@@ -120,9 +120,13 @@
   // ---- Row-axis ancestor walk -----------------------------------------
   /**
    * Walk the clicked row up the parent chain and return the active
-   * (region, country, city) filter. A row at depth 0 (region) gives
-   * just `region`; a leaf at depth 2 gives all three.
+   * (region, country, city) filter. The chain's ORDINAL position maps
+   * to the row-axis dimension: chain[0] = region, chain[1] = country,
+   * chain[2] = city. We can't key on `__pivotDepth` because the engine
+   * counts the synthetic root as level 0, so the depths are 1/2/3 not
+   * 0/1/2 - ordinal position is what we actually want here anyway.
    */
+  const ROW_FIELDS = ['region', 'country', 'city'] as const
   function rowFilterFor(row: PivotRow): {
     region?: Region
     country?: string
@@ -137,12 +141,12 @@
       cur = pid ? pivot.rows.find((r) => r.__pivotId === pid) : undefined
     }
     const out: { region?: Region; country?: string; city?: string } = {}
-    // Depth 0 = region, depth 1 = country, depth 2 = city.
-    for (const r of chain) {
-      const label = String(r.__pivotLabel)
-      if (r.__pivotDepth === 0) out.region = label as Region
-      else if (r.__pivotDepth === 1) out.country = label
-      else if (r.__pivotDepth === 2) out.city = label
+    for (let i = 0; i < chain.length && i < ROW_FIELDS.length; i += 1) {
+      const field = ROW_FIELDS[i]!
+      const label = String(chain[i]!.__pivotLabel)
+      if (field === 'region') out.region = label as Region
+      else if (field === 'country') out.country = label
+      else if (field === 'city') out.city = label
     }
     return out
   }

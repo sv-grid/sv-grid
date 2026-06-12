@@ -93,12 +93,15 @@
   }))
 
   function findRegionLabel(parentId: string | null): Region | null {
+    // Walk up to the top-most ancestor; that's the region (chain[0]).
     if (!parentId) return null
     let cur: PivotRow | undefined = pivot.rows.find((r) => r.__pivotId === parentId)
     while (cur) {
-      if (cur.__pivotDepth === 0 && cur.__pivotKind === 'group') return cur.__pivotLabel as Region
       const pid: string | null = cur.__pivotParentId
-      cur = pid ? pivot.rows.find((r) => r.__pivotId === pid) : undefined
+      if (!pid) {
+        return cur.__pivotKind === 'group' ? (cur.__pivotLabel as Region) : null
+      }
+      cur = pivot.rows.find((r) => r.__pivotId === pid)
     }
     return null
   }
@@ -108,7 +111,9 @@
   let didInit = false
   $effect(() => {
     if (didInit) return
-    const regionIds = pivot.rows.filter((r) => r.__pivotKind === 'group' && r.__pivotDepth === 0)
+    // Top-level groups have __pivotParentId === null. (Depth is 1-based
+     // because the engine counts the synthetic root as level 0.)
+    const regionIds = pivot.rows.filter((r) => r.__pivotKind === 'group' && r.__pivotParentId === null)
                                 .map((r) => r.__pivotId)
     if (regionIds.length === 0) return
     expanded = new Set(regionIds)
@@ -278,11 +283,13 @@
 {#snippet LabelCell(props: { row: PivotRow })}
   {@const row = props.row}
   {@const isOpen = expanded.has(row.__pivotId)}
-  {@const region = row.__pivotDepth === 0 ? (row.__pivotLabel as Region)
-                  : row.__pivotKind === 'leaf' ? findRegionLabel(row.__pivotParentId)
+  {@const region = (row.__pivotKind === 'group' && row.__pivotParentId === null)
+                    ? (row.__pivotLabel as Region)
+                  : row.__pivotKind === 'leaf'
+                    ? findRegionLabel(row.__pivotParentId)
                   : null}
   <span class="pv-label" class:pv-label-grand={row.__pivotKind === 'grandTotal'}
-        style={`padding-left: ${row.__pivotDepth * 14 + 6}px`}>
+        style={`padding-left: ${Math.max(0, row.__pivotDepth - 1) * 14 + 6}px`}>
     {#if row.__pivotExpandable}
       <button
         type="button"
