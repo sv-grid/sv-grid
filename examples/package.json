@@ -1,0 +1,33 @@
+{
+  "name": "sv-grid-community-example-gallery",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "test:types": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "eslint ./src"
+  },
+  "devDependencies": {
+    "@rollup/plugin-replace": "^6.0.3",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@tailwindcss/postcss": "^4.2.4",
+    "@tsconfig/svelte": "^5.0.8",
+    "autoprefixer": "^10.5.0",
+    "jszip": "^3.10.1",
+    "pdfmake": "^0.2.10",
+    "postcss": "^8.5.12",
+    "sv-grid-community": "workspace:*",
+    "sv-grid-pro": "workspace:*",
+    "svelte": "^5.55.5",
+    "svelte-check": "^4.4.6",
+    "tailwindcss": "^4.2.4",
+    "typescript": "6.0.3",
+    "vite": "^8.0.10"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "smart-webcomponents": "^26.0.0"
+  }
+}

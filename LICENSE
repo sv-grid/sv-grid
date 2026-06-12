@@ -1,6 +1,31 @@
+This repository is a multi-package workspace. Different packages ship
+under different licenses. The authoritative license for each package is
+the LICENSE file inside that package directory.
+
+------------------------------------------------------------------------
+Per-package licensing
+------------------------------------------------------------------------
+
+  packages/sv-grid-community/  MIT (terms below, and packages/sv-grid-community/LICENSE)
+  packages/sv-grid-pro/        Commercial - see packages/sv-grid-pro/LICENSE
+  packages/sv-grid-mcp/        Commercial - see packages/sv-grid-mcp/LICENSE
+  website/                     Proprietary - see website/LICENSE
+
+Only `sv-grid-community` is open source. Everything else in this
+repository (the Pro feature pack, the MCP server, the marketing +
+docs website, and any other package added later that does not ship
+its own MIT LICENSE) is proprietary and may not be copied, modified,
+or redistributed without a paid license. Source is visible in this
+repository for transparency and for paying customers; visibility does
+not grant a license.
+
+------------------------------------------------------------------------
+MIT License (applies ONLY to packages/sv-grid-community)
+------------------------------------------------------------------------
+
 MIT License
 
-Copyright (c) 2026 sv-grid
+Copyright (c) 2026 Boyko Markov <boikom@jqwidgets.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

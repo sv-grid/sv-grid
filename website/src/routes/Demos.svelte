@@ -1,0 +1,393 @@
+<script lang="ts">
+  /**
+   * Demos route - mirrors examples/src/App.svelte so the look inside the
+   * website is indistinguishable from `pnpm dev` on the gallery package.
+   * The only changes vs. the original: hash-routed under /demos, theme
+   * locked to dark, no theme toggle.
+   */
+  import { demos, demoGroups, findDemo } from '../lib/demos'
+  import SourceModal from '../components/SourceModal.svelte'
+  import { openInStackBlitz } from '../lib/stackblitz'
+  import { router } from '../lib/router.svelte'
+
+  type Props = { demoId: string }
+  let { demoId }: Props = $props()
+
+  const current = $derived(findDemo(demoId))
+  const Current = $derived(current.component)
+
+  function go(id: string) {
+    router.navigate(`demos/${id}`)
+  }
+
+  let showSource = $state(false)
+
+  // ---- Smart demo search (mirrors examples/src/App.svelte) ---------------
+  let query = $state('')
+  let searchEl = $state<HTMLInputElement | null>(null)
+
+  function tokens(q: string): string[] {
+    return q.toLowerCase().split(/\s+/).filter(Boolean)
+  }
+
+  function scoreDemo(d: typeof demos[number], toks: string[]): number {
+    if (toks.length === 0) return 0
+    const title = d.title.toLowerCase()
+    const blurb = d.blurb.toLowerCase()
+    const category = d.category.toLowerCase()
+    const id = d.id.toLowerCase()
+    let total = 0
+    for (const tok of toks) {
+      let s = 0
+      if (title.startsWith(tok)) s += 60
+      else if (title.includes(' ' + tok) || title.includes('-' + tok)) s += 45
+      else if (title.includes(tok)) s += 30
+      if (id.includes(tok)) s += 18
+      if (category.includes(tok)) s += 12
+      if (blurb.includes(tok)) s += 8
+      if (s === 0) return -1
+      total += s
+    }
+    return total
+  }
+
+  const searchResults = $derived.by(() => {
+    const toks = tokens(query)
+    if (toks.length === 0) return null
+    return demos
+      .map((d) => ({ demo: d, score: scoreDemo(d, toks) }))
+      .filter((r) => r.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((r) => r.demo)
+  })
+
+  function highlight(text: string, toks: string[]): string {
+    if (toks.length === 0) return text
+    const pattern = toks
+      .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .sort((a, b) => b.length - a.length)
+      .join('|')
+    const re = new RegExp(`(${pattern})`, 'gi')
+    return text.replace(re, '<mark class="demo-search-hit">$1</mark>')
+  }
+
+  function onSearchKey(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      query = ''
+      searchEl?.blur()
+    } else if (e.key === 'Enter' && searchResults && searchResults.length > 0) {
+      e.preventDefault()
+      go(searchResults[0]!.id)
+    }
+  }
+
+  $effect(() => {
+    const onGlobalKey = (e: KeyboardEvent) => {
+      if (e.key !== '/') return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      e.preventDefault()
+      searchEl?.focus()
+      searchEl?.select()
+    }
+    window.addEventListener('keydown', onGlobalKey)
+    return () => window.removeEventListener('keydown', onGlobalKey)
+  })
+
+  // ---- Collapsible sidebar groups ---------------------------------------
+  function loadOpenGroups(): Record<string, boolean> {
+    try {
+      const raw = localStorage.getItem('sg-demo-groups')
+      if (raw) return JSON.parse(raw)
+    } catch { /* ignore */ }
+    return {}
+  }
+  let openGroups = $state<Record<string, boolean>>(loadOpenGroups())
+
+  $effect(() => {
+    const cat = current.category
+    if (!(cat in openGroups)) {
+      openGroups = { ...openGroups, [cat]: true, 'Getting Started': true }
+    }
+  })
+  $effect(() => {
+    try { localStorage.setItem('sg-demo-groups', JSON.stringify(openGroups)) } catch { /* ignore */ }
+  })
+
+  function toggleGroup(cat: string) {
+    openGroups = { ...openGroups, [cat]: !(openGroups[cat] ?? false) }
+  }
+</script>
+
+<div class="flex h-full min-h-0">
+  <aside
+    class="w-72 shrink-0 border-r p-4 overflow-y-auto"
+    style="border-color: var(--sg-border)"
+  >
+    <div class="mb-4">
+      <h1 class="text-lg font-semibold">SvGrid</h1>
+      <p class="text-xs" style="color: var(--sg-muted)">Examples gallery</p>
+    </div>
+
+    <div class="demo-search-wrap mb-4">
+      <svg class="demo-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.3-4.3" />
+      </svg>
+      <input
+        bind:this={searchEl}
+        bind:value={query}
+        type="search"
+        placeholder="Search demos…"
+        aria-label="Search demos"
+        class="demo-search-input"
+        onkeydown={onSearchKey}
+      />
+      {#if query}
+        <button type="button" class="demo-search-clear" aria-label="Clear search" onclick={() => (query = '')}>×</button>
+      {:else}
+        <kbd class="demo-search-kbd" aria-hidden="true">/</kbd>
+      {/if}
+    </div>
+
+    <nav aria-label="Examples">
+      {#if searchResults !== null}
+        {@const toks = tokens(query)}
+        <div class="mb-2 px-2 text-[11px] uppercase tracking-wider" style="color: var(--sg-muted);">
+          {#if searchResults.length === 0}
+            No matches
+          {:else}
+            {searchResults.length} match{searchResults.length === 1 ? '' : 'es'}
+            <span class="normal-case tracking-normal" style="color: var(--sg-muted); opacity: 0.7;"> · Enter to open top hit</span>
+          {/if}
+        </div>
+        {#if searchResults.length === 0}
+          <p class="px-3 py-4 text-xs" style="color: var(--sg-muted);">
+            Nothing matches <em>"{query}"</em>. Try a feature ("pivot", "tree", "export") or an industry ("CRM", "healthcare").
+          </p>
+        {:else}
+          <ul class="space-y-0.5">
+            {#each searchResults as demo (demo.id)}
+              {@const active = demo.id === current.id}
+              <li>
+                <button
+                  type="button"
+                  onclick={() => go(demo.id)}
+                  class="demo-row w-full text-left rounded px-3 py-1.5 text-sm transition-colors"
+                  style:background={active ? 'var(--sg-row-hover-bg)' : 'transparent'}
+                  style:color="var(--sg-fg)"
+                  style:font-weight={active ? '600' : '400'}
+                >
+                  <span class="demo-row-title">
+                    {@html highlight(demo.title, toks)}
+                    {#if demo.pro}<span class="demo-pro-dot" title="Pro feature" aria-label="Pro"></span>{/if}
+                  </span>
+                  <span class="demo-row-cat" style="color: var(--sg-muted);">{demo.category}</span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      {:else}
+        {#each demoGroups as group (group.category)}
+          {@const isOpen = openGroups[group.category] ?? false}
+          <div class="mb-1">
+            <button
+              type="button"
+              onclick={() => toggleGroup(group.category)}
+              aria-expanded={isOpen}
+              class="demo-group-head w-full flex items-center gap-2 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded transition-colors"
+              style="color: var(--sg-muted);"
+            >
+              <svg class="demo-group-chev {isOpen ? 'is-open' : ''}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 6 15 12 9 18" />
+              </svg>
+              <span class="flex-1 text-left">{group.category}</span>
+              {#if group.category === 'Pro'}
+                <span class="demo-group-pro-badge">Pro</span>
+              {/if}
+              <span class="demo-group-count">{group.demos.length}</span>
+            </button>
+            {#if isOpen}
+              <ul class="space-y-0.5 pb-2">
+                {#each group.demos as demo (demo.id)}
+                  {@const active = demo.id === current.id}
+                  <li>
+                    <button
+                      type="button"
+                      onclick={() => go(demo.id)}
+                      class="demo-leaf w-full text-left rounded pl-6 pr-3 py-1.5 text-sm transition-colors"
+                      style:background={active ? 'var(--sg-row-hover-bg)' : 'transparent'}
+                      style:color="var(--sg-fg)"
+                      style:font-weight={active ? '600' : '400'}
+                    >
+                      <span class="demo-leaf-title">{demo.title}</span>
+                      {#if demo.pro}<span class="demo-pro-dot" title="Pro feature" aria-label="Pro"></span>{/if}
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
+        {/each}
+      {/if}
+    </nav>
+    <p class="mt-8 text-xs" style="color: var(--sg-muted)">
+      Each demo is a single .svelte file under <code>examples/src/demos/</code>. Read the source
+      alongside the running app - it is what you would copy into your own project.
+    </p>
+  </aside>
+
+  <main class="flex flex-col flex-1 overflow-x-hidden p-6 min-h-0">
+    <header class="mb-5 flex shrink-0 items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h2 class="text-2xl font-semibold">{current.title}</h2>
+        <p style="color: var(--sg-muted)">{current.blurb}</p>
+      </div>
+      <div class="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onclick={() => openInStackBlitz(current)}
+          class="inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-sm"
+          style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
+          title="Open this demo as an editable project in StackBlitz"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M10.797 14.182H3.635L16.728 0l-3.525 9.818h7.162L7.272 24l3.525-9.818Z" />
+          </svg>
+          Edit in StackBlitz
+        </button>
+        <button
+          type="button"
+          onclick={() => (showSource = true)}
+          class="inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-sm"
+          style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="16 18 22 12 16 6" />
+            <polyline points="8 6 2 12 8 18" />
+          </svg>
+          Source
+        </button>
+      </div>
+    </header>
+    <div class="flex flex-col flex-1 min-h-0">
+      {#key current.id}
+        <Current />
+      {/key}
+    </div>
+  </main>
+</div>
+
+{#if showSource}
+  <SourceModal
+    title={current.title}
+    source={current.source}
+    onClose={() => (showSource = false)}
+  />
+{/if}
+
+<style>
+  .demo-search-wrap {
+    position: relative;
+    display: flex; align-items: center;
+  }
+  .demo-search-icon {
+    position: absolute; left: 10px;
+    color: var(--sg-muted, #94a3b8);
+    pointer-events: none;
+  }
+  .demo-search-input {
+    width: 100%;
+    border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1));
+    background: var(--sg-input-bg, var(--sg-bg, #0b1220));
+    color: var(--sg-fg, #e2e8f0);
+    border-radius: 8px;
+    padding: 7px 36px 7px 32px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+  .demo-search-input::placeholder { color: var(--sg-muted, #94a3b8); }
+  .demo-search-input:focus {
+    border-color: var(--sg-accent, #3b82f6);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--sg-accent, #3b82f6) 22%, transparent);
+  }
+  .demo-search-input::-webkit-search-cancel-button { display: none; }
+  .demo-search-kbd {
+    position: absolute; right: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    padding: 1px 6px;
+    border: 1px solid var(--sg-border, #374151);
+    border-radius: 4px;
+    color: var(--sg-muted, #94a3b8);
+    background: var(--sg-header-bg, transparent);
+    pointer-events: none;
+  }
+  .demo-search-clear {
+    position: absolute; right: 6px;
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0; background: transparent;
+    color: var(--sg-muted, #94a3b8);
+    font-size: 18px; line-height: 1; cursor: pointer;
+    border-radius: 4px;
+  }
+  .demo-search-clear:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.15)); color: var(--sg-fg, #e2e8f0); }
+
+  .demo-row { display: flex; align-items: baseline; gap: 8px; }
+  .demo-row-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .demo-row-cat {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  :global(.demo-search-hit) {
+    background: color-mix(in oklab, var(--sg-accent, #3b82f6) 30%, transparent);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  /* Collapsible category groups (DevExpress / Kendo style sidebar) */
+  .demo-group-head { cursor: pointer; }
+  .demo-group-head:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.08)); }
+  .demo-group-chev { flex-shrink: 0; transition: transform 140ms ease; }
+  .demo-group-chev.is-open { transform: rotate(90deg); }
+  .demo-group-count {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--sg-muted, #94a3b8);
+    background: var(--sg-row-hover-bg, rgba(148,163,184,0.15));
+    border-radius: 10px;
+    padding: 1px 7px;
+    letter-spacing: 0;
+  }
+  .demo-group-pro-badge {
+    flex-shrink: 0;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 4px;
+    padding: 1px 5px;
+    letter-spacing: 0.04em;
+  }
+
+  .demo-leaf { display: flex; align-items: center; gap: 6px; }
+  .demo-leaf-title {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .demo-pro-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    box-shadow: 0 0 0 2px color-mix(in oklab, #8b5cf6 30%, transparent);
+    flex-shrink: 0;
+  }
+</style>

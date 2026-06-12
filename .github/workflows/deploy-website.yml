@@ -1,0 +1,76 @@
+name: Deploy website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'examples/src/demos/**'
+      - 'packages/sv-grid-community/**'
+      - 'docs/**'
+      - '.github/workflows/deploy-website.yml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build library
+        run: pnpm --filter sv-grid-community build
+
+      - name: Build website
+        run: pnpm --filter svgrid-website build
+        env:
+          # Served from the svgrid.com custom domain at the root.
+          SVGRID_SITE_BASE: /
+          SVGRID_SITE_ORIGIN: https://svgrid.com
+          # Exposed to the client build (canonical URLs in src/lib/seo.ts).
+          VITE_SITE_ORIGIN: https://svgrid.com
+
+      - name: Add .nojekyll
+        run: touch website/dist/.nojekyll
+
+      - name: Add SPA 404 fallback
+        # Hash routing means deep links always hit "/", but if someone removes
+        # the hash on a sub-path, GitHub Pages serves its default 404. Mirror
+        # index.html as 404.html so the SPA still loads.
+        run: cp website/dist/index.html website/dist/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

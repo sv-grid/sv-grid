@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+/* SvGrid ships its own scoped styles. These custom properties let you theme
+   the grid to match the dashboard shell. Tweak freely. */
+:root {
+  --app-bg: #f8fafc;
+  --app-panel: #ffffff;
+  --app-border: #e2e8f0;
+  --app-fg: #0f172a;
+  --app-muted: #64748b;
+  --app-accent: #4f46e5;
+}
+
+html,
+body {
+  background: var(--app-bg);
+  color: var(--app-fg);
+}

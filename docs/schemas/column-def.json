@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://svgrid.dev/schemas/column-def.json",
+  "title": "ColumnDef",
+  "description": "One entry in the `columns` array passed to `<SvGrid>`. Source: packages/sv-grid-community/src/core.ts (ColumnDef<TFeatures, TData>).",
+  "type": "object",
+  "$comment": "Hand-curated to mirror packages/sv-grid-community/src/core.ts. Update both sides if the runtime surface changes.",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable identifier. Defaults to `field` or a generated path id. Required for grouped header columns."
+    },
+    "field": {
+      "type": "string",
+      "description": "Dot-free property name on each row. Drives the default accessor + the editor write-back target."
+    },
+    "accessorFn": {
+      "description": "Function `(row: TData) => unknown` returning the cell value. Use when `field` is insufficient (computed cells, nested paths)."
+    },
+    "header": {
+      "description": "String label OR `(ctx) => any` snippet/component for the column header."
+    },
+    "footer": {
+      "description": "Same shape as header, for the column footer row."
+    },
+    "cell": {
+      "description": "Custom cell renderer: a string OR `(ctx) => any` snippet/component."
+    },
+    "columns": {
+      "type": "array",
+      "description": "Nested column-group children. When non-empty, this column becomes a header-only group and its `cell` / `field` are ignored.",
+      "items": {
+        "$ref": "#"
+      }
+    },
+    "editorType": {
+      "type": "string",
+      "enum": [
+        "text",
+        "number",
+        "date",
+        "datetime",
+        "checkbox",
+        "list",
+        "chips"
+      ],
+      "description": "Built-in editor used during inline editing. Defaults to \"text\"."
+    },
+    "editable": {
+      "description": "`true` (default), `false` (read-only column), or `(ctx) => boolean` for per-cell gating.",
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string",
+          "description": "(ctx) => boolean - rendered as a function reference in code."
+        }
+      ]
+    },
+    "sortable": {
+      "type": "boolean",
+      "description": "When false, the column is exempt from sorting (header click is a no-op, sort indicator hidden, api.setSort ignored).",
+      "default": true
+    },
+    "filterable": {
+      "type": "boolean",
+      "description": "When false, the column is exempt from filtering (funnel + menu hidden, api.setFilter ignored).",
+      "default": true
+    },
+    "editorOptions": {
+      "description": "Options for `editorType: \"list\" | \"chips\"`. Array of bare values OR `{ value, label, color? }` objects, OR `(row) => options` for cascading dropdowns."
+    },
+    "editorMultiple": {
+      "type": "boolean",
+      "description": "list / chips allow multiple values."
+    },
+    "editorSeparator": {
+      "type": "string",
+      "description": "Read-only display separator for array-valued cells. Defaults to \", \"."
+    },
+    "format": {
+      "type": "object",
+      "description": "Built-in cell formatter (currency / number / percent / date / datetime).",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "currency",
+            "number",
+            "percent",
+            "date",
+            "datetime"
+          ]
+        },
+        "currency": {
+          "type": "string",
+          "description": "ISO 4217 code for `type: \"currency\"` (e.g. \"USD\")."
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Date pattern: \"y-m-d\", \"d/m/y\", etc."
+        },
+        "options": {
+          "type": "object",
+          "description": "Intl.NumberFormatOptions / Intl.DateTimeFormatOptions, depending on `type`."
+        }
+      }
+    },
+    "formatter": {
+      "description": "Free-form `(value, row) => string` when `format` is not enough."
+    },
+    "width": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Initial column width in pixels."
+    },
+    "align": {
+      "type": "string",
+      "enum": [
+        "left",
+        "center",
+        "right"
+      ],
+      "description": "Horizontal alignment. Defaults derived from editorType."
+    },
+    "cellClass": {
+      "description": "String, array of strings, OR `(ctx) => string | string[] | Record<string, boolean>`. Applied to each <td>."
+    }
+  },
+  "additionalProperties": false
+}

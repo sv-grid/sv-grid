@@ -1,0 +1,40 @@
+{
+  "name": "create-sv-grid",
+  "version": "1.0.0",
+  "description": "Scaffold a Svelte app powered by SvGrid in one command: npm create sv-grid@latest",
+  "type": "module",
+  "license": "MIT",
+  "author": "jQWidgets Ltd",
+  "homepage": "https://www.svgrid.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sv-grid/sv-grid.git",
+    "directory": "packages/create-sv-grid"
+  },
+  "keywords": [
+    "svelte",
+    "sveltekit",
+    "data-grid",
+    "datagrid",
+    "table",
+    "sv-grid",
+    "create",
+    "scaffold",
+    "starter",
+    "template"
+  ],
+  "bin": {
+    "create-sv-grid": "index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "templates"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "sync-templates": "node sync-templates.mjs",
+    "prepack": "node sync-templates.mjs"
+  }
+}

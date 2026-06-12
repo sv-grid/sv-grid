@@ -1,0 +1,6 @@
+# Optional local override for the revoked-keys list. See src/revoked.ts
+# for the override pattern. Keep real revoked keys out of the public repo.
+src/revoked.local.ts
+
+# Build outputs (if a build step is added later).
+build/

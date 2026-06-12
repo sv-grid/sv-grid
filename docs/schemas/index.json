@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://svgrid.dev/schemas/index.json",
+  "title": "sv-grid schema index",
+  "schemas": [
+    {
+      "id": "column-def",
+      "file": "column-def.json",
+      "describes": "One entry in <SvGrid columns={...}>."
+    },
+    {
+      "id": "svgrid-options",
+      "file": "svgrid-options.json",
+      "describes": "<SvGrid> Svelte prop bag + createSvGrid options."
+    },
+    {
+      "id": "export-options",
+      "file": "export-options.json",
+      "describes": "sv-grid-pro api.exportData({...}) argument."
+    }
+  ]
+}

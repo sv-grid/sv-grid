@@ -1,0 +1,589 @@
+﻿@import 'tailwindcss';
+
+/* Tailwind's `dark:` modifier follows our data-theme attribute, so theme
+ * switching is in sync with our own --sg-* tokens. App.svelte writes the
+ * resolved theme to html[data-theme]. */
+@custom-variant dark (&:where(html[data-theme='dark'], html[data-theme='dark'] *));
+
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #0f172a;
+  --sg-muted: #64748b;
+  --sg-border: #e2e8f0;
+  --sg-header-bg: #f1f5f9;
+  --sg-header-fg: #0f172a;
+  --sg-row-alt-bg: #f8fafc;
+  --sg-row-hover-bg: #eef2ff;
+  --sg-row-height: 36px;
+  --sg-focus-ring: 0 0 0 2px #2563eb;
+  --sg-selection-bg: #dbeafe;
+  --sg-accent: #2563eb;
+  --sg-pill-active: #dcfce7;
+  --sg-pill-active-fg: #166534;
+  --sg-pill-pending: #fef9c3;
+  --sg-pill-pending-fg: #854d0e;
+  --sg-pill-inactive: #fee2e2;
+  --sg-pill-inactive-fg: #991b1b;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #cbd5e1;
+}
+
+/*
+ * Dark palette. Applied when html[data-theme='dark'] is set on the root.
+ * App.svelte's effect resolves "auto" to the system preference and writes
+ * the concrete value here, so Tailwind's dark: modifier and our --sg-*
+ * tokens always switch together.
+ */
+html[data-theme='dark'] {
+  --sg-bg: #181d27;
+  --sg-fg: #e2e8f0;
+  --sg-muted: #94a3b8;
+  --sg-border: #374151;
+  --sg-header-bg: #1e2433;
+  --sg-header-fg: #e2e8f0;
+  --sg-row-alt-bg: #1b2230;
+  --sg-row-hover-bg: #232b3c;
+  --sg-selection-bg: #1d3a73;
+  --sg-pill-active: #064e3b;
+  --sg-pill-active-fg: #6ee7b7;
+  --sg-pill-pending: #713f12;
+  --sg-pill-pending-fg: #fde68a;
+  --sg-pill-inactive: #7f1d1d;
+  --sg-pill-inactive-fg: #fecaca;
+  --sg-input-bg: #1a2130;
+  --sg-input-border: #2c3548;
+  --sg-accent: #3b82f6;
+  --sg-scrollbar-bg: #1a2130;
+  --sg-scrollbar-border: rgba(148, 163, 184, 0.08);
+  --sg-scrollbar-arrow: #64748b;
+  --sg-scrollbar-arrow-hover: #e2e8f0;
+  --sg-scrollbar-arrow-hover-bg: #2a3142;
+  --sg-scrollbar-arrow-active: #f1f5f9;
+  --sg-scrollbar-arrow-active-bg: #374151;
+  --sg-scrollbar-arrow-disabled: #475569;
+  --sg-scrollbar-thumb: #475569;
+  --sg-scrollbar-thumb-hover: #64748b;
+  --sg-scrollbar-thumb-active: #94a3b8;
+  color-scheme: dark;
+}
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: var(--sg-bg);
+  color: var(--sg-fg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+/* Demo-control selects (Density, Theme, Department, etc.).
+ * Without an explicit bg/fg the native popup options inherit the page's
+ * dark fg color against the OS-chosen popup bg, which on Chrome/Windows
+ * lands on light-gray-on-light-gray - unreadable. Force concrete colors
+ * on both the trigger and the dropdown popup options. */
+section select {
+  background: var(--sg-input-bg, var(--sg-bg)) !important;
+  color: var(--sg-fg) !important;
+  border-color: var(--sg-input-border, var(--sg-border)) !important;
+}
+section select option {
+  background: var(--sg-input-bg, var(--sg-bg));
+  color: var(--sg-fg);
+}
+
+/*
+ * The SvGrid component ships with hard-coded light-mode colors on
+ * .sv-grid-cell / .sv-grid-head / .sv-grid-foot / .sv-grid-shell. We
+ * override them to use our CSS custom properties so dark mode works.
+ */
+.sv-grid-shell {
+  border-bottom: 1px solid var(--sg-border) !important;
+}
+.sv-grid-column,
+.sv-grid-cell {
+  background: var(--sg-bg) !important;
+  color: var(--sg-fg);
+  /* Visible row + column borders. The table uses border-collapse: separate
+   * so we draw right + bottom only (no doubles between adjacent cells). */
+  border-right: 1px solid var(--sg-border) !important;
+  border-bottom: 1px solid var(--sg-border) !important;
+}
+/* Last column has no right border so it doesn't double up against the grid edge */
+.sv-grid-table tr > :last-child.sv-grid-column,
+.sv-grid-table tr > :last-child.sv-grid-cell {
+  border-right: 0 !important;
+}
+.sv-grid-head {
+  background: var(--sg-header-bg) !important;
+  color: var(--sg-header-fg);
+}
+.sv-grid-foot {
+  background: var(--sg-header-bg) !important;
+  color: var(--sg-header-fg);
+}
+.sv-grid-scrollbar-corner,
+.sv-grid-scrollbar-corner-br {
+  background: var(--sg-header-bg) !important;
+  border-bottom-color: var(--sg-border) !important;
+}
+/* Hide the corner when its accompanying scrollbar is absent. */
+.sv-grid-no-scroll .sv-grid-scrollbar-corner,
+.sv-grid-no-scroll .sv-grid-scrollbar {
+  display: none !important;
+}
+/* Tone down the active-cell outline; SvGrid's default is 2px solid #0b63f3 which
+   reads as a hard rectangle on otherwise calm rows. */
+.sv-grid-cell-active {
+  outline-color: var(--sg-accent) !important;
+  outline-offset: -1px !important;
+}
+
+/* Filter row inputs + cell editor inputs + column menu inputs */
+.sv-grid-column-filter,
+.sv-grid-filter-value,
+.sv-grid-cell-editor,
+.sv-grid-menu-search,
+.sv-grid-menu-condition-value,
+.sv-grid-global-filter input {
+  background: var(--sg-input-bg) !important;
+  color: var(--sg-fg) !important;
+  border: 1px solid var(--sg-input-border) !important;
+  border-radius: 4px !important;
+  padding: 0 8px !important;
+  box-sizing: border-box !important;
+}
+/*
+ * SvGrid's `.sv-grid-menu-condition-value` is styled `flex: 1 1 0`, which is
+ * only meaningful inside a flex parent. Since the redesigned menu uses block
+ * layout, force the input to span the full menu width.
+ */
+.sv-grid-menu-condition-value,
+.sv-grid-menu-search {
+  width: 100% !important;
+}
+.sv-grid-column-filter::placeholder,
+.sv-grid-filter-value::placeholder,
+.sv-grid-cell-editor::placeholder,
+.sv-grid-menu-search::placeholder {
+  color: var(--sg-muted);
+  opacity: 0.7;
+}
+
+/* Filter row sizing - make the row read as a single calm bar */
+.sv-grid-column-filter {
+  height: 28px !important;
+  width: 100% !important;
+  font-size: 0.8125rem !important;
+}
+
+/*
+ * Override SvGrid's hard-coded #0b63f3 focus outline on filter inputs and the
+ * inline cell editor. The library sets:
+ *   outline: 2px solid #0b63f3; outline-offset: -2px; border-color: #0b63f3
+ * which is harsh on a dark background. Replace with a calm accent-tinted
+ * box-shadow that respects the active theme.
+ */
+.sv-grid-column-filter:focus,
+.sv-grid-filter-value:focus,
+.sv-grid-menu-search:focus,
+.sv-grid-menu-condition-value:focus,
+.sv-grid-global-filter input:focus,
+.sv-grid-cell-editor:focus {
+  outline: none !important;
+  outline-offset: 0 !important;
+  border-color: var(--sg-accent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-accent) 30%, transparent) !important;
+}
+
+/* Column menu popover */
+.sv-grid-menu {
+  background: var(--sg-bg) !important;
+  color: var(--sg-fg) !important;
+  border-color: var(--sg-border) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4) !important;
+}
+.sv-grid-menu-item:hover {
+  background: var(--sg-row-hover-bg) !important;
+}
+.sv-grid-menu-sep {
+  background: var(--sg-border) !important;
+}
+.sv-grid-menu-filter-head {
+  color: var(--sg-muted) !important;
+}
+.sv-grid-menu-operator-btn {
+  background: var(--sg-input-bg) !important;
+  color: var(--sg-fg) !important;
+  border-color: var(--sg-input-border) !important;
+}
+.sv-grid-menu-operator-btn.is-active {
+  background: var(--sg-accent) !important;
+  color: #fff !important;
+  border-color: var(--sg-accent) !important;
+}
+
+/* New <select> for filter operator (replaces the radio-button group) */
+.sv-grid-menu-operator-select {
+  width: 100%;
+  height: 28px;
+  padding: 0 22px 0 8px;
+  margin-bottom: 6px;
+  border: 1px solid var(--sg-input-border);
+  border-radius: 5px;
+  background: var(--sg-input-bg);
+  color: var(--sg-fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 12px) 12px,
+    calc(100% - 8px) 12px;
+  background-size:
+    4px 4px,
+    4px 4px;
+  background-repeat: no-repeat;
+}
+.sv-grid-menu-operator-select:focus {
+  outline: none;
+  border-color: var(--sg-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-accent) 40%, transparent);
+}
+
+/* Facet list (the "Select all" + value checklist inside the menu) */
+.sv-grid-facet:hover {
+  background: var(--sg-row-hover-bg) !important;
+}
+.sv-grid-facet-all {
+  border-bottom-color: var(--sg-border) !important;
+}
+.sv-grid-facet-list {
+  border-color: var(--sg-border) !important;
+}
+.sv-grid-facet-empty,
+.sv-grid-facet-note {
+  color: var(--sg-muted) !important;
+}
+
+/* Menu action buttons */
+.sv-grid-menu-btn {
+  background: var(--sg-input-bg) !important;
+  color: var(--sg-fg) !important;
+  border-color: var(--sg-input-border) !important;
+}
+.sv-grid-menu-btn-primary {
+  background: var(--sg-accent) !important;
+  color: #fff !important;
+  border-color: var(--sg-accent) !important;
+}
+
+/* New filter-only popover (split out from the column menu) */
+.sv-grid-filter-menu {
+  width: 260px;
+}
+
+/* Choose Columns submenu */
+.sv-grid-choose-columns-menu {
+  width: 240px;
+}
+.sv-grid-choose-columns-menu .sv-grid-facet-list {
+  max-height: 280px;
+}
+/* Native checkboxes inside the facet list pick up the theme accent */
+.sv-grid-facet input[type='checkbox'] {
+  accent-color: var(--sg-accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* Right-chevron on the "Choose columns" item to indicate a submenu */
+.sv-grid-menu-item-chevron {
+  margin-left: auto;
+  transform: rotate(-90deg);
+  opacity: 0.55;
+}
+.sv-grid-menu-item.is-open .sv-grid-menu-item-chevron {
+  opacity: 1;
+}
+
+/* Filter button on the column header (funnel icon, next to the 3-line menu)
+ * Hidden when the column is idle. Becomes visible when:
+ *   - the column is hovered, OR
+ *   - the menu is open on this column, OR
+ *   - the column has an active filter (.is-active - also tinted in accent). */
+.sv-grid-col-filter-btn {
+  opacity: 0 !important;
+}
+.sv-grid-column:hover .sv-grid-col-filter-btn,
+.sv-grid-col-filter-btn:hover,
+.sv-grid-col-filter-btn.is-open {
+  opacity: 1 !important;
+}
+.sv-grid-col-filter-btn.is-active {
+  color: var(--sg-accent) !important;
+  opacity: 1 !important;
+}
+
+/* Magnifying-glass prefix on the filter menu's search input */
+.sv-grid-menu-search {
+  padding-left: 28px !important;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='M20 20l-4.5-4.5'/%3E%3C/svg%3E");
+  background-position: 8px center;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+}
+
+/* Filter menu spacing rhythm */
+.sv-grid-menu-filter > * + * {
+  margin-top: 6px;
+}
+.sv-grid-facet-all {
+  font-weight: 600;
+}
+
+/* Row-number column: themed muted text and matched background tokens. */
+.sv-grid-row-number-column,
+.sv-grid-row-number-cell {
+  color: var(--sg-muted) !important;
+  background: var(--sg-header-bg) !important;
+}
+
+/* Group row background (selection rules live below the zebra rule so they
+ * win on source order; see below). */
+.sv-grid-group-row > .sv-grid-cell {
+  background: var(--sg-header-bg) !important;
+  color: var(--sg-header-fg) !important;
+}
+
+/* Checkbox (used for row selection + the read-only checkbox cells) */
+.sv-grid-checkbox {
+  background: var(--sg-input-bg) !important;
+  border-color: var(--sg-input-border) !important;
+}
+.sv-grid-checkbox[aria-checked='true'],
+.sv-grid-checkbox[aria-checked='mixed'] {
+  background: var(--sg-accent) !important;
+  border-color: var(--sg-accent) !important;
+  color: #fff !important;
+}
+
+/* Filter-row operator button: SvGrid's scoped styles hard-code white bg +
+ * dark text which is too bright in dark mode. Route through theme tokens. */
+.sv-grid-filter-operator-btn {
+  background: var(--sg-input-bg) !important;
+  color: var(--sg-fg) !important;
+  border-color: var(--sg-input-border) !important;
+  opacity: 0.85;
+}
+.sv-grid-filter-operator-btn:hover {
+  opacity: 1;
+  border-color: var(--sg-accent) !important;
+}
+.sv-grid-filter-operator-btn.is-open {
+  border-color: var(--sg-accent) !important;
+  opacity: 1;
+}
+.sv-grid-filter-operator-btn .sv-grid-header-icon {
+  color: var(--sg-muted);
+}
+.sv-grid-filter-operator-btn .sv-grid-caret {
+  color: var(--sg-muted);
+}
+
+/* Pagination footer below the grid. Layout: PageSize · Range · Nav buttons.
+ * Matches the AG-Grid-style pager the user shipped as a reference. */
+.sv-grid-pagination {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 24px !important;
+  padding: 12px 16px !important;
+  margin-top: 0 !important;
+  border: 1px solid var(--sg-border) !important;
+  border-top: 0 !important;
+  border-radius: 0 0 6px 6px !important;
+  background: var(--sg-header-bg) !important;
+  color: var(--sg-fg) !important;
+  font-size: 13px !important;
+}
+
+.sv-grid-pagination-pagesize {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sg-muted);
+}
+.sv-grid-pagination-pagesize select {
+  height: 28px;
+  padding: 0 22px 0 8px;
+  border: 1px solid var(--sg-input-border);
+  border-radius: 5px;
+  background: var(--sg-input-bg);
+  color: var(--sg-fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 12px) 12px,
+    calc(100% - 8px) 12px;
+  background-size:
+    4px 4px,
+    4px 4px;
+  background-repeat: no-repeat;
+}
+.sv-grid-pagination-pagesize select:focus {
+  outline: none;
+  border-color: var(--sg-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-accent) 30%, transparent);
+}
+
+.sv-grid-pagination-range {
+  color: var(--sg-fg);
+}
+
+.sv-grid-pagination-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sv-grid-pagination-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  color: var(--sg-fg) !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  transition: background-color 100ms ease, color 100ms ease;
+}
+.sv-grid-pagination-btn:hover:not(:disabled) {
+  background: var(--sg-input-bg) !important;
+  color: var(--sg-accent) !important;
+}
+.sv-grid-pagination-btn:disabled {
+  color: var(--sg-muted) !important;
+  opacity: 0.4 !important;
+  cursor: default !important;
+}
+
+.sv-grid-pagination-label {
+  margin: 0 8px;
+  color: var(--sg-fg);
+}
+
+/* Resize handle: an invisible 6px hit-zone on the right edge of every
+ * header. The pill ::after only appears while the column is hovered, the
+ * handle is hovered, or a drag is in progress. Standard AG-Grid behavior. */
+.sv-grid-resize-handle {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: 6px !important;
+  height: 100% !important;
+  z-index: 100 !important;
+  cursor: col-resize !important;
+  background: transparent !important;
+  pointer-events: auto !important;
+}
+.sv-grid-resize-handle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto 2px;
+  width: 2px;
+  background: var(--sg-fg);
+  opacity: 0;
+  border-radius: 1px;
+  transition: background-color 100ms ease, opacity 100ms ease;
+}
+/* faint pill while the parent column is hovered */
+.sv-grid-column:hover .sv-grid-resize-handle::after {
+  opacity: 0.3;
+}
+/* bright accent pill when the handle itself is hovered or being dragged.
+ * The selector includes ".sv-grid-column:hover" to match the specificity
+ * of the rule above and rank higher (extra :hover) so it wins on cascade. */
+.sv-grid-column:hover .sv-grid-resize-handle:hover::after,
+.sv-grid-resize-handle.is-resizing::after {
+  background: var(--sg-accent);
+  opacity: 1;
+}
+/* zebra striping by row */
+.sv-grid-table tbody tr:nth-child(even) .sv-grid-cell {
+  background: var(--sg-row-alt-bg) !important;
+}
+.sv-grid-table tbody tr:hover .sv-grid-cell {
+  background: var(--sg-row-hover-bg) !important;
+}
+/* Selected row and cell-range backgrounds. We re-write them here, AFTER
+ * the zebra rule, with the same `.sv-grid-table tbody tr` prefix so they
+ * match zebra's specificity (0,3,2) and beat it on source order. Without
+ * this, even-numbered selected rows show the zebra bg instead of the
+ * selection bg. */
+.sv-grid-table tbody tr.sv-grid-row-selected .sv-grid-cell {
+  background: var(--sg-selection-bg) !important;
+}
+.sv-grid-table tbody tr .sv-grid-cell[data-selected-range='true'] {
+  background: var(--sg-selection-bg) !important;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.pill-active {
+  background: var(--sg-pill-active);
+  color: var(--sg-pill-active-fg);
+}
+.pill-pending {
+  background: var(--sg-pill-pending);
+  color: var(--sg-pill-pending-fg);
+}
+.pill-inactive {
+  background: var(--sg-pill-inactive);
+  color: var(--sg-pill-inactive-fg);
+}
+
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--sg-focus-ring);
+}
+
+.sparkbar {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 18px;
+}
+.sparkbar span {
+  width: 3px;
+  background: var(--sg-accent);
+  border-radius: 1px;
+  opacity: 0.85;
+}
+
+.density-compact { --sg-row-height: 28px; }
+.density-comfortable { --sg-row-height: 48px; }

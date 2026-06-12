@@ -1,0 +1,57 @@
+{
+  "name": "sv-grid-wc",
+  "version": "1.0.0",
+  "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element). Drop into React, Vue, Angular, or plain HTML - no build step required.",
+  "type": "module",
+  "license": "MIT",
+  "author": "jQWidgets Ltd",
+  "homepage": "https://www.svgrid.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sv-grid/sv-grid.git",
+    "directory": "packages/sv-grid-wc"
+  },
+  "keywords": [
+    "svelte",
+    "web component",
+    "web-components",
+    "custom element",
+    "custom-elements",
+    "data grid",
+    "datagrid",
+    "table",
+    "react",
+    "vue",
+    "angular",
+    "framework-agnostic",
+    "sv-grid"
+  ],
+  "main": "./dist/sv-grid-element.js",
+  "module": "./dist/sv-grid-element.js",
+  "exports": {
+    ".": {
+      "import": "./dist/sv-grid-element.js"
+    },
+    "./dist/sv-grid-element.js": "./dist/sv-grid-element.js"
+  },
+  "unpkg": "./dist/sv-grid-element.js",
+  "jsdelivr": "./dist/sv-grid-element.js",
+  "sideEffects": true,
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run",
+    "prepack": "vite build"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "sv-grid-community": "workspace:*",
+    "svelte": "^5.55.5",
+    "vite": "^8.0.10"
+  }
+}

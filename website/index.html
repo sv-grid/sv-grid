@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#181d27" />
+
+    <!-- Default meta - JS overrides per route. The defaults below ensure
+         crawlers that don't run JS still get full title + description
+         + OpenGraph for the homepage. -->
+    <title>SvGrid - The Svelte 5 Data Grid with Headless Core + Render Component</title>
+    <meta
+      name="description"
+      content="SvGrid is a modern Svelte 5 data grid. Headless-first engine plus a full render component. Enterprise-grade features: sorting, Excel-style filters, grouping, virtualization, inline editing, server-side data. 100% Svelte runes, MIT-licensed core."
+    />
+    <meta
+      name="keywords"
+      content="svelte data grid, svelte 5 grid, svelte table, tanstack table svelte, sv-grid, data grid, headless table, enterprise svelte grid"
+    />
+    <meta name="author" content="jQWidgets" />
+    <link rel="canonical" href="https://svgrid.com/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SvGrid" />
+    <meta
+      property="og:title"
+      content="SvGrid - The Svelte 5 Data Grid"
+    />
+    <meta
+      property="og:description"
+      content="A modern Svelte 5 data grid. Headless-first engine plus a full render component. Sorting, filtering, grouping, virtualization, inline editing, server-side data."
+    />
+    <meta property="og:url" content="https://svgrid.com/" />
+    <meta property="og:image" content="https://svgrid.com/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:image:alt" content="SvGrid - the enterprise-grade Svelte 5 data grid" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="SvGrid - The Svelte 5 Data Grid" />
+    <meta
+      name="twitter:description"
+      content="A modern Svelte 5 data grid. Headless-first engine plus a full render component."
+    />
+    <meta name="twitter:image" content="https://svgrid.com/og-image.svg" />
+
+    <!-- Favicon: the SvGrid mark - a flat data-table glyph (header row + 3-col
+         body) on a solid plate, with one brand-orange "active cell". Matches
+         the Logo component's `plate` variant. Inlined as a data URI. -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Crect%20x%3D%22.5%22%20y%3D%22.5%22%20width%3D%2223%22%20height%3D%2223%22%20rx%3D%225%22%20fill%3D%22%23111a2e%22%2F%3E%3Crect%20x%3D%22.5%22%20y%3D%22.5%22%20width%3D%2223%22%20height%3D%2223%22%20rx%3D%225%22%20fill%3D%22none%22%20stroke%3D%22rgba(148%2C163%2C184%2C0.28)%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%226%22%20height%3D%224%22%20rx%3D%221.2%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.95%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%224%22%20width%3D%224%22%20height%3D%224%22%20rx%3D%221.2%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.95%22%2F%3E%3Crect%20x%3D%2216%22%20y%3D%224%22%20width%3D%224%22%20height%3D%224%22%20rx%3D%221.2%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.95%22%2F%3E%3Cpath%20d%3D%22M16.9%205.4%20L19.1%205.4%20L18%206.9%20Z%22%20fill%3D%22%23ff3e00%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%229%22%20width%3D%226%22%20height%3D%223%22%20rx%3D%22.9%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%229%22%20width%3D%224%22%20height%3D%223%22%20rx%3D%22.9%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2216%22%20y%3D%229%22%20width%3D%224%22%20height%3D%223%22%20rx%3D%22.9%22%20fill%3D%22%23ff3e00%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2213%22%20width%3D%226%22%20height%3D%223%22%20rx%3D%22.9%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%2213%22%20width%3D%224%22%20height%3D%223%22%20rx%3D%22.9%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2216%22%20y%3D%2213%22%20width%3D%224%22%20height%3D%223%22%20rx%3D%22.9%22%20fill%3D%22%23ff3e00%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2217%22%20width%3D%226%22%20height%3D%223%22%20rx%3D%22.9%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2211%22%20y%3D%2217%22%20width%3D%224%22%20height%3D%223%22%20rx%3D%22.9%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2216%22%20y%3D%2217%22%20width%3D%224%22%20height%3D%223%22%20rx%3D%22.9%22%20fill%3D%22%23ff3e00%22%2F%3E%3C%2Fsvg%3E"
+    />
+
+    <!-- Structured data: Organization + SoftwareApplication.
+         Helps Google generate rich results for product searches. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://www.jqwidgets.com/#organization",
+            "name": "jQWidgets",
+            "url": "https://www.jqwidgets.com",
+            "sameAs": [
+              "https://www.htmlelements.com",
+              "https://github.com/jqwidgets",
+              "https://github.com/HTMLElements",
+              "https://www.facebook.com/jqwidgets",
+              "https://github.com/sv-grid"
+            ]
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "SvGrid",
+            "alternateName": "sv-grid-community",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web",
+            "description": "A modern Svelte 5 data grid. Headless-first engine plus a full render component. Enterprise-grade features.",
+            "url": "https://svgrid.com/",
+            "downloadUrl": "https://www.npmjs.com/package/sv-grid-community",
+            "softwareVersion": "1.0.0",
+            "publisher": { "@id": "https://www.jqwidgets.com/#organization" },
+            "offers": [
+              {
+                "@type": "Offer",
+                "name": "Community",
+                "price": "0",
+                "priceCurrency": "USD",
+                "description": "Free under the MIT License, including commercial use."
+              },
+              {
+                "@type": "Offer",
+                "name": "Pro - Single Application Developer License",
+                "price": "599",
+                "priceCurrency": "USD",
+                "description": "Per developer. Perpetual license + 1 year of updates and support that renews automatically (cancel anytime). Covers one deployed production application. Includes sv-grid-pro (export to Excel, PDF, CSV, TSV, HTML + Print, pivot, AI), email support, private Slack, priority bug fixes."
+              },
+              {
+                "@type": "Offer",
+                "name": "Pro - Multiple Application Developer License",
+                "price": "999",
+                "priceCurrency": "USD",
+                "description": "Per developer. Perpetual license + 1 year of updates and support that renews automatically (cancel anytime). Covers unlimited deployed production applications in your organisation. Includes everything in Single Application plus volume / multi-year discounts."
+              }
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "url": "https://svgrid.com/",
+            "name": "SvGrid",
+            "publisher": { "@id": "https://www.jqwidgets.com/#organization" }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Crawler-readable fallback. Hidden once Svelte hydrates - but search
+         engines that don't run JS still see the headline + key features and
+         can index the page meaningfully. -->
+    <noscript>
+      <style>
+        body { background: #181d27; color: #e2e8f0; font-family: system-ui, sans-serif; padding: 2rem; }
+        a { color: #22d3ee; }
+        h1 { color: #fff; }
+      </style>
+      <h1>SvGrid - The Svelte 5 Data Grid</h1>
+      <p>
+        SvGrid is a modern data grid for Svelte 5. Headless-first engine plus a full-featured
+        render component. Built by jQWidgets - the team behind jqwidgets.com and htmlelements.com,
+        whose other UI components are used in production by 5,000+ companies (Samsung, Boeing,
+        NVIDIA, Microsoft, Nokia, Intel). SvGrid is a new Svelte 5 product from the same team.
+      </p>
+      <ul>
+        <li>Sorting, Excel-style filters, grouping + aggregation</li>
+        <li>Row + column virtualization (100k rows smooth)</li>
+        <li>Inline editing with cascade formulas</li>
+        <li>Server-side data, master/detail, tree</li>
+        <li>WAI-ARIA + full keyboard navigation</li>
+        <li>120+ production-quality examples and a full documentation site</li>
+        <li>MCP server for AI assistants (Claude, Cursor)</li>
+      </ul>
+      <p>
+        This site requires JavaScript to browse the live demos. The full source is on
+        <a href="https://github.com/sv-grid/sv-grid">GitHub</a>, and the library is on
+        <a href="https://www.npmjs.com/package/sv-grid-community">npm</a> as
+        <code>sv-grid-community</code>.
+      </p>
+    </noscript>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

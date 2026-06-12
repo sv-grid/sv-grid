@@ -1,0 +1,4 @@
+# admin-dashboard is generated from ../../templates/sveltekit-admin-dashboard
+# by sync-templates.mjs (runs on prepack). Don't commit the duplicate.
+templates/admin-dashboard
+node_modules

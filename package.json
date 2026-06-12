@@ -1,0 +1,31 @@
+{
+  "name": "sv-grid",
+  "private": true,
+  "version": "0.0.0",
+  "description": "SvGrid - a modern Svelte 5 data grid (standalone workspace).",
+  "license": "SEE LICENSE IN LICENSE",
+  "type": "module",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "pnpm --filter sv-grid-community-example-gallery dev",
+    "build": "pnpm --filter sv-grid-community build",
+    "build:example": "pnpm --filter sv-grid-community-example-gallery build",
+    "test": "pnpm --filter sv-grid-community test:lib",
+    "test:types": "pnpm -r test:types",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install chromium",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^22.10.7",
+    "playwright": "^1.60.0",
+    "typescript": "6.0.3",
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
+  }
+}

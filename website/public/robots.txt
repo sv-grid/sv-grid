@@ -1,0 +1,43 @@
+# SvGrid - https://sv-grid.github.io/sv-grid/
+# All crawlers welcome, including AI / LLM crawlers. A machine-readable
+# summary of the docs is published at /llms.txt and /llms-full.txt, and a
+# JSON manifest at /docs.json.
+
+User-agent: *
+Allow: /
+
+# Explicitly welcome the major AI / LLM crawlers (each honours its own token).
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://sv-grid.github.io/sv-grid/sitemap.xml

@@ -1,0 +1,70 @@
+SV-GRID WEBSITE - PROPRIETARY LICENSE
+Version 1.0
+
+Copyright (c) 2026 Boyko Markov <boikom@jqwidgets.com>
+Project: sv-grid website (marketing + documentation site)
+
+All rights reserved.
+
+This directory contains the source of the public marketing and
+documentation site for SvGrid, including page layouts, design,
+written copy, illustrations, demos, and other content. It is NOT
+open source.
+
+------------------------------------------------------------------------
+1. NO LICENSE GRANTED
+------------------------------------------------------------------------
+
+No license, express or implied, is granted to copy, modify,
+redistribute, host, mirror, fork, or create derivative works of any
+part of this directory, in whole or in part, for any purpose other
+than:
+
+  (a) reading the source for the purpose of evaluating SvGrid;
+  (b) submitting a bug report or documentation correction back to
+      this repository via pull request, in which case the contributor
+      grants the Author a perpetual, royalty-free, irrevocable license
+      to use the contribution.
+
+Source visibility in this public repository does not constitute a
+license. The Author reserves all rights not expressly granted.
+
+------------------------------------------------------------------------
+2. RESTRICTIONS
+------------------------------------------------------------------------
+
+You may NOT:
+
+  (a) copy this site, in whole or in part, to publish a competing or
+      derivative marketing or documentation site;
+  (b) reuse the written copy, design, illustrations, or demo
+      compositions in another product's marketing material;
+  (c) republish the bundled documentation outside the official
+      sv-grid.dev domain;
+  (d) remove or alter copyright notices.
+
+------------------------------------------------------------------------
+3. THIRD-PARTY COMPONENTS
+------------------------------------------------------------------------
+
+This site depends on `sv-grid-community` (MIT), `sv-grid-pro`
+(commercial; see packages/sv-grid-pro/LICENSE), and various
+open-source build and runtime dependencies declared in
+`package.json`, each licensed by its respective author under its
+own terms.
+
+------------------------------------------------------------------------
+4. WARRANTY DISCLAIMER
+------------------------------------------------------------------------
+
+THE SITE SOURCE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED.
+
+------------------------------------------------------------------------
+5. CONTACT
+------------------------------------------------------------------------
+
+For licensing inquiries or to report unauthorized use, contact:
+boikom@jqwidgets.com
+
+END OF LICENSE

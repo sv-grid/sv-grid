@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://svgrid.dev/schemas/export-options.json",
+  "title": "ExportOptions",
+  "description": "`api.exportData({...})` argument from sv-grid-pro.",
+  "type": "object",
+  "$comment": "Mirrors packages/sv-grid-pro/src/export.ts ExportOptions<TData>.",
+  "required": [
+    "format"
+  ],
+  "properties": {
+    "format": {
+      "type": "string",
+      "enum": [
+        "xlsx",
+        "pdf",
+        "csv",
+        "tsv",
+        "html"
+      ]
+    },
+    "filename": {
+      "type": "string",
+      "default": "grid"
+    },
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "header": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "field"
+        ]
+      }
+    },
+    "rows": {
+      "type": "array",
+      "description": "Override the displayed rows. Defaults to `api.getDisplayedRows()`."
+    },
+    "pageOrientation": {
+      "type": "string",
+      "enum": [
+        "portrait",
+        "landscape"
+      ],
+      "default": "portrait"
+    },
+    "styles": {
+      "type": "object",
+      "description": "Header / body / alternate-row styles. Cell-style sub-properties accept CSS-named keys (color, backgroundColor, fontWeight, fontStyle, fontSize, fontFamily, textAlign, verticalAlign, textDecoration, numFmt).",
+      "properties": {
+        "headerRow": {
+          "type": "object"
+        },
+        "rows": {
+          "type": "object"
+        },
+        "rowAlternate": {
+          "type": "object"
+        },
+        "cells": {
+          "type": "object",
+          "description": "HTML-only: per-cell-ref overrides keyed by Excel-style reference (e.g. \"B1\")."
+        }
+      }
+    },
+    "header": {
+      "type": "array",
+      "description": "Page-header lines: `{ text, style? } | { image, width?, height? } | { left?, center?, right? }`."
+    },
+    "footer": {
+      "type": "array",
+      "description": "Page-footer lines, same shape as `header`."
+    },
+    "sheets": {
+      "type": "array",
+      "description": "Multi-sheet export (xlsx only). Each entry becomes one tab."
+    },
+    "imageFields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fields whose value is a data URL get embedded as a real image cell."
+    },
+    "imageSize": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        }
+      },
+      "default": {
+        "width": 32,
+        "height": 32
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "versions": [
+    {
+      "id":           "latest",
+      "label":        "v1 (current)",
+      "tag":          "1.x",
+      "default":      true,
+      "supportUntil": "active",
+      "docsPath":     "/",
+      "changelogId":  "unreleased"
+    }
+  ],
+  "policy": {
+    "supportWindow": "Current major + previous major for 12 months after the next-major ships. See /help/api-stability.",
+    "ltsEnterprise": "Pro Enterprise tier may extend LTS on a per-contract basis - contact support."
+  },
+  "next": {
+    "id":      "v2",
+    "draftedAt": null,
+    "comment":  "When v2 ships, this file gains a new entry, the v1 entry's docsPath moves to /v1/, and we mirror the v1/ tree from the current docs/ at release time."
+  }
+}

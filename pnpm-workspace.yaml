@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+  - examples
+  - website
+
+linkWorkspacePackages: true
+preferWorkspacePackages: true

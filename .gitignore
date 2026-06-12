@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output (CI rebuilds these; never commit)
+dist/
+build/
+.svelte-kit/
+.vercel/
+*.tsbuildinfo
+
+# Vite temp files
+vite.config.*.timestamp-*
+vite.config.*.timestamp_*
+
+# Env files (keep the documented examples)
+.env
+.env.*
+!.env.example
+
+# Test / coverage artifacts
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Generated per-customer license files and the issuance audit log.
+# These contain real customer-bound license keys and must never be
+# committed to the public repo. The issuer script lives at
+# tools/issue-license.mjs (committed) and writes here.
+tools/licenses/

@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://svgrid.dev/schemas/svgrid-options.json",
+  "title": "SvGridProps",
+  "description": "Props on the `<SvGrid>` Svelte component plus headless `createSvGrid` options.",
+  "type": "object",
+  "$comment": "Mirrors packages/sv-grid-community/src/SvGrid.svelte top-of-file Props type + core.ts SvGridOptions.",
+  "required": [
+    "data",
+    "columns",
+    "features"
+  ],
+  "properties": {
+    "data": {
+      "type": "array",
+      "description": "Source rows (any TypeScript object shape)."
+    },
+    "columns": {
+      "type": "array",
+      "description": "Column definitions.",
+      "items": {
+        "$ref": "column-def.json"
+      }
+    },
+    "features": {
+      "type": "object",
+      "description": "Result of `tableFeatures({...})`. Opts the engine into sorting/filtering/grouping/etc."
+    },
+    "getRowId": {
+      "description": "`(row, index) => string` - stable row id. Defaults to the array index."
+    },
+    "selectionMode": {
+      "type": "string",
+      "enum": [
+        "row",
+        "cell",
+        "both",
+        "none"
+      ],
+      "default": "both"
+    },
+    "enableCellSelection": {
+      "type": "boolean",
+      "default": true
+    },
+    "onRowSelectionChange": {
+      "description": "`(selection, rows) => void`"
+    },
+    "enableInlineEditing": {
+      "type": "boolean",
+      "default": true
+    },
+    "onCellValueChange": {
+      "description": "`(event: { rowIndex, columnId, oldValue, newValue, row }) => void`"
+    },
+    "filterMode": {
+      "type": "string",
+      "enum": [
+        "menu",
+        "row",
+        "none"
+      ],
+      "default": "menu"
+    },
+    "externalFilter": {
+      "type": "boolean",
+      "description": "When true, the grid records filter state but does NOT filter `data`. Pair with `onFiltersChange` for server-side filtering."
+    },
+    "onFiltersChange": {
+      "description": "`(payload: { global, columns }) => void`"
+    },
+    "externalSort": {
+      "type": "boolean"
+    },
+    "onSortingChange": {
+      "description": "`(clauses: { id, desc }[]) => void`"
+    },
+    "rowHeight": {
+      "type": "integer",
+      "default": 32
+    },
+    "columnWidth": {
+      "type": "integer",
+      "default": 140
+    },
+    "fitColumns": {
+      "type": "boolean",
+      "default": false
+    },
+    "containerHeight": {
+      "description": "Pixel number or \"100%\" - the grid scrolls inside this."
+    },
+    "virtualization": {
+      "type": "boolean",
+      "default": true
+    },
+    "columnVirtualization": {
+      "type": "boolean",
+      "default": true
+    },
+    "overscan": {
+      "type": "integer",
+      "default": 8
+    },
+    "columnOverscan": {
+      "type": "integer",
+      "default": 3
+    },
+    "showRowNumbers": {
+      "type": "boolean",
+      "default": false
+    },
+    "showPagination": {
+      "type": "boolean",
+      "default": false
+    },
+    "pageSize": {
+      "type": "integer",
+      "default": 10
+    },
+    "showGlobalFilter": {
+      "type": "boolean"
+    },
+    "showColumnFilters": {
+      "type": "boolean"
+    },
+    "showGroupingControls": {
+      "type": "boolean"
+    },
+    "rowClass": {
+      "description": "`(ctx: { row, rowIndex }) => string | string[] | Record<string, boolean> | null`"
+    },
+    "emptyMessage": {
+      "type": "string",
+      "default": "No rows to display."
+    },
+    "loading": {
+      "type": "boolean"
+    },
+    "error": {
+      "type": "string"
+    },
+    "onApiReady": {
+      "description": "`(api: SvGridApi<TFeatures, TData>) => void` - fires once when the grid is ready."
+    }
+  }
+}
