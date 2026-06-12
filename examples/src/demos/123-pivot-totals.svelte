@@ -174,7 +174,7 @@
   {@const row = props.row}
   {@const isCollapsed = collapsed.has(row.__pivotId)}
   <span class="pv-label" class:pv-label-grand={row.__pivotKind === 'grandTotal'}
-        style={`padding-left: ${row.__pivotDepth * 14 + 6}px`}>
+        style={`padding-left: ${Math.max(0, row.__pivotDepth - 1) * 14 + 6}px`}>
     {#if row.__pivotExpandable}
       <button type="button" class="pv-chev" class:open={!isCollapsed}
               onclick={() => toggle(row.__pivotId)}

@@ -105,7 +105,9 @@
   let didInit = false
   $effect(() => {
     if (didInit) return
-    const first = pivot.rows.find((r) => r.__pivotKind === 'group' && r.__pivotDepth === 0)
+    // Top-level groups have __pivotParentId === null. (Depth is 1-based
+     // because the engine counts the synthetic root as level 0.)
+    const first = pivot.rows.find((r) => r.__pivotKind === 'group' && r.__pivotParentId === null)
     if (!first) return
     expanded = new Set([first.__pivotId])
     didInit = true
@@ -185,6 +187,19 @@
     const total = cf.measure === 'units'
       ? matched.reduce((a, f) => a + f.units, 0)
       : matched.reduce((a, f) => a + f.revenue, 0)
+    // eslint-disable-next-line no-console
+    console.log('[drill]', {
+      colId,
+      rowFilter: rf,
+      colFilter: cf,
+      matchedCount: matched.length,
+      total,
+      rowKind: row.__pivotKind,
+      rowLabel: row.__pivotLabel,
+      rowDepth: row.__pivotDepth,
+      rowParentId: row.__pivotParentId,
+      sampleFact: facts[0],
+    })
     drill = { row, colId, rowFilter: rf, colFilter: cf, facts: matched, total }
   }
   function closeDrill() { drill = null }
@@ -257,7 +272,7 @@
   {@const row = props.row}
   {@const isOpen = expanded.has(row.__pivotId)}
   <span class="pv-label" class:pv-label-grand={row.__pivotKind === 'grandTotal'}
-        style={`padding-left: ${row.__pivotDepth * 14 + 6}px`}>
+        style={`padding-left: ${Math.max(0, row.__pivotDepth - 1) * 14 + 6}px`}>
     {#if row.__pivotExpandable}
       <button type="button" class="pv-chev" class:open={isOpen}
               onclick={() => toggle(row.__pivotId)} aria-label={isOpen ? 'Collapse' : 'Expand'}>▸</button>

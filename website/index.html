@@ -119,6 +119,14 @@
         ]
       }
     </script>
+
+    <!-- Prerendered SEO fallback is injected inside #root for crawlers (which
+         read the raw HTML regardless of CSS). Hide it from users so it doesn't
+         flash before the SPA mounts; main.ts clears #root and Svelte then
+         renders the real, styled app. Render-blocking inline style = no flash. -->
+    <style>
+      [data-prerender] { display: none !important; }
+    </style>
   </head>
   <body>
     <!-- Crawler-readable fallback. Hidden once Svelte hydrates - but search
