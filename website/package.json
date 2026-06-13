@@ -13,6 +13,7 @@
     "lint": "eslint ./src"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@rollup/plugin-replace": "^6.0.3",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/postcss": "^4.2.4",

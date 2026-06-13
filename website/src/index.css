@@ -724,7 +724,10 @@ a:focus-visible,
 .prose h2,
 .prose h3,
 .prose h4 {
-  color: #ffffff;
+  /* Was hardcoded #ffffff, which is invisible on the light-theme white
+     page. --site-fg resolves to near-white on dark and near-black on
+     light, so headings stay readable in both themes. */
+  color: var(--site-fg);
   font-weight: 700;
   margin: 1.5em 0 0.6em;
   line-height: 1.25;
@@ -798,6 +801,21 @@ a:focus-visible,
   width: 100%;
   border-collapse: collapse;
   margin: 1em 0;
+}
+/* Wide tables would be clipped by the docs main's overflow-x-hidden on
+   narrow screens. Let the table scroll horizontally instead so every
+   column stays reachable on a phone. */
+@media (max-width: 640px) {
+  .prose table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .prose th,
+  .prose td {
+    white-space: nowrap;
+  }
 }
 .prose th,
 .prose td {

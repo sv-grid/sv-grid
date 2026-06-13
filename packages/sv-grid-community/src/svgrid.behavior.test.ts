@@ -301,6 +301,73 @@ describe('SvGrid - row selection', () => {
   })
 })
 
+describe('SvGrid - capability shortcuts', () => {
+  it('sortable + filterable enable sorting/filtering UI with no features prop', async () => {
+    const { target, destroy } = await mountGrid({
+      features: undefined,
+      sortable: true,
+      filterable: true,
+    })
+    try {
+      await tick()
+      // rowSortingFeature injected -> headers expose aria-sort.
+      expect(
+        target.querySelectorAll('[role="columnheader"][aria-sort]').length,
+      ).toBeGreaterThan(0)
+      // columnFilteringFeature injected -> per-column filter button renders.
+      expect(target.querySelector('.sv-grid-col-filter-btn')).toBeTruthy()
+    } finally {
+      destroy()
+    }
+  })
+
+  it('sortable={false} overrides a rowSortingFeature passed via features', async () => {
+    // The harness default `fullFeatures` includes rowSortingFeature.
+    const { target, destroy } = await mountGrid({ sortable: false })
+    try {
+      await tick()
+      expect(
+        target.querySelector('[role="columnheader"][aria-sort]'),
+      ).toBeNull()
+    } finally {
+      destroy()
+    }
+  })
+
+  it('pageable toggles the pagination footer', async () => {
+    const off = await mountGrid({ pageable: false })
+    try {
+      await tick()
+      expect(off.target.querySelector('.sv-grid-pagination')).toBeNull()
+    } finally {
+      off.destroy()
+    }
+    const on = await mountGrid({ features: undefined, pageable: true })
+    try {
+      await tick()
+      expect(on.target.querySelector('.sv-grid-pagination')).toBeTruthy()
+    } finally {
+      on.destroy()
+    }
+  })
+
+  it('editable={false} blocks inline editing entry points', async () => {
+    const { api, target, destroy } = await mountGrid({ editable: false })
+    try {
+      await tick()
+      // Double-clicking a body cell must not open an editor when editing
+      // is disabled via the shortcut.
+      const cell = target.querySelector<HTMLElement>('.sv-grid-cell')
+      cell?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+      await tick()
+      expect(target.querySelector('.sv-grid-cell-editor')).toBeNull()
+      expect(api.getData().length).toBe(people.length)
+    } finally {
+      destroy()
+    }
+  })
+})
+
 describe('SvGrid - cell selection', () => {
   it('enableCellSelection mounts without error', async () => {
     const { api, destroy } = await mountGrid({ enableCellSelection: true })

@@ -16,8 +16,13 @@
   const current = $derived(findDemo(demoId))
   const Current = $derived(current.component)
 
+  // Mobile: the sidebar is a slide-in drawer (it would otherwise eat ~288px
+  // of a phone screen and crush the demo). Opening a demo closes it.
+  let mobileNav = $state(false)
+
   function go(id: string) {
     router.navigate(`demos/${id}`)
+    mobileNav = false
   }
 
   let showSource = $state(false)
@@ -121,13 +126,30 @@
 </script>
 
 <div class="flex h-full min-h-0">
+  {#if mobileNav}
+    <button
+      type="button"
+      class="demo-backdrop md:hidden"
+      aria-label="Close menu"
+      onclick={() => (mobileNav = false)}
+    ></button>
+  {/if}
   <aside
-    class="w-72 shrink-0 border-r p-4 overflow-y-auto"
+    class="demo-aside w-72 shrink-0 border-r p-4 overflow-y-auto"
+    class:is-open={mobileNav}
     style="border-color: var(--sg-border)"
   >
-    <div class="mb-4">
-      <h1 class="text-lg font-semibold">SvGrid</h1>
-      <p class="text-xs" style="color: var(--sg-muted)">Examples gallery</p>
+    <div class="mb-4 flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-semibold">SvGrid</h1>
+        <p class="text-xs" style="color: var(--sg-muted)">Examples gallery</p>
+      </div>
+      <button
+        type="button"
+        class="demo-aside-close md:hidden"
+        aria-label="Close menu"
+        onclick={() => (mobileNav = false)}
+      >×</button>
     </div>
 
     <div class="demo-search-wrap mb-4">
@@ -239,37 +261,50 @@
     </p>
   </aside>
 
-  <main class="flex flex-col flex-1 overflow-x-hidden p-6 min-h-0">
-    <header class="mb-5 flex shrink-0 items-start justify-between gap-4">
-      <div class="min-w-0">
-        <h2 class="text-2xl font-semibold">{current.title}</h2>
-        <p style="color: var(--sg-muted)">{current.blurb}</p>
+  <main class="flex flex-col flex-1 overflow-x-hidden p-3 sm:p-6 min-h-0">
+    <header class="mb-5 flex shrink-0 items-start justify-between gap-3">
+      <div class="flex min-w-0 items-start gap-2">
+        <button
+          type="button"
+          class="demo-menu-btn md:hidden"
+          aria-label="Open demos menu"
+          onclick={() => (mobileNav = true)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <div class="min-w-0">
+          <h2 class="text-xl sm:text-2xl font-semibold">{current.title}</h2>
+          <p class="text-sm" style="color: var(--sg-muted)">{current.blurb}</p>
+        </div>
       </div>
       <div class="flex shrink-0 items-center gap-2">
         <button
           type="button"
           onclick={() => openInStackBlitz(current)}
-          class="inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-sm"
+          class="inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-sm"
           style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
           title="Open this demo as an editable project in StackBlitz"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M10.797 14.182H3.635L16.728 0l-3.525 9.818h7.162L7.272 24l3.525-9.818Z" />
           </svg>
-          Edit in StackBlitz
+          <span class="hidden sm:inline">Edit in StackBlitz</span>
         </button>
         <button
           type="button"
           onclick={() => (showSource = true)}
-          class="inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-sm"
+          class="inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-sm"
           style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
+          title="View source"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="16 18 22 12 16 6" />
             <polyline points="8 6 2 12 8 18" />
           </svg>
-          Source
+          <span class="hidden sm:inline">Source</span>
         </button>
       </div>
     </header>
@@ -290,6 +325,50 @@
 {/if}
 
 <style>
+  /* ---- Mobile sidebar drawer ------------------------------------------
+     On >=768px the sidebar is a normal in-flow column. Below that it
+     becomes a fixed slide-in drawer so the demo gets the full width. */
+  .demo-menu-btn,
+  .demo-aside-close {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: var(--sg-fg);
+    background: transparent;
+    border: 1px solid var(--sg-border);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .demo-menu-btn { width: 38px; height: 38px; flex-shrink: 0; }
+  .demo-aside-close {
+    width: 30px; height: 30px;
+    font-size: 22px; line-height: 1;
+    border: 0;
+  }
+  @media (max-width: 767px) {
+    .demo-menu-btn { display: inline-flex; }
+    .demo-aside-close { display: inline-flex; }
+    .demo-aside {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 84vw;
+      max-width: 320px;
+      z-index: 60;
+      background: var(--site-bg);
+      transform: translateX(-100%);
+      transition: transform 200ms ease;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+    }
+    .demo-aside.is-open { transform: translateX(0); }
+    .demo-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      background: rgba(0, 0, 0, 0.45);
+      border: 0;
+    }
+  }
+
   .demo-search-wrap {
     position: relative;
     display: flex; align-items: center;

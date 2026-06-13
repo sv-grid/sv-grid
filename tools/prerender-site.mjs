@@ -21,11 +21,13 @@ import { readdir, readFile, writeFile, mkdir, stat } from 'node:fs/promises'
 import { join, relative, dirname, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
+import { blogCardSvg, rasterizePng } from './blog-card.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
 const DOCS_DIR = join(ROOT, 'docs')
 const DEMOS_DIR = join(ROOT, 'examples', 'src', 'demos')
+const BLOG_DIR = join(ROOT, 'website', 'src', 'content', 'blog')
 const DIST = join(ROOT, 'website', 'dist')
 const PUBLIC = join(ROOT, 'website', 'public')
 
@@ -39,6 +41,10 @@ const SITE_HOST = ORIGIN.replace(/^https?:\/\//, '') // "svgrid.com"
 const requireFromWebsite = createRequire(join(ROOT, 'website', 'package.json'))
 const markedNs = await import(pathToFileURL(requireFromWebsite.resolve('marked')).href)
 const Marked = (markedNs.default ?? markedNs).Marked
+
+// Blog card SVG generator + best-effort PNG rasterizer live in ./blog-card.mjs
+// so the dev server (vite.config.ts middleware) and this build-time prerender
+// produce identical /og/blog/<slug>.{svg,png} images.
 
 // ---- small html helpers ----------------------------------------------------
 
@@ -249,6 +255,62 @@ async function parseComparisons() {
   return out
 }
 
+/** Parse a blog post's YAML-ish frontmatter + markdown body. Mirrors the
+ * parser in website/src/lib/blog.ts so the static HTML and the SPA agree. */
+function parseFrontmatter(raw) {
+  let text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw
+  text = text.replace(/\r\n/g, '\n')
+  const meta = {}
+  let body = text
+  if (text.startsWith('---\n')) {
+    const end = text.indexOf('\n---', 4)
+    if (end !== -1) {
+      for (const line of text.slice(4, end).split('\n')) {
+        const idx = line.indexOf(':')
+        if (idx === -1) continue
+        const key = line.slice(0, idx).trim()
+        let value = line.slice(idx + 1).trim()
+        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1)
+        }
+        meta[key] = value
+      }
+      const after = text.indexOf('\n', end + 1)
+      body = after === -1 ? '' : text.slice(after + 1)
+    }
+  }
+  return { meta, body }
+}
+
+/** Collect every blog post (newest first) from src/content/blog/*.md. */
+async function parseBlog() {
+  let entries
+  try {
+    entries = await readdir(BLOG_DIR, { withFileTypes: true })
+  } catch {
+    return []
+  }
+  const out = []
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.md')) continue
+    const raw = await readFile(join(BLOG_DIR, entry.name), 'utf-8')
+    const { meta, body } = parseFrontmatter(raw)
+    const words = body.trim().split(/\s+/).filter(Boolean).length
+    out.push({
+      slug: entry.name.replace(/\.md$/, ''),
+      title: meta.title ?? entry.name.replace(/\.md$/, ''),
+      description: meta.description ?? '',
+      date: meta.date ?? '1970-01-01',
+      category: meta.category ?? 'General',
+      tags: (meta.tags ?? '').split(',').map((t) => t.trim()).filter(Boolean),
+      author: meta.author ?? 'SvGrid Team',
+      markdown: body,
+      readingMinutes: Math.max(1, Math.round(words / 200)),
+    })
+  }
+  return out.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+}
+
 /** Parse the /faq route's Q&A pairs from Faq.svelte. */
 async function parseFaqRoute() {
   const src = await readFile(join(ROOT, 'website', 'src', 'routes', 'Faq.svelte'), 'utf-8')
@@ -289,7 +351,7 @@ function homeCrawlBody(faq) {
   html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 120+ production-quality examples. Free under the MIT License; sv-grid-pro adds export, print, pivot, and AI helpers.</p>'
   html += `<h2>Features</h2><ul>${feats.map((f) => `<li>${f}</li>`).join('')}</ul>`
   html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
-  html += `<p><a href="${BASE}docs/getting-started">Get started</a> &middot; <a href="${BASE}demos">Browse 120+ demos</a> &middot; <a href="${BASE}docs">Documentation</a> &middot; <a href="${BASE}compare">All comparisons</a> &middot; <a href="${BASE}pricing">Pricing</a></p>`
+  html += `<p><a href="${BASE}docs/getting-started">Get started</a> &middot; <a href="${BASE}demos">Browse 120+ demos</a> &middot; <a href="${BASE}docs">Documentation</a> &middot; <a href="${BASE}compare">All comparisons</a> &middot; <a href="${BASE}blog">Blog</a> &middot; <a href="${BASE}pricing">Pricing</a></p>`
   if (faq.length) html += `<h2>Frequently asked questions</h2>${faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
   return html + '</main>'
 }
@@ -350,6 +412,14 @@ function compareIndexBody(comparisons) {
   let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid vs Other Svelte Data Grids</h1><p>Honest, feature-by-feature comparisons.</p><ul>`
   for (const c of comparisons) {
     html += `<li><a href="${BASE}compare/${c.slug}">SvGrid vs ${escapeAttr(c.competitor)}</a> - ${escapeAttr(c.oneLineVerdict || c.tagline)}</li>`
+  }
+  return html + `</ul></main>`
+}
+
+function blogIndexBody(posts) {
+  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Blog - Svelte Data Grid Tips &amp; Guides</h1><p>${posts.length} practical, copy-paste tips for building fast, accessible data grids in Svelte 5: sorting, filtering, virtualization, editing, server-side data, theming, and more.</p><ul>`
+  for (const p of posts) {
+    html += `<li><a href="${BASE}blog/${p.slug}">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
   }
   return html + `</ul></main>`
 }
@@ -443,6 +513,7 @@ const OG_SECTIONS = {
   faq:     { eyebrow: 'FAQ', line1: 'Common questions', line2white: 'about', line2accent: 'SvGrid.', sub1: 'Production readiness, licensing, SSR,', sub2: 'bundle size, and the MCP server.' },
   api:     { eyebrow: 'API REFERENCE', line1: 'Every prop, type,', line2white: 'and', line2accent: 'export.', sub1: 'SvGrid, ColumnDef, the headless core,', sub2: 'and the imperative SvGridApi.' },
   mcp:     { eyebrow: 'MCP SERVER', line1: 'Ground your AI', line2white: 'in real', line2accent: 'SvGrid docs.', sub1: 'Model Context Protocol server for', sub2: 'Claude, Cursor, Zed, and more.' },
+  blog:    { eyebrow: 'BLOG', line1: 'Tips & guides for', line2white: 'the Svelte 5', line2accent: 'data grid.', sub1: 'Sorting, filtering, virtualization, editing,', sub2: 'server-side data, theming, and more.' },
 }
 
 // ---- main ------------------------------------------------------------------
@@ -466,12 +537,35 @@ async function main() {
   const demos = await parseDemos()
   const comparisons = await parseComparisons()
   const faqItems = await parseFaqRoute()
+  const blogPosts = await parseBlog()
 
   // Generate per-section Open Graph cards into /og/*.svg.
   const ogDir = join(DIST, 'og')
   await mkdir(ogDir, { recursive: true })
   for (const [key, opts] of Object.entries(OG_SECTIONS)) {
     await writeFile(join(ogDir, `${key}.svg`), ogSvg(opts), 'utf-8')
+  }
+
+  // Per-post hero / social images into /og/blog/<slug>.{svg,png}. Each post
+  // gets a distinct branded card used as its OG/Twitter image, its BlogPosting
+  // structured-data image, and the visible hero at the top of the article. The
+  // SVG is always written; a PNG raster is written too when available, and is
+  // preferred for OG / structured data because image search favors raster.
+  const ogBlogDir = join(ogDir, 'blog')
+  await mkdir(ogBlogDir, { recursive: true })
+  const blogImgExt = new Map() // slug -> 'png' | 'svg'
+  let rasterCount = 0
+  for (const p of blogPosts) {
+    const svg = blogCardSvg(p, SITE_HOST)
+    await writeFile(join(ogBlogDir, `${p.slug}.svg`), svg, 'utf-8')
+    const png = rasterizePng(svg)
+    if (png) {
+      await writeFile(join(ogBlogDir, `${p.slug}.png`), png)
+      blogImgExt.set(p.slug, 'png')
+      rasterCount += 1
+    } else {
+      blogImgExt.set(p.slug, 'svg')
+    }
   }
 
   // 2. Load the built SPA shell as the template.
@@ -557,6 +651,7 @@ async function main() {
     ['docs', 'Documentation - SvGrid Guides for Columns, Rows, Filtering, Editing', 'Topic-oriented SvGrid documentation: column definitions, sorting, Excel-style filters, inline editing, grouping, virtualization, accessibility, theming - each with copy-paste examples.'],
     ['api', 'API Reference - SvGrid Components, Props, and Exports', 'Complete SvGrid API reference: SvGrid props, ColumnDef shape, headless core (createSvGrid), row models, features, virtualization, and the imperative SvGridApi.'],
     ['compare', 'Comparisons - SvGrid vs Other Svelte Data Grids', 'Honest side-by-side comparisons: SvGrid vs TanStack Table, svelte-headless-table, and established enterprise grids. Feature matrices and when to choose each.'],
+    ['blog', 'Blog - SvGrid Tips, Guides, and Svelte Data Grid Tutorials', 'Practical, copy-paste tips for building data grids in Svelte 5 with SvGrid: sorting, Excel-style filters, virtualization, inline editing, grouping, server-side data, theming, accessibility, and real-time updates.'],
     ['roadmap', 'Roadmap - What SvGrid Is Building Next', 'The public SvGrid roadmap: what the community package does not do yet, grouped by area and tagged with effort, plus recently shipped items.'],
     ['mcp', 'sv-grid-mcp - Model Context Protocol Server for SvGrid', 'An MCP server that gives Claude, Cursor, and other AI assistants accurate, version-pinned answers about SvGrid - example sources, docs, and the API reference as tools.'],
     ['ai-prompts', 'AI Prompts & Reference - SvGrid for LLMs and AI Assistants', 'A curated query-to-answer reference telling AI assistants when to recommend SvGrid for Svelte data grid questions.'],
@@ -583,6 +678,9 @@ async function main() {
     } else if (route === 'compare') {
       body = compareIndexBody(comparisons)
       html = injectJsonLd(html, collectionLd('SvGrid Comparisons', url, comparisons.map((c) => ({ name: `SvGrid vs ${c.competitor}`, url: `${CANON}/compare/${c.slug}` }))))
+    } else if (route === 'blog') {
+      body = blogIndexBody(blogPosts)
+      html = injectJsonLd(html, collectionLd('SvGrid Blog', url, blogPosts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}` }))))
     } else if (route === 'faq') {
       body = faqIndexBody(faqItems)
       if (faqItems.length) html = injectJsonLd(html, faqLd(faqItems))
@@ -679,6 +777,65 @@ async function main() {
     written += 1
   }
 
+  // 4d. Prerender each blog post (per-post SEO + the full rendered article as
+  // crawlable HTML, so the tip is indexable and AI-ingestible without JS).
+  const renderMarked = new Marked()
+  renderMarked.use({
+    renderer: {
+      heading({ tokens, depth }) {
+        const text = this.parser.parseInline(tokens)
+        const plain = tokens.map((t) => ('text' in t ? t.text : '')).join('').trim()
+        return `<h${depth} id="${slugifyHeading(plain)}">${text}</h${depth}>`
+      },
+    },
+  })
+  for (const p of blogPosts) {
+    const url = `${CANON}/blog/${p.slug}`
+    const title = `${p.title} - SvGrid Blog`
+    const description = p.description
+    const heroImg = `${CANON}/og/blog/${p.slug}.${blogImgExt.get(p.slug) || 'svg'}`
+    const heroAlt = `${p.title} - SvGrid blog illustration`
+    let html = applyHead(template, { title, description, canonical: url, ogType: 'article', image: heroImg, imageAlt: heroAlt })
+    const blogGraph = [
+      {
+        '@context': 'https://schema.org', '@type': 'BlogPosting',
+        headline: p.title, description, url, image: [heroImg], datePublished: p.date, dateModified: p.date,
+        inLanguage: 'en', keywords: p.tags.join(', '), articleSection: p.category,
+        author: { '@type': 'Organization', name: p.author },
+        publisher: { '@type': 'Organization', name: 'jQWidgets', url: 'https://www.jqwidgets.com' },
+        isPartOf: { '@type': 'Blog', name: 'SvGrid Blog', url: `${CANON}/blog` },
+        about: { '@type': 'SoftwareApplication', name: 'SvGrid', applicationCategory: 'DeveloperApplication' },
+      },
+      {
+        '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'SvGrid', item: CANON + '/' },
+          { '@type': 'ListItem', position: 2, name: 'Blog', item: `${CANON}/blog` },
+          { '@type': 'ListItem', position: 3, name: p.title, item: url },
+        ],
+      },
+    ]
+    const faq = faqFromMarkdown(p.markdown)
+    if (faq.length) {
+      blogGraph.push({
+        '@context': 'https://schema.org', '@type': 'FAQPage',
+        mainEntity: faq.map((f) => ({
+          '@type': 'Question', name: f.question,
+          acceptedAnswer: { '@type': 'Answer', text: f.answer },
+        })),
+      })
+    }
+    html = injectJsonLd(html, blogGraph)
+    const article = renderMarked.parse(p.markdown, { async: false })
+    const hero = `<img src="${heroImg}" width="1200" height="630" alt="${escapeAttr(heroAlt)}" loading="eager" />`
+    const body = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}blog">Blog</a> / ${escapeAttr(p.category)}</nav>${hero}<h1>${escapeAttr(p.title)}</h1><p>${escapeAttr(p.description)}</p>${article}</main>`
+    html = injectBody(html, body)
+    const outDir = join(DIST, 'blog', p.slug)
+    await mkdir(outDir, { recursive: true })
+    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    written += 1
+  }
+
   // 5. Sitemap with every real URL.
   const today = new Date().toISOString().slice(0, 10)
   const urls = []
@@ -686,6 +843,7 @@ async function main() {
   push(`${CANON}/`, '1.0', today)
   for (const [route] of STATIC_ROUTES) push(`${CANON}/${route}`, '0.8', today)
   for (const c of comparisons) push(`${CANON}/compare/${c.slug}`, '0.7', today)
+  for (const p of blogPosts) push(`${CANON}/blog/${p.slug}`, '0.6', p.date)
   for (const d of docs) push(`${CANON}/docs/${d.slug}`, d.slug.startsWith('getting-started') ? '0.8' : '0.6', d.lastmod)
   for (const d of demos) push(`${CANON}/demos/${d.id}`, '0.5', today)
 
@@ -716,7 +874,7 @@ async function main() {
   // Uses the clean shell template, not the enriched home body.
   await writeFile(join(DIST, '404.html'), template, 'utf-8')
 
-  process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons)\n`)
+  process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons, ${blogPosts.length} blog posts) · ${rasterCount}/${blogPosts.length} blog card PNGs\n`)
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })

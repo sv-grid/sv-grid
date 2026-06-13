@@ -131,51 +131,43 @@
   function onApiReady(next: SvGridApi<typeof features, PivotRow>) {
     api = installPro(next)
   }
-  /** Export the visible OLAP cube to xlsx. We hand-build the row +
-   *  column shape so the workbook reflects what the user sees on
-   *  screen (N dim columns + value columns) instead of the engine's
-   *  internal `pv__...` keys. */
+  /** Export the cube to xlsx. We flatten ONLY the leaf rows (no engine
+   *  subtotal / grand rows) and ask the exporter to wrap them with
+   *  Smart's native Excel outline grouping by Region → Country. The
+   *  user opens the file in Excel and the row-header gutter shows
+   *  +/- buttons to fold every region or country group. */
   async function exportXlsx() {
     if (!api) return
     exporting = true
     exportNote = null
     try {
-      // Flatten each visible row into dim labels + measure values.
-      // For outline rows we still emit the chain at every level so
-      // the xlsx reader sees a full grid (drag-fill / pivot friendly).
-      const exportRows = visibleRows.map((r) => {
-        const chain = chainForRow.get(r.__pivotId) ?? []
-        const flat: Record<string, unknown> = {
-          region:  r.__pivotKind === 'grandTotal' ? 'Grand total' : chain[0] ?? '',
-          country: r.__pivotKind === 'grandTotal' ? '' : chain[1] ?? '',
-          family:  r.__pivotKind === 'grandTotal' ? '' : chain[2] ?? '',
-          rowKind: r.__pivotKind,
-        }
-        // Promote every leaf-column value (Q1..Q4 × every measure) onto
-        // the row. Engine ids look like `pv__Q1__m0` - decode to
-        // "Q1 ARR" / "Q1 Customers" etc.
-        for (const [k, v] of Object.entries(r)) {
-          if (!k.startsWith('pv__')) continue
-          const m = k.match(/^pv__(.+)__m(\d+)$/)
-          if (!m) continue
-          const q = m[1]!.replace(/_/g, ' ')
-          const measureLabel = values[Number(m[2])]?.label ?? `m${m[2]}`
-          flat[`${q} · ${measureLabel}`] = typeof v === 'number' ? Math.round(v * 1000) / 1000 : v
-        }
-        return flat
-      })
+      const exportRows = pivot.rows
+        .filter((r) => r.__pivotKind === 'leaf')
+        .map((r) => {
+          const chain = chainForRow.get(r.__pivotId) ?? []
+          const flat: Record<string, unknown> = {
+            region:  chain[0] ?? '',
+            country: chain[1] ?? '',
+            family:  chain[2] ?? '',
+          }
+          for (const [k, v] of Object.entries(r)) {
+            if (!k.startsWith('pv__')) continue
+            const m = k.match(/^pv__(.+)__m(\d+)$/)
+            if (!m) continue
+            const q = m[1]!.replace(/_/g, ' ')
+            const measureLabel = values[Number(m[2])]?.label ?? `m${m[2]}`
+            flat[`${q} · ${measureLabel}`] = typeof v === 'number' ? Math.round(v * 1000) / 1000 : v
+          }
+          return flat
+        })
 
-      // Build the column list dynamically off the FIRST row so order
-      // is stable. Dim columns first (in row-axis order), then every
-      // measure column.
       const firstKeys = exportRows.length > 0 ? Object.keys(exportRows[0]!) : []
-      const dimOrder = ['region', 'country', 'family', 'rowKind']
+      const dimOrder = ['region', 'country', 'family']
       const measureKeys = firstKeys.filter((k) => !dimOrder.includes(k))
       const exportCols = [
         { field: 'region',  header: 'Region'         },
         { field: 'country', header: 'Country'        },
         { field: 'family',  header: 'Product family' },
-        { field: 'rowKind', header: 'Row kind'       },
         ...measureKeys.map((k) => ({ field: k, header: k })),
       ]
 
@@ -184,14 +176,16 @@
         filename: `olap-cube-${typeof activeYear === 'number' ? activeYear : 'all'}.xlsx`,
         columns: exportCols,
         rows: exportRows as never,
+        // Native Excel outline groups for Region → Country. Opens in
+        // Excel with the +/- buttons in the row header gutter.
+        groupBy: ['region', 'country'],
       })
-      exportNote = `Exported ${exportRows.length} rows`
+      exportNote = `Exported ${exportRows.length} leaf rows with Excel outline groups`
     } catch (e) {
       exportNote = e instanceof Error ? e.message : String(e)
       console.error('[olap export]', e)
     } finally {
       exporting = false
-      // Clear the note after a few seconds so it doesn't linger.
       setTimeout(() => { if (!exporting) exportNote = null }, 3500)
     }
   }

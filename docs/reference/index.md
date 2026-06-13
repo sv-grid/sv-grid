@@ -12,6 +12,8 @@ patterns see [Help](../help/index.md); for first contact see
 | [`SvGridApi`](./SvGridApi.md) | The imperative API: data, columns, sort, filter, group, selection.   |
 | [`ColumnDef`](./ColumnDef.md) | Every field on a column definition + the sub-types.                   |
 | [Features](./features.md)     | The feature registry + the row-model factory pipeline.                |
+| [Headless engine](./headless-engine.md) | `createSvGrid` without `<SvGrid>` - the renderer-free path.  |
+| [Bundle size](./bundle-size.md) | Per-feature gzipped cost + reproduction command.                    |
 
 ## sv-grid-pro
 

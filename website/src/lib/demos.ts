@@ -131,6 +131,8 @@ import PivotOlap                 from '@demos/124-pivot-olap.svelte'
 import PivotCharts               from '@demos/125-pivot-charts.svelte'
 import ExportGroupedGrid         from '@demos/126-export-grouped-grid.svelte'
 import ExportPivotGrid           from '@demos/127-export-pivot-grid.svelte'
+import DevMigrationFromAg        from '@demos/139-migration-from-ag-grid.svelte'
+import ShortcutConfig            from '@demos/135-shortcut-config.svelte'
 
 // Bundle the raw .svelte source for every demo so we can show it inline.
 // Vite's `?raw` query inlines file text; `eager: true` returns a synchronous map.
@@ -223,6 +225,7 @@ export const demos: Demo[] = [
   // ----- Getting Started
   demo('00-trading-desk',           'Trading desk - live',         '10,000 securities ticking on a 500 ms feed. Pinned Symbol + P&L, sparklines, sector chips, KPI strip. The hero.', 'Getting Started', TradingDesk),
   demo('01-quick-start',            'Quick start',                 'A realistic 25-row × 9-column grid with sort, filter, selection, inline editing, and column resize all enabled.', 'Getting Started', QuickStart),
+  demo('135-shortcut-config',       'Shortcut config',             'Capabilities are off by default - opt into sort / filter / edit / group / paging with one boolean shortcut each. No `features` array, no fine-grained props. Toggle the switches to build the config live.', 'Getting Started', ShortcutConfig),
   demo('22-admin-template',         'Admin template',              'Self-contained admin app: sidebar + three pages (Dashboard, Orders w/ Pro export bar, Customers w/ inline edit). Read end-to-end in one file.', 'Getting Started', AdminTemplate),
   demo('06-large-dataset',          '100k rows × 100 columns',     'Row + column virtualization. Chunked load with progress + cancellation.', 'Getting Started', LargeDataset),
   demo('78-million-rows',           '1 million rows',              'A literal 1,000,000-row dataset with sort, filter, group, scroll, and inline edit all on. Chunked generation with progress.', 'Getting Started', MillionRows),
@@ -336,6 +339,7 @@ export const demos: Demo[] = [
   demo('16-csp-compliant',          'CSP-compliant grid',          'No eval, no inline scripts. Documented CSP header + live runtime self-check.', 'Integrations', CspCompliant),
   demo('19-ssr',                    'Server-side rendering',       'SvelteKit-style SSR with a sandboxed pre-hydration snapshot.', 'Integrations', Ssr),
   demo('77-smart-chart',            'Smart.Chart integration',     'Mounts a <smart-chart> web component (htmlelements.com) and pipes the grid\'s displayed rows into its dataSource. Re-aggregates on every filter / sort.', 'Integrations', SmartChart),
+  demo('139-migration-from-ag-grid','AG Grid ↔ sv-grid side-by-side','Two real grids over the same dataset: AG Grid Community v35 on the left, sv-grid on the right. Same global filter drives both. Source code panels for either side.', 'Integrations', DevMigrationFromAg),
 
   // ----- Industry Templates
   demo('12-hr-team',                'HR team directory',           'Employee directory with avatars, status badges, group by team / location / status.', 'Industry Templates', HrTeam),
@@ -356,12 +360,6 @@ export const demos: Demo[] = [
   demo('76-kanban-board',           'Kanban board',                'Four-lane Kanban (Backlog / In progress / Review / Done). Each lane is a separate SvGrid bound to the same $state array - HTML5 drag-and-drop rewrites status.', 'Industry Templates', KanbanBoard),
 
   // ----- Pro (commercial features in sv-grid-pro)
-  demo('21-export-and-print',         'Export + Print',                 'Pro feature pack: download to Excel, PDF, CSV, TSV, HTML, or open a printable view in a new window.', 'Pro', ExportAndPrint,         { pro: true }),
-  demo('56-export-theme-matched',     'Export - Theme-matched',         'One xlsx, light or dark - styles read from the same --sg-* tokens the grid renders with.', 'Pro', ExportThemeMatched,     { pro: true }),
-  demo('57-export-header-footer-logo','Export - Header + Footer + Logo','Branded xlsx: PNG logo + title + subtitle in the page header, generated date + page numbers in the footer.', 'Pro', ExportHeaderFooterLogo, { pro: true }),
-  demo('58-export-with-images',       'Export - Cell images',           'Product grid with thumbnail column. On xlsx export each thumbnail is embedded as a real picture cell.', 'Pro', ExportWithImages,       { pro: true }),
-  demo('59-export-multi-sheet',       'Export - Multiple sheets',       'One xlsx with 5 tabs - All orders + per-region splits - independent of the current grid filter.', 'Pro', ExportMultiSheet,       { pro: true }),
-  demo('119-workbook-multi-sheet',    'Workbook - multi-sheet + formulas','A real spreadsheet: A/B/C columns + many rows you can grow on demand, cross-sheet formulas (=SUM, =VLOOKUP, nested IF) recalculating live, cell + conditional formatting, validation dropdowns, an inline chart, a calendar/scheduler sheet, open .xlsx/.csv, and export every sheet to one multi-tab .xlsx.', 'Pro', WorkbookMultiSheet,    { pro: true }),
   demo('53-excel-import',             'Excel / CSV import',             'File picker + column mapping + per-row validation preview before commit. Reads xlsx / csv / tsv / json with format auto-detect.', 'Pro', ExcelImport,            { pro: true }),
   demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Pro', StagedEditing,          { pro: true }),
   demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'Pro', AiAssistant,            { pro: true }),
@@ -374,10 +372,8 @@ export const demos: Demo[] = [
   demo('112-barcode-cells',           'Barcode label cells (EAN-13)',   'Every row renders a real, scannable EAN-13 barcode as crisp SVG - no canvas, no eval, no dependency. Retail / warehouse / inventory pattern. Row virtualization keeps only visible barcodes in the DOM; click a row for a shelf-label preview.', 'Rows & Cells', BarcodeCells),
   demo('120-test-systems-monitor',    'Test systems monitor (live ops)','Operations console for a fleet of connected test & measurement systems: live status, utilization sparklines, temperature, alarms, firmware, and calibration with stable row identity (getRowId). Select systems for bulk actions (acknowledge alarms, schedule calibration), group by site, KPI strip, search + filters, and master-detail with live instrument tags. Virtualized to fleet scale.', 'Industry Templates', TestSystemsMonitor),
   demo('91-cell-comments',            'Cell comments + @-mentions',     'Right-click any cell to start a thread. Type @ inside the editor to mention a teammate (fuzzy picker, chip insertion). Comment indicator triangle, resolve-thread action, mention count.', 'Rows & Cells', CellComments),
-  demo('93-password-protected-export','Password-protected export',      'PBKDF2 (100k iters) + AES-GCM 256 client-side. Strength meter, encrypt + download, in-page decrypt tool to verify the round-trip. Pro pack maps to ECMA-376 Agile encryption.', 'Pro', PasswordProtectedExport, { pro: true }),
-  demo('101-formulas-in-xlsx',        'Formulas preserved in xlsx',     'Builds a real OOXML workbook in the browser via JSZip; computed columns export as <f>...</f> formula cells. Open in Excel and the math recomputes when you edit a number.', 'Pro', FormulasInXlsx,         { pro: true }),
 
-  // ----- Pro: Pivot cluster (kept together at the bottom of the Pro lane)
+  // ----- Pro: Pivot cluster
   demo('52-pivot-table',              'Pivot table + Designer',         'Drag-and-drop Pivot Designer with Filters / Rows / Columns / Values zones, multi-level column headers, subtotal + grand-total rows, row-header sort menu.', 'Pro', PivotTable,             { pro: true }),
   demo('60-pivot-expandable',         'Pivot - Sales pipeline',         'Polished pivot view: KPI strip, region/sales-person rows, quarter columns, two measures, expand-all/collapse-all toolbar, heatmap tinting.', 'Pro', PivotExpandable,        { pro: true }),
   demo('121-pivot-conditional-cells', 'Pivot - Conditional cells',      'Function-valued cell and header templates on top of createPivotModel: traffic-light revenue pills, target chips, units data-bars, measure icons in headers, region color dots in row labels.', 'Pro', PivotConditionalCells,  { pro: true }),
@@ -385,8 +381,19 @@ export const demos: Demo[] = [
   demo('123-pivot-totals',            'Pivot - Totals + Subtotals',     'Live toggles for grandTotalRow / grandTotalCol / rowSubtotals on createPivotModel. Subtotals get a Σ badge, the grand-total row is tinted accent, the grand-total column is an amber stripe.', 'Pro', PivotTotals,            { pro: true }),
   demo('124-pivot-olap',              'Pivot - OLAP cube (BI shell)',   'Full BI dashboard around an OLAP cube: page header, 5 KPI tiles with QoQ sparklines, left slicer rail (region multi-select, year picker, country search, view-mode, density, heatmap toggle), cube in Tabular form (one column per row dim), right insights rail (top YoY movers, top contributors).', 'Pro', PivotOlap,              { pro: true }),
   demo('125-pivot-charts',            'Pivot + linked charts',          'Pivot cube wired to a horizontal bar chart + multi-year line chart. Click any cube row to drill the charts one level deeper (region → country → product); scope KPI strip tracks selection; charts are zero-dep inline SVG.', 'Pro', PivotCharts,            { pro: true }),
-  demo('126-export-grouped-grid',     'Export grouped grid to Excel',   'A grouped sales grid (Region → Country) wired to api.exportData. Group rows + per-group subtotals + grand total are materialised into the workbook. Toggle subtotals / grand / styling / outline vs flat. Live workbook preview.', 'Pro', ExportGroupedGrid,      { pro: true }),
-  demo('127-export-pivot-grid',       'Export pivot grid to Excel',     'createPivotModel output projected into an xlsx via api.exportData. Engine column ids ("pv__Q1__m0") translate to readable headers ("Q1 · Revenue"). Toggle subtotal / grand row / grand column; single-sheet OR one tab per region (Pro multi-sheet).', 'Pro', ExportPivotGrid,        { pro: true }),
+
+  // ----- Pro: Export cluster (kept together at the very bottom)
+  demo('21-export-and-print',         'Export + Print',                 'Pro feature pack: download to Excel, PDF, CSV, TSV, HTML, or open a printable view in a new window.', 'Pro', ExportAndPrint,         { pro: true }),
+  demo('56-export-theme-matched',     'Export - Theme-matched',         'One xlsx, light or dark - styles read from the same --sg-* tokens the grid renders with.', 'Pro', ExportThemeMatched,     { pro: true }),
+  demo('57-export-header-footer-logo','Export - Header + Footer + Logo','Branded xlsx: PNG logo + title + subtitle in the page header, generated date + page numbers in the footer.', 'Pro', ExportHeaderFooterLogo, { pro: true }),
+  demo('58-export-with-images',       'Export - Cell images',           'Product grid with thumbnail column. On xlsx export each thumbnail is embedded as a real picture cell.', 'Pro', ExportWithImages,       { pro: true }),
+  demo('59-export-multi-sheet',       'Export - Multiple sheets',       'One xlsx with 5 tabs - All orders + per-region splits - independent of the current grid filter.', 'Pro', ExportMultiSheet,       { pro: true }),
+  demo('119-workbook-multi-sheet',    'Workbook - multi-sheet + formulas','A real spreadsheet: A/B/C columns + many rows you can grow on demand, cross-sheet formulas (=SUM, =VLOOKUP, nested IF) recalculating live, cell + conditional formatting, validation dropdowns, an inline chart, a calendar/scheduler sheet, open .xlsx/.csv, and export every sheet to one multi-tab .xlsx.', 'Pro', WorkbookMultiSheet,    { pro: true }),
+  demo('93-password-protected-export','Password-protected export',      'PBKDF2 (100k iters) + AES-GCM 256 client-side. Strength meter, encrypt + download, in-page decrypt tool to verify the round-trip. Pro pack maps to ECMA-376 Agile encryption.', 'Pro', PasswordProtectedExport, { pro: true }),
+  demo('101-formulas-in-xlsx',        'Formulas preserved in xlsx',     'Builds a real OOXML workbook in the browser via JSZip; computed columns export as <f>...</f> formula cells. Open in Excel and the math recomputes when you edit a number.', 'Pro', FormulasInXlsx,         { pro: true }),
+  demo('126-export-grouped-grid',     'Export grouped grid to Excel',   'A flat sales grid (Region → Country) exported via api.exportData({ format: "xlsx", groupBy }) which uses Smart\'s NATIVE Excel row outline grouping. Opens in Excel with +/- buttons in the row header gutter for every group level.', 'Pro', ExportGroupedGrid,      { pro: true }),
+  demo('127-export-pivot-grid',       'Export pivot grid to Excel',     'createPivotModel leaves projected into an xlsx via api.exportData with groupBy: ["region"] - each region becomes an Excel outline group. Engine column ids ("pv__Q1__m0") translate to readable headers ("Q1 · Revenue").', 'Pro', ExportPivotGrid,        { pro: true }),
+
 ]
 
 export type DemoGroup = { category: DemoCategory; demos: Demo[] }

@@ -9,11 +9,25 @@
   }
   let { active, theme, onToggleTheme }: Props = $props()
 
+  // Mobile nav: the desktop link row is `hidden md:flex`, so without this
+  // hamburger there is no way to reach Demos / Docs / Pricing etc. on a
+  // phone. The panel closes on any link tap (hashchange) - see below.
+  let menuOpen = $state(false)
+
+  $effect(() => {
+    if (typeof window === 'undefined') return
+    const close = () => (menuOpen = false)
+    window.addEventListener('hashchange', close)
+    return () => window.removeEventListener('hashchange', close)
+  })
+
   const links = [
     { id: 'demos', label: 'Demos', href: '#/demos' },
     { id: 'docs', label: 'Docs', href: '#/docs' },
     { id: 'api', label: 'API', href: '#/api' },
+    { id: 'theme-builder', label: 'Theme Builder', href: '#/theme-builder' },
     { id: 'compare', label: 'Compare', href: '#/compare' },
+    { id: 'blog', label: 'Blog', href: '#/blog' },
     { id: 'roadmap', label: 'Roadmap', href: '#/roadmap' },
     { id: 'mcp', label: 'MCP', href: '#/mcp' },
     { id: 'pricing', label: 'Pricing', href: '#/pricing' },
@@ -44,6 +58,25 @@
     </nav>
 
     <div class="ml-auto flex items-center gap-2">
+      <button
+        type="button"
+        onclick={() => (menuOpen = !menuOpen)}
+        aria-label="Toggle navigation menu"
+        aria-expanded={menuOpen}
+        class="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors"
+        style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
+      >
+        {#if menuOpen}
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+          </svg>
+        {:else}
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        {/if}
+      </button>
+
       <button
         type="button"
         onclick={onToggleTheme}
@@ -110,4 +143,25 @@
       </a>
     </div>
   </div>
+
+  {#if menuOpen}
+    <nav
+      class="md:hidden border-t px-3 py-2"
+      style="border-color: var(--sg-border); background: var(--site-bg);"
+      aria-label="Mobile"
+    >
+      {#each links as link (link.id)}
+        {@const isActive = active === link.id}
+        <a
+          href={link.href}
+          onclick={() => (menuOpen = false)}
+          class="block rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+          style:color={isActive ? 'var(--site-accent)' : 'var(--site-fg)'}
+          style:background={isActive ? 'color-mix(in srgb, var(--site-accent) 12%, transparent)' : 'transparent'}
+        >
+          {link.label}
+        </a>
+      {/each}
+    </nav>
+  {/if}
 </header>

@@ -44,6 +44,13 @@ export { subscribeGrid, subscribeSvGrid } from './subscribe'
 export { default as SvGrid } from './SvGrid.svelte'
 export { default as FlexRender } from './FlexRender.svelte'
 export { renderComponent, renderSnippet } from './render-component'
+export {
+  buildSparkline,
+  toSparklineValues,
+  type SparklineConfig,
+  type SparklineType,
+  type SparklineGeometry,
+} from './sparkline'
 export { getKeyboardIntent, getNextActiveCell, type GridKeyboardIntent } from './keyboard'
 export { createVirtualizer } from './virtualization/virtualizer'
 export { createSvelteVirtualizer } from './virtualization/svelte-virtualizer.svelte'

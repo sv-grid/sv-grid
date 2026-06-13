@@ -55,8 +55,11 @@ companion `sv-grid-pro` ships under a separate commercial license. See
 ### How do I add a data grid to a Svelte 5 app?
 
 Install `sv-grid-community`, import `SvGrid`, and pass `data` and `columns`.
-A complete grid is about 15 lines - sorting, keyboard navigation, and
-accessibility are on by default. See [First grid](./getting-started/2-first-grid.md).
+A complete grid is about 15 lines - keyboard navigation and accessibility are
+on by default, and you opt into sort/filter/edit/group/paging with one boolean
+shortcut each (`sortable`, `filterable`, ...). See
+[First grid](./getting-started/2-first-grid.md) and
+[Features](./getting-started/4-features.md#capability-shortcuts-the-quick-way).
 
 ### Does SvGrid work with SvelteKit?
 

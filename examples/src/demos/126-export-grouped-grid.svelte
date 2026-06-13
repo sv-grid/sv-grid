@@ -2,21 +2,22 @@
   /**
    * 126. Export grouped grid to Excel (Pro)
    * ---------------------------------------
-   * A regular grouped grid (Region → Country → Sales rep) wired to
-   * Pro's `api.exportData({ format: 'xlsx' })`. The exporter keeps the
-   * group structure: each group becomes a header row, each leaf row
-   * keeps its parent labels in the dim columns, and the subtotal /
-   * grand-total math is materialised so the xlsx round-trips into
-   * Excel as a navigable, sortable, filterable workbook.
+   * A flat sales grid grouped by Region (and optionally Country),
+   * exported with Smart's native row-outline grouping:
    *
-   *   - Group by chip toolbar - the same setGroupBy api the demo grid
-   *     uses also drives which grouping is exported.
-   *   - "Export options" panel: include grand total, include subtotals,
-   *     style the group rows in bold + accent fill, flat vs outline
-   *     export format.
-   *   - Live "preview" panel shows the exact rows that will be written
-   *     to the workbook so you can verify the shape before clicking
-   *     Export.
+   *   await api.exportData({
+   *     format: 'xlsx',
+   *     filename: 'deals',
+   *     groupBy: ['region', 'country'],   // ← outline rows in xlsx
+   *   })
+   *
+   * The exporter wraps every cluster of rows in an Excel outline row
+   * with the +/- expand button - the file opens in Excel with native
+   * Data → Outline behavior, no extra rows materialized by hand.
+   *
+   * The toolbar lets the user pick grouping levels (None / Region /
+   * Region → Country / Region → Country → Rep), and the preview panel
+   * mirrors what the exported workbook will contain.
    */
   import {
     SvGrid,
@@ -120,88 +121,13 @@
   }
 
   // ---- Export options -------------------------------------------------
-  let includeSubtotals = $state(true)
-  let includeGrand     = $state(true)
-  let styleGroups      = $state(true)
-  let outlineFormat    = $state<'flat' | 'outline'>('outline')
-  let exporting        = $state(false)
-  let lastExport       = $state<string | null>(null)
-  let exportError      = $state<string | null>(null)
+  let zebra      = $state(true)
+  let exporting  = $state(false)
+  let lastExport = $state<string | null>(null)
+  let exportError = $state<string | null>(null)
 
-  /** Build the exact row list the xlsx will receive. Walks the grouped
-   *  deal set by hand so the demo can show a faithful preview of the
-   *  workbook BEFORE the user clicks export. */
-  type ExportRow = Record<string, unknown> & { __kind: 'group' | 'subtotal' | 'leaf' | 'grand'; __depth: number }
-  const exportRows = $derived.by(() => {
-    const out: ExportRow[] = []
-    /** Recursive group walk over the (possibly nested) groupBy spec. */
-    function walk(items: Deal[], levels: string[], parentLabels: Record<string, string>, depth: number): void {
-      if (levels.length === 0) {
-        for (const d of items) {
-          out.push({
-            __kind: 'leaf',
-            __depth: depth,
-            ...(outlineFormat === 'flat' ? parentLabels : {}),
-            id: d.id, region: d.region, country: d.country, rep: d.rep,
-            product: d.product, stage: d.stage, closeDate: d.closeDate, amount: d.amount,
-          })
-        }
-        return
-      }
-      const [key, ...rest] = levels
-      const buckets = new Map<string, Deal[]>()
-      for (const d of items) {
-        const v = String((d as unknown as Record<string, unknown>)[key!] ?? '')
-        const list = buckets.get(v) ?? []
-        list.push(d); buckets.set(v, list)
-      }
-      const sortedKeys = Array.from(buckets.keys()).sort()
-      for (const groupKey of sortedKeys) {
-        const groupItems = buckets.get(groupKey)!
-        const labels = { ...parentLabels, [key!]: groupKey }
-        // Group row
-        out.push({
-          __kind: 'group',
-          __depth: depth,
-          id: '',
-          region:  labels['region']  ?? '',
-          country: labels['country'] ?? '',
-          rep:     labels['rep']     ?? '',
-          product: '',
-          stage:   '',
-          closeDate: '',
-          amount:  '',
-        })
-        walk(groupItems, rest, labels, depth + 1)
-        if (includeSubtotals) {
-          const subtotal = groupItems.reduce((a, d) => a + d.amount, 0)
-          out.push({
-            __kind: 'subtotal',
-            __depth: depth,
-            id: '',
-            region:  key === 'region'  ? `${groupKey} total` : labels['region']  ?? '',
-            country: key === 'country' ? `${groupKey} total` : labels['country'] ?? '',
-            rep:     key === 'rep'     ? `${groupKey} total` : labels['rep']     ?? '',
-            product: '', stage: '', closeDate: '',
-            amount: subtotal,
-          })
-        }
-      }
-    }
-    walk(deals, groupBy, {}, 0)
-    if (includeGrand) {
-      const grand = deals.reduce((a, d) => a + d.amount, 0)
-      out.push({
-        __kind: 'grand',
-        __depth: 0,
-        id: '', region: 'GRAND TOTAL', country: '', rep: '', product: '', stage: '', closeDate: '',
-        amount: grand,
-      })
-    }
-    return out
-  })
-
-  // ---- Export columns ------------------------------------------------
+  /** Same column-field mapping the grid uses - the exporter projects
+   *  each row to these fields in order. */
   const exportColumns = [
     { field: 'region',    header: 'Region'     },
     { field: 'country',   header: 'Country'    },
@@ -211,26 +137,30 @@
     { field: 'closeDate', header: 'Close date' },
     { field: 'amount',    header: 'Amount'     },
   ]
+  /** Sort deals by the groupBy fields so groups are contiguous - Smart
+   *  expects each group's rows to come together in the input stream. */
+  const sortedDeals = $derived.by(() => {
+    if (groupBy.length === 0) return deals
+    return [...deals].sort((a, b) => {
+      for (const k of groupBy) {
+        const av = String((a as unknown as Record<string, unknown>)[k] ?? '')
+        const bv = String((b as unknown as Record<string, unknown>)[k] ?? '')
+        if (av < bv) return -1
+        if (av > bv) return 1
+      }
+      return 0
+    })
+  })
 
-  // ---- Style hints ---------------------------------------------------
-  /** Pro's exporter accepts a `styles` payload mirroring ExportStyles:
-   *  headerRow / rows / rowAlternate / cells. Per-row conditional tints
-   *  (group vs leaf) aren't a first-class feature; we use a zebra
-   *  rowAlternate to give the workbook visible row banding and a
-   *  bold header. The richer per-kind styling lives in the preview
-   *  panel below, which exists exactly to communicate that the xlsx
-   *  cells will be plain. */
-  const exportStyles = $derived.by(() => {
-    if (!styleGroups) return undefined
-    return {
-      headerRow: {
-        backgroundColor: '#e0e7ff',
-        color: '#3730a3',
-        fontWeight: 'bold' as const,
-        textAlign: 'left' as const,
-      },
-      rowAlternate: { backgroundColor: '#f8fafc' },
+  /** Group counts for the preview panel + status note. */
+  const groupCounts = $derived.by(() => {
+    if (groupBy.length === 0) return [] as Array<{ label: string; count: number }>
+    const counts = new Map<string, number>()
+    for (const d of sortedDeals) {
+      const key = groupBy.map((k) => String((d as unknown as Record<string, unknown>)[k] ?? '')).join(' / ')
+      counts.set(key, (counts.get(key) ?? 0) + 1)
     }
+    return Array.from(counts.entries()).map(([label, count]) => ({ label, count }))
   })
 
   async function exportXlsx() {
@@ -239,26 +169,38 @@
     exportError = null
     lastExport = null
     try {
+      const styles = zebra
+        ? {
+            headerRow: {
+              backgroundColor: '#e0e7ff',
+              color: '#3730a3',
+              fontWeight: 'bold' as const,
+              textAlign: 'left' as const,
+            },
+            rowAlternate: { backgroundColor: '#f8fafc' },
+          }
+        : undefined
       await api.exportData({
         format: 'xlsx',
         filename: `deals-grouped-${groupBy.join('-') || 'flat'}`,
         columns: exportColumns,
-        rows: exportRows as never,
-        ...(exportStyles ? { styles: exportStyles } : {}),
+        rows: sortedDeals,
+        // Smart's NATIVE Excel outline rows. Open the file in Excel
+        // and the +/- buttons appear in the row header gutter for
+        // every group level. No manually-materialised subtotal rows.
+        ...(groupBy.length > 0 ? { groupBy } : {}),
+        ...(styles ? { styles } : {}),
       })
-      const counts = countRowKinds(exportRows)
-      lastExport = `Exported ${exportRows.length} rows (${counts.leaf} deals · ${counts.group} groups · ${counts.subtotal} subtotals${counts.grand > 0 ? ' · 1 grand total' : ''})`
+      lastExport =
+        groupBy.length > 0
+          ? `Exported ${sortedDeals.length} rows in ${groupCounts.length} groups (Excel outline rows enabled)`
+          : `Exported ${sortedDeals.length} flat rows`
     } catch (e) {
       exportError = e instanceof Error ? e.message : String(e)
       console.error('[grouped export]', e)
     } finally {
       exporting = false
     }
-  }
-  function countRowKinds(rows: ExportRow[]): Record<'leaf'|'group'|'subtotal'|'grand', number> {
-    const out = { leaf: 0, group: 0, subtotal: 0, grand: 0 }
-    for (const r of rows) out[r.__kind] += 1
-    return out
   }
 
   function fmtMoney(n: number | string | unknown): string {
@@ -271,22 +213,24 @@
   <header class="ex-head">
     <h2>Export grouped grid to Excel</h2>
     <p>
-      A grouped sales grid (Region → Country) wired to Pro's
-      <code>api.exportData(&#123; format: 'xlsx' &#125;)</code>. Group rows, per-group subtotals, and
-      a grand total are all materialised into the workbook so the file opens
-      in Excel as a navigable, sortable, filterable table.
+      Wired to Pro's new <code>groupBy</code> export option, which maps straight to
+      Smart DataExporter's native row-outline grouping. The xlsx opens in
+      Excel with the +/- outline buttons in the row header gutter at every
+      group level - no manually-emitted subtotal rows, the exporter wraps
+      each cluster of rows automatically.
     </p>
   </header>
 
   <div class="ex-toolbar">
     <div class="ex-group-by">
       <span class="ex-label">Group by:</span>
-      <button class="ex-chip" class:on={groupBy.length === 0}                   onclick={() => applyGroup([])}>None</button>
-      <button class="ex-chip" class:on={groupBy.join() === 'region'}            onclick={() => applyGroup(['region'])}>Region</button>
-      <button class="ex-chip" class:on={groupBy.join() === 'region,country'}    onclick={() => applyGroup(['region', 'country'])}>Region → Country</button>
+      <button class="ex-chip" class:on={groupBy.length === 0}                    onclick={() => applyGroup([])}>None</button>
+      <button class="ex-chip" class:on={groupBy.join() === 'region'}             onclick={() => applyGroup(['region'])}>Region</button>
+      <button class="ex-chip" class:on={groupBy.join() === 'region,country'}     onclick={() => applyGroup(['region', 'country'])}>Region → Country</button>
       <button class="ex-chip" class:on={groupBy.join() === 'region,country,rep'} onclick={() => applyGroup(['region', 'country', 'rep'])}>Region → Country → Rep</button>
     </div>
     <div class="ex-actions">
+      <label class="ex-opt"><input type="checkbox" bind:checked={zebra} /> Header fill + zebra rows</label>
       <button
         type="button"
         class="ex-export"
@@ -297,16 +241,6 @@
       </button>
       {#if lastExport}<span class="ex-msg ok">{lastExport}</span>{/if}
       {#if exportError}<span class="ex-msg err">{exportError}</span>{/if}
-    </div>
-  </div>
-
-  <div class="ex-options">
-    <label class="ex-opt"><input type="checkbox" bind:checked={includeSubtotals} /> Include subtotals</label>
-    <label class="ex-opt"><input type="checkbox" bind:checked={includeGrand}     /> Include grand total</label>
-    <label class="ex-opt"><input type="checkbox" bind:checked={styleGroups}      /> Header fill + zebra rows</label>
-    <div class="ex-seg">
-      <button class:active={outlineFormat === 'outline'} onclick={() => (outlineFormat = 'outline')}>Outline (Excel-style)</button>
-      <button class:active={outlineFormat === 'flat'}    onclick={() => (outlineFormat = 'flat')}>Flat (repeat parents)</button>
     </div>
   </div>
 
@@ -331,37 +265,42 @@
 
     <aside class="ex-preview">
       <div class="ex-preview-head">
-        <span class="ex-preview-eyebrow">Workbook preview</span>
-        <span class="ex-preview-count">{exportRows.length} rows</span>
+        <span class="ex-preview-eyebrow">Export shape</span>
+        <span class="ex-preview-count">{sortedDeals.length} rows · {groupCounts.length || 0} groups</span>
       </div>
       <div class="ex-preview-body">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Region</th>
-              <th>Country</th>
-              <th>Rep</th>
-              <th>Product</th>
-              <th class="right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each exportRows.slice(0, 80) as r, i (i)}
-              <tr class={`ex-row-${r.__kind}`}>
-                <td class="ex-row-n">{i + 1}</td>
-                <td>{String(r.region ?? '')}</td>
-                <td>{String(r.country ?? '')}</td>
-                <td>{String(r.rep ?? '')}</td>
-                <td>{String(r.product ?? '')}</td>
-                <td class="right">{typeof r.amount === 'number' ? fmtMoney(r.amount) : ''}</td>
-              </tr>
+        {#if groupBy.length === 0}
+          <p class="ex-preview-empty">
+            Flat export - every deal becomes one xlsx row, no grouping.
+          </p>
+        {:else}
+          <p class="ex-preview-empty">
+            Each cluster below becomes one collapsible outline row in the
+            xlsx. The header row gutter in Excel will show ▲/▼ buttons to
+            fold groups at each level.
+          </p>
+          <ul class="ex-group-list">
+            {#each groupCounts.slice(0, 30) as g (g.label)}
+              <li class="ex-group-li">
+                <span class="ex-group-name">{g.label}</span>
+                <span class="ex-group-count">{g.count} rows</span>
+              </li>
             {/each}
-            {#if exportRows.length > 80}
-              <tr class="ex-row-overflow"><td colspan="6">… {exportRows.length - 80} more rows in xlsx</td></tr>
+            {#if groupCounts.length > 30}
+              <li class="ex-group-overflow">… +{groupCounts.length - 30} more groups</li>
             {/if}
-          </tbody>
-        </table>
+          </ul>
+        {/if}
+
+        <div class="ex-snippet-block">
+          <div class="ex-snippet-title">Call</div>
+          <pre class="ex-snippet"><code>{`await api.exportData({
+  format: 'xlsx',
+  filename: 'deals-grouped',
+  columns: [/* 7 fields */],
+  rows: sortedDeals,${groupBy.length > 0 ? `\n  groupBy: ${JSON.stringify(groupBy)},` : ''}${zebra ? '\n  styles: { headerRow, rowAlternate },' : ''}
+})`}</code></pre>
+        </div>
       </div>
     </aside>
   </div>
@@ -400,7 +339,8 @@
     border-color: var(--sg-accent, #2563eb);
     color: #fff;
   }
-  .ex-actions { display: flex; align-items: center; gap: 10px; }
+  .ex-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ex-opt { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; }
   .ex-export {
     border: 1px solid #16a34a;
     background: #16a34a;
@@ -416,28 +356,6 @@
   :global([data-theme='dark']) .ex-msg.ok  { color: #4ade80; }
   :global([data-theme='dark']) .ex-msg.err { color: #f87171; }
 
-  .ex-options {
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    padding: 6px 12px;
-    border: 1px dashed var(--sg-border, #e2e8f0);
-    border-radius: 6px;
-    flex-shrink: 0;
-    font-size: 12px;
-  }
-  .ex-opt { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
-  .ex-seg {
-    display: inline-flex;
-    border: 1px solid var(--sg-border, #cbd5e1);
-    border-radius: 5px; overflow: hidden;
-    margin-left: auto;
-  }
-  .ex-seg button {
-    border: 0; background: transparent;
-    padding: 4px 10px; font-size: 11px;
-    cursor: pointer; color: var(--sg-fg, #1e293b);
-  }
-  .ex-seg button.active { background: var(--sg-accent, #2563eb); color: #fff; font-weight: 700; }
-
   .ex-split { min-height: 0; }
   .ex-grid-wrap {
     border: 1px solid var(--sg-border, #e2e8f0);
@@ -447,7 +365,7 @@
   }
 
   .ex-preview {
-    width: 420px; flex-shrink: 0;
+    width: 380px; flex-shrink: 0;
     border: 1px solid var(--sg-border, #e2e8f0);
     border-radius: 10px;
     background: var(--sg-bg, #ffffff);
@@ -465,43 +383,42 @@
     font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--sg-muted, #64748b); font-weight: 700;
   }
-  .ex-preview-count {
-    font-size: 11px; color: var(--sg-muted, #64748b);
-    font-variant-numeric: tabular-nums;
+  .ex-preview-count { font-size: 11px; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; }
+  .ex-preview-body { flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .ex-preview-empty { font-size: 12px; color: var(--sg-muted, #64748b); margin: 0; line-height: 1.5; }
+  .ex-group-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 3px; }
+  .ex-group-li {
+    display: grid; grid-template-columns: 1fr auto; gap: 8px;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 5px;
+    background: rgba(99,102,241,0.06);
+    font-size: 11.5px;
   }
-  .ex-preview-body { flex: 1; overflow: auto; }
-  .ex-preview-body table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-  .ex-preview-body th, .ex-preview-body td {
-    padding: 3px 8px; border-bottom: 1px solid var(--sg-border, #f1f5f9);
-    text-align: left; white-space: nowrap;
+  :global([data-theme='dark']) .ex-group-li { background: rgba(99,102,241,0.14); }
+  .ex-group-name { font-weight: 600; }
+  .ex-group-count { font-size: 10.5px; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; }
+  .ex-group-overflow {
+    text-align: center; font-style: italic; font-size: 11px;
+    color: var(--sg-muted, #64748b); padding: 4px 0;
+    list-style: none;
   }
-  :global([data-theme='dark']) .ex-preview-body th,
-  :global([data-theme='dark']) .ex-preview-body td { border-color: rgba(148,163,184,0.18); }
-  .ex-preview-body th {
-    background: var(--sg-header-bg, #f8fafc);
-    font-weight: 700; color: var(--sg-muted, #64748b);
-    position: sticky; top: 0;
+
+  .ex-snippet-block {
+    border-top: 1px dashed var(--sg-border, #e2e8f0);
+    padding-top: 10px;
   }
-  .ex-preview-body .right { text-align: right; font-variant-numeric: tabular-nums; }
-  .ex-row-n { color: var(--sg-muted, #64748b); width: 30px; }
-  .ex-row-leaf { color: var(--sg-fg, #1e293b); }
-  .ex-row-group {
-    background: rgba(99,102,241,0.10);
-    font-weight: 700; color: #3730a3;
+  .ex-snippet-title {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--sg-muted, #64748b); font-weight: 700; margin-bottom: 6px;
   }
-  .ex-row-subtotal {
-    background: rgba(14,165,233,0.10);
-    font-weight: 700; color: #1e40af;
-  }
-  .ex-row-grand {
-    background: rgba(245,158,11,0.18);
-    font-weight: 800; color: #854d0e;
-  }
-  :global([data-theme='dark']) .ex-row-group    { color: #c7d2fe; }
-  :global([data-theme='dark']) .ex-row-subtotal { color: #93c5fd; }
-  :global([data-theme='dark']) .ex-row-grand    { color: #fcd34d; }
-  .ex-row-overflow td {
-    text-align: center; font-style: italic; color: var(--sg-muted, #64748b);
-    padding: 8px 0;
+  .ex-snippet {
+    margin: 0; padding: 8px 10px;
+    background: #0f172a; color: #e2e8f0;
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    overflow: auto;
   }
 </style>

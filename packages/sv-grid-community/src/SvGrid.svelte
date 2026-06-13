@@ -1,6 +1,6 @@
 ﻿<script
   lang="ts"
-  generics="TFeatures extends TableFeatures, TData extends RowData"
+  generics="TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData"
 >
   import {
     applyExcelFilter,
@@ -24,6 +24,9 @@
     normalizeEditorOptions,
     sortFns,
     tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    columnGroupingFeature,
     type CellContext,
     type EditorContext,
     type CellEditorOption,
@@ -50,12 +53,41 @@
     RenderComponentConfig,
   } from "./render-component";
   import { buildFillPattern } from "./fill-patterns";
+  import { buildSparkline, toSparklineValues } from "./sparkline";
   import SvGridDropdown from "./SvGridDropdown.svelte";
 
   type Props = {
     data: ReadonlyArray<TData>;
     columns: Array<ColumnDef<TFeatures, TData>>;
-    features: TFeatures;
+    /**
+     * The feature set built with `tableFeatures({ ... })`. Optional - the
+     * `sortable` / `filterable` / `groupable` shortcuts below inject the
+     * matching feature for you, so a grid can be configured entirely from
+     * the boolean shortcuts without importing the feature constants.
+     */
+    features?: TFeatures;
+    /**
+     * Convenience shortcuts to switch a whole capability on without wiring
+     * `features` or the finer-grained props by hand. Every capability is OFF
+     * by default - a bare grid is a plain read-only table - so set the
+     * shortcut `true` to opt in. (`false` / omitted both leave it off; the
+     * shortcut is mainly there to turn things ON.)
+     *
+     *   `sortable`   - column sorting       (injects `rowSortingFeature`)
+     *   `filterable` - column filtering     (injects `columnFilteringFeature`)
+     *   `editable`   - inline cell editing  (alias of `enableInlineEditing`)
+     *   `groupable`  - row grouping controls(alias of `showGroupingControls`,
+     *                  also injects `columnGroupingFeature`)
+     *   `pageable`   - pagination footer    (alias of `showPagination`)
+     *
+     * Fine-grained props (`enableInlineEditing`, `showPagination`, ...) still
+     * work; the shortcut wins only when it is explicitly set.
+     */
+    sortable?: boolean;
+    filterable?: boolean;
+    editable?: boolean;
+    groupable?: boolean;
+    pageable?: boolean;
     loading?: boolean;
     error?: string | null;
     emptyMessage?: string;
@@ -370,6 +402,25 @@
   type MenuPosition = { x: number; y: number };
 
   let props: Props = $props();
+
+  // Resolved capability gates. Capabilities are OFF by default - a bare
+  // grid is a plain read-only table, and each power feature is opted into
+  // via its shortcut (`editable` / `pageable` / `groupable`) or the matching
+  // fine-grained prop (`enableInlineEditing` / `showPagination` /
+  // `showGroupingControls`). The shortcut wins when set; otherwise the
+  // fine-grained prop wins; otherwise the capability is off. (Sorting and
+  // filtering follow the same opt-in model already - they require their
+  // feature, injected by `sortable` / `filterable`.)
+  const editingEnabled = $derived(
+    props.editable ?? props.enableInlineEditing ?? false,
+  );
+  const paginationEnabled = $derived(
+    props.pageable ?? props.showPagination ?? false,
+  );
+  const groupingControlsEnabled = $derived(
+    props.groupable ?? props.showGroupingControls ?? false,
+  );
+
   let globalFilter = $state("");
   let scrollContainer: HTMLDivElement | null = $state(null);
   let gridRootEl: HTMLElement | null = $state(null);
@@ -681,9 +732,26 @@
   const passthroughSortedRowModel = ({ rows }: { rows: Array<Row<TData>> }) =>
     rows;
 
+  // Merge the consumer's `features` set with whatever the boolean shortcuts
+  // imply. A shortcut set to `true` injects its feature; set to `false` it
+  // removes it (so `sortable={false}` wins even if `rowSortingFeature` was
+  // passed in `features`); left undefined it defers to `features`.
+  function resolveEffectiveFeatures(): TableFeatures {
+    const merged: Record<string, unknown> = { ...(props.features ?? {}) };
+    if (props.sortable === true) merged.rowSortingFeature = rowSortingFeature;
+    else if (props.sortable === false) delete merged.rowSortingFeature;
+    if (props.filterable === true)
+      merged.columnFilteringFeature = columnFilteringFeature;
+    else if (props.filterable === false) delete merged.columnFilteringFeature;
+    if (props.groupable === true)
+      merged.columnGroupingFeature = columnGroupingFeature;
+    else if (props.groupable === false) delete merged.columnGroupingFeature;
+    return tableFeatures(merged);
+  }
+
   const grid = createSvGrid({
     get _features() {
-      return tableFeatures(props.features);
+      return resolveEffectiveFeatures();
     },
     get _rowModels() {
       // Pagination is intentionally NOT in the grid's row-model pipeline.
@@ -1255,7 +1323,7 @@
    */
   const allRows = $derived.by(() => {
     const rows = allRowsBeforePagination;
-    if (!(props.showPagination ?? true)) return rows;
+    if (!paginationEnabled) return rows;
     const { pageIndex, pageSize } = paginationState;
     const start = pageIndex * pageSize;
     return rows.slice(start, start + pageSize);
@@ -1529,30 +1597,97 @@
     return String(value);
   }
 
-  const summaryByColumn = $derived.by(() => {
-    if (!(props.enableRowSummaries ?? true)) return {};
+  /**
+   * Aggregate every row into a per-column footer summary (sum for numeric
+   * columns, `Count: N` otherwise). This loop is the hottest path on a
+   * large grid - it is rows x columns iterations - so two things keep the
+   * constant factor down:
+   *
+   *   1. The edited-cell overlay is only consulted when an edit actually
+   *      exists. `key in editedCellValues` hits a reactive-proxy `has`
+   *      trap for every cell otherwise - 5M no-op trap calls on a
+   *      100k x 50 grid. Skipping it when the map is empty is the single
+   *      biggest win here.
+   *   2. The column's accessor (`accessorFn` / `field`) is resolved once
+   *      per column, not re-read off `columnDef` for every cell.
+   */
+  function computeSummaries(
+    rows: ReadonlyArray<Row<TData>>,
+    columns: ReadonlyArray<Column<TData>>,
+  ): Record<string, string> {
     const summary: Record<string, string> = {};
-    for (const column of allColumns) {
+    const rowCount = rows.length;
+    const hasEdits = Object.keys(editedCellValues).length > 0;
+    for (const column of columns) {
+      const def = column.columnDef;
+      const accessorFn = def.accessorFn;
+      const field = def.field;
+      const columnId = column.id;
       let numericSum = 0;
       let numericCount = 0;
-      for (const row of allRows) {
-        const value = getCellDisplayValue(
-          row.id,
-          column.id,
-          getColumnBaseValue(row, column),
-        );
+      for (let i = 0; i < rowCount; i += 1) {
+        const row = rows[i]!;
+        let value: unknown;
+        const base = accessorFn
+          ? accessorFn(row.original)
+          : field
+            ? (row.original as Record<string, unknown>)[field]
+            : row.getCellValueByColumnId(columnId);
+        if (hasEdits) {
+          const key = getCellKey(row.id, columnId);
+          value = key in editedCellValues ? editedCellValues[key] : base;
+        } else {
+          value = base;
+        }
         const asNumber = Number(value);
         if (Number.isFinite(asNumber)) {
           numericSum += asNumber;
           numericCount += 1;
         }
       }
-      summary[column.id] =
+      summary[columnId] =
         numericCount > 0
           ? formatSummaryNumeric(column, numericSum)
-          : `Count: ${allRows.length}`;
+          : `Count: ${rowCount}`;
     }
     return summary;
+  }
+
+  // Above this many cells (rows x columns) the summary aggregation is
+  // deferred one animation frame so it never blocks first paint - a
+  // 100k x 50 grid would otherwise spend seconds summing reactive cells
+  // before the grid ever appears. Smaller grids compute inline so the
+  // footer is correct on the first frame (no flicker).
+  const SUMMARY_DEFER_CELL_LIMIT = 50_000;
+
+  let summaryByColumn = $state<Record<string, string>>({});
+  $effect(() => {
+    // Re-aggregate whenever the visible data, columns, edits, or any
+    // state that reorders/filters rows changes.
+    gridStateVersion;
+    void editedCellValues;
+    const rows = allRows;
+    const columns = allColumns;
+    if (!(props.enableRowSummaries ?? true)) {
+      summaryByColumn = {};
+      return;
+    }
+    if (
+      rows.length * columns.length <= SUMMARY_DEFER_CELL_LIMIT ||
+      typeof requestAnimationFrame === "undefined"
+    ) {
+      summaryByColumn = computeSummaries(rows, columns);
+      return;
+    }
+    // Large grid: paint first, total a frame later.
+    let cancelled = false;
+    const handle = requestAnimationFrame(() => {
+      if (!cancelled) summaryByColumn = computeSummaries(rows, columns);
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(handle);
+    };
   });
 
   $effect(() => {
@@ -2222,7 +2357,16 @@
     });
   }
 
+  /** True once a real interaction (click, keyboard nav, or a public-API
+   *  call) has activated a cell. Distinct from `activeCell.cellId`, which
+   *  the on-mount seed effect populates straight on the grid state without
+   *  going through `setActiveCell` - so it can't tell a seeded (0,0) apart
+   *  from a user-focused (0,0). The fill handle keys off this flag so it
+   *  stays hidden until the user actually selects something. */
+  let userHasActivatedCell = $state(false);
+
   function setActiveCell(rowIndex: number, colIndex: number) {
+    userHasActivatedCell = true;
     grid.setActiveCell({
       rowIndex,
       colIndex,
@@ -2517,10 +2661,11 @@
       };
     }
     const a = activeCell;
-    // Only show the handle once the user has actually focused a cell -
-    // `cellId` is null on the default-zero state, non-null once a click
-    // has set the active cell.
-    if (!a || a.cellId == null) return null;
+    // Only show the handle once the user (or the public API) has actually
+    // activated a cell. The on-mount seed writes activeCell (0,0) directly
+    // to the grid state, so `cellId` alone can't gate this - see
+    // `userHasActivatedCell`.
+    if (!userHasActivatedCell || !a) return null;
     return { rowIndex: a.rowIndex, colIndex: a.colIndex };
   });
 
@@ -2711,7 +2856,7 @@
       return;
     }
     const a = grid.getState().activeCell;
-    if (a && a.cellId != null) {
+    if (a && userHasActivatedCell) {
       const col = allColumns[a.colIndex];
       if (col?.columnDef.field && isCellEditableAt(a.rowIndex, a.colIndex)) {
         writeCellRaw(a.rowIndex, col.id, null);
@@ -2912,7 +3057,7 @@
       activeAtPointerDown !== null &&
       activeAtPointerDown.rowIndex === rowIndex &&
       activeAtPointerDown.colIndex === colIndex;
-    if (wasActive && (props.enableInlineEditing ?? true)) {
+    if (wasActive && editingEnabled) {
       onCellDoubleClick(rowIndex, colIndex);
       return;
     }
@@ -3115,7 +3260,7 @@
   }
 
   function onCellDoubleClick(rowIndex: number, colIndex: number) {
-    if (!(props.enableInlineEditing ?? true)) return;
+    if (!editingEnabled) return;
     const row = allRows[rowIndex];
     const column = allColumns[colIndex];
     if (!row || !column) return;
@@ -3155,7 +3300,7 @@
     colIndex: number,
     char: string,
   ): boolean {
-    if (!(props.enableInlineEditing ?? true)) return false;
+    if (!editingEnabled) return false;
     const row = allRows[rowIndex];
     const column = allColumns[colIndex];
     if (!row || !column || isGroupRow(row)) return false;
@@ -4652,6 +4797,60 @@
       {:else}
         {formatListCellValue(column, cellValue, row)}
       {/if}
+    {:else if column.columnDef.sparkline && column.columnDef.cell == null}
+      {@const geo = buildSparkline(
+        toSparklineValues(cellValue),
+        column.columnDef.sparkline,
+      )}
+      {#if geo}
+        {@const vals = toSparklineValues(cellValue)}
+        <svg
+          class="sv-grid-sparkline"
+          width={geo.width}
+          height={geo.height}
+          viewBox={`0 0 ${geo.width} ${geo.height}`}
+          preserveAspectRatio="none"
+          role="img"
+          aria-label={`Sparkline, ${vals.length} points, last ${vals[vals.length - 1]}`}
+        >
+          {#if geo.areaPath}
+            <path
+              d={geo.areaPath}
+              fill={geo.color}
+              fill-opacity="0.18"
+              stroke="none"
+            />
+          {/if}
+          {#if geo.linePath}
+            <path
+              d={geo.linePath}
+              fill="none"
+              stroke={geo.color}
+              stroke-width={geo.lineWidth}
+              stroke-linejoin="round"
+              stroke-linecap="round"
+            />
+          {/if}
+          {#each geo.bars as bar, i (i)}
+            <rect
+              x={bar.x}
+              y={bar.y}
+              width={bar.w}
+              height={bar.h}
+              rx="0.5"
+              fill={bar.negative ? geo.negativeColor : geo.color}
+            />
+          {/each}
+          {#if geo.lastPoint}
+            <circle
+              cx={geo.lastPoint.x}
+              cy={geo.lastPoint.y}
+              r={geo.lineWidth + 0.5}
+              fill={geo.color}
+            />
+          {/if}
+        </svg>
+      {/if}
     {:else}
       {#if row.depth > 0 && column.id === allColumns[0]?.id}
         <span
@@ -6074,7 +6273,7 @@
       {/if}
     </div>
 
-    {#if props.showPagination ?? true}
+    {#if paginationEnabled}
       {@const totalRows = allRowsBeforePagination.length}
       {@const pageSize = paginationState.pageSize}
       {@const pageCount = Math.max(1, Math.ceil(totalRows / pageSize))}
@@ -6314,7 +6513,7 @@
         <span class="sv-grid-header-icon">{@render icon("autosize")}</span> Autosize
         all columns
       </button>
-      {#if props.showGroupingControls ?? true}
+      {#if groupingControlsEnabled}
         <div class="sv-grid-menu-sep"></div>
         <button
           type="button"
@@ -7312,6 +7511,11 @@
     gap: 4px;
     max-width: 100%;
     vertical-align: middle;
+  }
+  .sv-grid-sparkline {
+    display: inline-block;
+    vertical-align: middle;
+    overflow: visible;
   }
   .sv-grid-chip {
     display: inline-flex;

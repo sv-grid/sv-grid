@@ -170,28 +170,39 @@
 
   /** Build the rows the exporter will receive: one row per visible
    *  PivotRow, with the row dim columns (Region, Country, Kind) at the
-   *  front and every leaf column value promoted up. */
+   *  front and every leaf column value promoted up.
+   *
+   *  Only LEAF rows are emitted - Smart's groupBy: ['region'] will
+   *  wrap them in native Excel outline groups, and the engine's own
+   *  subtotal / grand rows are skipped (they'd double-count under the
+   *  outline). */
   const exportRows = $derived.by(() => {
-    return pivot.rows.map((r) => {
-      const chain: string[] = []
-      const byId = new Map(pivot.rows.map((x) => [x.__pivotId, x] as const))
+    const byId = new Map(pivot.rows.map((x) => [x.__pivotId, x] as const))
+    function chainOf(r: PivotRow): string[] {
+      const out: string[] = []
       let cur: PivotRow | undefined = r
       while (cur) {
-        chain.unshift(String(cur.__pivotLabel))
+        out.unshift(String(cur.__pivotLabel))
         const pid: string | null = cur.__pivotParentId
         cur = pid ? byId.get(pid) : undefined
       }
-      const row: Record<string, unknown> = {
-        kind: r.__pivotKind,
-        region:  r.__pivotKind === 'grandTotal' ? 'GRAND TOTAL' : chain[0] ?? '',
-        country: r.__pivotKind === 'grandTotal' ? '' : chain[1] ?? '',
-      }
-      for (const lc of exportLeafCols) {
-        const v = r[lc.id]
-        row[lc.header] = typeof v === 'number' ? Math.round(v * 1000) / 1000 : v ?? ''
-      }
-      return row
-    })
+      return out
+    }
+    return pivot.rows
+      .filter((r) => r.__pivotKind === 'leaf' || r.__pivotKind === 'grandTotal')
+      .map((r) => {
+        const chain = chainOf(r)
+        const row: Record<string, unknown> = {
+          kind: r.__pivotKind,
+          region:  r.__pivotKind === 'grandTotal' ? 'GRAND TOTAL' : chain[0] ?? '',
+          country: r.__pivotKind === 'grandTotal' ? '' : chain[1] ?? '',
+        }
+        for (const lc of exportLeafCols) {
+          const v = r[lc.id]
+          row[lc.header] = typeof v === 'number' ? Math.round(v * 1000) / 1000 : v ?? ''
+        }
+        return row
+      })
   })
   const exportColumns = $derived.by(() => {
     const base = [
@@ -255,8 +266,11 @@
           filename: deriveFilename(filename),
           columns: exportColumns,
           rows: exportRows as never,
+          // Smart's native row-outline grouping: each region becomes
+          // an Excel outline group with a +/- button in the row header.
+          groupBy: ['region'],
         })
-        lastExport = `Exported ${exportRows.length} rows · ${exportColumns.length} columns`
+        lastExport = `Exported ${exportRows.length} rows · ${exportColumns.length} columns (Excel outline rows grouped by Region)`
       }
     } catch (e) {
       exportError = e instanceof Error ? e.message : String(e)

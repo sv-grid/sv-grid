@@ -25,6 +25,11 @@
    */
   let openGroups = $state<Record<string, boolean>>({})
 
+  // Mobile: the doc tree + search live in a slide-in drawer. Without this
+  // the sidebar is `hidden` on phones and there is no way to navigate or
+  // search between pages. Opening a page closes the drawer.
+  let mobileNav = $state(false)
+
   // Rebuild a Marked instance per render so the `walkTokens` closure sees the
   // current slug. Cheap - it's just an option bag.
   function slugify(text: string): string {
@@ -139,6 +144,7 @@
 
   function go(s: string) {
     router.navigate(`docs/${s}`)
+    mobileNav = false
     // Scroll the main column back to the top when navigating - the sidebar
     // can otherwise leave you mid-page on the new doc.
     queueMicrotask(() => window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }))
@@ -209,15 +215,32 @@
      above each flat list of pages - same visual grammar as the demo
      gallery, just with section dividers instead of separate accordions. -->
 <div class="flex h-full min-h-0">
+  {#if mobileNav}
+    <button
+      type="button"
+      class="docs-backdrop md:hidden"
+      aria-label="Close menu"
+      onclick={() => (mobileNav = false)}
+    ></button>
+  {/if}
   <aside
-    class="hidden md:block w-72 shrink-0 border-r p-4 overflow-y-auto"
+    class="docs-aside w-72 shrink-0 border-r p-4 overflow-y-auto"
+    class:is-open={mobileNav}
     style="border-color: var(--sg-border)"
   >
-    <div class="mb-4">
-      <h1 class="text-lg font-semibold">SvGrid</h1>
-      <p class="text-xs" style="color: var(--sg-muted)">
-        Documentation · {docGroups.reduce((n, g) => n + g.pages.length, 0)} pages
-      </p>
+    <div class="mb-4 flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-semibold">SvGrid</h1>
+        <p class="text-xs" style="color: var(--sg-muted)">
+          Documentation · {docGroups.reduce((n, g) => n + g.pages.length, 0)} pages
+        </p>
+      </div>
+      <button
+        type="button"
+        class="docs-aside-close md:hidden"
+        aria-label="Close menu"
+        onclick={() => (mobileNav = false)}
+      >×</button>
     </div>
 
     <!-- Docs search: client-side full-text over every page's title + headings
@@ -314,16 +337,28 @@
   </aside>
 
   <main class="flex-1 overflow-x-hidden overflow-y-auto min-h-0">
-    <div class="mx-auto w-full max-w-3xl px-6 py-8">
-      <header class="mb-8 flex items-start justify-between gap-4">
-        <div class="min-w-0">
-          <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--site-accent-2);">
-            {current.category}
-          </p>
-          <h2 class="text-2xl font-semibold">{current.title}</h2>
-          <p class="mt-1 text-sm" style="color: var(--sg-muted)">
-            <code>{current.githubPath}</code>
-          </p>
+    <div class="mx-auto w-full max-w-3xl px-4 sm:px-6 py-8">
+      <header class="mb-8 flex items-start justify-between gap-3">
+        <div class="flex min-w-0 items-start gap-2">
+          <button
+            type="button"
+            class="docs-menu-btn md:hidden"
+            aria-label="Open documentation menu"
+            onclick={() => (mobileNav = true)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <div class="min-w-0">
+            <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--site-accent-2);">
+              {current.category}
+            </p>
+            <h2 class="text-2xl font-semibold">{current.title}</h2>
+            <p class="mt-1 text-sm" style="color: var(--sg-muted)">
+              <code>{current.githubPath}</code>
+            </p>
+          </div>
         </div>
         <a
           href={`https://github.com/sv-grid/sv-grid/blob/main/${current.githubPath}`}
@@ -344,6 +379,52 @@
 </div>
 
 <style>
+  /* ---- Mobile sidebar drawer ------------------------------------------
+     >=768px: sidebar is a normal in-flow column. Below that it slides in
+     as a fixed drawer (it is otherwise hidden, leaving no nav on phones). */
+  .docs-menu-btn,
+  .docs-aside-close {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: var(--sg-fg);
+    background: transparent;
+    cursor: pointer;
+  }
+  .docs-menu-btn {
+    width: 38px; height: 38px; flex-shrink: 0;
+    border: 1px solid var(--sg-border);
+    border-radius: 8px;
+  }
+  .docs-aside-close {
+    width: 30px; height: 30px;
+    font-size: 22px; line-height: 1;
+    border: 0;
+  }
+  @media (max-width: 767px) {
+    .docs-menu-btn { display: inline-flex; }
+    .docs-aside-close { display: inline-flex; }
+    .docs-aside {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 86vw;
+      max-width: 340px;
+      z-index: 60;
+      background: var(--site-bg);
+      transform: translateX(-100%);
+      transition: transform 200ms ease;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+    }
+    .docs-aside.is-open { transform: translateX(0); }
+    .docs-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      background: rgba(0, 0, 0, 0.45);
+      border: 0;
+    }
+  }
+
   /* Docs search */
   .docs-search { position: relative; }
   .docs-search-row {

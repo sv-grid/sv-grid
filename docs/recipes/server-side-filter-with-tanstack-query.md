@@ -179,6 +179,105 @@ the time `onCellValueChange` fires - the mutation is fire-and-forget.
 If the server rejects the change, TanStack Query's refetch restores
 the canonical value.
 
+### Explicit rollback (no refetch)
+
+For lower-latency UX or when the server response carries the previous
+value, roll back manually instead of waiting for the next refetch. The
+pattern: capture the prior value before mutating, and on error call
+`api.setCellValue(rowIndex, columnId, priorValue)` to revert the cell.
+
+```ts
+const editMutation = createMutation({
+  mutationFn: async (e: { rowId: string; columnId: string; value: unknown }) => {
+    const res = await fetch(`/api/people/${e.rowId}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ [e.columnId]: e.value }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  },
+  // Capture the prior cell value AND row index before the mutation
+  // runs - we'll need both to rollback on error.
+  onMutate: async (e) => {
+    const prior = api?.getCellValue(e.rowIndex, e.columnId)
+    return { prior, rowIndex: e.rowIndex, columnId: e.columnId }
+  },
+  onError: (_err, _vars, ctx) => {
+    if (api && ctx) api.setCellValue(ctx.rowIndex, ctx.columnId, ctx.prior)
+    // Surface the failure - a toast, an inline chip, etc.
+  },
+  onSuccess: () => qc.invalidateQueries({ queryKey: ['people'] }),
+})
+
+// In your <SvGrid onCellValueChange>:
+//   $editMutation.mutate({
+//     rowId: e.row.id, columnId: e.columnId,
+//     value: e.newValue, rowIndex: e.rowIndex,
+//   })
+```
+
+`api.setCellValue(rowIndex, ...)` takes the data-array index, not the
+row id. `onCellValueChange` provides both - capture `e.rowIndex` and
+hand it to the mutation context. This works for both inline editors
+AND any drawer / modal that funnels through `api.setCellValue` (see
+[Form library bridge recipe](./form-library-bridge.md)).
+
+## Visualising the query cache
+
+While debugging cache misses or unexpected refetches, a small side
+panel that lists every entry in the cache with its state is invaluable.
+The QueryClient exposes `getQueryCache().getAll()` for exactly this.
+
+```svelte
+<script lang="ts">
+  import { useQueryClient } from '@tanstack/svelte-query'
+
+  const qc = useQueryClient()
+
+  type Snap = { key: string; state: 'fetching' | 'fresh' | 'stale' | 'error' }
+  let cacheView = $state<Snap[]>([])
+
+  $effect(() => {
+    const cache = qc.getQueryCache()
+    const refresh = () => {
+      cacheView = cache.getAll().slice(0, 12).map((q) => ({
+        key: JSON.stringify(q.queryKey),
+        state:
+          q.state.fetchStatus === 'fetching' ? 'fetching'
+          : q.state.status === 'error'      ? 'error'
+          : q.state.isInvalidated           ? 'stale'
+          :                                   'fresh',
+      }))
+    }
+    const unsub = cache.subscribe(refresh)
+    refresh()
+    return unsub
+  })
+</script>
+
+<aside class="cache-panel">
+  <h3>Query cache · {cacheView.length} entries</h3>
+  <ul>
+    {#each cacheView as q (q.key)}
+      <li class="state-{q.state}">
+        <code>{q.key}</code>
+        <span>{q.state}</span>
+      </li>
+    {/each}
+  </ul>
+</aside>
+```
+
+The cache subscriber fires for every state transition - including
+optimistic mutations, error rollbacks, and the auto-invalidation from
+`invalidateQueries`. Pair this with the [grid state inspector](./grid-state-inspector.md)
+to debug edge cases where the grid and the cache disagree.
+
+For visual polish, color-code the rows by state: green for `fresh`,
+amber for `stale` / `fetching`, red for `error`. The page background
+of your devtools panel can use `rgba(99,102,241,0.06)` for an
+unobtrusive contrast.
+
 ## Notes
 
 - **The query key shape matters.** TanStack Query JSON-stringifies the

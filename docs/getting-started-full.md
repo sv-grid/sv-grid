@@ -426,6 +426,19 @@ back into the grid via `ctx.table`.
 Once their features are registered (see §5) the UI affordances appear
 automatically. The state is controllable.
 
+**Quick way - capability shortcuts.** Every capability is off by default;
+the fastest way to opt in is a boolean shortcut prop, no feature constants
+required. `sortable` and `filterable` inject the matching feature for you;
+`editable`, `groupable`, and `pageable` alias `enableInlineEditing`,
+`showGroupingControls`, and `showPagination`:
+
+```svelte
+<SvGrid data={rows} columns={columns} sortable filterable editable groupable pageable />
+```
+
+Reach for the explicit `features` set + fine-grained props below when you
+need more control (filter mode, page size, per-column opt-outs).
+
 ### Uncontrolled (the default)
 
 The wrapper owns sort, filter, pagination, selection, and expansion

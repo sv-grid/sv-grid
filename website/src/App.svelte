@@ -17,12 +17,15 @@
   import AiPrompts from './routes/AiPrompts.svelte'
   import Roadmap from './routes/Roadmap.svelte'
   import LogoLab from './routes/LogoLab.svelte'
-  import { applyRouteSeo, applyDocSeo, applyDemoSeo, applyCompareSeo } from './lib/seo'
+  import Blog from './routes/Blog.svelte'
+  import ThemeBuilder from './routes/ThemeBuilder.svelte'
+  import { applyRouteSeo, applyDocSeo, applyDemoSeo, applyCompareSeo, applyBlogSeo } from './lib/seo'
   import { initAnalytics, trackPageview, funnel } from './lib/analytics'
   import { router } from './lib/router.svelte'
   import { findDoc } from './lib/docs'
   import { findDemo } from './lib/demos'
   import { findComparison } from './lib/comparisons'
+  import { findPost } from './lib/blog'
 
   // History-based routing gives every page a real, individually-indexable URL
   // (e.g. /sv-grid/docs/help/columns/column-definitions). The router module
@@ -75,7 +78,8 @@
   // so the grids (which paint their own --sg-bg) are never tinted.
   const MARKETING = new Set([
     '', 'pricing', 'about', 'faq', 'contact', 'privacy', 'terms',
-    'roadmap', 'compare', 'ai-prompts', 'mcp', 'logo-lab',
+    'roadmap', 'compare', 'ai-prompts', 'mcp', 'logo-lab', 'blog',
+    'theme-builder',
   ])
   const isMarketing = $derived(MARKETING.has(route.section))
   // App-shell routes lock the layout to the viewport: the nav + content
@@ -99,6 +103,10 @@
     } else if (section === 'compare' && rest) {
       const cmp = findComparison(rest)
       if (cmp) applyCompareSeo(cmp)
+      else applyRouteSeo(section)
+    } else if (section === 'blog' && rest) {
+      const post = findPost(rest)
+      if (post) applyBlogSeo(post)
       else applyRouteSeo(section)
     } else {
       applyRouteSeo(section)
@@ -148,8 +156,12 @@
       <AiPrompts />
     {:else if route.section === 'roadmap'}
       <Roadmap />
+    {:else if route.section === 'blog'}
+      <Blog slug={route.rest} />
     {:else if route.section === 'logo-lab'}
       <LogoLab />
+    {:else if route.section === 'theme-builder'}
+      <ThemeBuilder />
     {:else}
       <section class="mx-auto max-w-3xl px-6 py-24 text-center">
         <h1 class="text-3xl font-bold">Page not found</h1>

@@ -64,6 +64,16 @@ the [gallery](https://svgrid.com/#/demos).
 ### Framework interop
 - [Use SvGrid from React (custom-element bridge)](./use-svgrid-from-react.md)
 
+### Developer recipes
+- [Build your own feature plugin](./build-a-feature-plugin.md) - extend `tableFeatures()` with a row-accent or audit hook
+- [Cell renderer patterns](./cell-renderer-patterns.md) - string / fn / `renderSnippet` / `renderComponent`
+- [Custom filter functions](./custom-filter-functions.md) - semver, CIDR, fuzzy, regex
+- [Form library bridge](./form-library-bridge.md) - drive grid edits from Felte / Superforms / native `<form>`
+- [Testing your grid](./testing-your-grid.md) - Vitest unit, @testing-library/svelte, Playwright E2E
+- [Profiling with a FPS HUD](./profiling-with-fps-hud.md) - live FPS + frame budget + DOM row count
+- [Benchmark harness](./benchmark-harness.md) - measure paint time across (rows × cols) on your machine
+- [Grid state inspector](./grid-state-inspector.md) - dev-only side panel polling every public api reader
+
 ## See also
 
 - [Help topic pages](../help/index.md) - the conceptual story behind each recipe

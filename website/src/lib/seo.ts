@@ -74,12 +74,26 @@ const ROUTES: Record<string, RouteSeo> = {
     keywords: ['mcp server', 'sv-grid mcp', 'svelte ai integration', 'claude desktop mcp', 'model context protocol'],
     path: '/mcp',
   },
+  'theme-builder': {
+    title: 'Theme Builder - Match SvGrid to Your Brand',
+    description:
+      'Enterprise-ready theme builder for SvGrid. Pick a brand color or load a preset, derive the whole palette via HSL math, preview light + dark side-by-side, check WCAG contrast, and export CSS / SCSS / JSON / Tailwind config. Persists locally; shareable URL.',
+    keywords: ['sv-grid theme builder', 'svelte data grid theming', 'data grid brand theme', 'svelte grid colors', 'svgrid theme generator', 'data grid wcag contrast'],
+    path: '/theme-builder',
+  },
   pricing: {
     title: 'Pricing - SvGrid Community (Free) + sv-grid-pro (Single / Multi App License)',
     description:
       'SvGrid Community is free under the MIT License for commercial use. sv-grid-pro is a paid companion, per developer: Single Application Developer License $599 or Multiple Application Developer License $999 - a perpetual license + 1 year of updates and support that renews automatically (cancel anytime). Adds Excel, PDF, CSV, TSV, HTML export and Print, pivot, AI, plus direct support.',
     keywords: ['svelte grid pricing', 'sv-grid license', 'sv-grid-pro license', 'single application developer license', 'multiple application developer license', 'svelte table commercial license'],
     path: '/pricing',
+  },
+  blog: {
+    title: 'Blog - SvGrid Tips, Guides, and Svelte Data Grid Tutorials',
+    description:
+      'Practical tips and tutorials for building data grids in Svelte 5 with SvGrid: sorting, Excel-style filters, virtualization for 100k rows, inline editing, grouping, server-side data, theming, accessibility, and real-time updates.',
+    keywords: ['svelte data grid tutorial', 'svelte grid tips', 'sv-grid blog', 'svelte 5 table guide', 'svelte data grid how-to'],
+    path: '/blog',
   },
   roadmap: {
     title: 'Roadmap - What SvGrid Is Building Next',
@@ -510,4 +524,85 @@ export function applyCompareSeo(cmp: SeoComparison) {
     })
   }
   ensureJsonLd('graph').textContent = JSON.stringify(graph)
+}
+
+// Structural shape for a blog post - no import cycle with blog.ts.
+export type SeoBlogPost = {
+  slug: string
+  title: string
+  description: string
+  date: string
+  category: string
+  tags: string[]
+  author: string
+}
+
+/**
+ * Per-blog-post SEO for /blog/<slug>. Each post is an indexable article with
+ * its own title, description, canonical, OpenGraph/Twitter, and a BlogPosting +
+ * BreadcrumbList graph. These tip pages target long-tail "how to X in a Svelte
+ * data grid" queries and feed AI retrieval.
+ */
+export function applyBlogSeo(post: SeoBlogPost) {
+  if (typeof document === 'undefined') return
+  const homepage = `${SITE_ORIGIN}${SITE_PATH_PREFIX}/`
+  const url = `${homepage}blog/${post.slug}`
+  const title = `${post.title} - SvGrid Blog`
+  const description = post.description
+  // Per-post hero/social card generated at build time (see prerender-site.mjs).
+  // A PNG raster is emitted alongside the SVG and preferred here because image
+  // search and many social/AI crawlers favor raster over SVG.
+  const image = `${SITE_ORIGIN}${SITE_PATH_PREFIX}/og/blog/${post.slug}.png`
+
+  document.title = title
+  ensureMeta('name', 'description').content = description
+  ensureMeta('name', 'keywords').content = [
+    ...post.tags, post.category.toLowerCase(), 'svelte data grid', 'sv-grid', 'svelte 5',
+  ].join(', ')
+  ensureLink('canonical').href = url
+
+  ensureLink('alternate').setAttribute('type', 'text/plain')
+  ensureLink('alternate').setAttribute('title', 'llms.txt - AI ingest')
+  const llmsLink = document.head.querySelector<HTMLLinkElement>('link[rel="alternate"][type="text/plain"]')
+  if (llmsLink) llmsLink.href = `${homepage}llms.txt`
+
+  ensureMeta('property', 'og:type').content = 'article'
+  ensureMeta('property', 'og:site_name').content = 'SvGrid'
+  ensureMeta('property', 'og:title').content = title
+  ensureMeta('property', 'og:description').content = description
+  ensureMeta('property', 'og:url').content = url
+  ensureMeta('property', 'og:image').content = image
+  ensureMeta('name', 'twitter:card').content = 'summary_large_image'
+  ensureMeta('name', 'twitter:title').content = title
+  ensureMeta('name', 'twitter:description').content = description
+  ensureMeta('name', 'twitter:image').content = image
+
+  ensureJsonLd('graph').textContent = JSON.stringify([
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      description,
+      url,
+      image: [image],
+      datePublished: post.date,
+      dateModified: post.date,
+      inLanguage: 'en',
+      keywords: post.tags.join(', '),
+      articleSection: post.category,
+      author: { '@type': 'Organization', name: post.author },
+      publisher: { '@type': 'Organization', name: 'jQWidgets', url: 'https://www.jqwidgets.com' },
+      isPartOf: { '@type': 'Blog', name: 'SvGrid Blog', url: `${homepage}blog` },
+      about: { '@type': 'SoftwareApplication', name: 'SvGrid', applicationCategory: 'DeveloperApplication' },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'SvGrid', item: homepage },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${homepage}blog` },
+        { '@type': 'ListItem', position: 3, name: post.title, item: url },
+      ],
+    },
+  ])
 }

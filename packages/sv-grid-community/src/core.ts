@@ -1,4 +1,6 @@
-﻿export type RowData = Record<string, unknown>
+﻿import type { SparklineConfig } from './sparkline'
+
+export type RowData = Record<string, unknown>
 export type Updater<T> = T | ((prev: T) => T)
 export type SortingState = Array<{ id: string; desc: boolean }>
 export type ColumnFilter = { id: string; value: unknown; fn?: keyof typeof filterFns }
@@ -187,6 +189,19 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   editorSeparator?: string
   format?: CellFormatConfig
   formatter?: CellFormatter<TData>
+  /**
+   * Render the cell as an in-cell sparkline chart. The cell value should be
+   * an array of numbers (or a comma/space separated string). Mutually
+   * exclusive with a custom `cell` renderer (a `cell` wins if both are set).
+   *
+   *   { sparkline: { type: 'line' } }                 // default line
+   *   { sparkline: { type: 'bar', color: '#16a34a' } }
+   *   { sparkline: { type: 'winloss' } }              // sign-only up/down
+   *
+   * See `SparklineConfig` for the full option set (type, color,
+   * negativeColor, width, height, fixed min/max).
+   */
+  sparkline?: SparklineConfig
   /** Initial column width in pixels. Falls back to the grid's `columnWidth` prop. */
   width?: number
   /**

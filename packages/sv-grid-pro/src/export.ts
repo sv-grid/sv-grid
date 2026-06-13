@@ -111,6 +111,21 @@ export type ExportOptions<TData> = {
    * for inline icons.
    */
   imageSize?: { width: number; height: number }
+  /**
+   * Group flat rows by one or more field names. The exporter wraps each
+   * group in an Excel outline row (with the +/- expand button), and
+   * emits a `<value> <field>` group header above every cluster. Maps
+   * straight to Smart DataExporter's constructor `groupBy` arg. xlsx
+   * only; csv/tsv/html flatten the groups back out.
+   */
+  groupBy?: ReadonlyArray<string>
+  /**
+   * Mark rows as a hierarchical (tree) data source. Each row should
+   * declare its own children either via the `subRows` convention or by
+   * matching the parent/child shape Smart expects on the input rows.
+   * Mutually exclusive with `groupBy`. xlsx only.
+   */
+  hierarchical?: boolean
 }
 
 let exporterCtorPromise: Promise<
@@ -377,6 +392,12 @@ function buildExporterOptions<TData>(
   }
   const style = translateStyles(opts.styles)
   if (style) out.style = style
+  // Smart's xlsx writer emits Excel-native row outlining when
+  // `hierarchical: true` is set on the constructor options OR when the
+  // second constructor arg is a non-empty groupBy array. We thread
+  // hierarchical through here and groupBy through the constructor call
+  // site in exportGrid.
+  if (opts.hierarchical) out.hierarchical = true
   return out
 }
 
@@ -479,7 +500,13 @@ export async function exportGrid<
     throw new Error('sv-grid-pro: nothing to export - the grid has no rows')
   }
   const datafields = Object.keys(rows[0]!)
-  const exporter = new Ctor(buildExporterOptions(opts))
+  // The constructor's SECOND arg is `groupBy`: when non-empty AND
+  // `hierarchical` is NOT set, Smart wraps each group of rows in an
+  // Excel outline row with an expand/collapse button at the group key.
+  const groupBy = !opts.hierarchical && opts.groupBy && opts.groupBy.length > 0
+    ? opts.groupBy
+    : undefined
+  const exporter = new Ctor(buildExporterOptions(opts), groupBy)
   applyInstanceOptions(exporter, opts, datafields)
   exporter.exportData(rows, opts.format, filename)
 }

@@ -40,6 +40,38 @@ need the headless pipeline directly - say, a custom renderer - drop
 down to `createSvGrid` from the same package. See
 [Why headless?](../why-headless.md).
 
+## Capability shortcuts (the quick way)
+
+Every capability is **off by default** - a bare `<SvGrid>` is a plain,
+read-only table. The fastest way to opt in is a set of boolean shortcut
+props. No `tableFeatures({ … })` import, no feature constants:
+
+```svelte
+<SvGrid
+  data={rows}
+  columns={columns}
+  sortable
+  filterable
+  editable
+  groupable
+  pageable
+/>
+```
+
+| Shortcut     | Turns on                                         | Equivalent to                              |
+| ------------ | ------------------------------------------------ | ------------------------------------------ |
+| `sortable`   | Click headers to sort                            | injects `rowSortingFeature`                |
+| `filterable` | Per-column filter menu                           | injects `columnFilteringFeature`           |
+| `editable`   | Inline cell editing (needs `editorType` columns) | `enableInlineEditing`                      |
+| `groupable`  | "Group by this column" in the column menu        | `showGroupingControls`                     |
+| `pageable`   | Pagination footer                                | `showPagination`                           |
+
+Each shortcut is an override: omit it (or set `false`) to leave the
+capability off; set it `true` to opt in. They compose with the
+fine-grained props and the `features` set below - reach for those when
+you need finer control (e.g. `filterMode`, `pageSize`, per-column
+`sortable: false`). See the live [Shortcut config](https://sv-grid.com/demos/135-shortcut-config) demo.
+
 ## The feature catalogue
 
 | Feature                  | What it enables                                           | Doc                                                |

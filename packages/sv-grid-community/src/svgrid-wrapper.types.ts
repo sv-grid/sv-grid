@@ -311,7 +311,27 @@ export type SvGridWrapperProps<
 > = {
   data: ReadonlyArray<TData>
   columns: Array<ColumnDef<TFeatures, TData>>
-  features: TFeatures
+  /**
+   * Feature set from `tableFeatures({ ... })`. Optional - the `sortable` /
+   * `filterable` / `groupable` shortcuts inject the matching feature, so a
+   * grid can be configured from the boolean shortcuts alone.
+   */
+  features?: TFeatures
+  /**
+   * Capability shortcuts. Every capability is OFF by default (a bare grid is
+   * a plain read-only table); set a shortcut `true` to opt in.
+   *
+   *   `sortable`   - column sorting    (injects `rowSortingFeature`)
+   *   `filterable` - column filtering  (injects `columnFilteringFeature`)
+   *   `editable`   - inline editing    (alias of `enableInlineEditing`)
+   *   `groupable`  - grouping controls (alias of `showGroupingControls`)
+   *   `pageable`   - pagination footer (alias of `showPagination`)
+   */
+  sortable?: boolean
+  filterable?: boolean
+  editable?: boolean
+  groupable?: boolean
+  pageable?: boolean
   options?: Partial<SvGridOptions<TFeatures, TData>>
   loading?: boolean
   error?: string | null

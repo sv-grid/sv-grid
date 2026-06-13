@@ -27,6 +27,7 @@
     "vite": "^8.0.10"
   },
   "dependencies": {
+    "ag-grid-community": "^35.3.1",
     "chart.js": "^4.5.1",
     "smart-webcomponents": "^26.0.0"
   }
