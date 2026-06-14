@@ -5,6 +5,7 @@ date: 2026-06-12
 category: Company
 tags: company, jqxgrid, history, svelte data grid, reactivity, story
 author: SvGrid Team
+pinned: true
 ---
 
 Every few years someone announces a new data grid, and the reasonable reaction is a sigh: does the world really need another one? It is a fair question. There are dozens of good grids. We have built some of them.

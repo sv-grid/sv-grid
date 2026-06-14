@@ -13,13 +13,42 @@ export type BlogPost = {
   description: string
   /** ISO date string, e.g. "2026-06-09". */
   date: string
+  /** Fine-grained category from frontmatter (e.g. "Sorting"). */
   category: string
+  /** Top-level group used for the index filter (e.g. "Tutorials"). */
+  group: string
   tags: string[]
   author: string
+  /** Featured at the top of the blog index, above the dated list. */
+  pinned: boolean
   /** Raw markdown body (frontmatter stripped). */
   markdown: string
   /** Estimated reading time in minutes, derived from word count. */
   readingMinutes: number
+}
+
+// The blog has ~20 fine-grained per-post categories, which is too many for a
+// usable filter bar. We roll them up into a small set of top-level groups for
+// navigation, in this display order. The post keeps its specific category too.
+export const BLOG_GROUPS = ['Tutorials', 'Compare', 'Performance', 'Engineering', 'Guides', 'AI', 'Pro', 'Company'] as const
+export type BlogGroup = (typeof BLOG_GROUPS)[number]
+
+const CATEGORY_TO_GROUP: Record<string, BlogGroup> = {
+  'Getting started': 'Tutorials',
+  Sorting: 'Tutorials', Filtering: 'Tutorials', Editing: 'Tutorials', Grouping: 'Tutorials',
+  Selection: 'Tutorials', Columns: 'Tutorials', Cells: 'Tutorials', Rows: 'Tutorials',
+  Formatting: 'Tutorials', Data: 'Tutorials', 'Use cases': 'Tutorials',
+  Comparisons: 'Compare',
+  Performance: 'Performance',
+  Engineering: 'Engineering', Architecture: 'Engineering',
+  Accessibility: 'Guides', Theming: 'Guides', Integration: 'Guides', Concepts: 'Guides', Reference: 'Guides',
+  AI: 'AI',
+  Pro: 'Pro', Export: 'Pro', Product: 'Pro',
+  Company: 'Company',
+}
+
+function groupOf(category: string): BlogGroup {
+  return CATEGORY_TO_GROUP[category] ?? 'Guides'
 }
 
 // Eagerly import every post as a raw string. The keys are file paths like
@@ -69,24 +98,37 @@ function slugFromPath(path: string): string {
   return path.replace(/^.*\//, '').replace(/\.md$/, '')
 }
 
+// Scheduled publishing: a post is live only once its `date` has arrived. Posts
+// dated in the future are hidden from the index, related lists, and direct
+// lookup, so we can queue a backlog and release one per day (see
+// tools/schedule-blog.mjs + the daily deploy cron). The prerenderer applies the
+// same gate at build time, so future posts are not in the static HTML/sitemap.
+const TODAY = new Date().toISOString().slice(0, 10)
+const isPublished = (dateISO: string): boolean => dateISO <= TODAY
+
 export const blogPosts: BlogPost[] = Object.entries(files)
   .map(([path, raw]) => {
     const { meta, body } = parse(raw)
+    const category = meta.category ?? 'General'
     return {
       slug: slugFromPath(path),
       title: meta.title ?? slugFromPath(path),
       description: meta.description ?? '',
       date: meta.date ?? '1970-01-01',
-      category: meta.category ?? 'General',
+      category,
+      group: groupOf(category),
       tags: (meta.tags ?? '')
         .split(',')
         .map((t) => t.trim())
         .filter(Boolean),
       author: meta.author ?? 'SvGrid Team',
+      pinned: meta.pinned === 'true',
       markdown: body,
       readingMinutes: readingTime(body),
     } satisfies BlogPost
   })
+  // Hide posts whose publish date has not arrived yet.
+  .filter((p) => isPublished(p.date))
   // Newest first.
   .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
 
@@ -100,6 +142,17 @@ export function blogCategories(): string[] {
   const seen: string[] = []
   for (const p of blogPosts) if (!seen.includes(p.category)) seen.push(p.category)
   return seen
+}
+
+/** Pinned posts, featured above the dated list on the index. Newest first. */
+export const pinnedPosts: BlogPost[] = blogPosts.filter((p) => p.pinned)
+
+/** Top-level groups that actually have posts, with counts - for the filter bar. */
+export function blogGroups(): { group: BlogGroup; count: number }[] {
+  return BLOG_GROUPS.map((group) => ({
+    group,
+    count: blogPosts.filter((p) => p.group === group).length,
+  })).filter((g) => g.count > 0)
 }
 
 /** Human-readable date, e.g. "June 9, 2026". */

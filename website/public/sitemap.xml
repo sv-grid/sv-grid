@@ -2,189 +2,333 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://svgrid.com/</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/docs</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/api</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/blog</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/roadmap</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/mcp</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/ai-prompts</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/pricing</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/faq</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/about</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/contact</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/tanstack-table</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/svelte-headless-table</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/ag-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/mui-x-datagrid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/handsontable</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/glide-data-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/svar-svelte-datagrid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/vincjo-datatables</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/svelte-ui-kit-tables</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/tabulator</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/gridjs</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/react-data-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/primevue-datatable</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/kendo-ui-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/devextreme-datagrid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/syncfusion-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/jqxgrid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://svgrid.com/compare/smart-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/best-svelte-data-grids-2026</loc>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/server-side-data-and-the-headless-core</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/sticky-summary-footer-row</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-5-is-here</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-convex</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-drizzle-orm</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-firebase-firestore</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-flowbite-svelte</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-graphql</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-in-astro</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-laravel-inertia</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-pocketbase</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-prisma</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-rest-api</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-shadcn-svelte</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-skeleton-ui</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-tauri-desktop</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svelte-data-grid-trpc</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/svgrid-in-storybook</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/sync-grid-state-to-url</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/testing-svgrid-with-playwright</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/testing-svgrid-with-vitest</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/the-idea-a-native-svelte-grid</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/blog/theming-svgrid-with-tailwind</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://svgrid.com/blog/why-the-world-needed-another-grid</loc>
@@ -421,78 +565,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/blog/going-ai-native-the-mcp-server</loc>
-    <lastmod>2025-11-04</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/server-side-data-and-the-headless-core</loc>
-    <lastmod>2025-10-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/building-the-theming-system</loc>
-    <lastmod>2025-09-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/accessibility-from-the-ground-up</loc>
-    <lastmod>2025-08-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/building-grouping-trees-master-detail</loc>
-    <lastmod>2025-07-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/building-the-editing-engine</loc>
-    <lastmod>2025-06-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/how-we-built-excel-style-filters</loc>
-    <lastmod>2025-05-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/building-the-sort-pipeline</loc>
-    <lastmod>2025-04-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/first-light-100000-rows</loc>
-    <lastmod>2025-03-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/day-one-building-svgrid</loc>
-    <lastmod>2025-01-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/the-idea-a-native-svelte-grid</loc>
-    <lastmod>2024-11-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/blog/svelte-5-is-here</loc>
-    <lastmod>2024-10-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://svgrid.com/docs/changelog</loc>
     <lastmod>2026-06-11</lastmod>
     <changefreq>weekly</changefreq>
@@ -542,7 +614,7 @@
   </url>
   <url>
     <loc>https://svgrid.com/docs/getting-started/4-features</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -572,7 +644,7 @@
   </url>
   <url>
     <loc>https://svgrid.com/docs/getting-started</loc>
-    <lastmod>2026-06-11</lastmod>
+    <lastmod>2026-06-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -649,6 +721,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://svgrid.com/docs/help/cells/conditional-formatting</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://svgrid.com/docs/help/cells/expressions</loc>
     <lastmod>2026-06-08</lastmod>
     <changefreq>weekly</changefreq>
@@ -663,6 +741,12 @@
   <url>
     <loc>https://svgrid.com/docs/help/cells/highlighting-changes</loc>
     <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/docs/help/cells/sparklines</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -687,6 +771,18 @@
   <url>
     <loc>https://svgrid.com/docs/help/cells/view-refresh</loc>
     <lastmod>2026-06-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/docs/help/charts</loc>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/docs/help/collaboration</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -741,6 +837,12 @@
   <url>
     <loc>https://svgrid.com/docs/help/columns/custom-header-components</loc>
     <lastmod>2026-06-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/docs/help/columns/tool-panel</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -897,6 +999,12 @@
   <url>
     <loc>https://svgrid.com/docs/help/glossary</loc>
     <lastmod>2026-06-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/docs/help/grouping/aggregators</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -1141,6 +1249,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://svgrid.com/docs/help/rows/transactions</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://svgrid.com/docs/help/rows/tree-rows</loc>
     <lastmod>2026-06-05</lastmod>
     <changefreq>weekly</changefreq>
@@ -1159,6 +1273,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://svgrid.com/docs/help/server/server-row-model</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://svgrid.com/docs/help/server-side-data</loc>
     <lastmod>2026-06-08</lastmod>
     <changefreq>weekly</changefreq>
@@ -1171,8 +1291,20 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://svgrid.com/docs/help/state/named-views</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://svgrid.com/docs/help/state-maintenance</loc>
     <lastmod>2026-06-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/docs/help/status-bar</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -1574,775 +1706,841 @@
   </url>
   <url>
     <loc>https://svgrid.com/demos/00-trading-desk</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/01-quick-start</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/135-shortcut-config</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/22-admin-template</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/06-large-dataset</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/78-million-rows</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/80-cell-types-showcase</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/05-inline-editing</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/84-editor-types</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/26-list-chips-editors</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/66-custom-cell-editors</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/68-dependent-dropdowns</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/24-validation</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/71-submit-validation</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/82-conditional-form-schema</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/18-cascade-editing</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/86-undo-redo</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/95-fill-handle</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/103-async-validation</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/02-sort-filter-paginate</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/03-excel-filters</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/64-filter-between-operator</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/69-highlighted-search</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/87-find-in-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/110-locale-aware-filter</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/111-set-filter-advanced</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/98-advanced-filter-builder</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/99-top-n-filter</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/07-grouping-aggregation</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/142-group-aggregators</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/89-group-panel</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/36-reporting-workspace</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/04-selection-copy-paste</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/90-selection-api</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/144-status-bar</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/118-range-selection</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/23-bulk-actions</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/67-context-menu</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/25-column-pinning</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/54-columns-hierarchy</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/63-column-layout-api</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/146-tool-panel</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/104-column-reorder</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/109-column-reorder-engine</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/10-custom-cells-and-themes</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/140-sparkline-cells</loc>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/141-conditional-formatting</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/62-conditional-styling</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/85-tooltips-and-notes</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/55-state-maintenance</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/143-named-views</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/94-conditional-formatting</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/105-row-reorder</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/107-pinned-rows</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/108-pinned-rows-engine</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/28-org-chart-tree</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/29-wbs-project-tree</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/30-bom-tree</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/31-lazy-tree-load</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/08-tree-and-master-detail</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/102-tree-checkbox-cascade</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/40-forms-master-detail</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/70-multi-grid-sync</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/97-side-drawer-edit</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/106-detail-rows</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/09-server-side</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/33-server-infinite</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/148-server-row-model</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/72-graphql-adapter</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/79-loading-from-rest</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/113-cursor-pagination</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/114-server-grouping</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/115-optimistic-updates</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/116-websocket-live-updates</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/117-bulk-operations</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/118-live-dashboard</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/11-stock-market</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/14-industrial</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/20-industrial-dashboard</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/34-realtime-orders</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/149-realtime-collaboration</loc>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/145-transaction-api</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/73-chartjs-sync</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/demos/147-integrated-charts</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/27-spreadsheet-ribbon</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/83-spreadsheet-formulas</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/37-theming-studio</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/74-theme-integrations</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/17-accessibility</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/65-keyboard-shortcuts</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/81-mobile-card-view</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/15-localization</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/38-rtl-i18n</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/16-csp-compliant</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/19-ssr</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/77-smart-chart</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/139-migration-from-ag-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/12-hr-team</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/13-finances</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/32-manufacturing-ops</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/35-permissions-audit</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/39-print-board-export</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/41-healthcare-emr</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/42-logistics-fleet</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/43-compliance-queue</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/44-field-service</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/45-gantt-chart</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/46-scheduler</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/47-trash-truck-timeline</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/48-crm-sales-pipeline</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/49-admin-dashboard</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/50-seller-panel</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/76-kanban-board</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/53-excel-import</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/88-staged-editing</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/51-ai-assistant</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/75-ai-smart-paste</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/92-nl-filter-bar</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/96-high-contrast-theme</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/100-anomaly-highlights</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/112-barcode-cells</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/120-test-systems-monitor</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/91-cell-comments</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/52-pivot-table</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/60-pivot-expandable</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/121-pivot-conditional-cells</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/122-pivot-drill-through</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/123-pivot-totals</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/124-pivot-olap</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/125-pivot-charts</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/21-export-and-print</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/56-export-theme-matched</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/57-export-header-footer-logo</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/58-export-with-images</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/59-export-multi-sheet</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/119-workbook-multi-sheet</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/93-password-protected-export</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/101-formulas-in-xlsx</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/126-export-grouped-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://svgrid.com/demos/127-export-pivot-grid</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>

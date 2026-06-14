@@ -1,7 +1,7 @@
 ---
 title: How We Built Excel-Style Filters
 description: Designing SvGrid's filtering: type-aware operators, the menu vs row UI, and keeping in-memory filtering fast enough to feel instant.
-date: 2026-06-13
+date: 2026-07-20
 category: Engineering
 tags: filtering, excel filters, engineering, story
 author: SvGrid Team

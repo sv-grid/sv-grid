@@ -27,37 +27,57 @@
   } from 'sv-grid-community'
   import { onMount } from 'svelte'
 
-  // ---- Preview dataset -----------------------------------------------
-  type Subscription = {
+  // ---- Preview dataset (data-agnostic placeholder) -------------------
+  /** Generic preview shape: text, category, count, amount, date,
+   *  status - the column variety a typical grid renders. Nothing here
+   *  leaks into the exported theme; this exists only to populate the
+   *  live preview so designers can judge contrast + density. */
+  type PreviewRow = {
     id: string
-    customer: string
-    plan: 'Free' | 'Pro' | 'Team' | 'Enterprise'
-    mrr: number
-    seats: number
-    renewal: string
-    status: 'Active' | 'Trialing' | 'Past due' | 'Churned'
+    label: string
+    category: 'Type A' | 'Type B' | 'Type C' | 'Type D'
+    count: number
+    amount: number
+    date: string
+    status: 'Active' | 'Pending' | 'Review' | 'Closed'
   }
-  const rows: Subscription[] = [
-    { id: 'SUB-001', customer: 'Acme',     plan: 'Enterprise', mrr: 12400, seats: 240, renewal: '2026-08-14', status: 'Active' },
-    { id: 'SUB-002', customer: 'Globex',   plan: 'Team',       mrr:  4200, seats: 48,  renewal: '2026-07-02', status: 'Active' },
-    { id: 'SUB-003', customer: 'Initech',  plan: 'Pro',        mrr:   190, seats: 5,   renewal: '2026-06-21', status: 'Trialing' },
-    { id: 'SUB-004', customer: 'Umbrella', plan: 'Enterprise', mrr: 19800, seats: 412, renewal: '2026-09-30', status: 'Active' },
-    { id: 'SUB-005', customer: 'Vandelay', plan: 'Team',       mrr:  3650, seats: 36,  renewal: '2026-08-08', status: 'Past due' },
-    { id: 'SUB-006', customer: 'Pied P.',  plan: 'Pro',        mrr:   260, seats: 8,   renewal: '2026-07-19', status: 'Active' },
-    { id: 'SUB-007', customer: 'Hooli',    plan: 'Enterprise', mrr: 28100, seats: 720, renewal: '2026-12-01', status: 'Active' },
-    { id: 'SUB-008', customer: 'Wonka',    plan: 'Team',       mrr:  2900, seats: 28,  renewal: '2026-06-30', status: 'Active' },
-    { id: 'SUB-009', customer: 'Tyrell',   plan: 'Pro',        mrr:   120, seats: 3,   renewal: '2026-06-15', status: 'Churned' },
-    { id: 'SUB-010', customer: 'Stark',    plan: 'Enterprise', mrr: 17600, seats: 320, renewal: '2026-11-22', status: 'Active' },
+  // Procedural NATO-phonetic dataset. Enough rows to overflow the viewport
+  // so the vertical scrollbar is always visible in the preview.
+  const PHONETIC = [
+    'alpha','bravo','charlie','delta','echo','foxtrot','golf','hotel',
+    'india','juliet','kilo','lima','mike','november','oscar','papa',
+    'quebec','romeo','sierra','tango','uniform','victor','whiskey','xray',
+    'yankee','zulu',
   ]
+  const CATEGORIES: PreviewRow['category'][] = ['Type A','Type B','Type C','Type D']
+  const STATUSES:   PreviewRow['status'][]   = ['Active','Pending','Review','Closed']
+  const rows: PreviewRow[] = Array.from({ length: 80 }, (_, i) => {
+    const word = PHONETIC[i % PHONETIC.length]!
+    // Deterministic pseudo-random so values stay stable across re-renders.
+    const seed = (i + 1) * 9301 + 49297
+    const r1 = (seed % 233280) / 233280
+    const r2 = ((seed * 1664525 + 1013904223) % 4096) / 4096
+    const day = ((i * 7) % 28) + 1
+    const month = ((i * 3) % 12) + 1
+    return {
+      id:       'R-' + String(i + 1).padStart(3, '0'),
+      label:    'Item ' + word + (i >= PHONETIC.length ? ' ' + (Math.floor(i / PHONETIC.length) + 1) : ''),
+      category: CATEGORIES[i % CATEGORIES.length]!,
+      count:    Math.round(r1 * 950 + 5),
+      amount:   Math.round(r2 * 48000 + 200),
+      date:     '2026-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0'),
+      status:   STATUSES[i % STATUSES.length]!,
+    }
+  })
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-  const columns: ColumnDef<typeof features, Subscription>[] = [
-    { field: 'id',       header: 'ID',       width: 90  },
-    { field: 'customer', header: 'Customer', width: 140 },
-    { field: 'plan',     header: 'Plan',     width: 110 },
-    { field: 'mrr',      header: 'MRR',      width: 110, align: 'right',
-      format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },
-    { field: 'seats',    header: 'Seats',    width: 80, align: 'right' },
-    { field: 'renewal',  header: 'Renewal',  width: 110, format: { type: 'date', pattern: 'y-m-d' } },
+  const columns: ColumnDef<typeof features, PreviewRow>[] = [
+    { field: 'id',       header: 'ID',       width: 80  },
+    { field: 'label',    header: 'Label',    width: 150 },
+    { field: 'category', header: 'Category', width: 110 },
+    { field: 'count',    header: 'Count',    width: 90, align: 'right' },
+    { field: 'amount',   header: 'Amount',   width: 110, align: 'right',
+      format: { type: 'number', options: { maximumFractionDigits: 0 } } },
+    { field: 'date',     header: 'Date',     width: 110, format: { type: 'date', pattern: 'y-m-d' } },
     { field: 'status',   header: 'Status',   width: 110 },
   ]
 
@@ -186,6 +206,7 @@
     headerFontSize: 12,
     headerDividerStyle: 'none' as 'none' | 'solid' | 'dashed' | 'dotted',
     headerDividerWidth: 1,
+    headerBorderColor: '',       // divider + bottom-border tint (blank = global border token)
     headerBottomBorderWidth: 1,
     headerShadow: false,
     // Column-level styling
@@ -196,7 +217,40 @@
     firstColWeight: 600,
     altColumns: false,
     altColumnBg: '#f8fafc',
-    rightAlignNumeric: true,
+    // Body-cell (column) color overrides - empty = inherit surface tokens
+    colBg: '',
+    colFg: '',
+    colBorder: '',
+    // ---- Header state tokens (Handsontable-style) ------------------
+    // Base inherits headerBg/headerFg from token system.
+    // Empty value = inherit / no override applied.
+    headerHoverFg: '',
+    headerHoverBg: '',
+    headerHoverShadowSize: 4,    // px - drop shadow under hovered cell
+    headerActiveFg: '',          // sorted column header
+    headerActiveBg: '',
+    headerActiveBorderColor: '',
+    headerFilterBg: '',          // column with active filter
+    // ---- Cell border state tokens ----------------------------------
+    horizontalBorderColor: '',   // body row border-bottom (horizontal)
+    verticalBorderColor: '',     // body cell border-right (vertical)
+    selectionBorderColor: '',    // selected cell ring
+    // ---- Cell state colors -----------------------------------------
+    successBg: '',               // .success cell class
+    errorBg: '',                 // .error cell class
+    readOnlyBg: '',              // .readonly cell class
+    // ---- Editor styling --------------------------------------------
+    editorBorderWidth: 1,
+    editorBorderColor: '',
+    editorFg: '',
+    editorBg: '',
+    editorShadowBlur: 12,
+    editorShadowColor: '',
+    // ---- Scrollbar styling -----------------------------------------
+    scrollRadius: 8,
+    scrollTrack: '',
+    scrollThumb: '',
+    scrollArrow: '',             // arrow glyph color on scrollbar buttons
     zebra: true,
     tokenMode: 'auto' as 'auto' | 'manual',
   }
@@ -222,6 +276,7 @@
   let headerFontSize = $state<number>(DEFAULTS.headerFontSize)
   let headerDividerStyle = $state<'none' | 'solid' | 'dashed' | 'dotted'>(DEFAULTS.headerDividerStyle)
   let headerDividerWidth = $state<number>(DEFAULTS.headerDividerWidth)
+  let headerBorderColor  = $state<string>(DEFAULTS.headerBorderColor)
   let headerBottomBorderWidth = $state<number>(DEFAULTS.headerBottomBorderWidth)
   let headerShadow = $state<boolean>(DEFAULTS.headerShadow)
   let colDividerStyle = $state<'none' | 'solid' | 'dashed' | 'dotted'>(DEFAULTS.colDividerStyle)
@@ -231,7 +286,37 @@
   let firstColWeight = $state<number>(DEFAULTS.firstColWeight)
   let altColumns = $state<boolean>(DEFAULTS.altColumns)
   let altColumnBg = $state<string>(DEFAULTS.altColumnBg)
-  let rightAlignNumeric = $state<boolean>(DEFAULTS.rightAlignNumeric)
+  let colBg = $state<string>(DEFAULTS.colBg)
+  let colFg = $state<string>(DEFAULTS.colFg)
+  let colBorder = $state<string>(DEFAULTS.colBorder)
+  // Header state tokens
+  let headerHoverFg = $state<string>(DEFAULTS.headerHoverFg)
+  let headerHoverBg = $state<string>(DEFAULTS.headerHoverBg)
+  let headerHoverShadowSize = $state<number>(DEFAULTS.headerHoverShadowSize)
+  let headerActiveFg = $state<string>(DEFAULTS.headerActiveFg)
+  let headerActiveBg = $state<string>(DEFAULTS.headerActiveBg)
+  let headerActiveBorderColor = $state<string>(DEFAULTS.headerActiveBorderColor)
+  let headerFilterBg = $state<string>(DEFAULTS.headerFilterBg)
+  // Cell border state
+  let horizontalBorderColor = $state<string>(DEFAULTS.horizontalBorderColor)
+  let verticalBorderColor = $state<string>(DEFAULTS.verticalBorderColor)
+  let selectionBorderColor = $state<string>(DEFAULTS.selectionBorderColor)
+  // Cell state colors
+  let successBg = $state<string>(DEFAULTS.successBg)
+  let errorBg = $state<string>(DEFAULTS.errorBg)
+  let readOnlyBg = $state<string>(DEFAULTS.readOnlyBg)
+  // Editor
+  let editorBorderWidth = $state<number>(DEFAULTS.editorBorderWidth)
+  let editorBorderColor = $state<string>(DEFAULTS.editorBorderColor)
+  let editorFg = $state<string>(DEFAULTS.editorFg)
+  let editorBg = $state<string>(DEFAULTS.editorBg)
+  let editorShadowBlur = $state<number>(DEFAULTS.editorShadowBlur)
+  let editorShadowColor = $state<string>(DEFAULTS.editorShadowColor)
+  // Scrollbar
+  let scrollRadius = $state<number>(DEFAULTS.scrollRadius)
+  let scrollTrack = $state<string>(DEFAULTS.scrollTrack)
+  let scrollThumb = $state<string>(DEFAULTS.scrollThumb)
+  let scrollArrow = $state<string>(DEFAULTS.scrollArrow)
   let zebra    = $state<boolean>(DEFAULTS.zebra)
   let tokenMode = $state<'auto' | 'manual'>(DEFAULTS.tokenMode)
   let activePreset = $state<string | null>(null)
@@ -342,6 +427,7 @@
     headerFontSize = DEFAULTS.headerFontSize
     headerDividerStyle = DEFAULTS.headerDividerStyle
     headerDividerWidth = DEFAULTS.headerDividerWidth
+    headerBorderColor  = DEFAULTS.headerBorderColor
     headerBottomBorderWidth = DEFAULTS.headerBottomBorderWidth
     headerShadow = DEFAULTS.headerShadow
     colDividerStyle = DEFAULTS.colDividerStyle
@@ -351,7 +437,32 @@
     firstColWeight = DEFAULTS.firstColWeight
     altColumns = DEFAULTS.altColumns
     altColumnBg = DEFAULTS.altColumnBg
-    rightAlignNumeric = DEFAULTS.rightAlignNumeric
+    colBg = DEFAULTS.colBg
+    colFg = DEFAULTS.colFg
+    colBorder = DEFAULTS.colBorder
+    headerHoverFg = DEFAULTS.headerHoverFg
+    headerHoverBg = DEFAULTS.headerHoverBg
+    headerHoverShadowSize = DEFAULTS.headerHoverShadowSize
+    headerActiveFg = DEFAULTS.headerActiveFg
+    headerActiveBg = DEFAULTS.headerActiveBg
+    headerActiveBorderColor = DEFAULTS.headerActiveBorderColor
+    headerFilterBg = DEFAULTS.headerFilterBg
+    horizontalBorderColor = DEFAULTS.horizontalBorderColor
+    verticalBorderColor = DEFAULTS.verticalBorderColor
+    selectionBorderColor = DEFAULTS.selectionBorderColor
+    successBg = DEFAULTS.successBg
+    errorBg = DEFAULTS.errorBg
+    readOnlyBg = DEFAULTS.readOnlyBg
+    editorBorderWidth = DEFAULTS.editorBorderWidth
+    editorBorderColor = DEFAULTS.editorBorderColor
+    editorFg = DEFAULTS.editorFg
+    editorBg = DEFAULTS.editorBg
+    editorShadowBlur = DEFAULTS.editorShadowBlur
+    editorShadowColor = DEFAULTS.editorShadowColor
+    scrollRadius = DEFAULTS.scrollRadius
+    scrollTrack = DEFAULTS.scrollTrack
+    scrollThumb = DEFAULTS.scrollThumb
+    scrollArrow = DEFAULTS.scrollArrow
     zebra = DEFAULTS.zebra
     tokenMode = DEFAULTS.tokenMode
     overrides = {}
@@ -557,8 +668,42 @@ module.exports = {
     headerFontSize: number;
     headerDividerStyle: 'none' | 'solid' | 'dashed' | 'dotted';
     headerDividerWidth: number;
+    headerBorderColor: string;
     headerBottomBorderWidth: number;
     headerShadow: boolean;
+    colDividerStyle: 'none' | 'solid' | 'dashed' | 'dotted';
+    colDividerWidth: number;
+    firstColEmphasis: boolean;
+    firstColBg: string;
+    firstColWeight: number;
+    altColumns: boolean;
+    altColumnBg: string;
+    colBg: string;
+    colFg: string;
+    colBorder: string;
+    headerHoverFg: string;
+    headerHoverBg: string;
+    headerHoverShadowSize: number;
+    headerActiveFg: string;
+    headerActiveBg: string;
+    headerActiveBorderColor: string;
+    headerFilterBg: string;
+    horizontalBorderColor: string;
+    verticalBorderColor: string;
+    selectionBorderColor: string;
+    successBg: string;
+    errorBg: string;
+    readOnlyBg: string;
+    editorBorderWidth: number;
+    editorBorderColor: string;
+    editorFg: string;
+    editorBg: string;
+    editorShadowBlur: number;
+    editorShadowColor: string;
+    scrollRadius: number;
+    scrollTrack: string;
+    scrollThumb: string;
+    scrollArrow: string;
     zebra: boolean; tokenMode: 'auto' | 'manual';
     overrides: Overrides;
   }
@@ -570,7 +715,17 @@ module.exports = {
       borderStyle, borderWidth,
       font, bodyFontSize, bodyFontWeight, headerFontWeight, headerTransform, headerLetterSpacing,
       headerAlign, headerPaddingX, headerFontSize,
-      headerDividerStyle, headerDividerWidth, headerBottomBorderWidth, headerShadow,
+      headerDividerStyle, headerDividerWidth, headerBorderColor, headerBottomBorderWidth, headerShadow,
+      colDividerStyle, colDividerWidth,
+      firstColEmphasis, firstColBg, firstColWeight,
+      altColumns, altColumnBg,
+      colBg, colFg, colBorder,
+      headerHoverFg, headerHoverBg, headerHoverShadowSize,
+      headerActiveFg, headerActiveBg, headerActiveBorderColor, headerFilterBg,
+      horizontalBorderColor, verticalBorderColor, selectionBorderColor,
+      successBg, errorBg, readOnlyBg,
+      editorBorderWidth, editorBorderColor, editorFg, editorBg, editorShadowBlur, editorShadowColor,
+      scrollRadius, scrollTrack, scrollThumb, scrollArrow,
       zebra, tokenMode, overrides,
     }
   }
@@ -595,8 +750,42 @@ module.exports = {
     headerFontSize   = s.headerFontSize ?? DEFAULTS.headerFontSize
     headerDividerStyle = s.headerDividerStyle ?? DEFAULTS.headerDividerStyle
     headerDividerWidth = s.headerDividerWidth ?? DEFAULTS.headerDividerWidth
+    headerBorderColor  = s.headerBorderColor  ?? DEFAULTS.headerBorderColor
     headerBottomBorderWidth = s.headerBottomBorderWidth ?? DEFAULTS.headerBottomBorderWidth
     headerShadow     = s.headerShadow ?? DEFAULTS.headerShadow
+    colDividerStyle  = s.colDividerStyle ?? DEFAULTS.colDividerStyle
+    colDividerWidth  = s.colDividerWidth ?? DEFAULTS.colDividerWidth
+    firstColEmphasis = s.firstColEmphasis ?? DEFAULTS.firstColEmphasis
+    firstColBg       = s.firstColBg ?? DEFAULTS.firstColBg
+    firstColWeight   = s.firstColWeight ?? DEFAULTS.firstColWeight
+    altColumns       = s.altColumns ?? DEFAULTS.altColumns
+    altColumnBg      = s.altColumnBg ?? DEFAULTS.altColumnBg
+    colBg            = s.colBg ?? DEFAULTS.colBg
+    colFg            = s.colFg ?? DEFAULTS.colFg
+    colBorder        = s.colBorder ?? DEFAULTS.colBorder
+    headerHoverFg    = s.headerHoverFg ?? DEFAULTS.headerHoverFg
+    headerHoverBg    = s.headerHoverBg ?? DEFAULTS.headerHoverBg
+    headerHoverShadowSize = s.headerHoverShadowSize ?? DEFAULTS.headerHoverShadowSize
+    headerActiveFg   = s.headerActiveFg ?? DEFAULTS.headerActiveFg
+    headerActiveBg   = s.headerActiveBg ?? DEFAULTS.headerActiveBg
+    headerActiveBorderColor = s.headerActiveBorderColor ?? DEFAULTS.headerActiveBorderColor
+    headerFilterBg   = s.headerFilterBg ?? DEFAULTS.headerFilterBg
+    horizontalBorderColor = s.horizontalBorderColor ?? DEFAULTS.horizontalBorderColor
+    verticalBorderColor   = s.verticalBorderColor ?? DEFAULTS.verticalBorderColor
+    selectionBorderColor  = s.selectionBorderColor ?? DEFAULTS.selectionBorderColor
+    successBg        = s.successBg ?? DEFAULTS.successBg
+    errorBg          = s.errorBg ?? DEFAULTS.errorBg
+    readOnlyBg       = s.readOnlyBg ?? DEFAULTS.readOnlyBg
+    editorBorderWidth = s.editorBorderWidth ?? DEFAULTS.editorBorderWidth
+    editorBorderColor = s.editorBorderColor ?? DEFAULTS.editorBorderColor
+    editorFg         = s.editorFg ?? DEFAULTS.editorFg
+    editorBg         = s.editorBg ?? DEFAULTS.editorBg
+    editorShadowBlur = s.editorShadowBlur ?? DEFAULTS.editorShadowBlur
+    editorShadowColor = s.editorShadowColor ?? DEFAULTS.editorShadowColor
+    scrollRadius     = s.scrollRadius ?? DEFAULTS.scrollRadius
+    scrollTrack      = s.scrollTrack ?? DEFAULTS.scrollTrack
+    scrollThumb      = s.scrollThumb ?? DEFAULTS.scrollThumb
+    scrollArrow      = s.scrollArrow ?? DEFAULTS.scrollArrow
     zebra            = s.zebra ?? DEFAULTS.zebra
     tokenMode        = s.tokenMode ?? DEFAULTS.tokenMode
     overrides        = s.overrides ?? {}
@@ -718,20 +907,74 @@ module.exports = {
   $effect(() => {
     if (!styleEl) return
     const ls = (headerLetterSpacing / 100).toFixed(2)
-    const headerDivider = headerDividerStyle === 'none'
+    const borderTint = headerBorderColor || activeTokens.border
+    // "none" + non-zero width still wins as "0 wins" - normalise width to 0
+    // when style is none so an unset slider doesn't silently eat the bottom
+    // border below it.
+    const dividerStyle = headerDividerStyle
+    const dividerWidth = dividerStyle === 'none' ? 0 : Math.max(headerDividerWidth, 1)
+    const headerDivider = dividerStyle === 'none'
       ? 'none'
-      : headerDividerWidth + 'px ' + headerDividerStyle + ' ' + activeTokens.border
+      : dividerWidth + 'px ' + dividerStyle + ' ' + borderTint
     const headerBottom = headerBottomBorderWidth === 0
       ? 'none'
-      : headerBottomBorderWidth + 'px solid ' + activeTokens.border
+      : headerBottomBorderWidth + 'px solid ' + borderTint
     const headerShadowCss = headerShadow ? '0 2px 6px rgba(0,0,0,0.10)' : 'none'
     // String-concat builds CSS - template literals with literal {}
     // confuse the svelte preprocessor.
     const parts: string[] = []
+    // ---- Body cells: paint background + text directly ---------------
+    // SvGrid hardcodes `.sv-grid-cell { background: #fff }` so the
+    // --sg-bg variable never reaches a body cell. We override here so the
+    // user's bg/fg picks actually take effect on every non-special cell.
     parts.push('.tb-live-instance .sv-grid-cell ')
     parts.push('{ padding: ' + cellPaddingY + 'px ' + cellPaddingX + 'px !important; ')
     parts.push('font-size: ' + bodyFontSize + 'px; ')
-    parts.push('font-weight: ' + bodyFontWeight + '; }')
+    parts.push('font-weight: ' + bodyFontWeight + '; ')
+    parts.push('background: ' + activeTokens.bg + ' !important; ')
+    parts.push('color: ' + activeTokens.fg + ' !important; }')
+
+    // ---- Row state cascade -----------------------------------------
+    // Every rule below uses `.sv-grid-table` in the chain to land at
+    // specificity (0,5,0) - higher than the website's global zebra rule
+    // `.sv-grid-table tbody tr:nth-child(even) .sv-grid-cell` (0,4,2),
+    // and all equal to each other so source order decides between them:
+    // alt -> hover -> selected.
+    parts.push(' .tb-live-instance .sv-grid-table .sv-grid-row:nth-child(even) > .sv-grid-cell ')
+    parts.push('{ background: ' + activeTokens.rowAlt + ' !important; }')
+
+    parts.push(' .tb-live-instance .sv-grid-table .sv-grid-row:hover > .sv-grid-cell ')
+    parts.push('{ background: ' + activeTokens.rowHover + ' !important; ')
+    parts.push('color: ' + activeTokens.rowHoverFg + ' !important; }')
+
+    // Selection MUST come after alt + hover so it wins at equal
+    // specificity. The grid library hardcodes selected-row bg to
+    // #eaf2ff; this override paints the brand selection color.
+    // Three flavours of selection live here:
+    //   1. .sv-grid-row-selected  - whole row selection (checkbox / row mode)
+    //   2. [data-selected-range]  - cell range (shift-click / drag)
+    //   3. .sv-grid-cell-active   - the keyboard-focused single cell
+    parts.push(' .tb-live-instance .sv-grid-table .sv-grid-row.sv-grid-row-selected > .sv-grid-cell, ')
+    parts.push(' .tb-live-instance .sv-grid-table .sv-grid-row > .sv-grid-cell[data-selected-range="true"], ')
+    parts.push(' .tb-live-instance .sv-grid-table .sv-grid-row > .sv-grid-cell.sv-grid-cell-active ')
+    parts.push('{ background: ' + activeTokens.selectionBg + ' !important; ')
+    parts.push('color: ' + activeTokens.selectionFg + ' !important; }')
+
+    // ---- Status bar (footer) -------------------------------------
+    // The status bar uses --sg-header-bg as background which we already
+    // override above, but the text color falls through to --sg-fg and
+    // the border defaults to --sg-border, so re-bind here for clarity.
+    parts.push(' .tb-live-instance .sv-grid-status-bar ')
+    parts.push('{ background: ' + activeTokens.headerBg + ' !important; ')
+    parts.push('color: ' + activeTokens.fg + ' !important; ')
+    parts.push('border-color: ' + activeTokens.border + ' !important; }')
+
+    // ---- Resize handle accent ------------------------------------
+    // Hardcoded `rgba(11, 99, 243, 0.3)` in the library - rebind to the
+    // brand accent so the column-resize affordance matches.
+    parts.push(' .tb-live-instance .sv-grid-resize-handle:hover, ')
+    parts.push(' .tb-live-instance .sv-grid-resize-handle.is-resizing ')
+    parts.push('{ background: ' + activeTokens.accent + ' !important; }')
     parts.push(' .tb-live-instance .sv-grid-header-cell ')
     parts.push('{ font-weight: ' + headerFontWeight + ' !important; ')
     parts.push('text-transform: ' + headerTransform + ' !important; ')
@@ -741,29 +984,226 @@ module.exports = {
     parts.push('padding: 0 ' + headerPaddingX + 'px !important; ')
     parts.push('font-size: ' + headerFontSize + 'px !important; ')
     parts.push('justify-content: ' + (headerAlign === 'left' ? 'flex-start' : headerAlign === 'right' ? 'flex-end' : 'center') + ' !important; ')
-    parts.push('text-align: ' + headerAlign + ' !important; ')
-    parts.push('border-right: ' + headerDivider + ' !important; }')
-    parts.push(' .tb-live-instance .sv-grid-header-cell:last-child { border-right: none !important; }')
-    parts.push(' .tb-live-instance .sv-grid-thead ')
+    parts.push('text-align: ' + headerAlign + ' !important; }')
+    // Vertical divider lives on the <th> itself (.sv-grid-column) so it
+    // spans the full column height and aligns flush with the cell edges.
+    parts.push(' .tb-live-instance .sv-grid-header-row > .sv-grid-column ')
+    parts.push('{ border-right: ' + headerDivider + ' !important; }')
+    parts.push(' .tb-live-instance .sv-grid-header-row > .sv-grid-column:last-child { border-right: none !important; }')
+    parts.push(' .tb-live-instance .sv-grid-head ')
     parts.push('{ min-height: ' + headerHeight + 'px; ')
-    parts.push('border-bottom: ' + headerBottom + ' !important; ')
+    // SvGrid hardcodes the head background to #f5f7fb and ignores
+    // --sg-header-bg there - so we paint it explicitly. Same for the
+    // text color: there is no --sg-header-fg consumer in SvGrid at all.
+    parts.push('background: ' + activeTokens.headerBg + ' !important; ')
+    parts.push('color: ' + activeTokens.headerFg + ' !important; ')
     parts.push('box-shadow: ' + headerShadowCss + '; }')
-    parts.push(' .tb-live-instance .sv-grid-header-label { text-align: ' + headerAlign + ' !important; width: 100%; }')
+    // Each <th> needs the same background or sticky/hover states from the
+    // grid library can paint over the thead. Inner div carries the color
+    // so text inheritance reaches .sv-grid-header-label.
+    parts.push(' .tb-live-instance .sv-grid-header-row > .sv-grid-column ')
+    parts.push('{ background: ' + activeTokens.headerBg + ' !important; ')
+    parts.push('color: ' + activeTokens.headerFg + ' !important; }')
+    parts.push(' .tb-live-instance .sv-grid-header-row .sv-grid-header-cell ')
+    parts.push('{ color: ' + activeTokens.headerFg + ' !important; }')
+    // Paint the bottom border on the <th> itself (.sv-grid-column inside
+    // .sv-grid-header-row). The inner .sv-grid-header-cell div sits within
+    // the cell's padding so its border stops short of the column edges
+    // and looks fragmented.
+    parts.push(' .tb-live-instance .sv-grid-header-row > .sv-grid-column ')
+    parts.push('{ border-bottom: ' + headerBottom + ' !important; }')
+    parts.push(' .tb-live-instance .sv-grid-header-label ')
+    parts.push('{ text-align: ' + headerAlign + ' !important; ')
+    parts.push('text-transform: ' + headerTransform + ' !important; ')
+    parts.push('letter-spacing: ' + ls + 'em !important; ')
+    parts.push('font-weight: ' + headerFontWeight + ' !important; ')
+    parts.push('width: 100%; }')
+
+    // ---- Column-level rules ----------------------------------------
+    // Body cell background + text overrides (apply per-column body colors).
+    if (colBg || colFg) {
+      parts.push(' .tb-live-instance .sv-grid-row > .sv-grid-cell ')
+      parts.push('{ ')
+      if (colBg) parts.push('background: ' + colBg + ' !important; ')
+      if (colFg) parts.push('color: ' + colFg + ' !important; ')
+      parts.push('}')
+    }
+    // Vertical body divider between cells (parallel to header divider).
+    if (colDividerStyle !== 'none' && colDividerWidth > 0) {
+      const dividerColor = colBorder || activeTokens.border
+      parts.push(' .tb-live-instance .sv-grid-row > .sv-grid-cell ')
+      parts.push('{ border-right: ' + colDividerWidth + 'px ' + colDividerStyle + ' ' + dividerColor + ' !important; }')
+      parts.push(' .tb-live-instance .sv-grid-row > .sv-grid-cell:last-child { border-right: none !important; }')
+    }
+    // First-column emphasis - bold text + tinted bg.
+    if (firstColEmphasis) {
+      parts.push(' .tb-live-instance .sv-grid-row > .sv-grid-cell:first-child ')
+      parts.push('{ background: ' + firstColBg + ' !important; ')
+      parts.push('font-weight: ' + firstColWeight + ' !important; }')
+    }
+    // Alternating columns (zebra by column index, every 2nd cell).
+    if (altColumns) {
+      parts.push(' .tb-live-instance .sv-grid-row > .sv-grid-cell:nth-child(even) ')
+      parts.push('{ background: ' + altColumnBg + ' !important; }')
+    }
+
+
+    // ---- Header state: highlighted (hover) -------------------------
+    if (headerHoverBg || headerHoverFg || headerHoverShadowSize > 0) {
+      parts.push(' .tb-live-instance .sv-grid-header-cell:hover ')
+      parts.push('{ ')
+      if (headerHoverBg) parts.push('background: ' + headerHoverBg + ' !important; ')
+      if (headerHoverFg) parts.push('color: ' + headerHoverFg + ' !important; ')
+      if (headerHoverShadowSize > 0) parts.push('box-shadow: 0 0 0 ' + headerHoverShadowSize + 'px ' + (headerHoverBg || activeTokens.accent) + ' inset; ')
+      parts.push('}')
+    }
+    // ---- Header state: active (sorted column) ----------------------
+    if (headerActiveBg || headerActiveFg || headerActiveBorderColor) {
+      parts.push(' .tb-live-instance .sv-grid-header-cell[aria-sort="ascending"], ')
+      parts.push(' .tb-live-instance .sv-grid-header-cell[aria-sort="descending"] ')
+      parts.push('{ ')
+      if (headerActiveBg) parts.push('background: ' + headerActiveBg + ' !important; ')
+      if (headerActiveFg) parts.push('color: ' + headerActiveFg + ' !important; ')
+      if (headerActiveBorderColor) parts.push('border-bottom-color: ' + headerActiveBorderColor + ' !important; ')
+      parts.push('}')
+    }
+    // ---- Header state: filtered column ----------------------------
+    if (headerFilterBg) {
+      parts.push(' .tb-live-instance .sv-grid-header-cell.is-filtered, ')
+      parts.push(' .tb-live-instance .sv-grid-header-cell:has(.sv-grid-col-filter-btn.is-active) ')
+      parts.push('{ background: ' + headerFilterBg + ' !important; }')
+    }
+
+    // ---- Cell borders (state-organized) ----------------------------
+    if (horizontalBorderColor) {
+      parts.push(' .tb-live-instance .sv-grid-row > .sv-grid-cell ')
+      parts.push('{ border-bottom-color: ' + horizontalBorderColor + ' !important; }')
+    }
+    if (verticalBorderColor) {
+      parts.push(' .tb-live-instance .sv-grid-row > .sv-grid-cell ')
+      parts.push('{ border-right-color: ' + verticalBorderColor + ' !important; }')
+    }
+    // The library hardcodes `.sv-grid-cell-active { box-shadow: inset 0 0 0
+    // 2px #0b63f3 }` so the ring stays blue regardless of brand. Always
+    // emit the override - default to the brand accent when the user hasn't
+    // picked a specific color so the ring at least matches the theme.
+    {
+      const ringColor = selectionBorderColor || activeTokens.accent
+      parts.push(' .tb-live-instance .sv-grid-cell-active, ')
+      parts.push(' .tb-live-instance .sv-grid-cell-editing ')
+      parts.push('{ box-shadow: inset 0 0 0 2px ' + ringColor + ' !important; }')
+      // Range selection (shift-click / drag) draws its border from four
+      // hardcoded inset box-shadows on [data-range-top/bottom/left/right]
+      // cells (also #0b63f3). Re-define each per-edge custom property with
+      // the chosen ring color so the range outline follows the theme.
+      parts.push(' .tb-live-instance .sv-grid-cell[data-range-top="true"] ')
+      parts.push('{ --sv-range-top: inset 0 2px 0 ' + ringColor + ' !important; }')
+      parts.push(' .tb-live-instance .sv-grid-cell[data-range-bottom="true"] ')
+      parts.push('{ --sv-range-bottom: inset 0 -2px 0 ' + ringColor + ' !important; }')
+      parts.push(' .tb-live-instance .sv-grid-cell[data-range-left="true"] ')
+      parts.push('{ --sv-range-left: inset 2px 0 0 ' + ringColor + ' !important; }')
+      parts.push(' .tb-live-instance .sv-grid-cell[data-range-right="true"] ')
+      parts.push('{ --sv-range-right: inset -2px 0 0 ' + ringColor + ' !important; }')
+    }
+
+    // ---- Cell semantic states --------------------------------------
+    if (successBg) {
+      parts.push(' .tb-live-instance .sv-grid-cell.success ')
+      parts.push('{ background: ' + successBg + ' !important; }')
+    }
+    if (errorBg) {
+      parts.push(' .tb-live-instance .sv-grid-cell.error ')
+      parts.push('{ background: ' + errorBg + ' !important; }')
+    }
+    if (readOnlyBg) {
+      parts.push(' .tb-live-instance .sv-grid-cell.readonly, ')
+      parts.push(' .tb-live-instance .sv-grid-cell[aria-readonly="true"] ')
+      parts.push('{ background: ' + readOnlyBg + ' !important; }')
+    }
+
+    // ---- Editor (in-cell edit state) -------------------------------
+    if (editorBg || editorFg || editorBorderColor || editorShadowColor) {
+      const editorShadow = editorShadowColor
+        ? '0 0 ' + editorShadowBlur + 'px ' + editorShadowColor
+        : 'none'
+      parts.push(' .tb-live-instance .sv-grid-cell-editor ')
+      parts.push('{ ')
+      if (editorBg) parts.push('background: ' + editorBg + ' !important; ')
+      if (editorFg) parts.push('color: ' + editorFg + ' !important; ')
+      if (editorBorderColor) parts.push('border: ' + editorBorderWidth + 'px solid ' + editorBorderColor + ' !important; ')
+      if (editorShadowColor) parts.push('box-shadow: ' + editorShadow + ' !important; ')
+      parts.push('}')
+    }
+
+    // ---- Scrollbar -------------------------------------------------
+    // SvGrid replaces native scrollbars with a custom <sv-grid-scrollbar>
+    // web component (shadow DOM). It exposes --sg-scrollbar-bg /
+    // --sg-scrollbar-thumb / --sg-scrollbar-thumb-radius as CSS variables
+    // we can set on the wrapping element to recolor.
+    if (scrollTrack || scrollThumb || scrollArrow || scrollRadius !== 8) {
+      parts.push(' .tb-live-instance { ')
+      if (scrollTrack) parts.push('--sg-scrollbar-bg: ' + scrollTrack + '; ')
+      if (scrollThumb) {
+        parts.push('--sg-scrollbar-thumb: ' + scrollThumb + '; ')
+        parts.push('--sg-scrollbar-thumb-hover: ' + scrollThumb + '; ')
+        parts.push('--sg-scrollbar-thumb-active: ' + scrollThumb + '; ')
+      }
+      if (scrollArrow) {
+        parts.push('--sg-scrollbar-arrow: ' + scrollArrow + '; ')
+        parts.push('--sg-scrollbar-arrow-hover: ' + scrollArrow + '; ')
+        parts.push('--sg-scrollbar-arrow-active: ' + scrollArrow + '; ')
+        // Disabled = the arrow at the end of scroll travel (up arrow at
+        // top, down arrow at bottom). Without this it kept the default
+        // gray and the user only ever saw the OTHER arrow recolor.
+        parts.push('--sg-scrollbar-arrow-disabled: ' + scrollArrow + '; ')
+      }
+      parts.push('--sg-scrollbar-thumb-radius: ' + scrollRadius + 'px; ')
+      parts.push('}')
+    }
+
     styleEl.textContent = parts.join('')
   })
 
   // ---- Tabbed controls ----------------------------------------------
-  type Tab = 'brand' | 'header' | 'body' | 'rows' | 'cells' | 'pinned' | 'type'
-  const TABS: Array<{ id: Tab; label: string; desc: string }> = [
-    { id: 'brand',  label: 'Brand',   desc: 'Color & mode' },
-    { id: 'header', label: 'Header',  desc: 'Column-header styling' },
-    { id: 'body',   label: 'Body',    desc: 'Rows, cells, padding' },
-    { id: 'rows',   label: 'States',  desc: 'Hover, selected, focus' },
-    { id: 'cells',  label: 'Borders', desc: 'Border style + radius' },
-    { id: 'pinned', label: 'Pinned',  desc: 'Pinned-column tokens' },
-    { id: 'type',   label: 'Type',    desc: 'Font family' },
+  type Tab = 'brand' | 'header' | 'body' | 'rows' | 'cells' | 'pinned' | 'scrollbar' | 'type'
+  /** Each tab carries an inline SVG path for the sidebar icon (24×24 viewBox). */
+  const TABS: Array<{ id: Tab; label: string; desc: string; icon: string }> = [
+    { id: 'brand',     label: 'Brand',     desc: 'Color & mode',            icon: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 6"/>' },
+    { id: 'header',    label: 'Header',    desc: 'Column-header styling',   icon: '<rect x="3" y="4" width="18" height="6" rx="1"/><line x1="3" y1="13" x2="21" y2="13"/><line x1="3" y1="17" x2="21" y2="17"/><line x1="3" y1="21" x2="21" y2="21"/>' },
+    { id: 'body',      label: 'Body',      desc: 'Rows, cells, padding',    icon: '<rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/>' },
+    { id: 'rows',      label: 'States',    desc: 'Hover, selected, focus',  icon: '<path d="M12 21l-9-9 4-4 5 5 9-9"/>' },
+    { id: 'cells',     label: 'Cells',     desc: 'Padding, border, editor', icon: '<rect x="3" y="3" width="18" height="18" rx="4"/>' },
+    { id: 'pinned',    label: 'Pinned',    desc: 'Pinned-column tokens',    icon: '<path d="M16 4l4 4-6 6 2 6-3-1-7 7-1-1 7-7-1-3z"/>' },
+    { id: 'scrollbar', label: 'Scrollbar', desc: 'Track, thumb, radius',    icon: '<rect x="9" y="3" width="6" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/>' },
+    { id: 'type',      label: 'Type',      desc: 'Font family',             icon: '<path d="M5 4h14v3h-5v13h-4V7H5z"/>' },
   ]
   let activeTab = $state<Tab>('brand')
+
+  // ---- Sub-section groups (Handsontable-style collapsibles) ----------
+  /** Each tab panel breaks down into named GROUPS (Colors, Padding,
+   *  Border, State, ...). We track open/closed per group-key so the
+   *  user can drill into the specific concern they want to tweak. */
+  let openGroups = $state<Set<string>>(new Set([
+    // Default-open: the first 1-2 groups of each tab.
+    // Header leads with the full Base/Highlighted/Active/Filter taxonomy so
+    // the column-header sub-states are visible without hunting.
+    'header.base', 'header.highlighted', 'header.active', 'header.filter',
+    'body.density', 'body.cell',
+    'rows.alt', 'rows.hover', 'rows.selection', 'rows.focus',
+    'cells.padding', 'cells.border',
+    'pinned.colors',
+  ]))
+  /** Sync openGroups to the native <details> open state.
+   *  We pass the post-toggle open value from the event target rather than
+   *  blindly flipping — this guards against any re-entrant toggle that
+   *  could otherwise oscillate the group state. */
+  function syncGroup(key: string, isOpen: boolean) {
+    const has = openGroups.has(key)
+    if (isOpen === has) return
+    const next = new Set(openGroups)
+    if (isOpen) next.add(key); else next.delete(key)
+    openGroups = next
+  }
 
   // ---- Right-rail sub-tabs (Export vs WCAG) -------------------------
   type RailTab = 'export' | 'wcag'
@@ -810,10 +1250,6 @@ module.exports = {
   )
   const failingCount = $derived(activeScores.filter((s) => s.level === 'Fail').length)
 </script>
-
-<svelte:head>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" />
-</svelte:head>
 
 <section class="tb-page px-4 py-4">
   <header class="tb-page-head">
@@ -896,9 +1332,18 @@ module.exports = {
             class="tb-sidenav-link"
             class:active={activeTab === t.id}
             onclick={() => (activeTab = t.id)}
+            title={t.desc}
           >
-            <span class="tb-sidenav-label">{t.label}</span>
-            <span class="tb-sidenav-desc">{t.desc}</span>
+            <span class="tb-sidenav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                {@html t.icon}
+              </svg>
+            </span>
+            <span class="tb-sidenav-textbox">
+              <span class="tb-sidenav-label">{t.label}</span>
+              <span class="tb-sidenav-desc">{t.desc}</span>
+            </span>
+            <span class="tb-sidenav-arrow" aria-hidden="true">›</span>
           </button>
         {/each}
       </nav>
@@ -945,184 +1390,437 @@ module.exports = {
       {/if}
 
       {#if activeTab === 'header'}
-        <div class="tb-panel">
-          <div class="tb-field-row">
-            <label class="tb-field-label">Header colors</label>
-          </div>
-          {#each ['headerBg', 'headerFg', 'accent'] as k (k)}
-            <div class="tb-token">
-              <input type="color" value={activeTokens[k as keyof Tokens].slice(0, 7)}
-                aria-label={`${k} color`}
-                oninput={(e) => smartOverride(k as keyof Tokens, (e.target as HTMLInputElement).value)} />
-              <span class="tb-token-name">{TOKEN_LABEL[k as keyof Tokens]}</span>
-              <code class="tb-token-key">{k}</code>
-              <code class="tb-token-val">{activeTokens[k as keyof Tokens]}</code>
+        <div class="tb-panel tb-panel-grouped">
+
+          <!-- BASE -->
+          <details class="tb-group" open={openGroups.has('header.base')} ontoggle={(e) => syncGroup('header.base', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Base</span><span class="tb-group-hint">font weight · foreground · background</span></summary>
+            <div class="tb-group-body">
+              <label class="tb-slider"><span>Font weight</span>
+                <select bind:value={headerFontWeight} onchange={onUserEdit}>
+                  <option value={400}>400 regular</option>
+                  <option value={500}>500 medium</option>
+                  <option value={600}>600 semibold</option>
+                  <option value={700}>700 bold</option>
+                  <option value={800}>800 extra-bold</option>
+                </select>
+              </label>
+              <div class="tb-token">
+                <input type="color" value={activeTokens.headerFg.slice(0, 7)} aria-label="Header text"
+                  oninput={(e) => smartOverride('headerFg', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Foreground</span>
+                <code class="tb-token-key">headerFg</code>
+                <code class="tb-token-val">{activeTokens.headerFg}</code>
+              </div>
+              <div class="tb-token">
+                <input type="color" value={activeTokens.headerBg.slice(0, 7)} aria-label="Header background"
+                  oninput={(e) => smartOverride('headerBg', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Background</span>
+                <code class="tb-token-key">headerBg</code>
+                <code class="tb-token-val">{activeTokens.headerBg}</code>
+              </div>
             </div>
-          {/each}
+          </details>
 
-          <div class="tb-grid-2">
-            <label class="tb-slider">
-              <span>Height · <strong>{headerHeight}px</strong></span>
-              <input type="range" min="28" max="64" step="1" bind:value={headerHeight} oninput={onUserEdit} />
-            </label>
-            <label class="tb-slider">
-              <span>Padding · <strong>{headerPaddingX}px</strong></span>
-              <input type="range" min="2" max="32" step="1" bind:value={headerPaddingX} oninput={onUserEdit} />
-            </label>
-            <label class="tb-slider">
-              <span>Font size · <strong>{headerFontSize}px</strong></span>
-              <input type="range" min="10" max="18" step="1" bind:value={headerFontSize} oninput={onUserEdit} />
-            </label>
-            <label class="tb-slider">
-              <span>Letter-spacing · <strong>{(headerLetterSpacing / 100).toFixed(2)}em</strong></span>
-              <input type="range" min="0" max="20" step="1" bind:value={headerLetterSpacing} oninput={onUserEdit} />
-            </label>
-          </div>
+          <!-- HIGHLIGHTED (hover) -->
+          <details class="tb-group" open={openGroups.has('header.highlighted')} ontoggle={(e) => syncGroup('header.highlighted', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Highlighted</span><span class="tb-group-hint">shadow size · foreground · background</span></summary>
+            <div class="tb-group-body">
+              <label class="tb-slider"><span>Shadow size · <strong>{headerHoverShadowSize}px</strong></span><input type="range" min="0" max="12" step="1" bind:value={headerHoverShadowSize} oninput={onUserEdit} /></label>
+              <div class="tb-col-color">
+                <input type="color" value={headerHoverFg || activeTokens.headerFg.slice(0, 7)}
+                  oninput={(e) => { headerHoverFg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Hover header text" />
+                <span class="tb-col-color-label">Foreground</span>
+                <button type="button" class="tb-col-reset" title="Match base" disabled={!headerHoverFg} onclick={() => (headerHoverFg = '')}>↺</button>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={headerHoverBg || activeTokens.headerBg.slice(0, 7)}
+                  oninput={(e) => { headerHoverBg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Hover header background" />
+                <span class="tb-col-color-label">Background</span>
+                <button type="button" class="tb-col-reset" title="Match base" disabled={!headerHoverBg} onclick={() => (headerHoverBg = '')}>↺</button>
+              </div>
+            </div>
+          </details>
 
-          <div class="tb-field-row">
-            <label class="tb-field-label">Alignment</label>
-          </div>
-          <div class="tb-seg">
-            <button type="button" class:active={headerAlign === 'left'}   onclick={() => { headerAlign = 'left'; onUserEdit() }}>Left</button>
-            <button type="button" class:active={headerAlign === 'center'} onclick={() => { headerAlign = 'center'; onUserEdit() }}>Center</button>
-            <button type="button" class:active={headerAlign === 'right'}  onclick={() => { headerAlign = 'right'; onUserEdit() }}>Right</button>
-          </div>
+          <!-- ACTIVE (sorted) -->
+          <details class="tb-group" open={openGroups.has('header.active')} ontoggle={(e) => syncGroup('header.active', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Active</span><span class="tb-group-hint">border · foreground · background</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-col-color">
+                <input type="color" value={headerActiveBorderColor || activeTokens.accent.slice(0, 7)}
+                  oninput={(e) => { headerActiveBorderColor = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Active header border" />
+                <span class="tb-col-color-label">Border color</span>
+                <button type="button" class="tb-col-reset" title="Match accent" disabled={!headerActiveBorderColor} onclick={() => (headerActiveBorderColor = '')}>↺</button>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={headerActiveFg || activeTokens.headerFg.slice(0, 7)}
+                  oninput={(e) => { headerActiveFg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Active header text" />
+                <span class="tb-col-color-label">Foreground</span>
+                <button type="button" class="tb-col-reset" title="Match base" disabled={!headerActiveFg} onclick={() => (headerActiveFg = '')}>↺</button>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={headerActiveBg || activeTokens.headerBg.slice(0, 7)}
+                  oninput={(e) => { headerActiveBg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Active header background" />
+                <span class="tb-col-color-label">Background</span>
+                <button type="button" class="tb-col-reset" title="Match base" disabled={!headerActiveBg} onclick={() => (headerActiveBg = '')}>↺</button>
+              </div>
+            </div>
+          </details>
 
-          <div class="tb-grid-2">
-            <label class="tb-slider">
-              <span>Weight</span>
-              <select bind:value={headerFontWeight} onchange={onUserEdit}>
-                <option value={500}>500 medium</option>
-                <option value={600}>600 semibold</option>
-                <option value={700}>700 bold</option>
-                <option value={800}>800 extra-bold</option>
-              </select>
-            </label>
-            <label class="tb-slider">
-              <span>Text transform</span>
-              <select bind:value={headerTransform} onchange={onUserEdit}>
-                <option value="none">none</option>
-                <option value="uppercase">UPPERCASE</option>
-                <option value="capitalize">Capitalize</option>
-              </select>
-            </label>
-          </div>
+          <!-- FILTER -->
+          <details class="tb-group" open={openGroups.has('header.filter')} ontoggle={(e) => syncGroup('header.filter', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Filter</span><span class="tb-group-hint">column with active filter</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-col-color">
+                <input type="color" value={headerFilterBg || activeTokens.headerBg.slice(0, 7)}
+                  oninput={(e) => { headerFilterBg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Filter header background" />
+                <span class="tb-col-color-label">Background</span>
+                <button type="button" class="tb-col-reset" title="Match base" disabled={!headerFilterBg} onclick={() => (headerFilterBg = '')}>↺</button>
+              </div>
+            </div>
+          </details>
 
-          <div class="tb-field-row">
-            <label class="tb-field-label">Column divider</label>
-            <span class="tb-field-hint">vertical line between header cells</span>
-          </div>
-          <div class="tb-grid-2">
-            <label class="tb-slider">
-              <span>Style</span>
-              <select bind:value={headerDividerStyle} onchange={onUserEdit}>
-                <option value="none">none</option>
-                <option value="solid">solid</option>
-                <option value="dashed">dashed</option>
-                <option value="dotted">dotted</option>
-              </select>
-            </label>
-            <label class="tb-slider">
-              <span>Width · <strong>{headerDividerWidth}px</strong></span>
-              <input type="range" min="0" max="3" step="1" bind:value={headerDividerWidth} oninput={onUserEdit} />
-            </label>
-          </div>
+          <!-- Secondary: Layout / Typography / Border / Scroll (collapsed by default) -->
+          <details class="tb-group" open={openGroups.has('header.layout')} ontoggle={(e) => syncGroup('header.layout', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Layout</span><span class="tb-group-hint">height · padding · alignment</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-grid-2">
+                <label class="tb-slider"><span>Height · <strong>{headerHeight}px</strong></span><input type="range" min="28" max="64" step="1" bind:value={headerHeight} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Padding-X · <strong>{headerPaddingX}px</strong></span><input type="range" min="2" max="32" step="1" bind:value={headerPaddingX} oninput={onUserEdit} /></label>
+              </div>
+              <div class="tb-row-label"><span>Text alignment</span></div>
+              <div class="tb-seg">
+                <button type="button" class:active={headerAlign === 'left'}   onclick={() => { headerAlign = 'left'; onUserEdit() }}>Left</button>
+                <button type="button" class:active={headerAlign === 'center'} onclick={() => { headerAlign = 'center'; onUserEdit() }}>Center</button>
+                <button type="button" class:active={headerAlign === 'right'}  onclick={() => { headerAlign = 'right'; onUserEdit() }}>Right</button>
+              </div>
+            </div>
+          </details>
 
-          <div class="tb-grid-2">
-            <label class="tb-slider">
-              <span>Bottom border · <strong>{headerBottomBorderWidth}px</strong></span>
-              <input type="range" min="0" max="4" step="1" bind:value={headerBottomBorderWidth} oninput={onUserEdit} />
-            </label>
-            <label class="tb-toggle">
-              <input type="checkbox" bind:checked={headerShadow} onchange={onUserEdit} />
-              <span>Sticky shadow</span>
-            </label>
-          </div>
+          <details class="tb-group" open={openGroups.has('header.typography')} ontoggle={(e) => syncGroup('header.typography', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Typography</span><span class="tb-group-hint">size · letter-spacing · transform</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-grid-2">
+                <label class="tb-slider"><span>Font size · <strong>{headerFontSize}px</strong></span><input type="range" min="10" max="18" step="1" bind:value={headerFontSize} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Letter-spacing · <strong>{(headerLetterSpacing / 100).toFixed(2)}em</strong></span><input type="range" min="0" max="20" step="1" bind:value={headerLetterSpacing} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Text transform</span>
+                  <select bind:value={headerTransform} onchange={onUserEdit}>
+                    <option value="none">none</option>
+                    <option value="uppercase">UPPERCASE</option>
+                    <option value="capitalize">Capitalize</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="tb-group" open={openGroups.has('header.border')} ontoggle={(e) => syncGroup('header.border', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Border &amp; divider</span><span class="tb-group-hint">between cells · bottom border · color</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-grid-2">
+                <label class="tb-slider"><span>Divider style</span>
+                  <select bind:value={headerDividerStyle} onchange={onUserEdit}>
+                    <option value="none">none</option>
+                    <option value="solid">solid</option>
+                    <option value="dashed">dashed</option>
+                    <option value="dotted">dotted</option>
+                  </select>
+                </label>
+                <label class="tb-slider"><span>Divider width · <strong>{headerDividerWidth}px</strong></span><input type="range" min="1" max="3" step="1" bind:value={headerDividerWidth} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Bottom border · <strong>{headerBottomBorderWidth}px</strong></span><input type="range" min="0" max="4" step="1" bind:value={headerBottomBorderWidth} oninput={onUserEdit} /></label>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={headerBorderColor || activeTokens.border.slice(0, 7)}
+                  oninput={(e) => { headerBorderColor = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Header border color" />
+                <span class="tb-col-color-label">Border color</span>
+                <button type="button" class="tb-col-reset" title="Match global border" disabled={!headerBorderColor} onclick={() => (headerBorderColor = '')}>↺</button>
+              </div>
+            </div>
+          </details>
+
+          <details class="tb-group" open={openGroups.has('header.scroll')} ontoggle={(e) => syncGroup('header.scroll', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>On scroll</span><span class="tb-group-hint">sticky drop-shadow</span></summary>
+            <div class="tb-group-body">
+              <label class="tb-toggle"><input type="checkbox" bind:checked={headerShadow} onchange={onUserEdit} /><span>Drop shadow under header when scrolling</span></label>
+            </div>
+          </details>
+
         </div>
       {/if}
 
       {#if activeTab === 'body'}
-        <div class="tb-panel">
-          <div class="tb-grid-2">
-            <label class="tb-slider">
-              <span>Row height · <strong>{rowHeight}px</strong></span>
-              <input type="range" min="24" max="56" step="2" bind:value={rowHeight} oninput={onUserEdit} />
-            </label>
-            <label class="tb-slider">
-              <span>Body font size · <strong>{bodyFontSize}px</strong></span>
-              <input type="range" min="11" max="18" step="1" bind:value={bodyFontSize} oninput={onUserEdit} />
-            </label>
-            <label class="tb-slider">
-              <span>Body weight</span>
-              <select bind:value={bodyFontWeight} onchange={onUserEdit}>
-                <option value={400}>400 regular</option>
-                <option value={500}>500 medium</option>
-                <option value={600}>600 semibold</option>
-              </select>
-            </label>
-            <label class="tb-slider">
-              <span>Cell padding-X · <strong>{cellPaddingX}px</strong></span>
-              <input type="range" min="2" max="24" step="1" bind:value={cellPaddingX} oninput={onUserEdit} />
-            </label>
-            <label class="tb-slider">
-              <span>Cell padding-Y · <strong>{cellPaddingY}px</strong></span>
-              <input type="range" min="0" max="12" step="1" bind:value={cellPaddingY} oninput={onUserEdit} />
-            </label>
-          </div>
-          <label class="tb-toggle"><input type="checkbox" bind:checked={zebra} onchange={onUserEdit} /><span>Zebra alternating rows</span></label>
-          <div class="tb-token">
-            <input type="color" value={activeTokens.rowAlt.slice(0, 7)}
-              aria-label="rowAlt color"
-              oninput={(e) => smartOverride('rowAlt', (e.target as HTMLInputElement).value)} />
-            <span class="tb-token-name">Alt-row background</span>
-            <code class="tb-token-key">rowAlt</code>
-            <code class="tb-token-val">{activeTokens.rowAlt}</code>
-          </div>
+        <div class="tb-panel tb-panel-grouped">
+
+          <!-- DENSITY -->
+          <details class="tb-group" open={openGroups.has('body.density')} ontoggle={(e) => syncGroup('body.density', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Density</span><span class="tb-group-hint">one-click presets</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-seg">
+                <button type="button" class:active={rowHeight <= 28}
+                  onclick={() => { rowHeight = 28; cellPaddingX = 8;  cellPaddingY = 0; bodyFontSize = 12; onUserEdit() }}>Compact</button>
+                <button type="button" class:active={rowHeight > 28 && rowHeight <= 36}
+                  onclick={() => { rowHeight = 34; cellPaddingX = 12; cellPaddingY = 0; bodyFontSize = 13; onUserEdit() }}>Default</button>
+                <button type="button" class:active={rowHeight > 36}
+                  onclick={() => { rowHeight = 44; cellPaddingX = 16; cellPaddingY = 4; bodyFontSize = 14; onUserEdit() }}>Comfy</button>
+              </div>
+            </div>
+          </details>
+
+          <!-- CELL -->
+          <details class="tb-group" open={openGroups.has('body.cell')} ontoggle={(e) => syncGroup('body.cell', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Cell</span><span class="tb-group-hint">row height · padding</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-grid-2">
+                <label class="tb-slider"><span>Row height · <strong>{rowHeight}px</strong></span><input type="range" min="24" max="56" step="2" bind:value={rowHeight} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Padding-X · <strong>{cellPaddingX}px</strong></span><input type="range" min="2" max="24" step="1" bind:value={cellPaddingX} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Padding-Y · <strong>{cellPaddingY}px</strong></span><input type="range" min="0" max="12" step="1" bind:value={cellPaddingY} oninput={onUserEdit} /></label>
+              </div>
+            </div>
+          </details>
+
+          <!-- TYPOGRAPHY -->
+          <details class="tb-group" open={openGroups.has('body.type')} ontoggle={(e) => syncGroup('body.type', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Typography</span><span class="tb-group-hint">size · weight</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-grid-2">
+                <label class="tb-slider"><span>Font size · <strong>{bodyFontSize}px</strong></span><input type="range" min="11" max="18" step="1" bind:value={bodyFontSize} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Weight</span>
+                  <select bind:value={bodyFontWeight} onchange={onUserEdit}>
+                    <option value={400}>400 regular</option>
+                    <option value={500}>500 medium</option>
+                    <option value={600}>600 semibold</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <!-- ROW ZEBRA -->
+          <details class="tb-group" open={openGroups.has('body.zebra')} ontoggle={(e) => syncGroup('body.zebra', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Alternating rows</span><span class="tb-group-hint">zebra striping</span></summary>
+            <div class="tb-group-body">
+              <label class="tb-toggle"><input type="checkbox" bind:checked={zebra} onchange={onUserEdit} /><span>Alternate every other row</span></label>
+              <div class="tb-token">
+                <input type="color" value={activeTokens.rowAlt.slice(0, 7)} aria-label="rowAlt color"
+                  oninput={(e) => smartOverride('rowAlt', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Alt-row background</span>
+                <code class="tb-token-key">rowAlt</code>
+                <code class="tb-token-val">{activeTokens.rowAlt}</code>
+              </div>
+            </div>
+          </details>
+
         </div>
       {/if}
 
       {#if activeTab === 'rows'}
-        <div class="tb-panel">
-          <div class="tb-field-row">
-            <label class="tb-field-label">Hover, selection, focus</label>
-          </div>
-          {#each ['rowHover', 'rowHoverFg', 'selectionBg', 'selectionFg', 'focusRing'] as k (k)}
-            <div class="tb-token">
-              <input type="color"
-                value={activeTokens[k as keyof Tokens].startsWith('#')
-                  ? activeTokens[k as keyof Tokens].slice(0, 7)
-                  : '#888888'}
-                aria-label={`${k} color`}
-                oninput={(e) => smartOverride(k as keyof Tokens, (e.target as HTMLInputElement).value)} />
-              <span class="tb-token-name">{TOKEN_LABEL[k as keyof Tokens]}</span>
-              <code class="tb-token-key">{k}</code>
-              <code class="tb-token-val">{activeTokens[k as keyof Tokens]}</code>
+        <div class="tb-panel tb-panel-grouped">
+
+          <!-- ALTERNATE (ZEBRA) -->
+          <details class="tb-group" open={openGroups.has('rows.alt')} ontoggle={(e) => syncGroup('rows.alt', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Alternate row</span><span class="tb-group-hint">zebra striping</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-token">
+                <input type="color" value={activeTokens.rowAlt.startsWith('#') ? activeTokens.rowAlt.slice(0, 7) : '#888888'}
+                  aria-label="Alt-row background"
+                  oninput={(e) => smartOverride('rowAlt', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Background</span>
+                <code class="tb-token-key">rowAlt</code>
+                <code class="tb-token-val">{activeTokens.rowAlt}</code>
+              </div>
             </div>
-          {/each}
+          </details>
+
+          <!-- HOVER -->
+          <details class="tb-group" open={openGroups.has('rows.hover')} ontoggle={(e) => syncGroup('rows.hover', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Hover</span><span class="tb-group-hint">row under pointer</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-token">
+                <input type="color" value={activeTokens.rowHover.startsWith('#') ? activeTokens.rowHover.slice(0, 7) : '#888888'}
+                  aria-label="Hover background"
+                  oninput={(e) => smartOverride('rowHover', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Background</span>
+                <code class="tb-token-key">rowHover</code>
+                <code class="tb-token-val">{activeTokens.rowHover}</code>
+              </div>
+              <div class="tb-token">
+                <input type="color" value={activeTokens.rowHoverFg.startsWith('#') ? activeTokens.rowHoverFg.slice(0, 7) : '#888888'}
+                  aria-label="Hover text"
+                  oninput={(e) => smartOverride('rowHoverFg', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Foreground</span>
+                <code class="tb-token-key">rowHoverFg</code>
+                <code class="tb-token-val">{activeTokens.rowHoverFg}</code>
+              </div>
+            </div>
+          </details>
+
+          <!-- SELECTION -->
+          <details class="tb-group" open={openGroups.has('rows.selection')} ontoggle={(e) => syncGroup('rows.selection', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Selection</span><span class="tb-group-hint">row clicked / range</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-token">
+                <input type="color" value={activeTokens.selectionBg.startsWith('#') ? activeTokens.selectionBg.slice(0, 7) : '#888888'}
+                  aria-label="Selection background"
+                  oninput={(e) => smartOverride('selectionBg', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Background</span>
+                <code class="tb-token-key">selectionBg</code>
+                <code class="tb-token-val">{activeTokens.selectionBg}</code>
+              </div>
+              <div class="tb-token">
+                <input type="color" value={activeTokens.selectionFg.startsWith('#') ? activeTokens.selectionFg.slice(0, 7) : '#888888'}
+                  aria-label="Selection text"
+                  oninput={(e) => smartOverride('selectionFg', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Foreground</span>
+                <code class="tb-token-key">selectionFg</code>
+                <code class="tb-token-val">{activeTokens.selectionFg}</code>
+              </div>
+            </div>
+          </details>
+
+          <!-- FOCUS -->
+          <details class="tb-group" open={openGroups.has('rows.focus')} ontoggle={(e) => syncGroup('rows.focus', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Focus ring</span><span class="tb-group-hint">keyboard navigation</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-token">
+                <input type="color" value={activeTokens.focusRing.startsWith('#') ? activeTokens.focusRing.slice(0, 7) : '#888888'}
+                  aria-label="Focus ring color"
+                  oninput={(e) => smartOverride('focusRing', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Ring color</span>
+                <code class="tb-token-key">focusRing</code>
+                <code class="tb-token-val">{activeTokens.focusRing}</code>
+              </div>
+            </div>
+          </details>
+
         </div>
       {/if}
 
       {#if activeTab === 'cells'}
-        <div class="tb-panel">
-          <div class="tb-grid-2">
-            <label class="tb-slider">
-              <span>Border style</span>
-              <select bind:value={borderStyle} onchange={onUserEdit}>
-                <option value="solid">solid</option>
-                <option value="dashed">dashed</option>
-                <option value="dotted">dotted</option>
-                <option value="none">none</option>
-              </select>
-            </label>
-            <label class="tb-slider">
-              <span>Border width · <strong>{borderWidth}px</strong></span>
-              <input type="range" min="0" max="3" step="1" bind:value={borderWidth} oninput={onUserEdit} />
-            </label>
-            <label class="tb-slider">
-              <span>Corner radius · <strong>{radius}px</strong></span>
-              <input type="range" min="0" max="20" step="1" bind:value={radius} oninput={onUserEdit} />
-            </label>
-          </div>
+        <div class="tb-panel tb-panel-grouped">
+
+          <!-- PADDING -->
+          <details class="tb-group" open={openGroups.has('cells.padding')} ontoggle={(e) => syncGroup('cells.padding', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Padding</span><span class="tb-group-hint">horizontal · vertical</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-grid-2">
+                <label class="tb-slider"><span>Horizontal · <strong>{cellPaddingX}px</strong></span><input type="range" min="2" max="24" step="1" bind:value={cellPaddingX} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Vertical · <strong>{cellPaddingY}px</strong></span><input type="range" min="0" max="12" step="1" bind:value={cellPaddingY} oninput={onUserEdit} /></label>
+              </div>
+            </div>
+          </details>
+
+          <!-- BORDER -->
+          <details class="tb-group" open={openGroups.has('cells.border')} ontoggle={(e) => syncGroup('cells.border', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Border</span><span class="tb-group-hint">style · width · radius · colors</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-grid-2">
+                <label class="tb-slider"><span>Style</span>
+                  <select bind:value={borderStyle} onchange={onUserEdit}>
+                    <option value="solid">solid</option>
+                    <option value="dashed">dashed</option>
+                    <option value="dotted">dotted</option>
+                    <option value="none">none</option>
+                  </select>
+                </label>
+                <label class="tb-slider"><span>Width · <strong>{borderWidth}px</strong></span><input type="range" min="0" max="3" step="1" bind:value={borderWidth} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Corner radius · <strong>{radius}px</strong></span><input type="range" min="0" max="20" step="1" bind:value={radius} oninput={onUserEdit} /></label>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={horizontalBorderColor || activeTokens.border.slice(0, 7)}
+                  oninput={(e) => { horizontalBorderColor = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Horizontal border color" />
+                <span class="tb-col-color-label">Horizontal border</span>
+                <button type="button" class="tb-col-reset" title="Match border" disabled={!horizontalBorderColor} onclick={() => (horizontalBorderColor = '')}>↺</button>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={verticalBorderColor || activeTokens.border.slice(0, 7)}
+                  oninput={(e) => { verticalBorderColor = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Vertical border color" />
+                <span class="tb-col-color-label">Vertical border</span>
+                <button type="button" class="tb-col-reset" title="Match border" disabled={!verticalBorderColor} onclick={() => (verticalBorderColor = '')}>↺</button>
+              </div>
+            </div>
+          </details>
+
+          <!-- SELECTION -->
+          <details class="tb-group" open={openGroups.has('cells.selection')} ontoggle={(e) => syncGroup('cells.selection', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Selection</span><span class="tb-group-hint">active cell ring</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-col-color">
+                <input type="color" value={selectionBorderColor || activeTokens.accent.slice(0, 7)}
+                  oninput={(e) => { selectionBorderColor = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Selection border color" />
+                <span class="tb-col-color-label">Selection border</span>
+                <button type="button" class="tb-col-reset" title="Match accent" disabled={!selectionBorderColor} onclick={() => (selectionBorderColor = '')}>↺</button>
+              </div>
+              <div class="tb-token">
+                <input type="color" value={activeTokens.selectionBg.slice(0, 7)} aria-label="Selection background"
+                  oninput={(e) => smartOverride('selectionBg', (e.target as HTMLInputElement).value)} />
+                <span class="tb-token-name">Selection background</span>
+                <code class="tb-token-key">selectionBg</code>
+                <code class="tb-token-val">{activeTokens.selectionBg}</code>
+              </div>
+            </div>
+          </details>
+
+          <!-- STATE: semantic cell colors -->
+          <details class="tb-group" open={openGroups.has('cells.state')} ontoggle={(e) => syncGroup('cells.state', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>State</span><span class="tb-group-hint">success · error · read-only</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-col-color">
+                <input type="color" value={successBg || '#dcfce7'}
+                  oninput={(e) => { successBg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Success background" />
+                <span class="tb-col-color-label">Success background</span>
+                <button type="button" class="tb-col-reset" title="Clear" disabled={!successBg} onclick={() => (successBg = '')}>↺</button>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={errorBg || '#fee2e2'}
+                  oninput={(e) => { errorBg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Error background" />
+                <span class="tb-col-color-label">Error background</span>
+                <button type="button" class="tb-col-reset" title="Clear" disabled={!errorBg} onclick={() => (errorBg = '')}>↺</button>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={readOnlyBg || '#f1f5f9'}
+                  oninput={(e) => { readOnlyBg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Read-only background" />
+                <span class="tb-col-color-label">Read-only background</span>
+                <button type="button" class="tb-col-reset" title="Clear" disabled={!readOnlyBg} onclick={() => (readOnlyBg = '')}>↺</button>
+              </div>
+              <p class="tb-field-hint">Applied to cells with the matching CSS class: <code>.success</code> / <code>.error</code> / <code>.readonly</code> (or <code>aria-readonly</code>).</p>
+            </div>
+          </details>
+
+          <!-- EDITOR -->
+          <details class="tb-group" open={openGroups.has('cells.editor')} ontoggle={(e) => syncGroup('cells.editor', (e.currentTarget as HTMLDetailsElement).open)}>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Editor</span><span class="tb-group-hint">in-cell edit mode</span></summary>
+            <div class="tb-group-body">
+              <div class="tb-grid-2">
+                <label class="tb-slider"><span>Border width · <strong>{editorBorderWidth}px</strong></span><input type="range" min="0" max="4" step="1" bind:value={editorBorderWidth} oninput={onUserEdit} /></label>
+                <label class="tb-slider"><span>Shadow blur · <strong>{editorShadowBlur}px</strong></span><input type="range" min="0" max="32" step="1" bind:value={editorShadowBlur} oninput={onUserEdit} /></label>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={editorBorderColor || activeTokens.accent.slice(0, 7)}
+                  oninput={(e) => { editorBorderColor = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Editor border color" />
+                <span class="tb-col-color-label">Border color</span>
+                <button type="button" class="tb-col-reset" title="Match accent" disabled={!editorBorderColor} onclick={() => (editorBorderColor = '')}>↺</button>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={editorFg || activeTokens.fg.slice(0, 7)}
+                  oninput={(e) => { editorFg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Editor text" />
+                <span class="tb-col-color-label">Text</span>
+                <button type="button" class="tb-col-reset" title="Match surface" disabled={!editorFg} onclick={() => (editorFg = '')}>↺</button>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={editorBg || activeTokens.bg.slice(0, 7)}
+                  oninput={(e) => { editorBg = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Editor background" />
+                <span class="tb-col-color-label">Background</span>
+                <button type="button" class="tb-col-reset" title="Match surface" disabled={!editorBg} onclick={() => (editorBg = '')}>↺</button>
+              </div>
+              <div class="tb-col-color">
+                <input type="color" value={editorShadowColor || '#000000'}
+                  oninput={(e) => { editorShadowColor = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Editor shadow color" />
+                <span class="tb-col-color-label">Shadow color</span>
+                <button type="button" class="tb-col-reset" title="Clear" disabled={!editorShadowColor} onclick={() => (editorShadowColor = '')}>↺</button>
+              </div>
+            </div>
+          </details>
+
         </div>
       {/if}
 
@@ -1142,6 +1840,40 @@ module.exports = {
               <code class="tb-token-val">{activeTokens[k as keyof Tokens]}</code>
             </div>
           {/each}
+        </div>
+      {/if}
+
+      {#if activeTab === 'scrollbar'}
+        <div class="tb-panel">
+          <div class="tb-field-row">
+            <label class="tb-field-label">Scrollbar tokens</label>
+            <span class="tb-field-hint">webkit (Chrome / Safari / Edge)</span>
+          </div>
+          <div class="tb-grid-2">
+            <label class="tb-slider">
+              <span>Border radius · <strong>{scrollRadius}px</strong></span>
+              <input type="range" min="0" max="12" step="1" bind:value={scrollRadius} oninput={onUserEdit} />
+            </label>
+          </div>
+          <div class="tb-col-color">
+            <input type="color" value={scrollTrack || 'transparent'}
+              oninput={(e) => { scrollTrack = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Track color" />
+            <span class="tb-col-color-label">Track color</span>
+            <button type="button" class="tb-col-reset" title="Clear" disabled={!scrollTrack} onclick={() => (scrollTrack = '')}>↺</button>
+          </div>
+          <div class="tb-col-color">
+            <input type="color" value={scrollThumb || activeTokens.muted.slice(0, 7)}
+              oninput={(e) => { scrollThumb = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Thumb color" />
+            <span class="tb-col-color-label">Thumb color</span>
+            <button type="button" class="tb-col-reset" title="Match muted" disabled={!scrollThumb} onclick={() => (scrollThumb = '')}>↺</button>
+          </div>
+          <div class="tb-col-color">
+            <input type="color" value={scrollArrow || activeTokens.muted.slice(0, 7)}
+              oninput={(e) => { scrollArrow = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Arrow color" />
+            <span class="tb-col-color-label">Arrow color</span>
+            <button type="button" class="tb-col-reset" title="Match muted" disabled={!scrollArrow} onclick={() => (scrollArrow = '')}>↺</button>
+          </div>
+          <p class="tb-field-hint">Styles SvGrid's custom scrollbar. Arrow color applies to the chevron glyphs on the scroll buttons.</p>
         </div>
       {/if}
 
@@ -1187,13 +1919,8 @@ module.exports = {
     <main class="tb-preview">
       {#if comparison}
         {#each (['light', 'dark'] as const) as m (m)}
-          {@const t = m === 'light' ? lightTokens : darkTokens}
-          {@const s = m === 'light' ? lightStyle  : darkStyle}
+          {@const s = m === 'light' ? lightStyle : darkStyle}
           <article class="tb-preview-card" data-theme={m}>
-            <header class="tb-preview-head" style={`background:${t.headerBg}; color:${t.headerFg}; border-bottom:1px solid ${t.border}`}>
-              <span class="tb-preview-eyebrow">{m}</span>
-              <span class="tb-preview-meta">{rowHeight}px · radius {radius}px</span>
-            </header>
             <div class="tb-grid-wrap tb-live-instance" style={s}>
               <SvGrid
                 data={rows}
@@ -1212,10 +1939,6 @@ module.exports = {
         {/each}
       {:else}
         <article class="tb-preview-card" data-theme={mode}>
-          <header class="tb-preview-head" style={`background:${activeTokens.headerBg}; color:${activeTokens.headerFg}; border-bottom:1px solid ${activeTokens.border}`}>
-            <span class="tb-preview-eyebrow">Live preview</span>
-            <span class="tb-preview-meta">{mode} · {rowHeight}px · radius {radius}px · {borderStyle} {borderWidth}px</span>
-          </header>
           <div class="tb-grid-wrap tb-live-instance" style={activeStyle}>
             <SvGrid
               data={rows}
@@ -1291,7 +2014,18 @@ module.exports = {
 </section>
 
 <style>
-  .tb-page { font-family: Inter, ui-sans-serif, system-ui; }
+  /* Pin the page to the viewport so nothing can trigger a body scrollbar
+     toggle. Without this, any width/height oscillation (Windows-classic
+     scrollbars appearing/disappearing) caused the whole workspace to
+     shimmy on every interaction. */
+  .tb-page {
+    font-family: Inter, ui-sans-serif, system-ui;
+    position: fixed;
+    inset: 64px 0 0 0;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
 
   .tb-page-head {
     display: flex; align-items: flex-start; justify-content: space-between;
@@ -1412,11 +2146,12 @@ module.exports = {
     display: grid;
     grid-template-columns: 200px 320px minmax(0, 1fr) 360px;
     gap: 12px;
-    height: calc(100vh - 220px);
-    min-height: 560px;
+    /* Flex into the locked .tb-page viewport instead of computing vh math. */
+    flex: 1;
+    min-height: 0;
   }
-  @media (max-width: 1280px) { .tb-grid { grid-template-columns: 180px 1fr 1fr; height: auto; } }
-  @media (max-width: 900px)  { .tb-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 1280px) { .tb-grid { grid-template-columns: 180px 1fr 1fr; } }
+  @media (max-width: 900px)  { .tb-grid { grid-template-columns: 1fr; flex: none; } }
 
   /* LEFT sidebar nav - docs-style */
   .tb-sidenav { padding: 12px 8px; overflow: auto; }
@@ -1433,7 +2168,10 @@ module.exports = {
     border-radius: 6px;
     cursor: pointer;
     color: var(--site-fg, #0f172a);
-    display: flex; flex-direction: column; gap: 1px;
+    display: grid;
+    grid-template-columns: 18px 1fr 12px;
+    align-items: center;
+    gap: 8px;
     border-left: 2px solid transparent;
   }
   .tb-sidenav-link:hover { background: var(--sg-header-bg, #f1f5f9); }
@@ -1442,9 +2180,21 @@ module.exports = {
     border-left-color: var(--site-accent, #2563eb);
     color: var(--site-accent, #2563eb);
   }
-  .tb-sidenav-label { font-size: 13px; font-weight: 700; }
+  .tb-sidenav-icon { color: var(--site-muted, #64748b); display: inline-flex; }
+  .tb-sidenav-link.active .tb-sidenav-icon { color: var(--site-accent, #2563eb); }
+  .tb-sidenav-textbox { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .tb-sidenav-label { font-size: 13px; font-weight: 600; }
+  .tb-sidenav-link.active .tb-sidenav-label { font-weight: 700; }
   .tb-sidenav-desc  { font-size: 10.5px; color: var(--site-muted, #94a3b8); font-weight: 400; }
-  .tb-sidenav-link.active .tb-sidenav-desc { color: rgba(99, 102, 241, 0.7); }
+  .tb-sidenav-link.active .tb-sidenav-desc { color: rgba(99, 102, 241, 0.75); }
+  .tb-sidenav-arrow {
+    color: var(--site-muted, #94a3b8);
+    font-size: 14px; line-height: 1;
+    opacity: 0; transition: opacity 100ms ease, transform 100ms ease;
+  }
+  .tb-sidenav-link:hover .tb-sidenav-arrow,
+  .tb-sidenav-link.active .tb-sidenav-arrow { opacity: 1; }
+  .tb-sidenav-link.active .tb-sidenav-arrow { color: var(--site-accent, #2563eb); transform: translateX(2px); }
 
   .tb-card {
     border: 1px solid var(--sg-border, #e2e8f0);
@@ -1485,11 +2235,43 @@ module.exports = {
   }
   .tb-tab-panel { flex: 1; min-height: 0; overflow: auto; }
   .tb-panel { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .tb-panel-grouped { padding: 6px 0; gap: 0; }
   .tb-field-row { display: flex; align-items: baseline; justify-content: space-between; }
   .tb-field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--site-muted, #64748b); }
   .tb-field-hint { font-size: 10.5px; color: var(--site-muted, #94a3b8); }
+  .tb-row-label { font-size: 11px; color: var(--site-muted, #64748b); margin-top: 4px; }
   .tb-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .tb-fullwidth { width: 100%; }
+
+  /* Handsontable-style collapsible sub-section groups */
+  .tb-group { border-bottom: 1px solid var(--sg-border, #e2e8f0); }
+  .tb-group:last-child { border-bottom: 0; }
+  .tb-group[open] { background: color-mix(in srgb, var(--site-accent, #2563eb) 3%, transparent); }
+  .tb-group-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 14px;
+    list-style: none;
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--site-fg, #0f172a);
+    user-select: none;
+  }
+  .tb-group-head::-webkit-details-marker { display: none; }
+  .tb-group-head:hover { background: var(--sg-header-bg, #f1f5f9); }
+  .tb-group-chev {
+    width: 0; height: 0;
+    border-left: 4px solid currentColor;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    color: var(--site-muted, #94a3b8);
+    transition: transform 140ms ease;
+    transform: rotate(0deg);
+    flex-shrink: 0;
+  }
+  .tb-group[open] > .tb-group-head .tb-group-chev { transform: rotate(90deg); color: var(--site-accent, #2563eb); }
+  .tb-group-hint { margin-left: auto; font-size: 10.5px; color: var(--site-muted, #94a3b8); font-weight: 400; }
+  .tb-group-body { padding: 4px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
 
   /* Saved themes footer */
   .tb-controls-foot {
@@ -1571,6 +2353,34 @@ module.exports = {
   }
   input[type='range'] { width: 100%; accent-color: var(--site-accent, #2563eb); }
   .tb-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
+
+  .tb-col-color {
+    display: grid;
+    grid-template-columns: 26px 1fr 22px;
+    align-items: center; gap: 8px;
+    font-size: 12px;
+  }
+  .tb-col-color input[type='color'] {
+    width: 24px; height: 24px; padding: 0;
+    border: 1px solid var(--sg-border, #cbd5e1);
+    border-radius: 4px; cursor: pointer;
+  }
+  .tb-col-color input[type='color']:hover { box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.18); }
+  .tb-col-color-label { font-weight: 500; color: var(--site-fg, #0f172a); }
+  .tb-col-reset {
+    border: 0; background: transparent;
+    color: var(--site-muted, #94a3b8);
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 13px;
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .tb-col-reset:hover:not(:disabled) {
+    background: var(--sg-header-bg, #f1f5f9);
+    color: var(--site-fg, #1e293b);
+  }
+  .tb-col-reset:disabled { opacity: 0.35; cursor: default; }
 
   .tb-token { display: grid; grid-template-columns: 26px 1fr auto auto; align-items: center; gap: 8px; font-size: 12px; }
   .tb-token input[type='color'] { width: 24px; height: 24px; padding: 0; border: 1px solid var(--sg-border, #cbd5e1); border-radius: 4px; cursor: pointer; }
@@ -1681,7 +2491,7 @@ module.exports = {
   .tb-wcag-inner .tb-wcag-foot { color: #94a3b8; font-size: 10.5px; margin-top: 8px; }
   .tb-wcag-head-mode { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
 
-  .tb-export { display: flex; flex-direction: column; background: #0f172a; border-color: #1e293b; max-height: calc(100vh - 230px); }
+  .tb-export { display: flex; flex-direction: column; background: #0f172a; border-color: #1e293b; min-height: 0; flex: 1; }
   .tb-export-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(148,163,184,0.20); }
   .tb-seg-export { width: auto; border-color: rgba(148,163,184,0.30); }
   .tb-seg-export button { color: #cbd5e1; font-size: 11px; }

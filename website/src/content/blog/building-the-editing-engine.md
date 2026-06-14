@@ -1,7 +1,7 @@
 ---
 title: 'Inside SvGrid: The Inline Editing Engine'
 description: Turning SvGrid from a viewer into a tool: typed editors, a keyboard-first edit flow, and the deliberate choice never to mutate your data.
-date: 2026-06-13
+date: 2026-07-04
 category: Engineering
 tags: editing, validation, engineering, story
 author: SvGrid Team

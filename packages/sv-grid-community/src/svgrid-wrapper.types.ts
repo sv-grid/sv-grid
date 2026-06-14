@@ -35,6 +35,22 @@ export type SvGridViewState = {
 }
 
 /**
+ * A batch of row mutations for `api.applyTransaction`. `update` / `remove`
+ * (by id) match on `getRowId`; `remove` also accepts row object references.
+ */
+export type SvGridTransaction<TData> = {
+  add?: ReadonlyArray<TData>
+  update?: ReadonlyArray<TData>
+  remove?: ReadonlyArray<TData | string>
+}
+
+export type SvGridTransactionResult = {
+  added: number
+  updated: number
+  removed: number
+}
+
+/**
  * Imperative API exposed via the `<SvGrid onApiReady>` callback. Use it for
  * data, column, filter, sort, group, and visibility operations from outside
  * the component.
@@ -74,6 +90,14 @@ export type SvGridApi<
   /** Remove a row at the given data-array index. */
   removeRow(rowIndex: number): void
   removeRows(rowIndices: ReadonlyArray<number>): void
+  /**
+   * Apply a batch of add / update / remove mutations in a SINGLE data update
+   * (one re-render, not one per row) - the high-frequency / streaming path.
+   * `update` and `remove`-by-id match rows via `getRowId`, so set that prop
+   * for those to work; `remove` also accepts row object references. Returns
+   * the counts actually applied.
+   */
+  applyTransaction(tx: SvGridTransaction<TData>): SvGridTransactionResult
 
   // ----- Columns -----
   /** Add one column. `position` defaults to `'right'`. */

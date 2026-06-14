@@ -1,7 +1,7 @@
 ---
 title: How We Started Building SvGrid
 description: The architectural calls that everything else rests on - a runes-native engine, a headless core, and a render component - and the first grid that actually rendered.
-date: 2026-06-13
+date: 2026-07-13
 category: Company
 tags: company, story, engineering, development
 author: SvGrid Team

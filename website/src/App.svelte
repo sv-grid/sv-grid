@@ -2,23 +2,32 @@
   import './index.css'
   import Header from './components/Header.svelte'
   import Footer from './components/Footer.svelte'
+  import LazyRoute from './components/LazyRoute.svelte'
+  // Home is the default + most-visited route, so it stays statically imported
+  // (no extra round-trip on first paint). Every other route is loaded on demand
+  // via the ROUTES map below, so its code - and heavy deps like sv-grid-pro
+  // (pulled by the API reference) - never lands in the entry chunk.
   import Home from './routes/Home.svelte'
-  import Demos from './routes/Demos.svelte'
-  import Docs from './routes/Docs.svelte'
-  import Api from './routes/Api.svelte'
-  import Pricing from './routes/Pricing.svelte'
-  import Mcp from './routes/Mcp.svelte'
-  import Faq from './routes/Faq.svelte'
-  import About from './routes/About.svelte'
-  import Privacy from './routes/Privacy.svelte'
-  import Terms from './routes/Terms.svelte'
-  import Contact from './routes/Contact.svelte'
-  import Compare from './routes/Compare.svelte'
-  import AiPrompts from './routes/AiPrompts.svelte'
-  import Roadmap from './routes/Roadmap.svelte'
-  import LogoLab from './routes/LogoLab.svelte'
-  import Blog from './routes/Blog.svelte'
-  import ThemeBuilder from './routes/ThemeBuilder.svelte'
+
+  const ROUTES = {
+    demos: () => import('./routes/Demos.svelte'),
+    docs: () => import('./routes/Docs.svelte'),
+    api: () => import('./routes/Api.svelte'),
+    pricing: () => import('./routes/Pricing.svelte'),
+    mcp: () => import('./routes/Mcp.svelte'),
+    faq: () => import('./routes/Faq.svelte'),
+    about: () => import('./routes/About.svelte'),
+    privacy: () => import('./routes/Privacy.svelte'),
+    terms: () => import('./routes/Terms.svelte'),
+    contact: () => import('./routes/Contact.svelte'),
+    compare: () => import('./routes/Compare.svelte'),
+    aiPrompts: () => import('./routes/AiPrompts.svelte'),
+    roadmap: () => import('./routes/Roadmap.svelte'),
+    logoLab: () => import('./routes/LogoLab.svelte'),
+    blog: () => import('./routes/Blog.svelte'),
+    themeBuilder: () => import('./routes/ThemeBuilder.svelte'),
+  }
+
   import { applyRouteSeo, applyDocSeo, applyDemoSeo, applyCompareSeo, applyBlogSeo } from './lib/seo'
   import { initAnalytics, trackPageview, funnel } from './lib/analytics'
   import { router } from './lib/router.svelte'
@@ -131,37 +140,37 @@
     {#if route.section === ''}
       <Home />
     {:else if route.section === 'demos'}
-      <Demos demoId={route.rest} />
+      <LazyRoute loader={ROUTES.demos} props={{ demoId: route.rest }} />
     {:else if route.section === 'docs'}
-      <Docs slug={route.rest} />
+      <LazyRoute loader={ROUTES.docs} props={{ slug: route.rest }} />
     {:else if route.section === 'api'}
-      <Api />
+      <LazyRoute loader={ROUTES.api} />
     {:else if route.section === 'pricing'}
-      <Pricing />
+      <LazyRoute loader={ROUTES.pricing} />
     {:else if route.section === 'mcp'}
-      <Mcp />
+      <LazyRoute loader={ROUTES.mcp} />
     {:else if route.section === 'faq'}
-      <Faq />
+      <LazyRoute loader={ROUTES.faq} />
     {:else if route.section === 'about'}
-      <About />
+      <LazyRoute loader={ROUTES.about} />
     {:else if route.section === 'privacy'}
-      <Privacy />
+      <LazyRoute loader={ROUTES.privacy} />
     {:else if route.section === 'terms'}
-      <Terms />
+      <LazyRoute loader={ROUTES.terms} />
     {:else if route.section === 'contact'}
-      <Contact />
+      <LazyRoute loader={ROUTES.contact} />
     {:else if route.section === 'compare'}
-      <Compare slug={route.rest} />
+      <LazyRoute loader={ROUTES.compare} props={{ slug: route.rest }} />
     {:else if route.section === 'ai-prompts'}
-      <AiPrompts />
+      <LazyRoute loader={ROUTES.aiPrompts} />
     {:else if route.section === 'roadmap'}
-      <Roadmap />
+      <LazyRoute loader={ROUTES.roadmap} />
     {:else if route.section === 'blog'}
-      <Blog slug={route.rest} />
+      <LazyRoute loader={ROUTES.blog} props={{ slug: route.rest }} />
     {:else if route.section === 'logo-lab'}
-      <LogoLab />
+      <LazyRoute loader={ROUTES.logoLab} />
     {:else if route.section === 'theme-builder'}
-      <ThemeBuilder />
+      <LazyRoute loader={ROUTES.themeBuilder} />
     {:else}
       <section class="mx-auto max-w-3xl px-6 py-24 text-center">
         <h1 class="text-3xl font-bold">Page not found</h1>

@@ -1,7 +1,7 @@
 ---
 title: 'Inside SvGrid: The Row Model and Sorting'
 description: How SvGrid's row-model pipeline came together, and why sorting was the first real feature we built on top of the headless core.
-date: 2026-06-13
+date: 2026-07-05
 category: Engineering
 tags: sorting, row model, engineering, story
 author: SvGrid Team

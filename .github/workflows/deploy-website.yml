@@ -12,6 +12,12 @@ on:
       - 'pnpm-workspace.yaml'
       - 'package.json'
   workflow_dispatch:
+  # Daily rebuild so scheduled blog posts go live on their date. The build gates
+  # out future-dated posts (see tools/schedule-blog.mjs + lib/blog.ts), so each
+  # day's rebuild publishes exactly the posts whose date has arrived. 07:12 UTC
+  # is an off-peak, non-round minute (GitHub delays jobs scheduled on the hour).
+  schedule:
+    - cron: '12 7 * * *'
 
 permissions:
   contents: read

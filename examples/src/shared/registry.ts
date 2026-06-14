@@ -127,6 +127,16 @@ import ExportGroupedGrid         from '../demos/126-export-grouped-grid.svelte'
 import ExportPivotGrid           from '../demos/127-export-pivot-grid.svelte'
 import DevMigrationFromAg        from '../demos/139-migration-from-ag-grid.svelte'
 import ShortcutConfig            from '../demos/135-shortcut-config.svelte'
+import SparklineCells            from '../demos/140-sparkline-cells.svelte'
+import GroupAggregators          from '../demos/142-group-aggregators.svelte'
+import NamedViews                from '../demos/143-named-views.svelte'
+import StatusBar                 from '../demos/144-status-bar.svelte'
+import TransactionApi             from '../demos/145-transaction-api.svelte'
+import ToolPanel                 from '../demos/146-tool-panel.svelte'
+import IntegratedCharts          from '../demos/147-integrated-charts.svelte'
+import ServerRowModel            from '../demos/148-server-row-model.svelte'
+import RealtimeCollaboration     from '../demos/149-realtime-collaboration.svelte'
+import ConditionalFormattingEngine from '../demos/141-conditional-formatting.svelte'
 
 // Bundle the raw .svelte source for every demo at build time so the Source
 // button can display the exact file the user would copy into their project.
@@ -254,12 +264,14 @@ export const demos: Demo[] = [
 
   // ----- Sorting & Grouping
   demo('07-grouping-aggregation',   'Grouping + aggregation',      'Group by department, sum salaries, average performance, expand/collapse keys.', 'Sorting & Grouping', Grouping),
+  demo('142-group-aggregators',     'Group aggregators',           'Declarative per-column rollups for group rows via the aggregate column option: sum, avg, min, max, count, countDistinct, extent, first, or a custom (values, rows) reducer. Each rollup is formatted with the column format and shown in the group header.', 'Sorting & Grouping', GroupAggregators),
   demo('89-group-panel',            'Group panel (drag & drop)',   'DevExpress / Kendo-style Group Panel: drag chips into the panel to group, drag inside to reorder grouping levels, × to ungroup. Drives api.setGroupBy() under the hood.', 'Sorting & Grouping', GroupPanel),
   demo('36-reporting-workspace',    'Reporting workspace',         'Pivot-lite: group-by chips, per-column aggregator picker, saved views with localStorage persistence, live KPI strip + summary cards.', 'Sorting & Grouping', ReportingWorkspace),
 
   // ----- Selection & Clipboard
   demo('04-selection-copy-paste',   'Selection + copy/paste',      'Row + cell-range selection with TSV clipboard round-trip.', 'Selection & Clipboard', SelectionCopyPaste),
   demo('90-selection-api',          'Selection API + events',      'Drive cell selection with api.selectCells / api.getSelected; subscribe to changes via onCellSelectionChange. Live SUM/AVG/MIN/MAX panel + event log + copy-as-TSV.', 'Selection & Clipboard', SelectionApi),
+  demo('144-status-bar',            'Status bar (range aggregates)','Excel-style bar under the grid with live aggregates of the selected cell range: Count, Sum, Avg, Min, Max. Enable with statusBar + enableCellSelection, then drag a rectangle across numeric cells. Choose the aggregate set via statusBar={ aggregates }.', 'Selection & Clipboard', StatusBar),
   demo('118-range-selection',       'Range selection (Excel-style)','Drag any rectangle of cells (mouse or Shift+arrows); the toolbar issues common ranges via api.selectCells; live SUM/AVG/MIN/MAX/COUNT status bar (Google Sheets style); copy as TSV.', 'Selection & Clipboard', RangeSelection),
   demo('23-bulk-actions',           'Bulk actions toolbar',        'Select rows → sticky action bar with Mark / Delete / Copy as TSV. The Gmail / Linear pattern.', 'Selection & Clipboard', BulkActions),
   demo('67-context-menu',           'Right-click context menu',    'Custom row context menu (copy, duplicate, move up/down, delete) wired via a contextmenu listener + the wrapper\'s data-svgrid-row attribute.', 'Selection & Clipboard', ContextMenu),
@@ -268,14 +280,18 @@ export const demos: Demo[] = [
   demo('25-column-pinning',         'Column pinning + freezing',   'Wide 13-column grid. Pin Company left and Price right via the column menu; the middle scrolls under sticky edges.', 'Columns', ColumnPinning),
   demo('54-columns-hierarchy',      'Columns hierarchy + manager', 'Side-panel tree of grouped columns: drag leaves to reorder, click a chevron to collapse a group into one summary column, toggle visibility per leaf or whole group.', 'Columns', ColumnsHierarchy),
   demo('63-column-layout-api',      'Column layout API',           'setColumnWidth + setColumnPinning + getColumnWidths + getColumnPinning. Save the snapshot to localStorage, restore on reload, drive widths and pins from buttons.', 'Columns', ColumnLayoutApi),
+  demo('146-tool-panel',            'Columns tool panel',          'The docked enterprise sidebar for managing columns without a right-click: toggle visibility, reorder up/down, and group by a column. Enable with the toolPanel prop; a button appears at the grid top-right and the panel docks on the right edge.', 'Columns', ToolPanel),
   demo('104-column-reorder',        'Column reorder (drag)',       'Drag any column header left or right to reorder. Vertical drop indicator. Order persists across reloads via localStorage. Works through the existing data-svgrid-header-col attribute - no library change needed.', 'Columns', ColumnReorder),
   demo('109-column-reorder-engine', 'Column reorder (engine prop)','Set `enableColumnReorder` on <SvGrid> and every header becomes draggable. api.setColumnOrder / getColumnOrder + onColumnOrderChange event. Toolbar buttons drive imperative reorders.', 'Columns', ColumnReorderEngine),
 
   // ----- Rows & Cells
   demo('10-custom-cells-and-themes','Custom cells + themes',       'Avatars, sparklines, progress bars, density toggle, dark mode, full a11y.', 'Rows & Cells', CustomCells),
+  demo('140-sparkline-cells',       'Sparkline cells',             'In-cell mini charts as a first-class column type: set `sparkline` on a number-array column and the grid paints an inline SVG. Line, area, bar (with +/- coloring), and win/loss - no chart library, no custom snippet.', 'Rows & Cells', SparklineCells),
+  demo('141-conditional-formatting','Conditional formatting (engine)',      'Excel-style value-driven cell coloring as a declarative `conditionalFormats` engine prop: color scales, in-cell data bars, icon sets (arrows/traffic/triangles), and predicate rules - scoped per column, no per-cell snippet.', 'Rows & Cells', ConditionalFormattingEngine),
   demo('62-conditional-styling',    'Conditional styling',         'Support-ticket triage board: rowClass highlights SLA breach + at-risk rows with side-bar accents; cellClass paints priority pills, status badges, agent-load progress bars, and CSAT highlights.', 'Rows & Cells', ConditionalStyling),
   demo('85-tooltips-and-notes',     'Tooltips + per-cell notes',   'Column-level `tooltip` prop (static or value-driven) plus per-cell notes via the `notes` prop on `<SvGrid>` - corner indicator + edit modal.', 'Rows & Cells', TooltipsAndNotes),
   demo('55-state-maintenance',      'State maintenance',           'Capture / restore the grid\'s sort, filters, visibility, widths, page, selection, expansion. Includes undo / redo history, named bookmarks, JSON import/export, debounced localStorage auto-save.', 'Rows & Cells', StateMaintenance),
+  demo('143-named-views',           'Named views',                 'Save the grid sort + filter + layout as a named view and restore it in one click. createNamedViews(api, { storage }) wraps getState/setState; localStorageViews persists across reloads, or plug your own server adapter.', 'Rows & Cells', NamedViews),
   demo('94-conditional-formatting', 'Conditional formatting',      'Excel-style color scale, data bars, icon sets, and heatmap tint - all via user-land cellRenderers. Per-formatter toggles to compare on/off. The "P&L preset" lights up the whole grid.', 'Rows & Cells', ConditionalFormatting),
   demo('105-row-reorder',           'Row reorder (drag rows)',     'Priority queue with a ⋮⋮ drag handle column. Multi-select aware - check several rows, drag the group as a block. Auto-scroll near viewport edges.', 'Rows & Cells', RowReorder),
   demo('107-pinned-rows',           'Pinned rows (top / bottom)',  'Frozen "Account totals" row at the top + sticky "Page totals" at the bottom that reacts to filters. Right-click any row to pin it. Three stacked SvGrid instances share one column schema.', 'Rows & Cells', PinnedRows),
@@ -298,6 +314,7 @@ export const demos: Demo[] = [
   // ----- Server-Side Data
   demo('09-server-side',            'Server-side data',            'Sort/filter/page round-tripped to a mock endpoint with debounce + cancel.', 'Server-Side Data', ServerSide),
   demo('33-server-infinite',        'Server-side infinite scroll', '100k-event audit log behind a mock API. Sparse chunked load on scroll; sort + filter + search pushed to the server.', 'Server-Side Data', ServerInfinite),
+  demo('148-server-row-model',      'Server-Side Row Model (SSRM)','One datasource contract for server-backed data: implement a single async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Here a 100,000-row in-memory server behind 250ms latency; the grid holds only the current 50-row page.', 'Server-Side Data', ServerRowModel),
   demo('72-graphql-adapter',        'GraphQL adapter',             'Server-side sort / filter / page wired to a mock GraphQL resolver. Side panel shows the live query doc so you can compare what the grid sent to the network tab.', 'Server-Side Data', GraphqlAdapter),
   demo('79-loading-from-rest',      'Loading from REST',           'Fetches rows from a public REST API with loading skeleton, retry, error surface, and a Reload button. The pattern every line-of-business app needs.', 'Server-Side Data', LoadingFromRest),
   demo('113-cursor-pagination',     'Cursor (keyset) pagination',  'The modern alternative to offset paging: server returns prev/next cursor tokens so writes never shift rows across pages and deep pages stay O(log N). Page-size picker, live timing readout.', 'Server-Side Data', CursorPagination),
@@ -311,7 +328,10 @@ export const demos: Demo[] = [
   demo('14-industrial',             'Industrial - IoT sensors',    'Live sensor floor: threshold-driven status, sparkline trends, group by line.', 'Real-time & Streaming', Industrial),
   demo('20-industrial-dashboard',   'Industrial dashboard',        'KPI cards plus live line-status and active-alarms grids, on a 2-second tick.', 'Real-time & Streaming', IndustrialDashboard),
   demo('34-realtime-orders',        'Real-time / streaming',       'WebSocket-style live order stream with delta merge, out-of-order safety, pause / backlog, disconnect-reconnect, throughput slider.', 'Real-time & Streaming', RealtimeOrders),
+  demo('149-realtime-collaboration','Real-time collaboration',     'Presence (who is here + where their cursor is) and live edits (a change in one client lands in every other) over a pluggable transport. createCollaboration + broadcastChannelTransport sync cursors and edits across tabs with zero backend; swap the transport for a WebSocket to go cross-machine. Also the substrate for multiple AI agents editing one grid.', 'Real-time & Streaming', RealtimeCollaboration),
+  demo('145-transaction-api',       'Transaction API (batched)',   'api.applyTransaction({ add, update, remove }) applies a batch of row mutations in ONE data update - the high-frequency streaming path. update and remove-by-id match on getRowId; remove also accepts row refs. Live order book ticking via batched transactions.', 'Real-time & Streaming', TransactionApi),
   demo('73-chartjs-sync',           'Real-time + Chart.js sync',   'Mock WebSocket pushes price ticks every 350 ms. A Chart.js bar chart auto-syncs with the grid - filter the Symbol column, the chart trims to match.', 'Real-time & Streaming', ChartJsSync),
+  demo('147-integrated-charts',     'Integrated charts (no deps)', 'Chart the grid data with no external charting library. SvGridChart renders a ChartSpec; rowsToChartSpec aggregates the grid current (filtered/sorted) rows into one. Bar, line, area, pie - filter the grid and the chart re-aggregates live.', 'Integrations', IntegratedCharts),
 
   // ----- Spreadsheet
   demo('27-spreadsheet-ribbon',     'Spreadsheet + Ribbon bar',    'Excel-style Ribbon UI driving the grid via SvGridApi: cell formatting (bold, color, number format), insert/delete row, sort, live SUM/AVG/COUNT.', 'Spreadsheet', SpreadsheetRibbon),

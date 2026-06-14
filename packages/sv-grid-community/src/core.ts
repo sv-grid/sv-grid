@@ -96,6 +96,55 @@ export type CellFormatter<TData extends RowData> = (context: {
 
 export type ColumnDefTemplate<TContext> = string | ((context: TContext) => unknown)
 
+/**
+ * How a column's value is aggregated for a group row when `columnGrouping`
+ * is active. Built-in reducers cover the common cases; pass a function for
+ * anything custom (weighted average, median, percentile, distinct count).
+ * The function receives the finite numeric values AND the raw leaf rows.
+ */
+export type GroupAggregator<TData = any> =
+  | 'sum'
+  | 'avg'
+  | 'min'
+  | 'max'
+  | 'count'
+  | 'countDistinct'
+  | 'extent'
+  | 'first'
+  | ((values: number[], rows: Array<TData>) => unknown)
+
+/** Apply a group aggregator over a bucket's leaf rows for one column. */
+export function applyGroupAggregate<TData extends RowData>(
+  agg: GroupAggregator<TData>,
+  columnId: string,
+  rows: ReadonlyArray<Row<TData>>,
+): unknown {
+  const raw = rows.map((r) => r.getCellValueByColumnId(columnId))
+  if (typeof agg === 'function') {
+    const nums = raw.map((v) => Number(v)).filter((n) => Number.isFinite(n))
+    return agg(nums, rows.map((r) => r.original))
+  }
+  if (agg === 'count') return rows.length
+  if (agg === 'countDistinct') return new Set(raw.map((v) => String(v ?? ''))).size
+  if (agg === 'first') return raw[0]
+  const nums = raw.map((v) => Number(v)).filter((n) => Number.isFinite(n))
+  if (!nums.length) return undefined
+  switch (agg) {
+    case 'sum':
+      return nums.reduce((a, b) => a + b, 0)
+    case 'avg':
+      return nums.reduce((a, b) => a + b, 0) / nums.length
+    case 'min':
+      return Math.min(...nums)
+    case 'max':
+      return Math.max(...nums)
+    case 'extent':
+      return `${Math.min(...nums)} – ${Math.max(...nums)}`
+    default:
+      return undefined
+  }
+}
+
 export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = {
   id?: string
   field?: keyof TData & string
@@ -189,6 +238,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   editorSeparator?: string
   format?: CellFormatConfig
   formatter?: CellFormatter<TData>
+  /**
+   * Aggregate this column's values into the group row when grouping is
+   * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
+   * 'extent' | 'first'`, or a custom `(values, rows) => unknown`. The result
+   * is formatted with this column's `format` and shown in the group header.
+   */
+  aggregate?: GroupAggregator<TData>
   /**
    * Render the cell as an in-cell sparkline chart. The cell value should be
    * an array of numbers (or a comma/space separated string). Mutually
@@ -428,7 +484,11 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
         const groupOriginal: Record<string, unknown> = {}
         columns.forEach((column) => {
           const field = column.columnDef.field
-          if (field) groupOriginal[field] = resolveColumnValue(column.id)
+          if (!field) return
+          const agg = column.columnDef.aggregate
+          groupOriginal[field] = agg
+            ? applyGroupAggregate(agg, column.id, children)
+            : resolveColumnValue(column.id)
         })
 
         const groupRow: Row<TData> = {
@@ -448,7 +508,15 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
             table.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
           },
           getAllCells: () => [],
-          getCellValueByColumnId: resolveColumnValue,
+          // Prefer the precomputed group value (which carries aggregates)
+          // and fall back to the shared-value resolver for columns without
+          // a field.
+          getCellValueByColumnId: (columnId: string) => {
+            const col = columns.find((c) => c.id === columnId)
+            const field = col?.columnDef.field
+            if (field && field in groupOriginal) return groupOriginal[field]
+            return resolveColumnValue(columnId)
+          },
         }
         groupRows.push(groupRow)
       })

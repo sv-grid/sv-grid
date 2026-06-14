@@ -1,5 +1,14 @@
 @import 'tailwindcss';
 
+/* The site re-hosts every demo from the examples package (via the `@demos`
+ * alias). Tailwind v4 auto-detects sources from this project only, so without
+ * this the demos' Tailwind classes - especially demo-unique ones like
+ * `lg:grid-cols-[1fr_280px]` - never get generated here, and those demos
+ * render with broken layouts (collapsed grids, stacked sidebars). Scan the
+ * examples sources too. (The legacy `tailwind.config.cjs` content array is
+ * ignored under @tailwindcss/postcss v4.) */
+@source '../../examples/src';
+
 /* The website supports both light and dark, just like the examples gallery.
  * App.svelte writes the resolved theme to html[data-theme], and the
  * `:root` block below holds the light palette while html[data-theme='dark']
@@ -626,8 +635,11 @@ a:focus-visible,
 .btn:active {
   transform: translateY(1px);
 }
+/* White text on the bright brand orange was only ~3:1 (fails WCAG AA, which
+   needs 4.5:1 for this 15px/600 label). Darkened both gradient stops so white
+   text clears AA (~5:1) while staying recognizably Svelte-orange. */
 .btn-primary {
-  background: linear-gradient(135deg, var(--site-brand), #ff8a3d);
+  background: linear-gradient(135deg, #d4400a, #e8590c);
   color: #ffffff;
 }
 .btn-primary:hover {

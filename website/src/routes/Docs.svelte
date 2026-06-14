@@ -82,6 +82,10 @@
 
   let articleEl: HTMLElement | null = $state(null)
   let mounted: Array<{ host: HTMLElement; instance: ReturnType<typeof mount> }> = []
+  // Demos are loaded lazily (their components are per-demo chunks), so mounting
+  // is async. This generation token lets a slow chunk that resolves after the
+  // user has already navigated away bail out instead of mounting into stale DOM.
+  let mountGen = 0
 
   function mountDemos() {
     if (!articleEl) return
@@ -91,6 +95,7 @@
       m.host.innerHTML = ''
     }
     mounted = []
+    const gen = ++mountGen
     const placeholders = articleEl.querySelectorAll<HTMLElement>('[data-docs-demo]')
     placeholders.forEach((host) => {
       const demoId = host.getAttribute('data-docs-demo')
@@ -113,8 +118,19 @@
         <div class="docs-demo-frame" style="height:${height}px"></div>
       `
       const frame = host.querySelector<HTMLElement>('.docs-demo-frame')!
-      const instance = mount(demo.component, { target: frame })
-      mounted.push({ host, instance })
+      // Fetch the demo's chunk, then mount - unless the doc changed (gen) or
+      // the placeholder was replaced (isConnected) while the chunk loaded.
+      demo
+        .load()
+        .then((mod) => {
+          if (gen !== mountGen || !frame.isConnected) return
+          const instance = mount(mod.default, { target: frame })
+          mounted.push({ host, instance })
+        })
+        .catch(() => {
+          if (gen !== mountGen || !frame.isConnected) return
+          frame.innerHTML = `<div class="docs-demo-missing">Failed to load demo "${demoId}".</div>`
+        })
     })
   }
 
@@ -135,6 +151,8 @@
       if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
     })
     return () => {
+      // Invalidate any in-flight lazy demo loads so they don't mount after teardown.
+      mountGen++
       for (const m of mounted) {
         try { unmount(m.instance) } catch { /* */ }
       }

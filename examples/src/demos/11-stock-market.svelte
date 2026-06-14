@@ -2,7 +2,7 @@
   /**
    * 11. Stock market - live updates
    * -------------------------------
-   * Simulates a fast-moving market feed. A 250 ms interval randomly walks
+   * Simulates a fast-moving market feed. A 500 ms interval randomly walks
    * each symbol's last price, bid/ask, and cumulative volume. Cells flash
    * green on an up-tick, red on a down-tick.
    *
@@ -126,7 +126,7 @@
   let rows = $state.raw<Stock[]>(initialRows())
   let pulses = $state.raw<Record<string, 'up' | 'down'>>({})
   let paused = $state(false)
-  let tickIntervalMs = $state(250)
+  let tickIntervalMs = $state(500)
   let ticks = $state(0)
 
   // The columns that should flash on change. Avoids re-pulsing static columns

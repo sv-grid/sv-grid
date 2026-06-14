@@ -1,12 +1,21 @@
 <script lang="ts">
   import { Marked } from 'marked'
-  import { blogPosts, findPost, formatPostDate, relatedPosts } from '../lib/blog'
+  import { blogPosts, pinnedPosts, blogGroups, findPost, formatPostDate, relatedPosts } from '../lib/blog'
   import { router } from '../lib/router.svelte'
 
   type Props = { slug: string }
   let { slug }: Props = $props()
 
   const current = $derived(findPost(slug))
+
+  // Index: category filter (top-level groups) + a pinned/featured post.
+  const groups = blogGroups()
+  const totalPosts = blogPosts.length
+  let activeGroup = $state<string>('All')
+  const visiblePosts = $derived.by(() => {
+    if (activeGroup === 'All') return blogPosts.filter((p) => !p.pinned)
+    return blogPosts.filter((p) => p.group === activeGroup)
+  })
 
   // Per-post hero / social image, generated at build time by the prerenderer
   // into /og/blog/<slug>.{png,svg}. The post hero uses the PNG raster (favored
@@ -70,8 +79,63 @@
       </p>
     </header>
 
+    <!-- Pinned / featured post -->
+    {#if activeGroup === 'All' && pinnedPosts.length}
+      {@const f = pinnedPosts[0]}
+      <button
+        type="button"
+        onclick={() => go(f.slug)}
+        class="group mb-10 grid w-full overflow-hidden rounded-2xl border text-left transition-colors md:grid-cols-2"
+        style="border-color: var(--site-accent); background: var(--sg-header-bg);"
+      >
+        <img
+          src={thumbSrc(f.slug)}
+          onerror={hideOnError}
+          width="1200"
+          height="630"
+          loading="eager"
+          alt={`${f.title} - SvGrid blog illustration`}
+          class="h-full w-full object-cover"
+          style="border-color: var(--sg-border);"
+        />
+        <div class="flex flex-col justify-center p-7 md:p-9">
+          <div class="flex items-center gap-2 text-xs" style="color: var(--site-accent);">
+            <span class="rounded-full px-2 py-0.5 font-bold uppercase tracking-wider"
+              style="background: color-mix(in srgb, var(--site-accent) 16%, transparent);">★ Featured</span>
+            <span style="color: var(--site-muted);">{f.group} · {f.readingMinutes} min read</span>
+          </div>
+          <h2 class="mt-3 text-2xl md:text-3xl font-extrabold leading-tight" style="color: var(--sg-fg);">{f.title}</h2>
+          <p class="mt-3 text-sm md:text-base" style="color: var(--site-muted);">{f.description}</p>
+          <span class="mt-5 text-sm font-semibold" style="color: var(--site-accent-2);">Read the story →</span>
+        </div>
+      </button>
+    {/if}
+
+    <!-- Category filter -->
+    <div class="mb-8 flex flex-wrap justify-center gap-2">
+      <button
+        type="button"
+        onclick={() => (activeGroup = 'All')}
+        class="rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors"
+        style:color={activeGroup === 'All' ? 'var(--site-accent)' : 'var(--site-fg)'}
+        style:border-color={activeGroup === 'All' ? 'var(--site-accent)' : 'var(--sg-border)'}
+        style:background={activeGroup === 'All' ? 'color-mix(in srgb, var(--site-accent) 12%, transparent)' : 'transparent'}
+      >All <span style="color: var(--site-muted);">{totalPosts}</span></button>
+      {#each groups as g (g.group)}
+        {@const on = activeGroup === g.group}
+        <button
+          type="button"
+          onclick={() => (activeGroup = g.group)}
+          class="rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors"
+          style:color={on ? 'var(--site-accent)' : 'var(--site-fg)'}
+          style:border-color={on ? 'var(--site-accent)' : 'var(--sg-border)'}
+          style:background={on ? 'color-mix(in srgb, var(--site-accent) 12%, transparent)' : 'transparent'}
+        >{g.group} <span style="color: var(--site-muted);">{g.count}</span></button>
+      {/each}
+    </div>
+
     <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-      {#each blogPosts as p (p.slug)}
+      {#each visiblePosts as p (p.slug)}
         <button
           type="button"
           onclick={() => go(p.slug)}

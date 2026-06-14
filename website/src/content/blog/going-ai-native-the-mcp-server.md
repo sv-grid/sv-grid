@@ -1,13 +1,13 @@
 ---
-title: Build Log - Going AI-Native with an MCP Server
-description: The last piece before launch: making SvGrid the grid AI assistants get right, with a Model Context Protocol server and an llms.txt feed.
-date: 2025-11-04
+title: 'Going AI-Native: The SvGrid MCP Server'
+description: Making SvGrid the grid AI assistants get right, with a Model Context Protocol server and an llms.txt feed.
+date: 2026-07-19
 category: Engineering
 tags: ai, mcp, claude, cursor, engineering, story
 author: SvGrid Team
 ---
 
-The final build-log post before the story catches up to the present. By November 2025 SvGrid was, by every traditional measure, ready: fast, accessible, full-featured, themeable, server-capable. But "ready" in 2025 means something it did not used to. A huge share of the grid code being written now is written with an AI assistant in the loop. So the last thing we built before launch was for them.
+By every traditional measure, SvGrid was ready: fast, accessible, full-featured, themeable, server-capable. But "ready" today means something it did not used to. A huge share of the grid code being written now is written with an AI assistant in the loop. So one of the last things we built was for them.
 
 ## The problem: assistants hallucinate APIs
 
@@ -47,9 +47,9 @@ The how-to is [Build Svelte Grids Faster with AI and the SvGrid MCP Server](buil
 
 This is the same instinct that has driven the team since 2011. We shipped for jQuery because that is where developers were, then web components, then native Svelte. AI assistants are simply where a lot of development happens now, so that is where the grid had to show up. The technology changes; the principle does not.
 
-## The story catches up
+## From build to product
 
-That was the last major piece. With the grid fast, accessible, complete, themeable, server-ready, and grounded for AI, the work shifted from building to sharing - the documentation, the demos, and the launch. The posts after this one in the blog are the present: the feature guides, the comparisons, and the announcement that SvGrid is here. The build is the story; this is where it becomes a product.
+That was the last major piece. With the grid fast, accessible, complete, themeable, server-ready, and grounded for AI, the work shifted from building to sharing - the documentation, the demos, and the launch. From here the blog turns to the feature guides, the comparisons, and the [announcement that SvGrid is here](introducing-svgrid). The build is the story; this is where it becomes a product.
 
 ## Frequently asked questions
 
@@ -57,6 +57,6 @@ That was the last major piece. With the grid fast, accessible, complete, themeab
 
 `sv-grid-mcp` is a Model Context Protocol server that exposes SvGrid's real examples, documentation, and API reference as tools an AI assistant can call, so generated grid code uses props and types that actually exist.
 
-### Why build AI support before launching?
+### Why is AI support a core part of SvGrid?
 
-Because most grid code today is written with AI assistants, and the value of an assistant depends on whether its output compiles. Grounding assistants in the real API is part of the adoption experience, so it shipped as a core capability rather than an afterthought.
+Because most grid code today is written with AI assistants, and the value of an assistant depends on whether its output compiles. Grounding assistants in the real API is part of the adoption experience, so it is a core capability, not an afterthought.

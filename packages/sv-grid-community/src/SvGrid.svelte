@@ -54,6 +54,14 @@
   } from "./render-component";
   import { buildFillPattern } from "./fill-patterns";
   import { buildSparkline, toSparklineValues } from "./sparkline";
+  import {
+    resolveCellFormat,
+    computeColumnStat,
+    formatsNeedingStats,
+    type ConditionalFormat,
+    type ColumnStat,
+    type ResolvedCellFormat,
+  } from "./conditional-formatting";
   import SvGridDropdown from "./SvGridDropdown.svelte";
 
   type Props = {
@@ -89,6 +97,16 @@
     groupable?: boolean;
     pageable?: boolean;
     loading?: boolean;
+    /**
+     * Render `loading` as a non-blocking overlay instead of replacing the
+     * whole grid: the current rows stay visible (dimmed, with a top progress
+     * bar) during a refetch, and the first load shows shimmer skeleton rows.
+     * Ideal for server-paged grids so paging/sorting doesn't flash. Defaults
+     * to `false` (the classic full "Loading..." replacement).
+     */
+    loadingOverlay?: boolean;
+    /** Skeleton placeholder rows to show on first load. Defaults to 8. */
+    loadingSkeletonRows?: number;
     error?: string | null;
     emptyMessage?: string;
     showGlobalFilter?: boolean;
@@ -142,6 +160,26 @@
     enableCellSelection?: boolean;
     enableInlineEditing?: boolean;
     enableRowSummaries?: boolean;
+    /**
+     * Excel-style status bar under the grid showing live aggregates of the
+     * selected cell range (count, numeric count, sum, average, min, max).
+     * `true` shows the default set; pass `{ aggregates: [...] }` to choose
+     * which. Requires `enableCellSelection`.
+     */
+    statusBar?:
+      | boolean
+      | {
+          aggregates?: ReadonlyArray<
+            "count" | "numericCount" | "sum" | "avg" | "min" | "max"
+          >;
+        };
+    /**
+     * Show a docked Columns tool panel - the enterprise sidebar for toggling
+     * column visibility, reordering, and grouping without a right-click. A
+     * toggle button appears at the grid's top-right; the panel itself docks
+     * on the right edge.
+     */
+    toolPanel?: boolean;
     /**
      * Quick way to pick which selection surfaces are active. `'row'` shows the
      * selection checkbox column only, `'cell'` allows rectangle/range cell
@@ -255,6 +293,15 @@
      * you own storage (write your own callbacks to add / edit notes).
      */
     notes?: Record<string, Record<string, string>>;
+    /**
+     * Excel-style conditional formatting. A list of value-driven rules that
+     * color cells: `colorScale` (gradient across the column range),
+     * `dataBar` (in-cell proportional bar), `iconSet` (arrows / traffic /
+     * triangles by threshold), and `rule` (apply a style when a predicate
+     * matches). Scope a format to specific columns with `columns: [...]`,
+     * or omit it to apply to every column. Later entries win on conflict.
+     */
+    conditionalFormats?: ReadonlyArray<ConditionalFormat<TData>>;
     onCellValueChange?: (event: {
       rowIndex: number;
       columnId: string;
@@ -1149,6 +1196,67 @@
     return row.getCellValueByColumnId(column.id);
   }
 
+  // ---- Conditional formatting --------------------------------------------
+  // True when the feature is in use; gates the per-cell positioning context
+  // (cells are otherwise non-relative for scroll performance).
+  const hasConditionalFormats = $derived(
+    (props.conditionalFormats?.length ?? 0) > 0,
+  );
+  // Per-column numeric min/max, needed only by colorScale / dataBar formats.
+  // Lazy: this derived never runs unless `conditionalFormats` is set.
+  const conditionalColumnStats = $derived.by(() => {
+    const map = new Map<string, ColumnStat>();
+    const formats = props.conditionalFormats;
+    if (!formats?.length || !formatsNeedingStats(formats)) return map;
+    for (const column of allColumns) {
+      const needs = formats.some(
+        (f) =>
+          (f.type === "colorScale" || f.type === "dataBar") &&
+          (!f.columns || f.columns.includes(column.id)),
+      );
+      if (!needs) continue;
+      const def = column.columnDef;
+      const accessorFn = def.accessorFn;
+      const field = def.field;
+      const stat = computeColumnStat(
+        (function* () {
+          for (const row of allRows) {
+            yield accessorFn
+              ? accessorFn(row.original)
+              : field
+                ? (row.original as Record<string, unknown>)[field]
+                : row.getCellValueByColumnId(column.id);
+          }
+        })(),
+      );
+      if (stat) map.set(column.id, stat);
+    }
+    return map;
+  });
+
+  function cellConditionalFormat(
+    row: Row<TData>,
+    column: Column<TData>,
+    value: unknown,
+  ): ResolvedCellFormat | null {
+    const formats = props.conditionalFormats;
+    if (!formats?.length) return null;
+    return resolveCellFormat(
+      value,
+      row.original,
+      column.id,
+      formats,
+      conditionalColumnStats.get(column.id) ?? null,
+    );
+  }
+
+  function cfTextStyle(cf: ResolvedCellFormat): string {
+    let s = "";
+    if (cf.color) s += `color:${cf.color};`;
+    if (cf.fontWeight != null) s += `font-weight:${cf.fontWeight};`;
+    return s;
+  }
+
   function isGroupRow(row: Row<TData>) {
     return typeof row.getCanExpand === "function" && row.getCanExpand();
   }
@@ -1371,6 +1479,117 @@
     lastCellRangeSerialized = serialized;
     props.onCellSelectionChange?.(ranges);
   });
+
+  // ---- Status bar: live aggregates of the selected cell range -----------
+  const statusBarEnabled = $derived(
+    props.statusBar != null && props.statusBar !== false,
+  );
+  const statusBarAggregates = $derived(
+    typeof props.statusBar === "object" && props.statusBar.aggregates
+      ? props.statusBar.aggregates
+      : (["count", "sum", "avg", "min", "max"] as const),
+  );
+  const statusBarStats = $derived.by(() => {
+    if (!statusBarEnabled) return null;
+    const a = selectionRange.anchor;
+    const f = selectionRange.focus;
+    if (!a || !f) return null;
+    const minR = Math.min(a.rowIndex, f.rowIndex);
+    const maxR = Math.max(a.rowIndex, f.rowIndex);
+    const minC = Math.min(a.colIndex, f.colIndex);
+    const maxC = Math.max(a.colIndex, f.colIndex);
+    let count = 0;
+    let numericCount = 0;
+    let sum = 0;
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+    for (let r = minR; r <= maxR; r += 1) {
+      const row = allRows[r];
+      if (!row || isGroupRow(row)) continue;
+      for (let c = minC; c <= maxC; c += 1) {
+        const col = allColumns[c];
+        if (!col) continue;
+        count += 1;
+        const base = getColumnBaseValue(row, col);
+        const v = getCellDisplayValue(row.id, col.id, base);
+        if (v == null || v === "") continue;
+        const n = Number(v);
+        if (!Number.isFinite(n)) continue;
+        numericCount += 1;
+        sum += n;
+        if (n < min) min = n;
+        if (n > max) max = n;
+      }
+    }
+    if (count <= 1) return null;
+    return {
+      count,
+      numericCount,
+      sum,
+      avg: numericCount ? sum / numericCount : 0,
+      min: numericCount ? min : 0,
+      max: numericCount ? max : 0,
+    };
+  });
+
+  function fmtStat(n: number): string {
+    return Number.isInteger(n)
+      ? n.toLocaleString()
+      : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  // ---- Tool panel (docked columns sidebar) -------------------------------
+  let toolPanelOpen = $state(false);
+  const toolPanelEnabled = $derived(props.toolPanel === true);
+  // Every column (including hidden ones) in the user's current order, so the
+  // panel can toggle/reorder anything. Group columns are flagged live.
+  const toolPanelColumns = $derived.by(() => {
+    gridStateVersion;
+    const all = grid.getAllColumns();
+    if (!userColumnOrder.length) return all;
+    const byId = new Map(all.map((c) => [c.id, c]));
+    const ordered: Column<TData>[] = [];
+    const seen = new Set<string>();
+    for (const id of userColumnOrder) {
+      const c = byId.get(id);
+      if (c && !seen.has(id)) {
+        ordered.push(c);
+        seen.add(id);
+      }
+    }
+    for (const c of all) if (!seen.has(c.id)) ordered.push(c);
+    return ordered;
+  });
+
+  function toolPanelHeaderLabel(column: Column<TData>): string {
+    const h = column.columnDef.header;
+    return typeof h === "string" ? h : column.id;
+  }
+  function toggleColumnVisibleInPanel(columnId: string) {
+    if (hiddenColumns[columnId]) {
+      const next = { ...hiddenColumns };
+      delete next[columnId];
+      hiddenColumns = next;
+    } else {
+      hiddenColumns = { ...hiddenColumns, [columnId]: true };
+    }
+  }
+  function moveColumnInPanel(columnId: string, dir: -1 | 1) {
+    const current = toolPanelColumns.map((c) => c.id);
+    const i = current.indexOf(columnId);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= current.length) return;
+    [current[i], current[j]] = [current[j]!, current[i]!];
+    userColumnOrder = current;
+  }
+  function toggleGroupInPanel(columnId: string) {
+    const g = (grid.getState().grouping ?? []) as string[];
+    grid.setGrouping(
+      g.includes(columnId)
+        ? g.filter((x) => x !== columnId)
+        : [...g, columnId],
+    );
+  }
 
   // Forward sort-clause changes to the consumer. Same dedupe pattern as the
   // selection callback above - fires only when the serialized clauses change.
@@ -4268,6 +4487,50 @@
         const drop = new Set(rowIndices);
         internalData = internalData.filter((_, i) => !drop.has(i));
       },
+      applyTransaction(tx) {
+        const getId = props.getRowId;
+        let next = internalData.slice() as Array<TData>;
+        let added = 0;
+        let updated = 0;
+        let removed = 0;
+
+        if (tx.remove?.length) {
+          const removeIds = new Set<string>();
+          const removeRefs = new Set<TData>();
+          for (const r of tx.remove) {
+            if (typeof r === "string") removeIds.add(r);
+            else removeRefs.add(r as TData);
+          }
+          next = next.filter((row, i) => {
+            const hit =
+              removeRefs.has(row) ||
+              (getId ? removeIds.has(getId(row, i)) : false);
+            if (hit) removed += 1;
+            return !hit;
+          });
+        }
+
+        if (tx.update?.length && getId) {
+          const byId = new Map<string, TData>();
+          for (const u of tx.update) byId.set(getId(u, 0), u);
+          next = next.map((row, i) => {
+            const u = byId.get(getId(row, i));
+            if (u) {
+              updated += 1;
+              return u;
+            }
+            return row;
+          });
+        }
+
+        if (tx.add?.length) {
+          next.push(...(tx.add as Array<TData>));
+          added += tx.add.length;
+        }
+
+        internalData = next;
+        return { added, updated, removed };
+      },
       addColumn(column, position = "right") {
         this.addColumns([column], position);
       },
@@ -4681,7 +4944,7 @@
   onpointermove={onWindowPointerMove}
 />
 
-{#if props.loading}
+{#if props.loading && !props.loadingOverlay}
   <div class="sv-grid-state sv-grid-state-loading" role="status">
     Loading grid data...
   </div>
@@ -4888,6 +5151,38 @@
       {:else}
         {formatCellValue(column, cellValue, row)}
       {/if}
+    {/if}
+  {/snippet}
+
+  <!-- Cell content wrapped with conditional-formatting overlays. The color-
+       scale fill and data bar are absolutely-positioned layers BEHIND the
+       text (the app stylesheet forces `.sv-grid-cell` background with
+       !important, so an overlay is the only way to tint reliably). Text
+       color / weight and the icon-set glyph ride on the content wrapper.
+       Falls straight through to `cellBody` when no format applies, so the
+       common (unformatted) path pays nothing. -->
+  {#snippet cellBodyWithFormat(
+    row: Row<TData>,
+    column: Column<TData>,
+    cellValue: unknown,
+  )}
+    {@const cf = cellConditionalFormat(row, column, cellValue)}
+    {#if cf && (cf.background || cf.dataBar || cf.icon || cf.color || cf.fontWeight != null)}
+      {#if cf.background}
+        <div class="sv-grid-cf-bg" style={`background:${cf.background}`}></div>
+      {/if}
+      {#if cf.dataBar}
+        <div
+          class="sv-grid-cf-bar"
+          style={`width:${cf.dataBar.percent}%;background:${cf.dataBar.color}`}
+        ></div>
+      {/if}
+      <span class="sv-grid-cf-content" style={cfTextStyle(cf)}>
+        {#if cf.icon}<span class="sv-grid-cf-icon">{cf.icon}</span>{/if}
+        {#if !cf.iconOnly}{@render cellBody(row, column, cellValue)}{/if}
+      </span>
+    {:else}
+      {@render cellBody(row, column, cellValue)}
     {/if}
   {/snippet}
 
@@ -5266,6 +5561,21 @@
       <span class="sv-grid-group-count"
         >{count} {count === 1 ? "row" : "rows"}</span
       >
+      {#each allColumns as col (col.id)}
+        {#if col.columnDef.aggregate && col.id !== groupingColumnId}
+          {@const aggVal = row.getCellValueByColumnId(col.id)}
+          {#if aggVal != null && aggVal !== ""}
+            <span class="sv-grid-group-agg">
+              <span class="sv-grid-group-agg-label"
+                >{typeof col.columnDef.header === "string"
+                  ? col.columnDef.header
+                  : col.id}</span
+              >
+              {formatCellValue(col, aggVal, row)}
+            </span>
+          {/if}
+        {/if}
+      {/each}
     </div>
   {/snippet}
 
@@ -5753,7 +6063,7 @@
           {/if}
           <!-- svelte-ignore a11y_no_redundant_roles -->
           <tbody class="sv-grid-body" role="rowgroup">
-            {#if !allRows.length}
+            {#if !allRows.length && !(props.loading && props.loadingOverlay)}
               <tr class="sv-grid-row sv-grid-empty-row">
                 <td
                   class="sv-grid-cell sv-grid-empty-cell"
@@ -5880,6 +6190,7 @@
                           class:sv-grid-cell-active={activeCell.rowIndex ===
                             rowIndex && activeCell.colIndex === colIndex}
                           class:sv-grid-cell-has-fill-handle={hasFillHandle}
+                          class:sv-grid-cell-cf={hasConditionalFormats}
                           class:sv-grid-cell-has-note={cellNote != null}
                           data-svgrid-row={rowIndex}
                           data-svgrid-col={colIndex}
@@ -5919,7 +6230,7 @@
                           {#if isEditing}
                             {@render editorBody(rendered.column, row)}
                           {:else}
-                            {@render cellBody(row, rendered.column, cellValue)}
+                            {@render cellBodyWithFormat(row, rendered.column, cellValue)}
                           {/if}
                           {#if !isEditing && fillHandleCell && fillHandleCell.rowIndex === rowIndex && fillHandleCell.colIndex === colIndex}
                             <!-- Excel-style fill handle: drag down/right to
@@ -6068,6 +6379,7 @@
                         class:sv-grid-cell-editing={isEditing}
                         class:sv-grid-cell-active={activeCell.rowIndex ===
                           rowIndex && activeCell.colIndex === colIndex}
+                        class:sv-grid-cell-cf={hasConditionalFormats}
                         class:sv-grid-cell-has-note={cellNote != null}
                         data-svgrid-row={rowIndex}
                         data-svgrid-col={colIndex}
@@ -6107,7 +6419,7 @@
                         {#if isEditing}
                           {@render editorBody(rendered.column, row)}
                         {:else}
-                          {@render cellBody(row, rendered.column, cellValue)}
+                          {@render cellBodyWithFormat(row, rendered.column, cellValue)}
                         {/if}
                         {#if cellNote != null && !isEditing}
                           <!-- Excel-style per-cell note indicator. The
@@ -6273,6 +6585,39 @@
       {/if}
     </div>
 
+    {#if statusBarEnabled && statusBarStats}
+      {@const s = statusBarStats}
+      <div class="sv-grid-status-bar" role="status" aria-live="polite">
+        {#each statusBarAggregates as agg (agg)}
+          {#if agg === "count"}
+            <span class="sv-grid-status-item"
+              ><span class="sv-grid-status-label">Count</span>{fmtStat(s.count)}</span
+            >
+          {:else if agg === "numericCount"}
+            <span class="sv-grid-status-item"
+              ><span class="sv-grid-status-label">Numeric</span>{fmtStat(s.numericCount)}</span
+            >
+          {:else if s.numericCount > 0 && agg === "sum"}
+            <span class="sv-grid-status-item"
+              ><span class="sv-grid-status-label">Sum</span>{fmtStat(s.sum)}</span
+            >
+          {:else if s.numericCount > 0 && agg === "avg"}
+            <span class="sv-grid-status-item"
+              ><span class="sv-grid-status-label">Avg</span>{fmtStat(s.avg)}</span
+            >
+          {:else if s.numericCount > 0 && agg === "min"}
+            <span class="sv-grid-status-item"
+              ><span class="sv-grid-status-label">Min</span>{fmtStat(s.min)}</span
+            >
+          {:else if s.numericCount > 0 && agg === "max"}
+            <span class="sv-grid-status-item"
+              ><span class="sv-grid-status-label">Max</span>{fmtStat(s.max)}</span
+            >
+          {/if}
+        {/each}
+      </div>
+    {/if}
+
     {#if paginationEnabled}
       {@const totalRows = allRowsBeforePagination.length}
       {@const pageSize = paginationState.pageSize}
@@ -6392,6 +6737,100 @@
         <button type="button" class="sv-grid-find-close" aria-label="Close find"
           onclick={() => { findOpen = false; findQuery = '' }}>✕</button>
       </div>
+    {/if}
+
+    {#if props.loading && props.loadingOverlay}
+      <div class="sv-grid-loading-overlay" role="status" aria-live="polite">
+        <div class="sv-grid-loading-bar"></div>
+        {#if allRows.length === 0}
+          <div class="sv-grid-skeleton" aria-hidden="true">
+            {#each Array(props.loadingSkeletonRows ?? 8) as _, r (r)}
+              <div class="sv-grid-skeleton-row">
+                {#each allColumns as col (col.id)}
+                  <div
+                    class="sv-grid-skeleton-cell"
+                    style={`width:${getColumnWidth(col.id)}px`}
+                  >
+                    <span class="sv-grid-skeleton-bar"></span>
+                  </div>
+                {/each}
+              </div>
+            {/each}
+          </div>
+        {/if}
+        <span class="sv-grid-sr-only">Loading…</span>
+      </div>
+    {/if}
+
+    {#if toolPanelEnabled}
+      <button
+        type="button"
+        class="sv-grid-tool-panel-toggle"
+        class:is-open={toolPanelOpen}
+        aria-label={toolPanelOpen ? "Close columns panel" : "Open columns panel"}
+        aria-expanded={toolPanelOpen}
+        onclick={() => (toolPanelOpen = !toolPanelOpen)}
+        title="Columns"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="6" height="16" rx="1" />
+          <rect x="11" y="4" width="4" height="16" rx="1" />
+          <rect x="17" y="4" width="4" height="16" rx="1" />
+        </svg>
+      </button>
+      {#if toolPanelOpen}
+        <aside class="sv-grid-tool-panel" aria-label="Columns tool panel">
+          <div class="sv-grid-tool-panel-head">
+            <span>Columns</span>
+            <button
+              type="button"
+              class="sv-grid-tool-panel-close"
+              aria-label="Close"
+              onclick={() => (toolPanelOpen = false)}>✕</button
+            >
+          </div>
+          <ul class="sv-grid-tool-panel-list">
+            {#each toolPanelColumns as column, i (column.id)}
+              {@const visible = !hiddenColumns[column.id]}
+              {@const grouped = groupingColumns.includes(column.id)}
+              <li class="sv-grid-tool-panel-item">
+                <label class="sv-grid-tool-panel-vis">
+                  <input
+                    type="checkbox"
+                    checked={visible}
+                    onchange={() => toggleColumnVisibleInPanel(column.id)}
+                  />
+                  <span class="sv-grid-tool-panel-name">{toolPanelHeaderLabel(column)}</span>
+                </label>
+                <span class="sv-grid-tool-panel-actions">
+                  <button
+                    type="button"
+                    class="sv-grid-tool-panel-btn"
+                    class:is-active={grouped}
+                    aria-label={grouped ? "Ungroup" : "Group by"}
+                    title={grouped ? "Ungroup" : "Group by this column"}
+                    onclick={() => toggleGroupInPanel(column.id)}>⊞</button
+                  >
+                  <button
+                    type="button"
+                    class="sv-grid-tool-panel-btn"
+                    aria-label="Move up"
+                    disabled={i === 0}
+                    onclick={() => moveColumnInPanel(column.id, -1)}>↑</button
+                  >
+                  <button
+                    type="button"
+                    class="sv-grid-tool-panel-btn"
+                    aria-label="Move down"
+                    disabled={i === toolPanelColumns.length - 1}
+                    onclick={() => moveColumnInPanel(column.id, 1)}>↓</button
+                  >
+                </span>
+              </li>
+            {/each}
+          </ul>
+        </aside>
+      {/if}
     {/if}
   </div>
   <!-- /.sv-grid-root -->
@@ -6761,6 +7200,198 @@
    * viewport. */
   .sv-grid-root {
     position: relative;
+  }
+  .sv-grid-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .sv-grid-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 18;
+    pointer-events: auto;
+    background: color-mix(in srgb, var(--sg-bg, #fff) 35%, transparent);
+  }
+  /* Indeterminate top progress bar - the "something is happening" signal
+     that keeps the current rows visible underneath (no flash). */
+  .sv-grid-loading-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--sg-accent, #2563eb) 18%, transparent);
+  }
+  .sv-grid-loading-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: var(--sg-accent, #2563eb);
+    animation: sv-grid-loading-slide 1.1s ease-in-out infinite;
+  }
+  @keyframes sv-grid-loading-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+  }
+  /* First-load skeleton: shimmer placeholder rows under the header. */
+  .sv-grid-skeleton {
+    position: absolute;
+    top: var(--sg-thead-h, 40px);
+    left: 0;
+    right: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  .sv-grid-skeleton-row {
+    display: flex;
+    height: var(--sg-pinned-row-h, 36px);
+    align-items: center;
+    border-bottom: 1px solid var(--sg-border, #e2e8f0);
+  }
+  .sv-grid-skeleton-cell {
+    flex-shrink: 0;
+    padding: 0 12px;
+    box-sizing: border-box;
+  }
+  .sv-grid-skeleton-bar {
+    display: block;
+    height: 10px;
+    width: 70%;
+    border-radius: 4px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--sg-muted, #94a3b8) 18%, transparent) 25%,
+      color-mix(in srgb, var(--sg-muted, #94a3b8) 32%, transparent) 50%,
+      color-mix(in srgb, var(--sg-muted, #94a3b8) 18%, transparent) 75%
+    );
+    background-size: 200% 100%;
+    animation: sv-grid-shimmer 1.3s linear infinite;
+  }
+  @keyframes sv-grid-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .sv-grid-tool-panel-toggle {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 21;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--sg-border, #e2e8f0);
+    border-radius: 6px;
+    background: var(--sg-bg, #fff);
+    color: var(--sg-muted, #64748b);
+    cursor: pointer;
+  }
+  .sv-grid-tool-panel-toggle:hover,
+  .sv-grid-tool-panel-toggle.is-open {
+    color: var(--sg-accent, #2563eb);
+    border-color: var(--sg-accent, #2563eb);
+  }
+  .sv-grid-tool-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    background: var(--sg-bg, #fff);
+    border-left: 1px solid var(--sg-border, #e2e8f0);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+  }
+  .sv-grid-tool-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--sg-muted, #64748b);
+    border-bottom: 1px solid var(--sg-border, #e2e8f0);
+  }
+  .sv-grid-tool-panel-close {
+    border: 0;
+    background: transparent;
+    color: var(--sg-muted, #64748b);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .sv-grid-tool-panel-list {
+    list-style: none;
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .sv-grid-tool-panel-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 3px 6px;
+    border-radius: 5px;
+  }
+  .sv-grid-tool-panel-item:hover {
+    background: var(--sg-row-hover-bg, rgba(148, 163, 184, 0.1));
+  }
+  .sv-grid-tool-panel-vis {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--sg-fg, #0f172a);
+    cursor: pointer;
+  }
+  .sv-grid-tool-panel-vis input {
+    accent-color: var(--sg-accent, #2563eb);
+  }
+  .sv-grid-tool-panel-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sv-grid-tool-panel-actions {
+    display: inline-flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .sv-grid-tool-panel-btn {
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--sg-muted, #64748b);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .sv-grid-tool-panel-btn:hover:not(:disabled) {
+    background: var(--sg-row-hover-bg, rgba(148, 163, 184, 0.18));
+    color: var(--sg-fg, #0f172a);
+  }
+  .sv-grid-tool-panel-btn.is-active {
+    color: var(--sg-accent, #2563eb);
+  }
+  .sv-grid-tool-panel-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
   }
   /* Root wrapper fill mode: only takes effect when consumer passes
    * containerHeight='100%'. The shell becomes a flex item that expands
@@ -7517,6 +8148,56 @@
     vertical-align: middle;
     overflow: visible;
   }
+  /* Conditional formatting overlays - behind the cell text. */
+  .sv-grid-cf-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .sv-grid-cf-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 0;
+    opacity: 0.85;
+    border-radius: 0 2px 2px 0;
+    pointer-events: none;
+  }
+  .sv-grid-cell-cf {
+    position: relative;
+  }
+  .sv-grid-status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--sg-fg);
+    background: var(--sg-header-bg, #f1f5f9);
+    border: 1px solid var(--sg-border, #e2e8f0);
+    border-top: 0;
+    flex-shrink: 0;
+  }
+  .sv-grid-status-item {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .sv-grid-status-label {
+    color: var(--sg-muted, #64748b);
+    font-weight: 400;
+    margin-right: 5px;
+  }
+  .sv-grid-cf-content {
+    position: relative;
+    z-index: 1;
+  }
+  .sv-grid-cf-icon {
+    margin-right: 5px;
+    font-size: 0.95em;
+  }
   .sv-grid-chip {
     display: inline-flex;
     align-items: center;
@@ -7948,6 +8629,21 @@
     font-weight: 400;
     font-size: 12px;
     color: #64748b;
+  }
+  .sv-grid-group-agg {
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sg-fg);
+    white-space: nowrap;
+  }
+  .sv-grid-group-agg-label {
+    font-weight: 400;
+    color: var(--sg-muted, #64748b);
+    margin-right: 4px;
+  }
+  .sv-grid-group-agg-label::after {
+    content: ":";
   }
 
   .sv-grid-group-child-indent {

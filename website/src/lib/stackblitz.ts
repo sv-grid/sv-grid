@@ -43,14 +43,14 @@ function detectDependencies(source: string): Record<string, string> {
   return deps
 }
 
-function buildFiles(demo: Demo): Record<string, string> {
+function buildFiles(demo: Demo, source: string): Record<string, string> {
   const pkg = {
     name: `svgrid-${demo.id}`,
     private: true,
     version: '0.0.0',
     type: 'module',
     scripts: { dev: 'vite', build: 'vite build', preview: 'vite preview' },
-    dependencies: detectDependencies(demo.source),
+    dependencies: detectDependencies(source),
     devDependencies: {
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       svelte: '^5.55.5',
@@ -116,7 +116,7 @@ export default { preprocess: vitePreprocess() }
     'svelte.config.js': svelteConfig,
     'tsconfig.json': tsconfig,
     'src/main.ts': mainTs,
-    'src/App.svelte': demo.source,
+    'src/App.svelte': source,
   }
 }
 
@@ -125,8 +125,9 @@ export default { preprocess: vitePreprocess() }
  * Builds a hidden form and submits it - the only reliable cross-browser way to
  * POST a multi-file project to StackBlitz without their SDK.
  */
-export function openInStackBlitz(demo: Demo): void {
-  const files = buildFiles(demo)
+export async function openInStackBlitz(demo: Demo): Promise<void> {
+  const source = await demo.loadSource()
+  const files = buildFiles(demo, source)
 
   const form = document.createElement('form')
   form.method = 'POST'

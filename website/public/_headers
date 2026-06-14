@@ -1,0 +1,15 @@
+# Cache headers for static hosting (Cloudflare Pages / Netlify honor this file).
+# NOTE: plain GitHub Pages ignores this and forces max-age=600 on everything.
+# Vite emits content-hashed filenames under /assets, so those files are
+# immutable: a content change produces a new filename. Cache them for a year.
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML and the SPA fallback must stay fresh so new deploys go live immediately.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/404.html
+  Cache-Control: public, max-age=0, must-revalidate

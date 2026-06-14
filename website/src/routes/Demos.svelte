@@ -14,7 +14,6 @@
   let { demoId }: Props = $props()
 
   const current = $derived(findDemo(demoId))
-  const Current = $derived(current.component)
 
   // Mobile: the sidebar is a slide-in drawer (it would otherwise eat ~288px
   // of a phone screen and crush the demo). Opening a demo closes it.
@@ -25,7 +24,16 @@
     mobileNav = false
   }
 
+  // Source is loaded on demand (the registry only holds a lazy loader), so the
+  // raw text ships only when the user actually opens the source panel.
   let showSource = $state(false)
+  let sourceText = $state<string | null>(null)
+
+  async function openSource() {
+    sourceText = null
+    showSource = true
+    sourceText = await current.loadSource()
+  }
 
   // ---- Smart demo search (mirrors examples/src/App.svelte) ---------------
   let query = $state('')
@@ -294,7 +302,7 @@
         </button>
         <button
           type="button"
-          onclick={() => (showSource = true)}
+          onclick={openSource}
           class="inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-sm"
           style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
           title="View source"
@@ -310,7 +318,18 @@
     </header>
     <div class="flex flex-col flex-1 min-h-0">
       {#key current.id}
-        <Current />
+        {#await current.load()}
+          <div class="flex flex-1 items-center justify-center text-sm" style="color: var(--sg-muted);">
+            Loading demo…
+          </div>
+        {:then mod}
+          {@const Current = mod.default}
+          <Current />
+        {:catch}
+          <div class="flex flex-1 items-center justify-center text-sm" style="color: var(--sg-muted);">
+            Failed to load this demo. Try refreshing the page.
+          </div>
+        {/await}
       {/key}
     </div>
   </main>
@@ -319,7 +338,7 @@
 {#if showSource}
   <SourceModal
     title={current.title}
-    source={current.source}
+    source={sourceText ?? '// Loading source…'}
     onClose={() => (showSource = false)}
   />
 {/if}

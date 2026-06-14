@@ -1,7 +1,7 @@
 ---
 title: Accessibility from the Ground Up
 description: Why SvGrid shipped WAI-ARIA roles and full keyboard navigation as defaults, and what it takes to keep a feature-rich grid accessible as it grows.
-date: 2026-06-13
+date: 2026-06-29
 category: Engineering
 tags: accessibility, keyboard, aria, engineering, story
 author: SvGrid Team

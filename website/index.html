@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#181d27" />
 
+    <!-- Inter is the first font in body's font-family stack; load it once
+         site-wide so it isn't only fetched when the theme builder mounts.
+         Without this, navigating to /theme-builder swapped the nav's
+         rendered font from system-ui to Inter mid-session. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+
     <!-- Default meta - JS overrides per route. The defaults below ensure
          crawlers that don't run JS still get full title + description
          + OpenGraph for the homepage. -->

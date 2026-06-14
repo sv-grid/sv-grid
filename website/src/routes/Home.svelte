@@ -351,7 +351,7 @@
     <div>
       <h2 class="text-2xl md:text-3xl font-bold tracking-tight" style="color: var(--sg-fg)">Live: a stock market feed</h2>
       <p class="mt-1 text-sm md:text-base" style="color: var(--site-muted);">
-        25 symbols, 250 ms tick. Cells flash green / red on each up- and down-tick. Sorting and cell selection still work while live - try clicking a column header.
+        25 symbols, 500 ms tick. Cells flash green / red on each up- and down-tick. Sorting and cell selection still work while live - try clicking a column header.
       </p>
     </div>
     <a href="#/demos/11-stock-market" class="text-sm font-medium" style="color: var(--site-accent-2);">Open in gallery →</a>

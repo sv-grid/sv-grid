@@ -106,7 +106,7 @@ const STYLE_TEMPLATE = `
   }
   .thumb {
     position: absolute;
-    border-radius: 6px;
+    border-radius: var(--sg-scrollbar-thumb-radius, 6px);
     background: var(--sg-scrollbar-thumb, #b1bccd);
     cursor: pointer;
     transition: background-color 100ms ease;

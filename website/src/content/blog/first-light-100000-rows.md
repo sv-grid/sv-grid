@@ -1,7 +1,7 @@
 ---
 title: First Light - Pointing SvGrid at 100,000 Rows
 description: The milestone that validated the whole approach: virtualization on a runes-native engine, scrolling a hundred thousand rows smoothly, and what it proved about building native.
-date: 2026-06-13
+date: 2026-07-18
 category: Company
 tags: company, story, performance, virtualization
 author: SvGrid Team

@@ -282,6 +282,18 @@ function parseFrontmatter(raw) {
   return { meta, body }
 }
 
+// Top-level groups for the blog index - mirrors BLOG_GROUPS in lib/blog.ts.
+const BLOG_GROUPS = ['Tutorials', 'Compare', 'Performance', 'Engineering', 'Guides', 'AI', 'Pro', 'Company']
+const CATEGORY_TO_GROUP = {
+  'Getting started': 'Tutorials', Sorting: 'Tutorials', Filtering: 'Tutorials', Editing: 'Tutorials',
+  Grouping: 'Tutorials', Selection: 'Tutorials', Columns: 'Tutorials', Cells: 'Tutorials', Rows: 'Tutorials',
+  Formatting: 'Tutorials', Data: 'Tutorials', 'Use cases': 'Tutorials', Comparisons: 'Compare',
+  Performance: 'Performance', Engineering: 'Engineering', Architecture: 'Engineering',
+  Accessibility: 'Guides', Theming: 'Guides', Integration: 'Guides', Concepts: 'Guides', Reference: 'Guides',
+  AI: 'AI', Pro: 'Pro', Export: 'Pro', Product: 'Pro', Company: 'Company',
+}
+const blogGroupOf = (cat) => CATEGORY_TO_GROUP[cat] ?? 'Guides'
+
 /** Collect every blog post (newest first) from src/content/blog/*.md. */
 async function parseBlog() {
   let entries
@@ -296,14 +308,17 @@ async function parseBlog() {
     const raw = await readFile(join(BLOG_DIR, entry.name), 'utf-8')
     const { meta, body } = parseFrontmatter(raw)
     const words = body.trim().split(/\s+/).filter(Boolean).length
+    const category = meta.category ?? 'General'
     out.push({
       slug: entry.name.replace(/\.md$/, ''),
       title: meta.title ?? entry.name.replace(/\.md$/, ''),
       description: meta.description ?? '',
       date: meta.date ?? '1970-01-01',
-      category: meta.category ?? 'General',
+      category,
+      group: blogGroupOf(category),
       tags: (meta.tags ?? '').split(',').map((t) => t.trim()).filter(Boolean),
       author: meta.author ?? 'SvGrid Team',
+      pinned: meta.pinned === 'true',
       markdown: body,
       readingMinutes: Math.max(1, Math.round(words / 200)),
     })
@@ -417,11 +432,23 @@ function compareIndexBody(comparisons) {
 }
 
 function blogIndexBody(posts) {
-  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Blog - Svelte Data Grid Tips &amp; Guides</h1><p>${posts.length} practical, copy-paste tips for building fast, accessible data grids in Svelte 5: sorting, filtering, virtualization, editing, server-side data, theming, and more.</p><ul>`
-  for (const p of posts) {
-    html += `<li><a href="${BASE}blog/${p.slug}">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Blog - Svelte Data Grid Tips &amp; Guides</h1><p>${posts.length} practical, copy-paste tips and the story behind building a Svelte 5 data grid: sorting, filtering, virtualization, editing, server-side data, theming, and more.</p>`
+  // Featured (pinned) posts first.
+  const pinned = posts.filter((p) => p.pinned)
+  if (pinned.length) {
+    html += `<h2>Featured</h2><ul>`
+    for (const p of pinned) html += `<li><a href="${BASE}blog/${p.slug}">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+    html += `</ul>`
   }
-  return html + `</ul></main>`
+  // Then a section per top-level group.
+  for (const group of BLOG_GROUPS) {
+    const inGroup = posts.filter((p) => p.group === group && !p.pinned)
+    if (!inGroup.length) continue
+    html += `<h2>${escapeAttr(group)}</h2><ul>`
+    for (const p of inGroup) html += `<li><a href="${BASE}blog/${p.slug}">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+    html += `</ul>`
+  }
+  return html + `</main>`
 }
 
 function faqIndexBody(items) {
@@ -537,7 +564,11 @@ async function main() {
   const demos = await parseDemos()
   const comparisons = await parseComparisons()
   const faqItems = await parseFaqRoute()
-  const blogPosts = await parseBlog()
+  // Scheduled publishing: only build posts whose date has arrived. Future-dated
+  // posts stay out of the static HTML, cards, and sitemap until a build runs on
+  // or after their date (the daily deploy cron handles the drip).
+  const buildDate = new Date().toISOString().slice(0, 10)
+  const blogPosts = (await parseBlog()).filter((p) => p.date <= buildDate)
 
   // Generate per-section Open Graph cards into /og/*.svg.
   const ogDir = join(DIST, 'og')

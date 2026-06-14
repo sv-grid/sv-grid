@@ -129,8 +129,8 @@
     </span>
   </div>
 
-  <div class="grid gap-3 flex-1 min-h-0 lg:grid-cols-[1fr_280px]">
-    <div class="min-h-0">
+  <div class="grid gap-3 flex-1 min-h-0 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <div class="min-h-0 min-w-0">
       <SvGrid
         data={rows}
         columns={columns}

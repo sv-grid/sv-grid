@@ -9,6 +9,7 @@ export {
   createGroupedRowModel,
   createPaginatedRowModel,
   createSortedRowModel,
+  applyGroupAggregate,
   filterFns,
   rowExpandingFeature,
   rowPaginationFeature,
@@ -26,6 +27,7 @@ export {
   type Column,
   type ColumnDef,
   type ColumnDefTemplate,
+  type GroupAggregator,
   type Header,
   type HeaderContext,
   type HeaderGroup,
@@ -44,6 +46,30 @@ export { subscribeGrid, subscribeSvGrid } from './subscribe'
 export { default as SvGrid } from './SvGrid.svelte'
 export { default as FlexRender } from './FlexRender.svelte'
 export { renderComponent, renderSnippet } from './render-component'
+export { default as SvGridChart } from './SvGridChart.svelte'
+export {
+  buildChart,
+  rowsToChartSpec,
+  niceScale,
+  DEFAULT_PALETTE,
+  type ChartType,
+  type ChartSpec,
+  type ChartSeries,
+  type ChartGeometry,
+  type ChartBar,
+  type ChartLine,
+  type ChartLinePoint,
+  type ChartPieSlice,
+  type ChartSelection,
+  type NiceScale,
+} from './chart'
+export {
+  chartToSvgString,
+  downloadChartSvg,
+  chartToPngBlob,
+  downloadChartPng,
+  type ChartExportOptions,
+} from './chart-export'
 export {
   buildSparkline,
   toSparklineValues,
@@ -51,6 +77,47 @@ export {
   type SparklineType,
   type SparklineGeometry,
 } from './sparkline'
+export {
+  createCollaboration,
+  broadcastChannelTransport,
+  type CollabUser,
+  type CollabCell,
+  type CollabPresence,
+  type CollabMessage,
+  type CollabTransport,
+  type Collaboration,
+} from './collaboration'
+export {
+  createServerDataSource,
+  type ServerDataSource,
+  type ServerRequest,
+  type ServerResult,
+  type ServerController,
+  type ServerState,
+  type ServerSortModel,
+  type ServerFilterModel,
+} from './server-data-source'
+export {
+  createNamedViews,
+  memoryViews,
+  localStorageViews,
+  type SavedView,
+  type ViewStorage,
+  type NamedViews,
+} from './named-views'
+export {
+  resolveCellFormat,
+  computeColumnStat,
+  lerpColor,
+  contrastText,
+  type ConditionalFormat,
+  type ConditionalFormatSpec,
+  type ColorScaleFormat,
+  type DataBarFormat,
+  type IconSetFormat,
+  type RuleFormat,
+  type ResolvedCellFormat,
+} from './conditional-formatting'
 export { getKeyboardIntent, getNextActiveCell, type GridKeyboardIntent } from './keyboard'
 export { createVirtualizer } from './virtualization/virtualizer'
 export { createSvelteVirtualizer } from './virtualization/svelte-virtualizer.svelte'
