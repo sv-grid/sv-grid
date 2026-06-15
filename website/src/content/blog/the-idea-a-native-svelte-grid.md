@@ -4,7 +4,7 @@ description: After Svelte 5 shipped, we surveyed the Svelte data-grid landscape 
 date: 2026-06-13
 category: Company
 tags: company, story, idea, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Once Svelte 5 shipped with its signal-based reactivity, the question for us was what it meant for data grids. The answer came from looking hard at what already existed, finding a real gap, and deciding to fill it.

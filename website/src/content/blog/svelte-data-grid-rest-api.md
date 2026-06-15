@@ -4,7 +4,7 @@ description: Drive SvGrid from any REST backend - mapping the grid's sort, filte
 date: 2026-06-13
 category: Integration
 tags: rest api, server-side, fetch, integration, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 You do not need an ORM or a fancy client to drive a data grid server-side - a plain REST endpoint and `fetch` are enough. The key is mapping SvGrid's state to query parameters and returning a total count. Here is a clean, production-ready pattern.

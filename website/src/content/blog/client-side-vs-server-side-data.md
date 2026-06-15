@@ -4,10 +4,10 @@ description: When to load all your rows into the browser and when to page, sort,
 date: 2026-06-19
 category: Concepts
 tags: server-side, data, concepts, performance
-author: SvGrid Team
+author: Boyko Markov
 ---
 
-One architectural choice shapes everything about a data table: does the browser hold all the rows, or does the server send one page at a time? Get this right and the rest is easy. Here is how to choose.
+One early decision shapes everything else about a data table: does the browser hold all the rows, or does the server hand them over one page at a time? I have watched teams agonize over grid features when this was the real fork in the road. Get it right and the rest falls into place.
 
 ## Client-side: all rows in the browser
 

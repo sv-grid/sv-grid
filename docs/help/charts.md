@@ -3,10 +3,12 @@
 SvGrid can chart its own data with no external charting library. Two pieces:
 
 - **`SvGridChart`** - a component that renders a `ChartSpec` as inline SVG
-  (bar, line, area, pie) with axes, hover tooltips, and a clickable legend
-  that toggles series (or pie slices) on and off.
+  (bar, line, area, pie, scatter / bubble) with axes, hover tooltips, a
+  clickable legend that toggles series (or pie slices) on and off, reference
+  lines, a time axis, and a visually-hidden data table for screen readers.
 - **`rowsToChartSpec(rows, opts)`** - aggregates flat rows (group by a
-  category field, reduce a value field) into a `ChartSpec`.
+  category field, reduce a value field) into a `ChartSpec`, with optional
+  sorting and top-N + "Other" bucketing.
 
 Feed it `api.getDisplayedRows()` and the chart reflects the grid's current,
 filtered, sorted data - the "chart from the grid" enterprise feature.
@@ -35,12 +37,16 @@ filtered, sorted data - the "chart from the grid" enterprise feature.
 
 | Option        | Meaning                                                  |
 | ------------- | -------------------------------------------------------- |
-| `type`        | `'bar' \| 'line' \| 'area' \| 'pie'`                     |
+| `type`        | `'bar' \| 'line' \| 'area' \| 'pie' \| 'scatter'`       |
 | `category`    | Field whose distinct values become the x-axis / slices.  |
 | `value`       | Numeric field, **or an array of fields** (one series each). |
 | `series`      | Pivot field: one series per distinct value of it.        |
 | `reduce`      | `'sum'` (default), `'avg'`, or `'count'`.                |
 | `stacked`     | Stack the series instead of grouping them.               |
+| `stacked100`  | Stack to 100% - each category normalized to its total.   |
+| `sort`        | `'value-desc' \| 'value-asc' \| 'category' \| 'none'`.   |
+| `topN`        | Keep the top N categories, bucket the rest into "Other". |
+| `otherLabel`  | Label for the bucket (default `'Other'`).                |
 | `width` / `height` | SVG viewBox size.                                  |
 
 Three multi-series shapes:
@@ -75,6 +81,71 @@ const spec: ChartSpec = {
 The geometry helper `buildChart(spec)` is exported too, if you want the raw SVG
 primitives for a custom renderer.
 
+## Reference / target lines
+
+`referenceLines` draws horizontal goal / average / SLA lines across the plot.
+Each entry stretches the axis domain so the line is always in view:
+
+```ts
+const spec: ChartSpec = {
+  type: 'bar', categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+  series: [{ label: 'Revenue', values: [120, 140, 90, 180] }],
+  referenceLines: [{ value: 150, label: 'Target', axis: 'left', color: '#ef4444', dashed: true }],
+}
+```
+
+## 100% stacked
+
+`stacked100: true` (implies `stacked`) normalizes each category to its own
+total, so the axis runs 0..100% and every column fills the plot height -
+ideal for reading composition / share. Tooltips and labels still show the
+original values.
+
+## Scatter / bubble
+
+`type: 'scatter'` plots two numeric measures against each other. Each series
+carries `points: [{ x, y, r?, label? }]`; an optional `r` becomes the bubble
+radius (scaled across the data). One series per group colours the points.
+
+```ts
+const spec: ChartSpec = {
+  type: 'scatter', categories: [],
+  xAxisTitle: 'Spend', yAxisTitle: 'Revenue',
+  series: [
+    { label: 'EMEA', values: [], points: [{ x: 12_000, y: 80_000, r: 18, label: 'Ada' }] },
+    { label: 'APAC', values: [], points: [{ x: 30_000, y: 140_000, r: 33, label: 'Grace' }] },
+  ],
+}
+```
+
+## Horizontal bars
+
+`orientation: 'horizontal'` swaps the axes: categories run down the left, bars
+grow rightward. It suits long category labels (rep names, product names) that
+would otherwise crowd / rotate on a vertical x-axis. Grouped, stacked, 100%,
+data labels, and reference lines (which become vertical) all work. Only applies
+when every series is a bar - combo / line / area fall back to vertical.
+
+```ts
+const spec: ChartSpec = {
+  type: 'bar', orientation: 'horizontal',
+  categories: ['Ada', 'Grace', 'Margaret', 'Linus'],
+  series: [{ label: 'Revenue', values: [120, 90, 140, 80] }],
+  referenceLines: [{ value: 110, label: 'Avg' }],   // drawn as a vertical line
+}
+```
+
+## Time axis
+
+`xType: 'time'` treats `categories` as dates: x positions are spaced by actual
+time (irregular gaps render proportionally, not evenly) and the axis shows real
+date ticks. Works with line / area / bar.
+
+```ts
+rowsToChartSpec(rows, { type: 'line', category: 'date', value: 'sessions', series: 'channel' })
+// then: spec.xType = 'time'
+```
+
 ## Interactivity
 
 `SvGridChart` is interactive by default:
@@ -83,8 +154,13 @@ primitives for a custom renderer.
   crosshair and a single tooltip listing **every** series' value at that
   category (with color swatches), so multi-series and combo charts read at a
   glance. Pie slices keep a per-slice tooltip.
-- **Legend toggle** - clicking a legend chip hides/shows that series (or pie
-  slice). The chart re-scales to the visible data; colors stay stable.
+- **Legend toggle + isolate** - clicking a legend chip hides/shows that series
+  (or pie slice); **double-clicking** isolates it (shows only that one, click
+  again to restore). Hovering a chip dims the others. The chart re-scales to
+  the visible data; colors stay stable.
+- **Scatter tooltip** - hovering a bubble shows its x / y (and label).
+- **Legend overflow** - a wide pivot (many series) collapses the legend to the
+  first 10 chips with a "+N more" toggle, so it never floods the chart.
 - **Data labels** - `dataLabels` draws the value on each bar / point / slice.
 - **Drill-down** - `onSelect({ category, series, value })` fires when a bar /
   point / slice is clicked. Wire it to `api.setFacetFilter(...)` to filter the
@@ -123,10 +199,15 @@ screen.
 
 - Pure SVG - no canvas, no dependency, SSR-safe, and it inherits the grid's
   `--sg-*` theme tokens.
+- **Accessible** - every chart renders a visually-hidden `<table>` of the same
+  data, wired to the SVG via `aria-describedby`, so screen readers get the
+  numbers, not just "chart".
 - For a richer charting stack (zoom, tooltips, dozens of types) you can still
   pipe `getDisplayedRows()` into Chart.js or a web component - see demos
   `73-chartjs-sync` and `77-smart-chart`. `SvGridChart` is the
   batteries-included option.
 
 See the live [Integrated charts](https://sv-grid.com/demos/147-integrated-charts)
-demo.
+demo, or the [Chart wizard panel](https://sv-grid.com/demos/152-chart-wizard) -
+a pick-a-chart dialog whose type-gallery thumbnails are themselves live
+`SvGridChart` previews.

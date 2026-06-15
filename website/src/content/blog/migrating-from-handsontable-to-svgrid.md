@@ -1,10 +1,10 @@
 ---
 title: Migrating from Handsontable to SvGrid
 description: Move a Handsontable spreadsheet to SvGrid in Svelte 5 - mapping data, columns, editors, and afterChange, and what differs about licensing.
-date: 2026-07-24
+date: 2026-08-13
 category: Comparisons
 tags: migration, handsontable, comparison, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Handsontable is a capable spreadsheet component. Teams move to SvGrid for a native Svelte 5 integration, an MIT-licensed core, and a grid that scales to large datasets with built-in virtualization. Here is how to migrate the common pieces.

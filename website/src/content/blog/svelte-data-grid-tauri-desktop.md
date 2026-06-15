@@ -4,7 +4,7 @@ description: Build a desktop data grid with SvGrid and Tauri - loading data from
 date: 2026-06-13
 category: Integration
 tags: tauri, desktop, sqlite, integration, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Tauri lets you ship a Svelte app as a small, native desktop binary with a Rust backend. SvGrid is a strong choice for the data-heavy screens such apps usually need - and virtualization means even large local datasets stay smooth. Here is how they fit together.

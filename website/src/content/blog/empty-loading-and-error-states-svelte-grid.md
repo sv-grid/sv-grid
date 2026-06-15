@@ -1,10 +1,10 @@
 ---
 title: Empty, Loading, and Error States for a Svelte Data Grid
 description: The three states every data grid needs but teams forget - a helpful empty state, a non-jarring loading state, and a recoverable error state.
-date: 2026-07-16
+date: 2026-07-27
 category: Data
 tags: empty state, loading, error handling, ux, recipe
-author: SvGrid Team
+author: Kamelia M
 ---
 
 A grid spends most demos showing data. In production it spends real time showing nothing, loading, or failing - and those three states are where polish lives. Teams build the happy path and forget these, which is exactly why handling them well makes your grid feel finished. Here is how.

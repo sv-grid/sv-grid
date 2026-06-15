@@ -4,10 +4,13 @@ description: Enable single and multi-column sorting in SvGrid, observe sort stat
 date: 2026-05-19
 category: Sorting
 tags: sorting, multi-sort, svelte data grid, sv-grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Sorting is the feature users reach for first. In SvGrid you switch it on by registering `rowSortingFeature`; clicking a header sorts, and Shift-clicking adds a secondary sort.
+
+![Multi-column sorting in a SvGrid data grid](/blog-media/sorting.png)
+*Sorting in SvGrid - click a header to sort, Shift-click to add a tie-breaker.*
 
 ## Turn on sorting
 

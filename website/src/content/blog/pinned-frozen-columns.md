@@ -4,10 +4,13 @@ description: Keep key columns visible while scrolling horizontally by pinning th
 date: 2026-03-03
 category: Columns
 tags: pinned columns, frozen columns, wide tables, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 When a grid is wider than the screen, users lose context the moment they scroll right - which row is this again? Pinned columns fix that by freezing an identifier column on the left and actions on the right, so the important columns stay put while the rest scroll.
+
+![Pinned (frozen) columns in SvGrid](/blog-media/column-pinning.png)
+*Pinned columns staying put while the rest scroll, in SvGrid.*
 
 ## Pin a column
 

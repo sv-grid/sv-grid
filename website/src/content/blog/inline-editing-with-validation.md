@@ -4,10 +4,13 @@ description: Make cells editable in your Svelte data grid, choose the right edit
 date: 2026-04-28
 category: Editing
 tags: inline editing, validation, editable grid, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 A read-only grid shows data; an editable grid lets users change it. SvGrid turns any column into an editable cell with the right editor - text, number, checkbox, or date - and hands you a clean event when a value is committed.
+
+![Inline cell editing in SvGrid](/blog-media/inline-editing.png)
+*Inline editing in SvGrid with typed cell editors.*
 
 ## Make a column editable
 

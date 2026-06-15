@@ -4,7 +4,7 @@ description: Make SvGrid match your shadcn-svelte design by mapping its --sg-* t
 date: 2026-06-13
 category: Integration
 tags: shadcn-svelte, theming, design system, integration, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 shadcn-svelte styles components with a set of CSS variables (`--background`, `--foreground`, `--border`, `--primary`, and so on). SvGrid is themed with `--sg-*` variables. Bridge the two and the grid looks like a native part of your shadcn UI. Here is the mapping.

@@ -1,13 +1,16 @@
 ---
 title: Row Drag-and-Drop Reordering in a Svelte Data Grid
 description: Let users drag rows into a new order in SvGrid - a drag-handle cell, reordering your reactive data, and persisting the new sequence.
-date: 2026-08-04
+date: 2026-09-01
 category: Rows
 tags: row reorder, drag and drop, rows, recipe, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Manual ordering - dragging a row up or down - is common in playlists, priorities, and kanban-style lists. Because SvGrid renders from a reactive `data` array, row reordering is mostly about updating that array; the grid follows. Here is a clean recipe.
+
+![Drag-to-reorder rows in SvGrid](/blog-media/row-reorder.png)
+*Drag-to-reorder rows in SvGrid.*
 
 ## A drag handle in a cell
 

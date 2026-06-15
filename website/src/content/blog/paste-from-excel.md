@@ -1,13 +1,16 @@
 ---
 title: Paste from Excel into a Svelte Data Grid
 description: Let users paste a block of cells from Excel or Google Sheets into SvGrid - parsing tab-separated clipboard data and writing it into your rows.
-date: 2026-07-30
+date: 2026-08-24
 category: Editing
 tags: paste, clipboard, excel, editing, recipe
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Copying out is half the story; pasting in is what makes a grid feel like a spreadsheet for data entry. When a user copies cells from Excel and pastes into your grid, the clipboard holds tab-separated text. Parse it and write it into your rows. Here is the recipe.
+
+![A spreadsheet-style SvGrid with a ribbon](/blog-media/spreadsheet.png)
+*A spreadsheet-style SvGrid - paste tabular data straight in.*
 
 ## The clipboard format
 

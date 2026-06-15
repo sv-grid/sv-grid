@@ -4,7 +4,7 @@ description: Generics, discriminated unions, and type-safe column definitions - 
 date: 2026-05-15
 category: Engineering
 tags: typescript, generics, type safety, data grid, engineering
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Data-heavy front ends - dashboards, admin panels, grids - live or die by their types. When a screen renders dozens of columns from a row shape that changes over time, strong types are the difference between a refactor that takes an afternoon and one that takes a week of runtime bug-hunting. Here are the TypeScript patterns we lean on, drawn from building a typed data grid.

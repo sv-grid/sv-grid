@@ -4,10 +4,13 @@ description: Turn row selection into action - bulk edit, delete, archive, and ex
 date: 2025-12-02
 category: Selection
 tags: bulk operations, selection, toolbar, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Selecting rows is only step one; the value is in what users do next. Bulk operations turn a set of selected rows into a single action - archive these, delete those, update a field across all of them. SvGrid gives you the selection; a contextual toolbar gives you the workflow.
+
+![Row selection driving bulk actions in SvGrid](/blog-media/selection-api.png)
+*Selection powering bulk actions in SvGrid.*
 
 ## Capture the selection
 

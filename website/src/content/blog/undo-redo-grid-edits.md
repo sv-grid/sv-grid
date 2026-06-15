@@ -1,10 +1,10 @@
 ---
 title: Undo/Redo for Grid Edits in SvGrid
 description: Add Ctrl+Z / Ctrl+Y to your Svelte data grid - an edit history built from the change event, with a clean stack and keyboard shortcuts.
-date: 2026-08-10
+date: 2026-09-18
 category: Editing
 tags: undo, redo, editing, history, recipe
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Editable grids need a safety net. Undo/redo turns "oh no" into "Ctrl+Z" and makes bulk data entry far less stressful. Because SvGrid emits a change event with the old and new value for every edit, building an undo stack is straightforward. Here is the recipe.

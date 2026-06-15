@@ -4,10 +4,13 @@ description: Group rows by a column and show sums, averages, and counts in foote
 date: 2026-04-21
 category: Grouping
 tags: grouping, aggregation, summaries, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 When a table has natural categories - region, status, owner - grouping turns a flat list into a collapsible summary. SvGrid's `columnGroupingFeature` groups rows by a column and shows aggregated footers per group.
+
+![Row grouping with aggregated footers in SvGrid](/blog-media/grouping.png)
+*Grouping with aggregated group footers in SvGrid.*
 
 ## Turn on grouping
 

@@ -16,7 +16,6 @@
     {
       area: 'Columns',
       items: [
-        { title: 'Per-column enableSorting / enableFilter flags', effort: 'S' },
         { title: 'Column spanning (colSpan on cell context)', effort: 'L' },
       ],
     },
@@ -34,6 +33,7 @@
       items: [
         { title: 'Built-in cell flash / animated change highlight on ColumnDef', effort: 'S', note: 'Demos roll their own today via renderSnippet.' },
         { title: 'Formula language / formula editor (enterprise parity)', effort: 'L', note: 'Demo 83 ships an in-grid formula engine (refs, ranges, SUM/AVG/IF/COUNTIF, cycle detection); this moves it into the engine.' },
+        { title: 'Built-in rich-text / Markdown cell renderer with safe sanitization', effort: 'M' },
       ],
     },
     {
@@ -50,6 +50,51 @@
         { title: 'Per-column validate() returning string | true', effort: 'S', note: 'Async validation is demonstrated end-to-end in demo 103; this folds the per-column validate hook into the engine.' },
         { title: 'Programmatic api.startEditing() / stopEditing()', effort: 'S' },
         { title: 'Full-row editing mode', effort: 'M' },
+        { title: 'Custom calendar systems for the date editor (Hijri, Buddhist, fiscal-year, custom holidays)', effort: 'M', note: 'Gregorian date / datetime / time editors already ship as editorType.' },
+        { title: 'Async option loading + virtualized dropdown for the rich-select editor', effort: 'M', note: 'The combobox itself ships as editorType: rich-select; this adds async sources and a virtualized list for 10k+ options.' },
+      ],
+    },
+    {
+      area: 'Menus',
+      items: [
+        { title: 'Custom column menu items / actions API to extend the built-in menu with your own commands', effort: 'S' },
+        { title: 'Built-in row + cell context menu API driven by Svelte snippets', effort: 'M', note: 'Demo 67 ships the user-land pattern today; this moves it into the engine.' },
+        { title: 'Cascading multi-level menus with keyboard navigation', effort: 'M' },
+        { title: 'Programmatic api.openColumnMenu(colId) / api.openContextMenu(rowId, colId)', effort: 'S' },
+        { title: 'Menu theming hooks (per-item icon, separator, danger style, disabled state)', effort: 'S' },
+      ],
+    },
+    {
+      area: 'Pivot (sv-grid-pro)',
+      items: [
+        { title: 'Custom aggregation functions registered on the Pivot Designer', effort: 'S' },
+        { title: 'Per-measure value formatters (currency, percent, accounting, custom)', effort: 'S' },
+        { title: 'Saved pivot layouts with per-user persistence + shareable URL', effort: 'M', note: 'Named views (demo 143) save grid state today; this is the pivot-specific layout snapshot.' },
+      ],
+    },
+    {
+      area: 'Export (sv-grid-pro)',
+      items: [
+        { title: 'PDF export layout extensions: portrait / landscape toggle, cover page, repeating section headers, multi-section reports', effort: 'M', note: 'Branded headers, footers, and logo (demo 57) already ship; this is the page-layout pass.' },
+        { title: 'PDF export with charts and KPI strip alongside the table', effort: 'L' },
+        { title: 'Server-side export pipeline that streams large datasets without the browser-memory ceiling', effort: 'L' },
+        { title: 'Saveable export templates / presets the user can reuse across reports', effort: 'S' },
+      ],
+    },
+    {
+      area: 'Data adapters and integrations',
+      items: [
+        { title: 'Packaged first-class adapters for OData, Supabase, Firestore', effort: 'M', note: 'GraphQL and REST adapters ship as demos 72 and 79; this formalises the contract and adds three new sources.' },
+        { title: 'Streaming adapter for Kafka / Pulsar / Redpanda over a thin server proxy', effort: 'L' },
+        { title: 'Auth helpers for data adapters: Bearer, OAuth flow, signed-URL refresh', effort: 'S' },
+      ],
+    },
+    {
+      area: 'Templates and starters',
+      items: [
+        { title: 'Additional industry templates: ticketing, field-service intake, multi-site retail ops, telco service-assurance', effort: 'M', note: 'CRM (48), EMR (41), logistics (42), industrial (14, 20), test-systems (120), realtime orders (34), and admin dashboards (22, 49) already ship.' },
+        { title: 'SvelteKit + REST starter with auth scaffold (cookies, role gating, server load)', effort: 'M' },
+        { title: 'Pivot + drill-through dashboard template combining demo 122 + demo 125 into one ready-to-deploy starter', effort: 'M' },
       ],
     },
   ]
@@ -89,7 +134,65 @@
     { title: 'Locale-aware text filtering (accent-insensitive, ICU lowercase via filterLocale)', demo: '110-locale-aware-filter' },
     { title: 'Set filter - tree, async, Excel-mode patterns via api.setFacetFilter', demo: '111-set-filter-advanced' },
 
-    // Pro
+    // Cells
+    { title: 'Sparkline cell renderer (line / area / bar / win-loss) as a first-class column type', demo: '140-sparkline-cells' },
+
+    // Columns - per-column flags
+    { title: 'Per-column sortable / filterable flags on ColumnDef', demo: '02-sort-filter-paginate' },
+
+    // Editing - more built-in editor types
+    { title: "Built-in time + date-time editors (editorType: 'time' | 'datetime')", demo: '84-editor-types' },
+    { title: "Built-in color picker editor (editorType: 'color')", demo: '66-custom-cell-editors' },
+    { title: "Built-in password + rating editors (editorType: 'password' | 'rating')", demo: '84-editor-types' },
+    { title: "Built-in list + chips editors (editorType: 'list' | 'chips')", demo: '26-list-chips-editors' },
+
+    // Pro - Pivot
+    { title: 'Pivot drill-through (click any pivot value to see contributing source rows)', demo: '122-pivot-drill-through' },
+    { title: 'Pivot subtotal + grand-total rows + style controls', demo: '123-pivot-totals' },
+    { title: 'Conditional formatting in pivot cells (heatmap, data bars)', demo: '121-pivot-conditional-cells' },
+    { title: 'Pivot OLAP-style hierarchical row / column axes', demo: '124-pivot-olap' },
+    { title: 'Pivot value charts (charts driven by the pivot model)', demo: '125-pivot-charts' },
+    { title: 'Export pivot grid to Excel', demo: '127-export-pivot-grid' },
+
+    // Pro - Export polish
+    { title: 'Theme-matched export styling (palette, fonts, alternating rows)', demo: '56-export-theme-matched' },
+    { title: 'Branded export with custom header, footer, and embedded logo', demo: '57-export-header-footer-logo' },
+    { title: 'Image cells round-tripped into Excel exports', demo: '58-export-with-images' },
+    { title: 'Multi-sheet workbook exports', demo: '59-export-multi-sheet' },
+    { title: 'Grouped grid export with collapsed group rows preserved', demo: '126-export-grouped-grid' },
+    { title: 'Password-protected (encrypted) Excel export', demo: '93-password-protected-export' },
+
+    // Data adapters / integrations
+    { title: 'Server-side row model contract with sort / filter / page pushdown', demo: '148-server-row-model' },
+    { title: 'Server-side grouping + aggregation pushdown', demo: '114-server-grouping' },
+    { title: 'GraphQL adapter (server-side sort + filter + page)', demo: '72-graphql-adapter' },
+    { title: 'REST data loading with loading / error / empty / ready states', demo: '79-loading-from-rest' },
+    { title: 'WebSocket live-update pattern with insert / update / delete deltas', demo: '116-websocket-live-updates' },
+    { title: 'Real-time collaboration (multi-user cursors + edits)', demo: '149-realtime-collaboration' },
+    { title: 'Transaction API for row-level applyTransaction with optimistic updates', demo: '145-transaction-api' },
+    { title: 'Chart.js sync (grid edits flow live into a chart and back)', demo: '73-chartjs-sync' },
+    { title: 'Integrated charts (charts rendered against the grid model)', demo: '147-integrated-charts' },
+    { title: 'Excel / CSV import with column mapping and per-row validation', demo: '53-excel-import' },
+
+    // Templates and starters
+    { title: 'Industry template - CRM sales pipeline', demo: '48-crm-sales-pipeline' },
+    { title: 'Industry template - Healthcare EMR', demo: '41-healthcare-emr' },
+    { title: 'Industry template - Logistics fleet dispatch', demo: '42-logistics-fleet' },
+    { title: 'Industry template - Industrial / HMI dashboard', demo: '20-industrial-dashboard' },
+    { title: 'Industry template - Test & measurement systems monitor', demo: '120-test-systems-monitor' },
+    { title: 'Industry template - Real-time order operations', demo: '34-realtime-orders' },
+    { title: 'Industry template - Manufacturing ops console', demo: '32-manufacturing-ops' },
+    { title: 'Industry template - Compliance review queue', demo: '43-compliance-queue' },
+    { title: 'Industry template - Field-service work orders', demo: '44-field-service' },
+    { title: 'Industry template - Kanban board', demo: '76-kanban-board' },
+    { title: 'Starter - Admin dashboard (KPI cards + grid + chart)', demo: '49-admin-dashboard' },
+    { title: 'Starter - Admin template shell', demo: '22-admin-template' },
+    { title: 'Starter - Reporting workspace', demo: '36-reporting-workspace' },
+    { title: 'Starter - Seller / marketplace operator panel', demo: '50-seller-panel' },
+    { title: 'Starter - Side-drawer record editor', demo: '97-side-drawer-edit' },
+    { title: 'Starter - Mobile card view layout', demo: '81-mobile-card-view' },
+
+    // Pro - misc
     { title: 'Excel / PDF / CSV / TSV / HTML export + Print (sv-grid-pro)' },
     { title: 'Staged / batch editing mode via createStagedEditing (sv-grid-pro)', demo: '88-staged-editing' },
   ]

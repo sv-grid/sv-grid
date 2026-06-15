@@ -4,10 +4,13 @@ description: Drive a Svelte data grid from your API. Let SvGrid own the UI state
 date: 2026-03-31
 category: Data
 tags: server-side, pagination, api, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 When a table has millions of rows, you cannot ship them all to the browser. The answer is server-side data: the grid owns the sort, filter, and page UI, and your backend returns just the rows for the current view. SvGrid's external mode is built exactly for this.
+
+![Server-side data in SvGrid](/blog-media/server-side.png)
+*Server-side sorting, filtering, and paging in SvGrid.*
 
 ## The contract
 

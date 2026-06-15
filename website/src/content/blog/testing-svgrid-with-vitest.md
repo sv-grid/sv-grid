@@ -4,7 +4,7 @@ description: Test data grid logic and components with Vitest and @testing-librar
 date: 2026-06-13
 category: Integration
 tags: vitest, testing, unit tests, integration, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 A data grid carries real logic - accessors, formatters, sort and filter behavior - and that logic deserves tests. Vitest plus `@testing-library/svelte` covers both pure logic and rendered components. Here is how to test SvGrid effectively.

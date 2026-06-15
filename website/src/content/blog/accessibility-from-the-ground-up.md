@@ -4,7 +4,7 @@ description: Why SvGrid shipped WAI-ARIA roles and full keyboard navigation as d
 date: 2026-06-29
 category: Engineering
 tags: accessibility, keyboard, aria, engineering, story
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Accessibility is the feature we insisted on from the first render and had to prove at depth as the grid grew. With sorting, filtering, editing, grouping, and hierarchy in place, all of it had to be usable by keyboard and screen reader - not as a retrofit, but as the thing it had been from line one.

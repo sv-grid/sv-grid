@@ -1,10 +1,10 @@
 ---
 title: Conditional Row Styling in SvGrid
 description: Highlight whole rows by their data - overdue invoices, errors, VIP customers - with value-driven row classes and styles in your Svelte data grid.
-date: 2026-07-09
+date: 2026-07-14
 category: Rows
 tags: conditional formatting, row styling, rows, recipe, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Sometimes the whole row matters, not a single cell: an overdue invoice in red, a failed job tinted, a VIP customer highlighted. This is row-level conditional formatting, and it is the fastest way to make a grid scannable. Here is how to drive it from your data.

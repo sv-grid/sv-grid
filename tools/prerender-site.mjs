@@ -83,13 +83,17 @@ function applyHead(html, { title, description, canonical, ogType, keywords, imag
   html = setMeta(html, 'property', 'og:url', canonical)
   html = setMeta(html, 'name', 'twitter:title', title)
   html = setMeta(html, 'name', 'twitter:description', description)
-  // Open Graph image - section-specific card when provided, else the default.
-  const img = image || `${CANON}/og-image.svg`
+  // Open Graph image - section-specific card when provided, else the default
+  // PNG. PNG is preferred because some scrapers (LinkedIn in particular) ignore
+  // SVG OG images; the SVG default is also emitted by index.html as a secondary
+  // og:image for clients that prefer it.
+  const img = image || `${CANON}/og-image.png`
+  const isPng = /\.png(\?|$)/i.test(img)
   const alt = imageAlt || title
   html = setMeta(html, 'property', 'og:image', img)
   html = setMeta(html, 'property', 'og:image:width', '1200')
   html = setMeta(html, 'property', 'og:image:height', '630')
-  html = setMeta(html, 'property', 'og:image:type', 'image/svg+xml')
+  html = setMeta(html, 'property', 'og:image:type', isPng ? 'image/png' : 'image/svg+xml')
   html = setMeta(html, 'property', 'og:image:alt', alt)
   html = setMeta(html, 'name', 'twitter:image', img)
   html = setMeta(html, 'name', 'twitter:image:alt', alt)
@@ -363,10 +367,10 @@ function homeCrawlBody(faq) {
   ]
   let html = '<main class="prerender-home" data-prerender="1">'
   html += '<h1>SvGrid - the Svelte 5 data grid</h1>'
-  html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 120+ production-quality examples. Free under the MIT License; sv-grid-pro adds export, print, pivot, and AI helpers.</p>'
+  html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 150+ production-quality examples. Free under the MIT License; sv-grid-pro adds export, print, pivot, and AI helpers.</p>'
   html += `<h2>Features</h2><ul>${feats.map((f) => `<li>${f}</li>`).join('')}</ul>`
   html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
-  html += `<p><a href="${BASE}docs/getting-started">Get started</a> &middot; <a href="${BASE}demos">Browse 120+ demos</a> &middot; <a href="${BASE}docs">Documentation</a> &middot; <a href="${BASE}compare">All comparisons</a> &middot; <a href="${BASE}blog">Blog</a> &middot; <a href="${BASE}pricing">Pricing</a></p>`
+  html += `<p><a href="${BASE}docs/getting-started">Get started</a> &middot; <a href="${BASE}demos">Browse 150+ demos</a> &middot; <a href="${BASE}docs">Documentation</a> &middot; <a href="${BASE}compare">All comparisons</a> &middot; <a href="${BASE}blog">Blog</a> &middot; <a href="${BASE}pricing">Pricing</a></p>`
   if (faq.length) html += `<h2>Frequently asked questions</h2>${faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
   return html + '</main>'
 }
@@ -533,7 +537,7 @@ function ogSvg({ eyebrow, line1, line2white, line2accent, sub1, sub2 }) {
 
 const OG_SECTIONS = {
   docs:    { eyebrow: 'DOCUMENTATION', line1: 'Guides for the', line2white: 'Svelte 5', line2accent: 'data grid.', sub1: 'Columns, rows, cells, filtering, editing,', sub2: 'each with copy-paste examples.' },
-  demos:   { eyebrow: 'EXAMPLES', line1: '120+ live', line2white: 'Svelte 5 grid', line2accent: 'demos.', sub1: 'Sorting, filtering, grouping, editing,', sub2: 'virtualization, server-side data, and more.' },
+  demos:   { eyebrow: 'EXAMPLES', line1: '150+ live', line2white: 'Svelte 5 grid', line2accent: 'demos.', sub1: 'Sorting, filtering, grouping, editing,', sub2: 'virtualization, server-side data, and more.' },
   compare: { eyebrow: 'COMPARISONS', line1: 'SvGrid vs the', line2white: 'other Svelte', line2accent: 'data grids.', sub1: 'Honest, feature-by-feature matrices.', sub2: '' },
   pricing: { eyebrow: 'PRICING', line1: 'Free core.', line2white: 'Pro for export', line2accent: '& pivot.', sub1: 'Community is MIT-licensed and free.', sub2: 'sv-grid-pro from $599/dev/yr.' },
   roadmap: { eyebrow: 'ROADMAP', line1: 'What SvGrid is', line2white: 'building', line2accent: 'next.', sub1: 'An honest, living feature list,', sub2: 'plus a recently-shipped track record.' },
@@ -597,6 +601,21 @@ async function main() {
     } else {
       blogImgExt.set(p.slug, 'svg')
     }
+  }
+
+  // Rasterize the global /og-image.svg -> /og-image.png. Some social scrapers
+  // (notably LinkedIn) ignore SVG OG images, so the PNG is the primary card
+  // referenced in index.html and seo.ts; the SVG remains as a fallback.
+  let ogPngWritten = false
+  try {
+    const ogSvg = await readFile(join(DIST, 'og-image.svg'), 'utf-8')
+    const ogPng = rasterizePng(ogSvg)
+    if (ogPng) {
+      await writeFile(join(DIST, 'og-image.png'), ogPng)
+      ogPngWritten = true
+    }
+  } catch {
+    // dist/og-image.svg is not present yet (e.g. first build) - skip silently.
   }
 
   // 2. Load the built SPA shell as the template.
@@ -678,7 +697,7 @@ async function main() {
 
   // 4. Prerender the static (non-doc) routes with correct head + minimal body.
   const STATIC_ROUTES = [
-    ['demos', 'Demos - 120+ Production-Ready SvGrid Examples', 'Browse live, editable SvGrid demos: quick start, server-side data, 100k rows, Excel-style filters, grouping, master/detail, inline editing, accessibility, and more.'],
+    ['demos', 'Demos - 150+ Production-Ready SvGrid Examples', 'Browse live, editable SvGrid demos: quick start, server-side data, 100k rows, Excel-style filters, grouping, master/detail, inline editing, accessibility, and more.'],
     ['docs', 'Documentation - SvGrid Guides for Columns, Rows, Filtering, Editing', 'Topic-oriented SvGrid documentation: column definitions, sorting, Excel-style filters, inline editing, grouping, virtualization, accessibility, theming - each with copy-paste examples.'],
     ['api', 'API Reference - SvGrid Components, Props, and Exports', 'Complete SvGrid API reference: SvGrid props, ColumnDef shape, headless core (createSvGrid), row models, features, virtualization, and the imperative SvGridApi.'],
     ['compare', 'Comparisons - SvGrid vs Other Svelte Data Grids', 'Honest side-by-side comparisons: SvGrid vs TanStack Table, svelte-headless-table, and established enterprise grids. Feature matrices and when to choose each.'],
@@ -832,7 +851,7 @@ async function main() {
         '@context': 'https://schema.org', '@type': 'BlogPosting',
         headline: p.title, description, url, image: [heroImg], datePublished: p.date, dateModified: p.date,
         inLanguage: 'en', keywords: p.tags.join(', '), articleSection: p.category,
-        author: { '@type': 'Organization', name: p.author },
+        author: { '@type': 'Person', name: p.author },
         publisher: { '@type': 'Organization', name: 'jQWidgets', url: 'https://www.jqwidgets.com' },
         isPartOf: { '@type': 'Blog', name: 'SvGrid Blog', url: `${CANON}/blog` },
         about: { '@type': 'SoftwareApplication', name: 'SvGrid', applicationCategory: 'DeveloperApplication' },
@@ -905,7 +924,7 @@ async function main() {
   // Uses the clean shell template, not the enriched home body.
   await writeFile(join(DIST, '404.html'), template, 'utf-8')
 
-  process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons, ${blogPosts.length} blog posts) · ${rasterCount}/${blogPosts.length} blog card PNGs\n`)
+  process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons, ${blogPosts.length} blog posts) · ${rasterCount}/${blogPosts.length} blog card PNGs · og-image.png ${ogPngWritten ? 'ok' : 'skipped'}\n`)
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })

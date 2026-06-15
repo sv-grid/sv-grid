@@ -4,7 +4,7 @@ description: Connect SvGrid to PocketBase - server-side paging with getList, sor
 date: 2026-06-13
 category: Integration
 tags: pocketbase, realtime, server-side, integration, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 PocketBase is a single-file backend with a clean JavaScript SDK, built-in auth, and realtime subscriptions - a great fit for a Svelte data grid. Its `getList` API maps almost exactly onto what the grid needs.

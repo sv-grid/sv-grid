@@ -4,7 +4,7 @@ description: Everything a Svelte data grid column can do - field accessors, comp
 date: 2026-05-26
 category: Columns
 tags: columns, column definitions, formatting, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Columns are the heart of any data grid. In SvGrid a column definition tells the grid how to read a value out of a row, how to format it, and how to render it. Get comfortable with `ColumnDef` and most of the grid follows.

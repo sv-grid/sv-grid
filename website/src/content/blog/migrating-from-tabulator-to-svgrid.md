@@ -1,10 +1,10 @@
 ---
 title: Migrating from Tabulator to SvGrid
 description: Move a Tabulator table to SvGrid in Svelte 5 - mapping column definitions, formatters, editors, and ajax to a native runes-based grid.
-date: 2026-07-28
+date: 2026-08-17
 category: Comparisons
 tags: migration, tabulator, comparison, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Tabulator is a feature-rich, framework-agnostic table. In a Svelte app you instantiate it imperatively; SvGrid gives you a declarative, runes-native component instead. The migration is mostly a translation of column options.

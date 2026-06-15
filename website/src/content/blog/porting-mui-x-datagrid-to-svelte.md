@@ -1,10 +1,10 @@
 ---
 title: Porting a React MUI X DataGrid Screen to Svelte
 description: Moving a React MUI X DataGrid to Svelte 5 with SvGrid - mapping GridColDef, valueGetter, renderCell, and the Pro server-side features.
-date: 2026-07-31
+date: 2026-08-25
 category: Comparisons
 tags: migration, mui x datagrid, react, comparison, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Teams adopting Svelte often have React screens built on MUI X DataGrid. Porting one to SvGrid is mostly mechanical: the column model and data flow have direct equivalents, and Svelte's reactivity replaces React hooks. Here is the mapping.

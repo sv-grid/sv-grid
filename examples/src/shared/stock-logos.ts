@@ -118,3 +118,25 @@ export function getStockBrand(symbol: string): StockBrand & { mark: string } {
   const mark = brand.mark ?? symbol.replace('.', '').slice(0, 2)
   return { ...brand, mark }
 }
+
+/** WCAG relative luminance of a #rgb / #rrggbb color. */
+function luminance(hex: string): number {
+  const h = hex.replace('#', '')
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255)
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+  return 0.2126 * lin(r!) + 0.7152 * lin(g!) + 0.0722 * lin(b!)
+}
+
+/**
+ * Readable text color (#000 / #fff) for the monogram on top of `bg`. Brand
+ * colors like the medium blues read fine to the eye but fail WCAG contrast
+ * with white text, so the badge text picks whichever of black/white has the
+ * higher contrast against the background.
+ */
+export function readableMarkColor(bg: string): '#000' | '#fff' {
+  const L = luminance(bg)
+  const contrastWhite = 1.05 / (L + 0.05)
+  const contrastBlack = (L + 0.05) / 0.05
+  return contrastWhite >= contrastBlack ? '#fff' : '#000'
+}

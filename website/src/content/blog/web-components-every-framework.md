@@ -4,7 +4,7 @@ description: How custom elements let a single UI component run across frameworks
 date: 2026-05-08
 category: Architecture
 tags: web components, custom elements, react, vue, angular, interop
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Most teams are not on a single framework. A company has a React app, an Angular admin tool a team inherited, a Vue marketing site, and a couple of plain-HTML internal pages. Maintaining the same data grid four times is nobody's idea of fun. Web Components - custom elements built on web standards - are the standard answer to "write the component once, use it everywhere."

@@ -4,7 +4,7 @@ description: Why we built a brand-new data grid for Svelte 5 from scratch, what 
 date: 2026-06-10
 category: Company
 tags: announcement, svelte data grid, jqwidgets, sv-grid, launch
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Today we are introducing SvGrid, a data grid built from the ground up for Svelte 5. It is not a port, not a wrapper around an older grid, and not a thin adapter over a framework-agnostic engine. It is a native Svelte 5 component, written on runes, by the team at jQWidgets.
@@ -58,7 +58,7 @@ SvGrid ships an MCP (Model Context Protocol) server and an `llms.txt` file, so a
 ## Where to start
 
 - [Render your first grid in under 5 minutes](render-your-first-svelte-data-grid)
-- Browse the [120+ live demos](/demos) or read the [documentation](/docs/getting-started).
+- Browse the [150+ live demos](/demos) or read the [documentation](/docs/getting-started).
 
 We have been building data grids for over a decade. SvGrid is the one we are most excited about - because for the first time, the framework underneath is as fine-grained as the grid wants to be.
 

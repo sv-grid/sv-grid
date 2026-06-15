@@ -4,10 +4,13 @@ description: Display numbers, dates, and currency correctly for every user with 
 date: 2025-12-09
 category: Formatting
 tags: formatting, i18n, currency, dates, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 A grid shown to a global audience cannot hard-code `$` and `MM/DD/YYYY`. SvGrid has a built-in, locale-aware formatter that renders numbers, currency, percentages, and dates correctly per locale - while keeping the raw value for sorting and filtering.
+
+![Locale-aware number and date formatting in SvGrid](/blog-media/locale-filter.png)
+*Locale-aware formatting and filtering in SvGrid.*
 
 ## Format on the column, not the value
 

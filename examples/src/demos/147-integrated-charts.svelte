@@ -68,15 +68,36 @@
   // "Revenue + Deals" defaults to combo: Deals becomes a line on a secondary
   // right axis. Uncheck Combo to compare them on one (shared) axis.
   let stacked = $state(false)
+  let stacked100 = $state(false)
   let combo = $state(true)
   let dataLabels = $state(false)
   let donut = $state(false)
+  let topN = $state(false)
+  let avgLine = $state(false)
+  let horizontal = $state(false)
   let drill = $state<string | null>(null)
   let chartWrap = $state<HTMLElement | null>(null)
+  // Rows covered by the current cell-selection range(s). When non-empty the
+  // chart aggregates ONLY these - the "select a range, chart it" loop.
+  let selectedRows = $state<Row[]>([])
 
   function sync() {
     displayed = (api?.getDisplayedRows() as Row[]) ?? rows
   }
+
+  // Map selection rectangles ([rowStart, _, rowEnd, _]) to the displayed rows.
+  function onSelectionChange(ranges: Array<[number, number, number, number]>) {
+    const idx = new Set<number>()
+    for (const [r0, , r1] of ranges) {
+      const lo = Math.min(r0, r1)
+      const hi = Math.max(r0, r1)
+      for (let r = lo; r <= hi; r++) idx.add(r)
+    }
+    selectedRows = [...idx].map((i) => displayed[i]).filter((r): r is Row => !!r)
+  }
+
+  // Aggregate the selection when there is one, otherwise the full displayed set.
+  const chartRows = $derived(selectedRows.length ? selectedRows : displayed)
 
   // Compact + currency-aware so the Y-axis ticks and tooltips match (e.g.
   // "$2M" on the axis, "$2.1M" in the tooltip - never "2000000").
@@ -93,21 +114,39 @@
 
   const spec = $derived.by<ChartSpec>(() => {
     const measures = measure === 'both' ? (['revenue', 'deals'] as const) : [measure]
-    const s = rowsToChartSpec(displayed, {
+    const s = rowsToChartSpec(chartRows, {
       type: chartType,
       category,
       value: measures as any,
       reduce: 'sum',
       stacked: stacked && chartType !== 'pie',
+      stacked100: stacked100 && stacked && chartType !== 'pie',
+      // Rank categories and bucket the long tail into "Other" (great for `by Rep`).
+      sort: topN ? 'value-desc' : 'none',
+      topN: topN ? 5 : undefined,
       width: 520,
       height: 300,
     })
-    s.yAxisTitle = measureTitle
-    s.xAxisTitle = cap(category)
+    // Horizontal bars suit long category labels (e.g. by Rep). Only bars.
+    const isHoriz = horizontal && chartType === 'bar' && measure !== 'both'
+    if (isHoriz) {
+      s.orientation = 'horizontal'
+      s.yAxisTitle = cap(category)
+      s.xAxisTitle = stacked100 && stacked ? 'Share' : measureTitle
+    } else {
+      s.yAxisTitle = stacked100 && stacked ? 'Share' : measureTitle
+      s.xAxisTitle = cap(category)
+    }
     // Combo: draw the 2nd measure as a line on the secondary (right) axis.
     if (combo && !stacked && measure === 'both' && chartType !== 'pie' && s.series[1]) {
       s.series[1] = { ...s.series[1], type: 'line', axis: 'right' }
       s.y2AxisTitle = 'Deals'
+    }
+    // Average reference line across the categories (single-measure, not 100%).
+    if (avgLine && chartType !== 'pie' && !(stacked100 && stacked) && s.series[0]) {
+      const vals = s.series[0].values.filter((v) => Number.isFinite(v))
+      const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
+      s.referenceLines = [{ value: Math.round(avg), label: `Avg ${fmtVal(avg)}` }]
     }
     if (chartType === 'pie') s.innerRadius = donut ? 0.62 : 0
     return s
@@ -129,7 +168,7 @@
       Live chart bound to the grid via <code>rowsToChartSpec</code> + <code>SvGridChart</code>
     </p>
     <p class="mt-0.5 text-xs" style="color: var(--sg-muted);">
-      Hover a column for a unified tooltip + crosshair (all series at once) · click a legend chip to toggle a series · click to drill the grid.
+      Hover for a unified tooltip + crosshair · click a legend chip to toggle, double-click to isolate · click a bar to drill · <strong>drag a cell range to chart just that selection</strong>.
     </p>
     <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
       <select bind:value={chartType} class="ic-sel">
@@ -151,14 +190,24 @@
       </select>
       {#if chartType !== 'pie'}
         <label class="ic-chk"><input type="checkbox" bind:checked={stacked} disabled={measure !== 'both'} onchange={() => stacked && (combo = false)} /> Stacked</label>
+        <label class="ic-chk"><input type="checkbox" bind:checked={stacked100} disabled={!stacked || measure !== 'both'} /> 100%</label>
         <label class="ic-chk"><input type="checkbox" bind:checked={combo} disabled={measure !== 'both'} onchange={() => combo && (stacked = false)} /> Combo (2nd axis)</label>
+        <label class="ic-chk"><input type="checkbox" bind:checked={avgLine} /> Avg line</label>
+        {#if chartType === 'bar'}
+          <label class="ic-chk"><input type="checkbox" bind:checked={horizontal} disabled={measure === 'both'} /> Horizontal</label>
+        {/if}
       {:else}
         <label class="ic-chk"><input type="checkbox" bind:checked={donut} /> Donut</label>
       {/if}
+      <label class="ic-chk"><input type="checkbox" bind:checked={topN} /> Top 5 + Other</label>
       <label class="ic-chk"><input type="checkbox" bind:checked={dataLabels} /> Data labels</label>
       <span class="mx-1 h-4 w-px" style="background: var(--sg-border)"></span>
       <button type="button" class="ic-btn" onclick={() => chartWrap && downloadChartSvg(chartWrap, 'chart.svg')}>SVG</button>
       <button type="button" class="ic-btn" onclick={() => chartWrap && downloadChartPng(chartWrap, 'chart.png')}>PNG</button>
+      {#if selectedRows.length}
+        <span class="ic-badge" style="background: var(--sg-accent, #2563eb)">Charting {selectedRows.length} selected row{selectedRows.length === 1 ? '' : 's'}</span>
+        <button type="button" class="ic-clear" onclick={() => { selectedRows = []; api?.selectCells([]) }}>clear</button>
+      {/if}
       {#if drill}
         <span class="ic-badge">Drilled: {drill}</span>
         <button type="button" class="ic-clear" onclick={resetDrill}>reset</button>
@@ -174,14 +223,15 @@
         features={features}
         sortable
         filterable
-        selectionMode="none"
+        selectionMode="cell"
         enableRowSummaries={false}
         rowHeight={32}
         containerHeight="100%"
         fitColumns={true}
         onApiReady={(a) => { api = a; sync() }}
-        onFiltersChange={sync}
-        onSortingChange={sync}
+        onFiltersChange={() => { sync(); selectedRows = [] }}
+        onSortingChange={() => { sync(); selectedRows = [] }}
+        onCellSelectionChange={onSelectionChange}
       />
     </div>
     <div class="shrink-0 rounded-lg border p-3" style="width: 560px; border-color: var(--sg-border); background: var(--sg-bg);" bind:this={chartWrap}>

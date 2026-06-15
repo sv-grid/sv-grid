@@ -5031,6 +5031,7 @@
         role="checkbox"
         aria-checked={Boolean(cellValue)}
         aria-readonly="true"
+        aria-label={toolPanelHeaderLabel(column)}
       ></div>
     {:else if (column.columnDef.editorType === "list" || column.columnDef.editorType === "chips") && column.columnDef.cell == null}
       {@const arr = Array.isArray(cellValue)

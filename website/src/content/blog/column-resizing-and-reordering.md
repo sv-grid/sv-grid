@@ -4,10 +4,13 @@ description: Give users drag-to-resize and drag-to-reorder columns in SvGrid, an
 date: 2026-02-24
 category: Columns
 tags: column resize, column reorder, layout, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 No two users read a table the same way. One wants the description column wide; another wants it out of the way. Column resizing and reordering hand that control to the user, and persisting the layout makes the grid feel like theirs.
+
+![Drag-to-reorder columns in SvGrid](/blog-media/column-reorder.png)
+*Drag-to-reorder columns in SvGrid.*
 
 ## Drag to resize
 

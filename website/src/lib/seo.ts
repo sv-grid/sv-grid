@@ -22,7 +22,10 @@ export const SITE_ORIGIN =
   (import.meta.env.VITE_SITE_ORIGIN as string | undefined) || 'https://svgrid.com'
 export const SITE_PATH_PREFIX = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
 
-const DEFAULT_IMAGE = '/og-image.svg'
+// PNG raster is preferred for OG/Twitter cards: some scrapers (notably
+// LinkedIn) silently ignore SVG OG images. The PNG is built from
+// /og-image.svg by tools/prerender-site.mjs at deploy time.
+const DEFAULT_IMAGE = '/og-image.png'
 
 const ROUTES: Record<string, RouteSeo> = {
   '': {
@@ -33,9 +36,9 @@ const ROUTES: Record<string, RouteSeo> = {
     path: '/',
   },
   demos: {
-    title: 'Demos - 120+ Production-Ready SvGrid Examples',
+    title: 'Demos - 150+ Production-Ready SvGrid Examples',
     description:
-      '120+ production-quality SvGrid demos: quick start, server-side data, 100k rows, Excel-style filters, grouping + aggregation, master/detail, live stock market feed, inline editing, accessibility, SSR, and more. Copy-paste any example into your project.',
+      '150+ production-quality SvGrid demos: quick start, server-side data, 100k rows, Excel-style filters, grouping + aggregation, master/detail, live stock market feed, inline editing, accessibility, SSR, and more. Copy-paste any example into your project.',
     keywords: ['svelte data grid examples', 'svelte table examples', 'sv-grid demos'],
     path: '/demos',
   },
@@ -82,10 +85,10 @@ const ROUTES: Record<string, RouteSeo> = {
     path: '/theme-builder',
   },
   pricing: {
-    title: 'Pricing - SvGrid Community (Free) + sv-grid-pro (Single / Multi App License)',
+    title: 'Pricing - SvGrid Community (Free), sv-grid-pro, and Enterprise',
     description:
-      'SvGrid Community is free under the MIT License for commercial use. sv-grid-pro is a paid companion, per developer: Single Application Developer License $599 or Multiple Application Developer License $999 - a perpetual license + 1 year of updates and support that renews automatically (cancel anytime). Adds Excel, PDF, CSV, TSV, HTML export and Print, pivot, AI, plus direct support.',
-    keywords: ['svelte grid pricing', 'sv-grid license', 'sv-grid-pro license', 'single application developer license', 'multiple application developer license', 'svelte table commercial license'],
+      'SvGrid Community is free under the MIT License for commercial use. sv-grid-pro is a paid companion, per developer: Single Application Developer License $599 or Multiple Application Developer License $999 - buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise tier for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. Adds Excel, PDF, CSV, TSV, HTML export and Print, pivot, AI, plus direct support.',
+    keywords: ['svelte grid pricing', 'sv-grid license', 'sv-grid-pro license', 'single application developer license', 'multiple application developer license', 'sv-grid enterprise license', 'svelte table commercial license'],
     path: '/pricing',
   },
   blog: {
@@ -202,14 +205,20 @@ function structuredData(url: string, seo: RouteSeo): unknown[] {
           name: 'Pro - Single Application Developer License',
           price: '599',
           priceCurrency: 'USD',
-          description: 'Per developer. Perpetual license + 1 year of updates and support, auto-renewing (cancel anytime). One deployed application. Adds Excel / PDF / CSV / HTML export + Print + pivot + AI + support.',
+          description: 'Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. One deployed application. Adds Excel / PDF / CSV / HTML export + Print + pivot + AI + support.',
         },
         {
           '@type': 'Offer',
           name: 'Pro - Multiple Application Developer License',
           price: '999',
           priceCurrency: 'USD',
-          description: 'Per developer. Perpetual license + 1 year of updates and support, auto-renewing (cancel anytime). Unlimited deployed applications.',
+          description: 'Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Unlimited deployed applications.',
+        },
+        {
+          '@type': 'Offer',
+          name: 'Enterprise - Site / Org-wide License',
+          priceCurrency: 'USD',
+          description: 'Custom contract for organisations with 50+ developers, MSA / NDA, source-code escrow, named support engineer, on-prem documentation, custom SLAs, multi-year terms, or government / FedRAMP procurement. Contact sales@jqwidgets.com.',
         },
       ],
       keywords: 'svelte data grid, svelte 5 grid, svelte table, sv-grid, sv-grid-community, headless table, enterprise svelte grid, AG Grid alternative svelte, TanStack Table svelte 5',
@@ -590,7 +599,7 @@ export function applyBlogSeo(post: SeoBlogPost) {
       inLanguage: 'en',
       keywords: post.tags.join(', '),
       articleSection: post.category,
-      author: { '@type': 'Organization', name: post.author },
+      author: { '@type': 'Person', name: post.author },
       publisher: { '@type': 'Organization', name: 'jQWidgets', url: 'https://www.jqwidgets.com' },
       isPartOf: { '@type': 'Blog', name: 'SvGrid Blog', url: `${homepage}blog` },
       about: { '@type': 'SoftwareApplication', name: 'SvGrid', applicationCategory: 'DeveloperApplication' },

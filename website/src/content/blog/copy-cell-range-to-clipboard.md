@@ -1,10 +1,10 @@
 ---
 title: Copy a Cell Range to the Clipboard in SvGrid
 description: Copy a selected range as tab-separated values that paste cleanly into Excel and Google Sheets - plus copying with headers and programmatic copy.
-date: 2026-07-10
+date: 2026-07-16
 category: Selection
 tags: clipboard, copy, cell range, selection, recipe
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Spreadsheet users expect to select a block of cells and copy it. SvGrid's cell range selection makes this work, and the detail that matters is the clipboard *format*: tab-separated values paste into Excel and Google Sheets with columns intact. Here is how copy works and how to extend it.

@@ -24,7 +24,7 @@
     </div>
 
     <div>
-      <h4 class="font-semibold mb-3">Product</h4>
+      <h2 class="font-semibold mb-3">Product</h2>
       <ul class="space-y-2" style="color: var(--site-muted);">
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/demos">Demos</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/docs">Docs</a></li>
@@ -38,7 +38,7 @@
     </div>
 
     <div>
-      <h4 class="font-semibold mb-3">Company</h4>
+      <h2 class="font-semibold mb-3">Company</h2>
       <ul class="space-y-2" style="color: var(--site-muted);">
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/about">About us</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/faq">FAQ</a></li>
@@ -62,7 +62,7 @@
     </div>
 
     <div>
-      <h4 class="font-semibold mb-3">Resources</h4>
+      <h2 class="font-semibold mb-3">Resources</h2>
       <ul class="space-y-2" style="color: var(--site-muted);">
         <li>
           <a class="hover:text-[color:var(--site-accent)]" href="https://github.com/sv-grid/sv-grid" target="_blank" rel="noopener noreferrer">GitHub</a>

@@ -1,10 +1,10 @@
 ---
 title: Migrating from svelte-headless-table to SvGrid
 description: Move from svelte-headless-table's store-and-plugin model to SvGrid's runes-native engine and render component, with a clear concept mapping.
-date: 2026-07-27
+date: 2026-08-16
 category: Comparisons
 tags: migration, svelte-headless-table, comparison, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 svelte-headless-table is a Svelte-native headless table built on stores and a plugin system. If you are moving to SvGrid, you gain a Svelte-5 runes data flow, a ready-made render component, and built-in virtualization. Here is the mapping.

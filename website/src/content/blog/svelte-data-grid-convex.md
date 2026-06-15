@@ -4,7 +4,7 @@ description: Pair SvGrid with Convex's reactive queries for a data grid that upd
 date: 2026-06-13
 category: Integration
 tags: convex, reactive, realtime, integration, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Convex is a reactive backend: query functions are live by default, so when the underlying data changes, your query result updates automatically. Combined with SvGrid, that means a data grid that stays fresh with almost no plumbing. Here is the pattern.

@@ -1,10 +1,10 @@
 ---
 title: 'Inside SvGrid: A Theming System on CSS Variables'
 description: Why SvGrid is themed entirely with --sg-* CSS custom properties, how dark mode falls out for free, and the choice to avoid a JavaScript theme config.
-date: 2026-07-06
+date: 2026-07-10
 category: Engineering
 tags: theming, dark mode, css, engineering, story
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Moving from behavior to appearance. A data grid that only looks right in its own demo is useless, so SvGrid had to fit into other people's products without a fight. The question was how to make it themeable without inventing a configuration language nobody wants to learn.

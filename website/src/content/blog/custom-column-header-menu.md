@@ -1,10 +1,10 @@
 ---
 title: A Custom Column Header Menu in SvGrid
 description: Add a per-column header menu for sort, hide, pin, and custom actions using a header snippet and your own dropdown.
-date: 2026-07-11
+date: 2026-07-19
 category: Columns
 tags: header menu, columns, customization, recipe, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 A column header menu gives users a tidy place to sort, hide, pin, or run column-specific actions. SvGrid lets a column render a custom `header`, so you can drop your own menu button into any header. Here is the pattern.

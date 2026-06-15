@@ -1,10 +1,10 @@
 ---
 title: Migrating from jqxGrid to SvGrid
 description: Moving from the jQuery-era jqxGrid to SvGrid, the native Svelte 5 grid from the same team - mapping source, columns, and editing.
-date: 2026-07-25
+date: 2026-08-14
 category: Comparisons
 tags: migration, jqxgrid, jquery, comparison, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 jqxGrid is the jQuery-era data grid from jQWidgets - the same team that builds SvGrid. If your Svelte app still wraps jqxGrid, moving to SvGrid drops jQuery and gives you a native, reactive grid. As the makers of both, here is the honest migration path.

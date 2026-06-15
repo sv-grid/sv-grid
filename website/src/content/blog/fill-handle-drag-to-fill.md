@@ -1,13 +1,16 @@
 ---
 title: A Fill Handle (Drag to Fill) in SvGrid
 description: Build the spreadsheet fill handle - drag a cell's corner to copy its value down a column - on top of SvGrid's cell selection.
-date: 2026-07-17
+date: 2026-07-29
 category: Editing
 tags: fill handle, editing, spreadsheet, cell selection, recipe
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 The fill handle - the little square in a cell's corner you drag to copy a value down - is one of the most-loved spreadsheet interactions. SvGrid gives you cell selection and editing; the fill handle is a thin layer you build on top. Here is the approach.
+
+![A spreadsheet fill handle in SvGrid](/blog-media/fill-handle.png)
+*A drag-to-fill handle in SvGrid.*
 
 ## The interaction
 

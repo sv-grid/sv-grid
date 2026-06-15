@@ -4,7 +4,7 @@ description: From jQWidgets in 2011 to Smart UI web components and now SvGrid fo
 date: 2026-06-05
 category: Company
 tags: company, jqwidgets, smart ui, htmlelements, history
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 SvGrid did not appear out of nowhere. It is the latest product from a team that has been shipping UI components since 2011. This is the story of how we got here, and what a decade and a half of building grids taught us.

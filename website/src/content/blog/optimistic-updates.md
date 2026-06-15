@@ -4,10 +4,13 @@ description: Make edits in your Svelte data grid feel immediate by updating the 
 date: 2025-12-23
 category: Editing
 tags: optimistic updates, editing, ux, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 The fastest interaction is the one that does not wait for the network. Optimistic updates apply a change to the grid immediately, fire the request in the background, and roll back only if the server rejects it. Done well, edits feel instant even on a slow connection.
+
+![Optimistic edits in SvGrid](/blog-media/optimistic-updates.png)
+*Optimistic updates: edits apply instantly, then reconcile.*
 
 ## The pattern
 

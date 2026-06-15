@@ -4,10 +4,13 @@ description: Build Excel-style set filters with checkboxes, custom operators, an
 date: 2025-11-25
 category: Filtering
 tags: set filter, custom filters, faceted search, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Text and number filters cover most needs, but categorical data wants something different: a checklist of every distinct value, the way Excel's filter dropdown works. SvGrid supports set-style filtering and custom filter logic so users can pick exactly the categories they want.
+
+![An Excel-style set filter in SvGrid](/blog-media/set-filter.png)
+*An advanced set filter in SvGrid.*
 
 ## The set filter idea
 

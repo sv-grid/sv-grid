@@ -1,10 +1,10 @@
 ---
 title: Migrating from DataTables.net to a Svelte Data Grid
 description: Move a jQuery DataTables setup to SvGrid in Svelte 5 - replacing the jQuery plugin, ajax/serverSide config, and column definitions with a native grid.
-date: 2026-07-23
+date: 2026-08-12
 category: Comparisons
 tags: migration, datatables, jquery, comparison, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 DataTables.net has powered jQuery tables for years. Moving to Svelte means dropping jQuery entirely and adopting a reactive, component-based grid. The concepts carry over; the implementation gets simpler. Here is the path.

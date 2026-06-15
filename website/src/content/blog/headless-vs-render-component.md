@@ -4,10 +4,13 @@ description: SvGrid ships both a headless engine and a drop-in render component.
 date: 2026-06-02
 category: Architecture
 tags: headless table, svelte data grid, architecture, createSvGrid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 One of the first decisions you make with SvGrid is which layer to build on. SvGrid is headless-first: a pure data engine (`createSvGrid`) sits underneath a full render component (`<SvGrid>`). You can use either, and you can drop from one to the other without rewriting your data logic.
+
+![The SvGrid render component](/blog-media/quick-start.png)
+*The <SvGrid> render component - the batteries-included layer over the headless core.*
 
 ## The render component: `<SvGrid>`
 

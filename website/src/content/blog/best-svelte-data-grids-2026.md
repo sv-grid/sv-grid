@@ -4,10 +4,10 @@ description: A candid roundup of the data grid and table libraries you can use w
 date: 2026-06-14
 category: Comparisons
 tags: comparison, alternatives, svelte data grid, svelte table
-author: SvGrid Team
+author: Boyko Markov
 ---
 
-"What is the best data grid for Svelte?" has more than one right answer, because "best" depends on whether you want a headless engine, a drop-in component, or a framework-agnostic grid you can also use elsewhere. Here is an honest map of the options in 2026, including ours, with the case for each.
+"What is the best data grid for Svelte?" does not have a single answer, and anyone who gives you one is selling something. It depends on whether you want a headless engine, a drop-in component, or a framework-agnostic grid you can reuse elsewhere. We build one of these, so weigh our enthusiasm accordingly - but this is an honest map of the 2026 options, including ours, with the real case for each.
 
 ## The shortlist
 

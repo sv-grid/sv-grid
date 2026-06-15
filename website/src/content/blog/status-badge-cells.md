@@ -1,13 +1,16 @@
 ---
 title: Status Badge Cells in SvGrid
 description: Render colored status badges in grid cells - mapping values to accessible, themeable pills that stay sortable and filterable.
-date: 2026-08-08
+date: 2026-09-09
 category: Cells
 tags: badges, status, cells, custom cells, recipe
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 A status column reads far better as colored pills than as plain text: "Active", "Pending", "Closed" become instantly scannable. SvGrid renders any markup in a cell, so a badge is a small custom cell. Here is how to do it well - themeable and accessible.
+
+![Custom badge cells in SvGrid](/blog-media/custom-cells-themes.png)
+*Custom badge and status cells in SvGrid.*
 
 ## A badge cell
 

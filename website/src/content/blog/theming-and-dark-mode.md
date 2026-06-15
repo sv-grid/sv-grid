@@ -4,10 +4,13 @@ description: Customize SvGrid colors, borders, and density with --sg-* CSS custo
 date: 2026-03-10
 category: Theming
 tags: theming, dark mode, css variables, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 A data grid should match your product, not fight it. SvGrid is themed entirely with CSS custom properties prefixed `--sg-*`, so you restyle it with plain CSS - no theme builder, no JavaScript config object.
+
+![Custom cells and theming in SvGrid](/blog-media/custom-cells-themes.png)
+*Custom cell renderers and theming in SvGrid.*
 
 ## The token system
 

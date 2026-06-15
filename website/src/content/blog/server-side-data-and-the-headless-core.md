@@ -4,7 +4,7 @@ description: Teaching SvGrid to drive from a backend without changing its UI, an
 date: 2026-06-13
 category: Engineering
 tags: server-side, headless, engineering, story
-author: SvGrid Team
+author: Kamelia M
 ---
 
 By this point SvGrid could do almost everything in the browser. One big capability remained: the opposite - doing almost nothing in the browser, and letting a server do the work. This is about server-side data, and about the headless core coming into its own.

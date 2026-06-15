@@ -4,7 +4,7 @@ description: Connect SvGrid to a Prisma backend in SvelteKit - server-side pagin
 date: 2026-06-13
 category: Integration
 tags: prisma, sveltekit, server-side, integration, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Prisma is a popular, ergonomic ORM. Its `findMany` options map neatly onto what a data grid needs: `orderBy` for sorting, `where` for filtering, `skip`/`take` for paging, and `count` for the pager total. Here is how to drive SvGrid server-side from Prisma.

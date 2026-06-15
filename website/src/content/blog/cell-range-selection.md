@@ -4,10 +4,13 @@ description: Let users drag to select rectangular cell ranges, then copy, sum, o
 date: 2026-01-20
 category: Selection
 tags: range selection, cell selection, spreadsheet, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Power users think in ranges, not rows. They drag across a block of cells to copy it, sum it, or clear it. SvGrid brings that spreadsheet interaction to your Svelte app with cell range selection.
+
+![Spreadsheet-style cell range selection in SvGrid](/blog-media/range-selection.png)
+*Drag-to-select cell ranges in SvGrid.*
 
 ## Enable range selection
 

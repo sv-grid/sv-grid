@@ -4,10 +4,13 @@ description: SvGrid ships WAI-ARIA roles and full keyboard control by default. L
 date: 2026-02-17
 category: Accessibility
 tags: accessibility, wai-aria, keyboard navigation, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Accessibility is not a feature you bolt on - it is the default a grid should ship with. SvGrid renders a semantic table with WAI-ARIA roles and full keyboard navigation out of the box, so your grid is usable by keyboard and screen-reader users from the first line.
+
+![Keyboard navigation and accessibility in SvGrid](/blog-media/accessibility.png)
+*SvGrid is keyboard-navigable and screen-reader friendly by default.*
 
 ## What you get for free
 

@@ -4,7 +4,7 @@ description: AG Grid is powerful but not Svelte-native. Here are the best altern
 date: 2026-06-15
 category: Comparisons
 tags: comparison, alternatives, ag grid, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 AG Grid is a brilliant, mature data grid - and it is framework-agnostic, which means in a Svelte app you use it through a wrapper rather than as a native component. If you are looking for something that feels at home in Svelte 5, or for a lighter or more permissively licensed option, here are the alternatives worth evaluating.

@@ -4,7 +4,7 @@ description: Move from TanStack Table's headless Svelte adapter to SvGrid - mapp
 date: 2026-06-28
 category: Comparisons
 tags: migration, tanstack table, comparison, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 TanStack Table is a great headless engine. You might move to SvGrid to stop hand-building the UI, to get a Svelte-5-native (runes, not stores) data flow, or for built-in virtualization and Excel-style filters. Here is how the pieces map - and an honest note on when to stay.

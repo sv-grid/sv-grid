@@ -53,7 +53,7 @@
     { n: 'Svelte 5', l: 'native runes' },
     { n: '42 KB', l: 'gzip (7.5 KB core)' },
     { n: 'MIT', l: 'free, commercial' },
-    { n: '120+', l: 'live demos' },
+    { n: '150+', l: 'live demos' },
     { n: 'MCP', l: 'AI-ready' },
   ]
 
@@ -68,9 +68,9 @@
     },
     {
       name: 'sv-grid-pro',
-      tag: 'From $599/dev/yr',
+      tag: 'From $599/dev',
       blurb:
-        'Companion feature pack that plugs into Community: export to Excel (xlsx), PDF, CSV, TSV, HTML, plus a paginated printable view, pivot tables, and AI helpers. Single Application ($599) or Multiple Application ($999) Developer License, per developer. A perpetual license + 1 year of updates and support that renews automatically; cancel anytime. Email support, private Slack, priority bug fixes.',
+        'Companion feature pack that plugs into Community: export to Excel (xlsx), PDF, CSV, TSV, HTML, plus a paginated printable view, pivot tables, and AI helpers. Single Application ($599) or Multiple Application ($999) Developer License, per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Email support, private Slack, priority bug fixes.',
       install: 'npm install sv-grid-pro',
       cta: { label: 'See license tiers', href: '#/pricing' },
       highlight: true,
@@ -102,7 +102,7 @@
     },
     {
       q: 'Is SvGrid compatible with my framework?',
-      a: 'SvGrid is Svelte 5 native - it uses runes ($state / $derived / $effect) and snippets, not Svelte 4 stores. For React / Angular / Vue / vanilla web components, see our sibling product htmlelements.com.',
+      a: 'SvGrid is Svelte 5 only by design - it uses runes ($state / $derived / $effect) and snippets, not Svelte 4 stores, and pays no abstraction tax for cross-framework support. For React, Angular, Vue, or vanilla web components, the same team ships htmlelements.com.',
     },
     {
       q: 'Does SvGrid work with AI tools and assistants?',
@@ -118,7 +118,7 @@
     },
     {
       q: 'How much does sv-grid-pro cost?',
-      a: 'Two license tiers, both per developer. Single Application Developer License ($599) covers one deployed app; Multiple Application Developer License ($999) covers unlimited deployed apps in your organisation. Each is a perpetual license that includes 1 year of updates and support and renews automatically each year - cancel anytime and keep every version from your paid term. Volume / multi-year discounts available.',
+      a: 'Two self-serve license tiers, both per developer. Single Application Developer License ($599) covers one deployed app; Multiple Application Developer License ($999) covers unlimited deployed apps in your organisation. Buy once, keep forever - the optional yearly renewal pays for new updates and support, and you can cancel anytime and keep every version released during your paid term. For 50+ seats, MSA / NDA / on-prem / multi-year terms, see the Enterprise tier on the pricing page.',
     },
   ]
 
@@ -238,10 +238,10 @@
     </h1>
 
     <p class="mx-auto mt-6 max-w-2xl text-lg md:text-xl" style="color: var(--site-muted);">
-      Built for Svelte 5 runes from the first line - not a React grid wrapped in a
-      Svelte shim. A headless engine you can compose, plus a full-featured render
-      component you can drop in: sorting, filtering, grouping, virtualization, inline
-      editing, server-side data, and 120+ production-quality examples.
+      Virtualization, Excel-style filters, cell selection, and inline editing in one
+      prop pass - not a React grid wrapped in a Svelte shim. Built for Svelte 5 runes
+      from the first line, with a headless engine underneath when you need full
+      control. 150+ production-quality examples.
     </p>
 
     <!-- Credibility stat row -->
@@ -257,7 +257,7 @@
     <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
       <a href="#/docs/getting-started" class="btn btn-primary">Get started</a>
       <a href="#/demos" class="btn btn-ghost">
-        Browse 120+ demos
+        Browse 150+ demos
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
@@ -446,7 +446,7 @@
         <div class="flex items-center gap-3">
           <code class="text-base font-bold" style="color: var(--sg-fg);">{p.name}</code>
           <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-            style:background={p.highlight ? 'var(--site-accent)' : 'var(--sg-row-alt-bg)'}
+            style:background={p.highlight ? '#c2410c' : 'var(--sg-row-alt-bg)'}
             style:color={p.highlight ? '#fff' : 'var(--site-muted)'}>{p.tag}</span>
         </div>
         <p class="mt-3 text-sm" style="color: var(--sg-fg);">{p.blurb}</p>
@@ -500,7 +500,7 @@
     style="border-color: var(--site-border); background: linear-gradient(135deg, rgba(255,62,0,0.14), rgba(245,158,11,0.08));">
     <h2 class="text-2xl md:text-3xl font-bold" style="color: var(--sg-fg)">Ready to drop SvGrid into your app?</h2>
     <p class="mt-2 max-w-2xl mx-auto" style="color: var(--site-muted);">
-      Start from one of 120+ examples - quick start, server-side data, inline editing, 100k rows, grouping, tree, master/detail, live updates, and more.
+      Start from one of 150+ examples - quick start, server-side data, inline editing, 100k rows, grouping, tree, master/detail, live updates, and more.
     </p>
     <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
       <a href="#/docs/getting-started" class="btn btn-primary">Get started</a>

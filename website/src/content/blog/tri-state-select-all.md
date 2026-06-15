@@ -1,10 +1,10 @@
 ---
 title: A Tri-State Select-All Checkbox in SvGrid
 description: The header checkbox that selects all rows, clears them, and shows an indeterminate state when only some are selected - and the all-pages nuance.
-date: 2026-08-09
+date: 2026-09-17
 category: Selection
 tags: selection, select all, checkbox, recipe, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 The header checkbox in a grid has three states, not two: all selected, none selected, and indeterminate (some selected). SvGrid's row selection includes this tri-state header checkbox out of the box. Here is how it works and the one nuance to get right with paged or server data.

@@ -1,10 +1,10 @@
 ---
 title: 'Inside SvGrid: The Inline Editing Engine'
 description: Turning SvGrid from a viewer into a tool: typed editors, a keyboard-first edit flow, and the deliberate choice never to mutate your data.
-date: 2026-07-04
+date: 2026-07-08
 category: Engineering
 tags: editing, validation, engineering, story
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 By this point SvGrid could sort and filter a hundred thousand rows smoothly. But a grid you can only read is half a grid. The next piece was editing - the feature that turns a data viewer into a data tool, and the one with the most opinions baked into it.

@@ -4,7 +4,7 @@ description: Drive SvGrid from a GraphQL API in Svelte - mapping grid sort, filt
 date: 2026-06-13
 category: Integration
 tags: graphql, urql, server-side, integration, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 GraphQL APIs expose exactly the fields you ask for, which pairs well with a data grid that knows its columns. With a client like urql or Houdini in Svelte, you map the grid's sort, filter, and page state onto query variables. Here is the pattern, including cursor pagination.

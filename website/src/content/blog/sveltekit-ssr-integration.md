@@ -4,7 +4,7 @@ description: Load data in a SvelteKit load function, render the grid on the serv
 date: 2025-12-16
 category: Integration
 tags: sveltekit, ssr, hydration, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 SvGrid renders meaningful HTML before hydration, so it works under SvelteKit's server-side rendering and static builds without special handling. That means faster first paint and a grid that search engines and crawlers can read.

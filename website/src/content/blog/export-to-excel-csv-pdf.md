@@ -4,10 +4,13 @@ description: Let users download grid data as XLSX, CSV, or PDF with sv-grid-pro,
 date: 2026-02-10
 category: Export
 tags: export, excel, csv, pdf, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 "Can I get this in Excel?" is the most common request a data grid gets. The `sv-grid-pro` pack adds export to Excel (XLSX), CSV, TSV, HTML, and PDF, plus printing - and it exports what the user is actually looking at, honoring the current sort, filter, and selection.
+
+![Exporting a SvGrid grid to Excel and PDF](/blog-media/export.png)
+*Exporting a SvGrid grid (sv-grid-pro) to Excel, PDF, and more.*
 
 ## Export formats
 

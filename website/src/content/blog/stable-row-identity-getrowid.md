@@ -1,10 +1,10 @@
 ---
 title: Stable Row Identity in SvGrid (and why it matters)
 description: Why a data grid needs stable row identity for selection, edits, and performance - and how to keep it correct as your data changes.
-date: 2026-08-07
+date: 2026-09-08
 category: Performance
 tags: performance, identity, getRowId, selection, recipe
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Row identity is the quiet foundation under selection, editing, and efficient updates. When a grid cannot tell that "this row now" is the same record as "that row before", selection jumps, edits land on the wrong row, and updates do more work than they should. Here is how identity works in SvGrid and how to keep it correct.

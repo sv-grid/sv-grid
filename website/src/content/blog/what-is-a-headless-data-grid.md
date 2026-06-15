@@ -4,10 +4,10 @@ description: A clear explanation of headless data grids - behavior without marku
 date: 2026-06-16
 category: Concepts
 tags: headless, concepts, data grid, architecture
-author: SvGrid Team
+author: Kamelia M
 ---
 
-A headless data grid is a grid that provides all the behavior and state - sorting, filtering, grouping, pagination, selection, virtualization logic - without rendering any markup. You bring the DOM; it brings the brains. The term gets used loosely, so here is a precise explanation.
+A headless data grid is a grid that provides all the behavior and state - sorting, filtering, grouping, pagination, selection, virtualization logic - without rendering any markup. You bring the DOM; it brings the brains. The word "headless" gets thrown around loosely, so let me pin down what it actually means and when it is the right call.
 
 ## Headless vs all-in-one
 

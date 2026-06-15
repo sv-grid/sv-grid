@@ -4,10 +4,13 @@ description: Highlight negatives, flag thresholds, and build heatmaps in a Svelt
 date: 2026-01-13
 category: Cells
 tags: conditional formatting, cell styles, heatmap, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Numbers in a table become insight when color does the reading for you - red for negatives, green for targets met, a heatmap for intensity. SvGrid lets you style cells based on their value, so the grid surfaces the story without the user scanning every figure.
+
+![Conditional cell formatting in SvGrid](/blog-media/conditional-formatting.png)
+*Value-driven conditional formatting: color scales, data bars, and icons.*
 
 ## Style a cell by its value
 

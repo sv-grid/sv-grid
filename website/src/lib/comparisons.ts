@@ -59,7 +59,7 @@ const tanstack: Comparison = {
     'Native Svelte 5 - $state / $derived / $effect / snippets. No store wrappers, no .subscribe ceremony.',
     'Ships <SvGrid /> - a production render component with virtualization, Excel-style filters, cell-range selection, inline editing, and pagination. With TanStack Table you build all of this.',
     'Imperative API surface (SvGridApi) for adding rows, setting filters, mutating columns from outside the component.',
-    '120+ production-quality examples ready to copy; TanStack ships a much smaller Svelte example set.',
+    '150+ production-quality examples ready to copy; TanStack ships a much smaller Svelte example set.',
     'sv-grid-mcp MCP server bundled - AI assistants can fetch real example sources without hallucinating.',
     'Pro + Support tier ($599/dev/yr) for teams that need an SLA.',
   ],

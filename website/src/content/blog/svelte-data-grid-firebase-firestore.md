@@ -4,7 +4,7 @@ description: Build a real-time SvGrid backed by Firestore - live onSnapshot upda
 date: 2026-06-13
 category: Integration
 tags: firebase, firestore, realtime, integration, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Firestore's real-time listeners make it a natural fit for a live data grid: subscribe to a query and the grid updates as documents change. Here is how to wire SvGrid to Firestore with live updates and pagination.

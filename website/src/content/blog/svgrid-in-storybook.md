@@ -4,7 +4,7 @@ description: Build a living catalog of your data grid configurations in Storyboo
 date: 2026-06-13
 category: Integration
 tags: storybook, documentation, testing, integration, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Storybook turns your grid configurations into a living, browsable catalog - useful for design review, QA, and onboarding. Pairing it with SvGrid lets your team see every grid state in isolation. Here is how to set it up well.

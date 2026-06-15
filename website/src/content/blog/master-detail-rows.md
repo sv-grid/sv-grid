@@ -4,10 +4,13 @@ description: Build expandable rows that reveal a detail panel - a nested grid, a
 date: 2026-04-14
 category: Rows
 tags: master detail, expandable rows, nested grid, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Some data does not fit in a single row. An order has line items; a customer has recent activity. Master-detail rows let users expand a row to reveal a rich detail panel - another grid, a chart, or a form - without leaving the page.
+
+![Master-detail rows with a detail form in SvGrid](/blog-media/forms-master-detail.png)
+*Master-detail rows revealing a detail form in SvGrid.*
 
 ## Enable expandable rows
 

@@ -4,7 +4,7 @@ description: Wire SvGrid to a Supabase Postgres backend in SvelteKit - server-si
 date: 2026-06-24
 category: Integration
 tags: sveltekit, supabase, server-side, integration, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Supabase gives you a Postgres database with a clean JavaScript client; SvelteKit gives you load functions and server endpoints. Together they are a great backend for a data grid. Here is how to drive SvGrid server-side from Supabase so it scales past what fits in the browser.

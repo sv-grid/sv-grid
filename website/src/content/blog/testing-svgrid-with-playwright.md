@@ -4,7 +4,7 @@ description: Write reliable Playwright tests for a data grid - sorting, filterin
 date: 2026-06-13
 category: Integration
 tags: playwright, testing, e2e, accessibility, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 End-to-end tests catch the integration bugs unit tests miss: does sorting actually reorder rows, does an edit persist, does keyboard navigation work? Playwright is a great fit, and because SvGrid renders proper ARIA roles, your tests can be robust rather than brittle. Here is the approach.

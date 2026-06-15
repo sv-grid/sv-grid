@@ -4,10 +4,13 @@ description: Render badges, progress bars, avatars, and action buttons inside Sv
 date: 2026-03-17
 category: Cells
 tags: custom cells, snippets, renderSnippet, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Plain text takes a grid far, but real apps need badges, progress bars, avatars, and action buttons inside cells. SvGrid renders any Svelte 5 snippet in a cell with `renderSnippet`, so you keep full component power and type safety.
+
+![Custom cell editors in SvGrid](/blog-media/custom-cell-editors.png)
+*Custom cell editors rendered with Svelte snippets in SvGrid.*
 
 ## A status badge
 

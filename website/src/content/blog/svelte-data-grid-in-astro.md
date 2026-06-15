@@ -4,7 +4,7 @@ description: Drop SvGrid into an Astro site as a Svelte island - hydration direc
 date: 2026-06-13
 category: Integration
 tags: astro, islands, svelte, integration, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Astro's islands architecture lets you ship mostly static HTML with small interactive components hydrated on demand. A data grid is a perfect island: the page stays fast, and only the grid becomes interactive. Here is how to use SvGrid in Astro.

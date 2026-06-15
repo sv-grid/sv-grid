@@ -1,13 +1,16 @@
 ---
 title: An Editable Select / Dropdown Cell in SvGrid
 description: Let users pick a value from a dropdown inside a grid cell - a custom editor cell that commits the choice back to your data.
-date: 2026-07-15
+date: 2026-07-26
 category: Editing
 tags: editing, dropdown, select, cell editor, recipe
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Some columns should be picked from a fixed set, not typed - status, category, assignee. A dropdown cell gives users a constrained, fast way to edit. SvGrid's built-in editors cover text, number, checkbox, and dates; for a select, you render a small custom editor cell. Here is the pattern.
+
+![Editable dropdown cells in SvGrid](/blog-media/custom-cell-editors.png)
+*Custom cell editors, including dropdowns, in SvGrid.*
 
 ## A select cell
 

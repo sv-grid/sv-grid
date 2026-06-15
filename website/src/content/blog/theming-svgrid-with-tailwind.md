@@ -4,10 +4,13 @@ description: Wire SvGrid's --sg-* tokens to your Tailwind v4 theme so the grid i
 date: 2026-06-13
 category: Theming
 tags: tailwind, theming, css variables, integration, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 SvGrid is themed entirely with `--sg-*` CSS custom properties, and Tailwind v4 is configured with CSS variables via `@theme`. That means you can point the grid at your Tailwind tokens and it inherits your design system - including dark mode - for free. Here is how.
+
+![SvGrid themed to match a design system](/blog-media/theme-integrations.png)
+*SvGrid themed via --sg-* tokens to match a design system.*
 
 ## Map grid tokens to Tailwind tokens
 

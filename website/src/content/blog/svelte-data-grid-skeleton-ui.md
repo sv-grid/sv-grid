@@ -4,7 +4,7 @@ description: Blend SvGrid into a Skeleton UI app by mapping its --sg-* tokens to
 date: 2026-06-13
 category: Integration
 tags: skeleton ui, theming, design system, integration, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Skeleton is a popular Svelte UI toolkit built on Tailwind with a themeable set of CSS custom properties. Since SvGrid is themed with `--sg-*` variables, you can map it onto Skeleton's theme so the grid matches your app's look and dark mode.

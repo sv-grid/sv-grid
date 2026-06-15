@@ -4,7 +4,7 @@ description: Use SvGrid in a Laravel + Inertia (Svelte) app - server-side paging
 date: 2026-06-13
 category: Integration
 tags: laravel, inertia, server-side, integration, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Inertia.js lets a Laravel backend drive Svelte pages without building a separate API. SvGrid fits naturally: Laravel's paginator produces exactly the page and total a grid needs, and Inertia's partial reloads keep navigation snappy. Here is the setup.

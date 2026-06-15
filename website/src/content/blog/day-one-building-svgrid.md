@@ -1,10 +1,10 @@
 ---
 title: How We Started Building SvGrid
 description: The architectural calls that everything else rests on - a runes-native engine, a headless core, and a render component - and the first grid that actually rendered.
-date: 2026-07-13
+date: 2026-07-21
 category: Company
 tags: company, story, engineering, development
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 The idea was settled: a data grid built natively for Svelte 5. This post is about the part where talk becomes code - the early decisions that are expensive to change later, and the small thrill of the first grid that actually rendered.

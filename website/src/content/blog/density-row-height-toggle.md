@@ -1,10 +1,10 @@
 ---
 title: A Density (Row-Height) Toggle for SvGrid
 description: Give users compact, comfortable, and spacious row-density options - driven by CSS tokens and a persisted preference.
-date: 2026-07-14
+date: 2026-07-23
 category: Rows
 tags: density, row height, theming, rows, recipe
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Different users want different densities: an analyst scanning thousands of rows wants compact; a casual user wants comfortable. A density toggle is a small feature with a big usability payoff. Because SvGrid is styled with `--sg-*` tokens, you can drive density with CSS. Here is the recipe.

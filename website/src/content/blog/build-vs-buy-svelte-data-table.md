@@ -4,7 +4,7 @@ description: A clear-eyed look at when to hand-roll a Svelte table and when to u
 date: 2026-06-21
 category: Comparisons
 tags: comparison, build vs buy, svelte data grid, engineering
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Every team that needs a table in Svelte hits the same fork: write a `{#each}` over a `<table>`, or reach for a data grid. A simple table is genuinely easy in Svelte, so the build option is tempting. Here is how to decide honestly - including the costs that do not show up until later.

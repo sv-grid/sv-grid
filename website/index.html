@@ -28,7 +28,10 @@
     <meta name="author" content="jQWidgets" />
     <link rel="canonical" href="https://svgrid.com/" />
 
-    <!-- Open Graph -->
+    <!-- Open Graph. PNG is listed first because some scrapers (LinkedIn in
+         particular) ignore SVG OG images; the SVG is kept as a secondary
+         fallback for clients that prefer it. The PNG is rasterized from
+         /og-image.svg at build time (see tools/prerender-site.mjs). -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="SvGrid" />
     <meta
@@ -40,11 +43,13 @@
       content="A modern Svelte 5 data grid. Headless-first engine plus a full render component. Sorting, filtering, grouping, virtualization, inline editing, server-side data."
     />
     <meta property="og:url" content="https://svgrid.com/" />
-    <meta property="og:image" content="https://svgrid.com/og-image.svg" />
+    <meta property="og:image" content="https://svgrid.com/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:alt" content="SvGrid - the enterprise-grade Svelte 5 data grid" />
+    <meta property="og:image" content="https://svgrid.com/og-image.svg" />
+    <meta property="og:image:type" content="image/svg+xml" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -53,7 +58,7 @@
       name="twitter:description"
       content="A modern Svelte 5 data grid. Headless-first engine plus a full render component."
     />
-    <meta name="twitter:image" content="https://svgrid.com/og-image.svg" />
+    <meta name="twitter:image" content="https://svgrid.com/og-image.png" />
 
     <!-- Favicon: the SvGrid mark - a flat data-table glyph (header row + 3-col
          body) on a solid plate, with one brand-orange "active cell". Matches
@@ -107,14 +112,25 @@
                 "name": "Pro - Single Application Developer License",
                 "price": "599",
                 "priceCurrency": "USD",
-                "description": "Per developer. Perpetual license + 1 year of updates and support that renews automatically (cancel anytime). Covers one deployed production application. Includes sv-grid-pro (export to Excel, PDF, CSV, TSV, HTML + Print, pivot, AI), email support, private Slack, priority bug fixes."
+                "description": "Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers one deployed production application. Includes sv-grid-pro (export to Excel, PDF, CSV, TSV, HTML + Print, pivot, AI), email support, private Slack, priority bug fixes."
               },
               {
                 "@type": "Offer",
                 "name": "Pro - Multiple Application Developer License",
                 "price": "999",
                 "priceCurrency": "USD",
-                "description": "Per developer. Perpetual license + 1 year of updates and support that renews automatically (cancel anytime). Covers unlimited deployed production applications in your organisation. Includes everything in Single Application plus volume / multi-year discounts."
+                "description": "Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers unlimited deployed production applications in your organisation. Includes everything in Single Application plus volume / multi-year discounts."
+              },
+              {
+                "@type": "Offer",
+                "name": "Enterprise - Site / Org-wide License",
+                "priceSpecification": {
+                  "@type": "PriceSpecification",
+                  "priceCurrency": "USD",
+                  "price": "0",
+                  "valueAddedTaxIncluded": false
+                },
+                "description": "Custom contract for organisations with 50+ developers, MSA / NDA, source-code escrow, named support engineer, on-prem documentation, custom SLAs, multi-year (2 / 3 / 5 yr) terms, or government / FedRAMP procurement. Includes everything in Multiple Application plus enterprise-grade procurement support. Contact sales@jqwidgets.com for a custom quote."
               }
             ]
           },
@@ -159,7 +175,7 @@
         <li>Inline editing with cascade formulas</li>
         <li>Server-side data, master/detail, tree</li>
         <li>WAI-ARIA + full keyboard navigation</li>
-        <li>120+ production-quality examples and a full documentation site</li>
+        <li>150+ production-quality examples and a full documentation site</li>
         <li>MCP server for AI assistants (Claude, Cursor)</li>
       </ul>
       <p>

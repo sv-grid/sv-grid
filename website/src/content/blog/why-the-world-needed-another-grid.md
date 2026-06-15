@@ -4,13 +4,13 @@ description: Every framework era gets the data grid it deserves - jqxGrid for th
 date: 2026-06-12
 category: Company
 tags: company, jqxgrid, history, svelte data grid, reactivity, story
-author: SvGrid Team
+author: Boyko Markov
 pinned: true
 ---
 
-Every few years someone announces a new data grid, and the reasonable reaction is a sigh: does the world really need another one? It is a fair question. There are dozens of good grids. We have built some of them.
+Every few years someone ships a new data grid and the rest of us roll our eyes. Does the world really need another one? I have asked it myself, and since I have spent the better part of fifteen years building the things, I feel entitled to the cynicism.
 
-The honest answer is that the world periodically does need another grid - not because the old ones are bad, but because the ground underneath them moves. A data grid is a reactivity engine wearing a table's clothes, and reactivity is the one thing you cannot bolt on after the fact. When the way frameworks handle reactivity changes, the grids built for the old model start to feel like guests in someone else's house. That is the whole story, told once every framework era.
+Here is where I have landed. The world does periodically need a new grid, and it is never because the old ones got worse. It is because the ground moves. A data grid is really a reactivity engine wearing a table's clothes, and reactivity is the one part you cannot bolt on later. So every time the way frameworks handle reactivity shifts, the grids built for the previous model start to feel like a guest who overstayed: technically still here, faintly out of place.
 
 ## A grid is native to the era it was born in
 
@@ -44,9 +44,9 @@ Building native to Svelte 5 is not an aesthetic preference; it shows up in the p
 
 ## The throughline
 
-The team behind SvGrid has shipped a grid for every era the web has had: jqxGrid for jQuery, the Smart UI web components on [htmlelements.com](https://www.htmlelements.com) for the cross-framework years, and now SvGrid for Svelte. The constant is not a particular technology - it is the belief that a grid should be native to the framework it lives in, fast, accessible, and a pleasure to extend.
+We have now built a grid for every era the web has handed us: jqxGrid in the jQuery days, the Smart UI web components on [htmlelements.com](https://www.htmlelements.com) through the cross-framework years, and SvGrid for Svelte. The technology keeps changing; the conviction does not. A grid should be native to the framework it lives in, fast, accessible, and genuinely pleasant to extend.
 
-So, does the world need another grid? When a framework arrives with a genuinely better model of reactivity, yes - it needs one built for that model. Svelte 5 is that kind of arrival. That is why we built SvGrid.
+So, does the world need another grid? When a framework shows up with a better model of reactivity, I think it does. Svelte 5 was that arrival for me, and SvGrid is my answer to it.
 
 ## Frequently asked questions
 

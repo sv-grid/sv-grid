@@ -1,10 +1,10 @@
 ---
 title: 'Inside SvGrid: Grouping, Trees, and Master-Detail'
 description: How SvGrid grew from flat tables to hierarchy: grouping with aggregation, tree data, and expandable master-detail rows, all on one expansion model.
-date: 2026-07-03
+date: 2026-07-07
 category: Engineering
 tags: grouping, tree, master detail, engineering, story
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 With viewing and editing solid, the next challenge was a harder shape of data: hierarchy. Real datasets are not always flat. Orders have line items, regions contain customers, folders hold files. This is how SvGrid learned to express all of that.

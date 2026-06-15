@@ -1,10 +1,10 @@
 ---
 title: First Light - Pointing SvGrid at 100,000 Rows
 description: The milestone that validated the whole approach: virtualization on a runes-native engine, scrolling a hundred thousand rows smoothly, and what it proved about building native.
-date: 2026-07-18
+date: 2026-07-30
 category: Company
 tags: company, story, performance, virtualization
-author: SvGrid Team
+author: Kamelia M
 ---
 
 A three-row grid proves your API compiles. It proves nothing about whether your architecture survives contact with real data. So once SvGrid could render and sort, we did the only honest next thing: we pointed it at a hundred thousand rows and watched.

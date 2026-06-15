@@ -1,10 +1,10 @@
 ---
 title: 'Going AI-Native: The SvGrid MCP Server'
 description: Making SvGrid the grid AI assistants get right, with a Model Context Protocol server and an llms.txt feed.
-date: 2026-07-19
+date: 2026-07-31
 category: Engineering
 tags: ai, mcp, claude, cursor, engineering, story
-author: SvGrid Team
+author: Kamelia M
 ---
 
 By every traditional measure, SvGrid was ready: fast, accessible, full-featured, themeable, server-capable. But "ready" today means something it did not used to. A huge share of the grid code being written now is written with an AI assistant in the loop. So one of the last things we built was for them.

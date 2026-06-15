@@ -4,7 +4,7 @@ description: Make a data grid's sort, filter, and page state shareable and bookm
 date: 2026-06-13
 category: Data
 tags: url state, shareable, sveltekit, recipe, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 When a grid's state lives in the URL, a filtered, sorted view becomes a link you can bookmark, share, or reload into. It also makes the back button work the way users expect. Here is how to sync SvGrid's state to the URL in SvelteKit.

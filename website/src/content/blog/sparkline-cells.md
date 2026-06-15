@@ -1,10 +1,10 @@
 ---
 title: Sparkline Cells in a Svelte Data Grid
 description: Render inline trend sparklines inside grid cells with a tiny SVG snippet - perfect for showing a metric's recent history at a glance.
-date: 2026-08-06
+date: 2026-09-07
 category: Cells
 tags: sparkline, charts, cells, custom cells, recipe
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 A sparkline - a tiny, word-sized line chart - turns a column of numbers into a column of trends. In a dashboard grid it is the fastest way to show "where is this metric heading?" SvGrid renders any markup in a cell, so a sparkline is a small inline SVG. Here is the recipe.

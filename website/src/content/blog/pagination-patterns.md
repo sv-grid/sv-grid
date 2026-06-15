@@ -4,10 +4,13 @@ description: Choose the right paging strategy for your Svelte data grid and wire
 date: 2026-01-06
 category: Data
 tags: pagination, cursor, infinite scroll, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Pagination is not one pattern but three, and picking the right one depends on your backend and your data. SvGrid supports classic page controls and pairs cleanly with cursor and infinite-scroll backends.
+
+![Server-driven pagination in SvGrid](/blog-media/server-row-model.png)
+*A server row model paging data in SvGrid.*
 
 ## Classic offset pagination
 

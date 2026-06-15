@@ -4,7 +4,7 @@ description: What "headless" means in modern component libraries, the trade-offs
 date: 2026-05-22
 category: Architecture
 tags: headless ui, architecture, design patterns, component design
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 "Headless" is one of those words that gets used everywhere and explained nowhere. In UI libraries it has a precise meaning, and understanding it helps you choose the right tool - and the right layer of a tool - for a job. This is a practical tour of the pattern, with a data grid as the running example.

@@ -4,7 +4,7 @@ description: Ground Claude, Cursor, and other AI assistants in real SvGrid docs 
 date: 2025-11-18
 category: AI
 tags: ai, mcp, claude, cursor, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 AI coding assistants are great at scaffolding a grid - until they hallucinate a prop that does not exist. SvGrid ships an MCP (Model Context Protocol) server that grounds Claude, Cursor, Zed, and other assistants in real, version-pinned SvGrid docs and examples, so the code they generate actually runs.

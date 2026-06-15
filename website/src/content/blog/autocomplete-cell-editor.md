@@ -1,10 +1,10 @@
 ---
 title: An Autocomplete Cell Editor in SvGrid
 description: Add a typeahead/autocomplete editor to a grid cell - suggesting values as the user types and committing the selection to your data.
-date: 2026-07-01
+date: 2026-07-03
 category: Editing
 tags: editing, autocomplete, typeahead, cell editor, recipe
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 When a column draws from a large set of values - customers, products, tags - a plain dropdown is unwieldy and free text is error-prone. An autocomplete editor lets users type to filter and pick. SvGrid renders custom editor cells, so you can build one with your own input plus a suggestion list. Here is a clean approach.

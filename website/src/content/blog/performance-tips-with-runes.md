@@ -4,7 +4,7 @@ description: Keep your Svelte data grid fast - stable references, derived state,
 date: 2026-01-27
 category: Performance
 tags: performance, runes, svelte 5, optimization, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 SvGrid is built on Svelte 5 runes, which give it fine-grained reactivity - the grid updates only what changed. A few habits on your side keep the whole pipeline fast, even with large datasets and frequent updates.

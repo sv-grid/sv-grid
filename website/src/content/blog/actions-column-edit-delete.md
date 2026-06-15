@@ -4,7 +4,7 @@ description: Add a column of per-row action buttons - edit, delete, duplicate - 
 date: 2026-06-30
 category: Cells
 tags: actions, buttons, cells, custom cells, recipe
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Almost every admin grid needs per-row actions: edit, delete, duplicate, view. An actions column puts those buttons right where the user is looking. SvGrid renders any markup in a cell, so an actions column is a custom cell with real buttons. Here is the recipe.

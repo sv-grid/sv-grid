@@ -4,10 +4,13 @@ description: A practical guide to accessible data tables and grids - semantic ma
 date: 2026-06-20
 category: Accessibility
 tags: accessibility, wcag, aria, data table, concepts
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Accessible data tables are a requirement for many organizations - government, finance, healthcare, and any enterprise with a procurement checklist. They are also just good engineering. Here is what "accessible" actually means for a table or grid, and how to get there.
+
+![A high-contrast accessible SvGrid theme](/blog-media/high-contrast.png)
+*A high-contrast theme; SvGrid ships accessible by default.*
 
 ## Two kinds of tables, two markup patterns
 

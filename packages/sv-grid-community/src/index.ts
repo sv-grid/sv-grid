@@ -61,6 +61,11 @@ export {
   type ChartLinePoint,
   type ChartPieSlice,
   type ChartSelection,
+  type ChartReferenceLine,
+  type ChartRefLineGeo,
+  type ChartRefLineGeoV,
+  type ChartScatterDot,
+  type ScatterPoint,
   type NiceScale,
 } from './chart'
 export {

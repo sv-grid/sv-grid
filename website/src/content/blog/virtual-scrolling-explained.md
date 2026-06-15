@@ -4,10 +4,10 @@ description: How virtual scrolling (windowing) keeps a data grid fast with tens 
 date: 2026-06-17
 category: Concepts
 tags: virtualization, performance, concepts, data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
-Virtual scrolling, also called windowing, is the technique that lets a table show a hundred thousand rows while keeping only a few dozen in the DOM. It is the single most important performance idea in data grids. Here is how it works and where it goes wrong.
+Virtual scrolling, also called windowing, is the technique that lets a table show a hundred thousand rows while keeping only a few dozen in the DOM. If you take one performance idea away from these posts, make it this one. Below is how it works, and the handful of ways people accidentally switch it off.
 
 ## The problem it solves
 

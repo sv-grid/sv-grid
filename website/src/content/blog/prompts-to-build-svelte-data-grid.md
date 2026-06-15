@@ -4,7 +4,7 @@ description: Copy-paste prompts for AI assistants to scaffold SvGrid features co
 date: 2026-06-23
 category: AI
 tags: ai, mcp, claude, cursor, prompts, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 If you build with an AI assistant, the difference between a helpful one and a frustrating one is whether its output compiles. These prompts produce working SvGrid code - and the section at the end shows how to ground your assistant so it stops inventing props.

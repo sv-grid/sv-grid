@@ -1,10 +1,10 @@
 ---
 title: Importing CSV into a Svelte Data Grid
 description: Let users upload a CSV and load it into SvGrid - parsing the file, mapping columns, validating rows, and handling the messy real-world cases.
-date: 2026-07-21
+date: 2026-08-04
 category: Data
 tags: csv, import, data, recipe, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Letting users bring their own data via CSV upload is a staple of admin and data tools. With SvGrid you parse the file into objects and set them as the grid's `data`. Here is a practical, robust recipe - including the messy parts CSV always has.

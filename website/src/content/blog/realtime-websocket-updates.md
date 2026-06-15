@@ -4,10 +4,13 @@ description: Stream live data into a Svelte data grid over WebSockets without dr
 date: 2025-12-30
 category: Data
 tags: realtime, websocket, live data, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Trading desks, dashboards, and monitoring tools live and die on fresh data. SvGrid handles real-time streams well because Svelte 5's fine-grained reactivity updates only the cells that changed - but how you feed the grid matters just as much.
+
+![Live WebSocket updates in a SvGrid grid](/blog-media/websocket-live.png)
+*Live WebSocket updates streaming into a SvGrid grid.*
 
 ## Update in place, by identity
 

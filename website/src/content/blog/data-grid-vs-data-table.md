@@ -4,10 +4,10 @@ description: "Data grid" and "data table" are often used interchangeably, but th
 date: 2026-06-18
 category: Concepts
 tags: concepts, data grid, data table, terminology
-author: SvGrid Team
+author: Boyko Markov
 ---
 
-People say "data table" and "data grid" as if they mean the same thing, and informally they often do. But the terms carry different expectations, and knowing the difference helps you pick the right tool and communicate clearly.
+Ask ten developers whether they want a "data table" or a "data grid" and half will use the words interchangeably. Most of the time that is fine. But the two words quietly signal different expectations, and knowing which you actually need saves you from either over-building or painting yourself into a corner.
 
 ## The short version
 

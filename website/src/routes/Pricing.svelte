@@ -54,9 +54,9 @@
       name: 'Pro - Single App',
       licenseType: 'Single Application Developer License',
       price: '$599',
-      cadence: 'per developer / year',
+      cadence: 'per developer',
       blurb:
-        'For teams shipping a single production app. Covers one deployed application, any number of internal dev / staging environments. Perpetual license + 1 year of updates and support; renews automatically, cancel anytime.',
+        'For teams shipping a single production app. Covers one deployed application, any number of internal dev / staging environments. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime.',
       cta: { kind: 'paypal', planKey: 'proSingleApp' },
       highlight: true,
       ribbon: 'Most popular',
@@ -65,10 +65,23 @@
       name: 'Pro - Multi App',
       licenseType: 'Multiple Application Developer License',
       price: '$999',
-      cadence: 'per developer / year',
+      cadence: 'per developer',
       blurb:
-        'For teams shipping multiple production apps. Covers unlimited deployed applications under your organisation. Perpetual license + 1 year of updates and support; renews automatically, cancel anytime. Best value for product suites.',
+        'For teams shipping multiple production apps. Covers unlimited deployed applications under your organisation. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Best value for product suites.',
       cta: { kind: 'paypal', planKey: 'proMultiApp' },
+    },
+    {
+      name: 'Enterprise',
+      licenseType: 'Site / Org-wide License',
+      price: 'Custom',
+      cadence: '',
+      blurb:
+        'For organisations with 50+ developers, security review, MSA / NDA, source-code escrow, named support engineer, on-prem documentation, government / FedRAMP, or multi-year (2 / 3 / 5 yr) terms. Includes everything in Multi App + custom SLAs.',
+      cta: {
+        kind: 'link',
+        label: 'Talk to sales',
+        href: "mailto:sales@jqwidgets.com?subject=sv-grid-pro%20Enterprise%20quote&body=Hi%20jQWidgets,%0A%0AWe'd%20like%20a%20custom%20Enterprise%20quote%20for%20sv-grid-pro.%0A%0ACompany:%20%0ATeam%20size:%20%0AApps%20covered:%20%0ARequirements%20(MSA%20/%20NDA%20/%20escrow%20/%20on-prem%20/%20SLA):%20%0AContract%20term%20(1%20/%202%20/%203%20/%205%20yr):%20%0A%0AThanks!",
+      },
     },
   ]
 
@@ -249,7 +262,9 @@
     { q: 'Can I trial sv-grid-pro before paying?',
       a: 'Yes. Contact us and we will issue a 14-day SVPRO-EVAL-... key that unlocks the full Pro feature set with no watermark. You can also evaluate the feature unlicensed (watermarked) for as long as you like - no time bomb, no broken functionality.' },
     { q: 'Do you offer team or volume pricing?',
-      a: 'Yes - email sales@jqwidgets.com for teams of 5+ developers. Multi-year terms (2 / 3 / 5 years) carry escalating discounts. Multiple App licenses are typically the right choice once a team exceeds ~6 deployed apps.' },
+      a: 'Yes - email sales@jqwidgets.com for teams of 5+ developers. Multi-year terms (2 / 3 / 5 years) carry escalating discounts. Multiple App licenses are typically the right choice once a team exceeds ~6 deployed apps. For 50+ developers, MSA / NDA / on-prem documentation, source-code escrow, a named support engineer, or government / FedRAMP requirements, see the Enterprise tier.' },
+    { q: 'What is the Enterprise tier?',
+      a: 'A custom, organisation-wide contract that includes everything in Multiple App plus the things large orgs need: an MSA / NDA, source-code escrow, a named support engineer, on-prem documentation, custom SLAs, multi-year (2 / 3 / 5 yr) terms, government / FedRAMP-friendly procurement, and security review. Pricing is tailored to seat count, contract length, and required deliverables - email sales@jqwidgets.com with your requirements and we will quote within one business day.' },
     { q: 'What about peer dependencies for export and import?',
       a: 'sv-grid-pro lazy-loads "jszip" for xlsx export AND xlsx import, and "pdfmake" for PDF export. CSV, TSV, HTML, JSON import, print, the AI assistant, and the pivot helpers have no extra dependencies. Install only the peers you actually use.' },
     { q: 'Is it a subscription? Can I cancel?',
@@ -282,15 +297,15 @@
       Pricing
     </p>
     <h1 class="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight" style="color: var(--sg-fg);">
-      Free Community. Two Pro license tiers.
+      Free Community. Pro for teams. Enterprise for orgs.
     </h1>
     <p class="mt-5 max-w-3xl mx-auto text-base md:text-lg" style="color: var(--site-muted);">
       The full grid is free under the <strong>MIT License</strong>. <strong>sv-grid-pro</strong>
       adds Excel / PDF / CSV export + print, Excel import, a pivot table with drag-and-drop
-      designer, an AI assistant, password-protected export, and direct support. Each Pro license is
-      <strong>perpetual</strong> and includes <strong>1 year of updates and support</strong> that
-      renews automatically each year. <strong>Cancel anytime - you keep every version released
-      during your paid term.</strong>
+      designer, an AI assistant, password-protected export, and direct support.
+      <strong>Buy once, keep forever - the optional yearly renewal only pays for new updates
+      and support, cancel anytime.</strong> 50+ seats or MSA / NDA / on-prem / multi-year? Talk
+      to sales about Enterprise.
     </p>
     <div class="mt-7 flex flex-wrap items-center justify-center gap-3 text-xs"
       style="color: var(--site-muted);">
@@ -309,7 +324,7 @@
   </header>
 
   <!-- Tier cards ------------------------------------------------- -->
-  <div class="mt-12 grid gap-6 md:grid-cols-3">
+  <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
     {#each tiers as tier (tier.licenseType ?? tier.name)}
       <article
         class="relative rounded-2xl border p-7 flex flex-col"
@@ -391,8 +406,10 @@
             Full data grid, MIT license, GitHub-issue support.
           {:else if tier.licenseType?.startsWith('Single')}
             Everything in Community + Pro pack + paid support.
-          {:else}
+          {:else if tier.licenseType?.startsWith('Multiple')}
             Everything in Single App + unlimited apps + volume discounts.
+          {:else}
+            Everything in Multi App + MSA / NDA / escrow + named support.
           {/if}
         </p>
       </article>
@@ -591,7 +608,7 @@
   <section class="mt-12 rounded-2xl border p-6 md:p-8"
     style="border-color: var(--sg-border); background: var(--sg-header-bg);">
     <h2 class="text-lg font-bold" style="color: var(--sg-fg);">Which license do I need?</h2>
-    <div class="mt-4 grid gap-4 md:grid-cols-3 text-sm" style="color: var(--sg-fg);">
+    <div class="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4 text-sm" style="color: var(--sg-fg);">
       <div>
         <p class="decide-key" style="color: var(--site-accent-2);">Community</p>
         <p style="color: var(--site-muted);">
@@ -612,6 +629,14 @@
         <p style="color: var(--site-muted);">
           You ship <strong>multiple</strong> production apps from one team or org - internal
           tools, a product suite, customer-facing apps + admin. Avoids tracking per-app coverage.
+        </p>
+      </div>
+      <div>
+        <p class="decide-key" style="color: var(--site-accent-2);">Enterprise</p>
+        <p style="color: var(--site-muted);">
+          You have <strong>50+ developers</strong>, security review, MSA / NDA, source-code
+          escrow, named support, on-prem docs, or government / FedRAMP requirements. Talk to
+          sales for a custom quote and multi-year terms.
         </p>
       </div>
     </div>

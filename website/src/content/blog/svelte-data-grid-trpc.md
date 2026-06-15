@@ -4,7 +4,7 @@ description: Use tRPC to drive SvGrid with full type safety from server to grid 
 date: 2026-06-13
 category: Integration
 tags: trpc, sveltekit, server-side, type safety, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 tRPC gives you typed remote procedure calls with no schema duplication - the client knows the server's input and output types. Combined with SvGrid, you get a data grid that is type-safe from the database query all the way to the column definitions. Here is the setup.

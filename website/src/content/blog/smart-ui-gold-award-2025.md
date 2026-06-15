@@ -4,7 +4,7 @@ description: Smart UI, the web-components suite from the team behind SvGrid, was
 date: 2026-05-28
 category: Company
 tags: company, award, smart ui, htmlelements, recognition
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 We are proud to share that Smart UI - the web-components library from the team that builds SvGrid - was voted Gold Winner in Visual Studio Magazine's 2025 Readers' Choice Awards, in the software development service providers category.

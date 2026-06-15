@@ -136,6 +136,9 @@ import ToolPanel                 from '../demos/146-tool-panel.svelte'
 import IntegratedCharts          from '../demos/147-integrated-charts.svelte'
 import ServerRowModel            from '../demos/148-server-row-model.svelte'
 import RealtimeCollaboration     from '../demos/149-realtime-collaboration.svelte'
+import ScatterBubble             from '../demos/150-scatter-bubble.svelte'
+import TimeSeriesChart           from '../demos/151-time-series-chart.svelte'
+import ChartWizard               from '../demos/152-chart-wizard.svelte'
 import ConditionalFormattingEngine from '../demos/141-conditional-formatting.svelte'
 
 // Bundle the raw .svelte source for every demo at build time so the Source
@@ -331,7 +334,10 @@ export const demos: Demo[] = [
   demo('149-realtime-collaboration','Real-time collaboration',     'Presence (who is here + where their cursor is) and live edits (a change in one client lands in every other) over a pluggable transport. createCollaboration + broadcastChannelTransport sync cursors and edits across tabs with zero backend; swap the transport for a WebSocket to go cross-machine. Also the substrate for multiple AI agents editing one grid.', 'Real-time & Streaming', RealtimeCollaboration),
   demo('145-transaction-api',       'Transaction API (batched)',   'api.applyTransaction({ add, update, remove }) applies a batch of row mutations in ONE data update - the high-frequency streaming path. update and remove-by-id match on getRowId; remove also accepts row refs. Live order book ticking via batched transactions.', 'Real-time & Streaming', TransactionApi),
   demo('73-chartjs-sync',           'Real-time + Chart.js sync',   'Mock WebSocket pushes price ticks every 350 ms. A Chart.js bar chart auto-syncs with the grid - filter the Symbol column, the chart trims to match.', 'Real-time & Streaming', ChartJsSync),
-  demo('147-integrated-charts',     'Integrated charts (no deps)', 'Chart the grid data with no external charting library. SvGridChart renders a ChartSpec; rowsToChartSpec aggregates the grid current (filtered/sorted) rows into one. Bar, line, area, pie - filter the grid and the chart re-aggregates live.', 'Integrations', IntegratedCharts),
+  demo('147-integrated-charts',     'Integrated charts (no deps)', 'Chart the grid data with no external charting library. SvGridChart renders a ChartSpec; rowsToChartSpec aggregates the grid current (filtered/sorted) rows into one. Bar, line, area, pie - plus 100% stacked, top-N + Other, an average reference line, and double-click-to-isolate a series. Filter the grid and the chart re-aggregates live.', 'Integrations', IntegratedCharts),
+  demo('150-scatter-bubble',        'Scatter / bubble chart',      'A scatter plot maps two numeric measures (x vs y); a bubble chart adds a third via dot radius. type: scatter with series points [{ x, y, r }]. Spend vs revenue, sized by deals, coloured by region, with an average-revenue reference line. Filter the grid and the cloud re-plots.', 'Integrations', ScatterBubble),
+  demo('151-time-series-chart',     'Time-series chart (date axis)','xType: time spaces points by ACTUAL time - irregular date gaps render proportionally - and shows real date ticks. A referenceLines target/SLA line spans the plot; toggle 100% stacked to read each day as a share of its total. Line, stacked area, or stacked bar.', 'Integrations', TimeSeriesChart),
+  demo('152-chart-wizard',          'Chart wizard (from the grid)','Grid on the left, chart wizard on the right. The wizard builds a chart from the grid rows via rowsToChartSpec: pick the type from a gallery (whose thumbnails are themselves live mini SvGridChart instances), choose group-by + measure + aggregation, and a palette. Column, Bar (horizontal), Line, Area, Pie with stacked / 100% variants. Drag a cell range or tick row checkboxes to chart just the selection; otherwise the whole filtered / sorted set re-aggregates live.', 'Integrations', ChartWizard),
 
   // ----- Spreadsheet
   demo('27-spreadsheet-ribbon',     'Spreadsheet + Ribbon bar',    'Excel-style Ribbon UI driving the grid via SvGridApi: cell formatting (bold, color, number format), insert/delete row, sort, live SUM/AVG/COUNT.', 'Spreadsheet', SpreadsheetRibbon),

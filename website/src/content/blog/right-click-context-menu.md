@@ -1,13 +1,16 @@
 ---
 title: A Right-Click Context Menu for Your Svelte Data Grid
 description: Add a contextual right-click menu to grid rows and cells - capturing the target row, positioning the menu, and wiring row actions.
-date: 2026-08-03
+date: 2026-08-31
 category: Cells
 tags: context menu, right-click, actions, recipe, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 A right-click context menu - "Edit", "Duplicate", "Delete", "Copy" - is a power-user staple. SvGrid does not lock down the contextmenu event, so you can add one with a custom cell or a wrapper and your own menu component. Here is a clean approach.
+
+![A right-click context menu in SvGrid](/blog-media/context-menu.png)
+*A right-click context menu on a SvGrid row.*
 
 ## Capture the target and position
 

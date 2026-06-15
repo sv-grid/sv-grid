@@ -1,13 +1,16 @@
 ---
 title: A Column Show/Hide Toggle in SvGrid
 description: Let users pick which columns are visible - a column chooser that adds and removes columns by filtering your column definitions.
-date: 2026-07-08
+date: 2026-07-13
 category: Columns
 tags: column visibility, columns, customization, recipe, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Wide grids overwhelm; a column chooser lets each user show only the columns they care about. Because SvGrid renders whatever `columns` array you pass, show/hide is a matter of deriving that array from a visibility map. Here is the recipe.
+
+![Column show/hide and layout controls in SvGrid](/blog-media/column-layout.png)
+*Column layout and visibility controls in SvGrid.*
 
 ## Keep all columns plus a visibility map
 

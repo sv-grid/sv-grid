@@ -4,7 +4,7 @@ description: A look at Svelte 5's runes - $state, $derived, $effect - and why fi
 date: 2026-05-30
 category: Engineering
 tags: svelte 5, runes, reactivity, performance, architecture
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 A data grid is a reactivity problem wearing a table's clothes. You have tens of thousands of cells, any of which can change at any moment, and the entire job is to repaint exactly what moved and nothing else. When Svelte 5 shipped runes, we saw a reactivity model finally fine-grained enough to make that easy. Here is the reasoning behind building SvGrid on it.

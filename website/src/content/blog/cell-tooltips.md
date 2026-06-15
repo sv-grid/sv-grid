@@ -1,13 +1,16 @@
 ---
 title: Cell Tooltips Done Right in a Data Grid
 description: Add helpful, accessible tooltips to grid cells - for truncated text, status explanations, and extra detail - without hurting performance.
-date: 2026-07-07
+date: 2026-07-11
 category: Cells
 tags: tooltips, cells, accessibility, recipe, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Tooltips earn their keep in a dense grid: revealing truncated text in full, explaining a status, or showing extra detail on hover. Done badly they hurt accessibility and performance. Here is how to add them well in SvGrid.
+
+![Cell tooltips and notes in SvGrid](/blog-media/tooltips.png)
+*Cell tooltips and notes in SvGrid.*
 
 ## The simplest tooltip: native title
 

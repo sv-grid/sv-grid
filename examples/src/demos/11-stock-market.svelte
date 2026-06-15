@@ -25,7 +25,7 @@
     renderSnippet,
     type ColumnDef,
   } from 'sv-grid-community'
-  import { getStockBrand } from '../shared/stock-logos'
+  import { getStockBrand, readableMarkColor } from '../shared/stock-logos'
 
   type Stock = {
     symbol: string
@@ -194,7 +194,7 @@
           <path d={brand.svg} />
         </svg>
       {:else}
-        <span class="sv-logo-mark">{brand.mark}</span>
+        <span class="sv-logo-mark" style:color={readableMarkColor(brand.bg)}>{brand.mark}</span>
       {/if}
     </span>
     <span class="sv-symbol-text">{props.row.symbol}</span>

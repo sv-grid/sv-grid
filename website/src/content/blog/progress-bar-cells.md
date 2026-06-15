@@ -1,10 +1,10 @@
 ---
 title: Progress and Percentage Bar Cells in SvGrid
 description: Render in-cell progress bars and percentage indicators in your Svelte data grid with a custom cell, keeping the value sortable.
-date: 2026-08-01
+date: 2026-08-26
 category: Cells
 tags: progress bar, cells, custom cells, recipe, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 A number in a cell is information; a bar is insight. In-cell progress bars make completion, utilization, and scores readable at a glance. SvGrid renders any Svelte markup in a cell, so a progress bar is a small custom cell. Here is the recipe.

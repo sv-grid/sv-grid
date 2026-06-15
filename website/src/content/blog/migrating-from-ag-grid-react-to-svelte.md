@@ -1,10 +1,10 @@
 ---
 title: Migrating from ag-grid-react to a Svelte Stack
 description: Moving a React app's ag-grid-react screens to Svelte 5 and SvGrid - translating column defs, hooks, cell renderers, and the server-side row model.
-date: 2026-07-22
+date: 2026-08-11
 category: Comparisons
 tags: migration, ag-grid-react, react, comparison, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 If you are moving an app from React to Svelte, the `ag-grid-react` screens are often the most involved part to port. The grid concepts carry over to SvGrid cleanly; what changes is React's component/hook model becoming Svelte runes. Here is the playbook.

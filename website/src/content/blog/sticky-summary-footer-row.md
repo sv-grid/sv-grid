@@ -4,10 +4,13 @@ description: Show always-visible totals at the bottom of your data grid - column
 date: 2026-06-13
 category: Rows
 tags: footer, summary row, aggregation, rows, recipe
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 A summary row - totals, averages, counts that stay visible while the body scrolls - turns a table into a report. SvGrid supports column footers, and combined with aggregation you get a pinned summary with almost no code. Here is the recipe.
+
+![Group footers and totals in SvGrid](/blog-media/grouping.png)
+*Aggregated footers and totals in SvGrid.*
 
 ## Column footers
 

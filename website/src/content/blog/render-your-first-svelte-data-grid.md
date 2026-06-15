@@ -4,10 +4,13 @@ description: A step-by-step guide to adding a fast, accessible data grid to a Sv
 date: 2026-06-09
 category: Getting started
 tags: svelte data grid, getting started, svelte 5, sv-grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
-If you are building an admin panel, a dashboard, or any screen that shows tabular data in Svelte 5, you do not need to hand-roll a `<table>`. SvGrid gives you a production-ready data grid in about fifteen lines, with sorting, keyboard navigation, and accessibility switched on by default.
+The first time I needed a table in a Svelte 5 app I started hand-rolling a `<table>` out of habit, then caught myself: sorting, keyboard navigation, accessibility, every bit of it was going to be mine to write and maintain. You really do not have to. SvGrid gets you a production-ready data grid in about fifteen lines, with all of that already handled.
+
+![A SvGrid data grid with sorting, selection, and inline editing](/blog-media/quick-start.png)
+*The SvGrid quick-start demo: sorting, selection, and inline editing out of the box.*
 
 ## Install
 

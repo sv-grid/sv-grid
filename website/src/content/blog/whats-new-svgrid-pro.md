@@ -4,7 +4,7 @@ description: A tour of the sv-grid-pro feature pack - Excel and PDF export, data
 date: 2026-06-11
 category: Product
 tags: product, sv-grid-pro, export, pivot, ai, new features
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 The SvGrid Community core is free, MIT-licensed, and complete enough to ship real products. But some teams need the features that turn a data grid into a reporting and analysis tool. That is what `sv-grid-pro` adds. Here is what is in the pack today and how to think about whether you need it.

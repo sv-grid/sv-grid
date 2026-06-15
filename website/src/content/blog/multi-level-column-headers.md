@@ -1,13 +1,16 @@
 ---
 title: Multi-Level (Grouped) Column Headers in SvGrid
 description: Organize wide grids with grouped, multi-row column headers - nesting child columns under a shared header band.
-date: 2026-07-29
+date: 2026-08-20
 category: Columns
 tags: column groups, headers, columns, recipe, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 When a grid has many related columns - quarters under a year, metrics under a category - grouped headers add a second header row that bands related columns together. SvGrid supports this natively: a column definition can contain child columns.
+
+![Multi-level grouped column headers in SvGrid](/blog-media/columns-hierarchy.png)
+*Grouped, multi-level column headers in SvGrid.*
 
 ## Nest columns
 

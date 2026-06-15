@@ -4,7 +4,7 @@ description: A dense, copy-paste quick reference for SvGrid - install, columns, 
 date: 2026-06-22
 category: Reference
 tags: reference, cheat sheet, quick start, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Everything you reach for most, in one place. Bookmark this; it is also a good page to hand an AI assistant.

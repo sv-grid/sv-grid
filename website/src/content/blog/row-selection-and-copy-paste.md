@@ -4,10 +4,13 @@ description: Add checkbox selection, range selection, and Excel-compatible copy-
 date: 2026-03-24
 category: Selection
 tags: selection, copy paste, clipboard, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Selection is the gateway to bulk actions: select rows, then delete, export, or update them. SvGrid supports both checkbox row selection and click-and-drag cell range selection, and it speaks the clipboard format Excel and Google Sheets expect.
+
+![Row and range selection in SvGrid](/blog-media/selection.png)
+*Row and range selection with clipboard copy in SvGrid.*
 
 ## Checkbox row selection
 

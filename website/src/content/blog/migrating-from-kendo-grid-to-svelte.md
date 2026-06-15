@@ -1,10 +1,10 @@
 ---
 title: Migrating from Kendo UI Grid to a Svelte Data Grid
 description: Move a Kendo UI Grid to SvGrid in Svelte 5 - mapping columns, data sources, server operations, and editing to a native, MIT-core grid.
-date: 2026-07-26
+date: 2026-08-15
 category: Comparisons
 tags: migration, kendo grid, comparison, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Kendo UI Grid is a mature commercial grid, typically used via jQuery or a framework wrapper. Moving to SvGrid gives you a native Svelte 5 component with an MIT-licensed core. The data and column concepts translate directly.

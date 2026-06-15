@@ -8,10 +8,13 @@
  * (per-series type), a secondary (right) Y axis, signed Y domains (negative
  * values drop below a zero baseline), and nice auto-scaled ticks.
  */
-export type ChartType = 'bar' | 'line' | 'area' | 'pie'
+export type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'scatter'
 
 /** A clicked bar / point / slice - the payload of `SvGridChart`'s `onSelect`. */
 export type ChartSelection = { category: string; series: string; value: number }
+
+/** A single scatter / bubble point. */
+export type ScatterPoint = { x: number; y: number; r?: number; label?: string }
 
 export type ChartSeries = {
   label: string
@@ -21,6 +24,17 @@ export type ChartSeries = {
   type?: 'bar' | 'line' | 'area'
   /** Plot against the left (default) or right Y axis. */
   axis?: 'left' | 'right'
+  /** Scatter / bubble points (used when `type === 'scatter'`). */
+  points?: ScatterPoint[]
+}
+
+/** A horizontal reference / target line drawn across the plot. */
+export type ChartReferenceLine = {
+  value: number
+  label?: string
+  axis?: 'left' | 'right'
+  color?: string
+  dashed?: boolean
 }
 
 export type ChartSpec = {
@@ -35,8 +49,20 @@ export type ChartSpec = {
   palette?: string[]
   /** Stack bar / area series (per axis) instead of grouping them. */
   stacked?: boolean
+  /** Stack to 100% (each category normalized to its total). Implies stacked. */
+  stacked100?: boolean
+  /**
+   * Bar orientation. `'horizontal'` swaps the axes - categories run down the
+   * left, bars grow rightward - which suits long category labels. Only applies
+   * when every series is a bar (combo / line / area fall back to vertical).
+   */
+  orientation?: 'vertical' | 'horizontal'
   /** Pie only: inner radius as a fraction of the outer radius (0..1) -> donut. */
   innerRadius?: number
+  /** Horizontal target / goal / average lines. */
+  referenceLines?: ChartReferenceLine[]
+  /** Treat `categories` as dates -> time-scaled x positions + date ticks. */
+  xType?: 'category' | 'time'
   /** Axis titles (reserve gutter space + render). */
   yAxisTitle?: string
   y2AxisTitle?: string
@@ -83,6 +109,19 @@ export type ChartPieSlice = {
 export type ChartAxisTick = { value: number; y: number; label: string }
 export type ChartCategoryTick = { label: string; x: number }
 export type ChartLegendItem = { label: string; color: string }
+export type ChartRefLineGeo = { y: number; label: string; color: string; dashed: boolean }
+/** A vertical reference line (horizontal bar charts) positioned by `x`. */
+export type ChartRefLineGeoV = { x: number; label: string; color: string; dashed: boolean }
+export type ChartScatterDot = {
+  cx: number
+  cy: number
+  r: number
+  color: string
+  label: string
+  series: string
+  x: number
+  y: number
+}
 
 export type ChartGeometry = {
   type: ChartType
@@ -102,6 +141,18 @@ export type ChartGeometry = {
   legend: ChartLegendItem[]
   /** Donut centre (pie + innerRadius), for a centre total label. */
   donut: { cx: number; cy: number; r: number; total: number } | null
+  /** Horizontal reference / target lines. */
+  referenceLines: ChartRefLineGeo[]
+  /** Scatter / bubble points (type === 'scatter'). */
+  scatterPoints: ChartScatterDot[]
+  /** Bar orientation. `'horizontal'` uses `valueTicks` / `catTicks` below. */
+  orientation: 'vertical' | 'horizontal'
+  /** Horizontal bars: value-axis ticks along the bottom (label + x). */
+  valueTicks: ChartCategoryTick[]
+  /** Horizontal bars: category labels down the left (label + y; value = index). */
+  catTicks: ChartAxisTick[]
+  /** Horizontal bars: vertical reference / target lines (positioned by x). */
+  referenceLinesV: ChartRefLineGeoV[]
 }
 
 export const DEFAULT_PALETTE = [
@@ -161,6 +212,24 @@ function fmtTick(n: number): string {
   return String(Math.round(n * 100) / 100)
 }
 
+const DAY = 86_400_000
+/** Nice date-tick timestamps across [min, max]. */
+function dateTicks(tMin: number, tMax: number): number[] {
+  const span = tMax - tMin
+  const step =
+    span <= 7 * DAY ? DAY : span <= 70 * DAY ? 7 * DAY : span <= 800 * DAY ? 30 * DAY : 365 * DAY
+  const ticks: number[] = []
+  for (let t = Math.ceil(tMin / step) * step; t <= tMax + 1; t += step) ticks.push(t)
+  if (!ticks.length) ticks.push(tMin, tMax)
+  return ticks
+}
+function fmtDate(t: number, span: number): string {
+  const d = new Date(t)
+  if (span <= 70 * DAY) return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  if (span <= 800 * DAY) return d.toLocaleDateString(undefined, { month: 'short', year: '2-digit' })
+  return String(d.getFullYear())
+}
+
 type ResolvedSeries = ChartSeries & {
   color: string
   kind: 'bar' | 'line' | 'area'
@@ -172,6 +241,7 @@ function axisDomain(
   list: ResolvedSeries[],
   categories: string[],
   stacked: boolean,
+  extra: number[] = [],
 ): NiceScale {
   let dMin = Infinity
   let dMax = -Infinity
@@ -180,6 +250,7 @@ function axisDomain(
     if (v < dMin) dMin = v
     if (v > dMax) dMax = v
   }
+  for (const v of extra) note(v)
   const stackable = list.filter((s) => s.kind === 'bar' || s.kind === 'area')
   const lines = list.filter((s) => s.kind === 'line')
   if (stacked && stackable.length) {
@@ -215,10 +286,14 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
   const height = spec.height ?? 300
   const palette = spec.palette ?? DEFAULT_PALETTE
 
+  const stacked = !!(spec.stacked || spec.stacked100)
   const series: ResolvedSeries[] = spec.series.map((s, i) => ({
     ...s,
     color: s.color ?? palette[i % palette.length]!,
-    kind: (s.type ?? (spec.type === 'pie' ? 'bar' : spec.type)) as 'bar' | 'line' | 'area',
+    kind: (s.type ?? (spec.type === 'pie' || spec.type === 'scatter' ? 'bar' : spec.type)) as
+      | 'bar'
+      | 'line'
+      | 'area',
     axis: s.axis ?? 'left',
   }))
   const legend: ChartLegendItem[] = series.map((s) => ({ label: s.label, color: s.color }))
@@ -238,6 +313,12 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
     xLabelRotated: false,
     legend,
     donut: null,
+    referenceLines: [],
+    scatterPoints: [],
+    orientation: 'vertical',
+    valueTicks: [],
+    catTicks: [],
+    referenceLinesV: [],
   }
 
   if (spec.type === 'pie') {
@@ -297,6 +378,180 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
     }
   }
 
+  if (spec.type === 'scatter') {
+    const padL = 48 + (spec.yAxisTitle ? 16 : 0)
+    const padR = 12
+    const padT = 10
+    const padB = 28 + (spec.xAxisTitle ? 16 : 0)
+    const plotW = Math.max(1, width - padL - padR)
+    const plotH = Math.max(1, height - padT - padB)
+    const plot = { x: padL, y: padT, w: plotW, h: plotH }
+
+    let xMin = Infinity
+    let xMax = -Infinity
+    let yMin = Infinity
+    let yMax = -Infinity
+    let rMin = Infinity
+    let rMax = -Infinity
+    for (const s of series) {
+      for (const pt of s.points ?? []) {
+        if (Number.isFinite(pt.x)) { xMin = Math.min(xMin, pt.x); xMax = Math.max(xMax, pt.x) }
+        if (Number.isFinite(pt.y)) { yMin = Math.min(yMin, pt.y); yMax = Math.max(yMax, pt.y) }
+        if (pt.r != null && Number.isFinite(pt.r)) { rMin = Math.min(rMin, pt.r); rMax = Math.max(rMax, pt.r) }
+      }
+    }
+    if (xMin === Infinity) return { ...empty, plot }
+    const xDom = niceScale(xMin, xMax)
+    const yDom = niceScale(yMin, yMax)
+    const hasR = rMax > rMin
+    const xOf = (v: number) => round(padL + ((v - xDom.min) / (xDom.max - xDom.min || 1)) * plotW)
+    const yOf = (v: number) => round(padT + plotH - ((v - yDom.min) / (yDom.max - yDom.min || 1)) * plotH)
+    const rOf = (r?: number) =>
+      hasR && r != null && Number.isFinite(r)
+        ? round(4 + ((r - rMin) / (rMax - rMin || 1)) * 14)
+        : 5
+
+    const scatterPoints: ChartScatterDot[] = []
+    for (const s of series) {
+      for (const pt of s.points ?? []) {
+        if (!Number.isFinite(pt.x) || !Number.isFinite(pt.y)) continue
+        scatterPoints.push({
+          cx: xOf(pt.x),
+          cy: yOf(pt.y),
+          r: rOf(pt.r),
+          color: s.color,
+          label: pt.label ?? '',
+          series: s.label,
+          x: pt.x,
+          y: pt.y,
+        })
+      }
+    }
+    const referenceLines: ChartRefLineGeo[] = (spec.referenceLines ?? []).map((ref) => ({
+      y: yOf(ref.value),
+      label: ref.label ?? fmtTick(ref.value),
+      color: ref.color ?? '#ef4444',
+      dashed: ref.dashed !== false,
+    }))
+    return {
+      ...empty,
+      plot,
+      scatterPoints,
+      referenceLines,
+      yTicks: yDom.ticks.map((value) => ({ value, y: yOf(value), label: fmtTick(value) })),
+      xTicks: xDom.ticks.map((value) => ({ label: fmtTick(value), x: xOf(value) })),
+    }
+  }
+
+  // ---- Horizontal bars ----------------------------------------------------
+  // Categories run down the left, bars grow rightward. Bars-only (no combo).
+  const horizontal =
+    spec.orientation === 'horizontal' && series.length > 0 && series.every((s) => s.kind === 'bar')
+  if (horizontal) {
+    const maxLabel = spec.categories.reduce((m, c) => Math.max(m, c.length), 0)
+    const padL = Math.min(150, 18 + maxLabel * 6.4) + (spec.yAxisTitle ? 16 : 0)
+    const padR = 16
+    const padT = 8
+    const padB = 26 + (spec.xAxisTitle ? 16 : 0)
+    const plotW = Math.max(1, width - padL - padR)
+    const plotH = Math.max(1, height - padT - padB)
+    const plot = { x: padL, y: padT, w: plotW, h: plotH }
+
+    const refs = (spec.referenceLines ?? []).map((r) => r.value)
+    const dom = spec.stacked100 ? niceScale(0, 100) : axisDomain(series, spec.categories, stacked, refs)
+    const xOf = (v: number) => round(padL + ((v - dom.min) / (dom.max - dom.min || 1)) * plotW)
+
+    const n = spec.categories.length
+    const slot = plotH / Math.max(1, n)
+    const groupPad = slot * 0.2
+    const inner = slot - groupPad
+    const bandTop = (i: number) => padT + slot * i + groupPad / 2
+    const xBase = xOf(Math.min(Math.max(0, dom.min), dom.max))
+
+    const bars: ChartBar[] = []
+    if (stacked) {
+      const totals = spec.stacked100
+        ? spec.categories.map(
+            (_, i) => series.reduce((sum, s) => sum + Math.abs(Number.isFinite(s.values[i]!) ? s.values[i]! : 0), 0) || 1,
+          )
+        : null
+      const pos = new Array(n).fill(0)
+      const neg = new Array(n).fill(0)
+      for (const s of series) {
+        s.values.forEach((v, i) => {
+          if (!Number.isFinite(v)) return
+          const vp = totals ? (v / totals[i]!) * 100 : v
+          let xL: number
+          let xR: number
+          if (vp >= 0) {
+            xL = xOf(pos[i])
+            xR = xOf(pos[i] + vp)
+            pos[i] += vp
+          } else {
+            xL = xOf(neg[i] + vp)
+            xR = xOf(neg[i])
+            neg[i] += vp
+          }
+          bars.push({
+            x: Math.min(xL, xR),
+            y: round(bandTop(i)),
+            w: round(Math.abs(xR - xL)),
+            h: round(Math.max(1, inner)),
+            color: s.color,
+            label: spec.categories[i] ?? String(i),
+            series: s.label,
+            value: v,
+          })
+        })
+      }
+    } else {
+      const barH = inner / series.length
+      series.forEach((s, bi) => {
+        s.values.forEach((v, i) => {
+          if (!Number.isFinite(v)) return
+          const xV = xOf(v)
+          bars.push({
+            x: Math.min(xV, xBase),
+            y: round(bandTop(i) + barH * bi),
+            w: round(Math.max(1, Math.abs(xV - xBase))),
+            h: round(Math.max(1, barH - 1)),
+            color: s.color,
+            label: spec.categories[i] ?? String(i),
+            series: s.label,
+            value: v,
+          })
+        })
+      })
+    }
+
+    const valueTicks: ChartCategoryTick[] = dom.ticks.map((value) => ({
+      label: spec.stacked100 ? `${fmtTick(value)}%` : fmtTick(value),
+      x: xOf(value),
+    }))
+    const catTicks: ChartAxisTick[] = spec.categories.map((label, i) => ({
+      value: i,
+      y: round(bandTop(i) + inner / 2),
+      label,
+    }))
+    const referenceLinesV: ChartRefLineGeoV[] = (spec.referenceLines ?? []).map((ref) => ({
+      x: xOf(ref.value),
+      label: ref.label ?? fmtTick(ref.value),
+      color: ref.color ?? '#ef4444',
+      dashed: ref.dashed !== false,
+    }))
+
+    return {
+      ...empty,
+      plot,
+      bars,
+      orientation: 'horizontal',
+      valueTicks,
+      catTicks,
+      referenceLinesV,
+      xLabelRotated: false,
+    }
+  }
+
   // ---- Cartesian (bar / line / area, possibly combo + dual axis) ----------
   const leftSeries = series.filter((s) => s.axis === 'left')
   const rightSeries = series.filter((s) => s.axis === 'right')
@@ -312,8 +567,16 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
   const plotH = Math.max(1, height - padT - padB)
   const plot = { x: padL, y: padT, w: plotW, h: plotH }
 
-  const leftDom = axisDomain(leftSeries, spec.categories, !!spec.stacked)
-  const rightDom = hasRightAxis ? axisDomain(rightSeries, spec.categories, !!spec.stacked) : null
+  const refsLeft = (spec.referenceLines ?? []).filter((r) => r.axis !== 'right').map((r) => r.value)
+  const refsRight = (spec.referenceLines ?? []).filter((r) => r.axis === 'right').map((r) => r.value)
+  const leftDom = spec.stacked100
+    ? niceScale(0, 100)
+    : axisDomain(leftSeries, spec.categories, stacked, refsLeft)
+  const rightDom = hasRightAxis
+    ? spec.stacked100
+      ? niceScale(0, 100)
+      : axisDomain(rightSeries, spec.categories, stacked, refsRight)
+    : null
 
   const yOf = (dom: NiceScale, v: number) =>
     round(padT + plotH - ((v - dom.min) / (dom.max - dom.min || 1)) * plotH)
@@ -323,16 +586,30 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
 
   const n = spec.categories.length
   const slot = plotW / Math.max(1, n)
-  const xTicks: ChartCategoryTick[] = spec.categories.map((label, i) => ({
-    label,
-    x: round(padL + slot * i + slot / 2),
-  }))
+
+  // X positions. A time axis spaces points by actual time (irregular gaps);
+  // a category axis is uniform. (Bars stay uniform either way.)
+  const timeVals =
+    spec.xType === 'time' ? spec.categories.map((c) => Date.parse(c)) : null
+  const timeOk = !!timeVals && timeVals.some((t) => Number.isFinite(t))
+  const tMin = timeOk ? Math.min(...timeVals!.filter(Number.isFinite)) : 0
+  const tSpan = timeOk ? Math.max(...timeVals!.filter(Number.isFinite)) - tMin || 1 : 1
+  const xCenter = (i: number) =>
+    timeOk && Number.isFinite(timeVals![i])
+      ? round(padL + ((timeVals![i]! - tMin) / tSpan) * plotW)
+      : round(padL + slot * i + slot / 2)
+  const xTicks: ChartCategoryTick[] = timeOk
+    ? dateTicks(tMin, tMin + tSpan).map((t) => ({
+        label: fmtDate(t, tSpan),
+        x: round(padL + ((t - tMin) / tSpan) * plotW),
+      }))
+    : spec.categories.map((label, i) => ({ label, x: xCenter(i) }))
 
   const barSeries = series.filter((s) => s.kind === 'bar')
   const bars: ChartBar[] = []
   if (barSeries.length) {
     const groupPad = slot * 0.2
-    if (spec.stacked) {
+    if (stacked) {
       const inner = slot - groupPad
       const x0 = (i: number) => padL + slot * i + groupPad / 2
       // Stack independently per axis so dual-axis stacks line up to their own scale.
@@ -340,21 +617,32 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
         const axisBars = barSeries.filter((s) => s.axis === axis)
         if (!axisBars.length) continue
         const yA = axis === 'right' ? yRight : yLeft
+        // 100% mode normalizes each category to its absolute total.
+        const totals = spec.stacked100
+          ? spec.categories.map(
+              (_, i) =>
+                axisBars.reduce(
+                  (sum, s) => sum + Math.abs(Number.isFinite(s.values[i]!) ? s.values[i]! : 0),
+                  0,
+                ) || 1,
+            )
+          : null
         const pos = new Array(n).fill(0)
         const neg = new Array(n).fill(0)
         for (const s of axisBars) {
           s.values.forEach((v, i) => {
             if (!Number.isFinite(v)) return
+            const vp = totals ? (v / totals[i]!) * 100 : v
             let yTop: number
             let yBot: number
-            if (v >= 0) {
-              yTop = yA(pos[i] + v)
+            if (vp >= 0) {
+              yTop = yA(pos[i] + vp)
               yBot = yA(pos[i])
-              pos[i] += v
+              pos[i] += vp
             } else {
               yTop = yA(neg[i])
-              yBot = yA(neg[i] + v)
-              neg[i] += v
+              yBot = yA(neg[i] + vp)
+              neg[i] += vp
             }
             bars.push({
               x: round(x0(i)),
@@ -400,20 +688,40 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
     left: new Array(n).fill(0),
     right: new Array(n).fill(0),
   }
+  // 100% mode: per-axis per-category totals to normalize stacked areas to 100.
+  const areaTotals: Record<'left' | 'right', number[] | null> = { left: null, right: null }
+  if (spec.stacked100) {
+    for (const axis of ['left', 'right'] as const) {
+      const areaSeries = series.filter((s) => s.kind === 'area' && s.axis === axis)
+      if (areaSeries.length) {
+        areaTotals[axis] = spec.categories.map(
+          (_, i) =>
+            areaSeries.reduce(
+              (sum, s) => sum + Math.abs(Number.isFinite(s.values[i]!) ? s.values[i]! : 0),
+              0,
+            ) || 1,
+        )
+      }
+    }
+  }
   for (const s of series) {
     if (s.kind === 'bar') continue
     const dom = domOf(s)
     const yA = (v: number) => yOf(dom, v)
-    const isStackedArea = spec.stacked && s.kind === 'area'
-    const px = (i: number) => round(padL + slot * i + slot / 2)
+    const isStackedArea = stacked && s.kind === 'area'
+    const px = (i: number) => xCenter(i)
     let pts: ChartLinePoint[]
     let baselinePts: Array<{ x: number; y: number }> | null = null
     if (isStackedArea) {
       // Stacked areas treat a gap as 0 so the stack stays continuous.
       const cum = areaCum[s.axis]
       const prev = cum.slice()
+      const totals = areaTotals[s.axis]
       pts = s.values.map((v, i) => {
-        const c = (cum[i] ?? 0) + (Number.isFinite(v) ? v : 0)
+        const vv = Number.isFinite(v) ? v : 0
+        // 100% mode positions by share of the category total; value stays original.
+        const norm = totals ? (vv / totals[i]!) * 100 : vv
+        const c = (cum[i] ?? 0) + norm
         cum[i] = c
         return { x: px(i), y: yA(c), label: spec.categories[i] ?? String(i), value: v, defined: Number.isFinite(v) }
       })
@@ -470,6 +778,16 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
   const tickFor = (dom: NiceScale): ChartAxisTick[] =>
     dom.ticks.map((value) => ({ value, y: yOf(dom, value), label: fmtTick(value) }))
 
+  const referenceLines: ChartRefLineGeo[] = (spec.referenceLines ?? []).map((ref) => {
+    const dom = ref.axis === 'right' ? (rightDom ?? leftDom) : leftDom
+    return {
+      y: yOf(dom, ref.value),
+      label: ref.label ?? fmtTick(ref.value),
+      color: ref.color ?? '#ef4444',
+      dashed: ref.dashed !== false,
+    }
+  })
+
   return {
     ...empty,
     plot,
@@ -479,7 +797,8 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
     y2Ticks: rightDom ? tickFor(rightDom) : [],
     hasRightAxis,
     xTicks,
-    xLabelRotated,
+    xLabelRotated: timeOk ? false : xLabelRotated,
+    referenceLines,
   }
 }
 
@@ -504,7 +823,14 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
     width?: number
     height?: number
     stacked?: boolean
+    stacked100?: boolean
     palette?: string[]
+    /** Order categories. Defaults to insertion order (or value-desc when topN). */
+    sort?: 'value-desc' | 'value-asc' | 'category' | 'none'
+    /** Keep only the top N categories; bucket the rest into "Other". */
+    topN?: number
+    /** Label for the bucketed remainder. Default "Other". */
+    otherLabel?: string
   },
 ): ChartSpec {
   const reduce = opts.reduce ?? 'sum'
@@ -560,7 +886,7 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
     }
   }
 
-  const series: ChartSeries[] = [...seriesMap.entries()].map(([name, arr]) => ({
+  const entries = [...seriesMap.entries()].map(([name, arr]) => ({
     label: opts.series ? name : opts.seriesLabel && valueFields.length === 1 ? opts.seriesLabel : name,
     values: categories.map((_, i) => {
       const cell = arr[i] ?? { sum: 0, count: 0 }
@@ -568,13 +894,41 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
     }),
   }))
 
+  // ---- Sort + top-N -----------------------------------------------------
+  const totals = categories.map((_, i) =>
+    entries.reduce((sum, e) => sum + (Number.isFinite(e.values[i]!) ? e.values[i]! : 0), 0),
+  )
+  const sort = opts.sort ?? (opts.topN ? 'value-desc' : 'none')
+  let order = categories.map((_, i) => i)
+  if (sort === 'value-desc') order.sort((a, b) => totals[b]! - totals[a]!)
+  else if (sort === 'value-asc') order.sort((a, b) => totals[a]! - totals[b]!)
+  else if (sort === 'category') order.sort((a, b) => categories[a]!.localeCompare(categories[b]!))
+
+  let finalCategories: string[]
+  let finalSeries: ChartSeries[]
+  if (opts.topN && order.length > opts.topN) {
+    const keep = order.slice(0, opts.topN)
+    const rest = order.slice(opts.topN)
+    finalCategories = keep.map((i) => categories[i]!).concat(opts.otherLabel ?? 'Other')
+    finalSeries = entries.map((e) => ({
+      label: e.label,
+      values: keep
+        .map((i) => e.values[i]!)
+        .concat(rest.reduce((sum, i) => sum + (Number.isFinite(e.values[i]!) ? e.values[i]! : 0), 0)),
+    }))
+  } else {
+    finalCategories = order.map((i) => categories[i]!)
+    finalSeries = entries.map((e) => ({ label: e.label, values: order.map((i) => e.values[i]!) }))
+  }
+
   return {
     type: opts.type,
-    categories,
-    series,
+    categories: finalCategories,
+    series: finalSeries,
     width: opts.width,
     height: opts.height,
     stacked: opts.stacked,
+    stacked100: opts.stacked100,
     palette: opts.palette,
   }
 }

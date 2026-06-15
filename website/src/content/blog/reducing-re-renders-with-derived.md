@@ -1,10 +1,10 @@
 ---
 title: Reducing Re-Renders in SvGrid with $derived
 description: Use Svelte 5's $derived to compute grid data efficiently - so the grid recomputes only when inputs change, not on every render.
-date: 2026-08-02
+date: 2026-08-30
 category: Performance
 tags: performance, runes, derived, reactivity, recipe
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 The fastest update is the one that does not happen. Svelte 5's `$derived` lets you compute a grid's data so it recalculates only when its actual inputs change - the cleanest performance lever you have in a data-heavy app. Here is how to use it well with SvGrid.

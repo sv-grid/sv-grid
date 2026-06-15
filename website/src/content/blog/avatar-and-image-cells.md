@@ -1,10 +1,10 @@
 ---
 title: Avatar and Image Cells in SvGrid
 description: Render avatars, logos, and thumbnails in grid cells - with fallbacks, lazy loading, and accessible alt text - using a custom cell snippet.
-date: 2026-07-02
+date: 2026-07-04
 category: Cells
 tags: avatar, image, cells, custom cells, recipe
-author: SvGrid Team
+author: Kamelia M
 ---
 
 People grids want faces; product grids want thumbnails. An image cell makes a table instantly more scannable. SvGrid renders any markup in a cell, so an avatar is a small custom cell - the craft is in fallbacks, performance, and accessibility. Here is the recipe.

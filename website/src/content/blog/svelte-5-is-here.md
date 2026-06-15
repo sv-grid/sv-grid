@@ -4,7 +4,7 @@ description: Svelte 5 shipped with runes - signal-based, fine-grained reactivity
 date: 2026-06-13
 category: Company
 tags: svelte 5, reactivity, story, background
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Svelte 5 shipped in late 2024 with runes - a release that quietly rewrote how reactivity works in Svelte. If you build data-heavy UI for a living, as we do, it is hard to overstate how significant that was.

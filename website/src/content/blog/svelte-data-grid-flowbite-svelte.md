@@ -4,7 +4,7 @@ description: Combine SvGrid with Flowbite Svelte - match the grid to Flowbite's 
 date: 2026-06-13
 category: Integration
 tags: flowbite, theming, design system, integration, svelte data grid
-author: SvGrid Team
+author: Boyko Markov
 ---
 
 Flowbite Svelte is a Tailwind-based component library with a polished default look. SvGrid pairs well with it: use Flowbite for the chrome (buttons, dropdowns, inputs) and SvGrid for the data grid itself, themed to match via `--sg-*` variables.

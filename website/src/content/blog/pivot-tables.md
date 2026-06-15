@@ -4,10 +4,13 @@ description: Turn flat rows into a cross-tab summary with sv-grid-pro pivot tabl
 date: 2026-02-03
 category: Pro
 tags: pivot table, cross-tab, aggregation, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 A pivot table answers "how much, broken down by what?" - revenue by region and quarter, headcount by department and level. Instead of exporting to a spreadsheet, `sv-grid-pro` brings pivoting into your Svelte app, so the summary lives next to the data and updates in real time.
+
+![A pivot table built with sv-grid-pro](/blog-media/pivot.png)
+*A pivot table built with sv-grid-pro.*
 
 ## The three axes of a pivot
 

@@ -4,7 +4,7 @@ description: Drive SvGrid from a Drizzle ORM backend in SvelteKit - type-safe se
 date: 2026-06-13
 category: Integration
 tags: drizzle, sveltekit, server-side, integration, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Drizzle ORM gives you fully typed SQL in TypeScript. Paired with SvGrid's external mode, you get a data grid where the types flow from the database all the way to the column definitions. Here is how to wire server-side sorting, filtering, and pagination.

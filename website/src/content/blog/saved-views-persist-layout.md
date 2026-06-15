@@ -1,13 +1,16 @@
 ---
 title: Saved Views - Persist Grid Layout and Filters
 description: Let users save and switch named views of a data grid - column order, widths, sorting, and filters - persisted to localStorage or the server.
-date: 2026-08-05
+date: 2026-09-04
 category: Data
 tags: saved views, persistence, layout, recipe, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 Power users want their grid the way they left it - and often want several named setups: "Overdue", "My accounts", "This quarter". Saved views capture the grid's configuration and let users switch between them. Here is how to build them on SvGrid.
+
+![Saving a grid layout in SvGrid](/blog-media/column-layout.png)
+*Saving and restoring grid layouts in SvGrid.*
 
 ## What a view contains
 

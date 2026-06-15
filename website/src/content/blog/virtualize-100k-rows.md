@@ -4,10 +4,13 @@ description: How SvGrid virtualizes rows and columns so a Svelte data grid stays
 date: 2026-05-05
 category: Performance
 tags: virtualization, performance, large data, svelte data grid
-author: SvGrid Team
+author: Victor Vidolov
 ---
 
 A naive table renders one DOM row per data row. At a few thousand rows the browser slows; at a hundred thousand it locks up. SvGrid solves this with built-in row and column virtualization - only the cells in the viewport exist in the DOM.
+
+![SvGrid virtualizing a large dataset](/blog-media/large-dataset.png)
+*A large dataset in SvGrid - only the visible rows exist in the DOM.*
 
 ## It is on when it needs to be
 

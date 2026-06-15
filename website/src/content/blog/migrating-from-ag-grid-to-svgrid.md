@@ -4,7 +4,7 @@ description: A practical guide to moving an AG Grid screen to SvGrid in Svelte 5
 date: 2026-06-27
 category: Comparisons
 tags: migration, ag grid, comparison, svelte data grid
-author: SvGrid Team
+author: Kamelia M
 ---
 
 AG Grid is excellent, but in a Svelte app it lives behind an integration layer. If you are moving to a native Svelte 5 grid, the good news is the concepts transfer almost one-to-one. Here is how to migrate cleanly.

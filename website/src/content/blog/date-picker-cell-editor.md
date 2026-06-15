@@ -1,13 +1,16 @@
 ---
 title: A Date-Picker Cell Editor in SvGrid
 description: Make date columns editable with a real date picker - using SvGrid's built-in date editor, formatting the display, and handling time zones.
-date: 2026-07-12
+date: 2026-07-20
 category: Editing
 tags: editing, date picker, cell editor, formatting, recipe
-author: SvGrid Team
+author: Kamelia M
 ---
 
 Dates are everywhere in business data and easy to get wrong. SvGrid has a built-in date editor, so making a column editable with a proper date picker is one property - the care is in formatting and time zones. Here is the recipe.
+
+![Editable cells in SvGrid](/blog-media/custom-cell-editors.png)
+*Typed cell editors in SvGrid.*
 
 ## Use the built-in date editor
 
