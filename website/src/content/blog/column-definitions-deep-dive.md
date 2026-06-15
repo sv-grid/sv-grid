@@ -7,7 +7,7 @@ tags: columns, column definitions, formatting, svelte data grid
 author: Boyko Markov
 ---
 
-Columns are the heart of any data grid. In SvGrid a column definition tells the grid how to read a value out of a row, how to format it, and how to render it. Get comfortable with `ColumnDef` and most of the grid follows.
+If you only learn one part of a data grid's API, make it the column definition - everything else hangs off it. In SvGrid a column tells the grid how to read a value from a row, how to format it, and how to render it. Get fluent with `ColumnDef` and the rest of the grid mostly falls into place.
 
 ## Read a value: `field` vs `accessorFn`
 

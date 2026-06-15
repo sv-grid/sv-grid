@@ -7,7 +7,7 @@ tags: comparison, build vs buy, svelte data grid, engineering
 author: Boyko Markov
 ---
 
-Every team that needs a table in Svelte hits the same fork: write a `{#each}` over a `<table>`, or reach for a data grid. A simple table is genuinely easy in Svelte, so the build option is tempting. Here is how to decide honestly - including the costs that do not show up until later.
+Every team that needs a table in Svelte hits the same fork in the road: hand-roll a `{#each}` over a `<table>`, or pull in a data grid. And honestly, a simple table in Svelte is so easy that building it yourself feels obviously right. It usually is, until it is not. The trick is knowing which side of the line you are on before you are six features deep.
 
 ## When building your own is the right call
 

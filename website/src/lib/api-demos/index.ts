@@ -12,6 +12,10 @@ import TableFeaturesDemo from './TableFeaturesDemo.svelte'
 import PivotDemo from './PivotDemo.svelte'
 import StagedEditingDemo from './StagedEditingDemo.svelte'
 import ExportDemo from './ExportDemo.svelte'
+import RenderHelpersDemo from './RenderHelpersDemo.svelte'
+import FlexRenderDemo from './FlexRenderDemo.svelte'
+import SvGridChartDemo from './SvGridChartDemo.svelte'
+import SparklineDemo from './SparklineDemo.svelte'
 
 export const apiDemos: Record<string, Component<any>> = {
   'svgrid-component': SvGridComponentDemo,
@@ -20,6 +24,10 @@ export const apiDemos: Record<string, Component<any>> = {
   'cell-format': CellFormatDemo,
   'imperative-api': ImperativeApiDemo,
   tablefeatures: TableFeaturesDemo,
+  flexrender: FlexRenderDemo,
+  'render-helpers': RenderHelpersDemo,
+  'svgrid-chart': SvGridChartDemo,
+  sparkline: SparklineDemo,
   'pro-export': ExportDemo,
   'pro-pivot': PivotDemo,
   'pro-staged-editing': StagedEditingDemo,

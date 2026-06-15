@@ -7,7 +7,7 @@ tags: filtering, excel filters, search, svelte data grid
 author: Victor Vidolov
 ---
 
-Users expect to filter a table the way they filter a spreadsheet. SvGrid's `columnFilteringFeature` gives you Excel-style per-column menus, an optional filter row, and a global search box - all from one feature.
+People do not learn how to filter your table; they arrive already knowing, because they have used a spreadsheet. Meet that expectation and the grid feels obvious. SvGrid's `columnFilteringFeature` gives you the Excel-style per-column menus, an optional filter row, and a global search box from a single feature.
 
 ![SvGrid's Excel-style column filter menu](/blog-media/excel-filters.png)
 *SvGrid's Excel-style per-column filter menu.*

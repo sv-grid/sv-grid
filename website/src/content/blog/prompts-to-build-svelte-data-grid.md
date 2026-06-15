@@ -7,7 +7,7 @@ tags: ai, mcp, claude, cursor, prompts, svelte data grid
 author: Kamelia M
 ---
 
-If you build with an AI assistant, the difference between a helpful one and a frustrating one is whether its output compiles. These prompts produce working SvGrid code - and the section at the end shows how to ground your assistant so it stops inventing props.
+If you pair with an AI assistant, you already know the difference between a great session and a maddening one comes down to a single thing: does the code it gives you actually compile? These are the prompts that get working SvGrid code out of it, plus the one setup step that stops it inventing props in the first place.
 
 ## Ground the assistant first
 

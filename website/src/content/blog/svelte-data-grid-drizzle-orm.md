@@ -9,6 +9,9 @@ author: Kamelia M
 
 Drizzle ORM gives you fully typed SQL in TypeScript. Paired with SvGrid's external mode, you get a data grid where the types flow from the database all the way to the column definitions. Here is how to wire server-side sorting, filtering, and pagination.
 
+![Server-side data from Drizzle in SvGrid](/blog-media/server-side-2.png)
+*A Drizzle-backed, fully typed server grid.*
+
 ## The pattern
 
 SvGrid reports sort/filter/page state; your Drizzle query turns that into typed SQL and returns the page plus a total count.

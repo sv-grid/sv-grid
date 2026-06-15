@@ -7,7 +7,7 @@ tags: inline editing, validation, editable grid, svelte data grid
 author: Boyko Markov
 ---
 
-A read-only grid shows data; an editable grid lets users change it. SvGrid turns any column into an editable cell with the right editor - text, number, checkbox, or date - and hands you a clean event when a value is committed.
+A read-only grid shows you data; an editable one lets people fix it, which is where most internal tools actually earn their keep. SvGrid makes any column editable with the right editor - text, number, checkbox, date - and hands you a clean event the moment a value is committed, so you stay in charge of what happens next.
 
 ![Inline cell editing in SvGrid](/blog-media/inline-editing.png)
 *Inline editing in SvGrid with typed cell editors.*

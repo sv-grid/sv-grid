@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-06-12T08:38:47.046Z",
+  "generatedAt": "2026-06-15T09:41:27.243Z",
   "counts": {
-    "pages": 175,
+    "pages": 195,
     "pro": 9,
     "withDemo": 72
   },
@@ -55,6 +55,8 @@
         "help/architecture.md",
         "help/benchmarks.md",
         "help/browser-support.md",
+        "help/charts.md",
+        "help/collaboration.md",
         "help/columns-hierarchy.md",
         "help/comparison.md",
         "help/conditional-form-schema.md",
@@ -97,6 +99,7 @@
         "help/server-side-data.md",
         "help/spreadsheet-formulas.md",
         "help/state-maintenance.md",
+        "help/status-bar.md",
         "help/tailwind.md",
         "help/testing-and-quality.md",
         "help/testing.md",
@@ -112,9 +115,11 @@
         "help/cells/cell-components.md",
         "help/cells/cell-data-types.md",
         "help/cells/cell-text-selection.md",
+        "help/cells/conditional-formatting.md",
         "help/cells/expressions.md",
         "help/cells/getting-values.md",
         "help/cells/highlighting-changes.md",
+        "help/cells/sparklines.md",
         "help/cells/styling-cells.md",
         "help/cells/text-formatting.md",
         "help/cells/tooltips.md",
@@ -134,6 +139,7 @@
         "help/columns/column-spanning.md",
         "help/columns/column-state.md",
         "help/columns/custom-header-components.md",
+        "help/columns/tool-panel.md",
         "help/columns/updating-definitions.md"
       ]
     },
@@ -169,6 +175,13 @@
       ]
     },
     {
+      "id": "help/grouping",
+      "title": "help/grouping",
+      "pages": [
+        "help/grouping/aggregators.md"
+      ]
+    },
+    {
       "id": "help/rows",
       "title": "Rows",
       "pages": [
@@ -182,7 +195,22 @@
         "help/rows/row-sorting.md",
         "help/rows/row-spanning.md",
         "help/rows/styling-rows.md",
+        "help/rows/transactions.md",
         "help/rows/tree-rows.md"
+      ]
+    },
+    {
+      "id": "help/server",
+      "title": "help/server",
+      "pages": [
+        "help/server/server-row-model.md"
+      ]
+    },
+    {
+      "id": "help/state",
+      "title": "help/state",
+      "pages": [
+        "help/state/named-views.md"
       ]
     },
     {
@@ -201,14 +229,20 @@
       "pages": [
         "recipes/autosave-with-debounce.md",
         "recipes/barcode-cells.md",
+        "recipes/benchmark-harness.md",
         "recipes/between-date-filter.md",
+        "recipes/build-a-feature-plugin.md",
         "recipes/bulk-edit-selected-rows.md",
+        "recipes/cell-renderer-patterns.md",
         "recipes/chartjs-sync.md",
         "recipes/conditional-row-coloring.md",
         "recipes/cursor-based-infinite-scroll.md",
+        "recipes/custom-filter-functions.md",
         "recipes/dependent-dropdowns.md",
         "recipes/drag-drop-columns.md",
         "recipes/external-search.md",
+        "recipes/form-library-bridge.md",
+        "recipes/grid-state-inspector.md",
         "recipes/heatmap-cells.md",
         "recipes/index.md",
         "recipes/kanban-from-grid-data.md",
@@ -220,6 +254,7 @@
         "recipes/nl-filter.md",
         "recipes/persist-column-layout-to-url.md",
         "recipes/pin-first-column.md",
+        "recipes/profiling-with-fps-hud.md",
         "recipes/role-based-editing.md",
         "recipes/saved-filter-sets.md",
         "recipes/saved-views.md",
@@ -227,6 +262,7 @@
         "recipes/smart-paste.md",
         "recipes/sparkline-cells.md",
         "recipes/submit-time-validation.md",
+        "recipes/testing-your-grid.md",
         "recipes/theme-matched-export.md",
         "recipes/theme-presets.md",
         "recipes/two-grid-master-detail.md",
@@ -247,8 +283,10 @@
         "reference/auto/sv-grid-pro-import.md",
         "reference/auto/sv-grid-pro-install.md",
         "reference/auto/sv-grid-pro-pivot.md",
+        "reference/bundle-size.md",
         "reference/ColumnDef.md",
         "reference/features.md",
+        "reference/headless-engine.md",
         "reference/index.md",
         "reference/pro.md",
         "reference/SvGrid.md",
@@ -330,7 +368,7 @@
       "summary": "SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,000-row, 100-column editing surface with grouping, multi-column filtering, server-side data, and full keyboard and screen-reader support.",
       "section": "",
       "tier": "community",
-      "words": 3254,
+      "words": 3330,
       "lastUpdated": "2026-06-12",
       "demoIds": []
     },
@@ -341,8 +379,8 @@
       "summary": "SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,000-row × 100-column editing surface with grouping, multi-column filtering, server-side data, and full keyboard and screen-reader support.",
       "section": "",
       "tier": "community",
-      "words": 510,
-      "lastUpdated": "2026-06-11",
+      "words": 524,
+      "lastUpdated": "2026-06-12",
       "demoIds": []
     },
     {
@@ -387,8 +425,8 @@
       "summary": "The grid engine is **feature-gated**. Out of the box you get the core row model (rows in their original order). To enable sorting, filtering, grouping, pagination, expansion, or selection, register the matching feature; the wrapper wires the matching row-model factory for you.",
       "section": "getting-started",
       "tier": "community",
-      "words": 618,
-      "lastUpdated": "2026-06-05",
+      "words": 795,
+      "lastUpdated": "2026-06-12",
       "demoIds": []
     },
     {
@@ -577,6 +615,17 @@
       ]
     },
     {
+      "path": "help/cells/conditional-formatting.md",
+      "url": "/help/cells/conditional-formatting",
+      "title": "Conditional formatting",
+      "summary": "Conditional formatting colors a cell by its value. SvGrid ships it as a declarative engine prop, conditionalFormats, so you describe the rules once and the grid paints every cell - no per-cell cell snippet required.",
+      "section": "help/cells",
+      "tier": "community",
+      "words": 438,
+      "lastUpdated": "2026-06-13",
+      "demoIds": []
+    },
+    {
       "path": "help/cells/expressions.md",
       "url": "/help/cells/expressions",
       "title": "Expressions",
@@ -614,6 +663,17 @@
       "demoIds": [
         "11-stock-market"
       ]
+    },
+    {
+      "path": "help/cells/sparklines.md",
+      "url": "/help/cells/sparklines",
+      "title": "Sparklines",
+      "summary": "A sparkline is a tiny, word-sized chart drawn inside a single cell. SvGrid renders them as a first-class column type: set sparkline on a column whose value is an array of numbers and the grid paints an inline SVG. No chart library, no custom cell snippet.",
+      "section": "help/cells",
+      "tier": "community",
+      "words": 437,
+      "lastUpdated": "2026-06-13",
+      "demoIds": []
     },
     {
       "path": "help/cells/styling-cells.md",
@@ -661,6 +721,28 @@
       "tier": "community",
       "words": 246,
       "lastUpdated": "2026-06-05",
+      "demoIds": []
+    },
+    {
+      "path": "help/charts.md",
+      "url": "/help/charts",
+      "title": "Integrated charts",
+      "summary": "SvGrid can chart its own data with no external charting library. Two pieces:",
+      "section": "help",
+      "tier": "community",
+      "words": 1306,
+      "lastUpdated": "2026-06-15",
+      "demoIds": []
+    },
+    {
+      "path": "help/collaboration.md",
+      "url": "/help/collaboration",
+      "title": "Real-time collaboration",
+      "summary": "Two people (or two AI agents) on the same grid: **presence** (who's here and where their cursor is) and **live edits** (a change in one client appears in every other). SvGrid packages this as a headless controller over a pluggable transport - the only infrastructure-specific piece.",
+      "section": "help",
+      "tier": "community",
+      "words": 358,
+      "lastUpdated": "2026-06-13",
       "demoIds": []
     },
     {
@@ -790,6 +872,17 @@
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
+    },
+    {
+      "path": "help/columns/tool-panel.md",
+      "url": "/help/columns/tool-panel",
+      "title": "Columns tool panel",
+      "summary": "The tool panel is the docked sidebar - standard in enterprise grids - for managing columns without hunting through a right-click menu. Turn it on with the toolPanel prop:",
+      "section": "help/columns",
+      "tier": "community",
+      "words": 177,
+      "lastUpdated": "2026-06-13",
+      "demoIds": []
     },
     {
       "path": "help/columns/updating-definitions.md",
@@ -1123,6 +1216,17 @@
       ]
     },
     {
+      "path": "help/grouping/aggregators.md",
+      "url": "/help/grouping/aggregators",
+      "title": "Group aggregators",
+      "summary": "When grouping is active, each group row can show a rolled-up value per column - the sum of revenue, the average score, the count of deals. SvGrid does this declaratively: set aggregate on a column and the group header shows the result, formatted with that column's own format.",
+      "section": "help/grouping",
+      "tier": "community",
+      "words": 398,
+      "lastUpdated": "2026-06-13",
+      "demoIds": []
+    },
+    {
       "path": "help/i18n-rtl.md",
       "url": "/help/i18n-rtl",
       "title": "Internationalisation & RTL",
@@ -1308,11 +1412,11 @@
       "path": "help/migrating-from-svar-svelte-datagrid.md",
       "url": "/help/migrating-from-svar-svelte-datagrid",
       "title": "Migrating from SVAR Svelte DataGrid",
-      "summary": "SVAR Svelte DataGrid (wx-svelte-grid) is, like SvGrid, an actual Svelte-native grid rather than a wrapper. Because both are component-first with array-of-object column definitions, a port is mostly a configuration translation. The two decisions that usually drive the switch are **licensing** (SVAR is offered under GPL with a separate commercial license; SvGrid's community core is MIT) and **architecture** (SvGrid also exposes a headless engine and an MCP server).",
+      "summary": "SVAR Svelte DataGrid (wx-svelte-grid) is, like SvGrid, an actual Svelte-native grid rather than a wrapper, and both are MIT-licensed and free for commercial use. Because both are component-first with array-of-object column definitions, a port is mostly a configuration translation. The reasons people switch are **capability** (SvGrid adds row grouping with aggregation, master-detail, Excel-style cell-range selection, integrated charts, and pivot) and **architecture** (SvGrid also exposes a headless engine and an MCP server).",
       "section": "help",
       "tier": "community",
-      "words": 659,
-      "lastUpdated": "2026-06-12",
+      "words": 733,
+      "lastUpdated": "2026-06-15",
       "demoIds": []
     },
     {
@@ -1620,6 +1724,17 @@
       ]
     },
     {
+      "path": "help/rows/transactions.md",
+      "url": "/help/rows/transactions",
+      "title": "Transactions",
+      "summary": "api.applyTransaction({ add, update, remove }) applies a batch of row mutations in a **single** data update - one re-render for the whole batch, not one per row. It's the path to use for high-frequency / streaming feeds (WebSocket deltas, tick data) where calling addRow / setCellValue per row would thrash.",
+      "section": "help/rows",
+      "tier": "community",
+      "words": 323,
+      "lastUpdated": "2026-06-13",
+      "demoIds": []
+    },
+    {
       "path": "help/rows/tree-rows.md",
       "url": "/help/rows/tree-rows",
       "title": "Tree rows (expand / collapse)",
@@ -1672,6 +1787,17 @@
       ]
     },
     {
+      "path": "help/server/server-row-model.md",
+      "url": "/help/server/server-row-model",
+      "title": "Server-Side Row Model (SSRM)",
+      "summary": "When the data lives on the server - millions of rows in a database - the grid should hold only the page on screen and push sorting, filtering, and paging to the backend. SvGrid packages this as **one datasource contract**: you implement a single async getRows, and createServerDataSource owns the rest.",
+      "section": "help/server",
+      "tier": "community",
+      "words": 411,
+      "lastUpdated": "2026-06-13",
+      "demoIds": []
+    },
+    {
       "path": "help/spreadsheet-formulas.md",
       "url": "/help/spreadsheet-formulas",
       "title": "Spreadsheet formulas",
@@ -1696,6 +1822,28 @@
       "demoIds": [
         "55-state-maintenance"
       ]
+    },
+    {
+      "path": "help/state/named-views.md",
+      "url": "/help/state/named-views",
+      "title": "Named views",
+      "summary": "A \"view\" is a saved snapshot of the grid's state - sort, filters, column order/width/visibility, page, grouping. Named views let a user save the layout they like and switch between them. SvGrid ships this as a small manager over the grid's getState() / setState(), with pluggable storage.",
+      "section": "help/state",
+      "tier": "community",
+      "words": 327,
+      "lastUpdated": "2026-06-13",
+      "demoIds": []
+    },
+    {
+      "path": "help/status-bar.md",
+      "url": "/help/status-bar",
+      "title": "Status bar",
+      "summary": "The status bar is the strip under the grid that shows live aggregates of the **selected cell range** - count, sum, average, min, max - the way Excel does at the bottom-right when you select a block of numbers.",
+      "section": "help",
+      "tier": "community",
+      "words": 234,
+      "lastUpdated": "2026-06-13",
+      "demoIds": []
     },
     {
       "path": "help/tailwind.md",
@@ -1836,6 +1984,17 @@
       ]
     },
     {
+      "path": "recipes/benchmark-harness.md",
+      "url": "/recipes/benchmark-harness",
+      "title": "Benchmark harness",
+      "summary": "You're answering:",
+      "section": "recipes",
+      "tier": "community",
+      "words": 1050,
+      "lastUpdated": "2026-06-12",
+      "demoIds": []
+    },
+    {
       "path": "recipes/between-date-filter.md",
       "url": "/recipes/between-date-filter",
       "title": "Between-operator filters for date ranges",
@@ -1843,6 +2002,17 @@
       "section": "recipes",
       "tier": "community",
       "words": 96,
+      "lastUpdated": "2026-06-12",
+      "demoIds": []
+    },
+    {
+      "path": "recipes/build-a-feature-plugin.md",
+      "url": "/recipes/build-a-feature-plugin",
+      "title": "Build your own feature plugin",
+      "summary": "You want to inject behavior that applies to *every* row or column - a computed accent class, an audit fingerprint, an inline diff badge, a per-row policy gate - without forking the grid component or writing the same cell: boilerplate on every column def.",
+      "section": "recipes",
+      "tier": "community",
+      "words": 618,
       "lastUpdated": "2026-06-12",
       "demoIds": []
     },
@@ -1855,6 +2025,17 @@
       "tier": "community",
       "words": 760,
       "lastUpdated": "2026-06-05",
+      "demoIds": []
+    },
+    {
+      "path": "recipes/cell-renderer-patterns.md",
+      "url": "/recipes/cell-renderer-patterns",
+      "title": "Cell renderer patterns",
+      "summary": "Every supported shape for the cell: slot on a ColumnDef, with the trade-offs for each.",
+      "section": "recipes",
+      "tier": "community",
+      "words": 550,
+      "lastUpdated": "2026-06-12",
       "demoIds": []
     },
     {
@@ -1887,6 +2068,17 @@
       "section": "recipes",
       "tier": "community",
       "words": 286,
+      "lastUpdated": "2026-06-12",
+      "demoIds": []
+    },
+    {
+      "path": "recipes/custom-filter-functions.md",
+      "url": "/recipes/custom-filter-functions",
+      "title": "Custom filter functions",
+      "summary": "You need any of:",
+      "section": "recipes",
+      "tier": "community",
+      "words": 668,
       "lastUpdated": "2026-06-12",
       "demoIds": []
     },
@@ -1924,6 +2116,28 @@
       "demoIds": []
     },
     {
+      "path": "recipes/form-library-bridge.md",
+      "url": "/recipes/form-library-bridge",
+      "title": "Form library bridge",
+      "summary": "You want the same row to be editable two ways:",
+      "section": "recipes",
+      "tier": "community",
+      "words": 756,
+      "lastUpdated": "2026-06-12",
+      "demoIds": []
+    },
+    {
+      "path": "recipes/grid-state-inspector.md",
+      "url": "/recipes/grid-state-inspector",
+      "title": "Grid state inspector",
+      "summary": "You're stuck on one of:",
+      "section": "recipes",
+      "tier": "community",
+      "words": 776,
+      "lastUpdated": "2026-06-12",
+      "demoIds": []
+    },
+    {
       "path": "recipes/heatmap-cells.md",
       "url": "/recipes/heatmap-cells",
       "title": "Heatmap-tinted numeric cells",
@@ -1941,7 +2155,7 @@
       "summary": "Copy-paste patterns for sv-grid. Every recipe is a complete, runnable snippet you can drop into your app. Each pairs with a live demo in the gallery.",
       "section": "recipes",
       "tier": "community",
-      "words": 315,
+      "words": 422,
       "lastUpdated": "2026-06-12",
       "demoIds": []
     },
@@ -2045,6 +2259,17 @@
       "demoIds": []
     },
     {
+      "path": "recipes/profiling-with-fps-hud.md",
+      "url": "/recipes/profiling-with-fps-hud",
+      "title": "Profiling with a live FPS HUD",
+      "summary": "You're trying to figure out:",
+      "section": "recipes",
+      "tier": "community",
+      "words": 710,
+      "lastUpdated": "2026-06-12",
+      "demoIds": []
+    },
+    {
       "path": "recipes/role-based-editing.md",
       "url": "/recipes/role-based-editing",
       "title": "Role-based editable columns",
@@ -2084,8 +2309,8 @@
       "summary": "Goal: drive the grid from a real API. Sort + filter + page round-trip to the server; the response goes into TanStack Query so we get **caching, deduplication, request cancellation, retries, optimistic updates, and stale-while-revalidate** for free.",
       "section": "recipes",
       "tier": "community",
-      "words": 946,
-      "lastUpdated": "2026-06-05",
+      "words": 1382,
+      "lastUpdated": "2026-06-12",
       "demoIds": []
     },
     {
@@ -2118,6 +2343,17 @@
       "section": "recipes",
       "tier": "community",
       "words": 249,
+      "lastUpdated": "2026-06-12",
+      "demoIds": []
+    },
+    {
+      "path": "recipes/testing-your-grid.md",
+      "url": "/recipes/testing-your-grid",
+      "title": "Testing your grid",
+      "summary": "Three strategies for testing a grid in your app. Pick the strategy that matches the question you're answering.",
+      "section": "recipes",
+      "tier": "community",
+      "words": 721,
       "lastUpdated": "2026-06-12",
       "demoIds": []
     },
@@ -2276,6 +2512,17 @@
       "demoIds": []
     },
     {
+      "path": "reference/bundle-size.md",
+      "url": "/reference/bundle-size",
+      "title": "Bundle size",
+      "summary": "What each feature costs in the final bundle, how to reproduce the numbers on your branch, and what to do if size matters.",
+      "section": "reference",
+      "tier": "community",
+      "words": 534,
+      "lastUpdated": "2026-06-12",
+      "demoIds": []
+    },
+    {
       "path": "reference/ColumnDef.md",
       "url": "/reference/ColumnDef",
       "title": "`ColumnDef` reference",
@@ -2298,14 +2545,25 @@
       "demoIds": []
     },
     {
+      "path": "reference/headless-engine.md",
+      "url": "/reference/headless-engine",
+      "title": "Headless engine",
+      "summary": "createSvGrid(options) returns a table object with:",
+      "section": "reference",
+      "tier": "community",
+      "words": 657,
+      "lastUpdated": "2026-06-12",
+      "demoIds": []
+    },
+    {
       "path": "reference/index.md",
       "url": "/reference/index",
       "title": "API reference",
       "summary": "The exhaustive surface of the published packages. For walkthroughs + patterns see Help; for first contact see Getting started.",
       "section": "reference",
       "tier": "community",
-      "words": 183,
-      "lastUpdated": "2026-06-05",
+      "words": 206,
+      "lastUpdated": "2026-06-12",
       "demoIds": []
     },
     {

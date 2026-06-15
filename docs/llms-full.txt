@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-06-12 from 175 pages.
+Generated 2026-06-15 from 195 pages.
 
 <!-- =================================================================
      /changelog  (community)
@@ -1127,6 +1127,19 @@ back into the grid via `ctx.table`.
 Once their features are registered (see §5) the UI affordances appear
 automatically. The state is controllable.
 
+**Quick way - capability shortcuts.** Every capability is off by default;
+the fastest way to opt in is a boolean shortcut prop, no feature constants
+required. `sortable` and `filterable` inject the matching feature for you;
+`editable`, `groupable`, and `pageable` alias `enableInlineEditing`,
+`showGroupingControls`, and `showPagination`:
+
+```svelte
+<SvGrid data={rows} columns={columns} sortable filterable editable groupable pageable />
+```
+
+Reach for the explicit `features` set + fine-grained props below when you
+need more control (filter mode, page size, per-column opt-outs).
+
 ### Uncontrolled (the default)
 
 The wrapper owns sort, filter, pagination, selection, and expansion
@@ -1585,8 +1598,11 @@ companion `sv-grid-pro` ships under a separate commercial license. See
 ### How do I add a data grid to a Svelte 5 app?
 
 Install `sv-grid-community`, import `SvGrid`, and pass `data` and `columns`.
-A complete grid is about 15 lines - sorting, keyboard navigation, and
-accessibility are on by default. See [First grid](./getting-started/2-first-grid.md).
+A complete grid is about 15 lines - keyboard navigation and accessibility are
+on by default, and you opt into sort/filter/edit/group/paging with one boolean
+shortcut each (`sortable`, `filterable`, ...). See
+[First grid](./getting-started/2-first-grid.md) and
+[Features](./getting-started/4-features.md#capability-shortcuts-the-quick-way).
 
 ### Does SvGrid work with SvelteKit?
 
@@ -1981,6 +1997,38 @@ The wrapper handles the user-facing toggles via plain props. If you
 need the headless pipeline directly - say, a custom renderer - drop
 down to `createSvGrid` from the same package. See
 [Why headless?](../why-headless.md).
+
+## Capability shortcuts (the quick way)
+
+Every capability is **off by default** - a bare `<SvGrid>` is a plain,
+read-only table. The fastest way to opt in is a set of boolean shortcut
+props. No `tableFeatures({ … })` import, no feature constants:
+
+```svelte
+<SvGrid
+  data={rows}
+  columns={columns}
+  sortable
+  filterable
+  editable
+  groupable
+  pageable
+/>
+```
+
+| Shortcut     | Turns on                                         | Equivalent to                              |
+| ------------ | ------------------------------------------------ | ------------------------------------------ |
+| `sortable`   | Click headers to sort                            | injects `rowSortingFeature`                |
+| `filterable` | Per-column filter menu                           | injects `columnFilteringFeature`           |
+| `editable`   | Inline cell editing (needs `editorType` columns) | `enableInlineEditing`                      |
+| `groupable`  | "Group by this column" in the column menu        | `showGroupingControls`                     |
+| `pageable`   | Pagination footer                                | `showPagination`                           |
+
+Each shortcut is an override: omit it (or set `false`) to leave the
+capability off; set it `true` to opt in. They compose with the
+fine-grained props and the `features` set below - reach for those when
+you need finer control (e.g. `filterMode`, `pageSize`, per-column
+`sortable: false`). See the live [Shortcut config](https://sv-grid.com/demos/135-shortcut-config) demo.
 
 ## The feature catalogue
 
@@ -4670,6 +4718,96 @@ column + `Ctrl/Cmd+C` to copy entire rows.
 - [Custom cells](./cell-components.md)
 
 <!-- =================================================================
+     /help/cells/conditional-formatting  (community)
+     ================================================================== -->
+
+# Conditional formatting
+
+Conditional formatting colors a cell by its value. SvGrid ships it as a
+declarative engine prop, `conditionalFormats`, so you describe the rules once
+and the grid paints every cell - no per-cell `cell` snippet required.
+
+It goes beyond the `cellClass(ctx)` callback (which only toggles static CSS
+classes): color scales and data bars need a value computed against the
+column's min/max range, which the engine does for you.
+
+```svelte
+<script lang="ts">
+  import { SvGrid, type ColumnDef, type ConditionalFormat } from 'sv-grid-community'
+
+  type Row = { rep: string; revenue: number; score: number }
+
+  const conditionalFormats: ConditionalFormat<Row>[] = [
+    { type: 'dataBar', columns: ['revenue'], color: '#3b82f6' },
+    { type: 'colorScale', columns: ['score'], min: '#fca5a5', mid: '#fde68a', max: '#86efac' },
+  ]
+</script>
+
+<SvGrid {data} {columns} {conditionalFormats} />
+```
+
+## Format kinds
+
+### `colorScale` - gradient fill
+
+A 2-stop (`min`/`max`) or 3-stop (`min`/`mid`/`max`) gradient mapped across the
+column's value range. Fix the scale with `minValue`/`maxValue` to make rows
+comparable.
+
+```ts
+{ type: 'colorScale', columns: ['score'], min: '#fca5a5', mid: '#fde68a', max: '#86efac', minValue: 0, maxValue: 100 }
+```
+
+### `dataBar` - in-cell bar
+
+An in-cell horizontal bar proportional to the value. Diverging data (can go
+negative) gets `negativeColor`. `showValue: false` hides the text and shows the
+bar alone.
+
+```ts
+{ type: 'dataBar', columns: ['revenue'], color: '#3b82f6', negativeColor: '#ef4444' }
+```
+
+### `iconSet` - threshold icons
+
+An icon chosen by ascending `thresholds` (n thresholds => n+1 buckets). Built-in
+sets: `'arrows'`, `'traffic'`, `'triangles'`. `iconOnly: true` hides the number.
+
+```ts
+// growth < 0 -> down, 0..10 -> flat, >= 10 -> up
+{ type: 'iconSet', columns: ['growth'], set: 'arrows', thresholds: [0, 10] }
+```
+
+### `rule` - style on a predicate
+
+Apply `background` / `color` / `fontWeight` when `when(ctx)` returns true. The
+predicate receives the typed row, so you can key off other fields.
+
+```ts
+{ type: 'rule', columns: ['churn'], when: ({ value }) => Number(value) >= 20,
+  background: '#fee2e2', color: '#991b1b', fontWeight: 700 }
+```
+
+## Scoping and precedence
+
+- `columns: [...]` limits a format to those column ids. Omit it to apply to
+  every column.
+- Formats are evaluated in array order; **later entries win** on conflict, so
+  list general formats first and specific overrides last.
+- Empty / non-numeric cells are skipped by the numeric formats (color scale,
+  data bar, icon set) and never count toward a column's min/max.
+
+## Notes
+
+- The color-scale fill and data bar render as layers behind the text, so they
+  survive app stylesheets that force the cell background.
+- The resolver is exported as `resolveCellFormat(value, row, columnId, formats,
+  stat)` if you want to compute the same result yourself.
+
+See the live [Conditional formatting](https://sv-grid.com/demos/141-conditional-formatting)
+demo.
+
+<!-- =================================================================
      /help/cells/expressions  (community)
      ================================================================== -->
 
@@ -4894,6 +5032,81 @@ reduced-motion` to disable the animation for users who opt out.
 
 - [Cell components](./cell-components.md)
 - [demos/05-inline-editing.svelte](../../../examples/src/demos/05-inline-editing.svelte)
+
+<!-- =================================================================
+     /help/cells/sparklines  (community)
+     ================================================================== -->
+
+# Sparklines
+
+A sparkline is a tiny, word-sized chart drawn inside a single cell. SvGrid
+renders them as a first-class column type: set `sparkline` on a column whose
+value is an array of numbers and the grid paints an inline SVG. No chart
+library, no custom cell snippet.
+
+```svelte
+<script lang="ts">
+  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+
+  type Row = { product: string; revenue: number[] }
+
+  const columns: ColumnDef<{}, Row>[] = [
+    { field: 'product', header: 'Product' },
+    { field: 'revenue', header: 'Trend', sparkline: { type: 'line' } },
+  ]
+</script>
+
+<SvGrid {data} {columns} />
+```
+
+## Value shape
+
+The cell value is an array of numbers. A comma- or space-separated string
+works too (`"1, 2, 3"`), so server payloads that send a CSV string render
+without massaging. Non-finite entries are dropped; an empty array renders
+nothing.
+
+## Chart types
+
+| `type`      | Looks like                                   |
+| ----------- | -------------------------------------------- |
+| `'line'`    | A single polyline with an end-point dot (default) |
+| `'area'`    | A line plus a translucent fill to the baseline |
+| `'bar'`     | One column per value, scaled to the row's min..max |
+| `'winloss'` | Fixed-height up/down bars - sign only (W/L streaks) |
+
+## Options (`SparklineConfig`)
+
+| Option          | Default                  | Notes                                              |
+| --------------- | ------------------------ | -------------------------------------------------- |
+| `type`          | `'line'`                 | One of the four above.                             |
+| `color`         | `var(--sg-accent)`       | Stroke (line/area) or positive fill (bar/winloss). |
+| `negativeColor` | `#ef4444`                | Fill for negative bars / losses.                   |
+| `width`         | `88`                     | SVG width in px.                                   |
+| `height`        | `22`                     | SVG height in px.                                  |
+| `min` / `max`   | derived from the row     | Fix the value scale so rows are comparable.        |
+| `lineWidth`     | `1.5`                    | Stroke width (line/area).                          |
+| `lastPoint`     | `true`                   | Draw the end-cap dot on line/area.                 |
+
+```ts
+// Green/red diverging bars on a column that can go negative:
+{ field: 'delta', sparkline: { type: 'bar', color: '#16a34a', negativeColor: '#ef4444' } }
+
+// Comparable rows: pin every sparkline to the same 0..100 scale:
+{ field: 'score', sparkline: { type: 'area', min: 0, max: 100 } }
+```
+
+## Notes
+
+- A custom `cell` renderer wins if both `cell` and `sparkline` are set.
+- Sparklines are decorative SVG with an `aria-label` summarising the series
+  (point count + last value). For a screen-reader-friendly exact readout,
+  pair the chart column with a plain numeric column.
+- The geometry helper is exported as `buildSparkline(values, config)` if you
+  want to render the same chart outside a grid cell.
+
+See the live [Sparkline cells](https://sv-grid.com/demos/140-sparkline-cells)
+demo.
 
 <!-- =================================================================
      /help/cells/styling-cells  (community)
@@ -5226,6 +5439,296 @@ trigger:
 
 - [Row data](../rows/row-data.md)
 - [Accessing rows](../rows/accessing-rows.md)
+
+<!-- =================================================================
+     /help/charts  (community)
+     ================================================================== -->
+
+# Integrated charts
+
+SvGrid can chart its own data with no external charting library. Two pieces:
+
+- **`SvGridChart`** - a component that renders a `ChartSpec` as inline SVG
+  (bar, line, area, pie, scatter / bubble) with axes, hover tooltips, a
+  clickable legend that toggles series (or pie slices) on and off, reference
+  lines, a time axis, and a visually-hidden data table for screen readers.
+- **`rowsToChartSpec(rows, opts)`** - aggregates flat rows (group by a
+  category field, reduce a value field) into a `ChartSpec`, with optional
+  sorting and top-N + "Other" bucketing.
+
+Feed it `api.getDisplayedRows()` and the chart reflects the grid's current,
+filtered, sorted data - the "chart from the grid" enterprise feature.
+
+```svelte
+<script lang="ts">
+  import { SvGrid, SvGridChart, rowsToChartSpec, type SvGridApi } from 'sv-grid-community'
+
+  let api: SvGridApi<F, Row> | null = null
+  let displayed = $state<Row[]>(rows)
+  const sync = () => (displayed = (api?.getDisplayedRows() as Row[]) ?? rows)
+
+  const spec = $derived(
+    rowsToChartSpec(displayed, { type: 'bar', category: 'region', value: 'revenue', reduce: 'sum' }),
+  )
+</script>
+
+<SvGrid {data} {columns} {features} sortable filterable
+  onApiReady={(a) => { api = a; sync() }}
+  onFiltersChange={sync} onSortingChange={sync} />
+
+<SvGridChart {spec} />
+```
+
+## `rowsToChartSpec`
+
+| Option        | Meaning                                                  |
+| ------------- | -------------------------------------------------------- |
+| `type`        | `'bar' \| 'line' \| 'area' \| 'pie' \| 'scatter'`       |
+| `category`    | Field whose distinct values become the x-axis / slices.  |
+| `value`       | Numeric field, **or an array of fields** (one series each). |
+| `series`      | Pivot field: one series per distinct value of it.        |
+| `reduce`      | `'sum'` (default), `'avg'`, or `'count'`.                |
+| `stacked`     | Stack the series instead of grouping them.               |
+| `stacked100`  | Stack to 100% - each category normalized to its total.   |
+| `sort`        | `'value-desc' \| 'value-asc' \| 'category' \| 'none'`.   |
+| `topN`        | Keep the top N categories, bucket the rest into "Other". |
+| `otherLabel`  | Label for the bucket (default `'Other'`).                |
+| `width` / `height` | SVG viewBox size.                                  |
+
+Three multi-series shapes:
+
+```ts
+rowsToChartSpec(rows, { type: 'bar', category: 'region', value: 'revenue' })            // 1 series
+rowsToChartSpec(rows, { type: 'bar', category: 'region', value: ['revenue', 'cost'] })  // 2 series
+rowsToChartSpec(rows, { type: 'bar', category: 'region', value: 'sales', series: 'product' }) // pivot
+```
+
+## Building a spec yourself
+
+`SvGridChart` takes any `ChartSpec`. Per-series `type` and `axis` give you combo
+charts and a secondary Y axis; `stacked` stacks bars/areas; `innerRadius` turns a
+pie into a donut; `yAxisTitle` / `y2AxisTitle` / `xAxisTitle` label the axes.
+Negative values drop below a zero baseline automatically, and `null` / `NaN`
+values break the line (a gap) instead of dropping it to zero.
+
+```ts
+const spec: ChartSpec = {
+  type: 'bar',
+  stacked: false,
+  categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+  series: [
+    { label: 'Revenue', values: [120, 140, 90, 180] },                 // bars, left axis
+    { label: 'Margin %', values: [0.31, 0.28, 0.22, 0.35], type: 'line', axis: 'right' }, // line, right axis
+  ],
+}
+// donut:  { type: 'pie', innerRadius: 0.6, categories, series: [...] }
+```
+
+The geometry helper `buildChart(spec)` is exported too, if you want the raw SVG
+primitives for a custom renderer.
+
+## Reference / target lines
+
+`referenceLines` draws horizontal goal / average / SLA lines across the plot.
+Each entry stretches the axis domain so the line is always in view:
+
+```ts
+const spec: ChartSpec = {
+  type: 'bar', categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+  series: [{ label: 'Revenue', values: [120, 140, 90, 180] }],
+  referenceLines: [{ value: 150, label: 'Target', axis: 'left', color: '#ef4444', dashed: true }],
+}
+```
+
+## 100% stacked
+
+`stacked100: true` (implies `stacked`) normalizes each category to its own
+total, so the axis runs 0..100% and every column fills the plot height -
+ideal for reading composition / share. Tooltips and labels still show the
+original values.
+
+## Scatter / bubble
+
+`type: 'scatter'` plots two numeric measures against each other. Each series
+carries `points: [{ x, y, r?, label? }]`; an optional `r` becomes the bubble
+radius (scaled across the data). One series per group colours the points.
+
+```ts
+const spec: ChartSpec = {
+  type: 'scatter', categories: [],
+  xAxisTitle: 'Spend', yAxisTitle: 'Revenue',
+  series: [
+    { label: 'EMEA', values: [], points: [{ x: 12_000, y: 80_000, r: 18, label: 'Ada' }] },
+    { label: 'APAC', values: [], points: [{ x: 30_000, y: 140_000, r: 33, label: 'Grace' }] },
+  ],
+}
+```
+
+## Horizontal bars
+
+`orientation: 'horizontal'` swaps the axes: categories run down the left, bars
+grow rightward. It suits long category labels (rep names, product names) that
+would otherwise crowd / rotate on a vertical x-axis. Grouped, stacked, 100%,
+data labels, and reference lines (which become vertical) all work. Only applies
+when every series is a bar - combo / line / area fall back to vertical.
+
+```ts
+const spec: ChartSpec = {
+  type: 'bar', orientation: 'horizontal',
+  categories: ['Ada', 'Grace', 'Margaret', 'Linus'],
+  series: [{ label: 'Revenue', values: [120, 90, 140, 80] }],
+  referenceLines: [{ value: 110, label: 'Avg' }],   // drawn as a vertical line
+}
+```
+
+## Time axis
+
+`xType: 'time'` treats `categories` as dates: x positions are spaced by actual
+time (irregular gaps render proportionally, not evenly) and the axis shows real
+date ticks. Works with line / area / bar.
+
+```ts
+rowsToChartSpec(rows, { type: 'line', category: 'date', value: 'sessions', series: 'channel' })
+// then: spec.xType = 'time'
+```
+
+## Interactivity
+
+`SvGridChart` is interactive by default:
+
+- **Unified tooltip + crosshair** - hovering a category column shows a vertical
+  crosshair and a single tooltip listing **every** series' value at that
+  category (with color swatches), so multi-series and combo charts read at a
+  glance. Pie slices keep a per-slice tooltip.
+- **Legend toggle + isolate** - clicking a legend chip hides/shows that series
+  (or pie slice); **double-clicking** isolates it (shows only that one, click
+  again to restore). Hovering a chip dims the others. The chart re-scales to
+  the visible data; colors stay stable.
+- **Scatter tooltip** - hovering a bubble shows its x / y (and label).
+- **Legend overflow** - a wide pivot (many series) collapses the legend to the
+  first 10 chips with a "+N more" toggle, so it never floods the chart.
+- **Data labels** - `dataLabels` draws the value on each bar / point / slice.
+- **Drill-down** - `onSelect({ category, series, value })` fires when a bar /
+  point / slice is clicked. Wire it to `api.setFacetFilter(...)` to filter the
+  grid to the clicked category - the "click the chart to drill the grid" loop.
+
+```svelte
+<SvGridChart {spec}
+  dataLabels                                  // value labels on each element
+  formatValue={(v) => `$${compact(v)}`}       // tooltips, labels, AND Y-axis ticks
+  onSelect={(s) => api.setFacetFilter('region', [s.category])} // drill the grid
+  legend={true}                               // clickable legend; default true
+  interactive={false}                         // opt out of tooltips + toggling
+/>
+```
+
+`formatValue` is applied to tooltips, data labels, **and the Y-axis ticks**, so
+they stay consistent - keep it compact (e.g. `$2M`, not `$2,000,000`).
+
+## Export
+
+Download the rendered chart as a standalone SVG or a PNG. Pass the chart's
+wrapper element (or its `<svg>`):
+
+```svelte
+<div bind:this={chartEl}><SvGridChart {spec} /></div>
+
+<button onclick={() => downloadChartSvg(chartEl, 'chart.svg')}>SVG</button>
+<button onclick={() => downloadChartPng(chartEl, 'chart.png', { scale: 2 })}>PNG</button>
+```
+
+`chartToSvgString` / `chartToPngBlob` return the data if you want to upload it
+instead. The export inlines the live theme colors, so it matches what's on
+screen.
+
+## Notes
+
+- Pure SVG - no canvas, no dependency, SSR-safe, and it inherits the grid's
+  `--sg-*` theme tokens.
+- **Accessible** - every chart renders a visually-hidden `<table>` of the same
+  data, wired to the SVG via `aria-describedby`, so screen readers get the
+  numbers, not just "chart".
+- For a richer charting stack (zoom, tooltips, dozens of types) you can still
+  pipe `getDisplayedRows()` into Chart.js or a web component - see demos
+  `73-chartjs-sync` and `77-smart-chart`. `SvGridChart` is the
+  batteries-included option.
+
+See the live [Integrated charts](https://sv-grid.com/demos/147-integrated-charts)
+demo, or the [Chart wizard panel](https://sv-grid.com/demos/152-chart-wizard) -
+a pick-a-chart dialog whose type-gallery thumbnails are themselves live
+`SvGridChart` previews.
+
+<!-- =================================================================
+     /help/collaboration  (community)
+     ================================================================== -->
+
+# Real-time collaboration
+
+Two people (or two AI agents) on the same grid: **presence** (who's here and
+where their cursor is) and **live edits** (a change in one client appears in
+every other). SvGrid packages this as a headless controller over a pluggable
+transport - the only infrastructure-specific piece.
+
+```ts
+import { createCollaboration, broadcastChannelTransport } from 'sv-grid-community'
+
+const collab = createCollaboration({
+  user: { id: myId, name: 'Ada', color: '#ef4444' },
+  transport: broadcastChannelTransport('my-grid-room'),
+  onPeersChange: (peers) => renderCursors(peers),
+  onRemoteEdit: ({ rowId, columnId, value }) => applyEdit(rowId, columnId, value),
+})
+```
+
+Wire it to the grid:
+
+```svelte
+<SvGrid {data} {columns} editable getRowId={(r) => r.id}
+  onActiveCellChange={(c) => collab.setCell({ rowId: data[c.rowIndex].id, columnId: c.columnId })}
+  onCellValueChange={(e) => collab.sendEdit(data[e.rowIndex].id, e.columnId, e.newValue)} />
+```
+
+## The transport
+
+The controller is transport-agnostic. It ships with one adapter:
+
+- **`broadcastChannelTransport(name)`** - syncs across tabs of the same
+  browser with **zero backend**. Great for demos and single-user multi-tab.
+
+For cross-machine collaboration implement `CollabTransport` (a `post(msg)` +
+`subscribe(handler)` pair) over a WebSocket, WebRTC datachannel, or a CRDT
+library:
+
+```ts
+const wsTransport: CollabTransport = {
+  post: (msg) => socket.send(JSON.stringify(msg)),
+  subscribe: (h) => { const l = (e) => h(JSON.parse(e.data)); socket.addEventListener('message', l); return () => socket.removeEventListener('message', l) },
+}
+```
+
+## The controller API
+
+| Method                      | Does                                            |
+| --------------------------- | ----------------------------------------------- |
+| `setCell(cell \| null)`     | Broadcast where your cursor is.                 |
+| `sendEdit(rowId, col, val)` | Broadcast a cell edit.                          |
+| `peers()`                   | Present peers (excludes you), with their cursor.|
+| `dispose()`                 | Announce leave + tear down (call on unmount).   |
+
+`onPeersChange` fires whenever the peer set or any cursor moves; `onRemoteEdit`
+fires for edits from **other** users only (never echoes your own).
+
+## Notes
+
+- Presence is heartbeat-pruned: a peer that closes its tab without a clean
+  `bye` is dropped after `peerTimeoutMs` (default 15s).
+- Edits are last-writer-wins at the cell level. For conflict-free merging on a
+  busy doc, back the transport with a CRDT; the controller doesn't assume one.
+- This is also the **multi-agent** substrate: an AI agent is just another peer
+  posting `edit` messages - drive `sendEdit` from your agent loop.
+
+See the live [Real-time collaboration](https://sv-grid.com/demos/149-realtime-collaboration)
+demo (open it in two tabs).
 
 <!-- =================================================================
      /help/columns-hierarchy  (community)
@@ -6299,6 +6802,42 @@ a "select all" checkbox in a leading column.
 ## See also
 
 - [Cell components](../cells/cell-components.md) - same API on the body side.
+
+<!-- =================================================================
+     /help/columns/tool-panel  (community)
+     ================================================================== -->
+
+# Columns tool panel
+
+The tool panel is the docked sidebar - standard in enterprise grids - for
+managing columns without hunting through a right-click menu. Turn it on with
+the `toolPanel` prop:
+
+```svelte
+<SvGrid {data} {columns} {features} toolPanel />
+```
+
+A columns button appears at the grid's top-right. Clicking it opens a panel
+docked on the right edge with, for every column:
+
+- a **visibility** checkbox (show / hide the column),
+- **↑ / ↓** to reorder the column,
+- **⊞** to group / ungroup by that column (when grouping is enabled).
+
+## Notes
+
+- The panel lists **all** columns, including hidden ones, in the current
+  display order, so you can bring a hidden column back.
+- Visibility, order, and grouping changes go through the same engine state as
+  the column menu and the imperative API (`setColumnVisible`,
+  `setColumnOrder`, `setGroupBy`) - so they round-trip with `getState()` /
+  `setState()` and [named views](../state/named-views.md).
+- Grouping a column whose other columns declare an
+  [`aggregate`](../grouping/aggregators.md) rolls those values up in the group
+  header automatically.
+
+See the live [Columns tool panel](https://sv-grid.com/demos/146-tool-panel)
+demo.
 
 <!-- =================================================================
      /help/columns/updating-definitions  (community)
@@ -9518,6 +10057,84 @@ field across the column axis with nested headers - that is the `sv-grid-pro`
 pivot model. See [Pivot tables](./pivot.md) for the column-axis version.
 
 <!-- =================================================================
+     /help/grouping/aggregators  (community)
+     ================================================================== -->
+
+# Group aggregators
+
+When grouping is active, each group row can show a rolled-up value per column -
+the sum of revenue, the average score, the count of deals. SvGrid does this
+declaratively: set `aggregate` on a column and the group header shows the
+result, formatted with that column's own `format`.
+
+```svelte
+<script lang="ts">
+  import { SvGrid, tableFeatures, columnGroupingFeature, type ColumnDef } from 'sv-grid-community'
+
+  const features = tableFeatures({ columnGroupingFeature })
+
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { field: 'region', header: 'Region' },
+    { field: 'revenue', header: 'Revenue', aggregate: 'sum', format: { type: 'currency', currency: 'USD' } },
+    { field: 'winRate', header: 'Win rate', aggregate: 'avg', format: { type: 'percent' } },
+  ]
+</script>
+
+<SvGrid {data} {columns} {features} groupable />
+```
+
+## Built-in reducers
+
+| `aggregate`       | Result                                              |
+| ----------------- | --------------------------------------------------- |
+| `'sum'`           | Sum of the finite numeric values.                   |
+| `'avg'`           | Mean of the finite numeric values.                  |
+| `'min'` / `'max'` | Smallest / largest value.                           |
+| `'count'`         | Number of leaf rows in the group.                   |
+| `'countDistinct'` | Number of distinct values.                          |
+| `'extent'`        | `"min – max"` range string.                         |
+| `'first'`         | The first leaf row's value (e.g. a shared label).   |
+
+Non-numeric and empty cells are ignored by the numeric reducers; an all-empty
+group yields no value (the header chip is hidden).
+
+## Custom aggregators
+
+Pass a function for anything the built-ins don't cover - weighted average,
+median, percentile, distinct-with-rules. It receives the finite numeric values
+and the raw leaf rows:
+
+```ts
+const median = (vals: number[]) =>
+  vals.length ? [...vals].sort((a, b) => a - b)[Math.floor(vals.length / 2)] : 0
+
+const columns = [
+  { field: 'score', header: 'Median score', aggregate: median },
+  // weighted average using two columns off the raw rows:
+  {
+    field: 'rate',
+    header: 'Blended rate',
+    aggregate: (_vals, rows: Row[]) => {
+      const w = rows.reduce((s, r) => s + r.weight, 0)
+      return w ? rows.reduce((s, r) => s + r.rate * r.weight, 0) / w : 0
+    },
+  },
+]
+```
+
+## Notes
+
+- Aggregates roll up **all leaf rows** under a group, at every nesting level.
+- The aggregated value is stored on the group row, so
+  `api.getDisplayedRows()` and `row.getCellValueByColumnId(id)` return it too -
+  handy for exporting group totals.
+- The reducer is exported as `applyGroupAggregate(agg, columnId, rows)` for
+  reuse outside the grid.
+
+See the live [Group aggregators](https://sv-grid.com/demos/142-group-aggregators)
+demo.
+
+<!-- =================================================================
      /help/i18n-rtl  (community)
      ================================================================== -->
 
@@ -12227,13 +12844,13 @@ features.
 # Migrating from SVAR Svelte DataGrid
 
 SVAR Svelte DataGrid (`wx-svelte-grid`) is, like SvGrid, an actual
-Svelte-native grid rather than a wrapper. Because both are
-component-first with array-of-object column definitions, a port is
-mostly a configuration translation. The two decisions that usually
-drive the switch are **licensing** (SVAR is offered under GPL with a
-separate commercial license; SvGrid's community core is MIT) and
-**architecture** (SvGrid also exposes a headless engine and an MCP
-server).
+Svelte-native grid rather than a wrapper, and both are MIT-licensed and
+free for commercial use. Because both are component-first with
+array-of-object column definitions, a port is mostly a configuration
+translation. The reasons people switch are **capability** (SvGrid adds
+row grouping with aggregation, master-detail, Excel-style cell-range
+selection, integrated charts, and pivot) and **architecture** (SvGrid
+also exposes a headless engine and an MCP server).
 
 > Estimated effort: **2-4 hours** per grid - a prop and event rename
 > pass, plus re-theming.
@@ -12285,20 +12902,22 @@ server).
 
 ## Licensing note
 
-SVAR components are distributed under GPLv3 with a separate commercial
-license. If you ship a closed-source product, that means either
-complying with the GPL or buying a commercial license. SvGrid's
-`sv-grid-community` core is MIT - free for commercial, closed-source use
-- and the optional `sv-grid-pro` pack is the only paid piece. Confirm
-the current SVAR terms against their site before you decide.
+Both grids are MIT and free for commercial use, so licensing is not the
+deciding factor. The difference is monetization: SVAR keeps the whole
+grid free (including CSV export and print) and sells its Gantt instead,
+whereas SvGrid's `sv-grid-community` core is MIT and the optional
+`sv-grid-pro` pack (advanced XLSX/PDF export, pivot, import, AI, support)
+is the paid piece. If all you need is CSV export, SVAR gives it free; if
+you need pivot, advanced export, or a support SLA, that is Pro on SvGrid.
 
 ## What you get with SvGrid
 
-- An **MIT community core** with no copyleft obligations.
+- **Row grouping with aggregation**, **master-detail**, **pinned rows**,
+  and left/right column freezing - beyond SVAR's documented surface.
 - A **headless engine** (`createSvGrid` + row models) in addition to the
   component, if you want to compose your own layer.
-- **Excel-style filter menu**, **cell-range selection + TSV copy**, and a
-  documented **imperative API**.
+- **Excel-style filter menu**, **cell-range selection + TSV copy**, a
+  **fill handle**, **integrated charts**, and a documented **imperative API**.
 - **sv-grid-mcp** so AI assistants answer accurately about your grid.
 
 ## What to check on the SVAR side
@@ -12318,10 +12937,11 @@ the current SVAR terms against their site before you decide.
 
 ### Why move from SVAR Svelte DataGrid to SvGrid?
 
-The usual reasons are licensing and architecture: SvGrid's core is MIT (no GPL
-obligations for closed-source apps), and it ships a headless engine plus an MCP
-server alongside the component. Both are genuinely Svelte-native, so the grid
-behaviour is comparable.
+Capability and architecture, not licensing (both are MIT). SvGrid adds row
+grouping with aggregation, master-detail, Excel-style cell-range selection,
+integrated charts, and pivot, and it ships a headless engine plus an MCP server
+alongside the component. Both are genuinely Svelte-native, so the core grid
+behaviour is comparable; SvGrid simply reaches further.
 
 ### Is the migration a rewrite?
 
@@ -12329,10 +12949,12 @@ No. Both are component-first with array-of-object columns, so it is mostly a
 prop / event rename pass (`id` → `field`, edit events → `onCellValueChange`)
 plus re-theming through `--sg-*` tokens.
 
-### Is SvGrid GPL like SVAR?
+### Are SvGrid and SVAR both free and MIT?
 
-No. `sv-grid-community` is MIT-licensed and free for commercial, closed-source
-use. Only the optional `sv-grid-pro` add-on is commercially licensed.
+Yes. `sv-grid-community` and the SVAR DataGrid are both MIT and free for
+commercial, closed-source use. SVAR keeps the whole grid free and monetizes its
+Gantt; on SvGrid, only the optional `sv-grid-pro` add-on (advanced export,
+pivot, import, AI, support) is paid.
 
 <!-- =================================================================
      /help/migrating-from-svelte-headless-table  (community)
@@ -15562,6 +16184,72 @@ The gallery defines these tokens - override at `:root` or on the grid host:
 - [Custom cells](../cells/cell-components.md)
 
 <!-- =================================================================
+     /help/rows/transactions  (community)
+     ================================================================== -->
+
+# Transactions
+
+`api.applyTransaction({ add, update, remove })` applies a batch of row
+mutations in a **single** data update - one re-render for the whole batch,
+not one per row. It's the path to use for high-frequency / streaming feeds
+(WebSocket deltas, tick data) where calling `addRow` / `setCellValue` per row
+would thrash.
+
+```ts
+const result = api.applyTransaction({
+  add:    [newOrder],                          // appended
+  update: [{ ...order, price: nextPrice }],    // matched by id
+  remove: ['ORD-1001', staleRowRef],           // by id OR row reference
+})
+// result -> { added: 1, updated: 1, removed: 2 }
+```
+
+## Matching
+
+- **`add`** - rows are appended to the data.
+- **`update`** - each row is matched to an existing row by **id**, then
+  replaced. Set `getRowId` so the grid can compute ids; without it, updates
+  can't be matched.
+- **`remove`** - accepts row **ids** (needs `getRowId`) and/or row **object
+  references** (always works). Unknown ids are silently ignored.
+
+The call returns the counts actually applied, so you can log or reconcile.
+
+## Why batch
+
+Each `applyTransaction` produces exactly one new data array and therefore one
+reactive update, regardless of how many rows changed. On a live feed that
+emits dozens of deltas per second, batching them per animation frame (or per
+WebSocket message) keeps the grid smooth where per-row calls would not.
+
+```ts
+// buffer deltas, flush once per frame
+let buffer: Delta[] = []
+socket.onmessage = (e) => { buffer.push(JSON.parse(e.data)); schedule() }
+
+function schedule() {
+  requestAnimationFrame(() => {
+    api.applyTransaction({
+      add:    buffer.filter((d) => d.type === 'add').map((d) => d.row),
+      update: buffer.filter((d) => d.type === 'update').map((d) => d.row),
+      remove: buffer.filter((d) => d.type === 'remove').map((d) => d.id),
+    })
+    buffer = []
+  })
+}
+```
+
+## Notes
+
+- The grid owns its data after mount; read the current rows back with
+  `api.getData()` (which reflects applied transactions).
+- Selection, expansion, and edit state keyed by `getRowId` survive a
+  transaction - that's the point of a stable row id.
+
+See the live [Transaction API](https://sv-grid.com/demos/145-transaction-api)
+demo.
+
+<!-- =================================================================
      /help/rows/tree-rows  (community)
      ================================================================== -->
 
@@ -16520,6 +17208,90 @@ consumes rows, so you can back it with REST, GraphQL, or TanStack Query. See the
 related recipes for worked examples.
 
 <!-- =================================================================
+     /help/server/server-row-model  (community)
+     ================================================================== -->
+
+# Server-Side Row Model (SSRM)
+
+When the data lives on the server - millions of rows in a database - the grid
+should hold only the page on screen and push sorting, filtering, and paging to
+the backend. SvGrid packages this as **one datasource contract**: you implement
+a single async `getRows`, and `createServerDataSource` owns the rest.
+
+```ts
+import { createServerDataSource, type ServerDataSource } from 'sv-grid-community'
+
+const source: ServerDataSource<Row> = {
+  async getRows({ startRow, endRow, sortModel, filterModel }) {
+    const res = await fetch('/api/rows', {
+      method: 'POST',
+      body: JSON.stringify({ startRow, endRow, sortModel, filterModel }),
+    })
+    const { rows, total } = await res.json()
+    return { rows, rowCount: total }
+  },
+}
+
+let s = $state(/* initial ServerState */)
+const ctl = createServerDataSource(source, { pageSize: 50, onChange: (next) => (s = next) })
+ctl.refresh()
+```
+
+## Wiring to the grid
+
+Run the grid in **controlled** mode - it records sort/filter UI state but
+doesn't reorder/slice the data itself (the server already did) - and feed it
+the controller's current page:
+
+```svelte
+<SvGrid
+  data={s.rows}
+  {columns} {features}
+  sortable filterable
+  externalSort externalFilter
+  loading={s.loading}
+  pageable={false}
+  onSortingChange={(sorting) => ctl.setSort(sorting)}
+  onFiltersChange={(f) => ctl.setFilter({ global: f.global, columns: toColumnModel(f.columns) })}
+/>
+<!-- your pager drives ctl.setPage(...) from s.pageIndex / s.pageCount -->
+```
+
+## The controller
+
+`createServerDataSource(source, { pageSize, onChange })` returns:
+
+| Method            | Does                                            |
+| ----------------- | ----------------------------------------------- |
+| `refresh()`       | Re-fetch the current page (after a mutation).   |
+| `setSort(model)`  | New sort, jump to page 0, fetch.                |
+| `setFilter(model)`| New filter, jump to page 0, fetch.             |
+| `setPage(i)`      | Fetch page `i`.                                 |
+| `setPageSize(n)`  | New page size, page 0, fetch.                   |
+| `getState()`      | Current `{ rows, total, loading, pageIndex, pageCount, ... }`. |
+| `dispose()`       | Stop accepting responses (call on unmount).     |
+
+`onChange` fires on every state transition (including `loading: true` before a
+fetch and `loading: false` after) so the UI tracks in-flight requests.
+
+## Race safety
+
+Each fetch carries a monotonic id; only the **latest** request is allowed to
+land. A slow response for an old sort/filter can't clobber a newer one - the
+classic SSRM bug, handled for you. `dispose()` drops everything in flight.
+
+## Notes
+
+- The `ServerRequest` carries `startRow` / `endRow` (block bounds),
+  `pageIndex` / `pageSize`, plus `sortModel` and `filterModel` - map these to
+  your `ORDER BY` / `WHERE` / `LIMIT`.
+- This is the **controlled** building block; pair it with optimistic updates
+  (demo 115) or `applyTransaction` for writes.
+
+See the live [Server-Side Row Model](https://sv-grid.com/demos/148-server-row-model)
+demo.
+
+<!-- =================================================================
      /help/spreadsheet-formulas  (community)
      ================================================================== -->
 
@@ -17095,6 +17867,121 @@ that any storage backend accepts.
 - [Architecture](./architecture.md) - which slices live where.
 - [Demo #55 State maintenance](https://svgrid.com/#/demos/55-state-maintenance)
   - the reference implementation.
+
+<!-- =================================================================
+     /help/state/named-views  (community)
+     ================================================================== -->
+
+# Named views
+
+A "view" is a saved snapshot of the grid's state - sort, filters, column
+order/width/visibility, page, grouping. Named views let a user save the layout
+they like and switch between them. SvGrid ships this as a small manager over
+the grid's `getState()` / `setState()`, with pluggable storage.
+
+```svelte
+<script lang="ts">
+  import { SvGrid, createNamedViews, localStorageViews, type SvGridApi } from 'sv-grid-community'
+
+  let views: ReturnType<typeof createNamedViews> | null = null
+
+  function onApiReady(api: SvGridApi<F, Row>) {
+    views = createNamedViews(api, { storage: localStorageViews('my-grid-views') })
+  }
+</script>
+
+<SvGrid {data} {columns} {features} onApiReady={onApiReady} />
+
+<button onclick={() => views?.save('Top earners')}>Save</button>
+<button onclick={() => views?.load('Top earners')}>Restore</button>
+```
+
+## The manager API
+
+`createNamedViews(api, { storage })` returns:
+
+| Method            | Does                                                       |
+| ----------------- | ---------------------------------------------------------- |
+| `list()`          | All saved views, oldest first.                             |
+| `save(name)`      | Capture the current state under `name` (overwrites a dup). |
+| `load(name)`      | Apply a saved view. Returns `false` if unknown.            |
+| `remove(name)`    | Delete a view. Returns `false` if unknown.                 |
+| `rename(a, b)`    | Rename, unless `b` already exists.                         |
+| `has(name)`       | Whether a view exists.                                     |
+
+It's pure and synchronous - all persistence goes through the storage adapter.
+
+## Storage adapters
+
+- **`localStorageViews(key)`** - persists per browser. SSR-safe (no-ops when
+  `localStorage` is unavailable).
+- **`memoryViews()`** - in-memory only (the default if you pass no storage).
+- **Custom** - implement `ViewStorage` (`read()` / `write(views)`) to sync
+  views to a server or a per-user account:
+
+```ts
+const serverStorage: ViewStorage = {
+  read: () => cachedViews,
+  write: (views) => { cachedViews = views; fetch('/api/views', { method: 'PUT', body: JSON.stringify(views) }) },
+}
+createNamedViews(api, { storage: serverStorage })
+```
+
+## Notes
+
+- A view stores whatever `api.getState()` returns; restoring calls
+  `api.setState(view.state)`, which applies only the keys present.
+- This is the building block; the demo wires a simple save-box + chips UI on
+  top, but the manager is headless so you can render views however you like.
+
+See the live [Named views](https://sv-grid.com/demos/143-named-views) demo.
+
+<!-- =================================================================
+     /help/status-bar  (community)
+     ================================================================== -->
+
+# Status bar
+
+The status bar is the strip under the grid that shows live aggregates of the
+**selected cell range** - count, sum, average, min, max - the way Excel does at
+the bottom-right when you select a block of numbers.
+
+```svelte
+<SvGrid {data} {columns} {features} enableCellSelection statusBar />
+```
+
+It needs `enableCellSelection` (the bar aggregates the selected rectangle).
+Drag a range across numeric cells and the bar updates instantly.
+
+## Choosing aggregates
+
+`statusBar={true}` shows the default set (`count`, `sum`, `avg`, `min`, `max`).
+Pass an object to pick which:
+
+```svelte
+<SvGrid enableCellSelection statusBar={{ aggregates: ['count', 'sum', 'avg'] }} />
+```
+
+| Aggregate      | Meaning                                              |
+| -------------- | ---------------------------------------------------- |
+| `count`        | Cells in the selection (non-group).                  |
+| `numericCount` | How many of those hold a finite number.              |
+| `sum`          | Sum of the numeric cells.                            |
+| `avg`          | Mean of the numeric cells.                           |
+| `min` / `max`  | Smallest / largest numeric value.                    |
+
+## Behavior
+
+- The numeric aggregates (`sum`, `avg`, `min`, `max`) only appear when the
+  selection actually contains numbers - selecting text cells shows just the
+  count.
+- A single-cell selection shows nothing; the bar appears once a range of two
+  or more cells is selected.
+- Edited values are respected: the aggregates read the displayed value, so an
+  in-progress edit is reflected.
+- Group rows are skipped.
+
+See the live [Status bar](https://sv-grid.com/demos/144-status-bar) demo.
 
 <!-- =================================================================
      /help/tailwind  (community)
@@ -19041,6 +19928,225 @@ in the DOM regardless of how many products the grid holds.
 - [Recipes index](./index.md)
 
 <!-- =================================================================
+     /recipes/benchmark-harness  (community)
+     ================================================================== -->
+
+# Benchmark harness
+
+> Measure grid time-to-first-paint at every (row count × column count)
+> you care about. Run on your branch, your machine, your data shape.
+> Use the output to track regressions and to justify "this dataset
+> needs server-side pagination".
+
+## When
+
+You're answering:
+
+- "How slow does this get at 100k × 50?"
+- "Did my refactor regress paint time?"
+- "At what dataset size should I cut over to server-side pagination?"
+
+The same matrix runs in CI as a perf gate, and locally before a PR.
+
+## The harness
+
+The pattern: a tiny `<SvGrid>` mounted in an off-screen probe div,
+wrapped in `performance.now()` brackets. The probe unmounts between
+measurements so each cell starts from a clean state.
+
+```svelte
+<script lang="ts">
+  import {
+    SvGrid, tableFeatures,
+    rowSortingFeature, columnFilteringFeature, rowSelectionFeature,
+    type ColumnDef,
+  } from 'sv-grid-community'
+
+  const ROW_SIZES = [100, 1_000, 10_000, 50_000, 100_000] as const
+  const COL_SIZES = [5, 10, 20, 50] as const
+
+  type Cell = { rows: number; cols: number; ms: number | null }
+  const matrix = $state<Cell[][]>(ROW_SIZES.map((r) =>
+    COL_SIZES.map((c) => ({ rows: r, cols: c, ms: null })),
+  ))
+  let busy = $state(false)
+  let running = $state<{ r: number; c: number } | null>(null)
+
+  type Row = Record<string, unknown> & { __id: number }
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowSelectionFeature,
+  })
+
+  /** Deterministic seeded data so the same matrix is reproducible. */
+  function makeData(rows: number, cols: number) {
+    let prng = 0xABCDEF >>> 0
+    const rnd = () => (prng = (prng * 1664525 + 1013904223) >>> 0) / 0xFFFFFFFF
+    const columns: ColumnDef<typeof features, Row>[] = []
+    for (let i = 0; i < cols; i += 1)
+      columns.push({ field: `c${i}` as keyof Row & string, header: `Col ${i + 1}`, width: 100 })
+    const data: Row[] = new Array(rows)
+    for (let i = 0; i < rows; i += 1) {
+      const r: Row = { __id: i }
+      for (let j = 0; j < cols; j += 1) r[`c${j}`] = Math.round(rnd() * 10000)
+      data[i] = r
+    }
+    return { data, columns }
+  }
+
+  /** The off-screen probe. The grid mounts here for measurement. */
+  type Probe = { data: Row[]; columns: ColumnDef<typeof features, Row>[] } | null
+  let probe = $state<Probe>(null)
+
+  async function runOne(rIdx: number, cIdx: number) {
+    busy = true
+    running = { r: rIdx, c: cIdx }
+    matrix[rIdx]![cIdx]!.ms = null
+    probe = null
+    await new Promise((r) => requestAnimationFrame(() => r(null)))
+
+    const { rows, cols } = matrix[rIdx]![cIdx]!
+    // Generate data BEFORE the timer so the allocation doesn't
+    // pollute the time-to-paint number. Yield once after so the
+    // status-cell repaint doesn't get blocked by the alloc.
+    const { data, columns } = makeData(rows, cols)
+    await new Promise((r) => requestAnimationFrame(() => r(null)))
+
+    const t0 = performance.now()
+    probe = { data, columns }
+    // One rAF = first paint with the new grid mounted. That's
+    // "time to first paint".
+    await new Promise((r) => requestAnimationFrame(() => r(null)))
+    const t1 = performance.now()
+
+    matrix[rIdx]![cIdx]!.ms = Math.round((t1 - t0) * 10) / 10
+    running = null
+    busy = false
+  }
+
+  async function runAll() {
+    if (busy) return
+    busy = true
+    for (let r = 0; r < ROW_SIZES.length; r += 1)
+      for (let c = 0; c < COL_SIZES.length; c += 1)
+        await runOne(r, c)
+    busy = false
+  }
+
+  function heatColor(ms: number | null): string {
+    if (ms === null) return 'transparent'
+    if (ms < 16)   return 'rgba(34,197,94,0.45)'
+    if (ms < 50)   return 'rgba(132,204,22,0.55)'
+    if (ms < 100)  return 'rgba(245,158,11,0.55)'
+    if (ms < 250)  return 'rgba(249,115,22,0.65)'
+    return 'rgba(239,68,68,0.75)'
+  }
+</script>
+
+<button onclick={runAll} disabled={busy}>{busy ? 'Running…' : 'Run all'}</button>
+
+<table>
+  <thead>
+    <tr><th></th>
+      {#each COL_SIZES as c (c)}<th>{c} cols</th>{/each}
+    </tr>
+  </thead>
+  <tbody>
+    {#each matrix as row, rIdx (rIdx)}
+      <tr>
+        <th>{ROW_SIZES[rIdx]?.toLocaleString()} rows</th>
+        {#each row as cell, cIdx (cIdx)}
+          <td style="background: {heatColor(cell.ms)}">
+            <button onclick={() => !busy && runOne(rIdx, cIdx)} disabled={busy}>
+              {cell.ms === null ? '-' : cell.ms < 10 ? cell.ms.toFixed(1) + ' ms' : Math.round(cell.ms) + ' ms'}
+            </button>
+          </td>
+        {/each}
+      </tr>
+    {/each}
+  </tbody>
+</table>
+
+<!-- The off-screen probe. Mount target for measured timing brackets. -->
+<div style="position: fixed; left: -9999px; top: -9999px; width: 800px; height: 400px; visibility: hidden;">
+  {#if probe}
+    <SvGrid
+      data={probe.data}
+      columns={probe.columns}
+      features={features}
+      showRowSelection={false}
+      showPagination={false}
+      enableInlineEditing={false}
+      enableCellSelection={false}
+      rowHeight={26}
+      containerHeight="400px"
+      fitColumns={false}
+    />
+  {/if}
+</div>
+```
+
+## What the timing actually captures
+
+- **`t0` is recorded JUST BEFORE** `probe = {...}` triggers a Svelte
+  re-render. Data allocation happened before `t0`, on purpose.
+- **`t1` is recorded AFTER one rAF.** The browser fires rAF callbacks
+  right before the paint, so by the time `t1` runs, the new grid is
+  mounted and its first frame is on screen.
+- The number is **time to first paint with this dataset mounted**, NOT
+  time to first interaction. Hovering and clicking happen on
+  subsequent frames; those are virtually free if the grid virtualises.
+
+The off-screen probe has `visibility: hidden` but real width / height
+so the browser still computes layout - paint cost is real.
+
+## Reading the matrix
+
+Suggested thresholds for an internal "is this still good?" gauge:
+
+| Size      | Healthy        | Server-side recommended above |
+| --------- | -------------- | ----------------------------- |
+| 100×5     | < 16 ms        | -                             |
+| 1k×10     | < 50 ms        | -                             |
+| 10k×20    | < 100 ms       | -                             |
+| 50k×20    | < 250 ms       | dataset > 50k                 |
+| 100k×50   | < 1 s          | absolutely yes                |
+
+If a "healthy" cell jumps red between branches, you regressed
+something - bisect with a smaller matrix.
+
+## Run in CI
+
+The same harness runs headless in Playwright. Mount the matrix page,
+click "Run all", read the cells, fail the job if any cell exceeds the
+threshold:
+
+```ts
+test('grid time-to-first-paint regression gate', async ({ page }) => {
+  await page.goto('/dev/stress-matrix')
+  await page.getByRole('button', { name: /Run all/ }).click()
+  await page.waitForFunction(() => !document.querySelector('button[disabled]'))
+  const cells = await page.locator('td button').allTextContents()
+  // Smoke-check: every cell now has a number, none are placeholders.
+  expect(cells.every((c) => /\d/.test(c))).toBe(true)
+  // Project-specific gates here:
+  //   expect(parseFloat(cells[0])).toBeLessThan(20)
+  //   ...
+})
+```
+
+## Demo
+
+The runnable companion: [Demo 134 - Stress matrix (gallery)](https://svgrid.com/#/demos/134-stress-matrix) - this harness wrapped in a page, ready to click on your machine.
+
+## See also
+
+- [Profiling with a FPS HUD](./profiling-with-fps-hud.md) - the matching live tool
+- [Bundle size reference](../reference/bundle-size.md) - the per-feature cost
+- [Million rows recipe](./million-rows.md) - the engineering for very large grids
+
+<!-- =================================================================
      /recipes/between-date-filter  (community)
      ================================================================== -->
 
@@ -19068,6 +20174,134 @@ page that explains the underlying feature in depth is linked from the
 - [Demo 64-filter-between-operator source](https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/64-filter-between-operator.svelte)
 - [Demo 64-filter-between-operator prompt sidecar](https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/prompts/64-filter-between-operator.md) - drop into an LLM context window
 - [Recipes index](./index.md)
+
+<!-- =================================================================
+     /recipes/build-a-feature-plugin  (community)
+     ================================================================== -->
+
+# Build your own feature plugin
+
+> The pattern: `tableFeatures()` is an open registry. Library features
+> (`rowSortingFeature`, `columnFilteringFeature`, ...) are nothing more
+> than objects with three hooks. Your own feature plugs into the same
+> surface.
+
+## When
+
+You want to inject behavior that applies to *every* row or column - a
+computed accent class, an audit fingerprint, an inline diff badge, a
+per-row policy gate - without forking the grid component or writing
+the same `cell:` boilerplate on every column def.
+
+## The contract
+
+A feature is an object with three optional hooks:
+
+```ts
+type TableFeature = {
+  /** Initial slice of state the engine merges into its store. */
+  getInitialState?: () => Record<string, unknown>
+  /** Default values for the options bag the consumer passes through. */
+  getDefaultOptions?: <TData>() => Record<string, unknown>
+  /** Runs once when the table is created. Wrap api methods here. */
+  createTable?: <TFeatures extends TableFeatures, TData extends RowData>(table: {
+    options: Record<string, unknown>
+    getRowModel: () => { rows: Array<{ original: TData }> }
+  }) => void
+}
+```
+
+Drop the unused hooks. A read-only decorator only needs `createTable`.
+
+## How
+
+This 25-line plugin writes a computed `__rowAccent` string onto every
+row in the row model. A user-supplied function decides the accent:
+
+```ts
+import { tableFeatures, rowSortingFeature, type RowData, type TableFeatures } from 'sv-grid-community'
+
+type RowAccentFn<TData extends RowData> = (row: TData) => string | undefined
+
+const rowAccentFeature = {
+  getInitialState: () => ({}),
+  getDefaultOptions: <TData extends RowData>() =>
+    ({ rowAccent: undefined as RowAccentFn<TData> | undefined }),
+  createTable: <TFeatures extends TableFeatures, TData extends RowData>(table: {
+    options: { rowAccent?: RowAccentFn<TData> }
+    getRowModel: () => { rows: Array<{ original: TData }> }
+  }) => {
+    // Wrap the row-model accessor so every row carries the computed
+    // accent. Cheap O(visibleRows) per render.
+    const orig = table.getRowModel.bind(table)
+    table.getRowModel = () => {
+      const model = orig()
+      const fn = table.options.rowAccent
+      if (!fn) return model
+      for (const row of model.rows) {
+        (row.original as Record<string, unknown>).__rowAccent =
+          fn(row.original as TData)
+      }
+      return model
+    }
+  },
+} as const
+```
+
+## Wire it up
+
+Register the feature and supply `rowClass` to surface the accent in CSS:
+
+```svelte
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+
+  type Deal = { company: string; health: number; __rowAccent?: string }
+
+  const features = tableFeatures({ rowSortingFeature, rowAccentFeature })
+  const deals: Deal[] = [/* ... */]
+
+  function rowAccent(d: Deal): string | undefined {
+    if (d.health >= 0.75) return 'good'
+    if (d.health <  0.40) return 'bad'
+    return 'warn'
+  }
+  function rowClass(ctx: { row: Deal; rowIndex: number }): string {
+    const a = rowAccent(ctx.row)
+    return a ? `accent-${a}` : ''
+  }
+</script>
+
+<SvGrid {features} {columns} data={deals} {rowClass} />
+
+<style>
+  /* rowClass lands on the <tr>; <td> cells paint their own bg over it,
+     so tint the cells via a descendant selector. */
+  :global(.accent-good td.sv-grid-cell) { background: rgba(34,197,94,0.14) !important; }
+  :global(.accent-warn td.sv-grid-cell) { background: rgba(245,158,11,0.16) !important; }
+  :global(.accent-bad  td.sv-grid-cell) { background: rgba(239,68,68,0.18) !important; }
+</style>
+```
+
+## Trade-offs
+
+- **`createTable` runs once.** Mutating row data inside `getRowModel`
+  works because the model is rebuilt on every state change - but it's a
+  side effect on the consumer's `TData`. Use `__`-prefixed keys so it
+  reads as a synthetic field, not a real one.
+- **Don't put expensive work in `createTable`.** It runs for every
+  feature in the registry on every table creation. Put expensive work
+  on the consumer's option (`rowAccent: (d) => ...`) where the consumer
+  controls the cost.
+- **No reactivity from the feature itself.** Reactivity comes from the
+  data the consumer hands the grid (Svelte 5 `$state`) - the feature is
+  pure transform.
+
+## See also
+
+- [Features reference](../reference/features.md) - the full registry contract
+- [Conditional row coloring recipe](./conditional-row-coloring.md) - same idea, no plugin
+- [Architecture overview](../help/architecture.md)
 
 <!-- =================================================================
      /recipes/bulk-edit-selected-rows  (community)
@@ -19257,6 +20491,141 @@ async function applyBulkAndPersist() {
   a fuller version with confirm + undo
 
 <!-- =================================================================
+     /recipes/cell-renderer-patterns  (community)
+     ================================================================== -->
+
+# Cell renderer patterns
+
+Every supported shape for the `cell:` slot on a `ColumnDef`, with the
+trade-offs for each.
+
+## The four shapes
+
+`cell:` accepts one of:
+
+| Shape                              | When to use                                                    |
+| ---------------------------------- | -------------------------------------------------------------- |
+| `string`                           | A literal placeholder ("TBD"). Rare.                           |
+| `(ctx) => string \| number`        | Computed text, no DOM control.                                 |
+| `(ctx) => renderSnippet(...)`      | Inline Svelte 5 snippet defined in the same file.              |
+| `(ctx) => renderComponent(...)`    | Mount a real Svelte component imported from another file.      |
+
+`ctx` is `{ row: Row<TData>, column, table, getValue }` - the same
+context TanStack-style tables emit. Everywhere below `ctx.row.original`
+is your `TData` row.
+
+## 1. Literal string
+
+```ts
+{ field: 'amount', header: 'Amount', cell: 'TBD' }
+```
+
+Used when bootstrapping. The cell renders the literal across every row.
+
+## 2. Computed function
+
+```ts
+{
+  field: 'amount', header: 'Amount', align: 'right',
+  cell: (ctx) => {
+    const n = ctx.row.original.amount
+    if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
+    if (n >= 1_000)     return `$${Math.round(n / 1_000)}k`
+    return `$${n}`
+  },
+}
+```
+
+Cheapest custom renderer. No DOM control - the grid wraps the return
+value in its own `<td>`. Use for formatted text, status acronyms,
+computed totals.
+
+For built-in formats (currency, percent, date, units) prefer the
+declarative [`format:`](../reference/ColumnDef.md#format) field - it
+runs through `Intl.NumberFormat` cached per locale.
+
+## 3. Inline snippet
+
+```svelte
+<script lang="ts">
+  import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+
+  type Sale = { amount: number; up: boolean }
+  const columns: ColumnDef<typeof features, Sale>[] = [
+    {
+      field: 'amount', header: 'Amount', align: 'right',
+      cell: (ctx) => renderSnippet(Pill, { sale: ctx.row.original }),
+    },
+  ]
+</script>
+
+{#snippet Pill(props: { sale: Sale })}
+  <span class="pill" class:up={props.sale.up} class:down={!props.sale.up}>
+    {props.sale.up ? '▲' : '▼'} ${props.sale.amount.toLocaleString()}
+  </span>
+{/snippet}
+
+<style>
+  :global(.pill.up)   { background: rgba(34,197,94,0.18);  color: #15803d; }
+  :global(.pill.down) { background: rgba(239,68,68,0.18);  color: #b91c1c; }
+</style>
+```
+
+The snippet is local to the component, with access to its scope. Best
+for one-off renderers that need DOM control but don't merit their own
+file. The styles need `:global` because the snippet renders into the
+grid's body, not the consumer's component subtree.
+
+## 4. Imported component
+
+```svelte
+<script lang="ts">
+  import { renderComponent } from 'sv-grid-community'
+  import BadgeCell from './BadgeCell.svelte'
+
+  const columns = [
+    {
+      field: 'amount', header: 'Amount',
+      cell: (ctx) => renderComponent(BadgeCell, {
+        label: `$${ctx.row.original.amount.toLocaleString()}`,
+        tone:  ctx.row.original.up ? 'good' : 'bad',
+      }),
+    },
+  ]
+</script>
+```
+
+```svelte
+<!-- BadgeCell.svelte -->
+<script lang="ts">
+  let { label, tone }: { label: string; tone: 'good' | 'bad' } = $props()
+</script>
+<span class="bc" class:good={tone === 'good'} class:bad={tone === 'bad'}>{label}</span>
+```
+
+Use when the renderer is reused across columns or grids, or when it
+carries its own non-trivial state.
+
+## Headers, footers, editors - same shapes
+
+The `header:` and `footer:` fields on `ColumnDef` accept the same four
+shapes - any function-valued header is rendered via the same path. So
+you can plug your own `<HeaderToolbar />` component without forking
+`<SvGrid>`.
+
+Custom inline editors use `cellEditor:` and follow the
+`(ctx) => renderSnippet(...)` pattern - see the [`84-editor-types`
+demo](https://svgrid.com/#/demos/84-editor-types).
+
+## See also
+
+- [Sparkline-cells recipe](./sparkline-cells.md) - a non-trivial component cell
+- [Heatmap-cells recipe](./heatmap-cells.md) - computed-function cell with conditional formatting
+- [Barcode-cells recipe](./barcode-cells.md) - real SVG rendered per row
+- [Conditional row coloring](./conditional-row-coloring.md) - styling without a custom renderer
+- [`<SvGrid>` reference](../reference/SvGrid.md) - `renderSnippet` / `renderComponent` helpers
+
+<!-- =================================================================
      /recipes/chartjs-sync  (community)
      ================================================================== -->
 
@@ -19394,6 +20763,156 @@ async function loadMore() {
 - [Real-time / streaming](../help/real-time.md) - if events arrive PUSHED instead of PULLED
 
 <!-- =================================================================
+     /recipes/custom-filter-functions  (community)
+     ================================================================== -->
+
+# Custom filter functions
+
+> Filter logic that the built-in `filterFns` (`includesString`,
+> `equals`, `between`, ...) doesn't cover - semver ranges, CIDR / IP
+> matching, fuzzy search, regex. The library doesn't expose a
+> per-column `filterFn` field; the pattern is **pre-filter the data
+> array** and hand the result to the grid.
+
+## When
+
+You need any of:
+
+- semver-range matching (`^2.4.0` → `2.4.7` but not `3.0.0`)
+- CIDR / IP subnet matching (`10.0.0.0/8` → `10.5.2.3`)
+- acronym / fuzzy matching (`rct` → `react` AND `redact`)
+- regex matching against a Tag column
+- score-based ranking by relevance, not just a boolean filter
+
+For exact-match, contains, range, and "in [list]" - prefer
+[`api.setFilter`](../reference/SvGridApi.md#setfilter) with a built-in
+operator.
+
+## The pattern
+
+Each filter is a pure `(value, spec) => boolean` function. Compose
+them in a `$derived` that filters the data array before it reaches
+`<SvGrid data={...}>`.
+
+```svelte
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from 'sv-grid-community'
+
+  type FilterFn = (value: unknown, filterValue: string) => boolean
+
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+
+  let services: Service[] = [/* ... */]
+  let semverSpec = $state('')
+  let cidrSpec   = $state('')
+  let fuzzySpec  = $state('')
+  let regexSpec  = $state('')
+
+  const filtered = $derived(
+    services.filter((s) =>
+      semverInRange(s.semver, semverSpec)
+      && cidrContainsIp(s.ip, cidrSpec)
+      && fuzzySubstring(s.id, fuzzySpec)
+      && regexMatch(s.tag, regexSpec)
+    ),
+  )
+</script>
+
+<SvGrid data={filtered} {columns} {features} />
+```
+
+The grid stays a plain consumer - all filters compose naturally and
+empty inputs are no-ops.
+
+## The four filter implementations
+
+### Semver in range
+
+```ts
+/** Matches simple "^x.y.z" (compatible) and "~x.y.z" (patch-only). */
+const semverInRange: FilterFn = (value, filterValue) => {
+  const v = String(value ?? '')
+  const spec = String(filterValue ?? '').trim()
+  if (!spec) return true
+  const parse = (s: string) =>
+    s.split('.').map((n) => parseInt(n, 10) || 0) as [number, number, number]
+  const op = spec[0]
+  const base = parse(spec.slice(op === '^' || op === '~' ? 1 : 0))
+  const cur  = parse(v)
+  if (op === '^') return cur[0] === base[0] &&
+    (cur[1] > base[1] || (cur[1] === base[1] && cur[2] >= base[2]))
+  if (op === '~') return cur[0] === base[0] && cur[1] === base[1] && cur[2] >= base[2]
+  return v === spec
+}
+```
+
+### CIDR contains IP
+
+```ts
+const cidrContainsIp: FilterFn = (value, filterValue) => {
+  const ip = String(value ?? '')
+  const cidr = String(filterValue ?? '').trim()
+  if (!cidr) return true
+  const [net, bitsStr] = cidr.split('/')
+  if (!net || !bitsStr) return false
+  const bits = parseInt(bitsStr, 10)
+  const toInt = (s: string) =>
+    s.split('.').reduce((a, b) => (a << 8) + (parseInt(b, 10) || 0), 0) >>> 0
+  const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0
+  return (toInt(ip) & mask) === (toInt(net) & mask)
+}
+```
+
+### Fuzzy substring (acronym OR contiguous)
+
+```ts
+const fuzzySubstring: FilterFn = (value, filterValue) => {
+  const hay = String(value ?? '').toLowerCase()
+  const needle = String(filterValue ?? '').toLowerCase().trim()
+  if (!needle) return true
+  if (hay.includes(needle)) return true
+  // Acronym: every needle char appears in hay in order.
+  let i = 0
+  for (const ch of hay) {
+    if (ch === needle[i]) i += 1
+    if (i === needle.length) return true
+  }
+  return false
+}
+```
+
+### Regex match
+
+```ts
+const regexMatch: FilterFn = (value, filterValue) => {
+  const v = String(value ?? '')
+  const pattern = String(filterValue ?? '').trim()
+  if (!pattern) return true
+  try { return new RegExp(pattern).test(v) }
+  catch { return false }
+}
+```
+
+## Performance notes
+
+- Pre-filtering on the consumer side runs **before** the grid's own
+  sort/group/page pipeline - so the engine sees fewer rows and does
+  less work.
+- For large datasets (>10k rows) keep filter functions allocation-free
+  - no `.map().filter()` chains inside a hot path. The four above are
+  all single-pass.
+- Debounce the input bindings if a filter is heavy. `bind:value` fires
+  every keystroke; wrap it in a `$derived` keyed off a debounced
+  `$state` mirror if needed.
+
+## See also
+
+- [Locale-aware filtering recipe](./external-search.md)
+- [Saved filter sets](./saved-filter-sets.md)
+- [Between-operator filters for date ranges](./between-date-filter.md)
+- [`SvGridApi.setFilter`](../reference/SvGridApi.md#setfilter) for built-in operator filters
+
+<!-- =================================================================
      /recipes/dependent-dropdowns  (community)
      ================================================================== -->
 
@@ -19519,6 +21038,371 @@ page that explains the underlying feature in depth is linked from the
 - [Recipes index](./index.md)
 
 <!-- =================================================================
+     /recipes/form-library-bridge  (community)
+     ================================================================== -->
+
+# Form library bridge
+
+> Drive grid edits from a form library - Felte, Superforms, Formsnap,
+> or a plain `<form>`. `api.setCellValue` is the single write surface;
+> any UI that funnels through it stays consistent with inline editing.
+
+## When
+
+You want the same row to be editable two ways:
+
+- **Inline** via the grid's built-in editors (commit on blur)
+- **Drawer / modal** via a form library with its own validation
+
+Both writers must update the SAME underlying data so users can edit
+either way and not lose work. Common in admin tools, CRMs, and audit
+queues where some fields are best inline (status pill) and others need
+a real form (long-text + validation + dependent dropdowns).
+
+## The pattern
+
+```
+┌──────────────────┐         setCellValue(idx, field, v)         ┌──────────┐
+│  Inline editor   │ ──────────────────────────────────────────► │  data[]  │
+└──────────────────┘                                             │  $state  │
+                                                                 │          │
+┌──────────────────┐         setCellValue(idx, field, v)         │          │
+│  Drawer <form>   │ ──────────────────────────────────────────► │          │
+└──────────────────┘                                             └──────────┘
+```
+
+Same write path. Same dirty tracking (count `onCellValueChange`
+events). Whatever lives in `data[]` is the truth.
+
+## Wire-up
+
+```svelte
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi } from 'sv-grid-community'
+
+  type Employee = { id: string; name: string; email: string; team: 'Eng' | 'Sales' | 'Ops'; salary: number; remote: boolean }
+  let employees = $state<Employee[]>([/* ... */])
+
+  const features = tableFeatures({ rowSortingFeature })
+  const columns = [
+    { field: 'id',     header: 'ID',     editable: false },
+    { field: 'name',   header: 'Name',   editorType: 'text' },
+    { field: 'email',  header: 'Email',  editorType: 'text' },
+    { field: 'team',   header: 'Team',   editorType: 'select',
+      editorOptions: ['Eng', 'Sales', 'Ops'].map((v) => ({ value: v })) },
+    { field: 'salary', header: 'Salary', editorType: 'number',
+      format: { type: 'currency', currency: 'USD' } },
+    { field: 'remote', header: 'Remote', editorType: 'checkbox' },
+  ] as const
+
+  let api = $state<SvGridApi<typeof features, Employee> | null>(null)
+  let selectedId = $state<string>('E001')
+  const selected = $derived(employees.find((e) => e.id === selectedId) ?? null)
+
+  // Draft state for the drawer form
+  type FormDraft = Omit<Employee, 'id'>
+  let draft = $state<FormDraft | null>(null)
+  let errors = $state<Partial<Record<keyof FormDraft, string>>>({})
+
+  $effect(() => {
+    if (selected) draft = { ...selected }
+    else          draft = null
+    errors = {}
+  })
+
+  function validate(d: FormDraft): Partial<Record<keyof FormDraft, string>> {
+    const out: Partial<Record<keyof FormDraft, string>> = {}
+    if (d.name.trim().length < 2) out.name = 'Name must be at least 2 characters'
+    if (!/^\S+@\S+\.\S+$/.test(d.email)) out.email = 'Looks unlike an email'
+    if (d.salary < 0 || d.salary > 10_000_000) out.salary = 'Salary out of range'
+    return out
+  }
+
+  function isDirty(): boolean {
+    if (!selected || !draft) return false
+    return (Object.keys(draft) as Array<keyof FormDraft>)
+      .some((k) => draft![k] !== selected[k])
+  }
+
+  function submit() {
+    if (!api || !selected || !draft) return
+    const e = validate(draft)
+    errors = e
+    if (Object.keys(e).length > 0) return
+    // setCellValue takes a rowIndex (number), not an id.
+    // In a real app, memoise this lookup.
+    const rowIndex = employees.findIndex((emp) => emp.id === selected.id)
+    if (rowIndex < 0) return
+    for (const k of Object.keys(draft) as Array<keyof FormDraft>) {
+      if (draft[k] !== selected[k]) {
+        api.setCellValue(rowIndex, k as string, draft[k] as unknown)
+      }
+    }
+  }
+
+  // Dirty-state count: increment on every cell change from EITHER UI.
+  let dirtyCount = $state(0)
+  function onCellChanged() { dirtyCount += 1 }
+</script>
+
+<SvGrid
+  data={employees}
+  {columns}
+  {features}
+  enableInlineEditing
+  getRowId={(r) => r.id}
+  onApiReady={(a) => (api = a)}
+  onCellValueChange={onCellChanged}
+/>
+
+{#if draft}
+  <form onsubmit={(e) => { e.preventDefault(); submit() }}>
+    <label>Name <input type="text" bind:value={draft.name} /></label>
+    {#if errors.name}<em>{errors.name}</em>{/if}
+    <label>Email <input type="email" bind:value={draft.email} /></label>
+    {#if errors.email}<em>{errors.email}</em>{/if}
+    <label>Salary <input type="number" bind:value={draft.salary} /></label>
+    <button type="submit" disabled={!isDirty()}>Save → setCellValue</button>
+  </form>
+{/if}
+```
+
+## Plugging Felte / Superforms
+
+Same pattern with the library's idiomatic surface:
+
+- **Felte**: bind the form to `draft`; the library handles validation.
+  In `onSubmit`, call `api.setCellValue` for each changed key.
+- **Superforms**: pass `selected` as the initial form data; on submit,
+  the validated `form.data` becomes the source of `setCellValue` calls.
+- **Formsnap**: a Superforms shape with built-in field components.
+  Same `onSubmit` plumbing.
+
+The library doesn't care which form library renders the inputs - the
+contract is just "after validation, call `api.setCellValue` per dirty
+field".
+
+## Tracking "dirty" across both UIs
+
+Two valid strategies:
+
+1. **Event count** (shown above) - simplest. Reset to 0 after a save.
+2. **Snapshot diff** - keep an initial copy of the data array;
+   `JSON.stringify(initial) !== JSON.stringify(api.getData())` is dirty.
+   More accurate, more expensive.
+
+Most apps want #1.
+
+## See also
+
+- [Side-drawer edit demo (97)](https://svgrid.com/#/demos/97-side-drawer-edit) - the slide-in pattern used as the form host
+- [Submit-time validation recipe](./submit-time-validation.md) - similar bulk-commit-then-validate pattern
+- [Undo / redo for grid edits](./undo-redo-edits.md) - layer history on top of the same `setCellValue` calls
+- [`SvGridApi.setCellValue`](../reference/SvGridApi.md#setcellvalue)
+
+<!-- =================================================================
+     /recipes/grid-state-inspector  (community)
+     ================================================================== -->
+
+# Grid state inspector
+
+> Mount a dev-only side panel that shows the live grid state - filters,
+> selection, active cell, column order, pinning, visibility - updated
+> every animation frame. The thing every dev wishes was always-on while
+> debugging.
+
+## When
+
+You're stuck on one of:
+
+- "Why isn't this filter narrowing the rows? Is it even applied?"
+- "Did the column reorder write into the api state?"
+- "What rowIndex is the active cell - so I can verify my onCellClick handler?"
+- "Selection looks broken - is it the api or the renderer?"
+
+Sticking `console.log(api.getXxx())` everywhere works once. A panel
+that polls every reader every frame answers all of these at once.
+
+## The contract
+
+The `SvGridApi` exposes a snapshot getter for every piece of public
+state you might care about:
+
+| Reader                  | What it returns                                           |
+| ----------------------- | --------------------------------------------------------- |
+| `getFilters()`          | Per-column operator-filter clauses                        |
+| `getSelectedRowIds()`   | Array of row ids currently selected                       |
+| `getSelected()`         | Cell selection ranges `[r0,c0,r1,c1][]`                   |
+| `getActiveCell()`       | The focused cell, or null                                 |
+| `getColumnOrder()`      | Column ids in current visual order                        |
+| `getColumnPinning()`    | `{ left: [], right: [] }`                                 |
+| `getColumns()`          | Every column with `id`, `header`, `visible`               |
+| `getDisplayedRows()`    | The post-pipeline visible rows                            |
+| `getData()`             | The pre-pipeline data array                               |
+
+Sort state is *event-driven only* (`onSortingChange`) - there is no
+`getSorting()` getter. The pattern below tracks it locally in the
+panel to fill the gap.
+
+## Implementation
+
+```svelte
+<script lang="ts">
+  import {
+    SvGrid, tableFeatures,
+    rowSortingFeature, columnFilteringFeature,
+    rowSelectionFeature, rowExpandingFeature,
+    type SvGridApi, type ColumnDef,
+  } from 'sv-grid-community'
+
+  type Row = { id: number; name: string; team: string; score: number; active: boolean }
+  const rows: Row[] = [/* ... */]
+
+  const features = tableFeatures({
+    rowSortingFeature, columnFilteringFeature,
+    rowSelectionFeature, rowExpandingFeature,
+  })
+  const columns: ColumnDef<typeof features, Row>[] = [/* ... */]
+
+  let api = $state<SvGridApi<typeof features, Row> | null>(null)
+
+  type Snapshot = {
+    filters: unknown
+    selectedRowIds: unknown
+    activeCell: unknown
+    columnOrder: unknown
+    columnPinning: unknown
+    columns: unknown
+    displayedRowCount: number
+    cellSelection: unknown
+  }
+  let snap = $state<Snapshot | null>(null)
+  let running = $state(true)
+
+  // Track sort locally - the api has no getSorting() reader.
+  let sortField = $state<string | null>(null)
+  let sortDesc  = $state(false)
+
+  $effect(() => {
+    if (!running) return
+    let raf = 0
+    function tick() {
+      if (api) {
+        snap = {
+          filters:           api.getFilters(),
+          selectedRowIds:    api.getSelectedRowIds(),
+          activeCell:        api.getActiveCell(),
+          columnOrder:       api.getColumnOrder(),
+          columnPinning:     api.getColumnPinning(),
+          columns:           api.getColumns().map((c) => ({
+            id: c.id, header: c.header, visible: c.visible,
+          })),
+          displayedRowCount: api.getDisplayedRows().length,
+          cellSelection:     api.getSelected(),
+        }
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  })
+
+  // "Click a leaf to mutate it back" - quick mutators that drive the
+  // grid api from the panel. Sort goes asc → desc → off.
+  function flipSort(field: string) {
+    if (!api) return
+    if (sortField === field) {
+      if (!sortDesc) { sortDesc = true; api.setSort(field, 'desc') }
+      else { sortField = null; api.clearSort() }
+    } else {
+      sortField = field; sortDesc = false
+      api.setSort(field, 'asc')
+    }
+  }
+  function clearAll() {
+    if (!api) return
+    api.clearSort()
+    api.clearAllFilters()
+    sortField = null; sortDesc = false
+  }
+</script>
+
+<button onclick={() => flipSort('score')}>Flip score sort</button>
+<button onclick={clearAll}>Clear</button>
+<button onclick={() => (running = !running)}>
+  {running ? '⏸ Pause' : '▶ Resume'}
+</button>
+
+<SvGrid
+  data={rows}
+  {columns}
+  {features}
+  enableCellSelection
+  onApiReady={(a) => (api = a)}
+/>
+
+<aside class="devtools">
+  <h3>Grid state · live</h3>
+  {#if snap}
+    {#each Object.entries(snap) as [k, v] (k)}
+      <section>
+        <span class="key">{k}</span>
+        <pre><code>{JSON.stringify(v, null, 2)}</code></pre>
+      </section>
+    {/each}
+  {/if}
+</aside>
+```
+
+## Polling vs subscribing
+
+This recipe polls every frame for simplicity - 16ms cadence, no
+subscriptions to manage. For most dev panels that's fine; the cost is
+a few JSON.stringify calls per frame.
+
+If you want event-driven instead, hook the grid's `on*` callbacks:
+
+```ts
+<SvGrid
+  ...
+  onSortingChange={(sorting) => log('sort', sorting)}
+  onFiltersChange={(filters) => log('filter', filters)}
+  onCellSelectionChange={(ranges) => log('cellsel', ranges)}
+  onColumnOrderChange={(order) => log('colorder', order)}
+/>
+```
+
+Event-driven catches every mutation without missing intermediate states
+that polling might skip over. Polling catches state changes that don't
+have a callback (e.g. the active cell moving via keyboard).
+
+A real devtools panel combines both: poll on rAF for the current
+snapshot, plus a separate event log seeded from the callbacks.
+
+## Don't ship to production
+
+Wrap behind an env flag:
+
+```svelte
+{#if import.meta.env.DEV || localStorage.getItem('svgrid:devtools') === 'on'}
+  <Devtools />
+{/if}
+```
+
+Polling every frame and serialising the whole snapshot is fine in dev,
+unnecessary in prod.
+
+## Demo
+
+The runnable companion: [Demo 135 - Devtools panel (gallery)](https://svgrid.com/#/demos/135-devtools-panel) - this panel running next to a real grid.
+
+## See also
+
+- [`SvGridApi` reference](../reference/SvGridApi.md) - every reader the panel calls
+- [Profiling with a FPS HUD](./profiling-with-fps-hud.md) - the perf-focused twin
+- [Headless engine reference](../reference/headless-engine.md) - skip the grid component entirely
+
+<!-- =================================================================
      /recipes/heatmap-cells  (community)
      ================================================================== -->
 
@@ -19616,6 +21500,16 @@ the [gallery](https://svgrid.com/#/demos).
 
 ### Framework interop
 - [Use SvGrid from React (custom-element bridge)](./use-svgrid-from-react.md)
+
+### Developer recipes
+- [Build your own feature plugin](./build-a-feature-plugin.md) - extend `tableFeatures()` with a row-accent or audit hook
+- [Cell renderer patterns](./cell-renderer-patterns.md) - string / fn / `renderSnippet` / `renderComponent`
+- [Custom filter functions](./custom-filter-functions.md) - semver, CIDR, fuzzy, regex
+- [Form library bridge](./form-library-bridge.md) - drive grid edits from Felte / Superforms / native `<form>`
+- [Testing your grid](./testing-your-grid.md) - Vitest unit, @testing-library/svelte, Playwright E2E
+- [Profiling with a FPS HUD](./profiling-with-fps-hud.md) - live FPS + frame budget + DOM row count
+- [Benchmark harness](./benchmark-harness.md) - measure paint time across (rows × cols) on your machine
+- [Grid state inspector](./grid-state-inspector.md) - dev-only side panel polling every public api reader
 
 ## See also
 
@@ -20042,6 +21936,164 @@ page that explains the underlying feature in depth is linked from the
 - [Recipes index](./index.md)
 
 <!-- =================================================================
+     /recipes/profiling-with-fps-hud  (community)
+     ================================================================== -->
+
+# Profiling with a live FPS HUD
+
+> Drop a tiny perf HUD next to any grid in development. Measures FPS,
+> last-frame budget, and live DOM row count - every animation frame.
+> Behind a dev-only flag in production.
+
+## When
+
+You're trying to figure out:
+
+- Why does sorting feel sluggish on this dataset?
+- Is the row virtualiser actually working - or am I rendering 10k DOM rows?
+- Which user action spikes my frame time over the 16.7ms budget?
+
+A reload-and-check-Lighthouse loop is too slow for that. A live HUD
+puts the numbers right next to the grid as you interact.
+
+## The pattern
+
+Three pieces:
+
+1. **A `requestAnimationFrame` loop** that measures the delta between
+   frames and pushes it onto a ring buffer.
+2. **A live readout** (FPS, last-frame ms, budget bar) bound to that buffer.
+3. **A DOM row counter** that queries `.sv-grid-row` to confirm
+   virtualisation is keeping the live row count bounded.
+
+## Implementation
+
+```svelte
+<script lang="ts">
+  /** Number of recent frames to average over. ~60 = 1s @ 60Hz. */
+  const WINDOW = 60
+  /** Length of the trace ring buffer. ~120 = 2s @ 60Hz. */
+  const TRACE_LEN = 120
+
+  let fps         = $state<number>(60)
+  let lastFrameMs = $state<number>(0)
+  let visibleRows = $state<number>(0)
+  let trace       = $state<number[]>(Array(TRACE_LEN).fill(0))
+  let running     = $state<boolean>(true)
+
+  $effect(() => {
+    if (!running) return
+    let last = performance.now()
+    const frameTimes: number[] = []
+    let raf = 0
+
+    function tick(now: number) {
+      const dt = now - last
+      last = now
+      lastFrameMs = Math.round(dt * 10) / 10
+      frameTimes.push(dt)
+      if (frameTimes.length > WINDOW) frameTimes.shift()
+
+      const avg = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length
+      fps = Math.round(1000 / avg)
+      trace = [...trace.slice(1), Math.min(40, dt)]
+
+      // Count actual rendered <tr>s. With virtualisation, this stays
+      // bounded regardless of dataset size.
+      const counted = document.querySelectorAll('.sv-grid-row').length
+      if (counted > 0) visibleRows = counted
+
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  })
+</script>
+
+{#if running}
+  <aside class="hud">
+    <div>FPS: <strong>{fps}</strong> / 60</div>
+    <div class:warn={lastFrameMs > 16.7} class:bad={lastFrameMs > 33.3}>
+      Frame: <strong>{lastFrameMs}</strong> ms
+    </div>
+    <div>DOM rows: <strong>{visibleRows}</strong></div>
+    <svg viewBox="0 0 480 40" preserveAspectRatio="none">
+      <!-- 16.7ms target line -->
+      <line x1="0" y1="22" x2="480" y2="22" stroke="#94a3b8" stroke-dasharray="2 2" />
+      <!-- Frame-time trace -->
+      <path d={trace.map((p, i) => `${i === 0 ? 'M' : 'L'}${i * (480 / (TRACE_LEN - 1))},${40 - (Math.min(p, 40) / 40) * 36 - 2}`).join(' ')}
+            fill="none" stroke="#6366f1" stroke-width="1.4" />
+    </svg>
+  </aside>
+{/if}
+```
+
+## Stress your own grid
+
+Wire toolbar buttons to spike the engine while you watch the trace:
+
+```svelte
+<script lang="ts">
+  let api = $state<SvGridApi<TF, TD> | null>(null)
+
+  function spamSort() {
+    if (!api) return
+    api.setSort('price', Math.random() > 0.5 ? 'desc' : 'asc')
+  }
+  function spamFilter() {
+    if (!api) return
+    const pick = ['AAPL', 'GOOG', 'NVDA', 'TSLA'][Math.floor(Math.random() * 4)]!
+    api.setFilter('sym', { operator: 'equals', value: pick })
+  }
+  function clearAll() {
+    if (!api) return
+    api.clearSort()
+    api.clearAllFilters()
+  }
+</script>
+```
+
+Each click should produce one visible spike on the trace. If a spike
+sustains over multiple frames, the work is too heavy for a single
+frame budget - move it off the main thread or memoise the inputs.
+
+## Reading the numbers
+
+| Metric          | Healthy        | Investigate                              |
+| --------------- | -------------- | ---------------------------------------- |
+| FPS             | ≥ 55           | < 30 during interaction = animation jank |
+| Frame time      | ≤ 16.7 ms      | > 33 ms = consistently missed frames     |
+| DOM rows        | < 100 always   | Growing with dataset = virtualiser off   |
+| Frame trace     | flat baseline  | Sustained plateau = synchronous work     |
+
+If DOM rows grows linearly with dataset size, double-check
+`svelteVirtualizer` is in your `tableFeatures` and `containerHeight`
+is bounded (not `auto`).
+
+## Shipping behind a flag
+
+Mount the HUD only when a dev flag is set:
+
+```svelte
+{#if import.meta.env.DEV && localStorage.getItem('svgrid:hud') === 'on'}
+  <FpsHud />
+{/if}
+```
+
+Toggle from the console: `localStorage.setItem('svgrid:hud', 'on')`.
+
+## Demo
+
+The runnable companion: [Demo 132 - Profiler dashboard (gallery)](https://svgrid.com/#/demos/132-profiler-dashboard) - drop this HUD around a 50,000-row grid and use the spam buttons.
+
+## See also
+
+- [Bundle size reference](../reference/bundle-size.md) - what each feature costs
+- [Benchmark harness recipe](./benchmark-harness.md) - measure across grid sizes
+- [Grid state inspector recipe](./grid-state-inspector.md) - the matching debug panel
+- [Million rows recipe](./million-rows.md) - virtualisation in anger
+
+<!-- =================================================================
      /recipes/role-based-editing  (community)
      ================================================================== -->
 
@@ -20355,6 +22407,105 @@ the time `onCellValueChange` fires - the mutation is fire-and-forget.
 If the server rejects the change, TanStack Query's refetch restores
 the canonical value.
 
+### Explicit rollback (no refetch)
+
+For lower-latency UX or when the server response carries the previous
+value, roll back manually instead of waiting for the next refetch. The
+pattern: capture the prior value before mutating, and on error call
+`api.setCellValue(rowIndex, columnId, priorValue)` to revert the cell.
+
+```ts
+const editMutation = createMutation({
+  mutationFn: async (e: { rowId: string; columnId: string; value: unknown }) => {
+    const res = await fetch(`/api/people/${e.rowId}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ [e.columnId]: e.value }),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  },
+  // Capture the prior cell value AND row index before the mutation
+  // runs - we'll need both to rollback on error.
+  onMutate: async (e) => {
+    const prior = api?.getCellValue(e.rowIndex, e.columnId)
+    return { prior, rowIndex: e.rowIndex, columnId: e.columnId }
+  },
+  onError: (_err, _vars, ctx) => {
+    if (api && ctx) api.setCellValue(ctx.rowIndex, ctx.columnId, ctx.prior)
+    // Surface the failure - a toast, an inline chip, etc.
+  },
+  onSuccess: () => qc.invalidateQueries({ queryKey: ['people'] }),
+})
+
+// In your <SvGrid onCellValueChange>:
+//   $editMutation.mutate({
+//     rowId: e.row.id, columnId: e.columnId,
+//     value: e.newValue, rowIndex: e.rowIndex,
+//   })
+```
+
+`api.setCellValue(rowIndex, ...)` takes the data-array index, not the
+row id. `onCellValueChange` provides both - capture `e.rowIndex` and
+hand it to the mutation context. This works for both inline editors
+AND any drawer / modal that funnels through `api.setCellValue` (see
+[Form library bridge recipe](./form-library-bridge.md)).
+
+## Visualising the query cache
+
+While debugging cache misses or unexpected refetches, a small side
+panel that lists every entry in the cache with its state is invaluable.
+The QueryClient exposes `getQueryCache().getAll()` for exactly this.
+
+```svelte
+<script lang="ts">
+  import { useQueryClient } from '@tanstack/svelte-query'
+
+  const qc = useQueryClient()
+
+  type Snap = { key: string; state: 'fetching' | 'fresh' | 'stale' | 'error' }
+  let cacheView = $state<Snap[]>([])
+
+  $effect(() => {
+    const cache = qc.getQueryCache()
+    const refresh = () => {
+      cacheView = cache.getAll().slice(0, 12).map((q) => ({
+        key: JSON.stringify(q.queryKey),
+        state:
+          q.state.fetchStatus === 'fetching' ? 'fetching'
+          : q.state.status === 'error'      ? 'error'
+          : q.state.isInvalidated           ? 'stale'
+          :                                   'fresh',
+      }))
+    }
+    const unsub = cache.subscribe(refresh)
+    refresh()
+    return unsub
+  })
+</script>
+
+<aside class="cache-panel">
+  <h3>Query cache · {cacheView.length} entries</h3>
+  <ul>
+    {#each cacheView as q (q.key)}
+      <li class="state-{q.state}">
+        <code>{q.key}</code>
+        <span>{q.state}</span>
+      </li>
+    {/each}
+  </ul>
+</aside>
+```
+
+The cache subscriber fires for every state transition - including
+optimistic mutations, error rollbacks, and the auto-invalidation from
+`invalidateQueries`. Pair this with the [grid state inspector](./grid-state-inspector.md)
+to debug edge cases where the grid and the cache disagree.
+
+For visual polish, color-code the rows by state: green for `fresh`,
+amber for `stale` / `fetching`, red for `error`. The page background
+of your devtools panel can use `rgba(99,102,241,0.06)` for an
+unobtrusive contrast.
+
 ## Notes
 
 - **The query key shape matters.** TanStack Query JSON-stringifies the
@@ -20508,6 +22659,164 @@ Live in [demo 71 (Submit-time validation)](https://svgrid.com/#/demos/71-submit-
 
 - [Validation while editing](../help/editing/validation.md) - per-keystroke variant
 - [Demo 24 (Validation)](https://svgrid.com/#/demos/24-validation) - rejecting bad values inline
+
+<!-- =================================================================
+     /recipes/testing-your-grid  (community)
+     ================================================================== -->
+
+# Testing your grid
+
+Three strategies for testing a grid in your app. Pick the strategy
+that matches the question you're answering.
+
+## TL;DR
+
+| Strategy            | Runner                            | Use for                                      | Cost           |
+| ------------------- | --------------------------------- | -------------------------------------------- | -------------- |
+| **Unit**            | Vitest                            | Reducer / aggregator / pivot logic           | < 1ms / test   |
+| **Component**       | @testing-library/svelte + jsdom   | Mount-time behavior, ARIA, custom renderers  | 5-25ms / test  |
+| **E2E**             | Playwright                        | Real browser, scrolling, downloads, screens  | 0.5-2s / test  |
+
+The repo ships all three: vitest config in
+`packages/sv-grid-community/vitest.config.ts`, component tests in
+`*.behavior.test.ts` files, Playwright specs in `examples/e2e/*.spec.ts`.
+
+## Strategy 1 - Vitest unit
+
+Mock no DOM. Drive the engine directly via `createSvGrid` and assert
+on the row model. Fastest, smallest blast radius - perfect for pure
+logic (aggregators, custom filter fns, pivot models).
+
+```ts
+import { describe, it, expect } from 'vitest'
+import {
+  createSvGrid,
+  createCoreRowModel,
+  createSortedRowModel,
+  tableFeatures,
+  rowSortingFeature,
+} from 'sv-grid-community'
+
+const features = tableFeatures({ rowSortingFeature })
+
+describe('row sorting', () => {
+  it('sorts rows desc on api call', () => {
+    type Row = { x: number }
+    const data: Row[] = [{ x: 1 }, { x: 3 }, { x: 2 }]
+    let sorting: Array<{ id: string; desc: boolean }> = []
+
+    const table = createSvGrid({
+      _features: features,
+      _rowModels: {
+        coreRowModel:   createCoreRowModel<Row>(),
+        sortedRowModel: createSortedRowModel<Row>(),
+      },
+      data,
+      columns: [{ field: 'x' }],
+      state: { sorting },
+      onSortingChange: (u) => {
+        sorting = typeof u === 'function' ? (u as (s: typeof sorting) => typeof sorting)(sorting) : u
+      },
+      enableSorting: true,
+    } as never)
+
+    table.setSorting([{ id: 'x', desc: true }])
+    const rows = table.getRowModel().rows.map((r) => (r.original as Row).x)
+    expect(rows).toEqual([3, 2, 1])
+  })
+})
+```
+
+Notes:
+- `_rowModels` must be passed explicitly when bypassing `<SvGrid>` -
+  the component wires them for you, the headless path doesn't.
+
+## Strategy 2 - Component (testing-library)
+
+Mount the real `<SvGrid>` component into jsdom. Assert on accessible
+names, roles, `aria-sort`, etc. This is where you catch
+regressions in custom cell renderers and headers.
+
+```ts
+import { describe, it, expect } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/svelte'
+import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+
+const features = tableFeatures({ rowSortingFeature })
+
+describe('<SvGrid> header', () => {
+  it('toggles aria-sort on column-header click', async () => {
+    const props = {
+      data: [{ x: 1 }, { x: 3 }, { x: 2 }],
+      columns: [{ field: 'x', header: 'X' }],
+      features,
+    }
+    render(SvGrid, props)
+    const header = screen.getByRole('columnheader', { name: /X/ })
+    expect(header).toHaveAttribute('aria-sort', 'none')
+    await fireEvent.click(header)
+    expect(header).toHaveAttribute('aria-sort', 'ascending')
+  })
+})
+```
+
+Notes:
+- jsdom doesn't implement `ResizeObserver` or layout - so virtualisation
+  numbers aren't realistic here. Component tests are about *behavior*,
+  not perf.
+- For ARIA assertions, lean on `@testing-library/jest-dom` matchers.
+
+## Strategy 3 - Playwright E2E
+
+Drive a real Chromium / WebKit / Firefox. Cover the things only a real
+browser does correctly: scrolling, downloads, screenshots, multi-tab.
+
+```ts
+import { test, expect } from '@playwright/test'
+
+test('large dataset paints the last row after scroll', async ({ page }) => {
+  await page.goto('/demos/06-large-dataset')
+  await expect(page.getByRole('grid')).toBeVisible()
+  await page.locator('.sv-grid-body').evaluate((el) => {
+    (el as HTMLElement).scrollTop = (el as HTMLElement).scrollHeight
+  })
+  await expect(page.getByText('Row 99999')).toBeVisible()
+  await page.screenshot({ path: 'large-dataset-bottom.png' })
+})
+
+test('export button downloads xlsx', async ({ page }) => {
+  await page.goto('/demos/21-export-and-print')
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: /Export Excel/ }).click(),
+  ])
+  expect(download.suggestedFilename()).toContain('.xlsx')
+})
+```
+
+Notes:
+- Run `npx playwright install` once to pull the browsers.
+- Use trace viewer (`--trace on`) when a test flakes - usually it's a
+  missing `await page.waitForLoadState('networkidle')`.
+
+## Picking by question
+
+| Question                                                          | Strategy   |
+| ----------------------------------------------------------------- | ---------- |
+| Does my custom `cell:` function return the right value?           | Unit       |
+| Does my `createPivotModel` config produce the right subtotals?    | Unit       |
+| Does clicking the header set `aria-sort`?                         | Component  |
+| Does my snippet render the badge for `status === 'overdue'`?      | Component  |
+| Does scroll-to-bottom paint the last row of 100k?                 | E2E        |
+| Does Export download an actual `.xlsx`?                           | E2E        |
+| Does the grid still look right on a real laptop in Safari?        | E2E        |
+
+## See also
+
+- [`packages/sv-grid-community/vitest.config.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-community/vitest.config.ts) - the live config
+- [`*.behavior.test.ts` files](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-community/src) - component-test examples
+- [`examples/e2e/`](https://github.com/sv-grid/sv-grid/tree/main/examples/e2e) - Playwright specs
+- [Architecture overview](../help/architecture.md) - what's headless vs what's rendered
 
 <!-- =================================================================
      /recipes/theme-matched-export  (community)
@@ -22551,6 +24860,89 @@ export function filterCollapsedPivotRows(
 ```
 
 <!-- =================================================================
+     /reference/bundle-size  (community)
+     ================================================================== -->
+
+# Bundle size
+
+What each feature costs in the final bundle, how to reproduce the
+numbers on your branch, and what to do if size matters.
+
+## Per-feature gzipped cost
+
+Numbers from a `rollup -p terser` production build against
+`packages/sv-grid-community/dist/`. Each feature is the marginal cost
+*above* the baseline core when imported alone.
+
+| Feature                       | gz kB  | Required? | Notes                                          |
+| ----------------------------- | -----: | --------- | ---------------------------------------------- |
+| **Baseline (engine + render)** | **9.2** | -        | `createSvGrid` + the `<SvGrid>` shell          |
+| `rowSortingFeature`           | 1.4    | recommended | Core to the value of a grid                  |
+| `columnFilteringFeature`      | 2.1    | recommended | Operator filters + the menu UI                |
+| `rowSelectionFeature`         | 1.0    | recommended | Checkbox + range + keyboard shift             |
+| `columnGroupingFeature`       | 1.8    | optional  | Group-by; tree-shaken if unused                |
+| `rowExpandingFeature`         | 1.5    | optional  | Tree + master-detail expansion                |
+| `columnPinningFeature`        | 0.9    | recommended | Pin-left / pin-right; sticky cells            |
+| `paginationFeature`           | 0.7    | recommended | Paginated row model                            |
+| `columnReorderFeature`        | 1.3    | optional  | Drag-to-reorder columns                        |
+| `excelFilters`                | 4.2    | optional  | Set-list + facet count + Excel-style menu     |
+| `cellEditing` (built-in)      | 5.8    | recommended | date / number / select / chips / etc.         |
+| `fillHandle`                  | 2.6    | optional  | Excel-style fill handle + pattern detector     |
+| `undoRedo`                    | 1.1    | optional  | Bounded 200-step history                       |
+| `columnVirtualizer`           | 1.6    | recommended | Windowed column rendering                      |
+| `svelteVirtualizer`           | 2.4    | recommended | Windowed row rendering                         |
+
+A typical app importing the recommended set ships **~28 kB gzipped**
+of grid code.
+
+## sv-grid-pro
+
+Pro pack (export + pivot + AI helpers + import + watermark) adds
+~26.4 kB gzipped. xlsx export pulls JSZip as a peer dep
+(~22 kB gzipped) on first call to `api.exportData({ format: 'xlsx' })`,
+not at module load.
+
+## Reproduce on your branch
+
+```bash
+# Build
+corepack pnpm --filter sv-grid-community build
+
+# Inspect the dist bundle
+npx source-map-explorer packages/sv-grid-community/dist/index.js
+```
+
+A treemap opens in your browser. Each block is a source file scaled by
+its byte cost in the final bundle. Hover a feature module to see how
+much of the total weight it owns.
+
+For a quick gzipped readout:
+
+```bash
+node -e "console.log((require('zlib').gzipSync(require('fs').readFileSync('packages/sv-grid-community/dist/index.js')).length / 1024).toFixed(1) + ' kB gz')"
+```
+
+## What to do if size matters
+
+1. **Skip the optional features you don't use.** Each item marked
+   `optional` in the table is fully tree-shaken when not imported.
+2. **Code-split the Pro pack.** `installPro(api)` is async-safe;
+   import it dynamically in the route that needs export, not at module
+   load: `const { installPro } = await import('sv-grid-pro')`.
+3. **Defer xlsx peer deps.** JSZip + pdfMake are imported on first
+   `api.exportData` call. They aren't part of the synchronous bundle.
+4. **Use the headless engine for read-only views.** When you only need
+   to display server-side data with no interaction, `createSvGrid` +
+   a 30-line `<table>` renderer saves the `<SvGrid>` shell entirely.
+   See the [headless engine reference](./headless-engine.md).
+
+## See also
+
+- [Features reference](./features.md) - what each feature does
+- [Headless engine reference](./headless-engine.md) - skip the renderer entirely
+- [Going to production guide](../getting-started/6-going-to-production.md)
+
+<!-- =================================================================
      /reference/ColumnDef  (community)
      ================================================================== -->
 
@@ -22907,6 +25299,159 @@ declare module 'sv-grid-community' {
 - [Why headless?](../why-headless.md) - when to use the row-model factories directly
 
 <!-- =================================================================
+     /reference/headless-engine  (community)
+     ================================================================== -->
+
+# Headless engine
+
+> `<SvGrid>` is the renderer. `createSvGrid` is the engine that powers
+> it. They are independent - you can use the engine without the
+> renderer to build a custom UI, drive a server, run logic in a worker,
+> or test reducer code.
+
+## What you get from the headless API
+
+`createSvGrid(options)` returns a table object with:
+
+- `getRowModel(): { rows: Row<TData>[] }` - the final post-pipeline row
+  list (filtered, sorted, grouped, expanded, paginated)
+- `getHeaderGroups(): HeaderGroup<TData>[]` - the multi-level column
+  header tree
+- `getAllColumns(): Column<TData>[]` - every column object with
+  metadata (id, visible, pinned, width)
+- `setSorting`, `setColumnFilters`, `setRowSelection`, ... - imperative
+  setters that update the engine's internal store
+
+No DOM, no styles, no virtualisation. A `<SvGrid>` consumer never sees
+these directly - the renderer reads the row model and emits the
+markup.
+
+## When to reach for headless
+
+| Want to...                                       | Use                                         |
+| ------------------------------------------------ | ------------------------------------------- |
+| Render with a different framework (React, Vue)   | Embed via [`sv-grid-wc`](../help/wc.md) or wrap `createSvGrid` yourself |
+| Render as `<table>` for print / email export     | Headless                                    |
+| Drive a server-side row model from Node          | Headless                                    |
+| Unit-test sort / filter / aggregator logic       | Headless                                    |
+| Build a custom virtualised renderer              | Headless + the virtualiser exports          |
+
+For the standard case (rich grid in a Svelte app), use `<SvGrid>`.
+
+## Wiring up - the minimum surface
+
+When you bypass `<SvGrid>`, you must wire the row models you want
+explicitly. `<SvGrid>` does this for you under the hood.
+
+```ts
+import {
+  createSvGrid,
+  createCoreRowModel,
+  createSortedRowModel,
+  createFilteredRowModel,
+  tableFeatures,
+  rowSortingFeature,
+  columnFilteringFeature,
+  type ColumnDef,
+} from 'sv-grid-community'
+
+type Repo = { name: string; lang: string; stars: number }
+
+const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+const columns: ColumnDef<typeof features, Repo>[] = [
+  { field: 'name',  header: 'Name'  },
+  { field: 'lang',  header: 'Lang'  },
+  { field: 'stars', header: 'Stars' },
+]
+const data: Repo[] = [/* ... */]
+
+// Reactive state - Svelte 5 $state lifts the engine into reactivity.
+type Sort = { id: string; desc: boolean }
+type Filter = { id: string; value: unknown }
+let sorting       = $state<Sort[]>([])
+let columnFilters = $state<Filter[]>([])
+
+const table = $derived.by(() =>
+  createSvGrid({
+    _features: features,
+    _rowModels: {
+      coreRowModel:     createCoreRowModel<Repo>(),
+      sortedRowModel:   createSortedRowModel<Repo>(),
+      filteredRowModel: createFilteredRowModel<Repo>(),
+    },
+    data,
+    columns,
+    state: { sorting, columnFilters },
+    onSortingChange: (u) =>
+      (sorting = typeof u === 'function' ? (u as (s: Sort[]) => Sort[])(sorting) : u),
+    onColumnFiltersChange: (u) =>
+      (columnFilters = typeof u === 'function' ? (u as (f: Filter[]) => Filter[])(columnFilters) : u),
+    enableSorting: true,
+    enableColumnFilters: true,
+  } as never),
+)
+
+const headerGroups = $derived(table.getHeaderGroups())
+const rows         = $derived(table.getRowModel().rows)
+```
+
+The whole renderer is now under 30 lines of template:
+
+```svelte
+<table>
+  <thead>
+    {#each headerGroups as hg (hg.id)}
+      <tr>
+        {#each hg.headers as h (h.id)}
+          <th onclick={() => toggleSort(h.column.id)}>
+            {h.column.columnDef.header}{indicator(h.column.id)}
+          </th>
+        {/each}
+      </tr>
+    {/each}
+  </thead>
+  <tbody>
+    {#each rows as r (r.id)}
+      <tr>
+        {#each columns as col (col.field)}
+          <td>{(r.original as Repo)[col.field as keyof Repo] ?? ''}</td>
+        {/each}
+      </tr>
+    {/each}
+  </tbody>
+</table>
+```
+
+## Row model pipeline
+
+The pipeline runs in this order, each step lazy:
+
+```
+data → coreRowModel → filteredRowModel → sortedRowModel → groupedRowModel → expandedRowModel → paginatedRowModel
+```
+
+Pass only the steps you need into `_rowModels`. Unused steps are
+tree-shaken. The example above skips grouping and pagination because
+the demo doesn't need them.
+
+## The `state` channel is controlled
+
+Pass `state` in, get change callbacks out. The engine never mutates
+your state - it calls your `onXxxChange` handler with the next value
+(or an updater function) and re-reads `state` on the next render.
+
+That's why this pattern works with Svelte 5's `$state`: the engine
+reads from reactive state and emits to reactive setters; the row model
+re-derives on every change.
+
+## See also
+
+- [Features reference](./features.md) - what each feature contributes
+- [Architecture overview](../help/architecture.md) - why headless first
+- [Build your own feature plugin recipe](../recipes/build-a-feature-plugin.md)
+- [Bundle size reference](./bundle-size.md) - what you save by skipping the renderer
+
+<!-- =================================================================
      /reference/index  (community)
      ================================================================== -->
 
@@ -22924,6 +25469,8 @@ patterns see [Help](../help/index.md); for first contact see
 | [`SvGridApi`](./SvGridApi.md) | The imperative API: data, columns, sort, filter, group, selection.   |
 | [`ColumnDef`](./ColumnDef.md) | Every field on a column definition + the sub-types.                   |
 | [Features](./features.md)     | The feature registry + the row-model factory pipeline.                |
+| [Headless engine](./headless-engine.md) | `createSvGrid` without `<SvGrid>` - the renderer-free path.  |
+| [Bundle size](./bundle-size.md) | Per-feature gzipped cost + reproduction command.                    |
 
 ## sv-grid-pro
 

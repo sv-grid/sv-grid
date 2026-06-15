@@ -18,14 +18,9 @@ const BASE = process.env.SHOT_BASE ?? 'http://localhost:5180'
 
 // demo id -> output name (used in blog posts as /blog-media/<name>.png)
 const SHOTS = [
-  ['54-columns-hierarchy', 'columns-hierarchy'],
-  ['63-column-layout-api', 'column-layout'],
-  ['111-set-filter-advanced', 'set-filter'],
-  ['148-server-row-model', 'server-row-model'],
-  ['100-anomaly-highlights', 'anomaly'],
-  ['112-barcode-cells', 'barcode'],
-  ['42-logistics-fleet', 'logistics-fleet'],
-  ['28-org-chart-tree', 'org-chart'],
+  ['31-lazy-tree-load', 'lazy-tree'],
+  ['09-server-side', 'server-side-2'],
+  ['64-filter-between-operator', 'filter-between'],
 ]
 
 await mkdir(OUT, { recursive: true })

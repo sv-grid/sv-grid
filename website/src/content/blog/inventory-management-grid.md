@@ -7,7 +7,7 @@ tags: inventory, stock, use case, svelte data grid
 author: Boyko Markov
 ---
 
-Inventory grids are workhorses: warehouse staff scan, edit quantities, and reconcile stock all day. They reward fast inline editing and clear visual signals. Here is a blueprint built from SvGrid recipes.
+Inventory grids are unglamorous workhorses - warehouse staff scan, adjust quantities, and reconcile stock in them all shift - which means they live and die on fast inline editing and dead-obvious visual signals. Here is a blueprint that leans on both.
 
 ![Anomaly highlighting in a SvGrid grid](/blog-media/anomaly.png)
 *Threshold and anomaly highlighting, ideal for stock levels.*

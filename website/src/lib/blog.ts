@@ -25,6 +25,8 @@ export type BlogPost = {
   markdown: string
   /** Estimated reading time in minutes, derived from word count. */
   readingMinutes: number
+  /** First real screenshot in the body (/blog-media/...), used as the card image. */
+  heroImage?: string
 }
 
 // The blog has ~20 fine-grained per-post categories, which is too many for a
@@ -125,6 +127,7 @@ export const blogPosts: BlogPost[] = Object.entries(files)
       pinned: meta.pinned === 'true',
       markdown: body,
       readingMinutes: readingTime(body),
+      heroImage: body.match(/!\[[^\]]*\]\((\/blog-media\/[^)]+)\)/)?.[1],
     } satisfies BlogPost
   })
   // Hide posts whose publish date has not arrived yet.

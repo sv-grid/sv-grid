@@ -7,7 +7,7 @@ tags: crm, contacts, use case, svelte data grid
 author: Boyko Markov
 ---
 
-A CRM contacts table is the screen sales teams live in. It needs to be scannable, editable, and fast to act on. Here is a blueprint that combines a handful of SvGrid recipes into a polished CRM grid.
+The contacts table is the screen a sales team stares at all day, so it has to be scannable at a glance, editable in place, and quick to act on in bulk. This blueprint stitches a handful of SvGrid recipes into a CRM grid that does all three.
 
 ![A CRM sales pipeline grid in SvGrid](/blog-media/crm.png)
 *A CRM pipeline built with SvGrid.*

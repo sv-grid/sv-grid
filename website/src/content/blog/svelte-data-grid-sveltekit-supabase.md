@@ -9,6 +9,9 @@ author: Kamelia M
 
 Supabase gives you a Postgres database with a clean JavaScript client; SvelteKit gives you load functions and server endpoints. Together they are a great backend for a data grid. Here is how to drive SvGrid server-side from Supabase so it scales past what fits in the browser.
 
+![Server-side data from Supabase in SvGrid](/blog-media/server-side.png)
+*Server-side sorting, filtering, and paging - here backed by Supabase.*
+
 ## The shape of the integration
 
 For anything beyond a few thousand rows, let the database do the work: SvGrid records the sort, filter, and page state, and Supabase returns the matching page plus a total count. Supabase's `.range()` and the `{ count: 'exact' }` option map directly onto what the grid's pager needs.

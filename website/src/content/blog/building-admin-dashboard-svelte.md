@@ -7,7 +7,7 @@ tags: dashboard, admin, use case, svelte data grid
 author: Kamelia M
 ---
 
-Most admin dashboards are a data grid surrounded by controls. Get the grid and the layout right and the rest follows. Here is a practical blueprint for building one in Svelte 5, using SvGrid as the centerpiece.
+Strip most admin dashboards down and they are a data grid with some controls bolted around it. Get the grid and the layout right and everything else is detail. Here is a practical blueprint for one in Svelte 5, with SvGrid in the middle.
 
 ![An admin dashboard built with SvGrid](/blog-media/admin-dashboard.png)
 *An admin dashboard built around SvGrid.*

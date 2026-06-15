@@ -7,7 +7,7 @@ tags: headless ui, architecture, design patterns, component design
 author: Boyko Markov
 ---
 
-"Headless" is one of those words that gets used everywhere and explained nowhere. In UI libraries it has a precise meaning, and understanding it helps you choose the right tool - and the right layer of a tool - for a job. This is a practical tour of the pattern, with a data grid as the running example.
+"Headless" is one of those words that is everywhere and explained almost nowhere. In UI libraries it actually has a precise meaning, and once it clicks you make better calls about which tool - and which layer of a tool - to reach for. Let me walk through it the practical way, with a data grid as the running example.
 
 ## What headless actually means
 

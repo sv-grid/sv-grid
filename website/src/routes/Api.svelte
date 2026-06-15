@@ -1,6 +1,7 @@
 <script lang="ts">
   import { sections, sectionGroups, findSection, memberHeading } from '../lib/api-reference'
   import { getApiDemo } from '../lib/api-demos'
+  import { openSnippetInStackBlitz } from '../lib/stackblitz'
 
   let selectedId = $state<string>(sections[0]!.id)
   const current = $derived(findSection(selectedId))
@@ -9,6 +10,30 @@
   function go(id: string) {
     selectedId = id
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+    // Switching sections collapses any open per-prop example panels - rows
+    // would not match up across sections anyway.
+    expanded = {}
+  }
+
+  // Per-row "Show example" panels. Keyed by `${sectionId}::${propName}` so a
+  // user can keep one open across re-renders within a section.
+  let expanded = $state<Record<string, boolean>>({})
+  function toggleExample(key: string) {
+    expanded[key] = !expanded[key]
+  }
+
+  // Per-row "Copy code" feedback. Cleared on a timer so the visual ack
+  // doesn't linger after the user moves on.
+  let copied = $state<string>('')
+  let copyTimer: ReturnType<typeof setTimeout> | null = null
+  function copyCode(key: string, code: string) {
+    navigator.clipboard?.writeText(code).then(() => {
+      copied = key
+      if (copyTimer) clearTimeout(copyTimer)
+      copyTimer = setTimeout(() => {
+        if (copied === key) copied = ''
+      }, 1400)
+    })
   }
 </script>
 
@@ -163,12 +188,40 @@
           </thead>
           <tbody>
             {#each current.props as p, i (p.name)}
-              <tr
-                style:background={i % 2 === 0 ? 'var(--sg-header-bg)' : 'var(--sg-bg)'}
-                style="border-top: 1px solid var(--sg-border)"
-              >
+              {@const key = `${current.id}::${p.name}`}
+              {@const isOpen = !!expanded[key]}
+              {@const rowBg = i % 2 === 0 ? 'var(--sg-header-bg)' : 'var(--sg-bg)'}
+              <tr style:background={rowBg} style="border-top: 1px solid var(--sg-border)">
                 <td class="p-3 align-top font-mono" style="color: var(--sg-fg);">
                   <div class="flex items-center gap-2">
+                    {#if p.example}
+                      <button
+                        type="button"
+                        class="api-expand"
+                        aria-expanded={isOpen}
+                        aria-controls={`example-${key}`}
+                        title={isOpen ? 'Hide example' : 'Show example'}
+                        onclick={() => toggleExample(key)}
+                      >
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2.4"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          aria-hidden="true"
+                          style:transform={isOpen ? 'rotate(90deg)' : 'rotate(0deg)'}
+                          style="transition: transform 140ms ease;"
+                        >
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                      </button>
+                    {:else}
+                      <span class="api-expand-placeholder" aria-hidden="true"></span>
+                    {/if}
                     <span>{p.name}</span>
                     {#if p.required}
                       <span
@@ -187,12 +240,81 @@
                 <td class="p-3 align-top font-mono text-xs" style="color: var(--sg-muted);">{p.default ?? ''}</td>
                 <td class="p-3 align-top" style="color: var(--sg-fg);">
                   <div>{p.description}</div>
-                  {#if p.example}
-                    <pre class="mt-2 rounded p-2 text-xs overflow-x-auto"
-                      style="background: #0a1124; color: #e2e8f0;"><code>{p.example}</code></pre>
-                  {/if}
                 </td>
               </tr>
+              {#if isOpen && p.example}
+                <tr style:background={rowBg} id={`example-${key}`}>
+                  <td colspan="4" class="px-3 pb-4 pt-0">
+                    <div
+                      class="api-example-panel rounded-lg border p-3"
+                      style="border-color: var(--sg-border); background: #0a1124;"
+                    >
+                      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div class="flex items-center gap-2">
+                          <span
+                            class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                            style="background: rgba(249,115,22,0.18); color: #fdba74;"
+                          >
+                            Example
+                          </span>
+                          <code class="text-xs" style="color: #cbd5e1;">{p.name}</code>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <button
+                            type="button"
+                            class="api-example-btn"
+                            onclick={() => copyCode(key, p.example ?? '')}
+                          >
+                            {#if copied === key}
+                              <svg
+                                width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e"
+                                stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                              >
+                                <path d="M20 6L9 17l-5-5" />
+                              </svg>
+                              Copied
+                            {:else}
+                              <svg
+                                width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                              >
+                                <rect x="9" y="9" width="13" height="13" rx="2" />
+                                <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                              </svg>
+                              Copy code
+                            {/if}
+                          </button>
+                          <button
+                            type="button"
+                            class="api-example-btn api-example-btn-primary"
+                            title="Open this snippet as an editable Svelte 5 + sv-grid-community project in StackBlitz"
+                            onclick={() =>
+                              openSnippetInStackBlitz({
+                                sectionTitle: current.title,
+                                sectionCategory: current.category,
+                                propName: p.name,
+                                propType: p.type,
+                                description: p.description,
+                                code: p.example ?? '',
+                              })}
+                          >
+                            <svg
+                              width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+                            >
+                              <path d="M10.797 14.182H3.635L16.728 0l-3.525 9.818h7.162L7.272 24l3.525-9.818Z" />
+                            </svg>
+                            Run in StackBlitz
+                          </button>
+                        </div>
+                      </div>
+                      <pre
+                        class="text-xs leading-relaxed overflow-x-auto"
+                        style="color: #e2e8f0; margin: 0;"
+                      ><code>{p.example}</code></pre>
+                    </div>
+                  </td>
+                </tr>
+              {/if}
             {/each}
           </tbody>
         </table>
@@ -270,5 +392,69 @@
     align-self: flex-start;
     max-height: calc(100vh - 4rem);
     overflow-y: auto;
+  }
+
+  /* Per-prop "Show example" toggle: a flat chevron in the Name column that
+     rotates 90deg when the example panel below the row is open. A 14x14
+     hit-target sized to match the row baseline. */
+  .api-expand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    margin-right: 2px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: var(--site-accent-2);
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .api-expand:hover {
+    background: color-mix(in srgb, var(--site-accent-2) 14%, transparent);
+  }
+  .api-expand:focus-visible {
+    outline: 2px solid var(--site-accent);
+    outline-offset: 2px;
+  }
+  /* Reserves chevron width for rows without an example so prop names stay
+     vertically aligned with rows that do have one. */
+  .api-expand-placeholder {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Expanded example panel - the second <tr> we render below the prop row. */
+  .api-example-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(148, 163, 184, 0.08);
+    color: #e2e8f0;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms, border-color 120ms;
+  }
+  .api-example-btn:hover {
+    background: rgba(148, 163, 184, 0.18);
+    border-color: rgba(148, 163, 184, 0.45);
+  }
+  .api-example-btn-primary {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white;
+    border-color: transparent;
+  }
+  .api-example-btn-primary:hover {
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    border-color: transparent;
   }
 </style>

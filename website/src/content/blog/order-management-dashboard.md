@@ -7,7 +7,7 @@ tags: orders, ecommerce, master detail, use case, svelte data grid
 author: Kamelia M
 ---
 
-Order management is a natural fit for a data grid with master-detail: each order is a row, and its line items live in an expandable panel. Add a status workflow and bulk fulfillment and you have a complete operations screen. Here is the blueprint.
+Order management is the textbook case for master-detail: each order is a row, its line items live in a panel you expand. Layer a status workflow and bulk fulfillment on top and the grid becomes a full operations console. Here is how the pieces fit.
 
 ![A live order-management grid in SvGrid](/blog-media/realtime-orders.png)
 *A live order-management grid in SvGrid.*

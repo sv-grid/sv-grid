@@ -37,7 +37,7 @@ The enterprise heavyweight. Enormous feature set, used widely in finance and dat
 
 ### Others worth knowing
 
-- **SVAR Svelte DataGrid** - a Svelte-focused commercial grid.
+- **SVAR Svelte DataGrid** - a free, MIT-licensed Svelte 5 grid from XB Software (the team behind Webix); they monetize their Gantt, not the grid.
 - **Handsontable / Tabulator / Grid.js** - mature, framework-agnostic grids you can embed in Svelte.
 - **Vincjo datatables** - a small, simple Svelte table helper for modest tables.
 

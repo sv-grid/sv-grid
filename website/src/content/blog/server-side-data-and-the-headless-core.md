@@ -9,6 +9,9 @@ author: Kamelia M
 
 By this point SvGrid could do almost everything in the browser. One big capability remained: the opposite - doing almost nothing in the browser, and letting a server do the work. This is about server-side data, and about the headless core coming into its own.
 
+![Server-side data in SvGrid](/blog-media/server-side.png)
+*The grid records state; the server returns the page.*
+
 ## The problem with "in the browser"
 
 Every feature so far assumed the data was in memory. That is the right assumption right up until the dataset is millions of rows, or sensitive, or changing too fast to ship. Then you cannot send it all to the client, and the grid has to become a controller for state that lives on a server.

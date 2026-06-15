@@ -7,7 +7,7 @@ tags: tree data, hierarchy, expandable rows, svelte data grid
 author: Boyko Markov
 ---
 
-File systems, org charts, and category trees are hierarchies, not flat lists. SvGrid renders tree data with the same `rowExpandingFeature` that powers master-detail, so a parent row can expand to show its children indented beneath it.
+Plenty of data is a tree wearing a list's disguise: file systems, org charts, category trees. SvGrid renders that hierarchy with the same `rowExpandingFeature` that powers master-detail, so a parent row expands to show its children indented underneath.
 
 ![Tree rows and master-detail in SvGrid](/blog-media/tree-master-detail.png)
 *Tree rows and master-detail expansion in SvGrid.*

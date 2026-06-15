@@ -1,13 +1,13 @@
 # Migrating from SVAR Svelte DataGrid
 
 SVAR Svelte DataGrid (`wx-svelte-grid`) is, like SvGrid, an actual
-Svelte-native grid rather than a wrapper. Because both are
-component-first with array-of-object column definitions, a port is
-mostly a configuration translation. The two decisions that usually
-drive the switch are **licensing** (SVAR is offered under GPL with a
-separate commercial license; SvGrid's community core is MIT) and
-**architecture** (SvGrid also exposes a headless engine and an MCP
-server).
+Svelte-native grid rather than a wrapper, and both are MIT-licensed and
+free for commercial use. Because both are component-first with
+array-of-object column definitions, a port is mostly a configuration
+translation. The reasons people switch are **capability** (SvGrid adds
+row grouping with aggregation, master-detail, Excel-style cell-range
+selection, integrated charts, and pivot) and **architecture** (SvGrid
+also exposes a headless engine and an MCP server).
 
 > Estimated effort: **2-4 hours** per grid - a prop and event rename
 > pass, plus re-theming.
@@ -59,20 +59,22 @@ server).
 
 ## Licensing note
 
-SVAR components are distributed under GPLv3 with a separate commercial
-license. If you ship a closed-source product, that means either
-complying with the GPL or buying a commercial license. SvGrid's
-`sv-grid-community` core is MIT - free for commercial, closed-source use
-- and the optional `sv-grid-pro` pack is the only paid piece. Confirm
-the current SVAR terms against their site before you decide.
+Both grids are MIT and free for commercial use, so licensing is not the
+deciding factor. The difference is monetization: SVAR keeps the whole
+grid free (including CSV export and print) and sells its Gantt instead,
+whereas SvGrid's `sv-grid-community` core is MIT and the optional
+`sv-grid-pro` pack (advanced XLSX/PDF export, pivot, import, AI, support)
+is the paid piece. If all you need is CSV export, SVAR gives it free; if
+you need pivot, advanced export, or a support SLA, that is Pro on SvGrid.
 
 ## What you get with SvGrid
 
-- An **MIT community core** with no copyleft obligations.
+- **Row grouping with aggregation**, **master-detail**, **pinned rows**,
+  and left/right column freezing - beyond SVAR's documented surface.
 - A **headless engine** (`createSvGrid` + row models) in addition to the
   component, if you want to compose your own layer.
-- **Excel-style filter menu**, **cell-range selection + TSV copy**, and a
-  documented **imperative API**.
+- **Excel-style filter menu**, **cell-range selection + TSV copy**, a
+  **fill handle**, **integrated charts**, and a documented **imperative API**.
 - **sv-grid-mcp** so AI assistants answer accurately about your grid.
 
 ## What to check on the SVAR side
@@ -92,10 +94,11 @@ the current SVAR terms against their site before you decide.
 
 ### Why move from SVAR Svelte DataGrid to SvGrid?
 
-The usual reasons are licensing and architecture: SvGrid's core is MIT (no GPL
-obligations for closed-source apps), and it ships a headless engine plus an MCP
-server alongside the component. Both are genuinely Svelte-native, so the grid
-behaviour is comparable.
+Capability and architecture, not licensing (both are MIT). SvGrid adds row
+grouping with aggregation, master-detail, Excel-style cell-range selection,
+integrated charts, and pivot, and it ships a headless engine plus an MCP server
+alongside the component. Both are genuinely Svelte-native, so the core grid
+behaviour is comparable; SvGrid simply reaches further.
 
 ### Is the migration a rewrite?
 
@@ -103,7 +106,9 @@ No. Both are component-first with array-of-object columns, so it is mostly a
 prop / event rename pass (`id` → `field`, edit events → `onCellValueChange`)
 plus re-theming through `--sg-*` tokens.
 
-### Is SvGrid GPL like SVAR?
+### Are SvGrid and SVAR both free and MIT?
 
-No. `sv-grid-community` is MIT-licensed and free for commercial, closed-source
-use. Only the optional `sv-grid-pro` add-on is commercially licensed.
+Yes. `sv-grid-community` and the SVAR DataGrid are both MIT and free for
+commercial, closed-source use. SVAR keeps the whole grid free and monetizes its
+Gantt; on SvGrid, only the optional `sv-grid-pro` add-on (advanced export,
+pivot, import, AI, support) is paid.

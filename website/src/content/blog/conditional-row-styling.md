@@ -9,6 +9,9 @@ author: Kamelia M
 
 Sometimes the whole row matters, not a single cell: an overdue invoice in red, a failed job tinted, a VIP customer highlighted. This is row-level conditional formatting, and it is the fastest way to make a grid scannable. Here is how to drive it from your data.
 
+![Conditional row highlighting in SvGrid](/blog-media/anomaly.png)
+*Row-level conditional styling driven by the data.*
+
 ## Style rows by a derived flag
 
 Compute a status from the row and map it to a class. Keep the logic in one place so it is easy to reason about:

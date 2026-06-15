@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 A SaaS billing or usage table shows customers what they consumed and what it costs. It lives or dies on correct formatting and trustworthy totals. Here is a blueprint built with SvGrid.
 
+![A billing grid exported from SvGrid](/blog-media/export.png)
+*A billing/usage grid - formatted, totalled, and exportable.*
+
 ## The columns
 
 - **Item / metric** - the line (seats, API calls, storage).

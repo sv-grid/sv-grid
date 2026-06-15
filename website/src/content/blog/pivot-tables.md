@@ -7,7 +7,7 @@ tags: pivot table, cross-tab, aggregation, svelte data grid
 author: Kamelia M
 ---
 
-A pivot table answers "how much, broken down by what?" - revenue by region and quarter, headcount by department and level. Instead of exporting to a spreadsheet, `sv-grid-pro` brings pivoting into your Svelte app, so the summary lives next to the data and updates in real time.
+A pivot table answers the question every dashboard eventually asks: "how much, broken down by what?" Revenue by region and quarter; headcount by department and level. The usual move is to export to a spreadsheet and pivot there - but `sv-grid-pro` brings pivoting into the app itself, so the summary sits next to the data and updates live.
 
 ![A pivot table built with sv-grid-pro](/blog-media/pivot.png)
 *A pivot table built with sv-grid-pro.*

@@ -1499,15 +1499,33 @@ module.exports = {
       if (headerHoverShadowSize > 0) parts.push('box-shadow: 0 0 0 ' + headerHoverShadowSize + 'px ' + (headerHoverBg || activeTokens.accent) + ' inset; ')
       parts.push('}')
     }
-    // ---- Header state: active (sorted column) ----------------------
+    // ---- Header state: active --------------------------------------
+    // "Active" means a column header that's currently sorted (aria-sort
+    // ascending/descending on the <th>) OR has keyboard / mouse focus on
+    // its sort button. We catch both so the user gets immediate visual
+    // feedback when clicking a header, even before sorting changes the
+    // aria-sort attribute. aria-sort is set on the <th> (.sv-grid-column)
+    // via getGridHeaderA11yProps, NOT the inner .sv-grid-header-cell div.
     if (headerActiveBg || headerActiveFg || headerActiveBorderColor) {
-      parts.push(' .tb-live-instance .sv-grid-header-cell[aria-sort="ascending"], ')
-      parts.push(' .tb-live-instance .sv-grid-header-cell[aria-sort="descending"] ')
-      parts.push('{ ')
+      const activeSel =
+        ' .tb-live-instance .sv-grid-header-row > .sv-grid-column[aria-sort="ascending"], ' +
+        ' .tb-live-instance .sv-grid-header-row > .sv-grid-column[aria-sort="descending"], ' +
+        ' .tb-live-instance .sv-grid-header-row > .sv-grid-column:has(.sv-grid-header-sort:focus), ' +
+        ' .tb-live-instance .sv-grid-header-row > .sv-grid-column:has(.sv-grid-header-sort:active) '
+      parts.push(activeSel + '{ ')
       if (headerActiveBg) parts.push('background: ' + headerActiveBg + ' !important; ')
       if (headerActiveFg) parts.push('color: ' + headerActiveFg + ' !important; ')
       if (headerActiveBorderColor) parts.push('border-bottom-color: ' + headerActiveBorderColor + ' !important; ')
       parts.push('}')
+      // The inner content div carries the text - paint its color too so
+      // the foreground change propagates to the header label.
+      if (headerActiveFg) {
+        parts.push(' .tb-live-instance .sv-grid-column[aria-sort="ascending"] .sv-grid-header-cell, ')
+        parts.push(' .tb-live-instance .sv-grid-column[aria-sort="descending"] .sv-grid-header-cell, ')
+        parts.push(' .tb-live-instance .sv-grid-column[aria-sort="ascending"] .sv-grid-header-label, ')
+        parts.push(' .tb-live-instance .sv-grid-column[aria-sort="descending"] .sv-grid-header-label ')
+        parts.push('{ color: ' + headerActiveFg + ' !important; }')
+      }
     }
     // ---- Header state: filtered column ----------------------------
     if (headerFilterBg) {
@@ -1979,7 +1997,7 @@ module.exports = {
 
           <!-- ACTIVE (sorted) -->
           <details class="tb-group" open={openGroups.has('header.active')} ontoggle={(e) => syncGroup('header.active', (e.currentTarget as HTMLDetailsElement).open)}>
-            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Active</span><span class="tb-group-hint">border · foreground · background</span></summary>
+            <summary class="tb-group-head"><span class="tb-group-chev"></span><span>Active</span><span class="tb-group-hint">sorted column · click a header to test</span></summary>
             <div class="tb-group-body">
               <div class="tb-col-color">
                 <input type="color" value={headerActiveBorderColor || activeTokens.accent.slice(0, 7)}

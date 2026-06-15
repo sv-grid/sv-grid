@@ -7,7 +7,7 @@ tags: custom cells, snippets, renderSnippet, svelte data grid
 author: Boyko Markov
 ---
 
-Plain text takes a grid far, but real apps need badges, progress bars, avatars, and action buttons inside cells. SvGrid renders any Svelte 5 snippet in a cell with `renderSnippet`, so you keep full component power and type safety.
+Plain text gets you surprisingly far, but sooner or later a real app wants badges, progress bars, avatars, and buttons living inside the cells. SvGrid renders any Svelte 5 snippet in a cell via `renderSnippet`, so you get full component power and type safety without giving up sorting or filtering on the underlying value.
 
 ![Custom cell editors in SvGrid](/blog-media/custom-cell-editors.png)
 *Custom cell editors rendered with Svelte snippets in SvGrid.*

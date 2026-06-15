@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 When a column draws from a large set of values - customers, products, tags - a plain dropdown is unwieldy and free text is error-prone. An autocomplete editor lets users type to filter and pick. SvGrid renders custom editor cells, so you can build one with your own input plus a suggestion list. Here is a clean approach.
 
+![Custom cell editors in SvGrid](/blog-media/custom-cell-editors.png)
+*Custom, typed cell editors in SvGrid.*
+
 ## The quick version: input + datalist
 
 For modest option lists, the native `<datalist>` gives you autocomplete with zero JavaScript and full accessibility:

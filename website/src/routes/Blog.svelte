@@ -89,7 +89,7 @@
         style="border-color: var(--site-accent); background: var(--sg-header-bg);"
       >
         <img
-          src={thumbSrc(f.slug)}
+          src={f.heroImage ?? thumbSrc(f.slug)}
           onerror={hideOnError}
           width="1200"
           height="630"
@@ -143,7 +143,7 @@
           style="border-color: var(--sg-border); background: var(--sg-header-bg);"
         >
           <img
-            src={thumbSrc(p.slug)}
+            src={p.heroImage ?? thumbSrc(p.slug)}
             onerror={hideOnError}
             width="1200"
             height="630"

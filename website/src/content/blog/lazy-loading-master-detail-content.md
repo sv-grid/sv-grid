@@ -9,6 +9,9 @@ author: Kamelia M
 
 Master-detail rows are powerful, but loading every row's detail up front is wasteful - most rows never get opened. Lazy-loading detail content keeps the initial grid fast and only pays for the panels users actually expand. Here is how to do it well.
 
+![Lazy-loaded tree branches in SvGrid](/blog-media/lazy-tree.png)
+*Lazy-loaded branches: detail data fetched only on expand.*
+
 ## Fetch on expand
 
 Load the detail data inside the detail snippet, triggered by expansion, with an `{#await}` block:

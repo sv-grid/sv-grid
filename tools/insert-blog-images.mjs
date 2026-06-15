@@ -14,21 +14,16 @@ const BLOG_DIR = join(HERE, '..', 'website', 'src', 'content', 'blog')
 
 // slug -> { name (file in /blog-media), alt, caption }
 const MAP = {
-  'multi-level-column-headers': { name: 'columns-hierarchy', alt: 'Multi-level grouped column headers in SvGrid', caption: 'Grouped, multi-level column headers in SvGrid.' },
-  'column-visibility-toggle': { name: 'column-layout', alt: 'Column show/hide and layout controls in SvGrid', caption: 'Column layout and visibility controls in SvGrid.' },
-  'saved-views-persist-layout': { name: 'column-layout', alt: 'Saving a grid layout in SvGrid', caption: 'Saving and restoring grid layouts in SvGrid.' },
-  'custom-set-filters': { name: 'set-filter', alt: 'An Excel-style set filter in SvGrid', caption: 'An advanced set filter in SvGrid.' },
-  'pagination-patterns': { name: 'server-row-model', alt: 'Server-driven pagination in SvGrid', caption: 'A server row model paging data in SvGrid.' },
-  'inventory-management-grid': { name: 'anomaly', alt: 'Anomaly highlighting in a SvGrid grid', caption: 'Threshold and anomaly highlighting, ideal for stock levels.' },
-  'ecommerce-product-catalog': { name: 'barcode', alt: 'Barcode and rich cells in a SvGrid product grid', caption: 'Barcode and rich cells in a SvGrid catalog.' },
-  'what-is-a-pivot-table': { name: 'pivot', alt: 'A pivot table in SvGrid', caption: 'A pivot table: rows, columns, and aggregated values.' },
-  'headless-vs-render-component': { name: 'quick-start', alt: 'The SvGrid render component', caption: 'The <SvGrid> render component - the batteries-included layer over the headless core.' },
-  'admin-user-management-screen': { name: 'admin-dashboard', alt: 'An admin screen built with SvGrid', caption: 'An admin screen built around SvGrid.' },
-  'log-viewer-large-logs': { name: 'large-dataset', alt: 'A large dataset in SvGrid', caption: 'Virtualization keeps huge row counts smooth - ideal for logs.' },
-  'editable-select-dropdown-cell': { name: 'custom-cell-editors', alt: 'Editable dropdown cells in SvGrid', caption: 'Custom cell editors, including dropdowns, in SvGrid.' },
-  'date-picker-cell-editor': { name: 'custom-cell-editors', alt: 'Editable cells in SvGrid', caption: 'Typed cell editors in SvGrid.' },
-  'sticky-summary-footer-row': { name: 'grouping', alt: 'Group footers and totals in SvGrid', caption: 'Aggregated footers and totals in SvGrid.' },
-  'status-badge-cells': { name: 'custom-cells-themes', alt: 'Custom badge cells in SvGrid', caption: 'Custom badge and status cells in SvGrid.' },
+  'lazy-loading-master-detail-content': { name: 'lazy-tree', alt: 'Lazy-loaded tree branches in SvGrid', caption: 'Lazy-loaded branches: detail data fetched only on expand.' },
+  'building-grouping-trees-master-detail': { name: 'org-chart', alt: 'An org-chart tree in SvGrid', caption: 'Grouping, trees, and master-detail on one expansion model.' },
+  'svelte-data-grid-sveltekit-supabase': { name: 'server-side', alt: 'Server-side data from Supabase in SvGrid', caption: 'Server-side sorting, filtering, and paging - here backed by Supabase.' },
+  'svelte-data-grid-tanstack-query': { name: 'server-row-model', alt: 'Server-paged data with TanStack Query in SvGrid', caption: 'Cached, server-paged data driving a SvGrid grid.' },
+  'svelte-data-grid-prisma': { name: 'server-side-2', alt: 'Server-side data from Prisma in SvGrid', caption: 'A Prisma-backed server row model in SvGrid.' },
+  'svelte-data-grid-drizzle-orm': { name: 'server-side-2', alt: 'Server-side data from Drizzle in SvGrid', caption: 'A Drizzle-backed, fully typed server grid.' },
+  'server-side-data-and-the-headless-core': { name: 'server-side', alt: 'Server-side data in SvGrid', caption: 'The grid records state; the server returns the page.' },
+  'saas-billing-usage-table': { name: 'export', alt: 'A billing grid exported from SvGrid', caption: 'A billing/usage grid - formatted, totalled, and exportable.' },
+  'conditional-row-styling': { name: 'anomaly', alt: 'Conditional row highlighting in SvGrid', caption: 'Row-level conditional styling driven by the data.' },
+  'autocomplete-cell-editor': { name: 'custom-cell-editors', alt: 'Custom cell editors in SvGrid', caption: 'Custom, typed cell editors in SvGrid.' },
 }
 
 async function main() {

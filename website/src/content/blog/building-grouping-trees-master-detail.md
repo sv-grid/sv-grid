@@ -9,6 +9,9 @@ author: Boyko Markov
 
 With viewing and editing solid, the next challenge was a harder shape of data: hierarchy. Real datasets are not always flat. Orders have line items, regions contain customers, folders hold files. This is how SvGrid learned to express all of that.
 
+![An org-chart tree in SvGrid](/blog-media/org-chart.png)
+*Grouping, trees, and master-detail on one expansion model.*
+
 ## One model for three features
 
 It would have been easy to build grouping, tree data, and master-detail as three separate systems. Instead we found the thing they share: expansion. Every one of them is a row that can expand to reveal more rows or content beneath it.

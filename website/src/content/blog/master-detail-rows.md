@@ -7,7 +7,7 @@ tags: master detail, expandable rows, nested grid, svelte data grid
 author: Kamelia M
 ---
 
-Some data does not fit in a single row. An order has line items; a customer has recent activity. Master-detail rows let users expand a row to reveal a rich detail panel - another grid, a chart, or a form - without leaving the page.
+Some records simply do not fit in one row. An order has line items; a customer has a history. Master-detail rows let a user expand a row to reveal a richer panel - a nested grid, a chart, a form - without ever leaving the page they are on.
 
 ![Master-detail rows with a detail form in SvGrid](/blog-media/forms-master-detail.png)
 *Master-detail rows revealing a detail form in SvGrid.*

@@ -593,37 +593,63 @@ const flexRenderSection: ApiSection = {
   id: 'flexrender',
   category: 'Components',
   title: '<FlexRender />',
-  blurb: 'Renders a Svelte component, snippet, or plain value from a column definition.',
+  blurb: 'Renders a Svelte component, snippet, function, or plain value from a column definition.',
+  demo: 'flexrender',
   intro: [
-    'When you build a custom layout on top of the headless core, FlexRender bridges between the cell renderer set on a ColumnDef and the actual DOM. It handles all four cases: snippet, Svelte component, function returning a string, or raw value.',
+    'When you build a custom layout on top of the headless core, FlexRender bridges between the renderer set on a ColumnDef and the actual DOM. It handles every case: a string, a {#snippet} (via renderSnippet), a Svelte component (via renderComponent), a function returning one of those, or a raw value.',
+    'You can pass the renderer explicitly with content + context, or use one of the cell / header / footer shorthands and let FlexRender pull the right renderer and context off the engine object for you.',
   ],
   signature: `import { FlexRender } from 'sv-grid-community'
 
+<!-- Explicit form: -->
 {#each row.getAllCells() as cell (cell.id)}
-  <div class="cell">
-    <FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-  </div>
+  <FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
+{/each}
+
+<!-- Shorthand form (equivalent for cells): -->
+{#each row.getAllCells() as cell (cell.id)}
+  <FlexRender cell={cell} />
 {/each}`,
   props: [
     {
       name: 'content',
-      type: 'unknown',
-      required: true,
+      type: 'ColumnDefTemplate<HeaderContext | CellContext> | undefined',
       description:
-        'The cell renderer pulled from the column definition. FlexRender detects whether it is a snippet, component, function, or value.',
+        'The renderer to draw - typically cell.column.columnDef.cell or header.column.columnDef.header. FlexRender detects whether it resolves to a string, snippet config, component config, or value. Pair with `context`.',
       example: `<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />`,
     },
     {
       name: 'context',
-      type: 'CellContext<TData, TValue>',
-      required: true,
-      description: 'The cell context object created by the headless engine. Passed verbatim to the renderer.',
-      example: `// CellContext exposes:
-//   row, column, table, getValue()
-const ctx = cell.getContext()`,
+      type: 'CellContext<TData> | HeaderContext<TData>',
+      description: 'The context object from the engine, passed verbatim to a function renderer. Required when you pass `content`. CellContext exposes row, column, table, and getValue().',
+      example: `const ctx = cell.getContext() // { row, column, table, getValue }`,
+    },
+    {
+      name: 'cell',
+      type: 'Cell<TData>',
+      description: 'Shorthand: pass a cell and FlexRender reads columnDef.cell + cell.getContext() itself. Use instead of content + context.',
+      example: `<FlexRender cell={cell} />`,
+    },
+    {
+      name: 'header',
+      type: 'Header<TData>',
+      description: 'Shorthand for a header: renders columnDef.header with the header context.',
+      example: `{#each headerGroup.headers as header (header.id)}
+  <FlexRender header={header} />
+{/each}`,
+    },
+    {
+      name: 'footer',
+      type: 'Header<TData>',
+      description: 'Shorthand for a footer cell: renders columnDef.footer with the header context.',
+      example: `<FlexRender footer={footerHeader} />`,
     },
   ],
-  notes: ['Used internally by <SvGrid />. Only needed when building a custom layout on top of createSvGrid.'],
+  notes: [
+    'Exactly one of `content` (with `context`), `cell`, `header`, or `footer` is used - they are mutually exclusive.',
+    'A plain column with no `cell` renderer leaves columnDef.cell undefined, so the `cell` shorthand renders nothing; render `cell.getValue()` yourself for those, or always set a `cell`.',
+    'Used internally by <SvGrid />. You only need it when hand-building a layout on top of createSvGrid.',
+  ],
 }
 
 const renderHelpersSection: ApiSection = {
@@ -631,14 +657,16 @@ const renderHelpersSection: ApiSection = {
   category: 'Components',
   title: 'renderSnippet / renderComponent',
   blurb: 'Wrap a snippet or Svelte component as a typed cell or header renderer.',
+  demo: 'render-helpers',
   intro: [
-    'Cell and header renderers on a ColumnDef can be anything FlexRender accepts. These two helpers return a tagged object that FlexRender recognizes and dispatches correctly.',
+    'A ColumnDef cell / header renderer can be a string, a function, or - for custom UI - a snippet or component. These two helpers return a tagged config (RenderSnippetConfig / RenderComponentConfig) that FlexRender recognizes and dispatches correctly. You return them from a `cell` or `header` function on the column.',
+    'Reach for renderSnippet when the markup lives in the same file as the grid (a local {#snippet}); reach for renderComponent when the cell UI is a reusable .svelte component with its own props.',
   ],
   props: [
     {
-      name: 'renderSnippet(snippet, props)',
-      type: '<P>(snippet: Snippet<[P]>, props: P) => RenderSnippetConfig<P>',
-      description: 'Tag a Svelte snippet (the {#snippet ...} kind) as a typed cell or header renderer.',
+      name: 'renderSnippet(snippet, params)',
+      type: '<P>(snippet: Snippet<[P]>, params: P) => RenderSnippetConfig<P>',
+      description: 'Tag a Svelte snippet (the {#snippet ...} kind) as a typed cell or header renderer. The second argument is the single params object passed to the snippet.',
       example: `{#snippet StatusPill(props: { row: Order })}
   <span class={\`pill pill-\${props.row.status}\`}>{props.row.status}</span>
 {/snippet}
@@ -663,6 +691,76 @@ const columns = [
   },
 ]`,
     },
+  ],
+}
+
+// ---------- <SvGridChart /> --------------------------------------------
+
+const svgridChartSection: ApiSection = {
+  id: 'svgrid-chart',
+  category: 'Components',
+  title: '<SvGridChart />',
+  blurb: 'A dependency-free chart component (bar, line, area, pie/donut, scatter, combo) driven by a ChartSpec.',
+  demo: 'svgrid-chart',
+  intro: [
+    'SvGridChart renders an interactive SVG chart with no charting dependency: stacked/grouped bars, lines, areas, pie/donut, scatter, and per-series combo. It supports a crosshair tooltip, a clickable legend that toggles series, optional data labels, and a click-to-drill callback.',
+    'You give it a ChartSpec. The easiest way to build one from grid rows is rowsToChartSpec(), which aggregates a value field by a category (and optionally pivots into one series per value of a `series` field). For full control, build a ChartSpec by hand or with buildChart().',
+  ],
+  signature: `import { SvGridChart, rowsToChartSpec } from 'sv-grid-community'
+
+const spec = rowsToChartSpec(orders, {
+  type: 'bar',
+  category: 'region',   // x axis / pie slices
+  value: 'total',       // measure
+  reduce: 'sum',        // 'sum' | 'avg' | 'count'
+})
+
+<SvGridChart {spec} dataLabels formatValue={(v) => \`$\${v}\`} />`,
+  props: [
+    {
+      name: 'spec',
+      type: 'ChartSpec',
+      required: true,
+      description: 'The chart definition: type, categories, and series. Build it with rowsToChartSpec() or by hand.',
+      example: `const spec = rowsToChartSpec(rows, { type: 'line', category: 'month', value: 'revenue', series: 'product' })`,
+    },
+    {
+      name: 'legend',
+      type: 'boolean',
+      default: 'true',
+      description: 'Show the clickable legend. Click a chip to toggle a series; double-click to isolate it.',
+      example: `<SvGridChart {spec} legend={false} />`,
+    },
+    {
+      name: 'interactive',
+      type: 'boolean',
+      default: 'true',
+      description: 'Enable tooltips, the crosshair, and legend toggling. Set false for a static, print-friendly chart.',
+      example: `<SvGridChart {spec} interactive={false} />`,
+    },
+    {
+      name: 'dataLabels',
+      type: 'boolean',
+      default: 'false',
+      description: 'Draw the value on each bar, point, or slice.',
+      example: `<SvGridChart {spec} dataLabels />`,
+    },
+    {
+      name: 'formatValue',
+      type: '(value: number) => string',
+      description: 'Format values for tooltips, data labels, and Y-axis ticks.',
+      example: `<SvGridChart {spec} formatValue={(v) => v >= 1000 ? \`$\${(v/1000).toFixed(1)}k\` : \`$\${v}\`} />`,
+    },
+    {
+      name: 'onSelect',
+      type: '(selection: ChartSelection) => void',
+      description: 'Fired when a category, point, or slice is clicked - use it to drill back into the grid (e.g. set a filter).',
+      example: `<SvGridChart {spec} onSelect={(s) => api.setFilter('region', { operator: 'equals', value: s.category })} />`,
+    },
+  ],
+  notes: [
+    'rowsToChartSpec() options include `series` (pivot into one series per value), `reduce` (sum/avg/count), `stacked`, `stacked100`, `topN` + `otherLabel`, `sort`, and `width` / `height`.',
+    'For SVG/PNG export of a rendered chart, see chartToSvgString / downloadChartPng in the chart-export module.',
   ],
 }
 
@@ -2711,6 +2809,362 @@ npx sv-grid-mcp
   ],
 }
 
+// ---------- Charts -----------------------------------------------------
+
+const chartApiSection: ApiSection = {
+  id: 'chart-api',
+  category: 'Charts',
+  title: 'rowsToChartSpec / buildChart / niceScale',
+  blurb: 'Build the ChartSpec that <SvGridChart /> renders - from grid rows, or by hand.',
+  intro: [
+    'A ChartSpec is the data model behind every chart: a default type, category labels, and one or more series. rowsToChartSpec() aggregates raw rows into a spec; buildChart() turns a spec into pure geometry (useful for tests or a custom renderer); niceScale() rounds an axis domain to friendly tick boundaries.',
+  ],
+  signature: `import { rowsToChartSpec, SvGridChart } from 'sv-grid-community'
+
+const spec = rowsToChartSpec(orders, {
+  type: 'bar', category: 'region', value: 'total',
+  series: 'status',   // pivot: one series per status
+  reduce: 'sum', stacked: true, topN: 8,
+})
+
+<SvGridChart {spec} />`,
+  props: [
+    {
+      name: 'rowsToChartSpec(rows, opts)',
+      type: '(rows, opts) => ChartSpec',
+      description: 'Aggregate rows into a ChartSpec. opts: { type, category, value (one field or many), series?, reduce?: "sum"|"avg"|"count", stacked?, stacked100?, sort?, topN?, otherLabel?, width?, height?, palette? }.',
+      example: `rowsToChartSpec(sales, { type: 'line', category: 'month', value: 'revenue', series: 'product' })`,
+    },
+    {
+      name: 'buildChart(spec)',
+      type: '(spec: ChartSpec) => ChartGeometry',
+      description: 'Compute laid-out geometry (bars, line paths, slices, axis ticks) from a spec. <SvGridChart /> calls this internally; call it directly for a custom renderer or snapshot tests.',
+      example: `const geo = buildChart(spec) // { bars, lines, slices, xTicks, yTicks, ... }`,
+    },
+    {
+      name: 'niceScale(min, max, tickCount?)',
+      type: '(min, max, tickCount = 4) => NiceScale',
+      description: 'Round a [min, max] domain out to nice tick boundaries. Returns { min, max, step, ticks }.',
+      example: `niceScale(0, 9300) // -> { min: 0, max: 10000, step: 2500, ticks: [0,2500,...] }`,
+    },
+    {
+      name: 'DEFAULT_PALETTE',
+      type: 'string[]',
+      description: 'The 8-color default series palette, used when a series has no explicit color.',
+      example: `import { DEFAULT_PALETTE } from 'sv-grid-community'`,
+    },
+    {
+      name: 'ChartSpec',
+      type: 'type',
+      description: 'The chart model: { type, categories, series, width?, height?, palette?, stacked?, stacked100?, orientation?, innerRadius?, referenceLines?, xType?, yAxisTitle?, ... }.',
+    },
+  ],
+  notes: ['Render a ChartSpec with the <SvGridChart /> component. See its section for the visual, interactive props.'],
+}
+
+const chartExportSection: ApiSection = {
+  id: 'chart-export',
+  category: 'Charts',
+  title: 'Chart export (SVG / PNG)',
+  blurb: 'Serialize or download a rendered chart as a standalone SVG or rasterized PNG.',
+  intro: [
+    'These take the chart\'s rendered DOM (the <svg>, or a wrapping element) and produce a self-styled SVG string or a PNG. Styling that lives in CSS variables is inlined, so the exported file looks the same outside the app.',
+  ],
+  signature: `import { downloadChartPng } from 'sv-grid-community'
+
+let chartEl: HTMLElement   // bind:this on the chart wrapper
+
+<div bind:this={chartEl}><SvGridChart {spec} /></div>
+<button onclick={() => downloadChartPng(chartEl, 'revenue.png')}>Download PNG</button>`,
+  props: [
+    {
+      name: 'chartToSvgString(source, options?)',
+      type: '(source: SVGSVGElement | HTMLElement, options?) => string',
+      description: 'Serialize the chart to a standalone, self-styled SVG string (CSS-variable colors inlined, hit layers stripped).',
+      example: `const svg = chartToSvgString(chartEl, { background: '#fff' })`,
+    },
+    {
+      name: 'downloadChartSvg(source, filename?, options?)',
+      type: '(source, filename = "chart.svg", options?) => void',
+      description: 'Serialize and trigger a browser download of the .svg file.',
+      example: `downloadChartSvg(chartEl, 'q3-revenue.svg')`,
+    },
+    {
+      name: 'chartToPngBlob(source, options?)',
+      type: '(source, options?) => Promise<Blob>',
+      description: 'Rasterize the chart to a PNG Blob. options.scale controls pixel density (default 2 = retina).',
+      example: `const blob = await chartToPngBlob(chartEl, { scale: 3 })`,
+    },
+    {
+      name: 'downloadChartPng(source, filename?, options?)',
+      type: '(source, filename = "chart.png", options?) => Promise<void>',
+      description: 'Rasterize and trigger a browser download of the .png file.',
+      example: `await downloadChartPng(chartEl, 'revenue.png', { background: '#0a1124' })`,
+    },
+    {
+      name: 'ChartExportOptions',
+      type: '{ background?: string; scale?: number }',
+      description: 'background overrides the fill (defaults to --sg-bg); scale is the PNG pixel multiplier.',
+    },
+  ],
+}
+
+const sparklineSection: ApiSection = {
+  id: 'sparkline',
+  category: 'Charts',
+  title: 'buildSparkline / toSparklineValues',
+  blurb: 'Compute the geometry for an in-cell sparkline (line, area, bar, win/loss).',
+  intro: [
+    'Sparklines are headless: buildSparkline() returns paths + bar rects sized to your width/height, and you render the tiny SVG inside a cell snippet. toSparklineValues() coerces loose cell values (arrays or comma/space strings) into a clean number array first.',
+  ],
+  signature: `import { buildSparkline, toSparklineValues, renderSnippet } from 'sv-grid-community'
+
+{ field: 'history', header: 'Trend',
+  cell: (ctx) => renderSnippet(Spark, { values: toSparklineValues(ctx.getValue()) }) }`,
+  props: [
+    {
+      name: 'toSparklineValues(value)',
+      type: '(value: unknown) => number[]',
+      description: 'Coerce an array, or a comma/space-separated string, into a finite number array. Drops non-numeric entries.',
+      example: `toSparklineValues('3, 5, 2, 8') // -> [3, 5, 2, 8]`,
+    },
+    {
+      name: 'buildSparkline(values, cfg?)',
+      type: '(values: number[], cfg?: SparklineConfig) => SparklineGeometry | null',
+      description: 'Lay out the sparkline. Returns { linePath, areaPath, bars, lastPoint, width, height, ... } to render as SVG, or null for empty input.',
+      example: `const geo = buildSparkline(values, { type: 'area', width: 96, height: 24 })`,
+    },
+    {
+      name: 'SparklineConfig',
+      type: 'type',
+      description: '{ type?: "line"|"area"|"bar"|"winloss"; color?; negativeColor?; width?; height?; min?; max?; lineWidth?; lastPoint? }.',
+    },
+  ],
+  notes: ['buildSparkline returns geometry only - you draw the <svg> (a <path d={geo.linePath} /> plus an end dot, or {#each geo.bars}). See the interactive example above.'],
+  demo: 'sparkline',
+}
+
+// ---------- Data & state -----------------------------------------------
+
+const serverDataSourceSection: ApiSection = {
+  id: 'server-data-source',
+  category: 'Data & state',
+  title: 'createServerDataSource()',
+  blurb: 'A controller for server-side data: it turns sort / filter / page changes into one debounced, race-safe fetch.',
+  intro: [
+    'You implement a single getRows(request) that talks to your backend; createServerDataSource() owns the paging/sort/filter state, calls getRows, and pushes the result back through onChange. A monotonic request id guarantees a slow response for an old query can never clobber a newer one.',
+  ],
+  signature: `import { createServerDataSource } from 'sv-grid-community'
+
+const controller = createServerDataSource(
+  { getRows: async (req) => {
+      const res = await fetch('/api/orders?' + toQuery(req))
+      return res.json() // { rows, rowCount }
+    } },
+  { pageSize: 50, onChange: (state) => (view = state) },
+)`,
+  props: [
+    {
+      name: 'source.getRows(request)',
+      type: '(request: ServerRequest) => Promise<ServerResult<TData>>',
+      description: 'Your fetcher. ServerRequest carries { startRow, endRow, pageIndex, pageSize, sortModel, filterModel }; return { rows, rowCount }.',
+    },
+    {
+      name: 'options',
+      type: '{ pageSize?: number; onChange: (state: ServerState<TData>) => void }',
+      description: 'onChange fires whenever rows / total / loading / page change - wire it to your component state.',
+    },
+    {
+      name: 'controller.setSort / setFilter / setPage / setPageSize',
+      type: '(model) => void',
+      description: 'Push a new sort model, filter model, page index, or page size; each triggers a fresh fetch.',
+      example: `controller.setSort([{ id: 'total', desc: true }])`,
+    },
+    {
+      name: 'controller.refresh / getState / dispose',
+      type: '() => void | ServerState<TData>',
+      description: 'refresh() re-fetches the current page (e.g. after a mutation); getState() reads the latest snapshot; dispose() ignores in-flight responses on unmount.',
+      example: `onDestroy(() => controller.dispose())`,
+    },
+  ],
+}
+
+const namedViewsSection: ApiSection = {
+  id: 'named-views',
+  category: 'Data & state',
+  title: 'createNamedViews()',
+  blurb: 'Save and restore named snapshots of grid state (sort, filters, columns, ...).',
+  intro: [
+    'A view manager over any host that exposes getState() / setState() - the SvGridApi satisfies it directly. Persist views in memory (default) or localStorage, or implement your own ViewStorage.',
+  ],
+  signature: `import { createNamedViews, localStorageViews } from 'sv-grid-community'
+
+const views = createNamedViews(api, { storage: localStorageViews('orders-views') })
+views.save('EMEA at risk')   // capture current state
+views.load('EMEA at risk')   // re-apply it`,
+  props: [
+    {
+      name: 'createNamedViews(host, options?)',
+      type: '(host: ViewStateHost, options?: { storage?: ViewStorage }) => NamedViews',
+      description: 'host is anything with getState()/setState() (SvGridApi qualifies). Defaults to in-memory storage.',
+    },
+    {
+      name: 'NamedViews',
+      type: 'API',
+      description: 'list() · save(name) · load(name) · remove(name) · rename(from, to) · has(name). save() overwrites a duplicate name; load()/remove()/rename() return false for unknown names.',
+      example: `views.list().map((v) => v.name)`,
+    },
+    {
+      name: 'memoryViews(initial?) / localStorageViews(key)',
+      type: '() => ViewStorage',
+      description: 'Built-in ViewStorage implementations. localStorageViews is SSR-safe (no-ops without localStorage). Implement { read(), write(views) } for a server-backed store.',
+      example: `localStorageViews('grid:orders:views')`,
+    },
+  ],
+}
+
+const collaborationSection: ApiSection = {
+  id: 'collaboration',
+  category: 'Data & state',
+  title: 'createCollaboration()',
+  blurb: 'Multi-user presence + live edit broadcast over a pluggable transport.',
+  intro: [
+    'Share cursor positions and cell edits between users. createCollaboration() is transport-agnostic: ship the built-in broadcastChannelTransport() for cross-tab demos, or implement CollabTransport over your own WebSocket / WebRTC channel.',
+  ],
+  signature: `import { createCollaboration, broadcastChannelTransport } from 'sv-grid-community'
+
+const collab = createCollaboration({
+  user: { id, name: 'Ada', color: '#22c55e' },
+  transport: broadcastChannelTransport('orders-room'),
+  onPeersChange: (peers) => (cursors = peers),
+  onRemoteEdit: ({ rowId, columnId, value }) => applyEdit(rowId, columnId, value),
+})`,
+  props: [
+    {
+      name: 'createCollaboration(options)',
+      type: '(options: CollaborationOptions) => Collaboration',
+      description: 'options: { user, transport, onPeersChange?, onRemoteEdit?, peerTimeoutMs? (default 15000) }.',
+    },
+    {
+      name: 'Collaboration',
+      type: 'API',
+      description: 'setCell(cell | null) broadcasts your cursor · sendEdit(rowId, columnId, value) broadcasts an edit · peers() lists present users (self excluded) · dispose() leaves the room.',
+      example: `collab.sendEdit(row.id, 'status', 'shipped')`,
+    },
+    {
+      name: 'broadcastChannelTransport(name)',
+      type: '(name: string) => CollabTransport',
+      description: 'Built-in transport over BroadcastChannel - live across tabs of the same browser, no backend. No-ops where BroadcastChannel is unavailable.',
+    },
+    {
+      name: 'CollabTransport',
+      type: '{ post(msg); subscribe(handler): () => void }',
+      description: 'Implement this over any channel (WebSocket, WebRTC, Supabase Realtime, ...) to collaborate across machines.',
+    },
+  ],
+}
+
+// ---------- Conditional formatting / filters / editors -----------------
+
+const conditionalFormattingSection: ApiSection = {
+  id: 'conditional-formatting',
+  category: 'Utilities',
+  title: 'Conditional formatting',
+  blurb: 'Resolve color scales, data bars, icon sets, and rule styles for a cell.',
+  intro: [
+    'The primitives behind conditional formatting. computeColumnStat() finds a column\'s numeric range once per render; resolveCellFormat() turns your format specs into a concrete { background, color, dataBar, icon, ... } for one cell. lerpColor() and contrastText() are the color helpers they use, exported for your own renderers.',
+  ],
+  signature: `import { computeColumnStat, resolveCellFormat } from 'sv-grid-community'
+
+const stat = computeColumnStat(rows.map((r) => r.score))
+const fmt = resolveCellFormat(value, row, 'score', [
+  { type: 'colorScale', min: '#fee', max: '#c2410c' },
+], stat)`,
+  props: [
+    {
+      name: 'resolveCellFormat(value, row, columnId, formats, stat)',
+      type: '(...) => ResolvedCellFormat',
+      description: 'Apply the matching ConditionalFormat specs to one cell. Returns { background?, color?, fontWeight?, dataBar?, icon?, iconOnly? } to spread onto the cell.',
+      example: `const { background, color } = resolveCellFormat(v, row, 'total', formats, stat)`,
+    },
+    {
+      name: 'computeColumnStat(values)',
+      type: '(values: Iterable<unknown>) => { min, max } | null',
+      description: 'Compute a column\'s numeric min/max once, then pass it to resolveCellFormat for color scales and data bars.',
+    },
+    {
+      name: 'ConditionalFormat',
+      type: 'type',
+      description: 'A spec plus optional `columns`. Variants: colorScale (2/3-stop gradient), dataBar (in-cell bar), iconSet ("arrows"|"traffic"|"triangles"), rule (when(ctx) => boolean + styles).',
+      example: `{ type: 'dataBar', color: '#3b82f6', columns: ['revenue'] }`,
+    },
+    {
+      name: 'lerpColor(a, b, t) / contrastText(bg)',
+      type: '(a, b, t) => string · (bg) => string | null',
+      description: 'lerpColor interpolates two hex colors (t in 0..1); contrastText returns black or white for legible text on bg.',
+      example: `lerpColor('#fee2e2', '#16a34a', 0.5)`,
+    },
+  ],
+}
+
+const excelFilterSection: ApiSection = {
+  id: 'excel-filters',
+  category: 'Utilities',
+  title: 'applyExcelFilter / normalizeForFilter',
+  blurb: 'The operator-based, locale-aware text/number filter primitives.',
+  intro: [
+    'applyExcelFilter() evaluates one ExcelFilter against a cell value; normalizeForFilter() is the accent- and case-folding pass it uses (NFD decompose, strip diacritics, locale-aware lowercase) so "cafe" matches "Café".',
+  ],
+  props: [
+    {
+      name: 'applyExcelFilter(cellValue, filter, options?)',
+      type: '(cellValue, filter: ExcelFilter, options?: ExcelFilterOptions) => boolean',
+      description: 'Test a value against a filter. ExcelFilter is { id, operator, value?, valueTo? }.',
+      example: `applyExcelFilter(row.city, { id: 'city', operator: 'contains', value: 'cafe' }, { locale: 'fr' })`,
+    },
+    {
+      name: 'normalizeForFilter(s, locale?)',
+      type: '(s: string, locale?: string | string[]) => string',
+      description: 'Diacritic-stripping, locale-aware lowercasing used for accent-insensitive matching.',
+      example: `normalizeForFilter('Tōkyō') // -> 'tokyo'`,
+    },
+    {
+      name: 'ExcelFilterOperator',
+      type: 'type',
+      description: '"contains" | "equals" | "startsWith" | "greaterThan" | "lessThan" | "between" | "isBlank".',
+    },
+  ],
+}
+
+const editorHelpersSection: ApiSection = {
+  id: 'editor-helpers',
+  category: 'Utilities',
+  title: 'parseEditorValue / normalizeEditorOptions',
+  blurb: 'Coerce an edited value to its typed result, and normalize editor option lists.',
+  intro: [
+    'When you build a custom editor, these match the built-in behavior: parseEditorValue() converts the raw input to the right runtime type for the editor; normalizeEditorOptions() turns a loose options list (strings, numbers, or objects) into uniform { value, label, color } entries for list/chips/select editors.',
+  ],
+  props: [
+    {
+      name: 'parseEditorValue(type, value, opts?)',
+      type: '(type: CellEditorType, value: unknown, opts?: { multiple?: boolean }) => unknown',
+      description: 'Coerce a raw editor value: number -> number|null, checkbox -> boolean, list/chips -> array when opts.multiple, etc.',
+      example: `parseEditorValue('number', '42') // -> 42`,
+    },
+    {
+      name: 'normalizeEditorOptions(options)',
+      type: '(options) => CellEditorOption[]',
+      description: 'Normalize ["a", { value: 2, label: "Two" }] into [{ value, label, color? }] for list/chips/select editors.',
+      example: `normalizeEditorOptions(['low', 'high']) // -> [{ value: 'low', label: 'low' }, ...]`,
+    },
+    {
+      name: 'CellEditorType',
+      type: 'type',
+      description: '"text" | "number" | "date" | "datetime" | "time" | "password" | "checkbox" | "list" | "chips" | "select" | "rich-select" | "textarea" | "color" | "rating".',
+    },
+  ],
+}
+
 // ---------- Combined export -------------------------------------------
 
 export const sections: ApiSection[] = [
@@ -2718,6 +3172,7 @@ export const sections: ApiSection[] = [
   eventsSection,
   flexRenderSection,
   renderHelpersSection,
+  svgridChartSection,
   columnDefSection,
   cellFormatSection,
   filterOperatorSection,
@@ -2731,6 +3186,17 @@ export const sections: ApiSection[] = [
   virtualizationSection,
   a11ySection,
   utilsSection,
+  conditionalFormattingSection,
+  excelFilterSection,
+  editorHelpersSection,
+  // Charts
+  chartApiSection,
+  chartExportSection,
+  sparklineSection,
+  // Data & state
+  serverDataSourceSection,
+  namedViewsSection,
+  collaborationSection,
   // Enterprise (Pro)
   proOverviewSection,
   licenseSection,
@@ -2757,6 +3223,8 @@ const CATEGORY_ORDER = [
   'Virtualization',
   'Accessibility',
   'Utilities',
+  'Charts',
+  'Data & state',
   'Enterprise (Pro)',
   'Tooling',
 ]
@@ -2794,6 +3262,8 @@ export function memberHeading(category: string): string {
     case 'Utilities':
     case 'Virtualization':
     case 'Accessibility':
+    case 'Charts':
+    case 'Data & state':
       return 'Functions'
     default:
       return 'Properties'

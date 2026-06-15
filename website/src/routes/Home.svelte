@@ -81,6 +81,7 @@
   const compares = [
     { label: 'AG Grid', href: '#/compare/ag-grid' },
     { label: 'TanStack Table', href: '#/compare/tanstack-table' },
+    { label: 'SVAR DataGrid', href: '#/compare/svar-svelte-datagrid' },
     { label: 'MUI X DataGrid', href: '#/compare/mui-x-datagrid' },
     { label: 'Handsontable', href: '#/compare/handsontable' },
     { label: 'svelte-headless-table', href: '#/compare/svelte-headless-table' },

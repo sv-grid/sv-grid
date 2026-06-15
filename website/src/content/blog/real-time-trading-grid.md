@@ -7,7 +7,7 @@ tags: trading, finance, realtime, use case, svelte data grid
 author: Kamelia M
 ---
 
-A trading or markets grid is the most demanding data grid there is: hundreds of rows, sub-second updates, and traders who notice a dropped frame. It is also where SvGrid's runes-native core earns its keep. Here is a blueprint.
+A trading or markets grid is about the hardest thing you can ask a data grid to do: hundreds of rows, sub-second updates, and users who genuinely notice a single dropped frame. It is also exactly where a runes-native core pays off. Here is how I would build one.
 
 ![A live market data grid in SvGrid](/blog-media/stock-market.png)
 *A live market grid in SvGrid, with flash-on-change cells.*

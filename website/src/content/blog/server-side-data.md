@@ -7,7 +7,7 @@ tags: server-side, pagination, api, svelte data grid
 author: Boyko Markov
 ---
 
-When a table has millions of rows, you cannot ship them all to the browser. The answer is server-side data: the grid owns the sort, filter, and page UI, and your backend returns just the rows for the current view. SvGrid's external mode is built exactly for this.
+Once a table has millions of rows, shipping them all to the browser stops being an option - the tab grinds, the user waits, everyone loses. The fix is server-side data: the grid keeps the sort, filter, and page UI, and your backend hands back only the rows for the view on screen. SvGrid's external mode exists for exactly this.
 
 ![Server-side data in SvGrid](/blog-media/server-side.png)
 *Server-side sorting, filtering, and paging in SvGrid.*

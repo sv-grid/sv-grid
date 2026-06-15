@@ -7,7 +7,7 @@ tags: conditional formatting, cell styles, heatmap, svelte data grid
 author: Boyko Markov
 ---
 
-Numbers in a table become insight when color does the reading for you - red for negatives, green for targets met, a heatmap for intensity. SvGrid lets you style cells based on their value, so the grid surfaces the story without the user scanning every figure.
+A wall of numbers hides its own story; color tells it for you - red for a loss, green for a target hit, a heatmap for where the heat actually is. SvGrid lets you style cells by their value, so the grid does the first pass of reading and the user's eye goes straight to what matters.
 
 ![Conditional cell formatting in SvGrid](/blog-media/conditional-formatting.png)
 *Value-driven conditional formatting: color scales, data bars, and icons.*

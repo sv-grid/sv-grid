@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Prisma is a popular, ergonomic ORM. Its `findMany` options map neatly onto what a data grid needs: `orderBy` for sorting, `where` for filtering, `skip`/`take` for paging, and `count` for the pager total. Here is how to drive SvGrid server-side from Prisma.
 
+![Server-side data from Prisma in SvGrid](/blog-media/server-side-2.png)
+*A Prisma-backed server row model in SvGrid.*
+
 ## The query
 
 ```ts

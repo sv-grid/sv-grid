@@ -7,7 +7,7 @@ tags: grouping, aggregation, summaries, svelte data grid
 author: Boyko Markov
 ---
 
-When a table has natural categories - region, status, owner - grouping turns a flat list into a collapsible summary. SvGrid's `columnGroupingFeature` groups rows by a column and shows aggregated footers per group.
+The moment a table has natural categories - region, status, owner - a flat list stops being the best way to look at it. Grouping collapses those categories into a summary you can expand on demand, and SvGrid's `columnGroupingFeature` does the grouping plus the aggregated footer per group.
 
 ![Row grouping with aggregated footers in SvGrid](/blog-media/grouping.png)
 *Grouping with aggregated group footers in SvGrid.*
