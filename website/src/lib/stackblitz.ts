@@ -11,6 +11,19 @@
  * See: https://developer.stackblitz.com/platform/api/post-api
  */
 import type { Demo } from './demos'
+// The gallery theme tokens (--sg-*) + the Tailwind entry, shared verbatim with
+// the examples app. Bundled as text and written into each StackBlitz project.
+import gridThemeCss from '../../../examples/src/index.css?raw'
+
+// app.css = the gallery theme/Tailwind, plus a host that gives the WebContainer
+// page a real height. Demos use `flex-1` / `containerHeight="100%"`, which
+// collapse to 0px unless #app is a sized, flex-column container.
+const APP_CSS = `${gridThemeCss}
+/* --- StackBlitz host (not part of the gallery stylesheet) --- */
+html, body { height: 100%; margin: 0; }
+body { background: var(--sg-bg); color: var(--sg-fg); font-family: system-ui, -apple-system, sans-serif; }
+#app { height: 100%; display: flex; flex-direction: column; padding: 1rem; box-sizing: border-box; }
+`
 
 // Published versions to pull from npm inside the WebContainer. Kept in step
 // with packages/*/package.json and examples/package.json.
@@ -107,14 +120,16 @@ function buildFiles(demo: Demo, source: string): Record<string, string> {
       // back to a wasm build that crashes ("Invalid atomic access index").
       // vite-plugin-svelte 6 supports Vite 7.
       '@sveltejs/vite-plugin-svelte': '^6.0.0',
+      '@tailwindcss/vite': '^4.3.0',
       svelte: '^5.55.5',
+      tailwindcss: '^4.3.0',
       typescript: '6.0.3',
       vite: '^7.0.0',
     },
   }
 
   const indexHtml = `<!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -128,6 +143,7 @@ function buildFiles(demo: Demo, source: string): Record<string, string> {
 `
 
   const mainTs = `import { mount } from 'svelte'
+import './app.css'
 import App from './App.svelte'
 
 export default mount(App, { target: document.getElementById('app')! })
@@ -135,8 +151,9 @@ export default mount(App, { target: document.getElementById('app')! })
 
   const viteConfig = `import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+import tailwindcss from '@tailwindcss/vite'
 
-export default defineConfig({ plugins: [svelte()] })
+export default defineConfig({ plugins: [tailwindcss(), svelte()] })
 `
 
   const svelteConfig = `import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
@@ -170,6 +187,7 @@ export default { preprocess: vitePreprocess() }
     'vite.config.js': viteConfig,
     'svelte.config.js': svelteConfig,
     'tsconfig.json': tsconfig,
+    'src/app.css': APP_CSS,
     'src/main.ts': mainTs,
     'src/App.svelte': source,
   }
@@ -399,13 +417,15 @@ function buildSnippetFiles(snippet: ApiSnippet): Record<string, string> {
       // back to a wasm build that crashes ("Invalid atomic access index").
       // vite-plugin-svelte 6 supports Vite 7.
       '@sveltejs/vite-plugin-svelte': '^6.0.0',
+      '@tailwindcss/vite': '^4.3.0',
       svelte: '^5.55.5',
+      tailwindcss: '^4.3.0',
       typescript: '6.0.3',
       vite: '^7.0.0',
     },
   }
   const indexHtml = `<!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -418,14 +438,16 @@ function buildSnippetFiles(snippet: ApiSnippet): Record<string, string> {
 </html>
 `
   const mainTs = `import { mount } from 'svelte'
+import './app.css'
 import App from './App.svelte'
 
 export default mount(App, { target: document.getElementById('app')! })
 `
   const viteConfig = `import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+import tailwindcss from '@tailwindcss/vite'
 
-export default defineConfig({ plugins: [svelte()] })
+export default defineConfig({ plugins: [tailwindcss(), svelte()] })
 `
   const svelteConfig = `import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 
@@ -454,6 +476,7 @@ export default { preprocess: vitePreprocess() }
     'vite.config.js': viteConfig,
     'svelte.config.js': svelteConfig,
     'tsconfig.json': tsconfig,
+    'src/app.css': APP_CSS,
     'src/main.ts': mainTs,
     'src/App.svelte': source,
   }
