@@ -35,7 +35,7 @@ pagination), you need the headless grid instance. The wrapper does not
 expose it as a prop today; if you need post-pipeline access, instantiate
 the headless engine yourself with `createSvGrid` and pass its computed
 output into your own renderer. See
-[`packages/sv-grid-community/src/createGrid.svelte.ts`](../../../packages/sv-grid-community/src/createGrid.svelte.ts).
+[`packages/sv-grid-core/src/createGrid.svelte.ts`](../../../packages/sv-grid-core/src/createGrid.svelte.ts).
 
 A dedicated `api.getDisplayedRows()` is on the
 [gap list](../missing-features.md).

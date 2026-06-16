@@ -231,8 +231,8 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 ## API reference
 
 - [Auto-generated reference](https://svgrid.com/reference/auto/index): _Generated from the published TypeScript sources. Do not edit by hand - rerun node tools/build-reference.mjs._
-- [`sv-grid-core` · `core.ts`](https://svgrid.com/reference/auto/sv-grid-community-core): Auto-generated. Source: packages\sv-grid-core\src\core.ts.
-- [`sv-grid-core` · `svgrid-wrapper.types.ts`](https://svgrid.com/reference/auto/sv-grid-community-svgrid-wrapper.types): Auto-generated. Source: packages\sv-grid-core\src\svgrid-wrapper.types.ts.
+- [`sv-grid-core` · `core.ts`](https://svgrid.com/reference/auto/sv-grid-core-core): Auto-generated. Source: packages\sv-grid-core\src\core.ts.
+- [`sv-grid-core` · `svgrid-wrapper.types.ts`](https://svgrid.com/reference/auto/sv-grid-core-svgrid-wrapper.types): Auto-generated. Source: packages\sv-grid-core\src\svgrid-wrapper.types.ts.
 - [`sv-grid-pro` · `ai.ts`](https://svgrid.com/reference/auto/sv-grid-pro-ai): Auto-generated. Source: packages\sv-grid-pro\src\ai.ts.
 - [`sv-grid-pro` · `export.ts`](https://svgrid.com/reference/auto/sv-grid-pro-export): Auto-generated. Source: packages\sv-grid-pro\src\export.ts.
 - [`sv-grid-pro` · `import.ts`](https://svgrid.com/reference/auto/sv-grid-pro-import): Auto-generated. Source: packages\sv-grid-pro\src\import.ts.

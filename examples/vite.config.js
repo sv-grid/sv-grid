@@ -21,8 +21,8 @@ export default defineConfig({
   resolve: {
     alias: {
       // Live-edit the grid package: alias to src/ so HMR fires on changes
-      // without needing `pnpm --filter ./packages/sv-grid-community build`.
-      'sv-grid-core': path.resolve(repoRoot, 'packages/sv-grid-community/src/index.ts'),
+      // without needing `pnpm --filter ./packages/sv-grid-core build`.
+      'sv-grid-core': path.resolve(repoRoot, 'packages/sv-grid-core/src/index.ts'),
     },
   },
   optimizeDeps: {

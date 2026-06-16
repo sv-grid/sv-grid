@@ -48,7 +48,7 @@ const virtualizer = createSvelteVirtualizer({
 })
 ```
 
-See [`packages/sv-grid-community/src/virtualization/`](../../../packages/sv-grid-community/src/virtualization/).
+See [`packages/sv-grid-core/src/virtualization/`](../../../packages/sv-grid-core/src/virtualization/).
 
 ## Header height
 

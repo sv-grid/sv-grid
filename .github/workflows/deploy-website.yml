@@ -6,7 +6,7 @@ on:
     paths:
       - 'website/**'
       - 'examples/src/demos/**'
-      - 'packages/sv-grid-community/**'
+      - 'packages/sv-grid-core/**'
       - 'docs/**'
       - '.github/workflows/deploy-website.yml'
       - 'pnpm-workspace.yaml'

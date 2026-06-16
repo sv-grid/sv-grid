@@ -159,5 +159,5 @@ worked example.
 - [Getting started](./getting-started.md) - the wrapper-first walkthrough
 - [Column definitions](./help/columns/column-definitions.md) - the contract the headless core enforces
 - [Filter API](./help/filtering/filter-api.md) - example of headless state surfaced through the wrapper
-- [`createSvGrid` source](../packages/sv-grid-community/src/createGrid.svelte.ts)
+- [`createSvGrid` source](../packages/sv-grid-core/src/createGrid.svelte.ts)
 - Demo [`19-ssr`](../examples/src/demos/19-ssr.svelte) - SSR with the headless core

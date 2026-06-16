@@ -37,7 +37,7 @@ const columns: ColumnDef<{}, Person>[] = [
 | `columns` | `ColumnDef[]` | Children - turns this column into a column **group**. |
 | `width` | `number` | Initial width in pixels (overrides the grid's `columnWidth`). |
 
-See [`packages/sv-grid-community/src/core.ts`](../../../packages/sv-grid-community/src/core.ts).
+See [`packages/sv-grid-core/src/core.ts`](../../../packages/sv-grid-core/src/core.ts).
 
 ## Accessor vs. accessorFn
 

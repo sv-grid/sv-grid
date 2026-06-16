@@ -6,7 +6,7 @@ numbers on your branch, and what to do if size matters.
 ## Per-feature gzipped cost
 
 Numbers from a `rollup -p terser` production build against
-`packages/sv-grid-community/dist/`. Each feature is the marginal cost
+`packages/sv-grid-core/dist/`. Each feature is the marginal cost
 *above* the baseline core when imported alone.
 
 | Feature                       | gz kB  | Required? | Notes                                          |
@@ -44,7 +44,7 @@ not at module load.
 corepack pnpm --filter sv-grid-core build
 
 # Inspect the dist bundle
-npx source-map-explorer packages/sv-grid-community/dist/index.js
+npx source-map-explorer packages/sv-grid-core/dist/index.js
 ```
 
 A treemap opens in your browser. Each block is a source file scaled by
@@ -54,7 +54,7 @@ much of the total weight it owns.
 For a quick gzipped readout:
 
 ```bash
-node -e "console.log((require('zlib').gzipSync(require('fs').readFileSync('packages/sv-grid-community/dist/index.js')).length / 1024).toFixed(1) + ' kB gz')"
+node -e "console.log((require('zlib').gzipSync(require('fs').readFileSync('packages/sv-grid-core/dist/index.js')).length / 1024).toFixed(1) + ' kB gz')"
 ```
 
 ## What to do if size matters

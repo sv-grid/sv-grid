@@ -19,7 +19,7 @@ parseEditorValue('checkbox', 'true')         // true
 parseEditorValue('checkbox', true)           // true
 ```
 
-The full source is short and worth reading: [`cell-editors.ts`](../../../packages/sv-grid-community/src/editors/cell-editors.ts).
+The full source is short and worth reading: [`cell-editors.ts`](../../../packages/sv-grid-core/src/editors/cell-editors.ts).
 
 ## What "null" means
 

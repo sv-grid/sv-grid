@@ -50,7 +50,7 @@ type:
 
 The editor receives a string from the DOM and converts to the canonical
 value before commit. The implementation lives in
-[`parseEditorValue`](../../../packages/sv-grid-community/src/editors/cell-editors.ts).
+[`parseEditorValue`](../../../packages/sv-grid-core/src/editors/cell-editors.ts).
 
 ```ts
 import { parseEditorValue } from 'sv-grid-core'

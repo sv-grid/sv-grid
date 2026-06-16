@@ -128,6 +128,29 @@ export type CellContext<TData extends RowData> = {
 }
 ```
 
+### `type EditorContext`
+
+Context passed to a custom `cellEditor` snippet/component. Three write
+helpers cover the lifecycle:
+
+  - `update(next)`  - stage `next` as the draft, keep the editor open.
+                      Use this for live-preview controls (sliders,
+                      color pickers) so the user can keep adjusting.
+  - `commit(next?)` - write the value AND close the editor. The
+                      argument is optional; when omitted, the most
+                      recently `update()`d value is saved. Use this
+                      for "done" gestures (Enter, picking an option).
+  - `cancel()`      - discard the draft and close the editor.
+
+```ts
+export type EditorContext<TData extends RowData> = CellContext<TData> & {
+  value: unknown
+  update: (next: unknown) => void
+  commit: (next?: unknown) => void
+  cancel: () => void
+}
+```
+
 ### `type CellFormatConfig`
 
 _No JSDoc yet._
@@ -157,6 +180,25 @@ _No JSDoc yet._
 export type ColumnDefTemplate<TContext> = string | ((context: TContext) => unknown)
 ```
 
+### `type GroupAggregator`
+
+How a column's value is aggregated for a group row when `columnGrouping`
+is active. Built-in reducers cover the common cases; pass a function for
+anything custom (weighted average, median, percentile, distinct count).
+The function receives the finite numeric values AND the raw leaf rows.
+
+```ts
+export type GroupAggregator<TData = any> =
+```
+
+### `function applyGroupAggregate`
+
+Apply a group aggregator over a bucket's leaf rows for one column. */
+
+```ts
+export function applyGroupAggregate<TData extends RowData>(
+```
+
 ### `type ColumnDef`
 
 _No JSDoc yet._
@@ -170,7 +212,38 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   footer?: ColumnDefTemplate<HeaderContext<TData>>
   cell?: ColumnDefTemplate<CellContext<TData>>
   columns?: Array<ColumnDef<TFeatures, TData>>
-  editorType?: 'text' | 'number' | 'date' | 'datetime' | 'checkbox' | 'list' | 'chips'
+  editorType?:
+    | 'text'
+    | 'number'
+    | 'date'
+    | 'datetime'
+    | 'time'         // native <input type="time"> - HH:MM or HH:MM:SS
+    | 'password'     // native <input type="password"> with masked rendering
+    | 'checkbox'
+    | 'list'
+    | 'chips'
+    | 'select'       // custom dropdown - single value, no typeahead
+    | 'rich-select'  // custom dropdown with a typeahead search input
+    | 'textarea'     // multi-line editor; Tab or Ctrl+Enter commits, plain Enter inserts a newline
+    | 'color'        // native <input type="color"> swatch
+    | 'rating'       // 5-star rating control
+  /**
+   * Custom in-cell editor. Receives the cell context PLUS a `commit(value)`
+   * and `cancel()` helper. Use when none of the built-in `editorType`s fit;
+   * the snippet's outer element is mounted inside the editing cell and
+   * inherits keyboard handling (Esc cancels, Enter commits unless your
+   * snippet preventDefaults it).
+   *
+   * Coexists with `editorType`: when both are set, `cellEditor` wins and
+   * `editorType` is treated as a hint for parsing the saved value.
+   */
+  cellEditor?: ColumnDefTemplate<EditorContext<TData>>
+  /**
+   * Per-column tooltip. String shows as a native `title=`; `(ctx) => string`
+   * runs per cell so the tooltip can reflect the value. Returning an empty
+   * string skips the tooltip.
+   */
+  tooltip?: string | ((ctx: CellContext<TData>) => string | null | undefined)
   /**
    * Gate editing per column or per cell.
    *
@@ -224,6 +297,26 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   editorSeparator?: string
   format?: CellFormatConfig
   formatter?: CellFormatter<TData>
+  /**
+   * Aggregate this column's values into the group row when grouping is
+   * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
+   * 'extent' | 'first'`, or a custom `(values, rows) => unknown`. The result
+   * is formatted with this column's `format` and shown in the group header.
+   */
+  aggregate?: GroupAggregator<TData>
+  /**
+   * Render the cell as an in-cell sparkline chart. The cell value should be
+   * an array of numbers (or a comma/space separated string). Mutually
+   * exclusive with a custom `cell` renderer (a `cell` wins if both are set).
+   *
+   *   { sparkline: { type: 'line' } }                 // default line
+   *   { sparkline: { type: 'bar', color: '#16a34a' } }
+   *   { sparkline: { type: 'winloss' } }              // sign-only up/down
+   *
+   * See `SparklineConfig` for the full option set (type, color,
+   * negativeColor, width, height, fixed min/max).
+   */
+  sparkline?: SparklineConfig
   /** Initial column width in pixels. Falls back to the grid's `columnWidth` prop. */
   width?: number
   /**
@@ -566,7 +659,11 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
         const groupOriginal: Record<string, unknown> = {}
         columns.forEach((column) => {
           const field = column.columnDef.field
-          if (field) groupOriginal[field] = resolveColumnValue(column.id)
+          if (!field) return
+          const agg = column.columnDef.aggregate
+          groupOriginal[field] = agg
+            ? applyGroupAggregate(agg, column.id, children)
+            : resolveColumnValue(column.id)
         })
 
         const groupRow: Row<TData> = {
@@ -586,7 +683,15 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
             table.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
           },
           getAllCells: () => [],
-          getCellValueByColumnId: resolveColumnValue,
+          // Prefer the precomputed group value (which carries aggregates)
+          // and fall back to the shared-value resolver for columns without
+          // a field.
+          getCellValueByColumnId: (columnId: string) => {
+            const col = columns.find((c) => c.id === columnId)
+            const field = col?.columnDef.field
+            if (field && field in groupOriginal) return groupOriginal[field]
+            return resolveColumnValue(columnId)
+          },
         }
         groupRows.push(groupRow)
       })

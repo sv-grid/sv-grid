@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-06-16T00:32:30.045Z",
+  "generatedAt": "2026-06-16T00:43:11.297Z",
   "counts": {
     "pages": 195,
     "pro": 9,
@@ -276,8 +276,8 @@
       "title": "API reference",
       "pages": [
         "reference/auto/index.md",
-        "reference/auto/sv-grid-community-core.md",
-        "reference/auto/sv-grid-community-svgrid-wrapper.types.md",
+        "reference/auto/sv-grid-core-core.md",
+        "reference/auto/sv-grid-core-svgrid-wrapper.types.md",
         "reference/auto/sv-grid-pro-ai.md",
         "reference/auto/sv-grid-pro-export.md",
         "reference/auto/sv-grid-pro-import.md",
@@ -555,7 +555,7 @@
       "path": "help/benchmarks.md",
       "url": "/help/benchmarks",
       "title": "Performance benchmarks",
-      "summary": "Headline numbers from the regression suite. Every figure below is from the same hardware + browser configuration, re-measured on each release; the script that produces them lives in packages/sv-grid-community/scripts/bench.ts and is checked in.",
+      "summary": "Headline numbers from the regression suite. Every figure below is from the same hardware + browser configuration, re-measured on each release; the script that produces them lives in packages/sv-grid-core/scripts/bench.ts and is checked in.",
       "section": "help",
       "tier": "community",
       "words": 1252,
@@ -2435,24 +2435,24 @@
       "demoIds": []
     },
     {
-      "path": "reference/auto/sv-grid-community-core.md",
-      "url": "/reference/auto/sv-grid-community-core",
+      "path": "reference/auto/sv-grid-core-core.md",
+      "url": "/reference/auto/sv-grid-core-core",
       "title": "`sv-grid-core` · `core.ts`",
       "summary": "Auto-generated. Source: packages\\sv-grid-core\\src\\core.ts.",
       "section": "reference",
       "tier": "community",
-      "words": 2204,
+      "words": 2791,
       "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
-      "path": "reference/auto/sv-grid-community-svgrid-wrapper.types.md",
-      "url": "/reference/auto/sv-grid-community-svgrid-wrapper.types",
+      "path": "reference/auto/sv-grid-core-svgrid-wrapper.types.md",
+      "url": "/reference/auto/sv-grid-core-svgrid-wrapper.types",
       "title": "`sv-grid-core` · `svgrid-wrapper.types.ts`",
       "summary": "Auto-generated. Source: packages\\sv-grid-core\\src\\svgrid-wrapper.types.ts.",
       "section": "reference",
       "tier": "community",
-      "words": 61,
+      "words": 248,
       "lastUpdated": "2026-06-16",
       "demoIds": []
     },
@@ -2474,7 +2474,7 @@
       "summary": "Auto-generated. Source: packages\\sv-grid-pro\\src\\export.ts.",
       "section": "reference",
       "tier": "community",
-      "words": 618,
+      "words": 723,
       "lastUpdated": "2026-06-16",
       "demoIds": []
     },

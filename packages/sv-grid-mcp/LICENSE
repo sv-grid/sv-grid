@@ -28,7 +28,7 @@ The number of developer seats covered is determined by the
 Subscriber's SvGrid Pro / Enterprise order. A "developer" is any
 individual who uses an AI assistant configured against this MCP
 server while writing or modifying source code that imports
-`sv-grid-community` or `sv-grid-pro`.
+`sv-grid-core` or `sv-grid-pro`.
 
 ------------------------------------------------------------------------
 2. RESTRICTIONS

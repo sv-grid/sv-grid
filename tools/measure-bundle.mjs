@@ -36,7 +36,7 @@ async function measure(label, exportsLine) {
   } finally { unlinkSync(entry) }
 }
 
-console.log('\nsv-grid-community published bundle size (Svelte = external peer dep)\n')
+console.log('\nsv-grid-core published bundle size (Svelte = external peer dep)\n')
 await measure('Full package (all exports)',            `export * from './index.js'`)
 await measure('Headless core only',                    `export { createSvGrid, createCoreRowModel } from './index.js'`)
 await measure('<SvGrid> render component',              `export { SvGrid } from './index.js'`)

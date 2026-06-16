@@ -1,8 +1,8 @@
 // Hand-curated SvGrid API reference data. Source of truth:
-//   packages/sv-grid-community/src/index.ts          (public exports)
-//   packages/sv-grid-community/src/SvGrid.svelte      (component Props)
-//   packages/sv-grid-community/src/svgrid-wrapper.types.ts  (SvGridApi)
-//   packages/sv-grid-community/src/core.ts            (ColumnDef, CellFormatConfig, ...)
+//   packages/sv-grid-core/src/index.ts          (public exports)
+//   packages/sv-grid-core/src/SvGrid.svelte      (component Props)
+//   packages/sv-grid-core/src/svgrid-wrapper.types.ts  (SvGridApi)
+//   packages/sv-grid-core/src/core.ts            (ColumnDef, CellFormatConfig, ...)
 //
 // Every public prop, method, event, and option is listed with a concrete
 // example so the consumer never has to guess the shape. Sections may also
@@ -1205,7 +1205,7 @@ const imperativeApiSection: ApiSection = {
   demo: 'imperative-api',
   intro: [
     'Most of the time you drive the grid by mutating reactive state (data, columns). When you need imperative control - "scroll to the row with id X", "clear all filters from a parent toolbar", "undo the last edit", "open find" - use the API object that <SvGrid onApiReady> delivers.',
-    'Every method is typed in packages/sv-grid-community/src/svgrid-wrapper.types.ts.',
+    'Every method is typed in packages/sv-grid-core/src/svgrid-wrapper.types.ts.',
   ],
   signature: `type SvGridApi<TFeatures, TData> = {
   // Cells

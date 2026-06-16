@@ -59,7 +59,7 @@ describe('sort behaviour', () => {
 ```
 
 Engine tests run at ~10k assertions/second on a modern laptop. The
-`sv-grid-core` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-community/src) -
+`sv-grid-core` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-core/src) -
 you can model yours after them.
 
 ## Pro feature tests (vitest + jsdom)

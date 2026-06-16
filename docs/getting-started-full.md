@@ -239,7 +239,7 @@ Sorting / filtering / grouping are toggled per-grid via the registered
 features - there is no per-column `enableSorting` / `enableColumnFilter`
 flag yet; those entries are in [Missing features](./help/missing-features.md).
 
-See [`packages/sv-grid-community/src/core.ts`](../packages/sv-grid-community/src/core.ts)
+See [`packages/sv-grid-core/src/core.ts`](../packages/sv-grid-core/src/core.ts)
 for the full type.
 
 ---
@@ -498,7 +498,7 @@ Pair `externalSort` / `externalFilter` with the callbacks above:
 ```
 
 For Excel-style filter operators and the active-filter chip UI, see
-[`applyExcelFilter`](../packages/sv-grid-community/src/filtering/excel-filters.ts).
+[`applyExcelFilter`](../packages/sv-grid-core/src/filtering/excel-filters.ts).
 
 ---
 
@@ -703,7 +703,7 @@ const virtualizer = createSvelteVirtualizer({
 virtualizer.scrollToIndex(75_432, { align: 'center' })
 ```
 
-See [`packages/sv-grid-community/src/virtualization/`](../packages/sv-grid-community/src/virtualization/)
+See [`packages/sv-grid-core/src/virtualization/`](../packages/sv-grid-core/src/virtualization/)
 for the full API.
 
 ---
@@ -724,7 +724,7 @@ SvGrid implements the WAI-ARIA 1.2 grid pattern.
   `aria-live` region the grid manages internally.
 
 If you build your own header or toolbar, use the helpers in
-[`a11y.ts`](../packages/sv-grid-community/src/a11y.ts) so your markup
+[`a11y.ts`](../packages/sv-grid-core/src/a11y.ts) so your markup
 stays consistent with the contract:
 
 ```ts
@@ -737,7 +737,7 @@ import {
 ```
 
 There is a contract test suite at
-[`a11y.contract.test.ts`](../packages/sv-grid-community/src/a11y.contract.test.ts)
+[`a11y.contract.test.ts`](../packages/sv-grid-core/src/a11y.contract.test.ts)
 that exercises the public a11y guarantees - run it (`pnpm test`) when
 you customize markup to be sure you haven't regressed the contract.
 

@@ -138,5 +138,20 @@ export type ExportOptions<TData> = {
    * for inline icons.
    */
   imageSize?: { width: number; height: number }
+  /**
+   * Group flat rows by one or more field names. The exporter wraps each
+   * group in an Excel outline row (with the +/- expand button), and
+   * emits a `<value> <field>` group header above every cluster. Maps
+   * straight to Smart DataExporter's constructor `groupBy` arg. xlsx
+   * only; csv/tsv/html flatten the groups back out.
+   */
+  groupBy?: ReadonlyArray<string>
+  /**
+   * Mark rows as a hierarchical (tree) data source. Each row should
+   * declare its own children either via the `subRows` convention or by
+   * matching the parent/child shape Smart expects on the input rows.
+   * Mutually exclusive with `groupBy`. xlsx only.
+   */
+  hierarchical?: boolean
 }
 ```

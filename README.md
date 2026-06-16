@@ -5,7 +5,7 @@ A modern Svelte 5 data grid - headless-first engine plus a render component (`Sv
 This repository is a **pnpm workspace** containing:
 
 ```
-packages/sv-grid-community/      # the core grid (MIT-licensed)
+packages/sv-grid-core/      # the core grid (MIT-licensed)
 packages/sv-grid-pro/            # paid feature pack: export + print (commercial)
 packages/sv-grid-mcp/           # MCP server for AI assistants
 examples/                       # demos covering every feature
@@ -26,7 +26,7 @@ pnpm install
 # run the gallery at http://localhost:5174
 pnpm dev
 
-# build the library (writes packages/sv-grid-community/dist)
+# build the library (writes packages/sv-grid-core/dist)
 pnpm build
 
 # build the gallery for production
@@ -42,7 +42,7 @@ pnpm build:site
 pnpm test:types
 ```
 
-`pnpm dev` proxies to `pnpm --filter sv-grid-core-example-gallery dev`. Inside the example the library is linked via the workspace (`"sv-grid-core": "workspace:*"`), so edits to `packages/sv-grid-community/src/**` are picked up by Vite HMR with no rebuild.
+`pnpm dev` proxies to `pnpm --filter sv-grid-core-example-gallery dev`. Inside the example the library is linked via the workspace (`"sv-grid-core": "workspace:*"`), so edits to `packages/sv-grid-core/src/**` are picked up by Vite HMR with no rebuild.
 
 ## Library entry points
 
@@ -108,7 +108,7 @@ is open source - everything else is commercial.
 
 | Package | License | LICENSE file |
 |---|---|---|
-| [packages/sv-grid-community](packages/sv-grid-community/) | **MIT** | [LICENSE](packages/sv-grid-community/LICENSE) |
+| [packages/sv-grid-core](packages/sv-grid-core/) | **MIT** | [LICENSE](packages/sv-grid-core/LICENSE) |
 | [packages/sv-grid-pro](packages/sv-grid-pro/) | Commercial | [LICENSE](packages/sv-grid-pro/LICENSE) |
 | [packages/sv-grid-mcp](packages/sv-grid-mcp/) | Commercial | [LICENSE](packages/sv-grid-mcp/LICENSE) |
 | [website](website/) | Proprietary | [LICENSE](website/LICENSE) |

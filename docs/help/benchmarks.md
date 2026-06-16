@@ -3,7 +3,7 @@
 Headline numbers from the regression suite. Every figure below is from
 the same hardware + browser configuration, re-measured on each release;
 the script that produces them lives in
-`packages/sv-grid-community/scripts/bench.ts` and is checked in.
+`packages/sv-grid-core/scripts/bench.ts` and is checked in.
 
 Live load - 100k rows x 100 columns with row + column virtualization:
 

@@ -64,7 +64,7 @@ when `enableInlineEditing` is true.
 
 **Engine.** Layer 2 in the [architecture](./architecture.md). The
 pure-function row-and-column model pipeline. Lives in
-`packages/sv-grid-community/src/core.ts` + the `row-models/` folder.
+`packages/sv-grid-core/src/core.ts` + the `row-models/` folder.
 
 ## F
 

@@ -940,7 +940,7 @@ Sorting / filtering / grouping are toggled per-grid via the registered
 features - there is no per-column `enableSorting` / `enableColumnFilter`
 flag yet; those entries are in [Missing features](./help/missing-features.md).
 
-See [`packages/sv-grid-community/src/core.ts`](../packages/sv-grid-community/src/core.ts)
+See [`packages/sv-grid-core/src/core.ts`](../packages/sv-grid-core/src/core.ts)
 for the full type.
 
 ---
@@ -1199,7 +1199,7 @@ Pair `externalSort` / `externalFilter` with the callbacks above:
 ```
 
 For Excel-style filter operators and the active-filter chip UI, see
-[`applyExcelFilter`](../packages/sv-grid-community/src/filtering/excel-filters.ts).
+[`applyExcelFilter`](../packages/sv-grid-core/src/filtering/excel-filters.ts).
 
 ---
 
@@ -1404,7 +1404,7 @@ const virtualizer = createSvelteVirtualizer({
 virtualizer.scrollToIndex(75_432, { align: 'center' })
 ```
 
-See [`packages/sv-grid-community/src/virtualization/`](../packages/sv-grid-community/src/virtualization/)
+See [`packages/sv-grid-core/src/virtualization/`](../packages/sv-grid-core/src/virtualization/)
 for the full API.
 
 ---
@@ -1425,7 +1425,7 @@ SvGrid implements the WAI-ARIA 1.2 grid pattern.
   `aria-live` region the grid manages internally.
 
 If you build your own header or toolbar, use the helpers in
-[`a11y.ts`](../packages/sv-grid-community/src/a11y.ts) so your markup
+[`a11y.ts`](../packages/sv-grid-core/src/a11y.ts) so your markup
 stays consistent with the contract:
 
 ```ts
@@ -1438,7 +1438,7 @@ import {
 ```
 
 There is a contract test suite at
-[`a11y.contract.test.ts`](../packages/sv-grid-community/src/a11y.contract.test.ts)
+[`a11y.contract.test.ts`](../packages/sv-grid-core/src/a11y.contract.test.ts)
 that exercises the public a11y guarantees - run it (`pnpm test`) when
 you customize markup to be sure you haven't regressed the contract.
 
@@ -4125,8 +4125,8 @@ mutate DOM nodes during a sort.
 | Layer | Source path                                       | Build output                         |
 | ----- | ------------------------------------------------- | ------------------------------------ |
 | 1     | Your app                                          | n/a                                  |
-| 2     | `packages/sv-grid-community/src/core.ts` + row-models | `dist/index.js` (~13 kB gzip)    |
-| 3     | `packages/sv-grid-community/src/SvGrid.svelte`    | bundled with the engine (~49 kB gzip total) |
+| 2     | `packages/sv-grid-core/src/core.ts` + row-models | `dist/index.js` (~13 kB gzip)    |
+| 3     | `packages/sv-grid-core/src/SvGrid.svelte`    | bundled with the engine (~49 kB gzip total) |
 |       | `packages/sv-grid-pro/src/{export,print,import,ai}.ts` | `sv-grid-pro/dist/*` (lazy-loaded peers) |
 
 ## See also
@@ -4168,7 +4168,7 @@ engine API.
 Headline numbers from the regression suite. Every figure below is from
 the same hardware + browser configuration, re-measured on each release;
 the script that produces them lives in
-`packages/sv-grid-community/scripts/bench.ts` and is checked in.
+`packages/sv-grid-core/scripts/bench.ts` and is checked in.
 
 Live load - 100k rows x 100 columns with row + column virtualization:
 
@@ -4638,7 +4638,7 @@ type:
 
 The editor receives a string from the DOM and converts to the canonical
 value before commit. The implementation lives in
-[`parseEditorValue`](../../../packages/sv-grid-community/src/editors/cell-editors.ts).
+[`parseEditorValue`](../../../packages/sv-grid-core/src/editors/cell-editors.ts).
 
 ```ts
 import { parseEditorValue } from 'sv-grid-core'
@@ -5313,7 +5313,7 @@ When a column has both, the resolution order is:
 ## See also
 
 - [Cell components](./cell-components.md) - when `format` is not enough.
-- [`cell-formatting.ts`](../../../packages/sv-grid-community/src/cell-formatting.ts)
+- [`cell-formatting.ts`](../../../packages/sv-grid-core/src/cell-formatting.ts)
 
 <!-- =================================================================
      /help/cells/tooltips  (community)
@@ -5972,7 +5972,7 @@ const columns: ColumnDef<{}, Person>[] = [
 | `columns` | `ColumnDef[]` | Children - turns this column into a column **group**. |
 | `width` | `number` | Initial width in pixels (overrides the grid's `columnWidth`). |
 
-See [`packages/sv-grid-community/src/core.ts`](../../../packages/sv-grid-community/src/core.ts).
+See [`packages/sv-grid-core/src/core.ts`](../../../packages/sv-grid-core/src/core.ts).
 
 ## Accessor vs. accessorFn
 
@@ -7623,7 +7623,7 @@ parseEditorValue('checkbox', 'true')         // true
 parseEditorValue('checkbox', true)           // true
 ```
 
-The full source is short and worth reading: [`cell-editors.ts`](../../../packages/sv-grid-community/src/editors/cell-editors.ts).
+The full source is short and worth reading: [`cell-editors.ts`](../../../packages/sv-grid-core/src/editors/cell-editors.ts).
 
 ## What "null" means
 
@@ -9600,7 +9600,7 @@ filter the data yourself before passing it in:
 - Demo 110: [Locale-aware text filter](#/demos/110-locale-aware-filter)
 - [Filter conditions](./filter-conditions.md)
 - [Custom column filters](./custom-column-filters.md)
-- [excel-filters.ts](../../../packages/sv-grid-community/src/filtering/excel-filters.ts)
+- [excel-filters.ts](../../../packages/sv-grid-core/src/filtering/excel-filters.ts)
 
 <!-- =================================================================
      /help/glossary  (community)
@@ -9672,7 +9672,7 @@ when `enableInlineEditing` is true.
 
 **Engine.** Layer 2 in the [architecture](./architecture.md). The
 pure-function row-and-column model pipeline. Lives in
-`packages/sv-grid-community/src/core.ts` + the `row-models/` folder.
+`packages/sv-grid-core/src/core.ts` + the `row-models/` folder.
 
 ## F
 
@@ -13801,7 +13801,7 @@ For balance - the things that **are** built in and stable:
 - Optional leading row-number column (`showRowNumbers`) and selection checkbox column
 - "Source" button in the gallery shell shows each demo's raw `.svelte` source for copy-paste
 - Imperative API for data + columns + filters + sort + grouping + visibility (`onApiReady`)
-- WAI-ARIA grid pattern with helpers in [`a11y.ts`](../../packages/sv-grid-community/src/a11y.ts) (see demo `17-accessibility`)
+- WAI-ARIA grid pattern with helpers in [`a11y.ts`](../../packages/sv-grid-core/src/a11y.ts) (see demo `17-accessibility`)
 - Locale-aware number / currency / percent / date / datetime formatters with `Intl` caching (see demo `15-localization`)
 - Built-in CSS custom-property theming surface (`--sg-*`); per-instance theme via `style="--sg-bg: ..."` (see demo `10-custom-cells-and-themes`)
 - CSP-clean runtime: no `eval`, no `new Function`, no inline scripts (see demo `16-csp-compliant`)
@@ -15372,7 +15372,7 @@ pagination), you need the headless grid instance. The wrapper does not
 expose it as a prop today; if you need post-pipeline access, instantiate
 the headless engine yourself with `createSvGrid` and pass its computed
 output into your own renderer. See
-[`packages/sv-grid-community/src/createGrid.svelte.ts`](../../../packages/sv-grid-community/src/createGrid.svelte.ts).
+[`packages/sv-grid-core/src/createGrid.svelte.ts`](../../../packages/sv-grid-core/src/createGrid.svelte.ts).
 
 A dedicated `api.getDisplayedRows()` is on the
 [gap list](../missing-features.md).
@@ -15664,7 +15664,7 @@ const virtualizer = createSvelteVirtualizer({
 })
 ```
 
-See [`packages/sv-grid-community/src/virtualization/`](../../../packages/sv-grid-community/src/virtualization/).
+See [`packages/sv-grid-core/src/virtualization/`](../../../packages/sv-grid-core/src/virtualization/).
 
 ## Header height
 
@@ -18237,7 +18237,7 @@ pnpm test:types      # svelte-check on every package
 ```
 
 The full coverage report lands in
-`packages/sv-grid-community/coverage/index.html`.
+`packages/sv-grid-core/coverage/index.html`.
 
 ## What's measured
 
@@ -18262,10 +18262,10 @@ dimensions, ResizeObserver fires) that jsdom returns as zero:
 
 - **`SvGrid.svelte`** - the 4000-line render component. Covered by **60+
   behavioral mount tests** across
-  [`svgrid.behavior.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-community/src/svgrid.behavior.test.ts),
-  [`svgrid.interaction.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-community/src/svgrid.interaction.test.ts),
+  [`svgrid.behavior.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/src/svgrid.behavior.test.ts),
+  [`svgrid.interaction.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/src/svgrid.interaction.test.ts),
   and
-  [`svgrid.api.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-community/src/svgrid.api.test.ts).
+  [`svgrid.api.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/src/svgrid.api.test.ts).
   Each test mounts the real `<SvGrid />` in jsdom and exercises a specific
   feature: sort, filter, pagination, inline editing, cell selection,
   grouping, row selection, column add/remove, keyboard navigation, etc.
@@ -18284,7 +18284,7 @@ The coverage report excludes:
 - `createGridState.svelte.ts` (downstream-adapter thin layer)
 - `test-fixtures/**`, `test-setup.ts`, `**/*.test.ts`, `**/*.d.ts`
 
-The exclusion list is part of `packages/sv-grid-community/vite.config.ts`
+The exclusion list is part of `packages/sv-grid-core/vite.config.ts`
 and is documented inline with the reasoning for each entry.
 
 ## Test files
@@ -18425,7 +18425,7 @@ describe('sort behaviour', () => {
 ```
 
 Engine tests run at ~10k assertions/second on a modern laptop. The
-`sv-grid-core` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-community/src) -
+`sv-grid-core` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-core/src) -
 you can model yours after them.
 
 ## Pro feature tests (vitest + jsdom)
@@ -22678,7 +22678,7 @@ that matches the question you're answering.
 | **E2E**             | Playwright                        | Real browser, scrolling, downloads, screens  | 0.5-2s / test  |
 
 The repo ships all three: vitest config in
-`packages/sv-grid-community/vitest.config.ts`, component tests in
+`packages/sv-grid-core/vitest.config.ts`, component tests in
 `*.behavior.test.ts` files, Playwright specs in `examples/e2e/*.spec.ts`.
 
 ## Strategy 1 - Vitest unit
@@ -22813,8 +22813,8 @@ Notes:
 
 ## See also
 
-- [`packages/sv-grid-community/vitest.config.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-community/vitest.config.ts) - the live config
-- [`*.behavior.test.ts` files](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-community/src) - component-test examples
+- [`packages/sv-grid-core/vitest.config.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/vitest.config.ts) - the live config
+- [`*.behavior.test.ts` files](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-core/src) - component-test examples
 - [`examples/e2e/`](https://github.com/sv-grid/sv-grid/tree/main/examples/e2e) - Playwright specs
 - [Architecture overview](../help/architecture.md) - what's headless vs what's rendered
 
@@ -23351,8 +23351,8 @@ see [the main reference index](../index.md).
 
 ## sv-grid-core
 
-- [`sv-grid-core/core.ts`](./sv-grid-community-core.md) - 45 exports
-- [`sv-grid-core/svgrid-wrapper.types.ts`](./sv-grid-community-svgrid-wrapper.types.md) - 3 exports
+- [`sv-grid-core/core.ts`](./sv-grid-core-core.md) - 48 exports
+- [`sv-grid-core/svgrid-wrapper.types.ts`](./sv-grid-core-svgrid-wrapper.types.md) - 6 exports
 
 ## sv-grid-pro
 
@@ -23363,7 +23363,7 @@ see [the main reference index](../index.md).
 - [`sv-grid-pro/install.ts`](./sv-grid-pro-install.md) - 4 exports
 
 <!-- =================================================================
-     /reference/auto/sv-grid-community-core  (community)
+     /reference/auto/sv-grid-core-core  (community)
      ================================================================== -->
 
 # `sv-grid-core` · `core.ts`
@@ -23496,6 +23496,29 @@ export type CellContext<TData extends RowData> = {
 }
 ```
 
+### `type EditorContext`
+
+Context passed to a custom `cellEditor` snippet/component. Three write
+helpers cover the lifecycle:
+
+  - `update(next)`  - stage `next` as the draft, keep the editor open.
+                      Use this for live-preview controls (sliders,
+                      color pickers) so the user can keep adjusting.
+  - `commit(next?)` - write the value AND close the editor. The
+                      argument is optional; when omitted, the most
+                      recently `update()`d value is saved. Use this
+                      for "done" gestures (Enter, picking an option).
+  - `cancel()`      - discard the draft and close the editor.
+
+```ts
+export type EditorContext<TData extends RowData> = CellContext<TData> & {
+  value: unknown
+  update: (next: unknown) => void
+  commit: (next?: unknown) => void
+  cancel: () => void
+}
+```
+
 ### `type CellFormatConfig`
 
 _No JSDoc yet._
@@ -23525,6 +23548,25 @@ _No JSDoc yet._
 export type ColumnDefTemplate<TContext> = string | ((context: TContext) => unknown)
 ```
 
+### `type GroupAggregator`
+
+How a column's value is aggregated for a group row when `columnGrouping`
+is active. Built-in reducers cover the common cases; pass a function for
+anything custom (weighted average, median, percentile, distinct count).
+The function receives the finite numeric values AND the raw leaf rows.
+
+```ts
+export type GroupAggregator<TData = any> =
+```
+
+### `function applyGroupAggregate`
+
+Apply a group aggregator over a bucket's leaf rows for one column. */
+
+```ts
+export function applyGroupAggregate<TData extends RowData>(
+```
+
 ### `type ColumnDef`
 
 _No JSDoc yet._
@@ -23538,7 +23580,38 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   footer?: ColumnDefTemplate<HeaderContext<TData>>
   cell?: ColumnDefTemplate<CellContext<TData>>
   columns?: Array<ColumnDef<TFeatures, TData>>
-  editorType?: 'text' | 'number' | 'date' | 'datetime' | 'checkbox' | 'list' | 'chips'
+  editorType?:
+    | 'text'
+    | 'number'
+    | 'date'
+    | 'datetime'
+    | 'time'         // native <input type="time"> - HH:MM or HH:MM:SS
+    | 'password'     // native <input type="password"> with masked rendering
+    | 'checkbox'
+    | 'list'
+    | 'chips'
+    | 'select'       // custom dropdown - single value, no typeahead
+    | 'rich-select'  // custom dropdown with a typeahead search input
+    | 'textarea'     // multi-line editor; Tab or Ctrl+Enter commits, plain Enter inserts a newline
+    | 'color'        // native <input type="color"> swatch
+    | 'rating'       // 5-star rating control
+  /**
+   * Custom in-cell editor. Receives the cell context PLUS a `commit(value)`
+   * and `cancel()` helper. Use when none of the built-in `editorType`s fit;
+   * the snippet's outer element is mounted inside the editing cell and
+   * inherits keyboard handling (Esc cancels, Enter commits unless your
+   * snippet preventDefaults it).
+   *
+   * Coexists with `editorType`: when both are set, `cellEditor` wins and
+   * `editorType` is treated as a hint for parsing the saved value.
+   */
+  cellEditor?: ColumnDefTemplate<EditorContext<TData>>
+  /**
+   * Per-column tooltip. String shows as a native `title=`; `(ctx) => string`
+   * runs per cell so the tooltip can reflect the value. Returning an empty
+   * string skips the tooltip.
+   */
+  tooltip?: string | ((ctx: CellContext<TData>) => string | null | undefined)
   /**
    * Gate editing per column or per cell.
    *
@@ -23592,6 +23665,26 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   editorSeparator?: string
   format?: CellFormatConfig
   formatter?: CellFormatter<TData>
+  /**
+   * Aggregate this column's values into the group row when grouping is
+   * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
+   * 'extent' | 'first'`, or a custom `(values, rows) => unknown`. The result
+   * is formatted with this column's `format` and shown in the group header.
+   */
+  aggregate?: GroupAggregator<TData>
+  /**
+   * Render the cell as an in-cell sparkline chart. The cell value should be
+   * an array of numbers (or a comma/space separated string). Mutually
+   * exclusive with a custom `cell` renderer (a `cell` wins if both are set).
+   *
+   *   { sparkline: { type: 'line' } }                 // default line
+   *   { sparkline: { type: 'bar', color: '#16a34a' } }
+   *   { sparkline: { type: 'winloss' } }              // sign-only up/down
+   *
+   * See `SparklineConfig` for the full option set (type, color,
+   * negativeColor, width, height, fixed min/max).
+   */
+  sparkline?: SparklineConfig
   /** Initial column width in pixels. Falls back to the grid's `columnWidth` prop. */
   width?: number
   /**
@@ -23934,7 +24027,11 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
         const groupOriginal: Record<string, unknown> = {}
         columns.forEach((column) => {
           const field = column.columnDef.field
-          if (field) groupOriginal[field] = resolveColumnValue(column.id)
+          if (!field) return
+          const agg = column.columnDef.aggregate
+          groupOriginal[field] = agg
+            ? applyGroupAggregate(agg, column.id, children)
+            : resolveColumnValue(column.id)
         })
 
         const groupRow: Row<TData> = {
@@ -23954,7 +24051,15 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
             table.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
           },
           getAllCells: () => [],
-          getCellValueByColumnId: resolveColumnValue,
+          // Prefer the precomputed group value (which carries aggregates)
+          // and fall back to the shared-value resolver for columns without
+          // a field.
+          getCellValueByColumnId: (columnId: string) => {
+            const col = columns.find((c) => c.id === columnId)
+            const field = col?.columnDef.field
+            if (field && field in groupOriginal) return groupOriginal[field]
+            return resolveColumnValue(columnId)
+          },
         }
         groupRows.push(groupRow)
       })
@@ -24074,7 +24179,7 @@ export function isFunction(value: unknown): value is (...args: Array<any>) => an
 ```
 
 <!-- =================================================================
-     /reference/auto/sv-grid-community-svgrid-wrapper.types  (community)
+     /reference/auto/sv-grid-core-svgrid-wrapper.types  (community)
      ================================================================== -->
 
 # `sv-grid-core` · `svgrid-wrapper.types.ts`
@@ -24087,6 +24192,59 @@ _No JSDoc yet._
 
 ```ts
 export type SvGridFilterOperator =
+```
+
+### `type SvGridViewState`
+
+A serializable snapshot of everything that makes up the current "view":
+sort, grouping, pagination, column layout (width / pinning / order /
+visibility), and all filter surfaces. Round-trippable through
+`api.getState()` / `api.setState()` - persist it to a URL, localStorage, or
+a server to implement "save view" / "named views".
+
+```ts
+export type SvGridViewState = {
+  sorting: Array<{ id: string; desc: boolean }>
+  grouping: string[]
+  pagination: { pageIndex: number; pageSize: number }
+  columnWidths: Record<string, number>
+  columnPinning: { left: string[]; right: string[] }
+  columnOrder: string[]
+  /** Ids of columns currently hidden via setColumnVisible. */
+  hiddenColumns: string[]
+  globalFilter: string
+  columnFilters: Record<
+    string,
+    { operator: SvGridFilterOperator; value: string; valueTo?: string }
+  >
+  /** Facet (Excel-style value checklist) selections, keyed by column id. */
+  facetFilters: Record<string, string[]>
+}
+```
+
+### `type SvGridTransaction`
+
+A batch of row mutations for `api.applyTransaction`. `update` / `remove`
+(by id) match on `getRowId`; `remove` also accepts row object references.
+
+```ts
+export type SvGridTransaction<TData> = {
+  add?: ReadonlyArray<TData>
+  update?: ReadonlyArray<TData>
+  remove?: ReadonlyArray<TData | string>
+}
+```
+
+### `type SvGridTransactionResult`
+
+_No JSDoc yet._
+
+```ts
+export type SvGridTransactionResult = {
+  added: number
+  updated: number
+  removed: number
+}
 ```
 
 ### `type SvGridApi`
@@ -24524,6 +24682,21 @@ export type ExportOptions<TData> = {
    * for inline icons.
    */
   imageSize?: { width: number; height: number }
+  /**
+   * Group flat rows by one or more field names. The exporter wraps each
+   * group in an Excel outline row (with the +/- expand button), and
+   * emits a `<value> <field>` group header above every cluster. Maps
+   * straight to Smart DataExporter's constructor `groupBy` arg. xlsx
+   * only; csv/tsv/html flatten the groups back out.
+   */
+  groupBy?: ReadonlyArray<string>
+  /**
+   * Mark rows as a hierarchical (tree) data source. Each row should
+   * declare its own children either via the `subRows` convention or by
+   * matching the parent/child shape Smart expects on the input rows.
+   * Mutually exclusive with `groupBy`. xlsx only.
+   */
+  hierarchical?: boolean
 }
 ```
 
@@ -24871,7 +25044,7 @@ numbers on your branch, and what to do if size matters.
 ## Per-feature gzipped cost
 
 Numbers from a `rollup -p terser` production build against
-`packages/sv-grid-community/dist/`. Each feature is the marginal cost
+`packages/sv-grid-core/dist/`. Each feature is the marginal cost
 *above* the baseline core when imported alone.
 
 | Feature                       | gz kB  | Required? | Notes                                          |
@@ -24909,7 +25082,7 @@ not at module load.
 corepack pnpm --filter sv-grid-core build
 
 # Inspect the dist bundle
-npx source-map-explorer packages/sv-grid-community/dist/index.js
+npx source-map-explorer packages/sv-grid-core/dist/index.js
 ```
 
 A treemap opens in your browser. Each block is a source file scaled by
@@ -24919,7 +25092,7 @@ much of the total weight it owns.
 For a quick gzipped readout:
 
 ```bash
-node -e "console.log((require('zlib').gzipSync(require('fs').readFileSync('packages/sv-grid-community/dist/index.js')).length / 1024).toFixed(1) + ' kB gz')"
+node -e "console.log((require('zlib').gzipSync(require('fs').readFileSync('packages/sv-grid-core/dist/index.js')).length / 1024).toFixed(1) + ' kB gz')"
 ```
 
 ## What to do if size matters
@@ -26327,5 +26500,5 @@ worked example.
 - [Getting started](./getting-started.md) - the wrapper-first walkthrough
 - [Column definitions](./help/columns/column-definitions.md) - the contract the headless core enforces
 - [Filter API](./help/filtering/filter-api.md) - example of headless state surfaced through the wrapper
-- [`createSvGrid` source](../packages/sv-grid-community/src/createGrid.svelte.ts)
+- [`createSvGrid` source](../packages/sv-grid-core/src/createGrid.svelte.ts)
 - Demo [`19-ssr`](../examples/src/demos/19-ssr.svelte) - SSR with the headless core

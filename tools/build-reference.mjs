@@ -22,7 +22,7 @@ import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join, basename } from 'node:path'
 
 const SOURCES = [
-  { pkg: 'sv-grid-core', dir: 'packages/sv-grid-community/src',
+  { pkg: 'sv-grid-core', dir: 'packages/sv-grid-core/src',
     files: ['core.ts', 'svgrid-wrapper.types.ts'] },
   { pkg: 'sv-grid-pro',       dir: 'packages/sv-grid-pro/src',
     files: ['export.ts', 'pivot.ts', 'import.ts', 'ai.ts', 'install.ts'] },

@@ -1627,13 +1627,13 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/auto/sv-grid-community-core</loc>
+    <loc>https://svgrid.com/docs/reference/auto/sv-grid-core-core</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/auto/sv-grid-community-svgrid-wrapper.types</loc>
+    <loc>https://svgrid.com/docs/reference/auto/sv-grid-core-svgrid-wrapper.types</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>

@@ -7,8 +7,8 @@ see [the main reference index](../index.md).
 
 ## sv-grid-core
 
-- [`sv-grid-core/core.ts`](./sv-grid-community-core.md) - 45 exports
-- [`sv-grid-core/svgrid-wrapper.types.ts`](./sv-grid-community-svgrid-wrapper.types.md) - 3 exports
+- [`sv-grid-core/core.ts`](./sv-grid-core-core.md) - 48 exports
+- [`sv-grid-core/svgrid-wrapper.types.ts`](./sv-grid-core-svgrid-wrapper.types.md) - 6 exports
 
 ## sv-grid-pro
 

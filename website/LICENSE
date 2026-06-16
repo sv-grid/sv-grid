@@ -47,7 +47,7 @@ You may NOT:
 3. THIRD-PARTY COMPONENTS
 ------------------------------------------------------------------------
 
-This site depends on `sv-grid-community` (MIT), `sv-grid-pro`
+This site depends on `sv-grid-core` (MIT), `sv-grid-pro`
 (commercial; see packages/sv-grid-pro/LICENSE), and various
 open-source build and runtime dependencies declared in
 `package.json`, each licensed by its respective author under its

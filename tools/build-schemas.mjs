@@ -33,9 +33,9 @@ function schema(id, body) {
 const columnDef = schema('column-def', {
   title:       'ColumnDef',
   description: 'One entry in the `columns` array passed to `<SvGrid>`. ' +
-               'Source: packages/sv-grid-community/src/core.ts (ColumnDef<TFeatures, TData>).',
+               'Source: packages/sv-grid-core/src/core.ts (ColumnDef<TFeatures, TData>).',
   type:        'object',
-  $comment:    'Hand-curated to mirror packages/sv-grid-community/src/core.ts. Update both sides if the runtime surface changes.',
+  $comment:    'Hand-curated to mirror packages/sv-grid-core/src/core.ts. Update both sides if the runtime surface changes.',
   properties: {
     id: {
       type: 'string',
@@ -110,7 +110,7 @@ const svgridOptions = schema('svgrid-options', {
   title:       'SvGridProps',
   description: 'Props on the `<SvGrid>` Svelte component plus headless `createSvGrid` options.',
   type:        'object',
-  $comment:    'Mirrors packages/sv-grid-community/src/SvGrid.svelte top-of-file Props type + core.ts SvGridOptions.',
+  $comment:    'Mirrors packages/sv-grid-core/src/SvGrid.svelte top-of-file Props type + core.ts SvGridOptions.',
   required:    ['data', 'columns', 'features'],
   properties: {
     data:     { type: 'array', description: 'Source rows (any TypeScript object shape).' },

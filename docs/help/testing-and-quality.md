@@ -24,7 +24,7 @@ pnpm test:types      # svelte-check on every package
 ```
 
 The full coverage report lands in
-`packages/sv-grid-community/coverage/index.html`.
+`packages/sv-grid-core/coverage/index.html`.
 
 ## What's measured
 
@@ -49,10 +49,10 @@ dimensions, ResizeObserver fires) that jsdom returns as zero:
 
 - **`SvGrid.svelte`** - the 4000-line render component. Covered by **60+
   behavioral mount tests** across
-  [`svgrid.behavior.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-community/src/svgrid.behavior.test.ts),
-  [`svgrid.interaction.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-community/src/svgrid.interaction.test.ts),
+  [`svgrid.behavior.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/src/svgrid.behavior.test.ts),
+  [`svgrid.interaction.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/src/svgrid.interaction.test.ts),
   and
-  [`svgrid.api.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-community/src/svgrid.api.test.ts).
+  [`svgrid.api.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/src/svgrid.api.test.ts).
   Each test mounts the real `<SvGrid />` in jsdom and exercises a specific
   feature: sort, filter, pagination, inline editing, cell selection,
   grouping, row selection, column add/remove, keyboard navigation, etc.
@@ -71,7 +71,7 @@ The coverage report excludes:
 - `createGridState.svelte.ts` (downstream-adapter thin layer)
 - `test-fixtures/**`, `test-setup.ts`, `**/*.test.ts`, `**/*.d.ts`
 
-The exclusion list is part of `packages/sv-grid-community/vite.config.ts`
+The exclusion list is part of `packages/sv-grid-core/vite.config.ts`
 and is documented inline with the reasoning for each entry.
 
 ## Test files
