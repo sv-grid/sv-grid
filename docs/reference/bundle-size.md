@@ -41,7 +41,7 @@ not at module load.
 
 ```bash
 # Build
-corepack pnpm --filter sv-grid-community build
+corepack pnpm --filter sv-grid-core build
 
 # Inspect the dist bundle
 npx source-map-explorer packages/sv-grid-community/dist/index.js

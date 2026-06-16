@@ -27,7 +27,7 @@
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import JSZip from 'jszip'
 
   // ---- Domain & seed -----------------------------------------------------

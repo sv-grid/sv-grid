@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
-    "sv-grid-community": "workspace:*",
+    "sv-grid-core": "workspace:*",
     "svelte": "^5.55.5",
     "vite": "^8.0.10"
   }

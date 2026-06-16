@@ -43,7 +43,7 @@ cells are snippets, and there is no manual mount / teardown.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -80,7 +80,7 @@ It is a configuration translation plus one mindset shift: you stop calling
 
 ### Is SvGrid free like Tabulator?
 
-Yes. `sv-grid-community` is MIT-licensed like Tabulator. The optional
+Yes. `sv-grid-core` is MIT-licensed like Tabulator. The optional
 `sv-grid-pro` pack (export, import, pivot, AI) is the only paid piece.
 
 ### Can I keep Tabulator's custom formatters?

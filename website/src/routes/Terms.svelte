@@ -14,7 +14,7 @@
     <p>
       These terms govern your use of the <strong>SvGrid</strong> website at
       <code>svgrid.com</code> and the related documentation. The
-      <code>sv-grid-community</code> npm package and source code are licensed separately under the
+      <code>sv-grid-core</code> npm package and source code are licensed separately under the
       <strong>MIT License</strong> - see the
       <a href="https://github.com/sv-grid/sv-grid/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE file</a>
       in the repository. The companion <code>sv-grid-pro</code> package ships under a separate
@@ -32,7 +32,7 @@
 
     <h2>3. Use of the SvGrid library</h2>
     <p>
-      Use of the <code>sv-grid-community</code> npm package and the <code>sv-grid-mcp</code>
+      Use of the <code>sv-grid-core</code> npm package and the <code>sv-grid-mcp</code>
       package is governed by their MIT licenses. The paid <code>sv-grid-pro</code> package is
       governed by its separate commercial license. Nothing on this website modifies those licenses.
     </p>

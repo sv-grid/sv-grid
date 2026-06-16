@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-06-15 from 195 pages.
+Generated 2026-06-16 from 195 pages.
 
 <!-- =================================================================
      /changelog  (community)
@@ -29,7 +29,7 @@ For machine-readable releases, fetch
 
 ## [Unreleased]
 
-### sv-grid-community
+### sv-grid-core
 
 - **New** `onCellValueChange` callback on `<SvGrid>`. Fires after every
   inline edit commits with `{ rowIndex, columnId, oldValue, newValue,
@@ -64,9 +64,9 @@ For machine-readable releases, fetch
   full dataset, not just the visible page. (Removed
   `paginatedRowModel` from the engine pipeline; pagination is applied
   AFTER filters by the wrapper.)
-- **Renamed package** `svgrid-community` → `sv-grid-community`.
+- **Renamed package** `svgrid-community` → `sv-grid-core`.
   **Breaking**. Update imports: `from 'svgrid-community'` →
-  `from 'sv-grid-community'`. Subpath imports follow the same change.
+  `from 'sv-grid-core'`. Subpath imports follow the same change.
 
 ### sv-grid-pro
 
@@ -129,7 +129,7 @@ For machine-readable releases, fetch
   `manualPagination`, `onColumnFiltersChange`, the wrapper `getRowId`
   prop, per-column `enableSorting` / `enableColumnFilter` /
   `enableGrouping` flags, the never-shipped
-  `sv-grid-community/themes/default.css` import.
+  `sv-grid-core/themes/default.css` import.
 - **Em-dashes globally swept to hyphens** (`-` → `-`) across all
   source-controlled text. Codified as a rule for new content.
 
@@ -179,7 +179,7 @@ Every event the grid surfaces:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, type SvGridApi } from 'sv-grid-core'
 
   type AuditRecord = {
     actor: string
@@ -601,7 +601,7 @@ this section answers each one directly.
 | Where is data stored?                             | **In your app's memory.** Never on a sv-grid server. There is no sv-grid server. |
 | Is there a security disclosure policy?            | Yes - email `support@jqwidgets.com`. Patches typically ship within 7 days for high-severity issues. |
 | Is the library tested for accessibility?          | Yes - WAI-ARIA 1.2 grid pattern + axe-core in CI. See [accessibility](../help/accessibility.md). |
-| Are dependencies vetted?                          | Yes - 0 runtime dependencies in `sv-grid-community`. `sv-grid-pro` lazy-loads `jszip` + `pdfmake` as peers. See [security](../help/security.md) for the dep table. |
+| Are dependencies vetted?                          | Yes - 0 runtime dependencies in `sv-grid-core`. `sv-grid-pro` lazy-loads `jszip` + `pdfmake` as peers. See [security](../help/security.md) for the dep table. |
 | Is there an SBOM?                                 | Yes - `pnpm run sbom` emits CycloneDX 1.5. See [security](../help/security.md#sbom-generation). |
 
 ## See also
@@ -638,7 +638,7 @@ responsibility ends and yours begins.
 | **CC6.6 Encryption in transit** | n/a - no transit                                       |
 | **CC7.1 System operations** | Bundle is deterministic; SHA-256 published per release      |
 | **CC8.1 Change management** | Every change ships as a PR with reviews; release notes per version |
-| **CC9.2 Vendor management** | 0 runtime deps in `sv-grid-community`; lazy peer deps in `sv-grid-pro` documented in [security](../help/security.md) |
+| **CC9.2 Vendor management** | 0 runtime deps in `sv-grid-core`; lazy peer deps in `sv-grid-pro` documented in [security](../help/security.md) |
 
 ## What you cover (in your own SOC 2)
 
@@ -719,7 +719,7 @@ assumes you've finished this one. Estimated reading time: 15 minutes.
 > - [Tailwind integration](./help/tailwind.md) - how `--sg-*` custom
 >   properties + Tailwind v4 + dark mode fit together.
 
-> `sv-grid-community` is published under the **MIT License** - permissive
+> `sv-grid-core` is published under the **MIT License** - permissive
 > for commercial use, redistribution, and modification. The paid companion
 > `sv-grid-pro` (data export + print) ships under a separate commercial
 > license. See [LICENSE](../LICENSE) and
@@ -751,7 +751,7 @@ assumes you've finished this one. Estimated reading time: 15 minutes.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
 
   type Person = { firstName: string; age: number; status: string }
 
@@ -783,13 +783,13 @@ framework - bring your own, or use the bundled stylesheet.
 
 ```bash
 # pnpm (recommended)
-pnpm add sv-grid-community
+pnpm add sv-grid-core
 
 # npm
-npm install sv-grid-community
+npm install sv-grid-core
 
 # yarn
-yarn add sv-grid-community
+yarn add sv-grid-core
 ```
 
 **Requirements.**
@@ -808,7 +808,7 @@ import {
   rowSortingFeature,
   columnFilteringFeature,
   type ColumnDef,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 ```
 
 The bundle is tree-shakeable - features you don't import don't ship. The
@@ -828,7 +828,7 @@ or a plain literal.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-community'
+  import { SvGrid } from 'sv-grid-core'
 
   type Person = { id: string; firstName: string; age: number }
 
@@ -866,7 +866,7 @@ A column definition tells SvGrid how to read a value out of a row, how
 to render it, and which features apply to it.
 
 ```ts
-import type { ColumnDef } from 'sv-grid-community'
+import type { ColumnDef } from 'sv-grid-core'
 
 type Person = {
   id: string
@@ -961,7 +961,7 @@ with `tableFeatures(...)` and the matching `create*RowModel` factory.
     columnFilteringFeature,
     rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -1083,7 +1083,7 @@ For anything beyond a stringified value, render with `FlexRender`,
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { renderSnippet, type ColumnDef } from 'sv-grid-core'
 </script>
 
 {#snippet StatusCell({ value }: { value: string })}
@@ -1105,7 +1105,7 @@ For anything beyond a stringified value, render with `FlexRender`,
 
 ```ts
 import StatusBadge from './StatusBadge.svelte'
-import { renderComponent } from 'sv-grid-community'
+import { renderComponent } from 'sv-grid-core'
 
 const columns = [
   {
@@ -1292,7 +1292,7 @@ doesn't try to re-order rows it didn't fetch.
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature,
-           columnFilteringFeature } from 'sv-grid-community'
+           columnFilteringFeature } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
@@ -1374,7 +1374,7 @@ opt-in so small grids don't pay the cost.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-community'
+  import { SvGrid } from 'sv-grid-core'
 </script>
 
 <SvGrid
@@ -1391,7 +1391,7 @@ For full control (e.g. variable row heights, programmatic scroll),
 use the headless virtualizer directly:
 
 ```ts
-import { createSvelteVirtualizer } from 'sv-grid-community'
+import { createSvelteVirtualizer } from 'sv-grid-core'
 
 const virtualizer = createSvelteVirtualizer({
   count:                 () => rows.length,
@@ -1434,7 +1434,7 @@ import {
   getGridRowA11yProps,
   getGridCellA11yProps,
   getGridHeaderA11yProps,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 ```
 
 There is a contract test suite at
@@ -1531,7 +1531,7 @@ demos and evaluation.
 
 ### License
 
-`sv-grid-community` is published under the **MIT License**. Free for
+`sv-grid-core` is published under the **MIT License**. Free for
 commercial and personal use. The paid `sv-grid-pro` companion package
 (export, import, print, pivot, AI assistant) is governed by a separate
 commercial license. See [LICENSE](../LICENSE) and
@@ -1558,7 +1558,7 @@ straight to the one you need if you're not.
 | #   | Page                                                          | What it covers                                                              |
 | --- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | 0   | [Starters & scaffolding](./getting-started/starters.md)       | `npm create sv-grid`, the minimal + SvelteKit admin templates, Deploy to Vercel. |
-| 1   | [Install](./getting-started/1-install.md)                     | `pnpm add sv-grid-community`, requirements, smoke-test.                     |
+| 1   | [Install](./getting-started/1-install.md)                     | `pnpm add sv-grid-core`, requirements, smoke-test.                     |
 | 2   | [First grid](./getting-started/2-first-grid.md)               | The minimum runnable example, explained line by line.                       |
 | 3   | [Data and columns](./getting-started/3-data-and-columns.md)   | What goes in `data` and `columns`. Custom cells via `renderSnippet`.        |
 | 4   | [Features](./getting-started/4-features.md)                   | Opt into sort, filter, pagination, grouping, selection, editing.            |
@@ -1587,7 +1587,7 @@ identical; the split exists for sidebar nav and faster mobile loads.
 
 ## License
 
-`sv-grid-community` is published under the **MIT License** - permissive
+`sv-grid-core` is published under the **MIT License** - permissive
 for commercial use, redistribution, and modification. The paid
 companion `sv-grid-pro` ships under a separate commercial license. See
 [LICENSE](../LICENSE) and
@@ -1597,7 +1597,7 @@ companion `sv-grid-pro` ships under a separate commercial license. See
 
 ### How do I add a data grid to a Svelte 5 app?
 
-Install `sv-grid-community`, import `SvGrid`, and pass `data` and `columns`.
+Install `sv-grid-core`, import `SvGrid`, and pass `data` and `columns`.
 A complete grid is about 15 lines - keyboard navigation and accessibility are
 on by default, and you opt into sort/filter/edit/group/paging with one boolean
 shortcut each (`sortable`, `filterable`, ...). See
@@ -1611,7 +1611,7 @@ SSR and static builds. Drive large datasets with controlled, server-side state.
 
 ### Is SvGrid free for commercial use?
 
-Yes. `sv-grid-community` is MIT-licensed, including commercial use, with no row
+Yes. `sv-grid-core` is MIT-licensed, including commercial use, with no row
 cap or license key. The optional `sv-grid-pro` pack (export, pivot, import, AI)
 ships under a separate paid license.
 
@@ -1649,13 +1649,13 @@ flow. To add SvGrid to an **existing** app, install it directly:
 
 ```bash
 # pnpm (recommended)
-pnpm add sv-grid-community
+pnpm add sv-grid-core
 
 # npm
-npm install sv-grid-community
+npm install sv-grid-core
 
 # yarn
-yarn add sv-grid-community
+yarn add sv-grid-core
 ```
 
 ## Requirements
@@ -1675,7 +1675,7 @@ A 5-line smoke test:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-community'
+  import { SvGrid } from 'sv-grid-core'
   const rows = [{ name: 'Ada' }, { name: 'Linus' }]
   const columns = [{ field: 'name', header: 'Name' }]
 </script>
@@ -1720,7 +1720,7 @@ printing or single-tab reading.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
 
   type Person = { firstName: string; age: number; status: string }
 
@@ -1802,7 +1802,7 @@ reference changes when the rows change.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-community'
+  import { SvGrid } from 'sv-grid-core'
 
   type Person = { id: string; firstName: string; age: number }
 
@@ -1842,7 +1842,7 @@ A column definition tells SvGrid how to read a value out of a row, how
 to render it, and how to format it.
 
 ```ts
-import type { ColumnDef } from 'sv-grid-community'
+import type { ColumnDef } from 'sv-grid-core'
 
 type Person = {
   id: string
@@ -1922,7 +1922,7 @@ For anything beyond a stringified value, render with `renderSnippet`:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-core'
 
   type Person = { firstName: string; lastName: string; age: number }
   const rows: Person[] = [/* ... */]
@@ -1974,7 +1974,7 @@ feature; the wrapper wires the matching row-model factory for you.
     columnFilteringFeature,
     rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -2328,7 +2328,7 @@ it didn't fetch.
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature,
-           columnFilteringFeature } from 'sv-grid-community'
+           columnFilteringFeature } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
@@ -2442,7 +2442,7 @@ attaches event listeners.
 ```svelte
 <!-- +page.svelte -->
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
   let { data } = $props()
 </script>
 
@@ -2488,7 +2488,7 @@ import type {
   SvGridApi,
   SortingState,
   TableFeatures,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 // 1. Constrain ColumnDef to your row type so editors and accessors stay typed.
 type Row = { id: string; firstName: string; age: number }
@@ -2562,8 +2562,8 @@ npm run dev
 
 | Template | Stack | Best for |
 | --- | --- | --- |
-| `minimal` | Vite + Svelte 5 + `sv-grid-community`, one page | Dropping a grid into something quickly |
-| `admin-dashboard` | SvelteKit + Tailwind + `sv-grid-community`, deploy to Vercel | A real dashboard / internal tool |
+| `minimal` | Vite + Svelte 5 + `sv-grid-core`, one page | Dropping a grid into something quickly |
+| `admin-dashboard` | SvelteKit + Tailwind + `sv-grid-core`, deploy to Vercel | A real dashboard / internal tool |
 
 ### Options
 
@@ -2573,7 +2573,7 @@ npm run dev
 | `--force` | `-f` | Scaffold into a non-empty directory |
 | `--help` | `-h` | Show usage |
 
-Both templates use the free MIT `sv-grid-community` core. Add
+Both templates use the free MIT `sv-grid-core` core. Add
 [`sv-grid-pro`](../pro/README.md) for export, import, print, pivot, and
 the AI helpers.
 
@@ -2629,7 +2629,7 @@ for SEO, and a one-click Deploy-to-Vercel button.
 
 ### Do the starters require a Pro license?
 
-No. Both templates use the free MIT `sv-grid-community` core. Pro
+No. Both templates use the free MIT `sv-grid-core` core. Pro
 features (export, import, print, pivot, AI) are an optional add-on that
 runs in evaluation without a key.
 
@@ -2878,7 +2878,7 @@ agent SDK can consume.
 ```svelte
 <script lang="ts">
   import OpenAI from 'openai'
-  import { SvGrid, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, type SvGridApi } from 'sv-grid-core'
 
   const client = new OpenAI()
   let api = $state<SvGridApi<typeof features, Row> | null>(null)
@@ -3143,7 +3143,7 @@ Paste any of the formats below into the textarea and click
     rowSelectionFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Contact = {
     id: string
@@ -3620,14 +3620,14 @@ configure, so you control what leaves the browser.
 
 A flat index of every Stable export. Each entry links to the topic
 page that covers it in depth. For the formal TypeScript shapes,
-inspect the `.d.ts` files in `node_modules/sv-grid-community/dist` -
+inspect the `.d.ts` files in `node_modules/sv-grid-core/dist` -
 they're the source of truth and ship with full JSDoc.
 
 > The "Tier" column reflects the badges from
 > [API stability](./api-stability.md). Anything not listed here is
 > Internal and may move under your feet.
 
-## sv-grid-community
+## sv-grid-core
 
 ### Components
 
@@ -3713,7 +3713,7 @@ is Stable.
 
 ### Static utilities
 
-Re-exports from `'sv-grid-community/static-functions'` for use outside
+Re-exports from `'sv-grid-core/static-functions'` for use outside
 a Svelte 5 component:
 
 | Export                       | Tier   | What it is                                              |
@@ -3824,10 +3824,10 @@ SvGrid follows [semver](https://semver.org/) strictly **for everything
 exported from the package root**:
 
 ```ts
-import { SvGrid, tableFeatures, /* ... */ } from 'sv-grid-community'
+import { SvGrid, tableFeatures, /* ... */ } from 'sv-grid-core'
 ```
 
-Anything reached via `'sv-grid-community/internal'` or a deeper path is
+Anything reached via `'sv-grid-core/internal'` or a deeper path is
 **not** covered. We may rename, reshape, or remove those between any
 two minor releases.
 
@@ -3863,7 +3863,7 @@ Internal symbols are excluded from the published `.d.ts`.
 
 The package surface as of the current shipping version:
 
-### `sv-grid-community`
+### `sv-grid-core`
 
 | Surface                              | Tier              |
 | ------------------------------------ | ----------------- |
@@ -4016,7 +4016,7 @@ do.
 └───────────┴─────────────────────────────────────────────────┘
 ```
 
-Layer 1 is yours. Layer 2 is `sv-grid-community` minus the renderer.
+Layer 1 is yours. Layer 2 is `sv-grid-core` minus the renderer.
 Layer 3 is the `<SvGrid>` component everyone uses by default.
 
 **You can use Layer 2 without Layer 3.** That's the headless promise:
@@ -4194,7 +4194,7 @@ Production build, gzipped, measured on the `dist/` output:
 
 | Surface                             | Brotli | gzip   | Notes                                  |
 | ----------------------------------- | ------ | ------ | -------------------------------------- |
-| `sv-grid-community` (full)          | 41 kB  | 49 kB  | One import covers the entire renderer  |
+| `sv-grid-core` (full)          | 41 kB  | 49 kB  | One import covers the entire renderer  |
 | Headless engine (no `<SvGrid>`)     | 11 kB  | 13 kB  | If you bring your own renderer         |
 | `sv-grid-pro` core                  | 7 kB   | 8 kB   | Export + print + import + AI shells    |
 | `sv-grid-pro` AI module only        | 4 kB   | 5 kB   | Imported via `'sv-grid-pro/ai'`        |
@@ -4391,7 +4391,7 @@ published bundle assumes:
 - `globalThis`
 
 If you need to ship to a baseline lower than ES2020, transpile
-`sv-grid-community` in your own build (Vite, Rollup, esbuild). The
+`sv-grid-core` in your own build (Vite, Rollup, esbuild). The
 package source contains no syntax above ES2022.
 
 ## DOM APIs
@@ -4456,7 +4456,7 @@ grid. Guard `document` / `window` reads inside an `onMount` or
 | Turbopack     | n/a     | Untested. Should work given ESM compatibility. |
 
 Tree-shaking works at the named-export granularity - `import { SvGrid,
-tableFeatures } from 'sv-grid-community'` pulls in only the surfaces
+tableFeatures } from 'sv-grid-core'` pulls in only the surfaces
 you reference. Each feature module (sorting, filtering, etc.) is its
 own export.
 
@@ -4500,7 +4500,7 @@ For any cell whose content is more than a string, use `cell:` with
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { renderSnippet, type ColumnDef } from 'sv-grid-core'
 
   const columns: ColumnDef<{}, Person>[] = [
     {
@@ -4523,7 +4523,7 @@ small.
 
 ```ts
 import StatusBadge from './StatusBadge.svelte'
-import { renderComponent } from 'sv-grid-community'
+import { renderComponent } from 'sv-grid-core'
 
 {
   field: 'status',
@@ -4641,7 +4641,7 @@ value before commit. The implementation lives in
 [`parseEditorValue`](../../../packages/sv-grid-community/src/editors/cell-editors.ts).
 
 ```ts
-import { parseEditorValue } from 'sv-grid-community'
+import { parseEditorValue } from 'sv-grid-core'
 
 parseEditorValue('number',   '42')      // 42
 parseEditorValue('number',   'abc')     // NaN - caller should reject
@@ -4733,7 +4733,7 @@ column's min/max range, which the engine does for you.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef, type ConditionalFormat } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef, type ConditionalFormat } from 'sv-grid-core'
 
   type Row = { rep: string; revenue: number; score: number }
 
@@ -5046,7 +5046,7 @@ library, no custom cell snippet.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
 
   type Row = { product: string; revenue: number[] }
 
@@ -5352,7 +5352,7 @@ Pass a component instead of a snippet:
 
 ```ts
 import TooltipCell from './TooltipCell.svelte'
-import { renderComponent } from 'sv-grid-community'
+import { renderComponent } from 'sv-grid-core'
 
 {
   field: 'description',
@@ -5461,7 +5461,7 @@ filtered, sorted data - the "chart from the grid" enterprise feature.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, SvGridChart, rowsToChartSpec, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, SvGridChart, rowsToChartSpec, type SvGridApi } from 'sv-grid-core'
 
   let api: SvGridApi<F, Row> | null = null
   let displayed = $state<Row[]>(rows)
@@ -5670,7 +5670,7 @@ every other). SvGrid packages this as a headless controller over a pluggable
 transport - the only infrastructure-specific piece.
 
 ```ts
-import { createCollaboration, broadcastChannelTransport } from 'sv-grid-community'
+import { createCollaboration, broadcastChannelTransport } from 'sv-grid-core'
 
 const collab = createCollaboration({
   user: { id: myId, name: 'Ada', color: '#ef4444' },
@@ -5945,7 +5945,7 @@ of `ColumnDef`s - look at the [source](https://svgrid.com/#/demos/01-quick-start
 ## Minimal
 
 ```ts
-import type { ColumnDef } from 'sv-grid-community'
+import type { ColumnDef } from 'sv-grid-core'
 
 type Person = { firstName: string; age: number; status: string }
 
@@ -6226,7 +6226,7 @@ There are two ways to move columns in sv-grid:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-core'
 
   let columns: ColumnDef<{}, Person>[] = [
     { field: 'firstName', header: 'First name' },
@@ -6361,7 +6361,7 @@ read / write from outside the grid:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-community'
+  import type { SvGridApi } from 'sv-grid-core'
   let api = $state<SvGridApi<typeof features, Person> | null>(null)
 </script>
 
@@ -6520,7 +6520,7 @@ The imperative API exposes `setColumnWidth` and `getColumnWidths`:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-community'
+  import type { SvGridApi } from 'sv-grid-core'
   let api = $state<SvGridApi<typeof features, Person> | null>(null)
 
   function save() {
@@ -6658,7 +6658,7 @@ through the imperative API:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-community'
+  import type { SvGridApi } from 'sv-grid-core'
 
   const KEY = 'people-grid-state'
 
@@ -6735,7 +6735,7 @@ a `renderSnippet(...)` or `renderComponent(...)`. The function receives a
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { renderSnippet, type ColumnDef } from 'sv-grid-core'
 
   const columns: ColumnDef<{}, Person>[] = [
     {
@@ -6758,7 +6758,7 @@ a `renderSnippet(...)` or `renderComponent(...)`. The function receives a
 
 ```ts
 import HeaderWithIcon from './HeaderWithIcon.svelte'
-import { renderComponent } from 'sv-grid-community'
+import { renderComponent } from 'sv-grid-core'
 
 const columns = [
   {
@@ -7020,7 +7020,7 @@ on your stack, your budget, and which constraints bite hardest.
 Measured gzipped, with Svelte treated as a peer dependency and excluded
 (the bundlephobia convention):
 
-| sv-grid-community path                          | Gzipped | Minified |
+| sv-grid-core path                          | Gzipped | Minified |
 | ----------------------------------------------- | ------- | -------- |
 | Headless core (`createSvGrid` + a row model)    | ~7.5 KB | ~35 KB   |
 | Full `<SvGrid>` render component                | ~42 KB  | ~189 KB  |
@@ -7048,7 +7048,7 @@ TanStack Table's React adapter in 90% of cases. The big differences:
 - Replace `useReactTable(opts)` with `createSvGrid(opts)`. Identical
   state machine.
 - Replace `getCoreRowModel()` calls with the same name from
-  `sv-grid-community`.
+  `sv-grid-core`.
 - The render layer changes - TanStack hands you `flexRender` + the
   row model; SvGrid lets you keep that headless approach OR drop in
   the default `<SvGrid>` component.
@@ -7204,7 +7204,7 @@ schema.
     renderSnippet,
     type ColumnDef,
     type CellContext,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type RecordType = 'individual' | 'business' | 'nonprofit'
   type Status     = 'draft' | 'pending' | 'approved' | 'rejected'
@@ -7610,7 +7610,7 @@ number / date inputs, a boolean for checkboxes) is parsed by
 <div data-docs-demo="24-validation" data-height="540"></div>
 
 ```ts
-import { parseEditorValue } from 'sv-grid-community'
+import { parseEditorValue } from 'sv-grid-core'
 
 parseEditorValue('text',     'Ada')          // 'Ada'
 parseEditorValue('number',   '42')           // 42
@@ -7795,7 +7795,7 @@ editor takes over on double-click.
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Brand = { id: string; name: string; color: string }
 
@@ -7860,7 +7860,7 @@ integer 0-5. Clicking a star commits immediately - no blur required.
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Review = { id: string; product: string; rating: number }
 
@@ -8285,7 +8285,7 @@ for the same pattern with a "dirty" indicator - substitute "invalid" for
 
 # Error reference
 
-Every `Error` thrown by `sv-grid-community` or `sv-grid-pro` with the
+Every `Error` thrown by `sv-grid-core` or `sv-grid-pro` with the
 exact message text, the trigger condition, and the fix. If a runtime
 message you see isn't on this list, it's coming from your own code or
 a peer dependency.
@@ -8303,7 +8303,7 @@ Error classes are part of the [API stability](./api-stability.md)
 contract: the `.name` and message structure are Stable; we may reword
 the trailing detail at the patch level if the diagnostic improves.
 
-## sv-grid-community
+## sv-grid-core
 
 ### `Error: SvGrid: cannot mount inside a non-element parent`
 
@@ -8538,7 +8538,7 @@ when the recipient expects formatted documents.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-core'
   import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
 
   // Set the license key once at startup. Without a key, the feature still
@@ -8687,7 +8687,7 @@ format.
 ### Is export part of the free Community package?
 
 No. Export and printing ship in the paid `sv-grid-pro` add-on. The free
-`sv-grid-community` package covers the full grid (sorting, filtering, grouping,
+`sv-grid-core` package covers the full grid (sorting, filtering, grouping,
 editing, virtualization) but not export/print/pivot/import.
 
 ### Does exporting bloat my bundle?
@@ -8780,14 +8780,14 @@ per column.
 
 ```ts
 // types
-declare module 'sv-grid-community' {
+declare module 'sv-grid-core' {
   interface FilterFnsRegistry {
     inListCSV: (value: unknown, query: string) => boolean
   }
 }
 
 // register
-import { filterFns } from 'sv-grid-community'
+import { filterFns } from 'sv-grid-core'
 ;(filterFns as any).inListCSV = (value: unknown, query: string) => {
   const items = String(query).split(',').map((s) => s.trim().toLowerCase())
   return items.includes(String(value ?? '').toLowerCase())
@@ -8890,7 +8890,7 @@ api.setFilter('joinedAt', {
 The headless filter helper works the same:
 
 ```ts
-import { applyExcelFilter } from 'sv-grid-community'
+import { applyExcelFilter } from 'sv-grid-core'
 
 applyExcelFilter('2026-05-27', {
   id: 'joinedAt',
@@ -9063,7 +9063,7 @@ Apply or update conditions through the `SvGridApi` once it's available:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-community'
+  import type { SvGridApi } from 'sv-grid-core'
 
   let api = $state<SvGridApi<typeof features, Person> | null>(null)
 
@@ -9207,7 +9207,7 @@ api.setFilter('age', { operator: 'between', value: '18', valueTo: '65' })
 Or via the headless filter helper:
 
 ```ts
-import { applyExcelFilter } from 'sv-grid-community'
+import { applyExcelFilter } from 'sv-grid-core'
 
 applyExcelFilter(72, { id: 'age', operator: 'between', value: 18, valueTo: 65 })
 // → false (72 > 65)
@@ -9223,7 +9223,7 @@ The filter value comes in from the DOM as a string. Use `parseEditorValue`
 to convert:
 
 ```ts
-import { parseEditorValue } from 'sv-grid-community'
+import { parseEditorValue } from 'sv-grid-core'
 
 parseEditorValue('number', '4.5')   // 4.5
 parseEditorValue('number', 'abc')   // NaN - reject
@@ -9281,7 +9281,7 @@ to actually filter rows:
 ```ts
 import {
   tableFeatures, columnFilteringFeature, createFilteredRowModel,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({ columnFilteringFeature })
 ```
@@ -9318,7 +9318,7 @@ For programmatic filtering (without the menu), pass a `filterFn` on the
 column or use the headless `createFilteredRowModel` directly.
 
 ```ts
-import { filterFns } from 'sv-grid-community'
+import { filterFns } from 'sv-grid-core'
 
 filterFns.includesString(cellValue, query)
 filterFns.equals(cellValue, query)
@@ -9564,7 +9564,7 @@ is exported, so you can use it in user-land code (e.g. a custom
 `externalFilter` pipeline):
 
 ```ts
-import { normalizeForFilter } from 'sv-grid-community'
+import { normalizeForFilter } from 'sv-grid-core'
 
 const filtered = rows.filter((r) =>
   normalizeForFilter(r.name, 'de-DE').includes(
@@ -9845,7 +9845,7 @@ per column:
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnGroupingFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Employee = {
     id: number; name: string; department: string;
@@ -10069,7 +10069,7 @@ result, formatted with that column's own `format`.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, columnGroupingFeature, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, columnGroupingFeature, type ColumnDef } from 'sv-grid-core'
 
   const features = tableFeatures({ columnGroupingFeature })
 
@@ -10435,7 +10435,7 @@ column-mapping, validation, error preview - not the parser itself.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-core'
   import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
 
   setLicenseKey('SVPRO-XXXX-XXXX-XXXX')
@@ -10656,7 +10656,7 @@ already.
 
 > **Tier badges.** Pages whose title ends with `- Pro` describe a
 > feature that ships in the paid `sv-grid-pro` add-on. Everything else
-> is part of the open-source `sv-grid-community` package. The same
+> is part of the open-source `sv-grid-core` package. The same
 > visual convention is used throughout this documentation.
 
 Live reference - the trading-desk demo runs the full feature set at
@@ -10898,7 +10898,7 @@ When generating sv-grid code:
   not raw <select> elements.
 - Always type the grid as
   `SvGrid<typeof features, RowType>` so column inference works.
-- The two npm packages are `sv-grid-community` (MIT) and `sv-grid-pro`
+- The two npm packages are `sv-grid-core` (MIT) and `sv-grid-pro`
   (commercial). Never import from `@sv-grid/core` or `svelte-grid`,
   which are different projects.
 ```
@@ -10996,7 +10996,7 @@ against your installed copy.
 ## Install
 
 ```bash
-# Inside any project that already depends on sv-grid-community
+# Inside any project that already depends on sv-grid-core
 pnpm add -D @sv-grid/mcp-server
 ```
 
@@ -11302,7 +11302,7 @@ const columnDefs: ColDef[] = [
 
 ```ts
 // SvGrid
-import { renderComponent, type ColumnDef } from 'sv-grid-community'
+import { renderComponent, type ColumnDef } from 'sv-grid-core'
 import StatusCell from './StatusCell.svelte'
 
 const columns: ColumnDef<typeof features, Row>[] = [
@@ -11353,7 +11353,7 @@ import {
   rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -11397,7 +11397,7 @@ You get the SvGrid API from `onApiReady` (equivalent to AG Grid's
     rowSortingFeature,
     columnFilteringFeature,
     rowPaginationFeature,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -11450,7 +11450,7 @@ to mutate (or not) on the `rows` array you passed in.
     columnGroupingFeature,
     rowSortingFeature,
     rowExpandingFeature,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -11557,7 +11557,7 @@ plays well with runes.
 
 A typical migration of a single grid takes 1-3 hours:
 
-1. **Install** - `pnpm add sv-grid-community` (and `sv-grid-pro` if you need export).
+1. **Install** - `pnpm add sv-grid-core` (and `sv-grid-pro` if you need export).
 2. **Translate columnDefs** - use the mapping table above. Most columns are 1:1.
 3. **Wrap features** - figure out which AG Grid features you actually use; register only those in `tableFeatures({...})`.
 4. **Swap the component** - `<AgGridSvelte gridOptions={...}>` → `<SvGrid data={rows} columns={columns} features={features}>`.
@@ -11941,7 +11941,7 @@ filters, editing, grouping - when you outgrow the basics.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -11976,7 +11976,7 @@ small table, Grid.js stays lighter.
 
 ### Is SvGrid MIT-licensed like Grid.js?
 
-Yes. `sv-grid-community` is MIT. Only the optional `sv-grid-pro` add-on is paid.
+Yes. `sv-grid-core` is MIT. Only the optional `sv-grid-pro` add-on is paid.
 
 ### Does SvGrid support server-side data like Grid.js?
 
@@ -12009,7 +12009,7 @@ the Formulas section below).
 +   SvGrid, tableFeatures,
 +   rowSortingFeature, columnFilteringFeature, rowSelectionFeature,
 +   type ColumnDef,
-+ } from 'sv-grid-community'
++ } from 'sv-grid-core'
 ```
 
 ## Schema → columns
@@ -12130,7 +12130,7 @@ a watermark for unlicensed builds) - no hard cutoff to plan around.
 
 ## What you get for free vs Handsontable
 
-- **No GPLv3 licensing fork.** sv-grid-community is MIT.
+- **No GPLv3 licensing fork.** sv-grid-core is MIT.
 - **Modern Svelte 5 ergonomics.** `$state` arrays beat
   `loadData(...)`.
 - **CSP-clean.** Handsontable's HyperFormula path needs CSP `eval`
@@ -12169,7 +12169,7 @@ functions before porting.
 
 ### Is SvGrid licensed like Handsontable?
 
-The `sv-grid-community` core is MIT and free for commercial use - no per-seat
+The `sv-grid-core` core is MIT and free for commercial use - no per-seat
 license key. The optional `sv-grid-pro` pack (export, pivot, import) is priced
 per developer.
 
@@ -12222,7 +12222,7 @@ engineering lineage is shared.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -12349,7 +12349,7 @@ with an MIT core - and a much cheaper paid tier.
 
 ### Is SvGrid a cheaper alternative to Kendo UI Grid?
 
-For a Svelte stack, yes: the `sv-grid-community` core is MIT (free, including
+For a Svelte stack, yes: the `sv-grid-core` core is MIT (free, including
 commercial use), and the paid `sv-grid-pro` tier is a fraction of enterprise
 component-suite pricing.
 
@@ -12381,7 +12381,7 @@ split very similar to sv-grid's. The port is mostly mechanical.
 
 | MUI X                                | sv-grid                                  |
 | ------------------------------------ | ---------------------------------------- |
-| `@mui/x-data-grid`                   | `sv-grid-community`                      |
+| `@mui/x-data-grid`                   | `sv-grid-core`                      |
 | `@mui/x-data-grid-pro`               | `sv-grid-pro` (export, import, pivot, AI) |
 | `@mui/x-data-grid-premium`           | All of `sv-grid-pro` ships in one tier   |
 
@@ -12391,7 +12391,7 @@ split very similar to sv-grid's. The port is mostly mechanical.
 - import { DataGrid, GridColDef, GridRowsProp } from '@mui/x-data-grid'
 
 + import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
-+          type ColumnDef } from 'sv-grid-community'
++          type ColumnDef } from 'sv-grid-core'
 ```
 
 ## Column defs
@@ -12607,7 +12607,7 @@ component.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -12643,7 +12643,7 @@ filtering move from per-column props to the `rowSortingFeature` /
 
 ### Is SvGrid open-source like the Prime grid core?
 
-Yes. `sv-grid-community` is MIT, like the Prime component cores. The difference
+Yes. `sv-grid-core` is MIT, like the Prime component cores. The difference
 is framework: SvGrid is Svelte 5, not Vue / Angular / React.
 
 ### Do I lose Prime theming?
@@ -12692,7 +12692,7 @@ is mostly a column rename pass.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -12730,7 +12730,7 @@ snippet). `rowKeyGetter` becomes `getRowId`.
 
 ### Is SvGrid free like react-data-grid?
 
-Yes - `sv-grid-community` is MIT-licensed, like react-data-grid. SvGrid adds an
+Yes - `sv-grid-core` is MIT-licensed, like react-data-grid. SvGrid adds an
 optional paid Pro pack for export, import, pivot, and AI.
 
 ### Does SvGrid have built-in filtering?
@@ -12786,7 +12786,7 @@ maps a Smart.Grid setup onto SvGrid.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -12888,7 +12888,7 @@ also exposes a headless engine and an MCP server).
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
@@ -12905,7 +12905,7 @@ also exposes a headless engine and an MCP server).
 Both grids are MIT and free for commercial use, so licensing is not the
 deciding factor. The difference is monetization: SVAR keeps the whole
 grid free (including CSV export and print) and sells its Gantt instead,
-whereas SvGrid's `sv-grid-community` core is MIT and the optional
+whereas SvGrid's `sv-grid-core` core is MIT and the optional
 `sv-grid-pro` pack (advanced XLSX/PDF export, pivot, import, AI, support)
 is the paid piece. If all you need is CSV export, SVAR gives it free; if
 you need pivot, advanced export, or a support SLA, that is Pro on SvGrid.
@@ -12951,7 +12951,7 @@ plus re-theming through `--sg-*` tokens.
 
 ### Are SvGrid and SVAR both free and MIT?
 
-Yes. `sv-grid-community` and the SVAR DataGrid are both MIT and free for
+Yes. `sv-grid-core` and the SVAR DataGrid are both MIT and free for
 commercial, closed-source use. SVAR keeps the whole grid free and monetizes its
 Gantt; on SvGrid, only the optional `sv-grid-pro` add-on (advanced export,
 pivot, import, AI, support) is paid.
@@ -13018,7 +13018,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
@@ -13149,7 +13149,7 @@ for a Svelte-5-native grid with an unconditional MIT core.
 
 ### Is SvGrid free, unlike the Syncfusion commercial license?
 
-`sv-grid-community` is MIT - free for everyone, with no revenue or team-size
+`sv-grid-core` is MIT - free for everyone, with no revenue or team-size
 conditions. Syncfusion's community license is free only for qualifying small
 teams; otherwise it is commercial.
 
@@ -13213,7 +13213,7 @@ cells are snippets, and there is no manual mount / teardown.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -13250,7 +13250,7 @@ It is a configuration translation plus one mindset shift: you stop calling
 
 ### Is SvGrid free like Tabulator?
 
-Yes. `sv-grid-community` is MIT-licensed like Tabulator. The optional
+Yes. `sv-grid-core` is MIT-licensed like Tabulator. The optional
 `sv-grid-pro` pack (export, import, pivot, AI) is the only paid piece.
 
 ### Can I keep Tabulator's custom formatters?
@@ -13300,7 +13300,7 @@ explicit row-model pipelines. If you already think in
 + import {
 +   SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +   renderSnippet, type ColumnDef,
-+ } from 'sv-grid-community'
++ } from 'sv-grid-core'
 ```
 
 ## Column definitions
@@ -13446,7 +13446,7 @@ in one prop pass.
 
 ### Is SvGrid free like TanStack Table?
 
-Yes - `sv-grid-community` is MIT-licensed, like TanStack Table. SvGrid
+Yes - `sv-grid-core` is MIT-licensed, like TanStack Table. SvGrid
 additionally offers an optional paid `sv-grid-pro` pack for export, pivot, and
 import, which TanStack Table does not provide at all.
 
@@ -13506,7 +13506,7 @@ That is the moment a styled `<Table>` stops paying for itself.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
@@ -13626,7 +13626,7 @@ port is mostly about deciding how much markup you want to keep.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
@@ -13686,7 +13686,7 @@ lighter choice.
 
 ### Is SvGrid also MIT-licensed like @vincjo/datatables?
 
-Yes. `sv-grid-community` is MIT, like `@vincjo/datatables`. SvGrid adds an
+Yes. `sv-grid-core` is MIT, like `@vincjo/datatables`. SvGrid adds an
 optional paid `sv-grid-pro` pack (export, import, pivot, AI).
 
 ### Can I keep my own table markup after switching?
@@ -13874,7 +13874,7 @@ data layer doesn't care which one is active.
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Status   = 'open' | 'in_progress' | 'blocked' | 'done'
   type Priority = 'low' | 'med' | 'high' | 'urgent'
@@ -14297,7 +14297,7 @@ displaying a pivot.
 import { createPivotModel } from 'sv-grid-pro'
 import {
   SvGrid, tableFeatures, rowSortingFeature, rowExpandingFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({ rowSortingFeature, rowExpandingFeature })
 
@@ -14546,7 +14546,7 @@ matters.
 ```json
 {
   "dependencies": {
-    "sv-grid-community": "1.0.0",
+    "sv-grid-core": "1.0.0",
     "sv-grid-pro":       "1.0.0"
   }
 }
@@ -14608,7 +14608,7 @@ dynamic import so the rest of the app doesn't ship the Pro bundle:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-community'
+  import type { SvGridApi } from 'sv-grid-core'
   import type { ProGridApi } from 'sv-grid-pro'
 
   let api = $state<SvGridApi<typeof features, Order> | null>(null)
@@ -14691,7 +14691,7 @@ export async function load() {
 ```svelte
 <!-- +page.svelte -->
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
   let { data } = $props()
   const features = tableFeatures({ rowSortingFeature })
 </script>
@@ -15573,7 +15573,7 @@ in the dataTransfer payload and reorder the data array on drop. A working
 sketch - drop into your column array:
 
 ```ts
-import { renderSnippet } from 'sv-grid-community'
+import { renderSnippet } from 'sv-grid-core'
 
 {#snippet Handle(p: { id: string })}
   <span
@@ -15654,7 +15654,7 @@ If you absolutely need it, use the lower-level headless virtualizer and roll
 your own row layout:
 
 ```ts
-import { createSvelteVirtualizer } from 'sv-grid-community'
+import { createSvelteVirtualizer } from 'sv-grid-core'
 
 const virtualizer = createSvelteVirtualizer({
   count: () => rows.length,
@@ -15724,7 +15724,7 @@ either turn it on with `showPagination` or drive its state from outside.
     SvGrid, tableFeatures,
     rowPaginationFeature, createPaginatedRowModel,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowPaginationFeature })
 </script>
@@ -15805,7 +15805,7 @@ Each is an array of your own row objects (same `TData` type as `data`). The grid
 
 ```ts
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-core'
 
   type Row = { id: string; account: string; arr: number; seats: number }
 
@@ -15957,7 +15957,7 @@ column to the sort key list (multi-sort):
 <script lang="ts">
   import {
     SvGrid, tableFeatures, rowSortingFeature, type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature })
 
@@ -15979,7 +15979,7 @@ adds the column to the sort key list (multi-sort).
 `sortFns` exposes the built-in comparators:
 
 ```ts
-import { sortFns } from 'sv-grid-community'
+import { sortFns } from 'sv-grid-core'
 // sortFns.auto    - lexical (default for unknown types)
 // sortFns.number  - numeric, NaN-safe
 // sortFns.date    - Date-parsed
@@ -16579,7 +16579,7 @@ imperative API.
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-community'
+  import type { SvGridApi } from 'sv-grid-core'
 
   let view = $state<GridView>(loadView() ?? defaultView())
   let api  = $state<SvGridApi<typeof features, Row> | null>(null)
@@ -16766,7 +16766,7 @@ our InfoSec team?".
 | --------------------------------- | ---------------------------------------------------------------------- |
 | Network egress at runtime         | **None.** Zero analytics, zero phone-home, no automatic update checks. |
 | Telemetry                         | **Zero.** No `fetch`, no `navigator.sendBeacon`, no console identifiers. |
-| `eval` / `new Function` / dynamic code | **None in `sv-grid-community`.** See [CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) demo + runtime self-check. |
+| `eval` / `new Function` / dynamic code | **None in `sv-grid-core`.** See [CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) demo + runtime self-check. |
 | Cookies / localStorage            | None set by the library itself. (Your app's saved-views helpers may opt in.) |
 | Outbound dependencies             | **Community:** zero runtime deps. **Pro:** two optional peer deps (`jszip`, `pdfmake`), see below. |
 | AI calls                          | The user's own `AIProvider` adapter calls whichever endpoint *they* configured. The package never embeds a model client. |
@@ -16776,7 +16776,7 @@ our InfoSec team?".
 
 ## Runtime dependencies
 
-`sv-grid-community` has **zero runtime dependencies**. It is a single
+`sv-grid-core` has **zero runtime dependencies**. It is a single
 package with no transitive supply chain - the only thing the user's
 build pulls in is `svelte` itself (peer).
 
@@ -16863,7 +16863,7 @@ Every release ships an `npm pack` tarball. You can generate a CycloneDX
 or SPDX SBOM directly:
 
 ```bash
-npx @cyclonedx/cdxgen -t npm -o sbom.json sv-grid-community
+npx @cyclonedx/cdxgen -t npm -o sbom.json sv-grid-core
 # or
 npx @cyclonedx/cdxgen -t npm -o sbom.json sv-grid-pro
 ```
@@ -16971,7 +16971,7 @@ sort/filter only the visible page, which is wrong.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, type ColumnDef } from 'sv-grid-core'
 
   let rows = $state<Order[]>([])
   let page = $state(0)
@@ -17015,7 +17015,7 @@ hand to the server.
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
-           type ColumnDef, type SvGridApi } from 'sv-grid-community'
+           type ColumnDef, type SvGridApi } from 'sv-grid-core'
 
   let rows = $state<Order[]>([])
   let total = $state(0)
@@ -17219,7 +17219,7 @@ the backend. SvGrid packages this as **one datasource contract**: you implement
 a single async `getRows`, and `createServerDataSource` owns the rest.
 
 ```ts
-import { createServerDataSource, type ServerDataSource } from 'sv-grid-community'
+import { createServerDataSource, type ServerDataSource } from 'sv-grid-core'
 
 const source: ServerDataSource<Row> = {
   async getRows({ startRow, endRow, sortModel, filterModel }) {
@@ -17355,7 +17355,7 @@ user inspect or edit the raw formula behind the active cell.
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   // ─────────────────── ENGINE ───────────────────
   type CellVal = string | number | boolean | { error: string }
@@ -17881,7 +17881,7 @@ the grid's `getState()` / `setState()`, with pluggable storage.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, createNamedViews, localStorageViews, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, createNamedViews, localStorageViews, type SvGridApi } from 'sv-grid-core'
 
   let views: ReturnType<typeof createNamedViews> | null = null
 
@@ -18220,7 +18220,7 @@ stands today.
 ## Headline numbers (v1.0)
 
 > **92.2% line coverage** on the testable surface
-> (`pnpm --filter sv-grid-community test:lib`)
+> (`pnpm --filter sv-grid-core test:lib`)
 
 | Metric | Coverage | Threshold |
 | ------ | -------- | --------- |
@@ -18232,7 +18232,7 @@ stands today.
 Run the suite locally:
 
 ```bash
-pnpm test            # alias for: pnpm --filter sv-grid-community test:lib
+pnpm test            # alias for: pnpm --filter sv-grid-core test:lib
 pnpm test:types      # svelte-check on every package
 ```
 
@@ -18316,7 +18316,7 @@ Total: **168 tests** across **14 test files**.
 - **TypeScript strict mode** across both packages. `pnpm test:types`
   must pass on every PR (currently 0 errors / 0 warnings).
 - **ESLint** at `pnpm lint`, with the Svelte plugin.
-- **Publint** at `pnpm --filter sv-grid-community test:build` checks the
+- **Publint** at `pnpm --filter sv-grid-core test:build` checks the
   published `exports` map.
 - **CSP-strict runtime**: no `eval`, no `new Function`, no inline scripts.
   Demo `16-csp-compliant` includes a runtime self-check.
@@ -18349,7 +18349,7 @@ Total: **168 tests** across **14 test files**.
    ```
 3. If the behavior is pure (a row model, a sort comparator, an a11y prop
    builder), add to one of the existing unit-test files.
-4. Run `pnpm --filter sv-grid-community exec vitest run <file>` to iterate
+4. Run `pnpm --filter sv-grid-core exec vitest run <file>` to iterate
    fast.
 5. Open the PR; include the before/after coverage delta in the description.
 
@@ -18394,12 +18394,12 @@ matter to your users.
 
 ## Engine tests (Layer 2, vitest)
 
-Every helper in `sv-grid-community` is a pure function. Test them
+Every helper in `sv-grid-core` is a pure function. Test them
 without a DOM.
 
 ```ts
 import { describe, it, expect } from 'vitest'
-import { createSvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+import { createSvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
 
 describe('sort behaviour', () => {
   it('sorts by a single column ascending', () => {
@@ -18425,7 +18425,7 @@ describe('sort behaviour', () => {
 ```
 
 Engine tests run at ~10k assertions/second on a modern laptop. The
-`sv-grid-community` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-community/src) -
+`sv-grid-core` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-community/src) -
 you can model yours after them.
 
 ## Pro feature tests (vitest + jsdom)
@@ -18469,7 +18469,7 @@ component in jsdom:
 ```ts
 import { render } from '@testing-library/svelte'
 import { describe, it, expect } from 'vitest'
-import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-community'
+import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-core'
 
 type Row = { id: number; name: string }
 
@@ -18498,7 +18498,7 @@ A few caveats:
 
 - **Vitest config:** `environment: 'jsdom'` plus
   `resolve.conditions: ['browser']` so vitest picks Svelte's client
-  build. The `sv-grid-community` repo's `vite.config.ts` shows the
+  build. The `sv-grid-core` repo's `vite.config.ts` shows the
   exact knobs.
 - **No virtualization in jsdom.** jsdom returns `0` for every layout
   metric, so the row virtualizer never advances. Test on small
@@ -18967,7 +18967,7 @@ JavaScript **properties**; simple toggles are exposed as **attributes**.
     rowSortingFeature,
     columnFilteringFeature,
     rowSelectionFeature,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   let {
     data = [],
@@ -19259,7 +19259,7 @@ dismissUpgradePrompt()
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, type SvGridApi } from 'sv-grid-core'
   import { installPro, type ProGridApi } from 'sv-grid-pro'
 
   let api = $state<ProGridApi<typeof features, Order> | null>(null)
@@ -19464,7 +19464,7 @@ support uses the ID you give us, not anything we phoned home for.
 
 # Pro feature pack
 
-`sv-grid-pro` is a paid add-on for `sv-grid-community`. It bolts onto
+`sv-grid-pro` is a paid add-on for `sv-grid-core`. It bolts onto
 the same `<SvGrid>` you already have and adds four feature areas: data
 export, data import, an AI assistant, and pivot tables.
 
@@ -19561,7 +19561,7 @@ Pricing + multi-app licensing: <https://sv-grid.dev/pricing>.
 ## How Pro integrates
 
 ```ts
-import { SvGrid, type SvGridApi } from 'sv-grid-community'
+import { SvGrid, type SvGridApi } from 'sv-grid-core'
 import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
 
 setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
@@ -19664,10 +19664,10 @@ feature broken; "sev-3" = bug; "sev-4" = question.
 
 1. **Reproduce in a minimal repo** - StackBlitz / CodeSandbox / `pnpm
    create svelte` + the smallest grid that shows the issue. We
-   support the official `sv-grid-community` and `sv-grid-pro`
+   support the official `sv-grid-core` and `sv-grid-pro`
    packages.
 2. **Include**:
-   - sv-grid version (`pnpm ls sv-grid-community sv-grid-pro`)
+   - sv-grid version (`pnpm ls sv-grid-core sv-grid-pro`)
    - Svelte version, Vite version, OS
    - Browser + version (we test on the latest 2 majors of Chrome, Firefox, Safari, Edge - see [browser support](../help/browser-support.md))
    - The exact error message + stack trace
@@ -19723,7 +19723,7 @@ generates one save, not twenty.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-community'
+  import { SvGrid } from 'sv-grid-core'
 
   type Patch = { rowId: string; columnId: string; value: unknown }
   let pending = new Map<string, Patch>()  // dedupe per (rowId, columnId)
@@ -19803,7 +19803,7 @@ CSP-clean runtime intact.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-core'
 
   // --- EAN-13 encoder (the actual GS1 spec - the output scans) ----------
   const L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011']
@@ -19960,7 +19960,7 @@ measurements so each cell starts from a clean state.
     SvGrid, tableFeatures,
     rowSortingFeature, columnFilteringFeature, rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const ROW_SIZES = [100, 1_000, 10_000, 50_000, 100_000] as const
   const COL_SIZES = [5, 10, 20, 50] as const
@@ -20219,7 +20219,7 @@ This 25-line plugin writes a computed `__rowAccent` string onto every
 row in the row model. A user-supplied function decides the accent:
 
 ```ts
-import { tableFeatures, rowSortingFeature, type RowData, type TableFeatures } from 'sv-grid-community'
+import { tableFeatures, rowSortingFeature, type RowData, type TableFeatures } from 'sv-grid-core'
 
 type RowAccentFn<TData extends RowData> = (row: TData) => string | undefined
 
@@ -20254,7 +20254,7 @@ Register the feature and supply `rowClass` to surface the accent in CSS:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
 
   type Deal = { company: string; health: number; __rowAccent?: string }
 
@@ -20328,7 +20328,7 @@ The recipe is three pieces:
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
     rowSelectionFeature, type ColumnDef, type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -20548,7 +20548,7 @@ runs through `Intl.NumberFormat` cached per locale.
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { renderSnippet, type ColumnDef } from 'sv-grid-core'
 
   type Sale = { amount: number; up: boolean }
   const columns: ColumnDef<typeof features, Sale>[] = [
@@ -20580,7 +20580,7 @@ grid's body, not the consumer's component subtree.
 
 ```svelte
 <script lang="ts">
-  import { renderComponent } from 'sv-grid-community'
+  import { renderComponent } from 'sv-grid-core'
   import BadgeCell from './BadgeCell.svelte'
 
   const columns = [
@@ -20696,7 +20696,7 @@ debounce on scroll, fetch the next chunk by cursor, splice into
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, type SvGridApi } from 'sv-grid-core'
 
   type Event = { id: string; ts: string; actor: string; action: string }
   let rows = $state<Event[]>([])
@@ -20796,7 +20796,7 @@ them in a `$derived` that filters the data array before it reaches
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from 'sv-grid-core'
 
   type FilterFn = (value: unknown, filterValue: string) => boolean
 
@@ -21078,7 +21078,7 @@ events). Whatever lives in `data[]` is the truth.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi } from 'sv-grid-core'
 
   type Employee = { id: string; name: string; email: string; team: 'Eng' | 'Sales' | 'Ops'; salary: number; remote: boolean }
   let employees = $state<Employee[]>([/* ... */])
@@ -21253,7 +21253,7 @@ panel to fill the gap.
     rowSortingFeature, columnFilteringFeature,
     rowSelectionFeature, rowExpandingFeature,
     type SvGridApi, type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Row = { id: number; name: string; team: string; score: number; active: boolean }
   const rows: Row[] = [/* ... */]
@@ -21590,7 +21590,7 @@ doesn't care which.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
   const features = tableFeatures({ rowSortingFeature })
   let rows = $state<Order[]>([])
   let loading = $state(true)
@@ -21817,7 +21817,7 @@ than in the URL - they're per-user, not per-link. See
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
@@ -22164,7 +22164,7 @@ restores the snapshot.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, type SvGridApi } from 'sv-grid-core'
 
   type View = {
     name: string
@@ -22278,7 +22278,7 @@ Query handles the rest.
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { createQuery } from '@tanstack/svelte-query'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
@@ -22695,7 +22695,7 @@ import {
   createSortedRowModel,
   tableFeatures,
   rowSortingFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({ rowSortingFeature })
 
@@ -22740,7 +22740,7 @@ regressions in custom cell renderers and headers.
 ```ts
 import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/svelte'
-import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
 
 const features = tableFeatures({ rowSortingFeature })
 
@@ -22897,7 +22897,7 @@ Both halves are plain `<SvGrid>` instances; the wiring is one
   import {
     SvGrid, tableFeatures, rowSortingFeature, rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, rowSelectionFeature })
 
@@ -23075,7 +23075,7 @@ SvGrid is Svelte-5-native, but you can drop it into a React app via a thin **cus
 
 ## 1. Author the custom element
 
-In your Svelte package (a thin wrapper over `sv-grid-community`):
+In your Svelte package (a thin wrapper over `sv-grid-core`):
 
 ```svelte
 <!-- packages/sv-grid-element/src/SvGridElement.svelte -->
@@ -23099,7 +23099,7 @@ In your Svelte package (a thin wrapper over `sv-grid-community`):
     SvGrid, tableFeatures,
     rowSortingFeature, columnFilteringFeature,
     rowSelectionFeature, rowPaginationFeature,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   // Re-export every prop the React side might want to set.
   let {
@@ -23349,10 +23349,10 @@ _Generated from the published TypeScript sources. Do not edit by hand - rerun `n
 For the hand-curated reference (with defaults + behaviour tables),
 see [the main reference index](../index.md).
 
-## sv-grid-community
+## sv-grid-core
 
-- [`sv-grid-community/core.ts`](./sv-grid-community-core.md) - 45 exports
-- [`sv-grid-community/svgrid-wrapper.types.ts`](./sv-grid-community-svgrid-wrapper.types.md) - 3 exports
+- [`sv-grid-core/core.ts`](./sv-grid-community-core.md) - 45 exports
+- [`sv-grid-core/svgrid-wrapper.types.ts`](./sv-grid-community-svgrid-wrapper.types.md) - 3 exports
 
 ## sv-grid-pro
 
@@ -23366,9 +23366,9 @@ see [the main reference index](../index.md).
      /reference/auto/sv-grid-community-core  (community)
      ================================================================== -->
 
-# `sv-grid-community` · `core.ts`
+# `sv-grid-core` · `core.ts`
 
-Auto-generated. Source: `packages\sv-grid-community\src\core.ts`.
+Auto-generated. Source: `packages\sv-grid-core\src\core.ts`.
 
 ### `type RowData`
 
@@ -24077,9 +24077,9 @@ export function isFunction(value: unknown): value is (...args: Array<any>) => an
      /reference/auto/sv-grid-community-svgrid-wrapper.types  (community)
      ================================================================== -->
 
-# `sv-grid-community` · `svgrid-wrapper.types.ts`
+# `sv-grid-core` · `svgrid-wrapper.types.ts`
 
-Auto-generated. Source: `packages\sv-grid-community\src\svgrid-wrapper.types.ts`.
+Auto-generated. Source: `packages\sv-grid-core\src\svgrid-wrapper.types.ts`.
 
 ### `type SvGridFilterOperator`
 
@@ -24906,7 +24906,7 @@ not at module load.
 
 ```bash
 # Build
-corepack pnpm --filter sv-grid-community build
+corepack pnpm --filter sv-grid-core build
 
 # Inspect the dist bundle
 npx source-map-explorer packages/sv-grid-community/dist/index.js
@@ -24952,7 +24952,7 @@ A column definition is the contract between the grid and one column of
 data. Pass an array of these as the `columns` prop to `<SvGrid>`.
 
 ```ts
-import type { ColumnDef } from 'sv-grid-community'
+import type { ColumnDef } from 'sv-grid-core'
 
 type Row = { id: string; firstName: string; salary: number; joinedAt: string }
 
@@ -25114,7 +25114,7 @@ You typically need `ctx.row.original` (the source row) and
 `ctx.getValue()`:
 
 ```ts
-import { renderSnippet } from 'sv-grid-community'
+import { renderSnippet } from 'sv-grid-core'
 
 {
   id: 'name',
@@ -25151,7 +25151,7 @@ import {
   rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -25211,7 +25211,7 @@ import {
   rowPaginationFeature,
   sortFns,
   filterFns,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const grid = createSvGrid({
   _features: tableFeatures({
@@ -25249,7 +25249,7 @@ const grid = createSvGrid({
 ### `sortFns`
 
 ```ts
-import { sortFns } from 'sv-grid-community'
+import { sortFns } from 'sv-grid-core'
 
 // sortFns.auto   - lexical (default for unknown / mixed types)
 // sortFns.number - numeric, NaN-safe
@@ -25263,7 +25263,7 @@ Pick a comparator yourself by setting the column's `editorType` -
 ### `filterFns`
 
 ```ts
-import { filterFns } from 'sv-grid-community'
+import { filterFns } from 'sv-grid-core'
 
 // includesString, equalsString, arrIncludes,
 // inNumberRange, isAfter, isBefore, isEmpty, isNotEmpty
@@ -25278,9 +25278,9 @@ const columnFilters = [{ id: 'age', value: 30, fn: 'equals' }]
 Extend the registry yourself - it's a plain mutable object:
 
 ```ts
-import { filterFns } from 'sv-grid-community'
+import { filterFns } from 'sv-grid-core'
 
-declare module 'sv-grid-community' {
+declare module 'sv-grid-core' {
   interface FilterFnsRegistry {
     inListCSV: (value: unknown, query: string) => boolean
   }
@@ -25353,7 +25353,7 @@ import {
   rowSortingFeature,
   columnFilteringFeature,
   type ColumnDef,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 type Repo = { name: string; lang: string; stars: number }
 
@@ -25461,7 +25461,7 @@ The exhaustive surface of the published packages. For walkthroughs +
 patterns see [Help](../help/index.md); for first contact see
 [Getting started](../getting-started.md).
 
-## sv-grid-community
+## sv-grid-core
 
 | Page                          | What's in it                                                          |
 | ----------------------------- | --------------------------------------------------------------------- |
@@ -25965,7 +25965,7 @@ Use it for data, column, filter, sort, group, selection, and
 visibility operations from outside the component.
 
 ```ts
-import type { SvGridApi } from 'sv-grid-community'
+import type { SvGridApi } from 'sv-grid-core'
 
 let api = $state<SvGridApi<typeof features, Order> | null>(null)
 ```
@@ -26174,7 +26174,7 @@ understanding before you reach for either.
 
 ## What "headless" actually means here
 
-The core - `createSvGrid` from `sv-grid-community/core` - knows about
+The core - `createSvGrid` from `sv-grid-core/core` - knows about
 rows, columns, sorting, filtering, grouping, pagination, expansion, and
 selection. It does **not** know about pixels, DOM, ARIA, or CSS. It is
 a state machine over your data that you query and mutate from Svelte.
@@ -26213,7 +26213,7 @@ You write the markup, you keep the headless brain.
 
 ```ts
 import { createSvGrid, createCoreRowModel, createSortedRowModel,
-         tableFeatures, rowSortingFeature, sortFns } from 'sv-grid-community'
+         tableFeatures, rowSortingFeature, sortFns } from 'sv-grid-core'
 
 const grid = createSvGrid({
   _features: tableFeatures({ rowSortingFeature }),
@@ -26235,7 +26235,7 @@ for (const row of grid.getRowModel().rows) {
 in one bundle. With SvGrid you only register what you use:
 
 ```ts
-import { tableFeatures, rowSortingFeature } from 'sv-grid-community'
+import { tableFeatures, rowSortingFeature } from 'sv-grid-core'
 
 // no filtering, no grouping, no pagination - none of that code is
 // reachable from this grid instance
@@ -26251,7 +26251,7 @@ and Vite tree-shakes away the rest.
 browser:
 
 ```ts
-import { createSvGrid, ... } from 'sv-grid-community'
+import { createSvGrid, ... } from 'sv-grid-core'
 
 test('sorts by salary descending', () => {
   const grid = createSvGrid({ ..., state: { sorting: [{ id: 'salary', desc: true }] } })

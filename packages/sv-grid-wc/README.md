@@ -84,7 +84,7 @@ sv-grid {
 
 ## Pro
 
-This element ships the free MIT `sv-grid-community` core. For export, import,
+This element ships the free MIT `sv-grid-core` core. For export, import,
 print, pivot, and AI, see [sv-grid-pro](https://www.svgrid.com/pricing).
 
 SvGrid(TM) is a trademark of jQWidgets Ltd. This package is MIT-licensed.

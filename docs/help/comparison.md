@@ -89,7 +89,7 @@ on your stack, your budget, and which constraints bite hardest.
 Measured gzipped, with Svelte treated as a peer dependency and excluded
 (the bundlephobia convention):
 
-| sv-grid-community path                          | Gzipped | Minified |
+| sv-grid-core path                          | Gzipped | Minified |
 | ----------------------------------------------- | ------- | -------- |
 | Headless core (`createSvGrid` + a row model)    | ~7.5 KB | ~35 KB   |
 | Full `<SvGrid>` render component                | ~42 KB  | ~189 KB  |
@@ -117,7 +117,7 @@ TanStack Table's React adapter in 90% of cases. The big differences:
 - Replace `useReactTable(opts)` with `createSvGrid(opts)`. Identical
   state machine.
 - Replace `getCoreRowModel()` calls with the same name from
-  `sv-grid-community`.
+  `sv-grid-core`.
 - The render layer changes - TanStack hands you `flexRender` + the
   row model; SvGrid lets you keep that headless approach OR drop in
   the default `<SvGrid>` component.

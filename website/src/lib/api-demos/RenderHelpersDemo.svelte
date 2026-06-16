@@ -10,7 +10,7 @@
     renderSnippet,
     renderComponent,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { makeOrders, type Order } from './seed'
   import RenderBadge from './RenderBadge.svelte'
 

@@ -21,7 +21,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   // ---- EAN-13 encoder ----------------------------------------------------
   // Three 7-module digit encodings + the parity table that lets the first

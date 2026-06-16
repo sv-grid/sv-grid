@@ -2,7 +2,7 @@
 
 > The Svelte 5-native data grid. Headless engine + render component, AI-native, WAI-ARIA, virtualized to 100k rows.
 
-Two npm packages: `sv-grid-community` (MIT, open source) and `sv-grid-pro` (commercial - export, import, pivot, AI helpers).
+Two npm packages: `sv-grid-core` (MIT, open source) and `sv-grid-pro` (commercial - export, import, pivot, AI helpers).
 
 For the full text of every doc page concatenated: see [llms-full.txt](/llms-full.txt).
 For a machine-readable manifest: see [docs.json](/docs.json).
@@ -25,7 +25,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 ## Getting started
 
 - [1. Install](https://svgrid.com/getting-started/1-install): SvGrid is a single npm package. There is no peer dependency on a CSS framework - bring your own, or use the default theme that ships with the render component.
-- [2. First grid in 60 seconds](https://svgrid.com/getting-started/2-first-grid): ```svelte <script lang="ts"> import { SvGrid, type ColumnDef } from 'sv-grid-community'
+- [2. First grid in 60 seconds](https://svgrid.com/getting-started/2-first-grid): ```svelte <script lang="ts"> import { SvGrid, type ColumnDef } from 'sv-grid-core'
 - [3. Data and columns](https://svgrid.com/getting-started/3-data-and-columns): SvGrid reads two arrays: data (your rows) and columns (the column-definition list). Everything else is opt-in.
 - [4. Features](https://svgrid.com/getting-started/4-features): The grid engine is **feature-gated**. Out of the box you get the core row model (rows in their original order). To enable sorting, filtering, grouping, pagination, expansion, or selection, register…
 - [5. Theme and density](https://svgrid.com/getting-started/5-theme-and-density): The render component (<SvGrid>) ships its own scoped styles. You re-theme it by declaring --sg-* CSS custom properties at any level above the grid - :root for the whole app, a wrapper <div> for one…
@@ -38,7 +38,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Build an AI agent that drives the grid](https://svgrid.com/help/agents): This is the "AI-native data grid" story end-to-end. Three patterns, in order of how much agency you hand to the LLM:
 - [AI Smart Paste](https://svgrid.com/help/ai-smart-paste): Drop any shape of contact / lead / row data into a text area - CSV, TSV, JSON, vCard, Markdown table, an email signature block, or a single line of prose - and the parser maps it into typed rows yo…
 - [AI assistant - Pro](https://svgrid.com/help/ai): Bring a language model into your grid with four helpers that stay strictly model-agnostic: **natural-language filter**, **smart fill**, **summarise**, and **classify**. Ships in the paid **sv-grid-…
-- [API reference](https://svgrid.com/help/api-reference): A flat index of every Stable export. Each entry links to the topic page that covers it in depth. For the formal TypeScript shapes, inspect the .d.ts files in node_modules/sv-grid-community/dist - t…
+- [API reference](https://svgrid.com/help/api-reference): A flat index of every Stable export. Each entry links to the topic page that covers it in depth. For the formal TypeScript shapes, inspect the .d.ts files in node_modules/sv-grid-core/dist - they'r…
 - [API stability & semver policy](https://svgrid.com/help/api-stability): The promise SvGrid makes to you about which exports you can lean on, how breaking changes are communicated, and how long deprecated APIs stick around.
 - [Architecture overview](https://svgrid.com/help/architecture): A one-page mental model that should let you reason about every other topic in the docs. SvGrid is a strict three-layer system - if you know which layer a piece of code lives in, you know what it ca…
 - [Performance benchmarks](https://svgrid.com/help/benchmarks): Headline numbers from the regression suite. Every figure below is from the same hardware + browser configuration, re-measured on each release; the script that produces them lives in packages/sv-gri…
@@ -48,7 +48,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Columns hierarchy & manager](https://svgrid.com/help/columns-hierarchy): The pattern for grids with too many columns to fit on screen at once. A side-panel "column manager" exposes the column tree to the user: they pick what's visible, what gets collapsed into a one-cel…
 - [Comparison: SvGrid vs AG Grid vs TanStack Table](https://svgrid.com/help/comparison): This is the page enterprise evaluators land on first. It is honest. The three projects solve overlapping problems and the right choice depends on your stack, your budget, and which constraints bite…
 - [Conditional form schema](https://svgrid.com/help/conditional-form-schema): A pattern for declarative field-visibility and editability rules inside a grid. Instead of writing imperative if/else checks across many cell callbacks and editable props, you declare a **schema** …
-- [Error reference](https://svgrid.com/help/errors): Every Error thrown by sv-grid-community or sv-grid-pro with the exact message text, the trigger condition, and the fix. If a runtime message you see isn't on this list, it's coming from your own co…
+- [Error reference](https://svgrid.com/help/errors): Every Error thrown by sv-grid-core or sv-grid-pro with the exact message text, the trigger condition, and the fix. If a runtime message you see isn't on this list, it's coming from your own code or…
 - [Data export and printing - Pro](https://svgrid.com/help/export): Export the grid to **Excel (xlsx)**, **PDF**, **CSV**, **TSV**, **HTML**, or open a printable view in a new window. Ships in the paid **sv-grid-pro** add-on; the Community build does not include th…
 - [Glossary](https://svgrid.com/help/glossary): Terminology used across the docs and the source. Sorted A-Z. If a term is unclear in a topic page and isn't on this list, please file an issue.
 - [Grouping & aggregation](https://svgrid.com/help/grouping-aggregation): Roll rows up by one or more columns and compute aggregates (sum, avg, count, min, max, custom) at each group level. Powered by columnGroupingFeature plus per-column aggregator config.
@@ -180,7 +180,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 
 - [Pro evaluation](https://svgrid.com/pro/evaluation): The sv-grid-pro package is soft-gated; you can evaluate every feature in production-equivalent code paths without contacting sales. This page is the playbook.
 - [Pro licensing](https://svgrid.com/pro/licensing): The sv-grid-pro package is **soft-gated**: every feature runs without a key, with a small unlicensed-build watermark in the bottom-right corner of the grid + a one-time console nudge. Set a key onc…
-- [Pro feature pack](https://svgrid.com/pro/README): sv-grid-pro is a paid add-on for sv-grid-community. It bolts onto the same <SvGrid> you already have and adds four feature areas: data export, data import, an AI assistant, and pivot tables.
+- [Pro feature pack](https://svgrid.com/pro/README): sv-grid-pro is a paid add-on for sv-grid-core. It bolts onto the same <SvGrid> you already have and adds four feature areas: data export, data import, an AI assistant, and pivot tables.
 - [Pro support](https://svgrid.com/pro/support): What you get on each tier, what response time to expect, how to escalate.
 
 ## Recipes / cookbook
@@ -231,8 +231,8 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 ## API reference
 
 - [Auto-generated reference](https://svgrid.com/reference/auto/index): _Generated from the published TypeScript sources. Do not edit by hand - rerun node tools/build-reference.mjs._
-- [`sv-grid-community` · `core.ts`](https://svgrid.com/reference/auto/sv-grid-community-core): Auto-generated. Source: packages\sv-grid-community\src\core.ts.
-- [`sv-grid-community` · `svgrid-wrapper.types.ts`](https://svgrid.com/reference/auto/sv-grid-community-svgrid-wrapper.types): Auto-generated. Source: packages\sv-grid-community\src\svgrid-wrapper.types.ts.
+- [`sv-grid-core` · `core.ts`](https://svgrid.com/reference/auto/sv-grid-community-core): Auto-generated. Source: packages\sv-grid-core\src\core.ts.
+- [`sv-grid-core` · `svgrid-wrapper.types.ts`](https://svgrid.com/reference/auto/sv-grid-community-svgrid-wrapper.types): Auto-generated. Source: packages\sv-grid-core\src\svgrid-wrapper.types.ts.
 - [`sv-grid-pro` · `ai.ts`](https://svgrid.com/reference/auto/sv-grid-pro-ai): Auto-generated. Source: packages\sv-grid-pro\src\ai.ts.
 - [`sv-grid-pro` · `export.ts`](https://svgrid.com/reference/auto/sv-grid-pro-export): Auto-generated. Source: packages\sv-grid-pro\src\export.ts.
 - [`sv-grid-pro` · `import.ts`](https://svgrid.com/reference/auto/sv-grid-pro-import): Auto-generated. Source: packages\sv-grid-pro\src\import.ts.

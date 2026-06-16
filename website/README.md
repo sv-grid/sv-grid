@@ -1,6 +1,6 @@
 # SvGrid website
 
-Marketing + docs site for `sv-grid-community`. Vite + Svelte 5 + Tailwind, dark-only.
+Marketing + docs site for `sv-grid-core`. Vite + Svelte 5 + Tailwind, dark-only.
 
 Pages (hash routing):
 

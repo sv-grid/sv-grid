@@ -37,11 +37,11 @@
       items: [
         {
           q: 'What is the license?',
-          a: 'sv-grid-community is MIT-licensed - permissive, SPDX-recognised, and friendly to corporate legal review. The paid companion package sv-grid-pro (data export + print) ships under a separate commercial license.',
+          a: 'sv-grid-core is MIT-licensed - permissive, SPDX-recognised, and friendly to corporate legal review. The paid companion package sv-grid-pro (data export + print) ships under a separate commercial license.',
         },
         {
           q: 'Do I need to pay for production use?',
-          a: 'Not for the core library - sv-grid-community is MIT-licensed, free for commercial use. Pay for sv-grid-pro only if you need the export + print feature pack or paid support. Two Pro license tiers, per developer: Single Application Developer License ($599) for one deployed app, Multiple Application Developer License ($999) for unlimited apps. Each is a perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Without a key, Pro features still work but render an "Unlicensed sv-grid-pro" watermark.',
+          a: 'Not for the core library - sv-grid-core is MIT-licensed, free for commercial use. Pay for sv-grid-pro only if you need the export + print feature pack or paid support. Two Pro license tiers, per developer: Single Application Developer License ($599) for one deployed app, Multiple Application Developer License ($999) for unlimited apps. Each is a perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Without a key, Pro features still work but render an "Unlicensed sv-grid-pro" watermark.',
         },
         {
           q: 'What is the difference between Single Application and Multiple Application Developer License?',

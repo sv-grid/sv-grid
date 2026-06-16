@@ -19,7 +19,7 @@
     rowExpandingFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Status = 'active' | 'pending' | 'inactive'
 

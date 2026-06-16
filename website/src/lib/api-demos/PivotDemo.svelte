@@ -2,7 +2,7 @@
   // Interactive demo for the Pro Pivot feature: pick the row axis, column
   // axis, and measure, then watch createPivotModel rebuild a cross-tab that
   // feeds a second, read-only <SvGrid>.
-  import { SvGrid, tableFeatures } from 'sv-grid-community'
+  import { SvGrid, tableFeatures } from 'sv-grid-core'
   import { createPivotModel } from 'sv-grid-pro'
   import { makeOrders, type Order } from './seed'
 

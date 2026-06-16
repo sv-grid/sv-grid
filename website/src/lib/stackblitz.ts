@@ -16,7 +16,7 @@ import type { Demo } from './demos'
 // with packages/*/package.json and examples/package.json.
 const SV_GRID_VERSION = '^1.0.0'
 
-// Demos may reach for one of these in addition to sv-grid-community. We only
+// Demos may reach for one of these in addition to sv-grid-core. We only
 // add a dependency when the demo source actually imports it, so a 10-line
 // quick-start does not drag in pdfmake. Versions mirror examples/package.json.
 const OPTIONAL_DEPS: Record<string, string> = {
@@ -33,7 +33,7 @@ function escapeForRegExp(value: string): string {
 
 /** Scan a demo's source for bare module imports we know how to resolve. */
 function detectDependencies(source: string): Record<string, string> {
-  const deps: Record<string, string> = { 'sv-grid-community': SV_GRID_VERSION }
+  const deps: Record<string, string> = { 'sv-grid-core': SV_GRID_VERSION }
   for (const [mod, version] of Object.entries(OPTIONAL_DEPS)) {
     // Match `from 'mod'`, `from "mod/sub"`, or a bare `import 'mod'`.
     const m = escapeForRegExp(mod)
@@ -138,7 +138,7 @@ export async function openInStackBlitz(demo: Demo): Promise<void> {
 // ---------------------------------------------------------------------------
 // "Open in StackBlitz" for an API-reference example (a prop / method / event
 // snippet on the /api page). Each snippet is wrapped in a minimal but real
-// Svelte 5 + sv-grid-community app: working dataset, the imperative `api`
+// Svelte 5 + sv-grid-core app: working dataset, the imperative `api`
 // object, and a "Run snippet" button that executes the example against the
 // live grid when the snippet calls `api.*`. Pure-doc snippets (column defs,
 // component prop usage) still land in a sandbox the user can edit live.
@@ -220,7 +220,7 @@ function buildSnippetSource(snippet: ApiSnippet): string {
     rowSelectionFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Order = {
     id: number

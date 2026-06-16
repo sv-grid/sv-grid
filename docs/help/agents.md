@@ -24,7 +24,7 @@ agent SDK can consume.
 ```svelte
 <script lang="ts">
   import OpenAI from 'openai'
-  import { SvGrid, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, type SvGridApi } from 'sv-grid-core'
 
   const client = new OpenAI()
   let api = $state<SvGridApi<typeof features, Row> | null>(null)

@@ -42,7 +42,7 @@ sort/filter only the visible page, which is wrong.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, type ColumnDef } from 'sv-grid-core'
 
   let rows = $state<Order[]>([])
   let page = $state(0)
@@ -86,7 +86,7 @@ hand to the server.
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
-           type ColumnDef, type SvGridApi } from 'sv-grid-community'
+           type ColumnDef, type SvGridApi } from 'sv-grid-core'
 
   let rows = $state<Order[]>([])
   let total = $state(0)

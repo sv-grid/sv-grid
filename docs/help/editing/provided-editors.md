@@ -139,7 +139,7 @@ editor takes over on double-click.
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Brand = { id: string; name: string; color: string }
 
@@ -204,7 +204,7 @@ integer 0-5. Clicking a star commits immediately - no blur required.
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Review = { id: string; product: string; rating: number }
 

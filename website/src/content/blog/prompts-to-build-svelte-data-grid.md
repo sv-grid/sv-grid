@@ -29,7 +29,7 @@ Give the assistant your data shape and the behavior you want. Specific beats vag
 
 **Scaffold a grid from a type:**
 
-> Here is my `Order` type. Build a Svelte 5 component using SvGrid (`sv-grid-community`) with columns for id, customer, a currency `total`, and a `status` badge. Enable sorting and an Excel-style filter menu.
+> Here is my `Order` type. Build a Svelte 5 component using SvGrid (`sv-grid-core`) with columns for id, customer, a currency `total`, and a `status` badge. Enable sorting and an Excel-style filter menu.
 
 **Add editing with validation:**
 

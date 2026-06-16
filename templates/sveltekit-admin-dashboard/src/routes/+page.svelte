@@ -6,7 +6,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import StatCard from '$lib/StatCard.svelte'
   import { makeOrders, makeCustomers, summarize } from '$lib/data'
   import type { Order } from '$lib/types'

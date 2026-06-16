@@ -29,7 +29,7 @@ Production build, gzipped, measured on the `dist/` output:
 
 | Surface                             | Brotli | gzip   | Notes                                  |
 | ----------------------------------- | ------ | ------ | -------------------------------------- |
-| `sv-grid-community` (full)          | 41 kB  | 49 kB  | One import covers the entire renderer  |
+| `sv-grid-core` (full)          | 41 kB  | 49 kB  | One import covers the entire renderer  |
 | Headless engine (no `<SvGrid>`)     | 11 kB  | 13 kB  | If you bring your own renderer         |
 | `sv-grid-pro` core                  | 7 kB   | 8 kB   | Export + print + import + AI shells    |
 | `sv-grid-pro` AI module only        | 4 kB   | 5 kB   | Imported via `'sv-grid-pro/ai'`        |

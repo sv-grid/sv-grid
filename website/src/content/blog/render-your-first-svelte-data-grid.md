@@ -15,7 +15,7 @@ The first time I needed a table in a Svelte 5 app I started hand-rolling a `<tab
 ## Install
 
 ```bash
-npm add sv-grid-community
+npm add sv-grid-core
 ```
 
 SvGrid Community is MIT-licensed and free for commercial use. There is no license key and no row-count cap.
@@ -26,7 +26,7 @@ Pass two props: `data` (your rows) and `columns` (how to read and label each fie
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
 
   type Person = { firstName: string; age: number; status: string }
 
@@ -63,7 +63,7 @@ Sorting, filtering, pagination, grouping, and editing are opt-in. You turn them 
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 </script>
@@ -86,7 +86,7 @@ The three-row table above proves the API; a real screen needs a few more pieces.
     columnFilteringFeature,
     rowPaginationFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Employee = {
     id: string
@@ -172,8 +172,8 @@ Each builds on the same `data` + `columns` + `features` shape you just learned.
 
 ### How do I add a data grid to a Svelte 5 app?
 
-Install `sv-grid-community`, import `SvGrid`, and pass `data` and `columns`. A full grid is about fifteen lines, and sorting plus accessibility are on by default.
+Install `sv-grid-core`, import `SvGrid`, and pass `data` and `columns`. A full grid is about fifteen lines, and sorting plus accessibility are on by default.
 
 ### Is SvGrid free for commercial use?
 
-Yes. `sv-grid-community` is MIT-licensed with no row cap or license key. The optional `sv-grid-pro` pack adds export, import, pivot, and AI features under a separate license.
+Yes. `sv-grid-core` is MIT-licensed with no row cap or license key. The optional `sv-grid-pro` pack adds export, import, pivot, and AI features under a separate license.

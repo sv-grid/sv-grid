@@ -1,15 +1,15 @@
 {
-  "name": "sv-grid-community",
+  "name": "sv-grid-core",
   "version": "1.0.0",
-  "description": "Headless-first independent Svelte grid engine and render utilities.",
-  "author": "TanStack Team",
+  "description": "SvGrid - a headless-first, Svelte 5-native data grid engine and render component.",
+  "author": "jQWidgets <boikom@jqwidgets.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TanStack/table.git",
-    "directory": "packages/sv-grid-community"
+    "url": "https://github.com/sv-grid/sv-grid.git",
+    "directory": "packages/sv-grid-core"
   },
-  "homepage": "https://tanstack.com/table",
+  "homepage": "https://svgrid.com",
   "keywords": [
     "svelte",
     "grid",

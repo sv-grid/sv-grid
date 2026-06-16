@@ -85,7 +85,7 @@ const columnDefs: ColDef[] = [
 
 ```ts
 // SvGrid
-import { renderComponent, type ColumnDef } from 'sv-grid-community'
+import { renderComponent, type ColumnDef } from 'sv-grid-core'
 import StatusCell from './StatusCell.svelte'
 
 const columns: ColumnDef<typeof features, Row>[] = [
@@ -136,7 +136,7 @@ import {
   rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -180,7 +180,7 @@ You get the SvGrid API from `onApiReady` (equivalent to AG Grid's
     rowSortingFeature,
     columnFilteringFeature,
     rowPaginationFeature,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -233,7 +233,7 @@ to mutate (or not) on the `rows` array you passed in.
     columnGroupingFeature,
     rowSortingFeature,
     rowExpandingFeature,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -340,7 +340,7 @@ plays well with runes.
 
 A typical migration of a single grid takes 1-3 hours:
 
-1. **Install** - `pnpm add sv-grid-community` (and `sv-grid-pro` if you need export).
+1. **Install** - `pnpm add sv-grid-core` (and `sv-grid-pro` if you need export).
 2. **Translate columnDefs** - use the mapping table above. Most columns are 1:1.
 3. **Wrap features** - figure out which AG Grid features you actually use; register only those in `tableFeatures({...})`.
 4. **Swap the component** - `<AgGridSvelte gridOptions={...}>` → `<SvGrid data={rows} columns={columns} features={features}>`.

@@ -70,7 +70,7 @@
     <h2>npm package telemetry</h2>
     <p>
       The analytics above apply to <strong>this website only</strong>. The
-      <code>sv-grid-community</code>, <code>sv-grid-pro</code>, <code>sv-grid-wc</code>, and
+      <code>sv-grid-core</code>, <code>sv-grid-pro</code>, <code>sv-grid-wc</code>, and
       <code>sv-grid-mcp</code> npm packages contain <strong>no telemetry and no analytics</strong>.
       They make no network calls at runtime - nothing in this analytics setup ships in the library
       you install. See the

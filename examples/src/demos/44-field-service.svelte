@@ -38,7 +38,7 @@
     renderSnippet,
     type ColumnDef,
     type CellContext,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { createStreamSim } from '../shared/stream-sim'
   import { createPrng } from '../shared/mock-api'
 

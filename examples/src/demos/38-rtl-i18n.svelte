@@ -33,7 +33,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   // ---- Domain (a SKU catalog so every locale touches names/units) -----
 

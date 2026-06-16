@@ -28,7 +28,7 @@ Most teams start with `<SvGrid>` and drop to the core only for a screen that nee
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
 
   const columns: ColumnDef<{}, Person>[] = [
     { field: 'firstName', header: 'First name' },
@@ -49,7 +49,7 @@ Most teams start with `<SvGrid>` and drop to the core only for a screen that nee
 
 ## Free core, optional Pro
 
-`sv-grid-community` is MIT-licensed and free for commercial use - no license key, no row cap. The optional `sv-grid-pro` pack adds data export (Excel, PDF, CSV, HTML), import, printing, pivot tables, and an AI assistant for teams that need them.
+`sv-grid-core` is MIT-licensed and free for commercial use - no license key, no row cap. The optional `sv-grid-pro` pack adds data export (Excel, PDF, CSV, HTML), import, printing, pivot tables, and an AI assistant for teams that need them.
 
 ## AI-native from day one
 

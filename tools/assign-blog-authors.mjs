@@ -21,7 +21,7 @@ const FOUNDER = new Set([
   'jqwidgets-story-since-2011',
   'why-the-world-needed-another-grid',
   'smart-ui-gold-award-2025',
-  'whats-new-svgrid-pro',
+  'whats-new-sv-grid-pro',
   'svelte-5-is-here',
   'the-idea-a-native-svelte-grid',
 ])

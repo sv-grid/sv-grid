@@ -23,7 +23,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   // The shape returned by https://jsonplaceholder.typicode.com/users
   type Geo = { lat: string; lng: string }

@@ -71,7 +71,7 @@ with an MIT core - and a much cheaper paid tier.
 
 ### Is SvGrid a cheaper alternative to Kendo UI Grid?
 
-For a Svelte stack, yes: the `sv-grid-community` core is MIT (free, including
+For a Svelte stack, yes: the `sv-grid-core` core is MIT (free, including
 commercial use), and the paid `sv-grid-pro` tier is a fraction of enterprise
 component-suite pricing.
 

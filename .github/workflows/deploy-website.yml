@@ -47,7 +47,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build library
-        run: pnpm --filter sv-grid-community build
+        run: pnpm --filter sv-grid-core build
 
       - name: Build website
         run: pnpm --filter svgrid-website build

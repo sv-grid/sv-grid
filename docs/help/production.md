@@ -10,7 +10,7 @@ matters.
 ```json
 {
   "dependencies": {
-    "sv-grid-community": "1.0.0",
+    "sv-grid-core": "1.0.0",
     "sv-grid-pro":       "1.0.0"
   }
 }
@@ -72,7 +72,7 @@ dynamic import so the rest of the app doesn't ship the Pro bundle:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-community'
+  import type { SvGridApi } from 'sv-grid-core'
   import type { ProGridApi } from 'sv-grid-pro'
 
   let api = $state<SvGridApi<typeof features, Order> | null>(null)
@@ -155,7 +155,7 @@ export async function load() {
 ```svelte
 <!-- +page.svelte -->
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
   let { data } = $props()
   const features = tableFeatures({ rowSortingFeature })
 </script>

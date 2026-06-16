@@ -181,7 +181,7 @@ function structuredData(url: string, seo: RouteSeo): unknown[] {
       '@context': 'https://schema.org',
       '@type': 'SoftwareApplication',
       name: 'SvGrid',
-      alternateName: ['sv-grid', 'sv-grid-community', 'Svelte data grid', 'Svelte 5 grid', 'Svelte table'],
+      alternateName: ['sv-grid', 'sv-grid-core', 'Svelte data grid', 'Svelte 5 grid', 'Svelte table'],
       applicationCategory: 'DeveloperApplication',
       applicationSubCategory: 'Data grid / table component',
       operatingSystem: 'Browser / Node.js',
@@ -190,7 +190,7 @@ function structuredData(url: string, seo: RouteSeo): unknown[] {
       url: homepage,
       sameAs: [
         'https://github.com/sv-grid/sv-grid',
-        'https://www.npmjs.com/package/sv-grid-community',
+        'https://www.npmjs.com/package/sv-grid-core',
       ],
       offers: [
         {
@@ -221,7 +221,7 @@ function structuredData(url: string, seo: RouteSeo): unknown[] {
           description: 'Custom contract for organisations with 50+ developers, MSA / NDA, source-code escrow, named support engineer, on-prem documentation, custom SLAs, multi-year terms, or government / FedRAMP procurement. Contact sales@jqwidgets.com.',
         },
       ],
-      keywords: 'svelte data grid, svelte 5 grid, svelte table, sv-grid, sv-grid-community, headless table, enterprise svelte grid, AG Grid alternative svelte, TanStack Table svelte 5',
+      keywords: 'svelte data grid, svelte 5 grid, svelte table, sv-grid, sv-grid-core, headless table, enterprise svelte grid, AG Grid alternative svelte, TanStack Table svelte 5',
       publisher: {
         '@type': 'Organization',
         name: 'jQWidgets',
@@ -231,7 +231,7 @@ function structuredData(url: string, seo: RouteSeo): unknown[] {
     {
       '@context': 'https://schema.org',
       '@type': 'SoftwareSourceCode',
-      name: 'sv-grid-community',
+      name: 'sv-grid-core',
       codeRepository: 'https://github.com/sv-grid/sv-grid',
       programmingLanguage: ['TypeScript', 'Svelte'],
       runtimePlatform: 'Svelte 5',
@@ -428,7 +428,7 @@ export function applyDemoSeo(demo: SeoDemo) {
   ensureMeta('name', 'description').content = description
   ensureMeta('name', 'keywords').content = [
     demo.title.toLowerCase(), demo.category.toLowerCase(), 'svelte data grid example',
-    'svelte 5', 'sv-grid', demo.pro ? 'sv-grid-pro' : 'sv-grid-community',
+    'svelte 5', 'sv-grid', demo.pro ? 'sv-grid-pro' : 'sv-grid-core',
   ].join(', ')
   ensureLink('canonical').href = url
 

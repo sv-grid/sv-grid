@@ -16,7 +16,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Status = 'backlog' | 'in_progress' | 'review' | 'done'
   type Priority = 'low' | 'normal' | 'high' | 'urgent'

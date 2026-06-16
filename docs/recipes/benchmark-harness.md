@@ -27,7 +27,7 @@ measurements so each cell starts from a clean state.
     SvGrid, tableFeatures,
     rowSortingFeature, columnFilteringFeature, rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const ROW_SIZES = [100, 1_000, 10_000, 50_000, 100_000] as const
   const COL_SIZES = [5, 10, 20, 50] as const

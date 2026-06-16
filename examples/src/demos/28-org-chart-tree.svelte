@@ -19,7 +19,7 @@
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Role = 'CEO' | 'VP' | 'Director' | 'Manager' | 'IC'
 

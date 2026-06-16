@@ -28,12 +28,12 @@ matter to your users.
 
 ## Engine tests (Layer 2, vitest)
 
-Every helper in `sv-grid-community` is a pure function. Test them
+Every helper in `sv-grid-core` is a pure function. Test them
 without a DOM.
 
 ```ts
 import { describe, it, expect } from 'vitest'
-import { createSvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+import { createSvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
 
 describe('sort behaviour', () => {
   it('sorts by a single column ascending', () => {
@@ -59,7 +59,7 @@ describe('sort behaviour', () => {
 ```
 
 Engine tests run at ~10k assertions/second on a modern laptop. The
-`sv-grid-community` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-community/src) -
+`sv-grid-core` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-community/src) -
 you can model yours after them.
 
 ## Pro feature tests (vitest + jsdom)
@@ -103,7 +103,7 @@ component in jsdom:
 ```ts
 import { render } from '@testing-library/svelte'
 import { describe, it, expect } from 'vitest'
-import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-community'
+import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-core'
 
 type Row = { id: number; name: string }
 
@@ -132,7 +132,7 @@ A few caveats:
 
 - **Vitest config:** `environment: 'jsdom'` plus
   `resolve.conditions: ['browser']` so vitest picks Svelte's client
-  build. The `sv-grid-community` repo's `vite.config.ts` shows the
+  build. The `sv-grid-core` repo's `vite.config.ts` shows the
   exact knobs.
 - **No virtualization in jsdom.** jsdom returns `0` for every layout
   metric, so the row virtualizer never advances. Test on small

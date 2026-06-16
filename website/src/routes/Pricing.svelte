@@ -47,7 +47,7 @@
       cta: {
         kind: 'link',
         label: 'Install from npm',
-        href: 'https://www.npmjs.com/package/sv-grid-community',
+        href: 'https://www.npmjs.com/package/sv-grid-core',
       },
     },
     {
@@ -248,7 +248,7 @@
     { q: 'Is sv-grid-pro free for open-source projects?',
       a: 'Yes. If your project is open-source (OSI-approved license, public repo, not a paid product), we issue a free SVPRO-OSS-... key - same feature set as the paid tier, no watermark. Email sales@jqwidgets.com with your repo URL; we typically respond within one business day. Keys are renewable annually for as long as the project stays open-source.' },
     { q: 'Is the Community tier really free for commercial use?',
-      a: 'Yes. sv-grid-community is published under the MIT License - permissive, SPDX-recognised, and friendly to corporate legal review. Use it in proprietary products, fork it, redistribute it. Read the LICENSE file in the repo for the exact terms.' },
+      a: 'Yes. sv-grid-core is published under the MIT License - permissive, SPDX-recognised, and friendly to corporate legal review. Use it in proprietary products, fork it, redistribute it. Read the LICENSE file in the repo for the exact terms.' },
     { q: 'What is the difference between Single App and Multiple App?',
       a: 'A Single Application Developer License covers one deployed application - typically one product or one customer-facing web app. A Multiple Application Developer License covers an unlimited number of deployed apps in your organisation, including subsidiaries and sister products. Both are licensed per developer as a perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime), where "developer" means engineers who write or modify code that imports sv-grid-pro.' },
     { q: 'What happens if I use sv-grid-pro without a license key?',
@@ -544,7 +544,7 @@
             <td></td>
             <td>
               <a class="btn btn-ghost w-full"
-                href="https://www.npmjs.com/package/sv-grid-community"
+                href="https://www.npmjs.com/package/sv-grid-core"
                 target="_blank" rel="noopener noreferrer">npm install</a>
             </td>
             <td class="cmp-td-highlight">

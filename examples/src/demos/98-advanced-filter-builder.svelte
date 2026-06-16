@@ -18,7 +18,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Row = {
     id: string

@@ -58,7 +58,7 @@ user inspect or edit the raw formula behind the active cell.
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   // ─────────────────── ENGINE ───────────────────
   type CellVal = string | number | boolean | { error: string }

@@ -20,7 +20,7 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Status = 'open' | 'in_review' | 'approved' | 'rejected' | 'archived'
   type Priority = 'low' | 'normal' | 'high' | 'urgent'

@@ -24,7 +24,7 @@ export async function load({ fetch }) {
 ```svelte
 <!-- +page.svelte -->
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-community'
+  import { SvGrid } from 'sv-grid-core'
   let { data } = $props()
 </script>
 

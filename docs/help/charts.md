@@ -15,7 +15,7 @@ filtered, sorted data - the "chart from the grid" enterprise feature.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, SvGridChart, rowsToChartSpec, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, SvGridChart, rowsToChartSpec, type SvGridApi } from 'sv-grid-core'
 
   let api: SvGridApi<F, Row> | null = null
   let displayed = $state<Row[]>(rows)

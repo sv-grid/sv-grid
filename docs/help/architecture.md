@@ -26,7 +26,7 @@ do.
 └───────────┴─────────────────────────────────────────────────┘
 ```
 
-Layer 1 is yours. Layer 2 is `sv-grid-community` minus the renderer.
+Layer 1 is yours. Layer 2 is `sv-grid-core` minus the renderer.
 Layer 3 is the `<SvGrid>` component everyone uses by default.
 
 **You can use Layer 2 without Layer 3.** That's the headless promise:

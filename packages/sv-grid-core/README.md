@@ -1,11 +1,11 @@
-# sv-grid-community
+# sv-grid-core
 
 Headless-first independent Svelte-native grid engine and render utilities.
 
 ## Install
 
 ```bash
-pnpm add sv-grid-community
+pnpm add sv-grid-core
 ```
 
 ## Quick start
@@ -15,7 +15,7 @@ import {
   createCoreRowModel,
   createSvGrid,
   tableFeatures,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 ```
 
 Primary API:

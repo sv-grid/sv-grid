@@ -18,7 +18,7 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   // ---- Shared data ---------------------------------------------------
   type Deal = { id: number; company: string; region: string; rep: string; arr: number; stage: string }
@@ -141,7 +141,7 @@ grid.setGridOption('quickFilterText', globalFilter)`
   SvGrid, tableFeatures,
   rowSortingFeature, columnFilteringFeature,
   type ColumnDef,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -209,7 +209,7 @@ $: filtered = deals.filter(d =>
 
     <article class="mg-side mg-sv">
       <header class="mg-side-head">
-        <span class="mg-side-eyebrow">sv-grid-community</span>
+        <span class="mg-side-eyebrow">sv-grid-core</span>
         <span class="mg-side-tag">~22 KB gzipped</span>
       </header>
       <div class="mg-grid">

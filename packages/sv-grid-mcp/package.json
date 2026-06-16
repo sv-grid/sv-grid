@@ -1,9 +1,9 @@
 {
   "name": "sv-grid-mcp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Model Context Protocol (MCP) server for SvGrid. Exposes example sources, docs, and API reference to AI assistants.",
   "license": "SEE LICENSE IN LICENSE",
-  "author": "Boyko Markov <boikom@jqwidgets.com>",
+  "author": "jQWidgets <sales@jqwidgets.com>",
   "homepage": "https://sv-grid.github.io/sv-grid/#/mcp",
   "repository": {
     "type": "git",

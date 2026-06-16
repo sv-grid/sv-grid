@@ -1036,7 +1036,7 @@ const syncfusion: Comparison = {
   bottomLine:
     'Syncfusion offers one of the largest suites and a free community license for small teams - but with revenue and headcount conditions. The MIT core of SvGrid is free for everyone with no conditions, and is the native fit for Svelte 5.',
   faq: [
-    { question: 'Is SvGrid free, unlike the Syncfusion commercial license?', answer: 'Yes - sv-grid-community is MIT with no revenue or team-size conditions. The Syncfusion community license is free only for qualifying small teams.' },
+    { question: 'Is SvGrid free, unlike the Syncfusion commercial license?', answer: 'Yes - sv-grid-core is MIT with no revenue or team-size conditions. The Syncfusion community license is free only for qualifying small teams.' },
     { question: 'SvGrid vs Syncfusion Grid - which for Svelte?', answer: 'SvGrid is Svelte-5-native; Syncfusion is a multi-framework commercial suite. For a Svelte stack, SvGrid is the lighter, unconditional-MIT fit.' },
     { question: 'Does SvGrid support Blazor like Syncfusion?', answer: 'No - SvGrid is Svelte 5 only. If you need Blazor, Syncfusion is the better fit.' },
   ],

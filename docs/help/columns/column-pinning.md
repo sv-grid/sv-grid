@@ -19,7 +19,7 @@ read / write from outside the grid:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-community'
+  import type { SvGridApi } from 'sv-grid-core'
   let api = $state<SvGridApi<typeof features, Person> | null>(null)
 </script>
 

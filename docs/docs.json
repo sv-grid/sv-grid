@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-06-15T09:41:27.243Z",
+  "generatedAt": "2026-06-16T00:32:30.045Z",
   "counts": {
     "pages": 195,
     "pro": 9,
@@ -303,7 +303,7 @@
       "section": "",
       "tier": "community",
       "words": 873,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -314,7 +314,7 @@
       "section": "compliance",
       "tier": "community",
       "words": 661,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -336,7 +336,7 @@
       "section": "compliance",
       "tier": "community",
       "words": 647,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -347,7 +347,7 @@
       "section": "compliance",
       "tier": "community",
       "words": 463,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -358,7 +358,7 @@
       "section": "compliance",
       "tier": "community",
       "words": 643,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -369,7 +369,7 @@
       "section": "",
       "tier": "community",
       "words": 3330,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -380,7 +380,7 @@
       "section": "",
       "tier": "community",
       "words": 524,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -391,18 +391,18 @@
       "section": "getting-started",
       "tier": "community",
       "words": 383,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
       "path": "getting-started/2-first-grid.md",
       "url": "/getting-started/2-first-grid",
       "title": "2. First grid in 60 seconds",
-      "summary": "```svelte <script lang=\"ts\"> import { SvGrid, type ColumnDef } from 'sv-grid-community'",
+      "summary": "```svelte <script lang=\"ts\"> import { SvGrid, type ColumnDef } from 'sv-grid-core'",
       "section": "getting-started",
       "tier": "community",
       "words": 294,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "01-quick-start"
       ]
@@ -415,7 +415,7 @@
       "section": "getting-started",
       "tier": "community",
       "words": 701,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -426,7 +426,7 @@
       "section": "getting-started",
       "tier": "community",
       "words": 795,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -450,7 +450,7 @@
       "section": "getting-started",
       "tier": "community",
       "words": 802,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "09-server-side",
         "06-large-dataset",
@@ -465,7 +465,7 @@
       "section": "getting-started",
       "tier": "community",
       "words": 562,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -489,7 +489,7 @@
       "section": "help",
       "tier": "community",
       "words": 1248,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -500,7 +500,7 @@
       "section": "help",
       "tier": "community",
       "words": 1230,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "75-ai-smart-paste"
       ]
@@ -513,7 +513,7 @@
       "section": "help",
       "tier": "pro",
       "words": 1390,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -522,11 +522,11 @@
       "path": "help/api-reference.md",
       "url": "/help/api-reference",
       "title": "API reference",
-      "summary": "A flat index of every Stable export. Each entry links to the topic page that covers it in depth. For the formal TypeScript shapes, inspect the .d.ts files in node_modules/sv-grid-community/dist - they're the source of truth and ship with full JSDoc.",
+      "summary": "A flat index of every Stable export. Each entry links to the topic page that covers it in depth. For the formal TypeScript shapes, inspect the .d.ts files in node_modules/sv-grid-core/dist - they're the source of truth and ship with full JSDoc.",
       "section": "help",
       "tier": "community",
       "words": 1553,
-      "lastUpdated": "2026-06-04",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -537,7 +537,7 @@
       "section": "help",
       "tier": "community",
       "words": 1178,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -548,7 +548,7 @@
       "section": "help",
       "tier": "community",
       "words": 1020,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -559,7 +559,7 @@
       "section": "help",
       "tier": "community",
       "words": 1252,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "06-large-dataset"
       ]
@@ -572,7 +572,7 @@
       "section": "help",
       "tier": "community",
       "words": 839,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -583,7 +583,7 @@
       "section": "help/cells",
       "tier": "community",
       "words": 330,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -596,7 +596,7 @@
       "section": "help/cells",
       "tier": "community",
       "words": 346,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "01-quick-start"
       ]
@@ -622,7 +622,7 @@
       "section": "help/cells",
       "tier": "community",
       "words": 438,
-      "lastUpdated": "2026-06-13",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -672,7 +672,7 @@
       "section": "help/cells",
       "tier": "community",
       "words": 437,
-      "lastUpdated": "2026-06-13",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -696,7 +696,7 @@
       "section": "help/cells",
       "tier": "community",
       "words": 336,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "13-finances"
       ]
@@ -709,7 +709,7 @@
       "section": "help/cells",
       "tier": "community",
       "words": 214,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -731,7 +731,7 @@
       "section": "help",
       "tier": "community",
       "words": 1306,
-      "lastUpdated": "2026-06-15",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -742,7 +742,7 @@
       "section": "help",
       "tier": "community",
       "words": 358,
-      "lastUpdated": "2026-06-13",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -766,7 +766,7 @@
       "section": "help/columns",
       "tier": "community",
       "words": 591,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "01-quick-start"
       ]
@@ -805,7 +805,7 @@
       "section": "help/columns",
       "tier": "community",
       "words": 569,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "109-column-reorder-engine"
       ]
@@ -818,7 +818,7 @@
       "section": "help/columns",
       "tier": "community",
       "words": 666,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "25-column-pinning"
       ]
@@ -831,7 +831,7 @@
       "section": "help/columns",
       "tier": "community",
       "words": 385,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "63-column-layout-api"
       ]
@@ -855,7 +855,7 @@
       "section": "help/columns",
       "tier": "community",
       "words": 418,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "55-state-maintenance"
       ]
@@ -868,7 +868,7 @@
       "section": "help/columns",
       "tier": "community",
       "words": 290,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -903,7 +903,7 @@
       "section": "help",
       "tier": "community",
       "words": 1480,
-      "lastUpdated": "2026-06-10",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -914,7 +914,7 @@
       "section": "help",
       "tier": "community",
       "words": 1339,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "82-conditional-form-schema"
       ]
@@ -966,7 +966,7 @@
       "section": "help/editing",
       "tier": "community",
       "words": 215,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "24-validation"
       ]
@@ -979,7 +979,7 @@
       "section": "help/editing",
       "tier": "community",
       "words": 1073,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "26-list-chips-editors"
       ]
@@ -1040,11 +1040,11 @@
       "path": "help/errors.md",
       "url": "/help/errors",
       "title": "Error reference",
-      "summary": "Every Error thrown by sv-grid-community or sv-grid-pro with the exact message text, the trigger condition, and the fix. If a runtime message you see isn't on this list, it's coming from your own code or a peer dependency.",
+      "summary": "Every Error thrown by sv-grid-core or sv-grid-pro with the exact message text, the trigger condition, and the fix. If a runtime message you see isn't on this list, it's coming from your own code or a peer dependency.",
       "section": "help",
       "tier": "community",
       "words": 1205,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1055,7 +1055,7 @@
       "section": "help",
       "tier": "pro",
       "words": 1138,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "21-export-and-print"
       ]
@@ -1081,7 +1081,7 @@
       "section": "help/filtering",
       "tier": "community",
       "words": 317,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "03-excel-filters"
       ]
@@ -1094,7 +1094,7 @@
       "section": "help/filtering",
       "tier": "community",
       "words": 274,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -1120,7 +1120,7 @@
       "section": "help/filtering",
       "tier": "community",
       "words": 276,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "03-excel-filters"
       ]
@@ -1146,7 +1146,7 @@
       "section": "help/filtering",
       "tier": "community",
       "words": 257,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -1159,7 +1159,7 @@
       "section": "help/filtering",
       "tier": "community",
       "words": 537,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "03-excel-filters"
       ]
@@ -1185,7 +1185,7 @@
       "section": "help/filtering",
       "tier": "community",
       "words": 358,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "69-highlighted-search",
         "110-locale-aware-filter"
@@ -1199,7 +1199,7 @@
       "section": "help",
       "tier": "community",
       "words": 1173,
-      "lastUpdated": "2026-06-04",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1210,7 +1210,7 @@
       "section": "help",
       "tier": "community",
       "words": 1090,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "07-grouping-aggregation"
       ]
@@ -1223,7 +1223,7 @@
       "section": "help/grouping",
       "tier": "community",
       "words": 398,
-      "lastUpdated": "2026-06-13",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1247,7 +1247,7 @@
       "section": "help",
       "tier": "pro",
       "words": 1406,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "53-excel-import"
       ]
@@ -1260,7 +1260,7 @@
       "section": "help",
       "tier": "community",
       "words": 1255,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "00-trading-desk"
       ]
@@ -1273,7 +1273,7 @@
       "section": "help",
       "tier": "community",
       "words": 854,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1284,7 +1284,7 @@
       "section": "help",
       "tier": "community",
       "words": 1051,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1295,7 +1295,7 @@
       "section": "help",
       "tier": "community",
       "words": 2129,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1306,7 +1306,7 @@
       "section": "help",
       "tier": "community",
       "words": 476,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1328,7 +1328,7 @@
       "section": "help",
       "tier": "community",
       "words": 406,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1339,7 +1339,7 @@
       "section": "help",
       "tier": "community",
       "words": 967,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1350,7 +1350,7 @@
       "section": "help",
       "tier": "community",
       "words": 573,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1361,7 +1361,7 @@
       "section": "help",
       "tier": "community",
       "words": 498,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1372,7 +1372,7 @@
       "section": "help",
       "tier": "community",
       "words": 871,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1383,7 +1383,7 @@
       "section": "help",
       "tier": "community",
       "words": 452,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1394,7 +1394,7 @@
       "section": "help",
       "tier": "community",
       "words": 454,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1405,7 +1405,7 @@
       "section": "help",
       "tier": "community",
       "words": 532,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1416,7 +1416,7 @@
       "section": "help",
       "tier": "community",
       "words": 733,
-      "lastUpdated": "2026-06-15",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1427,7 +1427,7 @@
       "section": "help",
       "tier": "community",
       "words": 670,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1438,7 +1438,7 @@
       "section": "help",
       "tier": "community",
       "words": 453,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1449,7 +1449,7 @@
       "section": "help",
       "tier": "community",
       "words": 484,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1460,7 +1460,7 @@
       "section": "help",
       "tier": "community",
       "words": 870,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1471,7 +1471,7 @@
       "section": "help",
       "tier": "community",
       "words": 642,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1482,7 +1482,7 @@
       "section": "help",
       "tier": "community",
       "words": 632,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1493,7 +1493,7 @@
       "section": "help",
       "tier": "community",
       "words": 1183,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1504,7 +1504,7 @@
       "section": "help",
       "tier": "community",
       "words": 1319,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "81-mobile-card-view"
       ]
@@ -1528,7 +1528,7 @@
       "section": "help",
       "tier": "pro",
       "words": 1142,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "52-pivot-table"
       ]
@@ -1541,7 +1541,7 @@
       "section": "help",
       "tier": "community",
       "words": 1090,
-      "lastUpdated": "2026-06-10",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "22-admin-template"
       ]
@@ -1603,7 +1603,7 @@
       "section": "help/rows",
       "tier": "community",
       "words": 313,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "04-selection-copy-paste"
       ]
@@ -1642,7 +1642,7 @@
       "section": "help/rows",
       "tier": "community",
       "words": 232,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "23-bulk-actions"
       ]
@@ -1655,7 +1655,7 @@
       "section": "help/rows",
       "tier": "community",
       "words": 337,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -1668,7 +1668,7 @@
       "section": "help/rows",
       "tier": "community",
       "words": 241,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "02-sort-filter-paginate"
       ]
@@ -1681,7 +1681,7 @@
       "section": "help/rows",
       "tier": "community",
       "words": 789,
-      "lastUpdated": "2026-06-09",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "108-pinned-rows-engine"
       ]
@@ -1694,7 +1694,7 @@
       "section": "help/rows",
       "tier": "community",
       "words": 380,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "02-sort-filter-paginate"
       ]
@@ -1755,7 +1755,7 @@
       "section": "help",
       "tier": "community",
       "words": 1132,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "36-reporting-workspace"
       ]
@@ -1768,7 +1768,7 @@
       "section": "help",
       "tier": "community",
       "words": 1232,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "16-csp-compliant"
       ]
@@ -1781,7 +1781,7 @@
       "section": "help",
       "tier": "community",
       "words": 1512,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "33-server-infinite"
       ]
@@ -1794,7 +1794,7 @@
       "section": "help/server",
       "tier": "community",
       "words": 411,
-      "lastUpdated": "2026-06-13",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1805,7 +1805,7 @@
       "section": "help",
       "tier": "community",
       "words": 1623,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "83-spreadsheet-formulas"
       ]
@@ -1831,7 +1831,7 @@
       "section": "help/state",
       "tier": "community",
       "words": 327,
-      "lastUpdated": "2026-06-13",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1866,7 +1866,7 @@
       "section": "help",
       "tier": "community",
       "words": 914,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1877,7 +1877,7 @@
       "section": "help",
       "tier": "community",
       "words": 1219,
-      "lastUpdated": "2026-06-04",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1912,7 +1912,7 @@
       "section": "help",
       "tier": "community",
       "words": 1425,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1923,7 +1923,7 @@
       "section": "pro",
       "tier": "pro",
       "words": 686,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1934,18 +1934,18 @@
       "section": "pro",
       "tier": "pro",
       "words": 641,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
       "path": "pro/README.md",
       "url": "/pro/README",
       "title": "Pro feature pack",
-      "summary": "sv-grid-pro is a paid add-on for sv-grid-community. It bolts onto the same <SvGrid> you already have and adds four feature areas: data export, data import, an AI assistant, and pivot tables.",
+      "summary": "sv-grid-pro is a paid add-on for sv-grid-core. It bolts onto the same <SvGrid> you already have and adds four feature areas: data export, data import, an AI assistant, and pivot tables.",
       "section": "pro",
       "tier": "pro",
       "words": 772,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1956,7 +1956,7 @@
       "section": "pro",
       "tier": "pro",
       "words": 501,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1967,7 +1967,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 228,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1978,7 +1978,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 973,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "112-barcode-cells"
       ]
@@ -1991,7 +1991,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 1050,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2013,7 +2013,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 618,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2024,7 +2024,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 760,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2035,7 +2035,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 550,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2068,7 +2068,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 286,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2079,7 +2079,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 668,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2123,7 +2123,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 756,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2134,7 +2134,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 776,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2189,7 +2189,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 310,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2244,7 +2244,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 521,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2299,7 +2299,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 249,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2310,7 +2310,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 1382,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2354,7 +2354,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 721,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2387,7 +2387,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 633,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2409,7 +2409,7 @@
       "section": "recipes",
       "tier": "community",
       "words": 1382,
-      "lastUpdated": "2026-06-11",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2431,29 +2431,29 @@
       "section": "reference",
       "tier": "community",
       "words": 71,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
       "path": "reference/auto/sv-grid-community-core.md",
       "url": "/reference/auto/sv-grid-community-core",
-      "title": "`sv-grid-community` · `core.ts`",
-      "summary": "Auto-generated. Source: packages\\sv-grid-community\\src\\core.ts.",
+      "title": "`sv-grid-core` · `core.ts`",
+      "summary": "Auto-generated. Source: packages\\sv-grid-core\\src\\core.ts.",
       "section": "reference",
       "tier": "community",
       "words": 2204,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
       "path": "reference/auto/sv-grid-community-svgrid-wrapper.types.md",
       "url": "/reference/auto/sv-grid-community-svgrid-wrapper.types",
-      "title": "`sv-grid-community` · `svgrid-wrapper.types.ts`",
-      "summary": "Auto-generated. Source: packages\\sv-grid-community\\src\\svgrid-wrapper.types.ts.",
+      "title": "`sv-grid-core` · `svgrid-wrapper.types.ts`",
+      "summary": "Auto-generated. Source: packages\\sv-grid-core\\src\\svgrid-wrapper.types.ts.",
       "section": "reference",
       "tier": "community",
       "words": 61,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2464,7 +2464,7 @@
       "section": "reference",
       "tier": "community",
       "words": 908,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2475,7 +2475,7 @@
       "section": "reference",
       "tier": "community",
       "words": 618,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2486,7 +2486,7 @@
       "section": "reference",
       "tier": "community",
       "words": 474,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2497,7 +2497,7 @@
       "section": "reference",
       "tier": "community",
       "words": 216,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2508,7 +2508,7 @@
       "section": "reference",
       "tier": "community",
       "words": 545,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2519,7 +2519,7 @@
       "section": "reference",
       "tier": "community",
       "words": 534,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2530,7 +2530,7 @@
       "section": "reference",
       "tier": "community",
       "words": 848,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2541,7 +2541,7 @@
       "section": "reference",
       "tier": "community",
       "words": 634,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2552,7 +2552,7 @@
       "section": "reference",
       "tier": "community",
       "words": 657,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2563,7 +2563,7 @@
       "section": "reference",
       "tier": "community",
       "words": 206,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2574,7 +2574,7 @@
       "section": "reference",
       "tier": "pro",
       "words": 737,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2596,7 +2596,7 @@
       "section": "reference",
       "tier": "community",
       "words": 520,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -2607,7 +2607,7 @@
       "section": "",
       "tier": "community",
       "words": 831,
-      "lastUpdated": "2026-05-30",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     }
   ]

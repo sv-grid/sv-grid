@@ -53,7 +53,7 @@ value before commit. The implementation lives in
 [`parseEditorValue`](../../../packages/sv-grid-community/src/editors/cell-editors.ts).
 
 ```ts
-import { parseEditorValue } from 'sv-grid-community'
+import { parseEditorValue } from 'sv-grid-core'
 
 parseEditorValue('number',   '42')      // 42
 parseEditorValue('number',   'abc')     // NaN - caller should reject

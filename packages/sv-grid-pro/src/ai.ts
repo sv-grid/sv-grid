@@ -25,7 +25,7 @@
  * no key is set so demos and evaluation stay frictionless.
  */
 
-import type { RowData, SvGridApi, TableFeatures } from 'sv-grid-community'
+import type { RowData, SvGridApi, TableFeatures } from 'sv-grid-core'
 import { assertProLicensed } from './license'
 
 // ---------------------------------------------------------------------------

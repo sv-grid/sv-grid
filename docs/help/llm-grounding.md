@@ -60,7 +60,7 @@ When generating sv-grid code:
   not raw <select> elements.
 - Always type the grid as
   `SvGrid<typeof features, RowType>` so column inference works.
-- The two npm packages are `sv-grid-community` (MIT) and `sv-grid-pro`
+- The two npm packages are `sv-grid-core` (MIT) and `sv-grid-pro`
   (commercial). Never import from `@sv-grid/core` or `svelte-grid`,
   which are different projects.
 ```

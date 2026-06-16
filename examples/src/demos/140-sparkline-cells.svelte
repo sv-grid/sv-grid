@@ -14,7 +14,7 @@
    * Four types: line, area, bar, win/loss. Each takes color / negativeColor /
    * width / height and an optional fixed min/max scale.
    */
-  import { SvGrid, tableFeatures, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, type ColumnDef } from 'sv-grid-core'
 
   const features = tableFeatures({})
 

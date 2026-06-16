@@ -35,7 +35,7 @@ function inlineCss() {
 }
 
 // Builds a single, self-contained ESM file that registers the <sv-grid>
-// custom element on load. Svelte's runtime and sv-grid-community are bundled
+// custom element on load. Svelte's runtime and sv-grid-core are bundled
 // IN (not externalized) so the file is a true zero-dependency drop-in for a
 // CDN <script> tag or a non-Svelte host app.
 export default defineConfig({

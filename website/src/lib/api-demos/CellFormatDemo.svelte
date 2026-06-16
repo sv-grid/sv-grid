@@ -6,7 +6,7 @@
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature })
 

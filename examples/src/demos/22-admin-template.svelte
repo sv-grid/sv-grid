@@ -25,7 +25,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
   import { makeOrders, makePeople, type Order, type Person } from '../shared/seed'
 

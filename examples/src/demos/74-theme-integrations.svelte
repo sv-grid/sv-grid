@@ -20,7 +20,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { makeOrders, type Order } from '../shared/seed'
 
   type ThemeId = 'ant' | 'mui' | 'fluent' | 'base' | 'shadcn'

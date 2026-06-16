@@ -29,7 +29,7 @@ import {
   createSortedRowModel,
   tableFeatures,
   rowSortingFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({ rowSortingFeature })
 
@@ -74,7 +74,7 @@ regressions in custom cell renderers and headers.
 ```ts
 import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/svelte'
-import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
 
 const features = tableFeatures({ rowSortingFeature })
 

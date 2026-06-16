@@ -52,7 +52,7 @@ runs through `Intl.NumberFormat` cached per locale.
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { renderSnippet, type ColumnDef } from 'sv-grid-core'
 
   type Sale = { amount: number; up: boolean }
   const columns: ColumnDef<typeof features, Sale>[] = [
@@ -84,7 +84,7 @@ grid's body, not the consumer's component subtree.
 
 ```svelte
 <script lang="ts">
-  import { renderComponent } from 'sv-grid-community'
+  import { renderComponent } from 'sv-grid-core'
   import BadgeCell from './BadgeCell.svelte'
 
   const columns = [

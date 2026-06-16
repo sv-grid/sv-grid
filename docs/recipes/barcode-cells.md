@@ -23,7 +23,7 @@ CSP-clean runtime intact.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-core'
 
   // --- EAN-13 encoder (the actual GS1 spec - the output scans) ----------
   const L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011']

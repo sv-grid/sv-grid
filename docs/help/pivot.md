@@ -16,7 +16,7 @@ displaying a pivot.
 import { createPivotModel } from 'sv-grid-pro'
 import {
   SvGrid, tableFeatures, rowSortingFeature, rowExpandingFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({ rowSortingFeature, rowExpandingFeature })
 

@@ -11,7 +11,7 @@ There are two ways to move columns in sv-grid:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-core'
 
   let columns: ColumnDef<{}, Person>[] = [
     { field: 'firstName', header: 'First name' },

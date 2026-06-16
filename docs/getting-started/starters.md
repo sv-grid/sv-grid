@@ -39,8 +39,8 @@ npm run dev
 
 | Template | Stack | Best for |
 | --- | --- | --- |
-| `minimal` | Vite + Svelte 5 + `sv-grid-community`, one page | Dropping a grid into something quickly |
-| `admin-dashboard` | SvelteKit + Tailwind + `sv-grid-community`, deploy to Vercel | A real dashboard / internal tool |
+| `minimal` | Vite + Svelte 5 + `sv-grid-core`, one page | Dropping a grid into something quickly |
+| `admin-dashboard` | SvelteKit + Tailwind + `sv-grid-core`, deploy to Vercel | A real dashboard / internal tool |
 
 ### Options
 
@@ -50,7 +50,7 @@ npm run dev
 | `--force` | `-f` | Scaffold into a non-empty directory |
 | `--help` | `-h` | Show usage |
 
-Both templates use the free MIT `sv-grid-community` core. Add
+Both templates use the free MIT `sv-grid-core` core. Add
 [`sv-grid-pro`](../pro/README.md) for export, import, print, pivot, and
 the AI helpers.
 
@@ -106,7 +106,7 @@ for SEO, and a one-click Deploy-to-Vercel button.
 
 ### Do the starters require a Pro license?
 
-No. Both templates use the free MIT `sv-grid-community` core. Pro
+No. Both templates use the free MIT `sv-grid-core` core. Pro
 features (export, import, print, pivot, AI) are an optional add-on that
 runs in evaluation without a key.
 

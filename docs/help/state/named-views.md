@@ -7,7 +7,7 @@ the grid's `getState()` / `setState()`, with pluggable storage.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, createNamedViews, localStorageViews, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, createNamedViews, localStorageViews, type SvGridApi } from 'sv-grid-core'
 
   let views: ReturnType<typeof createNamedViews> | null = null
 

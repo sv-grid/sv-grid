@@ -27,7 +27,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { createPivotModel, type PivotRow, type PivotValueConfig } from 'sv-grid-pro'
 
   // ---- Domain ---------------------------------------------------------

@@ -20,7 +20,7 @@
     type SvGridApi,
     type ChartSpec,
     type ChartType,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 

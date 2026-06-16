@@ -36,7 +36,7 @@ explicit row-model pipelines. If you already think in
 + import {
 +   SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +   renderSnippet, type ColumnDef,
-+ } from 'sv-grid-community'
++ } from 'sv-grid-core'
 ```
 
 ## Column definitions
@@ -182,6 +182,6 @@ in one prop pass.
 
 ### Is SvGrid free like TanStack Table?
 
-Yes - `sv-grid-community` is MIT-licensed, like TanStack Table. SvGrid
+Yes - `sv-grid-core` is MIT-licensed, like TanStack Table. SvGrid
 additionally offers an optional paid `sv-grid-pro` pack for export, pivot, and
 import, which TanStack Table does not provide at all.

@@ -1,6 +1,6 @@
 ﻿# sv-grid
 
-A modern Svelte 5 data grid - headless-first engine plus a render component (`SvGrid.svelte`). Published on npm as **`sv-grid-community`**.
+A modern Svelte 5 data grid - headless-first engine plus a render component (`SvGrid.svelte`). Published on npm as **`sv-grid-core`**.
 
 This repository is a **pnpm workspace** containing:
 
@@ -42,7 +42,7 @@ pnpm build:site
 pnpm test:types
 ```
 
-`pnpm dev` proxies to `pnpm --filter sv-grid-community-example-gallery dev`. Inside the example the library is linked via the workspace (`"sv-grid-community": "workspace:*"`), so edits to `packages/sv-grid-community/src/**` are picked up by Vite HMR with no rebuild.
+`pnpm dev` proxies to `pnpm --filter sv-grid-core-example-gallery dev`. Inside the example the library is linked via the workspace (`"sv-grid-core": "workspace:*"`), so edits to `packages/sv-grid-community/src/**` are picked up by Vite HMR with no rebuild.
 
 ## Library entry points
 
@@ -69,7 +69,7 @@ import {
   // cell renderers
   renderSnippet,
   renderComponent,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 ```
 
 ## Documentation
@@ -103,7 +103,7 @@ details on routes, base-path config, and the one-time Pages setup.
 
 ## License
 
-This repository ships under **mixed licensing**. Only `sv-grid-community`
+This repository ships under **mixed licensing**. Only `sv-grid-core`
 is open source - everything else is commercial.
 
 | Package | License | LICENSE file |
@@ -113,7 +113,7 @@ is open source - everything else is commercial.
 | [packages/sv-grid-mcp](packages/sv-grid-mcp/) | Commercial | [LICENSE](packages/sv-grid-mcp/LICENSE) |
 | [website](website/) | Proprietary | [LICENSE](website/LICENSE) |
 
-`sv-grid-community` (MIT) can be used freely, including for commercial
+`sv-grid-core` (MIT) can be used freely, including for commercial
 work. The Pro feature pack, the MCP server, and the marketing + docs
 website are proprietary - source is visible for evaluation and for
 paying customers, but visibility does not grant a license. See the

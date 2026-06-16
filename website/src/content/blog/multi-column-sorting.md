@@ -16,7 +16,7 @@ Watch anyone use a new table and the first thing they do is click a header to so
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
   const features = tableFeatures({ rowSortingFeature })
 </script>
 

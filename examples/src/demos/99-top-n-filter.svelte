@@ -16,7 +16,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Sales = {
     id: string

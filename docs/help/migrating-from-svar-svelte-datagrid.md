@@ -45,7 +45,7 @@ also exposes a headless engine and an MCP server).
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
@@ -62,7 +62,7 @@ also exposes a headless engine and an MCP server).
 Both grids are MIT and free for commercial use, so licensing is not the
 deciding factor. The difference is monetization: SVAR keeps the whole
 grid free (including CSV export and print) and sells its Gantt instead,
-whereas SvGrid's `sv-grid-community` core is MIT and the optional
+whereas SvGrid's `sv-grid-core` core is MIT and the optional
 `sv-grid-pro` pack (advanced XLSX/PDF export, pivot, import, AI, support)
 is the paid piece. If all you need is CSV export, SVAR gives it free; if
 you need pivot, advanced export, or a support SLA, that is Pro on SvGrid.
@@ -108,7 +108,7 @@ plus re-theming through `--sg-*` tokens.
 
 ### Are SvGrid and SVAR both free and MIT?
 
-Yes. `sv-grid-community` and the SVAR DataGrid are both MIT and free for
+Yes. `sv-grid-core` and the SVAR DataGrid are both MIT and free for
 commercial, closed-source use. SVAR keeps the whole grid free and monetizes its
 Gantt; on SvGrid, only the optional `sv-grid-pro` add-on (advanced export,
 pivot, import, AI, support) is paid.

@@ -8,7 +8,7 @@ For any cell whose content is more than a string, use `cell:` with
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { renderSnippet, type ColumnDef } from 'sv-grid-core'
 
   const columns: ColumnDef<{}, Person>[] = [
     {
@@ -31,7 +31,7 @@ small.
 
 ```ts
 import StatusBadge from './StatusBadge.svelte'
-import { renderComponent } from 'sv-grid-community'
+import { renderComponent } from 'sv-grid-core'
 
 {
   field: 'status',

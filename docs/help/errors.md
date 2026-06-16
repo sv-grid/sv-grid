@@ -1,6 +1,6 @@
 # Error reference
 
-Every `Error` thrown by `sv-grid-community` or `sv-grid-pro` with the
+Every `Error` thrown by `sv-grid-core` or `sv-grid-pro` with the
 exact message text, the trigger condition, and the fix. If a runtime
 message you see isn't on this list, it's coming from your own code or
 a peer dependency.
@@ -18,7 +18,7 @@ Error classes are part of the [API stability](./api-stability.md)
 contract: the `.name` and message structure are Stable; we may reword
 the trailing detail at the patch level if the diagnostic improves.
 
-## sv-grid-community
+## sv-grid-core
 
 ### `Error: SvGrid: cannot mount inside a non-element parent`
 

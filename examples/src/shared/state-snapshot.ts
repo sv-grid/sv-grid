@@ -4,7 +4,7 @@
  * Captures everything the user can change about a `<SvGrid>` into a
  * JSON-serialisable bag, and rehydrates the grid from one.
  *
- * Why it lives in `examples/shared/` and not in `sv-grid-community`:
+ * Why it lives in `examples/shared/` and not in `sv-grid-core`:
  * the engine already exposes everything we need via `SvGridApi`, so a
  * thin consumer-side wrapper avoids growing the public API surface.
  * If you want the same behaviour in your app, copy this file or the
@@ -15,7 +15,7 @@
  * bottom for the pattern.
  */
 
-import type { SvGridApi, TableFeatures, RowData, SvGridFilterOperator } from 'sv-grid-community'
+import type { SvGridApi, TableFeatures, RowData, SvGridFilterOperator } from 'sv-grid-core'
 
 // ---------------------------------------------------------------------------
 // Snapshot shape

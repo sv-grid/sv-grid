@@ -16,7 +16,7 @@ Plain text gets you surprisingly far, but sooner or later a real app wants badge
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-core'
 </script>
 
 {#snippet StatusCell(props: { value: string })}

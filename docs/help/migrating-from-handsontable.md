@@ -20,7 +20,7 @@ the Formulas section below).
 +   SvGrid, tableFeatures,
 +   rowSortingFeature, columnFilteringFeature, rowSelectionFeature,
 +   type ColumnDef,
-+ } from 'sv-grid-community'
++ } from 'sv-grid-core'
 ```
 
 ## Schema → columns
@@ -141,7 +141,7 @@ a watermark for unlicensed builds) - no hard cutoff to plan around.
 
 ## What you get for free vs Handsontable
 
-- **No GPLv3 licensing fork.** sv-grid-community is MIT.
+- **No GPLv3 licensing fork.** sv-grid-core is MIT.
 - **Modern Svelte 5 ergonomics.** `$state` arrays beat
   `loadData(...)`.
 - **CSP-clean.** Handsontable's HyperFormula path needs CSP `eval`
@@ -180,6 +180,6 @@ functions before porting.
 
 ### Is SvGrid licensed like Handsontable?
 
-The `sv-grid-community` core is MIT and free for commercial use - no per-seat
+The `sv-grid-core` core is MIT and free for commercial use - no per-seat
 license key. The optional `sv-grid-pro` pack (export, pivot, import) is priced
 per developer.

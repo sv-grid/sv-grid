@@ -43,7 +43,7 @@ engineering lineage is shared.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },

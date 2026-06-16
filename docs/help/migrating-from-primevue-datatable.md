@@ -36,7 +36,7 @@ component.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -72,7 +72,7 @@ filtering move from per-column props to the `rowSortingFeature` /
 
 ### Is SvGrid open-source like the Prime grid core?
 
-Yes. `sv-grid-community` is MIT, like the Prime component cores. The difference
+Yes. `sv-grid-core` is MIT, like the Prime component cores. The difference
 is framework: SvGrid is Svelte 5, not Vue / Angular / React.
 
 ### Do I lose Prime theming?

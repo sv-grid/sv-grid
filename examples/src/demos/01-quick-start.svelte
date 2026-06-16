@@ -20,7 +20,7 @@
     rowSelectionFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { makeOrders, type Order } from '../shared/seed'
 
   const features = tableFeatures({

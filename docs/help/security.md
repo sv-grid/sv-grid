@@ -13,7 +13,7 @@ our InfoSec team?".
 | --------------------------------- | ---------------------------------------------------------------------- |
 | Network egress at runtime         | **None.** Zero analytics, zero phone-home, no automatic update checks. |
 | Telemetry                         | **Zero.** No `fetch`, no `navigator.sendBeacon`, no console identifiers. |
-| `eval` / `new Function` / dynamic code | **None in `sv-grid-community`.** See [CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) demo + runtime self-check. |
+| `eval` / `new Function` / dynamic code | **None in `sv-grid-core`.** See [CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) demo + runtime self-check. |
 | Cookies / localStorage            | None set by the library itself. (Your app's saved-views helpers may opt in.) |
 | Outbound dependencies             | **Community:** zero runtime deps. **Pro:** two optional peer deps (`jszip`, `pdfmake`), see below. |
 | AI calls                          | The user's own `AIProvider` adapter calls whichever endpoint *they* configured. The package never embeds a model client. |
@@ -23,7 +23,7 @@ our InfoSec team?".
 
 ## Runtime dependencies
 
-`sv-grid-community` has **zero runtime dependencies**. It is a single
+`sv-grid-core` has **zero runtime dependencies**. It is a single
 package with no transitive supply chain - the only thing the user's
 build pulls in is `svelte` itself (peer).
 
@@ -110,7 +110,7 @@ Every release ships an `npm pack` tarball. You can generate a CycloneDX
 or SPDX SBOM directly:
 
 ```bash
-npx @cyclonedx/cdxgen -t npm -o sbom.json sv-grid-community
+npx @cyclonedx/cdxgen -t npm -o sbom.json sv-grid-core
 # or
 npx @cyclonedx/cdxgen -t npm -o sbom.json sv-grid-pro
 ```

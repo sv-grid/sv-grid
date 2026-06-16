@@ -81,7 +81,7 @@ export default defineConfig({
       // Point at the package's source so edits HMR live in dev. Production
       // build still uses the dist/ published artifacts via the package's
       // `exports` map (vite build resolves through node resolution).
-      'sv-grid-community': path.resolve(repoRoot, 'packages/sv-grid-community/src/index.ts'),
+      'sv-grid-core': path.resolve(repoRoot, 'packages/sv-grid-community/src/index.ts'),
       // Pro is a workspace dep but pnpm doesn't symlink it into the website's
       // node_modules, so point it at source too (mirrors the community alias).
       'sv-grid-pro': path.resolve(repoRoot, 'packages/sv-grid-pro/src/index.ts'),
@@ -95,7 +95,7 @@ export default defineConfig({
   optimizeDeps: {
     // The package re-imports its own .svelte files; let vite-plugin-svelte
     // handle them on demand rather than pre-bundling.
-    exclude: ['sv-grid-community', 'sv-grid-pro'],
+    exclude: ['sv-grid-core', 'sv-grid-pro'],
   },
   server: { port: 5180, fs: { allow: [repoRoot] } },
 })

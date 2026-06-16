@@ -18,7 +18,7 @@ in the dataTransfer payload and reorder the data array on drop. A working
 sketch - drop into your column array:
 
 ```ts
-import { renderSnippet } from 'sv-grid-community'
+import { renderSnippet } from 'sv-grid-core'
 
 {#snippet Handle(p: { id: string })}
   <span

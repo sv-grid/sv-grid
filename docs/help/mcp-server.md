@@ -15,7 +15,7 @@ against your installed copy.
 ## Install
 
 ```bash
-# Inside any project that already depends on sv-grid-community
+# Inside any project that already depends on sv-grid-core
 pnpm add -D @sv-grid/mcp-server
 ```
 

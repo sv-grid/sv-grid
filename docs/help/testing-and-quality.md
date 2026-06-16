@@ -7,7 +7,7 @@ stands today.
 ## Headline numbers (v1.0)
 
 > **92.2% line coverage** on the testable surface
-> (`pnpm --filter sv-grid-community test:lib`)
+> (`pnpm --filter sv-grid-core test:lib`)
 
 | Metric | Coverage | Threshold |
 | ------ | -------- | --------- |
@@ -19,7 +19,7 @@ stands today.
 Run the suite locally:
 
 ```bash
-pnpm test            # alias for: pnpm --filter sv-grid-community test:lib
+pnpm test            # alias for: pnpm --filter sv-grid-core test:lib
 pnpm test:types      # svelte-check on every package
 ```
 
@@ -103,7 +103,7 @@ Total: **168 tests** across **14 test files**.
 - **TypeScript strict mode** across both packages. `pnpm test:types`
   must pass on every PR (currently 0 errors / 0 warnings).
 - **ESLint** at `pnpm lint`, with the Svelte plugin.
-- **Publint** at `pnpm --filter sv-grid-community test:build` checks the
+- **Publint** at `pnpm --filter sv-grid-core test:build` checks the
   published `exports` map.
 - **CSP-strict runtime**: no `eval`, no `new Function`, no inline scripts.
   Demo `16-csp-compliant` includes a runtime self-check.
@@ -136,7 +136,7 @@ Total: **168 tests** across **14 test files**.
    ```
 3. If the behavior is pure (a row model, a sort comparator, an a11y prop
    builder), add to one of the existing unit-test files.
-4. Run `pnpm --filter sv-grid-community exec vitest run <file>` to iterate
+4. Run `pnpm --filter sv-grid-core exec vitest run <file>` to iterate
    fast.
 5. Open the PR; include the before/after coverage delta in the description.
 

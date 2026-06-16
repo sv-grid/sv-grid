@@ -30,10 +30,10 @@ feature broken; "sev-3" = bug; "sev-4" = question.
 
 1. **Reproduce in a minimal repo** - StackBlitz / CodeSandbox / `pnpm
    create svelte` + the smallest grid that shows the issue. We
-   support the official `sv-grid-community` and `sv-grid-pro`
+   support the official `sv-grid-core` and `sv-grid-pro`
    packages.
 2. **Include**:
-   - sv-grid version (`pnpm ls sv-grid-community sv-grid-pro`)
+   - sv-grid version (`pnpm ls sv-grid-core sv-grid-pro`)
    - Svelte version, Vite version, OS
    - Browser + version (we test on the latest 2 majors of Chrome, Firefox, Safari, Edge - see [browser support](../help/browser-support.md))
    - The exact error message + stack trace

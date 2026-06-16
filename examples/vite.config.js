@@ -22,11 +22,11 @@ export default defineConfig({
     alias: {
       // Live-edit the grid package: alias to src/ so HMR fires on changes
       // without needing `pnpm --filter ./packages/sv-grid-community build`.
-      'sv-grid-community': path.resolve(repoRoot, 'packages/sv-grid-community/src/index.ts'),
+      'sv-grid-core': path.resolve(repoRoot, 'packages/sv-grid-community/src/index.ts'),
     },
   },
   optimizeDeps: {
-    exclude: ['sv-grid-community'],
+    exclude: ['sv-grid-core'],
   },
   server: { port: 5174, fs: { allow: [repoRoot] } },
 })

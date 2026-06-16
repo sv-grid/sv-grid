@@ -1,7 +1,7 @@
 import type { Component } from 'svelte'
 
 // Demos live in the examples package (aliased to @demos in vite.config.ts) and
-// only import from `sv-grid-community` / `sv-grid-pro`. They are loaded LAZILY:
+// only import from `sv-grid-core` / `sv-grid-pro`. They are loaded LAZILY:
 // each demo - plus the grid library it pulls in - becomes its own chunk that is
 // fetched only when that demo is opened. This keeps the homepage and every
 // other route from bundling all 140 examples (and the whole grid) up front.

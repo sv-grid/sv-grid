@@ -11,7 +11,7 @@
     toSparklineValues,
     type ColumnDef,
     type SparklineType,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Stock = { symbol: string; last: number; trend: number[]; result: number[] }
 

@@ -10,10 +10,10 @@ SvGrid follows [semver](https://semver.org/) strictly **for everything
 exported from the package root**:
 
 ```ts
-import { SvGrid, tableFeatures, /* ... */ } from 'sv-grid-community'
+import { SvGrid, tableFeatures, /* ... */ } from 'sv-grid-core'
 ```
 
-Anything reached via `'sv-grid-community/internal'` or a deeper path is
+Anything reached via `'sv-grid-core/internal'` or a deeper path is
 **not** covered. We may rename, reshape, or remove those between any
 two minor releases.
 
@@ -49,7 +49,7 @@ Internal symbols are excluded from the published `.d.ts`.
 
 The package surface as of the current shipping version:
 
-### `sv-grid-community`
+### `sv-grid-core`
 
 | Surface                              | Tier              |
 | ------------------------------------ | ----------------- |

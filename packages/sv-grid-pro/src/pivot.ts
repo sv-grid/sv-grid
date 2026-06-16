@@ -29,7 +29,7 @@
  * <SvGrid data={pivot.rows} columns={pivot.columns} features={features} />
  * ```
  */
-import type { ColumnDef, CellFormatConfig, RowData, TableFeatures } from 'sv-grid-community'
+import type { ColumnDef, CellFormatConfig, RowData, TableFeatures } from 'sv-grid-core'
 
 // ---------------------------------------------------------------- types
 

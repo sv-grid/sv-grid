@@ -38,7 +38,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   // ---- Domain ---------------------------------------------------------
 

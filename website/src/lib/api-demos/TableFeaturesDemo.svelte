@@ -11,7 +11,7 @@
     rowPaginationFeature,
     rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { makeOrders, type Order } from './seed'
 
   let rows = $state<Order[]>(makeOrders(40))

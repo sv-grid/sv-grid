@@ -1,6 +1,6 @@
-# `sv-grid-community` · `core.ts`
+# `sv-grid-core` · `core.ts`
 
-Auto-generated. Source: `packages\sv-grid-community\src\core.ts`.
+Auto-generated. Source: `packages\sv-grid-core\src\core.ts`.
 
 ### `type RowData`
 

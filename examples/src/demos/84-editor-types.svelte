@@ -24,7 +24,7 @@
     columnFilteringFeature,
     type ColumnDef,
     type EditorContext,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Issue = {
     id: string

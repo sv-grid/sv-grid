@@ -16,7 +16,7 @@ The moment a table has natural categories - region, status, owner - a flat list 
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, columnGroupingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, columnGroupingFeature } from 'sv-grid-core'
   const features = tableFeatures({ columnGroupingFeature })
 </script>
 

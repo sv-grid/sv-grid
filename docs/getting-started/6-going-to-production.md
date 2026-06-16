@@ -15,7 +15,7 @@ it didn't fetch.
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature,
-           columnFilteringFeature } from 'sv-grid-community'
+           columnFilteringFeature } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
@@ -129,7 +129,7 @@ attaches event listeners.
 ```svelte
 <!-- +page.svelte -->
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
   let { data } = $props()
 </script>
 
@@ -175,7 +175,7 @@ import type {
   SvGridApi,
   SortingState,
   TableFeatures,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 // 1. Constrain ColumnDef to your row type so editors and accessors stay typed.
 type Row = { id: string; firstName: string; age: number }

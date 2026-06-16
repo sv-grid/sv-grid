@@ -72,7 +72,7 @@ is exported, so you can use it in user-land code (e.g. a custom
 `externalFilter` pipeline):
 
 ```ts
-import { normalizeForFilter } from 'sv-grid-community'
+import { normalizeForFilter } from 'sv-grid-core'
 
 const filtered = rows.filter((r) =>
   normalizeForFilter(r.name, 'de-DE').includes(

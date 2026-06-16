@@ -10,7 +10,7 @@ of `ColumnDef`s - look at the [source](https://svgrid.com/#/demos/01-quick-start
 ## Minimal
 
 ```ts
-import type { ColumnDef } from 'sv-grid-community'
+import type { ColumnDef } from 'sv-grid-core'
 
 type Person = { firstName: string; age: number; status: string }
 

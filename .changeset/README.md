@@ -15,7 +15,7 @@ pnpm changeset
 ```
 
 Walks you through:
-1. Which packages this change affects (`sv-grid-community`,
+1. Which packages this change affects (`sv-grid-core`,
    `sv-grid-pro`, both)
 2. Whether it's `patch`, `minor`, or `major`
 3. A one-paragraph user-facing note
@@ -28,7 +28,7 @@ many people add changesets at once.
 
 ```md
 ---
-'sv-grid-community': minor
+'sv-grid-core': minor
 'sv-grid-pro': minor
 ---
 

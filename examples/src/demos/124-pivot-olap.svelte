@@ -30,7 +30,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import {
     createPivotModel,
     filterCollapsedPivotRows,

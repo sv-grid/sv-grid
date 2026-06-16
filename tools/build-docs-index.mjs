@@ -133,7 +133,7 @@ async function main() {
   llmsLines.push('')
   llmsLines.push('> The Svelte 5-native data grid. Headless engine + render component, AI-native, WAI-ARIA, virtualized to 100k rows.')
   llmsLines.push('')
-  llmsLines.push('Two npm packages: `sv-grid-community` (MIT, open source) and `sv-grid-pro` (commercial - export, import, pivot, AI helpers).')
+  llmsLines.push('Two npm packages: `sv-grid-core` (MIT, open source) and `sv-grid-pro` (commercial - export, import, pivot, AI helpers).')
   llmsLines.push('')
   llmsLines.push('For the full text of every doc page concatenated: see [llms-full.txt](/llms-full.txt).')
   llmsLines.push('For a machine-readable manifest: see [docs.json](/docs.json).')

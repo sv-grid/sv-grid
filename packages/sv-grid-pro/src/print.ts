@@ -1,4 +1,4 @@
-﻿import type { RowData, TableFeatures, SvGridApi } from 'sv-grid-community'
+﻿import type { RowData, TableFeatures, SvGridApi } from 'sv-grid-core'
 import { assertProLicensed } from './license'
 import { installSmartShim } from './smart-shim'
 import type { ExportColumn } from './export'

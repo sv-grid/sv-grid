@@ -47,7 +47,7 @@ panel to fill the gap.
     rowSortingFeature, columnFilteringFeature,
     rowSelectionFeature, rowExpandingFeature,
     type SvGridApi, type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Row = { id: number; name: string; team: string; score: number; active: boolean }
   const rows: Row[] = [/* ... */]

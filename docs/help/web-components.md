@@ -88,7 +88,7 @@ JavaScript **properties**; simple toggles are exposed as **attributes**.
     rowSortingFeature,
     columnFilteringFeature,
     rowSelectionFeature,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   let {
     data = [],

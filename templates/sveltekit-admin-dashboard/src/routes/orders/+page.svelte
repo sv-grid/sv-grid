@@ -8,7 +8,7 @@
     rowSelectionFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { makeOrders } from '$lib/data'
   import type { Order } from '$lib/types'
 

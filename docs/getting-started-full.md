@@ -18,7 +18,7 @@ assumes you've finished this one. Estimated reading time: 15 minutes.
 > - [Tailwind integration](./help/tailwind.md) - how `--sg-*` custom
 >   properties + Tailwind v4 + dark mode fit together.
 
-> `sv-grid-community` is published under the **MIT License** - permissive
+> `sv-grid-core` is published under the **MIT License** - permissive
 > for commercial use, redistribution, and modification. The paid companion
 > `sv-grid-pro` (data export + print) ships under a separate commercial
 > license. See [LICENSE](../LICENSE) and
@@ -50,7 +50,7 @@ assumes you've finished this one. Estimated reading time: 15 minutes.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
 
   type Person = { firstName: string; age: number; status: string }
 
@@ -82,13 +82,13 @@ framework - bring your own, or use the bundled stylesheet.
 
 ```bash
 # pnpm (recommended)
-pnpm add sv-grid-community
+pnpm add sv-grid-core
 
 # npm
-npm install sv-grid-community
+npm install sv-grid-core
 
 # yarn
-yarn add sv-grid-community
+yarn add sv-grid-core
 ```
 
 **Requirements.**
@@ -107,7 +107,7 @@ import {
   rowSortingFeature,
   columnFilteringFeature,
   type ColumnDef,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 ```
 
 The bundle is tree-shakeable - features you don't import don't ship. The
@@ -127,7 +127,7 @@ or a plain literal.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-community'
+  import { SvGrid } from 'sv-grid-core'
 
   type Person = { id: string; firstName: string; age: number }
 
@@ -165,7 +165,7 @@ A column definition tells SvGrid how to read a value out of a row, how
 to render it, and which features apply to it.
 
 ```ts
-import type { ColumnDef } from 'sv-grid-community'
+import type { ColumnDef } from 'sv-grid-core'
 
 type Person = {
   id: string
@@ -260,7 +260,7 @@ with `tableFeatures(...)` and the matching `create*RowModel` factory.
     columnFilteringFeature,
     rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -382,7 +382,7 @@ For anything beyond a stringified value, render with `FlexRender`,
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { renderSnippet, type ColumnDef } from 'sv-grid-core'
 </script>
 
 {#snippet StatusCell({ value }: { value: string })}
@@ -404,7 +404,7 @@ For anything beyond a stringified value, render with `FlexRender`,
 
 ```ts
 import StatusBadge from './StatusBadge.svelte'
-import { renderComponent } from 'sv-grid-community'
+import { renderComponent } from 'sv-grid-core'
 
 const columns = [
   {
@@ -591,7 +591,7 @@ doesn't try to re-order rows it didn't fetch.
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature,
-           columnFilteringFeature } from 'sv-grid-community'
+           columnFilteringFeature } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
@@ -673,7 +673,7 @@ opt-in so small grids don't pay the cost.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-community'
+  import { SvGrid } from 'sv-grid-core'
 </script>
 
 <SvGrid
@@ -690,7 +690,7 @@ For full control (e.g. variable row heights, programmatic scroll),
 use the headless virtualizer directly:
 
 ```ts
-import { createSvelteVirtualizer } from 'sv-grid-community'
+import { createSvelteVirtualizer } from 'sv-grid-core'
 
 const virtualizer = createSvelteVirtualizer({
   count:                 () => rows.length,
@@ -733,7 +733,7 @@ import {
   getGridRowA11yProps,
   getGridCellA11yProps,
   getGridHeaderA11yProps,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 ```
 
 There is a contract test suite at
@@ -830,7 +830,7 @@ demos and evaluation.
 
 ### License
 
-`sv-grid-community` is published under the **MIT License**. Free for
+`sv-grid-core` is published under the **MIT License**. Free for
 commercial and personal use. The paid `sv-grid-pro` companion package
 (export, import, print, pivot, AI assistant) is governed by a separate
 commercial license. See [LICENSE](../LICENSE) and

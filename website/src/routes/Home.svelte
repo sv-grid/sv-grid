@@ -9,7 +9,7 @@
   // The smallest complete SvGrid - the canonical minimal example from
   // docs/getting-started/2-first-grid.md. Keep the two in sync.
   const quickStartCode = `<script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
 
   const rows = [
     { firstName: 'Ada',   age: 36, status: 'active' },
@@ -59,12 +59,12 @@
 
   const packages = [
     {
-      name: 'sv-grid-community',
+      name: 'sv-grid-core',
       tag: 'Free · MIT',
       blurb:
         'The full data grid. Sorting, Excel-style filters, grouping, virtualization, inline editing, server-side data, master/detail, tree, WAI-ARIA. Free under the MIT License, including commercial use.',
-      install: 'npm install sv-grid-community',
-      cta: { label: 'View on npm', href: 'https://www.npmjs.com/package/sv-grid-community' },
+      install: 'npm install sv-grid-core',
+      cta: { label: 'View on npm', href: 'https://www.npmjs.com/package/sv-grid-core' },
     },
     {
       name: 'sv-grid-pro',
@@ -91,7 +91,7 @@
   const homeFaqs = [
     {
       q: 'Can I build Svelte data grids for free with SvGrid?',
-      a: 'Yes. The sv-grid-community package is free under the MIT License, including commercial use. No license key, no row-count cap, no enterprise upsell pop-ups.',
+      a: 'Yes. The sv-grid-core package is free under the MIT License, including commercial use. No license key, no row-count cap, no enterprise upsell pop-ups.',
     },
     {
       q: 'How fast is SvGrid?',
@@ -114,8 +114,8 @@
       a: 'SvGrid is Svelte-5-native with a built-in <SvGrid /> render component - virtualization, Excel-style filters, cell selection, and inline editing work in one prop pass. TanStack Table is multi-framework and headless-only, so you build the DOM layer yourself. See the Compare page for a side-by-side matrix.',
     },
     {
-      q: 'What is the difference between sv-grid-community and sv-grid-pro?',
-      a: 'sv-grid-community is the full grid: sorting, filtering, grouping, virtualization, inline editing, server-side data, master/detail, tree, accessibility. Free under the MIT License. sv-grid-pro is a paid companion that adds export (Excel, PDF, CSV, TSV, HTML), a printable view, pivot tables, and AI helpers, plus direct support.',
+      q: 'What is the difference between sv-grid-core and sv-grid-pro?',
+      a: 'sv-grid-core is the full grid: sorting, filtering, grouping, virtualization, inline editing, server-side data, master/detail, tree, accessibility. Free under the MIT License. sv-grid-pro is a paid companion that adds export (Excel, PDF, CSV, TSV, HTML), a printable view, pivot tables, and AI helpers, plus direct support.',
     },
     {
       q: 'How much does sv-grid-pro cost?',
@@ -225,7 +225,7 @@
       style="border-color: var(--site-border); background: var(--site-bg-elev); color: var(--site-muted);"
     >
       <span class="inline-block h-1.5 w-1.5 rounded-full" style="background:var(--site-brand)"></span>
-      The Svelte 5 data grid · <code class="ml-1">sv-grid-community</code> <span class="opacity-50">·</span> <code>sv-grid-pro</code>
+      The Svelte 5 data grid · <code class="ml-1">sv-grid-core</code> <span class="opacity-50">·</span> <code>sv-grid-pro</code>
     </div>
 
     <h1
@@ -274,7 +274,7 @@
 
     <!-- Click-to-copy install commands -->
     <div class="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm">
-      {#each ['npm install sv-grid-community', 'npm install sv-grid-pro'] as cmd}
+      {#each ['npm install sv-grid-core', 'npm install sv-grid-pro'] as cmd}
         <button
           type="button"
           onclick={() => copy(cmd)}

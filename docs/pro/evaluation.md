@@ -57,7 +57,7 @@ dismissUpgradePrompt()
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, type SvGridApi } from 'sv-grid-core'
   import { installPro, type ProGridApi } from 'sv-grid-pro'
 
   let api = $state<ProGridApi<typeof features, Order> | null>(null)

@@ -7,7 +7,7 @@
     rowSortingFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { createStagedEditing } from 'sv-grid-pro'
   import { makeOrders, type Order } from './seed'
 

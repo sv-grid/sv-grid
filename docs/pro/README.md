@@ -1,6 +1,6 @@
 # Pro feature pack
 
-`sv-grid-pro` is a paid add-on for `sv-grid-community`. It bolts onto
+`sv-grid-pro` is a paid add-on for `sv-grid-core`. It bolts onto
 the same `<SvGrid>` you already have and adds four feature areas: data
 export, data import, an AI assistant, and pivot tables.
 
@@ -97,7 +97,7 @@ Pricing + multi-app licensing: <https://sv-grid.dev/pricing>.
 ## How Pro integrates
 
 ```ts
-import { SvGrid, type SvGridApi } from 'sv-grid-community'
+import { SvGrid, type SvGridApi } from 'sv-grid-core'
 import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
 
 setLicenseKey(import.meta.env.VITE_SVPRO_KEY)

@@ -37,7 +37,7 @@ when the recipient expects formatted documents.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-core'
   import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
 
   // Set the license key once at startup. Without a key, the feature still
@@ -186,7 +186,7 @@ format.
 ### Is export part of the free Community package?
 
 No. Export and printing ship in the paid `sv-grid-pro` add-on. The free
-`sv-grid-community` package covers the full grid (sorting, filtering, grouping,
+`sv-grid-core` package covers the full grid (sorting, filtering, grouping,
 editing, virtualization) but not export/print/pivot/import.
 
 ### Does exporting bloat my bundle?

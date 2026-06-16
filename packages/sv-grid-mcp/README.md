@@ -77,4 +77,4 @@ self-contained.
 
 ## License
 
-MIT. sv-grid-community is also MIT-licensed; sv-grid-pro is a paid companion package under a separate commercial license.
+MIT. sv-grid-core is also MIT-licensed; sv-grid-pro is a paid companion package under a separate commercial license.

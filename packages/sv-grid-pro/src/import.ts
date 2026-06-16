@@ -24,7 +24,7 @@
  * `print`, so unlicensed evaluation works but emits a one-time nudge.
  */
 
-import type { RowData, SvGridApi, TableFeatures } from 'sv-grid-community'
+import type { RowData, SvGridApi, TableFeatures } from 'sv-grid-core'
 import { assertProLicensed } from './license'
 
 // ---------------------------------------------------------------------------

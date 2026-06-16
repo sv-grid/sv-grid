@@ -15,7 +15,7 @@ Both halves are plain `<SvGrid>` instances; the wiring is one
   import {
     SvGrid, tableFeatures, rowSortingFeature, rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, rowSelectionFeature })
 

@@ -12,14 +12,14 @@ Everything you reach for most, in one place. Bookmark this; it is also a good pa
 ## Install
 
 ```bash
-npm add sv-grid-community
+npm add sv-grid-core
 ```
 
 ## Minimal grid
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
   const columns: ColumnDef<{}, Row>[] = [
     { field: 'name', header: 'Name' },
     { field: 'age', header: 'Age' },
@@ -49,7 +49,7 @@ Format types: `number`, `currency`, `percent`, `date`, `datetime`. Editor types:
 import {
   tableFeatures, rowSortingFeature, columnFilteringFeature,
   rowPaginationFeature, rowSelectionFeature, columnGroupingFeature, rowExpandingFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 ```
@@ -117,7 +117,7 @@ Arrows move; Home/End and Ctrl+Home/End jump; F2/Enter edit; Esc cancels; Tab co
 
 ### What is the fastest way to add a data grid to Svelte?
 
-Install `sv-grid-community`, import `SvGrid`, and pass `data` and `columns` - a working, accessible grid is about fifteen lines. Add features (sorting, filtering, pagination) by registering them with `tableFeatures`.
+Install `sv-grid-core`, import `SvGrid`, and pass `data` and `columns` - a working, accessible grid is about fifteen lines. Add features (sorting, filtering, pagination) by registering them with `tableFeatures`.
 
 ### Does SvGrid mutate my data on edit?
 

@@ -28,7 +28,7 @@
     rowSortingFeature,
     rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
 
   setLicenseKey('SVPRO-DEV-DEMO')

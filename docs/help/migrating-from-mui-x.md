@@ -11,7 +11,7 @@ split very similar to sv-grid's. The port is mostly mechanical.
 
 | MUI X                                | sv-grid                                  |
 | ------------------------------------ | ---------------------------------------- |
-| `@mui/x-data-grid`                   | `sv-grid-community`                      |
+| `@mui/x-data-grid`                   | `sv-grid-core`                      |
 | `@mui/x-data-grid-pro`               | `sv-grid-pro` (export, import, pivot, AI) |
 | `@mui/x-data-grid-premium`           | All of `sv-grid-pro` ships in one tier   |
 
@@ -21,7 +21,7 @@ split very similar to sv-grid's. The port is mostly mechanical.
 - import { DataGrid, GridColDef, GridRowsProp } from '@mui/x-data-grid'
 
 + import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
-+          type ColumnDef } from 'sv-grid-community'
++          type ColumnDef } from 'sv-grid-core'
 ```
 
 ## Column defs

@@ -5,7 +5,7 @@ Use it for data, column, filter, sort, group, selection, and
 visibility operations from outside the component.
 
 ```ts
-import type { SvGridApi } from 'sv-grid-community'
+import type { SvGridApi } from 'sv-grid-core'
 
 let api = $state<SvGridApi<typeof features, Order> | null>(null)
 ```

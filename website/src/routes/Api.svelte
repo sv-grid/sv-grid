@@ -287,7 +287,7 @@
                           <button
                             type="button"
                             class="api-example-btn api-example-btn-primary"
-                            title="Open this snippet as an editable Svelte 5 + sv-grid-community project in StackBlitz"
+                            title="Open this snippet as an editable Svelte 5 + sv-grid-core project in StackBlitz"
                             onclick={() =>
                               openSnippetInStackBlitz({
                                 sectionTitle: current.title,

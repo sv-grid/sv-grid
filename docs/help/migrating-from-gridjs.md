@@ -36,7 +36,7 @@ filters, editing, grouping - when you outgrow the basics.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -71,7 +71,7 @@ small table, Grid.js stays lighter.
 
 ### Is SvGrid MIT-licensed like Grid.js?
 
-Yes. `sv-grid-community` is MIT. Only the optional `sv-grid-pro` add-on is paid.
+Yes. `sv-grid-core` is MIT. Only the optional `sv-grid-pro` add-on is paid.
 
 ### Does SvGrid support server-side data like Grid.js?
 

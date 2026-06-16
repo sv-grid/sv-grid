@@ -8,7 +8,7 @@
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { makeOrders, type Order } from './seed'
 
   const features = tableFeatures({ rowSortingFeature })

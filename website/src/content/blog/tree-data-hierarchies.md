@@ -29,7 +29,7 @@ type Node = {
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowExpandingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowExpandingFeature } from 'sv-grid-core'
   const features = tableFeatures({ rowExpandingFeature })
 </script>
 

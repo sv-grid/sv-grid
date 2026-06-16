@@ -2,14 +2,14 @@
 
 A flat index of every Stable export. Each entry links to the topic
 page that covers it in depth. For the formal TypeScript shapes,
-inspect the `.d.ts` files in `node_modules/sv-grid-community/dist` -
+inspect the `.d.ts` files in `node_modules/sv-grid-core/dist` -
 they're the source of truth and ship with full JSDoc.
 
 > The "Tier" column reflects the badges from
 > [API stability](./api-stability.md). Anything not listed here is
 > Internal and may move under your feet.
 
-## sv-grid-community
+## sv-grid-core
 
 ### Components
 
@@ -95,7 +95,7 @@ is Stable.
 
 ### Static utilities
 
-Re-exports from `'sv-grid-community/static-functions'` for use outside
+Re-exports from `'sv-grid-core/static-functions'` for use outside
 a Svelte 5 component:
 
 | Export                       | Tier   | What it is                                              |

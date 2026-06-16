@@ -16,7 +16,7 @@ People do not learn how to filter your table; they arrive already knowing, becau
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, columnFilteringFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, columnFilteringFeature } from 'sv-grid-core'
   const features = tableFeatures({ columnFilteringFeature })
 </script>
 

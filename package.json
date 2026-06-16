@@ -10,10 +10,10 @@
     "node": ">=18"
   },
   "scripts": {
-    "dev": "pnpm --filter sv-grid-community-example-gallery dev",
-    "build": "pnpm --filter sv-grid-community build",
-    "build:example": "pnpm --filter sv-grid-community-example-gallery build",
-    "test": "pnpm --filter sv-grid-community test:lib",
+    "dev": "pnpm --filter sv-grid-core-example-gallery dev",
+    "build": "pnpm --filter sv-grid-core build",
+    "build:example": "pnpm --filter sv-grid-core-example-gallery build",
+    "test": "pnpm --filter sv-grid-core test:lib",
     "test:types": "pnpm -r test:types",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

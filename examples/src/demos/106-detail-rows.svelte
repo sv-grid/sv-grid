@@ -25,7 +25,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Status = 'pending' | 'paid' | 'fulfilled' | 'returned' | 'refunded'
 

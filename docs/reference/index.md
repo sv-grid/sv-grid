@@ -4,7 +4,7 @@ The exhaustive surface of the published packages. For walkthroughs +
 patterns see [Help](../help/index.md); for first contact see
 [Getting started](../getting-started.md).
 
-## sv-grid-community
+## sv-grid-core
 
 | Page                          | What's in it                                                          |
 | ----------------------------- | --------------------------------------------------------------------- |

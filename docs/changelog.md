@@ -21,7 +21,7 @@ For machine-readable releases, fetch
 
 ## [Unreleased]
 
-### sv-grid-community
+### sv-grid-core
 
 - **New** `onCellValueChange` callback on `<SvGrid>`. Fires after every
   inline edit commits with `{ rowIndex, columnId, oldValue, newValue,
@@ -56,9 +56,9 @@ For machine-readable releases, fetch
   full dataset, not just the visible page. (Removed
   `paginatedRowModel` from the engine pipeline; pagination is applied
   AFTER filters by the wrapper.)
-- **Renamed package** `svgrid-community` → `sv-grid-community`.
+- **Renamed package** `svgrid-community` → `sv-grid-core`.
   **Breaking**. Update imports: `from 'svgrid-community'` →
-  `from 'sv-grid-community'`. Subpath imports follow the same change.
+  `from 'sv-grid-core'`. Subpath imports follow the same change.
 
 ### sv-grid-pro
 
@@ -121,7 +121,7 @@ For machine-readable releases, fetch
   `manualPagination`, `onColumnFiltersChange`, the wrapper `getRowId`
   prop, per-column `enableSorting` / `enableColumnFilter` /
   `enableGrouping` flags, the never-shipped
-  `sv-grid-community/themes/default.css` import.
+  `sv-grid-core/themes/default.css` import.
 - **Em-dashes globally swept to hyphens** (`-` → `-`) across all
   source-controlled text. Codified as a rule for new content.
 

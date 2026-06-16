@@ -13,7 +13,7 @@ Astro's islands architecture lets you ship mostly static HTML with small interac
 
 ```bash
 npx astro add svelte
-npm add sv-grid-community
+npm add sv-grid-core
 ```
 
 This enables `.svelte` components inside Astro pages.
@@ -35,7 +35,7 @@ const people = await fetch(`${import.meta.env.API}/people`).then(r => r.json())
 ```svelte
 <!-- src/components/PeopleGrid.svelte -->
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
   let { people }: { people: Row[] } = $props()
   const columns: ColumnDef<{}, Row>[] = [/* ... */]
 </script>

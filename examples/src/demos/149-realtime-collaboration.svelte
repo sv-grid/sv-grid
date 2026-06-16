@@ -24,7 +24,7 @@
     type ColumnDef,
     type CellContext,
     type CollabPresence,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({})
 

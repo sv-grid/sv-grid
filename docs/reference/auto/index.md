@@ -5,10 +5,10 @@ _Generated from the published TypeScript sources. Do not edit by hand - rerun `n
 For the hand-curated reference (with defaults + behaviour tables),
 see [the main reference index](../index.md).
 
-## sv-grid-community
+## sv-grid-core
 
-- [`sv-grid-community/core.ts`](./sv-grid-community-core.md) - 45 exports
-- [`sv-grid-community/svgrid-wrapper.types.ts`](./sv-grid-community-svgrid-wrapper.types.md) - 3 exports
+- [`sv-grid-core/core.ts`](./sv-grid-community-core.md) - 45 exports
+- [`sv-grid-core/svgrid-wrapper.types.ts`](./sv-grid-community-svgrid-wrapper.types.md) - 3 exports
 
 ## sv-grid-pro
 

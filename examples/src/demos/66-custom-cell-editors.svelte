@@ -22,7 +22,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Mood = 'love' | 'happy' | 'neutral' | 'concerned' | 'critical' | null
   type Status = 'shipped' | 'in_progress' | 'planned' | 'at_risk'

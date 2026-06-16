@@ -9,7 +9,7 @@ const req = createRequire(join(ROOT, 'website', 'package.json'))
 const { build } = await import(pathToFileURL(req.resolve('vite')).href)
 const { svelte } = await import(pathToFileURL(req.resolve('@sveltejs/vite-plugin-svelte')).href)
 
-const DIST = join(ROOT, 'packages', 'sv-grid-community', 'dist')
+const DIST = join(ROOT, 'packages', 'sv-grid-core', 'dist')
 const kb = (n) => (n / 1024).toFixed(1).padStart(5) + ' KB'
 
 async function measure(label, exportsLine) {

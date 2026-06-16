@@ -4,7 +4,7 @@
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
 
   type Person = { firstName: string; age: number; status: string }
 

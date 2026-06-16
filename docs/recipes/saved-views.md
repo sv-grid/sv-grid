@@ -6,7 +6,7 @@ restores the snapshot.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, type SvGridApi } from 'sv-grid-core'
 
   type View = {
     name: string

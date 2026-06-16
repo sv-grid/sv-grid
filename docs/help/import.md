@@ -54,7 +54,7 @@ column-mapping, validation, error preview - not the parser itself.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-core'
   import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
 
   setLicenseKey('SVPRO-XXXX-XXXX-XXXX')

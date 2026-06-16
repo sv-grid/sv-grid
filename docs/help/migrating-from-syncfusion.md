@@ -68,7 +68,7 @@ for a Svelte-5-native grid with an unconditional MIT core.
 
 ### Is SvGrid free, unlike the Syncfusion commercial license?
 
-`sv-grid-community` is MIT - free for everyone, with no revenue or team-size
+`sv-grid-core` is MIT - free for everyone, with no revenue or team-size
 conditions. Syncfusion's community license is free only for qualifying small
 teams; otherwise it is commercial.
 

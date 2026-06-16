@@ -7,7 +7,7 @@ library, no custom cell snippet.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-community'
+  import { SvGrid, type ColumnDef } from 'sv-grid-core'
 
   type Row = { product: string; revenue: number[] }
 

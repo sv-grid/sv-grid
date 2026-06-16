@@ -22,7 +22,7 @@
     rowSortingFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Row = {
     id: number

@@ -56,7 +56,7 @@ Paste any of the formats below into the textarea and click
     rowSelectionFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Contact = {
     id: string

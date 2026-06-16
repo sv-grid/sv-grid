@@ -50,7 +50,7 @@ Query handles the rest.
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { createQuery } from '@tanstack/svelte-query'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })

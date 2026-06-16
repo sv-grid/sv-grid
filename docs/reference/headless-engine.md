@@ -49,7 +49,7 @@ import {
   rowSortingFeature,
   columnFilteringFeature,
   type ColumnDef,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 type Repo = { name: string; lang: string; stars: number }
 

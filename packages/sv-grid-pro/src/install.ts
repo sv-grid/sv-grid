@@ -1,4 +1,4 @@
-import type { RowData, TableFeatures, SvGridApi } from 'sv-grid-community'
+import type { RowData, TableFeatures, SvGridApi } from 'sv-grid-core'
 import { exportGrid, type ExportOptions } from './export'
 import { printGrid, type PrintOptions } from './print'
 import { importData, type ImportOptions, type ImportResult } from './import'

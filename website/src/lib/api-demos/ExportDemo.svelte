@@ -11,7 +11,7 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { makeOrders, type Order } from './seed'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })

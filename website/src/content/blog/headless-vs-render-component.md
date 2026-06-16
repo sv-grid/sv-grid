@@ -33,7 +33,7 @@ Reach for the render component when you want a working grid fast and the default
 The headless engine gives you the row-model pipeline - filtering, sorting, grouping, pagination, expansion - with zero markup. You own every DOM node.
 
 ```ts
-import { createSvGrid, rowSortingFeature, tableFeatures } from 'sv-grid-community'
+import { createSvGrid, rowSortingFeature, tableFeatures } from 'sv-grid-core'
 
 const grid = createSvGrid({
   data: rows,

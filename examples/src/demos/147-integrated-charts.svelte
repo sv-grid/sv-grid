@@ -24,7 +24,7 @@
     type ChartType,
     type ChartSpec,
     type ChartSelection,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 

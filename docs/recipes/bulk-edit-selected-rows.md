@@ -19,7 +19,7 @@ The recipe is three pieces:
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
     rowSelectionFeature, type ColumnDef, type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({
     rowSortingFeature,

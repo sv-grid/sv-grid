@@ -12,7 +12,7 @@ column to the sort key list (multi-sort):
 <script lang="ts">
   import {
     SvGrid, tableFeatures, rowSortingFeature, type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature })
 
@@ -34,7 +34,7 @@ adds the column to the sort key list (multi-sort).
 `sortFns` exposes the built-in comparators:
 
 ```ts
-import { sortFns } from 'sv-grid-community'
+import { sortFns } from 'sv-grid-core'
 // sortFns.auto    - lexical (default for unknown types)
 // sortFns.number  - numeric, NaN-safe
 // sortFns.date    - Date-parsed

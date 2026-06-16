@@ -27,7 +27,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Status = 'online' | 'degraded' | 'offline'
   type Severity = 'ok' | 'warning' | 'critical'

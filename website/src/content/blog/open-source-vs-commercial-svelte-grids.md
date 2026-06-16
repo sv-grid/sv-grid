@@ -39,7 +39,7 @@ Sometimes free is cheapest; sometimes a license is, once you price your own time
 
 A increasingly common - and pragmatic - answer is open-core: a free, permissive core that covers the common 90%, plus an optional paid pack for advanced needs. You ship free, and only pay if and when you need the extras.
 
-This is SvGrid's model: `sv-grid-community` is MIT-licensed and free for commercial use (sorting, filtering, grouping, virtualization, editing, server-side data), and [sv-grid-pro](/pricing) adds export, import, print, pivot, and AI plus support, per developer. You are not forced to choose all-free-or-all-paid up front.
+This is SvGrid's model: `sv-grid-core` is MIT-licensed and free for commercial use (sorting, filtering, grouping, virtualization, editing, server-side data), and [sv-grid-pro](/pricing) adds export, import, print, pivot, and AI plus support, per developer. You are not forced to choose all-free-or-all-paid up front.
 
 ## How to decide
 

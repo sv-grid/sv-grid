@@ -4,7 +4,7 @@ A column definition is the contract between the grid and one column of
 data. Pass an array of these as the `columns` prop to `<SvGrid>`.
 
 ```ts
-import type { ColumnDef } from 'sv-grid-community'
+import type { ColumnDef } from 'sv-grid-core'
 
 type Row = { id: string; firstName: string; salary: number; joinedAt: string }
 
@@ -166,7 +166,7 @@ You typically need `ctx.row.original` (the source row) and
 `ctx.getValue()`:
 
 ```ts
-import { renderSnippet } from 'sv-grid-community'
+import { renderSnippet } from 'sv-grid-core'
 
 {
   id: 'name',

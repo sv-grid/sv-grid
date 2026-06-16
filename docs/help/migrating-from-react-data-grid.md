@@ -35,7 +35,7 @@ is mostly a column rename pass.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
 +     { field: 'name',   header: 'Name' },
@@ -73,7 +73,7 @@ snippet). `rowKeyGetter` becomes `getRowId`.
 
 ### Is SvGrid free like react-data-grid?
 
-Yes - `sv-grid-community` is MIT-licensed, like react-data-grid. SvGrid adds an
+Yes - `sv-grid-core` is MIT-licensed, like react-data-grid. SvGrid adds an
 optional paid Pro pack for export, import, pivot, and AI.
 
 ### Does SvGrid have built-in filtering?

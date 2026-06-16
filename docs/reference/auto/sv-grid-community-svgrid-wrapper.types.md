@@ -1,6 +1,6 @@
-# `sv-grid-community` · `svgrid-wrapper.types.ts`
+# `sv-grid-core` · `svgrid-wrapper.types.ts`
 
-Auto-generated. Source: `packages\sv-grid-community\src\svgrid-wrapper.types.ts`.
+Auto-generated. Source: `packages\sv-grid-core\src\svgrid-wrapper.types.ts`.
 
 ### `type SvGridFilterOperator`
 

@@ -48,7 +48,7 @@ port is mostly about deciding how much markup you want to keep.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-community'
++   } from 'sv-grid-core'
 +
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
@@ -108,7 +108,7 @@ lighter choice.
 
 ### Is SvGrid also MIT-licensed like @vincjo/datatables?
 
-Yes. `sv-grid-community` is MIT, like `@vincjo/datatables`. SvGrid adds an
+Yes. `sv-grid-core` is MIT, like `@vincjo/datatables`. SvGrid adds an
 optional paid `sv-grid-pro` pack (export, import, pivot, AI).
 
 ### Can I keep my own table markup after switching?

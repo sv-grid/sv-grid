@@ -16,7 +16,7 @@
     rowExpandingFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
   import { makePeople, type Person } from '../shared/seed'
 
   const features = tableFeatures({

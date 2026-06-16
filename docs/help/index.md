@@ -9,7 +9,7 @@ already.
 
 > **Tier badges.** Pages whose title ends with `- Pro` describe a
 > feature that ships in the paid `sv-grid-pro` add-on. Everything else
-> is part of the open-source `sv-grid-community` package. The same
+> is part of the open-source `sv-grid-core` package. The same
 > visual convention is used throughout this documentation.
 
 Live reference - the trading-desk demo runs the full feature set at

@@ -6,7 +6,7 @@ understanding before you reach for either.
 
 ## What "headless" actually means here
 
-The core - `createSvGrid` from `sv-grid-community/core` - knows about
+The core - `createSvGrid` from `sv-grid-core/core` - knows about
 rows, columns, sorting, filtering, grouping, pagination, expansion, and
 selection. It does **not** know about pixels, DOM, ARIA, or CSS. It is
 a state machine over your data that you query and mutate from Svelte.
@@ -45,7 +45,7 @@ You write the markup, you keep the headless brain.
 
 ```ts
 import { createSvGrid, createCoreRowModel, createSortedRowModel,
-         tableFeatures, rowSortingFeature, sortFns } from 'sv-grid-community'
+         tableFeatures, rowSortingFeature, sortFns } from 'sv-grid-core'
 
 const grid = createSvGrid({
   _features: tableFeatures({ rowSortingFeature }),
@@ -67,7 +67,7 @@ for (const row of grid.getRowModel().rows) {
 in one bundle. With SvGrid you only register what you use:
 
 ```ts
-import { tableFeatures, rowSortingFeature } from 'sv-grid-community'
+import { tableFeatures, rowSortingFeature } from 'sv-grid-core'
 
 // no filtering, no grouping, no pagination - none of that code is
 // reachable from this grid instance
@@ -83,7 +83,7 @@ and Vite tree-shakes away the rest.
 browser:
 
 ```ts
-import { createSvGrid, ... } from 'sv-grid-community'
+import { createSvGrid, ... } from 'sv-grid-core'
 
 test('sorts by salary descending', () => {
   const grid = createSvGrid({ ..., state: { sorting: [{ id: 'salary', desc: true }] } })

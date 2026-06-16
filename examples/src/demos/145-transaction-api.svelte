@@ -14,7 +14,7 @@
    *     remove: ['ORD-1001'],                  // by id (or row ref)
    *   })
    */
-  import { SvGrid, tableFeatures, type ColumnDef, type SvGridApi } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, type ColumnDef, type SvGridApi } from 'sv-grid-core'
 
   const features = tableFeatures({})
 

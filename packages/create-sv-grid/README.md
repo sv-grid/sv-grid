@@ -42,7 +42,7 @@ npm install
 npm run dev
 ```
 
-All templates use the free MIT `sv-grid-community` core. Add
+All templates use the free MIT `sv-grid-core` core. Add
 [`sv-grid-pro`](https://www.svgrid.com/pricing) for Excel/PDF export, import,
 print, pivot, and AI helpers.
 

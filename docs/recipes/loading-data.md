@@ -7,7 +7,7 @@ doesn't care which.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
   const features = tableFeatures({ rowSortingFeature })
   let rows = $state<Order[]>([])
   let loading = $state(true)

@@ -9,7 +9,7 @@ a `renderSnippet(...)` or `renderComponent(...)`. The function receives a
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+  import { renderSnippet, type ColumnDef } from 'sv-grid-core'
 
   const columns: ColumnDef<{}, Person>[] = [
     {
@@ -32,7 +32,7 @@ a `renderSnippet(...)` or `renderComponent(...)`. The function receives a
 
 ```ts
 import HeaderWithIcon from './HeaderWithIcon.svelte'
-import { renderComponent } from 'sv-grid-community'
+import { renderComponent } from 'sv-grid-core'
 
 const columns = [
   {

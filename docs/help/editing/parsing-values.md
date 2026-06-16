@@ -6,7 +6,7 @@ number / date inputs, a boolean for checkboxes) is parsed by
 <div data-docs-demo="24-validation" data-height="540"></div>
 
 ```ts
-import { parseEditorValue } from 'sv-grid-community'
+import { parseEditorValue } from 'sv-grid-core'
 
 parseEditorValue('text',     'Ada')          // 'Ada'
 parseEditorValue('number',   '42')           // 42

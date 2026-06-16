@@ -15,7 +15,7 @@ straight to the one you need if you're not.
 | #   | Page                                                          | What it covers                                                              |
 | --- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | 0   | [Starters & scaffolding](./getting-started/starters.md)       | `npm create sv-grid`, the minimal + SvelteKit admin templates, Deploy to Vercel. |
-| 1   | [Install](./getting-started/1-install.md)                     | `pnpm add sv-grid-community`, requirements, smoke-test.                     |
+| 1   | [Install](./getting-started/1-install.md)                     | `pnpm add sv-grid-core`, requirements, smoke-test.                     |
 | 2   | [First grid](./getting-started/2-first-grid.md)               | The minimum runnable example, explained line by line.                       |
 | 3   | [Data and columns](./getting-started/3-data-and-columns.md)   | What goes in `data` and `columns`. Custom cells via `renderSnippet`.        |
 | 4   | [Features](./getting-started/4-features.md)                   | Opt into sort, filter, pagination, grouping, selection, editing.            |
@@ -44,7 +44,7 @@ identical; the split exists for sidebar nav and faster mobile loads.
 
 ## License
 
-`sv-grid-community` is published under the **MIT License** - permissive
+`sv-grid-core` is published under the **MIT License** - permissive
 for commercial use, redistribution, and modification. The paid
 companion `sv-grid-pro` ships under a separate commercial license. See
 [LICENSE](../LICENSE) and
@@ -54,7 +54,7 @@ companion `sv-grid-pro` ships under a separate commercial license. See
 
 ### How do I add a data grid to a Svelte 5 app?
 
-Install `sv-grid-community`, import `SvGrid`, and pass `data` and `columns`.
+Install `sv-grid-core`, import `SvGrid`, and pass `data` and `columns`.
 A complete grid is about 15 lines - keyboard navigation and accessibility are
 on by default, and you opt into sort/filter/edit/group/paging with one boolean
 shortcut each (`sortable`, `filterable`, ...). See
@@ -68,7 +68,7 @@ SSR and static builds. Drive large datasets with controlled, server-side state.
 
 ### Is SvGrid free for commercial use?
 
-Yes. `sv-grid-community` is MIT-licensed, including commercial use, with no row
+Yes. `sv-grid-core` is MIT-licensed, including commercial use, with no row
 cap or license key. The optional `sv-grid-pro` pack (export, pivot, import, AI)
 ships under a separate paid license.
 

@@ -36,13 +36,13 @@ jobs:
       - name: Build library (svelte-package)
         # Needed because the website + MCP packages depend on the published
         # entry points being generated.
-        run: pnpm --filter sv-grid-community build
+        run: pnpm --filter sv-grid-core build
 
       - name: Type-check (svelte-check on every package)
         run: pnpm test:types
 
       - name: Unit + behavioral tests with coverage
-        # `pnpm test` resolves to `pnpm --filter sv-grid-community test:lib`,
+        # `pnpm test` resolves to `pnpm --filter sv-grid-core test:lib`,
         # which runs `vitest run --coverage` against the configured
         # thresholds in packages/sv-grid-community/vite.config.ts
         # (lines 90 / statements 90 / functions 80 / branches 75).
@@ -68,7 +68,7 @@ jobs:
           if [ ! -f "$REPORT" ]; then
             # vitest's default text reporter doesn't emit JSON. Generate it
             # once more with json-summary added so we can parse cleanly.
-            pnpm --filter sv-grid-community exec vitest run --coverage \
+            pnpm --filter sv-grid-core exec vitest run --coverage \
               --coverage.reporter=text \
               --coverage.reporter=json-summary
           fi

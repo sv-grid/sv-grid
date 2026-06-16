@@ -1,6 +1,6 @@
 ﻿/// <reference path="./pdfmake-shims.d.ts" />
-import type { RowData, TableFeatures } from 'sv-grid-community'
-import type { SvGridApi } from 'sv-grid-community'
+import type { RowData, TableFeatures } from 'sv-grid-core'
+import type { SvGridApi } from 'sv-grid-core'
 import { assertProLicensed } from './license'
 import { installSmartShim, type SmartDataExporterInstance } from './smart-shim'
 

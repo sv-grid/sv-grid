@@ -24,7 +24,7 @@ than in the URL - they're per-user, not per-link. See
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 

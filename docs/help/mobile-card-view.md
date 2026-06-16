@@ -51,7 +51,7 @@ data layer doesn't care which one is active.
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Status   = 'open' | 'in_progress' | 'blocked' | 'done'
   type Priority = 'low' | 'med' | 'high' | 'urgent'

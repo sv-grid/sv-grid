@@ -14,7 +14,7 @@ import {
   rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -74,7 +74,7 @@ import {
   rowPaginationFeature,
   sortFns,
   filterFns,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const grid = createSvGrid({
   _features: tableFeatures({
@@ -112,7 +112,7 @@ const grid = createSvGrid({
 ### `sortFns`
 
 ```ts
-import { sortFns } from 'sv-grid-community'
+import { sortFns } from 'sv-grid-core'
 
 // sortFns.auto   - lexical (default for unknown / mixed types)
 // sortFns.number - numeric, NaN-safe
@@ -126,7 +126,7 @@ Pick a comparator yourself by setting the column's `editorType` -
 ### `filterFns`
 
 ```ts
-import { filterFns } from 'sv-grid-community'
+import { filterFns } from 'sv-grid-core'
 
 // includesString, equalsString, arrIncludes,
 // inNumberRange, isAfter, isBefore, isEmpty, isNotEmpty
@@ -141,9 +141,9 @@ const columnFilters = [{ id: 'age', value: 30, fn: 'equals' }]
 Extend the registry yourself - it's a plain mutable object:
 
 ```ts
-import { filterFns } from 'sv-grid-community'
+import { filterFns } from 'sv-grid-core'
 
-declare module 'sv-grid-community' {
+declare module 'sv-grid-core' {
   interface FilterFnsRegistry {
     inListCSV: (value: unknown, query: string) => boolean
   }

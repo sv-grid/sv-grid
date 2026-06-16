@@ -22,13 +22,13 @@ flow. To add SvGrid to an **existing** app, install it directly:
 
 ```bash
 # pnpm (recommended)
-pnpm add sv-grid-community
+pnpm add sv-grid-core
 
 # npm
-npm install sv-grid-community
+npm install sv-grid-core
 
 # yarn
-yarn add sv-grid-community
+yarn add sv-grid-core
 ```
 
 ## Requirements
@@ -48,7 +48,7 @@ A 5-line smoke test:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-community'
+  import { SvGrid } from 'sv-grid-core'
   const rows = [{ name: 'Ada' }, { name: 'Linus' }]
   const columns = [{ field: 'name', header: 'Name' }]
 </script>

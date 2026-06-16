@@ -16,7 +16,7 @@ per column:
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnGroupingFeature,
     type ColumnDef,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Employee = {
     id: number; name: string; department: string;

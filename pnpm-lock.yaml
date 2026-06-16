@@ -63,7 +63,7 @@ importers:
       postcss:
         specifier: ^8.5.12
         version: 8.5.15
-      sv-grid-community:
+      sv-grid-core:
         specifier: workspace:*
         version: link:../packages/sv-grid-community
       sv-grid-pro:
@@ -135,7 +135,7 @@ importers:
       pdfmake:
         specifier: ^0.2.10
         version: 0.2.23
-      sv-grid-community:
+      sv-grid-core:
         specifier: workspace:*
         version: link:../sv-grid-community
       svelte:
@@ -150,7 +150,7 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.0.0
         version: 7.1.2(svelte@5.55.9)(vite@8.0.14(@types/node@22.19.19)(jiti@2.7.0))
-      sv-grid-community:
+      sv-grid-core:
         specifier: workspace:*
         version: link:../sv-grid-community
       svelte:
@@ -192,7 +192,7 @@ importers:
       postcss:
         specifier: ^8.5.12
         version: 8.5.15
-      sv-grid-community:
+      sv-grid-core:
         specifier: workspace:*
         version: link:../packages/sv-grid-community
       sv-grid-pro:

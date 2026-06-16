@@ -53,7 +53,7 @@ const svgridComponent: ApiSection = {
     'SvGrid is the batteries-included render component. It wires the headless engine to a complete DOM layer with row + column virtualization, an Excel-style filter menu, cell-range selection, inline editing, grouping, pinning, find-in-grid, undo/redo, and pagination.',
     'For most apps this is the only entry point you need. Reach for the headless core (createSvGrid) only when you need a custom layout that the render component cannot deliver.',
   ],
-  signature: `import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-community'
+  signature: `import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
 
 const features = tableFeatures({ rowSortingFeature })
 
@@ -396,7 +396,7 @@ function ratesUp() { rows.forEach(r => r.rate *= 1.1) } // BAD - mutates in plac
     rowSelectionFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-community'
+  } from 'sv-grid-core'
 
   type Employee = { id: number; name: string; team: string; salary: number }
 
@@ -599,7 +599,7 @@ const flexRenderSection: ApiSection = {
     'When you build a custom layout on top of the headless core, FlexRender bridges between the renderer set on a ColumnDef and the actual DOM. It handles every case: a string, a {#snippet} (via renderSnippet), a Svelte component (via renderComponent), a function returning one of those, or a raw value.',
     'You can pass the renderer explicitly with content + context, or use one of the cell / header / footer shorthands and let FlexRender pull the right renderer and context off the engine object for you.',
   ],
-  signature: `import { FlexRender } from 'sv-grid-community'
+  signature: `import { FlexRender } from 'sv-grid-core'
 
 <!-- Explicit form: -->
 {#each row.getAllCells() as cell (cell.id)}
@@ -706,7 +706,7 @@ const svgridChartSection: ApiSection = {
     'SvGridChart renders an interactive SVG chart with no charting dependency: stacked/grouped bars, lines, areas, pie/donut, scatter, and per-series combo. It supports a crosshair tooltip, a clickable legend that toggles series, optional data labels, and a click-to-drill callback.',
     'You give it a ChartSpec. The easiest way to build one from grid rows is rowsToChartSpec(), which aggregates a value field by a category (and optionally pivots into one series per value of a `series` field). For full control, build a ChartSpec by hand or with buildChart().',
   ],
-  signature: `import { SvGridChart, rowsToChartSpec } from 'sv-grid-community'
+  signature: `import { SvGridChart, rowsToChartSpec } from 'sv-grid-core'
 
 const spec = rowsToChartSpec(orders, {
   type: 'bar',
@@ -990,7 +990,7 @@ const columnDefSection: ApiSection = {
   ],
   example: {
     title: 'A column set covering most patterns',
-    code: `import { renderSnippet, type ColumnDef } from 'sv-grid-community'
+    code: `import { renderSnippet, type ColumnDef } from 'sv-grid-core'
 
 {#snippet StatusCell(props: { row: Order })}
   <span class={\`pill pill-\${props.row.status}\`}>{props.row.status}</span>
@@ -1191,7 +1191,7 @@ const coreTypesSection: ApiSection = {
     },
   ],
   notes: [
-    'These types are exported from sv-grid-community for annotation: Row, Cell, Column, CellContext, EditorContext, HeaderContext, HeaderGroup, Header, RowData, SortingState, Updater, SvGridInstance, SvGridOptions, TableFeatures, ColumnDefTemplate.',
+    'These types are exported from sv-grid-core for annotation: Row, Cell, Column, CellContext, EditorContext, HeaderContext, HeaderGroup, Header, RowData, SortingState, Updater, SvGridInstance, SvGridOptions, TableFeatures, ColumnDefTemplate.',
   ],
 }
 
@@ -1674,7 +1674,7 @@ api.setState(JSON.parse(localStorage.getItem('view') ?? '{}'))`,
   example: {
     title: 'Drive the grid from a parent toolbar',
     code: `<script lang="ts">
-  import type { SvGridApi } from 'sv-grid-community'
+  import type { SvGridApi } from 'sv-grid-core'
 
   let api = $state<SvGridApi<typeof features, Order> | null>(null)
 
@@ -1725,7 +1725,7 @@ const featureSection: ApiSection = {
   rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -1799,7 +1799,7 @@ const createSvGridSection: ApiSection = {
   createSortedRowModel,
   tableFeatures,
   rowSortingFeature,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const features = tableFeatures({ rowSortingFeature })
 
@@ -1874,7 +1874,7 @@ const rowModelsSection: ApiSection = {
   createGroupedRowModel,
   createExpandedRowModel,
   createPaginatedRowModel,
-} from 'sv-grid-community'
+} from 'sv-grid-core'
 
 const grid = createSvGrid({
   // ...
@@ -1940,7 +1940,7 @@ const virtualizationSection: ApiSection = {
   intro: [
     'When you use <SvGrid />, virtualization is automatic. For custom layouts on top of the headless core, the virtualizer factories expose the same engine.',
   ],
-  signature: `import { createSvelteVirtualizer, createColumnVirtualizer } from 'sv-grid-community'
+  signature: `import { createSvelteVirtualizer, createColumnVirtualizer } from 'sv-grid-core'
 
 const rowVirtualizer = createSvelteVirtualizer({
   count: () => grid.getRowModel().rows.length,
@@ -2010,7 +2010,7 @@ const a11ySection: ApiSection = {
   getGridCellA11yProps,
   getGridRowA11yProps,
   getGridCellDomId,
-} from 'sv-grid-community'`,
+} from 'sv-grid-core'`,
   props: [
     {
       name: 'getGridRootA11yProps',
@@ -2059,14 +2059,14 @@ const utilsSection: ApiSection = {
       name: 'filterFns',
       type: '{ includesString; equals }',
       description: 'The built-in filter predicates the engine uses. Reference them when configuring a custom filtered row model.',
-      example: `import { filterFns } from 'sv-grid-community'
+      example: `import { filterFns } from 'sv-grid-core'
 const ok = filterFns.includesString(row.customer, 'acme')`,
     },
     {
       name: 'sortFns',
       type: '{ auto; number; date }',
       description: 'The built-in comparator set (locale-aware string, numeric, date). Used by the sorted row model.',
-      example: `import { sortFns } from 'sv-grid-community'
+      example: `import { sortFns } from 'sv-grid-core'
 rows.sort((a, b) => sortFns.number(a.total, b.total))`,
     },
     {
@@ -2132,10 +2132,10 @@ const proOverviewSection: ApiSection = {
   title: 'installPro / ProGridApi',
   blurb: 'Augment the community api with export, print, import, pivot, and AI.',
   intro: [
-    'sv-grid-pro is a thin, opt-in layer on top of sv-grid-community. You keep the same <SvGrid /> component; you just wrap the api object from onApiReady with installPro() to unlock the enterprise methods.',
+    'sv-grid-pro is a thin, opt-in layer on top of sv-grid-core. You keep the same <SvGrid /> component; you just wrap the api object from onApiReady with installPro() to unlock the enterprise methods.',
     'installPro mutates and returns the same api object, so existing references keep working. Every Pro method is license soft-gated: unlicensed evaluation works fully but shows a small watermark and emits a one-time console nudge. Revoked or malformed keys throw on first use.',
   ],
-  signature: `import { SvGrid } from 'sv-grid-community'
+  signature: `import { SvGrid } from 'sv-grid-core'
 import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
 
 setLicenseKey(import.meta.env.VITE_SVGRID_LICENSE)   // once, at startup
@@ -2819,7 +2819,7 @@ const chartApiSection: ApiSection = {
   intro: [
     'A ChartSpec is the data model behind every chart: a default type, category labels, and one or more series. rowsToChartSpec() aggregates raw rows into a spec; buildChart() turns a spec into pure geometry (useful for tests or a custom renderer); niceScale() rounds an axis domain to friendly tick boundaries.',
   ],
-  signature: `import { rowsToChartSpec, SvGridChart } from 'sv-grid-community'
+  signature: `import { rowsToChartSpec, SvGridChart } from 'sv-grid-core'
 
 const spec = rowsToChartSpec(orders, {
   type: 'bar', category: 'region', value: 'total',
@@ -2851,7 +2851,7 @@ const spec = rowsToChartSpec(orders, {
       name: 'DEFAULT_PALETTE',
       type: 'string[]',
       description: 'The 8-color default series palette, used when a series has no explicit color.',
-      example: `import { DEFAULT_PALETTE } from 'sv-grid-community'`,
+      example: `import { DEFAULT_PALETTE } from 'sv-grid-core'`,
     },
     {
       name: 'ChartSpec',
@@ -2870,7 +2870,7 @@ const chartExportSection: ApiSection = {
   intro: [
     'These take the chart\'s rendered DOM (the <svg>, or a wrapping element) and produce a self-styled SVG string or a PNG. Styling that lives in CSS variables is inlined, so the exported file looks the same outside the app.',
   ],
-  signature: `import { downloadChartPng } from 'sv-grid-community'
+  signature: `import { downloadChartPng } from 'sv-grid-core'
 
 let chartEl: HTMLElement   // bind:this on the chart wrapper
 
@@ -2917,7 +2917,7 @@ const sparklineSection: ApiSection = {
   intro: [
     'Sparklines are headless: buildSparkline() returns paths + bar rects sized to your width/height, and you render the tiny SVG inside a cell snippet. toSparklineValues() coerces loose cell values (arrays or comma/space strings) into a clean number array first.',
   ],
-  signature: `import { buildSparkline, toSparklineValues, renderSnippet } from 'sv-grid-community'
+  signature: `import { buildSparkline, toSparklineValues, renderSnippet } from 'sv-grid-core'
 
 { field: 'history', header: 'Trend',
   cell: (ctx) => renderSnippet(Spark, { values: toSparklineValues(ctx.getValue()) }) }`,
@@ -2954,7 +2954,7 @@ const serverDataSourceSection: ApiSection = {
   intro: [
     'You implement a single getRows(request) that talks to your backend; createServerDataSource() owns the paging/sort/filter state, calls getRows, and pushes the result back through onChange. A monotonic request id guarantees a slow response for an old query can never clobber a newer one.',
   ],
-  signature: `import { createServerDataSource } from 'sv-grid-community'
+  signature: `import { createServerDataSource } from 'sv-grid-core'
 
 const controller = createServerDataSource(
   { getRows: async (req) => {
@@ -2997,7 +2997,7 @@ const namedViewsSection: ApiSection = {
   intro: [
     'A view manager over any host that exposes getState() / setState() - the SvGridApi satisfies it directly. Persist views in memory (default) or localStorage, or implement your own ViewStorage.',
   ],
-  signature: `import { createNamedViews, localStorageViews } from 'sv-grid-community'
+  signature: `import { createNamedViews, localStorageViews } from 'sv-grid-core'
 
 const views = createNamedViews(api, { storage: localStorageViews('orders-views') })
 views.save('EMEA at risk')   // capture current state
@@ -3031,7 +3031,7 @@ const collaborationSection: ApiSection = {
   intro: [
     'Share cursor positions and cell edits between users. createCollaboration() is transport-agnostic: ship the built-in broadcastChannelTransport() for cross-tab demos, or implement CollabTransport over your own WebSocket / WebRTC channel.',
   ],
-  signature: `import { createCollaboration, broadcastChannelTransport } from 'sv-grid-community'
+  signature: `import { createCollaboration, broadcastChannelTransport } from 'sv-grid-core'
 
 const collab = createCollaboration({
   user: { id, name: 'Ada', color: '#22c55e' },
@@ -3074,7 +3074,7 @@ const conditionalFormattingSection: ApiSection = {
   intro: [
     'The primitives behind conditional formatting. computeColumnStat() finds a column\'s numeric range once per render; resolveCellFormat() turns your format specs into a concrete { background, color, dataBar, icon, ... } for one cell. lerpColor() and contrastText() are the color helpers they use, exported for your own renderers.',
   ],
-  signature: `import { computeColumnStat, resolveCellFormat } from 'sv-grid-community'
+  signature: `import { computeColumnStat, resolveCellFormat } from 'sv-grid-core'
 
 const stat = computeColumnStat(rows.map((r) => r.score))
 const fmt = resolveCellFormat(value, row, 'score', [
