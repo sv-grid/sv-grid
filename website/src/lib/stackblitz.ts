@@ -43,14 +43,64 @@ function detectDependencies(source: string): Record<string, string> {
   return deps
 }
 
+// Raw sources of the shared helpers under examples/src/shared. Some demos
+// import these via `../shared/<name>`; since StackBlitz only receives the demo
+// file, we bundle the ones it actually references (transitively) alongside it.
+const SHARED_SOURCES = import.meta.glob('../../../examples/src/shared/**/*.{ts,svelte}', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+/** Resolve a bare shared name (e.g. 'seed', 'BadgeCell') to its glob key. */
+function sharedKeyFor(name: string): string | null {
+  for (const ext of ['.ts', '.svelte']) {
+    const suffix = `/shared/${name}${ext}`
+    const key = Object.keys(SHARED_SOURCES).find((k) => k.endsWith(suffix))
+    if (key) return key
+  }
+  return null
+}
+
+/**
+ * Walk a demo's `../shared/<name>` imports (and any same-dir `./` imports those
+ * shared files make) and return them as project files placed under `shared/`,
+ * so `../shared/<name>` resolves from `src/App.svelte`. `registry` is skipped -
+ * it imports every demo and is only used by the standalone gallery shell.
+ */
+function collectSharedFiles(source: string): { files: Record<string, string>; sources: string[] } {
+  const files: Record<string, string> = {}
+  const sources: string[] = []
+  const seen = new Set<string>()
+  const visit = (src: string) => {
+    const re = /from\s+['"](?:\.\.\/shared\/|\.\/)([A-Za-z0-9_.-]+)['"]/g
+    let m: RegExpExecArray | null
+    while ((m = re.exec(src)) !== null) {
+      const name = m[1]!.replace(/\.(ts|svelte)$/, '')
+      if (name === 'registry' || seen.has(name)) continue
+      const key = sharedKeyFor(name)
+      if (!key) continue
+      seen.add(name)
+      const content = SHARED_SOURCES[key]!
+      const ext = key.endsWith('.svelte') ? '.svelte' : '.ts'
+      files[`shared/${name}${ext}`] = content
+      sources.push(content)
+      visit(content)
+    }
+  }
+  visit(source)
+  return { files, sources }
+}
+
 function buildFiles(demo: Demo, source: string): Record<string, string> {
+  const shared = collectSharedFiles(source)
   const pkg = {
     name: `svgrid-${demo.id}`,
     private: true,
     version: '0.0.0',
     type: 'module',
-    scripts: { dev: 'vite', build: 'vite build', preview: 'vite preview' },
-    dependencies: detectDependencies(source),
+    scripts: { start: 'vite', dev: 'vite', build: 'vite build', preview: 'vite preview' },
+    dependencies: detectDependencies([source, ...shared.sources].join('\n')),
     devDependencies: {
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       svelte: '^5.55.5',
@@ -110,6 +160,7 @@ export default { preprocess: vitePreprocess() }
   )
 
   return {
+    ...shared.files,
     'package.json': JSON.stringify(pkg, null, 2),
     'index.html': indexHtml,
     'vite.config.js': viteConfig,
@@ -336,7 +387,7 @@ function buildSnippetFiles(snippet: ApiSnippet): Record<string, string> {
     private: true,
     version: '0.0.0',
     type: 'module',
-    scripts: { dev: 'vite', build: 'vite build', preview: 'vite preview' },
+    scripts: { start: 'vite', dev: 'vite', build: 'vite build', preview: 'vite preview' },
     dependencies: detectDependencies(source),
     devDependencies: {
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
