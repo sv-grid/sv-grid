@@ -1,7 +1,7 @@
 import type { Component } from 'svelte'
 
 // Demos live in the examples package (aliased to @demos in vite.config.ts) and
-// only import from `sv-grid-core` / `sv-grid-pro`. They are loaded LAZILY:
+// only import from `@svgrid/grid` / `@svgrid/enterprise`. They are loaded LAZILY:
 // each demo - plus the grid library it pulls in - becomes its own chunk that is
 // fetched only when that demo is opened. This keeps the homepage and every
 // other route from bundling all 140 examples (and the whole grid) up front.
@@ -45,7 +45,7 @@ function loadSourceFor(id: string): () => Promise<string> {
  * past 60 unrelated demos. Mirrors examples/src/shared/registry.ts so the
  * standalone gallery and the website nav stay in lockstep.
  *
- * Every Pro demo lives under the single 'Pro' lane and carries an
+ * Every Enterprise demo lives under the single 'Enterprise' lane and carries an
  * explicit `pro: true` flag the sidebar draws as a small badge dot.
  */
 export type DemoCategory =
@@ -66,7 +66,7 @@ export type DemoCategory =
   | 'Mobile & Responsive'
   | 'Integrations'
   | 'Industry Templates'
-  | 'Pro'
+  | 'Enterprise'
 
 export const CATEGORY_ORDER: DemoCategory[] = [
   'Getting Started',
@@ -86,7 +86,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Mobile & Responsive',
   'Integrations',
   'Industry Templates',
-  'Pro',
+  'Enterprise',
 ]
 
 export type Demo = {
@@ -94,8 +94,8 @@ export type Demo = {
   title: string
   blurb: string
   category: DemoCategory
-  /** True when this demo depends on sv-grid-pro. Sidebar renders a small
-   *  badge dot so users can scan the Pro features at a glance. */
+  /** True when this demo depends on @svgrid/enterprise. Sidebar renders a small
+   *  badge dot so users can scan the Enterprise features at a glance. */
   pro?: boolean
   /** Lazily import the demo's Svelte component (resolves a per-demo chunk). */
   load: () => Promise<{ default: Component<any> }>
@@ -118,7 +118,7 @@ export const demos: Demo[] = [
   demo('00-trading-desk',           'Trading desk - live',         '10,000 securities ticking on a 500 ms feed. Pinned Symbol + P&L, sparklines, sector chips, KPI strip. The hero.', 'Getting Started'),
   demo('01-quick-start',            'Quick start',                 'A realistic 25-row × 9-column grid with sort, filter, selection, inline editing, and column resize all enabled.', 'Getting Started'),
   demo('135-shortcut-config',       'Shortcut config',             'Capabilities are off by default - opt into sort / filter / edit / group / paging with one boolean shortcut each. No `features` array, no fine-grained props. Toggle the switches to build the config live.', 'Getting Started'),
-  demo('22-admin-template',         'Admin template',              'Self-contained admin app: sidebar + three pages (Dashboard, Orders w/ Pro export bar, Customers w/ inline edit). Read end-to-end in one file.', 'Getting Started'),
+  demo('22-admin-template',         'Admin template',              'Self-contained admin app: sidebar + three pages (Dashboard, Orders w/ Enterprise export bar, Customers w/ inline edit). Read end-to-end in one file.', 'Getting Started'),
   demo('06-large-dataset',          '100k rows × 100 columns',     'Row + column virtualization. Chunked load with progress + cancellation.', 'Getting Started'),
   demo('78-million-rows',           '1 million rows',              'A literal 1,000,000-row dataset with sort, filter, group, scroll, and inline edit all on. Chunked generation with progress.', 'Getting Started'),
   demo('80-cell-types-showcase',    'Cell types showcase',         'Every editor in one grid: color picker, date picker, 5-star rating, mood feedback, list/chips, number formatting, status badge.', 'Getting Started'),
@@ -264,12 +264,12 @@ export const demos: Demo[] = [
   demo('50-seller-panel',           'Seller panel - e-commerce',   'Marketplace dashboard: catalog with SVG thumbnails, inventory bars vs reorder threshold, live orders pipeline, pricing rules - four tabs over one product list.', 'Industry Templates'),
   demo('76-kanban-board',           'Kanban board',                'Four-lane Kanban (Backlog / In progress / Review / Done). Each lane is a separate SvGrid bound to the same $state array - HTML5 drag-and-drop rewrites status.', 'Industry Templates'),
 
-  // ----- Pro (commercial features in sv-grid-pro)
-  demo('53-excel-import',             'Excel / CSV import',             'File picker + column mapping + per-row validation preview before commit. Reads xlsx / csv / tsv / json with format auto-detect.', 'Pro', { pro: true }),
-  demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Pro', { pro: true }),
-  demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'Pro', { pro: true }),
-  demo('75-ai-smart-paste',           'AI Smart Paste',                 'Paste CSV / TSV / free-form text - the assistant parses it into typed rows with a preview panel. Swap mockAssistant for your LLM endpoint and ship.', 'Pro', { pro: true }),
-  demo('92-nl-filter-bar',            'NL filter bar (AI)',             'Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFilter / setSort / topN calls. Demo ships a rule-based fallback so you can evaluate without a key; production wiring needs an AI Platform key.', 'Pro', { pro: true }),
+  // ----- Enterprise (commercial features in @svgrid/enterprise)
+  demo('53-excel-import',             'Excel / CSV import',             'File picker + column mapping + per-row validation preview before commit. Reads xlsx / csv / tsv / json with format auto-detect.', 'Enterprise', { pro: true }),
+  demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Enterprise', { pro: true }),
+  demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'Enterprise', { pro: true }),
+  demo('75-ai-smart-paste',           'AI Smart Paste',                 'Paste CSV / TSV / free-form text - the assistant parses it into typed rows with a preview panel. Swap mockAssistant for your LLM endpoint and ship.', 'Enterprise', { pro: true }),
+  demo('92-nl-filter-bar',            'NL filter bar (AI)',             'Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFilter / setSort / topN calls. Demo ships a rule-based fallback so you can evaluate without a key; production wiring needs an AI Platform key.', 'Enterprise', { pro: true }),
 
   // ----- New enterprise features
   demo('96-high-contrast-theme',      'High-contrast theme',            'WCAG 2.2 AAA-grade preset for accessibility procurement. Token block opts a subtree into the high-contrast skin while the rest of the page stays standard. Light + dark.', 'Themes & Styling'),
@@ -278,26 +278,26 @@ export const demos: Demo[] = [
   demo('120-test-systems-monitor',    'Test systems monitor (live ops)','Operations console for a fleet of connected test & measurement systems: live status, utilization sparklines, temperature, alarms, firmware, and calibration with stable row identity (getRowId). Select systems for bulk actions (acknowledge alarms, schedule calibration), group by site, KPI strip, search + filters, and master-detail with live instrument tags. Virtualized to fleet scale.', 'Industry Templates'),
   demo('91-cell-comments',            'Cell comments + @-mentions',     'Right-click any cell to start a thread. Type @ inside the editor to mention a teammate (fuzzy picker, chip insertion). Comment indicator triangle, resolve-thread action, mention count.', 'Rows & Cells'),
 
-  // ----- Pro: Pivot cluster
-  demo('52-pivot-table',              'Pivot table + Designer',         'Drag-and-drop Pivot Designer with Filters / Rows / Columns / Values zones, multi-level column headers, subtotal + grand-total rows, row-header sort menu.', 'Pro', { pro: true }),
-  demo('60-pivot-expandable',         'Pivot - Sales pipeline',         'Polished pivot view: KPI strip, region/sales-person rows, quarter columns, two measures, expand-all/collapse-all toolbar, heatmap tinting.', 'Pro', { pro: true }),
-  demo('121-pivot-conditional-cells', 'Pivot - Conditional cells',      'Function-valued cell and header templates on top of createPivotModel: traffic-light revenue pills, target chips, units data-bars, measure icons in headers, region color dots in row labels.', 'Pro', { pro: true }),
-  demo('122-pivot-drill-through',     'Pivot - Drill-through',          'Click any pivot value cell - leaf, subtotal, or grand total - and the right rail opens with the source facts behind the aggregate. Total + count + average always match the cell.', 'Pro', { pro: true }),
-  demo('123-pivot-totals',            'Pivot - Totals + Subtotals',     'Live toggles for grandTotalRow / grandTotalCol / rowSubtotals on createPivotModel. Subtotals get a Σ badge, the grand-total row is tinted accent, the grand-total column is an amber stripe.', 'Pro', { pro: true }),
-  demo('124-pivot-olap',              'Pivot - OLAP cube (BI shell)',   'Full BI dashboard around an OLAP cube: page header, 5 KPI tiles with QoQ sparklines, left slicer rail (region multi-select, year picker, country search, view-mode, density, heatmap toggle), cube in Tabular form (one column per row dim), right insights rail (top YoY movers, top contributors).', 'Pro', { pro: true }),
-  demo('125-pivot-charts',            'Pivot + linked charts',          'Pivot cube wired to a horizontal bar chart + multi-year line chart. Click any cube row to drill the charts one level deeper (region → country → product); scope KPI strip tracks selection; charts are zero-dep inline SVG.', 'Pro', { pro: true }),
+  // ----- Enterprise: Pivot cluster
+  demo('52-pivot-table',              'Pivot table + Designer',         'Drag-and-drop Pivot Designer with Filters / Rows / Columns / Values zones, multi-level column headers, subtotal + grand-total rows, row-header sort menu.', 'Enterprise', { pro: true }),
+  demo('60-pivot-expandable',         'Pivot - Sales pipeline',         'Polished pivot view: KPI strip, region/sales-person rows, quarter columns, two measures, expand-all/collapse-all toolbar, heatmap tinting.', 'Enterprise', { pro: true }),
+  demo('121-pivot-conditional-cells', 'Pivot - Conditional cells',      'Function-valued cell and header templates on top of createPivotModel: traffic-light revenue pills, target chips, units data-bars, measure icons in headers, region color dots in row labels.', 'Enterprise', { pro: true }),
+  demo('122-pivot-drill-through',     'Pivot - Drill-through',          'Click any pivot value cell - leaf, subtotal, or grand total - and the right rail opens with the source facts behind the aggregate. Total + count + average always match the cell.', 'Enterprise', { pro: true }),
+  demo('123-pivot-totals',            'Pivot - Totals + Subtotals',     'Live toggles for grandTotalRow / grandTotalCol / rowSubtotals on createPivotModel. Subtotals get a Σ badge, the grand-total row is tinted accent, the grand-total column is an amber stripe.', 'Enterprise', { pro: true }),
+  demo('124-pivot-olap',              'Pivot - OLAP cube (BI shell)',   'Full BI dashboard around an OLAP cube: page header, 5 KPI tiles with QoQ sparklines, left slicer rail (region multi-select, year picker, country search, view-mode, density, heatmap toggle), cube in Tabular form (one column per row dim), right insights rail (top YoY movers, top contributors).', 'Enterprise', { pro: true }),
+  demo('125-pivot-charts',            'Pivot + linked charts',          'Pivot cube wired to a horizontal bar chart + multi-year line chart. Click any cube row to drill the charts one level deeper (region → country → product); scope KPI strip tracks selection; charts are zero-dep inline SVG.', 'Enterprise', { pro: true }),
 
-  // ----- Pro: Export cluster (kept together at the very bottom)
-  demo('21-export-and-print',         'Export + Print',                 'Pro feature pack: download to Excel, PDF, CSV, TSV, HTML, or open a printable view in a new window.', 'Pro', { pro: true }),
-  demo('56-export-theme-matched',     'Export - Theme-matched',         'One xlsx, light or dark - styles read from the same --sg-* tokens the grid renders with.', 'Pro', { pro: true }),
-  demo('57-export-header-footer-logo','Export - Header + Footer + Logo','Branded xlsx: PNG logo + title + subtitle in the page header, generated date + page numbers in the footer.', 'Pro', { pro: true }),
-  demo('58-export-with-images',       'Export - Cell images',           'Product grid with thumbnail column. On xlsx export each thumbnail is embedded as a real picture cell.', 'Pro', { pro: true }),
-  demo('59-export-multi-sheet',       'Export - Multiple sheets',       'One xlsx with 5 tabs - All orders + per-region splits - independent of the current grid filter.', 'Pro', { pro: true }),
-  demo('119-workbook-multi-sheet',    'Workbook - multi-sheet + formulas','A real spreadsheet: A/B/C columns + many rows you can grow on demand, cross-sheet formulas (=SUM, =VLOOKUP, nested IF) recalculating live, cell + conditional formatting, validation dropdowns, an inline chart, a calendar/scheduler sheet, open .xlsx/.csv, and export every sheet to one multi-tab .xlsx.', 'Pro', { pro: true }),
-  demo('93-password-protected-export','Password-protected export',      'PBKDF2 (100k iters) + AES-GCM 256 client-side. Strength meter, encrypt + download, in-page decrypt tool to verify the round-trip. Pro pack maps to ECMA-376 Agile encryption.', 'Pro', { pro: true }),
-  demo('101-formulas-in-xlsx',        'Formulas preserved in xlsx',     'Builds a real OOXML workbook in the browser via JSZip; computed columns export as <f>...</f> formula cells. Open in Excel and the math recomputes when you edit a number.', 'Pro', { pro: true }),
-  demo('126-export-grouped-grid',     'Export grouped grid to Excel',   'A flat sales grid (Region → Country) exported via api.exportData({ format: "xlsx", groupBy }) which uses Smart\'s NATIVE Excel row outline grouping. Opens in Excel with +/- buttons in the row header gutter for every group level.', 'Pro', { pro: true }),
-  demo('127-export-pivot-grid',       'Export pivot grid to Excel',     'createPivotModel leaves projected into an xlsx via api.exportData with groupBy: ["region"] - each region becomes an Excel outline group. Engine column ids ("pv__Q1__m0") translate to readable headers ("Q1 · Revenue").', 'Pro', { pro: true }),
+  // ----- Enterprise: Export cluster (kept together at the very bottom)
+  demo('21-export-and-print',         'Export + Print',                 'Enterprise feature pack: download to Excel, PDF, CSV, TSV, HTML, or open a printable view in a new window.', 'Enterprise', { pro: true }),
+  demo('56-export-theme-matched',     'Export - Theme-matched',         'One xlsx, light or dark - styles read from the same --sg-* tokens the grid renders with.', 'Enterprise', { pro: true }),
+  demo('57-export-header-footer-logo','Export - Header + Footer + Logo','Branded xlsx: PNG logo + title + subtitle in the page header, generated date + page numbers in the footer.', 'Enterprise', { pro: true }),
+  demo('58-export-with-images',       'Export - Cell images',           'Product grid with thumbnail column. On xlsx export each thumbnail is embedded as a real picture cell.', 'Enterprise', { pro: true }),
+  demo('59-export-multi-sheet',       'Export - Multiple sheets',       'One xlsx with 5 tabs - All orders + per-region splits - independent of the current grid filter.', 'Enterprise', { pro: true }),
+  demo('119-workbook-multi-sheet',    'Workbook - multi-sheet + formulas','A real spreadsheet: A/B/C columns + many rows you can grow on demand, cross-sheet formulas (=SUM, =VLOOKUP, nested IF) recalculating live, cell + conditional formatting, validation dropdowns, an inline chart, a calendar/scheduler sheet, open .xlsx/.csv, and export every sheet to one multi-tab .xlsx.', 'Enterprise', { pro: true }),
+  demo('93-password-protected-export','Password-protected export',      'PBKDF2 (100k iters) + AES-GCM 256 client-side. Strength meter, encrypt + download, in-page decrypt tool to verify the round-trip. Enterprise pack maps to ECMA-376 Agile encryption.', 'Enterprise', { pro: true }),
+  demo('101-formulas-in-xlsx',        'Formulas preserved in xlsx',     'Builds a real OOXML workbook in the browser via JSZip; computed columns export as <f>...</f> formula cells. Open in Excel and the math recomputes when you edit a number.', 'Enterprise', { pro: true }),
+  demo('126-export-grouped-grid',     'Export grouped grid to Excel',   'A flat sales grid (Region → Country) exported via api.exportData({ format: "xlsx", groupBy }) which uses Smart\'s NATIVE Excel row outline grouping. Opens in Excel with +/- buttons in the row header gutter for every group level.', 'Enterprise', { pro: true }),
+  demo('127-export-pivot-grid',       'Export pivot grid to Excel',     'createPivotModel leaves projected into an xlsx via api.exportData with groupBy: ["region"] - each region becomes an Excel outline group. Engine column ids ("pv__Q1__m0") translate to readable headers ("Q1 · Revenue").', 'Enterprise', { pro: true }),
 
 ]
 

@@ -2,11 +2,11 @@
   /**
    * 21. Export + Print (Pro)
    * ------------------------
-   * Demonstrates the sv-grid-pro feature pack: download the visible grid to
+   * Demonstrates the @svgrid/enterprise feature pack: download the visible grid to
    * Excel, PDF, CSV, TSV, or HTML, and open a printable view in a new window.
    *
-   * The grid itself is plain sv-grid-core. Pro is installed via
-   * installPro(api) which adds api.exportData(...) and api.print(...) onto
+   * The grid itself is plain @svgrid/grid. Pro is installed via
+   * installEnterprise(api) which adds api.exportData(...) and api.print(...) onto
    * the same SvGridApi object you already have.
    */
   import {
@@ -17,23 +17,23 @@
     rowSelectionFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
-    installPro,
+    installEnterprise,
     setLicenseKey,
     clearLicenseKey,
     dismissUnlicensedNudge,
-    type ProGridApi,
-  } from 'sv-grid-pro'
+    type EnterpriseGridApi,
+  } from '@svgrid/enterprise'
   import { makeOrders, type Order } from '../shared/seed'
 
-  // Development license. In production, customers set their own SVPRO-...
+  // Development license. In production, customers set their own SVENTERPRISE-...
   // key once at app startup (e.g. in main.ts). Toggle below to see the
   // unlicensed soft-gate (watermark in the grid + console.log nudge).
   let licensed = $state(true)
   $effect(() => {
     if (licensed) {
-      setLicenseKey('SVPRO-DEV-LOCAL')
+      setLicenseKey('SVENTERPRISE-DEV-LOCAL')
       dismissUnlicensedNudge()
     } else {
       clearLicenseKey()
@@ -47,7 +47,7 @@
   })
 
   let rows = $state<Order[]>(makeOrders(120))
-  let api = $state<ProGridApi<typeof features, Order> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Order> | null>(null)
   let lastAction = $state<string>('')
   let busy = $state<string | null>(null)
   let errorMsg = $state<string | null>(null)
@@ -79,7 +79,7 @@
   ]
 
   function onReady(next: SvGridApi<typeof features, Order>) {
-    api = installPro(next)
+    api = installEnterprise(next)
   }
 
   async function run(label: string, fn: () => Promise<void>) {
@@ -188,7 +188,7 @@
 
   <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
     Pro feature - gated by <code>setLicenseKey()</code>. Without a valid key
-    (prefix <code>SVPRO-</code>), the feature still runs but the grid shows
+    (prefix <code>SVENTERPRISE-</code>), the feature still runs but the grid shows
     a watermark linking to jqwidgets.com. Revoked or malformed keys throw.
   </footer>
 </section>

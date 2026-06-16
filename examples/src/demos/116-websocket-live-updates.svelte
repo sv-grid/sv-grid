@@ -29,7 +29,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Status = 'placed' | 'paid' | 'picking' | 'shipped' | 'delivered' | 'cancelled'
   type Order = {

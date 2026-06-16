@@ -10,8 +10,8 @@ matters.
 ```json
 {
   "dependencies": {
-    "sv-grid-core": "1.0.0",
-    "sv-grid-pro":       "1.0.0"
+    "@svgrid/grid": "1.0.0",
+    "@svgrid/enterprise":       "1.0.0"
   }
 }
 ```
@@ -35,9 +35,9 @@ filters, inline editing, grouping, tree, master/detail, and accessibility are
 all in that one import. For a smaller footprint, use the headless core and
 render your own markup, registering only the features you need.
 
-Pro adds per feature you import:
+Enterprise adds per feature you import:
 
-| Pro module          | Approx KB | Peer deps                       |
+| Enterprise module          | Approx KB | Peer deps                       |
 | ------------------- | --------- | ------------------------------- |
 | `exportGrid` (csv/tsv/html) | ~6 KB    | -                          |
 | + xlsx               | ~6 KB    | `jszip` (loaded on first xlsx call) |
@@ -49,8 +49,8 @@ Pro adds per feature you import:
 Use the **subpath imports** to avoid pulling features you don't use:
 
 ```ts
-import { exportGrid }      from 'sv-grid-pro/export'    // export only
-import { createPivotModel } from 'sv-grid-pro/pivot'    // pivot only
+import { exportGrid }      from '@svgrid/enterprise/export'    // export only
+import { createPivotModel } from '@svgrid/enterprise/pivot'    // pivot only
 ```
 
 ## 3. Peer dependencies
@@ -65,24 +65,24 @@ Both `jszip` and `pdfmake` are dynamic imports - the bundle splits and
 loads them on the first call. Nothing ships in your initial chunk until
 the user actually clicks "Export to xlsx".
 
-## 4. Lazy-load Pro at route boundaries
+## 4. Lazy-load Enterprise at route boundaries
 
-If only one route in your app needs export, gate `installPro` behind a
-dynamic import so the rest of the app doesn't ship the Pro bundle:
+If only one route in your app needs export, gate `installEnterprise` behind a
+dynamic import so the rest of the app doesn't ship the Enterprise bundle:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-core'
-  import type { ProGridApi } from 'sv-grid-pro'
+  import type { SvGridApi } from '@svgrid/grid'
+  import type { EnterpriseGridApi } from '@svgrid/enterprise'
 
   let api = $state<SvGridApi<typeof features, Order> | null>(null)
-  let pro = $state<ProGridApi<typeof features, Order> | null>(null)
+  let pro = $state<EnterpriseGridApi<typeof features, Order> | null>(null)
 
   async function enablePro() {
     if (!api) return
-    const { installPro, setLicenseKey } = await import('sv-grid-pro')
+    const { installEnterprise, setLicenseKey } = await import('@svgrid/enterprise')
     setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
-    pro = installPro(api)
+    pro = installEnterprise(api)
   }
 </script>
 
@@ -94,18 +94,18 @@ dynamic import so the rest of the app doesn't ship the Pro bundle:
 {/if}
 ```
 
-## 5. License the Pro pack
+## 5. License the Enterprise pack
 
 ```ts
 // main.ts (or +layout.svelte for SvelteKit)
-import { setLicenseKey } from 'sv-grid-pro'
+import { setLicenseKey } from '@svgrid/enterprise'
 
 if (import.meta.env.VITE_SVPRO_KEY) {
   setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
 }
 ```
 
-Pro is **soft-gated** - it works unlicensed, but renders a small
+Enterprise is **soft-gated** - it works unlicensed, but renders a small
 watermark + a one-time console nudge. Set the key once at app
 startup; both disappear.
 
@@ -134,7 +134,7 @@ Content-Security-Policy:
 ```
 
 No `'unsafe-eval'`, no `'unsafe-inline'` on `script-src`. SvGrid
-Community + Pro run clean under this policy. [Demo 16](../../examples/src/demos/16-csp-compliant.svelte)
+Community + Enterprise run clean under this policy. [Demo 16](../../examples/src/demos/16-csp-compliant.svelte)
 includes a runtime self-check.
 
 If you ship in an iframe (embedded analytics, dashboards), add
@@ -155,7 +155,7 @@ export async function load() {
 ```svelte
 <!-- +page.svelte -->
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
   let { data } = $props()
   const features = tableFeatures({ rowSortingFeature })
 </script>
@@ -174,7 +174,7 @@ Targets that have held up in production:
 
 | Surface                            | Target               | What you do if you miss it                                       |
 | ---------------------------------- | -------------------- | ---------------------------------------------------------------- |
-| Time to first row visible          | < 200 ms             | Lazy-load Pro. Defer non-critical columns. Smaller initial page. |
+| Time to first row visible          | < 200 ms             | Lazy-load Enterprise. Defer non-critical columns. Smaller initial page. |
 | Scroll FPS (10k rows, virtualized) | 60 FPS               | Cap `overscan`. Avoid `cell` render functions that allocate per render. |
 | Sort over 100k rows                | < 60 ms              | Set `editorType` on numeric / date columns so `sortFns.number` / `sortFns.date` get used instead of `sortFns.auto`. |
 | Filter input → re-render           | < 30 ms              | Debounce server-side filters; the local filter UI is already ≤ 16 ms for 10k rows. |
@@ -222,7 +222,7 @@ function track(event: string, payload: object) {
 ## See also
 
 - [Why headless?](../why-headless.md) - the architectural decision
-  behind Community + Pro.
+  behind Community + Enterprise.
 - [API stability](./api-stability.md) - the semver promise and what
   it covers.
 - [Security](./security.md) - peer-dep table, SBOM, vulnerability

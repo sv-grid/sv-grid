@@ -50,7 +50,7 @@ That is the moment a styled `<Table>` stops paying for itself.
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-core'
++   } from '@svgrid/grid'
 +
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [

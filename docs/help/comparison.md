@@ -8,7 +8,7 @@ on your stack, your budget, and which constraints bite hardest.
 
 | Project              | Lives in                                 | Ships                                   | Bundle (typical) | License            |
 | -------------------- | ---------------------------------------- | --------------------------------------- | ---------------- | ------------------ |
-| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Pro pack | ~7.5 KB headless / ~42 KB full (gzip) | MIT (Community) / commercial (Pro) |
+| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~7.5 KB headless / ~42 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
 | **AG Grid Community**| React, Angular, Vue, plain JS            | Full grid + renderer                    | ~340 KB                                   | MIT                                |
 | **AG Grid Enterprise**| same                                    | Adds pivot, integrated charts, server-side row model, more | ~600 KB+ | Commercial                         |
 | **TanStack Table**   | React, Vue, Svelte, Solid, Qwik, Lit, JS | Headless engine **only**                | ~12-14 KB                                 | MIT                                |
@@ -41,7 +41,7 @@ on your stack, your budget, and which constraints bite hardest.
   Excel-native pivot UI (Enterprise), server-side row model
   (Enterprise).
 - You need **enterprise commercial support** with SLAs. AG sells it;
-  SvGrid Pro support is best-effort.
+  SvGrid Enterprise support is best-effort.
 
 ## When TanStack Table is the right choice
 
@@ -56,7 +56,7 @@ on your stack, your budget, and which constraints bite hardest.
 
 ## Feature parity at a glance
 
-|                                 | SvGrid Community | SvGrid Pro | AG Grid Community | AG Grid Enterprise | TanStack Table |
+|                                 | SvGrid Community | SvGrid Enterprise | AG Grid Community | AG Grid Enterprise | TanStack Table |
 | ------------------------------- | ---------------- | ---------- | ----------------- | ------------------ | -------------- |
 | Headless core (engine only)     | ✓                | ✓          | -                 | -                  | ✓              |
 | Default render component        | ✓ (Svelte 5)     | ✓          | ✓ (each FW)       | ✓                  | -              |
@@ -89,7 +89,7 @@ on your stack, your budget, and which constraints bite hardest.
 Measured gzipped, with Svelte treated as a peer dependency and excluded
 (the bundlephobia convention):
 
-| sv-grid-core path                          | Gzipped | Minified |
+| @svgrid/grid path                          | Gzipped | Minified |
 | ----------------------------------------------- | ------- | -------- |
 | Headless core (`createSvGrid` + a row model)    | ~7.5 KB | ~35 KB   |
 | Full `<SvGrid>` render component                | ~42 KB  | ~189 KB  |
@@ -98,7 +98,7 @@ The full render component is the whole grid - virtualization, Excel-style
 filters, inline editing, grouping, tree, master/detail, and accessibility -
 in one import. For reference, the headless core is lighter than TanStack
 Table's headless engine (~12-14 KB), and the render component is a fraction
-of AG Grid Community (commonly cited around 340 KB minified). `sv-grid-pro`
+of AG Grid Community (commonly cited around 340 KB minified). `@svgrid/enterprise`
 features are separate subpath imports that lazy-load, so they add nothing to
 your initial bundle until used.
 
@@ -117,7 +117,7 @@ TanStack Table's React adapter in 90% of cases. The big differences:
 - Replace `useReactTable(opts)` with `createSvGrid(opts)`. Identical
   state machine.
 - Replace `getCoreRowModel()` calls with the same name from
-  `sv-grid-core`.
+  `@svgrid/grid`.
 - The render layer changes - TanStack hands you `flexRender` + the
   row model; SvGrid lets you keep that headless approach OR drop in
   the default `<SvGrid>` component.
@@ -125,7 +125,7 @@ TanStack Table's React adapter in 90% of cases. The big differences:
 ## Pricing
 
 SvGrid Community is MIT - free for commercial use, no attribution
-required at runtime. SvGrid Pro is a paid license; see
+required at runtime. SvGrid Enterprise is a paid license; see
 <https://sv-grid.dev/pricing> for per-seat / per-app / multi-app tiers.
 
 AG Grid Community is MIT. AG Grid Enterprise pricing is on
@@ -140,7 +140,7 @@ TanStack Table is MIT.
   SvGrid's two-layer architecture.
 - [Migrating from AG Grid](./migrating-from-ag-grid.md) - the
   practical recipe.
-- [Pro feature pack](../pro/README.md) - what SvGrid charges for.
+- [Enterprise feature pack](../enterprise/README.md) - what SvGrid charges for.
 - [Missing features](./missing-features.md) - the honest gap list
   versus AG Grid Enterprise.
 
@@ -158,7 +158,7 @@ bridge into Svelte 5.
 
 Yes, for Svelte projects. SvGrid ships a much smaller bundle (~42 KB gzipped
 for the full render component, ~7.5 KB headless) than AG Grid Community, is
-MIT-licensed for commercial use, and offers `sv-grid-pro` for
+MIT-licensed for commercial use, and offers `@svgrid/enterprise` for
 export/pivot/import at a per-developer price instead of AG Grid Enterprise's
 per-deployment licensing. It does not yet match every AG Grid Enterprise
 feature - see the missing-features list for the honest gaps.
@@ -174,5 +174,5 @@ virtualization, and editing UI yourself. Both are MIT-licensed.
 
 Measured gzipped (Svelte excluded as a peer dependency): ~7.5 KB for the
 headless core and ~42 KB for the full `<SvGrid>` render component (~189 KB
-minified). Pro features are separate, lazy-loaded subpath imports, so you ship
+minified). Enterprise features are separate, lazy-loaded subpath imports, so you ship
 only what you import.

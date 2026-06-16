@@ -38,7 +38,7 @@ If you absolutely need it, use the lower-level headless virtualizer and roll
 your own row layout:
 
 ```ts
-import { createSvelteVirtualizer } from 'sv-grid-core'
+import { createSvelteVirtualizer } from '@svgrid/grid'
 
 const virtualizer = createSvelteVirtualizer({
   count: () => rows.length,
@@ -48,7 +48,7 @@ const virtualizer = createSvelteVirtualizer({
 })
 ```
 
-See [`packages/sv-grid-core/src/virtualization/`](../../../packages/sv-grid-core/src/virtualization/).
+See [`packages/grid/src/virtualization/`](../../../packages/grid/src/virtualization/).
 
 ## Header height
 

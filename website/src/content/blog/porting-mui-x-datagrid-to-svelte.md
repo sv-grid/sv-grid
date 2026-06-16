@@ -22,7 +22,7 @@ Teams adopting Svelte often have React screens built on MUI X DataGrid. Porting 
 | `editable` + `renderEditCell` | `editorType` |
 | `sortingMode="server"` etc. | external mode |
 | `paginationModel` state | `onPaginationChange` + `pageSize` |
-| DataGridPro/Premium (pivot, export) | sv-grid-pro |
+| DataGridPro/Premium (pivot, export) | @svgrid/enterprise |
 
 ## Columns
 
@@ -56,9 +56,9 @@ MUI's `renderCell` returns JSX; SvGrid's `cell` returns a Svelte snippet via `re
 
 React state (`useState`, `useMemo`) becomes Svelte runes (`$state`, `$derived`). The server-side modes (`sortingMode`, `filterMode`, `paginationMode` set to `"server"`) become SvGrid's external mode with callbacks and a total `rowCount`.
 
-## Pro features
+## Enterprise features
 
-MUI X Pro/Premium features like pivoting and Excel export map to [sv-grid-pro](/pricing); the free tier covers sorting, filtering, grouping, virtualization, and editing.
+MUI X Pro/Premium features like pivoting and Excel export map to [@svgrid/enterprise](/pricing); the free tier covers sorting, filtering, grouping, virtualization, and editing.
 
 ## Frequently asked questions
 
@@ -68,4 +68,4 @@ Map `rows` to `data`, `GridColDef` to `ColumnDef` (`headerName` to `header`, `va
 
 ### Is there a Svelte equivalent of DataGridPro features?
 
-Yes - sv-grid-pro provides pivot tables, export/import, and more, while the MIT core covers the standard DataGrid feature set.
+Yes - @svgrid/enterprise provides pivot tables, export/import, and more, while the MIT core covers the standard DataGrid feature set.

@@ -25,7 +25,7 @@ Two grids with the same headline KB can differ severalfold in what they add to a
 SvGrid is built so you pay for what you use:
 
 - **Tree-shakeable, feature-gated core.** You register only the features you need (`rowSortingFeature`, `columnFilteringFeature`, ...); each is roughly 1-2 KB gzipped. A read-only grid does not ship the editing or grouping code.
-- **Lazy-loaded Pro extras.** Export and import load their dependencies only when triggered, so a grid that never exports never pays for the export code.
+- **Lazy-loaded Enterprise extras.** Export and import load their dependencies only when triggered, so a grid that never exports never pays for the export code.
 - **MIT core, no heavy deps** in the community package.
 
 This means the right comparison is not "library A vs library B headline size" but "what does each add to *my* build with *my* feature set?"
@@ -52,4 +52,4 @@ Measure the real delta: build your app without the grid, then with the grid and 
 
 ### Does SvGrid add a lot to my bundle?
 
-It is designed to be tree-shakeable and feature-gated - you ship only the features you register (each roughly 1-2 KB gzipped), and Pro extras like export lazy-load on use. Measure the delta with your feature set for the exact number.
+It is designed to be tree-shakeable and feature-gated - you ship only the features you register (each roughly 1-2 KB gzipped), and Enterprise extras like export lazy-load on use. Measure the delta with your feature set for the exact number.

@@ -4,7 +4,7 @@
   "title": "SvGridProps",
   "description": "Props on the `<SvGrid>` Svelte component plus headless `createSvGrid` options.",
   "type": "object",
-  "$comment": "Mirrors packages/sv-grid-core/src/SvGrid.svelte top-of-file Props type + core.ts SvGridOptions.",
+  "$comment": "Mirrors packages/grid/src/SvGrid.svelte top-of-file Props type + core.ts SvGridOptions.",
   "required": [
     "data",
     "columns",

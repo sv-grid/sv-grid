@@ -46,7 +46,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { createStreamSim, type StreamMessage } from '../shared/stream-sim'
   import { createPrng } from '../shared/mock-api'
 

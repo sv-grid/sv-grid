@@ -31,7 +31,7 @@ Pass a component instead of a snippet:
 
 ```ts
 import TooltipCell from './TooltipCell.svelte'
-import { renderComponent } from 'sv-grid-core'
+import { renderComponent } from '@svgrid/grid'
 
 {
   field: 'description',

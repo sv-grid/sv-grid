@@ -1,16 +1,16 @@
 ---
 title: Export a Svelte Data Grid to Excel, CSV, and PDF
-description: Let users download grid data as XLSX, CSV, or PDF with sv-grid-pro, respecting the current sort, filter, and selection.
+description: Let users download grid data as XLSX, CSV, or PDF with @svgrid/enterprise, respecting the current sort, filter, and selection.
 date: 2026-02-10
 category: Export
 tags: export, excel, csv, pdf, svelte data grid
 author: Kamelia M
 ---
 
-"Can I get this in Excel?" is the most common request a data grid gets. The `sv-grid-pro` pack adds export to Excel (XLSX), CSV, TSV, HTML, and PDF, plus printing - and it exports what the user is actually looking at, honoring the current sort, filter, and selection.
+"Can I get this in Excel?" is the most common request a data grid gets. The `@svgrid/enterprise` pack adds export to Excel (XLSX), CSV, TSV, HTML, and PDF, plus printing - and it exports what the user is actually looking at, honoring the current sort, filter, and selection.
 
 ![Exporting a SvGrid grid to Excel and PDF](/blog-media/export.png)
-*Exporting a SvGrid grid (sv-grid-pro) to Excel, PDF, and more.*
+*Exporting a SvGrid grid (@svgrid/enterprise) to Excel, PDF, and more.*
 
 ## Export formats
 
@@ -23,7 +23,7 @@ author: Kamelia M
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-pro'
+  import { SvGrid } from '@svgrid/enterprise'
   let api
 
   function exportExcel() {
@@ -47,13 +47,13 @@ Export uses your column formatters, so a currency column lands in Excel as a pro
 
 ## Printing
 
-The same Pro pack adds a print view that lays the grid out for paper - repeating headers, page breaks, and a clean monochrome style - so "File > Print" produces something usable instead of a clipped screenshot.
+The same Enterprise pack adds a print view that lays the grid out for paper - repeating headers, page breaks, and a clean monochrome style - so "File > Print" produces something usable instead of a clipped screenshot.
 
 ## Frequently asked questions
 
 ### How do I export a Svelte data grid to Excel?
 
-Use `sv-grid-pro` and call the grid API's `exportData({ format: 'xlsx' })`. The export honors the current sort, filter, and selection.
+Use `@svgrid/enterprise` and call the grid API's `exportData({ format: 'xlsx' })`. The export honors the current sort, filter, and selection.
 
 ### Can I export only the selected rows?
 

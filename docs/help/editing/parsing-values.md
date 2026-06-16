@@ -6,7 +6,7 @@ number / date inputs, a boolean for checkboxes) is parsed by
 <div data-docs-demo="24-validation" data-height="540"></div>
 
 ```ts
-import { parseEditorValue } from 'sv-grid-core'
+import { parseEditorValue } from '@svgrid/grid'
 
 parseEditorValue('text',     'Ada')          // 'Ada'
 parseEditorValue('number',   '42')           // 42
@@ -19,7 +19,7 @@ parseEditorValue('checkbox', 'true')         // true
 parseEditorValue('checkbox', true)           // true
 ```
 
-The full source is short and worth reading: [`cell-editors.ts`](../../../packages/sv-grid-core/src/editors/cell-editors.ts).
+The full source is short and worth reading: [`cell-editors.ts`](../../../packages/grid/src/editors/cell-editors.ts).
 
 ## What "null" means
 

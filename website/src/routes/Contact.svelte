@@ -1,20 +1,20 @@
 <script lang="ts">
   const channels = [
     {
-      title: 'Sales & Pro Support',
-      blurb: 'Pricing questions, Pro + Support trials, volume / team licensing.',
+      title: 'Sales & Enterprise Support',
+      blurb: 'Pricing questions, Enterprise + Support trials, volume / team licensing.',
       cta: 'sales@jqwidgets.com',
       href: 'mailto:sales@jqwidgets.com',
     },
     {
       title: 'Technical support',
-      blurb: 'Already a Pro + Support customer? Reach the engineering team directly.',
+      blurb: 'Already a Enterprise + Support customer? Reach the engineering team directly.',
       cta: 'support@jqwidgets.com',
       href: 'mailto:support@jqwidgets.com',
     },
     {
       title: 'Bug reports & feature requests',
-      blurb: 'Public tracker for everyone - Community and Pro alike.',
+      blurb: 'Public tracker for everyone - Community and Enterprise alike.',
       cta: 'github.com/sv-grid/sv-grid/issues',
       href: 'https://github.com/sv-grid/sv-grid/issues',
     },

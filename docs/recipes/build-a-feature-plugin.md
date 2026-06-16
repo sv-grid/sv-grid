@@ -38,7 +38,7 @@ This 25-line plugin writes a computed `__rowAccent` string onto every
 row in the row model. A user-supplied function decides the accent:
 
 ```ts
-import { tableFeatures, rowSortingFeature, type RowData, type TableFeatures } from 'sv-grid-core'
+import { tableFeatures, rowSortingFeature, type RowData, type TableFeatures } from '@svgrid/grid'
 
 type RowAccentFn<TData extends RowData> = (row: TData) => string | undefined
 
@@ -73,7 +73,7 @@ Register the feature and supply `rowClass` to surface the accent in CSS:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
 
   type Deal = { company: string; health: number; __rowAccent?: string }
 

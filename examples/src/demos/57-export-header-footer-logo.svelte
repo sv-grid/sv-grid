@@ -16,20 +16,20 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
-    installPro,
+    installEnterprise,
     setLicenseKey,
-    type ProGridApi,
+    type EnterpriseGridApi,
     type ExportHeaderFooterLine,
-  } from 'sv-grid-pro'
+  } from '@svgrid/enterprise'
   import { makeOrders, type Order } from '../shared/seed'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   const rows = makeOrders(120)
-  let api = $state<ProGridApi<typeof features, Order> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Order> | null>(null)
   let busy = $state(false)
   let logoPng = $state<string | null>(null)
 
@@ -132,7 +132,7 @@
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}
-      onApiReady={(next) => (api = installPro(next))}
+      onApiReady={(next) => (api = installEnterprise(next))}
     />
   </div>
 </section>

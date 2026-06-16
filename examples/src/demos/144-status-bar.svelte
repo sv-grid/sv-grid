@@ -11,7 +11,7 @@
    *   <SvGrid enableCellSelection statusBar />
    *   <SvGrid enableCellSelection statusBar={{ aggregates: ['sum', 'avg'] }} />
    */
-  import { SvGrid, tableFeatures, type ColumnDef } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'
 
   const features = tableFeatures({})
 

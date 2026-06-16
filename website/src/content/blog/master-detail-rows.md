@@ -18,7 +18,7 @@ Register `rowExpandingFeature` and provide the detail content:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowExpandingFeature } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, rowExpandingFeature } from '@svgrid/grid'
   const features = tableFeatures({ rowExpandingFeature })
 </script>
 

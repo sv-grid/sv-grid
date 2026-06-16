@@ -12,8 +12,8 @@ Starting fresh? Skip the manual wiring and scaffold a project with the
 grid already set up:
 
 ```bash
-npm create sv-grid@latest                                   # interactive
-npm create sv-grid@latest my-admin -- --template admin-dashboard
+npm create @svgrid@latest                                   # interactive
+npm create @svgrid@latest my-admin -- --template admin-dashboard
 ```
 
 See [Starters & scaffolding](./starters.md) for the templates (minimal
@@ -22,13 +22,13 @@ flow. To add SvGrid to an **existing** app, install it directly:
 
 ```bash
 # pnpm (recommended)
-pnpm add sv-grid-core
+pnpm add @svgrid/grid
 
 # npm
-npm install sv-grid-core
+npm install @svgrid/grid
 
 # yarn
-yarn add sv-grid-core
+yarn add @svgrid/grid
 ```
 
 ## Requirements
@@ -48,7 +48,7 @@ A 5-line smoke test:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-core'
+  import { SvGrid } from '@svgrid/grid'
   const rows = [{ name: 'Ada' }, { name: 'Linus' }]
   const columns = [{ field: 'name', header: 'Name' }]
 </script>
@@ -58,17 +58,17 @@ A 5-line smoke test:
 
 If you see a styled `<table>` with two rows, you're done.
 
-## Pro add-on (optional)
+## Enterprise add-on (optional)
 
 If you need data export (Excel / PDF / CSV), data import, the AI
-assistant, or built-in pivot tables, install the paid Pro pack
+assistant, or built-in pivot tables, install the paid Enterprise pack
 alongside the Community package:
 
 ```bash
-pnpm add sv-grid-pro
+pnpm add @svgrid/enterprise
 ```
 
-See [Pro features](../pro/README.md) for what ships and how to license.
+See [Enterprise features](../enterprise/README.md) for what ships and how to license.
 
 ## Where the rest of this guide goes
 

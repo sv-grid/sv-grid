@@ -26,7 +26,7 @@ do.
 └───────────┴─────────────────────────────────────────────────┘
 ```
 
-Layer 1 is yours. Layer 2 is `sv-grid-core` minus the renderer.
+Layer 1 is yours. Layer 2 is `@svgrid/grid` minus the renderer.
 Layer 3 is the `<SvGrid>` component everyone uses by default.
 
 **You can use Layer 2 without Layer 3.** That's the headless promise:
@@ -135,9 +135,9 @@ mutate DOM nodes during a sort.
 | Layer | Source path                                       | Build output                         |
 | ----- | ------------------------------------------------- | ------------------------------------ |
 | 1     | Your app                                          | n/a                                  |
-| 2     | `packages/sv-grid-core/src/core.ts` + row-models | `dist/index.js` (~13 kB gzip)    |
-| 3     | `packages/sv-grid-core/src/SvGrid.svelte`    | bundled with the engine (~49 kB gzip total) |
-|       | `packages/sv-grid-pro/src/{export,print,import,ai}.ts` | `sv-grid-pro/dist/*` (lazy-loaded peers) |
+| 2     | `packages/grid/src/core.ts` + row-models | `dist/index.js` (~13 kB gzip)    |
+| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~49 kB gzip total) |
+|       | `packages/enterprise/src/{export,print,import,ai}.ts` | `@svgrid/enterprise/dist/*` (lazy-loaded peers) |
 
 ## See also
 

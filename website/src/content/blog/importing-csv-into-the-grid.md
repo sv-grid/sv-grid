@@ -28,7 +28,7 @@ Take a file from an `<input type="file">` and read its text:
 
 ## Parsing: use a real parser for real CSV
 
-A naive `split(',')` breaks on the first quoted comma. For trustworthy input a one-line split is fine; for user uploads, use a small, correct CSV parser (it handles quoted fields, embedded commas, and newlines inside quotes). The Pro pack includes import that handles XLSX and CSV with these edge cases; if you roll your own, do not split on commas blindly.
+A naive `split(',')` breaks on the first quoted comma. For trustworthy input a one-line split is fine; for user uploads, use a small, correct CSV parser (it handles quoted fields, embedded commas, and newlines inside quotes). The Enterprise pack includes import that handles XLSX and CSV with these edge cases; if you roll your own, do not split on commas blindly.
 
 ```ts
 // header row -> objects
@@ -54,7 +54,7 @@ For big CSVs, parse in a chunked/streaming fashion (or a Web Worker) so the UI s
 
 ### How do I import a CSV file into SvGrid?
 
-Read the uploaded file's text, parse it into objects (using a proper CSV parser for quoted fields), optionally map the file's headers to your columns, validate, and set the result as the grid's `data`. The Pro pack also provides built-in CSV/XLSX import.
+Read the uploaded file's text, parse it into objects (using a proper CSV parser for quoted fields), optionally map the file's headers to your columns, validate, and set the result as the grid's `data`. The Enterprise pack also provides built-in CSV/XLSX import.
 
 ### Why not just split on commas to parse CSV?
 

@@ -22,7 +22,7 @@ lower-cost paid tier.
 | `masterDetail`                           | `rowExpandingFeature` / master-detail rows |
 | `dataSource` (store / remote)            | `data` array or `externalSort/Filter`      |
 | `paging` + `pager`                       | `showPagination`                           |
-| `export`                                 | `sv-grid-pro` export pack                  |
+| `export`                                 | `@svgrid/enterprise` export pack                  |
 | `stateStoring`                           | persist column state yourself (saved views) |
 
 ## Shape of the change
@@ -52,7 +52,7 @@ lower-cost paid tier.
 ## Why teams switch
 
 - **Svelte 5 native** instead of a multi-framework commercial library.
-- **MIT community core** plus an optional Pro pack for export / import /
+- **MIT community core** plus an optional Enterprise pack for export / import /
   pivot / AI.
 - **Much lower-cost paid tier.**
 
@@ -66,7 +66,7 @@ lower-cost paid tier.
 
 - [SvGrid vs DevExtreme DataGrid](https://svgrid.com/compare/devextreme-datagrid) - the side-by-side comparison
 - [Saved views](./saved-views.md) - the state-persistence pattern
-- [Data export and printing - Pro](./export.md) - the Pro export pack
+- [Data export and printing - Enterprise](./export.md) - the Enterprise export pack
 
 ## Frequently asked questions
 
@@ -84,5 +84,5 @@ some built-in features like `stateStoring`.
 
 ### Does SvGrid export like DevExtreme?
 
-Yes, via the `sv-grid-pro` pack: Excel, PDF, CSV, TSV, and HTML export plus a
+Yes, via the `@svgrid/enterprise` pack: Excel, PDF, CSV, TSV, and HTML export plus a
 printable view.

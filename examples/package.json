@@ -1,5 +1,5 @@
 {
-  "name": "sv-grid-core-example-gallery",
+  "name": "@svgrid/grid-example-gallery",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,8 +18,8 @@
     "jszip": "^3.10.1",
     "pdfmake": "^0.2.10",
     "postcss": "^8.5.12",
-    "sv-grid-core": "workspace:*",
-    "sv-grid-pro": "workspace:*",
+    "@svgrid/grid": "workspace:*",
+    "@svgrid/enterprise": "workspace:*",
     "svelte": "^5.55.5",
     "svelte-check": "^4.4.6",
     "tailwindcss": "^4.2.4",

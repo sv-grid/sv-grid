@@ -32,7 +32,7 @@ export type BlogPost = {
 // The blog has ~20 fine-grained per-post categories, which is too many for a
 // usable filter bar. We roll them up into a small set of top-level groups for
 // navigation, in this display order. The post keeps its specific category too.
-export const BLOG_GROUPS = ['Tutorials', 'Compare', 'Performance', 'Engineering', 'Guides', 'AI', 'Pro', 'Company'] as const
+export const BLOG_GROUPS = ['Tutorials', 'Compare', 'Performance', 'Engineering', 'Guides', 'AI', 'Enterprise', 'Company'] as const
 export type BlogGroup = (typeof BLOG_GROUPS)[number]
 
 const CATEGORY_TO_GROUP: Record<string, BlogGroup> = {
@@ -45,7 +45,7 @@ const CATEGORY_TO_GROUP: Record<string, BlogGroup> = {
   Engineering: 'Engineering', Architecture: 'Engineering',
   Accessibility: 'Guides', Theming: 'Guides', Integration: 'Guides', Concepts: 'Guides', Reference: 'Guides',
   AI: 'AI',
-  Pro: 'Pro', Export: 'Pro', Product: 'Pro',
+  Enterprise: 'Enterprise', Export: 'Enterprise', Product: 'Enterprise',
   Company: 'Company',
 }
 

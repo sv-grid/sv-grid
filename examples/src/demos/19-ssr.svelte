@@ -27,7 +27,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
@@ -126,7 +126,7 @@ export async function load() {
 
 // +page.svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
   let { data } = $props()
 <\/script>
 <SvGrid data={data.rows} columns={columns} features={tableFeatures({ rowSortingFeature })} />`}</code></pre>

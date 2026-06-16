@@ -5,7 +5,7 @@ Use it for data, column, filter, sort, group, selection, and
 visibility operations from outside the component.
 
 ```ts
-import type { SvGridApi } from 'sv-grid-core'
+import type { SvGridApi } from '@svgrid/grid'
 
 let api = $state<SvGridApi<typeof features, Order> | null>(null)
 ```
@@ -184,12 +184,12 @@ Returns the rows that are currently **visible** in the grid - after
 filter, sort, and pagination. Use for `pro.exportData(...)` when you
 want to export the current view.
 
-## Pro extensions
+## Enterprise extensions
 
-After `installPro(api)`, the same object also exposes:
+After `installEnterprise(api)`, the same object also exposes:
 
 ```ts
-api.exportData(opts)   // see Pro export reference
+api.exportData(opts)   // see Enterprise export reference
 api.print(opts)
 api.importData(opts)
 api.ai.filter(...)
@@ -200,4 +200,4 @@ api.pivot.build(config)
 api.pivot.buildFrom(data, config)
 ```
 
-See [Pro reference](./pro.md).
+See [Enterprise reference](./enterprise.md).

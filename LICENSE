@@ -6,12 +6,12 @@ the LICENSE file inside that package directory.
 Per-package licensing
 ------------------------------------------------------------------------
 
-  packages/sv-grid-core/       MIT (terms below, and packages/sv-grid-core/LICENSE)
-  packages/sv-grid-pro/        Commercial - see packages/sv-grid-pro/LICENSE
-  packages/sv-grid-mcp/        Commercial - see packages/sv-grid-mcp/LICENSE
+  packages/grid/       MIT (terms below, and packages/grid/LICENSE)
+  packages/enterprise/        Commercial - see packages/enterprise/LICENSE
+  packages/mcp/        Commercial - see packages/mcp/LICENSE
   website/                     Proprietary - see website/LICENSE
 
-Only `sv-grid-core` is open source. Everything else in this
+Only `@svgrid/grid` is open source. Everything else in this
 repository (the Pro feature pack, the MCP server, the marketing +
 docs website, and any other package added later that does not ship
 its own MIT LICENSE) is proprietary and may not be copied, modified,
@@ -20,7 +20,7 @@ repository for transparency and for paying customers; visibility does
 not grant a license.
 
 ------------------------------------------------------------------------
-MIT License (applies ONLY to packages/sv-grid-core)
+MIT License (applies ONLY to packages/grid)
 ------------------------------------------------------------------------
 
 MIT License

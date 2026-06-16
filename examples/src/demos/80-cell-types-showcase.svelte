@@ -26,7 +26,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Mood = 'positive' | 'neutral' | 'concerned' | 'critical' | null
   type Status = 'active' | 'under_review' | 'at_risk' | 'sunset'

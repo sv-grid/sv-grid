@@ -23,7 +23,7 @@ through the imperative API:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-core'
+  import type { SvGridApi } from '@svgrid/grid'
 
   const KEY = 'people-grid-state'
 

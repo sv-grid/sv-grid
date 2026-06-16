@@ -5,7 +5,7 @@
   import LazyRoute from './components/LazyRoute.svelte'
   // Home is the default + most-visited route, so it stays statically imported
   // (no extra round-trip on first paint). Every other route is loaded on demand
-  // via the ROUTES map below, so its code - and heavy deps like sv-grid-pro
+  // via the ROUTES map below, so its code - and heavy deps like @svgrid/enterprise
   // (pulled by the API reference) - never lands in the entry chunk.
   import Home from './routes/Home.svelte'
 
@@ -30,6 +30,7 @@
 
   import { applyRouteSeo, applyDocSeo, applyDemoSeo, applyCompareSeo, applyBlogSeo } from './lib/seo'
   import { initAnalytics, trackPageview, funnel } from './lib/analytics'
+  import { trackGtagPageview } from './lib/gtag'
   import { router } from './lib/router.svelte'
   import { findDoc } from './lib/docs'
   import { findDemo } from './lib/demos'
@@ -124,6 +125,11 @@
     // Funnel instrumentation. A pageview on every route, plus the high-signal
     // consideration events resolved centrally from the route.
     trackPageview()
+    // GA4 / Google Ads page_view for the same SPA navigation. The gtag in
+    // index.html only fires the landing pageview - this captures every
+    // history-based route change so ad conversion attribution stays accurate.
+    // Runs after applyRouteSeo so document.title is already updated.
+    trackGtagPageview()
     if (section === 'pricing') funnel.pricingViewed()
     else if (section === 'demos' && rest) funnel.demoViewed(rest)
     else if (section === 'compare' && rest) funnel.compareViewed(rest)

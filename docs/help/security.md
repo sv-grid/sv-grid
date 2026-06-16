@@ -13,21 +13,21 @@ our InfoSec team?".
 | --------------------------------- | ---------------------------------------------------------------------- |
 | Network egress at runtime         | **None.** Zero analytics, zero phone-home, no automatic update checks. |
 | Telemetry                         | **Zero.** No `fetch`, no `navigator.sendBeacon`, no console identifiers. |
-| `eval` / `new Function` / dynamic code | **None in `sv-grid-core`.** See [CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) demo + runtime self-check. |
+| `eval` / `new Function` / dynamic code | **None in `@svgrid/grid`.** See [CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) demo + runtime self-check. |
 | Cookies / localStorage            | None set by the library itself. (Your app's saved-views helpers may opt in.) |
-| Outbound dependencies             | **Community:** zero runtime deps. **Pro:** two optional peer deps (`jszip`, `pdfmake`), see below. |
+| Outbound dependencies             | **Community:** zero runtime deps. **Enterprise:** two optional peer deps (`jszip`, `pdfmake`), see below. |
 | AI calls                          | The user's own `AIProvider` adapter calls whichever endpoint *they* configured. The package never embeds a model client. |
-| License                           | Community: MIT. Pro: commercial (see [LICENSE](../../packages/sv-grid-pro/LICENSE)). |
+| License                           | Community: MIT. Enterprise: commercial (see [LICENSE](../../packages/enterprise/LICENSE)). |
 | npm provenance + signing          | Published with `npm publish --provenance` from GitHub Actions; integrity hashes in the npm registry. |
 | Source                            | 100% open source. `pnpm patch` works; everything in this monorepo is the same code that ships to npm. |
 
 ## Runtime dependencies
 
-`sv-grid-core` has **zero runtime dependencies**. It is a single
+`@svgrid/grid` has **zero runtime dependencies**. It is a single
 package with no transitive supply chain - the only thing the user's
 build pulls in is `svelte` itself (peer).
 
-`sv-grid-pro` adds two **optional** peer dependencies, both lazy-loaded
+`@svgrid/enterprise` adds two **optional** peer dependencies, both lazy-loaded
 on first use:
 
 | Peer            | When loaded                                  | License        | Why optional                                                     |
@@ -57,7 +57,7 @@ Every observable side effect, mapped:
 | AI helpers                           | Build a prompt locally and call the consumer-registered `AIProvider`. The grid itself never opens a connection. |
 | License key check                    | A 4-line string-prefix check against an in-memory revoked-key set. No network. |
 | Unlicensed watermark                 | Renders a small DOM badge linking to the pricing page. No network. |
-| Unlicensed upgrade prompt            | On first unlicensed Pro feature call, appends a one-time DOM card linking to a trial. No network, no storage; one in-memory flag. |
+| Unlicensed upgrade prompt            | On first unlicensed Enterprise feature call, appends a one-time DOM card linking to a trial. No network, no storage; one in-memory flag. |
 
 ## CSP guidance
 
@@ -78,7 +78,7 @@ Notes:
   `unsafe-hashes` with a CSP nonce-aware build of Svelte.
 - `connect-src 'self'` is enough - the grid never opens a connection to
   a third-party origin.
-- `script-src` does NOT need `'unsafe-eval'` for community. (Pro pulls
+- `script-src` does NOT need `'unsafe-eval'` for community. (Enterprise pulls
   in `pdfmake` which historically used `eval`; check the pdfmake version
   if your CSP is strict.)
 - Demo [16. CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) runs the grid under a CSP header and surfaces any violation in real time.
@@ -101,7 +101,7 @@ Notes:
   day, advisory + patch within five business days for severity High +
   Critical.
 - Community: best-effort but every report is triaged.
-- Public advisories for Pro customers go out via the support Slack +
+- Public advisories for Enterprise customers go out via the support Slack +
   email **before** the GitHub advisory page goes public.
 
 ## SBOM
@@ -110,12 +110,12 @@ Every release ships an `npm pack` tarball. You can generate a CycloneDX
 or SPDX SBOM directly:
 
 ```bash
-npx @cyclonedx/cdxgen -t npm -o sbom.json sv-grid-core
+npx @cyclonedx/cdxgen -t npm -o sbom.json @svgrid/grid
 # or
-npx @cyclonedx/cdxgen -t npm -o sbom.json sv-grid-pro
+npx @cyclonedx/cdxgen -t npm -o sbom.json @svgrid/enterprise
 ```
 
-For Pro, the SBOM lists `jszip` and `pdfmake` as optional peers - flag
+For Enterprise, the SBOM lists `jszip` and `pdfmake` as optional peers - flag
 to your scanner if you don't use those formats.
 
 ## Data residency
@@ -166,6 +166,6 @@ app are ones you write.
 
 ### What is SvGrid's supply-chain footprint?
 
-The Community core has a minimal dependency surface; Pro export/import features
+The Community core has a minimal dependency surface; Enterprise export/import features
 lazy-load their dependencies only when used. See this page for the full
 dependency and runtime-call accounting procurement asks for.

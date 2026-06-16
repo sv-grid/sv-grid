@@ -18,11 +18,11 @@ assumes you've finished this one. Estimated reading time: 15 minutes.
 > - [Tailwind integration](./help/tailwind.md) - how `--sg-*` custom
 >   properties + Tailwind v4 + dark mode fit together.
 
-> `sv-grid-core` is published under the **MIT License** - permissive
+> `@svgrid/grid` is published under the **MIT License** - permissive
 > for commercial use, redistribution, and modification. The paid companion
-> `sv-grid-pro` (data export + print) ships under a separate commercial
+> `@svgrid/enterprise` (data export + print) ships under a separate commercial
 > license. See [LICENSE](../LICENSE) and
-> [packages/sv-grid-pro/LICENSE](../packages/sv-grid-pro/LICENSE).
+> [packages/enterprise/LICENSE](../packages/enterprise/LICENSE).
 
 ---
 
@@ -50,7 +50,7 @@ assumes you've finished this one. Estimated reading time: 15 minutes.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-core'
+  import { SvGrid, type ColumnDef } from '@svgrid/grid'
 
   type Person = { firstName: string; age: number; status: string }
 
@@ -82,13 +82,13 @@ framework - bring your own, or use the bundled stylesheet.
 
 ```bash
 # pnpm (recommended)
-pnpm add sv-grid-core
+pnpm add @svgrid/grid
 
 # npm
-npm install sv-grid-core
+npm install @svgrid/grid
 
 # yarn
-yarn add sv-grid-core
+yarn add @svgrid/grid
 ```
 
 **Requirements.**
@@ -107,7 +107,7 @@ import {
   rowSortingFeature,
   columnFilteringFeature,
   type ColumnDef,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 ```
 
 The bundle is tree-shakeable - features you don't import don't ship. The
@@ -127,7 +127,7 @@ or a plain literal.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-core'
+  import { SvGrid } from '@svgrid/grid'
 
   type Person = { id: string; firstName: string; age: number }
 
@@ -165,7 +165,7 @@ A column definition tells SvGrid how to read a value out of a row, how
 to render it, and which features apply to it.
 
 ```ts
-import type { ColumnDef } from 'sv-grid-core'
+import type { ColumnDef } from '@svgrid/grid'
 
 type Person = {
   id: string
@@ -239,7 +239,7 @@ Sorting / filtering / grouping are toggled per-grid via the registered
 features - there is no per-column `enableSorting` / `enableColumnFilter`
 flag yet; those entries are in [Missing features](./help/missing-features.md).
 
-See [`packages/sv-grid-core/src/core.ts`](../packages/sv-grid-core/src/core.ts)
+See [`packages/grid/src/core.ts`](../packages/grid/src/core.ts)
 for the full type.
 
 ---
@@ -260,7 +260,7 @@ with `tableFeatures(...)` and the matching `create*RowModel` factory.
     columnFilteringFeature,
     rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -382,7 +382,7 @@ For anything beyond a stringified value, render with `FlexRender`,
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from 'sv-grid-core'
+  import { renderSnippet, type ColumnDef } from '@svgrid/grid'
 </script>
 
 {#snippet StatusCell({ value }: { value: string })}
@@ -404,7 +404,7 @@ For anything beyond a stringified value, render with `FlexRender`,
 
 ```ts
 import StatusBadge from './StatusBadge.svelte'
-import { renderComponent } from 'sv-grid-core'
+import { renderComponent } from '@svgrid/grid'
 
 const columns = [
   {
@@ -498,7 +498,7 @@ Pair `externalSort` / `externalFilter` with the callbacks above:
 ```
 
 For Excel-style filter operators and the active-filter chip UI, see
-[`applyExcelFilter`](../packages/sv-grid-core/src/filtering/excel-filters.ts).
+[`applyExcelFilter`](../packages/grid/src/filtering/excel-filters.ts).
 
 ---
 
@@ -591,7 +591,7 @@ doesn't try to re-order rows it didn't fetch.
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature,
-           columnFilteringFeature } from 'sv-grid-core'
+           columnFilteringFeature } from '@svgrid/grid'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
@@ -673,7 +673,7 @@ opt-in so small grids don't pay the cost.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-core'
+  import { SvGrid } from '@svgrid/grid'
 </script>
 
 <SvGrid
@@ -690,7 +690,7 @@ For full control (e.g. variable row heights, programmatic scroll),
 use the headless virtualizer directly:
 
 ```ts
-import { createSvelteVirtualizer } from 'sv-grid-core'
+import { createSvelteVirtualizer } from '@svgrid/grid'
 
 const virtualizer = createSvelteVirtualizer({
   count:                 () => rows.length,
@@ -703,7 +703,7 @@ const virtualizer = createSvelteVirtualizer({
 virtualizer.scrollToIndex(75_432, { align: 'center' })
 ```
 
-See [`packages/sv-grid-core/src/virtualization/`](../packages/sv-grid-core/src/virtualization/)
+See [`packages/grid/src/virtualization/`](../packages/grid/src/virtualization/)
 for the full API.
 
 ---
@@ -724,7 +724,7 @@ SvGrid implements the WAI-ARIA 1.2 grid pattern.
   `aria-live` region the grid manages internally.
 
 If you build your own header or toolbar, use the helpers in
-[`a11y.ts`](../packages/sv-grid-core/src/a11y.ts) so your markup
+[`a11y.ts`](../packages/grid/src/a11y.ts) so your markup
 stays consistent with the contract:
 
 ```ts
@@ -733,11 +733,11 @@ import {
   getGridRowA11yProps,
   getGridCellA11yProps,
   getGridHeaderA11yProps,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 ```
 
 There is a contract test suite at
-[`a11y.contract.test.ts`](../packages/sv-grid-core/src/a11y.contract.test.ts)
+[`a11y.contract.test.ts`](../packages/grid/src/a11y.contract.test.ts)
 that exercises the public a11y guarantees - run it (`pnpm test`) when
 you customize markup to be sure you haven't regressed the contract.
 
@@ -797,10 +797,10 @@ auto-complete and type-check.
 - **[Compare SvGrid with other Svelte data grids](https://svgrid.com/#/compare)** -
   side-by-side feature matrix and when to pick which.
 
-### Pro features (`sv-grid-pro`)
+### Enterprise features (`@svgrid/enterprise`)
 
 The paid companion package augments your `SvGridApi` with one
-`installPro(api)` call. Set a license key at app boot to remove the
+`installEnterprise(api)` call. Set a license key at app boot to remove the
 "unlicensed" watermark - every feature still runs without a key for
 demos and evaluation.
 
@@ -823,15 +823,15 @@ demos and evaluation.
 
 - File issues at the [project repository](https://github.com/sv-grid/sv-grid/issues).
 - Browse the [Help index](./help/index.md) for topic-oriented guides.
-- Use the [sv-grid-mcp](https://svgrid.com/#/mcp) server
+- Use the [@svgrid/mcp](https://svgrid.com/#/mcp) server
   to give your AI assistant accurate answers.
 - Read the source - it is small, well-commented, and meant to be read
   before opening a bug report.
 
 ### License
 
-`sv-grid-core` is published under the **MIT License**. Free for
-commercial and personal use. The paid `sv-grid-pro` companion package
+`@svgrid/grid` is published under the **MIT License**. Free for
+commercial and personal use. The paid `@svgrid/enterprise` companion package
 (export, import, print, pivot, AI assistant) is governed by a separate
 commercial license. See [LICENSE](../LICENSE) and
-[packages/sv-grid-pro/LICENSE](../packages/sv-grid-pro/LICENSE).
+[packages/enterprise/LICENSE](../packages/enterprise/LICENSE).

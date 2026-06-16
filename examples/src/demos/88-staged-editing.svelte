@@ -9,7 +9,7 @@
    * commits the whole batch atomically (one server roundtrip) or
    * reverts to the original snapshot.
    *
-   * Built on `createStagedEditing<TData>()` from sv-grid-pro. The grid
+   * Built on `createStagedEditing<TData>()` from @svgrid/enterprise. The grid
    * surface is plain SvGrid - the staging engine sits next to it.
    */
   import {
@@ -19,16 +19,16 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
     createStagedEditing,
-    installPro,
+    installEnterprise,
     setLicenseKey,
-    type ProGridApi,
+    type EnterpriseGridApi,
     type StagedChange,
-  } from 'sv-grid-pro'
+  } from '@svgrid/enterprise'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   type Level = 'L3' | 'L4' | 'L5' | 'L6' | 'L7'
   type Employee = {
@@ -58,7 +58,7 @@
   ])
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-  let api = $state<ProGridApi<typeof features, Employee> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Employee> | null>(null)
   const stage = createStagedEditing<Employee>()
 
   // Tick to refresh the panel after each record / drop. The stage
@@ -226,7 +226,7 @@
         rowHeight={40}
         containerHeight="100%"
         fitColumns={true}
-        onApiReady={(next) => (api = installPro(next))}
+        onApiReady={(next) => (api = installEnterprise(next))}
         onCellValueChange={(e) => { stage.record(e); tick++ }}
       />
     </div>

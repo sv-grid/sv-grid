@@ -78,7 +78,7 @@ async function save(e) {
 
 ## Scaling up
 
-When the dataset outgrows the browser, switch the grid to server-side mode without changing the UI - see [Server-Side Data](server-side-data) and the [SvelteKit + Supabase guide](svelte-data-grid-sveltekit-supabase). Add export and pivot from the Pro pack if your admins need reporting. Start free with the MIT core; see [render your first grid](render-your-first-svelte-data-grid).
+When the dataset outgrows the browser, switch the grid to server-side mode without changing the UI - see [Server-Side Data](server-side-data) and the [SvelteKit + Supabase guide](svelte-data-grid-sveltekit-supabase). Add export and pivot from the Enterprise pack if your admins need reporting. Start free with the MIT core; see [render your first grid](render-your-first-svelte-data-grid).
 
 ## Frequently asked questions
 

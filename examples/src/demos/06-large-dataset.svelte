@@ -15,7 +15,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makeWidePeople, type WidePerson } from '../shared/seed'
 
   const features = tableFeatures({

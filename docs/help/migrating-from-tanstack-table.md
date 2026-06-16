@@ -36,7 +36,7 @@ explicit row-model pipelines. If you already think in
 + import {
 +   SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +   renderSnippet, type ColumnDef,
-+ } from 'sv-grid-core'
++ } from '@svgrid/grid'
 ```
 
 ## Column definitions
@@ -144,7 +144,7 @@ accepts a regular component if you prefer SFCs.
 - **Inline editing**. `editorType: 'text' | 'number' | 'date' |
   'list' | ...` - built-in editors with parsing + validation hooks.
 - **CSP-clean**. No `eval`. The shipped tests confirm.
-- **Pro features**. Export, import, pivot, AI - in one paid add-on.
+- **Enterprise features**. Export, import, pivot, AI - in one paid add-on.
 
 ## What you give up
 
@@ -182,6 +182,6 @@ in one prop pass.
 
 ### Is SvGrid free like TanStack Table?
 
-Yes - `sv-grid-core` is MIT-licensed, like TanStack Table. SvGrid
-additionally offers an optional paid `sv-grid-pro` pack for export, pivot, and
+Yes - `@svgrid/grid` is MIT-licensed, like TanStack Table. SvGrid
+additionally offers an optional paid `@svgrid/enterprise` pack for export, pivot, and
 import, which TanStack Table does not provide at all.

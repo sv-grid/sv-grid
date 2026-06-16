@@ -11,30 +11,30 @@ AI-native editors - Cursor, Zed, Windsurf - and assistants like Claude all write
 
 ## The shared idea: MCP
 
-Model Context Protocol is a standard way to give an AI assistant tools. The `sv-grid-mcp` server exposes SvGrid's real examples, docs, and API reference, so the assistant looks up the current, version-correct answer instead of guessing. Any MCP-capable editor benefits from the same server. See [build grids faster with AI](build-grids-faster-with-ai-and-mcp).
+Model Context Protocol is a standard way to give an AI assistant tools. The `@svgrid/mcp` server exposes SvGrid's real examples, docs, and API reference, so the assistant looks up the current, version-correct answer instead of guessing. Any MCP-capable editor benefits from the same server. See [build grids faster with AI](build-grids-faster-with-ai-and-mcp).
 
 ## Cursor
 
 Add the server to Cursor's MCP settings (Settings → MCP), or a project `.cursor/mcp.json`:
 
 ```json
-{ "mcpServers": { "sv-grid": { "command": "npx", "args": ["sv-grid-mcp"] } } }
+{ "mcpServers": { "sv-grid": { "command": "npx", "args": ["@svgrid/mcp"] } } }
 ```
 
 ## Zed
 
-Zed supports MCP via context servers. Add `sv-grid` to your Zed settings' context-server configuration with the same `npx sv-grid-mcp` command, and the assistant can call it while you work.
+Zed supports MCP via context servers. Add `sv-grid` to your Zed settings' context-server configuration with the same `npx @svgrid/mcp` command, and the assistant can call it while you work.
 
 ## Windsurf
 
-Windsurf (Cascade) supports MCP servers in its config. Register `sv-grid` with the `npx sv-grid-mcp` command, and Cascade will pull real SvGrid docs and examples into its answers.
+Windsurf (Cascade) supports MCP servers in its config. Register `sv-grid` with the `npx @svgrid/mcp` command, and Cascade will pull real SvGrid docs and examples into its answers.
 
 ## Claude (Desktop / Code)
 
 Add the same server block to Claude's MCP configuration. Claude Code and Claude Desktop then ground their SvGrid answers in the live API.
 
 ```json
-{ "mcpServers": { "sv-grid": { "command": "npx", "args": ["sv-grid-mcp"] } } }
+{ "mcpServers": { "sv-grid": { "command": "npx", "args": ["@svgrid/mcp"] } } }
 ```
 
 ## Why bother
@@ -45,8 +45,8 @@ The difference is whether generated code compiles. Grounded by the MCP server, "
 
 ### How do I use SvGrid with Cursor, Zed, or Windsurf?
 
-Register the `sv-grid-mcp` server in each editor's MCP configuration (the command is `npx sv-grid-mcp`). The editor's assistant can then look up SvGrid's real examples, docs, and API, so the grid code it generates actually compiles.
+Register the `@svgrid/mcp` server in each editor's MCP configuration (the command is `npx @svgrid/mcp`). The editor's assistant can then look up SvGrid's real examples, docs, and API, so the grid code it generates actually compiles.
 
 ### Does the SvGrid MCP server work with any AI editor?
 
-Yes - any MCP-capable assistant (Cursor, Zed, Windsurf, Claude Desktop/Code, and others) can use the same `sv-grid-mcp` server. MCP is a shared standard, so one server grounds all of them.
+Yes - any MCP-capable assistant (Cursor, Zed, Windsurf, Claude Desktop/Code, and others) can use the same `@svgrid/mcp` server. MCP is a shared standard, so one server grounds all of them.

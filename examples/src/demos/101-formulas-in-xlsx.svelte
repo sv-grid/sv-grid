@@ -17,7 +17,7 @@
    *     without a sharedStrings part.
    *   - The whole xlsx is built in the browser via JSZip - no server.
    *
-   * Production code: `sv-grid-pro` adds a `formulas: true` option to
+   * Production code: `@svgrid/enterprise` adds a `formulas: true` option to
    * `exportData({ format: 'xlsx' })` that runs the same code paths
    * across every grid in the app.
    */
@@ -27,7 +27,7 @@
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import JSZip from 'jszip'
 
   // ---- Domain & seed -----------------------------------------------------

@@ -72,7 +72,7 @@ is exported, so you can use it in user-land code (e.g. a custom
 `externalFilter` pipeline):
 
 ```ts
-import { normalizeForFilter } from 'sv-grid-core'
+import { normalizeForFilter } from '@svgrid/grid'
 
 const filtered = rows.filter((r) =>
   normalizeForFilter(r.name, 'de-DE').includes(
@@ -108,4 +108,4 @@ filter the data yourself before passing it in:
 - Demo 110: [Locale-aware text filter](#/demos/110-locale-aware-filter)
 - [Filter conditions](./filter-conditions.md)
 - [Custom column filters](./custom-column-filters.md)
-- [excel-filters.ts](../../../packages/sv-grid-core/src/filtering/excel-filters.ts)
+- [excel-filters.ts](../../../packages/grid/src/filtering/excel-filters.ts)

@@ -21,7 +21,7 @@ For machine-readable releases, fetch
 
 ## [Unreleased]
 
-### sv-grid-core
+### @svgrid/grid
 
 - **New** `onCellValueChange` callback on `<SvGrid>`. Fires after every
   inline edit commits with `{ rowIndex, columnId, oldValue, newValue,
@@ -56,11 +56,11 @@ For machine-readable releases, fetch
   full dataset, not just the visible page. (Removed
   `paginatedRowModel` from the engine pipeline; pagination is applied
   AFTER filters by the wrapper.)
-- **Renamed package** `svgrid-community` → `sv-grid-core`.
+- **Renamed package** `svgrid-community` → `@svgrid/grid`.
   **Breaking**. Update imports: `from 'svgrid-community'` →
-  `from 'sv-grid-core'`. Subpath imports follow the same change.
+  `from '@svgrid/grid'`. Subpath imports follow the same change.
 
-### sv-grid-pro
+### @svgrid/enterprise
 
 - **New** package. The paid feature pack adds:
   - **Export** to xlsx / pdf / csv / tsv / html, with theme-matched
@@ -77,10 +77,10 @@ For machine-readable releases, fetch
     `pro.pivot.build(config)`. Row + column axes, 8 built-in
     aggregators or custom, grand-total row + column, subtotals,
     custom axis sort. See [Pivot tables](./help/pivot.md).
-- **New** `installPro(api)` augments a `SvGridApi` with `exportData`,
+- **New** `installEnterprise(api)` augments a `SvGridApi` with `exportData`,
   `print`, `importData`, `ai.*`, and `pivot.*` methods.
 - **Soft-gated licensing**: features run unlicensed but the grid shows
-  a small watermark + a one-time console nudge. `setLicenseKey('SVPRO-…')`
+  a small watermark + a one-time console nudge. `setLicenseKey('SVENTERPRISE-…')`
   at app startup clears both.
 
 ### Examples gallery
@@ -88,7 +88,7 @@ For machine-readable releases, fetch
 - **New demos** (56-59): theme-matched export, branded export with
   header + footer + logo, export with cell images, multi-sheet export.
 - **New demos** (52-pivot-table, 51-ai-assistant, 53-excel-import):
-  reference implementations for each Pro feature.
+  reference implementations for each Enterprise feature.
 - **New demos** for industry verticals: stock market (live ticks),
   HR team, finances ledger, industrial IoT, localization, CSP
   compliant, accessibility, cascade editing, server-side rendering,
@@ -101,10 +101,10 @@ For machine-readable releases, fetch
 
 ### Docs
 
-- **New** [Pro feature pack](./pro/README.md) landing page.
+- **New** [Enterprise feature pack](./enterprise/README.md) landing page.
 - **New** [API reference](./reference/index.md) with hand-curated
   pages for `<SvGrid>`, `SvGridApi`, `ColumnDef`, features, and the
-  full Pro surface.
+  full Enterprise surface.
 - **New** [Why headless?](./why-headless.md) explains the layered
   architecture and when to drop down to the headless core.
 - **New** [Tailwind integration](./help/tailwind.md) walks the
@@ -121,7 +121,7 @@ For machine-readable releases, fetch
   `manualPagination`, `onColumnFiltersChange`, the wrapper `getRowId`
   prop, per-column `enableSorting` / `enableColumnFilter` /
   `enableGrouping` flags, the never-shipped
-  `sv-grid-core/themes/default.css` import.
+  `@svgrid/grid/themes/default.css` import.
 - **Em-dashes globally swept to hyphens** (`-` → `-`) across all
   source-controlled text. Codified as a rule for new content.
 

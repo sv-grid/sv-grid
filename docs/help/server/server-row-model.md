@@ -6,7 +6,7 @@ the backend. SvGrid packages this as **one datasource contract**: you implement
 a single async `getRows`, and `createServerDataSource` owns the rest.
 
 ```ts
-import { createServerDataSource, type ServerDataSource } from 'sv-grid-core'
+import { createServerDataSource, type ServerDataSource } from '@svgrid/grid'
 
 const source: ServerDataSource<Row> = {
   async getRows({ startRow, endRow, sortModel, filterModel }) {

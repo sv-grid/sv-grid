@@ -7,7 +7,7 @@
     columnFilteringFeature,
     columnGroupingFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makeCustomers } from '$lib/data'
   import type { Customer } from '$lib/types'
 

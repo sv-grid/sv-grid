@@ -18,7 +18,7 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makeOrders, type Order } from '../shared/seed'
 
   const ALL_ORDERS = makeOrders(2500)

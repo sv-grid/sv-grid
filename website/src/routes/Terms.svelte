@@ -14,12 +14,12 @@
     <p>
       These terms govern your use of the <strong>SvGrid</strong> website at
       <code>svgrid.com</code> and the related documentation. The
-      <code>sv-grid-core</code> npm package and source code are licensed separately under the
+      <code>@svgrid/grid</code> npm package and source code are licensed separately under the
       <strong>MIT License</strong> - see the
       <a href="https://github.com/sv-grid/sv-grid/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE file</a>
-      in the repository. The companion <code>sv-grid-pro</code> package ships under a separate
+      in the repository. The companion <code>@svgrid/enterprise</code> package ships under a separate
       commercial license - see
-      <a href="https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-pro/LICENSE" target="_blank" rel="noopener noreferrer">packages/sv-grid-pro/LICENSE</a>.
+      <a href="https://github.com/sv-grid/sv-grid/blob/main/packages/enterprise/LICENSE" target="_blank" rel="noopener noreferrer">packages/enterprise/LICENSE</a>.
     </p>
 
     <h2>2. Use of the website</h2>
@@ -32,14 +32,14 @@
 
     <h2>3. Use of the SvGrid library</h2>
     <p>
-      Use of the <code>sv-grid-core</code> npm package and the <code>sv-grid-mcp</code>
-      package is governed by their MIT licenses. The paid <code>sv-grid-pro</code> package is
+      Use of the <code>@svgrid/grid</code> npm package and the <code>@svgrid/mcp</code>
+      package is governed by their MIT licenses. The paid <code>@svgrid/enterprise</code> package is
       governed by its separate commercial license. Nothing on this website modifies those licenses.
     </p>
 
-    <h2>4. Pro + Support tier</h2>
+    <h2>4. Enterprise + Support tier</h2>
     <p>
-      The Pro + Support tier is a separate commercial agreement between you (or your organization)
+      The Enterprise + Support tier is a separate commercial agreement between you (or your organization)
       and jQWidgets. The terms of that agreement are sent at signup. The price listed on the
       Pricing page is current at the time of viewing and may change.
     </p>

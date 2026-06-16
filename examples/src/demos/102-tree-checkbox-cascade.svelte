@@ -19,7 +19,7 @@
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Kind = 'workspace' | 'resource' | 'action'
   type Node = {

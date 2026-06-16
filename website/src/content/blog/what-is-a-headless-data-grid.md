@@ -21,7 +21,7 @@ Neither is "better." They are different trade-offs between convenience and contr
 ## What a headless grid gives you
 
 ```ts
-import { createSvGrid, rowSortingFeature, tableFeatures } from 'sv-grid-core'
+import { createSvGrid, rowSortingFeature, tableFeatures } from '@svgrid/grid'
 
 const grid = createSvGrid({
   data: rows,

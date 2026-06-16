@@ -28,14 +28,14 @@
     rowExpandingFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
-    installPro,
+    installEnterprise,
     setLicenseKey,
-    type ProGridApi,
-  } from 'sv-grid-pro'
+    type EnterpriseGridApi,
+  } from '@svgrid/enterprise'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Domain --------------------------------------------------------
   type Region = 'AMER' | 'EMEA' | 'APAC'
@@ -109,14 +109,14 @@
       format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },
   ]
 
-  let api = $state<ProGridApi<typeof features, Deal> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Deal> | null>(null)
   let groupBy = $state<string[]>(['region', 'country'])
   function applyGroup(by: string[]) {
     groupBy = by
     api?.setGroupBy(by)
   }
   function onApiReady(next: SvGridApi<typeof features, Deal>) {
-    api = installPro(next)
+    api = installEnterprise(next)
     api.setGroupBy(groupBy)
   }
 

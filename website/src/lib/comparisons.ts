@@ -60,8 +60,8 @@ const tanstack: Comparison = {
     'Ships <SvGrid /> - a production render component with virtualization, Excel-style filters, cell-range selection, inline editing, and pagination. With TanStack Table you build all of this.',
     'Imperative API surface (SvGridApi) for adding rows, setting filters, mutating columns from outside the component.',
     '150+ production-quality examples ready to copy; TanStack ships a much smaller Svelte example set.',
-    'sv-grid-mcp MCP server bundled - AI assistants can fetch real example sources without hallucinating.',
-    'Pro + Support tier ($599/dev/yr) for teams that need an SLA.',
+    '@svgrid/mcp MCP server bundled - AI assistants can fetch real example sources without hallucinating.',
+    'Enterprise + Support tier ($599/dev/yr) for teams that need an SLA.',
   ],
   competitorAdvantages: [
     'Larger community and more battle-tested at scale (millions of downloads / month).',
@@ -82,7 +82,7 @@ const tanstack: Comparison = {
     { feature: 'Master/detail + tree', svgrid: '✅ Demo 08', competitor: '✅ Via expansion + subRows' },
     { feature: 'Aggregation (sum/avg/min/max)', svgrid: '✅ Built in', competitor: '✅ Built in' },
     { feature: 'WAI-ARIA helpers', svgrid: '✅ Exported', competitor: '⚠️ BYO ARIA' },
-    { feature: 'AI / MCP integration', svgrid: '✅ sv-grid-mcp', competitor: '❌', svgridBetter: true },
+    { feature: 'AI / MCP integration', svgrid: '✅ @svgrid/mcp', competitor: '❌', svgridBetter: true },
     { feature: 'Multi-framework support', svgrid: '❌ Svelte only', competitor: '✅ React / Vue / Solid / Qwik / Lit' },
     { feature: 'Paid support tier', svgrid: '✅ $599/dev/yr', competitor: '❌' },
   ],
@@ -129,8 +129,8 @@ const svelteHeadless: Comparison = {
     'Built on Svelte 5 ($state / $derived) rather than Svelte 4 stores.',
     'Bundled <SvGrid /> component - no need to assemble headers, body, virtualization yourself.',
     'Excel-style filter menu, cell-range selection, inline editing, and pagination footer all come for free.',
-    'sv-grid-mcp MCP server for AI assistants.',
-    'Pro + Support tier with email support and private Slack.',
+    '@svgrid/mcp MCP server for AI assistants.',
+    'Enterprise + Support tier with email support and private Slack.',
     '20 maintained production-quality examples + 54 doc pages.',
   ],
   competitorAdvantages: [
@@ -189,8 +189,8 @@ const agGrid: Comparison = {
   svgridAdvantages: [
     'Svelte-5 native - no JS wrapper layer, no DOM imperatives, idiomatic runes.',
     'Lower bundle size for the same feature set on a Svelte page.',
-    'sv-grid-mcp MCP server for AI assistants.',
-    'Pro + Support tier at $599/dev/yr - a fraction of AG Grid Enterprise pricing ($999+/dev/yr).',
+    '@svgrid/mcp MCP server for AI assistants.',
+    'Enterprise + Support tier at $599/dev/yr - a fraction of AG Grid Enterprise pricing ($999+/dev/yr).',
     'Source code openly licensed under the MIT License with no Enterprise-only features held back.',
   ],
   competitorAdvantages: [
@@ -232,7 +232,7 @@ const agGrid: Comparison = {
   faq: [
     { question: 'Is SvGrid a good AG Grid alternative for Svelte?', answer: 'Yes. It is Svelte-5-native (no JS wrapper), ships a ~42 KB gzipped render component (or a ~7.5 KB headless core) versus a far heavier AG Grid Community bundle, and includes master/detail, tree, and range selection in the free tier - features AG Grid gates behind Enterprise.' },
     { question: 'What does SvGrid not have versus AG Grid Enterprise?', answer: 'Integrated charting and the AG Grid server-side row model for tens of millions of rows. If you depend on those, AG Grid Enterprise is still the better fit.' },
-    { question: 'Is SvGrid cheaper than AG Grid Enterprise?', answer: 'Yes - the core is MIT and the paid sv-grid-pro tier is $599-$999 per developer, below the per-developer pricing of AG Grid Enterprise.' },
+    { question: 'Is SvGrid cheaper than AG Grid Enterprise?', answer: 'Yes - the core is MIT and the paid @svgrid/enterprise tier is $599-$999 per developer, below the per-developer pricing of AG Grid Enterprise.' },
   ],
 }
 
@@ -246,7 +246,7 @@ const muiX: Comparison = {
     "MUI X is the obvious pick if you're already on Material UI + React. SvGrid is Svelte-5-native, ships more in its free tier (pinning, master/detail, and tree data are not gated behind Pro/Premium), and carries no Material design opinion.",
   intro: [
     'MUI X DataGrid is what most React teams on Material UI reach for. The Community edition (MIT) covers sorting, filtering, and pagination; column pinning and tree data move to Pro, and row grouping, aggregation, range selection, and Excel export move to Premium - both paid per developer.',
-    'SvGrid is the inverse trade: a single Svelte-5-native grid whose MIT core already includes pinning, master/detail, tree data, and cell selection, plus an optional sv-grid-pro pack for export, import, pivot, and AI.',
+    'SvGrid is the inverse trade: a single Svelte-5-native grid whose MIT core already includes pinning, master/detail, tree data, and cell selection, plus an optional @svgrid/enterprise pack for export, import, pivot, and AI.',
   ],
   similarities: [
     'A Community / paid split with an MIT free tier.',
@@ -259,7 +259,7 @@ const muiX: Comparison = {
     'Column pinning, master/detail, and tree data ship in the free MIT tier, not behind Pro/Premium.',
     'No Material Design opinion baked in - theme entirely through --sg-* tokens.',
     'Lighter footprint on a Svelte page than MUI + Emotion + the grid.',
-    'sv-grid-mcp MCP server for AI assistants.',
+    '@svgrid/mcp MCP server for AI assistants.',
   ],
   competitorAdvantages: [
     'First-class fit if your app is already built on Material UI + React.',
@@ -275,7 +275,7 @@ const muiX: Comparison = {
     { feature: 'Tree data', svgrid: '✅ Community', competitor: '⚠️ Pro', svgridBetter: true },
     { feature: 'Row grouping + aggregation', svgrid: '✅ Community', competitor: '⚠️ Premium' },
     { feature: 'Cell-range selection', svgrid: '✅ Community', competitor: '⚠️ Premium' },
-    { feature: 'Excel export', svgrid: '✅ sv-grid-pro', competitor: '⚠️ Premium' },
+    { feature: 'Excel export', svgrid: '✅ @svgrid/enterprise', competitor: '⚠️ Premium' },
     { feature: 'Virtualization', svgrid: '✅', competitor: '✅' },
     { feature: 'Inline editing', svgrid: '✅', competitor: '✅' },
     { feature: 'AI / MCP integration', svgrid: '✅', competitor: '❌', svgridBetter: true },
@@ -297,7 +297,7 @@ const muiX: Comparison = {
   faq: [
     { question: 'SvGrid vs MUI X DataGrid - which for Svelte?', answer: 'SvGrid, if your stack is Svelte. MUI X is React-only and tied to Material UI; SvGrid is Svelte-5-native with no design-system lock-in.' },
     { question: 'Which MUI X features are free in SvGrid?', answer: 'Column pinning, master/detail, and tree data ship in the MIT core of SvGrid; MUI X charges for those in Pro, and for row grouping, aggregation, and range selection in Premium.' },
-    { question: 'Is SvGrid cheaper than MUI X Pro or Premium?', answer: 'The community core is free under the MIT License, and sv-grid-pro is priced per developer rather than gating grid features across two paid tiers.' },
+    { question: 'Is SvGrid cheaper than MUI X Pro or Premium?', answer: 'The community core is free under the MIT License, and @svgrid/enterprise is priced per developer rather than gating grid features across two paid tiers.' },
   ],
 }
 
@@ -323,7 +323,7 @@ const handsontable: Comparison = {
     'MIT-licensed core - no commercial license required for production use.',
     'Svelte 5 native rather than a vanilla-JS core behind a framework wrapper.',
     'Headless engine + render component, so you can compose or drop in.',
-    'sv-grid-mcp MCP server for AI assistants.',
+    '@svgrid/mcp MCP server for AI assistants.',
   ],
   competitorAdvantages: [
     'The most complete spreadsheet formula surface (HyperFormula) if you need it.',
@@ -384,7 +384,7 @@ const glide: Comparison = {
     'Renders real DOM - WAI-ARIA, keyboard nav, screen-reader support, selectable text.',
     'Svelte 5 native rather than React-only.',
     'Excel-style filter menu, headless engine, and the imperative API out of the box.',
-    'sv-grid-mcp MCP server for AI assistants.',
+    '@svgrid/mcp MCP server for AI assistants.',
   ],
   competitorAdvantages: [
     'Peak canvas rendering performance on hundreds of thousands of visible cells.',
@@ -431,7 +431,7 @@ const svar: Comparison = {
     "SVAR is the closest genuinely Svelte-native rival - both are MIT and Svelte 5. SvGrid wins on capability breadth (grouping/aggregation, master-detail, Excel-style range editing, integrated charts), a headless core, and a real AI/MCP layer; SVAR wins on a fully-free grid with built-in CSV export, multi-framework reach, and Webix-pedigree maturity.",
   intro: [
     'SVAR DataGrid (npm: wx-svelte-grid) is part of the SVAR suite from XB Software, the makers of Webix, and is one of the few grids genuinely built for Svelte rather than wrapped from another framework. Its v2.x line targets Svelte 5. It covers sorting, header + advanced filtering, in-cell editing, tree data, virtual scrolling, pinned (left) columns, header/footer column spans, CSV export, and print - all free under the MIT license.',
-    'SvGrid overlaps on the Svelte-native angle but reaches further: row grouping with aggregation, master-detail, Excel-style cell-range selection with clipboard and a fill handle, pinned rows and left/right column freezing, integrated charts, a deep server-side data story, a headless engine, and the sv-grid-mcp server. Several of these (advanced export, pivot, import, AI) live in the paid Pro pack, whereas SVAR keeps the grid entirely free and monetizes its Gantt instead.',
+    'SvGrid overlaps on the Svelte-native angle but reaches further: row grouping with aggregation, master-detail, Excel-style cell-range selection with clipboard and a fill handle, pinned rows and left/right column freezing, integrated charts, a deep server-side data story, a headless engine, and the @svgrid/mcp server. Several of these (advanced export, pivot, import, AI) live in the paid Enterprise pack, whereas SVAR keeps the grid entirely free and monetizes its Gantt instead.',
   ],
   similarities: [
     'Purpose-built for Svelte 5, not a cross-framework wrapper.',
@@ -448,11 +448,11 @@ const svar: Comparison = {
     'Integrated charts (no dependency) plus a chart wizard and Chart.js sync.',
     'Deeper server-side story: SSRM, cursor pagination, GraphQL, websocket, optimistic updates.',
     'Headless engine (createSvGrid) you can compose, in addition to the render component.',
-    'sv-grid-mcp MCP server + llms.txt so AI assistants answer accurately about the grid.',
-    'Pro pack: XLSX/PDF/TSV/HTML export, pivot tables, Excel/CSV import, and AI helpers, with paid support.',
+    '@svgrid/mcp MCP server + llms.txt so AI assistants answer accurately about the grid.',
+    'Enterprise pack: XLSX/PDF/TSV/HTML export, pivot tables, Excel/CSV import, and AI helpers, with paid support.',
   ],
   competitorAdvantages: [
-    'The grid is entirely free with no paywall - CSV export and print ship in the base library, whereas SvGrid gates export behind Pro.',
+    'The grid is entirely free with no paywall - CSV export and print ship in the base library, whereas SvGrid gates export behind Enterprise.',
     'Multi-framework: the same grid is available for React, Vue, and Svelte; SvGrid is Svelte-only by design.',
     'XB Software / Webix pedigree - a long, battle-tested track record building data-heavy grid components.',
     'Auto-sizes row height to content out of the box.',
@@ -460,7 +460,7 @@ const svar: Comparison = {
   ],
   features: [
     { feature: 'Svelte 5 native', svgrid: '✅', competitor: '✅' },
-    { feature: 'License', svgrid: '✅ MIT core (+ paid Pro)', competitor: '✅ MIT (grid fully free)' },
+    { feature: 'License', svgrid: '✅ MIT core (+ paid Enterprise)', competitor: '✅ MIT (grid fully free)' },
     { feature: 'Headless engine', svgrid: '✅ createSvGrid', competitor: '❌ Component-only', svgridBetter: true },
     { feature: 'Excel-style filter menu', svgrid: '✅ Built in', competitor: '✅ Header + advanced filters' },
     { feature: 'Cell-range selection + clipboard', svgrid: '✅ Built in', competitor: '❌ Row selection only', svgridBetter: true },
@@ -475,10 +475,10 @@ const svar: Comparison = {
     { feature: 'Virtualization (rows + columns)', svgrid: '✅', competitor: '✅' },
     { feature: 'Integrated charts', svgrid: '✅ No-dep + Chart.js', competitor: '❌', svgridBetter: true },
     { feature: 'Server-side data', svgrid: '✅ SSRM / cursor / GraphQL / ws', competitor: '⚠️ RestDataProvider' },
-    { feature: 'Export', svgrid: '✅ CSV (Community) · XLSX/PDF/HTML (Pro)', competitor: '✅ CSV (free)' },
-    { feature: 'Pivot tables', svgrid: '✅ Pro', competitor: '❌ Announced, not shipped', svgridBetter: true },
+    { feature: 'Export', svgrid: '✅ CSV (Community) · XLSX/PDF/HTML (Enterprise)', competitor: '✅ CSV (free)' },
+    { feature: 'Pivot tables', svgrid: '✅ Enterprise', competitor: '❌ Announced, not shipped', svgridBetter: true },
     { feature: 'Multi-framework (React/Vue)', svgrid: '❌ Svelte only', competitor: '✅ React / Vue / Svelte' },
-    { feature: 'AI / MCP integration', svgrid: '✅ sv-grid-mcp + llms.txt', competitor: '❌', svgridBetter: true },
+    { feature: 'AI / MCP integration', svgrid: '✅ @svgrid/mcp + llms.txt', competitor: '❌', svgridBetter: true },
     { feature: 'Paid support tier', svgrid: '✅ From $599/dev', competitor: '⚠️ Grid free; suite support varies' },
   ],
   whenToChooseSvGrid: [
@@ -498,7 +498,7 @@ const svar: Comparison = {
     'Both are genuinely Svelte-5-native and MIT, so this is not a licensing call. On raw capability SvGrid is the more complete grid - grouping, master-detail, range editing, charts, server-side, headless, and a real AI/MCP layer. SVAR is the leaner, fully-free, multi-framework option with Webix-grade pedigree, and it ships CSV export for free where SvGrid charges for advanced export. Choose SvGrid when you need the deeper feature set or support; choose SVAR when a free, multi-framework grid covers your needs.',
   faq: [
     { question: 'SvGrid vs SVAR Svelte DataGrid - what is the difference?', answer: 'Both are MIT-licensed, Svelte-5-native grids. SvGrid is the broader product (row grouping with aggregation, master-detail, Excel-style range selection, integrated charts, a headless core, and an MCP server for AI tools). SVAR is a leaner, fully-free, multi-framework grid (React/Vue/Svelte) from XB Software with built-in CSV export and a strong Webix pedigree.' },
-    { question: 'Are SvGrid and SVAR both free?', answer: 'SvGrid Community and the SVAR DataGrid are both free under the MIT license, including commercial use. SVAR keeps the whole grid free (CSV export and print included) and monetizes its Gantt; SvGrid charges for the Pro pack (advanced XLSX/PDF export, pivot, import, AI, support).' },
+    { question: 'Are SvGrid and SVAR both free?', answer: 'SvGrid Community and the SVAR DataGrid are both free under the MIT license, including commercial use. SVAR keeps the whole grid free (CSV export and print included) and monetizes its Gantt; SvGrid charges for the Enterprise pack (advanced XLSX/PDF export, pivot, import, AI, support).' },
     { question: 'Are both built for Svelte 5?', answer: 'Yes. SvGrid is Svelte-5 runes from the first line, and SVAR DataGrid v2.x targets Svelte 5 (v1.x was Svelte 4). Both are Svelte-native rather than cross-framework wrappers.' },
   ],
 }
@@ -525,8 +525,8 @@ const vincjo: Comparison = {
     'Built-in virtualized render component - no need to author the table.',
     'Excel-style filter menu, inline editing, and cell-range selection.',
     'Row + column virtualization for large datasets.',
-    'Imperative SvGridApi + sv-grid-mcp MCP server.',
-    'Optional Pro pack for export, import, pivot, and AI.',
+    'Imperative SvGridApi + @svgrid/mcp MCP server.',
+    'Optional Enterprise pack for export, import, pivot, and AI.',
   ],
   competitorAdvantages: [
     'Much smaller surface and bundle if all you need is sort / filter / paginate.',
@@ -584,7 +584,7 @@ const uiKit: Comparison = {
     'Sorting, filtering, grouping, and pagination are built in, not hand-rolled.',
     'Row + column virtualization for thousands of rows.',
     'Inline editing, cell selection, and clipboard.',
-    'Headless engine + imperative API + sv-grid-mcp.',
+    'Headless engine + imperative API + @svgrid/mcp.',
     'Still fully themeable via --sg-* tokens / Tailwind.',
   ],
   competitorAdvantages: [
@@ -644,7 +644,7 @@ const tabulator: Comparison = {
     'Svelte 5 native - reactive data binding, no imperative mount/teardown.',
     'Custom cells are Svelte snippets, not HTML-string formatters.',
     'Headless engine available in addition to the component.',
-    'sv-grid-mcp MCP server for AI assistants.',
+    '@svgrid/mcp MCP server for AI assistants.',
   ],
   competitorAdvantages: [
     'Framework-agnostic - the same library across vanilla, React, Vue, Angular.',
@@ -678,7 +678,7 @@ const tabulator: Comparison = {
     'Tabulator is a free, feature-packed table that runs anywhere. If your app is Svelte 5, SvGrid gives you a comparable feature set with reactive data binding and snippet cells instead of imperative setData and HTML-string formatters.',
   faq: [
     { question: 'SvGrid vs Tabulator for Svelte - which is better?', answer: 'For Svelte 5, SvGrid: reactive $state data and Svelte snippet cells, with no imperative mount or teardown. Tabulator wins if you need one library across vanilla JS, React, Vue, and Angular.' },
-    { question: 'Is SvGrid free like Tabulator?', answer: 'Yes - the core is MIT, like Tabulator. Only the optional sv-grid-pro pack is paid.' },
+    { question: 'Is SvGrid free like Tabulator?', answer: 'Yes - the core is MIT, like Tabulator. Only the optional @svgrid/enterprise pack is paid.' },
     { question: 'Can I reuse Tabulator formatters in SvGrid?', answer: 'You re-create them as Svelte snippets via renderSnippet, which is more flexible than HTML-string formatters.' },
   ],
 }
@@ -705,7 +705,7 @@ const gridjs: Comparison = {
     'Svelte 5 native instead of a vanilla core + wrapper.',
     'Row + column virtualization for large datasets.',
     'Excel-style filters, inline editing, grouping, tree, master/detail.',
-    'Headless engine + imperative API + sv-grid-mcp.',
+    'Headless engine + imperative API + @svgrid/mcp.',
   ],
   competitorAdvantages: [
     'Tiny footprint if all you need is search / sort / paginate.',
@@ -764,7 +764,7 @@ const reactDataGrid: Comparison = {
     'Svelte 5 native - runes and snippets, not React.',
     'Built-in Excel-style filter menu and the imperative API.',
     'Grouping, tree data, and master/detail in the core.',
-    'sv-grid-mcp MCP server + optional Pro pack.',
+    '@svgrid/mcp MCP server + optional Enterprise pack.',
   ],
   competitorAdvantages: [
     'First-class fit for a React codebase.',
@@ -797,7 +797,7 @@ const reactDataGrid: Comparison = {
   faq: [
     { question: 'SvGrid vs react-data-grid - which for Svelte?', answer: 'SvGrid - it is Svelte-5-native, while react-data-grid is React-only. They share a similar editing and virtualization model.' },
     { question: 'Does SvGrid have built-in filtering unlike react-data-grid?', answer: 'Yes - SvGrid ships an Excel-style filter menu and a global filter; react-data-grid leaves the filter UI to you.' },
-    { question: 'Is SvGrid free like react-data-grid?', answer: 'Yes, the core is MIT. SvGrid adds an optional Pro pack for export, import, pivot, and AI.' },
+    { question: 'Is SvGrid free like react-data-grid?', answer: 'Yes, the core is MIT. SvGrid adds an optional Enterprise pack for export, import, pivot, and AI.' },
   ],
 }
 
@@ -823,7 +823,7 @@ const primevue: Comparison = {
     'Svelte 5 native - not Vue, Angular, or React.',
     'Headless engine in addition to the component.',
     'No design-system lock-in - theme via --sg-* tokens / Tailwind.',
-    'sv-grid-mcp MCP server for AI assistants.',
+    '@svgrid/mcp MCP server for AI assistants.',
   ],
   competitorAdvantages: [
     'First-class fit inside the Prime suite for Vue / Angular / React.',
@@ -871,7 +871,7 @@ const kendo: Comparison = {
     'Kendo is a polished enterprise suite with full vendor support - and a commercial license to match. SvGrid is Svelte-5-native with an MIT core and a paid tier at a fraction of the cost.',
   intro: [
     'Kendo UI Grid is part of the Telerik / Progress suite: a comprehensive, well-supported enterprise grid available for jQuery, React, Vue, and Angular under a commercial license, with professional support and a large component library.',
-    'SvGrid targets the Svelte 5 stack with an MIT community core that already covers sorting, Excel-style filters, grouping, virtualization, editing, master/detail, and tree data - plus a paid Pro + support tier at a fraction of enterprise-suite pricing.',
+    'SvGrid targets the Svelte 5 stack with an MIT community core that already covers sorting, Excel-style filters, grouping, virtualization, editing, master/detail, and tree data - plus a paid Enterprise + support tier at a fraction of enterprise-suite pricing.',
   ],
   similarities: [
     'Full enterprise feature set: sort, filter, group, edit, virtualize.',
@@ -882,7 +882,7 @@ const kendo: Comparison = {
   svgridAdvantages: [
     'Svelte 5 native rather than a multi-framework commercial suite.',
     'MIT-licensed community core - no per-developer license for the grid itself.',
-    'Headless engine + imperative API + sv-grid-mcp.',
+    'Headless engine + imperative API + @svgrid/mcp.',
     'Paid support at a fraction of enterprise-suite pricing.',
     'No design-system lock-in - theme via --sg-* tokens.',
   ],
@@ -932,18 +932,18 @@ const devextreme: Comparison = {
     'DevExtreme is a deep, commercial multi-framework grid with strong vendor support. SvGrid is Svelte-5-native with an MIT core and a far lower-cost paid tier.',
   intro: [
     'DevExtreme DataGrid is a heavyweight commercial grid from DevExpress, available across jQuery, React, Vue, and Angular, with a very deep feature set (master/detail, grouping, summaries, export, state persistence) and professional support.',
-    'SvGrid covers the common ground - sorting, Excel-style filters, grouping, virtualization, editing, master/detail, tree - as a Svelte-5-native grid with an MIT core, and adds a Pro pack for export / import / pivot / AI.',
+    'SvGrid covers the common ground - sorting, Excel-style filters, grouping, virtualization, editing, master/detail, tree - as a Svelte-5-native grid with an MIT core, and adds a Enterprise pack for export / import / pivot / AI.',
   ],
   similarities: [
     'Deep feature set with master/detail, grouping, and summaries.',
     'Inline and batch editing.',
-    'Export (in SvGrid via the Pro pack).',
+    'Export (in SvGrid via the Enterprise pack).',
     'Paid support available.',
   ],
   svgridAdvantages: [
     'Svelte 5 native rather than a multi-framework commercial library.',
     'MIT-licensed community core.',
-    'Headless engine + imperative API + sv-grid-mcp.',
+    'Headless engine + imperative API + @svgrid/mcp.',
     'Much lower-cost paid tier.',
   ],
   competitorAdvantages: [
@@ -958,7 +958,7 @@ const devextreme: Comparison = {
     { feature: 'Grouping + summaries', svgrid: '✅', competitor: '✅' },
     { feature: 'Master/detail', svgrid: '✅', competitor: '✅' },
     { feature: 'Inline / batch editing', svgrid: '✅', competitor: '✅' },
-    { feature: 'Export', svgrid: '✅ sv-grid-pro', competitor: '✅ Built in' },
+    { feature: 'Export', svgrid: '✅ @svgrid/enterprise', competitor: '✅ Built in' },
     { feature: 'Headless engine', svgrid: '✅', competitor: '❌' },
     { feature: 'AI / MCP integration', svgrid: '✅', competitor: '❌', svgridBetter: true },
   ],
@@ -977,8 +977,8 @@ const devextreme: Comparison = {
     'DevExtreme is a deep, commercial multi-framework grid with built-ins like state storing and broad export. SvGrid trades that breadth for a Svelte-native grid with an MIT core and a far lower-cost paid tier.',
   faq: [
     { question: 'SvGrid vs DevExtreme DataGrid - which for Svelte?', answer: 'SvGrid is the native fit for Svelte and far cheaper; DevExtreme is a commercial multi-framework suite with a larger built-in feature set.' },
-    { question: 'Is SvGrid cheaper than DevExtreme?', answer: 'Yes - MIT core and a lower-cost Pro tier. You give up the multi-framework reach of DevExtreme and some built-ins like stateStoring, which becomes a saved-views pattern.' },
-    { question: 'Does SvGrid export like DevExtreme?', answer: 'Yes, via sv-grid-pro: Excel, PDF, CSV, TSV, and HTML plus a printable view.' },
+    { question: 'Is SvGrid cheaper than DevExtreme?', answer: 'Yes - MIT core and a lower-cost Enterprise tier. You give up the multi-framework reach of DevExtreme and some built-ins like stateStoring, which becomes a saved-views pattern.' },
+    { question: 'Does SvGrid export like DevExtreme?', answer: 'Yes, via @svgrid/enterprise: Excel, PDF, CSV, TSV, and HTML plus a printable view.' },
   ],
 }
 
@@ -992,18 +992,18 @@ const syncfusion: Comparison = {
     'Syncfusion is an enormous commercial suite with a free community license for small teams. SvGrid is Svelte-5-native with an MIT core and no revenue / headcount conditions.',
   intro: [
     'Syncfusion Grid is part of the Essential Studio suite - a very deep grid (grouping, aggregates, editing, export, filtering, virtualization) across JavaScript, React, Vue, Angular, and Blazor. It is commercially licensed, with a free community license for individuals and small companies under a revenue / headcount threshold.',
-    'SvGrid focuses on Svelte 5 with an MIT community core - free for everyone, with no revenue or team-size conditions - plus an optional Pro pack for export / import / pivot / AI.',
+    'SvGrid focuses on Svelte 5 with an MIT community core - free for everyone, with no revenue or team-size conditions - plus an optional Enterprise pack for export / import / pivot / AI.',
   ],
   similarities: [
     'Very deep grid feature set.',
     'Editing, grouping, aggregates, filtering, virtualization.',
-    'Export (SvGrid via the Pro pack).',
+    'Export (SvGrid via the Enterprise pack).',
     'Paid support available.',
   ],
   svgridAdvantages: [
     'Svelte 5 native rather than a multi-framework commercial suite.',
     'MIT core - no revenue / headcount conditions like the community license.',
-    'Headless engine + imperative API + sv-grid-mcp.',
+    'Headless engine + imperative API + @svgrid/mcp.',
     'No design-system lock-in.',
   ],
   competitorAdvantages: [
@@ -1018,7 +1018,7 @@ const syncfusion: Comparison = {
     { feature: 'Grouping + aggregates', svgrid: '✅', competitor: '✅' },
     { feature: 'Inline editing', svgrid: '✅', competitor: '✅' },
     { feature: 'Virtualization', svgrid: '✅', competitor: '✅' },
-    { feature: 'Export', svgrid: '✅ sv-grid-pro', competitor: '✅ Built in' },
+    { feature: 'Export', svgrid: '✅ @svgrid/enterprise', competitor: '✅ Built in' },
     { feature: 'Headless engine', svgrid: '✅', competitor: '❌' },
     { feature: 'AI / MCP integration', svgrid: '✅', competitor: '❌', svgridBetter: true },
   ],
@@ -1036,7 +1036,7 @@ const syncfusion: Comparison = {
   bottomLine:
     'Syncfusion offers one of the largest suites and a free community license for small teams - but with revenue and headcount conditions. The MIT core of SvGrid is free for everyone with no conditions, and is the native fit for Svelte 5.',
   faq: [
-    { question: 'Is SvGrid free, unlike the Syncfusion commercial license?', answer: 'Yes - sv-grid-core is MIT with no revenue or team-size conditions. The Syncfusion community license is free only for qualifying small teams.' },
+    { question: 'Is SvGrid free, unlike the Syncfusion commercial license?', answer: 'Yes - @svgrid/grid is MIT with no revenue or team-size conditions. The Syncfusion community license is free only for qualifying small teams.' },
     { question: 'SvGrid vs Syncfusion Grid - which for Svelte?', answer: 'SvGrid is Svelte-5-native; Syncfusion is a multi-framework commercial suite. For a Svelte stack, SvGrid is the lighter, unconditional-MIT fit.' },
     { question: 'Does SvGrid support Blazor like Syncfusion?', answer: 'No - SvGrid is Svelte 5 only. If you need Blazor, Syncfusion is the better fit.' },
   ],
@@ -1082,7 +1082,7 @@ const jqxGrid: Comparison = {
     { feature: 'Virtualization', svgrid: '✅', competitor: '✅' },
     { feature: 'Multi-framework', svgrid: '❌ Svelte only', competitor: '✅ jQuery / Angular / React / Vue' },
     { feature: 'Headless engine', svgrid: '✅', competitor: '❌' },
-    { feature: 'AI / MCP server', svgrid: '✅ sv-grid-mcp', competitor: '✅ jqxGrid MCP' },
+    { feature: 'AI / MCP server', svgrid: '✅ @svgrid/mcp', competitor: '✅ jqxGrid MCP' },
   ],
   whenToChooseSvGrid: [
     'Your stack is Svelte 5 and you want an idiomatic, runes-native grid.',
@@ -1144,7 +1144,7 @@ const smartGrid: Comparison = {
     { feature: 'Virtualization', svgrid: '✅', competitor: '✅' },
     { feature: 'Framework-agnostic', svgrid: '❌ Svelte only', competitor: '✅ Web component everywhere' },
     { feature: 'Headless engine', svgrid: '✅', competitor: '❌' },
-    { feature: 'AI / MCP server', svgrid: '✅ sv-grid-mcp', competitor: '✅ Smart MCP' },
+    { feature: 'AI / MCP server', svgrid: '✅ @svgrid/mcp', competitor: '✅ Smart MCP' },
   ],
   whenToChooseSvGrid: [
     'Your stack is Svelte 5 and you want reactive runes, not attribute binding.',

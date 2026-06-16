@@ -23,7 +23,7 @@ If you are moving an app from React to Svelte, the `ag-grid-react` screens are o
 | `useState` / `useMemo` | `$state` / `$derived` |
 | `useCallback` handlers | plain functions |
 | Server-Side Row Model | external mode |
-| Enterprise modules | sv-grid-pro |
+| Enterprise modules | @svgrid/enterprise |
 
 ## Components and renderers
 
@@ -65,4 +65,4 @@ Usually the surrounding React patterns, not the grid. Column definitions, cell r
 
 ### Do I lose AG Grid Enterprise features moving to Svelte?
 
-The standard feature set is in SvGrid's MIT core, and enterprise-style features (pivot, export, range selection) are in sv-grid-pro. Check the [comparison](/compare/ag-grid) for specifics before porting.
+The standard feature set is in SvGrid's MIT core, and enterprise-style features (pivot, export, range selection) are in @svgrid/enterprise. Check the [comparison](/compare/ag-grid) for specifics before porting.

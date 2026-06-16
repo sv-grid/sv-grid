@@ -34,7 +34,7 @@ Grouping summarizes along one dimension (revenue per region). A pivot summarizes
 
 ## Why do it in the app
 
-Traditionally you export to a spreadsheet to pivot. Doing it in your app keeps the analysis next to the data: it updates live as records change, respects the filters already applied, and needs no download or separate tool. In SvGrid, pivot tables are part of the [sv-grid-pro](pivot-tables) pack.
+Traditionally you export to a spreadsheet to pivot. Doing it in your app keeps the analysis next to the data: it updates live as records change, respects the filters already applied, and needs no download or separate tool. In SvGrid, pivot tables are part of the [@svgrid/enterprise](pivot-tables) pack.
 
 ## When you do not need one
 

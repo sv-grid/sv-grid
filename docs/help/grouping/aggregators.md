@@ -7,7 +7,7 @@ result, formatted with that column's own `format`.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, columnGroupingFeature, type ColumnDef } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, columnGroupingFeature, type ColumnDef } from '@svgrid/grid'
 
   const features = tableFeatures({ columnGroupingFeature })
 

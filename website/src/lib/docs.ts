@@ -67,8 +67,8 @@ const CATEGORY_ORDER: {
     summary: '28 copy-paste patterns; one demo per recipe.' },
   { dir: 'compliance',        label: 'Compliance',   icon: '✓',
     summary: 'SOC 2 / GDPR / HIPAA / audit-log integration.' },
-  { dir: 'pro',               label: 'Pro tier',     icon: '◈',
-    summary: 'License, evaluation, support, Pro features.' },
+  { dir: 'enterprise',               label: 'Enterprise tier',     icon: '◈',
+    summary: 'License, evaluation, support, Enterprise features.' },
   { dir: 'reference',         label: 'API reference',icon: '⟨⟩',
     summary: '<SvGrid> / SvGridApi / ColumnDef / features tables.' },
   { dir: 'reference/auto',    label: '  Auto-generated', icon: '⚙',
@@ -82,7 +82,7 @@ const HIDDEN_SLUGS = new Set([
   'recipes/index',         // ditto - the sidebar IS the index
   'compliance/index',
   'reference/index',
-  'pro/README',            // landing already lives under Pro group
+  'enterprise/README',            // landing already lives under Enterprise group
 ])
 // Hide the entire _internal tree (planning notes, dev-only docs).
 const HIDDEN_PREFIXES = ['_internal/']

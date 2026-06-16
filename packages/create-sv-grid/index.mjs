@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// create-sv-grid - scaffold a Svelte app powered by SvGrid.
+// @svgrid/create - scaffold a Svelte app powered by SvGrid.
 //
 //   npm  create sv-grid@latest             # interactive
 //   pnpm create sv-grid                     # interactive
@@ -65,7 +65,7 @@ function parseArgs(argv) {
 
 function printHelp() {
   stdout.write(`
-${color('bold', 'create-sv-grid')} - scaffold a Svelte app powered by SvGrid
+${color('bold', '@svgrid/create')} - scaffold a Svelte app powered by SvGrid
 
 ${color('bold', 'Usage')}
   npm create sv-grid@latest [dir] -- [--template <name>] [--force]
@@ -151,7 +151,7 @@ async function main() {
     return a || def
   }
 
-  stdout.write(`\n${color('bold', '◆ create-sv-grid')}  ${color('dim', 'Svelte + SvGrid')}\n\n`)
+  stdout.write(`\n${color('bold', '◆ @svgrid/create')}  ${color('dim', 'Svelte + SvGrid')}\n\n`)
 
   // 1. Target directory.
   let target = args._[0]

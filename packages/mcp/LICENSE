@@ -1,0 +1,82 @@
+SV-GRID-MCP COMMERCIAL LICENSE
+Version 1.0
+
+Copyright (c) 2026 Boyko Markov <boikom@jqwidgets.com>
+Project: @svgrid/mcp
+
+This software is licensed, not sold. Use requires a valid, paid SvGrid
+Pro or Enterprise license. The MCP server bundles SvGrid example
+sources, documentation, and API reference material; redistribution of
+those materials outside this package is not permitted.
+
+------------------------------------------------------------------------
+1. GRANT (with valid SvGrid Pro or Enterprise license)
+------------------------------------------------------------------------
+
+Subject to the Subscriber's compliance with this License and continued
+payment of the applicable license fee, the Author grants the Subscriber
+a non-exclusive, non-transferable, non-sublicensable license to:
+
+  (a) install and run the Software on developer workstations and on
+      build / CI machines belonging to the Subscriber;
+  (b) configure the Software as an MCP server for AI assistants used
+      by the Subscriber's developers;
+  (c) modify the Software for the Subscriber's internal use, provided
+      that all copyright notices and license terms are preserved.
+
+The number of developer seats covered is determined by the
+Subscriber's SvGrid Pro / Enterprise order. A "developer" is any
+individual who uses an AI assistant configured against this MCP
+server while writing or modifying source code that imports
+`@svgrid/grid` or `@svgrid/enterprise`.
+
+------------------------------------------------------------------------
+2. RESTRICTIONS
+------------------------------------------------------------------------
+
+The Subscriber may NOT:
+
+  (a) redistribute the Software as a standalone package, library, or
+      MCP server;
+  (b) sublicense, rent, lease, or sell the Software to third parties;
+  (c) extract the bundled SvGrid example sources, documentation, or
+      API reference material for use outside this package;
+  (d) use the Software to train, fine-tune, or evaluate a third-party
+      model intended for resale or public distribution;
+  (e) use the Software to develop a directly competing data-grid or
+      table component product.
+
+------------------------------------------------------------------------
+3. SUBSCRIPTION AND TERMINATION
+------------------------------------------------------------------------
+
+The license is granted for the term specified in the Subscriber's
+SvGrid Pro or Enterprise order. On non-renewal or material breach of
+Sections 1 or 2, the license terminates automatically and the
+Subscriber must cease all use of the Software and remove it from
+development environments and CI infrastructure.
+
+------------------------------------------------------------------------
+4. WARRANTY DISCLAIMER AND LIABILITY
+------------------------------------------------------------------------
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM USE OF THE SOFTWARE,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE.
+
+The Author's total cumulative liability under this License shall not
+exceed the license fees paid by the Subscriber in the twelve months
+preceding the event giving rise to the claim.
+
+------------------------------------------------------------------------
+5. CONTACT
+------------------------------------------------------------------------
+
+To purchase a license, request a quote, or report unauthorized use,
+contact: boikom@jqwidgets.com
+Pricing: https://sv-grid.dev/pricing
+
+END OF LICENSE

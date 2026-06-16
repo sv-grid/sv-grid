@@ -40,7 +40,7 @@ api.setFilter('joinedAt', {
 The headless filter helper works the same:
 
 ```ts
-import { applyExcelFilter } from 'sv-grid-core'
+import { applyExcelFilter } from '@svgrid/grid'
 
 applyExcelFilter('2026-05-27', {
   id: 'joinedAt',

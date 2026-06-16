@@ -23,7 +23,7 @@ CSP-clean runtime intact.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-core'
+  import { SvGrid, renderSnippet, type ColumnDef } from '@svgrid/grid'
 
   // --- EAN-13 encoder (the actual GS1 spec - the output scans) ----------
   const L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011']
@@ -104,7 +104,7 @@ Notes that matter in production:
 Because every code is SVG, the same markup scales to a shelf label or asset tag
 and prints razor-sharp. The [demo](https://svgrid.com/demos/112-barcode-cells)
 pops a label preview on row click; pair it with the
-[Pro print / export pack](../help/export.md) to generate pick lists or label
+[Enterprise print / export pack](../help/export.md) to generate pick lists or label
 sheets from the grid.
 
 ## What about QR codes?
@@ -144,5 +144,5 @@ in the DOM regardless of how many products the grid holds.
 - [Demo 112-barcode-cells source](https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/112-barcode-cells.svelte)
 - [Cell components](../help/cells/cell-components.md) - the custom-cell rendering model
 - [Sparkline cell renderer](./sparkline-cells.md) - the same SVG-in-a-cell pattern
-- [Data export and printing - Pro](../help/export.md) - print labels and pick lists
+- [Data export and printing - Enterprise](../help/export.md) - print labels and pick lists
 - [Recipes index](./index.md)

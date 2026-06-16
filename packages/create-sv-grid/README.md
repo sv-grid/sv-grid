@@ -1,4 +1,4 @@
-# create-sv-grid
+# @svgrid/create
 
 Scaffold a [Svelte](https://svelte.dev) app powered by
 [SvGrid](https://www.svgrid.com) - the modern Svelte 5 data grid - in one
@@ -42,8 +42,8 @@ npm install
 npm run dev
 ```
 
-All templates use the free MIT `sv-grid-core` core. Add
-[`sv-grid-pro`](https://www.svgrid.com/pricing) for Excel/PDF export, import,
+All templates use the free MIT `@svgrid/grid` core. Add
+[`@svgrid/enterprise`](https://www.svgrid.com/pricing) for Excel/PDF export, import,
 print, pivot, and AI helpers.
 
 SvGrid(TM) is a trademark of jQWidgets Ltd. This package is MIT-licensed.

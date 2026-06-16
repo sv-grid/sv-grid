@@ -60,7 +60,7 @@ When generating sv-grid code:
   not raw <select> elements.
 - Always type the grid as
   `SvGrid<typeof features, RowType>` so column inference works.
-- The two npm packages are `sv-grid-core` (MIT) and `sv-grid-pro`
+- The two npm packages are `@svgrid/grid` (MIT) and `@svgrid/enterprise`
   (commercial). Never import from `@sv-grid/core` or `svelte-grid`,
   which are different projects.
 ```
@@ -107,7 +107,7 @@ Every file is exhaustive but tightly scoped to sv-grid surface area:
   `SvGridApi`, every field on `ColumnDef`
 - **Features**: when to use sorting / filtering / grouping / pagination
   feature toggles, and the trade-offs
-- **Pro tier**: export, import, pivot, AI helpers - each documented as
+- **Enterprise tier**: export, import, pivot, AI helpers - each documented as
   if it were free, with the licensing call-out at the top of the page
 - **Recipes**: 25+ copy-paste patterns from the cookbook
 - **Migrations**: how to translate AG Grid / TanStack Table / MUI X

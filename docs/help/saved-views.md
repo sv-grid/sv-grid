@@ -84,7 +84,7 @@ imperative API.
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-core'
+  import type { SvGridApi } from '@svgrid/grid'
 
   let view = $state<GridView>(loadView() ?? defaultView())
   let api  = $state<SvGridApi<typeof features, Row> | null>(null)

@@ -31,7 +31,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   // =================================================================
   // ENGINE

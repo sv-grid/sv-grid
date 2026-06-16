@@ -116,7 +116,7 @@
           <ul>
             <li><button onclick={() => { q = 'How do I disable sort on one column?'; void submit() }}>How do I disable sort on one column?</button></li>
             <li><button onclick={() => { q = 'Show me a server-side filter with TanStack Query'; void submit() }}>Server-side filter with TanStack Query</button></li>
-            <li><button onclick={() => { q = 'How does the Pro license check work?'; void submit() }}>How does the Pro license check work?</button></li>
+            <li><button onclick={() => { q = 'How does the Enterprise license check work?'; void submit() }}>How does the Enterprise license check work?</button></li>
             <li><button onclick={() => { q = 'Generate a 5-column grid for an order list'; void submit() }}>Generate a 5-column grid for an order list</button></li>
           </ul>
         </div>

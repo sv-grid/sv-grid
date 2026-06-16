@@ -90,7 +90,7 @@ schema.
     renderSnippet,
     type ColumnDef,
     type CellContext,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type RecordType = 'individual' | 'business' | 'nonprofit'
   type Status     = 'draft' | 'pending' | 'approved' | 'rejected'

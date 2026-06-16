@@ -1,5 +1,5 @@
 {
-  "name": "create-sv-grid",
+  "name": "@svgrid/create",
   "version": "1.0.0",
   "description": "Scaffold a Svelte app powered by SvGrid in one command: npm create sv-grid@latest",
   "type": "module",
@@ -24,7 +24,7 @@
     "template"
   ],
   "bin": {
-    "create-sv-grid": "index.mjs"
+    "@svgrid/create": "index.mjs"
   },
   "files": [
     "index.mjs",

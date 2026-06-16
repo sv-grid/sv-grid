@@ -28,7 +28,7 @@
         },
         {
           q: 'How big is the bundle?',
-          a: 'Measured gzipped with Svelte as an excluded peer dependency: the headless core (createSvGrid + a row model) is about 7.5 kB, and the full <SvGrid> render component - virtualization, Excel-style filters, inline editing, grouping, tree, and accessibility in one import - is about 42 kB (around 189 kB minified). The library ships as ESM; sv-grid-pro features are separate subpath imports that lazy-load.',
+          a: 'Measured gzipped with Svelte as an excluded peer dependency: the headless core (createSvGrid + a row model) is about 7.5 kB, and the full <SvGrid> render component - virtualization, Excel-style filters, inline editing, grouping, tree, and accessibility in one import - is about 42 kB (around 189 kB minified). The library ships as ESM; @svgrid/enterprise features are separate subpath imports that lazy-load.',
         },
       ],
     },
@@ -37,11 +37,11 @@
       items: [
         {
           q: 'What is the license?',
-          a: 'sv-grid-core is MIT-licensed - permissive, SPDX-recognised, and friendly to corporate legal review. The paid companion package sv-grid-pro (data export + print) ships under a separate commercial license.',
+          a: '@svgrid/grid is MIT-licensed - permissive, SPDX-recognised, and friendly to corporate legal review. The paid companion package @svgrid/enterprise (data export + print) ships under a separate commercial license.',
         },
         {
           q: 'Do I need to pay for production use?',
-          a: 'Not for the core library - sv-grid-core is MIT-licensed, free for commercial use. Pay for sv-grid-pro only if you need the export + print feature pack or paid support. Two Pro license tiers, per developer: Single Application Developer License ($599) for one deployed app, Multiple Application Developer License ($999) for unlimited apps. Each is a perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Without a key, Pro features still work but render an "Unlicensed sv-grid-pro" watermark.',
+          a: 'Not for the core library - @svgrid/grid is MIT-licensed, free for commercial use. Pay for @svgrid/enterprise only if you need the export + print feature pack or paid support. Two Enterprise license tiers, per developer: Single Application Developer License ($599) for one deployed app, Multiple Application Developer License ($999) for unlimited apps. Each is a perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Without a key, Enterprise features still work but render an "Unlicensed @svgrid/enterprise" watermark.',
         },
         {
           q: 'What is the difference between Single Application and Multiple Application Developer License?',
@@ -49,7 +49,7 @@
         },
         {
           q: 'How do I get support?',
-          a: 'For Community users: open a GitHub issue. For Pro customers (Single or Multiple App): email support@jqwidgets.com - we respond within one business day. Pro customers also get a private Slack channel.',
+          a: 'For Community users: open a GitHub issue. For Enterprise customers (Single or Multiple App): email support@jqwidgets.com - we respond within one business day. Enterprise customers also get a private Slack channel.',
         },
         {
           q: 'Is there a roadmap?',
@@ -62,7 +62,7 @@
       items: [
         {
           q: 'What is the MCP server for?',
-          a: 'sv-grid-mcp gives Claude / Cursor / any MCP-capable AI tool access to the SvGrid examples and docs at runtime. That eliminates hallucinated APIs and stale answers. See the MCP page for setup.',
+          a: '@svgrid/mcp gives Claude / Cursor / any MCP-capable AI tool access to the SvGrid examples and docs at runtime. That eliminates hallucinated APIs and stale answers. See the MCP page for setup.',
         },
         {
           q: 'Can I use the MCP server offline?',

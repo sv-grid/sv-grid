@@ -64,15 +64,15 @@ with an MIT core - and a much cheaper paid tier.
 ## See also
 
 - [SvGrid vs Kendo UI Grid](https://svgrid.com/compare/kendo-ui-grid) - the side-by-side comparison
-- [Pricing](https://svgrid.com/pricing) - the SvGrid Pro tiers
+- [Pricing](https://svgrid.com/pricing) - the SvGrid Enterprise tiers
 - [Architecture](./architecture.md) - engine + render-component split
 
 ## Frequently asked questions
 
 ### Is SvGrid a cheaper alternative to Kendo UI Grid?
 
-For a Svelte stack, yes: the `sv-grid-core` core is MIT (free, including
-commercial use), and the paid `sv-grid-pro` tier is a fraction of enterprise
+For a Svelte stack, yes: the `@svgrid/grid` core is MIT (free, including
+commercial use), and the paid `@svgrid/enterprise` tier is a fraction of enterprise
 component-suite pricing.
 
 ### How long does a Kendo Grid migration take?

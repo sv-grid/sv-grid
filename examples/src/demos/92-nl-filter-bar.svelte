@@ -29,7 +29,7 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
@@ -331,7 +331,7 @@
        fallback so evaluators don't need a key to click around, but
        the production wiring routes queries through your AI Platform
        API key (set as VITE_AI_PLATFORM_KEY or POST'd via your backend).
-       Pro feature - in `sv-grid-pro`. -->
+       Pro feature - in `@svgrid/enterprise`. -->
   <aside class="nlf-aikey shrink-0" role="note">
     <span class="nlf-aikey-badge">PRO · AI</span>
     <div class="nlf-aikey-body">

@@ -31,17 +31,17 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
     createPivotModel,
-    installPro,
+    installEnterprise,
     setLicenseKey,
-    type ProGridApi,
+    type EnterpriseGridApi,
     type PivotRow,
     type PivotValueConfig,
-  } from 'sv-grid-pro'
+  } from '@svgrid/enterprise'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Domain --------------------------------------------------------
   type Region = 'AMER' | 'EMEA' | 'APAC'
@@ -104,9 +104,9 @@
   }))
 
   // ---- Pro install ---------------------------------------------------
-  let api = $state<ProGridApi<typeof features, PivotRow> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, PivotRow> | null>(null)
   function onApiReady(next: SvGridApi<typeof features, PivotRow>) {
-    api = installPro(next)
+    api = installEnterprise(next)
   }
 
   // ---- Grid columns (purely visual; the exporter builds its own) -----

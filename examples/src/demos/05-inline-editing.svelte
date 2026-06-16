@@ -23,7 +23,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makePeople, type Person, type Status } from '../shared/seed'
 
   const features = tableFeatures({

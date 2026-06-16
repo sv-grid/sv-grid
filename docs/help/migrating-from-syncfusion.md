@@ -22,7 +22,7 @@ for a Svelte-5-native grid with an unconditional MIT core.
 | `detailTemplate`                         | `rowExpandingFeature` / master-detail rows |
 | `dataSource` (local / `DataManager`)     | `data` array or `externalSort/Filter`      |
 | `allowPaging` + `pageSettings`           | `showPagination`                           |
-| `toolbar` export                         | `sv-grid-pro` export pack                  |
+| `toolbar` export                         | `@svgrid/enterprise` export pack                  |
 
 ## Shape of the change
 
@@ -50,7 +50,7 @@ for a Svelte-5-native grid with an unconditional MIT core.
 - **Svelte 5 native** instead of a multi-framework commercial suite.
 - **Unconditional MIT core** - no revenue / headcount threshold like the
   Syncfusion community license.
-- **Optional Pro pack** for export / import / pivot / AI.
+- **Optional Enterprise pack** for export / import / pivot / AI.
 
 ## What to weigh
 
@@ -61,14 +61,14 @@ for a Svelte-5-native grid with an unconditional MIT core.
 ## See also
 
 - [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid) - the side-by-side comparison
-- [Data export and printing - Pro](./export.md) - the Pro export pack
+- [Data export and printing - Enterprise](./export.md) - the Enterprise export pack
 - [Getting started](../getting-started.md) - a working grid in ~15 lines
 
 ## Frequently asked questions
 
 ### Is SvGrid free, unlike the Syncfusion commercial license?
 
-`sv-grid-core` is MIT - free for everyone, with no revenue or team-size
+`@svgrid/grid` is MIT - free for everyone, with no revenue or team-size
 conditions. Syncfusion's community license is free only for qualifying small
 teams; otherwise it is commercial.
 

@@ -3,7 +3,7 @@
 Headline numbers from the regression suite. Every figure below is from
 the same hardware + browser configuration, re-measured on each release;
 the script that produces them lives in
-`packages/sv-grid-core/scripts/bench.ts` and is checked in.
+`packages/grid/scripts/bench.ts` and is checked in.
 
 Live load - 100k rows x 100 columns with row + column virtualization:
 
@@ -29,11 +29,11 @@ Production build, gzipped, measured on the `dist/` output:
 
 | Surface                             | Brotli | gzip   | Notes                                  |
 | ----------------------------------- | ------ | ------ | -------------------------------------- |
-| `sv-grid-core` (full)          | 41 kB  | 49 kB  | One import covers the entire renderer  |
+| `@svgrid/grid` (full)          | 41 kB  | 49 kB  | One import covers the entire renderer  |
 | Headless engine (no `<SvGrid>`)     | 11 kB  | 13 kB  | If you bring your own renderer         |
-| `sv-grid-pro` core                  | 7 kB   | 8 kB   | Export + print + import + AI shells    |
-| `sv-grid-pro` AI module only        | 4 kB   | 5 kB   | Imported via `'sv-grid-pro/ai'`        |
-| `sv-grid-pro` import module only    | 5 kB   | 6 kB   | Imported via `'sv-grid-pro/import'`    |
+| `@svgrid/enterprise` core                  | 7 kB   | 8 kB   | Export + print + import + AI shells    |
+| `@svgrid/enterprise` AI module only        | 4 kB   | 5 kB   | Imported via `'@svgrid/enterprise/ai'`        |
+| `@svgrid/enterprise` import module only    | 5 kB   | 6 kB   | Imported via `'@svgrid/enterprise/import'`    |
 | Peer: `jszip`                       | 30 kB  | 35 kB  | Loaded on first `xlsx` export *or* import |
 | Peer: `pdfmake` + vfs               | ~200 kB| ~280 kB| Loaded on first `pdf` export only      |
 

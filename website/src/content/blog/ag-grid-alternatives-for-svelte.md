@@ -21,7 +21,7 @@ AG Grid is the right tool for many teams. People look past it for a few honest r
 
 ### SvGrid (native Svelte 5)
 
-A grid written natively on Svelte 5 runes: headless core plus a render component, with virtualization, Excel-style filters, grouping, inline editing, tree/master-detail, and server-side data. MIT core; Pro adds export, import, print, pivot, and AI. The closest thing to "AG Grid features, but Svelte-native." See [SvGrid vs AG Grid](/compare/ag-grid).
+A grid written natively on Svelte 5 runes: headless core plus a render component, with virtualization, Excel-style filters, grouping, inline editing, tree/master-detail, and server-side data. MIT core; Enterprise adds export, import, print, pivot, and AI. The closest thing to "AG Grid features, but Svelte-native." See [SvGrid vs AG Grid](/compare/ag-grid).
 
 ### TanStack Table (Svelte adapter)
 

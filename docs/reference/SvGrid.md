@@ -180,4 +180,4 @@ the grid's selection without polling.
 - [`SvGridApi`](./SvGridApi.md) - the imperative API exposed via `onApiReady`
 - [`ColumnDef`](./ColumnDef.md) - column-definition shape
 - [features](./features.md) - the feature registry
-- [Pro extensions](./pro.md) - what `installPro(api)` adds
+- [Enterprise extensions](./enterprise.md) - what `installEnterprise(api)` adds

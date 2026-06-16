@@ -45,6 +45,12 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.0.0
         version: 7.1.2(svelte@5.55.9)(vite@8.0.14(@types/node@22.19.19)(jiti@2.7.0))
+      '@svgrid/enterprise':
+        specifier: workspace:*
+        version: link:../packages/enterprise
+      '@svgrid/grid':
+        specifier: workspace:*
+        version: link:../packages/grid
       '@tailwindcss/postcss':
         specifier: ^4.2.4
         version: 4.3.0
@@ -63,12 +69,6 @@ importers:
       postcss:
         specifier: ^8.5.12
         version: 8.5.15
-      sv-grid-core:
-        specifier: workspace:*
-        version: link:../packages/sv-grid-core
-      sv-grid-pro:
-        specifier: workspace:*
-        version: link:../packages/sv-grid-pro
       svelte:
         specifier: ^5.55.5
         version: 5.55.9
@@ -87,7 +87,25 @@ importers:
 
   packages/create-sv-grid: {}
 
-  packages/sv-grid-core:
+  packages/enterprise:
+    devDependencies:
+      '@svgrid/grid':
+        specifier: workspace:*
+        version: link:../grid
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
+      pdfmake:
+        specifier: ^0.2.10
+        version: 0.2.23
+      svelte:
+        specifier: ^5.55.5
+        version: 5.55.9
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  packages/grid:
     devDependencies:
       '@sveltejs/package':
         specifier: ^2.5.7
@@ -111,7 +129,22 @@ importers:
         specifier: ^4.4.6
         version: 4.4.8(picomatch@4.0.4)(svelte@5.55.9)(typescript@6.0.3)
 
-  packages/sv-grid-mcp:
+  packages/grid-wc:
+    devDependencies:
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^7.0.0
+        version: 7.1.2(svelte@5.55.9)(vite@8.0.14(@types/node@22.19.19)(jiti@2.7.0))
+      '@svgrid/grid':
+        specifier: workspace:*
+        version: link:../grid
+      svelte:
+        specifier: ^5.55.5
+        version: 5.55.9
+      vite:
+        specifier: ^8.0.10
+        version: 8.0.14(@types/node@22.19.19)(jiti@2.7.0)
+
+  packages/mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.4
@@ -127,39 +160,6 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
-  packages/sv-grid-pro:
-    devDependencies:
-      jszip:
-        specifier: ^3.10.1
-        version: 3.10.1
-      pdfmake:
-        specifier: ^0.2.10
-        version: 0.2.23
-      sv-grid-core:
-        specifier: workspace:*
-        version: link:../sv-grid-core
-      svelte:
-        specifier: ^5.55.5
-        version: 5.55.9
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-
-  packages/sv-grid-wc:
-    devDependencies:
-      '@sveltejs/vite-plugin-svelte':
-        specifier: ^7.0.0
-        version: 7.1.2(svelte@5.55.9)(vite@8.0.14(@types/node@22.19.19)(jiti@2.7.0))
-      sv-grid-core:
-        specifier: workspace:*
-        version: link:../sv-grid-core
-      svelte:
-        specifier: ^5.55.5
-        version: 5.55.9
-      vite:
-        specifier: ^8.0.10
-        version: 8.0.14(@types/node@22.19.19)(jiti@2.7.0)
-
   website:
     devDependencies:
       '@resvg/resvg-js':
@@ -171,6 +171,12 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.0.0
         version: 7.1.2(svelte@5.55.9)(vite@8.0.14(@types/node@22.19.19)(jiti@2.7.0))
+      '@svgrid/enterprise':
+        specifier: workspace:*
+        version: link:../packages/enterprise
+      '@svgrid/grid':
+        specifier: workspace:*
+        version: link:../packages/grid
       '@tailwindcss/postcss':
         specifier: ^4.2.4
         version: 4.3.0
@@ -192,12 +198,6 @@ importers:
       postcss:
         specifier: ^8.5.12
         version: 8.5.15
-      sv-grid-core:
-        specifier: workspace:*
-        version: link:../packages/sv-grid-core
-      sv-grid-pro:
-        specifier: workspace:*
-        version: link:../packages/sv-grid-pro
       svelte:
         specifier: ^5.55.5
         version: 5.55.9

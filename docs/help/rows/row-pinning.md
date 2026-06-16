@@ -24,7 +24,7 @@ Each is an array of your own row objects (same `TData` type as `data`). The grid
 
 ```ts
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from '@svgrid/grid'
 
   type Row = { id: string; account: string; arr: number; seats: number }
 

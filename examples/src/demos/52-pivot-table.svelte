@@ -27,8 +27,8 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
-  import { createPivotModel, type PivotRow, type PivotValueConfig } from 'sv-grid-pro'
+  } from '@svgrid/grid'
+  import { createPivotModel, type PivotRow, type PivotValueConfig } from '@svgrid/enterprise'
 
   // ---- Domain ---------------------------------------------------------
 
@@ -163,7 +163,7 @@
     return values[idx]?.field ?? null
   }
 
-  // -- core pivot (powered by sv-grid-pro's createPivotModel) --
+  // -- core pivot (powered by @svgrid/enterprise's createPivotModel) --
 
   type SortSpec = { columnId: string; desc: boolean } | null
 

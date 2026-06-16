@@ -15,8 +15,8 @@ pnpm changeset
 ```
 
 Walks you through:
-1. Which packages this change affects (`sv-grid-core`,
-   `sv-grid-pro`, both)
+1. Which packages this change affects (`@svgrid/grid`,
+   `@svgrid/enterprise`, both)
 2. Whether it's `patch`, `minor`, or `major`
 3. A one-paragraph user-facing note
 
@@ -28,8 +28,8 @@ many people add changesets at once.
 
 ```md
 ---
-'sv-grid-core': minor
-'sv-grid-pro': minor
+'@svgrid/grid': minor
+'@svgrid/enterprise': minor
 ---
 
 Added per-column `sortable` and `filterable` properties so individual

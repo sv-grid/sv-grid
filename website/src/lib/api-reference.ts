@@ -1,8 +1,8 @@
 // Hand-curated SvGrid API reference data. Source of truth:
-//   packages/sv-grid-core/src/index.ts          (public exports)
-//   packages/sv-grid-core/src/SvGrid.svelte      (component Props)
-//   packages/sv-grid-core/src/svgrid-wrapper.types.ts  (SvGridApi)
-//   packages/sv-grid-core/src/core.ts            (ColumnDef, CellFormatConfig, ...)
+//   packages/grid/src/index.ts          (public exports)
+//   packages/grid/src/SvGrid.svelte      (component Props)
+//   packages/grid/src/svgrid-wrapper.types.ts  (SvGridApi)
+//   packages/grid/src/core.ts            (ColumnDef, CellFormatConfig, ...)
 //
 // Every public prop, method, event, and option is listed with a concrete
 // example so the consumer never has to guess the shape. Sections may also
@@ -53,7 +53,7 @@ const svgridComponent: ApiSection = {
     'SvGrid is the batteries-included render component. It wires the headless engine to a complete DOM layer with row + column virtualization, an Excel-style filter menu, cell-range selection, inline editing, grouping, pinning, find-in-grid, undo/redo, and pagination.',
     'For most apps this is the only entry point you need. Reach for the headless core (createSvGrid) only when you need a custom layout that the render component cannot deliver.',
   ],
-  signature: `import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
+  signature: `import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
 
 const features = tableFeatures({ rowSortingFeature })
 
@@ -396,7 +396,7 @@ function ratesUp() { rows.forEach(r => r.rate *= 1.1) } // BAD - mutates in plac
     rowSelectionFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Employee = { id: number; name: string; team: string; salary: number }
 
@@ -599,7 +599,7 @@ const flexRenderSection: ApiSection = {
     'When you build a custom layout on top of the headless core, FlexRender bridges between the renderer set on a ColumnDef and the actual DOM. It handles every case: a string, a {#snippet} (via renderSnippet), a Svelte component (via renderComponent), a function returning one of those, or a raw value.',
     'You can pass the renderer explicitly with content + context, or use one of the cell / header / footer shorthands and let FlexRender pull the right renderer and context off the engine object for you.',
   ],
-  signature: `import { FlexRender } from 'sv-grid-core'
+  signature: `import { FlexRender } from '@svgrid/grid'
 
 <!-- Explicit form: -->
 {#each row.getAllCells() as cell (cell.id)}
@@ -706,7 +706,7 @@ const svgridChartSection: ApiSection = {
     'SvGridChart renders an interactive SVG chart with no charting dependency: stacked/grouped bars, lines, areas, pie/donut, scatter, and per-series combo. It supports a crosshair tooltip, a clickable legend that toggles series, optional data labels, and a click-to-drill callback.',
     'You give it a ChartSpec. The easiest way to build one from grid rows is rowsToChartSpec(), which aggregates a value field by a category (and optionally pivots into one series per value of a `series` field). For full control, build a ChartSpec by hand or with buildChart().',
   ],
-  signature: `import { SvGridChart, rowsToChartSpec } from 'sv-grid-core'
+  signature: `import { SvGridChart, rowsToChartSpec } from '@svgrid/grid'
 
 const spec = rowsToChartSpec(orders, {
   type: 'bar',
@@ -990,7 +990,7 @@ const columnDefSection: ApiSection = {
   ],
   example: {
     title: 'A column set covering most patterns',
-    code: `import { renderSnippet, type ColumnDef } from 'sv-grid-core'
+    code: `import { renderSnippet, type ColumnDef } from '@svgrid/grid'
 
 {#snippet StatusCell(props: { row: Order })}
   <span class={\`pill pill-\${props.row.status}\`}>{props.row.status}</span>
@@ -1191,7 +1191,7 @@ const coreTypesSection: ApiSection = {
     },
   ],
   notes: [
-    'These types are exported from sv-grid-core for annotation: Row, Cell, Column, CellContext, EditorContext, HeaderContext, HeaderGroup, Header, RowData, SortingState, Updater, SvGridInstance, SvGridOptions, TableFeatures, ColumnDefTemplate.',
+    'These types are exported from @svgrid/grid for annotation: Row, Cell, Column, CellContext, EditorContext, HeaderContext, HeaderGroup, Header, RowData, SortingState, Updater, SvGridInstance, SvGridOptions, TableFeatures, ColumnDefTemplate.',
   ],
 }
 
@@ -1205,7 +1205,7 @@ const imperativeApiSection: ApiSection = {
   demo: 'imperative-api',
   intro: [
     'Most of the time you drive the grid by mutating reactive state (data, columns). When you need imperative control - "scroll to the row with id X", "clear all filters from a parent toolbar", "undo the last edit", "open find" - use the API object that <SvGrid onApiReady> delivers.',
-    'Every method is typed in packages/sv-grid-core/src/svgrid-wrapper.types.ts.',
+    'Every method is typed in packages/grid/src/svgrid-wrapper.types.ts.',
   ],
   signature: `type SvGridApi<TFeatures, TData> = {
   // Cells
@@ -1674,7 +1674,7 @@ api.setState(JSON.parse(localStorage.getItem('view') ?? '{}'))`,
   example: {
     title: 'Drive the grid from a parent toolbar',
     code: `<script lang="ts">
-  import type { SvGridApi } from 'sv-grid-core'
+  import type { SvGridApi } from '@svgrid/grid'
 
   let api = $state<SvGridApi<typeof features, Order> | null>(null)
 
@@ -1725,7 +1725,7 @@ const featureSection: ApiSection = {
   rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -1799,7 +1799,7 @@ const createSvGridSection: ApiSection = {
   createSortedRowModel,
   tableFeatures,
   rowSortingFeature,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 
 const features = tableFeatures({ rowSortingFeature })
 
@@ -1874,7 +1874,7 @@ const rowModelsSection: ApiSection = {
   createGroupedRowModel,
   createExpandedRowModel,
   createPaginatedRowModel,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 
 const grid = createSvGrid({
   // ...
@@ -1940,7 +1940,7 @@ const virtualizationSection: ApiSection = {
   intro: [
     'When you use <SvGrid />, virtualization is automatic. For custom layouts on top of the headless core, the virtualizer factories expose the same engine.',
   ],
-  signature: `import { createSvelteVirtualizer, createColumnVirtualizer } from 'sv-grid-core'
+  signature: `import { createSvelteVirtualizer, createColumnVirtualizer } from '@svgrid/grid'
 
 const rowVirtualizer = createSvelteVirtualizer({
   count: () => grid.getRowModel().rows.length,
@@ -2010,7 +2010,7 @@ const a11ySection: ApiSection = {
   getGridCellA11yProps,
   getGridRowA11yProps,
   getGridCellDomId,
-} from 'sv-grid-core'`,
+} from '@svgrid/grid'`,
   props: [
     {
       name: 'getGridRootA11yProps',
@@ -2059,14 +2059,14 @@ const utilsSection: ApiSection = {
       name: 'filterFns',
       type: '{ includesString; equals }',
       description: 'The built-in filter predicates the engine uses. Reference them when configuring a custom filtered row model.',
-      example: `import { filterFns } from 'sv-grid-core'
+      example: `import { filterFns } from '@svgrid/grid'
 const ok = filterFns.includesString(row.customer, 'acme')`,
     },
     {
       name: 'sortFns',
       type: '{ auto; number; date }',
       description: 'The built-in comparator set (locale-aware string, numeric, date). Used by the sorted row model.',
-      example: `import { sortFns } from 'sv-grid-core'
+      example: `import { sortFns } from '@svgrid/grid'
 rows.sort((a, b) => sortFns.number(a.total, b.total))`,
     },
     {
@@ -2120,33 +2120,33 @@ if (intent === 'move-down') focusNext()`,
 }
 
 // =======================================================================
-// Enterprise (Pro) - packages/sv-grid-pro
+// Enterprise - packages/enterprise
 // =======================================================================
-// The Pro package augments the community grid with Excel/PDF export,
+// The Enterprise package augments the community grid with Excel/PDF export,
 // printing, file import, pivot tables, AI helpers, and staged editing.
-// You opt in by wrapping the community api with installPro(api).
+// You opt in by wrapping the community api with installEnterprise(api).
 
 const proOverviewSection: ApiSection = {
   id: 'pro-overview',
-  category: 'Enterprise (Pro)',
-  title: 'installPro / ProGridApi',
+  category: 'Enterprise',
+  title: 'installEnterprise / EnterpriseGridApi',
   blurb: 'Augment the community api with export, print, import, pivot, and AI.',
   intro: [
-    'sv-grid-pro is a thin, opt-in layer on top of sv-grid-core. You keep the same <SvGrid /> component; you just wrap the api object from onApiReady with installPro() to unlock the enterprise methods.',
-    'installPro mutates and returns the same api object, so existing references keep working. Every Pro method is license soft-gated: unlicensed evaluation works fully but shows a small watermark and emits a one-time console nudge. Revoked or malformed keys throw on first use.',
+    '@svgrid/enterprise is a thin, opt-in layer on top of @svgrid/grid. You keep the same <SvGrid /> component; you just wrap the api object from onApiReady with installEnterprise() to unlock the enterprise methods.',
+    'installEnterprise mutates and returns the same api object, so existing references keep working. Every Enterprise method is license soft-gated: unlicensed evaluation works fully but shows a small watermark and emits a one-time console nudge. Revoked or malformed keys throw on first use.',
   ],
-  signature: `import { SvGrid } from 'sv-grid-core'
-import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
+  signature: `import { SvGrid } from '@svgrid/grid'
+import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
 
 setLicenseKey(import.meta.env.VITE_SVGRID_LICENSE)   // once, at startup
 
-let api = $state<ProGridApi<typeof features, Order> | null>(null)
+let api = $state<EnterpriseGridApi<typeof features, Order> | null>(null)
 
 <SvGrid {data} {columns} {features}
-  onApiReady={(base) => (api = installPro(base))}
+  onApiReady={(base) => (api = installEnterprise(base))}
 />
 
-// Now the Pro methods are available alongside the core api:
+// Now the Enterprise methods are available alongside the core api:
 await api.exportData({ format: 'xlsx', filename: 'orders' })
 await api.print()
 const result = await api.importData({ file, format: 'auto' })
@@ -2154,11 +2154,11 @@ const summary = await api.ai.summarize({ target: 'view' })
 const { rows, columns } = api.pivot.build(pivotConfig)`,
   props: [
     {
-      name: 'installPro(api)',
-      type: '(api: SvGridApi<TF, TData>) => ProGridApi<TF, TData>',
+      name: 'installEnterprise(api)',
+      type: '(api: SvGridApi<TF, TData>) => EnterpriseGridApi<TF, TData>',
       description:
-        'Wrap a community api to add the Pro methods. Returns the same (mutated) object. Call it once inside onApiReady.',
-      example: `onApiReady={(base) => (api = installPro(base))}`,
+        'Wrap a community api to add the Enterprise methods. Returns the same (mutated) object. Call it once inside onApiReady.',
+      example: `onApiReady={(base) => (api = installEnterprise(base))}`,
     },
     {
       name: 'api.exportData(opts)',
@@ -2180,43 +2180,43 @@ const { rows, columns } = api.pivot.build(pivotConfig)`,
     },
     {
       name: 'api.ai',
-      type: 'ProAIApi<TData>',
+      type: 'EnterpriseAIApi<TData>',
       description: 'Namespace of AI helpers: filter, smartFill, summarize, classify. All route through a consumer-registered AIProvider. See the AI section.',
       example: `const plan = await api.ai.filter('cancelled orders over $1k last quarter')`,
     },
     {
       name: 'api.pivot',
-      type: 'ProPivotApi<TFeatures, TData>',
+      type: 'EnterprisePivotApi<TFeatures, TData>',
       description: 'Pure pivot-model builder. build(config) returns { rows, columns } you feed to a second <SvGrid>. See the Pivot section.',
       example: `const { rows, columns } = api.pivot.build({ rows: ['region'], cols: ['status'], values: [...] })`,
     },
   ],
   notes: [
-    'installPro does not change the rendered grid - it only adds methods to the api object. The watermark (when unlicensed) is injected next to the grid at install time.',
-    'ProGridApi extends SvGridApi, so every community method (addRow, setFilter, getDisplayedRows, undo, ...) is still there.',
+    'installEnterprise does not change the rendered grid - it only adds methods to the api object. The watermark (when unlicensed) is injected next to the grid at install time.',
+    'EnterpriseGridApi extends SvGridApi, so every community method (addRow, setFilter, getDisplayedRows, undo, ...) is still there.',
   ],
 }
 
 const licenseSection: ApiSection = {
   id: 'pro-license',
-  category: 'Enterprise (Pro)',
+  category: 'Enterprise',
   title: 'Licensing',
-  blurb: 'Set and query the Pro license key. Evaluation works unlicensed.',
+  blurb: 'Set and query the Enterprise license key. Evaluation works unlicensed.',
   intro: [
-    'Pro is honor-system licensed. All features run without a key so you can evaluate end to end; an unlicensed grid just shows a small watermark and logs a one-time nudge. Set a valid key to remove both. Revoked or malformed keys throw on the first Pro call.',
+    'Enterprise is honor-system licensed. All features run without a key so you can evaluate end to end; an unlicensed grid just shows a small watermark and logs a one-time nudge. Set a valid key to remove both. Revoked or malformed keys throw on the first Enterprise call.',
   ],
   signature: `import {
   setLicenseKey, clearLicenseKey, getLicenseKey,
-  isLicenseKeySet, hasValidLicense, assertProLicensed,
-} from 'sv-grid-pro'
+  isLicenseKeySet, hasValidLicense, assertEnterpriseLicensed,
+} from '@svgrid/enterprise'
 
-// Once, as early as possible (before the first Pro call):
+// Once, as early as possible (before the first Enterprise call):
 setLicenseKey('SVG-XXXX-XXXX-XXXX-XXXX')`,
   props: [
     {
       name: 'setLicenseKey(key)',
       type: '(key: string) => void',
-      description: 'Register the license key for the session. Call once at startup, before any Pro method runs.',
+      description: 'Register the license key for the session. Call once at startup, before any Enterprise method runs.',
       example: `setLicenseKey(import.meta.env.VITE_SVGRID_LICENSE)`,
     },
     {
@@ -2244,16 +2244,16 @@ setLicenseKey('SVG-XXXX-XXXX-XXXX-XXXX')`,
       example: `featureFlags.proBadge = hasValidLicense()`,
     },
     {
-      name: 'assertProLicensed()',
+      name: 'assertEnterpriseLicensed()',
       type: '() => void',
-      description: 'Throws when the key is revoked / malformed; no-op when valid or merely unset (evaluation mode). Called internally by every Pro method.',
-      example: `assertProLicensed()   // guard a custom Pro-only code path`,
+      description: 'Throws when the key is revoked / malformed; no-op when valid or merely unset (evaluation mode). Called internally by every Enterprise method.',
+      example: `assertEnterpriseLicensed()   // guard a custom Enterprise-only code path`,
     },
     {
       name: 'dismissUnlicensedNudge()',
       type: '() => void',
       description: 'Suppress the one-time unlicensed console nudge / watermark for the rest of the session (e.g. in internal tooling).',
-      example: `import { dismissUnlicensedNudge } from 'sv-grid-pro'
+      example: `import { dismissUnlicensedNudge } from '@svgrid/enterprise'
 dismissUnlicensedNudge()`,
     },
   ],
@@ -2261,15 +2261,15 @@ dismissUnlicensedNudge()`,
 
 const exportSection: ApiSection = {
   id: 'pro-export',
-  category: 'Enterprise (Pro)',
+  category: 'Enterprise',
   title: 'Export',
   blurb: 'Export rows to Excel, PDF, CSV, TSV, or HTML - styled, multi-sheet, with headers/footers.',
   demo: 'pro-export',
   intro: [
-    'exportGrid(api, opts) (or api.exportData(opts) after installPro) writes the current displayed rows to a file and triggers the browser download. By default it exports the filtered/sorted view; pass rows explicitly to export the full dataset instead.',
+    'exportGrid(api, opts) (or api.exportData(opts) after installEnterprise) writes the current displayed rows to a file and triggers the browser download. By default it exports the filtered/sorted view; pass rows explicitly to export the full dataset instead.',
     'xlsx and pdf honour the styles, header, and footer options; csv/tsv ignore styling; html bakes styles into inline attributes. Multi-sheet output is xlsx-only.',
   ],
-  signature: `import { exportGrid, type ExportOptions } from 'sv-grid-pro'
+  signature: `import { exportGrid, type ExportOptions } from '@svgrid/enterprise'
 
 type ExportFormat = 'xlsx' | 'pdf' | 'csv' | 'tsv' | 'html'
 
@@ -2367,13 +2367,13 @@ footer: [{ left: 'Confidential', right: 'Page {page}' }],`,
 
 const printSection: ApiSection = {
   id: 'pro-print',
-  category: 'Enterprise (Pro)',
+  category: 'Enterprise',
   title: 'Print',
   blurb: 'Open a clean, print-ready view of the current rows in a new window.',
   intro: [
     'printGrid(api, opts) (or api.print(opts)) renders the displayed rows into a minimal print document and invokes the browser print dialog. Orientation is hinted via @page so the browser sizes the paper correctly.',
   ],
-  signature: `import { printGrid, type PrintOptions } from 'sv-grid-pro'
+  signature: `import { printGrid, type PrintOptions } from '@svgrid/enterprise'
 
 await printGrid(api, {
   title: 'Q3 Orders',
@@ -2412,14 +2412,14 @@ await printGrid(api, {
 
 const importSection: ApiSection = {
   id: 'pro-import',
-  category: 'Enterprise (Pro)',
+  category: 'Enterprise',
   title: 'Import',
   blurb: 'Read Excel / CSV / TSV / JSON into typed, validated rows.',
   intro: [
     'importData(api, opts) (or api.importData(opts)) parses a File/Blob or inline text into typed rows with per-cell validation, then either returns a preview (default) or commits straight into the grid. Use the preview to render an editing modal so users can fix issues before they land.',
     'Format is sniffed from the file extension (or the text payload) when format is "auto". columnMap renames/drops source headers; columnTypes adds strict per-field coercion; validator adds row-level business rules.',
   ],
-  signature: `import { importData, type ImportResult } from 'sv-grid-pro'
+  signature: `import { importData, type ImportResult } from '@svgrid/enterprise'
 
 // Preview, then commit if clean:
 const result = await api.importData({
@@ -2489,7 +2489,7 @@ status = \`\${rows.length}/\${total} parsed, \${errors.length} errors\``,
 
 const pivotSection: ApiSection = {
   id: 'pro-pivot',
-  category: 'Enterprise (Pro)',
+  category: 'Enterprise',
   title: 'Pivot tables',
   blurb: 'Build a pivot row/column model from grid data - pure, no DOM.',
   demo: 'pro-pivot',
@@ -2497,7 +2497,7 @@ const pivotSection: ApiSection = {
     'createPivotModel(data, config) (or api.pivot.build(config)) reduces a flat dataset into a cross-tab of row groups x column groups x measures. It is pure: it returns { rows, columns } that you hand to a second <SvGrid /> instance, leaving the source grid untouched.',
     'Configure the row axis, column axis, and one or more value measures. Each measure uses a built-in aggregator (sum, avg, min, max, count, countDistinct, first, last) or a custom reducer.',
   ],
-  signature: `import { createPivotModel, pivotAggregators, type PivotConfig } from 'sv-grid-pro'
+  signature: `import { createPivotModel, pivotAggregators, type PivotConfig } from '@svgrid/enterprise'
 
 const { rows, columns } = createPivotModel(orders, {
   rows: ['region'],            // row-axis grouping (outer-most first)
@@ -2562,7 +2562,7 @@ const { rows, columns } = createPivotModel(orders, {
       name: 'pivotAggregators',
       type: 'Record<PivotAggregatorId, PivotAggregator>',
       description: 'The built-in aggregator table: sum, avg, min, max, count, countDistinct, first, last. Reference one directly for a custom pipeline.',
-      example: `import { pivotAggregators } from 'sv-grid-pro'
+      example: `import { pivotAggregators } from '@svgrid/enterprise'
 const total = pivotAggregators.sum(values)`,
     },
     {
@@ -2580,14 +2580,14 @@ const total = pivotAggregators.sum(values)`,
 
 const aiSection: ApiSection = {
   id: 'pro-ai',
-  category: 'Enterprise (Pro)',
+  category: 'Enterprise',
   title: 'AI helpers',
   blurb: 'Natural-language filtering, smart fill, summarize, and classify - provider-agnostic.',
   intro: [
-    'The Pro AI helpers turn grid tasks into model calls: natural-language to filter+sort, fill blank cells from examples, summarize a selection, or classify free-text into known labels. No model client is bundled - you register a single AIProvider function and the grid routes every request through it, so you control the model, transport, keys, and cost.',
+    'The Enterprise AI helpers turn grid tasks into model calls: natural-language to filter+sort, fill blank cells from examples, summarize a selection, or classify free-text into known labels. No model client is bundled - you register a single AIProvider function and the grid routes every request through it, so you control the model, transport, keys, and cost.',
     'Each helper builds the prompt (column schema + sampled rows), calls your provider, parses the response, and returns a typed result. Most can optionally apply themselves to the grid.',
   ],
-  signature: `import { setAIProvider, type AIRequest } from 'sv-grid-pro'
+  signature: `import { setAIProvider, type AIRequest } from '@svgrid/enterprise'
 
 // Register once. Wire it to any model - here, the Anthropic Messages API.
 setAIProvider(async (req: AIRequest): Promise<string> => {
@@ -2599,7 +2599,7 @@ setAIProvider(async (req: AIRequest): Promise<string> => {
   return (await res.json()).text   // return the model's raw string
 })
 
-// Then, anywhere you hold a ProGridApi:
+// Then, anywhere you hold a EnterpriseGridApi:
 const plan = await api.ai.filter('cancelled orders over $1k in Q3', { apply: true })`,
   props: [
     {
@@ -2613,7 +2613,7 @@ if (!hasAIProvider()) disableAiButtons()`,
       name: 'mockAIProvider',
       type: 'AIProvider',
       description: 'A deterministic offline provider for tests / demos - returns canned, schema-valid responses without a network call.',
-      example: `import { mockAIProvider, setAIProvider } from 'sv-grid-pro'
+      example: `import { mockAIProvider, setAIProvider } from '@svgrid/enterprise'
 setAIProvider(mockAIProvider)`,
     },
     {
@@ -2667,14 +2667,14 @@ showPreview(rationale)`,
 
 const stagedEditingSection: ApiSection = {
   id: 'pro-staged-editing',
-  category: 'Enterprise (Pro)',
+  category: 'Enterprise',
   title: 'Staged editing',
   blurb: 'Buffer inline edits, show a dirty-state, then commit or revert as a batch.',
   demo: 'pro-staged-editing',
   intro: [
     'createStagedEditing() is a small, dependency-free buffer for "review before save" workflows. Feed it the grid\'s onCellValueChange events; it tracks each change with its original and staged values so you can show a dirty indicator, list pending edits, then commit them to a server in one transaction or roll them all back.',
   ],
-  signature: `import { createStagedEditing } from 'sv-grid-pro'
+  signature: `import { createStagedEditing } from '@svgrid/enterprise'
 
 const staging = createStagedEditing<Order>()
 
@@ -2745,25 +2745,25 @@ staging.clear()`,
 }
 
 // =======================================================================
-// MCP server - packages/sv-grid-mcp
+// MCP server - packages/mcp
 // =======================================================================
 
 const mcpSection: ApiSection = {
   id: 'mcp-server',
   category: 'Tooling',
-  title: 'MCP server (sv-grid-mcp)',
+  title: 'MCP server (@svgrid/mcp)',
   blurb: 'Give AI assistants accurate, version-pinned SvGrid knowledge over MCP.',
   intro: [
-    'sv-grid-mcp is a Model Context Protocol server that exposes the example sources, docs, and this API reference to MCP-capable clients (Claude Desktop, Claude Code, Cursor). Point a model at it and it answers from the real, version-pinned surface instead of hallucinating APIs or citing stale posts.',
+    '@svgrid/mcp is a Model Context Protocol server that exposes the example sources, docs, and this API reference to MCP-capable clients (Claude Desktop, Claude Code, Cursor). Point a model at it and it answers from the real, version-pinned surface instead of hallucinating APIs or citing stale posts.',
     'It speaks MCP over stdio - stdout carries JSON-RPC, logs go to stderr. Run it with npx, no install required.',
   ],
   signature: `# One-shot, no install
-npx sv-grid-mcp
+npx @svgrid/mcp
 
 # Claude Desktop / Claude Code config (claude_desktop_config.json):
 {
   "mcpServers": {
-    "sv-grid": { "command": "npx", "args": ["sv-grid-mcp"] }
+    "sv-grid": { "command": "npx", "args": ["@svgrid/mcp"] }
   }
 }`,
   props: [
@@ -2805,7 +2805,7 @@ npx sv-grid-mcp
     },
   ],
   notes: [
-    'Because the data is bundled with the published package, answers are pinned to the version of sv-grid-mcp the client runs.',
+    'Because the data is bundled with the published package, answers are pinned to the version of @svgrid/mcp the client runs.',
   ],
 }
 
@@ -2819,7 +2819,7 @@ const chartApiSection: ApiSection = {
   intro: [
     'A ChartSpec is the data model behind every chart: a default type, category labels, and one or more series. rowsToChartSpec() aggregates raw rows into a spec; buildChart() turns a spec into pure geometry (useful for tests or a custom renderer); niceScale() rounds an axis domain to friendly tick boundaries.',
   ],
-  signature: `import { rowsToChartSpec, SvGridChart } from 'sv-grid-core'
+  signature: `import { rowsToChartSpec, SvGridChart } from '@svgrid/grid'
 
 const spec = rowsToChartSpec(orders, {
   type: 'bar', category: 'region', value: 'total',
@@ -2851,7 +2851,7 @@ const spec = rowsToChartSpec(orders, {
       name: 'DEFAULT_PALETTE',
       type: 'string[]',
       description: 'The 8-color default series palette, used when a series has no explicit color.',
-      example: `import { DEFAULT_PALETTE } from 'sv-grid-core'`,
+      example: `import { DEFAULT_PALETTE } from '@svgrid/grid'`,
     },
     {
       name: 'ChartSpec',
@@ -2870,7 +2870,7 @@ const chartExportSection: ApiSection = {
   intro: [
     'These take the chart\'s rendered DOM (the <svg>, or a wrapping element) and produce a self-styled SVG string or a PNG. Styling that lives in CSS variables is inlined, so the exported file looks the same outside the app.',
   ],
-  signature: `import { downloadChartPng } from 'sv-grid-core'
+  signature: `import { downloadChartPng } from '@svgrid/grid'
 
 let chartEl: HTMLElement   // bind:this on the chart wrapper
 
@@ -2917,7 +2917,7 @@ const sparklineSection: ApiSection = {
   intro: [
     'Sparklines are headless: buildSparkline() returns paths + bar rects sized to your width/height, and you render the tiny SVG inside a cell snippet. toSparklineValues() coerces loose cell values (arrays or comma/space strings) into a clean number array first.',
   ],
-  signature: `import { buildSparkline, toSparklineValues, renderSnippet } from 'sv-grid-core'
+  signature: `import { buildSparkline, toSparklineValues, renderSnippet } from '@svgrid/grid'
 
 { field: 'history', header: 'Trend',
   cell: (ctx) => renderSnippet(Spark, { values: toSparklineValues(ctx.getValue()) }) }`,
@@ -2954,7 +2954,7 @@ const serverDataSourceSection: ApiSection = {
   intro: [
     'You implement a single getRows(request) that talks to your backend; createServerDataSource() owns the paging/sort/filter state, calls getRows, and pushes the result back through onChange. A monotonic request id guarantees a slow response for an old query can never clobber a newer one.',
   ],
-  signature: `import { createServerDataSource } from 'sv-grid-core'
+  signature: `import { createServerDataSource } from '@svgrid/grid'
 
 const controller = createServerDataSource(
   { getRows: async (req) => {
@@ -2997,7 +2997,7 @@ const namedViewsSection: ApiSection = {
   intro: [
     'A view manager over any host that exposes getState() / setState() - the SvGridApi satisfies it directly. Persist views in memory (default) or localStorage, or implement your own ViewStorage.',
   ],
-  signature: `import { createNamedViews, localStorageViews } from 'sv-grid-core'
+  signature: `import { createNamedViews, localStorageViews } from '@svgrid/grid'
 
 const views = createNamedViews(api, { storage: localStorageViews('orders-views') })
 views.save('EMEA at risk')   // capture current state
@@ -3031,7 +3031,7 @@ const collaborationSection: ApiSection = {
   intro: [
     'Share cursor positions and cell edits between users. createCollaboration() is transport-agnostic: ship the built-in broadcastChannelTransport() for cross-tab demos, or implement CollabTransport over your own WebSocket / WebRTC channel.',
   ],
-  signature: `import { createCollaboration, broadcastChannelTransport } from 'sv-grid-core'
+  signature: `import { createCollaboration, broadcastChannelTransport } from '@svgrid/grid'
 
 const collab = createCollaboration({
   user: { id, name: 'Ada', color: '#22c55e' },
@@ -3074,7 +3074,7 @@ const conditionalFormattingSection: ApiSection = {
   intro: [
     'The primitives behind conditional formatting. computeColumnStat() finds a column\'s numeric range once per render; resolveCellFormat() turns your format specs into a concrete { background, color, dataBar, icon, ... } for one cell. lerpColor() and contrastText() are the color helpers they use, exported for your own renderers.',
   ],
-  signature: `import { computeColumnStat, resolveCellFormat } from 'sv-grid-core'
+  signature: `import { computeColumnStat, resolveCellFormat } from '@svgrid/grid'
 
 const stat = computeColumnStat(rows.map((r) => r.score))
 const fmt = resolveCellFormat(value, row, 'score', [
@@ -3197,7 +3197,7 @@ export const sections: ApiSection[] = [
   serverDataSourceSection,
   namedViewsSection,
   collaborationSection,
-  // Enterprise (Pro)
+  // Enterprise
   proOverviewSection,
   licenseSection,
   exportSection,
@@ -3225,7 +3225,7 @@ const CATEGORY_ORDER = [
   'Utilities',
   'Charts',
   'Data & state',
-  'Enterprise (Pro)',
+  'Enterprise',
   'Tooling',
 ]
 
@@ -3253,7 +3253,7 @@ export function memberHeading(category: string): string {
       return 'Methods'
     case 'Events':
       return 'Events'
-    case 'Enterprise (Pro)':
+    case 'Enterprise':
     case 'Tooling':
       return 'Members'
     case 'Row models':

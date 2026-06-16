@@ -5,8 +5,8 @@
 // is used to render N buttons.
 //
 // Two plan IDs are pinned to the live PayPal subscription plans:
-//   - sv-grid-pro Single Application Developer License
-//   - sv-grid-pro Multiple Application Developer License
+//   - @svgrid/enterprise Single Application Developer License
+//   - @svgrid/enterprise Multiple Application Developer License
 //
 // The PayPal client-id is a public credential (analogous to a Stripe
 // publishable key) - safe to bundle in the client. We still read it from
@@ -14,9 +14,9 @@
 // sandbox) can be swapped without code changes.
 
 export const PAYPAL_PLAN_IDS = {
-  /** sv-grid-pro - Single Application Developer License ($599/dev/yr). */
+  /** @svgrid/enterprise - Single Application Developer License ($599/dev/yr). */
   proSingleApp: 'P-3N517466PB672681XNINVX4I',
-  /** sv-grid-pro - Multiple Application Developer License ($999/dev/yr). */
+  /** @svgrid/enterprise - Multiple Application Developer License ($999/dev/yr). */
   proMultiApp: 'P-9N961750GE1769819NINVYIQ',
 } as const
 
@@ -24,7 +24,7 @@ export type PayPalPlanKey = keyof typeof PAYPAL_PLAN_IDS
 
 /**
  * The PayPal client-id for the jQWidgets merchant account that owns the
- * sv-grid-pro subscription plans (same account that backs htmlelements.com
+ * @svgrid/enterprise subscription plans (same account that backs htmlelements.com
  * checkout). Public credential - analogous to a Stripe publishable key -
  * safe to ship in the client bundle.
  *

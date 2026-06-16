@@ -6,7 +6,7 @@ numbers on your branch, and what to do if size matters.
 ## Per-feature gzipped cost
 
 Numbers from a `rollup -p terser` production build against
-`packages/sv-grid-core/dist/`. Each feature is the marginal cost
+`packages/grid/dist/`. Each feature is the marginal cost
 *above* the baseline core when imported alone.
 
 | Feature                       | gz kB  | Required? | Notes                                          |
@@ -30,9 +30,9 @@ Numbers from a `rollup -p terser` production build against
 A typical app importing the recommended set ships **~28 kB gzipped**
 of grid code.
 
-## sv-grid-pro
+## @svgrid/enterprise
 
-Pro pack (export + pivot + AI helpers + import + watermark) adds
+Enterprise pack (export + pivot + AI helpers + import + watermark) adds
 ~26.4 kB gzipped. xlsx export pulls JSZip as a peer dep
 (~22 kB gzipped) on first call to `api.exportData({ format: 'xlsx' })`,
 not at module load.
@@ -41,10 +41,10 @@ not at module load.
 
 ```bash
 # Build
-corepack pnpm --filter sv-grid-core build
+corepack pnpm --filter @svgrid/grid build
 
 # Inspect the dist bundle
-npx source-map-explorer packages/sv-grid-core/dist/index.js
+npx source-map-explorer packages/grid/dist/index.js
 ```
 
 A treemap opens in your browser. Each block is a source file scaled by
@@ -54,16 +54,16 @@ much of the total weight it owns.
 For a quick gzipped readout:
 
 ```bash
-node -e "console.log((require('zlib').gzipSync(require('fs').readFileSync('packages/sv-grid-core/dist/index.js')).length / 1024).toFixed(1) + ' kB gz')"
+node -e "console.log((require('zlib').gzipSync(require('fs').readFileSync('packages/grid/dist/index.js')).length / 1024).toFixed(1) + ' kB gz')"
 ```
 
 ## What to do if size matters
 
 1. **Skip the optional features you don't use.** Each item marked
    `optional` in the table is fully tree-shaken when not imported.
-2. **Code-split the Pro pack.** `installPro(api)` is async-safe;
+2. **Code-split the Enterprise pack.** `installEnterprise(api)` is async-safe;
    import it dynamically in the route that needs export, not at module
-   load: `const { installPro } = await import('sv-grid-pro')`.
+   load: `const { installEnterprise } = await import('@svgrid/enterprise')`.
 3. **Defer xlsx peer deps.** JSZip + pdfMake are imported on first
    `api.exportData` call. They aren't part of the synchronous bundle.
 4. **Use the headless engine for read-only views.** When you only need

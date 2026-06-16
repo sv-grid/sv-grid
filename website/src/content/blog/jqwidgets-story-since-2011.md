@@ -19,7 +19,7 @@ Over the years jQWidgets components found their way into enterprise software at 
 
 As the platform matured, we rebuilt our component library on web standards - custom elements - and launched it as Smart UI on [htmlelements.com](https://www.htmlelements.com). Web Components let one component run in React, Angular, Vue, or plain HTML, which matched how real engineering teams actually work: heterogeneous, long-lived, and rarely on a single framework.
 
-Smart UI keeps moving. The 26.0.0 release brought Pro Themes - Material 3, Fluent, Strata, and Tabula - plus data grid modularity improvements and AI-assisted API documentation. And the work continues into 2026 with a roadmap that leans hard into AI: an MCP server, an AI-assisted dashboard builder, smart data-grid summaries, and AI-powered paste.
+Smart UI keeps moving. The 26.0.0 release brought Enterprise Themes - Material 3, Fluent, Strata, and Tabula - plus data grid modularity improvements and AI-assisted API documentation. And the work continues into 2026 with a roadmap that leans hard into AI: an MCP server, an AI-assisted dashboard builder, smart data-grid summaries, and AI-powered paste.
 
 ## Recognition
 

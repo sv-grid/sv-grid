@@ -2,7 +2,7 @@
   /**
    * 51. AI assistant (Pro)
    * ----------------------
-   * Demonstrates the sv-grid-pro AI feature pack. The grid stays
+   * Demonstrates the @svgrid/enterprise AI feature pack. The grid stays
    * model-agnostic; the demo wires the bundled `mockAIProvider` so
    * everything works end-to-end without any keys. In production you
    * register your own adapter that calls OpenAI / Anthropic / a proxy:
@@ -30,19 +30,19 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
-    installPro,
+    installEnterprise,
     setLicenseKey,
     dismissUnlicensedNudge,
     setAIProvider,
     mockAIProvider,
-    type ProGridApi,
+    type EnterpriseGridApi,
     type AIFilterResult,
     type AISmartFillResult,
     type AISummary,
     type AIClassifyResult,
-  } from 'sv-grid-pro'
+  } from '@svgrid/enterprise'
 
   // ---- Domain ---------------------------------------------------------
 
@@ -123,13 +123,13 @@
 
   // Mock provider so the demo works without an API key. In a real app
   // this is the seam where you wire your model call.
-  setLicenseKey('SVPRO-DEV-AI')
+  setLicenseKey('SVENTERPRISE-DEV-AI')
   dismissUnlicensedNudge()
   setAIProvider(mockAIProvider)
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   let accounts = $state<Account[]>(seedAccounts())
-  let api = $state<ProGridApi<typeof features, Account> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Account> | null>(null)
   let activeIndex = $state<number>(0)
 
   // Tab state
@@ -460,7 +460,7 @@
     </div>
 
     <footer class="ai-footer">
-      Provider: <code>mockAIProvider</code> · License: <code>SVPRO-DEV-AI</code>
+      Provider: <code>mockAIProvider</code> · License: <code>SVENTERPRISE-DEV-AI</code>
     </footer>
   </aside>
 
@@ -496,7 +496,7 @@
       rowHeight={44}
       containerHeight="100%"
       fitColumns={false}
-      onApiReady={(a) => { api = installPro(a) }}
+      onApiReady={(a) => { api = installEnterprise(a) }}
       onActiveCellChange={(args) => { activeIndex = args.rowIndex }}
     />
   </div>

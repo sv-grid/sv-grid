@@ -71,9 +71,9 @@ const ROUTES: Record<string, RouteSeo> = {
     path: '/ai-prompts',
   },
   mcp: {
-    title: 'sv-grid-mcp - Model Context Protocol Server for SvGrid',
+    title: '@svgrid/mcp - Model Context Protocol Server for SvGrid',
     description:
-      'Give Claude, Cursor, and other AI assistants accurate, version-pinned answers about SvGrid. The sv-grid-mcp package is an MCP server exposing 20 example sources, 54 docs, and the API reference as tools.',
+      'Give Claude, Cursor, and other AI assistants accurate, version-pinned answers about SvGrid. The @svgrid/mcp package is an MCP server exposing 20 example sources, 54 docs, and the API reference as tools.',
     keywords: ['mcp server', 'sv-grid mcp', 'svelte ai integration', 'claude desktop mcp', 'model context protocol'],
     path: '/mcp',
   },
@@ -85,10 +85,10 @@ const ROUTES: Record<string, RouteSeo> = {
     path: '/theme-builder',
   },
   pricing: {
-    title: 'Pricing - SvGrid Community (Free), sv-grid-pro, and Enterprise',
+    title: 'Pricing - SvGrid Community (Free) and three Enterprise tiers',
     description:
-      'SvGrid Community is free under the MIT License for commercial use. sv-grid-pro is a paid companion, per developer: Single Application Developer License $599 or Multiple Application Developer License $999 - buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise tier for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. Adds Excel, PDF, CSV, TSV, HTML export and Print, pivot, AI, plus direct support.',
-    keywords: ['svelte grid pricing', 'sv-grid license', 'sv-grid-pro license', 'single application developer license', 'multiple application developer license', 'sv-grid enterprise license', 'svelte table commercial license'],
+      'SvGrid Community is free under the MIT License for commercial use. The Enterprise pack (@svgrid/enterprise) is paid, per developer: Enterprise - Single App ($599) or Enterprise - Multi App ($999) - buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise - Custom is a tailored contract for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. Adds Excel, PDF, CSV, TSV, HTML export and Print, pivot, AI, plus direct support.',
+    keywords: ['svelte grid pricing', 'sv-grid license', '@svgrid/enterprise license', 'enterprise single app developer license', 'enterprise multi app developer license', 'enterprise custom svelte grid', 'svelte table commercial license'],
     path: '/pricing',
   },
   blog: {
@@ -129,7 +129,7 @@ const ROUTES: Record<string, RouteSeo> = {
   privacy: {
     title: 'Privacy Policy - SvGrid',
     description:
-      'SvGrid privacy policy. This static documentation site collects no personal data and uses no trackers.',
+      'SvGrid privacy policy. The marketing site uses cookieless Umami analytics and Google Analytics 4 (with Google Ads) for conversion measurement. No tracking ships in the @svgrid/* npm packages - they make no network calls at runtime.',
     path: '/privacy',
   },
   terms: {
@@ -181,7 +181,7 @@ function structuredData(url: string, seo: RouteSeo): unknown[] {
       '@context': 'https://schema.org',
       '@type': 'SoftwareApplication',
       name: 'SvGrid',
-      alternateName: ['sv-grid', 'sv-grid-core', 'Svelte data grid', 'Svelte 5 grid', 'Svelte table'],
+      alternateName: ['sv-grid', '@svgrid/grid', 'Svelte data grid', 'Svelte 5 grid', 'Svelte table'],
       applicationCategory: 'DeveloperApplication',
       applicationSubCategory: 'Data grid / table component',
       operatingSystem: 'Browser / Node.js',
@@ -190,7 +190,7 @@ function structuredData(url: string, seo: RouteSeo): unknown[] {
       url: homepage,
       sameAs: [
         'https://github.com/sv-grid/sv-grid',
-        'https://www.npmjs.com/package/sv-grid-core',
+        'https://www.npmjs.com/package/@svgrid/grid',
       ],
       offers: [
         {
@@ -202,26 +202,26 @@ function structuredData(url: string, seo: RouteSeo): unknown[] {
         },
         {
           '@type': 'Offer',
-          name: 'Pro - Single Application Developer License',
+          name: 'Enterprise - Single Application Developer License',
           price: '599',
           priceCurrency: 'USD',
           description: 'Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. One deployed application. Adds Excel / PDF / CSV / HTML export + Print + pivot + AI + support.',
         },
         {
           '@type': 'Offer',
-          name: 'Pro - Multiple Application Developer License',
+          name: 'Enterprise - Multiple Application Developer License',
           price: '999',
           priceCurrency: 'USD',
           description: 'Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Unlimited deployed applications.',
         },
         {
           '@type': 'Offer',
-          name: 'Enterprise - Site / Org-wide License',
+          name: 'Enterprise - Custom (Site / Org-wide License)',
           priceCurrency: 'USD',
           description: 'Custom contract for organisations with 50+ developers, MSA / NDA, source-code escrow, named support engineer, on-prem documentation, custom SLAs, multi-year terms, or government / FedRAMP procurement. Contact sales@jqwidgets.com.',
         },
       ],
-      keywords: 'svelte data grid, svelte 5 grid, svelte table, sv-grid, sv-grid-core, headless table, enterprise svelte grid, AG Grid alternative svelte, TanStack Table svelte 5',
+      keywords: 'svelte data grid, svelte 5 grid, svelte table, sv-grid, @svgrid/grid, headless table, enterprise svelte grid, AG Grid alternative svelte, TanStack Table svelte 5',
       publisher: {
         '@type': 'Organization',
         name: 'jQWidgets',
@@ -231,7 +231,7 @@ function structuredData(url: string, seo: RouteSeo): unknown[] {
     {
       '@context': 'https://schema.org',
       '@type': 'SoftwareSourceCode',
-      name: 'sv-grid-core',
+      name: '@svgrid/grid',
       codeRepository: 'https://github.com/sv-grid/sv-grid',
       programmingLanguage: ['TypeScript', 'Svelte'],
       runtimePlatform: 'Svelte 5',
@@ -428,7 +428,7 @@ export function applyDemoSeo(demo: SeoDemo) {
   ensureMeta('name', 'description').content = description
   ensureMeta('name', 'keywords').content = [
     demo.title.toLowerCase(), demo.category.toLowerCase(), 'svelte data grid example',
-    'svelte 5', 'sv-grid', demo.pro ? 'sv-grid-pro' : 'sv-grid-core',
+    'svelte 5', 'sv-grid', demo.pro ? '@svgrid/enterprise' : '@svgrid/grid',
   ].join(', ')
   ensureLink('canonical').href = url
 

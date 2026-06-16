@@ -30,7 +30,7 @@ api.setFilter('age', { operator: 'between', value: '18', valueTo: '65' })
 Or via the headless filter helper:
 
 ```ts
-import { applyExcelFilter } from 'sv-grid-core'
+import { applyExcelFilter } from '@svgrid/grid'
 
 applyExcelFilter(72, { id: 'age', operator: 'between', value: 18, valueTo: 65 })
 // → false (72 > 65)
@@ -46,7 +46,7 @@ The filter value comes in from the DOM as a string. Use `parseEditorValue`
 to convert:
 
 ```ts
-import { parseEditorValue } from 'sv-grid-core'
+import { parseEditorValue } from '@svgrid/grid'
 
 parseEditorValue('number', '4.5')   // 4.5
 parseEditorValue('number', 'abc')   // NaN - reject

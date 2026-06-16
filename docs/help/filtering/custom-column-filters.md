@@ -11,14 +11,14 @@ per column.
 
 ```ts
 // types
-declare module 'sv-grid-core' {
+declare module '@svgrid/grid' {
   interface FilterFnsRegistry {
     inListCSV: (value: unknown, query: string) => boolean
   }
 }
 
 // register
-import { filterFns } from 'sv-grid-core'
+import { filterFns } from '@svgrid/grid'
 ;(filterFns as any).inListCSV = (value: unknown, query: string) => {
   const items = String(query).split(',').map((s) => s.trim().toLowerCase())
   return items.includes(String(value ?? '').toLowerCase())

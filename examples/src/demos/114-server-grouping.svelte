@@ -24,7 +24,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   // ---- Domain model ----------------------------------------------------
   type Region   = 'Americas' | 'EMEA' | 'APAC' | 'LATAM'

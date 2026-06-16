@@ -10,7 +10,7 @@ column's min/max range, which the engine does for you.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef, type ConditionalFormat } from 'sv-grid-core'
+  import { SvGrid, type ColumnDef, type ConditionalFormat } from '@svgrid/grid'
 
   type Row = { rep: string; revenue: number; score: number }
 

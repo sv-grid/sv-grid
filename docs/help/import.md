@@ -1,10 +1,10 @@
-﻿# Data import - Pro
+﻿# Data import - Enterprise
 
 The sister to [data export and printing](./export.md). Read an Excel
 file, CSV/TSV blob, or JSON array in the browser and produce a typed
 preview of every parsed row - including per-cell validation errors -
 before any data lands in the grid. Ships in the paid
-**[sv-grid-pro](https://www.npmjs.com/package/sv-grid-pro)** add-on.
+**[@svgrid/enterprise](https://www.npmjs.com/package/@svgrid/enterprise)** add-on.
 
 Click **Preview from text** below to run the bundled sample through
 the parser + validator, then **Commit** to push the clean rows into
@@ -15,7 +15,7 @@ the grid:
 
 ## What it is
 
-`installPro(api)` adds one async method to your `SvGridApi`:
+`installEnterprise(api)` adds one async method to your `SvGridApi`:
 
 ```ts
 api.importData(opts): Promise<ImportResult<TData>>
@@ -54,14 +54,14 @@ column-mapping, validation, error preview - not the parser itself.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-core'
-  import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
+  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from '@svgrid/grid'
+  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
 
-  setLicenseKey('SVPRO-XXXX-XXXX-XXXX')
+  setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
 
   type Order = { orderId: number; customer: string; total: number }
   let rows = $state<Order[]>([])
-  let api = $state<ProGridApi<typeof features, Order> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Order> | null>(null)
 
   const features = tableFeatures({ rowSortingFeature })
   const columns: ColumnDef<typeof features, Order>[] = [
@@ -98,7 +98,7 @@ column-mapping, validation, error preview - not the parser itself.
   data={rows}
   columns={columns}
   features={features}
-  onApiReady={(next) => (api = installPro(next))}
+  onApiReady={(next) => (api = installEnterprise(next))}
 />
 ```
 
@@ -243,7 +243,7 @@ back via the same `addRows` call. The importer's review UX still works
 
 ### How do I import an Excel or CSV file into the grid?
 
-With `sv-grid-pro`, read an xlsx file, CSV/TSV blob, or JSON array in the browser
+With `@svgrid/enterprise`, read an xlsx file, CSV/TSV blob, or JSON array in the browser
 and get a typed preview of every parsed row - including per-cell validation
 errors - before any data lands in the grid. Nothing is uploaded; parsing happens
 client-side.
@@ -256,6 +256,6 @@ them before committing.
 
 ### Is import free?
 
-No. Import ships in `sv-grid-pro`, alongside export and pivot. The free
+No. Import ships in `@svgrid/enterprise`, alongside export and pivot. The free
 Community package handles displaying and editing data you already have in
 memory.

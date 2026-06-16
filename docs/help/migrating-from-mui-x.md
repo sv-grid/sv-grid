@@ -11,9 +11,9 @@ split very similar to sv-grid's. The port is mostly mechanical.
 
 | MUI X                                | sv-grid                                  |
 | ------------------------------------ | ---------------------------------------- |
-| `@mui/x-data-grid`                   | `sv-grid-core`                      |
-| `@mui/x-data-grid-pro`               | `sv-grid-pro` (export, import, pivot, AI) |
-| `@mui/x-data-grid-premium`           | All of `sv-grid-pro` ships in one tier   |
+| `@mui/x-data-grid`                   | `@svgrid/grid`                      |
+| `@mui/x-data-grid-pro`               | `@svgrid/enterprise` (export, import, pivot, AI) |
+| `@mui/x-data-grid-premium`           | All of `@svgrid/enterprise` ships in one tier   |
 
 ## Imports
 
@@ -21,7 +21,7 @@ split very similar to sv-grid's. The port is mostly mechanical.
 - import { DataGrid, GridColDef, GridRowsProp } from '@mui/x-data-grid'
 
 + import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
-+          type ColumnDef } from 'sv-grid-core'
++          type ColumnDef } from '@svgrid/grid'
 ```
 
 ## Column defs
@@ -71,7 +71,7 @@ MUI X.
 | `setPage(0)` / `setPageSize(50)`             | Use the built-in pager; for headless control register `pageSize` prop |
 | `selectRow(id)`                              | Toggle the row checkbox via the wrapper's UI; programmatic select is `api.setRowSelection({id: true})` |
 | `getSelectedRows()`                          | `api.getDisplayedRows().filter((r) => ...)` |
-| `exportDataAsExcel()`                        | `api.exportData({ format: 'xlsx' })` (Pro)  |
+| `exportDataAsExcel()`                        | `api.exportData({ format: 'xlsx' })` (Enterprise)  |
 | `setColumnVisibilityModel({field: false})`   | `api.setColumnVisible('field', false)`     |
 
 ## Custom cells
@@ -156,7 +156,7 @@ For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
 
 - **No Emotion / no Material theme dependency.** ~50 kB gzip total
   vs MUI X DataGrid Community's ~270 kB.
-- **All Pro features in one tier.** No DataGrid Pro vs Premium split.
+- **All Enterprise features in one tier.** No DataGrid Pro vs Premium split.
 - **CSP-clean.** No `eval`.
 
 ## What you give up
@@ -179,7 +179,7 @@ For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
 ### How hard is it to migrate from MUI X DataGrid to SvGrid?
 
 Mostly mechanical - typically 1-3 hours per grid, depending on how heavily you
-relied on `apiRef.current.*`. The Community/Pro split mirrors MUI X's, so the
+relied on `apiRef.current.*`. The Community/Enterprise split mirrors MUI X's, so the
 licensing mental model carries over directly.
 
 ### Can SvGrid keep the Material Design look?
@@ -190,7 +190,7 @@ bind your own MUI inputs inside custom cell components.
 
 ### Is SvGrid cheaper than MUI X Pro/Premium?
 
-SvGrid's Community tier is MIT and free for commercial use, and `sv-grid-pro`
+SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterprise`
 is priced per developer ($599 single-app / $999 multi-app) rather than
 per seat with Premium add-ons. Compare your team size and feature needs against
 the [pricing page](https://sv-grid.dev/#/pricing).

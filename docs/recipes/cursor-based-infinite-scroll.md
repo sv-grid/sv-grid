@@ -6,7 +6,7 @@ debounce on scroll, fetch the next chunk by cursor, splice into
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type SvGridApi } from 'sv-grid-core'
+  import { SvGrid, type SvGridApi } from '@svgrid/grid'
 
   type Event = { id: string; ts: string; actor: string; action: string }
   let rows = $state<Event[]>([])

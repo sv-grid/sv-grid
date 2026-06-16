@@ -25,7 +25,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 | `addExpandedRows()` / `addSubRows()`      | `rowExpandingFeature`                      |
 | `addGroupBy()`                            | `columnGroupingFeature` + `api.setGroupBy()` |
 | `addSelectedRows()`                       | `rowSelectionFeature`                      |
-| `addDataExport()`                         | `sv-grid-pro` export pack                  |
+| `addDataExport()`                         | `@svgrid/enterprise` export pack                  |
 | `createViewModel(columns)` + `Subscribe`  | `<SvGrid>` (no view model to wire)         |
 | `pluginStates.sort.sortKeys`              | `api.setSort(id, dir)` / `onSortingChange` |
 
@@ -56,7 +56,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-core'
++   } from '@svgrid/grid'
 +
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
@@ -76,7 +76,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 - **Excel-style filter menu** and **cell-range selection + TSV copy**,
   which are BYO in svelte-headless-table.
 - **Inline editing** with typed editors and validation hooks.
-- **Pro features** - export, import, pivot, AI - in one paid add-on.
+- **Enterprise features** - export, import, pivot, AI - in one paid add-on.
 
 ## What changes
 

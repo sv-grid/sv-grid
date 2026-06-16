@@ -35,7 +35,7 @@ events). Whatever lives in `data[]` is the truth.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi } from '@svgrid/grid'
 
   type Employee = { id: string; name: string; email: string; team: 'Eng' | 'Sales' | 'Ops'; salary: number; remote: boolean }
   let employees = $state<Employee[]>([/* ... */])

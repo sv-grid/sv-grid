@@ -10,7 +10,7 @@ either turn it on with `showPagination` or drive its state from outside.
     SvGrid, tableFeatures,
     rowPaginationFeature, createPaginatedRowModel,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   const features = tableFeatures({ rowPaginationFeature })
 </script>

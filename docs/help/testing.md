@@ -28,12 +28,12 @@ matter to your users.
 
 ## Engine tests (Layer 2, vitest)
 
-Every helper in `sv-grid-core` is a pure function. Test them
+Every helper in `@svgrid/grid` is a pure function. Test them
 without a DOM.
 
 ```ts
 import { describe, it, expect } from 'vitest'
-import { createSvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
+import { createSvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
 
 describe('sort behaviour', () => {
   it('sorts by a single column ascending', () => {
@@ -59,20 +59,20 @@ describe('sort behaviour', () => {
 ```
 
 Engine tests run at ~10k assertions/second on a modern laptop. The
-`sv-grid-core` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-core/src) -
+`@svgrid/grid` package itself ships [hundreds of these](https://github.com/sv-grid/sv-grid/tree/main/packages/grid/src) -
 you can model yours after them.
 
-## Pro feature tests (vitest + jsdom)
+## Enterprise feature tests (vitest + jsdom)
 
-The Pro helpers need `jsdom` because `importData` calls `Blob.text()`
+The Enterprise helpers need `jsdom` because `importData` calls `Blob.text()`
 and `exportData` builds an `<a download>`. Set vitest's `environment`
 to `'jsdom'` for these files.
 
 ```ts
 import { describe, it, expect, beforeEach } from 'vitest'
-import { importData, setLicenseKey } from 'sv-grid-pro'
+import { importData, setLicenseKey } from '@svgrid/enterprise'
 
-beforeEach(() => setLicenseKey('SVPRO-DEV-TEST'))
+beforeEach(() => setLicenseKey('SVENTERPRISE-DEV-TEST'))
 
 describe('CSV import', () => {
   it('parses, coerces types, and rejects negative prices', async () => {
@@ -92,7 +92,7 @@ describe('CSV import', () => {
 })
 ```
 
-The 48-test suite in `packages/sv-grid-pro/src/*.test.ts` shows the
+The 48-test suite in `packages/enterprise/src/*.test.ts` shows the
 full pattern, including a `fakeApi` stub you can copy.
 
 ## Component tests (svelte-testing-library + jsdom)
@@ -103,7 +103,7 @@ component in jsdom:
 ```ts
 import { render } from '@testing-library/svelte'
 import { describe, it, expect } from 'vitest'
-import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from 'sv-grid-core'
+import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from '@svgrid/grid'
 
 type Row = { id: number; name: string }
 
@@ -132,7 +132,7 @@ A few caveats:
 
 - **Vitest config:** `environment: 'jsdom'` plus
   `resolve.conditions: ['browser']` so vitest picks Svelte's client
-  build. The `sv-grid-core` repo's `vite.config.ts` shows the
+  build. The `@svgrid/grid` repo's `vite.config.ts` shows the
   exact knobs.
 - **No virtualization in jsdom.** jsdom returns `0` for every layout
   metric, so the row virtualizer never advances. Test on small

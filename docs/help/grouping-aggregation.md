@@ -16,7 +16,7 @@ per column:
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnGroupingFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Employee = {
     id: number; name: string; department: string;
@@ -224,5 +224,5 @@ at each group level and at the grand-total footer.
 ### Is grouping the same as a pivot table?
 
 No. Grouping rolls rows up along the row axis. A pivot table also spreads a
-field across the column axis with nested headers - that is the `sv-grid-pro`
+field across the column axis with nested headers - that is the `@svgrid/enterprise`
 pivot model. See [Pivot tables](./pivot.md) for the column-axis version.

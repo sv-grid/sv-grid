@@ -30,18 +30,18 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
     createPivotModel,
     filterCollapsedPivotRows,
-    installPro,
+    installEnterprise,
     setLicenseKey,
-    type ProGridApi,
+    type EnterpriseGridApi,
     type PivotRow,
     type PivotValueConfig,
-  } from 'sv-grid-pro'
+  } from '@svgrid/enterprise'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Domain --------------------------------------------------------
   type Region = 'AMER' | 'EMEA' | 'APAC'
@@ -125,11 +125,11 @@
   function refresh() { lastRefresh = new Date() }
 
   // Pro API hook - export needs api.exportData (Pro install).
-  let api = $state<ProGridApi<typeof features, PivotRow> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, PivotRow> | null>(null)
   let exporting = $state(false)
   let exportNote = $state<string | null>(null)
   function onApiReady(next: SvGridApi<typeof features, PivotRow>) {
-    api = installPro(next)
+    api = installEnterprise(next)
   }
   /** Export the cube to xlsx. We flatten ONLY the leaf rows (no engine
    *  subtotal / grand rows) and ask the exporter to wrap them with

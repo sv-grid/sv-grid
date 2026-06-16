@@ -3,17 +3,17 @@
 The fastest way to a working SvGrid app. One command scaffolds a project
 with the grid already wired up - no copy-paste, no config archaeology.
 
-## `npm create sv-grid`
+## `npm create @svgrid`
 
 ```bash
 # npm
-npm create sv-grid@latest
+npm create @svgrid@latest
 
 # pnpm
-pnpm create sv-grid
+pnpm create @svgrid
 
 # yarn
-yarn create sv-grid
+yarn create @svgrid
 ```
 
 Run with no arguments and it walks you through a project name and a
@@ -21,10 +21,10 @@ template. Or pass them directly:
 
 ```bash
 # Minimal Vite + Svelte 5 starter
-npm create sv-grid@latest my-app -- --template minimal
+npm create @svgrid@latest my-app -- --template minimal
 
 # Full SvelteKit admin dashboard
-npm create sv-grid@latest my-admin -- --template admin-dashboard
+npm create @svgrid@latest my-admin -- --template admin-dashboard
 ```
 
 Then:
@@ -39,8 +39,8 @@ npm run dev
 
 | Template | Stack | Best for |
 | --- | --- | --- |
-| `minimal` | Vite + Svelte 5 + `sv-grid-core`, one page | Dropping a grid into something quickly |
-| `admin-dashboard` | SvelteKit + Tailwind + `sv-grid-core`, deploy to Vercel | A real dashboard / internal tool |
+| `minimal` | Vite + Svelte 5 + `@svgrid/grid`, one page | Dropping a grid into something quickly |
+| `admin-dashboard` | SvelteKit + Tailwind + `@svgrid/grid`, deploy to Vercel | A real dashboard / internal tool |
 
 ### Options
 
@@ -50,8 +50,8 @@ npm run dev
 | `--force` | `-f` | Scaffold into a non-empty directory |
 | `--help` | `-h` | Show usage |
 
-Both templates use the free MIT `sv-grid-core` core. Add
-[`sv-grid-pro`](../pro/README.md) for export, import, print, pivot, and
+Both templates use the free MIT `@svgrid/grid` core. Add
+[`@svgrid/enterprise`](../enterprise/README.md) for export, import, print, pivot, and
 the AI helpers.
 
 ## The admin dashboard starter
@@ -94,19 +94,19 @@ install directly - see [Install](./1-install.md) and
 
 ### What's the fastest way to start a SvGrid project?
 
-Run `npm create sv-grid@latest` (or `pnpm create sv-grid`). It scaffolds a
+Run `npm create @svgrid@latest` (or `pnpm create @svgrid`). It scaffolds a
 Vite + Svelte or SvelteKit project with the grid already wired up, then
 `npm install` and `npm run dev`.
 
 ### Is there a SvelteKit admin dashboard template?
 
-Yes. `npm create sv-grid@latest my-admin -- --template admin-dashboard`
+Yes. `npm create @svgrid@latest my-admin -- --template admin-dashboard`
 scaffolds a SvelteKit + Tailwind admin with multiple grids, prerendered
 for SEO, and a one-click Deploy-to-Vercel button.
 
-### Do the starters require a Pro license?
+### Do the starters require a Enterprise license?
 
-No. Both templates use the free MIT `sv-grid-core` core. Pro
+No. Both templates use the free MIT `@svgrid/grid` core. Enterprise
 features (export, import, print, pivot, AI) are an optional add-on that
 runs in evaluation without a key.
 

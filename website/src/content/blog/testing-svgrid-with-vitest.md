@@ -30,7 +30,7 @@ Keep accessor and formatter functions exported so they are trivial to test in is
 Because SvGrid has a headless engine, you can assert on the row model - sorting, filtering - without a DOM, which is fast and stable:
 
 ```ts
-import { createSvGrid, rowSortingFeature, tableFeatures } from 'sv-grid-core'
+import { createSvGrid, rowSortingFeature, tableFeatures } from '@svgrid/grid'
 
 test('sorts by age descending', () => {
   const grid = createSvGrid({ data, columns, features: tableFeatures({ rowSortingFeature }) })

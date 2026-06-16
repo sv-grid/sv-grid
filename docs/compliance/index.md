@@ -36,7 +36,7 @@ this section answers each one directly.
 | Where is data stored?                             | **In your app's memory.** Never on a sv-grid server. There is no sv-grid server. |
 | Is there a security disclosure policy?            | Yes - email `support@jqwidgets.com`. Patches typically ship within 7 days for high-severity issues. |
 | Is the library tested for accessibility?          | Yes - WAI-ARIA 1.2 grid pattern + axe-core in CI. See [accessibility](../help/accessibility.md). |
-| Are dependencies vetted?                          | Yes - 0 runtime dependencies in `sv-grid-core`. `sv-grid-pro` lazy-loads `jszip` + `pdfmake` as peers. See [security](../help/security.md) for the dep table. |
+| Are dependencies vetted?                          | Yes - 0 runtime dependencies in `@svgrid/grid`. `@svgrid/enterprise` lazy-loads `jszip` + `pdfmake` as peers. See [security](../help/security.md) for the dep table. |
 | Is there an SBOM?                                 | Yes - `pnpm run sbom` emits CycloneDX 1.5. See [security](../help/security.md#sbom-generation). |
 
 ## See also

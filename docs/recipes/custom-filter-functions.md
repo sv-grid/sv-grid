@@ -28,7 +28,7 @@ them in a `$derived` that filters the data array before it reaches
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from '@svgrid/grid'
 
   type FilterFn = (value: unknown, filterValue: string) => boolean
 

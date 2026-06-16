@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Issue a sv-grid-pro license file for a paying customer.
+// Issue a @svgrid/enterprise license file for a paying customer.
 //
 // Produces two artifacts in tools/licenses/ (gitignored):
 //   - sv-grid-license-<slug>.ts   — email this to the customer
@@ -45,7 +45,7 @@ function parseArgs(argv) {
 
 function usage() {
   process.stdout.write(`
-sv-grid-pro license issuer
+@svgrid/enterprise license issuer
 
 Usage:
   node tools/issue-license.mjs --tenant <NAME> --seats <N> --expires <YYYY-MM>
@@ -77,7 +77,7 @@ After issuance:
 
 To revoke a previously issued key:
   grep the key out of tools/licenses/audit.jsonl, then add it to
-  packages/sv-grid-pro/src/revoked.ts (after running
+  packages/enterprise/src/revoked.ts (after running
   git update-index --skip-worktree on that file so your edits stay local).
 `)
 }
@@ -178,7 +178,7 @@ function main() {
     `//   1. Place this file at src/sv-grid-license.ts\n` +
     `//   2. Add  import './sv-grid-license'  at the top of your main.ts\n` +
     `\n` +
-    `import { setLicenseKey } from 'sv-grid-pro'\n` +
+    `import { setLicenseKey } from '@svgrid/enterprise'\n` +
     `\n` +
     `setLicenseKey('${key}')\n`
 

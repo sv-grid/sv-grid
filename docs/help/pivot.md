@@ -1,8 +1,8 @@
-# Pivot tables - Pro
+# Pivot tables - Enterprise
 
 A built-in pivot model that turns a flat data set into a row-axis tree,
 a nested column-axis header, and one aggregated cell per
-`(row-path × col-path × measure)` triple. Ships in **`sv-grid-pro`**.
+`(row-path × col-path × measure)` triple. Ships in **`@svgrid/enterprise`**.
 
 The output is plain SvGrid data + columns, so the rendering pipeline is
 the same one you already understand - the grid never knows it is
@@ -13,10 +13,10 @@ displaying a pivot.
 ## Minimal example
 
 ```ts
-import { createPivotModel } from 'sv-grid-pro'
+import { createPivotModel } from '@svgrid/enterprise'
 import {
   SvGrid, tableFeatures, rowSortingFeature, rowExpandingFeature,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 
 const features = tableFeatures({ rowSortingFeature, rowExpandingFeature })
 
@@ -51,14 +51,14 @@ The result:
 
 ## Via the imperative API
 
-When you've called `installPro(api)`, the same builder hangs off the
+When you've called `installEnterprise(api)`, the same builder hangs off the
 api object so the designer UI can rebuild on every config change
 without re-importing:
 
 ```ts
-import { installPro } from 'sv-grid-pro'
+import { installEnterprise } from '@svgrid/enterprise'
 
-const pro = installPro(api)
+const pro = installEnterprise(api)
 
 function applyPivot(config: PivotConfig<Order>) {
   const result = pro.pivot.build(config)
@@ -133,7 +133,7 @@ run the rows through `filterCollapsedPivotRows`:
 
 ```svelte
 <script lang="ts">
-  import { createPivotModel, filterCollapsedPivotRows } from 'sv-grid-pro'
+  import { createPivotModel, filterCollapsedPivotRows } from '@svgrid/enterprise'
 
   const pivot = createPivotModel(orders, config)
   let expanded = $state<Set<string>>(new Set())   // empty = all collapsed
@@ -226,14 +226,14 @@ straight into `data` / `columns`.
 - [Column groups](./columns/column-groups.md) - multi-level column
   headers; pivot uses these for the column-axis tree.
 - [Demo 52 - Pivot table + Designer](../../examples/src/demos/52-pivot-table.svelte)
-- [Data export and printing - Pro](./export.md) - the result of
+- [Data export and printing - Enterprise](./export.md) - the result of
   `createPivotModel` exports like any other grid view.
 
 ## Frequently asked questions
 
 ### Does SvGrid support pivot tables?
 
-Yes, in the paid `sv-grid-pro` add-on. `createPivotModel` turns a flat data set
+Yes, in the paid `@svgrid/enterprise` add-on. `createPivotModel` turns a flat data set
 into a row-axis tree with a nested column-axis header and one aggregated cell
 per (row-path × col-path × measure). The Community package does not include
 pivoting.
@@ -247,4 +247,4 @@ each row/column intersection.
 ### Can I export a pivot table?
 
 Yes. A pivot view exports to Excel/PDF/CSV like any other grid view through the
-same `sv-grid-pro` export helpers.
+same `@svgrid/enterprise` export helpers.

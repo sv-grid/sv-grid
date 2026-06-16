@@ -22,9 +22,9 @@ import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join, basename } from 'node:path'
 
 const SOURCES = [
-  { pkg: 'sv-grid-core', dir: 'packages/sv-grid-core/src',
+  { pkg: '@svgrid/grid', dir: 'packages/grid/src',
     files: ['core.ts', 'svgrid-wrapper.types.ts'] },
-  { pkg: 'sv-grid-pro',       dir: 'packages/sv-grid-pro/src',
+  { pkg: '@svgrid/enterprise',       dir: 'packages/enterprise/src',
     files: ['export.ts', 'pivot.ts', 'import.ts', 'ai.ts', 'install.ts'] },
 ]
 const OUT_DIR = 'docs/reference/auto'
@@ -110,6 +110,9 @@ async function main() {
     '',
   ]
   for (const src of SOURCES) {
+    // Scoped names like "@svgrid/grid" can't be filenames (the "/" and "@").
+    // Use a filesystem-safe slug for the .md files + links; keep src.pkg for labels.
+    const pkgSlug = src.pkg.replace('@', '').replace('/', '-')
     indexLines.push(`## ${src.pkg}`, '')
     for (const f of src.files) {
       const fullPath = join(src.dir, f)
@@ -126,10 +129,10 @@ async function main() {
         '',
         ...symbols.map((s) => md(s.name, s)),
       ].join('\n')
-      const outPath = join(OUT_DIR, `${src.pkg}-${slug}.md`)
+      const outPath = join(OUT_DIR, `${pkgSlug}-${slug}.md`)
       await writeFile(outPath, out, 'utf-8')
       indexLines.push(
-        `- [\`${src.pkg}/${f}\`](./${src.pkg}-${slug}.md) - ${symbols.length} exports`,
+        `- [\`${src.pkg}/${f}\`](./${pkgSlug}-${slug}.md) - ${symbols.length} exports`,
       )
     }
     indexLines.push('')

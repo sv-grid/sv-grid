@@ -211,7 +211,7 @@ export type Demo = {
   title: string
   blurb: string
   category: DemoCategory
-  /** When true, this demo depends on sv-grid-pro. Rendered with a
+  /** When true, this demo depends on @svgrid/enterprise. Rendered with a
    *  small dot badge in the sidebar so users can scan the Pro features
    *  at a glance. */
   pro?: boolean
@@ -380,7 +380,7 @@ export const demos: Demo[] = [
   demo('50-seller-panel',           'Seller panel - e-commerce',   'Marketplace dashboard: catalog with SVG thumbnails, inventory bars vs reorder threshold, live orders pipeline, pricing rules - four tabs over one product list.', 'Industry Templates', SellerPanel),
   demo('76-kanban-board',           'Kanban board',                'Four-lane Kanban (Backlog / In progress / Review / Done). Each lane is a separate SvGrid bound to the same $state array - HTML5 drag-and-drop rewrites status.', 'Industry Templates', KanbanBoard),
 
-  // ----- Pro (commercial features in sv-grid-pro)
+  // ----- Pro (commercial features in @svgrid/enterprise)
   demo('53-excel-import',             'Excel / CSV import',             'File picker + column mapping + per-row validation preview before commit. Reads xlsx / csv / tsv / json with format auto-detect.',     'Pro', ExcelImport,            { pro: true }),
   demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Pro', StagedEditing,          { pro: true }),
   demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'Pro', AiAssistant,            { pro: true }),

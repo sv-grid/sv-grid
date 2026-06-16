@@ -18,7 +18,7 @@
     rowExpandingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type FsNode = {
     id: string

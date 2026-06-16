@@ -16,7 +16,7 @@ Before prompting, connect the SvGrid MCP server so the assistant looks up the re
 ```json
 {
   "mcpServers": {
-    "sv-grid": { "command": "npx", "args": ["sv-grid-mcp"] }
+    "sv-grid": { "command": "npx", "args": ["@svgrid/mcp"] }
   }
 }
 ```
@@ -29,7 +29,7 @@ Give the assistant your data shape and the behavior you want. Specific beats vag
 
 **Scaffold a grid from a type:**
 
-> Here is my `Order` type. Build a Svelte 5 component using SvGrid (`sv-grid-core`) with columns for id, customer, a currency `total`, and a `status` badge. Enable sorting and an Excel-style filter menu.
+> Here is my `Order` type. Build a Svelte 5 component using SvGrid (`@svgrid/grid`) with columns for id, customer, a currency `total`, and a `status` badge. Enable sorting and an Excel-style filter menu.
 
 **Add editing with validation:**
 
@@ -63,7 +63,7 @@ Even grounded assistants make mistakes. Quick checks:
 
 ### How do I get an AI assistant to write correct SvGrid code?
 
-Connect the `sv-grid-mcp` server so the assistant uses the real examples, docs, and API, then prompt with your data shape and the specific behavior you want. Grounding plus specificity produces code that compiles.
+Connect the `@svgrid/mcp` server so the assistant uses the real examples, docs, and API, then prompt with your data shape and the specific behavior you want. Grounding plus specificity produces code that compiles.
 
 ### Why does AI-generated grid code often not compile?
 

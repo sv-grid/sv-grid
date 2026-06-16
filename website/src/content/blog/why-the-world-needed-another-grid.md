@@ -40,7 +40,7 @@ Building native to Svelte 5 is not an aesthetic preference; it shows up in the p
 - Row and column virtualization, so 100,000 rows by 100 columns stay smooth.
 - Excel-style filtering, grouping with aggregation, tree and master-detail rows, inline editing with validation, and server-side data.
 - WAI-ARIA accessibility and full keyboard navigation on by default.
-- An MIT-licensed core that is free for commercial use, plus an optional Pro pack for export, import, print, pivot, and AI.
+- An MIT-licensed core that is free for commercial use, plus an optional Enterprise pack for export, import, print, pivot, and AI.
 
 ## The throughline
 

@@ -18,7 +18,7 @@ Add `editorType` to the columns you want editable, then turn on editing at the g
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from 'sv-grid-core'
+  import { SvGrid, type ColumnDef } from '@svgrid/grid'
 
   const columns: ColumnDef<{}, Person>[] = [
     { field: 'firstName', header: 'Name',   editorType: 'text' },

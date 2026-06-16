@@ -18,7 +18,7 @@
     tableFeatures,
     type ColumnDef,
     type ConditionalFormat,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   const features = tableFeatures({})
 

@@ -1,10 +1,10 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-06-16T00:43:11.297Z",
+  "generatedAt": "2026-06-16T07:18:37.074Z",
   "counts": {
     "pages": 195,
-    "pro": 9,
+    "enterprise": 9,
     "withDemo": 72
   },
   "sections": [
@@ -27,6 +27,16 @@
         "compliance/hipaa.md",
         "compliance/index.md",
         "compliance/soc2.md"
+      ]
+    },
+    {
+      "id": "enterprise",
+      "title": "Enterprise tier",
+      "pages": [
+        "enterprise/evaluation.md",
+        "enterprise/licensing.md",
+        "enterprise/README.md",
+        "enterprise/support.md"
       ]
     },
     {
@@ -214,16 +224,6 @@
       ]
     },
     {
-      "id": "pro",
-      "title": "Pro tier",
-      "pages": [
-        "pro/evaluation.md",
-        "pro/licensing.md",
-        "pro/README.md",
-        "pro/support.md"
-      ]
-    },
-    {
       "id": "recipes",
       "title": "Recipes / cookbook",
       "pages": [
@@ -276,19 +276,19 @@
       "title": "API reference",
       "pages": [
         "reference/auto/index.md",
-        "reference/auto/sv-grid-core-core.md",
-        "reference/auto/sv-grid-core-svgrid-wrapper.types.md",
-        "reference/auto/sv-grid-pro-ai.md",
-        "reference/auto/sv-grid-pro-export.md",
-        "reference/auto/sv-grid-pro-import.md",
-        "reference/auto/sv-grid-pro-install.md",
-        "reference/auto/sv-grid-pro-pivot.md",
+        "reference/auto/svgrid-enterprise-ai.md",
+        "reference/auto/svgrid-enterprise-export.md",
+        "reference/auto/svgrid-enterprise-import.md",
+        "reference/auto/svgrid-enterprise-install.md",
+        "reference/auto/svgrid-enterprise-pivot.md",
+        "reference/auto/svgrid-grid-core.md",
+        "reference/auto/svgrid-grid-svgrid-wrapper.types.md",
         "reference/bundle-size.md",
         "reference/ColumnDef.md",
+        "reference/enterprise.md",
         "reference/features.md",
         "reference/headless-engine.md",
         "reference/index.md",
-        "reference/pro.md",
         "reference/SvGrid.md",
         "reference/SvGridApi.md"
       ]
@@ -362,6 +362,50 @@
       "demoIds": []
     },
     {
+      "path": "enterprise/evaluation.md",
+      "url": "/enterprise/evaluation",
+      "title": "Enterprise evaluation",
+      "summary": "The @svgrid/enterprise package is soft-gated; you can evaluate every feature in production-equivalent code paths without contacting sales. This page is the playbook.",
+      "section": "enterprise",
+      "tier": "enterprise",
+      "words": 686,
+      "lastUpdated": "2026-06-16",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/licensing.md",
+      "url": "/enterprise/licensing",
+      "title": "Enterprise licensing",
+      "summary": "The @svgrid/enterprise package is **soft-gated**: every feature runs without a key, with a small unlicensed-build watermark in the bottom-right corner of the grid + a one-time console nudge. Set a key once at app startup and both disappear.",
+      "section": "enterprise",
+      "tier": "enterprise",
+      "words": 641,
+      "lastUpdated": "2026-06-16",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/README.md",
+      "url": "/enterprise/README",
+      "title": "Enterprise feature pack",
+      "summary": "@svgrid/enterprise is a paid add-on for @svgrid/grid. It bolts onto the same <SvGrid> you already have and adds four feature areas: data export, data import, an AI assistant, and pivot tables.",
+      "section": "enterprise",
+      "tier": "enterprise",
+      "words": 772,
+      "lastUpdated": "2026-06-16",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/support.md",
+      "url": "/enterprise/support",
+      "title": "Enterprise support",
+      "summary": "What you get on each tier, what response time to expect, how to escalate.",
+      "section": "enterprise",
+      "tier": "enterprise",
+      "words": 501,
+      "lastUpdated": "2026-06-16",
+      "demoIds": []
+    },
+    {
       "path": "getting-started-full.md",
       "url": "/getting-started-full",
       "title": "Getting Started with SvGrid",
@@ -398,7 +442,7 @@
       "path": "getting-started/2-first-grid.md",
       "url": "/getting-started/2-first-grid",
       "title": "2. First grid in 60 seconds",
-      "summary": "```svelte <script lang=\"ts\"> import { SvGrid, type ColumnDef } from 'sv-grid-core'",
+      "summary": "```svelte <script lang=\"ts\"> import { SvGrid, type ColumnDef } from '@svgrid/grid'",
       "section": "getting-started",
       "tier": "community",
       "words": 294,
@@ -508,10 +552,10 @@
     {
       "path": "help/ai.md",
       "url": "/help/ai",
-      "title": "AI assistant - Pro",
-      "summary": "Bring a language model into your grid with four helpers that stay strictly model-agnostic: **natural-language filter**, **smart fill**, **summarise**, and **classify**. Ships in the paid **sv-grid-pro** add-on; the Community build does not include these features.",
+      "title": "AI assistant - Enterprise",
+      "summary": "Bring a language model into your grid with four helpers that stay strictly model-agnostic: **natural-language filter**, **smart fill**, **summarise**, and **classify**. Ships in the paid **@svgrid/enterprise** add-on; the Community build does not include these features.",
       "section": "help",
-      "tier": "pro",
+      "tier": "enterprise",
       "words": 1390,
       "lastUpdated": "2026-06-16",
       "demoIds": [
@@ -522,7 +566,7 @@
       "path": "help/api-reference.md",
       "url": "/help/api-reference",
       "title": "API reference",
-      "summary": "A flat index of every Stable export. Each entry links to the topic page that covers it in depth. For the formal TypeScript shapes, inspect the .d.ts files in node_modules/sv-grid-core/dist - they're the source of truth and ship with full JSDoc.",
+      "summary": "A flat index of every Stable export. Each entry links to the topic page that covers it in depth. For the formal TypeScript shapes, inspect the .d.ts files in node_modules/@svgrid/grid/dist - they're the source of truth and ship with full JSDoc.",
       "section": "help",
       "tier": "community",
       "words": 1553,
@@ -555,7 +599,7 @@
       "path": "help/benchmarks.md",
       "url": "/help/benchmarks",
       "title": "Performance benchmarks",
-      "summary": "Headline numbers from the regression suite. Every figure below is from the same hardware + browser configuration, re-measured on each release; the script that produces them lives in packages/sv-grid-core/scripts/bench.ts and is checked in.",
+      "summary": "Headline numbers from the regression suite. Every figure below is from the same hardware + browser configuration, re-measured on each release; the script that produces them lives in packages/grid/scripts/bench.ts and is checked in.",
       "section": "help",
       "tier": "community",
       "words": 1252,
@@ -1040,7 +1084,7 @@
       "path": "help/errors.md",
       "url": "/help/errors",
       "title": "Error reference",
-      "summary": "Every Error thrown by sv-grid-core or sv-grid-pro with the exact message text, the trigger condition, and the fix. If a runtime message you see isn't on this list, it's coming from your own code or a peer dependency.",
+      "summary": "Every Error thrown by @svgrid/grid or @svgrid/enterprise with the exact message text, the trigger condition, and the fix. If a runtime message you see isn't on this list, it's coming from your own code or a peer dependency.",
       "section": "help",
       "tier": "community",
       "words": 1205,
@@ -1050,10 +1094,10 @@
     {
       "path": "help/export.md",
       "url": "/help/export",
-      "title": "Data export and printing - Pro",
-      "summary": "Export the grid to **Excel (xlsx)**, **PDF**, **CSV**, **TSV**, **HTML**, or open a printable view in a new window. Ships in the paid **sv-grid-pro** add-on; the Community build does not include these features.",
+      "title": "Data export and printing - Enterprise",
+      "summary": "Export the grid to **Excel (xlsx)**, **PDF**, **CSV**, **TSV**, **HTML**, or open a printable view in a new window. Ships in the paid **@svgrid/enterprise** add-on; the Community build does not include these features.",
       "section": "help",
-      "tier": "pro",
+      "tier": "enterprise",
       "words": 1138,
       "lastUpdated": "2026-06-16",
       "demoIds": [
@@ -1234,7 +1278,7 @@
       "section": "help",
       "tier": "community",
       "words": 1135,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": [
         "38-rtl-i18n"
       ]
@@ -1242,10 +1286,10 @@
     {
       "path": "help/import.md",
       "url": "/help/import",
-      "title": "Data import - Pro",
-      "summary": "The sister to data export and printing. Read an Excel file, CSV/TSV blob, or JSON array in the browser and produce a typed preview of every parsed row - including per-cell validation errors - before any data lands in the grid. Ships in the paid **sv-grid-pro** add-on.",
+      "title": "Data import - Enterprise",
+      "summary": "The sister to data export and printing. Read an Excel file, CSV/TSV blob, or JSON array in the browser and produce a typed preview of every parsed row - including per-cell validation errors - before any data lands in the grid. Ships in the paid **@svgrid/enterprise** add-on.",
       "section": "help",
-      "tier": "pro",
+      "tier": "enterprise",
       "words": 1406,
       "lastUpdated": "2026-06-16",
       "demoIds": [
@@ -1523,10 +1567,10 @@
     {
       "path": "help/pivot.md",
       "url": "/help/pivot",
-      "title": "Pivot tables - Pro",
-      "summary": "A built-in pivot model that turns a flat data set into a row-axis tree, a nested column-axis header, and one aggregated cell per (row-path × col-path × measure) triple. Ships in **sv-grid-pro**.",
+      "title": "Pivot tables - Enterprise",
+      "summary": "A built-in pivot model that turns a flat data set into a row-axis tree, a nested column-axis header, and one aggregated cell per (row-path × col-path × measure) triple. Ships in **@svgrid/enterprise**.",
       "section": "help",
-      "tier": "pro",
+      "tier": "enterprise",
       "words": 1142,
       "lastUpdated": "2026-06-16",
       "demoIds": [
@@ -1901,7 +1945,7 @@
       "section": "help",
       "tier": "community",
       "words": 346,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {
@@ -1912,50 +1956,6 @@
       "section": "help",
       "tier": "community",
       "words": 1425,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "pro/evaluation.md",
-      "url": "/pro/evaluation",
-      "title": "Pro evaluation",
-      "summary": "The sv-grid-pro package is soft-gated; you can evaluate every feature in production-equivalent code paths without contacting sales. This page is the playbook.",
-      "section": "pro",
-      "tier": "pro",
-      "words": 686,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "pro/licensing.md",
-      "url": "/pro/licensing",
-      "title": "Pro licensing",
-      "summary": "The sv-grid-pro package is **soft-gated**: every feature runs without a key, with a small unlicensed-build watermark in the bottom-right corner of the grid + a one-time console nudge. Set a key once at app startup and both disappear.",
-      "section": "pro",
-      "tier": "pro",
-      "words": 641,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "pro/README.md",
-      "url": "/pro/README",
-      "title": "Pro feature pack",
-      "summary": "sv-grid-pro is a paid add-on for sv-grid-core. It bolts onto the same <SvGrid> you already have and adds four feature areas: data export, data import, an AI assistant, and pivot tables.",
-      "section": "pro",
-      "tier": "pro",
-      "words": 772,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "pro/support.md",
-      "url": "/pro/support",
-      "title": "Pro support",
-      "summary": "What you get on each tier, what response time to expect, how to escalate.",
-      "section": "pro",
-      "tier": "pro",
-      "words": 501,
       "lastUpdated": "2026-06-16",
       "demoIds": []
     },
@@ -2435,32 +2435,10 @@
       "demoIds": []
     },
     {
-      "path": "reference/auto/sv-grid-core-core.md",
-      "url": "/reference/auto/sv-grid-core-core",
-      "title": "`sv-grid-core` · `core.ts`",
-      "summary": "Auto-generated. Source: packages\\sv-grid-core\\src\\core.ts.",
-      "section": "reference",
-      "tier": "community",
-      "words": 2791,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/auto/sv-grid-core-svgrid-wrapper.types.md",
-      "url": "/reference/auto/sv-grid-core-svgrid-wrapper.types",
-      "title": "`sv-grid-core` · `svgrid-wrapper.types.ts`",
-      "summary": "Auto-generated. Source: packages\\sv-grid-core\\src\\svgrid-wrapper.types.ts.",
-      "section": "reference",
-      "tier": "community",
-      "words": 248,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/auto/sv-grid-pro-ai.md",
-      "url": "/reference/auto/sv-grid-pro-ai",
-      "title": "`sv-grid-pro` · `ai.ts`",
-      "summary": "Auto-generated. Source: packages\\sv-grid-pro\\src\\ai.ts.",
+      "path": "reference/auto/svgrid-enterprise-ai.md",
+      "url": "/reference/auto/svgrid-enterprise-ai",
+      "title": "`@svgrid/enterprise` · `ai.ts`",
+      "summary": "Auto-generated. Source: packages\\enterprise\\src\\ai.ts.",
       "section": "reference",
       "tier": "community",
       "words": 908,
@@ -2468,10 +2446,10 @@
       "demoIds": []
     },
     {
-      "path": "reference/auto/sv-grid-pro-export.md",
-      "url": "/reference/auto/sv-grid-pro-export",
-      "title": "`sv-grid-pro` · `export.ts`",
-      "summary": "Auto-generated. Source: packages\\sv-grid-pro\\src\\export.ts.",
+      "path": "reference/auto/svgrid-enterprise-export.md",
+      "url": "/reference/auto/svgrid-enterprise-export",
+      "title": "`@svgrid/enterprise` · `export.ts`",
+      "summary": "Auto-generated. Source: packages\\enterprise\\src\\export.ts.",
       "section": "reference",
       "tier": "community",
       "words": 723,
@@ -2479,10 +2457,10 @@
       "demoIds": []
     },
     {
-      "path": "reference/auto/sv-grid-pro-import.md",
-      "url": "/reference/auto/sv-grid-pro-import",
-      "title": "`sv-grid-pro` · `import.ts`",
-      "summary": "Auto-generated. Source: packages\\sv-grid-pro\\src\\import.ts.",
+      "path": "reference/auto/svgrid-enterprise-import.md",
+      "url": "/reference/auto/svgrid-enterprise-import",
+      "title": "`@svgrid/enterprise` · `import.ts`",
+      "summary": "Auto-generated. Source: packages\\enterprise\\src\\import.ts.",
       "section": "reference",
       "tier": "community",
       "words": 474,
@@ -2490,10 +2468,10 @@
       "demoIds": []
     },
     {
-      "path": "reference/auto/sv-grid-pro-install.md",
-      "url": "/reference/auto/sv-grid-pro-install",
-      "title": "`sv-grid-pro` · `install.ts`",
-      "summary": "Auto-generated. Source: packages\\sv-grid-pro\\src\\install.ts.",
+      "path": "reference/auto/svgrid-enterprise-install.md",
+      "url": "/reference/auto/svgrid-enterprise-install",
+      "title": "`@svgrid/enterprise` · `install.ts`",
+      "summary": "Auto-generated. Source: packages\\enterprise\\src\\install.ts.",
       "section": "reference",
       "tier": "community",
       "words": 216,
@@ -2501,13 +2479,35 @@
       "demoIds": []
     },
     {
-      "path": "reference/auto/sv-grid-pro-pivot.md",
-      "url": "/reference/auto/sv-grid-pro-pivot",
-      "title": "`sv-grid-pro` · `pivot.ts`",
-      "summary": "Auto-generated. Source: packages\\sv-grid-pro\\src\\pivot.ts.",
+      "path": "reference/auto/svgrid-enterprise-pivot.md",
+      "url": "/reference/auto/svgrid-enterprise-pivot",
+      "title": "`@svgrid/enterprise` · `pivot.ts`",
+      "summary": "Auto-generated. Source: packages\\enterprise\\src\\pivot.ts.",
       "section": "reference",
       "tier": "community",
       "words": 545,
+      "lastUpdated": "2026-06-16",
+      "demoIds": []
+    },
+    {
+      "path": "reference/auto/svgrid-grid-core.md",
+      "url": "/reference/auto/svgrid-grid-core",
+      "title": "`@svgrid/grid` · `core.ts`",
+      "summary": "Auto-generated. Source: packages\\grid\\src\\core.ts.",
+      "section": "reference",
+      "tier": "community",
+      "words": 2791,
+      "lastUpdated": "2026-06-16",
+      "demoIds": []
+    },
+    {
+      "path": "reference/auto/svgrid-grid-svgrid-wrapper.types.md",
+      "url": "/reference/auto/svgrid-grid-svgrid-wrapper.types",
+      "title": "`@svgrid/grid` · `svgrid-wrapper.types.ts`",
+      "summary": "Auto-generated. Source: packages\\grid\\src\\svgrid-wrapper.types.ts.",
+      "section": "reference",
+      "tier": "community",
+      "words": 248,
       "lastUpdated": "2026-06-16",
       "demoIds": []
     },
@@ -2530,6 +2530,17 @@
       "section": "reference",
       "tier": "community",
       "words": 848,
+      "lastUpdated": "2026-06-16",
+      "demoIds": []
+    },
+    {
+      "path": "reference/enterprise.md",
+      "url": "/reference/enterprise",
+      "title": "Enterprise reference",
+      "summary": "Everything that @svgrid/enterprise adds on top of the Community surface. Install + license: see Enterprise feature pack.",
+      "section": "reference",
+      "tier": "enterprise",
+      "words": 737,
       "lastUpdated": "2026-06-16",
       "demoIds": []
     },
@@ -2567,17 +2578,6 @@
       "demoIds": []
     },
     {
-      "path": "reference/pro.md",
-      "url": "/reference/pro",
-      "title": "Pro reference",
-      "summary": "Everything that sv-grid-pro adds on top of the Community surface. Install + license: see Pro feature pack.",
-      "section": "reference",
-      "tier": "pro",
-      "words": 737,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
       "path": "reference/SvGrid.md",
       "url": "/reference/SvGrid",
       "title": "`<SvGrid>` reference",
@@ -2585,7 +2585,7 @@
       "section": "reference",
       "tier": "community",
       "words": 1030,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-06-16",
       "demoIds": []
     },
     {

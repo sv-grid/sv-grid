@@ -10,7 +10,7 @@ of `ColumnDef`s - look at the [source](https://svgrid.com/#/demos/01-quick-start
 ## Minimal
 
 ```ts
-import type { ColumnDef } from 'sv-grid-core'
+import type { ColumnDef } from '@svgrid/grid'
 
 type Person = { firstName: string; age: number; status: string }
 
@@ -37,7 +37,7 @@ const columns: ColumnDef<{}, Person>[] = [
 | `columns` | `ColumnDef[]` | Children - turns this column into a column **group**. |
 | `width` | `number` | Initial width in pixels (overrides the grid's `columnWidth`). |
 
-See [`packages/sv-grid-core/src/core.ts`](../../../packages/sv-grid-core/src/core.ts).
+See [`packages/grid/src/core.ts`](../../../packages/grid/src/core.ts).
 
 ## Accessor vs. accessorFn
 

@@ -62,7 +62,7 @@ you registered via `setAIProvider(...)`. For PHI:
 Example redaction in the provider adapter:
 
 ```ts
-import { setAIProvider, type AIProvider } from 'sv-grid-pro'
+import { setAIProvider, type AIProvider } from '@svgrid/enterprise'
 
 const redactingProvider: AIProvider = async ({ prompt, ...rest }) => {
   const safe = prompt.replace(/MRN-?\d{8}/g, '<<MRN>>').replace(/SSN[:\s-]*\d{3}-?\d{2}-?\d{4}/g, '<<SSN>>')

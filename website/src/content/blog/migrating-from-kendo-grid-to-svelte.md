@@ -21,7 +21,7 @@ Kendo UI Grid is a mature commercial grid, typically used via jQuery or a framew
 | `pageable` | `rowPaginationFeature` |
 | `group` | `columnGroupingFeature` |
 | `serverPaging` / `serverSorting` | external mode |
-| Excel/PDF export | sv-grid-pro |
+| Excel/PDF export | @svgrid/enterprise |
 
 ## DataSource to data
 
@@ -52,14 +52,14 @@ const columns: ColumnDef<{}, Row>[] = [
 
 ## Licensing and exports
 
-Kendo is a commercial suite; SvGrid's core is MIT-licensed and free for commercial use, with export, import, and pivot in the optional Pro pack. See [pricing](/pricing).
+Kendo is a commercial suite; SvGrid's core is MIT-licensed and free for commercial use, with export, import, and pivot in the optional Enterprise pack. See [pricing](/pricing).
 
 ## Frequently asked questions
 
 ### How do I replace Kendo UI Grid in Svelte?
 
-Map `columns` directly (`title` to `header`, `format` to the `format` option, `editor` to `editorType`), replace the Kendo `DataSource` with a plain `data` array or SvGrid's external mode for server operations, and use the free MIT core plus Pro for export.
+Map `columns` directly (`title` to `header`, `format` to the `format` option, `editor` to `editorType`), replace the Kendo `DataSource` with a plain `data` array or SvGrid's external mode for server operations, and use the free MIT core plus Enterprise for export.
 
 ### Does SvGrid have Excel and PDF export like Kendo?
 
-Yes, in the sv-grid-pro pack, which adds Excel, PDF, CSV, TSV, and HTML export plus print and pivot. The core covers sorting, filtering, grouping, virtualization, and editing.
+Yes, in the @svgrid/enterprise pack, which adds Excel, PDF, CSV, TSV, and HTML export plus print and pivot. The core covers sorting, filtering, grouping, virtualization, and editing.

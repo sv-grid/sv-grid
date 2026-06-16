@@ -21,7 +21,7 @@ visible string in the grid comes from one of three places:
    uses for `format: { type: 'number' | 'currency' | 'percent' | 'date' }`.
 
 If you see an English string in the grid that isn't covered by one of
-the three, it's a bug - please file it. (The unlicensed Pro
+the three, it's a bug - please file it. (The unlicensed Enterprise
 watermark and the console nudge are the only literal strings the
 package itself emits, and both are off when a license key is set.)
 

@@ -12,7 +12,7 @@ that matches the question you're answering.
 | **E2E**             | Playwright                        | Real browser, scrolling, downloads, screens  | 0.5-2s / test  |
 
 The repo ships all three: vitest config in
-`packages/sv-grid-core/vitest.config.ts`, component tests in
+`packages/grid/vitest.config.ts`, component tests in
 `*.behavior.test.ts` files, Playwright specs in `examples/e2e/*.spec.ts`.
 
 ## Strategy 1 - Vitest unit
@@ -29,7 +29,7 @@ import {
   createSortedRowModel,
   tableFeatures,
   rowSortingFeature,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 
 const features = tableFeatures({ rowSortingFeature })
 
@@ -74,7 +74,7 @@ regressions in custom cell renderers and headers.
 ```ts
 import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/svelte'
-import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
+import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
 
 const features = tableFeatures({ rowSortingFeature })
 
@@ -147,7 +147,7 @@ Notes:
 
 ## See also
 
-- [`packages/sv-grid-core/vitest.config.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/vitest.config.ts) - the live config
-- [`*.behavior.test.ts` files](https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-core/src) - component-test examples
+- [`packages/grid/vitest.config.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/grid/vitest.config.ts) - the live config
+- [`*.behavior.test.ts` files](https://github.com/sv-grid/sv-grid/tree/main/packages/grid/src) - component-test examples
 - [`examples/e2e/`](https://github.com/sv-grid/sv-grid/tree/main/examples/e2e) - Playwright specs
 - [Architecture overview](../help/architecture.md) - what's headless vs what's rendered

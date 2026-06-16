@@ -1,9 +1,9 @@
-# AI assistant - Pro
+# AI assistant - Enterprise
 
 Bring a language model into your grid with four helpers that stay
 strictly model-agnostic: **natural-language filter**, **smart fill**,
 **summarise**, and **classify**. Ships in the paid
-**[sv-grid-pro](https://www.npmjs.com/package/sv-grid-pro)** add-on; the
+**[@svgrid/enterprise](https://www.npmjs.com/package/@svgrid/enterprise)** add-on; the
 Community build does not include these features.
 
 Run all four helpers live - the demo below is wired to the bundled
@@ -14,7 +14,7 @@ deterministic `mockAIProvider`, so no keys required:
 
 ## What it is
 
-`installPro(api)` (the same call you use for export and print) augments
+`installEnterprise(api)` (the same call you use for export and print) augments
 your `SvGridApi` with an `ai` namespace:
 
 ```ts
@@ -40,7 +40,7 @@ choice, routing, and data handling.
   consistent bucket label before downstream automation runs.
 
 If you don't need natural-language anywhere, skip this module entirely -
-the rest of `sv-grid-pro` doesn't depend on it.
+the rest of `@svgrid/enterprise` doesn't depend on it.
 
 ## Setting up the provider
 
@@ -48,7 +48,7 @@ The grid talks to your model through a single async function. Wire it
 once at app startup:
 
 ```ts
-import { setAIProvider, type AIProvider } from 'sv-grid-pro'
+import { setAIProvider, type AIProvider } from '@svgrid/enterprise'
 
 const myProvider: AIProvider = async ({ prompt, responseFormat, signal, task, maxOutputTokens }) => {
   const r = await fetch('/api/ai', {
@@ -84,7 +84,7 @@ For testing or for demo purposes, the package ships a deterministic
 in development:
 
 ```ts
-import { setAIProvider, mockAIProvider } from 'sv-grid-pro'
+import { setAIProvider, mockAIProvider } from '@svgrid/enterprise'
 setAIProvider(mockAIProvider)
 ```
 
@@ -224,15 +224,15 @@ and `print`:
 - **No key set** → call still runs, the grid shows an "unlicensed"
   watermark and the console logs a one-time nudge directing the user to
   pricing. This is intentional for demos and evaluation.
-- **`SVPRO-DEV-...` / `SVPRO-EVAL-...`** → call runs, a one-time
+- **`SVENTERPRISE-DEV-...` / `SVENTERPRISE-EVAL-...`** → call runs, a one-time
   `console.info` notes that the key is not for production.
-- **Other valid `SVPRO-` key** → call runs silently.
+- **Other valid `SVENTERPRISE-` key** → call runs silently.
 - **Malformed prefix or revoked key** → call throws.
 
 ## See also
 
-- [Demo 21 - Export + Print](../../examples/src/demos/21-export-and-print.svelte) - the other Pro
-  surface, installed by the same `installPro(api)` call.
+- [Demo 21 - Export + Print](../../examples/src/demos/21-export-and-print.svelte) - the other Enterprise
+  surface, installed by the same `installEnterprise(api)` call.
 - [Demo 51 - AI assistant](../../examples/src/demos/51-ai-assistant.svelte) - the full demo this
   page documents, with all four helpers wired to the mock provider.
 
@@ -240,7 +240,7 @@ and `print`:
 
 ### What AI features does SvGrid have?
 
-The `sv-grid-pro` AI assistant ships four model-agnostic helpers:
+The `@svgrid/enterprise` AI assistant ships four model-agnostic helpers:
 natural-language filter, smart fill, summarise, and classify. They run through a
 bring-your-own-model adapter, so you wire in your own LLM endpoint.
 

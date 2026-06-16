@@ -349,7 +349,7 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/blog/whats-new-svgrid-pro</loc>
+    <loc>https://svgrid.com/blog/whats-new-svgrid-enterprise</loc>
     <lastmod>2026-06-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -602,6 +602,24 @@
   </url>
   <url>
     <loc>https://svgrid.com/docs/compliance/soc2</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/docs/enterprise/evaluation</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/docs/enterprise/licensing</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://svgrid.com/docs/enterprise/support</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -1028,7 +1046,7 @@
   </url>
   <url>
     <loc>https://svgrid.com/docs/help/i18n-rtl</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -1346,30 +1364,12 @@
   </url>
   <url>
     <loc>https://svgrid.com/docs/help/versioning</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://svgrid.com/docs/help/web-components</loc>
-    <lastmod>2026-06-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/docs/pro/evaluation</loc>
-    <lastmod>2026-06-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/docs/pro/licensing</loc>
-    <lastmod>2026-06-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://svgrid.com/docs/pro/support</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -1627,43 +1627,43 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/auto/sv-grid-core-core</loc>
+    <loc>https://svgrid.com/docs/reference/auto/svgrid-enterprise-ai</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/auto/sv-grid-core-svgrid-wrapper.types</loc>
+    <loc>https://svgrid.com/docs/reference/auto/svgrid-enterprise-export</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/auto/sv-grid-pro-ai</loc>
+    <loc>https://svgrid.com/docs/reference/auto/svgrid-enterprise-import</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/auto/sv-grid-pro-export</loc>
+    <loc>https://svgrid.com/docs/reference/auto/svgrid-enterprise-install</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/auto/sv-grid-pro-import</loc>
+    <loc>https://svgrid.com/docs/reference/auto/svgrid-enterprise-pivot</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/auto/sv-grid-pro-install</loc>
+    <loc>https://svgrid.com/docs/reference/auto/svgrid-grid-core</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/auto/sv-grid-pro-pivot</loc>
+    <loc>https://svgrid.com/docs/reference/auto/svgrid-grid-svgrid-wrapper.types</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -1681,6 +1681,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://svgrid.com/docs/reference/enterprise</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://svgrid.com/docs/reference/features</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
@@ -1693,14 +1699,8 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://svgrid.com/docs/reference/pro</loc>
-    <lastmod>2026-06-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://svgrid.com/docs/reference/SvGrid</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>

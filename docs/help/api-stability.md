@@ -10,10 +10,10 @@ SvGrid follows [semver](https://semver.org/) strictly **for everything
 exported from the package root**:
 
 ```ts
-import { SvGrid, tableFeatures, /* ... */ } from 'sv-grid-core'
+import { SvGrid, tableFeatures, /* ... */ } from '@svgrid/grid'
 ```
 
-Anything reached via `'sv-grid-core/internal'` or a deeper path is
+Anything reached via `'@svgrid/grid/internal'` or a deeper path is
 **not** covered. We may rename, reshape, or remove those between any
 two minor releases.
 
@@ -49,7 +49,7 @@ Internal symbols are excluded from the published `.d.ts`.
 
 The package surface as of the current shipping version:
 
-### `sv-grid-core`
+### `@svgrid/grid`
 
 | Surface                              | Tier              |
 | ------------------------------------ | ----------------- |
@@ -63,11 +63,11 @@ The package surface as of the current shipping version:
 | `createGridState`                    | Stable            |
 | Anything imported via a deep path (`/internal`, `/test-utils`) | Internal |
 
-### `sv-grid-pro`
+### `@svgrid/enterprise`
 
 | Surface                              | Tier              |
 | ------------------------------------ | ----------------- |
-| `installPro`, `ProGridApi`           | Stable            |
+| `installEnterprise`, `EnterpriseGridApi`           | Stable            |
 | `exportGrid`, `ExportOptions`        | Stable            |
 | `printGrid`, `PrintOptions`          | Stable            |
 | `importData`, `ImportOptions`, `ImportResult` | Stable, accepting feedback |
@@ -130,7 +130,7 @@ can parse this table directly.
 | Symbol                           | Deprecated since | Removal target | Replacement                                              | Reason                                              |
 | -------------------------------- | ---------------- | -------------- | -------------------------------------------------------- | --------------------------------------------------- |
 | `<SvGrid filterMode="row">`      | v1.4             | v2.0           | `filterMode="menu"` + `showFilterRow={true}` if you really want both | The two modes were mutually exclusive in the type but both rendered when set; the split makes the intent explicit |
-| `mockAIProvider` named export    | v1.6             | v2.0           | `import { mockAIProvider } from 'sv-grid-pro/test-utils'` | Test helpers are moving out of the production bundle |
+| `mockAIProvider` named export    | v1.6             | v2.0           | `import { mockAIProvider } from '@svgrid/enterprise/test-utils'` | Test helpers are moving out of the production bundle |
 | `ColumnDef.cellClassRules`       | v1.3             | v2.0           | `cellClass: (ctx) => Record<string, boolean>`            | One field is enough; the rules format was unnecessary indirection |
 | `<SvGrid onCellClick>`           | v1.5             | v2.0           | `onActiveCellChange` + your own click handler            | The grid intercepts click already for selection / editing; surfacing it as a prop double-fires |
 
@@ -158,7 +158,7 @@ under a `### Removed` section and out of this table.
   patches only, for **12 months** after v2.0.0.
 - **Older majors** - no support.
 
-For Pro customers, our support contract may extend LTS beyond 12
+For Enterprise customers, our support contract may extend LTS beyond 12
 months on a case-by-case basis - contact `sales@jqwidgets.com`.
 
 ## See also

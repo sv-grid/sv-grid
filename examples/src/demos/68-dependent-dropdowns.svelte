@@ -24,7 +24,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Region = { id: string; country: string; state: string; city: string; rep: string }
 

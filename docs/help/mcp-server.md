@@ -15,7 +15,7 @@ against your installed copy.
 ## Install
 
 ```bash
-# Inside any project that already depends on sv-grid-core
+# Inside any project that already depends on @svgrid/grid
 pnpm add -D @sv-grid/mcp-server
 ```
 
@@ -208,7 +208,7 @@ agent's system prompt gives ~80% of the same value.
 
 - [LLM grounding](./llm-grounding.md) - the same files used by the MCP server, but documented for direct LLM consumption
 - [Agents](./agents.md) - how to build an AI agent that drives the live grid
-- [AI assistant - Pro](./ai.md) - the in-grid AI features (filter / smart-fill / classify / summarise)
+- [AI assistant - Enterprise](./ai.md) - the in-grid AI features (filter / smart-fill / classify / summarise)
 
 ## Frequently asked questions
 

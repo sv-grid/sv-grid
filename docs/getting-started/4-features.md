@@ -16,7 +16,7 @@ feature; the wrapper wires the matching row-model factory for you.
     columnFilteringFeature,
     rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   const features = tableFeatures({
     rowSortingFeature,

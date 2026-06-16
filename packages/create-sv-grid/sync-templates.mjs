@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Copies the canonical, forkable starter from the monorepo
 // (templates/sveltekit-admin-dashboard) into this package's bundled
-// templates/admin-dashboard so the published `create-sv-grid` is
+// templates/admin-dashboard so the published `@svgrid/create` is
 // self-contained. Runs automatically on `prepack` (before publish).
 //
 // Dotfiles and package.json are stored `_`-prefixed inside the package because

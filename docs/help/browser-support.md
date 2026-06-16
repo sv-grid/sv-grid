@@ -31,7 +31,7 @@ published bundle assumes:
 - `globalThis`
 
 If you need to ship to a baseline lower than ES2020, transpile
-`sv-grid-core` in your own build (Vite, Rollup, esbuild). The
+`@svgrid/grid` in your own build (Vite, Rollup, esbuild). The
 package source contains no syntax above ES2022.
 
 ## DOM APIs
@@ -96,7 +96,7 @@ grid. Guard `document` / `window` reads inside an `onMount` or
 | Turbopack     | n/a     | Untested. Should work given ESM compatibility. |
 
 Tree-shaking works at the named-export granularity - `import { SvGrid,
-tableFeatures } from 'sv-grid-core'` pulls in only the surfaces
+tableFeatures } from '@svgrid/grid'` pulls in only the surfaces
 you reference. Each feature module (sorting, filtering, etc.) is its
 own export.
 

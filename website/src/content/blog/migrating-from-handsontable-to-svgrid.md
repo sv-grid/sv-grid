@@ -22,7 +22,7 @@ Handsontable is a capable spreadsheet component. Teams move to SvGrid for a nati
 | `columnSorting` | `rowSortingFeature` |
 | `filters` + dropdown menu | `columnFilteringFeature` (`filterMode="menu"`) |
 | Cell range selection | `enableCellSelection` |
-| Non-commercial / commercial license | MIT core; Pro for export/import/pivot |
+| Non-commercial / commercial license | MIT core; Enterprise for export/import/pivot |
 
 ## Data shape
 
@@ -48,18 +48,18 @@ Handsontable mutates its data source; SvGrid emits an event and leaves the write
 
 ## Spreadsheet feel
 
-If you relied on range selection and copy/paste, enable cell selection (`selectionMode="cell"` / `enableCellSelection`); copying a range yields tab-separated values that paste into Excel. See [cell range selection](cell-range-selection). Excel/CSV export and import live in [sv-grid-pro](/pricing).
+If you relied on range selection and copy/paste, enable cell selection (`selectionMode="cell"` / `enableCellSelection`); copying a range yields tab-separated values that paste into Excel. See [cell range selection](cell-range-selection). Excel/CSV export and import live in [@svgrid/enterprise](/pricing).
 
 ## Licensing note
 
-Handsontable is free for non-commercial use and requires a license for commercial use. SvGrid's core is MIT-licensed for commercial use with no key; only the optional Pro pack is paid. Factor that into the migration's business case.
+Handsontable is free for non-commercial use and requires a license for commercial use. SvGrid's core is MIT-licensed for commercial use with no key; only the optional Enterprise pack is paid. Factor that into the migration's business case.
 
 ## Frequently asked questions
 
 ### Can SvGrid replace Handsontable's spreadsheet features?
 
-For most use cases, yes - inline editing with typed editors, cell range selection, copy/paste as TSV, sorting, filtering, and (via Pro) Excel/CSV import and export. Very spreadsheet-specific features like formula engines differ, so check your exact needs.
+For most use cases, yes - inline editing with typed editors, cell range selection, copy/paste as TSV, sorting, filtering, and (via Enterprise) Excel/CSV import and export. Very spreadsheet-specific features like formula engines differ, so check your exact needs.
 
 ### How does licensing compare?
 
-Handsontable requires a commercial license for commercial use; SvGrid's core is MIT-licensed and free for commercial use, with a separate optional paid Pro pack for export, import, pivot, and AI.
+Handsontable requires a commercial license for commercial use; SvGrid's core is MIT-licensed and free for commercial use, with a separate optional paid Enterprise pack for export, import, pivot, and AI.

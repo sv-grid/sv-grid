@@ -1,9 +1,9 @@
 <script lang="ts">
   // Pricing modelled on the AG Grid / Bryntum commercial structure:
   //   1. Community (free, MIT)
-  //   2. Pro - Single Application Developer License (one deployed app)
-  //   3. Pro - Multiple Application Developer License (unlimited apps)
-  // Pro is a perpetual license + 1 year of updates/support that renews
+  //   2. Enterprise - Single Application Developer License (one deployed app)
+  //   3. Enterprise - Multiple Application Developer License (unlimited apps)
+  // Enterprise is a perpetual license + 1 year of updates/support that renews
   // automatically until cancelled (cancel anytime, keep your paid-term versions).
   //
   // Layout follows ag-grid.com/license-pricing/:
@@ -47,11 +47,11 @@
       cta: {
         kind: 'link',
         label: 'Install from npm',
-        href: 'https://www.npmjs.com/package/sv-grid-core',
+        href: 'https://www.npmjs.com/package/@svgrid/grid',
       },
     },
     {
-      name: 'Pro - Single App',
+      name: 'Enterprise - Single App',
       licenseType: 'Single Application Developer License',
       price: '$599',
       cadence: 'per developer',
@@ -62,7 +62,7 @@
       ribbon: 'Most popular',
     },
     {
-      name: 'Pro - Multi App',
+      name: 'Enterprise - Multi App',
       licenseType: 'Multiple Application Developer License',
       price: '$999',
       cadence: 'per developer',
@@ -71,7 +71,7 @@
       cta: { kind: 'paypal', planKey: 'proMultiApp' },
     },
     {
-      name: 'Enterprise',
+      name: 'Enterprise - Custom',
       licenseType: 'Site / Org-wide License',
       price: 'Custom',
       cadence: '',
@@ -80,7 +80,7 @@
       cta: {
         kind: 'link',
         label: 'Talk to sales',
-        href: "mailto:sales@jqwidgets.com?subject=sv-grid-pro%20Enterprise%20quote&body=Hi%20jQWidgets,%0A%0AWe'd%20like%20a%20custom%20Enterprise%20quote%20for%20sv-grid-pro.%0A%0ACompany:%20%0ATeam%20size:%20%0AApps%20covered:%20%0ARequirements%20(MSA%20/%20NDA%20/%20escrow%20/%20on-prem%20/%20SLA):%20%0AContract%20term%20(1%20/%202%20/%203%20/%205%20yr):%20%0A%0AThanks!",
+        href: "mailto:sales@jqwidgets.com?subject=sv-grid%20Enterprise%20-%20Custom%20quote&body=Hi%20jQWidgets,%0A%0AWe'd%20like%20a%20custom%20Enterprise%20quote%20for%20SvGrid.%0A%0ACompany:%20%0ATeam%20size:%20%0AApps%20covered:%20%0ARequirements%20(MSA%20/%20NDA%20/%20escrow%20/%20on-prem%20/%20SLA):%20%0AContract%20term%20(1%20/%202%20/%203%20/%205%20yr):%20%0A%0AThanks!",
       },
     },
   ]
@@ -245,32 +245,32 @@
 
   // ---- FAQ (accordion) ----
   const faqs = [
-    { q: 'Is sv-grid-pro free for open-source projects?',
-      a: 'Yes. If your project is open-source (OSI-approved license, public repo, not a paid product), we issue a free SVPRO-OSS-... key - same feature set as the paid tier, no watermark. Email sales@jqwidgets.com with your repo URL; we typically respond within one business day. Keys are renewable annually for as long as the project stays open-source.' },
+    { q: 'Is the Enterprise pack free for open-source projects?',
+      a: 'Yes. If your project is open-source (OSI-approved license, public repo, not a paid product), we issue a free SVENTERPRISE-OSS-... key - same feature set as the paid Enterprise tiers, no watermark. Email sales@jqwidgets.com with your repo URL; we typically respond within one business day. Keys are renewable annually for as long as the project stays open-source.' },
     { q: 'Is the Community tier really free for commercial use?',
-      a: 'Yes. sv-grid-core is published under the MIT License - permissive, SPDX-recognised, and friendly to corporate legal review. Use it in proprietary products, fork it, redistribute it. Read the LICENSE file in the repo for the exact terms.' },
-    { q: 'What is the difference between Single App and Multiple App?',
-      a: 'A Single Application Developer License covers one deployed application - typically one product or one customer-facing web app. A Multiple Application Developer License covers an unlimited number of deployed apps in your organisation, including subsidiaries and sister products. Both are licensed per developer as a perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime), where "developer" means engineers who write or modify code that imports sv-grid-pro.' },
-    { q: 'What happens if I use sv-grid-pro without a license key?',
-      a: 'The Pro features still work - export, import, print, the AI assistant, and the pivot helpers all run. The grid renders a small "Unlicensed sv-grid-pro" watermark in the bottom-right and the console emits a one-time notice with a link to pricing. Set a valid SVPRO-... license key via setLicenseKey() and the watermark disappears.' },
+      a: 'Yes. @svgrid/grid is published under the MIT License - permissive, SPDX-recognised, and friendly to corporate legal review. Use it in proprietary products, fork it, redistribute it. Read the LICENSE file in the repo for the exact terms.' },
+    { q: 'What is the difference between Enterprise - Single App and Enterprise - Multi App?',
+      a: 'A Single Application Developer License covers one deployed application - typically one product or one customer-facing web app. A Multiple Application Developer License covers an unlimited number of deployed apps in your organisation, including subsidiaries and sister products. Both are licensed per developer as a perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime), where "developer" means engineers who write or modify code that imports @svgrid/enterprise.' },
+    { q: 'What happens if I use @svgrid/enterprise without a license key?',
+      a: 'The Enterprise features still work - export, import, print, the AI assistant, and the pivot helpers all run. The grid renders a small "Unlicensed @svgrid/enterprise" watermark in the bottom-right and the console emits a one-time notice with a link to pricing. Set a valid SVENTERPRISE-... license key via setLicenseKey() and the watermark disappears.' },
     { q: 'Do the AI features call OpenAI or Anthropic out of the box?',
-      a: 'No. sv-grid-pro stays model-agnostic: you register an AIProvider adapter via setAIProvider(fn) that talks to whatever endpoint you choose - OpenAI, Anthropic, a self-hosted llama, or a server-side proxy. No keys are ever embedded in the package, and no data is sent anywhere by default. The bundled mockAIProvider returns deterministic canned shapes so demos and tests work without a real model.' },
+      a: 'No. @svgrid/enterprise stays model-agnostic: you register an AIProvider adapter via setAIProvider(fn) that talks to whatever endpoint you choose - OpenAI, Anthropic, a self-hosted llama, or a server-side proxy. No keys are ever embedded in the package, and no data is sent anywhere by default. The bundled mockAIProvider returns deterministic canned shapes so demos and tests work without a real model.' },
     { q: 'Which import formats does the importer accept?',
-      a: 'sv-grid-pro reads Excel (.xlsx), CSV, TSV, and JSON arrays. The importer parses the file in the browser via the same JSZip peer dependency that powers Excel export, infers a column header row, lets you map source columns to your grid columns, runs per-column validation, and surfaces row-level errors before committing. No server round-trip required.' },
+      a: '@svgrid/enterprise reads Excel (.xlsx), CSV, TSV, and JSON arrays. The importer parses the file in the browser via the same JSZip peer dependency that powers Excel export, infers a column header row, lets you map source columns to your grid columns, runs per-column validation, and surfaces row-level errors before committing. No server round-trip required.' },
     { q: 'Does the pivot table need a special pivot grid?',
-      a: 'No. The pivot is built on top of the standard SvGrid using its multi-level column headers and custom-cell rendering. sv-grid-pro ships the pivot engine, the drag-and-drop Pivot Designer component, and pivot-aware sort wiring - you keep using the same headless engine you already know.' },
-    { q: 'Can I trial sv-grid-pro before paying?',
-      a: 'Yes. Contact us and we will issue a 14-day SVPRO-EVAL-... key that unlocks the full Pro feature set with no watermark. You can also evaluate the feature unlicensed (watermarked) for as long as you like - no time bomb, no broken functionality.' },
+      a: 'No. The pivot is built on top of the standard SvGrid using its multi-level column headers and custom-cell rendering. @svgrid/enterprise ships the pivot engine, the drag-and-drop Pivot Designer component, and pivot-aware sort wiring - you keep using the same headless engine you already know.' },
+    { q: 'Can I trial the Enterprise pack before paying?',
+      a: 'Yes. Contact us and we will issue a 14-day SVENTERPRISE-EVAL-... key that unlocks the full Enterprise feature set with no watermark. You can also evaluate the feature unlicensed (watermarked) for as long as you like - no time bomb, no broken functionality.' },
     { q: 'Do you offer team or volume pricing?',
-      a: 'Yes - email sales@jqwidgets.com for teams of 5+ developers. Multi-year terms (2 / 3 / 5 years) carry escalating discounts. Multiple App licenses are typically the right choice once a team exceeds ~6 deployed apps. For 50+ developers, MSA / NDA / on-prem documentation, source-code escrow, a named support engineer, or government / FedRAMP requirements, see the Enterprise tier.' },
-    { q: 'What is the Enterprise tier?',
-      a: 'A custom, organisation-wide contract that includes everything in Multiple App plus the things large orgs need: an MSA / NDA, source-code escrow, a named support engineer, on-prem documentation, custom SLAs, multi-year (2 / 3 / 5 yr) terms, government / FedRAMP-friendly procurement, and security review. Pricing is tailored to seat count, contract length, and required deliverables - email sales@jqwidgets.com with your requirements and we will quote within one business day.' },
+      a: 'Yes - email sales@jqwidgets.com for teams of 5+ developers. Multi-year terms (2 / 3 / 5 years) carry escalating discounts. Enterprise - Multi App is typically the right choice once a team exceeds ~6 deployed apps. For 50+ developers, MSA / NDA / on-prem documentation, source-code escrow, a named support engineer, or government / FedRAMP requirements, see Enterprise - Custom.' },
+    { q: 'What is Enterprise - Custom?',
+      a: 'A custom, organisation-wide contract that includes everything in Enterprise - Multi App plus the things large orgs need: an MSA / NDA, source-code escrow, a named support engineer, on-prem documentation, custom SLAs, multi-year (2 / 3 / 5 yr) terms, government / FedRAMP-friendly procurement, and security review. Pricing is tailored to seat count, contract length, and required deliverables - email sales@jqwidgets.com with your requirements and we will quote within one business day.' },
     { q: 'What about peer dependencies for export and import?',
-      a: 'sv-grid-pro lazy-loads "jszip" for xlsx export AND xlsx import, and "pdfmake" for PDF export. CSV, TSV, HTML, JSON import, print, the AI assistant, and the pivot helpers have no extra dependencies. Install only the peers you actually use.' },
+      a: '@svgrid/enterprise lazy-loads "jszip" for xlsx export AND xlsx import, and "pdfmake" for PDF export. CSV, TSV, HTML, JSON import, print, the AI assistant, and the pivot helpers have no extra dependencies. Install only the peers you actually use.' },
     { q: 'Is it a subscription? Can I cancel?',
       a: 'It is a perpetual license, not a rental. You buy the license once and own it forever; the yearly renewal only pays for continued updates and support, and it renews automatically until you cancel. Cancel anytime - the version you have keeps working, and you keep every version released during your paid term. You simply stop receiving new updates and support after the term you paid for.' },
     { q: 'Do my license keys expire?',
-      a: 'No. Keys are perpetual: an issued key keeps working for every version of sv-grid-pro released during your paid term, forever. The automatic yearly renewal is what unlocks new versions and keeps support active. If you cancel or let it lapse, your installed version keeps working - you just stop getting new releases and support.' },
+      a: 'No. Keys are perpetual: an issued key keeps working for every version of @svgrid/enterprise released during your paid term, forever. The automatic yearly renewal is what unlocks new versions and keeps support active. If you cancel or let it lapse, your installed version keeps working - you just stop getting new releases and support.' },
     { q: 'Is the license tied to a specific developer or a seat?',
       a: 'It is a seat license. The seat moves with the role: if a developer leaves and is replaced, the same seat transfers to the replacement. No re-purchase required.' },
   ]
@@ -297,15 +297,15 @@
       Pricing
     </p>
     <h1 class="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight" style="color: var(--sg-fg);">
-      Free Community. Pro for teams. Enterprise for orgs.
+      Free Community. Enterprise for production.
     </h1>
     <p class="mt-5 max-w-3xl mx-auto text-base md:text-lg" style="color: var(--site-muted);">
-      The full grid is free under the <strong>MIT License</strong>. <strong>sv-grid-pro</strong>
-      adds Excel / PDF / CSV export + print, Excel import, a pivot table with drag-and-drop
-      designer, an AI assistant, password-protected export, and direct support.
-      <strong>Buy once, keep forever - the optional yearly renewal only pays for new updates
-      and support, cancel anytime.</strong> 50+ seats or MSA / NDA / on-prem / multi-year? Talk
-      to sales about Enterprise.
+      The full grid is free under the <strong>MIT License</strong>. The <strong>Enterprise</strong>
+      pack (<code>@svgrid/enterprise</code>) adds Excel / PDF / CSV export + print, Excel import, a pivot
+      table with drag-and-drop designer, an AI assistant, password-protected export, and direct
+      support. <strong>Buy once, keep forever - the optional yearly renewal only pays for new
+      updates and support, cancel anytime.</strong> 50+ seats or MSA / NDA / on-prem / multi-year?
+      Talk to sales about Enterprise - Custom.
     </p>
     <div class="mt-7 flex flex-wrap items-center justify-center gap-3 text-xs"
       style="color: var(--site-muted);">
@@ -405,11 +405,11 @@
           {#if tier.name === 'Community'}
             Full data grid, MIT license, GitHub-issue support.
           {:else if tier.licenseType?.startsWith('Single')}
-            Everything in Community + Pro pack + paid support.
+            Everything in Community + Enterprise pack + paid support.
           {:else if tier.licenseType?.startsWith('Multiple')}
-            Everything in Single App + unlimited apps + volume discounts.
+            Everything in Enterprise - Single App + unlimited apps + volume discounts.
           {:else}
-            Everything in Multi App + MSA / NDA / escrow + named support.
+            Everything in Enterprise - Multi App + MSA / NDA / escrow + named support.
           {/if}
         </p>
       </article>
@@ -435,11 +435,11 @@
     <div class="md:flex md:items-center md:gap-10">
       <div class="flex-1">
         <h2 class="text-lg font-bold" style="color: var(--sg-fg);">
-          What does Pro cost for our team?
+          What does Enterprise cost for our team?
         </h2>
         <p class="mt-2 text-sm" style="color: var(--site-muted);">
           Set the number of developers who'll write or modify code that imports
-          <code>sv-grid-pro</code>. The totals below match what PayPal will charge at checkout.
+          <code>@svgrid/enterprise</code>. The totals below match what PayPal will charge at checkout.
         </p>
         <div class="mt-5">
           <label class="block">
@@ -455,7 +455,7 @@
           </label>
           {#if needsSalesContact}
             <a class="sales-cue mt-3"
-              href="mailto:sales@jqwidgets.com?subject=sv-grid-pro%20volume%20quote&body=Hi%20jQWidgets,%0A%0AWe're%20looking%20at%20sv-grid-pro%20for%20our%20team.%0A%0ASeats:%20{devCount}%0ATier:%20%0ACompany:%20%0A%0AThanks!">
+              href="mailto:sales@jqwidgets.com?subject=@svgrid/enterprise%20volume%20quote&body=Hi%20jQWidgets,%0A%0AWe're%20looking%20at%20@svgrid/enterprise%20for%20our%20team.%0A%0ASeats:%20{devCount}%0ATier:%20%0ACompany:%20%0A%0AThanks!">
               <strong>5+ seats?</strong>
               <span>Ask sales about volume + multi-year pricing - typical discounts at 5 / 10 / 20+ seats.</span>
               <span aria-hidden="true">→</span>
@@ -472,7 +472,7 @@
 
       <div class="mt-8 md:mt-0 grid grid-cols-2 gap-4 md:w-[400px]">
         <div class="calc-card">
-          <p class="calc-label">Single App</p>
+          <p class="calc-label">Enterprise - Single App</p>
           <p class="calc-price">${calc.single.toLocaleString()}<span class="calc-yr">/yr</span></p>
           <p class="calc-meta">${(calc.single / devCount / 12).toFixed(0)} / dev / month</p>
           <button type="button" class="btn btn-ghost w-full mt-3"
@@ -481,7 +481,7 @@
           </button>
         </div>
         <div class="calc-card highlighted">
-          <p class="calc-label">Multi App</p>
+          <p class="calc-label">Enterprise - Multi App</p>
           <p class="calc-price">${calc.multi.toLocaleString()}<span class="calc-yr">/yr</span></p>
           <p class="calc-meta">${(calc.multi / devCount / 12).toFixed(0)} / dev / month</p>
           <button type="button" class="btn btn-primary w-full mt-3"
@@ -514,11 +514,11 @@
               <div class="cmp-th-price">$0 forever</div>
             </th>
             <th class="cmp-th-highlight">
-              <div class="cmp-th-name">Pro - Single App</div>
+              <div class="cmp-th-name">Enterprise - Single App</div>
               <div class="cmp-th-price">$599 / dev / yr</div>
             </th>
             <th>
-              <div class="cmp-th-name">Pro - Multi App</div>
+              <div class="cmp-th-name">Enterprise - Multi App</div>
               <div class="cmp-th-price">$999 / dev / yr</div>
             </th>
           </tr>
@@ -544,16 +544,16 @@
             <td></td>
             <td>
               <a class="btn btn-ghost w-full"
-                href="https://www.npmjs.com/package/sv-grid-core"
+                href="https://www.npmjs.com/package/@svgrid/grid"
                 target="_blank" rel="noopener noreferrer">npm install</a>
             </td>
             <td class="cmp-td-highlight">
               <button class="btn btn-primary w-full"
-                onclick={() => openBuy('proSingleApp')}>Buy Single App</button>
+                onclick={() => openBuy('proSingleApp')}>Buy Enterprise - Single App</button>
             </td>
             <td>
               <button class="btn btn-ghost w-full"
-                onclick={() => openBuy('proMultiApp')}>Buy Multi App</button>
+                onclick={() => openBuy('proMultiApp')}>Buy Enterprise - Multi App</button>
             </td>
           </tr>
         </tbody>
@@ -585,7 +585,7 @@
         <p class="text-xs font-semibold uppercase tracking-[0.16em]"
           style="color: #16a34a;">Free for open source</p>
         <h2 class="mt-1 text-xl font-bold" style="color: var(--sg-fg);">
-          sv-grid-pro is free for OSS projects
+          The Enterprise pack is free for OSS projects
         </h2>
         <p class="mt-2 text-sm" style="color: var(--sg-fg);">
           If your project is open-source under an
@@ -593,12 +593,12 @@
             href="https://opensource.org/licenses" target="_blank" rel="noopener noreferrer">
             OSI-approved license
           </a>
-          and not a paid product, you get a free <code>SVPRO-OSS-…</code> key. Same Pro feature
-          set as the paid tiers, no watermark. Renewable annually.
+          and not a paid product, you get a free <code>SVENTERPRISE-OSS-…</code> key. Same Enterprise
+          feature set as the paid tiers, no watermark. Renewable annually.
         </p>
       </div>
       <a class="btn btn-ghost shrink-0"
-        href="mailto:sales@jqwidgets.com?subject=sv-grid-pro%20OSS%20license%20request&body=Hi%20jQWidgets,%0A%0AI'd%20like%20a%20free%20sv-grid-pro%20OSS%20license%20for%20my%20open-source%20project.%0A%0ARepo%20URL:%20%0AOSS%20license:%20%0AContact%20name:%20%0AContact%20email:%20%0A%0AThanks!">
+        href="mailto:sales@jqwidgets.com?subject=@svgrid/enterprise%20OSS%20license%20request&body=Hi%20jQWidgets,%0A%0AI'd%20like%20a%20free%20@svgrid/enterprise%20OSS%20license%20for%20my%20open-source%20project.%0A%0ARepo%20URL:%20%0AOSS%20license:%20%0AContact%20name:%20%0AContact%20email:%20%0A%0AThanks!">
         Request OSS key →
       </a>
     </div>
@@ -617,7 +617,7 @@
         </p>
       </div>
       <div>
-        <p class="decide-key" style="color: var(--site-accent-2);">Single Application</p>
+        <p class="decide-key" style="color: var(--site-accent-2);">Enterprise - Single App</p>
         <p style="color: var(--site-muted);">
           You ship <strong>one</strong> production app and want export + print, Excel / CSV
           import, pivot table + designer, the AI assistant, and paid support. Most common choice
@@ -625,14 +625,14 @@
         </p>
       </div>
       <div>
-        <p class="decide-key" style="color: var(--site-accent-2);">Multiple Application</p>
+        <p class="decide-key" style="color: var(--site-accent-2);">Enterprise - Multi App</p>
         <p style="color: var(--site-muted);">
           You ship <strong>multiple</strong> production apps from one team or org - internal
           tools, a product suite, customer-facing apps + admin. Avoids tracking per-app coverage.
         </p>
       </div>
       <div>
-        <p class="decide-key" style="color: var(--site-accent-2);">Enterprise</p>
+        <p class="decide-key" style="color: var(--site-accent-2);">Enterprise - Custom</p>
         <p style="color: var(--site-muted);">
           You have <strong>50+ developers</strong>, security review, MSA / NDA, source-code
           escrow, named support, on-prem docs, or government / FedRAMP requirements. Talk to
@@ -687,11 +687,11 @@
     </p>
     <div class="mt-6 flex flex-wrap justify-center gap-3">
       <a class="btn btn-primary"
-        href="mailto:sales@jqwidgets.com?subject=sv-grid-pro%20Custom%20quote&body=Hi%20jQWidgets,%0A%0AWe'd%20like%20a%20custom%20quote%20for%20sv-grid-pro.%0A%0ACompany:%20%0ATeam%20size:%20%0AApps%20covered:%20%0ANotes:%20%0A%0AThanks!">
+        href="mailto:sales@jqwidgets.com?subject=@svgrid/enterprise%20Custom%20quote&body=Hi%20jQWidgets,%0A%0AWe'd%20like%20a%20custom%20quote%20for%20@svgrid/enterprise.%0A%0ACompany:%20%0ATeam%20size:%20%0AApps%20covered:%20%0ANotes:%20%0A%0AThanks!">
         Talk to sales →
       </a>
       <a class="btn btn-ghost"
-        href="mailto:sales@jqwidgets.com?subject=sv-grid-pro%20Trial%20key%20request&body=Hi%20jQWidgets,%0A%0AI'd%20like%20a%2014-day%20evaluation%20key%20for%20sv-grid-pro.%0A%0AContact%20name:%20%0ACompany:%20%0AUse%20case:%20%0A%0AThanks!">
+        href="mailto:sales@jqwidgets.com?subject=@svgrid/enterprise%20Trial%20key%20request&body=Hi%20jQWidgets,%0A%0AI'd%20like%20a%2014-day%20evaluation%20key%20for%20@svgrid/enterprise.%0A%0AContact%20name:%20%0ACompany:%20%0AUse%20case:%20%0A%0AThanks!">
         Request 14-day trial key
       </a>
     </div>

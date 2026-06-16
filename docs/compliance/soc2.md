@@ -22,7 +22,7 @@ responsibility ends and yours begins.
 | **CC6.6 Encryption in transit** | n/a - no transit                                       |
 | **CC7.1 System operations** | Bundle is deterministic; SHA-256 published per release      |
 | **CC8.1 Change management** | Every change ships as a PR with reviews; release notes per version |
-| **CC9.2 Vendor management** | 0 runtime deps in `sv-grid-core`; lazy peer deps in `sv-grid-pro` documented in [security](../help/security.md) |
+| **CC9.2 Vendor management** | 0 runtime deps in `@svgrid/grid`; lazy peer deps in `@svgrid/enterprise` documented in [security](../help/security.md) |
 
 ## What you cover (in your own SOC 2)
 

@@ -16,7 +16,7 @@
     {
       "id": "export-options",
       "file": "export-options.json",
-      "describes": "sv-grid-pro api.exportData({...}) argument."
+      "describes": "@svgrid/enterprise api.exportData({...}) argument."
     }
   ]
 }

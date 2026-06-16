@@ -23,14 +23,14 @@
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
-    installPro,
+    installEnterprise,
     setLicenseKey,
-    type ProGridApi,
-  } from 'sv-grid-pro'
+    type EnterpriseGridApi,
+  } from '@svgrid/enterprise'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   type Product = {
     id: string
@@ -95,7 +95,7 @@
   })
 
   const features = tableFeatures({ rowSortingFeature })
-  let api = $state<ProGridApi<typeof features, Product> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Product> | null>(null)
   let busy = $state(false)
 
   const pngReady = $derived(Object.keys(pngById).length === SEED.length)
@@ -189,7 +189,7 @@
       rowHeight={44}
       containerHeight="100%"
       fitColumns={true}
-      onApiReady={(next) => (api = installPro(next))}
+      onApiReady={(next) => (api = installEnterprise(next))}
     />
   </div>
 </section>

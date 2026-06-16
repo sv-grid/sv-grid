@@ -18,7 +18,7 @@ SvGrid is Svelte-5-native, but you can drop it into a React app via a thin **cus
 
 ## 1. Author the custom element
 
-In your Svelte package (a thin wrapper over `sv-grid-core`):
+In your Svelte package (a thin wrapper over `@svgrid/grid`):
 
 ```svelte
 <!-- packages/sv-grid-element/src/SvGridElement.svelte -->
@@ -42,7 +42,7 @@ In your Svelte package (a thin wrapper over `sv-grid-core`):
     SvGrid, tableFeatures,
     rowSortingFeature, columnFilteringFeature,
     rowSelectionFeature, rowPaginationFeature,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   // Re-export every prop the React side might want to set.
   let {

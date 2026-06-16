@@ -1,6 +1,6 @@
 # Error reference
 
-Every `Error` thrown by `sv-grid-core` or `sv-grid-pro` with the
+Every `Error` thrown by `@svgrid/grid` or `@svgrid/enterprise` with the
 exact message text, the trigger condition, and the fix. If a runtime
 message you see isn't on this list, it's coming from your own code or
 a peer dependency.
@@ -18,7 +18,7 @@ Error classes are part of the [API stability](./api-stability.md)
 contract: the `.name` and message structure are Stable; we may reword
 the trailing detail at the patch level if the diagnostic improves.
 
-## sv-grid-core
+## @svgrid/grid
 
 ### `Error: SvGrid: cannot mount inside a non-element parent`
 
@@ -74,38 +74,38 @@ the trailing detail at the patch level if the diagnostic improves.
 - **Fix:** Give the computed column an explicit `id` and drop its
   `field`.
 
-## sv-grid-pro - License
+## @svgrid/enterprise - License
 
-### `Error: sv-grid-pro: setLicenseKey() requires a non-empty string`
+### `Error: @svgrid/enterprise: setLicenseKey() requires a non-empty string`
 
 - **Class:** `Error`
 - **When:** `setLicenseKey('')` or `setLicenseKey(null)`.
-- **Fix:** Pass a valid `SVPRO-...` string.
+- **Fix:** Pass a valid `SVENTERPRISE-...` string.
 
-### `Error: sv-grid-pro: invalid license key format (expected "SVPRO-..." prefix).`
+### `Error: @svgrid/enterprise: invalid license key format (expected "SVENTERPRISE-..." prefix).`
 
 - **Class:** `Error`
-- **When:** A key that doesn't start with `SVPRO-` was set; the first
-  Pro call throws.
+- **When:** A key that doesn't start with `SVENTERPRISE-` was set; the first
+  Enterprise call throws.
 - **Fix:** Use the key issued by jQWidgets. The free Community grid is
   the right choice if you don't have a key.
 
-### `Error: sv-grid-pro: this license key has been revoked. Contact sales@jqwidgets.com for a replacement.`
+### `Error: @svgrid/enterprise: this license key has been revoked. Contact sales@jqwidgets.com for a replacement.`
 
 - **Class:** `Error`
 - **When:** A key matching an entry in the package's revoked-keys list.
 - **Fix:** Contact `sales@jqwidgets.com` for a replacement.
 
-## sv-grid-pro - Export
+## @svgrid/enterprise - Export
 
-### `Error: sv-grid-pro: export requires a browser environment`
+### `Error: @svgrid/enterprise: export requires a browser environment`
 
 - **Class:** `Error`
 - **When:** `exportGrid` / `api.exportData` was called during SSR.
 - **Fix:** Guard with `if (typeof window === 'undefined') return` or
   defer to `onMount`.
 
-### `Error: sv-grid-pro: failed to load Smart.Utilities.DataExporter`
+### `Error: @svgrid/enterprise: failed to load Smart.Utilities.DataExporter`
 
 - **Class:** `Error`
 - **When:** The Smart exporter shim couldn't initialise. Usually a
@@ -114,40 +114,40 @@ the trailing detail at the patch level if the diagnostic improves.
 - **Fix:** Confirm the package is installed cleanly and your bundler
   permits dynamic imports.
 
-### `Error: sv-grid-pro: xlsx export requires the "jszip" peer dependency. Install it with: pnpm add jszip`
+### `Error: @svgrid/enterprise: xlsx export requires the "jszip" peer dependency. Install it with: pnpm add jszip`
 
 - **Class:** `Error`
 - **When:** First xlsx export when `jszip` isn't installed.
 - **Fix:** `pnpm add jszip` (or `npm` / `yarn`).
 
-### `Error: sv-grid-pro: pdf export requires the "pdfmake" peer dependency. Install it with: pnpm add pdfmake`
+### `Error: @svgrid/enterprise: pdf export requires the "pdfmake" peer dependency. Install it with: pnpm add pdfmake`
 
 - **Class:** `Error`
 - **When:** First pdf export when `pdfmake` isn't installed.
 - **Fix:** `pnpm add pdfmake`.
 
-## sv-grid-pro - Import
+## @svgrid/enterprise - Import
 
-### `Error: sv-grid-pro: importData requires a browser environment`
+### `Error: @svgrid/enterprise: importData requires a browser environment`
 
 - **Class:** `Error`
 - **When:** `importData` was called during SSR.
 - **Fix:** Guard with `if (typeof window === 'undefined') return`.
 
-### `Error: sv-grid-pro: xlsx import requires the "jszip" peer dependency. Install it with: pnpm add jszip`
+### `Error: @svgrid/enterprise: xlsx import requires the "jszip" peer dependency. Install it with: pnpm add jszip`
 
 - **Class:** `Error`
 - **When:** First xlsx import when `jszip` isn't installed.
 - **Fix:** `pnpm add jszip`.
 
-### `Error: sv-grid-pro: xlsx import expects a File or Blob, not a string. Use format: "csv" or "tsv" for inline text.`
+### `Error: @svgrid/enterprise: xlsx import expects a File or Blob, not a string. Use format: "csv" or "tsv" for inline text.`
 
 - **Class:** `Error`
 - **When:** Passing a string with `format: 'xlsx'`.
 - **Fix:** Either give the helper a `File` / `Blob` of the xlsx data
   or switch the format to `csv` / `tsv` for inline text.
 
-### `Error: sv-grid-pro: could not locate sheet1.xml in the .xlsx archive`
+### `Error: @svgrid/enterprise: could not locate sheet1.xml in the .xlsx archive`
 
 - **Class:** `Error`
 - **When:** The uploaded `.xlsx` is malformed or non-standard (e.g. a
@@ -157,7 +157,7 @@ the trailing detail at the patch level if the diagnostic improves.
   file is correct and the grid still fails, please file an issue with
   a redacted sample.
 
-### `Error: sv-grid-pro: JSON import expects a top-level array`
+### `Error: @svgrid/enterprise: JSON import expects a top-level array`
 
 - **Class:** `Error`
 - **When:** The JSON parses to an object (or any non-array) instead of
@@ -165,16 +165,16 @@ the trailing detail at the patch level if the diagnostic improves.
 - **Fix:** Wrap the data in `[]` or write a wrapper that extracts the
   array from the response.
 
-## sv-grid-pro - AI
+## @svgrid/enterprise - AI
 
-### `NoProviderError: sv-grid-pro/ai: no AI provider registered. Call setAIProvider(fn) with an adapter that talks to OpenAI / Anthropic / your proxy.`
+### `NoProviderError: @svgrid/enterprise/ai: no AI provider registered. Call setAIProvider(fn) with an adapter that talks to OpenAI / Anthropic / your proxy.`
 
 - **Class:** `NoProviderError` (extends `Error`)
 - **When:** Any `api.ai.*` call before `setAIProvider(fn)` ran.
 - **Fix:** Wire your adapter at app boot. For demos, use
   `setAIProvider(mockAIProvider)`.
 
-### `BadJsonError: sv-grid-pro/ai: provider returned non-JSON for a json-format request. First 200 chars: <prefix>`
+### `BadJsonError: @svgrid/enterprise/ai: provider returned non-JSON for a json-format request. First 200 chars: <prefix>`
 
 - **Class:** `BadJsonError` (extends `Error`)
 - **When:** A helper asked the provider for JSON and got prose back.
@@ -186,7 +186,7 @@ the trailing detail at the patch level if the diagnostic improves.
   automatically before parsing; multiple fences or surrounding prose
   trip this error.
 
-### `Error: sv-grid-pro/ai: aiSmartFill requires at least one example.`
+### `Error: @svgrid/enterprise/ai: aiSmartFill requires at least one example.`
 
 - **Class:** `Error`
 - **When:** `aiSmartFill({ examples: [] })`.

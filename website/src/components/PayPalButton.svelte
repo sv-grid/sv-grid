@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * Renders a PayPal subscription button for a specific sv-grid-pro plan.
+   * Renders a PayPal subscription button for a specific @svgrid/enterprise plan.
    *
    * Lifecycle:
    *   1. Mount → loadPayPalSdk() (singleton, lazy)
@@ -62,7 +62,7 @@
     style,
     subscriberDetails,
     quantity,
-    brandName = 'SvGrid Pro',
+    brandName = 'SvGrid Enterprise',
     onSubscribe,
     onCancel,
   }: Props = $props()

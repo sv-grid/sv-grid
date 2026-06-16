@@ -64,7 +64,7 @@ when `enableInlineEditing` is true.
 
 **Engine.** Layer 2 in the [architecture](./architecture.md). The
 pure-function row-and-column model pipeline. Lives in
-`packages/sv-grid-core/src/core.ts` + the `row-models/` folder.
+`packages/grid/src/core.ts` + the `row-models/` folder.
 
 ## F
 
@@ -117,7 +117,7 @@ in a side form. Toggled via `enableInlineEditing` on `<SvGrid>` +
 Layer 1 is your data; Layer 2 is the engine; Layer 3 is the
 `<SvGrid>` renderer.
 
-**License key.** A string starting with `SVPRO-` set via
+**License key.** A string starting with `SVENTERPRISE-` set via
 `setLicenseKey(...)`. Removes the unlicensed watermark + console
 nudge. See [API stability](./api-stability.md) for license-related
 errors.
@@ -142,9 +142,9 @@ ColumnDef tree the renderer needs.
 scroll. Renders skeleton cells until the real row loads. See
 [Server-side data](./server-side-data.md).
 
-**Pro.** The paid `sv-grid-pro` companion package adding export,
+**Enterprise.** The paid `@svgrid/enterprise` companion package adding export,
 import, print, pivot helpers, and the AI assistant. Installed
-separately; activated by `installPro(api)`.
+separately; activated by `installEnterprise(api)`.
 
 ## R
 
@@ -176,9 +176,9 @@ grid as the render template format for cells, headers, and editors.
 `renderSnippet(Foo, props)` is the wrapper the column passes to
 `cell`.
 
-**Soft-gate.** The unlicensed Pro behaviour: features still run; a
+**Soft-gate.** The unlicensed Enterprise behaviour: features still run; a
 small watermark + one-time console message appear. Removed by
-`setLicenseKey('SVPRO-...')`.
+`setLicenseKey('SVENTERPRISE-...')`.
 
 ## T
 
@@ -203,9 +203,9 @@ more than a few hundred rows. Bypassed in jsdom (zero layout metrics)
 
 ## W
 
-**Watermark.** The "Unlicensed sv-grid-pro" badge that appears
-bottom-right when a Pro feature runs without a valid license. Removed
-by `setLicenseKey('SVPRO-...')` or `dismissUnlicensedNudge()` (the
+**Watermark.** The "Unlicensed @svgrid/enterprise" badge that appears
+bottom-right when a Enterprise feature runs without a valid license. Removed
+by `setLicenseKey('SVENTERPRISE-...')` or `dismissUnlicensedNudge()` (the
 nudge only).
 
 ## See also

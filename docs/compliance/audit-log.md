@@ -28,7 +28,7 @@ Every event the grid surfaces:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type SvGridApi } from 'sv-grid-core'
+  import { SvGrid, type SvGridApi } from '@svgrid/grid'
 
   type AuditRecord = {
     actor: string

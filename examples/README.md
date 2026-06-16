@@ -5,7 +5,7 @@ Ten production-quality demos showcasing the full SvGrid feature surface.
 ```bash
 # from the repo root
 pnpm install
-pnpm --filter sv-grid-core-example-gallery dev
+pnpm --filter @svgrid/grid-example-gallery dev
 # open http://localhost:5174
 ```
 

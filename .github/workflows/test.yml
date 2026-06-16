@@ -36,20 +36,20 @@ jobs:
       - name: Build library (svelte-package)
         # Needed because the website + MCP packages depend on the published
         # entry points being generated.
-        run: pnpm --filter sv-grid-core build
+        run: pnpm --filter @svgrid/grid build
 
       - name: Type-check (svelte-check on every package)
         run: pnpm test:types
 
       - name: Unit + behavioral tests with coverage
-        # `pnpm test` resolves to `pnpm --filter sv-grid-core test:lib`,
+        # `pnpm test` resolves to `pnpm --filter @svgrid/grid test:lib`,
         # which runs `vitest run --coverage` against the configured
-        # thresholds in packages/sv-grid-core/vite.config.ts
+        # thresholds in packages/grid/vite.config.ts
         # (lines 90 / statements 90 / functions 80 / branches 75).
         run: pnpm test
 
       - name: Build MCP server (smoke check)
-        run: pnpm --filter sv-grid-mcp build
+        run: pnpm --filter @svgrid/mcp build
 
       - name: Build website (smoke check)
         run: pnpm --filter svgrid-website build
@@ -58,24 +58,24 @@ jobs:
 
       # Extract the coverage summary from the vitest text reporter output
       # so we can persist it as an artifact + comment on PRs. The HTML
-      # report goes to packages/sv-grid-core/coverage/.
+      # report goes to packages/grid/coverage/.
       - name: Extract coverage summary
         id: coverage
         if: always()
         run: |
           set -e
-          REPORT=packages/sv-grid-core/coverage/coverage-summary.json
+          REPORT=packages/grid/coverage/coverage-summary.json
           if [ ! -f "$REPORT" ]; then
             # vitest's default text reporter doesn't emit JSON. Generate it
             # once more with json-summary added so we can parse cleanly.
-            pnpm --filter sv-grid-core exec vitest run --coverage \
+            pnpm --filter @svgrid/grid exec vitest run --coverage \
               --coverage.reporter=text \
               --coverage.reporter=json-summary
           fi
           # Print the totals to the job log for human review.
           if [ -f "$REPORT" ]; then
             node -e "
-              const r = require('./packages/sv-grid-core/coverage/coverage-summary.json').total;
+              const r = require('./packages/grid/coverage/coverage-summary.json').total;
               const fmt = (m) => m.pct.toFixed(2) + '%';
               const out = \`### Test coverage
 | Metric | Coverage |
@@ -96,7 +96,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html
-          path: packages/sv-grid-core/coverage/
+          path: packages/grid/coverage/
           if-no-files-found: warn
           retention-days: 14
 

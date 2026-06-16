@@ -12,7 +12,7 @@ We tell you when **not** to switch at the bottom.
 
 ## TL;DR
 
-| | AG Grid Community | AG Grid Enterprise | SvGrid Community | sv-grid-pro |
+| | AG Grid Community | AG Grid Enterprise | SvGrid Community | @svgrid/enterprise |
 | --- | --- | --- | --- | --- |
 | **License** | MIT | Commercial (~$999/dev/yr) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
 | **Svelte 5 native** | ❌ (wrapper) | ❌ (wrapper) | ✅ | ✅ |
@@ -25,7 +25,7 @@ We tell you when **not** to switch at the bottom.
 | **Set filter / Excel-style filter menu** | ❌ Enterprise | ✅ | ✅ (free) | (in Community) |
 
 The headline: **SvGrid Community gives you most of AG Grid Enterprise's
-features for free**, and `sv-grid-pro` adds the export + print pack for
+features for free**, and `@svgrid/enterprise` adds the export + print pack for
 ~40% less than AG Grid Enterprise. The catch is Svelte-only and a much
 smaller ecosystem.
 
@@ -85,7 +85,7 @@ const columnDefs: ColDef[] = [
 
 ```ts
 // SvGrid
-import { renderComponent, type ColumnDef } from 'sv-grid-core'
+import { renderComponent, type ColumnDef } from '@svgrid/grid'
 import StatusCell from './StatusCell.svelte'
 
 const columns: ColumnDef<typeof features, Row>[] = [
@@ -136,7 +136,7 @@ import {
   rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -180,7 +180,7 @@ You get the SvGrid API from `onApiReady` (equivalent to AG Grid's
     rowSortingFeature,
     columnFilteringFeature,
     rowPaginationFeature,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -233,7 +233,7 @@ to mutate (or not) on the `rows` array you passed in.
     columnGroupingFeature,
     rowSortingFeature,
     rowExpandingFeature,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -279,14 +279,14 @@ locally. See [demo 09](https://sv-grid.dev/#/demos/09-server-side).
 ### Excel / PDF export
 
 AG Grid: `gridApi.exportDataAsExcel({...})` (Enterprise-only).
-SvGrid: install `sv-grid-pro`, call `api.exportData({ format: 'xlsx', ... })`. See [Data export and printing](./export.md).
+SvGrid: install `@svgrid/enterprise`, call `api.exportData({ format: 'xlsx', ... })`. See [Data export and printing](./export.md).
 
 ```ts
-import { installPro, setLicenseKey } from 'sv-grid-pro'
-setLicenseKey('SVPRO-...')   // your Pro key
+import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
+setLicenseKey('SVENTERPRISE-...')   // your Enterprise key
 
 // inside onApiReady:
-const pro = installPro(api)
+const pro = installEnterprise(api)
 await pro.exportData({ format: 'xlsx', filename: 'orders' })
 ```
 
@@ -340,7 +340,7 @@ plays well with runes.
 
 A typical migration of a single grid takes 1-3 hours:
 
-1. **Install** - `pnpm add sv-grid-core` (and `sv-grid-pro` if you need export).
+1. **Install** - `pnpm add @svgrid/grid` (and `@svgrid/enterprise` if you need export).
 2. **Translate columnDefs** - use the mapping table above. Most columns are 1:1.
 3. **Wrap features** - figure out which AG Grid features you actually use; register only those in `tableFeatures({...})`.
 4. **Swap the component** - `<AgGridSvelte gridOptions={...}>` → `<SvGrid data={rows} columns={columns} features={features}>`.
@@ -351,7 +351,7 @@ A typical migration of a single grid takes 1-3 hours:
 
 ## Need help migrating?
 
-Pro customers get **migration help included** with the support plan
+Enterprise customers get **migration help included** with the support plan
 (architecture review, port one grid for you as a reference). Email
 `support@jqwidgets.com` after purchase, or `sales@jqwidgets.com` for
 pre-sales questions.
@@ -360,7 +360,7 @@ pre-sales questions.
 
 - [Getting started](../getting-started.md) - full SvGrid walkthrough
 - [Why headless?](../why-headless.md) - the headless / render-component split
-- [Data export and printing](./export.md) - the `sv-grid-pro` feature pack
+- [Data export and printing](./export.md) - the `@svgrid/enterprise` feature pack
 - [SvGrid vs AG Grid comparison page](https://sv-grid.dev/#/compare/ag-grid)
 
 ## Frequently asked questions
@@ -375,7 +375,7 @@ not a rewrite.
 
 ### What is the SvGrid equivalent of AG Grid Enterprise?
 
-`sv-grid-pro`. It adds Excel/PDF/CSV/TSV/HTML export, a printable view, pivot
+`@svgrid/enterprise`. It adds Excel/PDF/CSV/TSV/HTML export, a printable view, pivot
 tables, data import, and AI helpers. It is licensed per developer
 ($599 single-app / $999 multi-app), not per deployment, and the Community
 package is MIT-licensed and free for commercial use.
@@ -390,5 +390,5 @@ and no framework bridge to keep in sync.
 
 Almost always. SvGrid's full render component is ~42 KB gzipped (or ~7.5 KB
 for the headless core) versus a much heavier AG Grid Community bundle, and you
-only add `sv-grid-pro` features you actually use - so you ship a fraction of
+only add `@svgrid/enterprise` features you actually use - so you ship a fraction of
 the JavaScript.

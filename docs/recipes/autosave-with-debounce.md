@@ -5,7 +5,7 @@ generates one save, not twenty.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-core'
+  import { SvGrid } from '@svgrid/grid'
 
   type Patch = { rowId: string; columnId: string; value: unknown }
   let pending = new Map<string, Patch>()  // dedupe per (rowId, columnId)

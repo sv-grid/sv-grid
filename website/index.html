@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#181d27" />
 
+    <!-- Google tag (gtag.js) - GA4 + Google Ads conversion measurement.
+         Placed as high in <head> as possible per Google's recommendation;
+         the loader is async so it does not block the SPA shell. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z6896B9VX8"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Z6896B9VX8');
+    </script>
+
     <!-- Inter is the first font in body's font-family stack; load it once
          site-wide so it isn't only fetched when the theme builder mounts.
          Without this, navigating to /theme-builder swapped the nav's
@@ -91,12 +103,12 @@
           {
             "@type": "SoftwareApplication",
             "name": "SvGrid",
-            "alternateName": "sv-grid-core",
+            "alternateName": "@svgrid/grid",
             "applicationCategory": "DeveloperApplication",
             "operatingSystem": "Web",
             "description": "A modern Svelte 5 data grid. Headless-first engine plus a full render component. Enterprise-grade features.",
             "url": "https://svgrid.com/",
-            "downloadUrl": "https://www.npmjs.com/package/sv-grid-core",
+            "downloadUrl": "https://www.npmjs.com/package/@svgrid/grid",
             "softwareVersion": "1.0.0",
             "publisher": { "@id": "https://www.jqwidgets.com/#organization" },
             "offers": [
@@ -109,28 +121,28 @@
               },
               {
                 "@type": "Offer",
-                "name": "Pro - Single Application Developer License",
+                "name": "Enterprise - Single Application Developer License",
                 "price": "599",
                 "priceCurrency": "USD",
-                "description": "Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers one deployed production application. Includes sv-grid-pro (export to Excel, PDF, CSV, TSV, HTML + Print, pivot, AI), email support, private Slack, priority bug fixes."
+                "description": "Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers one deployed production application. Includes the Enterprise pack (@svgrid/enterprise: export to Excel, PDF, CSV, TSV, HTML + Print, pivot, AI), email support, private Slack, priority bug fixes."
               },
               {
                 "@type": "Offer",
-                "name": "Pro - Multiple Application Developer License",
+                "name": "Enterprise - Multiple Application Developer License",
                 "price": "999",
                 "priceCurrency": "USD",
-                "description": "Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers unlimited deployed production applications in your organisation. Includes everything in Single Application plus volume / multi-year discounts."
+                "description": "Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers unlimited deployed production applications in your organisation. Includes everything in Enterprise - Single App plus volume / multi-year discounts."
               },
               {
                 "@type": "Offer",
-                "name": "Enterprise - Site / Org-wide License",
+                "name": "Enterprise - Custom (Site / Org-wide License)",
                 "priceSpecification": {
                   "@type": "PriceSpecification",
                   "priceCurrency": "USD",
                   "price": "0",
                   "valueAddedTaxIncluded": false
                 },
-                "description": "Custom contract for organisations with 50+ developers, MSA / NDA, source-code escrow, named support engineer, on-prem documentation, custom SLAs, multi-year (2 / 3 / 5 yr) terms, or government / FedRAMP procurement. Includes everything in Multiple Application plus enterprise-grade procurement support. Contact sales@jqwidgets.com for a custom quote."
+                "description": "Custom contract for organisations with 50+ developers, MSA / NDA, source-code escrow, named support engineer, on-prem documentation, custom SLAs, multi-year (2 / 3 / 5 yr) terms, or government / FedRAMP procurement. Includes everything in Enterprise - Multi App plus enterprise-grade procurement support. Contact sales@jqwidgets.com for a custom quote."
               }
             ]
           },
@@ -181,8 +193,8 @@
       <p>
         This site requires JavaScript to browse the live demos. The full source is on
         <a href="https://github.com/sv-grid/sv-grid">GitHub</a>, and the library is on
-        <a href="https://www.npmjs.com/package/sv-grid-core">npm</a> as
-        <code>sv-grid-core</code>.
+        <a href="https://www.npmjs.com/package/@svgrid/grid">npm</a> as
+        <code>@svgrid/grid</code>.
       </p>
     </noscript>
 

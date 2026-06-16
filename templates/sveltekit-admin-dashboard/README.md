@@ -65,9 +65,9 @@ Then read `data.orders` in the page via `let { data } = $props()`.
 
 ## Upgrade to Pro
 
-This starter uses the free MIT **`sv-grid-core`** core. For Excel/PDF
+This starter uses the free MIT **`@svgrid/grid`** core. For Excel/PDF
 export, data import, printing, pivot, and the AI helpers, add
-[`sv-grid-pro`](https://www.svgrid.com/pricing) and call `installPro(api)` on
+[`@svgrid/enterprise`](https://www.svgrid.com/pricing) and call `installPro(api)` on
 the grid's API. Pro runs in evaluation with a watermark - no key needed to try
 it.
 

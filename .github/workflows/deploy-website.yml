@@ -6,7 +6,7 @@ on:
     paths:
       - 'website/**'
       - 'examples/src/demos/**'
-      - 'packages/sv-grid-core/**'
+      - 'packages/grid/**'
       - 'docs/**'
       - '.github/workflows/deploy-website.yml'
       - 'pnpm-workspace.yaml'
@@ -47,7 +47,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build library
-        run: pnpm --filter sv-grid-core build
+        run: pnpm --filter @svgrid/grid build
 
       - name: Build website
         run: pnpm --filter svgrid-website build

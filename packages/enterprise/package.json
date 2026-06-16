@@ -1,0 +1,72 @@
+{
+  "name": "@svgrid/enterprise",
+  "version": "1.0.1",
+  "description": "Pro feature pack for sv-grid: data export (Excel, PDF, CSV, TSV, HTML), import (xlsx, CSV, TSV, JSON), pivot table + designer, AI assistant (BYO model), and printing. Requires a paid license key.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "jQWidgets <sales@jqwidgets.com>",
+  "homepage": "https://svgrid.com/pricing",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "svelte": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./export": {
+      "types": "./src/export.ts",
+      "svelte": "./src/export.ts",
+      "import": "./src/export.ts"
+    },
+    "./print": {
+      "types": "./src/print.ts",
+      "svelte": "./src/print.ts",
+      "import": "./src/print.ts"
+    },
+    "./ai": {
+      "types": "./src/ai.ts",
+      "svelte": "./src/ai.ts",
+      "import": "./src/ai.ts"
+    },
+    "./import": {
+      "types": "./src/import.ts",
+      "svelte": "./src/import.ts",
+      "import": "./src/import.ts"
+    },
+    "./pivot": {
+      "types": "./src/pivot.ts",
+      "svelte": "./src/pivot.ts",
+      "import": "./src/pivot.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:types": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0",
+    "@svgrid/grid": "workspace:*",
+    "jszip": "^3.10.0",
+    "pdfmake": "^0.2.0"
+  },
+  "peerDependenciesMeta": {
+    "jszip": {
+      "optional": true
+    },
+    "pdfmake": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "jszip": "^3.10.1",
+    "pdfmake": "^0.2.10",
+    "svelte": "^5.55.5",
+    "@svgrid/grid": "workspace:*",
+    "typescript": "6.0.3"
+  }
+}

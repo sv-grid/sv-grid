@@ -20,7 +20,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type KPI = {
     region: 'Americas' | 'EMEA' | 'APAC'

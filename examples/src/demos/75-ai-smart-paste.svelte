@@ -28,10 +28,10 @@
     rowSortingFeature,
     rowSelectionFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
-  import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
+  } from '@svgrid/grid'
+  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   type Contact = {
     id: string
@@ -48,7 +48,7 @@
   ])
 
   const features = tableFeatures({ rowSortingFeature, rowSelectionFeature })
-  let api = $state<ProGridApi<typeof features, Contact> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Contact> | null>(null)
 
   // ---- Smart paste state ----------------------------------------------
   let pasteText = $state('')
@@ -997,7 +997,7 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
       rowHeight={32}
       containerHeight="100%"
       fitColumns={true}
-      onApiReady={(next) => (api = installPro(next))}
+      onApiReady={(next) => (api = installEnterprise(next))}
     />
   </div>
 </section>

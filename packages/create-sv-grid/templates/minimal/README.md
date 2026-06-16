@@ -14,7 +14,7 @@ Open `src/App.svelte` and edit the `rows` / `columns` to use your own data.
 ## Next steps
 
 - Add more features: `rowExpandingFeature`, `columnGroupingFeature`, pagination, pinned rows. See the [docs](https://www.svgrid.com/docs).
-- Need Excel/PDF export, import, print, pivot, or AI helpers? Add [`sv-grid-pro`](https://www.svgrid.com/pricing).
+- Need Excel/PDF export, import, print, pivot, or AI helpers? Add [`@svgrid/enterprise`](https://www.svgrid.com/pricing).
 - Want a full app shell with routing? Scaffold the admin starter instead:
   `npm create sv-grid@latest my-admin -- --template admin-dashboard`
 

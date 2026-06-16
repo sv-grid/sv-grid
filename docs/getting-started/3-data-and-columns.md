@@ -14,7 +14,7 @@ reference changes when the rows change.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid } from 'sv-grid-core'
+  import { SvGrid } from '@svgrid/grid'
 
   type Person = { id: string; firstName: string; age: number }
 
@@ -54,7 +54,7 @@ A column definition tells SvGrid how to read a value out of a row, how
 to render it, and how to format it.
 
 ```ts
-import type { ColumnDef } from 'sv-grid-core'
+import type { ColumnDef } from '@svgrid/grid'
 
 type Person = {
   id: string
@@ -134,7 +134,7 @@ For anything beyond a stringified value, render with `renderSnippet`:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, renderSnippet, type ColumnDef } from 'sv-grid-core'
+  import { SvGrid, renderSnippet, type ColumnDef } from '@svgrid/grid'
 
   type Person = { firstName: string; lastName: string; age: number }
   const rows: Person[] = [/* ... */]

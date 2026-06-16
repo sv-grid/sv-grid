@@ -6,7 +6,7 @@ every other). SvGrid packages this as a headless controller over a pluggable
 transport - the only infrastructure-specific piece.
 
 ```ts
-import { createCollaboration, broadcastChannelTransport } from 'sv-grid-core'
+import { createCollaboration, broadcastChannelTransport } from '@svgrid/grid'
 
 const collab = createCollaboration({
   user: { id: myId, name: 'Ada', color: '#ef4444' },

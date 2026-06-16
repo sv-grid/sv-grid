@@ -8,7 +8,7 @@
     rowsToChartSpec,
     type ChartType,
     type ChartSelection,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makeOrders } from './seed'
 
   const orders = makeOrders(60)

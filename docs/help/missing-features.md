@@ -47,10 +47,10 @@ about, and which to work around in the meantime.
 
 | Gap | Where | Effort |
 | --- | ----- | ------ |
-| ~~Excel / xlsx export~~ - **shipped in `sv-grid-pro` v1.0** | [Export](./export.md) | ✓ |
-| ~~PDF export~~ - **shipped in `sv-grid-pro` v1.0** | [Export](./export.md) | ✓ |
-| ~~CSV / TSV / HTML export~~ - **shipped in `sv-grid-pro` v1.0** | [Export](./export.md) | ✓ |
-| ~~Print (printable view + browser print dialog)~~ - **shipped in `sv-grid-pro` v1.0** | [Export](./export.md) | ✓ |
+| ~~Excel / xlsx export~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
+| ~~PDF export~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
+| ~~CSV / TSV / HTML export~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
+| ~~Print (printable view + browser print dialog)~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
 
 ## Filtering
 
@@ -100,7 +100,7 @@ For balance - the things that **are** built in and stable:
 - Optional leading row-number column (`showRowNumbers`) and selection checkbox column
 - "Source" button in the gallery shell shows each demo's raw `.svelte` source for copy-paste
 - Imperative API for data + columns + filters + sort + grouping + visibility (`onApiReady`)
-- WAI-ARIA grid pattern with helpers in [`a11y.ts`](../../packages/sv-grid-core/src/a11y.ts) (see demo `17-accessibility`)
+- WAI-ARIA grid pattern with helpers in [`a11y.ts`](../../packages/grid/src/a11y.ts) (see demo `17-accessibility`)
 - Locale-aware number / currency / percent / date / datetime formatters with `Intl` caching (see demo `15-localization`)
 - Built-in CSS custom-property theming surface (`--sg-*`); per-instance theme via `style="--sg-bg: ..."` (see demo `10-custom-cells-and-themes`)
 - CSP-clean runtime: no `eval`, no `new Function`, no inline scripts (see demo `16-csp-compliant`)

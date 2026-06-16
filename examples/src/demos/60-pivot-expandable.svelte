@@ -20,18 +20,18 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
     createPivotModel,
     filterCollapsedPivotRows,
-    installPro,
+    installEnterprise,
     setLicenseKey,
     type PivotRow,
-    type ProGridApi,
+    type EnterpriseGridApi,
     type PivotValueConfig,
-  } from 'sv-grid-pro'
+  } from '@svgrid/enterprise'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Fact data --------------------------------------------------------
   type Region = 'AMER' | 'EMEA' | 'APAC'
@@ -297,10 +297,10 @@
   }))
 
   // ---- Pro: pin first column + export ---------------------------------
-  let api = $state<ProGridApi<typeof features, PivotRow> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, PivotRow> | null>(null)
   let exporting = $state(false)
   function onApiReady(next: SvGridApi<typeof features, PivotRow>) {
-    api = installPro(next)
+    api = installEnterprise(next)
     api.setColumnPinning({ left: ['__pivotRowHeader'] })
   }
   async function exportXlsx() {

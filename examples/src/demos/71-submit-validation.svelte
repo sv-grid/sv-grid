@@ -16,7 +16,7 @@
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Lead = {
     id: string

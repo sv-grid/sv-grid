@@ -7,7 +7,7 @@ stands today.
 ## Headline numbers (v1.0)
 
 > **92.2% line coverage** on the testable surface
-> (`pnpm --filter sv-grid-core test:lib`)
+> (`pnpm --filter @svgrid/grid test:lib`)
 
 | Metric | Coverage | Threshold |
 | ------ | -------- | --------- |
@@ -19,12 +19,12 @@ stands today.
 Run the suite locally:
 
 ```bash
-pnpm test            # alias for: pnpm --filter sv-grid-core test:lib
+pnpm test            # alias for: pnpm --filter @svgrid/grid test:lib
 pnpm test:types      # svelte-check on every package
 ```
 
 The full coverage report lands in
-`packages/sv-grid-core/coverage/index.html`.
+`packages/grid/coverage/index.html`.
 
 ## What's measured
 
@@ -49,10 +49,10 @@ dimensions, ResizeObserver fires) that jsdom returns as zero:
 
 - **`SvGrid.svelte`** - the 4000-line render component. Covered by **60+
   behavioral mount tests** across
-  [`svgrid.behavior.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/src/svgrid.behavior.test.ts),
-  [`svgrid.interaction.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/src/svgrid.interaction.test.ts),
+  [`svgrid.behavior.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/grid/src/svgrid.behavior.test.ts),
+  [`svgrid.interaction.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/grid/src/svgrid.interaction.test.ts),
   and
-  [`svgrid.api.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/sv-grid-core/src/svgrid.api.test.ts).
+  [`svgrid.api.test.ts`](https://github.com/sv-grid/sv-grid/blob/main/packages/grid/src/svgrid.api.test.ts).
   Each test mounts the real `<SvGrid />` in jsdom and exercises a specific
   feature: sort, filter, pagination, inline editing, cell selection,
   grouping, row selection, column add/remove, keyboard navigation, etc.
@@ -71,7 +71,7 @@ The coverage report excludes:
 - `createGridState.svelte.ts` (downstream-adapter thin layer)
 - `test-fixtures/**`, `test-setup.ts`, `**/*.test.ts`, `**/*.d.ts`
 
-The exclusion list is part of `packages/sv-grid-core/vite.config.ts`
+The exclusion list is part of `packages/grid/vite.config.ts`
 and is documented inline with the reasoning for each entry.
 
 ## Test files
@@ -103,7 +103,7 @@ Total: **168 tests** across **14 test files**.
 - **TypeScript strict mode** across both packages. `pnpm test:types`
   must pass on every PR (currently 0 errors / 0 warnings).
 - **ESLint** at `pnpm lint`, with the Svelte plugin.
-- **Publint** at `pnpm --filter sv-grid-core test:build` checks the
+- **Publint** at `pnpm --filter @svgrid/grid test:build` checks the
   published `exports` map.
 - **CSP-strict runtime**: no `eval`, no `new Function`, no inline scripts.
   Demo `16-csp-compliant` includes a runtime self-check.
@@ -136,7 +136,7 @@ Total: **168 tests** across **14 test files**.
    ```
 3. If the behavior is pure (a row model, a sort comparator, an a11y prop
    builder), add to one of the existing unit-test files.
-4. Run `pnpm --filter sv-grid-core exec vitest run <file>` to iterate
+4. Run `pnpm --filter @svgrid/grid exec vitest run <file>` to iterate
    fast.
 5. Open the PR; include the before/after coverage delta in the description.
 

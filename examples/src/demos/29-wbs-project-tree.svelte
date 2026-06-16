@@ -18,7 +18,7 @@
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Status = 'planned' | 'in-progress' | 'blocked' | 'done'
 

@@ -15,7 +15,7 @@ it didn't fetch.
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature,
-           columnFilteringFeature } from 'sv-grid-core'
+           columnFilteringFeature } from '@svgrid/grid'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
@@ -129,7 +129,7 @@ attaches event listeners.
 ```svelte
 <!-- +page.svelte -->
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
   let { data } = $props()
 </script>
 
@@ -175,7 +175,7 @@ import type {
   SvGridApi,
   SortingState,
   TableFeatures,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 
 // 1. Constrain ColumnDef to your row type so editors and accessors stay typed.
 type Row = { id: string; firstName: string; age: number }
@@ -197,7 +197,7 @@ inference picks up which capabilities your grid has.
 
 - [Why headless?](../why-headless.md) - the layered architecture and
   when to drop down to the headless core.
-- [Pro features](../pro/README.md) - export, import, AI, pivot.
+- [Enterprise features](../enterprise/README.md) - export, import, AI, pivot.
 - [Help index](../help/index.md) - the topic-page catalogue.
 - [Recipes](../help/recipes.md) - 20+ copy-paste patterns.
 - [Comparison vs AG Grid + TanStack](../help/comparison.md) - what

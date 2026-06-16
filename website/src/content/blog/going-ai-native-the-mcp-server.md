@@ -17,7 +17,7 @@ We did not want SvGrid to be one more library an assistant guesses at. We wanted
 
 ## The MCP server
 
-So we built `sv-grid-mcp`, a Model Context Protocol server that exposes SvGrid's actual knowledge as tools an assistant can call:
+So we built `@svgrid/mcp`, a Model Context Protocol server that exposes SvGrid's actual knowledge as tools an assistant can call:
 
 - the example sources, so it copies working patterns,
 - the documentation, so it explains features accurately,
@@ -28,7 +28,7 @@ Connected, an assistant stops guessing and starts looking up the current answer 
 ```json
 {
   "mcpServers": {
-    "sv-grid": { "command": "npx", "args": ["sv-grid-mcp"] }
+    "sv-grid": { "command": "npx", "args": ["@svgrid/mcp"] }
   }
 }
 ```
@@ -55,7 +55,7 @@ That was the last major piece. With the grid fast, accessible, complete, themeab
 
 ### What is the SvGrid MCP server?
 
-`sv-grid-mcp` is a Model Context Protocol server that exposes SvGrid's real examples, documentation, and API reference as tools an AI assistant can call, so generated grid code uses props and types that actually exist.
+`@svgrid/mcp` is a Model Context Protocol server that exposes SvGrid's real examples, documentation, and API reference as tools an AI assistant can call, so generated grid code uses props and types that actually exist.
 
 ### Why is AI support a core part of SvGrid?
 

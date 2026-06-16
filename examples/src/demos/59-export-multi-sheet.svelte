@@ -26,15 +26,15 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
-    installPro,
+    installEnterprise,
     setLicenseKey,
-    type ProGridApi,
-  } from 'sv-grid-pro'
+    type EnterpriseGridApi,
+  } from '@svgrid/enterprise'
   import { makeOrders, type Order } from '../shared/seed'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   const allOrders = makeOrders(400)
@@ -59,7 +59,7 @@
     region === 'all' ? allOrders : allOrders.filter((o) => regionOf(o) === region),
   )
 
-  let api = $state<ProGridApi<typeof features, Order> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Order> | null>(null)
   let busy = $state(false)
 
   async function doExport() {
@@ -137,7 +137,7 @@
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}
-      onApiReady={(next) => (api = installPro(next))}
+      onApiReady={(next) => (api = installEnterprise(next))}
     />
   </div>
 </section>

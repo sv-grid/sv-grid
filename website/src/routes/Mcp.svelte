@@ -3,12 +3,12 @@
   "mcpServers": {
     "sv-grid": {
       "command": "npx",
-      "args": ["-y", "sv-grid-mcp"]
+      "args": ["-y", "@svgrid/mcp"]
     }
   }
 }`
 
-  const claudeCodeCommand = 'claude mcp add sv-grid -- npx -y sv-grid-mcp'
+  const claudeCodeCommand = 'claude mcp add sv-grid -- npx -y @svgrid/mcp'
 
   const tools = [
     {
@@ -46,11 +46,11 @@
       Model Context Protocol
     </p>
     <h1 class="mt-2 text-4xl md:text-5xl font-extrabold tracking-tight" style="color: var(--sg-fg);">
-      sv-grid-mcp
+      @svgrid/mcp
     </h1>
     <p class="mt-4 max-w-3xl text-base md:text-lg" style="color: var(--site-muted);">
       Give your AI assistant accurate, version-pinned answers about SvGrid. The
-      <code>sv-grid-mcp</code> package is an
+      <code>@svgrid/mcp</code> package is an
       <a class="underline" style="color: var(--site-accent-2);" href="https://modelcontextprotocol.io" target="_blank" rel="noopener noreferrer">MCP</a>
       server that exposes every example source, every doc page, and the curated API reference as
       tools - so the model pulls real code instead of hallucinating.
@@ -65,11 +65,11 @@
     </p>
     <pre class="mt-4 rounded-lg border p-4 text-sm overflow-x-auto"
       style="border-color: var(--sg-border); background: #0a1124; color: #e2e8f0;"><code># one-shot
-npx sv-grid-mcp
+npx @svgrid/mcp
 
 # or install globally
-npm install -g sv-grid-mcp
-sv-grid-mcp</code></pre>
+npm install -g @svgrid/mcp
+@svgrid/mcp</code></pre>
   </article>
 
   <!-- Claude Desktop -->
@@ -158,7 +158,7 @@ sv-grid-mcp</code></pre>
         <strong>Local</strong> - runs over stdio, no API key, no network round-trip per tool call.
       </li>
       <li>
-        <strong>Zero install</strong> - <code>npx sv-grid-mcp</code> works from any project.
+        <strong>Zero install</strong> - <code>npx @svgrid/mcp</code> works from any project.
       </li>
     </ul>
   </article>
@@ -168,7 +168,7 @@ sv-grid-mcp</code></pre>
     <h2 class="text-2xl font-bold tracking-tight" style="color: var(--sg-fg);">Source</h2>
     <p class="mt-2 text-sm" style="color: var(--site-muted);">
       The server lives at
-      <a class="underline" style="color: var(--site-accent-2);" href="https://github.com/sv-grid/sv-grid/tree/main/packages/sv-grid-mcp" target="_blank" rel="noopener noreferrer">packages/sv-grid-mcp/</a>
+      <a class="underline" style="color: var(--site-accent-2);" href="https://github.com/sv-grid/sv-grid/tree/main/packages/mcp" target="_blank" rel="noopener noreferrer">packages/mcp/</a>
       in the SvGrid monorepo. PRs welcome.
     </p>
   </article>

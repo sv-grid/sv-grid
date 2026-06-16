@@ -24,7 +24,7 @@
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { getStockBrand, readableMarkColor } from '../shared/stock-logos'
 
   type Stock = {

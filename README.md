@@ -1,13 +1,13 @@
 ﻿# sv-grid
 
-A modern Svelte 5 data grid - headless-first engine plus a render component (`SvGrid.svelte`). Published on npm as **`sv-grid-core`**.
+A modern Svelte 5 data grid - headless-first engine plus a render component (`SvGrid.svelte`). Published on npm as **`@svgrid/grid`**.
 
 This repository is a **pnpm workspace** containing:
 
 ```
-packages/sv-grid-core/      # the core grid (MIT-licensed)
-packages/sv-grid-pro/            # paid feature pack: export + print (commercial)
-packages/sv-grid-mcp/           # MCP server for AI assistants
+packages/grid/      # the core grid (MIT-licensed)
+packages/enterprise/            # paid feature pack: export + print (commercial)
+packages/mcp/           # MCP server for AI assistants
 examples/                       # demos covering every feature
 website/                        # the public marketing + docs site
 ```
@@ -26,7 +26,7 @@ pnpm install
 # run the gallery at http://localhost:5174
 pnpm dev
 
-# build the library (writes packages/sv-grid-core/dist)
+# build the library (writes packages/grid/dist)
 pnpm build
 
 # build the gallery for production
@@ -42,7 +42,7 @@ pnpm build:site
 pnpm test:types
 ```
 
-`pnpm dev` proxies to `pnpm --filter sv-grid-core-example-gallery dev`. Inside the example the library is linked via the workspace (`"sv-grid-core": "workspace:*"`), so edits to `packages/sv-grid-core/src/**` are picked up by Vite HMR with no rebuild.
+`pnpm dev` proxies to `pnpm --filter @svgrid/grid-example-gallery dev`. Inside the example the library is linked via the workspace (`"@svgrid/grid": "workspace:*"`), so edits to `packages/grid/src/**` are picked up by Vite HMR with no rebuild.
 
 ## Library entry points
 
@@ -69,7 +69,7 @@ import {
   // cell renderers
   renderSnippet,
   renderComponent,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 ```
 
 ## Documentation
@@ -103,17 +103,17 @@ details on routes, base-path config, and the one-time Pages setup.
 
 ## License
 
-This repository ships under **mixed licensing**. Only `sv-grid-core`
+This repository ships under **mixed licensing**. Only `@svgrid/grid`
 is open source - everything else is commercial.
 
 | Package | License | LICENSE file |
 |---|---|---|
-| [packages/sv-grid-core](packages/sv-grid-core/) | **MIT** | [LICENSE](packages/sv-grid-core/LICENSE) |
-| [packages/sv-grid-pro](packages/sv-grid-pro/) | Commercial | [LICENSE](packages/sv-grid-pro/LICENSE) |
-| [packages/sv-grid-mcp](packages/sv-grid-mcp/) | Commercial | [LICENSE](packages/sv-grid-mcp/LICENSE) |
+| [packages/grid](packages/grid/) | **MIT** | [LICENSE](packages/grid/LICENSE) |
+| [packages/enterprise](packages/enterprise/) | Commercial | [LICENSE](packages/enterprise/LICENSE) |
+| [packages/mcp](packages/mcp/) | Commercial | [LICENSE](packages/mcp/LICENSE) |
 | [website](website/) | Proprietary | [LICENSE](website/LICENSE) |
 
-`sv-grid-core` (MIT) can be used freely, including for commercial
+`@svgrid/grid` (MIT) can be used freely, including for commercial
 work. The Pro feature pack, the MCP server, and the marketing + docs
 website are proprietary - source is visible for evaluation and for
 paying customers, but visibility does not grant a license. See the

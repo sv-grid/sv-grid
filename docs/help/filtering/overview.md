@@ -33,7 +33,7 @@ to actually filter rows:
 ```ts
 import {
   tableFeatures, columnFilteringFeature, createFilteredRowModel,
-} from 'sv-grid-core'
+} from '@svgrid/grid'
 
 const features = tableFeatures({ columnFilteringFeature })
 ```
@@ -70,7 +70,7 @@ For programmatic filtering (without the menu), pass a `filterFn` on the
 column or use the headless `createFilteredRowModel` directly.
 
 ```ts
-import { filterFns } from 'sv-grid-core'
+import { filterFns } from '@svgrid/grid'
 
 filterFns.includesString(cellValue, query)
 filterFns.equals(cellValue, query)

@@ -31,7 +31,7 @@ const SECTION_TITLES = {
   'help/rows':       'Rows',
   'recipes':         'Recipes / cookbook',
   'reference':       'API reference',
-  'pro':             'Pro tier',
+  'enterprise':             'Enterprise tier',
   'compliance':      'Compliance',
 }
 
@@ -96,7 +96,7 @@ async function main() {
       title,
       summary,
       section:     sectionOf(rel.replaceAll('/', sep)),
-      tier:        /\bPro\b/.test(title) ? 'pro' : 'community',
+      tier:        /\bEnterprise\b/.test(title) ? 'enterprise' : 'community',
       words:       src.split(/\s+/).filter(Boolean).length,
       lastUpdated: s.mtime.toISOString().slice(0, 10),
       demoIds:     [...src.matchAll(/data-docs-demo="([^"]+)"/g)].map((m) => m[1]),
@@ -111,7 +111,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     counts:      {
       pages: docs.length,
-      pro:   docs.filter((d) => d.tier === 'pro').length,
+      enterprise: docs.filter((d) => d.tier === 'enterprise').length,
       withDemo: docs.filter((d) => d.demoIds.length > 0).length,
     },
     sections: [...new Set(docs.map((d) => d.section))]
@@ -133,7 +133,7 @@ async function main() {
   llmsLines.push('')
   llmsLines.push('> The Svelte 5-native data grid. Headless engine + render component, AI-native, WAI-ARIA, virtualized to 100k rows.')
   llmsLines.push('')
-  llmsLines.push('Two npm packages: `sv-grid-core` (MIT, open source) and `sv-grid-pro` (commercial - export, import, pivot, AI helpers).')
+  llmsLines.push('Two npm packages: `@svgrid/grid` (MIT, open source) and `@svgrid/enterprise` (commercial - export, import, pivot, AI helpers).')
   llmsLines.push('')
   llmsLines.push('For the full text of every doc page concatenated: see [llms-full.txt](/llms-full.txt).')
   llmsLines.push('For a machine-readable manifest: see [docs.json](/docs.json).')
@@ -178,7 +178,7 @@ async function main() {
 
   // ---- Console summary --------------------------------------------------
   process.stdout.write(`build-docs-index: ${docs.length} pages → docs.json, llms.txt, llms-full.txt (docs/ + website/public/)\n`)
-  process.stdout.write(`  pro: ${manifest.counts.pro} · with demo: ${manifest.counts.withDemo}\n`)
+  process.stdout.write(`  enterprise: ${manifest.counts.enterprise} · with demo: ${manifest.counts.withDemo}\n`)
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })

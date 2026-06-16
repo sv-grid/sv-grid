@@ -13,7 +13,7 @@
     "paths": {
       "@demos/*": ["../examples/src/demos/*"],
       "@docs/*": ["../docs/*"],
-      "sv-grid-pro": ["../packages/sv-grid-pro/src/index.ts"]
+      "@svgrid/enterprise": ["../packages/enterprise/src/index.ts"]
     }
   },
   "include": [

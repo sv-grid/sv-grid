@@ -39,7 +39,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { createSavedViews } from '../shared/saved-views'
 
   // ---- Domain ----------------------------------------------------------

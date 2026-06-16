@@ -20,7 +20,7 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Region = 'AMER' | 'EMEA' | 'APAC'
   type Sale = { id: string; region: Region; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; product: string; amount: number; units: number }

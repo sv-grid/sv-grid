@@ -21,7 +21,7 @@
     rowSelectionFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
   const features = tableFeatures({ rowSortingFeature, rowSelectionFeature })

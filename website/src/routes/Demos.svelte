@@ -211,7 +211,7 @@
                 >
                   <span class="demo-row-title">
                     {@html highlight(demo.title, toks)}
-                    {#if demo.pro}<span class="demo-pro-dot" title="Pro feature" aria-label="Pro"></span>{/if}
+                    {#if demo.pro}<span class="demo-pro-dot" title="Enterprise feature" aria-label="Enterprise"></span>{/if}
                   </span>
                   <span class="demo-row-cat" style="color: var(--sg-muted);">{demo.category}</span>
                 </button>
@@ -234,8 +234,8 @@
                 <polyline points="9 6 15 12 9 18" />
               </svg>
               <span class="flex-1 text-left">{group.category}</span>
-              {#if group.category === 'Pro'}
-                <span class="demo-group-pro-badge">Pro</span>
+              {#if group.category === 'Enterprise'}
+                <span class="demo-group-pro-badge">Enterprise</span>
               {/if}
               <span class="demo-group-count">{group.demos.length}</span>
             </button>
@@ -253,7 +253,7 @@
                       style:font-weight={active ? '600' : '400'}
                     >
                       <span class="demo-leaf-title">{demo.title}</span>
-                      {#if demo.pro}<span class="demo-pro-dot" title="Pro feature" aria-label="Pro"></span>{/if}
+                      {#if demo.pro}<span class="demo-pro-dot" title="Enterprise feature" aria-label="Enterprise"></span>{/if}
                     </button>
                   </li>
                 {/each}

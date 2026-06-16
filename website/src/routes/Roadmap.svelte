@@ -65,7 +65,7 @@
       ],
     },
     {
-      area: 'Pivot (sv-grid-pro)',
+      area: 'Pivot (@svgrid/enterprise)',
       items: [
         { title: 'Custom aggregation functions registered on the Pivot Designer', effort: 'S' },
         { title: 'Per-measure value formatters (currency, percent, accounting, custom)', effort: 'S' },
@@ -73,7 +73,7 @@
       ],
     },
     {
-      area: 'Export (sv-grid-pro)',
+      area: 'Export (@svgrid/enterprise)',
       items: [
         { title: 'PDF export layout extensions: portrait / landscape toggle, cover page, repeating section headers, multi-section reports', effort: 'M', note: 'Branded headers, footers, and logo (demo 57) already ship; this is the page-layout pass.' },
         { title: 'PDF export with charts and KPI strip alongside the table', effort: 'L' },
@@ -146,7 +146,7 @@
     { title: "Built-in password + rating editors (editorType: 'password' | 'rating')", demo: '84-editor-types' },
     { title: "Built-in list + chips editors (editorType: 'list' | 'chips')", demo: '26-list-chips-editors' },
 
-    // Pro - Pivot
+    // Enterprise - Pivot
     { title: 'Pivot drill-through (click any pivot value to see contributing source rows)', demo: '122-pivot-drill-through' },
     { title: 'Pivot subtotal + grand-total rows + style controls', demo: '123-pivot-totals' },
     { title: 'Conditional formatting in pivot cells (heatmap, data bars)', demo: '121-pivot-conditional-cells' },
@@ -154,7 +154,7 @@
     { title: 'Pivot value charts (charts driven by the pivot model)', demo: '125-pivot-charts' },
     { title: 'Export pivot grid to Excel', demo: '127-export-pivot-grid' },
 
-    // Pro - Export polish
+    // Enterprise - Export polish
     { title: 'Theme-matched export styling (palette, fonts, alternating rows)', demo: '56-export-theme-matched' },
     { title: 'Branded export with custom header, footer, and embedded logo', demo: '57-export-header-footer-logo' },
     { title: 'Image cells round-tripped into Excel exports', demo: '58-export-with-images' },
@@ -192,9 +192,9 @@
     { title: 'Starter - Side-drawer record editor', demo: '97-side-drawer-edit' },
     { title: 'Starter - Mobile card view layout', demo: '81-mobile-card-view' },
 
-    // Pro - misc
-    { title: 'Excel / PDF / CSV / TSV / HTML export + Print (sv-grid-pro)' },
-    { title: 'Staged / batch editing mode via createStagedEditing (sv-grid-pro)', demo: '88-staged-editing' },
+    // Enterprise - misc
+    { title: 'Excel / PDF / CSV / TSV / HTML export + Print (@svgrid/enterprise)' },
+    { title: 'Staged / batch editing mode via createStagedEditing (@svgrid/enterprise)', demo: '88-staged-editing' },
   ]
 
   const effortLabel: Record<Effort, string> = { S: 'Small', M: 'Medium', L: 'Large' }

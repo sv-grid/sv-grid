@@ -19,7 +19,7 @@
    * `columnFilteringFeature` wiring here. Every capability is switched on by
    * a single boolean shortcut, which injects whatever feature it needs.
    */
-  import { SvGrid, tableFeatures, type ColumnDef } from 'sv-grid-core'
+  import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
   // Deliberately empty - the shortcuts below do all the wiring. (A typed

@@ -26,7 +26,7 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   // Budget-by-quarter dataset - perfect for "select the Q3 column",
   // "select all expense rows", "select the Marketing × Q4 cell".

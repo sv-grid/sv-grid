@@ -23,7 +23,7 @@ AG Grid is excellent, but in a Svelte app it lives behind an integration layer. 
 | `onCellValueChanged` | `onCellValueChange` |
 | Client-side row model | default (in-memory) |
 | Server-side row model | external mode (callbacks + `rowCount`) |
-| Enterprise (pivot, export) | sv-grid-pro |
+| Enterprise (pivot, export) | @svgrid/enterprise |
 
 ## Columns: before and after
 
@@ -68,7 +68,7 @@ AG Grid's Server-Side Row Model maps to SvGrid's external mode: read sort/filter
 
 ## What to check
 
-- Enterprise features (pivot, Excel export, range selection) live in [sv-grid-pro](/pricing).
+- Enterprise features (pivot, Excel export, range selection) live in [@svgrid/enterprise](/pricing).
 - Replace AG Grid theme classes with `--sg-*` CSS variables - see [Theming](theming-and-dark-mode).
 - The full feature matrix is at [SvGrid vs AG Grid](/compare/ag-grid).
 
@@ -80,4 +80,4 @@ Usually not. `rowData`, `columnDefs`, events, and the server-side row model all 
 
 ### Does SvGrid have AG Grid Enterprise features?
 
-Many of them - pivot, export, range selection, and more - are in the sv-grid-pro pack, while sorting, filtering, grouping, virtualization, and editing are in the free MIT core.
+Many of them - pivot, export, range selection, and more - are in the @svgrid/enterprise pack, while sorting, filtering, grouping, virtualization, and editing are in the free MIT core.

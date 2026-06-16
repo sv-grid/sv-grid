@@ -38,7 +38,7 @@ The imperative API exposes `setColumnWidth` and `getColumnWidths`:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-core'
+  import type { SvGridApi } from '@svgrid/grid'
   let api = $state<SvGridApi<typeof features, Person> | null>(null)
 
   function save() {

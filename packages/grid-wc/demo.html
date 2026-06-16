@@ -1,0 +1,51 @@
+<!doctype html>
+<!--
+  Manual smoke test for the built custom element.
+  Build first (`pnpm --filter @svgrid/grid-wc build`), then open this file via a
+  static server (e.g. `npx serve packages/grid-wc`) so the ES module loads.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>sv-grid web component demo</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 2rem; }
+      sv-grid { display: block; height: 420px; }
+    </style>
+    <script type="module" src="./dist/sv-grid-element.js"></script>
+  </head>
+  <body>
+    <h1>&lt;sv-grid&gt; web component</h1>
+    <p>A framework-agnostic custom element. Sort, filter, click a row.</p>
+
+    <sv-grid id="grid" sortable filterable selectable></sv-grid>
+
+    <pre id="log" style="color:#475569"></pre>
+
+    <script type="module">
+      const grid = document.getElementById('grid')
+      const log = document.getElementById('log')
+
+      grid.columns = [
+        { field: 'name', header: 'Name', editorType: 'text', width: 200 },
+        { field: 'team', header: 'Team', width: 150 },
+        { field: 'salary', header: 'Salary', align: 'right',
+          format: { type: 'currency', currency: 'USD' } },
+      ]
+      grid.data = [
+        { name: 'Ada Lovelace', team: 'Engineering', salary: 145000 },
+        { name: 'Alan Turing', team: 'Research', salary: 160000 },
+        { name: 'Grace Hopper', team: 'Engineering', salary: 152000 },
+        { name: 'Katherine Johnson', team: 'Data', salary: 138000 },
+      ]
+
+      grid.addEventListener('rowclick', (e) => {
+        log.textContent = 'rowclick: ' + JSON.stringify(e.detail)
+      })
+      grid.addEventListener('selectionchange', (e) => {
+        log.textContent = 'selected: ' + e.detail.length + ' row(s)'
+      })
+    </script>
+  </body>
+</html>

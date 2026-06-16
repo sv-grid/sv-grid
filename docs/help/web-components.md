@@ -29,11 +29,11 @@ exists to reach non-Svelte hosts.
 ## Quick start (no build)
 
 We publish a prebuilt, self-contained element as
-[`sv-grid-wc`](https://www.npmjs.com/package/sv-grid-wc). Drop it in from a CDN
+[`@svgrid/grid-wc`](https://www.npmjs.com/package/@svgrid/grid-wc). Drop it in from a CDN
 and you're done - no bundler, no Svelte in your app:
 
 ```html
-<script type="module" src="https://unpkg.com/sv-grid-wc"></script>
+<script type="module" src="https://unpkg.com/@svgrid/grid-wc"></script>
 
 <sv-grid id="grid" sortable filterable style="display:block;height:420px"></sv-grid>
 
@@ -47,11 +47,11 @@ and you're done - no bundler, no Svelte in your app:
 Or via npm:
 
 ```bash
-npm install sv-grid-wc
+npm install @svgrid/grid-wc
 ```
 
 ```js
-import 'sv-grid-wc' // registers <sv-grid> globally
+import '@svgrid/grid-wc' // registers <sv-grid> globally
 ```
 
 The rest of this page shows how that package is built, so you can fork it,
@@ -88,7 +88,7 @@ JavaScript **properties**; simple toggles are exposed as **attributes**.
     rowSortingFeature,
     columnFilteringFeature,
     rowSelectionFeature,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   let {
     data = [],
@@ -274,7 +274,7 @@ Add more by calling `emit('yourevent', detail)` from any SvGrid callback.
 - **Bundle size.** The custom element ships the grid plus the Svelte runtime in
   one file. That's expected for a self-contained drop-in element; native Svelte
   consumers share the runtime and ship less.
-- **Pro features.** `installPro` works the same inside the wrapper - import it
+- **Enterprise features.** `installEnterprise` works the same inside the wrapper - import it
   and augment the api in `onApiReady`. The license check is unchanged.
 
 ## Frequently asked questions

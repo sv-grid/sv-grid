@@ -1,6 +1,6 @@
 ---
 title: Build Svelte Grids Faster with AI and the SvGrid MCP Server
-description: Ground Claude, Cursor, and other AI assistants in real SvGrid docs with the sv-grid-mcp server, so generated grid code actually compiles.
+description: Ground Claude, Cursor, and other AI assistants in real SvGrid docs with the @svgrid/mcp server, so generated grid code actually compiles.
 date: 2025-11-18
 category: AI
 tags: ai, mcp, claude, cursor, svelte data grid
@@ -11,7 +11,7 @@ AI coding assistants are great at scaffolding a grid - until they hallucinate a 
 
 ## What the MCP server provides
 
-`sv-grid-mcp` exposes SvGrid's knowledge as tools an assistant can call:
+`@svgrid/mcp` exposes SvGrid's knowledge as tools an assistant can call:
 
 - The example sources, so the assistant copies working patterns.
 - The documentation pages, so it explains features accurately.
@@ -26,7 +26,7 @@ Add the server to your assistant's MCP configuration:
 ```json
 {
   "mcpServers": {
-    "sv-grid": { "command": "npx", "args": ["sv-grid-mcp"] }
+    "sv-grid": { "command": "npx", "args": ["@svgrid/mcp"] }
   }
 }
 ```
@@ -55,7 +55,7 @@ The difference between a helpful assistant and a frustrating one is whether its 
 
 ### How do I get AI assistants to write correct SvGrid code?
 
-Connect the `sv-grid-mcp` server to your assistant. It exposes the real examples, docs, and API reference as tools, so generated code uses props and types that actually exist.
+Connect the `@svgrid/mcp` server to your assistant. It exposes the real examples, docs, and API reference as tools, so generated code uses props and types that actually exist.
 
 ### What is llms.txt and how does SvGrid use it?
 

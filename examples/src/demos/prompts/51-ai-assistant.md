@@ -7,7 +7,7 @@ Live:   https://svgrid.dev/#/demos/51-ai-assistant
 
 51. AI assistant (Pro)
 ----------------------
-Demonstrates the sv-grid-pro AI feature pack. The grid stays
+Demonstrates the @svgrid/enterprise AI feature pack. The grid stays
 model-agnostic; the demo wires the bundled `mockAIProvider` so
 everything works end-to-end without any keys. In production you
 register your own adapter that calls OpenAI / Anthropic / a proxy:

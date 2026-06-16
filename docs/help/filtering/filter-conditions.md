@@ -37,7 +37,7 @@ Apply or update conditions through the `SvGridApi` once it's available:
 
 ```svelte
 <script lang="ts">
-  import type { SvGridApi } from 'sv-grid-core'
+  import type { SvGridApi } from '@svgrid/grid'
 
   let api = $state<SvGridApi<typeof features, Person> | null>(null)
 

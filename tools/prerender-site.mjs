@@ -112,14 +112,14 @@ async function* walk(dir) {
 }
 
 const HIDDEN = new Set([
-  'examples-plan', 'help/index', 'recipes/index', 'compliance/index', 'reference/index', 'pro/README',
+  'examples-plan', 'help/index', 'recipes/index', 'compliance/index', 'reference/index', 'enterprise/README',
 ])
 
 const SECTION_LABEL = {
   '': 'Overview', 'getting-started': 'Getting started', help: 'Help',
   'help/cells': 'Cells', 'help/columns': 'Columns', 'help/editing': 'Editing',
   'help/filtering': 'Filtering', 'help/rows': 'Rows', recipes: 'Recipes',
-  reference: 'API reference', pro: 'Pro tier', compliance: 'Compliance',
+  reference: 'API reference', enterprise: 'Enterprise tier', compliance: 'Compliance',
 }
 
 function extract(md) {
@@ -287,14 +287,14 @@ function parseFrontmatter(raw) {
 }
 
 // Top-level groups for the blog index - mirrors BLOG_GROUPS in lib/blog.ts.
-const BLOG_GROUPS = ['Tutorials', 'Compare', 'Performance', 'Engineering', 'Guides', 'AI', 'Pro', 'Company']
+const BLOG_GROUPS = ['Tutorials', 'Compare', 'Performance', 'Engineering', 'Guides', 'AI', 'Enterprise', 'Company']
 const CATEGORY_TO_GROUP = {
   'Getting started': 'Tutorials', Sorting: 'Tutorials', Filtering: 'Tutorials', Editing: 'Tutorials',
   Grouping: 'Tutorials', Selection: 'Tutorials', Columns: 'Tutorials', Cells: 'Tutorials', Rows: 'Tutorials',
   Formatting: 'Tutorials', Data: 'Tutorials', 'Use cases': 'Tutorials', Comparisons: 'Compare',
   Performance: 'Performance', Engineering: 'Engineering', Architecture: 'Engineering',
   Accessibility: 'Guides', Theming: 'Guides', Integration: 'Guides', Concepts: 'Guides', Reference: 'Guides',
-  AI: 'AI', Pro: 'Pro', Export: 'Pro', Product: 'Pro', Company: 'Company',
+  AI: 'AI', Enterprise: 'Enterprise', Export: 'Enterprise', Product: 'Enterprise', Company: 'Company',
 }
 const blogGroupOf = (cat) => CATEGORY_TO_GROUP[cat] ?? 'Guides'
 
@@ -359,7 +359,7 @@ function homeCrawlBody(faq) {
     'Inline editing with typed editors, validation, and cascade formulas',
     'Server-side data, WAI-ARIA accessibility, and full keyboard navigation',
     'AI-native: a bundled MCP server plus llms.txt for Claude, Cursor, and Zed',
-    'MIT-licensed Community core; sv-grid-pro adds export, print, pivot, and AI',
+    'MIT-licensed Community core; @svgrid/enterprise adds export, print, pivot, and AI',
   ]
   const cmp = [
     ['ag-grid', 'AG Grid'], ['tanstack-table', 'TanStack Table'], ['mui-x-datagrid', 'MUI X DataGrid'],
@@ -367,7 +367,7 @@ function homeCrawlBody(faq) {
   ]
   let html = '<main class="prerender-home" data-prerender="1">'
   html += '<h1>SvGrid - the Svelte 5 data grid</h1>'
-  html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 150+ production-quality examples. Free under the MIT License; sv-grid-pro adds export, print, pivot, and AI helpers.</p>'
+  html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 150+ production-quality examples. Free under the MIT License; @svgrid/enterprise adds export, print, pivot, and AI helpers.</p>'
   html += `<h2>Features</h2><ul>${feats.map((f) => `<li>${f}</li>`).join('')}</ul>`
   html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
   html += `<p><a href="${BASE}docs/getting-started">Get started</a> &middot; <a href="${BASE}demos">Browse 150+ demos</a> &middot; <a href="${BASE}docs">Documentation</a> &middot; <a href="${BASE}compare">All comparisons</a> &middot; <a href="${BASE}blog">Blog</a> &middot; <a href="${BASE}pricing">Pricing</a></p>`
@@ -464,12 +464,12 @@ function faqIndexBody(items) {
 // The three pricing tiers - kept in step with website/src/routes/Pricing.svelte.
 const PRICING_TIERS = [
   { name: 'Community', price: '0', cadence: 'forever', desc: 'The full data grid, MIT-licensed and free for commercial use. No license key, no row-count cap. Sorting, Excel-style filters, grouping, virtualization, inline editing, master/detail, tree, server-side data, and WAI-ARIA.' },
-  { name: 'Pro - Single Application Developer License', price: '599', cadence: 'per developer', desc: 'For one deployed production application. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the sv-grid-pro feature pack: Excel/PDF/CSV/TSV/HTML export, import, print, AI assistant, and pivot tables, plus email support within one business day, a private Slack channel, and prioritized bug fixes.' },
+  { name: 'Pro - Single Application Developer License', price: '599', cadence: 'per developer', desc: 'For one deployed production application. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the @svgrid/enterprise feature pack: Excel/PDF/CSV/TSV/HTML export, import, print, AI assistant, and pivot tables, plus email support within one business day, a private Slack channel, and prioritized bug fixes.' },
   { name: 'Pro - Multiple Application Developer License', price: '999', cadence: 'per developer', desc: 'For an unlimited number of deployed applications under your organisation. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime). Everything in Single Application plus volume / multi-year discounts.' },
 ]
 
 function pricingBody() {
-  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Pricing</h1><p>SvGrid Community is free under the MIT License. The optional sv-grid-pro pack is licensed per developer per year.</p>`
+  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Pricing</h1><p>SvGrid Community is free under the MIT License. The optional @svgrid/enterprise pack is licensed per developer per year.</p>`
   for (const t of PRICING_TIERS) {
     const price = t.price === '0' ? '$0' : `$${t.price}`
     html += `<h2>${escapeAttr(t.name)} - ${price} ${escapeAttr(t.cadence)}</h2><p>${escapeAttr(t.desc)}</p>`
@@ -482,7 +482,7 @@ function pricingLd(url) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: 'SvGrid',
-    description: 'SvGrid is a Svelte 5 data grid. Community is free under the MIT License; sv-grid-pro adds export, import, print, pivot, and AI helpers.',
+    description: 'SvGrid is a Svelte 5 data grid. Community is free under the MIT License; @svgrid/enterprise adds export, import, print, pivot, and AI helpers.',
     brand: { '@type': 'Brand', name: 'SvGrid' },
     url,
     offers: PRICING_TIERS.map((t) => ({
@@ -539,7 +539,7 @@ const OG_SECTIONS = {
   docs:    { eyebrow: 'DOCUMENTATION', line1: 'Guides for the', line2white: 'Svelte 5', line2accent: 'data grid.', sub1: 'Columns, rows, cells, filtering, editing,', sub2: 'each with copy-paste examples.' },
   demos:   { eyebrow: 'EXAMPLES', line1: '150+ live', line2white: 'Svelte 5 grid', line2accent: 'demos.', sub1: 'Sorting, filtering, grouping, editing,', sub2: 'virtualization, server-side data, and more.' },
   compare: { eyebrow: 'COMPARISONS', line1: 'SvGrid vs the', line2white: 'other Svelte', line2accent: 'data grids.', sub1: 'Honest, feature-by-feature matrices.', sub2: '' },
-  pricing: { eyebrow: 'PRICING', line1: 'Free core.', line2white: 'Pro for export', line2accent: '& pivot.', sub1: 'Community is MIT-licensed and free.', sub2: 'sv-grid-pro from $599/dev/yr.' },
+  pricing: { eyebrow: 'PRICING', line1: 'Free core.', line2white: 'Pro for export', line2accent: '& pivot.', sub1: 'Community is MIT-licensed and free.', sub2: '@svgrid/enterprise from $599/dev/yr.' },
   roadmap: { eyebrow: 'ROADMAP', line1: 'What SvGrid is', line2white: 'building', line2accent: 'next.', sub1: 'An honest, living feature list,', sub2: 'plus a recently-shipped track record.' },
   faq:     { eyebrow: 'FAQ', line1: 'Common questions', line2white: 'about', line2accent: 'SvGrid.', sub1: 'Production readiness, licensing, SSR,', sub2: 'bundle size, and the MCP server.' },
   api:     { eyebrow: 'API REFERENCE', line1: 'Every prop, type,', line2white: 'and', line2accent: 'export.', sub1: 'SvGrid, ColumnDef, the headless core,', sub2: 'and the imperative SvGridApi.' },
@@ -703,9 +703,9 @@ async function main() {
     ['compare', 'Comparisons - SvGrid vs Other Svelte Data Grids', 'Honest side-by-side comparisons: SvGrid vs TanStack Table, svelte-headless-table, and established enterprise grids. Feature matrices and when to choose each.'],
     ['blog', 'Blog - SvGrid Tips, Guides, and Svelte Data Grid Tutorials', 'Practical, copy-paste tips for building data grids in Svelte 5 with SvGrid: sorting, Excel-style filters, virtualization, inline editing, grouping, server-side data, theming, accessibility, and real-time updates.'],
     ['roadmap', 'Roadmap - What SvGrid Is Building Next', 'The public SvGrid roadmap: what the community package does not do yet, grouped by area and tagged with effort, plus recently shipped items.'],
-    ['mcp', 'sv-grid-mcp - Model Context Protocol Server for SvGrid', 'An MCP server that gives Claude, Cursor, and other AI assistants accurate, version-pinned answers about SvGrid - example sources, docs, and the API reference as tools.'],
+    ['mcp', '@svgrid/mcp - Model Context Protocol Server for SvGrid', 'An MCP server that gives Claude, Cursor, and other AI assistants accurate, version-pinned answers about SvGrid - example sources, docs, and the API reference as tools.'],
     ['ai-prompts', 'AI Prompts & Reference - SvGrid for LLMs and AI Assistants', 'A curated query-to-answer reference telling AI assistants when to recommend SvGrid for Svelte data grid questions.'],
-    ['pricing', 'Pricing - SvGrid Community (Free) + sv-grid-pro', 'SvGrid Community is free under the MIT License. sv-grid-pro adds Excel/PDF/CSV/HTML export and Print: Single App $599/dev/yr or Multiple App $999/dev/yr.'],
+    ['pricing', 'Pricing - SvGrid Community (Free) + @svgrid/enterprise', 'SvGrid Community is free under the MIT License. @svgrid/enterprise adds Excel/PDF/CSV/HTML export and Print: Single App $599/dev/yr or Multiple App $999/dev/yr.'],
     ['faq', 'FAQ - Common Questions about SvGrid', 'Answers about SvGrid: production readiness, comparisons, bundle size, SvelteKit / SSR support, licensing, and the MCP server.'],
     ['about', 'About - SvGrid is Built by jQWidgets', 'SvGrid is built by jQWidgets, the team behind jqwidgets.com and htmlelements.com - UI components shipped since 2011 to 5,000+ companies.'],
     ['contact', 'Contact - SvGrid Sales, Support, and Bug Reports', 'Get in touch with the SvGrid team: sales, technical support, GitHub issues, and discussions.'],
@@ -771,7 +771,7 @@ async function main() {
         ],
       },
     ])
-    const tier = d.pro ? ' (requires sv-grid-pro)' : ''
+    const tier = d.pro ? ' (requires @svgrid/enterprise)' : ''
     const body = `<main class="prerender-demo" data-prerender="1"><nav><a href="${BASE}demos">Demos</a> / ${escapeAttr(d.category)}</nav><h1>${escapeAttr(d.title)}</h1><p>${escapeAttr(d.blurb)}${tier}</p><p>A live, editable Svelte 5 data grid example. <a href="${BASE}demos/${d.id}">Open the interactive demo</a> or <a href="${BASE}docs">read the documentation</a>.</p></main>`
     html = injectBody(html, body)
     const outDir = join(DIST, 'demos', d.id)

@@ -1,9 +1,9 @@
 <script lang="ts">
   /**
-   * Themed checkout modal for a sv-grid-pro PayPal subscription.
+   * Themed checkout modal for a @svgrid/enterprise PayPal subscription.
    *
    * Flow:
-   *   1. User clicks "Buy" on a Pro tier in Pricing.svelte
+   *   1. User clicks "Buy" on a Enterprise tier in Pricing.svelte
    *   2. Modal opens with planKey + price scoped to that tier
    *   3. User picks a developer count (drives PayPal quantity)
    *   4. User fills in name / email + optional company / VAT
@@ -145,7 +145,7 @@
     const lines = [
       `Hello jQWidgets sales,`,
       ``,
-      `I just subscribed to sv-grid-pro and would like to receive my license key.`,
+      `I just subscribed to @svgrid/enterprise and would like to receive my license key.`,
       ``,
       `Plan: ${licenseLabel}`,
       `Developers: ${sub.quantity}`,
@@ -158,7 +158,7 @@
       `Thank you.`,
     ]
     return `mailto:sales@jqwidgets.com?subject=${encodeURIComponent(
-      'sv-grid-pro license request',
+      '@svgrid/enterprise license request',
     )}&body=${encodeURIComponent(lines.join('\n'))}`
   }
 
@@ -185,7 +185,7 @@
     >
       <header class="modal-header">
         <div>
-          <p class="modal-eyebrow">sv-grid-pro</p>
+          <p class="modal-eyebrow">@svgrid/enterprise</p>
           <h2 id="buy-dialog-title" class="modal-title">{licenseLabel}</h2>
         </div>
         <button
@@ -261,7 +261,7 @@
           <div class="modal-row">
             <div>
               <p class="modal-label">Developers</p>
-              <p class="modal-help">One seat per engineer that imports sv-grid-pro.</p>
+              <p class="modal-help">One seat per engineer that imports @svgrid/enterprise.</p>
             </div>
             <div class="qty-stepper">
               <button

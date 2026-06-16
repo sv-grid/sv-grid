@@ -7,11 +7,11 @@ Live:   https://svgrid.dev/#/demos/21-export-and-print
 
 21. Export + Print (Pro)
 ------------------------
-Demonstrates the sv-grid-pro feature pack: download the visible grid to
+Demonstrates the @svgrid/enterprise feature pack: download the visible grid to
 Excel, PDF, CSV, TSV, or HTML, and open a printable view in a new window.
 
-The grid itself is plain sv-grid-core. Pro is installed via
-installPro(api) which adds api.exportData(...) and api.print(...) onto
+The grid itself is plain @svgrid/grid. Pro is installed via
+installEnterprise(api) which adds api.exportData(...) and api.print(...) onto
 the same SvGridApi object you already have.
 
 ## Imports

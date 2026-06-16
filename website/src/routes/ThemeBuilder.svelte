@@ -24,7 +24,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { onMount } from 'svelte'
 
   // ---- Preview dataset (data-agnostic placeholder) -------------------

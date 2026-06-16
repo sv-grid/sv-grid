@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://svgrid.dev/schemas/export-options.json",
   "title": "ExportOptions",
-  "description": "`api.exportData({...})` argument from sv-grid-pro.",
+  "description": "`api.exportData({...})` argument from @svgrid/enterprise.",
   "type": "object",
-  "$comment": "Mirrors packages/sv-grid-pro/src/export.ts ExportOptions<TData>.",
+  "$comment": "Mirrors packages/enterprise/src/export.ts ExportOptions<TData>.",
   "required": [
     "format"
   ],

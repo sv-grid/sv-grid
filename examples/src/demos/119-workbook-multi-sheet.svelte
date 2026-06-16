@@ -31,14 +31,14 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
-    installPro,
+    installEnterprise,
     setLicenseKey,
-    type ProGridApi,
-  } from 'sv-grid-pro'
+    type EnterpriseGridApi,
+  } from '@svgrid/enterprise'
 
-  setLicenseKey('SVPRO-DEV-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ───────────────────────── Column address helpers ─────────────────────
   function colToLetters(n: number): string {
@@ -478,7 +478,7 @@
   const isFormula = $derived(formulaInput.trim().startsWith('='))
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-  let gridApi = $state<ProGridApi<typeof features, GridRow> | null>(null)
+  let gridApi = $state<EnterpriseGridApi<typeof features, GridRow> | null>(null)
 
   // ── Cell writes ────────────────────────────────────────────────────────
   function setRaw(sheetName: string, r: number, c: number, value: string) {
@@ -853,7 +853,7 @@
             containerHeight="100%"
             fitColumns={false}
             getRowId={(r) => String(r._r)}
-            onApiReady={(next) => (gridApi = installPro(next))}
+            onApiReady={(next) => (gridApi = installEnterprise(next))}
             onActiveCellChange={onActive}
             onCellValueChange={onCellEdit}
           />

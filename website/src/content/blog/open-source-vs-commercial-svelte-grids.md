@@ -39,12 +39,12 @@ Sometimes free is cheapest; sometimes a license is, once you price your own time
 
 A increasingly common - and pragmatic - answer is open-core: a free, permissive core that covers the common 90%, plus an optional paid pack for advanced needs. You ship free, and only pay if and when you need the extras.
 
-This is SvGrid's model: `sv-grid-core` is MIT-licensed and free for commercial use (sorting, filtering, grouping, virtualization, editing, server-side data), and [sv-grid-pro](/pricing) adds export, import, print, pivot, and AI plus support, per developer. You are not forced to choose all-free-or-all-paid up front.
+This is SvGrid's model: `@svgrid/grid` is MIT-licensed and free for commercial use (sorting, filtering, grouping, virtualization, editing, server-side data), and [@svgrid/enterprise](/pricing) adds export, import, print, pivot, and AI plus support, per developer. You are not forced to choose all-free-or-all-paid up front.
 
 ## How to decide
 
 - Standard CRUD grids, cost-sensitive? **Open-source** (free core) is usually enough.
-- Need pivot/export/SLAs, or your time is the expensive resource? **Commercial** (or open-core Pro) pays for itself.
+- Need pivot/export/SLAs, or your time is the expensive resource? **Commercial** (or open-core Enterprise) pays for itself.
 - Want to start free and upgrade only if needed? **Open-core** - the lowest-risk path.
 
 ## Frequently asked questions
@@ -55,4 +55,4 @@ Use a free open-source grid for standard grids when cost matters and the feature
 
 ### What is the open-core model?
 
-A free, permissively licensed core plus an optional paid pack for advanced features and support. SvGrid uses it: an MIT core free for commercial use, with sv-grid-pro adding export, pivot, import, and AI - so you start free and upgrade only if you need the extras.
+A free, permissively licensed core plus an optional paid pack for advanced features and support. SvGrid uses it: an MIT core free for commercial use, with @svgrid/enterprise adding export, pivot, import, and AI - so you start free and upgrade only if you need the extras.

@@ -15,7 +15,7 @@
    * A built-in viewer below lets users decrypt the downloaded file in
    * place - the round-trip is fully client-side, no server.
    *
-   * Production path (sv-grid-pro): xlsx encryption uses the ECMA-376
+   * Production path (@svgrid/enterprise): xlsx encryption uses the ECMA-376
    * Agile-Encryption profile (key spin + HMAC over the container).
    * This demo shows the UX + key-derivation pattern; the Pro pack
    * wires it to the real .xlsx container.
@@ -26,7 +26,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })

@@ -14,7 +14,7 @@
     FlexRender,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makeOrders, type Order } from './seed'
 
   const features = tableFeatures({ rowSortingFeature })

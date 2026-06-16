@@ -1,8 +1,8 @@
-﻿# Data export and printing - Pro
+﻿# Data export and printing - Enterprise
 
 Export the grid to **Excel (xlsx)**, **PDF**, **CSV**, **TSV**, **HTML**,
 or open a printable view in a new window. Ships in the paid
-**[sv-grid-pro](https://www.npmjs.com/package/sv-grid-pro)** add-on; the
+**[@svgrid/enterprise](https://www.npmjs.com/package/@svgrid/enterprise)** add-on; the
 Community build does not include these features.
 
 Try the export bar below - downloads run in your browser; the bundled
@@ -13,7 +13,7 @@ license key removes the unlicensed watermark:
 
 ## What it is
 
-`sv-grid-pro` augments the `SvGridApi` you already get from
+`@svgrid/enterprise` augments the `SvGridApi` you already get from
 `<SvGrid onApiReady>` with two methods:
 
 - `api.exportData({ format, filename?, columns?, rows?, pageOrientation? })`
@@ -37,13 +37,13 @@ when the recipient expects formatted documents.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from 'sv-grid-core'
-  import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
+  import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from '@svgrid/grid'
+  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
 
   // Set the license key once at startup. Without a key, the feature still
   // works but the grid shows an "unlicensed" watermark and the console
   // emits a one-time nudge directing users to the pricing page.
-  setLicenseKey('SVPRO-XXXX-XXXX-XXXX')
+  setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
 
   const features = tableFeatures({ rowSortingFeature })
 
@@ -58,10 +58,10 @@ when the recipient expects formatted documents.
     { field: 'price',   header: 'Price', format: { type: 'currency', currency: 'USD' } },
   ]
 
-  let api = $state<ProGridApi<typeof features, Order> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Order> | null>(null)
 
   function onReady(next: SvGridApi<typeof features, Order>) {
-    api = installPro(next)
+    api = installEnterprise(next)
   }
 </script>
 
@@ -81,7 +81,7 @@ when the recipient expects formatted documents.
 ## Install
 
 ```bash
-pnpm add sv-grid-pro
+pnpm add @svgrid/enterprise
 # Optional - install only the peers you actually use:
 pnpm add jszip     # required for xlsx
 pnpm add pdfmake   # required for pdf
@@ -93,18 +93,18 @@ them.
 
 ## Licensing
 
-`sv-grid-pro` has a tiered license gate:
+`@svgrid/enterprise` has a tiered license gate:
 
 | Key state                                  | Behavior |
 | ------------------------------------------ | -------- |
 | No key set (`setLicenseKey()` not called)  | Feature works. Grid shows an unlicensed watermark linking to jqwidgets.com; console.log emits a one-time nudge. |
-| Key doesn't start with `SVPRO-`            | Throws - programmer error. |
+| Key doesn't start with `SVENTERPRISE-`            | Throws - programmer error. |
 | Key is in the revoked list                 | Throws - contact support for a replacement. |
-| `SVPRO-DEV-...` or `SVPRO-EVAL-...`        | Works. One-time console.info notice. No watermark. |
-| Any other `SVPRO-...`                      | Works silently. |
+| `SVENTERPRISE-DEV-...` or `SVENTERPRISE-EVAL-...`        | Works. One-time console.info notice. No watermark. |
+| Any other `SVENTERPRISE-...`                      | Works silently. |
 
 Buy a production key at <https://sv-grid.dev/pricing> ($599 / developer /
-year). `SVPRO-DEV-...` and `SVPRO-EVAL-...` keys cover local development
+year). `SVENTERPRISE-DEV-...` and `SVENTERPRISE-EVAL-...` keys cover local development
 and 14-day trials respectively.
 
 ## Reference
@@ -121,7 +121,7 @@ branch on license status. `dismissUnlicensedNudge()` removes the
 watermark and stops the MutationObserver - call it after setting a
 valid key if you toggled the soft-gate during testing.
 
-### `installPro(api): ProGridApi`
+### `installEnterprise(api): EnterpriseGridApi`
 
 Mutates the given `SvGridApi` to add `exportData` and `print`. Returns
 the same object with the augmented type, so existing references keep
@@ -178,15 +178,15 @@ gesture (a click handler is fine - automatic on-load print is not).
 
 ### How do I export a Svelte data grid to Excel?
 
-Install `sv-grid-pro`, call `installPro(api)`, then call the export helper with
+Install `@svgrid/enterprise`, call `installEnterprise(api)`, then call the export helper with
 `format: 'xlsx'`. The exporter writes a real OOXML workbook in the browser - no
 server round-trip. CSV, TSV, PDF, and HTML use the same call with a different
 format.
 
 ### Is export part of the free Community package?
 
-No. Export and printing ship in the paid `sv-grid-pro` add-on. The free
-`sv-grid-core` package covers the full grid (sorting, filtering, grouping,
+No. Export and printing ship in the paid `@svgrid/enterprise` add-on. The free
+`@svgrid/grid` package covers the full grid (sorting, filtering, grouping,
 editing, virtualization) but not export/print/pivot/import.
 
 ### Does exporting bloat my bundle?

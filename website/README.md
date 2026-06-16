@@ -1,6 +1,6 @@
 # SvGrid website
 
-Marketing + docs site for `sv-grid-core`. Vite + Svelte 5 + Tailwind, dark-only.
+Marketing + docs site for `@svgrid/grid`. Vite + Svelte 5 + Tailwind, dark-only.
 
 Pages (hash routing):
 
@@ -32,7 +32,7 @@ The dev server proxies straight to Vite. Demos are imported from
 ## PayPal checkout
 
 The Pricing page (`#/pricing`) renders live PayPal subscription buttons
-for the two sv-grid-pro tiers. The PayPal plan IDs and client-id are
+for the two @svgrid/enterprise tiers. The PayPal plan IDs and client-id are
 pinned in `src/lib/paypal.ts`:
 
 - Client-id: `AYor43h8U5H7JZE-l73WQ8Zc86Hbd9o0AbpmEhTvz3Sem8MkBqBs5B0zAFbLdFcJueTpxV6aFQ4n5Vde`
@@ -64,7 +64,7 @@ After a successful subscription, the PayPal callback hands us a
 `subscriptionID`. The tier card swaps to a green confirmation panel that
 shows the ID and asks the user to forward it to `sales@jqwidgets.com` for
 license-key issuance. The next step is to replace that manual handoff
-with a PayPal webhook that auto-emails the SVPRO-... key.
+with a PayPal webhook that auto-emails the SVENTERPRISE-... key.
 
 ## Deploy
 

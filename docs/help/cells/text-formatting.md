@@ -89,4 +89,4 @@ When a column has both, the resolution order is:
 ## See also
 
 - [Cell components](./cell-components.md) - when `format` is not enough.
-- [`cell-formatting.ts`](../../../packages/sv-grid-core/src/cell-formatting.ts)
+- [`cell-formatting.ts`](../../../packages/grid/src/cell-formatting.ts)

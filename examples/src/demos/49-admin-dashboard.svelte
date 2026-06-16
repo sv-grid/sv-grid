@@ -34,7 +34,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   // ---- Domain ---------------------------------------------------------
 

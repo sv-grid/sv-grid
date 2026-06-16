@@ -20,7 +20,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   type Status   = 'open' | 'in_progress' | 'waiting' | 'resolved' | 'closed'
   type Priority = 'low' | 'normal' | 'high' | 'urgent'

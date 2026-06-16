@@ -2,14 +2,14 @@
 
 A flat index of every Stable export. Each entry links to the topic
 page that covers it in depth. For the formal TypeScript shapes,
-inspect the `.d.ts` files in `node_modules/sv-grid-core/dist` -
+inspect the `.d.ts` files in `node_modules/@svgrid/grid/dist` -
 they're the source of truth and ship with full JSDoc.
 
 > The "Tier" column reflects the badges from
 > [API stability](./api-stability.md). Anything not listed here is
 > Internal and may move under your feet.
 
-## sv-grid-core
+## @svgrid/grid
 
 ### Components
 
@@ -95,7 +95,7 @@ is Stable.
 
 ### Static utilities
 
-Re-exports from `'sv-grid-core/static-functions'` for use outside
+Re-exports from `'@svgrid/grid/static-functions'` for use outside
 a Svelte 5 component:
 
 | Export                       | Tier   | What it is                                              |
@@ -105,14 +105,14 @@ a Svelte 5 component:
 | `groupRows(rows, groupBy, aggregators)` | Stable | Pure group-and-aggregate helper.            |
 | `getDisplayedRows(rows, state)` | Stable | One-shot pipeline (filter → sort → group → page).    |
 
-## sv-grid-pro
+## @svgrid/enterprise
 
 ### Installation
 
 | Export       | Tier   | What it is                                                                                 |
 | ------------ | ------ | ------------------------------------------------------------------------------------------ |
-| `installPro(api)` | Stable | Augments a `SvGridApi` with `exportData`, `print`, `importData`, and `ai.*`.          |
-| `ProGridApi`      | Stable | The post-install API shape.                                                          |
+| `installEnterprise(api)` | Stable | Augments a `SvGridApi` with `exportData`, `print`, `importData`, and `ai.*`.          |
+| `EnterpriseGridApi`      | Stable | The post-install API shape.                                                          |
 
 ### License
 
@@ -123,14 +123,14 @@ a Svelte 5 component:
 | `getLicenseKey()`   | Stable | Inspect the current key (returns `null` when unset).          |
 | `isLicenseKeySet()` | Stable | Boolean for "any key registered".                             |
 | `hasValidLicense()` | Stable | Boolean for "key passes prefix + revocation check".           |
-| `assertProLicensed()` | Stable | Throws on a malformed / revoked key, soft-warns when unset. |
+| `assertEnterpriseLicensed()` | Stable | Throws on a malformed / revoked key, soft-warns when unset. |
 | `dismissUnlicensedNudge()` | Stable | Suppress the console one-time nudge.                   |
 
 ### Export + print
 
 | Export                   | Tier   | Purpose                                                              |
 | ------------------------ | ------ | -------------------------------------------------------------------- |
-| `exportGrid(api, opts)`  | Stable | Same as `api.exportData(opts)` for use without `installPro`.         |
+| `exportGrid(api, opts)`  | Stable | Same as `api.exportData(opts)` for use without `installEnterprise`.         |
 | `printGrid(api, opts?)`  | Stable | Same as `api.print(opts)`.                                           |
 | `ExportFormat`           | Stable | `'xlsx' | 'pdf' | 'csv' | 'tsv' | 'html'`.                          |
 | `ExportOptions` / `ExportColumn` | Stable | Option shape (see [Data export and printing](./export.md)).  |
@@ -173,10 +173,10 @@ Both packages support fine-grained imports so you only pay for what
 you use:
 
 ```ts
-import { setAIProvider } from 'sv-grid-pro/ai'
-import { importData } from 'sv-grid-pro/import'
-import { exportGrid } from 'sv-grid-pro/export'
-import { printGrid } from 'sv-grid-pro/print'
+import { setAIProvider } from '@svgrid/enterprise/ai'
+import { importData } from '@svgrid/enterprise/import'
+import { exportGrid } from '@svgrid/enterprise/export'
+import { printGrid } from '@svgrid/enterprise/print'
 ```
 
 The `package.json` `exports` map lists the supported paths.

@@ -45,7 +45,7 @@ also exposes a headless engine and an MCP server).
 +   import {
 +     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
 +     type ColumnDef,
-+   } from 'sv-grid-core'
++   } from '@svgrid/grid'
 +
 +   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 +   const columns: ColumnDef<typeof features, Row>[] = [
@@ -62,10 +62,10 @@ also exposes a headless engine and an MCP server).
 Both grids are MIT and free for commercial use, so licensing is not the
 deciding factor. The difference is monetization: SVAR keeps the whole
 grid free (including CSV export and print) and sells its Gantt instead,
-whereas SvGrid's `sv-grid-core` core is MIT and the optional
-`sv-grid-pro` pack (advanced XLSX/PDF export, pivot, import, AI, support)
+whereas SvGrid's `@svgrid/grid` core is MIT and the optional
+`@svgrid/enterprise` pack (advanced XLSX/PDF export, pivot, import, AI, support)
 is the paid piece. If all you need is CSV export, SVAR gives it free; if
-you need pivot, advanced export, or a support SLA, that is Pro on SvGrid.
+you need pivot, advanced export, or a support SLA, that is Enterprise on SvGrid.
 
 ## What you get with SvGrid
 
@@ -75,7 +75,7 @@ you need pivot, advanced export, or a support SLA, that is Pro on SvGrid.
   component, if you want to compose your own layer.
 - **Excel-style filter menu**, **cell-range selection + TSV copy**, a
   **fill handle**, **integrated charts**, and a documented **imperative API**.
-- **sv-grid-mcp** so AI assistants answer accurately about your grid.
+- **@svgrid/mcp** so AI assistants answer accurately about your grid.
 
 ## What to check on the SVAR side
 
@@ -108,7 +108,7 @@ plus re-theming through `--sg-*` tokens.
 
 ### Are SvGrid and SVAR both free and MIT?
 
-Yes. `sv-grid-core` and the SVAR DataGrid are both MIT and free for
+Yes. `@svgrid/grid` and the SVAR DataGrid are both MIT and free for
 commercial, closed-source use. SVAR keeps the whole grid free and monetizes its
-Gantt; on SvGrid, only the optional `sv-grid-pro` add-on (advanced export,
+Gantt; on SvGrid, only the optional `@svgrid/enterprise` add-on (advanced export,
 pivot, import, AI, support) is paid.

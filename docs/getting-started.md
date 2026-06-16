@@ -15,7 +15,7 @@ straight to the one you need if you're not.
 | #   | Page                                                          | What it covers                                                              |
 | --- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | 0   | [Starters & scaffolding](./getting-started/starters.md)       | `npm create sv-grid`, the minimal + SvelteKit admin templates, Deploy to Vercel. |
-| 1   | [Install](./getting-started/1-install.md)                     | `pnpm add sv-grid-core`, requirements, smoke-test.                     |
+| 1   | [Install](./getting-started/1-install.md)                     | `pnpm add @svgrid/grid`, requirements, smoke-test.                     |
 | 2   | [First grid](./getting-started/2-first-grid.md)               | The minimum runnable example, explained line by line.                       |
 | 3   | [Data and columns](./getting-started/3-data-and-columns.md)   | What goes in `data` and `columns`. Custom cells via `renderSnippet`.        |
 | 4   | [Features](./getting-started/4-features.md)                   | Opt into sort, filter, pagination, grouping, selection, editing.            |
@@ -33,7 +33,7 @@ Estimated reading time: 15 minutes across all six pages.
 - [Web Components & Custom Elements](./help/web-components.md) - use SvGrid
   as a framework-agnostic `<sv-grid>` element in React, Vue, Angular, or
   plain HTML.
-- [Pro features](./pro/README.md) - the paid feature pack: data export,
+- [Enterprise features](./enterprise/README.md) - the paid feature pack: data export,
   data import, AI assistant, and pivot tables.
 
 ## One-page version
@@ -44,17 +44,17 @@ identical; the split exists for sidebar nav and faster mobile loads.
 
 ## License
 
-`sv-grid-core` is published under the **MIT License** - permissive
+`@svgrid/grid` is published under the **MIT License** - permissive
 for commercial use, redistribution, and modification. The paid
-companion `sv-grid-pro` ships under a separate commercial license. See
+companion `@svgrid/enterprise` ships under a separate commercial license. See
 [LICENSE](../LICENSE) and
-[packages/sv-grid-pro/LICENSE](../packages/sv-grid-pro/LICENSE).
+[packages/enterprise/LICENSE](../packages/enterprise/LICENSE).
 
 ## Frequently asked questions
 
 ### How do I add a data grid to a Svelte 5 app?
 
-Install `sv-grid-core`, import `SvGrid`, and pass `data` and `columns`.
+Install `@svgrid/grid`, import `SvGrid`, and pass `data` and `columns`.
 A complete grid is about 15 lines - keyboard navigation and accessibility are
 on by default, and you opt into sort/filter/edit/group/paging with one boolean
 shortcut each (`sortable`, `filterable`, ...). See
@@ -68,12 +68,12 @@ SSR and static builds. Drive large datasets with controlled, server-side state.
 
 ### Is SvGrid free for commercial use?
 
-Yes. `sv-grid-core` is MIT-licensed, including commercial use, with no row
-cap or license key. The optional `sv-grid-pro` pack (export, pivot, import, AI)
+Yes. `@svgrid/grid` is MIT-licensed, including commercial use, with no row
+cap or license key. The optional `@svgrid/enterprise` pack (export, pivot, import, AI)
 ships under a separate paid license.
 
 ### What do I need to run SvGrid?
 
 Svelte 5 (runes) and any Vite-based toolchain. There are no other required
-dependencies for the Community core; Pro export/import features lazy-load their
+dependencies for the Community core; Enterprise export/import features lazy-load their
 own dependencies only when used.

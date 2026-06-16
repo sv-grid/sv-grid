@@ -22,22 +22,22 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import {
-    installPro,
+    installEnterprise,
     setLicenseKey,
     dismissUnlicensedNudge,
     importData,
-    type ProGridApi,
+    type EnterpriseGridApi,
     type ImportResult,
     type ImportColumnMap,
     type ImportColumnTypes,
     type ImportFieldType,
-  } from 'sv-grid-pro'
+  } from '@svgrid/enterprise'
 
   // ---- License + features --------------------------------------------
 
-  setLicenseKey('SVPRO-DEV-IMPORT')
+  setLicenseKey('SVENTERPRISE-DEV-IMPORT')
   dismissUnlicensedNudge()
 
   type Row = Record<string, unknown>
@@ -87,7 +87,7 @@
   // The grid below receives whatever rows have been committed so far,
   // plus dynamic columns derived from the latest column specs.
   let rows = $state<Row[]>([])
-  let api = $state<ProGridApi<typeof features, Row> | null>(null)
+  let api = $state<EnterpriseGridApi<typeof features, Row> | null>(null)
 
   // Stub used by the standalone `importData` for preview calls. The
   // grid only renders once columns exist (i.e. after the first preview),
@@ -421,7 +421,7 @@
     </div>
 
     <footer class="imp-footer">
-      Peer deps: <code>jszip</code> for xlsx. CSV/TSV/JSON parse natively. License: <code>SVPRO-DEV-IMPORT</code>
+      Peer deps: <code>jszip</code> for xlsx. CSV/TSV/JSON parse natively. License: <code>SVENTERPRISE-DEV-IMPORT</code>
     </footer>
   </aside>
 
@@ -471,7 +471,7 @@
           containerHeight="100%"
           fitColumns={true}
           emptyMessage={'Parsed columns shown. Commit a preview to fill in the rows.'}
-          onApiReady={(next: SvGridApi<typeof features, Row>) => { api = installPro(next) }}
+          onApiReady={(next: SvGridApi<typeof features, Row>) => { api = installEnterprise(next) }}
         />
       {/if}
     </div>

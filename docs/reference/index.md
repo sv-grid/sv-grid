@@ -4,7 +4,7 @@ The exhaustive surface of the published packages. For walkthroughs +
 patterns see [Help](../help/index.md); for first contact see
 [Getting started](../getting-started.md).
 
-## sv-grid-core
+## @svgrid/grid
 
 | Page                          | What's in it                                                          |
 | ----------------------------- | --------------------------------------------------------------------- |
@@ -15,11 +15,11 @@ patterns see [Help](../help/index.md); for first contact see
 | [Headless engine](./headless-engine.md) | `createSvGrid` without `<SvGrid>` - the renderer-free path.  |
 | [Bundle size](./bundle-size.md) | Per-feature gzipped cost + reproduction command.                    |
 
-## sv-grid-pro
+## @svgrid/enterprise
 
 | Page                  | What's in it                                                          |
 | --------------------- | --------------------------------------------------------------------- |
-| [Pro reference](./pro.md) | Export, print, import, AI helpers, pivot - the full Pro surface.  |
+| [Enterprise reference](./enterprise.md) | Export, print, import, AI helpers, pivot - the full Enterprise surface.  |
 
 ## Conventions
 

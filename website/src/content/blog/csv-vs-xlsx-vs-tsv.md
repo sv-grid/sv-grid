@@ -39,7 +39,7 @@ A real Excel workbook (zipped XML).
 | A report a human opens in Excel | XLSX |
 | Quick, universal download | CSV |
 
-Many grids offer all three - they are cheap to add and different users want different things. SvGrid's [Pro export](export-to-excel-csv-pdf) covers XLSX, CSV, TSV, and HTML, applying your column formatters so the output matches the grid.
+Many grids offer all three - they are cheap to add and different users want different things. SvGrid's [Enterprise export](export-to-excel-csv-pdf) covers XLSX, CSV, TSV, and HTML, applying your column formatters so the output matches the grid.
 
 ## The encoding footnote
 

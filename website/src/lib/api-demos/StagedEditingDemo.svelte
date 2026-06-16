@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Interactive demo for the Pro Staged-editing buffer: edit cells, watch the
+  // Interactive demo for the Enterprise Staged-editing buffer: edit cells, watch the
   // dirty list grow, then commit (clears) or revert (restores) as a batch.
   import {
     SvGrid,
@@ -7,8 +7,8 @@
     rowSortingFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
-  import { createStagedEditing } from 'sv-grid-pro'
+  } from '@svgrid/grid'
+  import { createStagedEditing } from '@svgrid/enterprise'
   import { makeOrders, type Order } from './seed'
 
   const features = tableFeatures({ rowSortingFeature })

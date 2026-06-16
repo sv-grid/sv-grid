@@ -7,9 +7,9 @@ shipping library - written for SvGrid, not translated from another grid.
 Start with [Getting Started](../getting-started.md) if you have not
 already.
 
-> **Tier badges.** Pages whose title ends with `- Pro` describe a
-> feature that ships in the paid `sv-grid-pro` add-on. Everything else
-> is part of the open-source `sv-grid-core` package. The same
+> **Tier badges.** Pages whose title ends with `- Enterprise` describe a
+> feature that ships in the paid `@svgrid/enterprise` add-on. Everything else
+> is part of the open-source `@svgrid/grid` package. The same
 > visual convention is used throughout this documentation.
 
 Live reference - the trading-desk demo runs the full feature set at
@@ -23,11 +23,11 @@ real-world scale:
 - [Architecture overview](./architecture.md) - the three-layer model: your data, the engine, the renderer
 - [Glossary](./glossary.md) - terminology used across the docs (accessor, snippet, row model, ...)
 - [Tailwind integration](./tailwind.md) - re-theming the grid via `--sg-*` tokens, dark-mode wiring, what *not* to do
-- [**Pro feature pack**](../pro/README.md) - landing page for the paid add-on; what's in it + how to license it
-- [Data export and printing - Pro](./export.md) - Excel, PDF, CSV, TSV, HTML, and Print
-- [Data import - Pro](./import.md) - Excel, CSV, TSV, and JSON import with column mapping + validation
-- [AI assistant - Pro](./ai.md) - natural-language filter, smart fill, summarise, classify; bring-your-own model adapter
-- [Pivot tables - Pro](./pivot.md) - `createPivotModel` + nested column headers; designer UI is a separate demo
+- [**Enterprise feature pack**](../enterprise/README.md) - landing page for the paid add-on; what's in it + how to license it
+- [Data export and printing - Enterprise](./export.md) - Excel, PDF, CSV, TSV, HTML, and Print
+- [Data import - Enterprise](./import.md) - Excel, CSV, TSV, and JSON import with column mapping + validation
+- [AI assistant - Enterprise](./ai.md) - natural-language filter, smart fill, summarise, classify; bring-your-own model adapter
+- [Pivot tables - Enterprise](./pivot.md) - `createPivotModel` + nested column headers; designer UI is a separate demo
 - **Migrating to SvGrid** - column / API translation guides from other grids:
   [AG Grid](./migrating-from-ag-grid.md) ·
   [TanStack Table](./migrating-from-tanstack-table.md) ·
@@ -71,7 +71,7 @@ real-world scale:
 - [Performance benchmarks](./benchmarks.md) - first paint, sustained scroll FPS, sort / filter / group, memory, bundle size, on a documented machine
 - [Testing your grid](./testing.md) - unit tests against the engine, jsdom component tests, Playwright e2e, axe-core for a11y regressions
 - [API stability & semver policy](./api-stability.md) - the promise we make to you about breaking changes + deprecation lifecycle
-- [**API reference**](../reference/index.md) - exhaustive prop/method/type tables for `<SvGrid>`, `SvGridApi`, `ColumnDef`, features, and the Pro surface
+- [**API reference**](../reference/index.md) - exhaustive prop/method/type tables for `<SvGrid>`, `SvGridApi`, `ColumnDef`, features, and the Enterprise surface
 - [API stability badges](./api-reference.md) - flat index of every Stable export with its tier badge
 - [Changelog](../changelog.md) - reverse-chronological log of every shipped change
 - [Error reference](./errors.md) - every typed error this surface throws, with the trigger and the fix

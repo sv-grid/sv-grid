@@ -68,7 +68,7 @@
           <a class="hover:text-[color:var(--site-accent)]" href="https://github.com/sv-grid/sv-grid" target="_blank" rel="noopener noreferrer">GitHub</a>
         </li>
         <li>
-          <a class="hover:text-[color:var(--site-accent)]" href="https://www.npmjs.com/package/sv-grid-core" target="_blank" rel="noopener noreferrer">npm</a>
+          <a class="hover:text-[color:var(--site-accent)]" href="https://www.npmjs.com/package/@svgrid/grid" target="_blank" rel="noopener noreferrer">npm</a>
         </li>
         <li>
           <a class="hover:text-[color:var(--site-accent)]" href="https://github.com/sv-grid/sv-grid/issues" target="_blank" rel="noopener noreferrer">Issues</a>
@@ -87,7 +87,7 @@
     class="border-t py-6 px-4 flex flex-wrap items-center justify-between gap-3 text-xs"
     style="border-color: var(--sg-border); color: var(--site-muted);"
   >
-    <span>© {new Date().getFullYear()} jQWidgets. sv-grid-core is MIT-licensed; sv-grid-pro is a paid companion package.</span>
+    <span>© {new Date().getFullYear()} jQWidgets. @svgrid/grid is MIT-licensed; @svgrid/enterprise is a paid companion package.</span>
 
     <span class="flex items-center gap-3">
       <a

@@ -13,7 +13,7 @@ author: Boyko Markov
 
 ### SvGrid
 
-A native Svelte 5 data grid: a headless core (`createSvGrid`) plus a full `<SvGrid>` render component, built on runes. Sorting, Excel-style filtering, grouping, virtualization (100k+ rows), inline editing, tree and master-detail, and server-side data. MIT-licensed core; an optional Pro pack adds export, import, print, pivot, and AI.
+A native Svelte 5 data grid: a headless core (`createSvGrid`) plus a full `<SvGrid>` render component, built on runes. Sorting, Excel-style filtering, grouping, virtualization (100k+ rows), inline editing, tree and master-detail, and server-side data. MIT-licensed core; an optional Enterprise pack adds export, import, print, pivot, and AI.
 
 **Choose it when** you are on Svelte 5 and want a complete, accessible grid that feels native, with an escape hatch to the headless core for custom layouts.
 
@@ -61,4 +61,4 @@ It depends on your needs. For a native Svelte 5 experience with a complete featu
 
 ### Is there a free Svelte data grid?
 
-Yes. SvGrid's Community core is MIT-licensed and free for commercial use, and TanStack Table and svelte-headless-table are open source. Paid tiers (such as SvGrid Pro or AG Grid Enterprise) add advanced features like export and pivot.
+Yes. SvGrid's Community core is MIT-licensed and free for commercial use, and TanStack Table and svelte-headless-table are open source. Paid tiers (such as SvGrid Enterprise or AG Grid Enterprise) add advanced features like export and pivot.

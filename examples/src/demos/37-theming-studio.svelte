@@ -30,7 +30,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   // ---- Domain (small + visual so the theming is what's loud) ----------
 

@@ -25,8 +25,8 @@
     "postcss": "^8.5.12",
     "svelte": "^5.55.5",
     "svelte-check": "^4.4.6",
-    "sv-grid-core": "workspace:*",
-    "sv-grid-pro": "workspace:*",
+    "@svgrid/grid": "workspace:*",
+    "@svgrid/enterprise": "workspace:*",
     "tailwindcss": "^4.2.4",
     "typescript": "6.0.3",
     "vite": "^8.0.10"

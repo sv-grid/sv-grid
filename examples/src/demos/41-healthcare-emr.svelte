@@ -29,7 +29,7 @@
     renderSnippet,
     type ColumnDef,
     type CellContext,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
 
   // ---- Domain ---------------------------------------------------------
 

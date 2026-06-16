@@ -5,15 +5,15 @@ _Generated from the published TypeScript sources. Do not edit by hand - rerun `n
 For the hand-curated reference (with defaults + behaviour tables),
 see [the main reference index](../index.md).
 
-## sv-grid-core
+## @svgrid/grid
 
-- [`sv-grid-core/core.ts`](./sv-grid-core-core.md) - 48 exports
-- [`sv-grid-core/svgrid-wrapper.types.ts`](./sv-grid-core-svgrid-wrapper.types.md) - 6 exports
+- [`@svgrid/grid/core.ts`](./svgrid-grid-core.md) - 48 exports
+- [`@svgrid/grid/svgrid-wrapper.types.ts`](./svgrid-grid-svgrid-wrapper.types.md) - 6 exports
 
-## sv-grid-pro
+## @svgrid/enterprise
 
-- [`sv-grid-pro/export.ts`](./sv-grid-pro-export.md) - 7 exports
-- [`sv-grid-pro/pivot.ts`](./sv-grid-pro-pivot.md) - 10 exports
-- [`sv-grid-pro/import.ts`](./sv-grid-pro-import.md) - 8 exports
-- [`sv-grid-pro/ai.ts`](./sv-grid-pro-ai.md) - 19 exports
-- [`sv-grid-pro/install.ts`](./sv-grid-pro-install.md) - 4 exports
+- [`@svgrid/enterprise/export.ts`](./svgrid-enterprise-export.md) - 7 exports
+- [`@svgrid/enterprise/pivot.ts`](./svgrid-enterprise-pivot.md) - 10 exports
+- [`@svgrid/enterprise/import.ts`](./svgrid-enterprise-import.md) - 8 exports
+- [`@svgrid/enterprise/ai.ts`](./svgrid-enterprise-ai.md) - 19 exports
+- [`@svgrid/enterprise/install.ts`](./svgrid-enterprise-install.md) - 4 exports

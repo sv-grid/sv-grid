@@ -25,14 +25,14 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
-  import { installPro, setLicenseKey, type ProGridApi } from 'sv-grid-pro'
+  } from '@svgrid/grid'
+  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
   import { makeOrders, makePeople, type Order, type Person } from '../shared/seed'
 
   // Dev license so the Pro export buttons work inside the demo without a
   // real customer key. Removes the watermark and surfaces a one-time
   // dev-license console notice.
-  setLicenseKey('SVPRO-DEV-ADMIN-DEMO')
+  setLicenseKey('SVENTERPRISE-DEV-ADMIN-DEMO')
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -252,13 +252,13 @@
   ]
 
   // ------ Orders page state -------------------------------------------
-  let ordersApi = $state<ProGridApi<typeof features, Order> | null>(null)
+  let ordersApi = $state<EnterpriseGridApi<typeof features, Order> | null>(null)
   let exportBusy = $state<string | null>(null)
   let exportMsg = $state<string>('')
   let exportErr = $state<string | null>(null)
 
   function onOrdersReady(next: SvGridApi<typeof features, Order>) {
-    ordersApi = installPro(next)
+    ordersApi = installEnterprise(next)
   }
 
   async function runExport(label: string, fn: () => Promise<void>) {
@@ -473,7 +473,7 @@
         {/each}
       </nav>
       <div class="sg-foot">
-        Powered by <strong>sv-grid</strong> + <strong>sv-grid-pro</strong>
+        Powered by <strong>sv-grid</strong> + <strong>@svgrid/enterprise</strong>
       </div>
     </aside>
 

@@ -40,7 +40,7 @@
     renderSnippet,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { createPrng } from '../shared/mock-api'
 
   // ---- Domain model ----------------------------------------------------

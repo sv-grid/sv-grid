@@ -1,9 +1,9 @@
 <script lang="ts">
-  // Interactive demo for the Pro Export / Print features. The heavy spreadsheet
-  // / PDF writers are NOT in the page bundle: the whole sv-grid-pro module is
+  // Interactive demo for the Enterprise Export / Print features. The heavy spreadsheet
+  // / PDF writers are NOT in the page bundle: the whole @svgrid/enterprise module is
   // dynamically imported the first time you click a button, so the weight only
   // lands when a user actually exports. Uses the standalone exportGrid /
-  // printGrid (not installPro) so the page stays watermark-free.
+  // printGrid (not installEnterprise) so the page stays watermark-free.
   import {
     SvGrid,
     tableFeatures,
@@ -11,7 +11,7 @@
     columnFilteringFeature,
     type ColumnDef,
     type SvGridApi,
-  } from 'sv-grid-core'
+  } from '@svgrid/grid'
   import { makeOrders, type Order } from './seed'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
@@ -34,7 +34,7 @@
     busy = true
     status = `Loading exporter for .${format} ...`
     try {
-      const { exportGrid } = await import('sv-grid-pro')
+      const { exportGrid } = await import('@svgrid/enterprise')
       await exportGrid(api, {
         format,
         filename: 'orders',
@@ -58,7 +58,7 @@
     busy = true
     status = 'Loading print view ...'
     try {
-      const { printGrid } = await import('sv-grid-pro')
+      const { printGrid } = await import('@svgrid/enterprise')
       await printGrid(api, { title: 'Orders', columns: exportColumns, orientation: 'landscape' })
       status = 'Opened the browser print dialog.'
     } catch (e) {

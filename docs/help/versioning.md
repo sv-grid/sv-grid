@@ -52,8 +52,8 @@ Per [api-stability](./api-stability.md):
   after the next-major ships
 - Older majors are unsupported
 
-Enterprise Pro customers may extend LTS - see
-[Pro support](../pro/support.md).
+Enterprise Enterprise customers may extend LTS - see
+[Enterprise support](../enterprise/support.md).
 
 ## Why we don't ship every version separately
 
