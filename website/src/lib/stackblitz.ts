@@ -102,10 +102,14 @@ function buildFiles(demo: Demo, source: string): Record<string, string> {
     scripts: { start: 'vite', dev: 'vite', build: 'vite build', preview: 'vite preview' },
     dependencies: detectDependencies([source, ...shared.sources].join('\n')),
     devDependencies: {
-      '@sveltejs/vite-plugin-svelte': '^7.0.0',
+      // Pinned to Rollup-based Vite 7, NOT the workspace's Vite 8. StackBlitz's
+      // WebContainer cannot run Vite 8's native Rolldown bundler, so it falls
+      // back to a wasm build that crashes ("Invalid atomic access index").
+      // vite-plugin-svelte 6 supports Vite 7.
+      '@sveltejs/vite-plugin-svelte': '^6.0.0',
       svelte: '^5.55.5',
       typescript: '6.0.3',
-      vite: '^8.0.10',
+      vite: '^7.0.0',
     },
   }
 
@@ -390,10 +394,14 @@ function buildSnippetFiles(snippet: ApiSnippet): Record<string, string> {
     scripts: { start: 'vite', dev: 'vite', build: 'vite build', preview: 'vite preview' },
     dependencies: detectDependencies(source),
     devDependencies: {
-      '@sveltejs/vite-plugin-svelte': '^7.0.0',
+      // Pinned to Rollup-based Vite 7, NOT the workspace's Vite 8. StackBlitz's
+      // WebContainer cannot run Vite 8's native Rolldown bundler, so it falls
+      // back to a wasm build that crashes ("Invalid atomic access index").
+      // vite-plugin-svelte 6 supports Vite 7.
+      '@sveltejs/vite-plugin-svelte': '^6.0.0',
       svelte: '^5.55.5',
       typescript: '6.0.3',
-      vite: '^8.0.10',
+      vite: '^7.0.0',
     },
   }
   const indexHtml = `<!doctype html>
