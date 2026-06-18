@@ -7,7 +7,7 @@ tags: svelte 5, reactivity, story, background
 author: Boyko Markov
 ---
 
-Svelte 5 shipped in late 2024 with runes - a release that quietly rewrote how reactivity works in Svelte. If you build data-heavy UI for a living, as we do, it is hard to overstate how significant that was.
+Svelte 5 shipped in late 2024 with runes, a release that rewrote how reactivity works in Svelte. If you build data-heavy UI for a living, as we do, it is hard to overstate how significant that was.
 
 This is where the SvGrid story starts: the runtime that made us want to build a new data grid from scratch. It begins with what runes changed.
 
@@ -19,7 +19,7 @@ Svelte 5 introduces runes: explicit, signal-based reactivity primitives.
 - `$derived` computes a value that updates only when the specific state it reads changes.
 - `$effect` runs side effects when its dependencies change.
 
-Earlier versions of Svelte leaned on compiler magic and a `let`-is-reactive convention that was elegant for small components but got fuzzy at scale. Runes make the data flow explicit and, crucially, fine-grained. A derived value recomputes when its inputs change - and not otherwise.
+Earlier versions of Svelte leaned on compiler magic and a `let`-is-reactive convention that was elegant for small components but got fuzzy at scale. Runes make the data flow explicit and, crucially, fine-grained. A derived value recomputes when its inputs change, and not otherwise.
 
 ## Why a grid cares more than most components
 
@@ -36,22 +36,12 @@ Typing in the filter recomputes `visible`. Editing a cell the filter never reads
 
 ## A decade of waiting for this
 
-We have built data grids since 2011 - jqxGrid in the jQuery era, the Smart UI web components after that. Across all of it, one truth held: a grid is only ever as fast and as natural as the reactivity model underneath it. jQuery gave us imperative DOM. The component era gave us virtual DOM and re-render discipline. Both worked, both had ceilings.
+We have built data grids since 2011, jqxGrid in the jQuery era, the Smart UI web components after that. Across all of it, one truth held: a grid is only ever as fast and as natural as the reactivity model underneath it. jQuery gave us imperative DOM. The component era gave us virtual DOM and re-render discipline. Both worked, both had ceilings.
 
 Signals are different. They are the model a grid has wanted all along.
 
 ## What comes next
 
-Reading the Svelte 5 release notes, the question almost asked itself: if this is finally the right foundation, who is going to build the grid that uses it natively - not a port, not an adapter over a store, but a grid written in runes from the first line?
+Reading the Svelte 5 release notes, the question almost asked itself: if this is finally the right foundation, who is going to build the grid that uses it natively, not a port, not an adapter over a store, but a grid written in runes from the first line?
 
-We had some thoughts about that, and acted on them. Read next: [The Idea - a data grid built for Svelte 5](the-idea-a-native-svelte-grid).
-
-## Frequently asked questions
-
-### What are runes in Svelte 5?
-
-Runes are Svelte 5's reactivity primitives - `$state`, `$derived`, and `$effect` - that make data flow explicit and fine-grained, so derived values and effects update only when the specific state they depend on changes.
-
-### Why do runes matter for a data grid specifically?
-
-A grid must repaint only the cells that change among tens of thousands. Signal-based reactivity does that surgically by default, which is exactly what high cell counts demand - making Svelte 5 an ideal foundation for a grid.
+We had some thoughts about that, and acted on them. Read next: [The Idea, a data grid built for Svelte 5](the-idea-a-native-svelte-grid).

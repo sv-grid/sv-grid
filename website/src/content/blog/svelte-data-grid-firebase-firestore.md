@@ -7,7 +7,7 @@ tags: firebase, firestore, realtime, integration, svelte data grid
 author: Kamelia M
 ---
 
-Firestore's real-time listeners make it a natural fit for a live data grid: subscribe to a query and the grid updates as documents change. Here is how to wire SvGrid to Firestore with live updates and pagination.
+Firestore's real-time listeners are the feature that makes it click with a data grid: subscribe to a query once and the grid just keeps up as documents change underneath it.
 
 ## Live rows with onSnapshot
 
@@ -47,7 +47,7 @@ Remember Firestore's constraints: range filters and ordering have indexing rules
 
 ## Pagination
 
-Firestore uses cursor pagination via `startAfter(lastDoc)`. Track the last document of each page and request the next slice. See [pagination patterns](pagination-patterns) for cursor vs offset trade-offs - Firestore is cursor-only by design.
+Firestore uses cursor pagination via `startAfter(lastDoc)`. Track the last document of each page and request the next slice. See [pagination patterns](pagination-patterns) for cursor vs offset trade-offs, Firestore is cursor-only by design.
 
 ## Flash on change
 

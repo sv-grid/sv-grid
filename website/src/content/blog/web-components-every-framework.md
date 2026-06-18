@@ -32,7 +32,7 @@ Cross-framework freedom comes with a few sharp edges. They are all manageable on
 - **Events.** Custom elements emit DOM `CustomEvent`s. Frameworks with their own synthetic event systems sometimes need a thin binding to listen, though this has improved a lot.
 - **Framework bindings.** React historically passed everything as attributes; modern React (19+) handles properties and custom events far better. Vue and Angular have long had clean property and event binding for custom elements.
 
-None of these are dealbreakers - they are just the contract of crossing the framework boundary.
+None of these are dealbreakers, they are just the contract of crossing the framework boundary.
 
 ## When cross-framework is the right call
 
@@ -42,7 +42,7 @@ Reach for Web Components when:
 - You need a component to outlive a framework migration.
 - You are embedding UI into third-party pages you do not control.
 
-This is exactly why the team behind SvGrid also ships Smart UI as web components on [htmlelements.com](https://www.htmlelements.com) - one grid that drops into React, Angular, Vue, or plain HTML.
+This is exactly why the team behind SvGrid also ships Smart UI as web components on [htmlelements.com](https://www.htmlelements.com), one grid that drops into React, Angular, Vue, or plain HTML.
 
 ## When native beats cross-framework
 
@@ -64,4 +64,4 @@ Yes. Custom elements are part of the browser platform, so any framework that ren
 
 ### Should I use a Web Component or a native framework component?
 
-Use a native component when you are committed to one framework - it is smaller and more ergonomic. Use a Web Component when you ship across multiple frameworks or need to survive a framework migration.
+Use a native component when you are committed to one framework, it is smaller and more ergonomic. Use a Web Component when you ship across multiple frameworks or need to survive a framework migration.

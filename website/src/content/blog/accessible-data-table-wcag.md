@@ -28,17 +28,17 @@ If it works only with a mouse, it is not accessible. An accessible grid supports
 - Arrow keys to move the active cell.
 - Home/End and Ctrl+Home/Ctrl+End for row and grid edges.
 - A single tab stop into the grid (roving tabindex), so keyboard users are not trapped tabbing through thousands of cells.
-- Enter/F2 to edit, Escape to cancel - matching spreadsheet conventions users already know.
+- Enter/F2 to edit, Escape to cancel, matching spreadsheet conventions users already know.
 
 ## The WCAG criteria that apply
 
 The ones a table most often touches:
 
-- **1.3.1 Info and Relationships** - structure conveyed programmatically (proper headers and scope).
-- **1.4.3 Contrast** - text and UI contrast against the background.
-- **2.1.1 Keyboard** - all functionality available from the keyboard.
-- **2.4.7 Focus Visible** - a clear focus indicator on the active cell.
-- **4.1.2 Name, Role, Value** - controls (sort buttons, checkboxes, editors) expose their role and state.
+- **1.3.1 Info and Relationships**: structure conveyed programmatically (proper headers and scope).
+- **1.4.3 Contrast**: text and UI contrast against the background.
+- **2.1.1 Keyboard**: all functionality available from the keyboard.
+- **2.4.7 Focus Visible**: a clear focus indicator on the active cell.
+- **4.1.2 Name, Role, Value**: controls (sort buttons, checkboxes, editors) expose their role and state.
 
 ## Common mistakes
 
@@ -50,7 +50,7 @@ The ones a table most often touches:
 
 ## Accessibility cannot be retrofitted
 
-The hard truth: a grid built without focus management and semantic roles cannot be patched into an accessible one - the assumptions are wrong throughout, and you rebuild. That is why it should be a default, not a setting.
+The hard truth: a grid built without focus management and semantic roles cannot be patched into an accessible one, the assumptions are wrong throughout, and you rebuild. That is why it should be a default, not a setting.
 
 SvGrid renders the WAI-ARIA grid pattern and full keyboard navigation from the first render, and preserves focus across virtualized row recycling. The practical guide is [Keyboard Navigation and Accessibility](keyboard-navigation-and-accessibility). For custom cells, the rule is simple: use real interactive elements and label icon-only controls.
 
@@ -58,8 +58,8 @@ SvGrid renders the WAI-ARIA grid pattern and full keyboard navigation from the f
 
 ### What makes a data table accessible?
 
-Semantic markup (or the WAI-ARIA grid pattern for interactive grids), full keyboard navigation with a visible focus indicator, programmatic header relationships, sufficient contrast, and controls that expose their name, role, and value - aligning with WCAG criteria like 1.3.1, 2.1.1, and 2.4.7.
+Semantic markup (or the WAI-ARIA grid pattern for interactive grids), full keyboard navigation with a visible focus indicator, programmatic header relationships, sufficient contrast, and controls that expose their name, role, and value, aligning with WCAG criteria like 1.3.1, 2.1.1, and 2.4.7.
 
 ### Can I add accessibility to a data grid later?
 
-Not really. Focus management and semantic roles shape the architecture, so a grid built without them must be rebuilt rather than patched. Choose a grid that ships accessibility as a default - SvGrid renders ARIA grid roles and keyboard navigation from the first render.
+Not really. Focus management and semantic roles shape the architecture, so a grid built without them must be rebuilt rather than patched. Choose a grid that ships accessibility as a default, SvGrid renders ARIA grid roles and keyboard navigation from the first render.

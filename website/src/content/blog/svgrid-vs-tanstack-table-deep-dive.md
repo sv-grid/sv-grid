@@ -7,7 +7,7 @@ tags: comparison, tanstack table, svelte data grid, headless
 author: Kamelia M
 ---
 
-SvGrid and TanStack Table are the two serious "headless" options for Svelte, and they are the most common head-to-head. They share DNA but make different bets. Here is an honest, detailed comparison.
+SvGrid and TanStack Table are the two serious "headless" options for Svelte, and they are the most common head-to-head. They share DNA but make different bets.
 
 ## The shared ground
 
@@ -15,9 +15,9 @@ Both are headless-first: a row-model pipeline (filter, sort, group, paginate, ex
 
 ## Where they diverge
 
-**Reactivity.** TanStack Table is framework-agnostic; its Svelte adapter bridges the engine through stores and the `$store` contract. SvGrid is written natively on Svelte 5 runes - state is `$state`, derived rows are `$derived`, no adapter layer. In a Svelte app, native means less ceremony and fewer abstractions; across frameworks, agnostic means one mental model everywhere.
+**Reactivity.** TanStack Table is framework-agnostic; its Svelte adapter bridges the engine through stores and the `$store` contract. SvGrid is written natively on Svelte 5 runes, state is `$state`, derived rows are `$derived`, no adapter layer. In a Svelte app, native means less ceremony and fewer abstractions; across frameworks, agnostic means one mental model everywhere.
 
-**Rendering.** TanStack Table is purely headless - you build all the markup. SvGrid ships *both* a headless core (`createSvGrid`) and a full render component (`<SvGrid>`) with virtualization, Excel-style filters, inline editing, and selection already built. With TanStack you assemble those yourself (or add libraries).
+**Rendering.** TanStack Table is purely headless, you build all the markup. SvGrid ships *both* a headless core (`createSvGrid`) and a full render component (`<SvGrid>`) with virtualization, Excel-style filters, inline editing, and selection already built. With TanStack you assemble those yourself (or add libraries).
 
 **Batteries.** Virtualization, range selection, and a filter UI are out-of-the-box in SvGrid's component; in TanStack they are your job (often paired with TanStack Virtual and custom UI).
 
@@ -44,7 +44,7 @@ Both are good. The decision is mostly "do I want to build the UI?" and "is cross
 
 ### What is the main difference between SvGrid and TanStack Table?
 
-TanStack Table is a framework-agnostic headless engine - you build all the markup, and in Svelte it works through a store-based adapter. SvGrid is native to Svelte 5 runes and ships both a headless core and a full render component, so the UI (virtualization, filters, editing) is built for you.
+TanStack Table is a framework-agnostic headless engine, you build all the markup, and in Svelte it works through a store-based adapter. SvGrid is native to Svelte 5 runes and ships both a headless core and a full render component, so the UI (virtualization, filters, editing) is built for you.
 
 ### Should I use SvGrid or TanStack Table for a Svelte app?
 

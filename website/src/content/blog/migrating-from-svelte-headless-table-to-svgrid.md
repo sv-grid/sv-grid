@@ -7,7 +7,7 @@ tags: migration, svelte-headless-table, comparison, svelte data grid
 author: Victor Vidolov
 ---
 
-svelte-headless-table is a Svelte-native headless table built on stores and a plugin system. If you are moving to SvGrid, you gain a Svelte-5 runes data flow, a ready-made render component, and built-in virtualization. Here is the mapping.
+svelte-headless-table did Svelte-native headless tables right for the store era, plugins, a clean view model, the works. Moving to SvGrid swaps the stores-and-`<Subscribe>` model for runes, and throws in a ready-made render component and virtualization you would otherwise build yourself.
 
 ## Concept mapping
 
@@ -51,20 +51,10 @@ const features = tableFeatures({
 
 ## Stores to runes, Subscribe to markup
 
-svelte-headless-table renders via `<Subscribe>` and header/cell stores. With SvGrid you either let `<SvGrid>` render the table, or use `createSvGrid` and read its reactive row model directly - no `.subscribe` ceremony, because runes are reactive by default.
+svelte-headless-table renders via `<Subscribe>` and header/cell stores. With SvGrid you either let `<SvGrid>` render the table, or use `createSvGrid` and read its reactive row model directly, no `.subscribe` ceremony, because runes are reactive by default.
 
 ## What you gain
 
 - Built-in row and column virtualization for large datasets.
 - A complete render component with Excel-style filters, inline editing, and selection if you want them.
 - Svelte 5 runes throughout.
-
-## Frequently asked questions
-
-### Is SvGrid a drop-in for svelte-headless-table?
-
-Not literally, but the concepts map directly: columns, plugins-to-features, and a headless core. The main change is moving from stores and `<Subscribe>` to Svelte 5 runes, plus the option to use a ready-made render component.
-
-### Does SvGrid have a plugin system like svelte-headless-table?
-
-It has a feature system - `tableFeatures({ ... })` - where you register only the capabilities you use (sorting, filtering, pagination, grouping, selection, expansion), which keeps the bundle small.

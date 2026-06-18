@@ -7,7 +7,7 @@ tags: astro, islands, svelte, integration, svelte data grid
 author: Victor Vidolov
 ---
 
-Astro's islands architecture lets you ship mostly static HTML with small interactive components hydrated on demand. A data grid is a perfect island: the page stays fast, and only the grid becomes interactive. Here is how to use SvGrid in Astro.
+Astro's whole idea is shipping mostly static HTML and hydrating a few interactive bits on demand, and a data grid is the textbook island. The page stays cheap and fast; only the grid wakes up.
 
 ## Set up the Svelte integration
 
@@ -44,9 +44,9 @@ const people = await fetch(`${import.meta.env.API}/people`).then(r => r.json())
 
 ## Choosing a hydration directive
 
-- `client:load` - hydrate immediately. Use when the grid is above the fold and central to the page.
-- `client:visible` - hydrate when scrolled into view. Great for a grid lower on a long page.
-- `client:idle` - hydrate when the browser is idle.
+- `client:load`, hydrate immediately. Use when the grid is above the fold and central to the page.
+- `client:visible`, hydrate when scrolled into view. Great for a grid lower on a long page.
+- `client:idle`, hydrate when the browser is idle.
 
 Fetch the data in the Astro frontmatter (server-side) and pass it as props so the first paint is fast and SEO-friendly; the island hydrates into a fully interactive grid.
 
@@ -62,4 +62,4 @@ Add the Svelte integration (`npx astro add svelte`), put SvGrid in a `.svelte` c
 
 ### Which Astro hydration directive should I use for a grid?
 
-Use `client:load` for a grid that is central and above the fold, or `client:visible` to defer hydration until the grid scrolls into view - ideal for keeping a long, mostly static page fast.
+Use `client:load` for a grid that is central and above the fold, or `client:visible` to defer hydration until the grid scrolls into view, ideal for keeping a long, mostly static page fast.

@@ -7,7 +7,7 @@ tags: svelte 5, bindable, props, components, engineering
 author: Kamelia M
 ---
 
-`$bindable` is Svelte 5's way to opt a prop into two-way binding. It is exactly what you want for the small controls around a data grid - a search box, a page-size selector, a density toggle - where parent and child should share one value. Here is how to use it well.
+`$bindable` is how you opt a prop into two-way binding in Svelte 5, and it is perfect for the little controls that ring a data grid - the search box, the page-size dropdown, the density toggle - where parent and child want to share one value. Here is how to use it without it turning into spaghetti.
 
 ## What $bindable does
 

@@ -7,7 +7,7 @@ tags: laravel, inertia, server-side, integration, svelte data grid
 author: Kamelia M
 ---
 
-Inertia.js lets a Laravel backend drive Svelte pages without building a separate API. SvGrid fits naturally: Laravel's paginator produces exactly the page and total a grid needs, and Inertia's partial reloads keep navigation snappy. Here is the setup.
+Inertia.js is the trick that lets a Laravel backend drive Svelte pages without you standing up a separate API, and SvGrid slots right in. Laravel's paginator already returns the page and total a grid wants, and Inertia's partial reloads keep sorting and paging snappy.
 
 ## Laravel controller
 
@@ -65,7 +65,3 @@ Read the paginator from props and feed SvGrid; drive navigation with Inertia vis
 ### How do I use SvGrid with Laravel and Inertia?
 
 Return a Laravel paginator as an Inertia page prop, bind its `data` to SvGrid and `total` to `rowCount`, and trigger Inertia partial reloads (`only: ['people']`) in the grid's sort and pagination callbacks.
-
-### How do I avoid full page reloads when paging?
-
-Use Inertia's partial reloads with `only: ['people']` and `preserveState`/`preserveScroll`, so only the grid's data prop is refetched when the user sorts or changes pages.

@@ -7,7 +7,7 @@ tags: header menu, columns, customization, recipe, svelte data grid
 author: Boyko Markov
 ---
 
-A column header menu gives users a tidy place to sort, hide, pin, or run column-specific actions. SvGrid lets a column render a custom `header`, so you can drop your own menu button into any header. Here is the pattern.
+Once a grid has more than a few columns, people want a per-column menu - sort this, hide that, pin the other - instead of a row of scattered controls. SvGrid lets any column render a custom `header`, so dropping your own menu button into one is straightforward. Here is the pattern, kept accessible.
 
 ## A header snippet with a menu button
 
@@ -28,10 +28,10 @@ A column's `header` accepts a snippet, so render the label plus a menu trigger:
 
 Wire the menu items to grid state and your own column model:
 
-- **Sort asc/desc** - set the grid's `sorting` state for that column.
-- **Hide column** - flip a visibility flag and rebuild the `columns` array (see [column visibility toggle](column-visibility-toggle)).
-- **Pin left/right** - set `pinned` on the column (see [pinned columns](pinned-frozen-columns)).
-- **Custom** - "Filter by this", "Copy column", "Group by this".
+- **Sort asc/desc**: set the grid's `sorting` state for that column.
+- **Hide column**: flip a visibility flag and rebuild the `columns` array (see [column visibility toggle](column-visibility-toggle)).
+- **Pin left/right**: set `pinned` on the column (see [pinned columns](pinned-frozen-columns)).
+- **Custom**: "Filter by this", "Copy column", "Group by this".
 
 ```ts
 function openMenu(columnId: string, e: MouseEvent) {
@@ -43,14 +43,4 @@ Render your dropdown (a positioned `<div>`, or a component from your UI kit) fro
 
 ## Keep it accessible
 
-Use a real `<button>` for the trigger, give it an `aria-label` ("Column options"), and make the menu keyboard-navigable (Arrow keys, Escape to close, focus return to the button). An inaccessible header menu undoes the grid's built-in accessibility - see [accessibility](keyboard-navigation-and-accessibility).
-
-## Frequently asked questions
-
-### How do I add a menu to a column header in SvGrid?
-
-Render the column's `header` as a snippet that includes a menu button, and open your own dropdown on click. Wire its items to grid state - sorting, a visibility flag, the column's `pinned` option, or custom actions.
-
-### How do I keep a header menu accessible?
-
-Use a real `<button>` trigger with an `aria-label`, make the menu operable by keyboard (arrow keys and Escape), and return focus to the trigger on close, so it does not break the grid's keyboard navigation.
+Use a real `<button>` for the trigger, give it an `aria-label` ("Column options"), and make the menu keyboard-navigable (Arrow keys, Escape to close, focus return to the button). An inaccessible header menu undoes the grid's built-in accessibility, see [accessibility](keyboard-navigation-and-accessibility).

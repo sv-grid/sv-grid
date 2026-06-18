@@ -7,22 +7,22 @@ tags: tasks, project management, grouping, use case, svelte data grid
 author: Victor Vidolov
 ---
 
-Not every task tool needs a Kanban board - a grid view is often faster for triage, bulk edits, and seeing everything at once. Here is a blueprint for a task/project grid with SvGrid.
+Not every task tool needs a Kanban board, a grid view is often faster for triage, bulk edits, and seeing everything at once.
 
 ![A work-breakdown project tree in SvGrid](/blog-media/wbs-tree.png)
 *A project breakdown as tree rows in SvGrid.*
 
 ## The columns
 
-- **Task** - title, often with a subtask indent (see tree rows below).
-- **Assignee** - an [avatar cell](avatar-and-image-cells) or [autocomplete editor](autocomplete-cell-editor).
-- **Status** - a [badge](status-badge-cells) plus an [editable dropdown](editable-select-dropdown-cell) (Todo, In progress, Done).
-- **Priority** - a colored badge.
-- **Due date** - a [date editor](date-picker-cell-editor); flag overdue with [row styling](conditional-row-styling).
+- **Task**: title, often with a subtask indent (see tree rows below).
+- **Assignee**: an [avatar cell](avatar-and-image-cells) or [autocomplete editor](autocomplete-cell-editor).
+- **Status**: a [badge](status-badge-cells) plus an [editable dropdown](editable-select-dropdown-cell) (Todo, In progress, Done).
+- **Priority**: a colored badge.
+- **Due date**: a [date editor](date-picker-cell-editor); flag overdue with [row styling](conditional-row-styling).
 
 ## Group by what matters
 
-The grid view's superpower is grouping. [Group by status](grouping-and-aggregation) for a board-like view, by assignee for workload, or by sprint - each with a count per group. Let users switch the grouping; it is the fastest way to reframe the same data.
+The grid view's superpower is grouping. [Group by status](grouping-and-aggregation) for a board-like view, by assignee for workload, or by sprint, each with a count per group. Let users switch the grouping; it is the fastest way to reframe the same data.
 
 ## Subtasks via tree rows
 
@@ -41,7 +41,3 @@ If teammates edit concurrently, push [live updates](realtime-websocket-updates) 
 ### How do I build a task management grid in Svelte?
 
 Use SvGrid with grouping (by status, assignee, or sprint) for a board-like view, tree rows for subtasks, inline editing for status and dates, and bulk operations for fast triage. Saved views and URL sync make personal task views shareable.
-
-### Grid view or Kanban board for tasks?
-
-A grid is often faster for triage, bulk edits, and seeing everything at once, while Kanban suits visual flow. With grouping by status, a grid gives you a board-like view plus the editing and bulk-action power of a table.

@@ -7,7 +7,7 @@ tags: performance, realtime, throttle, animation frame, recipe
 author: Boyko Markov
 ---
 
-A live feed - prices, sensors, logs - can push updates faster than the screen refreshes. Rendering on every message is wasted work: the display only repaints about 60 times a second. Batching updates to the animation frame is the single most effective fix for a janky real-time grid. Here is the pattern.
+A live feed - prices, sensors, logs - cheerfully pushes updates faster than the screen can possibly show them. Rendering on every message is just wasted work, since the display only repaints about 60 times a second. Batching updates to the animation frame is the single biggest fix for a stuttering real-time grid, and it is not much code.
 
 ## The problem
 
@@ -36,7 +36,7 @@ function flush() {
 }
 ```
 
-Keying the buffer by row id means if a row updates ten times between frames, you apply only the latest - coalescing for free.
+Keying the buffer by row id means if a row updates ten times between frames, you apply only the latest, coalescing for free.
 
 ## Apply in place by identity
 
@@ -54,13 +54,3 @@ A `Map` from id to index keeps each lookup O(1). See [stable row identity](stabl
 ## The result
 
 You now paint at most once per frame regardless of feed rate. Combined with virtualization (only visible rows in the DOM) and fine-grained reactivity (only changed cells repaint), a six-figure-row live grid stays smooth.
-
-## Frequently asked questions
-
-### How do I keep a real-time data grid from stuttering?
-
-Buffer incoming updates and flush them once per animation frame with `requestAnimationFrame`, keyed by row id so repeated updates to a row coalesce. You then paint at most once per frame no matter how fast the feed runs.
-
-### Why batch by row id instead of a queue?
-
-Keying the buffer by row id automatically coalesces multiple updates to the same row between frames into one, so you apply only the latest value - less work and no visual flicker from intermediate states.

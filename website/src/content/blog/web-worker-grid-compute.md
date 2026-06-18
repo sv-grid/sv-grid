@@ -7,7 +7,7 @@ tags: performance, web worker, threading, recipe, svelte data grid
 author: Victor Vidolov
 ---
 
-Virtualization keeps rendering cheap, but some grid work is genuinely heavy: parsing a multi-megabyte file, aggregating hundreds of thousands of rows, or running a complex custom filter. Doing that on the main thread freezes the UI. A Web Worker moves it off-thread so the grid stays responsive. Here is when and how.
+Virtualization keeps rendering cheap, but some work is just heavy no matter what, parsing a multi-megabyte upload, aggregating hundreds of thousands of rows, running a gnarly custom filter. Do that on the main thread and the whole UI freezes mid-scroll. A Web Worker moves it off-thread so the grid stays alive. Here is when it is worth it, and how.
 
 ## When it is worth it
 
@@ -17,7 +17,7 @@ Reach for a worker when a computation blocks the main thread long enough to drop
 - Aggregating or grouping very large in-memory datasets.
 - Expensive custom transforms (geo, stats, joins) over many rows.
 
-For ordinary sorting and filtering, the engine and virtualization are fast enough - do not add a worker you do not need.
+For ordinary sorting and filtering, the engine and virtualization are fast enough, do not add a worker you do not need.
 
 ## The pattern
 
@@ -50,18 +50,8 @@ Posting data to and from a worker copies it (structured clone), which is not fre
 
 - Do enough work in the worker to justify the copy.
 - Consider transferable objects (ArrayBuffer) for very large numeric payloads.
-- Show a loading state while the worker runs - see [empty, loading, and error states](empty-loading-and-error-states-svelte-grid).
+- Show a loading state while the worker runs, see [empty, loading, and error states](empty-loading-and-error-states-svelte-grid).
 
 ## Keep the UI honest
 
-While the worker computes, the grid should show a non-blocking loading indicator, and the rest of the page stays interactive - which is the entire point. When the result returns, swap it into `data` and virtualization renders it instantly.
-
-## Frequently asked questions
-
-### When should I use a Web Worker with a data grid?
-
-When a computation - parsing a large file, aggregating hundreds of thousands of rows, a heavy custom transform - blocks the main thread enough to freeze the UI. Ordinary sorting and filtering do not need one; the engine and virtualization handle those.
-
-### What is the catch with Web Workers for grid data?
-
-Passing data in and out copies it (structured clone), which costs time for very large arrays. Do enough work in the worker to justify the transfer, consider transferable buffers for numeric data, and show a loading state while it runs.
+While the worker computes, the grid should show a non-blocking loading indicator, and the rest of the page stays interactive, which is the entire point. When the result returns, swap it into `data` and virtualization renders it instantly.

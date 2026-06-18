@@ -7,10 +7,10 @@ tags: virtualization, performance, large data, svelte data grid
 author: Victor Vidolov
 ---
 
-A naive table renders one DOM row per data row. At a few thousand rows the browser slows; at a hundred thousand it locks up. SvGrid solves this with built-in row and column virtualization - only the cells in the viewport exist in the DOM.
+A naive table renders one DOM row per data row. At a few thousand rows the browser slows; at a hundred thousand it locks up. SvGrid solves this with built-in row and column virtualization, only the cells in the viewport exist in the DOM.
 
 ![SvGrid virtualizing a large dataset](/blog-media/large-dataset.png)
-*A large dataset in SvGrid - only the visible rows exist in the DOM.*
+*A large dataset in SvGrid, only the visible rows exist in the DOM.*
 
 ## It is on when it needs to be
 
@@ -73,13 +73,13 @@ Overscan is the buffer of off-screen rows the grid keeps rendered just beyond th
 
 ## Measuring it yourself
 
-Do not take "it is fast" on faith - measure on the hardware your users actually have. A quick protocol:
+Do not take "it is fast" on faith, measure on the hardware your users actually have. A quick protocol:
 
 1. Open your browser's performance panel and record while scrolling the full height of the grid.
 2. Watch for long frames (over ~16ms) and layout thrash.
-3. Check the DOM node count in the Elements panel - it should stay roughly constant as you scroll.
+3. Check the DOM node count in the Elements panel, it should stay roughly constant as you scroll.
 
-If the node count climbs as you scroll, virtualization is not engaging - and the cause is almost always a missing height on the container.
+If the node count climbs as you scroll, virtualization is not engaging, and the cause is almost always a missing height on the container.
 
 ## Common pitfalls
 

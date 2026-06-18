@@ -1,8 +1,21 @@
 <script lang="ts">
   import '../app.css'
   import { page } from '$app/state'
+  import { onMount } from 'svelte'
+  import { readTheme, applyTheme, type Theme } from '$lib/theme'
 
   let { children } = $props()
+
+  // Theme: dark by default (see app.html), toggleable + persisted.
+  let theme = $state<Theme>('dark')
+  onMount(() => {
+    theme = readTheme()
+    applyTheme(theme)
+  })
+  function toggleTheme() {
+    theme = theme === 'dark' ? 'light' : 'dark'
+    applyTheme(theme)
+  }
 
   const nav = [
     { href: '/', label: 'Overview', icon: '▦' },
@@ -18,8 +31,8 @@
 <div class="flex h-full min-h-screen">
   <!-- Sidebar -->
   <aside
-    class="hidden w-60 shrink-0 flex-col border-r bg-white md:flex"
-    style="border-color: var(--app-border);"
+    class="hidden w-60 shrink-0 flex-col border-r md:flex"
+    style="border-color: var(--app-border); background: var(--app-panel);"
   >
     <div class="flex items-center gap-2 px-5 py-4">
       <span
@@ -57,19 +70,42 @@
   <!-- Main -->
   <div class="flex min-w-0 flex-1 flex-col">
     <header
-      class="flex items-center justify-between border-b bg-white px-6 py-3"
-      style="border-color: var(--app-border);"
+      class="flex items-center justify-between border-b px-6 py-3"
+      style="border-color: var(--app-border); background: var(--app-panel);"
     >
       <h1 class="text-base font-semibold" style="color: var(--app-fg);">
         {nav.find((n) => isActive(n.href))?.label ?? 'Dashboard'}
       </h1>
-      <a
-        href="https://www.svgrid.com/docs"
-        target="_blank"
-        rel="noopener"
-        class="rounded-lg border px-3 py-1.5 text-sm font-medium"
-        style="border-color: var(--app-border); color: var(--app-fg);">Docs</a
-      >
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          onclick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label="Toggle theme"
+          class="grid h-9 w-9 place-items-center rounded-lg border"
+          style="border-color: var(--app-border); color: var(--app-fg);"
+        >
+          {#if theme === 'dark'}
+            <!-- sun -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            </svg>
+          {:else}
+            <!-- moon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          {/if}
+        </button>
+        <a
+          href="https://www.svgrid.com/docs"
+          target="_blank"
+          rel="noopener"
+          class="rounded-lg border px-3 py-1.5 text-sm font-medium"
+          style="border-color: var(--app-border); color: var(--app-fg);">Docs</a
+        >
+      </div>
     </header>
 
     <main class="min-w-0 flex-1 p-6">

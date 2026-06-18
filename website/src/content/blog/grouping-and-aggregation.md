@@ -41,7 +41,7 @@ Common aggregations are `sum`, `avg`, `min`, `max`, and `count`. Because the for
 
 ## Multi-level grouping
 
-Group by more than one column to build a hierarchy - region, then status within region. Each level gets its own collapsible header and its own rolled-up footer, so a sales table becomes a pivotable summary without leaving the grid.
+Group by more than one column to build a hierarchy, region, then status within region. Each level gets its own collapsible header and its own rolled-up footer, so a sales table becomes a pivotable summary without leaving the grid.
 
 ## Combine with sorting and filtering
 

@@ -1,7 +1,7 @@
 {
   "name": "@svgrid/create",
-  "version": "1.0.0",
-  "description": "Scaffold a Svelte app powered by SvGrid in one command: npm create sv-grid@latest",
+  "version": "1.0.3",
+  "description": "Scaffold a Svelte app powered by SvGrid in one command: npm create @svgrid@latest",
   "type": "module",
   "license": "MIT",
   "author": "jQWidgets Ltd",
@@ -23,9 +23,7 @@
     "starter",
     "template"
   ],
-  "bin": {
-    "@svgrid/create": "index.mjs"
-  },
+  "bin": "index.mjs",
   "files": [
     "index.mjs",
     "templates"

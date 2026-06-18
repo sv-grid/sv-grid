@@ -7,17 +7,17 @@ tags: export, excel, csv, pdf, svelte data grid
 author: Kamelia M
 ---
 
-"Can I get this in Excel?" is the most common request a data grid gets. The `@svgrid/enterprise` pack adds export to Excel (XLSX), CSV, TSV, HTML, and PDF, plus printing - and it exports what the user is actually looking at, honoring the current sort, filter, and selection.
+"Can I get this in Excel?" is, hands down, the most common thing anyone asks of a data grid. The `@svgrid/enterprise` pack answers it: export to Excel (XLSX), CSV, TSV, HTML, and PDF, plus printing, and crucially it exports what is on screen, honoring the current sort, filter, and selection rather than dumping the raw data.
 
 ![Exporting a SvGrid grid to Excel and PDF](/blog-media/export.png)
 *Exporting a SvGrid grid (@svgrid/enterprise) to Excel, PDF, and more.*
 
 ## Export formats
 
-- **XLSX** - a real Excel workbook with typed cells and formatting.
-- **CSV / TSV** - portable text for any spreadsheet or data pipeline.
-- **HTML** - a styled table you can email or embed.
-- **PDF** - a print-ready document.
+- **XLSX**: a real Excel workbook with typed cells and formatting.
+- **CSV / TSV**: portable text for any spreadsheet or data pipeline.
+- **HTML**: a styled table you can email or embed.
+- **PDF**: a print-ready document.
 
 ## A simple export button
 
@@ -39,22 +39,12 @@ The export reads the grid's current view, so a user who filtered to "active" cus
 
 ## Export selection only
 
-A frequent need is exporting just the selected rows. Combine row selection with the export call so a user can tick a handful of records and download only those - useful for sharing a subset without leaking the whole dataset.
+A frequent need is exporting just the selected rows. Combine row selection with the export call so a user can tick a handful of records and download only those, useful for sharing a subset without leaking the whole dataset.
 
 ## Respect formatting
 
-Export uses your column formatters, so a currency column lands in Excel as a properly formatted number, and a date column as a date - not as a raw ISO string. That means the exported file looks like the grid, which is what users expect.
+Export uses your column formatters, so a currency column lands in Excel as a properly formatted number, and a date column as a date, not as a raw ISO string. That means the exported file looks like the grid, which is what users expect.
 
 ## Printing
 
 The same Enterprise pack adds a print view that lays the grid out for paper - repeating headers, page breaks, and a clean monochrome style - so "File > Print" produces something usable instead of a clipped screenshot.
-
-## Frequently asked questions
-
-### How do I export a Svelte data grid to Excel?
-
-Use `@svgrid/enterprise` and call the grid API's `exportData({ format: 'xlsx' })`. The export honors the current sort, filter, and selection.
-
-### Can I export only the selected rows?
-
-Yes. Enable row selection and scope the export to the selected rows, so users can download just the records they ticked.

@@ -71,11 +71,11 @@ Sorting, filtering, pagination, grouping, and editing are opt-in. You turn them 
 <SvGrid data={rows} columns={columns} features={features} filterMode="menu" />
 ```
 
-Only register what you use - each feature is roughly 1-2 KB gzipped.
+Only register what you use, each feature is roughly 1-2 KB gzipped.
 
 ## A more realistic example
 
-The three-row table above proves the API; a real screen needs a few more pieces. Here is a grid with typed data, formatted columns, sorting, filtering, and pagination - still under thirty lines.
+The three-row table above proves the API; a real screen needs a few more pieces. Here is a grid with typed data, formatted columns, sorting, filtering, and pagination, still under thirty lines.
 
 ```svelte
 <script lang="ts">

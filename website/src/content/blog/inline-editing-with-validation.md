@@ -35,7 +35,7 @@ Add `editorType` to the columns you want editable, then turn on editing at the g
 />
 ```
 
-Users press F2 or double-click to edit, type, and press Enter to commit or Escape to cancel - all keyboard-accessible.
+Users press F2 or double-click to edit, type, and press Enter to commit or Escape to cancel, all keyboard-accessible.
 
 ## The change event
 
@@ -55,9 +55,9 @@ SvGrid does not mutate your data for you. You decide whether to mutate in place,
 
 ## Validation patterns
 
-- **Synchronous checks** - reject invalid values in `onCellValueChange` before you write them back.
-- **Visual feedback** - flag the row in your own state and render an error style with a custom cell.
-- **Async validation** - write the value optimistically, then revert if the server rejects it.
+- **Synchronous checks**: reject invalid values in `onCellValueChange` before you write them back.
+- **Visual feedback**: flag the row in your own state and render an error style with a custom cell.
+- **Async validation**: write the value optimistically, then revert if the server rejects it.
 
 ## Save to a server
 
@@ -96,15 +96,15 @@ Good inline editing is keyboard-first, and SvGrid wires the conventions users al
 - **Enter** commits and moves down; **Tab** commits and moves right.
 - **Escape** cancels and restores the original value.
 
-Because the active cell is part of the grid's roving focus model, a user can navigate with the arrow keys, hit F2, type, press Enter, and keep going - no mouse required. That flow is what makes bulk data entry bearable.
+Because the active cell is part of the grid's roving focus model, a user can navigate with the arrow keys, hit F2, type, press Enter, and keep going, no mouse required. That flow is what makes bulk data entry bearable.
 
 ## Three layers of validation
 
 Validation is not one thing; it is a sequence of increasingly expensive checks:
 
-1. **Type-level** - the editor already restricts input shape; a `number` editor will not yield a non-numeric value.
-2. **Synchronous rules** - in `onCellValueChange`, reject values that violate business rules (a negative age, an end date before a start date) before you write them back.
-3. **Asynchronous validation** - when the rule lives on the server (is this SKU unique?), apply the value optimistically, then revert and flag it if the server says no.
+1. **Type-level**: the editor already restricts input shape; a `number` editor will not yield a non-numeric value.
+2. **Synchronous rules**: in `onCellValueChange`, reject values that violate business rules (a negative age, an end date before a start date) before you write them back.
+3. **Asynchronous validation**: when the rule lives on the server (is this SKU unique?), apply the value optimistically, then revert and flag it if the server says no.
 
 ```ts
 function onCellValueChange(e) {

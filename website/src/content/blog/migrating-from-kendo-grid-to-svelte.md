@@ -7,7 +7,7 @@ tags: migration, kendo grid, comparison, svelte data grid
 author: Boyko Markov
 ---
 
-Kendo UI Grid is a mature commercial grid, typically used via jQuery or a framework wrapper. Moving to SvGrid gives you a native Svelte 5 component with an MIT-licensed core. The data and column concepts translate directly.
+Kendo UI Grid is mature and capable, and it is also commercial and usually reached through jQuery or a framework wrapper. Moving to SvGrid trades that for a native Svelte 5 component on an MIT-licensed core. The good news for the migration: the data and column concepts line up almost directly.
 
 ## Concept mapping
 
@@ -53,13 +53,3 @@ const columns: ColumnDef<{}, Row>[] = [
 ## Licensing and exports
 
 Kendo is a commercial suite; SvGrid's core is MIT-licensed and free for commercial use, with export, import, and pivot in the optional Enterprise pack. See [pricing](/pricing).
-
-## Frequently asked questions
-
-### How do I replace Kendo UI Grid in Svelte?
-
-Map `columns` directly (`title` to `header`, `format` to the `format` option, `editor` to `editorType`), replace the Kendo `DataSource` with a plain `data` array or SvGrid's external mode for server operations, and use the free MIT core plus Enterprise for export.
-
-### Does SvGrid have Excel and PDF export like Kendo?
-
-Yes, in the @svgrid/enterprise pack, which adds Excel, PDF, CSV, TSV, and HTML export plus print and pivot. The core covers sorting, filtering, grouping, virtualization, and editing.

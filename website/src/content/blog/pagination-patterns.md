@@ -7,7 +7,7 @@ tags: pagination, cursor, infinite scroll, svelte data grid
 author: Victor Vidolov
 ---
 
-Pagination is not one pattern but three, and picking the right one depends on your backend and your data. SvGrid supports classic page controls and pairs cleanly with cursor and infinite-scroll backends.
+"Add pagination" sounds like one task, but it is really a choice between three patterns, and the right one depends on your backend more than your grid. SvGrid handles classic page controls and pairs cleanly with cursor and infinite-scroll backends, here is how to pick.
 
 ![Server-driven pagination in SvGrid](/blog-media/server-row-model.png)
 *A server row model paging data in SvGrid.*
@@ -28,7 +28,7 @@ The familiar "Page 3 of 50" model. Enable the pager and pick a page size:
 />
 ```
 
-Offset paging is simple and lets users jump to any page. Its weakness is large offsets - `OFFSET 100000` is slow on most databases, and rows shifting between requests can cause skips.
+Offset paging is simple and lets users jump to any page. Its weakness is large offsets, `OFFSET 100000` is slow on most databases, and rows shifting between requests can cause skips.
 
 ## Cursor pagination
 
@@ -47,7 +47,7 @@ Cursor paging stays fast at any depth and does not skip rows when the underlying
 
 ## Infinite scroll
 
-For feeds and exploratory browsing, append the next page as the user scrolls near the bottom rather than showing page controls. Combine this with virtualization so the DOM stays bounded even as the in-memory array grows - load more data, but never render more nodes than the viewport needs.
+For feeds and exploratory browsing, append the next page as the user scrolls near the bottom rather than showing page controls. Combine this with virtualization so the DOM stays bounded even as the in-memory array grows, load more data, but never render more nodes than the viewport needs.
 
 ## Which should you use?
 

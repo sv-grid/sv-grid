@@ -31,9 +31,9 @@ Each row gets an expand toggle. Clicking it reveals the detail region for that r
 
 Anything you can render in Svelte:
 
-- **A nested grid** - the order's line items as their own `<SvGrid>`.
-- **A chart** - a sparkline of the customer's last 30 days.
-- **A form** - quick-edit fields for the selected record.
+- **A nested grid**: the order's line items as their own `<SvGrid>`.
+- **A chart**: a sparkline of the customer's last 30 days.
+- **A form**: quick-edit fields for the selected record.
 
 Because the detail panel is just Svelte markup, it has full access to the row's data and your app's components.
 
@@ -62,7 +62,3 @@ Expand toggles are keyboard-operable and announce their state, so screen-reader 
 ### How do I add expandable detail rows in a Svelte grid?
 
 Register `rowExpandingFeature` and render a detail snippet per row. The detail panel can hold a nested grid, a chart, or a form.
-
-### Can I lazy-load detail content?
-
-Yes. Fetch detail data inside the detail snippet when the row expands - for example with an `{#await}` block - so the main grid stays fast.

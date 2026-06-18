@@ -7,16 +7,16 @@ tags: svelte 5, runes, stores, state management, engineering
 author: Kamelia M
 ---
 
-Svelte 5 introduced runes, and a common question is whether stores are now obsolete. They are not. Runes and stores overlap but each has its place. Here is how to choose.
+The first question almost everyone asks after Svelte 5 lands: are stores dead now? Short answer, no. Runes and stores overlap, but each still has a job the other does awkwardly.
 
 ## What changed
 
-Before runes, stores (`writable`, `readable`, `derived`) were the main way to hold reactive state, especially outside components. Runes (`$state`, `$derived`) now cover most component state more ergonomically - no `$` prefix gymnastics, no `.subscribe`, deep reactivity by default.
+Before runes, stores (`writable`, `readable`, `derived`) were the main way to hold reactive state, especially outside components. Runes (`$state`, `$derived`) now cover most component state more ergonomically, no `$` prefix gymnastics, no `.subscribe`, deep reactivity by default.
 
 ## Reach for runes when...
 
-- **Component state** - local UI state, form values, a grid's sort/filter selection.
-- **Shared reactive state in modules** - `$state` works in `.svelte.ts` files, so you can export reactive objects:
+- **Component state**: local UI state, form values, a grid's sort/filter selection.
+- **Shared reactive state in modules**: `$state` works in `.svelte.ts` files, so you can export reactive objects:
 
 ```ts
 // grid-state.svelte.ts
@@ -27,9 +27,9 @@ Any component importing `gridState` reacts to its changes. This replaces many fo
 
 ## Stores are still useful when...
 
-- **Interop** - libraries and APIs that expose stores (or expect the store contract), including parts of SvelteKit (`page`, `navigating`).
-- **Plain `.ts` files without the rune compiler** - runes need `.svelte.ts`/`.svelte.js`; a plain `.ts` module cannot use `$state`. A store works anywhere.
-- **Stream-like patterns** - custom stores wrapping events, RxJS, or websockets where the subscribe/unsubscribe contract fits naturally.
+- **Interop**: libraries and APIs that expose stores (or expect the store contract), including parts of SvelteKit (`page`, `navigating`).
+- **Plain `.ts` files without the rune compiler**: runes need `.svelte.ts`/`.svelte.js`; a plain `.ts` module cannot use `$state`. A store works anywhere.
+- **Stream-like patterns**: custom stores wrapping events, RxJS, or websockets where the subscribe/unsubscribe contract fits naturally.
 
 The two interoperate: you can read a store's value in a rune context with the `$store` syntax, and wrap a store in derived state.
 

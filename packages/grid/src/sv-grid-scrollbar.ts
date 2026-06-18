@@ -127,7 +127,14 @@ const STYLE_TEMPLATE = `
   }
 `
 
-class SvGridScrollbarElement extends HTMLElement {
+// Extend a real HTMLElement in the browser, but a harmless stand-in on the
+// server. Evaluating `class X extends HTMLElement` at module load would throw
+// `HTMLElement is not defined` during SSR / prerender; the element is only ever
+// registered + instantiated in the browser (see the guarded define() below).
+const ScrollbarBase: typeof HTMLElement =
+  typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as unknown as typeof HTMLElement)
+
+class SvGridScrollbarElement extends ScrollbarBase {
   static get observedAttributes() {
     return ['orientation', 'viewport-size', 'content-size', 'value', 'step']
   }

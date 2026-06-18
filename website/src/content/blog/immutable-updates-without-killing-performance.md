@@ -7,7 +7,7 @@ tags: performance, immutability, reactivity, recipe, svelte data grid
 author: Kamelia M
 ---
 
-"Update immutably" is good advice that is easy to misapply. Cloning your entire dataset on every change is immutable - and slow. The goal is *surgical* immutability: a new reference only for what changed, shared references for everything else. Here is the pattern that keeps both correctness and speed.
+"Update immutably" is good advice that people take too literally. Cloning the whole dataset on every keystroke is technically immutable and slow, and it defeats the fine-grained updates that make the grid fast. What you actually want is *surgical* immutability: a fresh reference only for what changed, shared references for everything else.
 
 ## Why immutability matters for a grid
 
@@ -48,14 +48,10 @@ Everything outside that path keeps its reference and is skipped by reactivity.
 
 ## Helpers, with a caveat
 
-Libraries like Immer give you "mutable" syntax that produces immutable, structurally-shared results - convenient and correct. Just know there is a small overhead; for hot paths (a live feed updating thousands of times a second) hand-written surgical copies are leanest. See [throttling live updates](throttle-live-updates-animation-frames).
+Libraries like Immer give you "mutable" syntax that produces immutable, structurally-shared results, convenient and correct. Just know there is a small overhead; for hot paths (a live feed updating thousands of times a second) hand-written surgical copies are leanest. See [throttling live updates](throttle-live-updates-animation-frames).
 
 ## Frequently asked questions
 
 ### Does immutable updating make my grid slow?
 
 Only if you clone everything. Cloning the whole dataset on each change makes every row look new, defeating fine-grained reactivity. Copy only the changed row (and the array), keeping other references, and updates stay cheap.
-
-### How do I update nested grid data immutably?
-
-Copy only along the path to the change - a new object for the row, a new object for the nested field you touched - and keep all other references. Everything outside that path is then skipped by the grid's change detection.

@@ -7,7 +7,7 @@ tags: progress bar, cells, custom cells, recipe, svelte data grid
 author: Victor Vidolov
 ---
 
-A number in a cell is information; a bar is insight. In-cell progress bars make completion, utilization, and scores readable at a glance. SvGrid renders any Svelte markup in a cell, so a progress bar is a small custom cell. Here is the recipe.
+A number in a cell tells you the value; a bar tells you the story, is this 90% done or 9%, near the cap or nowhere near it. In-cell progress bars make completion and utilization readable at a glance. SvGrid renders any markup in a cell, so a bar is a small custom cell.
 
 ## A basic progress cell
 
@@ -34,7 +34,7 @@ Clamp the width to 0-100 so bad data cannot overflow the cell.
 
 ## Color by threshold
 
-Make the bar tell a story: green when on target, amber when at risk, red when low. Map the value to a band and drive the fill color from a token so it adapts to your theme - see [conditional formatting](conditional-formatting).
+Make the bar tell a story: green when on target, amber when at risk, red when low. Map the value to a band and drive the fill color from a token so it adapts to your theme, see [conditional formatting](conditional-formatting).
 
 ## Keep the value sortable
 
@@ -43,13 +43,3 @@ The golden rule for custom cells: render the bar, but let the column read its va
 ## Accessibility
 
 Add `role="progressbar"` with `aria-valuenow/min/max` (as above) and include the numeric label as text, so the value is available to screen readers, not just conveyed by bar length and color.
-
-## Frequently asked questions
-
-### How do I show a progress bar in a data grid cell?
-
-Render a custom cell with a track and a fill element whose width is the value (clamped 0-100), via `renderSnippet`. Keep the column's `field` so the value stays sortable and filterable.
-
-### How do I make a progress cell accessible?
-
-Add `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`, and include a text label of the value, so the information is not conveyed by bar length and color alone.

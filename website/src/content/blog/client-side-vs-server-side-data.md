@@ -15,7 +15,7 @@ You fetch the whole dataset once and let the grid sort, filter, and paginate in 
 
 **Good when:**
 
-- The dataset is small to medium - up to a few tens of thousands of rows.
+- The dataset is small to medium, up to a few tens of thousands of rows.
 - The data is not sensitive (everything ships to the client).
 - You want instant, zero-latency interaction.
 
@@ -42,7 +42,7 @@ When unsure, start client-side; it is less code. Move to server-side when the da
 
 ## Wiring each in SvGrid
 
-Client-side is the default - pass `data` and register the features:
+Client-side is the default, pass `data` and register the features:
 
 ```svelte
 <SvGrid data={rows} columns={columns} features={features} showPagination={true} />
@@ -72,7 +72,7 @@ Virtualization (client rendering) and server paging are complementary: page from
 
 ### Should I use client-side or server-side data for my table?
 
-Use client-side for small-to-medium, non-sensitive datasets - it is simpler and feels instant. Use server-side when the data is too large to transfer, sensitive, or rapidly changing, accepting the extra work of requests, debouncing, and loading states.
+Use client-side for small-to-medium, non-sensitive datasets, it is simpler and feels instant. Use server-side when the data is too large to transfer, sensitive, or rapidly changing, accepting the extra work of requests, debouncing, and loading states.
 
 ### Does server-side data change the grid's UI?
 

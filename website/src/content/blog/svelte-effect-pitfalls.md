@@ -7,7 +7,7 @@ tags: svelte 5, effect, reactivity, engineering, data grid
 author: Kamelia M
 ---
 
-`$effect` is the rune people reach for too often. It is for genuine side effects, not for computing values - and misusing it causes loops, stale data, and hard-to-trace bugs. Here are the pitfalls and the right patterns.
+`$effect` is the rune people reach for when they should not. It exists for genuine side effects, not for computing values, and using it as a general-purpose "run this when that changes" hammer is how you get loops, stale data, and bugs that take an afternoon to trace. Here are the traps and the patterns that avoid them.
 
 ## Pitfall 1: using $effect to derive state
 
@@ -52,7 +52,7 @@ $effect(() => {
 })
 ```
 
-This is exactly how you attach and detach a live data feed for a grid - see [real-time grids](realtime-websocket-updates).
+This is exactly how you attach and detach a live data feed for a grid, see [real-time grids](realtime-websocket-updates).
 
 ## Pitfall 4: async and stale closures
 
@@ -64,13 +64,3 @@ An `async` effect body can finish after dependencies changed. Capture what you n
 - Reacting to change with a side effect (DOM, network, subscription, logging)? `$effect`, with cleanup.
 
 Keep that line clean and most reactivity bugs disappear.
-
-## Frequently asked questions
-
-### When should I use $effect instead of $derived?
-
-Use `$effect` only for side effects - subscriptions, timers, DOM manipulation, network calls, logging - and always return a cleanup function when you set something up. If you are computing a value from other state, use `$derived` instead.
-
-### Why does my $effect run in an infinite loop?
-
-Because it writes to state that it also depends on, re-triggering itself. Move the computation to a `$derived`, or if you genuinely need to update unrelated state, read the trigger with `untrack` so it is not a dependency.

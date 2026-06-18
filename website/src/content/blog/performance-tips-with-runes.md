@@ -7,7 +7,7 @@ tags: performance, runes, svelte 5, optimization, svelte data grid
 author: Kamelia M
 ---
 
-SvGrid is built on Svelte 5 runes, which give it fine-grained reactivity - the grid updates only what changed. A few habits on your side keep the whole pipeline fast, even with large datasets and frequent updates.
+SvGrid is built on Svelte 5 runes, which give it fine-grained reactivity, the grid updates only what changed. A few habits on your side keep the whole pipeline fast, even with large datasets and frequent updates.
 
 ## Keep `data` references stable
 
@@ -32,7 +32,7 @@ let query = $state('')
 let visible = $derived(rows.filter((r) => r.name.includes(query)))
 ```
 
-Better still, let the grid's own filter feature do it - it filters once per change and reuses the result.
+Better still, let the grid's own filter feature do it, it filters once per change and reuses the result.
 
 ## Let the grid do the heavy lifting
 
@@ -55,13 +55,3 @@ function onTick(update) {
 ```
 
 The grid will happily render 60 times a second; it does not need to render 6,000 times a second.
-
-## Frequently asked questions
-
-### How do I keep a Svelte data grid fast with large data?
-
-Keep `data` references stable, derive computed lists with `$derived`, let the grid's features handle sorting and filtering, and give the grid a bounded height so virtualization engages.
-
-### How do I handle high-frequency live updates without jank?
-
-Batch incoming updates and flush them on `requestAnimationFrame`, so the grid paints at most once per frame instead of once per message.

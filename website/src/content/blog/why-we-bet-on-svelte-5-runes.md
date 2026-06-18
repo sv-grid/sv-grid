@@ -17,7 +17,7 @@ Svelte 5 replaced the compiler-magic reactivity of Svelte 3 and 4 with explicit,
 - **`$derived`** computes values that update only when their inputs change.
 - **`$effect`** runs side effects when dependencies change.
 
-The important word is *fine-grained*. A `$derived` value recomputes only when the specific state it reads changes - not when some unrelated part of the component updates. For most apps this is a nice ergonomic win. For a grid, it is the whole ballgame.
+The important word is *fine-grained*. A `$derived` value recomputes only when the specific state it reads changes, not when some unrelated part of the component updates. For most apps this is a nice ergonomic win. For a grid, it is the whole ballgame.
 
 ## Why fine-grained reactivity matters for grids
 
@@ -41,7 +41,7 @@ Runes solve "what changed"; virtualization solves "what is visible". Together th
 
 ## The trade-off we accepted
 
-Going native to Svelte 5 means SvGrid is not framework-agnostic the way a multi-adapter engine is. That is a deliberate choice. By committing to one framework's reactivity model, we get smaller code, fewer abstractions, and behavior that matches developer expectations exactly. For teams who need cross-framework reuse, the same company ships web components on htmlelements.com - but for a Svelte app, native wins.
+Going native to Svelte 5 means SvGrid is not framework-agnostic the way a multi-adapter engine is. That is a deliberate choice. By committing to one framework's reactivity model, we get smaller code, fewer abstractions, and behavior that matches developer expectations exactly. For teams who need cross-framework reuse, the same company ships web components on htmlelements.com, but for a Svelte app, native wins.
 
 ## Lessons for your own code
 
@@ -55,8 +55,4 @@ Even if you never build a grid, runes reward a few habits:
 
 ### Why build a data grid natively on Svelte 5 runes?
 
-A grid needs to repaint only the cells that changed. Runes give fine-grained, signal-based reactivity, so derived values and effects update surgically - which is exactly what high cell counts demand.
-
-### Do runes replace virtualization?
-
-No. Runes determine what changed; virtualization bounds how many DOM nodes exist. A fast grid needs both - signals for surgical updates and virtualization for a viewport-sized DOM.
+A grid needs to repaint only the cells that changed. Runes give fine-grained, signal-based reactivity, so derived values and effects update surgically, which is exactly what high cell counts demand.

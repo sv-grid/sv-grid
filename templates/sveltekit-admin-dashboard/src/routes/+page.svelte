@@ -53,7 +53,7 @@
     <StatCard label="Active customers" value={kpis.customers.toString()} />
   </div>
 
-  <div class="rounded-xl border bg-white p-4 shadow-sm" style="border-color: var(--app-border);">
+  <div class="rounded-xl border p-4 shadow-sm" style="border-color: var(--app-border); background: var(--app-panel);">
     <div class="mb-3 flex items-center justify-between">
       <h2 class="text-sm font-semibold" style="color: var(--app-fg);">Recent orders</h2>
       <a class="text-sm font-medium" style="color: var(--app-accent);" href="/orders">View all →</a>

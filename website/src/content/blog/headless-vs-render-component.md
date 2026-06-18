@@ -7,10 +7,10 @@ tags: headless table, svelte data grid, architecture, createSvGrid
 author: Boyko Markov
 ---
 
-One of the first decisions you make with SvGrid is which layer to build on. SvGrid is headless-first: a pure data engine (`createSvGrid`) sits underneath a full render component (`<SvGrid>`). You can use either, and you can drop from one to the other without rewriting your data logic.
+One of the first calls you make with SvGrid is which layer to build on, and it is worth understanding before you commit. SvGrid is headless-first: a pure data engine (`createSvGrid`) sits under a full render component (`<SvGrid>`). Use either - and the part that matters - drop from one to the other later without rewriting a line of your data logic.
 
 ![The SvGrid render component](/blog-media/quick-start.png)
-*The <SvGrid> render component - the batteries-included layer over the headless core.*
+*The <SvGrid> render component, the batteries-included layer over the headless core.*
 
 ## The render component: `<SvGrid>`
 
@@ -56,7 +56,7 @@ Choose the core when you need a bespoke layout - a card grid, a Kanban board, a 
 
 ## You are not locked in
 
-Because both layers share the same column definitions and feature factories, you can prototype with `<SvGrid>` and later drop to `createSvGrid` for one screen that needs a custom layout, reusing your `columns` array untouched. That migration path is the reason SvGrid is headless underneath - you never hit a wall where the component cannot do what you need.
+Because both layers share the same column definitions and feature factories, you can prototype with `<SvGrid>` and later drop to `createSvGrid` for one screen that needs a custom layout, reusing your `columns` array untouched. That migration path is the reason SvGrid is headless underneath, you never hit a wall where the component cannot do what you need.
 
 ## Frequently asked questions
 

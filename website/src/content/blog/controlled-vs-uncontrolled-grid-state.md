@@ -7,15 +7,15 @@ tags: concepts, state management, controlled, data grid
 author: Victor Vidolov
 ---
 
-One decision shapes how you integrate a data grid: who owns the state? The grid can manage its own sorting, filtering, and pagination, or you can. Getting this right keeps your integration simple. Here is the spectrum.
+Almost every integration headache with a data grid traces back to one question you answered without realizing it: who owns the state? The grid can run its own sorting, filtering, and pagination, or you can hold the reins. Pick deliberately and the rest gets easy; here is the spectrum.
 
 ## Three modes
 
 SvGrid (like most good grids) supports three levels of control per dimension (sort, filter, page):
 
-1. **Uncontrolled** - the grid owns the state. You pass initial config and forget it. Simplest.
-2. **Observable** - the grid owns the state but tells you when it changes via callbacks. Use when something outside the grid needs to react (a URL, a "3 filters active" pill, an analytics event).
-3. **External (controlled)** - you own the state. The grid records the user's intent but does not transform the rows; you do. Required for server-side data.
+1. **Uncontrolled**: the grid owns the state. You pass initial config and forget it. Simplest.
+2. **Observable**: the grid owns the state but tells you when it changes via callbacks. Use when something outside the grid needs to react (a URL, a "3 filters active" pill, an analytics event).
+3. **External (controlled)**: you own the state. The grid records the user's intent but does not transform the rows; you do. Required for server-side data.
 
 ## Uncontrolled: let the grid handle it
 
@@ -42,7 +42,7 @@ The grid still owns the state; you just observe it. Great for [URL sync](sync-gr
   onSortingChange={(s) => fetchPage({ sorting: s })} />
 ```
 
-The grid records what the user clicked but does not reorder rows - you fetch and supply them. This is how [server-side data](server-side-data) works.
+The grid records what the user clicked but does not reorder rows, you fetch and supply them. This is how [server-side data](server-side-data) works.
 
 ## How to choose
 
@@ -50,13 +50,13 @@ The grid records what the user clicked but does not reorder rows - you fetch and
 - Need outside UI to react to grid state? **Observable.**
 - Server-side data, or you must own the ordering? **External.**
 
-You can mix per dimension - uncontrolled sorting with external pagination, for instance. Start uncontrolled and graduate a dimension to external only when you need to.
+You can mix per dimension, uncontrolled sorting with external pagination, for instance. Start uncontrolled and graduate a dimension to external only when you need to.
 
 ## Frequently asked questions
 
 ### What is the difference between controlled and uncontrolled grid state?
 
-Uncontrolled means the grid owns and manages its sort/filter/page state. Controlled (external) means you own that state - the grid records the user's intent but you transform and supply the rows, which is required for server-side data. An in-between "observable" mode lets the grid own state while notifying you of changes.
+Uncontrolled means the grid owns and manages its sort/filter/page state. Controlled (external) means you own that state, the grid records the user's intent but you transform and supply the rows, which is required for server-side data. An in-between "observable" mode lets the grid own state while notifying you of changes.
 
 ### Which mode should I use for server-side data?
 

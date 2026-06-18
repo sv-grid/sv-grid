@@ -7,7 +7,7 @@ tags: tailwind, theming, css variables, integration, svelte data grid
 author: Kamelia M
 ---
 
-SvGrid is themed entirely with `--sg-*` CSS custom properties, and Tailwind v4 is configured with CSS variables via `@theme`. That means you can point the grid at your Tailwind tokens and it inherits your design system - including dark mode - for free. Here is how.
+Here is a happy accident: SvGrid is themed entirely with `--sg-*` CSS variables, and Tailwind v4 now defines its theme as CSS variables too, via `@theme`. So you can point the grid straight at your Tailwind tokens and it inherits your palette - dark mode included - without a line of glue.
 
 ![SvGrid themed to match a design system](/blog-media/theme-integrations.png)
 *SvGrid themed via --sg-* tokens to match a design system.*
@@ -44,7 +44,7 @@ Tailwind v4's dark variant pairs with SvGrid's token approach. Define both token
 .dark { --sg-bg: #181d27; --sg-fg: #e2e8f0; }
 ```
 
-The grid follows instantly because every color is a variable - see [theming and dark mode](theming-and-dark-mode).
+The grid follows instantly because every color is a variable, see [theming and dark mode](theming-and-dark-mode).
 
 ## Styling around the grid
 
@@ -60,13 +60,3 @@ Use Tailwind utilities for the layout *around* the grid (toolbars, the flex cont
 ## Why not Tailwind classes inside cells?
 
 You can use Tailwind utilities in custom cell snippets, and that is fine. But the grid's structural styling (borders, header, zebra, selection) is faster and more consistent through `--sg-*` tokens than through utility overrides.
-
-## Frequently asked questions
-
-### How do I make SvGrid match my Tailwind theme?
-
-Point SvGrid's `--sg-*` CSS variables at your Tailwind v4 `@theme` tokens (for example `--sg-accent: var(--color-brand-500)`). The grid then inherits your palette, and a theme change updates the grid automatically.
-
-### Does dark mode work with Tailwind and SvGrid?
-
-Yes. Define light and dark `--sg-*` token sets keyed off your dark selector (a `.dark` class or `data-theme`), and the grid switches instantly because all its colors are CSS variables.

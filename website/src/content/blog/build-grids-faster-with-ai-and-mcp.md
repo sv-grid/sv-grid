@@ -7,7 +7,7 @@ tags: ai, mcp, claude, cursor, svelte data grid
 author: Victor Vidolov
 ---
 
-AI coding assistants are great at scaffolding a grid - until they hallucinate a prop that does not exist. SvGrid ships an MCP (Model Context Protocol) server that grounds Claude, Cursor, Zed, and other assistants in real, version-pinned SvGrid docs and examples, so the code they generate actually runs.
+AI coding assistants are great at scaffolding a grid, until they hallucinate a prop that does not exist. SvGrid ships an MCP (Model Context Protocol) server that grounds Claude, Cursor, Zed, and other assistants in real, version-pinned SvGrid docs and examples, so the code they generate actually runs.
 
 ## What the MCP server provides
 
@@ -35,7 +35,7 @@ Once connected, ask your assistant to "add an editable column with validation" o
 
 ## llms.txt for retrieval systems
 
-Beyond MCP, the site publishes an `llms.txt` file - the emerging convention for pointing AI crawlers at a machine-readable summary. Retrieval-augmented tools can ingest it to answer SvGrid questions accurately, which is why a prompt for "Svelte data grid" can resolve to working SvGrid code.
+Beyond MCP, the site publishes an `llms.txt` file, the emerging convention for pointing AI crawlers at a machine-readable summary. Retrieval-augmented tools can ingest it to answer SvGrid questions accurately, which is why a prompt for "Svelte data grid" can resolve to working SvGrid code.
 
 ## Good prompts for grid code
 
@@ -49,7 +49,7 @@ Grounded by the MCP server, these prompts produce code you can paste in and run.
 
 ## Why grounding matters
 
-The difference between a helpful assistant and a frustrating one is whether its answer compiles. An MCP-grounded assistant uses the props, features, and types that exist in your installed version - so you spend your time reviewing real code, not debugging invented APIs.
+The difference between a helpful assistant and a frustrating one is whether its answer compiles. An MCP-grounded assistant uses the props, features, and types that exist in your installed version, so you spend your time reviewing real code, not debugging invented APIs.
 
 ## Frequently asked questions
 

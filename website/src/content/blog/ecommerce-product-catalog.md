@@ -7,19 +7,19 @@ tags: ecommerce, catalog, products, use case, svelte data grid
 author: Boyko Markov
 ---
 
-A product catalog admin is where merchandisers manage what is for sale: prices, stock, images, visibility. It rewards rich cells and fast inline editing. Here is a blueprint with SvGrid.
+A product catalog admin is where merchandisers manage what is for sale: prices, stock, images, visibility. It rewards rich cells and fast inline editing.
 
 ![Barcode and rich cells in a SvGrid product grid](/blog-media/barcode.png)
 *Barcode and rich cells in a SvGrid catalog.*
 
 ## The columns
 
-- **Product** - an [image/thumbnail cell](avatar-and-image-cells) with name and SKU.
-- **Price** - an inline-editable [currency](locale-aware-formatting) column.
-- **Stock** - a number, with [low-stock highlighting](conditional-row-styling).
-- **Category** - an [editable dropdown](editable-select-dropdown-cell).
-- **Status** - a [badge](status-badge-cells): Published, Draft, Archived.
-- **Actions** - [edit/duplicate/archive](actions-column-edit-delete).
+- **Product**: an [image/thumbnail cell](avatar-and-image-cells) with name and SKU.
+- **Price**: an inline-editable [currency](locale-aware-formatting) column.
+- **Stock**: a number, with [low-stock highlighting](conditional-row-styling).
+- **Category**: an [editable dropdown](editable-select-dropdown-cell).
+- **Status**: a [badge](status-badge-cells): Published, Draft, Archived.
+- **Actions**: [edit/duplicate/archive](actions-column-edit-delete).
 
 ## Fast merchandising edits
 
@@ -42,7 +42,3 @@ Large catalogs (tens of thousands of SKUs) run [server-side](svelte-data-grid-pr
 ### How do I build a product catalog admin grid in Svelte?
 
 Use SvGrid with image cells, inline-editable price and stock columns (committed optimistically), category dropdowns, status badges, and bulk operations for sales and seasonal updates. Add filtering, search, and CSV import for managing large catalogs.
-
-### How do I keep an image-heavy catalog grid fast?
-
-Use lazy-loaded thumbnail cells with fixed dimensions, rely on virtualization so only visible rows render, and run large catalogs server-side so only the current page loads.

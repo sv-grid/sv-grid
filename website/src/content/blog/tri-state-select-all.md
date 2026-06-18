@@ -7,7 +7,7 @@ tags: selection, select all, checkbox, recipe, svelte data grid
 author: Victor Vidolov
 ---
 
-The header checkbox in a grid has three states, not two: all selected, none selected, and indeterminate (some selected). SvGrid's row selection includes this tri-state header checkbox out of the box. Here is how it works and the one nuance to get right with paged or server data.
+That little checkbox in the header has three states, not two: all selected, none selected, and the indeterminate dash for "some". SvGrid's row selection ships that tri-state header checkbox out of the box.
 
 ## Turn on row selection
 
@@ -32,10 +32,10 @@ Enable selection and you get the checkbox column plus the tri-state header check
 
 "Select all" is ambiguous the moment you paginate. There are two meanings:
 
-- **Select all on this page** - the default, and what the header checkbox does.
+- **Select all on this page**: the default, and what the header checkbox does.
 - **Select all matching rows** (across every page, including ones not loaded).
 
-For the second, offer an explicit affordance after a page select: a small banner like "All 50 on this page selected - select all 1,284 matching?" This pattern (familiar from Gmail) avoids the trap of a user thinking they selected everything when they only selected the visible page.
+For the second, offer an explicit affordance after a page select: a small banner like "All 50 on this page selected, select all 1,284 matching?" This pattern (familiar from Gmail) avoids the trap of a user thinking they selected everything when they only selected the visible page.
 
 ## Server-side selection
 
@@ -49,8 +49,4 @@ The header checkbox is a real, labeled control and exposes its checked/indetermi
 
 ### How does the select-all checkbox show a partial state?
 
-SvGrid's row selection renders a tri-state header checkbox: checked when all rows are selected, unchecked when none are, and indeterminate (a dash) when only some are - the standard pattern users recognize.
-
-### How do I handle "select all" across pages?
-
-The header checkbox selects the current page. For all matching rows across pages, show an explicit "select all N" affordance and, for server data, represent it as a flag plus an exclusion set that your bulk action translates into a query.
+SvGrid's row selection renders a tri-state header checkbox: checked when all rows are selected, unchecked when none are, and indeterminate (a dash) when only some are, the standard pattern users recognize.

@@ -7,7 +7,7 @@ tags: accessibility, keyboard, aria, engineering, story
 author: Boyko Markov
 ---
 
-Accessibility is the feature we insisted on from the first render and had to prove at depth as the grid grew. With sorting, filtering, editing, grouping, and hierarchy in place, all of it had to be usable by keyboard and screen reader - not as a retrofit, but as the thing it had been from line one.
+Accessibility is the feature we insisted on from the first render and had to prove at depth as the grid grew. With sorting, filtering, editing, grouping, and hierarchy in place, all of it had to be usable by keyboard and screen reader, not as a retrofit, but as the thing it had been from line one.
 
 ## We did not bolt it on, because that never works
 
@@ -40,11 +40,11 @@ The usage write-up is [Keyboard Navigation and Accessibility in SvGrid](keyboard
 
 ## How we tested it
 
-The cheapest accessibility test costs nothing: unplug the mouse. We tabbed into the grid, moved with the arrow keys, edited a cell, expanded a row, and triggered an action, all without the pointer - then confirmed with a screen reader that cells and headers were announced. A feature was not done until it passed that.
+The cheapest accessibility test costs nothing: unplug the mouse. We tabbed into the grid, moved with the arrow keys, edited a cell, expanded a row, and triggered an action, all without the pointer, then confirmed with a screen reader that cells and headers were announced. A feature was not done until it passed that.
 
 ## What it secured
 
-Proving accessibility held across the whole feature set meant SvGrid could go into the kinds of products our team has always served, where keyboard and screen-reader support is a requirement, not a nice-to-have. Read next: [a theming system on CSS variables](building-the-theming-system) - how the grid looks.
+Proving accessibility held across the whole feature set meant SvGrid could go into the kinds of products our team has always served, where keyboard and screen-reader support is a requirement, not a nice-to-have. Read next: [a theming system on CSS variables](building-the-theming-system), how the grid looks.
 
 ## Frequently asked questions
 

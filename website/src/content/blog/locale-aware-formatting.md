@@ -7,7 +7,16 @@ tags: formatting, i18n, currency, dates, svelte data grid
 author: Victor Vidolov
 ---
 
-A grid shown to a global audience cannot hard-code `$` and `MM/DD/YYYY`. SvGrid has a built-in, locale-aware formatter that renders numbers, currency, percentages, and dates correctly per locale - while keeping the raw value for sorting and filtering.
+Ship a grid to a global audience with `---
+title: Locale-Aware Number, Date, and Currency Formatting
+description: Display numbers, dates, and currency correctly for every user with SvGrid's built-in formatters, without breaking sort and filter.
+date: 2025-12-09
+category: Formatting
+tags: formatting, i18n, currency, dates, svelte data grid
+author: Victor Vidolov
+---
+
+ and `MM/DD/YYYY` baked in and you will hear about it from the first user outside the US. SvGrid's built-in formatter renders numbers, currency, percentages, and dates correctly per locale, while keeping the raw value underneath so sorting and filtering stay honest.
 
 ![Locale-aware number and date formatting in SvGrid](/blog-media/locale-filter.png)
 *Locale-aware formatting and filtering in SvGrid.*
@@ -35,18 +44,8 @@ The currency formatter respects the currency code and the user's locale, so the 
 
 ## Dates and time zones
 
-Dates are a common source of off-by-one bugs. Store and pass dates as ISO strings, format them with the `date` or `datetime` type, and be deliberate about time zones - render in the user's zone or in UTC consistently, but never mix. The formatter handles presentation; you own which zone the value represents.
+Dates are a common source of off-by-one bugs. Store and pass dates as ISO strings, format them with the `date` or `datetime` type, and be deliberate about time zones, render in the user's zone or in UTC consistently, but never mix. The formatter handles presentation; you own which zone the value represents.
 
 ## One-off custom formats
 
 When the built-in types do not cover a case - a phone number, a custom unit - use the function form `formatter` on the column. It returns a display string while the underlying value stays intact for the data pipeline.
-
-## Frequently asked questions
-
-### How do I format currency and dates in a Svelte data grid?
-
-Set `format` on the column - for example `{ type: 'currency', currency: 'EUR' }` or `{ type: 'date', pattern: 'y-m-d' }`. SvGrid formats per locale while keeping the raw value.
-
-### Why does my number column sort alphabetically?
-
-Because it became a string - usually from formatting inside an accessor. Format on the column with the `format` option instead, so the value stays numeric and sorts correctly.

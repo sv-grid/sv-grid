@@ -7,26 +7,26 @@ tags: pivot table, aggregation, concepts, data grid
 author: Kamelia M
 ---
 
-"Pivot table" sounds like spreadsheet jargon, but the idea is simple and powerful: reshape a flat list into a summary grouped two ways at once. Here is a clear, plain-language explanation.
+"Pivot table" carries a faint whiff of spreadsheet wizardry, but the idea underneath is simple: take a flat list and summarize it grouped two ways at once. Once it clicks you see pivots everywhere. Here it is in plain language.
 
 ![A pivot table in SvGrid](/blog-media/pivot.png)
 *A pivot table: rows, columns, and aggregated values.*
 
 ## The core idea
 
-A flat table has one row per record - one row per order, say. A pivot table summarizes those records across two dimensions at the same time, with aggregated numbers in the cells. "Revenue by region (down) and quarter (across)" is a pivot.
+A flat table has one row per record, one row per order, say. A pivot table summarizes those records across two dimensions at the same time, with aggregated numbers in the cells. "Revenue by region (down) and quarter (across)" is a pivot.
 
 It is defined by three choices:
 
-- **Rows** - the categories down the side (region, product).
-- **Columns** - the categories across the top (quarter, status).
-- **Values** - the numbers in the cells, with an aggregation (sum of revenue, count of orders).
+- **Rows**: the categories down the side (region, product).
+- **Columns**: the categories across the top (quarter, status).
+- **Values**: the numbers in the cells, with an aggregation (sum of revenue, count of orders).
 
 ## A concrete example
 
 Flat data: thousands of orders, each with a region, a quarter, and an amount.
 
-Pivot: regions down the left, quarters across the top, and each cell is the summed revenue for that region-and-quarter. Add row and column totals and you can read the whole business at a glance - which a flat list of thousands of orders never lets you do.
+Pivot: regions down the left, quarters across the top, and each cell is the summed revenue for that region-and-quarter. Add row and column totals and you can read the whole business at a glance, which a flat list of thousands of orders never lets you do.
 
 ## Pivot vs grouping
 

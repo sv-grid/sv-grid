@@ -47,7 +47,7 @@ The snippet receives the cell context, so you can read the value or the whole ro
 
 ## An action button column
 
-Action columns usually have no field - they are pure UI. Give them an `id` and an `accessorFn` is not needed; just render:
+Action columns usually have no field, they are pure UI. Give them an `id` and an `accessorFn` is not needed; just render:
 
 ```svelte
 {#snippet RowActions(props: { row: Row })}
@@ -72,7 +72,3 @@ Snippets are cheap, and virtualization means only the visible cells render. Keep
 ### How do I render a custom component in a Svelte grid cell?
 
 Set the column's `cell` to `renderSnippet(MySnippet, props)`. The snippet receives the cell context and can render any Svelte markup.
-
-### Will custom cells break sorting and filtering?
-
-No, as long as the column still reads its value from a `field` or `accessorFn`. The grid sorts and filters the underlying value, not the rendered markup.

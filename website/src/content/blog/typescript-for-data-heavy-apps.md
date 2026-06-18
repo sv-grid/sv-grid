@@ -88,4 +88,4 @@ Parameterize the column type over your row type and use `field?: keyof TRow`, so
 
 ### When should I use a discriminated union in a data app?
 
-Whenever a value or event has several shapes - different cell types or edit events. The union lets the compiler narrow the payload per case, eliminating wrong-type coercions and flagging unhandled variants.
+Whenever a value or event has several shapes, different cell types or edit events. The union lets the compiler narrow the payload per case, eliminating wrong-type coercions and flagging unhandled variants.

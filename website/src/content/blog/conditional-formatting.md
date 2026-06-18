@@ -7,7 +7,7 @@ tags: conditional formatting, cell styles, heatmap, svelte data grid
 author: Boyko Markov
 ---
 
-A wall of numbers hides its own story; color tells it for you - red for a loss, green for a target hit, a heatmap for where the heat actually is. SvGrid lets you style cells by their value, so the grid does the first pass of reading and the user's eye goes straight to what matters.
+A wall of numbers hides its own story; color tells it for you, red for a loss, green for a target hit, a heatmap for where the heat actually is. SvGrid lets you style cells by their value, so the grid does the first pass of reading and the user's eye goes straight to what matters.
 
 ![Conditional cell formatting in SvGrid](/blog-media/conditional-formatting.png)
 *Value-driven conditional formatting: color scales, data bars, and icons.*
@@ -27,7 +27,7 @@ Render the cell with a snippet and choose styling from the value:
 { field: 'change', header: 'Change', cell: (ctx) => renderSnippet(DeltaCell, { value: ctx.getValue() }) }
 ```
 
-Negative changes go red, positive ones green - the user reads the column at a glance.
+Negative changes go red, positive ones green, the user reads the column at a glance.
 
 ## Threshold flags
 
@@ -53,14 +53,4 @@ The golden rule, again: format and color in the snippet, but let the column read
 
 ## Row-level formatting
 
-Sometimes the whole row matters - an overdue invoice, a failed job. Drive a row style from your own state or a derived flag, so the entire row tints when a record needs attention, drawing the eye before the user even scans the cells.
-
-## Frequently asked questions
-
-### How do I color grid cells based on their value in Svelte?
-
-Render the cell with a snippet and choose the color from the value - for example red for negatives. Keep the column's `field` so sorting still uses the raw value.
-
-### Can I build a heatmap in SvGrid?
-
-Yes. Map each numeric value to a background opacity inside the cell snippet to produce a heatmap across the column.
+Sometimes the whole row matters, an overdue invoice, a failed job. Drive a row style from your own state or a derived flag, so the entire row tints when a record needs attention, drawing the eye before the user even scans the cells.

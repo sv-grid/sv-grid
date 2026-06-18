@@ -7,7 +7,7 @@ tags: concepts, data grid, data table, terminology
 author: Boyko Markov
 ---
 
-Ask ten developers whether they want a "data table" or a "data grid" and half will use the words interchangeably. Most of the time that is fine. But the two words quietly signal different expectations, and knowing which you actually need saves you from either over-building or painting yourself into a corner.
+Ask ten developers whether they want a "data table" or a "data grid" and half will use the words interchangeably. Most of the time that is fine. But the two words signal different expectations, and knowing which you actually need saves you from either over-building or painting yourself into a corner.
 
 ## The short version
 
@@ -20,9 +20,9 @@ Every data grid is a table; not every table is a data grid.
 
 It helps to see them as points on a spectrum of interactivity:
 
-1. **Static table** - render rows; no interaction.
-2. **Sortable/filterable table** - click headers, type to filter.
-3. **Data grid** - virtualization, editing, grouping, selection, server-side data, accessibility, keyboard control.
+1. **Static table**: render rows; no interaction.
+2. **Sortable/filterable table**: click headers, type to filter.
+3. **Data grid**: virtualization, editing, grouping, selection, server-side data, accessibility, keyboard control.
 
 The word you reach for usually signals where on this ladder you are.
 
@@ -30,7 +30,7 @@ The word you reach for usually signals where on this ladder you are.
 
 Ask what users will *do* with the data:
 
-- Just read it, in small volumes? A **table** is plenty - even a hand-rolled one.
+- Just read it, in small volumes? A **table** is plenty, even a hand-rolled one.
 - Edit it, analyze it, handle thousands of rows, or work it like a spreadsheet? You need a **data grid**.
 
 Choosing a grid for a static list is over-engineering; choosing a plain table for a 100,000-row editable analysis surface is a rewrite waiting to happen.
@@ -43,7 +43,7 @@ SvGrid is a data grid in the full sense - virtualization, Excel-style filtering,
 
 ### Is a data grid the same as a data table?
 
-Not quite. A data table displays rows and columns and may sort or filter. A data grid adds application-grade interactivity - virtualization, inline editing, grouping, cell selection, and server-side data. Every grid is a table, but not every table is a grid.
+Not quite. A data table displays rows and columns and may sort or filter. A data grid adds application-grade interactivity, virtualization, inline editing, grouping, cell selection, and server-side data. Every grid is a table, but not every table is a grid.
 
 ### Do I need a data grid or just a table?
 

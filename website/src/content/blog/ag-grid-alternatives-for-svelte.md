@@ -7,7 +7,7 @@ tags: comparison, alternatives, ag grid, svelte data grid
 author: Victor Vidolov
 ---
 
-Let me say this first: AG Grid is a brilliant, mature grid, and if it is working for you there is no shame in staying. But it is framework-agnostic, so in a Svelte app you reach it through a wrapper rather than a native component - and once you have felt a grid that speaks Svelte natively, the wrapper starts to chafe. If you want that, or a lighter or more permissively licensed option, these are the alternatives I would actually evaluate.
+Let me say this first: AG Grid is a brilliant, mature grid, and if it is working for you there is no shame in staying. But it is framework-agnostic, so in a Svelte app you reach it through a wrapper rather than a native component, and once you have felt a grid that speaks Svelte natively, the wrapper starts to chafe. If you want that, or a lighter or more permissively licensed option, these are the alternatives I would actually evaluate.
 
 ## Why look for an alternative
 

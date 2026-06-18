@@ -7,7 +7,7 @@ tags: migration, tabulator, comparison, svelte data grid
 author: Kamelia M
 ---
 
-Tabulator is a feature-rich, framework-agnostic table. In a Svelte app you instantiate it imperatively; SvGrid gives you a declarative, runes-native component instead. The migration is mostly a translation of column options.
+Tabulator packs a lot into a framework-agnostic table, and it shows. The catch in a Svelte app is that you drive it imperatively - `new Tabulator(...)`, then method calls - where SvGrid lets you stay declarative and runes-native. Most of the migration is just translating column options from one shape to the other.
 
 ## Concept mapping
 
@@ -60,7 +60,7 @@ Tabulator's `ajaxURL` with remote pagination maps to SvGrid's external mode: fet
 
 ## What you gain
 
-- Declarative, reactive integration - no imperative table instance to manage.
+- Declarative, reactive integration, no imperative table instance to manage.
 - Svelte 5 runes throughout, plus a headless core if you want custom markup.
 - Built-in virtualization and accessibility defaults.
 
@@ -69,7 +69,3 @@ Tabulator's `ajaxURL` with remote pagination maps to SvGrid's external mode: fet
 ### How different is SvGrid from Tabulator?
 
 The feature sets overlap heavily (formatters, editors, header filters, grouping, pagination, virtualization). The main difference is the model: Tabulator is an imperative, framework-agnostic instance; SvGrid is a declarative Svelte 5 component with a headless core.
-
-### Does SvGrid support remote pagination like Tabulator's ajax mode?
-
-Yes. SvGrid's external mode reports sort, filter, and page state via callbacks; you fetch the page and return it with a total row count - the equivalent of Tabulator's remote pagination.

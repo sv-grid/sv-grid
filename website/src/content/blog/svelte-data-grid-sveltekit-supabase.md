@@ -7,10 +7,10 @@ tags: sveltekit, supabase, server-side, integration, svelte data grid
 author: Kamelia M
 ---
 
-Supabase gives you a Postgres database with a clean JavaScript client; SvelteKit gives you load functions and server endpoints. Together they are a great backend for a data grid. Here is how to drive SvGrid server-side from Supabase so it scales past what fits in the browser.
+Supabase gives you a Postgres database with a clean JavaScript client; SvelteKit gives you load functions and server endpoints. Together they are a great backend for a data grid.
 
 ![Server-side data from Supabase in SvGrid](/blog-media/server-side.png)
-*Server-side sorting, filtering, and paging - here backed by Supabase.*
+*Server-side sorting, filtering, and paging, here backed by Supabase.*
 
 ## The shape of the integration
 
@@ -84,14 +84,4 @@ In the component, fetch on every state change and feed the result back:
 - **Debounce the search** so typing does not fire a query per keystroke.
 - **Cancel stale requests** so a slow earlier response cannot overwrite a newer page.
 - **Use Row Level Security** in Supabase so the endpoint only returns what the user may see.
-- **Index the sort/filter columns** in Postgres - server-side paging is only fast if the database is.
-
-## Frequently asked questions
-
-### How do I paginate a Supabase query for a data grid?
-
-Use `.range(from, to)` for the page slice and `.select('*', { count: 'exact' })` to get the total row count. Feed the rows to SvGrid as `data` and the count as `rowCount` so the pager is accurate.
-
-### Where should the Supabase query live in SvelteKit?
-
-Behind a server endpoint (`+server.ts`) or in a server load function, so your keys and Row Level Security stay on the server. The grid calls it with the current sort, filter, and page state.
+- **Index the sort/filter columns** in Postgres, server-side paging is only fast if the database is.

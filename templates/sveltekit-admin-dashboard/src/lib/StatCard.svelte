@@ -7,8 +7,8 @@
 </script>
 
 <div
-  class="rounded-xl border bg-white p-4 shadow-sm"
-  style="border-color: var(--app-border);"
+  class="rounded-xl border p-4 shadow-sm"
+  style="border-color: var(--app-border); background: var(--app-panel);"
 >
   <p class="text-xs font-medium uppercase tracking-wide" style="color: var(--app-muted);">
     {label}

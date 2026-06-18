@@ -52,7 +52,7 @@
     {rows.length} customers · drag the <strong>Plan</strong> column into the group bar to group by plan.
   </p>
 
-  <div class="min-h-0 flex-1 rounded-xl border bg-white p-2 shadow-sm" style="border-color: var(--app-border);">
+  <div class="min-h-0 flex-1 rounded-xl border p-2 shadow-sm" style="border-color: var(--app-border); background: var(--app-panel);">
     {#if browser}
       <SvGrid
         data={rows}

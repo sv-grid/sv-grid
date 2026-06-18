@@ -7,7 +7,7 @@ tags: badges, status, cells, custom cells, recipe
 author: Victor Vidolov
 ---
 
-A status column reads far better as colored pills than as plain text: "Active", "Pending", "Closed" become instantly scannable. SvGrid renders any markup in a cell, so a badge is a small custom cell. Here is how to do it well - themeable and accessible.
+"Active", "Pending", "Closed" as plain text is a column you have to read; as colored pills it is a column you scan. SvGrid renders any markup in a cell, so a badge is a small custom cell. Here is how to do it well, themeable, and accessible rather than color-only.
 
 ![Custom badge cells in SvGrid](/blog-media/custom-cells-themes.png)
 *Custom badge and status cells in SvGrid.*
@@ -43,11 +43,11 @@ Map the value to a color and render a pill:
 
 ## Keep it sortable and filterable
 
-Because the column keeps its `field`, sorting the status column sorts by the real value and the Excel-style filter still lists the actual statuses. The badge only changes presentation - never compute the label inside an accessor, or you lose this.
+Because the column keeps its `field`, sorting the status column sorts by the real value and the Excel-style filter still lists the actual statuses. The badge only changes presentation, never compute the label inside an accessor, or you lose this.
 
 ## Do not rely on color alone
 
-Color plus the text label (as above) is the accessible pattern - colorblind users read the word, not just the hue. The dot is decorative; the text carries the meaning. See [accessible data tables](accessible-data-table-wcag).
+Color plus the text label (as above) is the accessible pattern, colorblind users read the word, not just the hue. The dot is decorative; the text carries the meaning. See [accessible data tables](accessible-data-table-wcag).
 
 ## Make it data-driven
 
@@ -58,7 +58,3 @@ Keep the value-to-color map in one place so badges stay consistent across the ap
 ### How do I show colored status badges in a Svelte data grid?
 
 Render a pill in a custom cell via `renderSnippet`, mapping the value to a color. Keep the column's `field` so the status stays sortable and filterable, and include the text label so it is accessible.
-
-### How do I keep badge colors consistent and theme-aware?
-
-Keep a single value-to-color map and derive the pill background with `color-mix` from that color, so badges are consistent across the app and adapt to light and dark mode automatically.

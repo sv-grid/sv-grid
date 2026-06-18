@@ -7,7 +7,7 @@ tags: conditional formatting, row styling, rows, recipe, svelte data grid
 author: Kamelia M
 ---
 
-Sometimes the whole row matters, not a single cell: an overdue invoice in red, a failed job tinted, a VIP customer highlighted. This is row-level conditional formatting, and it is the fastest way to make a grid scannable. Here is how to drive it from your data.
+Sometimes it is the whole row that matters, not one cell, the overdue invoice that should be red, the failed job, the VIP you do not want to miss. Row-level conditional styling is the fastest way to make a grid scannable at a glance. Here is how to drive it straight from your data, accessibly.
 
 ![Conditional row highlighting in SvGrid](/blog-media/anomaly.png)
 *Row-level conditional styling driven by the data.*
@@ -41,14 +41,4 @@ Color is a signal, not the only signal - colorblind users and screen readers nee
 
 ## Row vs cell formatting
 
-Use **row** styling when the whole record has a state (overdue, archived, selected). Use **cell** conditional formatting when a single value crosses a threshold (a negative number, a low score) - see [conditional formatting](conditional-formatting). They compose: a tinted overdue row can still have a red balance cell.
-
-## Frequently asked questions
-
-### How do I highlight an entire row based on its data in SvGrid?
-
-Compute a status from the row, map it to a CSS class, and apply that class at the row level so the style spans every cell. Drive the colors from theme tokens so they adapt to light and dark mode.
-
-### Is it okay to use only color to flag rows?
-
-No - color alone excludes colorblind and screen-reader users. Pair a row tint with an icon, badge, or text label so the meaning is conveyed without relying on color, in line with WCAG guidance.
+Use **row** styling when the whole record has a state (overdue, archived, selected). Use **cell** conditional formatting when a single value crosses a threshold (a negative number, a low score), see [conditional formatting](conditional-formatting). They compose: a tinted overdue row can still have a red balance cell.

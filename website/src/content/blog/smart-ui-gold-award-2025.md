@@ -17,27 +17,17 @@ Plenty of awards are decided by a panel. Readers' Choice is decided by the devel
 
 Smart UI did not win on novelty. It won on the things that compound over years of use:
 
-- **Breadth** - a complete suite, from data grid and scheduler to Gantt and charting, that covers a real application's needs.
-- **Stability** - components that do not break your build between minor versions.
-- **Standards** - built on web components, so they drop into React, Angular, Vue, or plain HTML.
-- **Momentum** - a steady release cadence, most recently the 26.0.0 release with Pro Themes (Material 3, Fluent, Strata, and Tabula) and AI-assisted API documentation.
+- **Breadth**: a complete suite, from data grid and scheduler to Gantt and charting, that covers a real application's needs.
+- **Stability**: components that do not break your build between minor versions.
+- **Standards**: built on web components, so they drop into React, Angular, Vue, or plain HTML.
+- **Momentum**: a steady release cadence, most recently the 26.0.0 release with Pro Themes (Material 3, Fluent, Strata, and Tabula) and AI-assisted API documentation.
 
 ## What it means for SvGrid users
 
-SvGrid is a new product, but it inherits the engineering culture that earned Smart UI this recognition. The same people who obsess over grid performance, accessibility, and backward compatibility on Smart UI are the ones building SvGrid for Svelte 5. When you adopt SvGrid, you are not betting on a first-time vendor - you are betting on a team with a fifteen-year track record and an award voted by their peers.
+SvGrid is a new product, but it inherits the engineering culture that earned Smart UI this recognition. The same people who obsess over grid performance, accessibility, and backward compatibility on Smart UI are the ones building SvGrid for Svelte 5. When you adopt SvGrid, you are not betting on a first-time vendor, you are betting on a team with a fifteen-year track record and an award voted by their peers.
 
 ## The road ahead
 
-Recognition is encouragement, not a finish line. Across both Smart UI and SvGrid, our 2026 work is heavily AI-native: MCP servers so assistants can use the components correctly, AI-assisted documentation, and smart data-grid features. The goal is simple - make the tools work beautifully whether a human or an AI assistant is driving them.
+Recognition is encouragement, not a finish line. Across both Smart UI and SvGrid, our 2026 work is heavily AI-native: MCP servers so assistants can use the components correctly, AI-assisted documentation, and smart data-grid features. The goal is simple, make the tools work beautifully whether a human or an AI assistant is driving them.
 
 Thank you to everyone who voted. The best way we know to repay it is to keep shipping.
-
-## Frequently asked questions
-
-### What award did Smart UI win?
-
-Smart UI was voted Gold Winner in Visual Studio Magazine's 2025 Readers' Choice Awards, in the software development service providers category - an award decided by the developers who use the tools.
-
-### How does the award relate to SvGrid?
-
-SvGrid is built by the same team behind Smart UI. It inherits the same engineering priorities - performance, accessibility, and stability - that earned Smart UI the recognition.

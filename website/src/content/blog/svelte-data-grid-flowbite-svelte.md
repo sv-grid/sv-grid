@@ -7,7 +7,7 @@ tags: flowbite, theming, design system, integration, svelte data grid
 author: Boyko Markov
 ---
 
-Flowbite Svelte is a Tailwind-based component library with a polished default look. SvGrid pairs well with it: use Flowbite for the chrome (buttons, dropdowns, inputs) and SvGrid for the data grid itself, themed to match via `--sg-*` variables.
+Flowbite Svelte gives you a polished, Tailwind-based component set out of the box. The natural division of labour: let Flowbite own the chrome - buttons, dropdowns, inputs - and let SvGrid own the grid, themed to match through `--sg-*` variables so the seam disappears.
 
 ## Match the palette
 
@@ -53,7 +53,3 @@ Render Flowbite buttons inside cells with `renderSnippet` for consistent, access
 ### How do I make SvGrid match Flowbite Svelte?
 
 Theme SvGrid's `--sg-*` variables against the same Tailwind color tokens Flowbite uses (such as the primary scale), and define dark values under Flowbite's `dark` class. The grid then matches Flowbite's look and dark mode.
-
-### Should I use Flowbite components inside the grid?
-
-Use them for the toolbar and for action cells (via `renderSnippet`) so controls match your UI, and let SvGrid render the grid body. Flowbite's buttons and inputs are accessible, so that carries into the cells.

@@ -7,7 +7,7 @@ tags: tauri, desktop, sqlite, integration, svelte data grid
 author: Victor Vidolov
 ---
 
-Tauri lets you ship a Svelte app as a small, native desktop binary with a Rust backend. SvGrid is a strong choice for the data-heavy screens such apps usually need - and virtualization means even large local datasets stay smooth. Here is how they fit together.
+Tauri lets you wrap a Svelte app into a small native desktop binary with a Rust backend, and desktop apps tend to be exactly the data-heavy, spreadsheet-shaped tools a grid is built for. Virtualization keeps even big local datasets smooth, and the MIT core ships inside your binary with no license check.
 
 ## Data from a Rust command
 
@@ -38,7 +38,7 @@ const db = await Database.load('sqlite:app.db')
 const rows = await db.select('SELECT * FROM people ORDER BY name LIMIT 50 OFFSET ?', [page * 50])
 ```
 
-Drive SvGrid in external mode against these queries exactly as you would a web backend - see [server-side data](server-side-data).
+Drive SvGrid in external mode against these queries exactly as you would a web backend, see [server-side data](server-side-data).
 
 ## Why SvGrid suits desktop
 
@@ -48,14 +48,4 @@ Drive SvGrid in external mode against these queries exactly as you would a web b
 
 ## Offline and bundle
 
-Everything runs locally, so the grid works offline. SvGrid's core is light, which keeps your Tauri bundle small - a Tauri selling point you do not want a heavy grid to undo.
-
-## Frequently asked questions
-
-### Can I use SvGrid in a Tauri desktop app?
-
-Yes. Load data from a Tauri Rust command via `invoke`, or from a local SQLite database with `tauri-plugin-sql`, and bind it to SvGrid. Virtualization keeps large local datasets fast, and the MIT core ships inside your binary.
-
-### How do I page a local SQLite table in a Tauri grid?
-
-Query with `ORDER BY`, `LIMIT`, and `OFFSET` (plus a `COUNT(*)` for the total) and drive SvGrid in external mode - the same pattern as a web backend, but the database is local.
+Everything runs locally, so the grid works offline. SvGrid's core is light, which keeps your Tauri bundle small, a Tauri selling point you do not want a heavy grid to undo.

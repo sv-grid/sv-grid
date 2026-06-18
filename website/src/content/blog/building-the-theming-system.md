@@ -11,7 +11,7 @@ Moving from behavior to appearance. A data grid that only looks right in its own
 
 ## The decision: no theme object
 
-Plenty of components ship a JavaScript theme config - a big object of tokens you import, override, and pass in. We deliberately did not. Every visual surface in SvGrid reads from a CSS custom property prefixed `--sg-*`, so you restyle it with plain CSS:
+Plenty of components ship a JavaScript theme config, a big object of tokens you import, override, and pass in. We deliberately did not. Every visual surface in SvGrid reads from a CSS custom property prefixed `--sg-*`, so you restyle it with plain CSS:
 
 ```css
 .my-grid {
@@ -34,7 +34,7 @@ Once every color is a token, dark mode stops being a feature and becomes a conse
 :root[data-theme='dark']  { --sg-bg: #181d27; --sg-fg: #e2e8f0; }
 ```
 
-The grid follows instantly, with no re-render and no flash, because it never hard-codes a color. We got light/dark essentially for free out of a decision we made for a different reason - the best kind of architecture payoff.
+The grid follows instantly, with no re-render and no flash, because it never hard-codes a color. We got light/dark essentially for free out of a decision we made for a different reason, the best kind of architecture payoff.
 
 ## Inheriting a design system
 
@@ -56,13 +56,3 @@ We resisted adding a runtime theming API. The platform already has one - it is c
 ## What it set up
 
 With theming on plain CSS variables, SvGrid could slot into real products and match real brands. That left one big area: data that does not fit in the browser. Read next: [server-side data and the headless core](server-side-data-and-the-headless-core).
-
-## Frequently asked questions
-
-### How do you theme SvGrid?
-
-Override the `--sg-*` CSS custom properties on the grid or at the root. Every surface reads from these tokens, so you restyle the grid with plain CSS - no JavaScript theme object or rebuild required.
-
-### How does dark mode work in SvGrid?
-
-Define light and dark token sets keyed off a `data-theme` attribute and toggle that attribute. Because every color is a CSS variable, the grid updates instantly with no re-render or flash.

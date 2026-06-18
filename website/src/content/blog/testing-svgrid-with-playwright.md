@@ -7,7 +7,7 @@ tags: playwright, testing, e2e, accessibility, svelte data grid
 author: Kamelia M
 ---
 
-End-to-end tests catch the integration bugs unit tests miss: does sorting actually reorder rows, does an edit persist, does keyboard navigation work? Playwright is a great fit, and because SvGrid renders proper ARIA roles, your tests can be robust rather than brittle. Here is the approach.
+Unit tests will not tell you whether sorting actually reorders the rows on screen, whether an edit really persists, or whether keyboard navigation works, those are integration questions, and that is Playwright's turf. The bonus: because SvGrid renders proper ARIA roles, your tests can lean on those instead of brittle CSS selectors. Here is the approach.
 
 ## Select by role, not by class
 
@@ -53,7 +53,7 @@ test('editing a cell commits', async ({ page }) => {
 
 ## Test keyboard navigation
 
-This verifies the part most grids get wrong - and that hand-rolled tables fail:
+This verifies the part most grids get wrong, and that hand-rolled tables fail:
 
 ```ts
 test('arrow keys move the active cell', async ({ page }) => {
@@ -78,4 +78,4 @@ Query the grid through ARIA roles (`grid`, `row`, `columnheader`, `gridcell`) ra
 
 ### Can I test keyboard navigation in the grid?
 
-Yes, and you should. Focus a cell, press arrow keys, Home/End, and F2/Enter, and assert the active cell and edits behave - SvGrid's roving focus model makes this testable, and it is exactly where weaker grids fall down.
+Yes, and you should. Focus a cell, press arrow keys, Home/End, and F2/Enter, and assert the active cell and edits behave, SvGrid's roving focus model makes this testable, and it is exactly where weaker grids fall down.

@@ -7,7 +7,7 @@ tags: set filter, custom filters, faceted search, svelte data grid
 author: Victor Vidolov
 ---
 
-Text and number filters cover most needs, but categorical data wants something different: a checklist of every distinct value, the way Excel's filter dropdown works. SvGrid supports set-style filtering and custom filter logic so users can pick exactly the categories they want.
+Text and number filters handle most columns, but categorical data wants something else entirely: a checklist of every distinct value, exactly like Excel's filter dropdown. SvGrid does this set-style filtering, and lets you drop in custom filter logic when the built-ins are not enough.
 
 ![An Excel-style set filter in SvGrid](/blog-media/set-filter.png)
 *An advanced set filter in SvGrid.*
@@ -29,7 +29,7 @@ When the built-in operators do not fit, you can filter on your own predicate. Fo
 
 ## Faceted counts
 
-A polished set filter shows how many rows each option would match - "Active (1,204)", "Archived (87)". Compute the facet counts from the current data and render them next to each checkbox, so users know what they will get before they apply.
+A polished set filter shows how many rows each option would match, "Active (1,204)", "Archived (87)". Compute the facet counts from the current data and render them next to each checkbox, so users know what they will get before they apply.
 
 ## Combine filters across columns
 

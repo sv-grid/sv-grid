@@ -7,7 +7,7 @@ tags: column resize, column reorder, layout, svelte data grid
 author: Boyko Markov
 ---
 
-No two users read a table the same way. One wants the description column wide; another wants it out of the way. Column resizing and reordering hand that control to the user, and persisting the layout makes the grid feel like theirs.
+No two people read a table the same way, one lives in the description column, the next wants it shoved to the end. Resizing and reordering hand that control to the user, and once you persist their layout the grid becomes theirs.
 
 ![Drag-to-reorder columns in SvGrid](/blog-media/column-reorder.png)
 *Drag-to-reorder columns in SvGrid.*
@@ -53,7 +53,3 @@ Always give users an escape hatch. A small "Reset columns" button that clears th
 ### How do users resize columns in a Svelte data grid?
 
 They drag a column's edge. Set an initial `width` per column for a good default, and SvGrid lets users adjust from there.
-
-### How do I remember a user's column layout?
-
-Capture the column widths and order in your state, persist them to `localStorage`, and apply them when you build the `columns` array on load. Offer a reset button to restore defaults.

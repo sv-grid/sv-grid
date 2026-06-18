@@ -18,9 +18,9 @@ It would have been easy to build grouping, tree data, and master-detail as three
 
 So we built a single expansion model in the core and expressed all three on top of it:
 
-- **Grouping** - rows collapsed under generated group headers.
-- **Tree data** - parent rows expanding to indented children.
-- **Master-detail** - a row expanding to a rich detail panel.
+- **Grouping**: rows collapsed under generated group headers.
+- **Tree data**: parent rows expanding to indented children.
+- **Master-detail**: a row expanding to a rich detail panel.
 
 One model, three faces. That kept the engine small and the behavior consistent: expand and collapse work the same way, with the same keyboard support, whichever feature you are using.
 
@@ -39,24 +39,14 @@ Each group footer rolls up its rows, and because the formatter runs on the aggre
 
 ## Trees and the question of children
 
-Tree data raised a design question: where do children come from? A nested `children` array is the simplest model to start with, and aggregation up the tree makes parents genuinely useful - a folder showing the total size of everything inside it. For very large trees, the expansion model lets you lazy-load a subtree the first time it opens, so you never pay for branches no one looks at.
+Tree data raised a design question: where do children come from? A nested `children` array is the simplest model to start with, and aggregation up the tree makes parents genuinely useful, a folder showing the total size of everything inside it. For very large trees, the expansion model lets you lazy-load a subtree the first time it opens, so you never pay for branches no one looks at.
 
 ## Master-detail: just render Svelte
 
-Master-detail is where being native to Svelte 5 really showed. A detail panel is not a special grid construct - it is whatever Svelte markup you want: a nested `<SvGrid>` of line items, a chart, a form. The expansion model provides the open/close machinery; you provide the content. Lazy-loading detail data when a row opens keeps a thousand-row grid light.
+Master-detail is where being native to Svelte 5 really showed. A detail panel is not a special grid construct, it is whatever Svelte markup you want: a nested `<SvGrid>` of line items, a chart, a form. The expansion model provides the open/close machinery; you provide the content. Lazy-loading detail data when a row opens keeps a thousand-row grid light.
 
 The practical guides came later: [Grouping and Aggregation](grouping-and-aggregation), [Tree Data and Hierarchies](tree-data-hierarchies), and [Master-Detail Rows](master-detail-rows). This post is about the decision to unify them.
 
 ## What it proved
 
-Collapsing grouping, trees, and master-detail onto one expansion model was the clearest example yet of the architecture earning its keep: three marquee features, one small mechanism, consistent behavior. Read next: [accessibility from the ground up](accessibility-from-the-ground-up) - something we insisted on from the start and had to prove at depth.
-
-## Frequently asked questions
-
-### Do grouping, tree data, and master-detail share code in SvGrid?
-
-Yes. All three are built on a single expansion model in the headless core - a row that reveals more beneath it - so they share consistent expand/collapse behavior and keyboard support.
-
-### Can parent rows summarize their children in a tree?
-
-Yes. Add an `aggregate` such as `sum` to a column and each parent rolls up the values of its subtree, with the column's formatter applied to the total - the same aggregation that powers grouping.
+Collapsing grouping, trees, and master-detail onto one expansion model was the clearest example yet of the architecture earning its keep: three marquee features, one small mechanism, consistent behavior. Read next: [accessibility from the ground up](accessibility-from-the-ground-up), something we insisted on from the start and had to prove at depth.

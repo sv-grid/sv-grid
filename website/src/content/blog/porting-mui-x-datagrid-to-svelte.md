@@ -7,7 +7,7 @@ tags: migration, mui x datagrid, react, comparison, svelte data grid
 author: Kamelia M
 ---
 
-Teams adopting Svelte often have React screens built on MUI X DataGrid. Porting one to SvGrid is mostly mechanical: the column model and data flow have direct equivalents, and Svelte's reactivity replaces React hooks. Here is the mapping.
+If your team is drifting from React to Svelte, the MUI X DataGrid screens are usually the scariest-looking thing to port, and usually the most mechanical once you start. The column model and data flow have direct equivalents, and Svelte reactivity deletes most of the hooks.
 
 ## Concept mapping
 
@@ -59,13 +59,3 @@ React state (`useState`, `useMemo`) becomes Svelte runes (`$state`, `$derived`).
 ## Enterprise features
 
 MUI X Pro/Premium features like pivoting and Excel export map to [@svgrid/enterprise](/pricing); the free tier covers sorting, filtering, grouping, virtualization, and editing.
-
-## Frequently asked questions
-
-### How do I port a React MUI X DataGrid to Svelte?
-
-Map `rows` to `data`, `GridColDef` to `ColumnDef` (`headerName` to `header`, `valueGetter` to `accessorFn`, `valueFormatter` to `format`, `renderCell` to a `renderSnippet` cell), and replace React state and server modes with Svelte runes and SvGrid's external mode.
-
-### Is there a Svelte equivalent of DataGridPro features?
-
-Yes - @svgrid/enterprise provides pivot tables, export/import, and more, while the MIT core covers the standard DataGrid feature set.

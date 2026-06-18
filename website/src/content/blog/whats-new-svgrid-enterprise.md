@@ -7,7 +7,7 @@ tags: product, @svgrid/enterprise, export, pivot, ai, new features
 author: Boyko Markov
 ---
 
-The SvGrid Community core is free, MIT-licensed, and complete enough to ship real products. But some teams need the features that turn a data grid into a reporting and analysis tool. That is what `@svgrid/enterprise` adds. Here is what is in the pack today and how to think about whether you need it.
+The SvGrid Community core is free, MIT-licensed, and complete enough to ship real products. But some teams need the features that turn a data grid into a reporting and analysis tool. That is what `@svgrid/enterprise` adds.
 
 ## Data export - Excel, PDF, CSV, TSV, HTML
 
@@ -31,7 +31,7 @@ Exports honor the current view - the active sort, filters, and selection - and u
 
 ## Data import
 
-Export's counterpart: bring spreadsheet data back in. Import lets users load XLSX or CSV files into the grid, map columns, and validate rows before they commit - useful for bulk data entry and migration workflows.
+Export's counterpart: bring spreadsheet data back in. Import lets users load XLSX or CSV files into the grid, map columns, and validate rows before they commit, useful for bulk data entry and migration workflows.
 
 ## Print
 
@@ -59,7 +59,7 @@ Enterprise features do not bloat your bundle. Export and import lazy-load their 
 
 ## Do you need Enterprise?
 
-A simple test: if your users only view, sort, filter, and edit data, Community is all you need - and it is free for commercial use. If they need to export to Excel, print reports, import spreadsheets, or pivot for analysis, Enterprise pays for itself on the first feature request you do not have to build yourself.
+A simple test: if your users only view, sort, filter, and edit data, Community is all you need, and it is free for commercial use. If they need to export to Excel, print reports, import spreadsheets, or pivot for analysis, Enterprise pays for itself on the first feature request you do not have to build yourself.
 
 Enterprise is licensed per developer: a Single Application license at $599 and a Multiple Application license at $999, each a perpetual license with a year of updates and support that renews automatically (cancel anytime). See [pricing](/pricing) for the details.
 
@@ -68,7 +68,3 @@ Enterprise is licensed per developer: a Single Application license at $599 and a
 ### What does @svgrid/enterprise add over the free Community core?
 
 Data export (Excel, PDF, CSV, TSV, HTML), data import, printing, pivot tables, and an AI assistant. The Community core - sorting, filtering, editing, virtualization, grouping - stays free and MIT-licensed.
-
-### Do Enterprise features increase my bundle size if I do not use them?
-
-No. Export and import lazy-load their dependencies only when triggered, so features you do not use add no weight to your bundle.

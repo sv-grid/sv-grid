@@ -7,14 +7,14 @@ tags: optimistic ui, concepts, ux, data grid
 author: Victor Vidolov
 ---
 
-Optimistic UI is the technique behind apps that feel instant even on a slow connection. The name sounds advanced; the idea is simple. Here is what it means and how to do it without losing your users' trust.
+Optimistic UI is the quiet trick behind every app that feels instant even when the network does not. The name sounds fancier than the idea, which is almost embarrassingly simple.
 
 ![Optimistic edits in SvGrid](/blog-media/optimistic-updates.png)
 *Optimistic UI in a SvGrid grid: apply now, confirm in the background.*
 
 ## The idea
 
-Normally an action waits: click, send request, wait for the server, then update the screen. Optimistic UI flips the order - it updates the screen *immediately*, assuming the request will succeed, and only corrects course if it fails.
+Normally an action waits: click, send request, wait for the server, then update the screen. Optimistic UI flips the order, it updates the screen *immediately*, assuming the request will succeed, and only corrects course if it fails.
 
 Because most requests do succeed, the user gets instant feedback almost every time, and the network round trip happens invisibly.
 
@@ -45,7 +45,7 @@ Optimism without honesty is how you lose trust:
 
 ## When not to be optimistic
 
-Optimism suits high-success, low-stakes actions (edits, likes, toggles). For operations that often fail or are dangerous (payments, irreversible deletes), prefer a clear pending state and wait for confirmation - the instant feel is not worth a wrong impression about money or data loss.
+Optimism suits high-success, low-stakes actions (edits, likes, toggles). For operations that often fail or are dangerous (payments, irreversible deletes), prefer a clear pending state and wait for confirmation, the instant feel is not worth a wrong impression about money or data loss.
 
 ## Frequently asked questions
 

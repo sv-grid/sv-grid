@@ -7,7 +7,7 @@ tags: context menu, right-click, actions, recipe, svelte data grid
 author: Kamelia M
 ---
 
-A right-click context menu - "Edit", "Duplicate", "Delete", "Copy" - is a power-user staple. SvGrid does not lock down the contextmenu event, so you can add one with a custom cell or a wrapper and your own menu component. Here is a clean approach.
+Right-click menus - Edit, Duplicate, Delete, Copy - are the kind of thing power users expect and never mention until they are missing. SvGrid does not hijack the `contextmenu` event, so you are free to add one with a custom cell (or a wrapper) and your own menu.
 
 ![A right-click context menu in SvGrid](/blog-media/context-menu.png)
 *A right-click context menu on a SvGrid row.*
@@ -47,11 +47,11 @@ Position a small menu at the pointer and close it on outside click or Escape:
 
 ## Make it keyboard-friendly
 
-Right-click is mouse-only, so also expose the same actions another way - an actions column (see [actions column](actions-column-edit-delete)) or the Shift+F10 / Menu key, which fires `contextmenu` from the keyboard. Use `role="menu"`/`role="menuitem"` and arrow-key navigation so the menu itself is accessible.
+Right-click is mouse-only, so also expose the same actions another way, an actions column (see [actions column](actions-column-edit-delete)) or the Shift+F10 / Menu key, which fires `contextmenu` from the keyboard. Use `role="menu"`/`role="menuitem"` and arrow-key navigation so the menu itself is accessible.
 
 ## Selection-aware actions
 
-If the user right-clicks a row that is part of a multi-row selection, act on the whole selection, not just that row. Check whether the target is selected and branch accordingly - the behavior users expect from file managers.
+If the user right-clicks a row that is part of a multi-row selection, act on the whole selection, not just that row. Check whether the target is selected and branch accordingly, the behavior users expect from file managers.
 
 ## Frequently asked questions
 

@@ -7,7 +7,7 @@ tags: migration, ag-grid-react, react, comparison, svelte data grid
 author: Kamelia M
 ---
 
-If you are moving an app from React to Svelte, the `ag-grid-react` screens are often the most involved part to port. The grid concepts carry over to SvGrid cleanly; what changes is React's component/hook model becoming Svelte runes. Here is the playbook.
+When a team migrates from React to Svelte, the `ag-grid-react` screens tend to look like the scariest part of the job. They are less scary than they look: the grid concepts port to SvGrid cleanly, and most of the real change is React's hooks becoming Svelte runes. Here is the playbook.
 
 ## Concept mapping
 
@@ -55,7 +55,7 @@ The biggest mental shift is reactivity. React re-renders components and you opti
 
 ## Server-side
 
-AG Grid's Server-Side Row Model maps to SvGrid external mode - callbacks plus a total `rowCount`. See [Server-Side Data](server-side-data) and the [SvelteKit + Supabase guide](svelte-data-grid-sveltekit-supabase).
+AG Grid's Server-Side Row Model maps to SvGrid external mode, callbacks plus a total `rowCount`. See [Server-Side Data](server-side-data) and the [SvelteKit + Supabase guide](svelte-data-grid-sveltekit-supabase).
 
 ## Frequently asked questions
 

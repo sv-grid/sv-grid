@@ -28,7 +28,7 @@ The pattern repeats every time:
 
 Svelte 5 introduced runes - `$state`, `$derived`, `$effect` - a signal-based reactivity model where a derived value recomputes only when the exact state it reads changes. For most components that is a pleasant ergonomic upgrade. For a data grid it is the whole ballgame, because a grid is a hundred thousand cells, any of which can change, and the entire job is to repaint exactly what moved and nothing else.
 
-You can take a framework-agnostic grid engine, wrap it in a Svelte adapter, bridge it with stores, and ship something that works. But you pay a translation tax on every update, and the result feels a half-step off - the same "works, but not quite native" sensation a jQuery grid gave an Angular app a decade ago. The lesson of every previous era is that the half-step never fully closes. Reactivity has to be designed in, not adapted on.
+You can take a framework-agnostic grid engine, wrap it in a Svelte adapter, bridge it with stores, and ship something that works. But you pay a translation tax on every update, and the result feels a half-step off, the same "works, but not quite native" sensation a jQuery grid gave an Angular app a decade ago. The lesson of every previous era is that the half-step never fully closes. Reactivity has to be designed in, not adapted on.
 
 So we built [SvGrid](/) natively on runes. No store wrappers, no adapter layer, no translation. State is just state; derived rows are just derived. The grid speaks the framework's own language because it is written in it.
 
@@ -36,7 +36,7 @@ So we built [SvGrid](/) natively on runes. No store wrappers, no adapter layer, 
 
 Building native to Svelte 5 is not an aesthetic preference; it shows up in the product:
 
-- A headless core (`createSvGrid`) for full control, and a render component (`<SvGrid>`) for speed - same column definitions, switch freely.
+- A headless core (`createSvGrid`) for full control, and a render component (`<SvGrid>`) for speed, same column definitions, switch freely.
 - Row and column virtualization, so 100,000 rows by 100 columns stay smooth.
 - Excel-style filtering, grouping with aggregation, tree and master-detail rows, inline editing with validation, and server-side data.
 - WAI-ARIA accessibility and full keyboard navigation on by default.

@@ -7,7 +7,7 @@ tags: svelte 5, reactivity, arrays, performance, engineering
 author: Victor Vidolov
 ---
 
-Svelte 5's deep reactivity is wonderful for ergonomics and mostly invisible for performance - until your arrays get very large, as they do behind a data grid. Here is how reactivity behaves at scale and how to keep it fast.
+Svelte 5's deep reactivity is a joy to write against and, for most apps, free. Then your array grows to tens of thousands of objects - which is exactly what sits behind a data grid - and "free" stops being quite true.
 
 ## Deep proxies have a cost
 
@@ -28,13 +28,13 @@ async function loadPage() {
 
 ## When you do mutate, mutate surgically
 
-If you use plain `$state` (deep) and mutate, change only what changed and keep other references stable - do not rebuild the whole array as new objects:
+If you use plain `$state` (deep) and mutate, change only what changed and keep other references stable, do not rebuild the whole array as new objects:
 
 ```ts
 rows[i] = { ...rows[i], price } // one new object; the rest keep identity
 ```
 
-This keeps both the proxy work and the grid's re-render minimal - see [immutable updates](immutable-updates-without-killing-performance).
+This keeps both the proxy work and the grid's re-render minimal, see [immutable updates](immutable-updates-without-killing-performance).
 
 ## Let virtualization and derivation help
 

@@ -7,7 +7,7 @@ tags: columns, column definitions, formatting, svelte data grid
 author: Boyko Markov
 ---
 
-If you only learn one part of a data grid's API, make it the column definition - everything else hangs off it. In SvGrid a column tells the grid how to read a value from a row, how to format it, and how to render it. Get fluent with `ColumnDef` and the rest of the grid mostly falls into place.
+If you only learn one part of a data grid's API, make it the column definition, everything else hangs off it. In SvGrid a column tells the grid how to read a value from a row, how to format it, and how to render it. Get fluent with `ColumnDef` and the rest of the grid mostly falls into place.
 
 ## Read a value: `field` vs `accessorFn`
 
@@ -69,7 +69,3 @@ Because the snippet receives the cell context, you keep full type safety and the
 ### How do I format currency in a Svelte data grid?
 
 Set `format: { type: 'currency', currency: 'USD' }` on the column. SvGrid keeps the raw number for sorting and filtering while displaying the localized string.
-
-### When do I need an id on a column?
-
-Whenever you use `accessorFn` instead of `field`. The id is the stable key the grid uses for sorting, filtering, and selection state.

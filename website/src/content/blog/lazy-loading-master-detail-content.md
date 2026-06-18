@@ -7,7 +7,7 @@ tags: performance, master detail, lazy loading, recipe, svelte data grid
 author: Kamelia M
 ---
 
-Master-detail rows are powerful, but loading every row's detail up front is wasteful - most rows never get opened. Lazy-loading detail content keeps the initial grid fast and only pays for the panels users actually expand. Here is how to do it well.
+Master-detail rows are great, but loading every row's detail up front is paying for a thousand panels to show the three someone opens. Lazy-loading flips that: the grid loads fast, and a detail panel only fetches when its row is actually expanded. Here is how to do it cleanly, caching included.
 
 ![Lazy-loaded tree branches in SvGrid](/blog-media/lazy-tree.png)
 *Lazy-loaded branches: detail data fetched only on expand.*
@@ -57,7 +57,3 @@ Detail panels and row virtualization work together: only visible rows render, an
 ### How do I lazy-load master-detail content in SvGrid?
 
 Fetch the detail data inside the detail snippet when the row expands - for example with an `{#await}` block - so only opened rows trigger a request. Cache results by row id so re-opening is instant.
-
-### How do I avoid wasted requests when users expand and collapse quickly?
-
-Cache the fetch promise per row id to dedupe concurrent opens, and cancel in-flight requests with an AbortController when a panel collapses before its data arrives.

@@ -7,7 +7,7 @@ tags: avatar, image, cells, custom cells, recipe
 author: Kamelia M
 ---
 
-People grids want faces; product grids want thumbnails. An image cell makes a table instantly more scannable. SvGrid renders any markup in a cell, so an avatar is a small custom cell - the craft is in fallbacks, performance, and accessibility. Here is the recipe.
+People grids want faces; product grids want thumbnails, either way, an image makes a table scannable in a way text never will. SvGrid renders any markup in a cell, so an avatar is a small custom cell; the craft is all in the fallbacks, the performance, and the alt text.
 
 ## A basic avatar cell
 
@@ -42,20 +42,10 @@ Never show a broken image. Fall back to initials on error or when the URL is mis
 
 ## Performance
 
-- **`loading="lazy"`** so off-screen images do not fetch until needed - and with virtualization, only visible cells render at all.
+- **`loading="lazy"`** so off-screen images do not fetch until needed, and with virtualization, only visible cells render at all.
 - **Fixed dimensions** (`width`/`height`) to avoid layout shift as images load.
 - **Thumbnails, not full images.** Serve a 56px source, not a 2000px hero, for a 28px cell.
 
 ## Accessibility
 
 Always set meaningful `alt` text - the person's or product's name - not "avatar". For purely decorative thumbnails alongside a text label, an empty `alt=""` is correct so screen readers do not announce it twice.
-
-## Frequently asked questions
-
-### How do I show avatars or images in a Svelte data grid?
-
-Render an `<img>` (plus a text label) in a custom cell via `renderSnippet`, give the column an `accessorFn` so it still sorts by the name, and use `loading="lazy"` with fixed dimensions for performance.
-
-### How do I handle missing or broken avatar images?
-
-Fall back to initials when the URL is absent, and hide the image on its `onerror` event so a broken-image icon never shows. Serve appropriately sized thumbnails to keep the grid light.

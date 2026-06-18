@@ -11,9 +11,9 @@ SvGrid did not appear out of nowhere. It is the latest product from a team that 
 
 ## 2011: jQWidgets and the jqxGrid
 
-We started in the jQuery era with jQWidgets - a suite of widgets anchored by jqxGrid, a data grid that had to be fast on the browsers of the time. That constraint shaped how we think to this day: a grid is a performance product first. Users do not forgive a table that stutters when they scroll, sort, or type in a filter.
+We started in the jQuery era with jQWidgets, a suite of widgets anchored by jqxGrid, a data grid that had to be fast on the browsers of the time. That constraint shaped how we think to this day: a grid is a performance product first. Users do not forgive a table that stutters when they scroll, sort, or type in a filter.
 
-Over the years jQWidgets components found their way into enterprise software at companies you know - Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel among thousands of others. Shipping into environments like that teaches you to value stability, backward compatibility, and accessibility over chasing trends.
+Over the years jQWidgets components found their way into enterprise software at companies you know, Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel among thousands of others. Shipping into environments like that teaches you to value stability, backward compatibility, and accessibility over chasing trends.
 
 ## The web components era: Smart UI
 
@@ -46,7 +46,7 @@ The same team that has shipped grids for over a decade is now all-in on two thin
 
 ### How long has the team behind SvGrid been building UI components?
 
-Since 2011 - first jQWidgets and jqxGrid, then the Smart UI web components on htmlelements.com, and now SvGrid for Svelte 5.
+Since 2011, first jQWidgets and jqxGrid, then the Smart UI web components on htmlelements.com, and now SvGrid for Svelte 5.
 
 ### What is the relationship between SvGrid, jQWidgets, and Smart UI?
 

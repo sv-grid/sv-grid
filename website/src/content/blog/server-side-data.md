@@ -7,7 +7,7 @@ tags: server-side, pagination, api, svelte data grid
 author: Boyko Markov
 ---
 
-Once a table has millions of rows, shipping them all to the browser stops being an option - the tab grinds, the user waits, everyone loses. The fix is server-side data: the grid keeps the sort, filter, and page UI, and your backend hands back only the rows for the view on screen. SvGrid's external mode exists for exactly this.
+Once a table has millions of rows, shipping them all to the browser stops being an option, the tab grinds, the user waits, everyone loses. The fix is server-side data: the grid keeps the sort, filter, and page UI, and your backend hands back only the rows for the view on screen. SvGrid's external mode exists for exactly this.
 
 ![Server-side data in SvGrid](/blog-media/server-side.png)
 *Server-side sorting, filtering, and paging in SvGrid.*
@@ -55,7 +55,7 @@ The pager needs to know how many rows exist on the server to render the right nu
 ## Keep requests in check
 
 - **Debounce filters** so typing in a filter box does not fire a request per keystroke.
-- **Cancel stale requests** - if a new query starts before the last resolves, ignore the older response so the grid never shows out-of-order pages.
+- **Cancel stale requests**: if a new query starts before the last resolves, ignore the older response so the grid never shows out-of-order pages.
 - **Cache pages** the user has already seen for instant back-and-forth paging.
 
 ## Combine with virtualization
@@ -100,7 +100,7 @@ Server round trips take time, and an unresponsive grid feels broken. A few touch
 
 - **Loading state.** Show a subtle overlay or skeleton while a page is in flight, so the user knows something is happening.
 - **Preserve scroll and selection.** Do not reset the user's scroll position or clear their selection just because a new page loaded, unless the query itself changed the result set.
-- **Empty and error states.** "No rows match these filters" and "Could not load - retry" are part of the feature, not an afterthought.
+- **Empty and error states.** "No rows match these filters" and "Could not load, retry" are part of the feature, not an afterthought.
 
 ## Caching for instant back-and-forth
 

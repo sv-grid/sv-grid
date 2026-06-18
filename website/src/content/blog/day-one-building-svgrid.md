@@ -7,7 +7,7 @@ tags: company, story, engineering, development
 author: Victor Vidolov
 ---
 
-The idea was settled: a data grid built natively for Svelte 5. This post is about the part where talk becomes code - the early decisions that are expensive to change later, and the small thrill of the first grid that actually rendered.
+The idea was settled: a data grid built natively for Svelte 5. This post is about the part where talk becomes code, the early decisions that are expensive to change later, and the small thrill of the first grid that actually rendered.
 
 ## The first commit was an architecture, not a feature
 
@@ -15,8 +15,8 @@ It is tempting to start a grid by rendering a table. We started somewhere less v
 
 We split the project in two from the first commit:
 
-- **`createSvGrid`** - the headless engine. It owns the row model: the pipeline that takes your data and applies sorting, filtering, grouping, pagination, and expansion, producing the rows to display. It renders nothing.
-- **`<SvGrid>`** - the render component. It consumes the engine and paints an accessible, virtualized, themeable grid.
+- **`createSvGrid`**: the headless engine. It owns the row model: the pipeline that takes your data and applies sorting, filtering, grouping, pagination, and expansion, producing the rows to display. It renders nothing.
+- **`<SvGrid>`**: the render component. It consumes the engine and paints an accessible, virtualized, themeable grid.
 
 The rule we set: anything that is pure logic lives in the core; anything that touches the DOM lives in the component. That single boundary is why, a year later, you can drop from the component to the core for a custom layout and reuse your column definitions untouched.
 
@@ -29,11 +29,11 @@ let sorting = $state([])
 let rows = $derived(applySort(applyFilter(data, filters), sorting))
 ```
 
-No store wrappers, no subscription bookkeeping, no diffing the world on every change. When a filter changes, the derived rows recompute; when an unrelated cell changes, they do not. The reactivity we would have spent weeks engineering on an older model came almost for free - which let us spend that time on the parts that are genuinely hard.
+No store wrappers, no subscription bookkeeping, no diffing the world on every change. When a filter changes, the derived rows recompute; when an unrelated cell changes, they do not. The reactivity we would have spent weeks engineering on an older model came almost for free, which let us spend that time on the parts that are genuinely hard.
 
 ## The column model
 
-The other early decision was the column definition - the contract between your data and the grid. We wanted it typed over your row shape, so a wrong field name is a compile error, not a blank column:
+The other early decision was the column definition, the contract between your data and the grid. We wanted it typed over your row shape, so a wrong field name is a compile error, not a blank column:
 
 ```ts
 const columns: ColumnDef<{}, Person>[] = [
@@ -46,7 +46,7 @@ This shape had to serve both layers - the headless core and the render component
 
 ## The first grid
 
-Then came the moment every project needs: data in, a real `<table>` out, with WAI-ARIA roles and keyboard focus from the very first render. Three rows, three columns, an arrow key moving the active cell. It does not look like much in a screenshot. But it proved the boundary held - the engine produced rows, the component painted them, and neither knew too much about the other.
+Then came the moment every project needs: data in, a real `<table>` out, with WAI-ARIA roles and keyboard focus from the very first render. Three rows, three columns, an arrow key moving the active cell. It does not look like much in a screenshot. But it proved the boundary held, the engine produced rows, the component painted them, and neither knew too much about the other.
 
 The first sort followed a day later. Click a header, the derived rows reorder, the DOM updates only where it must. Watching that work on runes, with no re-render ceremony, was the moment we knew the bet was right.
 
@@ -70,4 +70,4 @@ The split between a headless engine (`createSvGrid`) that owns all logic and a r
 
 ### Why was reactivity easy to build in SvGrid?
 
-Because it is native to Svelte 5 runes. Engine state is plain `$state` and derived rows are plain `$derived`, so updates are fine-grained by default - no store wrappers or manual subscription bookkeeping.
+Because it is native to Svelte 5 runes. Engine state is plain `$state` and derived rows are plain `$derived`, so updates are fine-grained by default, no store wrappers or manual subscription bookkeeping.

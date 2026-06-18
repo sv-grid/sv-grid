@@ -7,7 +7,7 @@ tags: migration, ag grid, comparison, svelte data grid
 author: Kamelia M
 ---
 
-AG Grid is excellent, but in a Svelte app it lives behind an integration layer. If you are moving to a native Svelte 5 grid, the good news is the concepts transfer almost one-to-one. Here is how to migrate cleanly.
+AG Grid is excellent, this is not a hit piece. But in a Svelte app it always sits behind an integration layer, and if you have decided you want a native Svelte 5 grid instead, the happy news is that almost every concept maps over one-to-one.
 
 ## Concept mapping
 
@@ -54,7 +54,7 @@ AG Grid `cellRenderer` components become Svelte snippets:
 
 ## Editing
 
-AG Grid mutates `rowData` by default; SvGrid never mutates your data - it emits an event and you decide:
+AG Grid mutates `rowData` by default; SvGrid never mutates your data, it emits an event and you decide:
 
 ```ts
 function onCellValueChange(e) {
@@ -69,7 +69,7 @@ AG Grid's Server-Side Row Model maps to SvGrid's external mode: read sort/filter
 ## What to check
 
 - Enterprise features (pivot, Excel export, range selection) live in [@svgrid/enterprise](/pricing).
-- Replace AG Grid theme classes with `--sg-*` CSS variables - see [Theming](theming-and-dark-mode).
+- Replace AG Grid theme classes with `--sg-*` CSS variables, see [Theming](theming-and-dark-mode).
 - The full feature matrix is at [SvGrid vs AG Grid](/compare/ag-grid).
 
 ## Frequently asked questions

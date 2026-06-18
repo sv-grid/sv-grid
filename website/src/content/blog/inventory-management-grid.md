@@ -7,18 +7,18 @@ tags: inventory, stock, use case, svelte data grid
 author: Boyko Markov
 ---
 
-Inventory grids are unglamorous workhorses - warehouse staff scan, adjust quantities, and reconcile stock in them all shift - which means they live and die on fast inline editing and dead-obvious visual signals. Here is a blueprint that leans on both.
+Inventory grids are unglamorous workhorses - warehouse staff scan, adjust quantities, and reconcile stock in them all shift - which means they live and die on fast inline editing and dead-obvious visual signals.
 
 ![Anomaly highlighting in a SvGrid grid](/blog-media/anomaly.png)
 *Threshold and anomaly highlighting, ideal for stock levels.*
 
 ## The columns
 
-- **SKU / product** - identity, often [pinned left](pinned-frozen-columns) so it stays visible.
-- **On hand / reserved / available** - numeric columns, right-aligned, formatted.
-- **Reorder level** - the threshold that drives alerts.
-- **Status** - a [badge](status-badge-cells): In stock, Low, Out.
-- **Last updated** - a date column.
+- **SKU / product**: identity, often [pinned left](pinned-frozen-columns) so it stays visible.
+- **On hand / reserved / available**: numeric columns, right-aligned, formatted.
+- **Reorder level**: the threshold that drives alerts.
+- **Status**: a [badge](status-badge-cells): In stock, Low, Out.
+- **Last updated**: a date column.
 
 ## Low-stock highlighting
 
@@ -34,7 +34,7 @@ function rowClass(r: Item) {
 
 ## Fast editing
 
-Quantity adjustments should be instant: number editors on the count columns, Enter to commit and move down, and [optimistic saves](optimistic-updates) so the warehouse UI never waits. Add [undo/redo](undo-redo-grid-edits) - reconciliation mistakes happen, and Ctrl+Z is a lifesaver. For bulk counts, [paste from a spreadsheet](paste-from-excel).
+Quantity adjustments should be instant: number editors on the count columns, Enter to commit and move down, and [optimistic saves](optimistic-updates) so the warehouse UI never waits. Add [undo/redo](undo-redo-grid-edits), reconciliation mistakes happen, and Ctrl+Z is a lifesaver. For bulk counts, [paste from a spreadsheet](paste-from-excel).
 
 ## Import and bulk update
 

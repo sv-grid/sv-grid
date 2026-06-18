@@ -7,7 +7,7 @@ tags: density, row height, theming, rows, recipe
 author: Kamelia M
 ---
 
-Different users want different densities: an analyst scanning thousands of rows wants compact; a casual user wants comfortable. A density toggle is a small feature with a big usability payoff. Because SvGrid is styled with `--sg-*` tokens, you can drive density with CSS. Here is the recipe.
+An analyst scanning ten thousand rows wants them packed tight; an occasional user wants room to breathe. A density toggle is a tiny feature that makes both happy. Because SvGrid is styled with `--sg-*` tokens, you can drive the whole thing with CSS. Here is the recipe.
 
 ## Density via CSS tokens
 
@@ -19,7 +19,7 @@ Define density levels as CSS that adjusts row height, cell padding, and font siz
 .grid-spacious    { --sg-row-height: 56px; --sg-cell-pad-y: 12px; font-size: 15px; }
 ```
 
-Switch the class and the grid reflows. Keeping density in CSS means no re-render and no special grid API - just a class swap.
+Switch the class and the grid reflows. Keeping density in CSS means no re-render and no special grid API, just a class swap.
 
 ## The toggle
 
@@ -43,17 +43,17 @@ A three-way control bound to a density state, applied as the wrapper class:
 
 ## Mind virtualization
 
-If you set an explicit row height via a grid prop, keep it in sync with the CSS so virtualization measures rows correctly - mismatched heights cause overlap or gaps. The simplest reliable approach is to let one source (the density class) drive both the visual height and any height value you pass to the grid.
+If you set an explicit row height via a grid prop, keep it in sync with the CSS so virtualization measures rows correctly, mismatched heights cause overlap or gaps. The simplest reliable approach is to let one source (the density class) drive both the visual height and any height value you pass to the grid.
 
 ## Persist the choice
 
-Density is a personal preference, so save it to `localStorage` and restore it on load - or fold it into a [saved view](saved-views-persist-layout). Returning users keep the density they chose.
+Density is a personal preference, so save it to `localStorage` and restore it on load, or fold it into a [saved view](saved-views-persist-layout). Returning users keep the density they chose.
 
 ## Frequently asked questions
 
 ### How do I add a compact/comfortable row-density toggle to SvGrid?
 
-Define density levels as CSS that adjust row height, padding, and font size via `--sg-*` tokens, scope them with a wrapper class, and switch the class from a toggle. It needs no re-render - just a class swap.
+Define density levels as CSS that adjust row height, padding, and font size via `--sg-*` tokens, scope them with a wrapper class, and switch the class from a toggle. It needs no re-render, just a class swap.
 
 ### How do I keep density consistent with virtualization?
 

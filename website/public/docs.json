@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-06-16T07:18:37.074Z",
+  "generatedAt": "2026-06-16T18:57:38.422Z",
   "counts": {
     "pages": 195,
     "enterprise": 9,
@@ -302,7 +302,7 @@
       "summary": "The user-facing log of what shipped. Format follows Keep a Changelog 1.1.0; versioning follows Semantic Versioning.",
       "section": "",
       "tier": "community",
-      "words": 873,
+      "words": 853,
       "lastUpdated": "2026-06-16",
       "demoIds": []
     },

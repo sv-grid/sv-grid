@@ -7,13 +7,13 @@ tags: comparison, build vs buy, svelte data grid, engineering
 author: Boyko Markov
 ---
 
-Every team that needs a table in Svelte hits the same fork in the road: hand-roll a `{#each}` over a `<table>`, or pull in a data grid. And honestly, a simple table in Svelte is so easy that building it yourself feels obviously right. It usually is, until it is not. The trick is knowing which side of the line you are on before you are six features deep.
+Every team that needs a table in Svelte hits the same fork in the road: hand-roll a `{#each}` over a `<table>`, or pull in a data grid. And a simple table in Svelte is so easy that building it yourself feels obviously right. It usually is, until it is not. The trick is knowing which side of the line you are on before you are six features deep.
 
 ## When building your own is the right call
 
 Do not over-engineer. Hand-roll it when:
 
-- The table is **small and static** - a few dozen rows, no virtualization needed.
+- The table is **small and static**, a few dozen rows, no virtualization needed.
 - You need **only basic sorting** and maybe a search box.
 - The layout is **bespoke** and a grid would fight you more than help.
 
@@ -34,7 +34,7 @@ The calculus flips fast. Reach for a grid when you need any of:
 - **Excel-style filtering**, grouping, or aggregation.
 - **Inline editing** with validation.
 - **Server-side** sorting, filtering, and pagination.
-- **Accessibility** done properly - WAI-ARIA roles and full keyboard navigation.
+- **Accessibility** done properly, WAI-ARIA roles and full keyboard navigation.
 
 Each of these is a project on its own. Virtualization that survives variable row heights, focus management that survives recycled DOM nodes, and a filter model that maps to a server query are exactly the things hand-rolled tables get wrong.
 
@@ -54,13 +54,13 @@ If your objection to "buy" is loss of control over markup, headless is the answe
 
 ## A simple rule
 
-Build it if it is small, static, and bespoke. Adopt a grid the moment you need virtualization, real filtering/editing, server-side data, or guaranteed accessibility - because those are the parts that are expensive to get right and expensive to get wrong.
+Build it if it is small, static, and bespoke. Adopt a grid the moment you need virtualization, real filtering/editing, server-side data, or guaranteed accessibility, because those are the parts that are expensive to get right and expensive to get wrong.
 
 ## Frequently asked questions
 
 ### Should I build my own table in Svelte or use a library?
 
-Build it for small, static, bespoke tables - a `{#each}` with a derived sort is enough. Use a data grid once you need virtualization, Excel-style filtering, inline editing, server-side data, or proper accessibility, since those are costly to implement correctly.
+Build it for small, static, bespoke tables, a `{#each}` with a derived sort is enough. Use a data grid once you need virtualization, Excel-style filtering, inline editing, server-side data, or proper accessibility, since those are costly to implement correctly.
 
 ### What is the cheapest way to keep control over markup but not build everything?
 

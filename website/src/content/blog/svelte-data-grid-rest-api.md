@@ -7,7 +7,7 @@ tags: rest api, server-side, fetch, integration, svelte data grid
 author: Boyko Markov
 ---
 
-You do not need an ORM or a fancy client to drive a data grid server-side - a plain REST endpoint and `fetch` are enough. The key is mapping SvGrid's state to query parameters and returning a total count. Here is a clean, production-ready pattern.
+You do not need an ORM, a GraphQL client, or anything clever to drive a grid server-side, a plain REST endpoint and `fetch` will do. The whole trick is mapping SvGrid's state to query parameters and returning a total count. Here is a clean version that holds up in production, debouncing and cancellation included.
 
 ## The contract
 
@@ -63,7 +63,3 @@ Whatever your stack, the endpoint runs `ORDER BY`, a `WHERE`/`LIKE`, and `LIMIT`
 ### How do I connect SvGrid to a REST API?
 
 Map the grid's sort, filter, and page state to query parameters in a `fetch`, return `{ rows, total }` from your endpoint, and pass them to SvGrid as `data` and `rowCount`. Debounce the requests and cancel stale ones with `AbortController`.
-
-### How do I stop an old response overwriting a newer page?
-
-Use an `AbortController`: abort the previous request before starting a new one, and ignore `AbortError`. That guarantees only the latest request's result reaches the grid.

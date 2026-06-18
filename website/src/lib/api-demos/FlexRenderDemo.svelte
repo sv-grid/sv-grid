@@ -70,7 +70,9 @@
               class:fr-sortable={header.column.getCanSort()}
               onclick={header.column.getToggleSortingHandler()}
             >
-              <FlexRender content={header.column.columnDef.header} context={header.getContext()} />
+              <!-- header is a HeaderContext template; FlexRender's prop is the
+                   header|cell union, so the narrowed type needs a cast. -->
+              <FlexRender content={header.column.columnDef.header as never} context={header.getContext()} />
               {#if sorted === 'asc'}<span class="fr-arrow">▲</span>
               {:else if sorted === 'desc'}<span class="fr-arrow">▼</span>{/if}
             </th>
@@ -84,7 +86,7 @@
           {#each row.getAllCells() as cell (cell.id)}
             <td class="fr-td">
               {#if cell.column.columnDef.cell}
-                <FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
+                <FlexRender content={cell.column.columnDef.cell as never} context={cell.getContext()} />
               {:else}
                 {cell.getValue()}
               {/if}

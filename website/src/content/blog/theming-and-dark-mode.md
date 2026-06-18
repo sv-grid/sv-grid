@@ -7,7 +7,7 @@ tags: theming, dark mode, css variables, svelte data grid
 author: Kamelia M
 ---
 
-A data grid should disappear into your product, not announce that it came from a library. SvGrid is themed entirely with `--sg-*` CSS custom properties, which means you restyle it with plain CSS you already know - no theme builder, no JavaScript config object to learn.
+A data grid should disappear into your product, not announce that it came from a library. SvGrid is themed entirely with `--sg-*` CSS custom properties, which means you restyle it with plain CSS you already know, no theme builder, no JavaScript config object to learn.
 
 ![Custom cells and theming in SvGrid](/blog-media/custom-cells-themes.png)
 *Custom cell renderers and theming in SvGrid.*

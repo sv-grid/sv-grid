@@ -7,14 +7,14 @@ tags: aria, accessibility, concepts, grid pattern, data grid
 author: Victor Vidolov
 ---
 
-The WAI-ARIA grid pattern is the accessibility spec for interactive, spreadsheet-like tables. If you build an editable, navigable data grid, this is the pattern you implement. Here is what it requires, in plain terms.
+If you are building an editable, keyboard-navigable table, there is already a spec for getting the accessibility right: the WAI-ARIA grid pattern. It is not optional folklore, it is the thing screen readers expect. Here is what it actually asks of you, in plain terms.
 
 ## Grid vs table: pick the right one
 
 The ARIA Authoring Practices define two relevant patterns:
 
-- **A static data table** (information only) uses native `<table>` semantics - `<th scope>`, `<caption>`. Screen readers announce row/column relationships from the markup.
-- **An interactive grid** (cells you navigate and edit with the keyboard, like a spreadsheet) uses the **grid pattern** - ARIA roles plus a managed focus model.
+- **A static data table** (information only) uses native `<table>` semantics, `<th scope>`, `<caption>`. Screen readers announce row/column relationships from the markup.
+- **An interactive grid** (cells you navigate and edit with the keyboard, like a spreadsheet) uses the **grid pattern**, ARIA roles plus a managed focus model.
 
 Using the grid pattern on a static table is overkill and can hurt; using a plain table for an interactive grid leaves keyboard users stranded. Match the pattern to the behavior.
 
@@ -31,7 +31,7 @@ These tell assistive technology "this is a navigable grid", not just a layout of
 
 ## The keyboard model
 
-This is the heart of the pattern - a **roving tabindex**: the grid is a single tab stop, and arrow keys move a single "active" cell within it. So a user tabs *into* the grid once, then navigates cells with arrows, rather than tabbing through thousands of cells. The expected keys:
+This is the heart of the pattern, a **roving tabindex**: the grid is a single tab stop, and arrow keys move a single "active" cell within it. So a user tabs *into* the grid once, then navigates cells with arrows, rather than tabbing through thousands of cells. The expected keys:
 
 - Arrow keys move the active cell.
 - Home / End to row ends; Ctrl+Home / Ctrl+End to grid corners.
@@ -49,7 +49,3 @@ The roving focus model and roles shape the component's architecture. A grid buil
 ### What is the WAI-ARIA grid pattern?
 
 It is the accessibility specification for interactive, spreadsheet-like tables: `role="grid"`, `row`, `columnheader`, and `gridcell`, plus a roving-tabindex keyboard model where the grid is one tab stop and arrow keys move the active cell.
-
-### When should I use the grid pattern instead of a plain table?
-
-Use the grid pattern for interactive tables users navigate and edit by keyboard. Use native `<table>` semantics for static, information-only tables. Matching the pattern to the behavior is what makes the table accessible.

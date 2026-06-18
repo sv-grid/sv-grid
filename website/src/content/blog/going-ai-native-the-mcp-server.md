@@ -35,11 +35,11 @@ Connected, an assistant stops guessing and starts looking up the current answer 
 
 ## llms.txt for everyone else
 
-Not every tool speaks MCP, so we also published an `llms.txt` - the emerging convention for pointing AI crawlers at a machine-readable summary of a site. Retrieval-based assistants can ingest it and answer SvGrid questions accurately. It is why a prompt for "Svelte data grid" can resolve to working SvGrid code instead of a plausible-looking guess.
+Not every tool speaks MCP, so we also published an `llms.txt`, the emerging convention for pointing AI crawlers at a machine-readable summary of a site. Retrieval-based assistants can ingest it and answer SvGrid questions accurately. It is why a prompt for "Svelte data grid" can resolve to working SvGrid code instead of a plausible-looking guess.
 
 ## Why this counts as a feature
 
-It would be easy to file AI support under marketing. We think it is product. The difference between a helpful assistant and a frustrating one is whether its output compiles, and that depends entirely on whether it is grounded in the real API. Building that grounding is engineering work, and it changes the actual experience of adopting the grid - you spend your time reviewing real code, not debugging invented APIs.
+It would be easy to file AI support under marketing. We think it is product. The difference between a helpful assistant and a frustrating one is whether its output compiles, and that depends entirely on whether it is grounded in the real API. Building that grounding is engineering work, and it changes the actual experience of adopting the grid, you spend your time reviewing real code, not debugging invented APIs.
 
 The how-to is [Build Svelte Grids Faster with AI and the SvGrid MCP Server](build-grids-faster-with-ai-and-mcp). This post is about why we built it before we launched rather than after.
 
@@ -49,7 +49,7 @@ This is the same instinct that has driven the team since 2011. We shipped for jQ
 
 ## From build to product
 
-That was the last major piece. With the grid fast, accessible, complete, themeable, server-ready, and grounded for AI, the work shifted from building to sharing - the documentation, the demos, and the launch. From here the blog turns to the feature guides, the comparisons, and the [announcement that SvGrid is here](introducing-svgrid). The build is the story; this is where it becomes a product.
+That was the last major piece. With the grid fast, accessible, complete, themeable, server-ready, and grounded for AI, the work shifted from building to sharing, the documentation, the demos, and the launch. From here the blog turns to the feature guides, the comparisons, and the [announcement that SvGrid is here](introducing-svgrid). The build is the story; this is where it becomes a product.
 
 ## Frequently asked questions
 

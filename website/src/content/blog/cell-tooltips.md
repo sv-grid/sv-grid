@@ -7,7 +7,7 @@ tags: tooltips, cells, accessibility, recipe, svelte data grid
 author: Boyko Markov
 ---
 
-Tooltips earn their keep in a dense grid: revealing truncated text in full, explaining a status, or showing extra detail on hover. Done badly they hurt accessibility and performance. Here is how to add them well in SvGrid.
+In a dense grid, a good tooltip pulls its weight: it shows truncated text in full, explains a cryptic status, or surfaces a little more detail on hover. Done carelessly, though, tooltips wreck both accessibility and performance. Here is how to add them to SvGrid without either.
 
 ![Cell tooltips and notes in SvGrid](/blog-media/tooltips.png)
 *Cell tooltips and notes in SvGrid.*
@@ -26,7 +26,7 @@ Pair it with CSS truncation (`text-overflow: ellipsis`) and the full value appea
 
 ## Rich tooltips
 
-When you need formatting, multiple fields, or a styled bubble, render a custom tooltip on hover/focus. Keep one shared tooltip element rather than one per cell - with virtualization there are only a few dozen cells in the DOM, but a shared tooltip is still cleaner and faster:
+When you need formatting, multiple fields, or a styled bubble, render a custom tooltip on hover/focus. Keep one shared tooltip element rather than one per cell, with virtualization there are only a few dozen cells in the DOM, but a shared tooltip is still cleaner and faster:
 
 ```svelte
 {#snippet Cell(p: { row: Row; value: unknown })}

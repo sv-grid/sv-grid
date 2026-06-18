@@ -5,18 +5,18 @@ Scaffold a [Svelte](https://svelte.dev) app powered by
 command.
 
 ```bash
-npm create sv-grid@latest
+npm create @svgrid@latest
 # or
-pnpm create sv-grid
+pnpm create @svgrid
 # or
-yarn create sv-grid
+yarn create @svgrid
 ```
 
 Interactive by default. Or pass a directory and template directly:
 
 ```bash
-npm create sv-grid@latest my-app -- --template admin-dashboard
-pnpm create sv-grid my-app -t minimal
+npm create @svgrid@latest my-app -- --template admin-dashboard
+pnpm create @svgrid my-app -t minimal
 ```
 
 ## Templates

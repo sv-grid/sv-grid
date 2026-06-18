@@ -7,7 +7,7 @@ tags: svelte 5, migration, runes, table, engineering
 author: Victor Vidolov
 ---
 
-If you have a hand-rolled table component from Svelte 4, moving it to Svelte 5 is a good chance to simplify it - and to decide whether to keep maintaining it or adopt a real grid. Here is the concept-by-concept migration.
+If you are carrying a hand-rolled table from Svelte 4, the move to Svelte 5 is a fork in the road: simplify what you have, or admit it has outgrown a hand-roll and reach for a real grid. Either way, here is the concept-by-concept translation, and an honest nudge on which path to take.
 
 ## The translation table
 
@@ -42,22 +42,12 @@ If you have a hand-rolled table component from Svelte 4, moving it to Svelte 5 i
 </script>
 ```
 
-The reactive `$:` becomes `$derived` for values and `$effect` for side effects - the split is the main mental shift. See [$effect pitfalls](svelte-effect-pitfalls).
+The reactive `$:` becomes `$derived` for values and `$effect` for side effects, the split is the main mental shift. See [$effect pitfalls](svelte-effect-pitfalls).
 
 ## Slots to snippets
 
-Custom cell slots become snippet props, which pass data far more cleanly - see [snippets vs slots](snippets-vs-slots-svelte-5). Events change from `on:click` to `onclick`, and `createEventDispatcher` becomes plain callback props.
+Custom cell slots become snippet props, which pass data far more cleanly, see [snippets vs slots](snippets-vs-slots-svelte-5). Events change from `on:click` to `onclick`, and `createEventDispatcher` becomes plain callback props.
 
 ## The bigger question: keep it or replace it?
 
 Migration is a good moment to be honest about your table. A Svelte 4 table you hand-rolled probably lacks virtualization, accessibility, and server-side data - the expensive parts. If you only need a small static table, port it; it is a quick job. If it has grown features (sorting, filtering, editing, large data), porting maintains a burden you could hand off - this is where adopting [SvGrid](build-vs-buy-svelte-data-table) often makes more sense than carrying your own grid into Svelte 5.
-
-## Frequently asked questions
-
-### How do I convert a Svelte 4 table to Svelte 5?
-
-Replace `export let` with `$props`, reactive `$:` statements with `$derived` (values) or `$effect` (side effects), local stores with `$state`, slots with snippets, and `on:event`/`createEventDispatcher` with `onevent` callback props.
-
-### Should I migrate my custom table or switch to a grid library?
-
-Port it if it is small and static - that is quick. If it has accumulated sorting, filtering, editing, or large-data needs, migration preserves a maintenance burden; adopting a grid like SvGrid hands off the expensive parts (virtualization, accessibility, server data) instead.

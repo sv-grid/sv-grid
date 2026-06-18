@@ -7,7 +7,7 @@ tags: migration, jqxgrid, jquery, comparison, svelte data grid
 author: Victor Vidolov
 ---
 
-jqxGrid is the jQuery-era data grid from jQWidgets - the same team that builds SvGrid. If your Svelte app still wraps jqxGrid, moving to SvGrid drops jQuery and gives you a native, reactive grid. As the makers of both, here is the honest migration path.
+jqxGrid is our own jQuery-era grid - the same team builds both it and SvGrid - so this is about as honest as a migration guide gets. If your Svelte app is still wrapping jqxGrid in a jQuery bridge, moving to SvGrid drops the jQuery entirely for a native, reactive grid.
 
 ## Why move
 
@@ -43,7 +43,7 @@ $('#grid').jqxGrid({ source: new $.jqx.dataAdapter(source), columns: [...] })
 <SvGrid data={rows} columns={columns} features={features} />
 ```
 
-No data adapter, no manual `refreshdata()` - update `rows` and the grid re-renders.
+No data adapter, no manual `refreshdata()`, update `rows` and the grid re-renders.
 
 ## Editing
 
@@ -58,7 +58,3 @@ You keep the engineering values you trusted in jqxGrid - performance, accessibil
 ### Is SvGrid the successor to jqxGrid for Svelte?
 
 SvGrid is the same team's native Svelte 5 data grid. jqxGrid remains the jQuery-era product; for Svelte apps, SvGrid replaces the jQuery bridge with a declarative, runes-based component.
-
-### How do I migrate jqxGrid columns to SvGrid?
-
-Map `datafield` to `field`, `text` to `header`, `cellsformat` to the `format` option, `cellsrenderer` to a `renderSnippet` cell, and `columntype` to `editorType`. Replace the data adapter with a plain reactive `data` array.

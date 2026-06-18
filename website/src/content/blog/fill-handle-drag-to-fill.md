@@ -7,7 +7,7 @@ tags: fill handle, editing, spreadsheet, cell selection, recipe
 author: Boyko Markov
 ---
 
-The fill handle - the little square in a cell's corner you drag to copy a value down - is one of the most-loved spreadsheet interactions. SvGrid gives you cell selection and editing; the fill handle is a thin layer you build on top. Here is the approach.
+The fill handle - that little square in a cell's corner you grab and drag to copy a value down a column - is one of those spreadsheet moves people miss instantly when it is gone. SvGrid gives you the cell selection and editing underneath; the fill handle is a thin layer on top.
 
 ![A spreadsheet fill handle in SvGrid](/blog-media/fill-handle.png)
 *A drag-to-fill handle in SvGrid.*
@@ -44,7 +44,7 @@ function startFill(e: PointerEvent, fromRow: number, field: string, value: unkno
 
 ## Beyond copy: series fill
 
-Spreadsheets also fill *series* - drag 1, 2 and it continues 3, 4; drag a date and it increments. Detect a numeric or date pattern in the source selection and extrapolate rather than copy. Start with plain copy (the common case) and add series detection if your users need it.
+Spreadsheets also fill *series*, drag 1, 2 and it continues 3, 4; drag a date and it increments. Detect a numeric or date pattern in the source selection and extrapolate rather than copy. Start with plain copy (the common case) and add series detection if your users need it.
 
 ## Make it commit like an edit
 
@@ -58,4 +58,4 @@ Render a small handle in the active cell, track a pointer drag to determine the 
 
 ### Can the fill handle continue a series, not just copy?
 
-Yes - detect a numeric or date pattern in the dragged source cells and extrapolate it across the fill range. Most apps start with simple copy (the common case) and add series detection only if needed.
+Yes, detect a numeric or date pattern in the dragged source cells and extrapolate it across the fill range. Most apps start with simple copy (the common case) and add series detection only if needed.

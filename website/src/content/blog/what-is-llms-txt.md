@@ -7,7 +7,7 @@ tags: ai, llms.txt, seo, discoverability, svelte data grid
 author: Victor Vidolov
 ---
 
-`llms.txt` is a small file with a big idea: a machine-readable summary of your site, placed at a known location, so AI systems can ingest your content accurately. As AI assistants and AI search become how people find tools, it is becoming as worth having as `robots.txt` or `sitemap.xml`. Here is what it is and why SvGrid publishes one.
+`llms.txt` is a small file with an outsized idea: a clean, machine-readable summary of your site at a known URL, so AI systems read you accurately instead of scraping your nav and ads. As people increasingly find tools through AI rather than search results, it is becoming as worth having as `robots.txt` or `sitemap.xml`.
 
 ## The idea
 
@@ -21,18 +21,8 @@ People increasingly discover and evaluate tools through AI - "what's the best Sv
 
 ## How SvGrid uses it
 
-SvGrid publishes an `llms.txt` that points AI systems at the canonical, machine-readable description of the grid - what it is, its docs, its API, its examples. Combined with the [MCP server](svgrid-with-cursor-zed-windsurf) (which grounds assistants while you code) and structured data on every page, it is part of a deliberate strategy: be the Svelte data grid that AI gets *right*, whether someone is asking about it or building with it.
+SvGrid publishes an `llms.txt` that points AI systems at the canonical, machine-readable description of the grid, what it is, its docs, its API, its examples. Combined with the [MCP server](svgrid-with-cursor-zed-windsurf) (which grounds assistants while you code) and structured data on every page, it is part of a deliberate strategy: be the Svelte data grid that AI gets *right*, whether someone is asking about it or building with it.
 
 ## Should your project have one?
 
-If developers might ask an AI about your library, yes. It is a single Markdown file, cheap to maintain, and it improves how AI systems understand and surface you - a small investment as AI-mediated discovery grows.
-
-## Frequently asked questions
-
-### What is llms.txt?
-
-It is a Markdown file at `/llms.txt` that gives AI systems a clean, curated, machine-readable summary of a site - what it is and where its key content lives. It complements `robots.txt` and `sitemap.xml`, helping AI assistants and AI search represent the site accurately.
-
-### Why does SvGrid publish an llms.txt?
-
-So AI assistants and AI search can understand and recommend SvGrid accurately. Together with the MCP server and per-page structured data, it makes SvGrid legible to AI-mediated discovery - increasingly how developers find and evaluate libraries.
+If developers might ask an AI about your library, yes. It is a single Markdown file, cheap to maintain, and it improves how AI systems understand and surface you, a small investment as AI-mediated discovery grows.

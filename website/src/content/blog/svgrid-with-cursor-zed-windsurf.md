@@ -7,7 +7,7 @@ tags: ai, mcp, cursor, zed, windsurf, svelte data grid
 author: Victor Vidolov
 ---
 
-AI-native editors - Cursor, Zed, Windsurf - and assistants like Claude all write a lot of grid code now. Left to their training data, they hallucinate props. The SvGrid MCP server fixes that across all of them. Here is how to wire it up in each.
+Cursor, Zed, Windsurf, Claude, whatever you drive, an AI assistant is writing a real share of your grid code now, and left to its training data it will confidently invent props that do not exist. The SvGrid MCP server fixes that for all of them at once. Here is how to wire it up in each.
 
 ## The shared idea: MCP
 
@@ -40,13 +40,3 @@ Add the same server block to Claude's MCP configuration. Claude Code and Claude 
 ## Why bother
 
 The difference is whether generated code compiles. Grounded by the MCP server, "add server-side pagination to my SvGrid" produces props and types that exist in your installed version - so you review real code instead of debugging invented APIs. Pair it with good prompts (your data shape, the exact behavior) for the best results - see [prompts that build a Svelte grid](prompts-to-build-svelte-data-grid).
-
-## Frequently asked questions
-
-### How do I use SvGrid with Cursor, Zed, or Windsurf?
-
-Register the `@svgrid/mcp` server in each editor's MCP configuration (the command is `npx @svgrid/mcp`). The editor's assistant can then look up SvGrid's real examples, docs, and API, so the grid code it generates actually compiles.
-
-### Does the SvGrid MCP server work with any AI editor?
-
-Yes - any MCP-capable assistant (Cursor, Zed, Windsurf, Claude Desktop/Code, and others) can use the same `@svgrid/mcp` server. MCP is a shared standard, so one server grounds all of them.

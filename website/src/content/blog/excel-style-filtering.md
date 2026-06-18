@@ -25,8 +25,8 @@ People do not learn how to filter your table; they arrive already knowing, becau
 
 The `filterMode` prop chooses the UI:
 
-- `"menu"` - a dropdown filter menu per column header (Excel-style).
-- `"row"` - an inline filter row under the header.
+- `"menu"`, a dropdown filter menu per column header (Excel-style).
+- `"row"`, an inline filter row under the header.
 
 ## Operators per data type
 
@@ -73,7 +73,7 @@ Column filters answer "show me rows where *this column* matches." A global searc
 
 ## Combining filters across columns
 
-Filters join with AND across columns: a status filter plus a date range plus a price threshold returns only the rows that satisfy all three. The grid tracks the complete filter model, so a single `onFiltersChange` handler gives you the full picture - ideal for syncing filters to the URL so a filtered view is shareable and survives a refresh.
+Filters join with AND across columns: a status filter plus a date range plus a price threshold returns only the rows that satisfy all three. The grid tracks the complete filter model, so a single `onFiltersChange` handler gives you the full picture, ideal for syncing filters to the URL so a filtered view is shareable and survives a refresh.
 
 ```svelte
 <SvGrid

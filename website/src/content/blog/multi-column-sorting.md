@@ -10,7 +10,7 @@ author: Victor Vidolov
 Watch anyone use a new table and the first thing they do is click a header to sort it. So sorting is worth getting right. In SvGrid you turn it on by registering `rowSortingFeature`: click a header to sort, Shift-click to add a secondary sort underneath.
 
 ![Multi-column sorting in a SvGrid data grid](/blog-media/sorting.png)
-*Sorting in SvGrid - click a header to sort, Shift-click to add a tie-breaker.*
+*Sorting in SvGrid, click a header to sort, Shift-click to add a tie-breaker.*
 
 ## Turn on sorting
 
@@ -23,7 +23,7 @@ Watch anyone use a new table and the first thing they do is click a header to so
 <SvGrid data={rows} columns={columns} features={features} />
 ```
 
-Now headers are clickable. Click cycles ascending, descending, none. Shift-click a second header to break ties by another column - the grid records the sort priority for you.
+Now headers are clickable. Click cycles ascending, descending, none. Shift-click a second header to break ties by another column, the grid records the sort priority for you.
 
 ## React to sort changes
 
@@ -65,7 +65,7 @@ This keeps a single, familiar sort UI whether the data lives in memory or in you
 ## Tips
 
 - Default a sort by setting the initial `sorting` state before first render.
-- Sort on the raw value, not the formatted string - SvGrid already does this when you use the `format` option instead of formatting inside an accessor.
+- Sort on the raw value, not the formatted string, SvGrid already does this when you use the `format` option instead of formatting inside an accessor.
 - For natural numeric ordering, make sure the underlying field is a `number`, not a string.
 
 ## Frequently asked questions

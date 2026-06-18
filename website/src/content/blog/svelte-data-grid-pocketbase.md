@@ -7,11 +7,11 @@ tags: pocketbase, realtime, server-side, integration, svelte data grid
 author: Boyko Markov
 ---
 
-PocketBase is a single-file backend with a clean JavaScript SDK, built-in auth, and realtime subscriptions - a great fit for a Svelte data grid. Its `getList` API maps almost exactly onto what the grid needs.
+PocketBase is a whole backend in a single file - clean JS SDK, auth, realtime - which makes it a fun pairing with a Svelte data grid. Better still, its `getList` API maps almost one-to-one onto what the grid asks for. Here is the wiring, paging and live updates included.
 
 ## Server-side paging
 
-`getList(page, perPage, options)` returns the page plus `totalItems` - exactly SvGrid's `data` and `rowCount`:
+`getList(page, perPage, options)` returns the page plus `totalItems`, exactly SvGrid's `data` and `rowCount`:
 
 ```svelte
 <script lang="ts">
@@ -52,18 +52,8 @@ $effect(() => {
 })
 ```
 
-For high-frequency changes, batch reloads or update rows in place rather than refetching the whole page - see [real-time grids](realtime-websocket-updates).
+For high-frequency changes, batch reloads or update rows in place rather than refetching the whole page, see [real-time grids](realtime-websocket-updates).
 
 ## Security
 
 Use PocketBase collection API rules so the list only returns records the user may see; never build filter strings from unsanitized user input without escaping.
-
-## Frequently asked questions
-
-### How do I paginate PocketBase in a data grid?
-
-Use `collection.getList(page, perPage, { sort, filter })`. It returns `items` for `data` and `totalItems` for `rowCount`. Remember PocketBase pages are 1-based, so add one to SvGrid's zero-based page index.
-
-### Can SvGrid update live from PocketBase?
-
-Yes. Subscribe to the collection's realtime feed and reload (or patch rows) when changes arrive, unsubscribing on cleanup. For busy feeds, batch updates to keep rendering smooth.

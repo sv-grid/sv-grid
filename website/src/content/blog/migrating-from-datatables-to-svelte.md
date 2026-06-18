@@ -7,7 +7,7 @@ tags: migration, datatables, jquery, comparison, svelte data grid
 author: Victor Vidolov
 ---
 
-DataTables.net has powered jQuery tables for years. Moving to Svelte means dropping jQuery entirely and adopting a reactive, component-based grid. The concepts carry over; the implementation gets simpler. Here is the path.
+DataTables.net has powered jQuery tables for over a decade, and a lot of them are still running. Moving to Svelte means dropping jQuery for good and thinking in reactive components instead of init options. The concepts carry over; the code gets noticeably simpler. Here is the path.
 
 ## Concept mapping
 
@@ -60,13 +60,3 @@ DataTables' `serverSide: true` posts a request format (`start`, `length`, `order
 - **No jQuery.** State is reactive Svelte; the DOM is declarative.
 - **Virtualization** is built in for large client-side datasets, where DataTables would lean on paging.
 - **Editing** is first-class via `editorType` and `onCellValueChange`, rather than plugins.
-
-## Frequently asked questions
-
-### How do I replace jQuery DataTables in a Svelte app?
-
-Use SvGrid: map `columns` and `data` directly, convert `render` callbacks to the column `format` option or a snippet, and replace `serverSide`/`ajax` with SvGrid's external mode (callbacks plus a total `rowCount`). You remove the jQuery dependency entirely.
-
-### Does SvGrid support server-side processing like DataTables?
-
-Yes. In external mode the grid reports sort, filter, and page state through callbacks and you return the matching page with a total count - the same server-driven model, expressed with Svelte runes instead of a jQuery plugin.

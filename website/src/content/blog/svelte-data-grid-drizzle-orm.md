@@ -7,7 +7,7 @@ tags: drizzle, sveltekit, server-side, integration, svelte data grid
 author: Kamelia M
 ---
 
-Drizzle ORM gives you fully typed SQL in TypeScript. Paired with SvGrid's external mode, you get a data grid where the types flow from the database all the way to the column definitions. Here is how to wire server-side sorting, filtering, and pagination.
+Drizzle gives you SQL that is actually typed, the query and the row shape agree, in TypeScript, at compile time. Point SvGrid's external mode at it and those types flow from the database straight through to your column definitions. Here is how to wire up server-side sorting, filtering, and pagination.
 
 ![Server-side data from Drizzle in SvGrid](/blog-media/server-side-2.png)
 *A Drizzle-backed, fully typed server grid.*
@@ -54,13 +54,3 @@ Expose it behind `+server.ts` so the database stays on the server, then call it 
 - Whitelist sortable columns (`opts.sort`) so the column name cannot be injected.
 - Index the columns you sort and filter on.
 - Debounce filter requests and cancel stale ones.
-
-## Frequently asked questions
-
-### How do I paginate a Drizzle query for a data grid?
-
-Use `.limit(size).offset(page * size)` for the page and a separate `count(*)` query for the total. Return both, then feed the rows to SvGrid as `data` and the total as `rowCount`.
-
-### How do I keep types end-to-end with Drizzle and SvGrid?
-
-Type your `ColumnDef` array with the row type Drizzle infers from your schema. A schema change then surfaces as a type error in your column definitions, keeping the grid in sync with the database.

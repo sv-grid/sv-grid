@@ -7,7 +7,7 @@ tags: storybook, documentation, testing, integration, svelte data grid
 author: Victor Vidolov
 ---
 
-Storybook turns your grid configurations into a living, browsable catalog - useful for design review, QA, and onboarding. Pairing it with SvGrid lets your team see every grid state in isolation. Here is how to set it up well.
+Storybook turns your grid configurations into a living catalog your team can actually browse, gold for design review, QA, and onboarding the next hire. The trick with a data grid is capturing the states people forget (empty, loading, huge), and giving it a real height. Here is how to do it well.
 
 ## A basic story
 
@@ -27,7 +27,7 @@ Wrap SvGrid in a story component and export named stories for the states that ma
 <Story name="Large dataset" args={{ rows: makeRows(100000) }} />
 ```
 
-The "Empty", "Loading", and "Large dataset" stories are the ones teams forget - and the ones that catch bugs. See [empty, loading, and error states](empty-loading-and-error-states-svelte-grid).
+The "Empty", "Loading", and "Large dataset" stories are the ones teams forget, and the ones that catch bugs. See [empty, loading, and error states](empty-loading-and-error-states-svelte-grid).
 
 ## Controls for props
 
@@ -50,7 +50,3 @@ Enable Storybook's a11y addon. Because SvGrid renders proper ARIA grid roles, yo
 ### How do I document a data grid in Storybook?
 
 Create stories for each meaningful state - default, empty, loading, large dataset - expose SvGrid's props as Storybook controls, and give the grid a bounded height so virtualization works inside the story frame.
-
-### Can Storybook check my grid's accessibility?
-
-Yes. Enable the Storybook a11y addon; SvGrid's ARIA grid roles pass automated checks, and the addon flags issues in your custom cells, such as unlabeled icon buttons or insufficient contrast.

@@ -27,7 +27,10 @@ dated heading on publish via `pnpm changeset version` (see
 For machine-readable releases, fetch
 [`/changelog.json`](/changelog.json) - same content, parseable shape.
 
-## [Unreleased]
+## [1.0.0] - 2026-06-16
+
+Initial public release - the Svelte 5-native data grid: `@svgrid/grid`
+(MIT core) and `@svgrid/enterprise` (the paid feature pack).
 
 ### @svgrid/grid
 
@@ -53,9 +56,6 @@ For machine-readable releases, fetch
   rendered before any selection column.
 - **New** `pageSize` prop on `<SvGrid>`. Initial page size for the
   built-in pager.
-- **Renamed** `accessorKey` → `field` on `ColumnDef`. **Breaking**.
-  Bulk-rename in your column defs: `accessorKey` → `field`. The
-  identifier is the only change; semantics are identical.
 - **Improved** column virtualizer now detects per-item size changes,
   not just total size. Fixes a regression where resizing a column under
   `fitColumns` left other columns stale.
@@ -64,9 +64,6 @@ For machine-readable releases, fetch
   full dataset, not just the visible page. (Removed
   `paginatedRowModel` from the engine pipeline; pagination is applied
   AFTER filters by the wrapper.)
-- **Renamed package** `svgrid-community` → `@svgrid/grid`.
-  **Breaking**. Update imports: `from 'svgrid-community'` →
-  `from '@svgrid/grid'`. Subpath imports follow the same change.
 
 ### @svgrid/enterprise
 
@@ -142,8 +139,9 @@ For machine-readable releases, fetch
 | **Patch**         | Bug fixes. Type-only fixes. Internal refactors with no public surface change. Doc typo fixes.                  |
 
 The [API stability page](./help/api-stability.md) annotates each export
-with its current tier (`Stable`, `Experimental`, `Internal`). Until
-1.0, treat anything not flagged `Stable` as subject to change.
+with its current tier (`Stable`, `Experimental`, `Internal`). As of 1.0,
+`Stable` APIs follow semver; `Experimental` APIs may still change in a
+minor release.
 
 <!-- =================================================================
      /compliance/audit-log  (community)

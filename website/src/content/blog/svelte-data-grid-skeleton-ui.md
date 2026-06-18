@@ -7,7 +7,7 @@ tags: skeleton ui, theming, design system, integration, svelte data grid
 author: Kamelia M
 ---
 
-Skeleton is a popular Svelte UI toolkit built on Tailwind with a themeable set of CSS custom properties. Since SvGrid is themed with `--sg-*` variables, you can map it onto Skeleton's theme so the grid matches your app's look and dark mode.
+Skeleton is a well-liked Svelte UI toolkit on top of Tailwind, themed through its own CSS custom properties. Since SvGrid themes through `--sg-*` variables, bridging the two is a short bit of CSS, and then the grid simply follows Skeleton's look and its dark mode.
 
 ## Map to Skeleton's theme tokens
 
@@ -24,7 +24,7 @@ Skeleton themes expose surface and color properties. Point SvGrid's tokens at th
 }
 ```
 
-In dark mode Skeleton swaps the surface scale, and because SvGrid reads everything from these variables, the grid switches with it - no extra work. See [theming and dark mode](theming-and-dark-mode).
+In dark mode Skeleton swaps the surface scale, and because SvGrid reads everything from these variables, the grid switches with it, no extra work. See [theming and dark mode](theming-and-dark-mode).
 
 ## Layout with Skeleton's app shell
 

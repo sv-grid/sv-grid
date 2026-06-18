@@ -7,7 +7,7 @@ tags: convex, reactive, realtime, integration, svelte data grid
 author: Victor Vidolov
 ---
 
-Convex is a reactive backend: query functions are live by default, so when the underlying data changes, your query result updates automatically. Combined with SvGrid, that means a data grid that stays fresh with almost no plumbing. Here is the pattern.
+Convex flips the usual model: its query functions are live by default, so when the underlying data changes, your result updates on its own, no subscriptions to manage. Bind that to SvGrid and you get a grid that stays fresh with almost no plumbing of your own.
 
 ## A query function
 
@@ -28,11 +28,11 @@ export const list = query({
 })
 ```
 
-Convex queries are transactional and reactive - any mutation that touches `people` re-runs this query for subscribed clients.
+Convex queries are transactional and reactive, any mutation that touches `people` re-runs this query for subscribed clients.
 
 ## The grid stays live for free
 
-With the Svelte Convex client, the query result is a reactive value. Bind it to SvGrid and you are done - no `onSnapshot`, no polling:
+With the Svelte Convex client, the query result is a reactive value. Bind it to SvGrid and you are done, no `onSnapshot`, no polling:
 
 ```svelte
 <script lang="ts">
@@ -55,7 +55,7 @@ Convex supports cursor pagination (`paginate`) for large tables; for big dataset
 
 ### Does SvGrid update live with Convex automatically?
 
-Yes. Convex queries are reactive by default, so binding the query result to SvGrid's `data` means the grid updates whenever the underlying data changes - no manual subscriptions or refetching.
+Yes. Convex queries are reactive by default, so binding the query result to SvGrid's `data` means the grid updates whenever the underlying data changes, no manual subscriptions or refetching.
 
 ### How do I sort or paginate a Convex-backed grid?
 

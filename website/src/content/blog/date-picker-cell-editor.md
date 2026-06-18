@@ -7,7 +7,7 @@ tags: editing, date picker, cell editor, formatting, recipe
 author: Kamelia M
 ---
 
-Dates are everywhere in business data and easy to get wrong. SvGrid has a built-in date editor, so making a column editable with a proper date picker is one property - the care is in formatting and time zones. Here is the recipe.
+Dates are everywhere in business data and the easiest thing to get wrong. SvGrid has a built-in date editor, so making a column editable with a real date picker is one property, the care goes into formatting and, inevitably, time zones. Here is the recipe.
 
 ![Editable cells in SvGrid](/blog-media/custom-cell-editors.png)
 *Typed cell editors in SvGrid.*
@@ -31,7 +31,7 @@ The user gets a native date picker on edit; the cell displays a formatted date t
 
 ## Store ISO, display localized
 
-The reliable pattern: store dates as ISO strings (or `Date`s) and let `format` localize them. Mixing display strings into your data is the root of most date sorting bugs - keep the raw value clean and format on the column. See [locale-aware formatting](locale-aware-formatting).
+The reliable pattern: store dates as ISO strings (or `Date`s) and let `format` localize them. Mixing display strings into your data is the root of most date sorting bugs, keep the raw value clean and format on the column. See [locale-aware formatting](locale-aware-formatting).
 
 ## Time zones: be deliberate
 

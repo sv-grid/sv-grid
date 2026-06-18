@@ -7,7 +7,7 @@ tags: pinned columns, frozen columns, wide tables, svelte data grid
 author: Kamelia M
 ---
 
-The moment a grid is wider than the screen, scrolling right turns into a guessing game - wait, which row am I even looking at? Pinned columns end that: freeze the identity column on the left and the actions on the right, and the columns that anchor you stay put while everything else scrolls.
+The moment a grid is wider than the screen, scrolling right turns into a guessing game, wait, which row am I even looking at? Pinned columns end that: freeze the identity column on the left and the actions on the right, and the columns that anchor you stay put while everything else scrolls.
 
 ![Pinned (frozen) columns in SvGrid](/blog-media/column-pinning.png)
 *Pinned columns staying put while the rest scroll, in SvGrid.*

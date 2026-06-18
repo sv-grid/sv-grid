@@ -7,7 +7,7 @@ tags: vitest, testing, unit tests, integration, svelte data grid
 author: Boyko Markov
 ---
 
-A data grid carries real logic - accessors, formatters, sort and filter behavior - and that logic deserves tests. Vitest plus `@testing-library/svelte` covers both pure logic and rendered components. Here is how to test SvGrid effectively.
+A grid is not just markup, it carries real logic in its accessors, formatters, and sort/filter behavior, and that logic breaks like any other code. Vitest plus `@testing-library/svelte` lets you test both the pure parts and the rendered component. Here is where to spend your testing effort for the most return.
 
 ## Test the pure parts first
 
@@ -55,7 +55,7 @@ test('renders a grid with headers', () => {
 })
 ```
 
-Query by `role="grid"`, `role="row"`, and `role="columnheader"` rather than CSS selectors - it is more robust and verifies the ARIA structure.
+Query by `role="grid"`, `role="row"`, and `role="columnheader"` rather than CSS selectors, it is more robust and verifies the ARIA structure.
 
 ## Config note
 
@@ -66,7 +66,3 @@ Use the `jsdom` (or `happy-dom`) environment for component tests and the Svelte 
 ### How do I unit-test a SvGrid data grid?
 
 Test exported accessor and formatter functions directly, assert on the headless `createSvGrid` row model for sort/filter behavior without a DOM, and use `@testing-library/svelte` to render the component and query by ARIA roles.
-
-### Should I test the rendered grid or the logic?
-
-Both, but lean on logic and headless-core tests - they are fast and stable. Use a few component tests (querying by `role`) to confirm the grid renders and stays accessible.

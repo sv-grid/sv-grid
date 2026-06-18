@@ -7,15 +7,15 @@ tags: performance, identity, getRowId, selection, recipe
 author: Kamelia M
 ---
 
-Row identity is the quiet foundation under selection, editing, and efficient updates. When a grid cannot tell that "this row now" is the same record as "that row before", selection jumps, edits land on the wrong row, and updates do more work than they should. Here is how identity works in SvGrid and how to keep it correct.
+Row identity is one of those things nobody thinks about until it breaks, and then selection jumps to the wrong row, an edit lands on the wrong record, and updates churn more than they should. It is the quiet foundation under selection, editing, and fast updates. Here is how identity works in SvGrid and how to keep it honest.
 
 ## What identity is for
 
 The grid uses a row's identity to answer three questions:
 
-- **Selection** - which rows are still selected after the data changes?
-- **Editing** - which row does a committed edit belong to?
-- **Performance** - which rows actually changed, so the rest can be skipped?
+- **Selection**: which rows are still selected after the data changes?
+- **Editing**: which row does a committed edit belong to?
+- **Performance**: which rows actually changed, so the rest can be skipped?
 
 Get identity wrong and all three degrade together.
 
@@ -40,16 +40,6 @@ Stable references are also a performance lever. Svelte 5's fine-grained reactivi
 ## Practical rules
 
 - Give every record a real, stable `id` from your backend.
-- Update rows immutably but surgically - new object for the changed row, same references for the rest.
+- Update rows immutably but surgically, new object for the changed row, same references for the rest.
 - For live feeds, look up the row by id (a `Map` from id to index) and replace just that one.
-- Do not use array index as a logical key for selection across reorders - use the real id.
-
-## Frequently asked questions
-
-### Why does my grid selection jump when data updates?
-
-Because row identity changed. If you rebuild the whole `data` array with new objects, the grid cannot tell which rows are the same, so selection and edit state drift. Preserve references for unchanged rows, and key on a stable `id`.
-
-### Does SvGrid support getRowId?
-
-The headless `createSvGrid` core supports `getRowId` for explicit, value-based identity. The render component identifies rows by array position today, so preserve object references for unchanged rows to keep selection and edits aligned.
+- Do not use array index as a logical key for selection across reorders, use the real id.

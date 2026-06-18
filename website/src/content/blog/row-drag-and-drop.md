@@ -7,7 +7,7 @@ tags: row reorder, drag and drop, rows, recipe, svelte data grid
 author: Boyko Markov
 ---
 
-Manual ordering - dragging a row up or down - is common in playlists, priorities, and kanban-style lists. Because SvGrid renders from a reactive `data` array, row reordering is mostly about updating that array; the grid follows. Here is a clean recipe.
+Drag-to-reorder shows up everywhere people impose their own order: playlists, priority lists, kanban backlogs. The nice part with SvGrid is that it renders straight from your reactive `data` array, so "reordering rows" is really just "reordering an array" and the grid follows along. Here is a clean recipe.
 
 ![Drag-to-reorder rows in SvGrid](/blog-media/row-reorder.png)
 *Drag-to-reorder rows in SvGrid.*
@@ -47,7 +47,7 @@ Keep a stable identity per row (an `id`) so selection and edit state survive the
 
 ## Persisting order
 
-Most apps store an explicit `position` field. After a drop, write the new positions back - optimistically update locally, then PATCH the server:
+Most apps store an explicit `position` field. After a drop, write the new positions back, optimistically update locally, then PATCH the server:
 
 ```ts
 rows.forEach((r, i) => (r.position = i))
@@ -59,13 +59,3 @@ await api.reorder(rows.map((r) => ({ id: r.id, position: r.position })))
 - Reordering and sorting are mutually exclusive in practice: manual order only makes sense when the grid is not also sorting by a column. Disable or clear sorting while reordering.
 - For touch devices, pair the native drag events with pointer events or use a small DnD helper.
 - See the row-reorder example in the [demos](/demos).
-
-## Frequently asked questions
-
-### How do I let users reorder rows by dragging in SvGrid?
-
-Render a draggable handle in a cell, track the dragged row, and on drop move it within your reactive `data` array (splice + reassign). The grid re-renders in the new order because `data` is reactive.
-
-### How do I persist a manual row order?
-
-Store an explicit `position` field per row, recompute positions after each drop, and persist them (optimistically locally, then to the server). Manual order should replace column sorting, not run alongside it.

@@ -44,7 +44,7 @@ Headless freedom comes with a bill. Accessibility, keyboard navigation, virtuali
 
 The pragmatic answer is a library that ships both layers on a shared foundation. SvGrid does exactly this:
 
-- **`createSvGrid`** is the headless engine - the row-model pipeline, no markup.
+- **`createSvGrid`** is the headless engine, the row-model pipeline, no markup.
 - **`<SvGrid>`** is a render component built on that engine, with accessibility, virtualization, and theming already solved.
 
 ```svelte

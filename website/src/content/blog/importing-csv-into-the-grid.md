@@ -7,7 +7,7 @@ tags: csv, import, data, recipe, svelte data grid
 author: Boyko Markov
 ---
 
-Letting users bring their own data via CSV upload is a staple of admin and data tools. With SvGrid you parse the file into objects and set them as the grid's `data`. Here is a practical, robust recipe - including the messy parts CSV always has.
+"Upload a CSV" is a staple of admin and data tools, and CSV is also reliably messier than anyone expects. With SvGrid the grid part is trivial - parse the file into objects, set it as `data` - so the real work is handling the mess.
 
 ## Read the file
 
@@ -48,14 +48,10 @@ Validate the parsed rows before loading them: coerce types (numbers, dates), fla
 
 ## Large files
 
-For big CSVs, parse in a chunked/streaming fashion (or a Web Worker) so the UI stays responsive, and rely on SvGrid's virtualization to render the result - tens of thousands of imported rows scroll fine once loaded.
+For big CSVs, parse in a chunked/streaming fashion (or a Web Worker) so the UI stays responsive, and rely on SvGrid's virtualization to render the result, tens of thousands of imported rows scroll fine once loaded.
 
 ## Frequently asked questions
 
 ### How do I import a CSV file into SvGrid?
 
 Read the uploaded file's text, parse it into objects (using a proper CSV parser for quoted fields), optionally map the file's headers to your columns, validate, and set the result as the grid's `data`. The Enterprise pack also provides built-in CSV/XLSX import.
-
-### Why not just split on commas to parse CSV?
-
-Because real CSV has quoted fields containing commas and newlines, which a naive `split(',')` mangles. Use a correct CSV parser for user-uploaded files, and reserve simple splitting for data you fully control.

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // @svgrid/create - scaffold a Svelte app powered by SvGrid.
 //
-//   npm  create sv-grid@latest             # interactive
-//   pnpm create sv-grid                     # interactive
-//   npm  create sv-grid@latest my-app -- --template admin-dashboard
-//   npm  create sv-grid@latest my-app -- -t minimal
+//   npm  create @svgrid@latest             # interactive
+//   pnpm create @svgrid                     # interactive
+//   npm  create @svgrid@latest my-app -- --template admin-dashboard
+//   npm  create @svgrid@latest my-app -- -t minimal
 //
 // Zero runtime dependencies - Node built-ins only. Copies a bundled template,
 // renames `_`-prefixed dotfiles, and rewrites the project name.
@@ -68,7 +68,7 @@ function printHelp() {
 ${color('bold', '@svgrid/create')} - scaffold a Svelte app powered by SvGrid
 
 ${color('bold', 'Usage')}
-  npm create sv-grid@latest [dir] -- [--template <name>] [--force]
+  npm create @svgrid@latest [dir] -- [--template <name>] [--force]
 
 ${color('bold', 'Templates')}
 ${Object.entries(TEMPLATES)
@@ -76,9 +76,9 @@ ${Object.entries(TEMPLATES)
   .join('\n')}
 
 ${color('bold', 'Examples')}
-  npm  create sv-grid@latest
-  npm  create sv-grid@latest my-app -- --template admin-dashboard
-  pnpm create sv-grid my-app -t minimal
+  npm  create @svgrid@latest
+  npm  create @svgrid@latest my-app -- --template admin-dashboard
+  pnpm create @svgrid my-app -t minimal
 `)
 }
 
@@ -100,10 +100,13 @@ function resolveTemplateDir(key) {
 }
 
 async function copyTemplate(srcDir, destDir) {
+  // Match only on the path RELATIVE to the template root. The absolute `src`
+  // includes the install location (e.g. `.../node_modules/@svgrid/create/...`),
+  // so testing it directly would match `node_modules` and skip the whole copy.
+  const skip = /(^|[\\/])(node_modules|\.svelte-kit|\.vercel|build|dist)([\\/]|$)/
   await cp(srcDir, destDir, {
     recursive: true,
-    filter: (src) =>
-      !/[\\/](node_modules|\.svelte-kit|\.vercel|build|dist)([\\/]|$)/.test(src),
+    filter: (src) => !skip.test(src.slice(srcDir.length)),
   })
   // Rename `_`-prefixed files back to their real dotfile names.
   await renameBack(destDir)

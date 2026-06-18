@@ -7,11 +7,11 @@ tags: undo, redo, editing, history, recipe
 author: Boyko Markov
 ---
 
-Editable grids need a safety net. Undo/redo turns "oh no" into "Ctrl+Z" and makes bulk data entry far less stressful. Because SvGrid emits a change event with the old and new value for every edit, building an undo stack is straightforward. Here is the recipe.
+Any grid people edit needs a safety net, and undo/redo is it, the difference between "oh no" and a casual Ctrl+Z, and the thing that makes bulk data entry far less nerve-wracking. Because SvGrid hands you both the old and new value on every edit, the undo stack practically builds itself.
 
 ## The change event has everything you need
 
-SvGrid's `onCellValueChange` gives you `{ rowIndex, columnId, oldValue, newValue, row }` - exactly the information to record and reverse an edit:
+SvGrid's `onCellValueChange` gives you `{ rowIndex, columnId, oldValue, newValue, row }`, exactly the information to record and reverse an edit:
 
 ```ts
 type Edit = { rowIndex: number; columnId: string; oldValue: unknown; newValue: unknown }
@@ -62,7 +62,7 @@ Wire the conventions users expect, and avoid hijacking them while typing in an i
 
 - **Coalesce** rapid edits to the same cell (typing) into one undo step, so one Ctrl+Z does not revert character by character.
 - **Cap the stack** (say 100 entries) so memory stays bounded.
-- **Persist server changes too** - if edits hit the server, undo should also send the reverse update, not just change local state.
+- **Persist server changes too**: if edits hit the server, undo should also send the reverse update, not just change local state.
 
 ## Frequently asked questions
 

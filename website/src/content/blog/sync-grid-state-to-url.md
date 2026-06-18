@@ -7,7 +7,7 @@ tags: url state, shareable, sveltekit, recipe, svelte data grid
 author: Victor Vidolov
 ---
 
-When a grid's state lives in the URL, a filtered, sorted view becomes a link you can bookmark, share, or reload into. It also makes the back button work the way users expect. Here is how to sync SvGrid's state to the URL in SvelteKit.
+Put the grid's state in the URL and a filtered, sorted view suddenly becomes a thing you can bookmark, paste into Slack, or reload straight back into, and the back button starts behaving the way people expect.
 
 ## Read state from the URL
 
@@ -45,10 +45,10 @@ Filter text changes rapidly; debounce the URL write (and any fetch) so typing do
 
 ## Why it is worth it
 
-- **Shareable views** - send a teammate a link to exactly what you see.
-- **Bookmarkable** - save a frequent filter.
-- **Reload-safe** - refresh keeps the view.
-- **Server-friendly** - if you do server-side data, the same params drive the query, so SSR can render the right page on first load.
+- **Shareable views**: send a teammate a link to exactly what you see.
+- **Bookmarkable**: save a frequent filter.
+- **Reload-safe**: refresh keeps the view.
+- **Server-friendly**: if you do server-side data, the same params drive the query, so SSR can render the right page on first load.
 
 ## Frequently asked questions
 

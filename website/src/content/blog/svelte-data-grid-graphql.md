@@ -7,7 +7,7 @@ tags: graphql, urql, server-side, integration, svelte data grid
 author: Victor Vidolov
 ---
 
-GraphQL APIs expose exactly the fields you ask for, which pairs well with a data grid that knows its columns. With a client like urql or Houdini in Svelte, you map the grid's sort, filter, and page state onto query variables. Here is the pattern, including cursor pagination.
+GraphQL hands you exactly the fields you ask for and nothing more, which is a oddly perfect match for a grid that already knows its columns. With urql or Houdini on the Svelte side, you map the grid's sort, filter, and page state onto query variables and let the server do the rest. Here is the pattern, cursor pagination included.
 
 ## The query
 
@@ -45,7 +45,7 @@ query People($first: Int!, $after: String, $orderBy: PeopleOrder!, $search: Stri
 
 ## Offset vs cursor
 
-GraphQL connections favor **cursor** pagination (`first`/`after`), which stays fast at any depth and does not skip rows when data changes - though it does not jump to an arbitrary page. If your API uses **offset** (`limit`/`offset`), map `page * size` to `offset` instead. See [pagination patterns](pagination-patterns) for the trade-offs.
+GraphQL connections favor **cursor** pagination (`first`/`after`), which stays fast at any depth and does not skip rows when data changes, though it does not jump to an arbitrary page. If your API uses **offset** (`limit`/`offset`), map `page * size` to `offset` instead. See [pagination patterns](pagination-patterns) for the trade-offs.
 
 ## Caching
 
@@ -56,7 +56,3 @@ urql and Houdini cache by query + variables, so revisiting a page is instant and
 ### How do I paginate a data grid with GraphQL?
 
 Map the grid's page state onto your query variables - cursor-based (`first`/`after`) for connection-style APIs, or offset-based (`limit`/`offset`) otherwise - and use `totalCount` for SvGrid's `rowCount` so the pager is accurate.
-
-### Can I use urql or Houdini with SvGrid?
-
-Yes. Drive SvGrid's `data` and `rowCount` from the query store's result, and update the query variables in the grid's sort/filter/pagination callbacks. The client's caching gives you instant back-and-forth paging.

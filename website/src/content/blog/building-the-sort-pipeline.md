@@ -11,7 +11,7 @@ With the architecture proven at scale by the 100,000-row test, attention turned 
 
 ## What a row model actually is
 
-Your `data` is an array. What the grid shows is almost never that array verbatim - it is your data after sorting, filtering, grouping, and pagination have been applied, in a specific order. The row model is the pipeline that performs those transformations and produces the final list of rows to render.
+Your `data` is an array. What the grid shows is almost never that array verbatim, it is your data after sorting, filtering, grouping, and pagination have been applied, in a specific order. The row model is the pipeline that performs those transformations and produces the final list of rows to render.
 
 We built it as a chain of pure steps inside the headless core:
 
@@ -38,9 +38,9 @@ On Svelte 5 runes this is almost anticlimactic: `sorting` is plain state, `sorte
 
 ## The detail that mattered: sort the value, not the view
 
-The bug that bites every grid is sorting a formatted column alphabetically - `"$1,000"` landing next to `"$100"` because they became strings. We made an early rule: formatting is a display concern that lives on the column, and the engine always sorts the raw value underneath.
+The bug that bites every grid is sorting a formatted column alphabetically, `"$1,000"` landing next to `"$100"` because they became strings. We made an early rule: formatting is a display concern that lives on the column, and the engine always sorts the raw value underneath.
 
-That decision rippled outward. It is why, today, you set `format` on a column instead of formatting inside an accessor - so the grid shows `$84,000` but sorts numerically. One small rule in the row model, paid back across every numeric and date column anyone ever defines.
+That decision rippled outward. It is why, today, you set `format` on a column instead of formatting inside an accessor, so the grid shows `$84,000` but sorts numerically. One small rule in the row model, paid back across every numeric and date column anyone ever defines.
 
 ## Multi-column sort
 
@@ -60,4 +60,4 @@ It is the pipeline that turns your raw `data` into the rows actually shown, by a
 
 ### Why does SvGrid sort the raw value instead of the displayed text?
 
-Because sorting formatted strings produces wrong orders - `"$1,000"` sorts next to `"$100"`. SvGrid keeps formatting on the column and always sorts the underlying value, so numbers and dates order correctly.
+Because sorting formatted strings produces wrong orders, `"$1,000"` sorts next to `"$100"`. SvGrid keeps formatting on the column and always sorts the underlying value, so numbers and dates order correctly.

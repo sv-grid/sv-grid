@@ -7,11 +7,11 @@ tags: actions, buttons, cells, custom cells, recipe
 author: Boyko Markov
 ---
 
-Almost every admin grid needs per-row actions: edit, delete, duplicate, view. An actions column puts those buttons right where the user is looking. SvGrid renders any markup in a cell, so an actions column is a custom cell with real buttons. Here is the recipe.
+Almost every admin grid grows an actions column eventually, edit, delete, duplicate, view, right where the user's eye already is. SvGrid renders any markup in a cell, so that column is just a custom cell with real buttons in it. The recipe is short; the accessibility details are where it counts.
 
 ## A pure-UI column
 
-Actions columns have no underlying field - they are pure UI. Give the column an `id` (no `field`/`accessorFn`) and render buttons:
+Actions columns have no underlying field, they are pure UI. Give the column an `id` (no `field`/`accessorFn`) and render buttons:
 
 ```svelte
 {#snippet Actions(p: { row: Row })}
@@ -49,13 +49,3 @@ This is where hand-rolled grids fail. Use real `<button>` elements (not clickabl
 ## Pair with selection for bulk actions
 
 Per-row actions handle one record; pair them with [row selection](bulk-operations-on-selected-rows) so users can also act on many rows at once. Some teams also expose the same actions via a [right-click menu](right-click-context-menu).
-
-## Frequently asked questions
-
-### How do I add edit and delete buttons to each row in SvGrid?
-
-Create a column with an `id` and no field, and render real `<button>` elements in a custom cell via `renderSnippet`. Give icon-only buttons an `aria-label`, set a fixed width, and consider pinning the column to the right.
-
-### How should I handle the delete action safely?
-
-Confirm before deleting and prefer a soft delete with undo. Apply the removal optimistically to your data and restore the row if the server request fails, so a misclick or error is recoverable.

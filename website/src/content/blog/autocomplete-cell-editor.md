@@ -7,7 +7,7 @@ tags: editing, autocomplete, typeahead, cell editor, recipe
 author: Victor Vidolov
 ---
 
-When a column draws from a large set of values - customers, products, tags - a plain dropdown is unwieldy and free text is error-prone. An autocomplete editor lets users type to filter and pick. SvGrid renders custom editor cells, so you can build one with your own input plus a suggestion list. Here is a clean approach.
+When a column pulls from a big set of values - thousands of customers, products, tags - a plain dropdown is unusable and free text is a typo factory. Autocomplete splits the difference: type to filter, then pick. SvGrid lets you render a custom editor cell, so you build one from your own input plus a suggestion list.
 
 ![Custom cell editors in SvGrid](/blog-media/custom-cell-editors.png)
 *Custom, typed cell editors in SvGrid.*
@@ -51,13 +51,3 @@ For server-backed suggestions, debounce the query and cancel stale requests (the
 ## Accessibility
 
 If you build a custom list, implement the combobox ARIA pattern: `role="combobox"` on the input, `role="listbox"`/`role="option"` on the suggestions, `aria-activedescendant` for the highlighted item. The native `<datalist>` gives you this for free, which is why it is the recommended starting point.
-
-## Frequently asked questions
-
-### How do I add autocomplete to a grid cell in SvGrid?
-
-Render a custom editor cell with an input. For small lists, a native `<datalist>` gives accessible autocomplete with no JavaScript; for large or remote sets, render your own filtered, keyboard-navigable suggestion list and commit the choice to your data.
-
-### How do I handle server-backed autocomplete options?
-
-Debounce the user's query, cancel superseded requests with an AbortController, and cache results. Keep the rendered suggestion list capped (for example 20 items) so the editor stays responsive.

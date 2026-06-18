@@ -7,7 +7,7 @@ tags: performance, layout thrash, reflow, custom cells, recipe
 author: Kamelia M
 ---
 
-Layout thrash is a sneaky performance killer: code that repeatedly reads a layout property (like `offsetWidth`) and then writes to the DOM forces the browser to recalculate layout over and over. In a grid - many cells, frequent updates - it shows up as jank. Here is how to recognize and avoid it in custom cells.
+Layout thrash is the performance bug you cannot catch in a code review: read a layout property like `offsetWidth`, write to the DOM, read again, and the browser is forced to recompute layout every single time. Multiply that across a grid full of cells updating often and you get mystery jank. Here is how to spot it and design custom cells that avoid it.
 
 ## What causes it
 
@@ -38,18 +38,8 @@ cells.forEach((el, i) => (el.style.width = widths[i] + 10 + 'px')) // all writes
 
 ## Let CSS do the work
 
-Most "I need to measure this cell" problems are really "I should express this in CSS." Fixed dimensions, `aspect-ratio` for images, ellipsis truncation, and flex/grid layout remove the need to read the DOM at all - which is the surest way to avoid thrash. See [cell tooltips](cell-tooltips) for the measure-once pattern.
+Most "I need to measure this cell" problems are really "I should express this in CSS." Fixed dimensions, `aspect-ratio` for images, ellipsis truncation, and flex/grid layout remove the need to read the DOM at all, which is the surest way to avoid thrash. See [cell tooltips](cell-tooltips) for the measure-once pattern.
 
 ## How to catch it
 
 DevTools' Performance panel flags "forced reflow" in long tasks, and purple "Layout" bars stacked during scroll are the tell. See [measuring grid performance](measuring-grid-performance-devtools).
-
-## Frequently asked questions
-
-### What is layout thrash in a data grid?
-
-It is repeatedly reading a layout property (like `offsetWidth`) and then writing to the DOM, which forces the browser to recompute layout each time. Across many cells and frequent updates, it causes scrolling and update jank.
-
-### How do I avoid layout thrash in custom cells?
-
-Batch all DOM reads before all writes, avoid measuring the DOM during cell render (use CSS for sizing instead), measure once rather than per cell for popovers, and prefer animating `transform`/`opacity` over layout properties.

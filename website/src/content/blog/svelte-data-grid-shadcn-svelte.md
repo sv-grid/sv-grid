@@ -7,7 +7,7 @@ tags: shadcn-svelte, theming, design system, integration, svelte data grid
 author: Boyko Markov
 ---
 
-shadcn-svelte styles components with a set of CSS variables (`--background`, `--foreground`, `--border`, `--primary`, and so on). SvGrid is themed with `--sg-*` variables. Bridge the two and the grid looks like a native part of your shadcn UI. Here is the mapping.
+shadcn-svelte styles everything through a tidy set of CSS variables, `--background`, `--foreground`, `--border`, `--primary`. SvGrid is themed through `--sg-*` variables. Wire one set to the other and the grid stops looking like a guest and starts looking like part of your shadcn UI.
 
 ## Bridge the tokens
 
@@ -24,7 +24,7 @@ shadcn-svelte defines its palette on `:root` and `.dark`. Map SvGrid's tokens to
 }
 ```
 
-Because shadcn already defines light and dark values for these variables, the grid gets dark mode for free - flip shadcn's `.dark` class and SvGrid follows.
+Because shadcn already defines light and dark values for these variables, the grid gets dark mode for free, flip shadcn's `.dark` class and SvGrid follows.
 
 ## Use shadcn components in cells
 
@@ -37,7 +37,7 @@ For custom cells, render shadcn-svelte components inside a snippet so actions ma
 // column: { id: 'actions', header: '', cell: (c) => renderSnippet(RowActions, { row: c.row.original }) }
 ```
 
-Keep these accessible - shadcn's `Button` renders a real `<button>`, so keyboard and screen-reader support carry over. See [custom cell renderers](custom-cell-renderers-with-snippets).
+Keep these accessible, shadcn's `Button` renders a real `<button>`, so keyboard and screen-reader support carry over. See [custom cell renderers](custom-cell-renderers-with-snippets).
 
 ## Toolbar consistency
 

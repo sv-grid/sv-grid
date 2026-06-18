@@ -7,7 +7,7 @@ tags: trading, finance, realtime, use case, svelte data grid
 author: Kamelia M
 ---
 
-A trading or markets grid is about the hardest thing you can ask a data grid to do: hundreds of rows, sub-second updates, and users who genuinely notice a single dropped frame. It is also exactly where a runes-native core pays off. Here is how I would build one.
+A trading or markets grid is about the hardest thing you can ask a data grid to do: hundreds of rows, sub-second updates, and users who notice a single dropped frame. It is also exactly where a runes-native core pays off. Here is how I would build one.
 
 ![A live market data grid in SvGrid](/blog-media/stock-market.png)
 *A live market grid in SvGrid, with flash-on-change cells.*
@@ -18,7 +18,7 @@ A trading grid is a fixed set of instruments (rows) whose prices update continuo
 
 ## Live updates, batched to the frame
 
-Connect a WebSocket, look up each tick's row by id, and update in place - but batch to the animation frame so a fast feed cannot outrun the screen:
+Connect a WebSocket, look up each tick's row by id, and update in place, but batch to the animation frame so a fast feed cannot outrun the screen:
 
 ```ts
 const index = new Map<string, number>() // symbol -> row index
@@ -47,7 +47,7 @@ Traders read movement by color. Flash a cell green on an uptick, red on a downti
 
 ## Conditional formatting
 
-Color the change column by sign, bid/ask spreads by width, P&L red/green. Keep the raw numeric values for sorting; render color in the cell - see [conditional formatting](conditional-formatting).
+Color the change column by sign, bid/ask spreads by width, P&L red/green. Keep the raw numeric values for sorting; render color in the cell, see [conditional formatting](conditional-formatting).
 
 ## Performance checklist
 

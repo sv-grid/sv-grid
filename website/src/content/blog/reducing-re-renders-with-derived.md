@@ -7,7 +7,7 @@ tags: performance, runes, derived, reactivity, recipe
 author: Victor Vidolov
 ---
 
-The fastest update is the one that does not happen. Svelte 5's `$derived` lets you compute a grid's data so it recalculates only when its actual inputs change - the cleanest performance lever you have in a data-heavy app. Here is how to use it well with SvGrid.
+The fastest update is the one that never runs. Svelte 5's `$derived` is the cleanest way to get there: compute the grid's data so it only recalculates when its real inputs change, and nothing recomputes on unrelated state. In a data-heavy app that is the highest-leverage performance lever you have.
 
 ## Derive, do not recompute
 
@@ -32,7 +32,7 @@ Better still: if you only need standard sorting and filtering, register the grid
 
 ## Keep references stable
 
-`$derived` helps only if its inputs change meaningfully. If you rebuild `rows` as all-new objects every tick, every derivation downstream sees "everything changed". Update immutably but surgically - new object for the changed row, same references for the rest. See [stable row identity](stable-row-identity-getrowid).
+`$derived` helps only if its inputs change meaningfully. If you rebuild `rows` as all-new objects every tick, every derivation downstream sees "everything changed". Update immutably but surgically, new object for the changed row, same references for the rest. See [stable row identity](stable-row-identity-getrowid).
 
 ## Avoid effect-driven recomputation
 
@@ -49,14 +49,4 @@ let result = $derived.by(() => {
 })
 ```
 
-It memoizes the same way - recomputing only when its dependencies change.
-
-## Frequently asked questions
-
-### How do I stop a Svelte data grid from recomputing unnecessarily?
-
-Compute the grid's data with `$derived` (or `$derived.by`) so it recalculates only when its inputs change, keep row object references stable for unchanged rows, and let the grid's own sort/filter features do standard work instead of duplicating it.
-
-### Should I use $effect to compute grid data?
-
-No. If a value is computed from other state, use `$derived` - it memoizes and avoids extra update cycles. Reserve `$effect` for true side effects like subscriptions, DOM manipulation, or network calls.
+It memoizes the same way, recomputing only when its dependencies change.

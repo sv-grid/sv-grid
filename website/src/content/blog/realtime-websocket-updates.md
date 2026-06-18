@@ -7,7 +7,7 @@ tags: realtime, websocket, live data, svelte data grid
 author: Victor Vidolov
 ---
 
-Trading desks, dashboards, and monitoring tools live and die on fresh data. SvGrid handles real-time streams well because Svelte 5's fine-grained reactivity updates only the cells that changed - but how you feed the grid matters just as much.
+Trading desks, ops dashboards, monitoring tools, they all live or die on how fresh the numbers are. SvGrid takes a real-time stream in stride because Svelte 5's fine-grained reactivity repaints only the cells that changed. But the grid is only half of it; how you feed it matters just as much, and that is where people trip.
 
 ![Live WebSocket updates in a SvGrid grid](/blog-media/websocket-live.png)
 *Live WebSocket updates streaming into a SvGrid grid.*
@@ -28,7 +28,7 @@ A `Map` from key to array index turns each update into an O(1) lookup, so a thou
 
 ## Batch to the frame
 
-A naive grid re-renders on every message. At high message rates that is wasted work - the screen only refreshes 60 times a second. Buffer updates and flush them on `requestAnimationFrame`:
+A naive grid re-renders on every message. At high message rates that is wasted work, the screen only refreshes 60 times a second. Buffer updates and flush them on `requestAnimationFrame`:
 
 ```ts
 let pending = new Map()

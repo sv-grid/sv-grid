@@ -7,7 +7,7 @@ tags: editing, dropdown, select, cell editor, recipe
 author: Kamelia M
 ---
 
-Some columns should be picked from a fixed set, not typed - status, category, assignee. A dropdown cell gives users a constrained, fast way to edit. SvGrid's built-in editors cover text, number, checkbox, and dates; for a select, you render a small custom editor cell. Here is the pattern.
+Some columns should be chosen, not typed, status, category, assignee live in a fixed set, and free text just invites typos. A dropdown cell makes editing fast and constrained. SvGrid's built-in editors cover text, number, checkbox, and dates; for a select you drop in a small custom editor cell. Here is the pattern.
 
 ![Editable dropdown cells in SvGrid](/blog-media/custom-cell-editors.png)
 *Custom cell editors, including dropdowns, in SvGrid.*
@@ -47,18 +47,8 @@ If you only want the dropdown while editing (and a clean badge otherwise), show 
 
 ## Async options
 
-When options come from the server (assignees, tags), load them once and cache them - do not fetch per cell. Render a loading state in the dropdown until they arrive.
+When options come from the server (assignees, tags), load them once and cache them, do not fetch per cell. Render a loading state in the dropdown until they arrive.
 
 ## Keep it accessible and consistent
 
-A native `<select>` is accessible by default - keyboard operable and announced by screen readers. If you use a custom combobox component instead, ensure it implements the listbox/combobox ARIA pattern. Sorting and filtering still work on the underlying value, since the cell only changes how it is edited.
-
-## Frequently asked questions
-
-### How do I add a dropdown editor to a grid cell in SvGrid?
-
-Render a `<select>` inside a custom cell via `renderSnippet` and commit the chosen value back to your `data` on change. SvGrid's built-in editors cover text, number, checkbox, and dates; a select is a small custom editor cell.
-
-### How do I load dropdown options from the server?
-
-Fetch the option list once and cache it, rather than per cell. Show a loading state in the dropdown until options arrive, and reuse the cached list across all cells in the column.
+A native `<select>` is accessible by default, keyboard operable and announced by screen readers. If you use a custom combobox component instead, ensure it implements the listbox/combobox ARIA pattern. Sorting and filtering still work on the underlying value, since the cell only changes how it is edited.

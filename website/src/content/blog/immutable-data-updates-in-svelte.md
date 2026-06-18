@@ -7,7 +7,7 @@ tags: svelte 5, immutability, reactivity, concepts, runes
 author: Victor Vidolov
 ---
 
-Svelte 5's runes are reactive, but how you update state still matters - especially for arrays and objects that feed a list or a data grid. Here are the patterns that keep updates reliable, and the ones that quietly fail.
+Svelte 5's runes are reactive, yes, but "reactive" does not mean "you can stop thinking about how you mutate things", especially for the arrays and objects feeding a list or a grid. Here are the update patterns that hold up, and the ones that fail in ways you only notice later.
 
 ## Svelte 5 reacts to assignment and mutation
 
@@ -31,7 +31,7 @@ When something downstream keys off identity, replace only what changed and keep 
 rows[i] = { ...rows[i], status: 'active' }
 ```
 
-Avoid rebuilding every item as a new object each tick - it makes everything look changed, which is wasteful for a grid:
+Avoid rebuilding every item as a new object each tick, it makes everything look changed, which is wasteful for a grid:
 
 ```ts
 // avoid: every row is "new", defeating fine-grained updates
@@ -43,9 +43,9 @@ See [immutable updates without killing performance](immutable-updates-without-ki
 ## Common pitfalls
 
 - **Replacing the array reference unnecessarily** when you only changed one item. Mutate the one item (or replace just it) instead.
-- **Deeply nested updates** - copy along the path you change, not the whole tree.
-- **Sharing the same object across rows** - mutating it changes every row that references it. Clone when you intend independence.
-- **External arrays** - if your data comes from a non-`$state` source (a prop, a store), wrap or assign it into `$state` so updates are tracked.
+- **Deeply nested updates**: copy along the path you change, not the whole tree.
+- **Sharing the same object across rows**: mutating it changes every row that references it. Clone when you intend independence.
+- **External arrays**: if your data comes from a non-`$state` source (a prop, a store), wrap or assign it into `$state` so updates are tracked.
 
 ## Why a grid cares
 
@@ -56,7 +56,3 @@ A data grid decides what to repaint, and what selection/edit state to keep, by c
 ### Do I need immutable updates in Svelte 5?
 
 Svelte 5 tracks both mutation and reassignment, so you have flexibility. But for list- or grid-backed state, surgical updates - new reference only for what changed - keep change detection precise and rendering minimal.
-
-### Why does updating one row re-render my whole grid?
-
-Usually because you rebuilt the entire array with new objects, so every row looks changed. Replace only the changed row (`rows[i] = { ...rows[i], ... }`) and keep other references stable so the grid repaints just that row.

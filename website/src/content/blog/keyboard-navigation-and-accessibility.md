@@ -47,7 +47,7 @@ A badge or progress bar needs no extra work; an interactive control does, and th
 
 ## Test it
 
-The fastest accessibility test costs nothing: unplug your mouse. Tab into the grid, move with the arrow keys, edit a cell, and trigger a row action - all without touching the pointer. If that flow works, most keyboard users are covered. Follow up with a screen reader to confirm cells and headers are announced.
+The fastest accessibility test costs nothing: unplug your mouse. Tab into the grid, move with the arrow keys, edit a cell, and trigger a row action, all without touching the pointer. If that flow works, most keyboard users are covered. Follow up with a screen reader to confirm cells and headers are announced.
 
 ## Frequently asked questions
 

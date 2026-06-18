@@ -7,7 +7,7 @@ tags: column groups, headers, columns, recipe, svelte data grid
 author: Victor Vidolov
 ---
 
-When a grid has many related columns - quarters under a year, metrics under a category - grouped headers add a second header row that bands related columns together. SvGrid supports this natively: a column definition can contain child columns.
+Once a grid has clusters of related columns - the four quarters under a year, several metrics under a category - a flat header row stops helping. Grouped headers add a second row that bands those columns together, and SvGrid does it natively: a column definition can simply contain child columns.
 
 ![Multi-level grouped column headers in SvGrid](/blog-media/columns-hierarchy.png)
 *Grouped, multi-level column headers in SvGrid.*
@@ -31,11 +31,11 @@ const columns: ColumnDef<{}, Row>[] = [
 ]
 ```
 
-The "2026" band spans Q1-Q4, and the leaf columns behave normally - sortable, filterable, formatted.
+The "2026" band spans Q1-Q4, and the leaf columns behave normally, sortable, filterable, formatted.
 
 ## Nest deeper if needed
 
-Children can themselves have children, so you can build three or more header levels (Year > Half > Quarter). Keep it shallow in practice - two levels read well; four become a puzzle.
+Children can themselves have children, so you can build three or more header levels (Year > Half > Quarter). Keep it shallow in practice, two levels read well; four become a puzzle.
 
 ## Combine with pinning and grouping
 
@@ -44,13 +44,3 @@ Grouped headers pair naturally with [pinned columns](pinned-frozen-columns) (fre
 ## When to use grouped headers vs separate tables
 
 Reach for grouped headers when columns share a clear parent dimension. If two groups are conceptually separate datasets, two grids (or a master-detail layout) often read better than one very wide grid with many header bands.
-
-## Frequently asked questions
-
-### How do I create grouped column headers in SvGrid?
-
-Give a column definition a `columns` array of child columns. SvGrid renders the parent as a spanning header band above its children, and the leaf columns remain fully functional (sort, filter, format).
-
-### Can column header groups be more than two levels deep?
-
-Yes - child columns can have their own children for three or more header levels. Keep nesting shallow in practice, since beyond two levels the header becomes hard to scan.

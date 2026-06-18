@@ -7,7 +7,7 @@ tags: saved views, persistence, layout, recipe, svelte data grid
 author: Victor Vidolov
 ---
 
-Power users want their grid the way they left it - and often want several named setups: "Overdue", "My accounts", "This quarter". Saved views capture the grid's configuration and let users switch between them. Here is how to build them on SvGrid.
+Power users want the grid exactly how they left it, and usually want a few named setups on top of that, "Overdue", "My accounts", "This quarter". Saved views capture the grid's whole configuration and let people flip between them. Here is how to build them on SvGrid.
 
 ![Saving a grid layout in SvGrid](/blog-media/column-layout.png)
 *Saving and restoring grid layouts in SvGrid.*
@@ -54,7 +54,7 @@ const views = JSON.parse(localStorage.getItem('grid.views') ?? '[]')
 
 - A view dropdown with the active view marked.
 - "Save as new view" and "Update current view".
-- A "Reset to default" that clears the saved layout - always give an escape hatch.
+- A "Reset to default" that clears the saved layout, always give an escape hatch.
 - Optionally, encode the active view in the URL so a view is shareable (see [sync grid state to the URL](sync-grid-state-to-url)).
 
 ## Frequently asked questions

@@ -7,7 +7,7 @@ tags: clipboard, copy, cell range, selection, recipe
 author: Boyko Markov
 ---
 
-Spreadsheet users expect to select a block of cells and copy it. SvGrid's cell range selection makes this work, and the detail that matters is the clipboard *format*: tab-separated values paste into Excel and Google Sheets with columns intact. Here is how copy works and how to extend it.
+Select a block of cells, hit copy, paste into a spreadsheet, users do it without thinking, and they notice immediately when it does not work. SvGrid's cell range selection makes it work, and the detail that decides whether paste lands in neat columns is the clipboard *format*: tab-separated values.
 
 ## Enable range selection and copy
 
@@ -17,7 +17,7 @@ Turn on cell selection; selecting a range and pressing Ctrl/Cmd+C copies it as T
 <SvGrid data={rows} columns={columns} selectionMode="cell" enableCellSelection={true} />
 ```
 
-The copied payload is rows of values joined by tabs, lines joined by newlines - the exact format spreadsheets parse, so a paste lands in aligned columns. See [cell range selection](cell-range-selection) for the selection UX.
+The copied payload is rows of values joined by tabs, lines joined by newlines, the exact format spreadsheets parse, so a paste lands in aligned columns. See [cell range selection](cell-range-selection) for the selection UX.
 
 ## Why tab-separated
 
@@ -39,18 +39,8 @@ Wire it to a toolbar button or a "Copy with headers" context-menu item.
 
 ## Programmatic copy
 
-Beyond the keyboard shortcut, you can copy on demand - a "Copy" button, copy the whole filtered set, or copy a single column. The pattern is the same: assemble TSV and call `navigator.clipboard.writeText`. Note the Clipboard API requires a secure context (HTTPS or localhost) and a user gesture.
+Beyond the keyboard shortcut, you can copy on demand, a "Copy" button, copy the whole filtered set, or copy a single column. The pattern is the same: assemble TSV and call `navigator.clipboard.writeText`. Note the Clipboard API requires a secure context (HTTPS or localhost) and a user gesture.
 
 ## Copy the value, not the markup
 
-Copy the underlying values, not rendered HTML - a badge cell should copy "Active", not its `<span>`. Because SvGrid keeps the raw value, the default copy already does this; preserve that when you build custom copy logic.
-
-## Frequently asked questions
-
-### How do I copy a range of cells from SvGrid into Excel?
-
-Enable cell selection (`selectionMode="cell"`, `enableCellSelection`), select a range, and press Ctrl/Cmd+C. SvGrid writes tab-separated values to the clipboard, which paste into Excel and Google Sheets with columns aligned.
-
-### How do I copy grid data with column headers?
-
-Build the clipboard text yourself: join the header names with tabs on the first line, then each row's values with tabs, and call `navigator.clipboard.writeText`. Trigger it from a button or a "Copy with headers" menu item.
+Copy the underlying values, not rendered HTML, a badge cell should copy "Active", not its `<span>`. Because SvGrid keeps the raw value, the default copy already does this; preserve that when you build custom copy logic.

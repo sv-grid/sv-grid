@@ -7,7 +7,7 @@ tags: footer, summary row, aggregation, rows, recipe
 author: Victor Vidolov
 ---
 
-A summary row - totals, averages, counts that stay visible while the body scrolls - turns a table into a report. SvGrid supports column footers, and combined with aggregation you get a pinned summary with almost no code. Here is the recipe.
+A summary row - the totals and averages that stay pinned while the rows scroll past - is what turns a table into a report. SvGrid gives columns a `footer`, and paired with aggregation you get that pinned summary for almost no code. Here is the recipe, including the bit everyone gets wrong about filtered totals.
 
 ![Group footers and totals in SvGrid](/blog-media/grouping.png)
 *Aggregated footers and totals in SvGrid.*
@@ -33,7 +33,7 @@ If you are grouping, the same aggregation that powers group footers can feed the
 
 ## Totals over the filtered set
 
-The number users expect is the total of what they are *looking at* - the filtered rows, not the entire dataset. Compute footer values from the grid's current (post-filter) rows so the summary updates as filters change. A sum that ignores the active filter is a common and confusing bug.
+The number users expect is the total of what they are *looking at*, the filtered rows, not the entire dataset. Compute footer values from the grid's current (post-filter) rows so the summary updates as filters change. A sum that ignores the active filter is a common and confusing bug.
 
 ## Server-side totals
 
@@ -43,7 +43,7 @@ When data lives on the server, the visible page is not the whole story. Return a
 
 ### How do I add a totals row to a Svelte data grid?
 
-Set a `footer` on each column - a static label or a function that computes a sum/average from the current rows. SvGrid renders a pinned footer row that stays visible while the body scrolls.
+Set a `footer` on each column, a static label or a function that computes a sum/average from the current rows. SvGrid renders a pinned footer row that stays visible while the body scrolls.
 
 ### Should the summary reflect filters?
 

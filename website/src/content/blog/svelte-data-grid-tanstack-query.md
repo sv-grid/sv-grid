@@ -7,7 +7,7 @@ tags: tanstack query, server-side, caching, integration, svelte data grid
 author: Victor Vidolov
 ---
 
-TanStack Query (the Svelte adapter) handles the hard parts of server state - caching, background refetching, request deduplication, and keeping previous data while the next page loads. SvGrid handles rendering. Pairing them gives you a server-driven grid that feels instant. Here is the pattern.
+TanStack Query (the Svelte adapter) handles the hard parts of server state, caching, background refetching, request deduplication, and keeping previous data while the next page loads. SvGrid handles rendering. Pairing them gives you a server-driven grid that feels instant.
 
 ![Server-paged data with TanStack Query in SvGrid](/blog-media/server-row-model.png)
 *Cached, server-paged data driving a SvGrid grid.*

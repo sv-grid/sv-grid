@@ -7,7 +7,7 @@ tags: row model, concepts, data grid, architecture
 author: Kamelia M
 ---
 
-When you read a data grid's docs you will hit the term "row model" quickly. It is the core idea that makes a grid more than a styled table. Here is a clear explanation.
+Open any data grid's docs and you trip over the phrase "row model" within a paragraph or two, usually without anyone stopping to define it. It is the idea that separates a real grid from a styled table, so it is worth slowing down for.
 
 ## The definition
 
@@ -25,21 +25,11 @@ Calling it a model emphasizes that the displayed rows are *derived*, not stored.
 
 ## Client-side vs server-side row models
 
-- **Client-side** - the whole dataset is in the browser and the row model runs locally. Sorting and filtering are instant.
-- **Server-side** - the row model effectively lives on your backend: the grid records the sort/filter/page state, your server returns the matching rows, and the grid displays them. The grid's local model just passes them through.
+- **Client-side**: the whole dataset is in the browser and the row model runs locally. Sorting and filtering are instant.
+- **Server-side**: the row model effectively lives on your backend: the grid records the sort/filter/page state, your server returns the matching rows, and the grid displays them. The grid's local model just passes them through.
 
-Choosing between these is the most important data-architecture decision for a grid - see [client-side vs server-side data](client-side-vs-server-side-data).
+Choosing between these is the most important data-architecture decision for a grid, see [client-side vs server-side data](client-side-vs-server-side-data).
 
 ## Why it matters to you
 
 Understanding the row model explains a lot of grid behavior: why you set `format` on a column (so the model sorts the raw value, not the string), why editing emits an event instead of mutating (so your data stays the single source of truth), and why features compose cleanly (each is another stage in the pipeline). In SvGrid the row model lives in the headless `createSvGrid` core; the `<SvGrid>` component renders its output.
-
-## Frequently asked questions
-
-### What does "row model" mean in a data grid?
-
-It is the pipeline that turns your raw data into the rows displayed, applying filtering, sorting, grouping, and pagination in order. The visible rows are derived from your data plus the UI state, not stored separately.
-
-### What is the difference between a client-side and server-side row model?
-
-A client-side row model runs in the browser over the full dataset, so operations are instant. A server-side row model offloads filtering, sorting, and paging to your backend, which returns just the matching page - necessary for very large or sensitive datasets.

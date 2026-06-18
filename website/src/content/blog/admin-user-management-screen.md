@@ -7,22 +7,22 @@ tags: admin, users, roles, use case, svelte data grid
 author: Boyko Markov
 ---
 
-Almost every app has an admin screen to manage users: see who has access, change roles, deactivate accounts. It is a data grid with a few specific needs around roles, status, and security. Here is the blueprint.
+Almost every app has an admin screen to manage users: see who has access, change roles, deactivate accounts. It is a data grid with a few specific needs around roles, status, and security.
 
 ![An admin screen built with SvGrid](/blog-media/admin-dashboard.png)
 *An admin screen built around SvGrid.*
 
 ## The columns
 
-- **User** - an [avatar cell](avatar-and-image-cells) with name and email.
-- **Role** - a [badge](status-badge-cells) plus an [editable dropdown](editable-select-dropdown-cell) (Admin, Editor, Viewer).
-- **Status** - Active / Invited / Suspended badge.
-- **Last active** - a date column.
-- **Actions** - an [actions column](actions-column-edit-delete): reset password, deactivate, remove.
+- **User**: an [avatar cell](avatar-and-image-cells) with name and email.
+- **Role**: a [badge](status-badge-cells) plus an [editable dropdown](editable-select-dropdown-cell) (Admin, Editor, Viewer).
+- **Status**: Active / Invited / Suspended badge.
+- **Last active**: a date column.
+- **Actions**: an [actions column](actions-column-edit-delete): reset password, deactivate, remove.
 
 ## Inline role changes
 
-The core interaction is changing a role. A dropdown editor that commits [optimistically](optimistic-updates) keeps it snappy - but role changes are sensitive, so confirm privilege escalations ("Make this user an Admin?") and reflect server rejection clearly if the change is denied.
+The core interaction is changing a role. A dropdown editor that commits [optimistically](optimistic-updates) keeps it snappy, but role changes are sensitive, so confirm privilege escalations ("Make this user an Admin?") and reflect server rejection clearly if the change is denied.
 
 ## Bulk actions
 
@@ -34,14 +34,10 @@ User data is sensitive and can be large, so run the grid [server-side](svelte-da
 
 ## Audit-friendly
 
-Because changes here matter, route every edit through one handler so you can log who changed what. The `onCellValueChange` event gives you old and new values - ideal for an audit trail alongside the persist call.
+Because changes here matter, route every edit through one handler so you can log who changed what. The `onCellValueChange` event gives you old and new values, ideal for an audit trail alongside the persist call.
 
 ## Frequently asked questions
 
 ### How do I build an admin user-management grid in Svelte?
 
 Use SvGrid with avatar and role/status badge cells, an editable role dropdown that commits optimistically, an actions column, and row selection for bulk changes. Run it server-side and enforce authorization on the backend.
-
-### How do I keep a user-management grid secure?
-
-Treat the grid as UI only: enforce all authorization on the server, validate sortable columns and bulk-action targets server-side, confirm privilege escalations, and log changes using the old/new values from the grid's change event for an audit trail.

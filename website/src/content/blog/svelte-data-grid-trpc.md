@@ -7,7 +7,7 @@ tags: trpc, sveltekit, server-side, type safety, svelte data grid
 author: Victor Vidolov
 ---
 
-tRPC gives you typed remote procedure calls with no schema duplication - the client knows the server's input and output types. Combined with SvGrid, you get a data grid that is type-safe from the database query all the way to the column definitions. Here is the setup.
+tRPC's whole pitch is calling your server like a local function, with the input and output types known on the client and zero schema to keep in sync. Wire it to SvGrid and the type safety runs the entire length of the pipe, from the database query to the column definitions. Here is the setup.
 
 ## A typed pagination procedure
 
@@ -34,7 +34,7 @@ export const peopleRouter = router({
 })
 ```
 
-Using `z.enum` for `sort` both validates input and prevents arbitrary column names - security and types in one move.
+Using `z.enum` for `sort` both validates input and prevents arbitrary column names, security and types in one move.
 
 ## Wire the grid
 
@@ -70,8 +70,4 @@ Pair tRPC with [TanStack Query](svelte-data-grid-tanstack-query) for caching, or
 
 ### How does tRPC help a data grid?
 
-It makes the grid's data call fully typed end to end - the server procedure's input and output types are known on the client, so your column definitions and row handling stay in sync with the backend with no manual types.
-
-### How do I prevent unsafe sort columns with tRPC?
-
-Validate the `sort` input with `z.enum([...])` listing only allowed columns. Invalid values are rejected at the boundary, which is both a type guarantee and protection against injecting arbitrary column names.
+It makes the grid's data call fully typed end to end, the server procedure's input and output types are known on the client, so your column definitions and row handling stay in sync with the backend with no manual types.

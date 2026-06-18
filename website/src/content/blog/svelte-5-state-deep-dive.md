@@ -7,7 +7,7 @@ tags: svelte 5, state, reactivity, engineering, data grid
 author: Kamelia M
 ---
 
-`$state` is the foundation of Svelte 5 reactivity, and understanding its details pays off in any data-heavy app - a grid most of all. Here is what is actually happening and how to use it well.
+`$state` looks like a one-liner you learn in five minutes, and for a button it is. For a data-heavy app - a grid above all - the details underneath start to matter a lot.
 
 ## Deep reactivity via proxies
 
@@ -45,19 +45,9 @@ Passing a proxy to `JSON.stringify` usually works, but some third-party code mis
 
 ## State in modules and classes
 
-`$state` works in `.svelte.ts`/`.svelte.js` modules and class fields, so you can build a reactive data store outside a component - handy for sharing grid state across views:
+`$state` works in `.svelte.ts`/`.svelte.js` modules and class fields, so you can build a reactive data store outside a component, handy for sharing grid state across views:
 
 ```ts
 // grid-state.svelte.ts
 export const gridState = $state({ sorting: [], filters: [] })
 ```
-
-## Frequently asked questions
-
-### What is the difference between $state and $state.raw?
-
-`$state` deeply proxies objects and arrays, so nested mutations are tracked. `$state.raw` is shallow and non-proxied - you update by reassignment, not mutation - which avoids proxy overhead for large, replace-only datasets like a fetched grid page.
-
-### How do I get a plain object out of $state?
-
-Use `$state.snapshot(value)` for a deep, non-proxy copy - ideal before serializing, logging, or passing data to third-party code that does not expect a proxy.

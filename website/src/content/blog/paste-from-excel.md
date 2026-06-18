@@ -7,10 +7,10 @@ tags: paste, clipboard, excel, editing, recipe
 author: Kamelia M
 ---
 
-Copying out is half the story; pasting in is what makes a grid feel like a spreadsheet for data entry. When a user copies cells from Excel and pastes into your grid, the clipboard holds tab-separated text. Parse it and write it into your rows. Here is the recipe.
+Copying out is the easy half; pasting in is what turns a grid into a real data-entry surface. When someone copies a block from Excel, the clipboard hands you tab-separated text, your job is to parse it and write it into the right rows and columns. Here is the recipe, validation included.
 
 ![A spreadsheet-style SvGrid with a ribbon](/blog-media/spreadsheet.png)
-*A spreadsheet-style SvGrid - paste tabular data straight in.*
+*A spreadsheet-style SvGrid, paste tabular data straight in.*
 
 ## The clipboard format
 
@@ -60,8 +60,4 @@ If the pasted block is taller than the remaining rows, decide your policy: clip 
 
 ### How do I let users paste Excel data into a Svelte grid?
 
-Listen for the paste event, read `text/plain` from the clipboard, split it into a matrix by newlines and tabs, and write the values into your `data` starting at the active cell - coercing each to its column's type.
-
-### How do I validate pasted data?
-
-Run the same validation you use for inline editing as you write each pasted value, reject or flag invalid cells, and show a summary of how many failed instead of silently committing bad data.
+Listen for the paste event, read `text/plain` from the clipboard, split it into a matrix by newlines and tabs, and write the values into your `data` starting at the active cell, coercing each to its column's type.

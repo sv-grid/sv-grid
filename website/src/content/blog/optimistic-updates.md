@@ -7,7 +7,7 @@ tags: optimistic updates, editing, ux, svelte data grid
 author: Kamelia M
 ---
 
-The fastest interaction is the one that does not wait for the network. Optimistic updates apply a change to the grid immediately, fire the request in the background, and roll back only if the server rejects it. Done well, edits feel instant even on a slow connection.
+The fastest interaction is the one that never waits for the network. Optimistic updates apply the change on screen at once, send the request in the background, and only walk it back if the server says no. Get it right and editing feels instant even on hotel wifi.
 
 ![Optimistic edits in SvGrid](/blog-media/optimistic-updates.png)
 *Optimistic updates: edits apply instantly, then reconcile.*
@@ -26,7 +26,7 @@ async function save(e) {
 }
 ```
 
-The user sees the change the instant they commit. The network round trip happens out of sight, and only a failure is visible - as a revert.
+The user sees the change the instant they commit. The network round trip happens out of sight, and only a failure is visible, as a revert.
 
 ## Make failures honest
 
@@ -48,7 +48,7 @@ If a background refresh arrives while an edit is in flight, do not blindly overw
 
 ### What is an optimistic update in a data grid?
 
-It applies the user's edit to the grid immediately, sends the request in the background, and only rolls back if the server rejects it - so the interaction feels instant.
+It applies the user's edit to the grid immediately, sends the request in the background, and only rolls back if the server rejects it, so the interaction feels instant.
 
 ### How do I handle a failed optimistic update?
 

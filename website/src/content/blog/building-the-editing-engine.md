@@ -7,7 +7,7 @@ tags: editing, validation, engineering, story
 author: Boyko Markov
 ---
 
-By this point SvGrid could sort and filter a hundred thousand rows smoothly. But a grid you can only read is half a grid. The next piece was editing - the feature that turns a data viewer into a data tool, and the one with the most opinions baked into it.
+By this point SvGrid could sort and filter a hundred thousand rows smoothly. But a grid you can only read is half a grid. The next piece was editing, the feature that turns a data viewer into a data tool, and the one with the most opinions baked into it.
 
 ## The biggest decision: do not touch the data
 
@@ -34,7 +34,7 @@ const columns = [
 ]
 ```
 
-The detail that mattered: a `number` editor commits a number, not the string `"42"`. Same theme as sorting and filtering - keep the value's type intact so the rest of the pipeline keeps working. An edited number column still sorts numerically.
+The detail that mattered: a `number` editor commits a number, not the string `"42"`. Same theme as sorting and filtering, keep the value's type intact so the rest of the pipeline keeps working. An edited number column still sorts numerically.
 
 ## Keyboard first, because data entry is keyboard work
 
@@ -42,20 +42,10 @@ Anyone entering data in bulk lives on the keyboard, so the edit flow had to be e
 
 ## Validation as a sequence, not a checkbox
 
-We resisted building one validation hook and calling it done. Validation is really layers: the editor restricts input shape, a synchronous rule in the change handler rejects bad business values, and async validation defers to the server. Because the grid hands you the change event rather than committing for you, all three fit naturally - you choose when a value is good enough to keep.
+We resisted building one validation hook and calling it done. Validation is really layers: the editor restricts input shape, a synchronous rule in the change handler rejects bad business values, and async validation defers to the server. Because the grid hands you the change event rather than committing for you, all three fit naturally, you choose when a value is good enough to keep.
 
 The usage side of all this is written up in [Inline Editing with Validation in SvGrid](inline-editing-with-validation) and [Optimistic Updates](optimistic-updates). This post is about why editing emits events instead of mutating.
 
 ## What it unlocked
 
 With editing in place, SvGrid crossed from "show me the data" to "let me work with the data." That opened the door to the features that assume a living dataset. Read next: [grouping, trees, and master-detail](building-grouping-trees-master-detail).
-
-## Frequently asked questions
-
-### Does SvGrid mutate my data when a user edits a cell?
-
-No. It emits an `onCellValueChange` event with the old and new values and lets you decide how to persist the change. This keeps edits explicit and makes validation, server-saving, and optimistic updates straightforward to compose.
-
-### How is inline editing made keyboard-accessible?
-
-The edit flow uses spreadsheet conventions - F2 or double-click to edit, Enter and Tab to commit and move, Escape to cancel - and the active cell is part of the grid's roving focus model, so bulk data entry never requires the mouse.

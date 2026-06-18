@@ -16,12 +16,12 @@ The contacts table is the screen a sales team stares at all day, so it has to be
 
 A useful contacts grid is more than text. Mix in rich cells:
 
-- **Contact** - an [avatar cell](avatar-and-image-cells) with name and email.
-- **Status** - a [status badge](status-badge-cells) (Lead, Active, Churned).
-- **Owner** - an avatar or name.
-- **Deal value** - a currency column (`format: { type: 'currency' }`).
-- **Last contacted** - a date column.
-- **Actions** - an [actions column](actions-column-edit-delete) (email, edit, delete).
+- **Contact**: an [avatar cell](avatar-and-image-cells) with name and email.
+- **Status**: a [status badge](status-badge-cells) (Lead, Active, Churned).
+- **Owner**: an avatar or name.
+- **Deal value**: a currency column (`format: { type: 'currency' }`).
+- **Last contacted**: a date column.
+- **Actions**: an [actions column](actions-column-edit-delete) (email, edit, delete).
 
 ## Inline editing
 
@@ -33,7 +33,7 @@ Reps want their own slices: "My leads", "Closing this month", "Untouched in 30 d
 
 ## Bulk actions
 
-Selection plus a contextual toolbar turns the grid into a workflow: select contacts, then assign an owner, add a tag, or start a sequence - see [bulk operations](bulk-operations-on-selected-rows).
+Selection plus a contextual toolbar turns the grid into a workflow: select contacts, then assign an owner, add a tag, or start a sequence, see [bulk operations](bulk-operations-on-selected-rows).
 
 ## Scaling
 
@@ -44,7 +44,3 @@ A few thousand contacts can live client-side for instant filtering. Past that, m
 ### How do I build a CRM contacts grid in Svelte?
 
 Combine SvGrid recipes: avatar and badge cells for scannability, inline editing (dropdowns, autocomplete, number editors) for quick updates, Excel-style filters plus saved views for personal slices, and row selection with a toolbar for bulk actions.
-
-### How many contacts can the grid handle?
-
-A few thousand work client-side with instant filtering thanks to virtualization. For larger contact books, switch to server-side data so only the current page loads, keeping the CRM responsive at any scale.

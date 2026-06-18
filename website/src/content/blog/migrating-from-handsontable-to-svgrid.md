@@ -7,7 +7,7 @@ tags: migration, handsontable, comparison, svelte data grid
 author: Boyko Markov
 ---
 
-Handsontable is a capable spreadsheet component. Teams move to SvGrid for a native Svelte 5 integration, an MIT-licensed core, and a grid that scales to large datasets with built-in virtualization. Here is how to migrate the common pieces.
+Handsontable is a capable spreadsheet, and if the spreadsheet metaphor is the whole point of your app, it may still be the right call. Teams move to SvGrid for the native Svelte 5 integration, the MIT-licensed core, and virtualization that holds up on large datasets.
 
 ## Concept mapping
 
@@ -53,13 +53,3 @@ If you relied on range selection and copy/paste, enable cell selection (`selecti
 ## Licensing note
 
 Handsontable is free for non-commercial use and requires a license for commercial use. SvGrid's core is MIT-licensed for commercial use with no key; only the optional Enterprise pack is paid. Factor that into the migration's business case.
-
-## Frequently asked questions
-
-### Can SvGrid replace Handsontable's spreadsheet features?
-
-For most use cases, yes - inline editing with typed editors, cell range selection, copy/paste as TSV, sorting, filtering, and (via Enterprise) Excel/CSV import and export. Very spreadsheet-specific features like formula engines differ, so check your exact needs.
-
-### How does licensing compare?
-
-Handsontable requires a commercial license for commercial use; SvGrid's core is MIT-licensed and free for commercial use, with a separate optional paid Enterprise pack for export, import, pivot, and AI.

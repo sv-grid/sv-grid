@@ -7411,7 +7411,7 @@
 
   .sv-grid-shell {
     position: relative;
-    border-bottom: 1px solid #cbd5e1;
+    border-bottom: 1px solid var(--sg-border, #cbd5e1);
   }
 
   .sv-grid-table {
@@ -7430,7 +7430,8 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    background: #fff;
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
     user-select: none;
   }
   /* Only the active cell + the cell hosting the fill handle become a
@@ -7575,7 +7576,7 @@
     position: sticky;
     top: 0;
     z-index: 6;
-    background: #f5f7fb;
+    background: var(--sg-header-bg, #f5f7fb);
   }
 
   /* Header drag-to-reorder. The `draggable` attribute is only set
@@ -7633,17 +7634,17 @@
   /* Group header rows for multi-level (pivot-style) headers. Sits above
    * the standard leaf header row when the column tree has nesting. */
   .sv-grid-group-header-row {
-    background: #eef2f8;
+    background: var(--sg-header-bg, #eef2f8);
   }
   .sv-grid-group-header-cell {
     box-sizing: border-box;
-    border-bottom: 1px solid #d8dee9;
-    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--sg-border, #d8dee9);
+    border-right: 1px solid var(--sg-border, #e2e8f0);
     text-align: center;
     padding: 4px 8px;
     font-weight: 700;
     font-size: 11.5px;
-    color: #475569;
+    color: var(--sg-header-fg, #475569);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
@@ -7663,7 +7664,7 @@
     position: sticky;
     bottom: 0;
     z-index: 6;
-    background: #f5f7fb;
+    background: var(--sg-header-bg, #f5f7fb);
   }
 
   .sv-grid-container {
@@ -7718,7 +7719,7 @@
     top: 0;
     inset-inline-end: 0;
     width: 16px;
-    background: #f5f7fb;
+    background: var(--sg-header-bg, #f5f7fb);
     border-bottom: 1px solid rgba(15, 23, 42, 0.08);
     z-index: 6;
     pointer-events: none;
@@ -7730,7 +7731,7 @@
     bottom: 0;
     width: 16px;
     height: 16px;
-    background: #eef2f8;
+    background: var(--sg-header-bg, #eef2f8);
     box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
     z-index: 21;
     pointer-events: none;
@@ -7759,7 +7760,7 @@
     position: sticky;
     left: 0;
     z-index: 4;
-    color: #64748b;
+    color: var(--sg-muted, #64748b);
     font-variant-numeric: tabular-nums;
   }
   .sv-grid-row-number-head {
@@ -7805,10 +7806,10 @@
     width: 16px;
     height: 16px;
     margin: 0 auto;
-    border: 1px solid #8794a8;
+    border: 1px solid var(--sg-input-border, #8794a8);
     border-radius: 4px;
-    background: #fff;
-    color: #0b63f3;
+    background: var(--sg-input-bg, #fff);
+    color: var(--sg-accent, #0b63f3);
     cursor: pointer;
     transition:
       border-color 120ms ease,
@@ -7858,8 +7859,8 @@
 
   .sv-grid-checkbox[aria-checked="true"],
   .sv-grid-checkbox[aria-checked="mixed"] {
-    border-color: #0b63f3;
-    background: #eaf2ff;
+    border-color: var(--sg-accent, #0b63f3);
+    background: var(--sg-selection-bg, #eaf2ff);
   }
 
   .sv-grid-checkbox[aria-checked="true"]::after {
@@ -7880,7 +7881,7 @@
   }
 
   .sv-grid-checkbox:focus-visible {
-    outline: 2px solid #0b63f3;
+    outline: 2px solid var(--sg-accent, #0b63f3);
     outline-offset: 1px;
   }
 
@@ -7902,7 +7903,7 @@
        the wrong position on clipped cells in some browsers - it's drawn
        outside the layout box, so the negative offset's effect was
        inconsistent at scroll boundaries. */
-    box-shadow: inset 0 0 0 2px #0b63f3;
+    box-shadow: inset 0 0 0 2px var(--sg-accent, #0b63f3);
     outline: none;
     /* Let list/chips popouts extend past the cell box (default cells have
        overflow: hidden so the chips picker would otherwise be clipped). */
@@ -7947,8 +7948,8 @@
     right: 0;
     width: 9px;
     height: 9px;
-    background: #0b63f3;
-    border: 1px solid #ffffff;
+    background: var(--sg-accent, #0b63f3);
+    border: 1px solid var(--sg-bg, #ffffff);
     box-sizing: border-box;
     cursor: crosshair;
     z-index: 15;
@@ -7974,7 +7975,7 @@
   /* The four CSS variables let us compose a single box-shadow that draws the
      selection rectangle outline only on the cells that sit on its edges. */
   .sv-grid-cell[data-selected-range="true"] {
-    background: #eef4ff;
+    background: var(--sg-selection-bg, #eef4ff);
     --sv-range-top: 0 0 0 transparent;
     --sv-range-bottom: 0 0 0 transparent;
     --sv-range-left: 0 0 0 transparent;
@@ -7984,19 +7985,19 @@
   }
 
   .sv-grid-cell[data-range-top="true"] {
-    --sv-range-top: inset 0 2px 0 #0b63f3;
+    --sv-range-top: inset 0 2px 0 var(--sg-accent, #0b63f3);
   }
 
   .sv-grid-cell[data-range-bottom="true"] {
-    --sv-range-bottom: inset 0 -2px 0 #0b63f3;
+    --sv-range-bottom: inset 0 -2px 0 var(--sg-accent, #0b63f3);
   }
 
   .sv-grid-cell[data-range-left="true"] {
-    --sv-range-left: inset 2px 0 0 #0b63f3;
+    --sv-range-left: inset 2px 0 0 var(--sg-accent, #0b63f3);
   }
 
   .sv-grid-cell[data-range-right="true"] {
-    --sv-range-right: inset -2px 0 0 #0b63f3;
+    --sv-range-right: inset -2px 0 0 var(--sg-accent, #0b63f3);
   }
 
   .sv-grid-cell-editor {
@@ -8006,7 +8007,7 @@
     height: 100%;
     border: 0;
     outline: none;
-    background: #fff;
+    background: var(--sg-input-bg, #fff);
     box-sizing: border-box;
     font: inherit;
     color: inherit;
@@ -8020,9 +8021,9 @@
   .sv-grid-menu-search:focus,
   .sv-grid-menu-condition-value:focus,
   .sv-grid-menu-operator:focus {
-    outline: 2px solid #0b63f3;
+    outline: 2px solid var(--sg-accent, #0b63f3);
     outline-offset: -2px;
-    border-color: #0b63f3;
+    border-color: var(--sg-accent, #0b63f3);
   }
 
   .sv-grid-cell-editor-number,
@@ -8040,7 +8041,7 @@
     appearance: auto;
     font: inherit;
     color: inherit;
-    background: #fff;
+    background: var(--sg-input-bg, #fff);
     border: 0;
     padding: 0 6px;
     box-sizing: border-box;
@@ -8055,8 +8056,8 @@
     max-height: 220px;
     z-index: 5;
     padding: 4px;
-    border: 1px solid #0b63f3;
-    background: #fff;
+    border: 1px solid var(--sg-accent, #0b63f3);
+    background: var(--sg-input-bg, #fff);
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
   }
 
@@ -8111,7 +8112,7 @@
     min-width: 80px;
     font: inherit;
     color: inherit;
-    background: #fff;
+    background: var(--sg-bg, #fff);
     border: 1px solid rgba(15, 23, 42, 0.15);
     border-radius: 4px;
     padding: 2px 4px;
@@ -8121,7 +8122,7 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: #fff;
-    background: #0b63f3;
+    background: var(--sg-accent, #0b63f3);
     border: 0;
     border-radius: 4px;
     padding: 3px 8px;
@@ -8292,7 +8293,7 @@
     display: inline-flex;
     flex: none;
     font-size: 13px;
-    color: #5b6b85;
+    color: var(--sg-muted, #5b6b85);
   }
 
   .sv-grid-header-icon-hint {
@@ -8305,7 +8306,7 @@
   }
 
   .sv-grid-header-icon-flag {
-    color: #0b63f3;
+    color: var(--sg-accent, #0b63f3);
   }
 
   .sv-grid-col-menu-btn {
@@ -8323,7 +8324,7 @@
     border: 0;
     border-radius: 4px;
     background: transparent;
-    color: #5b6b85;
+    color: var(--sg-muted, #5b6b85);
     font-size: 15px;
     cursor: pointer;
     opacity: 0;
@@ -8359,7 +8360,7 @@
 
   .sv-grid-col-menu-btn:hover,
   .sv-grid-col-menu-btn.is-open {
-    background: #e2e8f3;
+    background: var(--sg-row-hover-bg, #e2e8f3);
   }
 
   .sv-grid-filter-operator-btn {
@@ -8369,22 +8370,22 @@
     flex: none;
     height: 24px;
     padding: 0 4px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--sg-input-border, #cbd5e1);
     border-radius: 4px;
-    background: #fff;
-    color: #334155;
+    background: var(--sg-input-bg, #fff);
+    color: var(--sg-fg, #334155);
     font-size: 13px;
     cursor: pointer;
   }
 
   .sv-grid-filter-operator-btn.is-open {
-    border-color: #0b63f3;
+    border-color: var(--sg-accent, #0b63f3);
   }
 
   .sv-grid-caret {
     display: inline-flex;
     font-size: 9px;
-    color: #94a3b8;
+    color: var(--sg-muted, #94a3b8);
   }
 
   .sv-grid-menu-backdrop {
@@ -8400,12 +8401,12 @@
     max-height: calc(100vh - 24px);
     overflow: auto;
     padding: 4px;
-    background: #fff;
-    border: 1px solid #d6dee9;
+    background: var(--sg-bg, #fff);
+    border: 1px solid var(--sg-border, #d6dee9);
     border-radius: 8px;
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
     font-size: 13px;
-    color: #1f2937;
+    color: var(--sg-fg, #1f2937);
   }
 
   .sv-grid-column-menu {
@@ -8432,18 +8433,18 @@
   }
 
   .sv-grid-menu-item:hover {
-    background: #eef2f8;
+    background: var(--sg-row-hover-bg, #eef2f8);
   }
 
   .sv-grid-menu-item[aria-checked="true"] {
-    background: #eaf2ff;
-    color: #0b63f3;
+    background: var(--sg-selection-bg, #eaf2ff);
+    color: var(--sg-accent, #0b63f3);
   }
 
   .sv-grid-menu-sep {
     height: 1px;
     margin: 4px 6px;
-    background: #e6ebf2;
+    background: var(--sg-border, #e6ebf2);
   }
 
   .sv-grid-menu-filter {
@@ -8456,7 +8457,7 @@
     gap: 6px;
     padding: 2px 0 6px;
     font-weight: 600;
-    color: #475569;
+    color: var(--sg-muted, #475569);
   }
 
   .sv-grid-menu-search {
@@ -8465,7 +8466,7 @@
     box-sizing: border-box;
     margin-bottom: 6px;
     padding: 0 8px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--sg-input-border, #cbd5e1);
     border-radius: 5px;
     font: inherit;
   }
@@ -8489,10 +8490,10 @@
     justify-content: center;
     height: 28px;
     padding: 0;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--sg-input-border, #cbd5e1);
     border-radius: 4px;
-    background: #fff;
-    color: #475569;
+    background: var(--sg-input-bg, #fff);
+    color: var(--sg-fg, #475569);
     cursor: pointer;
     transition:
       background-color 100ms ease,
@@ -8501,12 +8502,12 @@
   }
 
   .sv-grid-menu-operator-btn:hover {
-    background: #eef2f8;
+    background: var(--sg-row-hover-bg, #eef2f8);
   }
 
   .sv-grid-menu-operator-btn.is-active {
-    background: #0b63f3;
-    border-color: #0b63f3;
+    background: var(--sg-accent, #0b63f3);
+    border-color: var(--sg-accent, #0b63f3);
     color: #fff;
   }
 
@@ -8516,7 +8517,7 @@
     height: 28px;
     box-sizing: border-box;
     padding: 0 8px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--sg-input-border, #cbd5e1);
     border-radius: 5px;
     font: inherit;
   }
@@ -8524,7 +8525,7 @@
   .sv-grid-facet-list {
     max-height: 200px;
     overflow: auto;
-    border: 1px solid #eaeef4;
+    border: 1px solid var(--sg-border, #eaeef4);
     border-radius: 5px;
   }
 
@@ -8537,11 +8538,11 @@
   }
 
   .sv-grid-facet:hover {
-    background: #f4f6fa;
+    background: var(--sg-row-hover-bg, #f4f6fa);
   }
 
   .sv-grid-facet-all {
-    border-bottom: 1px solid #eaeef4;
+    border-bottom: 1px solid var(--sg-border, #eaeef4);
     font-weight: 600;
   }
 
@@ -8558,7 +8559,7 @@
   .sv-grid-facet-empty,
   .sv-grid-facet-note {
     padding: 6px 8px;
-    color: #94a3b8;
+    color: var(--sg-muted, #94a3b8);
     font-size: 12px;
   }
 
@@ -8571,17 +8572,17 @@
 
   .sv-grid-menu-btn {
     padding: 5px 10px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--sg-input-border, #cbd5e1);
     border-radius: 5px;
-    background: #fff;
-    color: #334155;
+    background: var(--sg-input-bg, #fff);
+    color: var(--sg-fg, #334155);
     font: inherit;
     cursor: pointer;
   }
 
   .sv-grid-menu-btn-primary {
-    background: #0b63f3;
-    border-color: #0b63f3;
+    background: var(--sg-accent, #0b63f3);
+    border-color: var(--sg-accent, #0b63f3);
     color: #fff;
   }
 
@@ -8596,13 +8597,13 @@
   }
 
   .sv-grid-group-row > .sv-grid-cell {
-    background: #eef2f8;
+    background: var(--sg-header-bg, #eef2f8);
     font-weight: 600;
     cursor: pointer;
   }
 
   .sv-grid-row-selected > .sv-grid-cell {
-    background: #eaf2ff;
+    background: var(--sg-selection-bg, #eaf2ff);
   }
 
   .sv-grid-group-cell {
@@ -8621,7 +8622,7 @@
     padding: 0 4px 0 0;
     font-size: 11px;
     line-height: 1;
-    color: #334155;
+    color: var(--sg-fg, #334155);
     cursor: pointer;
   }
 
@@ -8629,7 +8630,7 @@
     margin-left: 6px;
     font-weight: 400;
     font-size: 12px;
-    color: #64748b;
+    color: var(--sg-muted, #64748b);
   }
   .sv-grid-group-agg {
     margin-left: 10px;

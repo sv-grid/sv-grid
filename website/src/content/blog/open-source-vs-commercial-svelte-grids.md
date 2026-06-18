@@ -7,21 +7,21 @@ tags: comparison, licensing, open source, commercial, svelte data grid
 author: Boyko Markov
 ---
 
-Choosing a data grid is partly a licensing decision. Free open-source options and paid commercial ones each have real trade-offs beyond the sticker price. Here is an honest framework for deciding - and where SvGrid's model fits.
+Choosing a data grid is partly a licensing decision. Free open-source options and paid commercial ones each have real trade-offs beyond the sticker price.
 
 ## What open-source gives you
 
-- **No cost, no license keys** - adopt and ship freely (under a permissive license like MIT).
-- **Inspectable, forkable** - read the source, patch if needed.
-- **Community momentum** - issues, PRs, examples.
+- **No cost, no license keys**: adopt and ship freely (under a permissive license like MIT).
+- **Inspectable, forkable**: read the source, patch if needed.
+- **Community momentum**: issues, PRs, examples.
 
 The risks: support is best-effort, advanced features may be missing, and maintenance depends on the project's health.
 
 ## What commercial gives you
 
-- **Advanced features** - pivot, enterprise export, sometimes specialized integrations.
-- **Guaranteed support** - SLAs, a team to escalate to, prioritized fixes.
-- **A roadmap you can rely on** - someone is paid to maintain it.
+- **Advanced features**: pivot, enterprise export, sometimes specialized integrations.
+- **Guaranteed support**: SLAs, a team to escalate to, prioritized fixes.
+- **A roadmap you can rely on**: someone is paid to maintain it.
 
 The risks: cost (often per-developer or per-app), license management, and lock-in to a vendor's pace and pricing.
 
@@ -29,9 +29,9 @@ The risks: cost (often per-developer or per-app), license management, and lock-i
 
 Sticker price is not total cost. Factor in:
 
-- **Build cost** of features a free grid lacks (virtualization, accessibility, export) - often far more than a license.
-- **Support cost** - hours lost to an unanswered issue vs a paid SLA.
-- **Risk cost** - an abandoned dependency is expensive to replace.
+- **Build cost** of features a free grid lacks (virtualization, accessibility, export), often far more than a license.
+- **Support cost**: hours lost to an unanswered issue vs a paid SLA.
+- **Risk cost**: an abandoned dependency is expensive to replace.
 
 Sometimes free is cheapest; sometimes a license is, once you price your own time.
 
@@ -45,14 +45,10 @@ This is SvGrid's model: `@svgrid/grid` is MIT-licensed and free for commercial u
 
 - Standard CRUD grids, cost-sensitive? **Open-source** (free core) is usually enough.
 - Need pivot/export/SLAs, or your time is the expensive resource? **Commercial** (or open-core Enterprise) pays for itself.
-- Want to start free and upgrade only if needed? **Open-core** - the lowest-risk path.
+- Want to start free and upgrade only if needed? **Open-core**, the lowest-risk path.
 
 ## Frequently asked questions
 
 ### Should I use a free or paid Svelte data grid?
 
-Use a free open-source grid for standard grids when cost matters and the feature set is enough. Choose commercial (or an open-core paid tier) when you need advanced features like pivot and export, or guaranteed support - and price in the cost of building missing features yourself.
-
-### What is the open-core model?
-
-A free, permissively licensed core plus an optional paid pack for advanced features and support. SvGrid uses it: an MIT core free for commercial use, with @svgrid/enterprise adding export, pivot, import, and AI - so you start free and upgrade only if you need the extras.
+Use a free open-source grid for standard grids when cost matters and the feature set is enough. Choose commercial (or an open-core paid tier) when you need advanced features like pivot and export, or guaranteed support, and price in the cost of building missing features yourself.
