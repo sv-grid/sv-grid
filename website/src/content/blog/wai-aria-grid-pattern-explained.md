@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 If you are building an editable, keyboard-navigable table, there is already a spec for getting the accessibility right: the WAI-ARIA grid pattern. It is not optional folklore, it is the thing screen readers expect. Here is what it actually asks of you, in plain terms.
 
+![Keyboard navigation and accessibility in SvGrid.](/blog-media/accessibility.png)
+*Keyboard navigation and accessibility in SvGrid.*
+
 ## Grid vs table: pick the right one
 
 The ARIA Authoring Practices define two relevant patterns:

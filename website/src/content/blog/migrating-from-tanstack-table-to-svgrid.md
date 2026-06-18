@@ -9,6 +9,9 @@ author: Kamelia M
 
 TanStack Table is a great headless engine, and plenty of people should just keep using it. You might still move to SvGrid to stop hand-building the UI, to get a runes-native (not store-bridged) data flow, or for virtualization and Excel-style filters out of the box. Here is how the pieces map, plus an honest note on when to stay put.
 
+![An HR team directory built with SvGrid.](/blog-media/hr-team.png)
+*An HR team directory built with SvGrid.*
+
 ## First, an honest note
 
 If you specifically want a framework-agnostic engine and total control over markup, TanStack Table is a strong choice, keep it. Migrate to SvGrid when you would rather have a render component (and a headless core when you need it), native runes, and batteries like virtualization and filtering included.

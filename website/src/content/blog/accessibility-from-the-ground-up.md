@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Accessibility is the feature we insisted on from the first render and had to prove at depth as the grid grew. With sorting, filtering, editing, grouping, and hierarchy in place, all of it had to be usable by keyboard and screen reader, not as a retrofit, but as the thing it had been from line one.
 
+![Keyboard navigation and accessibility in SvGrid.](/blog-media/accessibility.png)
+*Keyboard navigation and accessibility in SvGrid.*
+
 ## We did not bolt it on, because that never works
 
 The hardest lesson in accessible UI is that you cannot add it later. A grid built without focus management or semantic roles cannot be patched into one; the assumptions are wrong all the way down. So accessibility was a day-one default, and this month was about holding that line as the feature set grew.

@@ -9,6 +9,9 @@ author: Boyko Markov
 
 With the row model and sorting in place, the next step in the pipeline was the feature users live in: filtering. We wanted the Excel-style experience people already know - per-column menus, type-aware operators, a global search - without the weight that usually comes with it.
 
+![SvGrid's Excel-style column filter menu.](/blog-media/excel-filters.png)
+*SvGrid's Excel-style column filter menu.*
+
 ## Filtering is a row-model step
 
 Because we had built the row model as an ordered pipeline, filtering slotted in as the step before sorting:

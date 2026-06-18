@@ -9,6 +9,9 @@ author: Kamelia M
 
 When a team migrates from React to Svelte, the `ag-grid-react` screens tend to look like the scariest part of the job. They are less scary than they look: the grid concepts port to SvGrid cleanly, and most of the real change is React's hooks becoming Svelte runes. Here is the playbook.
 
+![An admin template built with SvGrid.](/blog-media/admin-template.png)
+*An admin template built with SvGrid.*
+
 ## Concept mapping
 
 | ag-grid-react | SvGrid |

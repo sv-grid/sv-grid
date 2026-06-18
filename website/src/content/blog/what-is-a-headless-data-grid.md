@@ -9,6 +9,9 @@ author: Kamelia M
 
 A headless data grid is a grid that provides all the behavior and state - sorting, filtering, grouping, pagination, selection, virtualization logic - without rendering any markup. You bring the DOM; it brings the brains. The word "headless" gets thrown around loosely, so let me pin down what it actually means and when it is the right call.
 
+![A SvGrid data grid with sorting, selection, and inline editing.](/blog-media/quick-start.png)
+*A SvGrid data grid with sorting, selection, and inline editing.*
+
 ## Headless vs all-in-one
 
 There are two ends of a spectrum:

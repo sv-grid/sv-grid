@@ -9,6 +9,9 @@ author: Kamelia M
 
 SvGrid and TanStack Table are the two serious "headless" options for Svelte, and they are the most common head-to-head. They share DNA but make different bets.
 
+![Group aggregators in SvGrid.](/blog-media/group-aggregators.png)
+*Group aggregators in SvGrid.*
+
 ## The shared ground
 
 Both are headless-first: a row-model pipeline (filter, sort, group, paginate, expand) that you compose, with TypeScript throughout and permissive open-source licensing. If you have used one, the mental model of the other is familiar.

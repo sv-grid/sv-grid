@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Kendo UI Grid is mature and capable, and it is also commercial and usually reached through jQuery or a framework wrapper. Moving to SvGrid trades that for a native Svelte 5 component on an MIT-licensed core. The good news for the migration: the data and column concepts line up almost directly.
 
+![SvGrid's Excel-style column filter menu.](/blog-media/excel-filters.png)
+*SvGrid's Excel-style column filter menu.*
+
 ## Concept mapping
 
 | Kendo UI Grid | SvGrid |

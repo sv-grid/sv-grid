@@ -9,6 +9,9 @@ author: Boyko Markov
 
 A sparkline - a tiny, word-sized chart - turns a column of numbers into a column of trends, which is often the question people actually have: where is this heading? SvGrid renders any markup in a cell, so a sparkline is just a small inline SVG, no charting library required.
 
+![Threshold and anomaly highlighting in SvGrid.](/blog-media/anomaly.png)
+*Threshold and anomaly highlighting in SvGrid.*
+
 ## A minimal SVG sparkline
 
 Map an array of values to an SVG polyline. No charting library needed:

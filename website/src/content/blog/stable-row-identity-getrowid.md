@@ -9,6 +9,9 @@ author: Kamelia M
 
 Row identity is one of those things nobody thinks about until it breaks, and then selection jumps to the wrong row, an edit lands on the wrong record, and updates churn more than they should. It is the quiet foundation under selection, editing, and fast updates. Here is how identity works in SvGrid and how to keep it honest.
 
+![A right-click context menu on a SvGrid row.](/blog-media/context-menu.png)
+*A right-click context menu on a SvGrid row.*
+
 ## What identity is for
 
 The grid uses a row's identity to answer three questions:

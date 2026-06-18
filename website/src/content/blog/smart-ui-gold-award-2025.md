@@ -9,6 +9,9 @@ author: Boyko Markov
 
 We are proud to share that Smart UI - the web-components library from the team that builds SvGrid - was voted Gold Winner in Visual Studio Magazine's 2025 Readers' Choice Awards, in the software development service providers category.
 
+![A live market grid in SvGrid.](/blog-media/stock-market.png)
+*A live market grid in SvGrid.*
+
 ## Why a readers' choice award matters
 
 Plenty of awards are decided by a panel. Readers' Choice is decided by the developers who actually use the tools. That distinction matters to us. It is one thing for a reviewer to like a component library; it is another for the engineers who ship with it every day, under deadline, to vote it the best in its class.

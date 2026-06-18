@@ -9,6 +9,9 @@ author: Kamelia M
 
 Debounce and throttle both rein in how often a function runs, and they get mixed up constantly, which is how you end up with a search box that lags or a live feed that drops updates. They are not interchangeable.
 
+![Live updates streaming into a SvGrid grid.](/blog-media/websocket-live.png)
+*Live updates streaming into a SvGrid grid.*
+
 ## The difference in one line
 
 - **Debounce**: wait until the activity *stops*, then run once. "Do it when they are done."

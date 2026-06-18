@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Today we are introducing SvGrid, a data grid built from the ground up for Svelte 5. It is not a port, not a wrapper around an older grid, and not a thin adapter over a framework-agnostic engine. It is a native Svelte 5 component, written on runes, by the team at jQWidgets.
 
+![Named, saved views in SvGrid.](/blog-media/named-views.png)
+*Named, saved views in SvGrid.*
+
 ## Why a new grid, and why now
 
 We have shipped UI components since 2011, first jQWidgets, then the Smart UI web components on [htmlelements.com](https://www.htmlelements.com). Over those years our components have gone into products at thousands of companies, including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel.

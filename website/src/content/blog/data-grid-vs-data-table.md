@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Ask ten developers whether they want a "data table" or a "data grid" and half will use the words interchangeably. Most of the time that is fine. But the two words signal different expectations, and knowing which you actually need saves you from either over-building or painting yourself into a corner.
 
+![A live market grid in SvGrid.](/blog-media/stock-market.png)
+*A live market grid in SvGrid.*
+
 ## The short version
 
 - A **data table** displays rows and columns. It may sort and filter. Think of an enhanced HTML `<table>`.

@@ -9,6 +9,9 @@ author: Boyko Markov
 
 A grid is not just markup, it carries real logic in its accessors, formatters, and sort/filter behavior, and that logic breaks like any other code. Vitest plus `@testing-library/svelte` lets you test both the pure parts and the rendered component. Here is where to spend your testing effort for the most return.
 
+![Keyboard navigation and accessibility in SvGrid.](/blog-media/accessibility.png)
+*Keyboard navigation and accessibility in SvGrid.*
+
 ## Test the pure parts first
 
 The cheapest, most valuable tests target your column logic - accessors and formatters - with no DOM:

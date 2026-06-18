@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Put the grid's state in the URL and a filtered, sorted view suddenly becomes a thing you can bookmark, paste into Slack, or reload straight back into, and the back button starts behaving the way people expect.
 
+![Barcode and rich cells in a SvGrid catalog.](/blog-media/barcode.png)
+*Barcode and rich cells in a SvGrid catalog.*
+
 ## Read state from the URL
 
 On load, initialize the grid from the query string so a shared link reproduces the view:

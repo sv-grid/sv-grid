@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Plenty of grids fall apart under SSR because they assume the browser is already there. SvGrid renders meaningful HTML before hydration, so it just works under SvelteKit's server-side rendering and static builds, no `onMount` guards, no `browser` checks. You get a faster first paint and a grid crawlers can actually read.
 
+![Server-side data in SvGrid.](/blog-media/server-side.png)
+*Server-side data in SvGrid.*
+
 ## Load data in `+page.ts`
 
 Fetch on the server (or at build time) in a load function and pass the rows to your page:

@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Everything you reach for most, in one place. Bookmark this; it is also a good page to hand an AI assistant.
 
+![A SvGrid data grid with sorting, selection, and inline editing.](/blog-media/quick-start.png)
+*A SvGrid data grid with sorting, selection, and inline editing.*
+
 ## Install
 
 ```bash

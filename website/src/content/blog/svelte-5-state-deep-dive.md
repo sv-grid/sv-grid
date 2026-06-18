@@ -9,6 +9,9 @@ author: Kamelia M
 
 `$state` looks like a one-liner you learn in five minutes, and for a button it is. For a data-heavy app - a grid above all - the details underneath start to matter a lot.
 
+![Named, saved views in SvGrid.](/blog-media/named-views.png)
+*Named, saved views in SvGrid.*
+
 ## Deep reactivity via proxies
 
 `$state` wraps objects and arrays in a deep proxy, so mutating nested properties is tracked:

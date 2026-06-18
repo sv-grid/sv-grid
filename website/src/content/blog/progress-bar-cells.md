@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 A number in a cell tells you the value; a bar tells you the story, is this 90% done or 9%, near the cap or nowhere near it. In-cell progress bars make completion and utilization readable at a glance. SvGrid renders any markup in a cell, so a bar is a small custom cell.
 
+![Threshold and anomaly highlighting in SvGrid.](/blog-media/anomaly.png)
+*Threshold and anomaly highlighting in SvGrid.*
+
 ## A basic progress cell
 
 Render a track and a fill whose width is the value:

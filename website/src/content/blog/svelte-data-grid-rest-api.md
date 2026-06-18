@@ -9,6 +9,9 @@ author: Boyko Markov
 
 You do not need an ORM, a GraphQL client, or anything clever to drive a grid server-side, a plain REST endpoint and `fetch` will do. The whole trick is mapping SvGrid's state to query parameters and returning a total count. Here is a clean version that holds up in production, debouncing and cancellation included.
 
+![Server-side data in SvGrid.](/blog-media/server-side.png)
+*Server-side data in SvGrid.*
+
 ## The contract
 
 Your endpoint accepts `page`, `size`, `sort`, `desc`, and `q`, and returns `{ rows, total }`. SvGrid records the state; you translate and fetch.

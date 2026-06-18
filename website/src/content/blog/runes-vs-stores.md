@@ -9,6 +9,9 @@ author: Kamelia M
 
 The first question almost everyone asks after Svelte 5 lands: are stores dead now? Short answer, no. Runes and stores overlap, but each still has a job the other does awkwardly.
 
+![A SvGrid grid loading from a REST API.](/blog-media/rest-loading.png)
+*A SvGrid grid loading from a REST API.*
+
 ## What changed
 
 Before runes, stores (`writable`, `readable`, `derived`) were the main way to hold reactive state, especially outside components. Runes (`$state`, `$derived`) now cover most component state more ergonomically, no `$` prefix gymnastics, no `.subscribe`, deep reactivity by default.

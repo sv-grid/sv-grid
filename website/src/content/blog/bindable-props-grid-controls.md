@@ -9,6 +9,9 @@ author: Kamelia M
 
 `$bindable` is how you opt a prop into two-way binding in Svelte 5, and it is perfect for the little controls that ring a data grid - the search box, the page-size dropdown, the density toggle - where parent and child want to share one value. Here is how to use it without it turning into spaghetti.
 
+![Named, saved views in SvGrid.](/blog-media/named-views.png)
+*Named, saved views in SvGrid.*
+
 ## What $bindable does
 
 By default props flow one way (parent to child). `$bindable` lets the parent use `bind:` so changes flow both ways:

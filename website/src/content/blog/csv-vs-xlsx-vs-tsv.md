@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 The moment you add export to a grid, someone has to choose a format, and CSV, TSV, and XLSX each come with their own strengths and their own ways to bite you. Here is how to pick, and why the honest answer is often "offer more than one."
 
+![Exporting a SvGrid grid to Excel, PDF, and more.](/blog-media/export.png)
+*Exporting a SvGrid grid to Excel, PDF, and more.*
+
 ## CSV - universal, lossy
 
 Comma-separated values: plain text, opens everywhere, tiny files.

@@ -9,6 +9,9 @@ author: Kamelia M
 
 "It feels slow" is not something you can fix, it is something you have to measure first, because the bottleneck is almost never where your gut says it is. Before you optimize a single line, record it.
 
+![A million-row dataset in SvGrid, kept smooth by virtualization.](/blog-media/million-rows.png)
+*A million-row dataset in SvGrid, kept smooth by virtualization.*
+
 ## Record a real interaction
 
 Open the Performance panel, hit record, and do the thing that feels slow - scroll the full height, sort a big column, type in a filter - then stop. Look for:

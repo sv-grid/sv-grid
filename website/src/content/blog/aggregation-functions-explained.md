@@ -9,6 +9,9 @@ author: Kamelia M
 
 Aggregations are how a pile of rows becomes an answer: total revenue, average score, how many orders this quarter. In a grid they drive the group footers and the summary row. The functions themselves are simple; the ways they go subtly wrong are where this post earns its place.
 
+![Grouping with aggregated footers in SvGrid.](/blog-media/grouping.png)
+*Grouping with aggregated footers in SvGrid.*
+
 ## The common aggregations
 
 - **Sum**: total of a numeric column. Revenue, units, hours.

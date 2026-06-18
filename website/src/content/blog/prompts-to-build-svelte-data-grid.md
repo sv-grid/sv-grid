@@ -9,6 +9,9 @@ author: Kamelia M
 
 If you pair with an AI assistant, you already know the difference between a great session and a maddening one comes down to a single thing: does the code it gives you actually compile? These are the prompts that get working SvGrid code out of it, plus the one setup step that stops it inventing props in the first place.
 
+![A natural-language filter bar in SvGrid.](/blog-media/nl-filter.png)
+*A natural-language filter bar in SvGrid.*
+
 ## Ground the assistant first
 
 Before prompting, connect the SvGrid MCP server so the assistant looks up the real API instead of guessing from stale training data:

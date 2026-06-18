@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Every team that needs a table in Svelte hits the same fork in the road: hand-roll a `{#each}` over a `<table>`, or pull in a data grid. And a simple table in Svelte is so easy that building it yourself feels obviously right. It usually is, until it is not. The trick is knowing which side of the line you are on before you are six features deep.
 
+![A finance grid built with SvGrid.](/blog-media/finances.png)
+*A finance grid built with SvGrid.*
+
 ## When building your own is the right call
 
 Do not over-engineer. Hand-roll it when:

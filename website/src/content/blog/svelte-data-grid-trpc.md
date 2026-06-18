@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 tRPC's whole pitch is calling your server like a local function, with the input and output types known on the client and zero schema to keep in sync. Wire it to SvGrid and the type safety runs the entire length of the pipe, from the database query to the column definitions. Here is the setup.
 
+![A server-driven SvGrid grid.](/blog-media/server-side-2.png)
+*A server-driven SvGrid grid.*
+
 ## A typed pagination procedure
 
 Define the grid's query as a tRPC procedure with validated input:

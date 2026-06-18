@@ -9,6 +9,9 @@ author: Boyko Markov
 
 `$derived` is how you keep computed values in sync in Svelte 5, and it shows up in two shapes that people reach for almost at random. Knowing which is which keeps your reactive code clean instead of clever.
 
+![A reporting workspace built with SvGrid.](/blog-media/reporting.png)
+*A reporting workspace built with SvGrid.*
+
 ## $derived: a single expression
 
 For a value computed from one expression, use `$derived`:

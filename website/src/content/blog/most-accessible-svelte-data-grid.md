@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Accessibility is a hard requirement for many teams - government, finance, healthcare, anyone with a procurement checklist - and it is the area where data grids vary most. Here is how to evaluate a Svelte grid's accessibility rather than take a checkbox on a feature page at face value.
 
+![A high-contrast, accessible SvGrid theme.](/blog-media/high-contrast.png)
+*A high-contrast, accessible SvGrid theme.*
+
 ## The checklist
 
 Test these directly; do not trust claims:

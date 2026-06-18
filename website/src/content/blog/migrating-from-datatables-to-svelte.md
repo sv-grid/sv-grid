@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 DataTables.net has powered jQuery tables for over a decade, and a lot of them are still running. Moving to Svelte means dropping jQuery for good and thinking in reactive components instead of init options. The concepts carry over; the code gets noticeably simpler. Here is the path.
 
+![The SvGrid AI assistant.](/blog-media/ai-assistant.png)
+*The SvGrid AI assistant.*
+
 ## Concept mapping
 
 | DataTables.net | SvGrid |

@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 `llms.txt` is a small file with an outsized idea: a clean, machine-readable summary of your site at a known URL, so AI systems read you accurately instead of scraping your nav and ads. As people increasingly find tools through AI rather than search results, it is becoming as worth having as `robots.txt` or `sitemap.xml`.
 
+![A natural-language filter bar in SvGrid.](/blog-media/nl-filter.png)
+*A natural-language filter bar in SvGrid.*
+
 ## The idea
 
 Web pages are built for humans - navigation, scripts, styling, ads - which makes them noisy for an LLM to parse. `llms.txt` is a curated, plain-Markdown file at `/llms.txt` that points to the canonical, clean version of your important content: what the project is, where the docs live, key pages, in a form a model can read directly.

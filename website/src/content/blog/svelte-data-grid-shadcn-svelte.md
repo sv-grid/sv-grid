@@ -9,6 +9,9 @@ author: Boyko Markov
 
 shadcn-svelte styles everything through a tidy set of CSS variables, `--background`, `--foreground`, `--border`, `--primary`. SvGrid is themed through `--sg-*` variables. Wire one set to the other and the grid stops looking like a guest and starts looking like part of your shadcn UI.
 
+![SvGrid themed to match a design system.](/blog-media/theme-integrations.png)
+*SvGrid themed to match a design system.*
+
 ## Bridge the tokens
 
 shadcn-svelte defines its palette on `:root` and `.dark`. Map SvGrid's tokens to those same variables:

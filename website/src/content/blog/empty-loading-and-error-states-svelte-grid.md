@@ -9,6 +9,9 @@ author: Kamelia M
 
 In a demo a grid is always full of data. In production it spends real time empty, loading, or broken, and those three states are exactly where "finished" lives. Almost everyone builds the happy path and forgets them, which is precisely why handling them well makes your grid feel a cut above. Here is how.
 
+![Named, saved views in SvGrid.](/blog-media/named-views.png)
+*Named, saved views in SvGrid.*
+
 ## Empty state: distinguish "no data" from "no matches"
 
 There are two empties, and they need different messages:

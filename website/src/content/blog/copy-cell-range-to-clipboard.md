@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Select a block of cells, hit copy, paste into a spreadsheet, users do it without thinking, and they notice immediately when it does not work. SvGrid's cell range selection makes it work, and the detail that decides whether paste lands in neat columns is the clipboard *format*: tab-separated values.
 
+![Spreadsheet-style cell range selection in SvGrid.](/blog-media/range-selection.png)
+*Spreadsheet-style cell range selection in SvGrid.*
+
 ## Enable range selection and copy
 
 Turn on cell selection; selecting a range and pressing Ctrl/Cmd+C copies it as TSV:

@@ -9,6 +9,9 @@ author: Kamelia M
 
 Layout thrash is the performance bug you cannot catch in a code review: read a layout property like `offsetWidth`, write to the DOM, read again, and the browser is forced to recompute layout every single time. Multiply that across a grid full of cells updating often and you get mystery jank. Here is how to spot it and design custom cells that avoid it.
 
+![A showcase of SvGrid cell types.](/blog-media/cell-types.png)
+*A showcase of SvGrid cell types.*
+
 ## What causes it
 
 The browser batches DOM writes and computes layout lazily. But reading a layout property (`offsetWidth`, `getBoundingClientRect`, `scrollHeight`, `clientTop`, etc.) forces it to compute layout *now*. Do that in a loop interleaved with writes, and you trigger a full reflow each iteration:

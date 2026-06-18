@@ -9,6 +9,9 @@ author: Kamelia M
 
 AG Grid is excellent, this is not a hit piece. But in a Svelte app it always sits behind an integration layer, and if you have decided you want a native Svelte 5 grid instead, the happy news is that almost every concept maps over one-to-one.
 
+![The SvGrid AI assistant.](/blog-media/ai-assistant.png)
+*The SvGrid AI assistant.*
+
 ## Concept mapping
 
 | AG Grid | SvGrid |

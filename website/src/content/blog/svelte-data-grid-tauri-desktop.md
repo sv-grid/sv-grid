@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Tauri lets you wrap a Svelte app into a small native desktop binary with a Rust backend, and desktop apps tend to be exactly the data-heavy, spreadsheet-shaped tools a grid is built for. Virtualization keeps even big local datasets smooth, and the MIT core ships inside your binary with no license check.
 
+![A SvGrid grid with a status bar.](/blog-media/status-bar.png)
+*A SvGrid grid with a status bar.*
+
 ## Data from a Rust command
 
 Expose a Tauri command that returns rows and call it from Svelte with `invoke`:

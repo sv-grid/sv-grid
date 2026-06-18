@@ -9,6 +9,9 @@ author: Boyko Markov
 
 The SvGrid Community core is free, MIT-licensed, and complete enough to ship real products. But some teams need the features that turn a data grid into a reporting and analysis tool. That is what `@svgrid/enterprise` adds.
 
+![Pinned columns staying put while the rest scroll, in SvGrid.](/blog-media/column-pinning.png)
+*Pinned columns staying put while the rest scroll, in SvGrid.*
+
 ## Data export - Excel, PDF, CSV, TSV, HTML
 
 The most-requested feature for any grid is "can I get this in Excel?" Enterprise answers it for every format:

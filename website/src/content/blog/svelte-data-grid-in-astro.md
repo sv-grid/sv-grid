@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Astro's whole idea is shipping mostly static HTML and hydrating a few interactive bits on demand, and a data grid is the textbook island. The page stays cheap and fast; only the grid wakes up.
 
+![The SvGrid AI assistant.](/blog-media/ai-assistant.png)
+*The SvGrid AI assistant.*
+
 ## Set up the Svelte integration
 
 ```bash

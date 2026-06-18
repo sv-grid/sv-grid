@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 With the architecture proven at scale by the 100,000-row test, attention turned to features. This post is part of a series on how SvGrid's internals work, and it starts where the grid itself starts: the row model, and the first feature built on it, sorting.
 
+![Sorting in a SvGrid data grid.](/blog-media/sorting.png)
+*Sorting in a SvGrid data grid.*
+
 ## What a row model actually is
 
 Your `data` is an array. What the grid shows is almost never that array verbatim, it is your data after sorting, filtering, grouping, and pagination have been applied, in a specific order. The row model is the pipeline that performs those transformations and produces the final list of rows to render.

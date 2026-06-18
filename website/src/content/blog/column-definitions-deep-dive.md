@@ -9,6 +9,9 @@ author: Boyko Markov
 
 If you only learn one part of a data grid's API, make it the column definition, everything else hangs off it. In SvGrid a column tells the grid how to read a value from a row, how to format it, and how to render it. Get fluent with `ColumnDef` and the rest of the grid mostly falls into place.
 
+![Grouped, multi-level column headers in SvGrid.](/blog-media/columns-hierarchy.png)
+*Grouped, multi-level column headers in SvGrid.*
+
 ## Read a value: `field` vs `accessorFn`
 
 Use `field` to read a property directly, or `accessorFn` to compute one:

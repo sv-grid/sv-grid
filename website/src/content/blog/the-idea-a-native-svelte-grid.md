@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Once Svelte 5 shipped with its signal-based reactivity, the question for us was what it meant for data grids. The answer came from looking hard at what already existed, finding a real gap, and deciding to fill it.
 
+![A real-time trading desk built with SvGrid.](/blog-media/trading-desk.png)
+*A real-time trading desk built with SvGrid.*
+
 ## We surveyed the landscape first
 
 Before building anything, you should check whether you need to. So we went looking for the data grid a Svelte 5 developer would reach for. What we found fell into three buckets:

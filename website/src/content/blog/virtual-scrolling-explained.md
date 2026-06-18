@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Virtual scrolling, also called windowing, is the technique that lets a table show a hundred thousand rows while keeping only a few dozen in the DOM. If you take one performance idea away from these posts, make it this one.
 
+![The SvGrid AI assistant.](/blog-media/ai-assistant.png)
+*The SvGrid AI assistant.*
+
 ## The problem it solves
 
 A naive table renders one DOM node per row. Browsers handle a few thousand nodes fine; at tens of thousands they slow down, and at hundreds of thousands they freeze. The cost is not your data - arrays of objects are cheap - it is the DOM.

@@ -9,6 +9,9 @@ author: Kamelia M
 
 Tabulator packs a lot into a framework-agnostic table, and it shows. The catch in a Svelte app is that you drive it imperatively - `new Tabulator(...)`, then method calls - where SvGrid lets you stay declarative and runes-native. Most of the migration is just translating column options from one shape to the other.
 
+![A showcase of SvGrid cell types.](/blog-media/cell-types.png)
+*A showcase of SvGrid cell types.*
+
 ## Concept mapping
 
 | Tabulator | SvGrid |

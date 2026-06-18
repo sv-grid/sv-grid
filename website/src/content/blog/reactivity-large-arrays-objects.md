@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Svelte 5's deep reactivity is a joy to write against and, for most apps, free. Then your array grows to tens of thousands of objects - which is exactly what sits behind a data grid - and "free" stops being quite true.
 
+![Drag-to-reorder columns in SvGrid.](/blog-media/column-reorder.png)
+*Drag-to-reorder columns in SvGrid.*
+
 ## Deep proxies have a cost
 
 `$state` wraps objects and arrays in a deep proxy so nested mutations are tracked. For a few hundred rows this is free. For tens or hundreds of thousands of rows, proxying every object has a memory and access cost you can measure.

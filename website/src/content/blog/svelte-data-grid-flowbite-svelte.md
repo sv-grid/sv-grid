@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Flowbite Svelte gives you a polished, Tailwind-based component set out of the box. The natural division of labour: let Flowbite own the chrome - buttons, dropdowns, inputs - and let SvGrid own the grid, themed to match through `--sg-*` variables so the seam disappears.
 
+![SvGrid themed to match a design system.](/blog-media/theme-integrations.png)
+*SvGrid themed to match a design system.*
+
 ## Match the palette
 
 Flowbite builds on Tailwind, so theme the grid against the same Tailwind tokens Flowbite uses (often a `primary` color scale):

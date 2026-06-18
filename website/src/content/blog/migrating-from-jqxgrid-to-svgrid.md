@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 jqxGrid is our own jQuery-era grid - the same team builds both it and SvGrid - so this is about as honest as a migration guide gets. If your Svelte app is still wrapping jqxGrid in a jQuery bridge, moving to SvGrid drops the jQuery entirely for a native, reactive grid.
 
+![A reporting workspace built with SvGrid.](/blog-media/reporting.png)
+*A reporting workspace built with SvGrid.*
+
 ## Why move
 
 jqxGrid is excellent on jQuery, but in a Svelte app it sits behind a jQuery bridge: imperative `$('#grid').jqxGrid({...})` calls, manual refreshes, and a data adapter. SvGrid replaces all of that with declarative Svelte state.

@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Convex flips the usual model: its query functions are live by default, so when the underlying data changes, your result updates on its own, no subscriptions to manage. Bind that to SvGrid and you get a grid that stays fresh with almost no plumbing of your own.
 
+![Live updates streaming into a SvGrid grid.](/blog-media/websocket-live.png)
+*Live updates streaming into a SvGrid grid.*
+
 ## A query function
 
 Define the grid's data as a Convex query that takes pagination and sort args:

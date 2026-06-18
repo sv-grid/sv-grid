@@ -9,6 +9,9 @@ author: Boyko Markov
 
 "Upload a CSV" is a staple of admin and data tools, and CSV is also reliably messier than anyone expects. With SvGrid the grid part is trivial - parse the file into objects, set it as `data` - so the real work is handling the mess.
 
+![A spreadsheet-style SvGrid grid.](/blog-media/spreadsheet.png)
+*A spreadsheet-style SvGrid grid.*
+
 ## Read the file
 
 Take a file from an `<input type="file">` and read its text:

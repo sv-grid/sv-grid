@@ -9,6 +9,9 @@ author: Kamelia M
 
 A three-row grid proves your API compiles. It proves nothing about whether your architecture survives contact with real data. So once SvGrid could render and sort, we did the only honest next thing: we pointed it at a hundred thousand rows and watched.
 
+![SvGrid inline editor types.](/blog-media/editor-types.png)
+*SvGrid inline editor types.*
+
 This is the post where the bet on Svelte 5 either paid off or it did not.
 
 ## Why scale is the real test

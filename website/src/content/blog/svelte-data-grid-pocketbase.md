@@ -9,6 +9,9 @@ author: Boyko Markov
 
 PocketBase is a whole backend in a single file - clean JS SDK, auth, realtime - which makes it a fun pairing with a Svelte data grid. Better still, its `getList` API maps almost one-to-one onto what the grid asks for. Here is the wiring, paging and live updates included.
 
+![Live updates streaming into a SvGrid grid.](/blog-media/websocket-live.png)
+*Live updates streaming into a SvGrid grid.*
+
 ## Server-side paging
 
 `getList(page, perPage, options)` returns the page plus `totalItems`, exactly SvGrid's `data` and `rowCount`:

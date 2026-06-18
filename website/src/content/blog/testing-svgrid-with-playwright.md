@@ -9,6 +9,9 @@ author: Kamelia M
 
 Unit tests will not tell you whether sorting actually reorders the rows on screen, whether an edit really persists, or whether keyboard navigation works, those are integration questions, and that is Playwright's turf. The bonus: because SvGrid renders proper ARIA roles, your tests can lean on those instead of brittle CSS selectors. Here is the approach.
 
+![Keyboard navigation and accessibility in SvGrid.](/blog-media/accessibility.png)
+*Keyboard navigation and accessibility in SvGrid.*
+
 ## Select by role, not by class
 
 The single most important habit: query the grid through accessible roles. They are stable across refactors and double as an accessibility assertion.

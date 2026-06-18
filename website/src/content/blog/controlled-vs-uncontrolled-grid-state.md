@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Almost every integration headache with a data grid traces back to one question you answered without realizing it: who owns the state? The grid can run its own sorting, filtering, and pagination, or you can hold the reins. Pick deliberately and the rest gets easy; here is the spectrum.
 
+![Named, saved views in SvGrid.](/blog-media/named-views.png)
+*Named, saved views in SvGrid.*
+
 ## Three modes
 
 SvGrid (like most good grids) supports three levels of control per dimension (sort, filter, page):

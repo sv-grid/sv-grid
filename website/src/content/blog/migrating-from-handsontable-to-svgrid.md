@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Handsontable is a capable spreadsheet, and if the spreadsheet metaphor is the whole point of your app, it may still be the right call. Teams move to SvGrid for the native Svelte 5 integration, the MIT-licensed core, and virtualization that holds up on large datasets.
 
+![A spreadsheet-style SvGrid grid.](/blog-media/spreadsheet.png)
+*A spreadsheet-style SvGrid grid.*
+
 ## Concept mapping
 
 | Handsontable | SvGrid |

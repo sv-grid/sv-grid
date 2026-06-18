@@ -9,8 +9,8 @@ author: Victor Vidolov
 
 "Active", "Pending", "Closed" as plain text is a column you have to read; as colored pills it is a column you scan. SvGrid renders any markup in a cell, so a badge is a small custom cell. Here is how to do it well, themeable, and accessible rather than color-only.
 
-![Custom badge cells in SvGrid](/blog-media/custom-cells-themes.png)
-*Custom badge and status cells in SvGrid.*
+![A showcase of SvGrid cell types.](/blog-media/cell-types.png)
+*A showcase of SvGrid cell types.*
 
 ## A badge cell
 

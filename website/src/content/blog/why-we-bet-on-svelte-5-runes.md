@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 A data grid is really a reactivity problem wearing a table's clothes. Tens of thousands of cells, any of which can change at any moment, and the whole job is to repaint exactly what moved and nothing more. I had wanted a runtime that made that easy for years; when Svelte 5 shipped runes, it finally existed. This is why we bet the grid on it.
 
+![A reporting workspace built with SvGrid.](/blog-media/reporting.png)
+*A reporting workspace built with SvGrid.*
+
 ## What runes changed
 
 Svelte 5 replaced the compiler-magic reactivity of Svelte 3 and 4 with explicit, signal-based primitives:

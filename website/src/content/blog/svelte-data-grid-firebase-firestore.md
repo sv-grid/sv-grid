@@ -9,6 +9,9 @@ author: Kamelia M
 
 Firestore's real-time listeners are the feature that makes it click with a data grid: subscribe to a query once and the grid just keeps up as documents change underneath it.
 
+![Live updates streaming into a SvGrid grid.](/blog-media/websocket-live.png)
+*Live updates streaming into a SvGrid grid.*
+
 ## Live rows with onSnapshot
 
 Subscribe to a query and pipe documents into `$state`; the grid re-renders as data changes:

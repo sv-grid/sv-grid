@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Let me say this first: AG Grid is a brilliant, mature grid, and if it is working for you there is no shame in staying. But it is framework-agnostic, so in a Svelte app you reach it through a wrapper rather than a native component, and once you have felt a grid that speaks Svelte natively, the wrapper starts to chafe. If you want that, or a lighter or more permissively licensed option, these are the alternatives I would actually evaluate.
 
+![Grouped, multi-level column headers in SvGrid.](/blog-media/columns-hierarchy.png)
+*Grouped, multi-level column headers in SvGrid.*
+
 ## Why look for an alternative
 
 AG Grid is the right tool for many teams. People look past it for a few honest reasons:

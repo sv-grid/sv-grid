@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Cursor, Zed, Windsurf, Claude, whatever you drive, an AI assistant is writing a real share of your grid code now, and left to its training data it will confidently invent props that do not exist. The SvGrid MCP server fixes that for all of them at once. Here is how to wire it up in each.
 
+![A natural-language filter bar in SvGrid.](/blog-media/nl-filter.png)
+*A natural-language filter bar in SvGrid.*
+
 ## The shared idea: MCP
 
 Model Context Protocol is a standard way to give an AI assistant tools. The `@svgrid/mcp` server exposes SvGrid's real examples, docs, and API reference, so the assistant looks up the current, version-correct answer instead of guessing. Any MCP-capable editor benefits from the same server. See [build grids faster with AI](build-grids-faster-with-ai-and-mcp).

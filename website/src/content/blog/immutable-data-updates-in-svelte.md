@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Svelte 5's runes are reactive, yes, but "reactive" does not mean "you can stop thinking about how you mutate things", especially for the arrays and objects feeding a list or a grid. Here are the update patterns that hold up, and the ones that fail in ways you only notice later.
 
+![A million-row dataset in SvGrid, kept smooth by virtualization.](/blog-media/million-rows.png)
+*A million-row dataset in SvGrid, kept smooth by virtualization.*
+
 ## Svelte 5 reacts to assignment and mutation
 
 Unlike Svelte 4's assignment-only model, Svelte 5's `$state` proxies deeply, so both mutation and reassignment are tracked:

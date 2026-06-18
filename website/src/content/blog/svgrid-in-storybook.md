@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Storybook turns your grid configurations into a living catalog your team can actually browse, gold for design review, QA, and onboarding the next hire. The trick with a data grid is capturing the states people forget (empty, loading, huge), and giving it a real height. Here is how to do it well.
 
+![An admin template built with SvGrid.](/blog-media/admin-template.png)
+*An admin template built with SvGrid.*
+
 ## A basic story
 
 Wrap SvGrid in a story component and export named stories for the states that matter:

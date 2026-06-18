@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Svelte 5 shipped in late 2024 with runes, a release that rewrote how reactivity works in Svelte. If you build data-heavy UI for a living, as we do, it is hard to overstate how significant that was.
 
+![A live market grid in SvGrid.](/blog-media/stock-market.png)
+*A live market grid in SvGrid.*
+
 This is where the SvGrid story starts: the runtime that made us want to build a new data grid from scratch. It begins with what runes changed.
 
 ## What actually changed

@@ -9,6 +9,9 @@ author: Kamelia M
 
 If your team is drifting from React to Svelte, the MUI X DataGrid screens are usually the scariest-looking thing to port, and usually the most mechanical once you start. The column model and data flow have direct equivalents, and Svelte reactivity deletes most of the hooks.
 
+![The SvGrid AI assistant.](/blog-media/ai-assistant.png)
+*The SvGrid AI assistant.*
+
 ## Concept mapping
 
 | MUI X DataGrid (React) | SvGrid (Svelte) |

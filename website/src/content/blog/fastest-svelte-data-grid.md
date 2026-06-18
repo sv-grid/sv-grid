@@ -9,6 +9,9 @@ author: Kamelia M
 
 "Which Svelte data grid is fastest?" is a fair question with a frustrating answer: it depends on what you measure and how. Rather than hand you a leaderboard (benchmarks go stale and are easy to rig), here is how to measure grid speed fairly and what makes a grid fast in the first place.
 
+![A million-row dataset in SvGrid, kept smooth by virtualization.](/blog-media/million-rows.png)
+*A million-row dataset in SvGrid, kept smooth by virtualization.*
+
 ## What actually makes a grid fast
 
 Three things dominate grid performance:

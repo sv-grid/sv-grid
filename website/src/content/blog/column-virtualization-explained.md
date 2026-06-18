@@ -9,6 +9,9 @@ author: Kamelia M
 
 Everyone has heard of row virtualization: render only the rows you can see. Column virtualization is the exact same trick turned sideways, and it matters far more than people expect once a grid gets wide. Let me walk through it.
 
+![A large dataset in SvGrid; only the visible rows are in the DOM.](/blog-media/large-dataset.png)
+*A large dataset in SvGrid; only the visible rows are in the DOM.*
+
 ## What it is
 
 Column virtualization renders only the columns currently visible in the viewport (plus a small buffer), recycling them as you scroll horizontally, exactly like row virtualization, but sideways. A grid with 100 columns only paints the ~10 you can see.

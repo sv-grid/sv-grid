@@ -9,6 +9,9 @@ author: Kamelia M
 
 Inertia.js is the trick that lets a Laravel backend drive Svelte pages without you standing up a separate API, and SvGrid slots right in. Laravel's paginator already returns the page and total a grid wants, and Inertia's partial reloads keep sorting and paging snappy.
 
+![Custom cell renderers and theming in SvGrid.](/blog-media/custom-cells-themes.png)
+*Custom cell renderers and theming in SvGrid.*
+
 ## Laravel controller
 
 Use Laravel's query builder and paginator, reading grid state from the request:

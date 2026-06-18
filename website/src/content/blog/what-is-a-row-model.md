@@ -9,6 +9,9 @@ author: Kamelia M
 
 Open any data grid's docs and you trip over the phrase "row model" within a paragraph or two, usually without anyone stopping to define it. It is the idea that separates a real grid from a styled table, so it is worth slowing down for.
 
+![A finance grid built with SvGrid.](/blog-media/finances.png)
+*A finance grid built with SvGrid.*
+
 ## The definition
 
 A row model is the pipeline that transforms your raw `data` into the rows the grid actually shows. Your data is an array; what appears on screen is that array after filtering, sorting, grouping, and pagination have been applied, in order:

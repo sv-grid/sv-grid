@@ -9,6 +9,9 @@ author: Kamelia M
 
 SvGrid is built on Svelte 5 runes, which give it fine-grained reactivity, the grid updates only what changed. A few habits on your side keep the whole pipeline fast, even with large datasets and frequent updates.
 
+![A million-row dataset in SvGrid, kept smooth by virtualization.](/blog-media/million-rows.png)
+*A million-row dataset in SvGrid, kept smooth by virtualization.*
+
 ## Keep `data` references stable
 
 Svelte's reactivity keys off references. If you rebuild the entire `data` array on every tick, the grid has to reconsider everything. Mutate in place or replace only what changed:

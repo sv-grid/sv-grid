@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Svelte 5 brought in snippets and retired slots, which can be disorienting if you are coming from Svelte 4, or if you are just wondering why a grid renders its cells with snippets now. Here is the difference, and why snippets are the upgrade they look like.
 
+![An HR team directory built with SvGrid.](/blog-media/hr-team.png)
+*An HR team directory built with SvGrid.*
+
 ## Slots (Svelte 4) vs snippets (Svelte 5)
 
 Slots let a parent pass markup into named holes in a child. They worked, but passing data *out* of a slot (slot props) was awkward, and you could not pass a slot around as a value.

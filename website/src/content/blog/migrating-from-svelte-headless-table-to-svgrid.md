@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 svelte-headless-table did Svelte-native headless tables right for the store era, plugins, a clean view model, the works. Moving to SvGrid swaps the stores-and-`<Subscribe>` model for runes, and throws in a ready-made render component and virtualization you would otherwise build yourself.
 
+![Group aggregators in SvGrid.](/blog-media/group-aggregators.png)
+*Group aggregators in SvGrid.*
+
 ## Concept mapping
 
 | svelte-headless-table | SvGrid |

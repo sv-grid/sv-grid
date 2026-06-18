@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 GraphQL hands you exactly the fields you ask for and nothing more, which is a oddly perfect match for a grid that already knows its columns. With urql or Houdini on the Svelte side, you map the grid's sort, filter, and page state onto query variables and let the server do the rest. Here is the pattern, cursor pagination included.
 
+![A server-driven SvGrid grid.](/blog-media/server-side-2.png)
+*A server-driven SvGrid grid.*
+
 ## The query
 
 Define a paginated query whose variables mirror the grid's state:

@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Once a grid has more than a few columns, people want a per-column menu - sort this, hide that, pin the other - instead of a row of scattered controls. SvGrid lets any column render a custom `header`, so dropping your own menu button into one is straightforward. Here is the pattern, kept accessible.
 
+![Column layout and visibility controls in SvGrid.](/blog-media/column-layout.png)
+*Column layout and visibility controls in SvGrid.*
+
 ## A header snippet with a menu button
 
 A column's `header` accepts a snippet, so render the label plus a menu trigger:

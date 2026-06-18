@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Bundle size matters, it is load time, and load time is conversions and Core Web Vitals. But the headline "X KB" on a library's page rarely matches what it adds to *your* app.
 
+![An HR team directory built with SvGrid.](/blog-media/hr-team.png)
+*An HR team directory built with SvGrid.*
+
 ## Why headline numbers mislead
 
 A single advertised size hides the things that determine your actual cost:

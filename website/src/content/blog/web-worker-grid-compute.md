@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Virtualization keeps rendering cheap, but some work is just heavy no matter what, parsing a multi-megabyte upload, aggregating hundreds of thousands of rows, running a gnarly custom filter. Do that on the main thread and the whole UI freezes mid-scroll. A Web Worker moves it off-thread so the grid stays alive. Here is when it is worth it, and how.
 
+![A drag-to-fill handle in SvGrid.](/blog-media/fill-handle.png)
+*A drag-to-fill handle in SvGrid.*
+
 ## When it is worth it
 
 Reach for a worker when a computation blocks the main thread long enough to drop frames or freeze interaction:

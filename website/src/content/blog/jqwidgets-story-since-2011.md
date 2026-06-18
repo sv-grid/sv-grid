@@ -9,6 +9,9 @@ author: Boyko Markov
 
 SvGrid did not appear out of nowhere. It is the latest product from a team that has been shipping UI components since 2011. This is the story of how we got here, and what a decade and a half of building grids taught us.
 
+![A SvGrid grid loading from a REST API.](/blog-media/rest-loading.png)
+*A SvGrid grid loading from a REST API.*
+
 ## 2011: jQWidgets and the jqxGrid
 
 We started in the jQuery era with jQWidgets, a suite of widgets anchored by jqxGrid, a data grid that had to be fast on the browsers of the time. That constraint shaped how we think to this day: a grid is a performance product first. Users do not forgive a table that stutters when they scroll, sort, or type in a filter.

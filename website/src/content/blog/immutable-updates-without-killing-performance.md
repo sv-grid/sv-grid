@@ -9,6 +9,9 @@ author: Kamelia M
 
 "Update immutably" is good advice that people take too literally. Cloning the whole dataset on every keystroke is technically immutable and slow, and it defeats the fine-grained updates that make the grid fast. What you actually want is *surgical* immutability: a fresh reference only for what changed, shared references for everything else.
 
+![A million-row dataset in SvGrid, kept smooth by virtualization.](/blog-media/million-rows.png)
+*A million-row dataset in SvGrid, kept smooth by virtualization.*
+
 ## Why immutability matters for a grid
 
 The grid (and Svelte 5's reactivity) decides what to repaint by comparing references. New reference means "this changed, re-render it." So immutable updates make change-detection precise. But the corollary bites: if everything is a new reference, everything looks changed.

@@ -9,6 +9,9 @@ author: Kamelia M
 
 `$effect` is the rune people reach for when they should not. It exists for genuine side effects, not for computing values, and using it as a general-purpose "run this when that changes" hammer is how you get loops, stale data, and bugs that take an afternoon to trace. Here are the traps and the patterns that avoid them.
 
+![A reporting workspace built with SvGrid.](/blog-media/reporting.png)
+*A reporting workspace built with SvGrid.*
+
 ## Pitfall 1: using $effect to derive state
 
 The most common mistake: computing a value from other state inside an effect and assigning it back.

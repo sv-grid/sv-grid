@@ -9,6 +9,9 @@ author: Boyko Markov
 
 "Headless" is one of those words that is everywhere and explained almost nowhere. In UI libraries it actually has a precise meaning, and once it clicks you make better calls about which tool - and which layer of a tool - to reach for. Let me walk through it the practical way, with a data grid as the running example.
 
+![A SvGrid data grid with sorting, selection, and inline editing.](/blog-media/quick-start.png)
+*A SvGrid data grid with sorting, selection, and inline editing.*
+
 ## What headless actually means
 
 A headless component provides behavior and state without rendering any markup. It manages the hard logic - in a grid's case, filtering, sorting, grouping, pagination, selection - and hands you the results to render however you like. You bring the DOM; it brings the brains.

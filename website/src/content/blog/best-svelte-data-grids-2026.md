@@ -9,6 +9,9 @@ author: Boyko Markov
 
 "What is the best data grid for Svelte?" does not have a single answer, and anyone who gives you one is selling something. It depends on whether you want a headless engine, a drop-in component, or a framework-agnostic grid you can reuse elsewhere. We build one of these, so weigh our enthusiasm accordingly, but this is an honest map of the 2026 options, including ours, with the real case for each.
 
+![Group aggregators in SvGrid.](/blog-media/group-aggregators.png)
+*Group aggregators in SvGrid.*
+
 ## The shortlist
 
 ### SvGrid

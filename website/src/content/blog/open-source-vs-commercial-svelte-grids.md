@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Choosing a data grid is partly a licensing decision. Free open-source options and paid commercial ones each have real trade-offs beyond the sticker price.
 
+![The SvGrid AI assistant.](/blog-media/ai-assistant.png)
+*The SvGrid AI assistant.*
+
 ## What open-source gives you
 
 - **No cost, no license keys**: adopt and ship freely (under a permissive license like MIT).

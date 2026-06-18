@@ -9,6 +9,9 @@ author: Kamelia M
 
 People grids want faces; product grids want thumbnails, either way, an image makes a table scannable in a way text never will. SvGrid renders any markup in a cell, so an avatar is a small custom cell; the craft is all in the fallbacks, the performance, and the alt text.
 
+![A CRM pipeline grid built with SvGrid.](/blog-media/crm.png)
+*A CRM pipeline grid built with SvGrid.*
+
 ## A basic avatar cell
 
 ```svelte

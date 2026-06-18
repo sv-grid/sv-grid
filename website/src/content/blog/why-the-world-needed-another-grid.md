@@ -10,6 +10,9 @@ pinned: true
 
 Every few years someone ships a new data grid and the rest of us roll our eyes. Does the world really need another one? I have asked it myself, and since I have spent the better part of fifteen years building the things, I feel entitled to the cynicism.
 
+![A real-time trading desk built with SvGrid.](/blog-media/trading-desk.png)
+*A real-time trading desk built with SvGrid.*
+
 Here is where I have landed. The world does periodically need a new grid, and it is never because the old ones got worse. It is because the ground moves. A data grid is really a reactivity engine wearing a table's clothes, and reactivity is the one part you cannot bolt on later. So every time the way frameworks handle reactivity shifts, the grids built for the previous model start to feel like a guest who overstayed: technically still here, faintly out of place.
 
 ## A grid is native to the era it was born in

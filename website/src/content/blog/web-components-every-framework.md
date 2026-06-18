@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Most teams are not on a single framework. A company has a React app, an Angular admin tool a team inherited, a Vue marketing site, and a couple of plain-HTML internal pages. Maintaining the same data grid four times is nobody's idea of fun. Web Components - custom elements built on web standards - are the standard answer to "write the component once, use it everywhere."
 
+![A SvGrid grid loading from a REST API.](/blog-media/rest-loading.png)
+*A SvGrid grid loading from a REST API.*
+
 ## What a Web Component is
 
 A Web Component is a custom HTML element backed by browser-native APIs: the Custom Elements registry, Shadow DOM for style encapsulation, and HTML templates. Because it is part of the platform, any framework that renders HTML can render it.

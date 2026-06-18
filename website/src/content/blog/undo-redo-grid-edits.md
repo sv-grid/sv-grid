@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Any grid people edit needs a safety net, and undo/redo is it, the difference between "oh no" and a casual Ctrl+Z, and the thing that makes bulk data entry far less nerve-wracking. Because SvGrid hands you both the old and new value on every edit, the undo stack practically builds itself.
 
+![Inline cell editing in SvGrid.](/blog-media/inline-editing.png)
+*Inline cell editing in SvGrid.*
+
 ## The change event has everything you need
 
 SvGrid's `onCellValueChange` gives you `{ rowIndex, columnId, oldValue, newValue, row }`, exactly the information to record and reverse an edit:

@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 That little checkbox in the header has three states, not two: all selected, none selected, and the indeterminate dash for "some". SvGrid's row selection ships that tri-state header checkbox out of the box.
 
+![Selection powering bulk actions in SvGrid.](/blog-media/selection-api.png)
+*Selection powering bulk actions in SvGrid.*
+
 ## Turn on row selection
 
 Enable selection and you get the checkbox column plus the tri-state header checkbox automatically:

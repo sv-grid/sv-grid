@@ -9,6 +9,9 @@ author: Boyko Markov
 
 Almost every admin grid grows an actions column eventually, edit, delete, duplicate, view, right where the user's eye already is. SvGrid renders any markup in a cell, so that column is just a custom cell with real buttons in it. The recipe is short; the accessibility details are where it counts.
 
+![A reporting workspace built with SvGrid.](/blog-media/reporting.png)
+*A reporting workspace built with SvGrid.*
+
 ## A pure-UI column
 
 Actions columns have no underlying field, they are pure UI. Give the column an `id` (no `field`/`accessorFn`) and render buttons:

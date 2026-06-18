@@ -9,6 +9,9 @@ author: Boyko Markov
 
 By this point SvGrid could sort and filter a hundred thousand rows smoothly. But a grid you can only read is half a grid. The next piece was editing, the feature that turns a data viewer into a data tool, and the one with the most opinions baked into it.
 
+![Inline cell editing in SvGrid.](/blog-media/inline-editing.png)
+*Inline cell editing in SvGrid.*
+
 ## The biggest decision: do not touch the data
 
 The first thing we settled was what editing would not do: it would not mutate your data. When a user commits an edit, the grid emits an event with the old and new values, and you decide what happens next.

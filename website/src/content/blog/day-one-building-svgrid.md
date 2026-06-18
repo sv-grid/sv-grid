@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 The idea was settled: a data grid built natively for Svelte 5. This post is about the part where talk becomes code, the early decisions that are expensive to change later, and the small thrill of the first grid that actually rendered.
 
+![Named, saved views in SvGrid.](/blog-media/named-views.png)
+*Named, saved views in SvGrid.*
+
 ## The first commit was an architecture, not a feature
 
 It is tempting to start a grid by rendering a table. We started somewhere less visible: the boundary between the engine and the view. Get that line wrong and every feature afterward pays for it.

@@ -9,6 +9,9 @@ author: Kamelia M
 
 An analyst scanning ten thousand rows wants them packed tight; an occasional user wants room to breathe. A density toggle is a tiny feature that makes both happy. Because SvGrid is styled with `--sg-*` tokens, you can drive the whole thing with CSS. Here is the recipe.
 
+![SvGrid themed to match a design system.](/blog-media/theme-integrations.png)
+*SvGrid themed to match a design system.*
+
 ## Density via CSS tokens
 
 Define density levels as CSS that adjusts row height, cell padding, and font size, scoped by a class on the grid wrapper:

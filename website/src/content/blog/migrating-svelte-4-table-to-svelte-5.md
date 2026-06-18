@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 If you are carrying a hand-rolled table from Svelte 4, the move to Svelte 5 is a fork in the road: simplify what you have, or admit it has outgrown a hand-roll and reach for a real grid. Either way, here is the concept-by-concept translation, and an honest nudge on which path to take.
 
+![A million-row dataset in SvGrid, kept smooth by virtualization.](/blog-media/million-rows.png)
+*A million-row dataset in SvGrid, kept smooth by virtualization.*
+
 ## The translation table
 
 | Svelte 4 | Svelte 5 |

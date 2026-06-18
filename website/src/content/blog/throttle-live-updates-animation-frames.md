@@ -9,6 +9,9 @@ author: Boyko Markov
 
 A live feed - prices, sensors, logs - cheerfully pushes updates faster than the screen can possibly show them. Rendering on every message is just wasted work, since the display only repaints about 60 times a second. Batching updates to the animation frame is the single biggest fix for a stuttering real-time grid, and it is not much code.
 
+![Live updates streaming into a SvGrid grid.](/blog-media/websocket-live.png)
+*Live updates streaming into a SvGrid grid.*
+
 ## The problem
 
 If you apply each message immediately, a feed sending 5,000 updates a second tries to trigger 5,000 renders a second. The browser cannot, so it falls behind and the UI stutters.

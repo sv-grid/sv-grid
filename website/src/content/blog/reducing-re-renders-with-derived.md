@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 The fastest update is the one that never runs. Svelte 5's `$derived` is the cleanest way to get there: compute the grid's data so it only recalculates when its real inputs change, and nothing recomputes on unrelated state. In a data-heavy app that is the highest-leverage performance lever you have.
 
+![Value-driven conditional formatting: color scales, data bars, and icons.](/blog-media/conditional-formatting.png)
+*Value-driven conditional formatting: color scales, data bars, and icons.*
+
 ## Derive, do not recompute
 
 Computing a shaped or filtered list inside markup or an effect runs more often than you think. A `$derived` runs only when the state it reads changes:

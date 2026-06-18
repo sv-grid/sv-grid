@@ -9,6 +9,9 @@ author: Kamelia M
 
 svelte-headless-table is a well-regarded, Svelte-first headless table. SvGrid is a newer native Svelte 5 grid that ships both a headless core and a render component.
 
+![SvGrid inline editor types.](/blog-media/editor-types.png)
+*SvGrid inline editor types.*
+
 ## What they share
 
 Both are Svelte-native (not framework-agnostic ports), both are headless at heart, both let you compose features, and both are TypeScript-first. If you want a table that feels like Svelte, both qualify.

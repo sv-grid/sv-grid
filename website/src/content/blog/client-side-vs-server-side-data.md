@@ -9,6 +9,9 @@ author: Boyko Markov
 
 One early decision shapes everything else about a data table: does the browser hold all the rows, or does the server hand them over one page at a time? I have watched teams agonize over grid features when this was the real fork in the road. Get it right and the rest falls into place.
 
+![Server-side data in SvGrid.](/blog-media/server-side.png)
+*Server-side data in SvGrid.*
+
 ## Client-side: all rows in the browser
 
 You fetch the whole dataset once and let the grid sort, filter, and paginate in memory.

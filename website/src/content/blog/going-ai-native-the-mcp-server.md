@@ -9,6 +9,9 @@ author: Kamelia M
 
 By every traditional measure, SvGrid was ready: fast, accessible, full-featured, themeable, server-capable. But "ready" today means something it did not used to. A huge share of the grid code being written now is written with an AI assistant in the loop. So one of the last things we built was for them.
 
+![A server row model paging data in SvGrid.](/blog-media/server-row-model.png)
+*A server row model paging data in SvGrid.*
+
 ## The problem: assistants hallucinate APIs
 
 If you have asked an AI assistant to scaffold a data grid, you have seen it confidently invent a prop that does not exist. The model is working from training data that is stale, averaged across libraries, and full of other grids' APIs. The code looks right and does not compile.

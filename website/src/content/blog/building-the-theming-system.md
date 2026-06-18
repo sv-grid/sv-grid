@@ -9,6 +9,9 @@ author: Victor Vidolov
 
 Moving from behavior to appearance. A data grid that only looks right in its own demo is useless, so SvGrid had to fit into other people's products without a fight. The question was how to make it themeable without inventing a configuration language nobody wants to learn.
 
+![SvGrid themed to match a design system.](/blog-media/theme-integrations.png)
+*SvGrid themed to match a design system.*
+
 ## The decision: no theme object
 
 Plenty of components ship a JavaScript theme config, a big object of tokens you import, override, and pass in. We deliberately did not. Every visual surface in SvGrid reads from a CSS custom property prefixed `--sg-*`, so you restyle it with plain CSS:
