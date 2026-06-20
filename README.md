@@ -1,50 +1,137 @@
-﻿# sv-grid
+# SvGrid
 
-A modern Svelte 5 data grid - headless-first engine plus a render component (`SvGrid.svelte`). Published on npm as **`@svgrid/grid`**.
+[![npm version](https://img.shields.io/npm/v/%40svgrid%2Fgrid.svg?label=%40svgrid%2Fgrid)](https://www.npmjs.com/package/@svgrid/grid)
+[![npm downloads](https://img.shields.io/npm/dm/%40svgrid%2Fgrid.svg)](https://www.npmjs.com/package/@svgrid/grid)
+[![MIT License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](packages/grid/LICENSE)
+[![TypeScript](https://img.shields.io/badge/types-included-blue.svg)](packages/grid/dist)
+[![Svelte 5](https://img.shields.io/badge/svelte-5-ff3e00.svg)](https://svelte.dev)
 
-This repository is a **pnpm workspace** containing:
+> The Svelte 5 native data grid. **Headless-first. Render-ready.**
 
-```
-packages/grid/      # the core grid (MIT-licensed)
-packages/enterprise/            # paid feature pack: export + print (commercial)
-packages/mcp/           # MCP server for AI assistants
-examples/                       # demos covering every feature
-website/                        # the public marketing + docs site
-```
+A modern data grid built from the first line for Svelte 5 runes, not a React grid wrapped in a Svelte shim. A headless engine you can compose plus a full `<SvGrid />` render component you can drop in. MIT core, MCP server for AI assistants, 150+ live demos.
 
-## Requirements
+**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs) · [150+ Demos](https://svgrid.com/demos) · [Pricing](https://svgrid.com/pricing) · [Roadmap](https://svgrid.com/roadmap) · [Blog](https://svgrid.com/blog) · [npm](https://www.npmjs.com/package/@svgrid/grid)
 
-- Node.js ≥ 18
-- pnpm (the workspace pins `pnpm@10.33.2` via the `packageManager` field; `corepack enable` will pick it up)
+---
 
-## Quick start
+## Install
+
+Scaffold a working Vite + Svelte 5 app with SvGrid wired up in one command:
 
 ```bash
-# from the repo root
-pnpm install
-
-# run the gallery at http://localhost:5174
-pnpm dev
-
-# build the library (writes packages/grid/dist)
-pnpm build
-
-# build the gallery for production
-pnpm build:example
-
-# run the website at http://localhost:5180
-pnpm dev:site
-
-# build the website (writes website/dist)
-pnpm build:site
-
-# type-check both packages
-pnpm test:types
+npm create sv-grid@latest
 ```
 
-`pnpm dev` proxies to `pnpm --filter @svgrid/grid-example-gallery dev`. Inside the example the library is linked via the workspace (`"@svgrid/grid": "workspace:*"`), so edits to `packages/grid/src/**` are picked up by Vite HMR with no rebuild.
+Or add it to an existing app:
 
-## Library entry points
+```bash
+npm install @svgrid/grid
+```
+
+## The 30-second example
+
+```svelte
+<script lang="ts">
+  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+
+  const rows = [
+    { firstName: 'Ada',   age: 36, status: 'active' },
+    { firstName: 'Linus', age: 54, status: 'active' },
+    { firstName: 'Grace', age: 85, status: 'inactive' },
+  ]
+  const columns: ColumnDef<{}, (typeof rows)[number]>[] = [
+    { field: 'firstName', header: 'First name' },
+    { field: 'age',       header: 'Age' },
+    { field: 'status',    header: 'Status' },
+  ]
+</script>
+
+<SvGrid data={rows} columns={columns} />
+```
+
+That is a real, working, accessible grid. Sorting, filtering, virtualization, cell selection, and inline editing all wire up the moment you turn on the matching prop.
+
+## What's in the box
+
+- **Row + column virtualization.** 100k × 100 stays smooth; there's a 1M-row demo too.
+- **Filtering.** Excel-style filter menu, inline filter row, locale-aware text matching, set / value-list filter, between operator on numbers and dates.
+- **Editing.** 14 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, textarea, color, checkbox, list, chips, rating, password) plus a `cellEditor` snippet slot for anything else.
+- **Selection.** Cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, row selection.
+- **Hierarchy.** Row grouping with aggregation, tree data, master/detail, full-width detail rows.
+- **Layout.** Row + column pinning, sticky header + first column, header drag-to-reorder, column sizing API.
+- **Operations.** Find in grid (Ctrl+F), undo / redo (Ctrl+Z), transaction API, optimistic updates, server-side row model with sort / filter / group pushdown.
+- **A11y.** WAI-ARIA grid roles, full keyboard navigation, RTL, high-contrast theme.
+- **Bundle.** ~7.5 KB gzipped headless core, ~42 KB gzipped full render component (Svelte stays a peer).
+
+The MIT community core has zero feature gating, no license key, no watermark, no row-count cap.
+
+## Two packages
+
+| Package | License | What it adds |
+|---|---|---|
+| [`@svgrid/grid`](packages/grid/) | **MIT** | The full data grid, free for commercial use |
+| [`@svgrid/enterprise`](packages/enterprise/) | Commercial | Export to Excel / PDF / CSV / TSV / HTML, paginated print, pivot tables with drag-and-drop Designer + drill-through, AI helpers |
+| [`@svgrid/mcp`](packages/mcp/) | Commercial | MCP server for Claude / Cursor / Zed |
+
+OSS projects get the Enterprise pack free. See [Pricing](https://svgrid.com/pricing).
+
+## AI-native
+
+SvGrid ships an MCP (Model Context Protocol) server so Claude, Cursor, and Zed give accurate, version-pinned answers about every prop, method, and event in the library plus all 150+ demo sources as context.
+
+```json
+{
+  "mcpServers": {
+    "svgrid": {
+      "command": "npx",
+      "args": ["-y", "@svgrid/mcp"]
+    }
+  }
+}
+```
+
+A published `llms.txt` / `llms-full.txt` is also available for retrieval-augmented setups.
+
+## Who's behind it
+
+SvGrid is built by [jQWidgets](https://www.jqwidgets.com), the team behind jqwidgets.com and [htmlelements.com](https://www.htmlelements.com). We've been shipping UI components since 2011 to 5,000+ companies including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel. SvGrid is our Svelte 5 native effort.
+
+---
+
+## Repository layout
+
+This is a **pnpm workspace** monorepo:
+
+```
+packages/grid/        @svgrid/grid        - MIT data grid
+packages/enterprise/  @svgrid/enterprise  - paid feature pack
+packages/mcp/         @svgrid/mcp         - MCP server
+packages/create/      create-sv-grid      - scaffolder
+examples/                                 - 150+ live demos
+website/                                  - svgrid.com source
+docs/                                     - markdown docs
+```
+
+### Requirements
+
+- Node.js ≥ 18
+- pnpm (the workspace pins `pnpm@10.33.2` via `packageManager`; `corepack enable` will pick it up)
+
+### Develop
+
+```bash
+pnpm install            # install workspace deps
+pnpm dev                # run the demo gallery at http://localhost:5174
+pnpm build              # build packages/grid/dist
+pnpm build:example      # build the demo gallery
+pnpm dev:site           # run the website at http://localhost:5180
+pnpm build:site         # build the website (writes website/dist)
+pnpm test:types         # type-check every package
+```
+
+`pnpm dev` proxies to `pnpm --filter @svgrid/grid-example-gallery dev`. Inside the example, the library is linked via the workspace (`"@svgrid/grid": "workspace:*"`), so edits in `packages/grid/src/**` are picked up by Vite HMR with no rebuild.
+
+### Library entry points
 
 ```ts
 import {
@@ -72,39 +159,33 @@ import {
 } from '@svgrid/grid'
 ```
 
-## Documentation
+### Documentation
 
-- [Getting started](docs/getting-started.md) - end-to-end walkthrough, 15 min read.
+- [Getting started](docs/getting-started.md) - end-to-end walkthrough.
 - [Why headless?](docs/why-headless.md) - what the headless core gives you and when to reach for it.
 - [Tailwind integration](docs/help/tailwind.md) - re-theming via `--sg-*` tokens, dark-mode wiring.
 - [Help index](docs/help/index.md) - topic pages for columns, rows, cells, filtering, editing.
-- [Missing features](docs/help/missing-features.md) - honest gap list versus AG Grid parity.
+- [Missing features](docs/help/missing-features.md) - honest gap list.
 
-## Examples gallery
+### Website
 
-20 production-quality demos under [`examples/src/demos/`](examples/src/demos/),
-each viewable + copyable via the gallery's "Source" button:
+`website/` contains the public marketing + docs site (Vite + Svelte 5). Published to GitHub Pages via [.github/workflows/deploy-website.yml](.github/workflows/deploy-website.yml) on every push to `main`. See [website/README.md](website/README.md) for routes, base-path config, and the one-time Pages setup.
 
-01 Quick start · 02 Sort/Filter/Paginate · 03 Excel-style filters ·
-04 Selection + copy/paste · 05 Inline editing · 06 100k × 100 dataset ·
-07 Grouping + aggregation · 08 Tree + master/detail · 09 Server-side data ·
-10 Custom cells + themes · 11 Stock market (live) · 12 HR team ·
-13 Finances ledger · 14 Industrial IoT · 15 Localization ·
-16 CSP-compliant · 17 Accessibility · 18 Cascade editing ·
-19 Server-side rendering · 20 Industrial dashboard.
+## What's not built yet
 
-## Website
+Honest list:
 
-`website/` contains the public marketing + docs site (Vite + Svelte 5,
-dark-only). Published to GitHub Pages via
-[.github/workflows/deploy-website.yml](.github/workflows/deploy-website.yml)
-on every push to `main`. See [website/README.md](website/README.md) for
-details on routes, base-path config, and the one-time Pages setup.
+- Column spanning (`colSpan` on cell context). On the roadmap, large effort.
+- Built-in row dragging across grids. Demos cover the in-grid case; cross-grid is not in the engine.
+- Variable row height on the `<SvGrid>` render component. The headless virtualizer does it today.
+- Engine-level formula language. There's a working in-grid formula engine in a demo, but it hasn't graduated into the package.
+- Custom calendar systems (Hijri, Buddhist, fiscal year) for the date editor. Gregorian dates / times / datetimes are built in.
+
+Full public [roadmap with effort tags](https://svgrid.com/roadmap) and a "recently shipped" track record on svgrid.com.
 
 ## License
 
-This repository ships under **mixed licensing**. Only `@svgrid/grid`
-is open source - everything else is commercial.
+This repository ships under **mixed licensing**. Only `@svgrid/grid` is open source - everything else is commercial.
 
 | Package | License | LICENSE file |
 |---|---|---|
@@ -113,19 +194,8 @@ is open source - everything else is commercial.
 | [packages/mcp](packages/mcp/) | Commercial | [LICENSE](packages/mcp/LICENSE) |
 | [website](website/) | Proprietary | [LICENSE](website/LICENSE) |
 
-`@svgrid/grid` (MIT) can be used freely, including for commercial
-work. The Pro feature pack, the MCP server, and the marketing + docs
-website are proprietary - source is visible for evaluation and for
-paying customers, but visibility does not grant a license. See the
-[SvGrid pricing page](https://sv-grid.dev/pricing) for Pro / Enterprise
-purchases.
+`@svgrid/grid` (MIT) can be used freely, including for commercial work. The Enterprise feature pack, the MCP server, and the marketing + docs website are proprietary - source is visible for evaluation and for paying customers, but visibility does not grant a license. See the [SvGrid pricing page](https://svgrid.com/pricing) for Enterprise purchases.
 
 ## Trademark
 
-SvGrid&trade; and sv-grid&trade; are trademarks of jQWidgets Ltd. The
-licenses above apply to the source code only; they grant no rights to
-the **SvGrid** / **sv-grid** names or logos. You may build on and
-redistribute the MIT-licensed code, but you may not reuse the project's
-name or branding in a way that implies endorsement by, or affiliation
-with, jQWidgets Ltd, nor redistribute it under a confusingly similar
-name.
+SvGrid&trade; and sv-grid&trade; are trademarks of jQWidgets Ltd. The licenses above apply to the source code only; they grant no rights to the **SvGrid** / **sv-grid** names or logos. You may build on and redistribute the MIT-licensed code, but you may not reuse the project's name or branding in a way that implies endorsement by, or affiliation with, jQWidgets Ltd, nor redistribute it under a confusingly similar name.
