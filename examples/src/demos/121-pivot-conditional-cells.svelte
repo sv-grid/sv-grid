@@ -370,6 +370,7 @@
       rowHeight={36}
       containerHeight="100%"
       fitColumns={false}
+      enableRowSummaries={false}
     />
   </div>
 </section>

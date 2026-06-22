@@ -56,6 +56,20 @@ export {
   type PivotValueConfig,
 } from './pivot'
 
+export { default as SvPivotDesigner } from './SvPivotDesigner.svelte'
+export {
+  ALL_AGGREGATORS,
+  AGG_LABEL,
+  EMPTY_LAYOUT,
+  defaultLayoutFor,
+  type PivotField,
+  type PivotValueChip,
+  type PivotFilterChip,
+  type PivotLayout,
+  type PivotPreset,
+  type Well,
+} from './pivot-designer'
+
 export {
   // Provider plumbing
   setAIProvider,

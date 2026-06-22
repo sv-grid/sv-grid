@@ -156,7 +156,9 @@
       ...c,
       width: isGrandCol ? 130 : 110,
       align: 'right',
-      cell: (ctx) => fmt(Number(ctx.getValue() ?? 0)),
+      // Group headers carry null value cells when subtotals are off - render
+      // those blank instead of "$0" so a label-only group row reads cleanly.
+      cell: (ctx) => { const v = ctx.getValue(); return v == null ? '' : fmt(Number(v)) },
       cellClass: (ctx) => kindClass(ctx.row.original, isGrandCol ? 'grandCol' : 'value'),
     }
   }
@@ -240,6 +242,7 @@
         rowHeight={32}
         containerHeight="100%"
         fitColumns={false}
+        enableRowSummaries={false}
       />
     </div>
 

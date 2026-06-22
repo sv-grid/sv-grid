@@ -1,0 +1,1651 @@
+/*
+ * SvGrid component styles. Extracted from SvGrid.svelte's <style> block so the
+ * component file stays focused on logic + markup. These are plain (global) CSS
+ * rules - every selector is a unique .sv-grid-* class that maps to a real class
+ * on the grid's elements, so behaviour is identical to the former scoped block.
+ * Imported for its side effect by SvGrid.svelte; the WC build inlines it and
+ * app bundlers include it via the import.
+ */
+/* Root wrapper: holds the shell + pager + any overlays (find, tooltips
+ * pinned to the root). Position-relative so absolutely-positioned
+ * overlays (the find-in-grid toolbar) anchor to the grid, not the
+ * viewport. */
+.sv-grid-root {
+  position: relative;
+}
+.sv-grid-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.sv-grid-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  pointer-events: auto;
+  background: color-mix(in srgb, var(--sg-bg, #fff) 35%, transparent);
+}
+/* Indeterminate top progress bar - the "something is happening" signal
+   that keeps the current rows visible underneath (no flash). */
+.sv-grid-loading-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--sg-accent, #2563eb) 18%, transparent);
+}
+.sv-grid-loading-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--sg-accent, #2563eb);
+  animation: sv-grid-loading-slide 1.1s ease-in-out infinite;
+}
+@keyframes sv-grid-loading-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+/* First-load skeleton: shimmer placeholder rows under the header. */
+.sv-grid-skeleton {
+  position: absolute;
+  top: var(--sg-thead-h, 40px);
+  left: 0;
+  right: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.sv-grid-skeleton-row {
+  display: flex;
+  height: var(--sg-pinned-row-h, 36px);
+  align-items: center;
+  border-bottom: 1px solid var(--sg-border, #e2e8f0);
+}
+.sv-grid-skeleton-cell {
+  flex-shrink: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+.sv-grid-skeleton-bar {
+  display: block;
+  height: 10px;
+  width: 70%;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--sg-muted, #94a3b8) 18%, transparent) 25%,
+    color-mix(in srgb, var(--sg-muted, #94a3b8) 32%, transparent) 50%,
+    color-mix(in srgb, var(--sg-muted, #94a3b8) 18%, transparent) 75%
+  );
+  background-size: 200% 100%;
+  animation: sv-grid-shimmer 1.3s linear infinite;
+}
+@keyframes sv-grid-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.sv-grid-tool-panel-toggle {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 21;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: 6px;
+  background: var(--sg-bg, #fff);
+  color: var(--sg-muted, #64748b);
+  cursor: pointer;
+}
+.sv-grid-tool-panel-toggle:hover,
+.sv-grid-tool-panel-toggle.is-open {
+  color: var(--sg-accent, #2563eb);
+  border-color: var(--sg-accent, #2563eb);
+}
+.sv-grid-tool-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  background: var(--sg-bg, #fff);
+  border-left: 1px solid var(--sg-border, #e2e8f0);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+}
+.sv-grid-tool-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sg-muted, #64748b);
+  border-bottom: 1px solid var(--sg-border, #e2e8f0);
+}
+.sv-grid-tool-panel-close {
+  border: 0;
+  background: transparent;
+  color: var(--sg-muted, #64748b);
+  font-size: 14px;
+  cursor: pointer;
+}
+.sv-grid-tool-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  flex: 1;
+}
+.sv-grid-tool-panel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 5px;
+}
+.sv-grid-tool-panel-item:hover {
+  background: var(--sg-row-hover-bg, rgba(148, 163, 184, 0.1));
+}
+.sv-grid-tool-panel-vis {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--sg-fg, #0f172a);
+  cursor: pointer;
+}
+.sv-grid-tool-panel-vis input {
+  accent-color: var(--sg-accent, #2563eb);
+}
+.sv-grid-tool-panel-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sv-grid-tool-panel-actions {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.sv-grid-tool-panel-btn {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sg-muted, #64748b);
+  font-size: 13px;
+  cursor: pointer;
+}
+.sv-grid-tool-panel-btn:hover:not(:disabled) {
+  background: var(--sg-row-hover-bg, rgba(148, 163, 184, 0.18));
+  color: var(--sg-fg, #0f172a);
+}
+.sv-grid-tool-panel-btn.is-active {
+  color: var(--sg-accent, #2563eb);
+}
+.sv-grid-tool-panel-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+/* Root wrapper fill mode: only takes effect when consumer passes
+ * containerHeight='100%'. The shell becomes a flex item that expands
+ * while the pager keeps its natural height. */
+.sv-grid-root-fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.sv-grid-root-fill > .sv-grid-shell {
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto !important;
+}
+
+.sv-grid-shell {
+  position: relative;
+  border-bottom: 1px solid var(--sg-border, #cbd5e1);
+}
+
+.sv-grid-table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.sv-grid-table:focus {
+  outline: none;
+}
+
+.sv-grid-column,
+.sv-grid-cell {
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--sg-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  user-select: none;
+}
+/* Only the active cell + the cell hosting the fill handle become a
+   positioning context (so the absolutely-positioned handle anchors
+   to the cell box). Adding `position: relative` to EVERY cell paints
+   each one as its own layout box and noticeably slows vertical
+   scroll on dense grids - keep it scoped. Sticky / pinned cells are
+   already positioning contexts via `position: sticky`. */
+.sv-grid-cell-active,
+.sv-grid-cell-has-fill-handle {
+  position: relative;
+}
+/* The cell that owns the fill handle gets overflow: visible so the
+   handle isn't clipped - chip cells in particular pack pills right up
+   to the cell edges, and with overflow: hidden the handle's hover
+   scale-up + the handle itself could be partially eaten by them. */
+.sv-grid-cell-has-fill-handle {
+  overflow: visible;
+}
+
+/* Full-width expandable detail row (props.isDetailRow / renderDetailRow).
+   Overrides the normal single-line cell clamps so the panel spans every
+   column and grows to its natural height. Pair with virtualization={false}
+   so the variable height isn't fought by the fixed-row-height virtualizer.
+   These rules sit AFTER `.sv-grid-cell` so they win at equal specificity. */
+.sv-grid-detail-row {
+  height: auto !important;
+}
+.sv-grid-detail-cell {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  height: auto;
+  padding: 0;
+  background: var(--sg-bg, #fff);
+  user-select: text;
+}
+
+/* Pinned columns read as "frozen" via three layered cues:
+     1. A distinct tint (slightly stronger than the header) so the
+        pinned strip is visible even before you scroll.
+     2. A solid 1px divider on the inside edge (toward the scrollable
+        middle) and a soft drop shadow extending into the scroll area.
+     3. A thin accent stripe on the outermost edge that turns on when
+        the grid scrolls past the pin - a familiar Excel-style cue.
+   The shadow direction flips based on which side is pinned so it
+   always points toward the scrollable middle. */
+.sv-grid-cell[data-pinned="left"],
+.sv-grid-column[data-pinned="left"] {
+  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+  box-shadow:
+    inset -1px 0 0 var(--sg-pinned-divider, var(--sg-border, #cbd5e1)),
+    8px 0 12px -6px rgba(15, 23, 42, 0.22);
+}
+.sv-grid-cell[data-pinned="right"],
+.sv-grid-column[data-pinned="right"] {
+  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+  box-shadow:
+    inset 1px 0 0 var(--sg-pinned-divider, var(--sg-border, #cbd5e1)),
+    -8px 0 12px -6px rgba(15, 23, 42, 0.22);
+}
+/* Header row pinned cells get a slightly darker variant + bolder font
+   so the frozen header itself reads as part of the grid chrome. */
+.sv-grid-head .sv-grid-column[data-pinned="left"],
+.sv-grid-head .sv-grid-column[data-pinned="right"] {
+  background: var(--sg-pinned-header-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 60%, var(--sg-accent, #2563eb) 14%));
+  font-weight: 600;
+}
+/* Zebra rows: keep the pinned tint visible (don't let the row-alt
+   background bleed through) by re-painting the pinned cells. */
+.sv-grid-row-alt > .sv-grid-cell[data-pinned] {
+  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+}
+/* When the row is selected, keep the pinned tint but layer the
+   selection color over it so the row still reads as selected. */
+.sv-grid-row-selected > .sv-grid-cell[data-pinned] {
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--sg-selection-bg, #dbeafe) 65%, transparent),
+      color-mix(in srgb, var(--sg-selection-bg, #dbeafe) 65%, transparent)
+    ),
+    var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+}
+/* Hovered row keeps the pinned tint distinguishable from the hover. */
+.sv-grid-row:hover > .sv-grid-cell[data-pinned] {
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--sg-row-hover-bg, #eef2ff) 55%, transparent),
+      color-mix(in srgb, var(--sg-row-hover-bg, #eef2ff) 55%, transparent)
+    ),
+    var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+}
+
+.sv-grid-column {
+  position: relative;
+}
+
+/* Column alignment via data-align attribute (see getColumnAlign helper).
+ * For body cells text-align is enough; for headers the label lives inside
+ * a flex container so we adjust justify-content on the sort button.
+ * Padding is biased to the aligned side: left-aligned text gets a 7px
+ * left gap; right-aligned numbers/dates get a 7px right gap. */
+.sv-grid-cell[data-align="left"],
+.sv-grid-column[data-align="left"] {
+  padding-left: 7px;
+}
+.sv-grid-cell[data-align="right"] {
+  text-align: right;
+  padding-right: 7px;
+}
+.sv-grid-cell[data-align="center"] {
+  text-align: center;
+}
+.sv-grid-column[data-align="right"] {
+  padding-right: 7px;
+}
+.sv-grid-column[data-align="right"] .sv-grid-header-sort {
+  justify-content: flex-end;
+}
+.sv-grid-column[data-align="center"] .sv-grid-header-sort {
+  justify-content: center;
+}
+
+.sv-grid-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 2;
+  transition: background-color 100ms ease;
+}
+
+.sv-grid-resize-handle:hover,
+.sv-grid-resize-handle.is-resizing {
+  background: rgba(11, 99, 243, 0.3);
+}
+
+.sv-grid-head {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--sg-header-bg, #f5f7fb);
+}
+
+/* Header drag-to-reorder. The `draggable` attribute is only set
+ * when `enableColumnReorder` is true, so the cursor and drop
+ * indicators only show in that mode. */
+.sv-grid-column[draggable="true"] { cursor: grab; }
+.sv-grid-column[draggable="true"]:active { cursor: grabbing; }
+.sv-grid-column.is-dragging { opacity: 0.55; }
+.sv-grid-column.is-drag-target-before,
+.sv-grid-column.is-drag-target-after {
+  position: relative;
+}
+.sv-grid-column.is-drag-target-before::before,
+.sv-grid-column.is-drag-target-after::after {
+  content: "";
+  position: absolute; top: 4px; bottom: 4px; width: 3px;
+  background: linear-gradient(180deg, #6366f1, #8b5cf6);
+  border-radius: 2px;
+  box-shadow: 0 0 6px #6366f1;
+  pointer-events: none;
+  z-index: 7;
+  animation: sg-drop-pulse 700ms ease-in-out infinite alternate;
+}
+.sv-grid-column.is-drag-target-before::before { left:  -2px; }
+.sv-grid-column.is-drag-target-after::after   { right: -2px; }
+@keyframes sg-drop-pulse { from { opacity: 0.55; } to { opacity: 1; } }
+
+/* Pinned rows (top / bottom). Each cell sticks individually so the
+ * row tracks scroll on every browser. Top rows stick below the sticky
+ * thead via --sg-thead-h; bottom rows stick to the bottom of the
+ * scroll container. Tinted background distinguishes them from
+ * regular rows. */
+.sv-grid-pinned-row td {
+  position: sticky;
+  z-index: 4;
+  background: var(--sg-pinned-bg, color-mix(in oklab, #6366f1 4%, #ffffff));
+  border-bottom: 1px solid var(--sg-pinned-border, color-mix(in oklab, #6366f1 24%, transparent));
+  font-weight: 600;
+}
+.sv-grid-pinned-row-top td    { top: var(--sg-thead-h, 36px); }
+.sv-grid-pinned-row-bottom td { bottom: 0; border-top: 1px solid var(--sg-pinned-border, color-mix(in oklab, #6366f1 24%, transparent)); }
+/* Stack multiple pinned-top rows: row 1 stops at thead, row 2 stops
+ * at thead + 36px, etc. The component itself sets --sg-pinned-top-h
+ * to the current pinned-top stack height via $effect. */
+.sv-grid-pinned-row-top[data-pinned-index="1"] td { top: calc(var(--sg-thead-h, 36px) + var(--sg-pinned-row-h, 32px)); }
+.sv-grid-pinned-row-top[data-pinned-index="2"] td { top: calc(var(--sg-thead-h, 36px) + var(--sg-pinned-row-h, 32px) * 2); }
+.sv-grid-pinned-row-top[data-pinned-index="3"] td { top: calc(var(--sg-thead-h, 36px) + var(--sg-pinned-row-h, 32px) * 3); }
+.sv-grid-pinned-row-bottom[data-pinned-index="1"] td { bottom: var(--sg-pinned-row-h, 32px); }
+.sv-grid-pinned-row-bottom[data-pinned-index="2"] td { bottom: calc(var(--sg-pinned-row-h, 32px) * 2); }
+.sv-grid-pinned-row-bottom[data-pinned-index="3"] td { bottom: calc(var(--sg-pinned-row-h, 32px) * 3); }
+/* Sticky-left columns keep their left position; just override their
+ * z so they sit above non-pinned pinned-row cells. */
+.sv-grid-pinned-row td[data-pinned] { z-index: 5; }
+
+/* Group header rows for multi-level (pivot-style) headers. Sits above
+ * the standard leaf header row when the column tree has nesting. */
+.sv-grid-group-header-row {
+  background: var(--sg-header-bg, #eef2f8);
+}
+.sv-grid-group-header-cell {
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--sg-border, #d8dee9);
+  border-right: 1px solid var(--sg-border, #e2e8f0);
+  text-align: center;
+  padding: 4px 8px;
+  font-weight: 700;
+  font-size: 11.5px;
+  color: var(--sg-header-fg, #475569);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sv-grid-group-header-placeholder {
+  background: transparent;
+  border-right-color: transparent;
+}
+.sv-grid-group-header-label {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-grid-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  background: var(--sg-header-bg, #f5f7fb);
+}
+
+.sv-grid-container {
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
+  /* Trap wheel scroll inside the grid. Without this, hitting the top
+   * or bottom edge of the grid lets the wheel event chain to the
+   * outer page (or any scrollable ancestor), so what feels like one
+   * wheel notch keeps scrolling something else - the "starts and
+   * doesn't stop" symptom. `contain` cancels the chained scroll
+   * but still bounces normally inside the grid. */
+  overscroll-behavior: contain;
+  /* Disable scroll anchoring. The virtualizer changes the top-spacer
+   * height every time the visible row window slides - modern browsers
+   * (default `overflow-anchor: auto`) react by quietly adjusting
+   * `scrollTop` to keep the visible content stable. That adjustment
+   * fires another `scroll` event, which fires `onBodyScroll`, which
+   * re-runs the virtualizer, which shifts the spacer again, which
+   * adjusts `scrollTop` again - a self-sustaining loop that
+   * presents as "the grid keeps scrolling after the wheel stops."
+   * Turning anchoring off lets the virtualizer own the scroll
+   * position outright. */
+  overflow-anchor: none;
+}
+
+.sv-grid-container.sv-grid-container-custom-scrollbars {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sv-grid-container.sv-grid-container-custom-scrollbars::-webkit-scrollbar {
+  display: none;
+}
+
+.sv-grid-scrollbar {
+  position: absolute;
+  /* Above pinned columns (z-index 30 via cellPinStyle) so a frozen
+     left/right column never paints over the custom scrollbar - that
+     was the bug behind "vertical scrollbar hidden under the frozen
+     column" in grids with a pinned column at the right edge. */
+  z-index: 40;
+}
+
+/* Scrollbars anchor to the inline-end edge so RTL flips them to the
+ * left automatically. `inset-inline-end` resolves to `right` in LTR
+ * and `left` in RTL, no manual override needed. */
+.sv-grid-scrollbar-vertical {
+  top: 0;
+  inset-inline-end: 0;
+  width: 16px;
+  height: calc(100% - 16px);
+}
+
+.sv-grid-scrollbar-corner {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
+  width: 16px;
+  background: var(--sg-header-bg, #f5f7fb);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  /* Above pinned header cells (z-index 30) so the gap above the
+     vertical scrollbar stays clean over a frozen column. */
+  z-index: 41;
+  pointer-events: none;
+}
+
+.sv-grid-scrollbar-corner-br {
+  position: absolute;
+  inset-inline-end: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  background: var(--sg-header-bg, #eef2f8);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+  z-index: 42;
+  pointer-events: none;
+}
+
+.sv-grid-scrollbar-horizontal {
+  inset-inline-start: 0;
+  bottom: 0;
+  width: calc(100% - 16px);
+  height: 16px;
+}
+
+.sv-grid-selection-column,
+.sv-grid-selection-cell {
+  text-align: center;
+  padding-inline: 6px;
+  position: sticky;
+  z-index: 4;
+}
+
+/* Row-number column: sticks to the left edge of the scroll viewport. */
+.sv-grid-row-number-column,
+.sv-grid-row-number-cell {
+  text-align: right;
+  padding-inline: 8px;
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  color: var(--sg-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+.sv-grid-row-number-head {
+  color: inherit;
+}
+
+.sv-grid-filter-row-control {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.sv-grid-filter-operator {
+  flex: 2 1 0;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sv-grid-filter-value {
+  flex: 3 1 0;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Brief glow used when the user clicks the funnel icon while the grid
+   is in row-filter mode - draws attention to where the input is so
+   the click isn't a no-op. */
+.sv-grid-filter-value.sv-grid-filter-value-pulse {
+  animation: sv-grid-filter-pulse 700ms ease-out;
+}
+@keyframes sv-grid-filter-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(11, 99, 243, 0.55); }
+  70%  { box-shadow: 0 0 0 6px rgba(11, 99, 243, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(11, 99, 243, 0); }
+}
+
+.sv-grid-checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0 auto;
+  border: 1px solid var(--sg-input-border, #8794a8);
+  border-radius: 4px;
+  background: var(--sg-input-bg, #fff);
+  color: var(--sg-accent, #0b63f3);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+/* Color editor - native HTML color input filling the cell so the
+   swatch is clickable across the whole cell area, not just the tiny
+   OS default size. */
+.sv-grid-cell-editor-color {
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.sv-grid-cell-editor-color::-webkit-color-swatch-wrapper { padding: 0; }
+.sv-grid-cell-editor-color::-webkit-color-swatch { border: 0; border-radius: 4px; }
+.sv-grid-cell-editor-color::-moz-color-swatch { border: 0; border-radius: 4px; }
+
+/* Rating editor - 5 clickable stars + clear button. Renders inline
+   in the cell when editorType="rating"; the readonly view renders a
+   filled-star count via the default text path (or a snippet cell). */
+.sv-grid-rating-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  height: 100%;
+}
+.sv-grid-rating-star {
+  border: 0; background: transparent; cursor: pointer;
+  color: var(--sg-rating-empty, #cbd5e1);
+  font-size: 18px; line-height: 1;
+  padding: 0 1px;
+  transition: color 80ms ease, transform 80ms ease;
+}
+.sv-grid-rating-star-on { color: var(--sg-rating-on, #f59e0b); }
+.sv-grid-rating-star:hover { color: var(--sg-rating-hover, #fbbf24); transform: scale(1.12); }
+.sv-grid-rating-clear {
+  margin-left: 4px;
+  border: 0; background: transparent;
+  color: var(--sg-muted, #94a3b8);
+  cursor: pointer; font-size: 14px;
+}
+.sv-grid-rating-clear:hover { color: var(--sg-fg, #0f172a); }
+
+.sv-grid-checkbox[aria-checked="true"],
+.sv-grid-checkbox[aria-checked="mixed"] {
+  border-color: var(--sg-accent, #0b63f3);
+  background: var(--sg-selection-bg, #eaf2ff);
+}
+
+.sv-grid-checkbox[aria-checked="true"]::after {
+  content: "";
+  width: 5px;
+  height: 9px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(40deg) translate(-1px, -1px);
+}
+
+.sv-grid-checkbox[aria-checked="mixed"]::after {
+  content: "";
+  width: 8px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.sv-grid-checkbox:focus-visible {
+  outline: 2px solid var(--sg-accent, #0b63f3);
+  outline-offset: 1px;
+}
+
+.sv-grid-checkbox-readonly {
+  cursor: default;
+  pointer-events: none;
+}
+
+.sv-grid-cell-active,
+.sv-grid-cell-editing {
+  position: relative;
+  /* High enough to sit above pinned-column stacking contexts (z=4) so the
+     list/chips popover overlays adjacent cells instead of being clipped. */
+  z-index: 20;
+  /* `box-shadow: inset` is bound to the cell's own box, so the ring
+     clips cleanly with the cell when it's partially scrolled out of
+     view (and shows up consistently at the right edge of a virtualized
+     window). The previous `outline + outline-offset: -2px` rendered at
+     the wrong position on clipped cells in some browsers - it's drawn
+     outside the layout box, so the negative offset's effect was
+     inconsistent at scroll boundaries. */
+  box-shadow: inset 0 0 0 2px var(--sg-accent, #0b63f3);
+  outline: none;
+  /* Let list/chips popouts extend past the cell box (default cells have
+     overflow: hidden so the chips picker would otherwise be clipped). */
+  overflow: visible;
+}
+
+/* Excel-style fill handle: a 7×7 blue square anchored to the bottom-
+   right corner of the active cell or selection range. The parent
+   `.sv-grid-cell` is `position: relative` (sticky cells override
+   that with sticky - which is also a positioning context), so the
+   handle anchors to the cell box. */
+/* Excel-style per-cell note indicator. A small triangle in the top-
+ * right corner that, when hovered, shows the note tooltip. The
+ * triangle IS the hot-zone (12×12 square clipped to a triangle via
+ * border tricks); a transparent invisible square on top widens the
+ * hit target a little so it's not painful to hit. */
+.sv-grid-cell-note-corner {
+  position: absolute;
+  top: 0; right: 0;
+  width: 12px; height: 12px;
+  /* Triangle: 0,0  →  12,0  →  12,12 */
+  background:
+    linear-gradient(45deg, transparent 50%, var(--sg-note-corner, #f59e0b) 50%);
+  cursor: help;
+  z-index: 6;
+}
+/* Slightly larger invisible hit area so users don't have to land on
+   a 6×6 pixel triangle. */
+.sv-grid-cell-note-corner::before {
+  content: '';
+  position: absolute;
+  inset: -3px -3px 0 0;
+}
+
+.sv-grid-fill-handle {
+  position: absolute;
+  /* Sit fully INSIDE the cell box so `overflow: hidden` doesn't clip
+     most of the handle. Previously the handle stuck 3px outside the
+     cell and the visible 4×4 corner was nearly unclickable - especially
+     on chip cells where pills filled the bottom edge. */
+  bottom: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  background: var(--sg-accent, #0b63f3);
+  border: 1px solid var(--sg-bg, #ffffff);
+  box-sizing: border-box;
+  cursor: crosshair;
+  z-index: 15;
+  touch-action: none;
+}
+.sv-grid-fill-handle:hover {
+  transform: scale(1.3);
+  transform-origin: bottom right;
+}
+
+/* Fill-preview overlay paints a dashed accent border on the cells the
+   user is about to fill. Source cells (still in the selection range)
+   keep their normal range styling. */
+.sv-grid-cell[data-fill-preview="true"] {
+  box-shadow: inset 0 0 0 2px rgba(11, 99, 243, 0.5);
+  background: rgba(11, 99, 243, 0.08);
+}
+
+.sv-grid-cell-editing {
+  padding: 0;
+}
+
+/* The four CSS variables let us compose a single box-shadow that draws the
+   selection rectangle outline only on the cells that sit on its edges. */
+.sv-grid-cell[data-selected-range="true"] {
+  background: var(--sg-selection-bg, #eef4ff);
+  --sv-range-top: 0 0 0 transparent;
+  --sv-range-bottom: 0 0 0 transparent;
+  --sv-range-left: 0 0 0 transparent;
+  --sv-range-right: 0 0 0 transparent;
+  box-shadow: var(--sv-range-top), var(--sv-range-bottom),
+    var(--sv-range-left), var(--sv-range-right);
+}
+
+.sv-grid-cell[data-range-top="true"] {
+  --sv-range-top: inset 0 2px 0 var(--sg-accent, #0b63f3);
+}
+
+.sv-grid-cell[data-range-bottom="true"] {
+  --sv-range-bottom: inset 0 -2px 0 var(--sg-accent, #0b63f3);
+}
+
+.sv-grid-cell[data-range-left="true"] {
+  --sv-range-left: inset 2px 0 0 var(--sg-accent, #0b63f3);
+}
+
+.sv-grid-cell[data-range-right="true"] {
+  --sv-range-right: inset -2px 0 0 var(--sg-accent, #0b63f3);
+}
+
+.sv-grid-cell-editor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: var(--sg-input-bg, #fff);
+  box-sizing: border-box;
+  font: inherit;
+  color: inherit;
+  padding: 0 8px;
+}
+
+/* Filter-related inputs share the same focused-cell outline treatment. */
+.sv-grid-global-filter input:focus,
+.sv-grid-filter-value:focus,
+.sv-grid-column-filter:focus,
+.sv-grid-menu-search:focus,
+.sv-grid-menu-condition-value:focus,
+.sv-grid-menu-operator:focus {
+  outline: 2px solid var(--sg-accent, #0b63f3);
+  outline-offset: -2px;
+  border-color: var(--sg-accent, #0b63f3);
+}
+
+.sv-grid-cell-editor-number,
+.sv-grid-cell-editor-date,
+.sv-grid-cell-editor-datetime {
+  width: 100%;
+  height: 100%;
+}
+
+/* List editor: native <select>. For multi-select it grows into a
+   small popup-style listbox that hangs over the cell. */
+.sv-grid-cell-editor-list {
+  width: 100%;
+  height: 100%;
+  appearance: auto;
+  font: inherit;
+  color: inherit;
+  background: var(--sg-input-bg, #fff);
+  border: 0;
+  padding: 0 6px;
+  box-sizing: border-box;
+}
+.sv-grid-cell-editor-list[multiple] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  min-height: 100%;
+  max-height: 220px;
+  z-index: 5;
+  padding: 4px;
+  border: 1px solid var(--sg-accent, #0b63f3);
+  background: var(--sg-input-bg, #fff);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+
+/* Free-form chips editor (multi-value cell with removable tokens).
+   Absolutely positioned so it can grow downward past the row without
+   pushing other rows. Theme-aware background + accent border + drop
+   shadow so it reads as a popout above the next row, not as part of
+   it. The cell's outer outline is suppressed for this editor - this
+   popout already provides its own border. */
+.sv-grid-cell-editor-chips {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  min-height: calc(100% + 2px);
+  background: var(--sg-header-bg, var(--sg-bg, #ffffff));
+  color: var(--sg-fg, #0f172a);
+  padding: 4px 6px;
+  box-sizing: border-box;
+  z-index: 1000;
+  overflow: visible;
+  display: flex;
+  align-items: flex-start;
+  border: 1px solid var(--sg-accent, #2563eb);
+  border-radius: 6px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+/* When the chips editor is mounted, the parent .sv-grid-cell-editing
+   no longer needs its own outline - the popout already shows one. */
+.sv-grid-cell-editing:has(.sv-grid-cell-editor-chips) {
+  outline: none;
+}
+.sv-grid-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.sv-grid-chip-input {
+  flex: 1 1 80px;
+  min-width: 60px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  padding: 2px 4px;
+}
+.sv-grid-chip-picker {
+  flex: 1 1 100px;
+  min-width: 80px;
+  font: inherit;
+  color: inherit;
+  background: var(--sg-bg, #fff);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.sv-grid-chip-commit {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--sg-accent, #0b63f3);
+  border: 0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.sv-grid-chip-commit:hover {
+  filter: brightness(1.1);
+}
+
+/* Chip badge - used both in readonly cell display and inside the
+   chips editor. Subtle neutral chrome, scales to the row's font size.
+   Readonly chip rows stay on one line (the parent <td> has
+   overflow: hidden, so overflowing chips get clipped - widen the
+   column or open the editor to see all). */
+.sv-grid-chips-display {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.sv-grid-sparkline {
+  display: inline-block;
+  vertical-align: middle;
+  overflow: visible;
+}
+/* Conditional formatting overlays - behind the cell text. */
+.sv-grid-cf-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.sv-grid-cf-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  opacity: 0.85;
+  border-radius: 0 2px 2px 0;
+  pointer-events: none;
+}
+.sv-grid-cell-cf {
+  position: relative;
+}
+.sv-grid-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--sg-fg);
+  background: var(--sg-header-bg, #f1f5f9);
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-top: 0;
+  flex-shrink: 0;
+}
+.sv-grid-status-item {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.sv-grid-status-label {
+  color: var(--sg-muted, #64748b);
+  font-weight: 400;
+  margin-right: 5px;
+}
+.sv-grid-cf-content {
+  position: relative;
+  z-index: 1;
+}
+.sv-grid-cf-icon {
+  margin-right: 5px;
+  font-size: 0.95em;
+}
+.sv-grid-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 0.85em;
+  line-height: 1.4;
+  background: color-mix(in srgb, var(--sg-accent, #2563eb) 18%, transparent);
+  color: var(--sg-fg, inherit);
+  border-radius: 999px;
+  border: 1px solid
+    color-mix(in srgb, var(--sg-accent, #2563eb) 35%, transparent);
+  white-space: nowrap;
+}
+.sv-grid-chip-removable {
+  padding-right: 2px;
+}
+.sv-grid-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sg-fg, #0f172a) 18%, transparent);
+  color: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.sv-grid-chip-remove:hover {
+  background: rgba(220, 38, 38, 0.7);
+  color: #fff;
+}
+
+.sv-grid-icon {
+  width: 1em;
+  height: 1em;
+  display: block;
+  flex: none;
+}
+
+.sv-grid-header-cell {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+}
+
+.sv-grid-header-sort {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Custom (function-valued) header rendering. Behaves like the sort
+   button but is a div so the consumer's snippet can contain its own
+   interactive elements (menu buttons, dropdowns, etc) - button-in-
+   button DOM is invalid. */
+.sv-grid-header-custom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+}
+
+.sv-grid-header-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-grid-header-icon {
+  display: inline-flex;
+  flex: none;
+  font-size: 13px;
+  color: var(--sg-muted, #5b6b85);
+}
+
+.sv-grid-header-icon-hint {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.sv-grid-column:hover .sv-grid-header-icon-hint {
+  opacity: 0.4;
+}
+
+.sv-grid-header-icon-flag {
+  color: var(--sg-accent, #0b63f3);
+}
+
+.sv-grid-col-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  /* Collapse to zero width when invisible so a non-hovered column
+     has no dead space at the right; the funnel (when an active
+     filter is on) can then sit flush against the right edge.
+     Hover / focus / open expand it back to 22px. */
+  width: 0;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sg-muted, #5b6b85);
+  font-size: 15px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transition:
+    width 140ms ease,
+    opacity 140ms ease,
+    background-color 120ms ease;
+}
+
+.sv-grid-column:hover .sv-grid-col-menu-btn,
+.sv-grid-col-menu-btn.is-open,
+.sv-grid-col-menu-btn:focus-visible {
+  width: 22px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The funnel filter button is a sibling .sv-grid-col-menu-btn that
+   ALSO carries .sv-grid-col-filter-btn. When the column has an
+   active filter (.is-active) the funnel stays visible at full size
+   even when the column isn't hovered - so users can see at a glance
+   which columns are filtered. Because the 3-dot menu still collapses
+   to width: 0 in that state, the funnel ends up flush against the
+   right edge. On hover, the menu expands back to 22px and pushes the
+   funnel left naturally. */
+.sv-grid-col-filter-btn.is-active {
+  width: 22px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sv-grid-col-menu-btn:hover,
+.sv-grid-col-menu-btn.is-open {
+  background: var(--sg-row-hover-bg, #e2e8f3);
+}
+
+.sv-grid-filter-operator-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  height: 24px;
+  padding: 0 4px;
+  border: 1px solid var(--sg-input-border, #cbd5e1);
+  border-radius: 4px;
+  background: var(--sg-input-bg, #fff);
+  color: var(--sg-fg, #334155);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.sv-grid-filter-operator-btn.is-open {
+  border-color: var(--sg-accent, #0b63f3);
+}
+
+.sv-grid-caret {
+  display: inline-flex;
+  font-size: 9px;
+  color: var(--sg-muted, #94a3b8);
+}
+
+.sv-grid-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: transparent;
+}
+
+.sv-grid-menu {
+  position: fixed;
+  z-index: 901;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding: 4px;
+  background: var(--sg-bg, #fff);
+  border: 1px solid var(--sg-border, #d6dee9);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  font-size: 13px;
+  color: var(--sg-fg, #1f2937);
+}
+
+.sv-grid-column-menu {
+  width: 260px;
+}
+
+.sv-grid-operator-menu {
+  width: 184px;
+}
+
+.sv-grid-context-menu {
+  min-width: 180px;
+}
+
+.sv-grid-comment-editor {
+  width: 240px;
+  padding: 8px;
+}
+.sv-grid-comment-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 60px;
+  padding: 6px 8px;
+  border: 1px solid var(--sg-input-border, #cbd5e1);
+  border-radius: 4px;
+  background: var(--sg-input-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.sv-grid-comment-textarea:focus {
+  border-color: var(--sg-accent, #6366f1);
+}
+.sv-grid-comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.sv-grid-comment-spacer {
+  flex: 1 1 auto;
+}
+.sv-grid-comment-actions button {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--sg-border, #cbd5e1);
+  background: var(--sg-bg, #fff);
+  color: var(--sg-fg, #1f2937);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sv-grid-comment-save {
+  border-color: var(--sg-accent, #6366f1) !important;
+  background: var(--sg-accent, #6366f1) !important;
+  color: #fff !important;
+}
+.sv-grid-comment-remove {
+  color: var(--sg-danger, #dc2626) !important;
+}
+
+.sv-grid-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sv-grid-menu-item:hover {
+  background: var(--sg-row-hover-bg, #eef2f8);
+}
+
+.sv-grid-menu-item[aria-checked="true"] {
+  background: var(--sg-selection-bg, #eaf2ff);
+  color: var(--sg-accent, #0b63f3);
+}
+
+.sv-grid-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--sg-border, #e6ebf2);
+}
+
+.sv-grid-menu-filter {
+  padding: 4px 6px 6px;
+}
+
+.sv-grid-menu-filter-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0 6px;
+  font-weight: 600;
+  color: var(--sg-muted, #475569);
+}
+
+.sv-grid-menu-search {
+  width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+  margin-bottom: 6px;
+  padding: 0 8px;
+  border: 1px solid var(--sg-input-border, #cbd5e1);
+  border-radius: 5px;
+  font: inherit;
+}
+
+.sv-grid-menu-filter-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.sv-grid-menu-operator-group {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.sv-grid-menu-operator-btn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--sg-input-border, #cbd5e1);
+  border-radius: 4px;
+  background: var(--sg-input-bg, #fff);
+  color: var(--sg-fg, #475569);
+  cursor: pointer;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease,
+    border-color 100ms ease;
+}
+
+.sv-grid-menu-operator-btn:hover {
+  background: var(--sg-row-hover-bg, #eef2f8);
+}
+
+.sv-grid-menu-operator-btn.is-active {
+  background: var(--sg-accent, #0b63f3);
+  border-color: var(--sg-accent, #0b63f3);
+  color: #fff;
+}
+
+.sv-grid-menu-condition-value {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border: 1px solid var(--sg-input-border, #cbd5e1);
+  border-radius: 5px;
+  font: inherit;
+}
+
+.sv-grid-facet-list {
+  max-height: 200px;
+  overflow: auto;
+  border: 1px solid var(--sg-border, #eaeef4);
+  border-radius: 5px;
+}
+
+.sv-grid-facet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.sv-grid-facet:hover {
+  background: var(--sg-row-hover-bg, #f4f6fa);
+}
+
+.sv-grid-facet-all {
+  border-bottom: 1px solid var(--sg-border, #eaeef4);
+  font-weight: 600;
+}
+
+.sv-grid-facet input {
+  flex: none;
+}
+
+.sv-grid-facet-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-grid-facet-empty,
+.sv-grid-facet-note {
+  padding: 6px 8px;
+  color: var(--sg-muted, #94a3b8);
+  font-size: 12px;
+}
+
+.sv-grid-menu-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.sv-grid-menu-btn {
+  padding: 5px 10px;
+  border: 1px solid var(--sg-input-border, #cbd5e1);
+  border-radius: 5px;
+  background: var(--sg-input-bg, #fff);
+  color: var(--sg-fg, #334155);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sv-grid-menu-btn-primary {
+  background: var(--sg-accent, #0b63f3);
+  border-color: var(--sg-accent, #0b63f3);
+  color: #fff;
+}
+
+.sv-grid-menu-item:disabled,
+.sv-grid-menu-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.sv-grid-menu-item:disabled:hover {
+  background: transparent;
+}
+
+.sv-grid-group-row > .sv-grid-cell {
+  background: var(--sg-header-bg, #eef2f8);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sv-grid-row-selected > .sv-grid-cell {
+  background: var(--sg-selection-bg, #eaf2ff);
+}
+
+.sv-grid-group-cell {
+  padding: 0 12px;
+}
+
+.sv-grid-group-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sv-grid-group-toggle {
+  border: 0;
+  background: transparent;
+  padding: 0 4px 0 0;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--sg-fg, #334155);
+  cursor: pointer;
+}
+
+.sv-grid-group-count {
+  margin-left: 6px;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--sg-muted, #64748b);
+}
+.sv-grid-group-agg {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sg-fg);
+  white-space: nowrap;
+}
+.sv-grid-group-agg-label {
+  font-weight: 400;
+  color: var(--sg-muted, #64748b);
+  margin-right: 4px;
+}
+.sv-grid-group-agg-label::after {
+  content: ":";
+}
+
+.sv-grid-group-child-indent {
+  display: inline-block;
+  width: 18px;
+}
+
+/* ---- Custom hover tooltip (column .tooltip + cell notes) ---- */
+.sv-grid-tooltip {
+  position: fixed;
+  z-index: 10000;
+  max-width: 280px;
+  padding: 8px 10px;
+  background: #0f172a;
+  color: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28);
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+[data-theme="dark"] .sv-grid-tooltip { background: #f1f5f9; color: #0f172a; }
+
+/* ---- Textarea editor ---- */
+.sv-grid-cell-editor-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 6px 8px;
+  border: 1px solid var(--sg-accent, #6366f1);
+  background: var(--sg-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+  outline: none;
+  box-shadow: var(--sg-focus-ring, 0 0 0 2px rgba(99, 102, 241, 0.40));
+}
+
+.sv-grid-autocomplete {
+  position: relative;
+  width: 100%;
+}
+.sv-grid-autocomplete-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 30;
+  max-height: 220px;
+  overflow: auto;
+  margin-top: 2px;
+  padding: 4px;
+  background: var(--sg-bg, #fff);
+  border: 1px solid var(--sg-border, #d6dee9);
+  border-radius: 6px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+}
+.sv-grid-autocomplete-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sg-fg, #1f2937);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sv-grid-autocomplete-option:hover,
+.sv-grid-autocomplete-option[aria-selected="true"] {
+  background: var(--sg-row-hover-bg, rgba(99, 102, 241, 0.10));
+}
+
+/* ---- Find-in-grid overlay ---- */
+.sv-grid-find {
+  position: absolute;
+  top: 8px; right: 8px;
+  z-index: 60;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 8px;
+  background: var(--sg-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  border: 1px solid var(--sg-border, #cbd5e1);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+  min-width: 280px;
+}
+.sv-grid-find-icon {
+  width: 14px; height: 14px;
+  color: var(--sg-muted, #94a3b8);
+  flex: none;
+  margin-left: 2px;
+}
+.sv-grid-find-input {
+  flex: 1; min-width: 0;
+  border: 0; outline: none;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  padding: 2px 6px;
+}
+.sv-grid-find-input::placeholder { color: var(--sg-muted, #94a3b8); }
+.sv-grid-find-count {
+  font-size: 11px;
+  color: var(--sg-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+.sv-grid-find-step, .sv-grid-find-close {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: transparent;
+  border: 0;
+  color: var(--sg-muted, #64748b);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.sv-grid-find-step:hover:not(:disabled),
+.sv-grid-find-close:hover {
+  background: var(--sg-row-hover-bg, rgba(148, 163, 184, 0.12));
+  color: var(--sg-fg, #0f172a);
+}
+.sv-grid-find-step:disabled { opacity: 0.30; cursor: default; }

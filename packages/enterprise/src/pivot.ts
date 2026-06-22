@@ -349,6 +349,28 @@ function computeRowValues(
   return result
 }
 
+/**
+ * Build the same value-column keys as `computeRowValues`, but with every cell
+ * `null`. Used for group HEADER rows when `rowSubtotals` is off: the row keeps
+ * its place in the hierarchy (label + expand/collapse) yet shows no aggregate
+ * numbers. Cells are `null` rather than absent so consumers can distinguish a
+ * deliberately-blank subtotal from a missing column.
+ */
+function blankRowValues(
+  colLeafPaths: ReadonlyArray<ReadonlyArray<unknown>>,
+  values: ReadonlyArray<PivotValueConfig<unknown>>,
+  includeGrandTotalCol: boolean,
+): Record<string, null> {
+  const result: Record<string, null> = {}
+  for (const colPath of colLeafPaths) {
+    for (let i = 0; i < values.length; i += 1) result[leafColumnId(colPath, i)] = null
+  }
+  if (includeGrandTotalCol) {
+    for (let i = 0; i < values.length; i += 1) result[leafColumnId(['__total'], i)] = null
+  }
+  return result
+}
+
 function walkRowTree(
   node: AxisNode,
   out: PivotRow[],
@@ -387,11 +409,16 @@ function walkRowTree(
     return
   }
 
-  // Group node. Emit a subtotal-style row IF requested AND this node has
-  // a real path (not the synthetic root) AND it's not at the deepest level.
+  // Group node. Emit the group HEADER row whenever this node is a real group
+  // (not the synthetic root, not the deepest level). The header is emitted
+  // regardless of `rowSubtotals` so the grouping hierarchy and the
+  // expand/collapse parent chain stay intact; the flag only controls whether
+  // the header carries its aggregate (subtotal) values or renders as a
+  // label-only row. This matches Excel / AG Grid, where hiding subtotals never
+  // removes a grouping level from the row axis.
   const isRealGroup = node.level > 0 && node.level < rowFields.length
   let nextParentId: string | null = parentId
-  if (isRealGroup && wantSubtotals) {
+  if (isRealGroup) {
     const id = `group__${node.pathKey}`
     out.push({
       __pivotId: id,
@@ -400,13 +427,15 @@ function walkRowTree(
       __pivotLabel: String(node.value ?? '(All)'),
       __pivotParentId: parentId,
       __pivotExpandable: true,
-      ...computeRowValues(
-        node.rows as ReadonlyArray<Record<string, unknown>>,
-        colLeafPaths,
-        colFields,
-        values,
-        includeGrandTotalCol,
-      ),
+      ...(wantSubtotals
+        ? computeRowValues(
+            node.rows as ReadonlyArray<Record<string, unknown>>,
+            colLeafPaths,
+            colFields,
+            values,
+            includeGrandTotalCol,
+          )
+        : blankRowValues(colLeafPaths, values, includeGrandTotalCol)),
     })
     // Children of this group point at this row as their parent so a
     // collapse hides the whole subtree, not just the immediate leaves.

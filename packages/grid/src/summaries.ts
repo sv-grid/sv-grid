@@ -1,0 +1,204 @@
+// summaries handlers extracted from the controller. Imperative event handlers
+// reading/writing controller state via the `ctx` handle; the reactive core
+// ($state/$derived/$effect) stays in the controller.
+import {
+  applyExcelFilter,
+  normalizeForFilter,
+  createColumnVirtualizer,
+  createCoreRowModel,
+  createExpandedRowModel,
+  createFilteredRowModel,
+  createGroupedRowModel,
+  createPaginatedRowModel,
+  createSvelteVirtualizer,
+  createSortedRowModel,
+  createSvGrid,
+  filterFns,
+  getGridCellA11yProps,
+  getGridCellDomId,
+  getGridHeaderA11yProps,
+  getGridRootA11yProps,
+  getGridRowA11yProps,
+  parseEditorValue,
+  normalizeEditorOptions,
+  sortFns,
+  tableFeatures,
+  rowSortingFeature,
+  columnFilteringFeature,
+  columnGroupingFeature,
+  type CellContext,
+  type EditorContext,
+  type CellEditorOption,
+  type CellEditorType,
+  type CellFormatter,
+  type CellFormatConfig,
+  type Column,
+  type ColumnDef,
+  type Row,
+  type RowData,
+  type SvGridApi,
+  type TableFeatures,
+} from "./index";
+import "./sv-grid-scrollbar";
+import type { Snippet } from "svelte";
+import { getKeyboardIntent, getNextActiveCell } from "./keyboard";
+import {
+  formatNumericWithConfig,
+  getDateFormatter,
+  resolveDatePattern,
+} from "./cell-formatting";
+import {
+  RenderSnippetConfig,
+  RenderComponentConfig,
+} from "./render-component";
+import { buildFillPattern } from "./fill-patterns";
+import { buildSparkline, toSparklineValues } from "./sparkline";
+import {
+  resolveCellFormat,
+  computeColumnStat,
+  formatsNeedingStats,
+  type ColumnStat,
+  type ResolvedCellFormat,
+} from "./conditional-formatting";
+import SvGridDropdown from "./SvGridDropdown.svelte";
+import type {
+  Props,
+  SelectionPoint,
+  SelectionRange,
+  CellEditState,
+  FilterOperator,
+  FilterOption,
+  MenuPosition,
+} from "./SvGrid.types";
+import {
+  cfTextStyle,
+  fmtStat,
+  getCellKey,
+  resolveClassList,
+  toDateInputValue,
+  toDateTimeLocalInputValue,
+  getEditableInputValue,
+  getEditorInputType,
+  toValueArray,
+  getOptionLabel,
+  getOptionColor,
+  colorfulChipStyle,
+  getEditorClass,
+  asDate,
+  clampMenuX,
+  cssEscape,
+  rawToNumber,
+  formatFacetNumber,
+  formatFacetDate,
+} from "./SvGrid.helpers";
+import { createMenus } from "./menus";
+import { createCellRender } from "./cell-render";
+import { createEditing } from "./editing";
+import { createSelection } from "./selection";
+import { createColumns } from "./columns";
+import { createGridApi } from "./build-api";
+import { createClipboard } from "./clipboard";
+import {
+  filterOperatorOptions,
+  fallbackOperatorOption,
+  TEXT_OPERATORS,
+  NUMBER_OPERATORS,
+  DATE_OPERATORS,
+  CHECKBOX_OPERATORS,
+  operatorOption,
+  operatorsForColumn,
+  defaultOperatorFor,
+  operatorLabelFor,
+} from "./filter-operators";
+import {
+  type FacetBucket,
+  isBucketableColumn,
+  buildBuckets,
+  isInBucket,
+} from "./facet-buckets";
+import {
+  getColumnBaseValue,
+  isGroupRow,
+  toolPanelHeaderLabel,
+  formatSummaryNumeric,
+  getColumnAlign,
+  getPinnedCellValue,
+  getColumnAccessorValue,
+  columnDefMatchesId,
+} from "./cell-values";
+
+export function createSummaries<
+  TFeatures extends TableFeatures = TableFeatures,
+  TData extends RowData = RowData,
+>(ctx: any) {
+  /**
+   * Aggregate every row into a per-column footer summary (sum for numeric
+   * columns, `Count: N` otherwise). This loop is the hottest path on a
+   * large grid - it is rows x columns iterations - so two things keep the
+   * constant factor down:
+   *
+   *   1. The edited-cell overlay is only consulted when an edit actually
+   *      exists. `key in editedCellValues` hits a reactive-proxy `has`
+   *      trap for every cell otherwise - 5M no-op trap calls on a
+   *      100k x 50 grid. Skipping it when the map is empty is the single
+   *      biggest win here.
+   *   2. The column's accessor (`accessorFn` / `field`) is resolved once
+   *      per column, not re-read off `columnDef` for every cell.
+   */
+  function computeSummaries(
+    rows: ReadonlyArray<Row<TData>>,
+    columns: ReadonlyArray<Column<TData>>,
+  ): Record<string, string> {
+    const summary: Record<string, string> = {};
+    const rowCount = rows.length;
+    const hasEdits = Object.keys(ctx.editedCellValues).length > 0;
+    for (const column of columns) {
+      const def = column.columnDef;
+      const accessorFn = def.accessorFn;
+      const field = def.field;
+      const columnId = column.id;
+      let numericSum = 0;
+      let numericCount = 0;
+      for (let i = 0; i < rowCount; i += 1) {
+        const row = rows[i]!;
+        let value: unknown;
+        const base = accessorFn
+          ? accessorFn(row.original)
+          : field
+            ? (row.original as Record<string, unknown>)[field]
+            : row.getCellValueByColumnId(columnId);
+        if (hasEdits) {
+          const key = getCellKey(row.id, columnId);
+          value = key in ctx.editedCellValues ? ctx.editedCellValues[key] : base;
+        } else {
+          value = base;
+        }
+        const asNumber = Number(value);
+        if (Number.isFinite(asNumber)) {
+          numericSum += asNumber;
+          numericCount += 1;
+        }
+      }
+      summary[columnId] =
+        numericCount > 0
+          ? formatSummaryNumeric(column, numericSum)
+          : `Count: ${rowCount}`;
+    }
+    return summary;
+  }
+
+  function hasRenderedColumn(entry: {
+    item: (typeof ctx.renderedColumnItems)[number];
+    column: (typeof ctx.allColumns)[number] | undefined;
+  }): entry is {
+    item: (typeof ctx.renderedColumnItems)[number];
+    column: (typeof ctx.allColumns)[number];
+  } {
+    return entry.column !== undefined;
+  }
+
+  return {
+    computeSummaries,
+    hasRenderedColumn,
+  };
+}

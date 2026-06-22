@@ -9,7 +9,33 @@ describe('SvGrid wrapper', () => {
   })
 
   it('contains full-wrapper controls and aria-activedescendant wiring', () => {
-    const source = readFileSync(resolve(__dirname, './SvGrid.svelte'), 'utf-8')
+    // The wrapper spans SvGrid.svelte plus its extracted sibling modules
+    // (types + pure helpers); read them together so these "contains X"
+    // assertions hold wherever the code physically lives.
+    const source = [
+      './SvGrid.svelte',
+      './SvGrid.controller.svelte.ts',
+      './GridMenus.svelte',
+      './GridFooter.svelte',
+      './SvGrid.types.ts',
+      './SvGrid.helpers.ts',
+      './filter-operators.ts',
+      './facet-buckets.ts',
+      './cell-values.ts',
+      './clipboard.ts',
+      './build-api.ts',
+      './columns.ts',
+      './selection.ts',
+      './editing.ts',
+      './cell-render.ts',
+      './menus.ts',
+      './summaries.ts',
+      './keyboard-handlers.ts',
+      './scroll-sync.ts',
+      './features.ts',
+    ]
+      .map((p) => readFileSync(resolve(__dirname, p), 'utf-8'))
+      .join('\n')
     expect(source).toContain('Filter all rows')
     expect(source).toContain('Previous')
     expect(source).toContain('role="status"')

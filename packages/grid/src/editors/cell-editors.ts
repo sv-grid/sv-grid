@@ -10,6 +10,7 @@
   | 'chips'
   | 'select'
   | 'rich-select'
+  | 'autocomplete'
   | 'textarea'
   | 'color'
   | 'rating'

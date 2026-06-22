@@ -273,6 +273,8 @@
       a: 'No. Keys are perpetual: an issued key keeps working for every version of @svgrid/enterprise released during your paid term, forever. The automatic yearly renewal is what unlocks new versions and keeps support active. If you cancel or let it lapse, your installed version keeps working - you just stop getting new releases and support.' },
     { q: 'Is the license tied to a specific developer or a seat?',
       a: 'It is a seat license. The seat moves with the role: if a developer leaves and is replaced, the same seat transfers to the replacement. No re-purchase required.' },
+    { q: 'Do you offer implementation or consulting help?',
+      a: 'Yes - through Resolute Software, our official services and consulting partner, who provide consulting and custom development: integrating SvGrid into your app, building data-heavy Svelte applications end to end, or team augmentation. See resolutesoftware.com, or email sales@jqwidgets.com and we will connect you.' },
   ]
 
   // Trusted by - anonymous-ish industry labels (no specific trademarked
@@ -389,7 +391,7 @@
               <button type="button"
                 class={tier.highlight ? 'btn btn-primary w-full' : 'btn btn-ghost w-full'}
                 onclick={() => openBuy(planKey)}>
-                Buy {tier.name}
+                Buy {tier.name.replace('Enterprise - ', '')}
               </button>
               <p class="mt-2 text-center text-xs" style="color: var(--site-muted);">
                 Pick developer count + buyer info in the next step.
@@ -549,11 +551,11 @@
             </td>
             <td class="cmp-td-highlight">
               <button class="btn btn-primary w-full"
-                onclick={() => openBuy('proSingleApp')}>Buy Enterprise - Single App</button>
+                onclick={() => openBuy('proSingleApp')}>Buy Single App</button>
             </td>
             <td>
               <button class="btn btn-ghost w-full"
-                onclick={() => openBuy('proMultiApp')}>Buy Enterprise - Multi App</button>
+                onclick={() => openBuy('proMultiApp')}>Buy Multi App</button>
             </td>
           </tr>
         </tbody>
@@ -642,8 +644,42 @@
     </div>
   </section>
 
+  <!-- Implementation & consulting (partner) --------------------- -->
+  <section class="mt-12 rounded-2xl border p-6 md:p-8"
+    style="border-color: var(--sg-border); background: linear-gradient(135deg, color-mix(in srgb, #3b82f6 10%, transparent), color-mix(in srgb, #6366f1 6%, transparent));">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="flex-1 min-w-[280px]">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em]" style="color: #9463e7;">
+          Official services &amp; consulting partner
+        </p>
+        <!-- Resolute's logo is the white "on dark" variant, so it sits on a dark
+             chip (a white backing would hide the white wordmark) - reads on both themes. -->
+        <a href="https://www.resolutesoftware.com" target="_blank" rel="noopener noreferrer"
+          class="mt-3 inline-flex items-center rounded-lg px-4 py-2.5"
+          style="background: #14182a; border: 1px solid rgba(148,163,184,0.18); box-shadow: 0 1px 3px rgba(0,0,0,0.25);"
+          aria-label="Resolute Software">
+          <img src="/partners/resolute-logo.svg" alt="Resolute Software"
+            style="height: 26px; width: auto; display: block;" />
+        </a>
+        <h2 class="mt-4 text-xl font-bold" style="color: var(--sg-fg);">
+          Need a team to build it with you?
+        </h2>
+        <p class="mt-2 text-sm max-w-2xl" style="color: var(--sg-fg);">
+          <strong>Resolute Software</strong> is our official services and consulting partner.
+          They provide consulting and custom development: integrating SvGrid into your product,
+          building data-heavy Svelte applications end to end, or augmenting your team. A good fit
+          when you want experienced hands on the project, not just a license.
+        </p>
+      </div>
+      <a class="btn btn-ghost shrink-0"
+        href="https://www.resolutesoftware.com" target="_blank" rel="noopener noreferrer">
+        Visit Resolute Software →
+      </a>
+    </div>
+  </section>
+
   <!-- FAQ accordion --------------------------------------------- -->
-  <section class="mt-20">
+  <section class="mt-16">
     <h2 class="text-2xl md:text-3xl font-bold tracking-tight" style="color: var(--sg-fg);">
       Pricing FAQ
     </h2>

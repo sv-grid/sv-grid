@@ -162,15 +162,42 @@ describe('createPivotModel - configuration toggles', () => {
     expect(r.rows.find((row) => row.__pivotKind === 'grandTotal')).toBeUndefined()
   })
 
-  it('omits row subtotals when rowSubtotals=false', () => {
+  it('keeps group headers but blanks their values when rowSubtotals=false', () => {
     const r = createPivotModel(facts, {
       rows: ['region', 'salesPerson'],
       cols: ['quarter'],
       values: [{ field: 'amount', agg: 'sum' }],
       rowSubtotals: false,
     })
-    // Only leaves + grand total - no `group` rows.
-    expect(r.rows.filter((row) => row.__pivotKind === 'group')).toEqual([])
+    // Group header rows are STILL emitted - the grouping hierarchy is
+    // preserved; turning off subtotals never removes a grouping level.
+    const groups = r.rows.filter((row) => row.__pivotKind === 'group')
+    expect(groups.length).toBeGreaterThan(0)
+    expect(groups.map((row) => row.__pivotLabel)).toContain('AMER')
+    // ...but each header carries no aggregate values: the value cells are
+    // present (so columns line up) and explicitly null.
+    for (const g of groups) {
+      const valueKeys = Object.keys(g).filter((k) => !k.startsWith('__pivot'))
+      expect(valueKeys.length).toBeGreaterThan(0)
+      expect(valueKeys.every((k) => (g as Record<string, unknown>)[k] === null)).toBe(true)
+    }
+  })
+
+  it('keeps the grand-total value identical whether or not subtotals show', () => {
+    const base = {
+      rows: ['region', 'salesPerson'] as string[],
+      cols: ['quarter'] as string[],
+      values: [{ field: 'amount', agg: 'sum' as const }],
+    }
+    const withSub = createPivotModel(facts, { ...base, rowSubtotals: true })
+    const noSub = createPivotModel(facts, { ...base, rowSubtotals: false })
+    const totalValues = (m: typeof withSub) => {
+      const g = m.rows.find((row) => row.__pivotKind === 'grandTotal')!
+      return Object.fromEntries(
+        Object.entries(g).filter(([k]) => !k.startsWith('__pivot')),
+      )
+    }
+    expect(totalValues(noSub)).toEqual(totalValues(withSub))
   })
 
   it('honours a custom rowSort comparator', () => {

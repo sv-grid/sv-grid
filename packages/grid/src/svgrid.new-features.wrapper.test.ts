@@ -16,8 +16,34 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const sourcePath = resolve(__dirname, './SvGrid.svelte')
-const source = readFileSync(sourcePath, 'utf-8')
+// The wrapper implementation spans SvGrid.svelte plus its extracted
+// sibling modules (types + pure helpers). Concatenate them so these
+// "the wrapper declares/exposes X" assertions hold wherever the code
+// physically lives.
+const source = [
+  './SvGrid.svelte',
+  './SvGrid.controller.svelte.ts',
+  './GridMenus.svelte',
+  './GridFooter.svelte',
+  './SvGrid.types.ts',
+  './SvGrid.helpers.ts',
+  './filter-operators.ts',
+  './facet-buckets.ts',
+  './cell-values.ts',
+  './clipboard.ts',
+  './build-api.ts',
+  './columns.ts',
+  './selection.ts',
+  './editing.ts',
+  './cell-render.ts',
+  './menus.ts',
+  './summaries.ts',
+  './keyboard-handlers.ts',
+  './scroll-sync.ts',
+  './features.ts',
+]
+  .map((p) => readFileSync(resolve(__dirname, p), 'utf-8'))
+  .join('\n')
 const typesPath = resolve(__dirname, './svgrid-wrapper.types.ts')
 const types = readFileSync(typesPath, 'utf-8')
 
@@ -143,7 +169,7 @@ describe('SvGrid wrapper - multi-cell paste + cut + delete', () => {
 
   it('wires Ctrl/Cmd+X to cutSelectionToClipboard', () => {
     expect(source).toMatch(/lower === "x"/)
-    expect(source).toMatch(/void cutSelectionToClipboard\(\)/)
+    expect(source).toMatch(/void (?:ctx\.)?cutSelectionToClipboard\(\)/)
     expect(source).toMatch(/async function cutSelectionToClipboard/)
     // Confirm both calls live inside the cutSelectionToClipboard body
     // (copy first, then clear). A comment between them is fine.
@@ -159,6 +185,6 @@ describe('SvGrid wrapper - multi-cell paste + cut + delete', () => {
 
   it('wires Delete + Backspace to clearSelectedCells (without clipboard interaction)', () => {
     expect(source).toMatch(/event\.key === "Delete" \|\| event\.key === "Backspace"/)
-    expect(source).toMatch(/if \(clearSelectedCells\(\)\)\s*\{/)
+    expect(source).toMatch(/if \((?:ctx\.)?clearSelectedCells\(\)\)\s*\{/)
   })
 })

@@ -165,6 +165,7 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
     | 'chips'
     | 'select'       // custom dropdown - single value, no typeahead
     | 'rich-select'  // custom dropdown with a typeahead search input
+    | 'autocomplete' // free-text input with a live-filtered suggestion list (accepts any value)
     | 'textarea'     // multi-line editor; Tab or Ctrl+Enter commits, plain Enter inserts a newline
     | 'color'        // native <input type="color"> swatch
     | 'rating'       // 5-star rating control

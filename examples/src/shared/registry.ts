@@ -118,11 +118,14 @@ import OptimisticUpdates         from '../demos/115-optimistic-updates.svelte'
 import WebSocketLiveUpdates      from '../demos/116-websocket-live-updates.svelte'
 import BulkOperations            from '../demos/117-bulk-operations.svelte'
 import RangeSelection            from '../demos/118-range-selection.svelte'
+import LiveDashboard             from '../demos/118-live-dashboard.svelte'
+import WorkbookMultiSheet        from '../demos/119-workbook-multi-sheet.svelte'
 import PivotConditionalCells     from '../demos/121-pivot-conditional-cells.svelte'
 import PivotDrillThrough         from '../demos/122-pivot-drill-through.svelte'
 import PivotTotals               from '../demos/123-pivot-totals.svelte'
 import PivotOlap                 from '../demos/124-pivot-olap.svelte'
 import PivotCharts               from '../demos/125-pivot-charts.svelte'
+import PivotDesigner             from '../demos/168-pivot-designer.svelte'
 import ExportGroupedGrid         from '../demos/126-export-grouped-grid.svelte'
 import ExportPivotGrid           from '../demos/127-export-pivot-grid.svelte'
 import DevMigrationFromAg        from '../demos/139-migration-from-ag-grid.svelte'
@@ -139,6 +142,21 @@ import RealtimeCollaboration     from '../demos/149-realtime-collaboration.svelt
 import ScatterBubble             from '../demos/150-scatter-bubble.svelte'
 import TimeSeriesChart           from '../demos/151-time-series-chart.svelte'
 import ChartWizard               from '../demos/152-chart-wizard.svelte'
+import ChartZoomBrush            from '../demos/153-chart-zoom-brush.svelte'
+import ChartHeatmap              from '../demos/154-chart-heatmap.svelte'
+import ChartAnalytics            from '../demos/155-chart-analytics.svelte'
+import ChartPatterns             from '../demos/156-chart-patterns.svelte'
+import ChartForecastBand         from '../demos/157-chart-forecast-band.svelte'
+import ChartWaterfall            from '../demos/158-chart-waterfall.svelte'
+import ChartStreaming            from '../demos/159-chart-streaming.svelte'
+import ChartFunnel               from '../demos/160-chart-funnel.svelte'
+import ChartRadar                from '../demos/161-chart-radar.svelte'
+import ChartCalendar             from '../demos/162-chart-calendar.svelte'
+import ChartGauge                from '../demos/163-chart-gauge.svelte'
+import ChartTreemap              from '../demos/164-chart-treemap.svelte'
+import ChartSankey               from '../demos/165-chart-sankey.svelte'
+import PivotAnalysisWorkspace    from '../demos/166-pivot-analysis-workspace.svelte'
+import ProjectTracker            from '../demos/167-project-tracker.svelte'
 import ConditionalFormattingEngine from '../demos/141-conditional-formatting.svelte'
 
 // Bundle the raw .svelte source for every demo at build time so the Source
@@ -178,6 +196,7 @@ export type DemoCategory =
   | 'Server-Side Data'
   | 'Real-time & Streaming'
   | 'Spreadsheet'
+  | 'Charts'
   | 'Themes & Styling'
   | 'Keyboard & Accessibility'
   | 'Mobile & Responsive'
@@ -198,6 +217,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Server-Side Data',
   'Real-time & Streaming',
   'Spreadsheet',
+  'Charts',
   'Themes & Styling',
   'Keyboard & Accessibility',
   'Mobile & Responsive',
@@ -325,6 +345,7 @@ export const demos: Demo[] = [
   demo('115-optimistic-updates',    'Optimistic updates + rollback','Edit a cell; UI updates immediately; server validates async; on reject the value rolls back with a toast and an inline ! retry chip. Per-cell pending / saved / failed badges + audit log.', 'Server-Side Data', OptimisticUpdates),
   demo('116-websocket-live-updates','WebSocket live updates',      'Insert / update / delete deltas merged into the grid by id, with cell-flash on update, pause / resume, throughput slider, reconnect button, and a 12-event tail.', 'Server-Side Data', WebSocketLiveUpdates),
   demo('117-bulk-operations',       'Bulk server operations',      'Select N rows → choose approve / archive / reassign / delete → server processes with configurable concurrency (1/4/10). Live progress bar, per-row outcome chip, mid-flight cancel.', 'Server-Side Data', BulkOperations),
+  demo('118-live-dashboard',        'Live 10M-row dashboard',      '10,000,000-transaction stream behind a mock API: server-side paging, sort, filter, a 1-second live feed, and inline SVG throughput/distribution charts.', 'Server-Side Data', LiveDashboard),
 
   // ----- Real-time & Streaming
   demo('11-stock-market',           'Stock market - live',         'WebSocket-style ticking feed. Cells flash on up/down ticks, pause control, throttle.', 'Real-time & Streaming', StockMarket),
@@ -334,10 +355,23 @@ export const demos: Demo[] = [
   demo('149-realtime-collaboration','Real-time collaboration',     'Presence (who is here + where their cursor is) and live edits (a change in one client lands in every other) over a pluggable transport. createCollaboration + broadcastChannelTransport sync cursors and edits across tabs with zero backend; swap the transport for a WebSocket to go cross-machine. Also the substrate for multiple AI agents editing one grid.', 'Real-time & Streaming', RealtimeCollaboration),
   demo('145-transaction-api',       'Transaction API (batched)',   'api.applyTransaction({ add, update, remove }) applies a batch of row mutations in ONE data update - the high-frequency streaming path. update and remove-by-id match on getRowId; remove also accepts row refs. Live order book ticking via batched transactions.', 'Real-time & Streaming', TransactionApi),
   demo('73-chartjs-sync',           'Real-time + Chart.js sync',   'Mock WebSocket pushes price ticks every 350 ms. A Chart.js bar chart auto-syncs with the grid - filter the Symbol column, the chart trims to match.', 'Real-time & Streaming', ChartJsSync),
-  demo('147-integrated-charts',     'Integrated charts (no deps)', 'Chart the grid data with no external charting library. SvGridChart renders a ChartSpec; rowsToChartSpec aggregates the grid current (filtered/sorted) rows into one. Bar, line, area, pie - plus 100% stacked, top-N + Other, an average reference line, and double-click-to-isolate a series. Filter the grid and the chart re-aggregates live.', 'Integrations', IntegratedCharts),
-  demo('150-scatter-bubble',        'Scatter / bubble chart',      'A scatter plot maps two numeric measures (x vs y); a bubble chart adds a third via dot radius. type: scatter with series points [{ x, y, r }]. Spend vs revenue, sized by deals, coloured by region, with an average-revenue reference line. Filter the grid and the cloud re-plots.', 'Integrations', ScatterBubble),
-  demo('151-time-series-chart',     'Time-series chart (date axis)','xType: time spaces points by ACTUAL time - irregular date gaps render proportionally - and shows real date ticks. A referenceLines target/SLA line spans the plot; toggle 100% stacked to read each day as a share of its total. Line, stacked area, or stacked bar.', 'Integrations', TimeSeriesChart),
-  demo('152-chart-wizard',          'Chart wizard (from the grid)','Grid on the left, chart wizard on the right. The wizard builds a chart from the grid rows via rowsToChartSpec: pick the type from a gallery (whose thumbnails are themselves live mini SvGridChart instances), choose group-by + measure + aggregation, and a palette. Column, Bar (horizontal), Line, Area, Pie with stacked / 100% variants. Drag a cell range or tick row checkboxes to chart just the selection; otherwise the whole filtered / sorted set re-aggregates live.', 'Integrations', ChartWizard),
+  demo('147-integrated-charts',     'Integrated charts (no deps)', 'Chart the grid data with no external charting library. SvGridChart renders a ChartSpec; rowsToChartSpec aggregates the grid current (filtered/sorted) rows into one. Bar, line, area, pie - plus 100% stacked, top-N + Other, an average reference line, and double-click-to-isolate a series. Filter the grid and the chart re-aggregates live.', 'Charts', IntegratedCharts),
+  demo('150-scatter-bubble',        'Scatter / bubble chart',      'A scatter plot maps two numeric measures (x vs y); a bubble chart adds a third via dot radius. type: scatter with series points [{ x, y, r }]. Spend vs revenue, sized by deals, coloured by region, with an average-revenue reference line. Filter the grid and the cloud re-plots.', 'Charts', ScatterBubble),
+  demo('151-time-series-chart',     'Time-series chart (date axis)','xType: time spaces points by ACTUAL time - irregular date gaps render proportionally - and shows real date ticks. A referenceLines target/SLA line spans the plot; toggle 100% stacked to read each day as a share of its total. Line, stacked area, or stacked bar.', 'Charts', TimeSeriesChart),
+  demo('152-chart-wizard',          'Chart wizard (from the grid)','Grid on the left, chart wizard on the right. The wizard builds a chart from the grid rows via rowsToChartSpec: pick the type from a gallery (whose thumbnails are themselves live mini SvGridChart instances), choose group-by + measure + aggregation, and a palette. Column, Bar (horizontal), Line, Area, Pie with stacked / 100% variants. Drag a cell range or tick row checkboxes to chart just the selection; otherwise the whole filtered / sorted set re-aggregates live.', 'Charts', ChartWizard),
+  demo('153-chart-zoom-brush',      'Chart zoom + brush mini-map','Drag a rectangle over a 180-day series to zoom in; double-click resets. A compact brush below shows the full range with a draggable window - drag the body to pan, edges to resize. Pairs with the crosshair tooltip + PNG/SVG export.', 'Charts', ChartZoomBrush),
+  demo('154-chart-heatmap',         'Heatmap chart',               'type: heatmap renders a colored grid (one cell per row/column) from the same categories + series shape. Choose a sequential or diverging color ramp; cell text auto-contrasts black/white. Filter the grid Channel column and the heatmap re-renders.', 'Charts', ChartHeatmap),
+  demo('155-chart-analytics',       'Analytics: trend, log, drill','Four story-telling chart features at once: overlay (SMA/EMA/linear regression), annotations pinned at named events, yScale: log for wide-range data, and onDrill that filters the grid to the rowIds of the clicked category. Click any day to drill.', 'Charts', ChartAnalytics),
+  demo('156-chart-patterns',        'Color-blind-safe pattern fills','patternFallback: true layers a texture (stripe / crosshatch / dots / diagonal) on every series so two series with similar hues still read as distinct in grayscale or for readers with color-vision deficiency. Works on bars and area stacks.', 'Charts', ChartPatterns),
+  demo('157-chart-forecast-band',   'Forecast: smooth + confidence band','smooth: true bends the polyline into a monotone cubic curve that still passes through every point but flows between them. upperValues + lowerValues shade a translucent envelope around the forecast for at-a-glance uncertainty. 12 weeks actuals + 8 weeks forecast.', 'Charts', ChartForecastBand),
+  demo('158-chart-waterfall',       'Waterfall (signed P&L)',     "type: waterfall renders each bar starting where the previous one ended. waterfallTotals marks subtotal/total bars that span from 0. Bars colour-code by sign (green / red); total bars get a neutral slate. Connector lines link bar tops so the cumulative trend reads at a glance.", 'Charts', ChartWaterfall),
+  demo('159-chart-streaming',       'Streaming chart (rolling window)','Hit Start - prices stream in at 4 Hz. The buffer holds the last 60 ticks; older points drop off the left as new ones appear on the right. Re-aggregates via rowsToChartSpec so smoothing, brush, zoom all stay in play.', 'Charts', ChartStreaming),
+  demo('160-chart-funnel',          'Funnel chart (signup conversion)','type: funnel renders strictly-decreasing values as a stack of trapezoids. Each segment shows conversion vs. the top of the funnel inline; hover for the step drop-off. Click a segment to record a drill selection.', 'Charts', ChartFunnel),
+  demo('161-chart-radar',           'Radar chart (product comparison)','type: radar plots each category as a spoke; every series draws a polygon connecting its values across the spokes. Shared scale makes two products read against each other directly. Click the legend to isolate one.', 'Charts', ChartRadar),
+  demo('162-chart-calendar',        'Calendar heatmap (year of days)','type: calendar renders a GitHub-commit-style 7-row x ~53-column grid. Each cell shaded by its value; days with no value render as outlined blanks so missing data reads as missing. Filter the grid Type column and the heatmap re-aggregates.', 'Charts', ChartCalendar),
+  demo('163-chart-gauge',           'Gauge dial (KPI dashboard)',  'type: gauge renders a semicircle with track + value arcs, optional red/amber/green range bands, and a target tick. Click any row in the KPI grid to drive the dial; bands auto-flip direction based on whether higher or lower is better.', 'Charts', ChartGauge),
+  demo('164-chart-treemap',         'Tree-map (sales by region·category)','The canonical BI tree-map: revenue broken down hierarchically into nested rectangles - bigger value = bigger rectangle. The squarified algorithm keeps every cell close to a square so labels stay readable. Switch the drill order (Region → Category vs. Category → Region) to compare the same data two ways.', 'Charts', ChartTreemap),
+  demo('165-chart-sankey',          'Sankey diagram (user flow)',  'type: sankey lays nodes out in columns by longest-path depth and renders flow links as bezier ribbons whose width = link value in pixels. User journey from acquisition channel through onboarding to outcome. Hover any ribbon for the source -> target value.', 'Charts', ChartSankey),
 
   // ----- Spreadsheet
   demo('27-spreadsheet-ribbon',     'Spreadsheet + Ribbon bar',    'Excel-style Ribbon UI driving the grid via SvGridApi: cell formatting (bold, color, number format), insert/delete row, sort, live SUM/AVG/COUNT.', 'Spreadsheet', SpreadsheetRibbon),
@@ -392,16 +426,19 @@ export const demos: Demo[] = [
   demo('100-anomaly-highlights',      'Anomaly highlights',             'IQR + rare-value detectors paint outliers per cell with severity halos (warning / outlier / extreme). Severity threshold toggle, per-detector tooltip explaining what tripped.', 'Rows & Cells', AnomalyHighlights),
   demo('112-barcode-cells',           'Barcode label cells (EAN-13)',   'Every row renders a real, scannable EAN-13 barcode as crisp SVG - no canvas, no eval, no dependency. Retail / warehouse / inventory pattern. Row virtualization keeps only visible barcodes in the DOM; click a row for a shelf-label preview.', 'Rows & Cells', BarcodeCells),
   demo('120-test-systems-monitor',    'Test systems monitor (live ops)','Operations console for a fleet of connected test & measurement systems: live status, utilization sparklines, temperature, alarms, firmware, and calibration with stable row identity (getRowId). Select systems for bulk actions (acknowledge alarms, schedule calibration), group by site, KPI strip, search + filters, and master-detail with live instrument tags. Virtualized to fleet scale.', 'Industry Templates', TestSystemsMonitor),
+  demo('167-project-tracker',         'Project tracker (PM workspace)', 'Linear-style project workspace: KPI strip (Projects / In progress / Ready / Blocked / Budget), bulk-action toolbar (Mark ready, Block, Move to launch, Delete) that enables on selection, phase-grouped rows with per-phase aggregate cards, NEW pill + SVG progress ring on the name column, avatar owner, colour-block Status / Priority / Risk cells, Department chip, multi-skills chips, inline filter row.', 'Industry Templates', ProjectTracker),
   demo('91-cell-comments',            'Cell comments + @-mentions',     'Right-click any cell to start a thread. Type @ inside the editor to mention a teammate (fuzzy picker, chip insertion). Comment indicator triangle, resolve-thread action, mention count.', 'Rows & Cells', CellComments),
 
   // ----- Pro: Pivot cluster
-  demo('52-pivot-table',              'Pivot table + Designer',         'Drag-and-drop Pivot Designer with Filters / Rows / Columns / Values zones, multi-level column headers, subtotal + grand-total rows, row-header sort menu.', 'Pro', PivotTable,             { pro: true }),
+  demo('52-pivot-table',              'Pivot + Designer',               'Drag-and-drop Pivot Designer with Filters / Rows / Columns / Values zones, multi-level column headers, subtotal + grand-total rows, row-header sort menu.', 'Pro', PivotTable,             { pro: true }),
   demo('60-pivot-expandable',         'Pivot - Sales pipeline',         'Polished pivot view: KPI strip, region/sales-person rows, quarter columns, two measures, expand-all/collapse-all toolbar, heatmap tinting.',           'Pro', PivotExpandable,        { pro: true }),
   demo('121-pivot-conditional-cells', 'Pivot - Conditional cells',      'Function-valued `cell` and `header` templates on top of createPivotModel: traffic-light revenue pills, target chips, units data-bars, measure icons in headers, region color dots in row labels. Headers can be snippets, not just strings.', 'Pro', PivotConditionalCells,  { pro: true }),
   demo('122-pivot-drill-through',     'Pivot - Drill-through',          'Click any pivot value cell - leaf, subtotal, or grand total - and the right rail opens with the exact source facts behind the aggregate. Total + count + average always match what the cell shows.', 'Pro', PivotDrillThrough,      { pro: true }),
   demo('123-pivot-totals',            'Pivot - Totals + Subtotals',     'Live toggles for grandTotalRow / grandTotalCol / rowSubtotals on createPivotModel. Subtotals get a Σ badge, the grand-total row is tinted accent, and the grand-total column is an amber stripe on the right. Counts panel shows what shipped.', 'Pro', PivotTotals,            { pro: true }),
   demo('124-pivot-olap',              'Pivot - OLAP cube (BI shell)',   'Full BI dashboard around an OLAP cube: page header with crumbs + last-refresh + export, 5 KPI tiles with QoQ sparklines, left slicer rail (region multi-select, year picker, country search, view-mode, density, heatmap toggle), the cube in Tabular form (one column per row dim), right insights rail (top YoY movers, top contributors, notes).', 'Pro', PivotOlap,              { pro: true }),
   demo('125-pivot-charts',            'Pivot + linked charts',          'Pivot cube wired to a horizontal bar chart + multi-year line chart. Click any cube row to drill the charts one level deeper (region → country → product); scope KPI strip tracks selection; charts are zero-dep inline SVG.', 'Pro', PivotCharts,            { pro: true }),
+  demo('166-pivot-analysis-workspace','Pivot - Analysis workspace',     'Excel-style pivot analysis: left-rail field picker (search + checkboxes) feeding four wells (Rows / Columns / Data / Filters), live re-pivot on every layout change, click-to-cycle aggregator chips, data-bar Total Spend cells + amber Avg Rating strips, subtotal + grand-total row tints.', 'Pro', PivotAnalysisWorkspace, { pro: true }),
+  demo('168-pivot-designer',          'Pivot designer component',       'SvPivotDesigner: self-contained, enterprise-ready pivot authoring with a left-rail field picker (search + grouped), four drop wells (Filters / Columns / Rows / Values), drag-and-drop between wells, per-chip aggregator + filter menus, presets toolbar, and an inline pivot grid driven by createPivotModel. Single bindable `layout` prop so the page can persist or restore it.', 'Pro', PivotDesigner,          { pro: true }),
 
   // ----- Pro: Export cluster (kept together at the very bottom)
   demo('21-export-and-print',         'Export + Print',                 'Pro feature pack: download to Excel, PDF, CSV, TSV, HTML, or open a printable view in a new window.',           'Pro', ExportAndPrint,         { pro: true }),
@@ -411,6 +448,7 @@ export const demos: Demo[] = [
   demo('59-export-multi-sheet',       'Export - Multiple sheets',       'One xlsx with 5 tabs - All orders + per-region splits - independent of the current grid filter.',                'Pro', ExportMultiSheet,       { pro: true }),
   demo('93-password-protected-export','Password-protected export',      'PBKDF2 (100k iters) + AES-GCM 256 client-side. Strength meter, encrypt + download, in-page decrypt tool to verify the round-trip. Pro pack maps to ECMA-376 Agile encryption.', 'Pro', PasswordProtectedExport, { pro: true }),
   demo('101-formulas-in-xlsx',        'Formulas preserved in xlsx',     'Builds a real OOXML workbook in the browser via JSZip; computed columns export as <f>...</f> formula cells. Open in Excel and the math recomputes when you edit a number.', 'Pro', FormulasInXlsx,         { pro: true }),
+  demo('119-workbook-multi-sheet',    'Workbook - multi-sheet + formulas','A real spreadsheet: A/B/C columns + many rows you can grow on demand, cross-sheet formulas (=SUM, =VLOOKUP, nested IF) recalculating live, cell + conditional formatting, validation dropdowns, an inline chart, a calendar/scheduler sheet, open .xlsx/.csv, and export every sheet to one multi-tab .xlsx.', 'Pro', WorkbookMultiSheet,     { pro: true }),
   demo('126-export-grouped-grid',     'Export grouped grid to Excel',   'A flat sales grid (Region → Country) exported via api.exportData({ format: "xlsx", groupBy }) which uses Smart\'s NATIVE Excel row outline grouping. Opens in Excel with +/- buttons in the row header gutter for every group level. Live preview lists every cluster.', 'Pro', ExportGroupedGrid,      { pro: true }),
   demo('127-export-pivot-grid',       'Export pivot grid to Excel',     'createPivotModel leaves projected into an xlsx via api.exportData with groupBy: ["region"] - each region becomes an Excel outline group. Engine column ids ("pv__Q1__m0") translate to readable headers ("Q1 · Revenue"). Single-sheet OR one tab per region (Pro multi-sheet).', 'Pro', ExportPivotGrid,        { pro: true }),
 

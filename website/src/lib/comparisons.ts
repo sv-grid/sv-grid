@@ -194,7 +194,7 @@ const agGrid: Comparison = {
     'Source code openly licensed under the MIT License with no Enterprise-only features held back.',
   ],
   competitorAdvantages: [
-    'Larger feature surface (pivoting, integrated charts, server-side row model with extreme scale).',
+    'A deeper, longer-proven enterprise surface and a server-side row model tested at extreme (tens-of-millions-of-rows) scale.',
     'Used at massive scale in enterprise dashboards - a decade+ of production data.',
     'Multi-framework support means parity with React / Angular / Vue teammates.',
     'More extensive Enterprise feature set if you can absorb the cost.',
@@ -208,8 +208,8 @@ const agGrid: Comparison = {
     { feature: 'Cell-range selection + clipboard', svgrid: '✅ Community', competitor: '⚠️ Enterprise only' },
     { feature: 'Master/detail', svgrid: '✅ Community', competitor: '⚠️ Enterprise only' },
     { feature: 'Tree data', svgrid: '✅ Community', competitor: '⚠️ Enterprise only' },
-    { feature: 'Pivot tables', svgrid: '❌', competitor: '⚠️ Enterprise only' },
-    { feature: 'Integrated charts', svgrid: '❌', competitor: '⚠️ Enterprise only' },
+    { feature: 'Pivot tables', svgrid: '✅ Enterprise', competitor: '⚠️ Enterprise only' },
+    { feature: 'Integrated charts', svgrid: '✅ Community', competitor: '⚠️ Enterprise only', svgridBetter: true },
     { feature: 'Pricing (paid tier)', svgrid: '✅ $599/dev/yr', competitor: '❌ ~$999+/dev/yr', svgridBetter: true },
     { feature: 'AI / MCP integration', svgrid: '✅', competitor: '❌', svgridBetter: true },
     { feature: 'Bundle size on Svelte', svgrid: '✅ Lighter', competitor: '⚠️ Heavier (vanilla JS + wrapper)' },
@@ -221,17 +221,17 @@ const agGrid: Comparison = {
     'You want AI assistants to source accurate grid info via an MCP server.',
   ],
   whenToChooseCompetitor: [
-    'You need pivoting or integrated charts.',
+    'You depend on a specific AG Grid Enterprise module or its decade-plus of battle-testing.',
     'You operate the same grid across React + Angular + Vue + Svelte and want one library.',
     'Your enterprise procurement specifically requires AG Grid Enterprise.',
     'You need server-side row model for tens of millions of rows.',
   ],
   migrationSlug: 'migrating-from-ag-grid',
   bottomLine:
-    'AG Grid is the safer pick for a multi-framework org or when you need pivoting, integrated charts, or a server-side row model at extreme scale. For a Svelte-first team, SvGrid delivers most of the enterprise surface - including master/detail, tree, and cell selection - in its free MIT tier, at a fraction of the bundle and the support cost.',
+    'AG Grid is the safer pick for a multi-framework org, or when you need its deepest enterprise modules or a server-side row model at extreme scale. For a Svelte-first team, SvGrid covers the enterprise surface too - master/detail, tree, cell selection, and integrated charts free in the MIT core, plus pivot tables, export, and AI in the @svgrid/enterprise pack - at a fraction of the bundle and the support cost.',
   faq: [
     { question: 'Is SvGrid a good AG Grid alternative for Svelte?', answer: 'Yes. It is Svelte-5-native (no JS wrapper), ships a ~42 KB gzipped render component (or a ~7.5 KB headless core) versus a far heavier AG Grid Community bundle, and includes master/detail, tree, and range selection in the free tier - features AG Grid gates behind Enterprise.' },
-    { question: 'What does SvGrid not have versus AG Grid Enterprise?', answer: 'Integrated charting and the AG Grid server-side row model for tens of millions of rows. If you depend on those, AG Grid Enterprise is still the better fit.' },
+    { question: 'What does SvGrid not have versus AG Grid Enterprise?', answer: 'Integrated charts are in the free MIT core and pivot tables are in the @svgrid/enterprise pack, so the real gaps are AG Grid Enterprise\'s server-side row model at tens-of-millions-of-rows scale and its breadth of niche enterprise modules. If you depend on those, AG Grid Enterprise is still the better fit.' },
     { question: 'Is SvGrid cheaper than AG Grid Enterprise?', answer: 'Yes - the core is MIT and the paid @svgrid/enterprise tier is $599-$999 per developer, below the per-developer pricing of AG Grid Enterprise.' },
   ],
 }

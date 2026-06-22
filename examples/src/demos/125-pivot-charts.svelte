@@ -374,6 +374,7 @@
         rowHeight={32}
         containerHeight="100%"
         fitColumns={false}
+        enableRowSummaries={false}
         onCellClick={handleCellClick}
       />
     </div>

@@ -20,13 +20,16 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      // Live-edit the grid package: alias to src/ so HMR fires on changes
-      // without needing `pnpm --filter ./packages/grid build`.
+      // Live-edit the grid + enterprise packages: alias to src/ so HMR fires on
+      // changes without needing a `build` of the package. Every demo imports the
+      // bare `@svgrid/enterprise` main entry (no subpath imports), so aliasing
+      // the entry point is safe and keeps a single module instance.
       '@svgrid/grid': path.resolve(repoRoot, 'packages/grid/src/index.ts'),
+      '@svgrid/enterprise': path.resolve(repoRoot, 'packages/enterprise/src/index.ts'),
     },
   },
   optimizeDeps: {
-    exclude: ['@svgrid/grid'],
+    exclude: ['@svgrid/grid', '@svgrid/enterprise'],
   },
   server: { port: 5174, fs: { allow: [repoRoot] } },
 })

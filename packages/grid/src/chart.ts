@@ -8,13 +8,37 @@
  * (per-series type), a secondary (right) Y axis, signed Y domains (negative
  * values drop below a zero baseline), and nice auto-scaled ticks.
  */
-export type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'scatter'
+export type ChartType =
+  | 'bar' | 'line' | 'area' | 'pie' | 'scatter'
+  | 'heatmap' | 'waterfall' | 'funnel' | 'radar'
+  | 'calendar' | 'gauge' | 'treemap' | 'sankey'
 
-/** A clicked bar / point / slice - the payload of `SvGridChart`'s `onSelect`. */
-export type ChartSelection = { category: string; series: string; value: number }
+/** A clicked bar / point / slice - the payload of `SvGridChart`'s `onSelect`.
+ *  `rowIds` is populated when the spec was built from grid rows (via
+ *  `rowsToChartSpec`) and lets a drill handler filter the grid back to the
+ *  source rows for the clicked category / series cell. */
+export type ChartSelection = {
+  category: string
+  series: string
+  value: number
+  rowIds?: Array<string | number>
+}
 
 /** A single scatter / bubble point. */
 export type ScatterPoint = { x: number; y: number; r?: number; label?: string }
+
+/** A statistical / smoothing line drawn on top of a source series.
+ *  - `'linear'`: ordinary least-squares regression line
+ *  - `'sma:N'`: simple moving average over a window of N points
+ *  - `'ema:N'`: exponential moving average with smoothing factor 2/(N+1) */
+export type SeriesOverlay = 'linear' | `sma:${number}` | `ema:${number}`
+
+/** A texture fill applied in addition to (and on top of) the series color.
+ *  Helps colorblind readers distinguish series at a glance. */
+export type SeriesPattern = 'solid' | 'stripe' | 'crosshatch' | 'dots' | 'diagonal'
+/** Cycle used when `ChartSpec.patternFallback` is true and a series has no
+ *  explicit `pattern` set. Skips `'solid'` so every series gets a texture. */
+const PATTERN_CYCLE: SeriesPattern[] = ['stripe', 'crosshatch', 'dots', 'diagonal']
 
 export type ChartSeries = {
   label: string
@@ -26,6 +50,41 @@ export type ChartSeries = {
   axis?: 'left' | 'right'
   /** Scatter / bubble points (used when `type === 'scatter'`). */
   points?: ScatterPoint[]
+  /** Row IDs contributing to each data point - parallel to `values`. When
+   *  present, click handlers receive these in `ChartSelection.rowIds` so
+   *  callers can drill the grid back to the source rows. */
+  rowIds?: Array<Array<string | number>>
+  /** Draw a smoothing / trend overlay on top of this series. */
+  overlay?: SeriesOverlay
+  /** Color for the overlay line. Defaults to the series color. */
+  overlayColor?: string
+  /** Texture fill (e.g. diagonal stripes) layered over the series color.
+   *  Lets colorblind viewers tell two series apart even at the same hue. */
+  pattern?: SeriesPattern
+  /** Interpolate the line as a curve instead of polylines. `'monotone'`
+   *  cubic prevents overshoots between points (best default for data);
+   *  `true` is an alias for `'monotone'`. Only meaningful for line/area. */
+  smooth?: boolean | 'monotone'
+  /** Upper envelope (e.g. forecast 95th percentile) parallel to `values`.
+   *  When set alongside `lowerValues`, the chart shades the band between
+   *  the two as a translucent fill in the series color. */
+  upperValues?: number[]
+  /** Lower envelope; pair with `upperValues` for a confidence band. */
+  lowerValues?: number[]
+}
+
+/** A pinned label drawn over the plot, anchored to a data point or to an
+ *  arbitrary (x, y) in data space. Useful for "Release v1", "Outage", etc. */
+export type ChartAnnotation = {
+  /** Anchor in data space. Provide either `category` + `axis` for a point on
+   *  an existing series, OR raw `x` / `y` numeric coordinates in data space. */
+  at:
+    | { category: string; series?: string }
+    | { x: number; y?: number }
+  label: string
+  color?: string
+  /** Where the label sits relative to the marker. Defaults to 'top'. */
+  placement?: 'top' | 'bottom' | 'left' | 'right'
 }
 
 /** A horizontal reference / target line drawn across the plot. */
@@ -67,6 +126,195 @@ export type ChartSpec = {
   yAxisTitle?: string
   y2AxisTitle?: string
   xAxisTitle?: string
+  /** Y-axis scale. `'log'` plots base-10 logarithmic - values <= 0 are
+   *  treated as missing. Necessary for wide-range data (money, audience
+   *  size, scientific). Default `'linear'`. */
+  yScale?: 'linear' | 'log'
+  /** Right (secondary) Y-axis scale. Default `'linear'`. */
+  y2Scale?: 'linear' | 'log'
+  /** Pinned text labels at fixed data-space positions (callouts). */
+  annotations?: ChartAnnotation[]
+  /** When true, automatically cycle through pattern fills for every series
+   *  that doesn't set `pattern` explicitly. Useful as a one-flag colorblind
+   *  fallback. Default false. */
+  patternFallback?: boolean
+  /** Calendar heatmap: array of date+value samples (one per day). Date
+   *  strings are 'YYYY-MM-DD'. Missing days render as blank cells. */
+  calendarValues?: Array<{ date: string; value: number }>
+  /** Calendar heatmap: year window. Default: span the data. */
+  calendarStart?: string
+  calendarEnd?: string
+
+  /** Gauge: the value to display. */
+  gaugeValue?: number
+  /** Gauge: min/max of the dial scale. Defaults [0, 100]. */
+  gaugeMin?: number
+  gaugeMax?: number
+  /** Gauge: target marker (the line/notch on the arc). */
+  gaugeTarget?: number
+  /** Gauge: color bands along the arc (e.g. red/amber/green). */
+  gaugeRanges?: Array<{ from: number; to: number; color: string }>
+  /** Gauge: unit / suffix shown next to the value (e.g. '%', 'ms'). */
+  gaugeUnit?: string
+
+  /** Tree-map: hierarchical root. Leaves have `value`; parents are the
+   *  sum of their children's totals. */
+  treemap?: TreeNode
+
+  /** Sankey: nodes + flow links between them. Link `source` / `target`
+   *  reference node ids. */
+  sankeyNodes?: Array<{ id: string; label?: string; color?: string }>
+  sankeyLinks?: Array<{ source: string; target: string; value: number; color?: string }>
+
+  /** Waterfall: per-category flag marking bars as totals/subtotals that
+   *  reset the running sum and span from 0. Same length as `categories`. */
+  waterfallTotals?: boolean[]
+  /** Waterfall: explicit colors for positive/negative/total bars. The
+   *  series color is ignored when this is set. */
+  waterfallColors?: { positive?: string; negative?: string; total?: string }
+  /** Heatmap color scale. `'sequential'` maps min->max through one hue,
+   *  `'diverging'` runs cold->neutral->warm around 0. A custom array
+   *  (>=2 hex colors) defines an arbitrary gradient. Default `'sequential'`. */
+  colorScale?: 'sequential' | 'diverging' | string[]
+}
+
+/** A tree-map / sankey / treemap node spec. Used recursively as a tree. */
+export type TreeNode = {
+  name: string
+  value?: number
+  color?: string
+  children?: TreeNode[]
+}
+
+/** A laid-out tree-map rectangle. */
+export type ChartTreemapCell = {
+  x: number
+  y: number
+  w: number
+  h: number
+  color: string
+  textColor: string
+  name: string
+  value: number
+  /** Depth from the root - useful for color cycling per level. */
+  depth: number
+}
+
+/** A calendar-heatmap cell (one day). */
+export type ChartCalendarCell = {
+  x: number
+  y: number
+  size: number
+  date: string
+  value: number
+  /** Defined when a value was supplied for this day; blank otherwise. */
+  defined: boolean
+  color: string
+}
+
+/** A gauge dial layout. */
+export type ChartGaugeLayout = {
+  cx: number
+  cy: number
+  r: number
+  /** Track arc path (background grey). */
+  trackPath: string
+  /** Value arc path (filled to the current value). */
+  valuePath: string
+  /** Optional colored range arcs. */
+  rangePaths: Array<{ path: string; color: string; from: number; to: number }>
+  /** Pixel position of the target marker (when set). */
+  target: { x1: number; y1: number; x2: number; y2: number } | null
+  /** Tick marks around the dial (major ticks are longer). */
+  ticks: Array<{ x1: number; y1: number; x2: number; y2: number; major: boolean }>
+  /** Pointer needle (a kite shape) + its center hub radius. */
+  needle: { path: string; hubR: number }
+  /** Status color of the value arc (the band the value falls in), or null to
+   *  fall back to the theme accent. */
+  valueColor: string | null
+  /** Scale end labels positioned under the two arc ends. */
+  minLabel: { x: number; y: number }
+  maxLabel: { x: number; y: number }
+  value: number
+  min: number
+  max: number
+  unit: string
+}
+
+/** A sankey node + its laid-out rect + total flow. */
+export type ChartSankeyNode = {
+  id: string
+  label: string
+  color: string
+  x: number
+  y: number
+  w: number
+  h: number
+  /** Column (depth) the node was assigned to. */
+  column: number
+  totalIn: number
+  totalOut: number
+}
+
+/** A sankey link rendered as a curved ribbon. */
+export type ChartSankeyLink = {
+  path: string
+  color: string
+  /** Stroke width = link value scaled to pixels. */
+  width: number
+  source: string
+  target: string
+  value: number
+}
+
+/** A single funnel segment (trapezoid) in pixel space. */
+export type ChartFunnelSegment = {
+  /** Pre-built SVG path for the trapezoid. */
+  path: string
+  color: string
+  label: string
+  /** Original value (before any percentile normalisation). */
+  value: number
+  /** Conversion vs. first segment, 0..1. */
+  conversion: number
+  /** Drop-off from the previous segment, 0..1. */
+  dropoff: number
+  /** Centre point (label anchor). */
+  cx: number
+  cy: number
+  /** Auto-picked black/white contrast color for in-segment labels. */
+  textColor: string
+}
+
+/** A radar series' polygon: axis values + the closed polygon path. */
+export type ChartRadarSeries = {
+  label: string
+  color: string
+  path: string
+  /** Per-axis (x, y) endpoints so callers can draw dots / hit targets. */
+  points: Array<{ x: number; y: number; value: number; axis: string }>
+}
+
+/** Radar axis spoke + tick info. */
+export type ChartRadarAxis = {
+  label: string
+  /** Outermost endpoint of the spoke. */
+  x: number
+  y: number
+}
+
+/** A single heatmap rectangle in pixel space. */
+export type ChartHeatmapCell = {
+  x: number
+  y: number
+  w: number
+  h: number
+  color: string
+  /** Text color picked for contrast against `color`. */
+  textColor: string
+  value: number
+  rowLabel: string
+  colLabel: string
 }
 
 export type ChartBar = {
@@ -95,6 +343,9 @@ export type ChartLine = {
   color: string
   label: string
   points: ChartLinePoint[]
+  /** Confidence-band path (between upperValues + lowerValues) for this
+   *  series, when both arrays are supplied. Empty otherwise. */
+  bandPath?: string
 }
 export type ChartPieSlice = {
   path: string
@@ -153,6 +404,43 @@ export type ChartGeometry = {
   catTicks: ChartAxisTick[]
   /** Horizontal bars: vertical reference / target lines (positioned by x). */
   referenceLinesV: ChartRefLineGeoV[]
+  /** Trend / moving-average overlay lines (parallel to `lines`). Drawn
+   *  dashed on top of their source series. */
+  overlays: ChartLine[]
+  /** Pinned annotation labels with pre-resolved screen coordinates. */
+  annotations: Array<{ x: number; y: number; label: string; color: string; placement: 'top' | 'bottom' | 'left' | 'right' }>
+  /** Heatmap cells (type === 'heatmap'). */
+  heatmapCells: ChartHeatmapCell[]
+  /** Heatmap row labels with pre-resolved y positions (left gutter). */
+  heatmapRowTicks: ChartAxisTick[]
+  /** Heatmap column labels (bottom of plot). */
+  heatmapColTicks: ChartCategoryTick[]
+  /** Heatmap color-scale legend: ordered stops with value + color. */
+  heatmapLegend: Array<{ value: number; color: string; label: string }>
+  /** Funnel segments (type === 'funnel'). */
+  funnelSegments: ChartFunnelSegment[]
+  /** Radar concentric grid rings (centred at `radarCenter`). */
+  radarRings: number[]
+  /** Radar axis labels + spoke endpoints. */
+  radarAxes: ChartRadarAxis[]
+  /** Radar series polygons. */
+  radarSeries: ChartRadarSeries[]
+  /** Centre of the radar / pie. Pre-computed so callers don't re-derive. */
+  radarCenter: { cx: number; cy: number; r: number } | null
+  /** Tree-map cells (type === 'treemap'). */
+  treemapCells: ChartTreemapCell[]
+  /** Calendar heatmap (type === 'calendar'). */
+  calendarCells: ChartCalendarCell[]
+  /** Calendar month labels along the top. */
+  calendarMonthTicks: ChartCategoryTick[]
+  /** Calendar legend stops (sequential ramp). */
+  calendarLegend: Array<{ value: number; color: string; label: string }>
+  /** Gauge layout (type === 'gauge'). Null when not a gauge. */
+  gauge: ChartGaugeLayout | null
+  /** Sankey nodes (type === 'sankey'). */
+  sankeyNodes: ChartSankeyNode[]
+  /** Sankey links (type === 'sankey'). */
+  sankeyLinks: ChartSankeyLink[]
 }
 
 export const DEFAULT_PALETTE = [
@@ -181,6 +469,236 @@ function niceNum(range: number, roundIt: boolean): number {
 }
 
 export type NiceScale = { min: number; max: number; step: number; ticks: number[] }
+
+// ---- Color helpers for heatmap / pattern fills ----------------------
+
+/** Built-in sequential ramp (light cyan -> deep blue), perception-friendly. */
+const SEQUENTIAL_STOPS = ['#eff6ff', '#bfdbfe', '#60a5fa', '#2563eb', '#1e3a8a']
+/** Built-in diverging ramp (red -> neutral -> blue). Use for signed data. */
+const DIVERGING_STOPS  = ['#b91c1c', '#fca5a5', '#f1f5f9', '#93c5fd', '#1d4ed8']
+/** Dark-theme ramps. The low (sequential) / neutral (diverging) end sits just
+ *  above the dark grid surface instead of near-white, so empty / low cells read
+ *  as "cold" rather than as glaring white rectangles. */
+const SEQUENTIAL_STOPS_DARK = ['#1c2c4d', '#1d4ed8', '#3b82f6', '#60a5fa', '#bae6fd']
+const DIVERGING_STOPS_DARK  = ['#f87171', '#b91c1c', '#222b3d', '#1d4ed8', '#60a5fa']
+
+function resolveColorScale(
+  scale: 'sequential' | 'diverging' | string[] | undefined,
+  vMin: number,
+  vMax: number,
+  theme: 'light' | 'dark' = 'light',
+): string[] {
+  if (Array.isArray(scale) && scale.length >= 2) return scale
+  const dark = theme === 'dark'
+  if (scale === 'diverging' || (scale == null && vMin < 0 && vMax > 0)) {
+    return dark ? DIVERGING_STOPS_DARK : DIVERGING_STOPS
+  }
+  return dark ? SEQUENTIAL_STOPS_DARK : SEQUENTIAL_STOPS
+}
+
+/** Sample a hex color from an array of hex stops at fractional position t.
+ *  Linearly interpolates between the two nearest stops in RGB space. */
+export function sampleGradient(stops: string[], t: number): string {
+  if (!stops.length) return '#888'
+  const clamped = Math.max(0, Math.min(1, t))
+  if (stops.length === 1) return stops[0]!
+  const pos = clamped * (stops.length - 1)
+  const i = Math.floor(pos)
+  const frac = pos - i
+  const a = hexToRgb(stops[i]!)
+  const b = hexToRgb(stops[Math.min(stops.length - 1, i + 1)]!)
+  if (!a || !b) return stops[i] ?? '#888'
+  const lerp = (x: number, y: number) => Math.round(x + (y - x) * frac)
+  const toHex = (n: number) => n.toString(16).padStart(2, '0')
+  return '#' + toHex(lerp(a.r, b.r)) + toHex(lerp(a.g, b.g)) + toHex(lerp(a.b, b.b))
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+  if (!m) return null
+  const n = parseInt(m[1]!, 16)
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
+}
+
+/** Pick a black or white text color that has the better contrast against
+ *  the given background. Uses the WCAG relative-luminance heuristic. */
+export function pickContrastText(bgHex: string): string {
+  const rgb = hexToRgb(bgHex)
+  if (!rgb) return '#0f172a'
+  const lin = (c: number) => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  }
+  const L = 0.2126 * lin(rgb.r) + 0.7152 * lin(rgb.g) + 0.0722 * lin(rgb.b)
+  return L > 0.5 ? '#0f172a' : '#ffffff'
+}
+
+/** Pick the largest power of 10 that fits at the bottom of [min,max], and
+ *  the smallest that covers the top, then enumerate decade boundaries. Used
+ *  by log-scale axes (yScale: 'log'). */
+export function niceLogScale(min: number, max: number): NiceScale {
+  // Only positive values are plottable on a log scale; callers should
+  // strip non-positive values before passing them in.
+  if (!Number.isFinite(min) || min <= 0) min = 1
+  if (!Number.isFinite(max) || max <= min) max = min * 10
+  const lo = Math.floor(Math.log10(min))
+  const hi = Math.ceil(Math.log10(max))
+  const ticks: number[] = []
+  for (let p = lo; p <= hi; p += 1) ticks.push(Math.pow(10, p))
+  return { min: Math.pow(10, lo), max: Math.pow(10, hi), step: 10, ticks }
+}
+
+/** Map a value to a fractional position [0..1] across the axis domain.
+ *  Pass the appropriate fn into projection code so linear / log share the
+ *  same plumbing. Returns null for non-positive values on log. */
+function project(value: number, min: number, max: number, isLog: boolean): number | null {
+  if (!Number.isFinite(value)) return null
+  if (isLog) {
+    if (value <= 0 || min <= 0) return null
+    return (Math.log10(value) - Math.log10(min)) / (Math.log10(max) - Math.log10(min))
+  }
+  return (value - min) / (max - min)
+}
+
+// ---- Overlay math: trendline + moving averages -----------------------
+
+/** Ordinary least-squares regression on (i, values[i]) pairs (i = x index).
+ *  Returns the fitted value at each x index, or NaN where the source value
+ *  was non-finite. */
+/** Build an SVG path from a list of (x,y) pairs, optionally smoothed via
+ *  monotone cubic interpolation (preserves local extrema - no overshoots).
+ *  Breaks the path at `defined === false` gaps. */
+export function buildLinePath(
+  pts: Array<{ x: number; y: number; defined: boolean }>,
+  smooth: boolean,
+): string {
+  if (!smooth) {
+    let path = ''
+    let pen = false
+    for (const p of pts) {
+      if (!p.defined) { pen = false; continue }
+      path += `${pen ? 'L' : 'M'}${p.x},${p.y} `
+      pen = true
+    }
+    return path.trim()
+  }
+  // Group defined-only runs; each run is smoothed independently.
+  const runs: Array<Array<{ x: number; y: number }>> = []
+  let cur: Array<{ x: number; y: number }> = []
+  for (const p of pts) {
+    if (p.defined) cur.push({ x: p.x, y: p.y })
+    else if (cur.length) { runs.push(cur); cur = [] }
+  }
+  if (cur.length) runs.push(cur)
+  return runs.map(monotoneCubicPath).filter(Boolean).join(' ')
+}
+
+/** Fritsch-Carlson monotone cubic interpolation -> cubic-Bezier path.
+ *  Slope at each point chosen so the curve passes through every (xi, yi)
+ *  AND stays monotonic between them; control points sit 1/3 of the way
+ *  to the neighbours along that tangent. */
+function monotoneCubicPath(pts: Array<{ x: number; y: number }>): string {
+  const n = pts.length
+  if (n === 0) return ''
+  if (n === 1) return `M${pts[0]!.x},${pts[0]!.y}`
+  if (n === 2) return `M${pts[0]!.x},${pts[0]!.y} L${pts[1]!.x},${pts[1]!.y}`
+  // Secant slopes between adjacent points.
+  const dx: number[] = new Array(n - 1)
+  const m: number[] = new Array(n - 1)
+  for (let i = 0; i < n - 1; i += 1) {
+    const d = pts[i + 1]!.x - pts[i]!.x
+    dx[i] = d
+    m[i] = d === 0 ? 0 : (pts[i + 1]!.y - pts[i]!.y) / d
+  }
+  // Tangent at each point: average of neighbouring slopes, with sign
+  // checks that flatten the tangent when slopes change sign.
+  const tan: number[] = new Array(n)
+  tan[0] = m[0]!
+  tan[n - 1] = m[n - 2]!
+  for (let i = 1; i < n - 1; i += 1) {
+    if (m[i - 1]! * m[i]! <= 0) tan[i] = 0
+    else tan[i] = (m[i - 1]! + m[i]!) / 2
+  }
+  // Fritsch-Carlson correction: ensure |tan / m| <= 3 to stay monotonic.
+  for (let i = 0; i < n - 1; i += 1) {
+    if (m[i] === 0) { tan[i] = 0; tan[i + 1] = 0; continue }
+    const a = tan[i]! / m[i]!
+    const b = tan[i + 1]! / m[i]!
+    const h = Math.hypot(a, b)
+    if (h > 3) {
+      tan[i] = (3 / h) * a * m[i]!
+      tan[i + 1] = (3 / h) * b * m[i]!
+    }
+  }
+  // Build the Bezier path. Each segment: control points at 1/3 of dx.
+  let path = `M${pts[0]!.x},${pts[0]!.y}`
+  for (let i = 0; i < n - 1; i += 1) {
+    const h = dx[i]!
+    const c1x = pts[i]!.x + h / 3
+    const c1y = pts[i]!.y + (tan[i]! * h) / 3
+    const c2x = pts[i + 1]!.x - h / 3
+    const c2y = pts[i + 1]!.y - (tan[i + 1]! * h) / 3
+    path += ` C${c1x},${c1y} ${c2x},${c2y} ${pts[i + 1]!.x},${pts[i + 1]!.y}`
+  }
+  return path
+}
+
+export function linearTrend(values: number[]): number[] {
+  let n = 0, sumX = 0, sumY = 0, sumXX = 0, sumXY = 0
+  for (let i = 0; i < values.length; i += 1) {
+    const y = values[i]!
+    if (!Number.isFinite(y)) continue
+    n += 1; sumX += i; sumY += y; sumXX += i * i; sumXY += i * y
+  }
+  if (n < 2) return values.map(() => NaN)
+  const denom = n * sumXX - sumX * sumX
+  if (denom === 0) return values.map(() => sumY / n)
+  const slope = (n * sumXY - sumX * sumY) / denom
+  const intercept = (sumY - slope * sumX) / n
+  return values.map((_, i) => slope * i + intercept)
+}
+
+/** Simple moving average over a window of `period` values. Window centres
+ *  trail to the right (typical for time-series). NaN for points before the
+ *  window is full. */
+export function simpleMovingAverage(values: number[], period: number): number[] {
+  if (period < 1) return values.slice()
+  const out: number[] = new Array(values.length).fill(NaN)
+  let sum = 0, count = 0
+  for (let i = 0; i < values.length; i += 1) {
+    const v = values[i]!
+    if (Number.isFinite(v)) { sum += v; count += 1 }
+    if (i >= period) {
+      const drop = values[i - period]!
+      if (Number.isFinite(drop)) { sum -= drop; count -= 1 }
+    }
+    if (i >= period - 1 && count > 0) out[i] = sum / count
+  }
+  return out
+}
+
+/** Exponential moving average. Smoothing factor alpha = 2 / (period + 1). */
+export function exponentialMovingAverage(values: number[], period: number): number[] {
+  const alpha = 2 / (Math.max(1, period) + 1)
+  const out: number[] = new Array(values.length).fill(NaN)
+  let prev: number | null = null
+  for (let i = 0; i < values.length; i += 1) {
+    const v = values[i]!
+    if (!Number.isFinite(v)) { out[i] = prev ?? NaN; continue }
+    prev = prev == null ? v : alpha * v + (1 - alpha) * prev
+    out[i] = prev
+  }
+  return out
+}
+
+/** Compute overlay values for a series spec like 'sma:7' / 'ema:14' / 'linear'. */
+export function computeOverlay(values: number[], spec: SeriesOverlay): number[] {
+  if (spec === 'linear') return linearTrend(values)
+  const m = /^(sma|ema):(\d+)$/.exec(spec)
+  if (!m) return values.map(() => NaN)
+  const period = Number(m[2])
+  return m[1] === 'ema' ? exponentialMovingAverage(values, period) : simpleMovingAverage(values, period)
+}
 
 /** Round a [min,max] domain out to nice tick boundaries. */
 export function niceScale(min: number, max: number, tickCount = 4): NiceScale {
@@ -236,17 +754,21 @@ type ResolvedSeries = ChartSeries & {
   axis: 'left' | 'right'
 }
 
-/** Data domain for one axis, honoring stacking of its bar/area series. */
+/** Data domain for one axis, honoring stacking of its bar/area series.
+ *  When `isLog` is true, non-positive values are discarded (log undefined)
+ *  and the domain is rounded to decade boundaries instead of nice steps. */
 function axisDomain(
   list: ResolvedSeries[],
   categories: string[],
   stacked: boolean,
   extra: number[] = [],
+  isLog = false,
 ): NiceScale {
   let dMin = Infinity
   let dMax = -Infinity
   const note = (v: number) => {
     if (!Number.isFinite(v)) return
+    if (isLog && v <= 0) return
     if (v < dMin) dMin = v
     if (v > dMax) dMax = v
   }
@@ -270,18 +792,19 @@ function axisDomain(
   }
   for (const s of lines) for (const v of s.values) note(v)
   if (dMin === Infinity) {
-    dMin = 0
-    dMax = 1
+    dMin = isLog ? 1 : 0
+    dMax = isLog ? 10 : 1
   }
-  // Bar / area charts read against a zero baseline, so always include 0.
-  if (stackable.length) {
+  // Bar / area charts read against a zero baseline, so always include 0
+  // - but only on linear axes (0 is invalid in log).
+  if (stackable.length && !isLog) {
     dMin = Math.min(dMin, 0)
     dMax = Math.max(dMax, 0)
   }
-  return niceScale(dMin, dMax)
+  return isLog ? niceLogScale(dMin, dMax) : niceScale(dMin, dMax)
 }
 
-export function buildChart(spec: ChartSpec): ChartGeometry {
+export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): ChartGeometry {
   const width = spec.width ?? 520
   const height = spec.height ?? 300
   const palette = spec.palette ?? DEFAULT_PALETTE
@@ -319,6 +842,660 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
     valueTicks: [],
     catTicks: [],
     referenceLinesV: [],
+    overlays: [],
+    annotations: [],
+    heatmapCells: [],
+    heatmapRowTicks: [],
+    heatmapColTicks: [],
+    heatmapLegend: [],
+    funnelSegments: [],
+    radarRings: [],
+    radarAxes: [],
+    radarSeries: [],
+    radarCenter: null,
+    treemapCells: [],
+    calendarCells: [],
+    calendarMonthTicks: [],
+    calendarLegend: [],
+    gauge: null,
+    sankeyNodes: [],
+    sankeyLinks: [],
+  }
+
+  // ---- Waterfall ----------------------------------------------------
+  // First series provides the values. Each non-total bar starts at the
+  // running cumulative sum; total bars (waterfallTotals[i]) reset and
+  // span from 0 to that sum. Color is derived from sign + total flag, with
+  // optional palette overrides via spec.waterfallColors.
+  if (spec.type === 'waterfall') {
+    const src = series[0]
+    if (!src) return { ...empty }
+    const colors = spec.waterfallColors ?? {}
+    const positive = colors.positive ?? '#16a34a'
+    const negative = colors.negative ?? '#ef4444'
+    const total    = colors.total    ?? '#475569'
+
+    const maxLabel = spec.categories.reduce((m, c) => Math.max(m, c.length), 0)
+    const xLabelRotated = spec.categories.length > 8 || maxLabel > 9
+    const padL = 48 + (spec.yAxisTitle ? 16 : 0)
+    const padR = 12
+    const padT = 10
+    const padB = (xLabelRotated ? 54 : 28) + (spec.xAxisTitle ? 16 : 0)
+    const plotW = Math.max(1, width - padL - padR)
+    const plotH = Math.max(1, height - padT - padB)
+    const plot = { x: padL, y: padT, w: plotW, h: plotH }
+
+    // Compute the running cumulative + per-bar (from, to) pairs.
+    const totals = spec.waterfallTotals ?? []
+    const pairs: Array<{ from: number; to: number; value: number; isTotal: boolean }> = []
+    let cum = 0
+    spec.categories.forEach((_, i) => {
+      const v = src.values[i] ?? 0
+      const isTotal = !!totals[i]
+      if (isTotal) {
+        pairs.push({ from: 0, to: cum, value: cum, isTotal: true })
+      } else {
+        pairs.push({ from: cum, to: cum + v, value: v, isTotal: false })
+        cum += v
+      }
+    })
+    // Y-axis domain spans every visited level (including 0).
+    let dMin = 0, dMax = 0
+    for (const p of pairs) {
+      if (p.from < dMin) dMin = p.from
+      if (p.to   < dMin) dMin = p.to
+      if (p.from > dMax) dMax = p.from
+      if (p.to   > dMax) dMax = p.to
+    }
+    const dom = niceScale(dMin, dMax)
+    const yOfW = (v: number) => round(padT + plotH - ((v - dom.min) / (dom.max - dom.min || 1)) * plotH)
+
+    const slotW = plotW / Math.max(1, spec.categories.length)
+    const barPad = slotW * 0.2
+    const barW = Math.max(1, slotW - barPad)
+    const bars: ChartBar[] = pairs.map((p, i) => {
+      const yTop = yOfW(Math.max(p.from, p.to))
+      const yBot = yOfW(Math.min(p.from, p.to))
+      const x = padL + slotW * i + barPad / 2
+      const color = p.isTotal ? total : p.value >= 0 ? positive : negative
+      return {
+        x: round(x), y: yTop, w: round(barW), h: Math.max(1, yBot - yTop),
+        color, label: spec.categories[i] ?? String(i), series: src.label, value: p.value,
+      }
+    })
+    // Thin connector lines between bar tops -> running total reads cleanly.
+    const connectors: ChartLine[] = [{
+      path: pairs
+        .map((p, i) => {
+          const x0 = padL + slotW * i + barPad / 2 + barW
+          const y  = yOfW(p.to)
+          const x1 = padL + slotW * (i + 1) + barPad / 2
+          // Skip the final connector beyond the last bar.
+          return i < pairs.length - 1 ? `M${x0},${y} L${x1},${y}` : ''
+        })
+        .filter(Boolean)
+        .join(' '),
+      areaPath: '',
+      color: 'var(--sg-muted, #94a3b8)',
+      label: '',
+      points: [],
+    }]
+    const xTicks: ChartCategoryTick[] = spec.categories.map((label, i) => ({
+      label,
+      x: round(padL + slotW * i + slotW / 2),
+    }))
+    const yTicks: ChartAxisTick[] = dom.ticks.map((value) => ({
+      value, y: yOfW(value), label: fmtTick(value),
+    }))
+    return {
+      ...empty,
+      plot,
+      bars,
+      lines: connectors,
+      yTicks,
+      xTicks,
+      xLabelRotated,
+    }
+  }
+
+  // ---- Funnel -------------------------------------------------------
+  // One series of strictly-decreasing values gets rendered as a stack
+  // of horizontal trapezoids: each level's width is proportional to its
+  // value relative to the largest, slope automatically links level N+1
+  // narrower than level N. Labels show value, conversion vs. top, and
+  // step drop-off.
+  if (spec.type === 'funnel') {
+    const src = series[0]
+    if (!src || !src.values.length) return { ...empty }
+    const padL = 20, padR = 20, padT = 16, padB = 16
+    const plotW = Math.max(1, width - padL - padR)
+    const plotH = Math.max(1, height - padT - padB)
+    const plot = { x: padL, y: padT, w: plotW, h: plotH }
+    const n = src.values.length
+    const stepH = plotH / n
+    const valMax = Math.max(...src.values.map((v) => (Number.isFinite(v) ? v : 0)))
+    const top = src.values[0] ?? 0
+    const widthAt = (v: number) => (valMax > 0 ? (v / valMax) * plotW : 0)
+    const cx = padL + plotW / 2
+    const palette = spec.palette ?? DEFAULT_PALETTE
+    const segments: ChartFunnelSegment[] = src.values.map((v, i) => {
+      const next = src.values[i + 1] ?? v * 0.8   // taper to a point on the last level
+      const w0 = widthAt(v)
+      const w1 = widthAt(next)
+      const y0 = padT + stepH * i
+      const y1 = y0 + stepH
+      const path = `M${cx - w0 / 2},${y0} L${cx + w0 / 2},${y0} L${cx + w1 / 2},${y1} L${cx - w1 / 2},${y1} Z`
+      const color = src.color ?? palette[i % palette.length]!
+      return {
+        path, color,
+        label: spec.categories[i] ?? src.label,
+        value: v,
+        conversion: top > 0 ? v / top : 0,
+        dropoff: i === 0 ? 0 : (src.values[i - 1] ?? v) > 0 ? 1 - v / (src.values[i - 1] ?? v) : 0,
+        cx,
+        cy: (y0 + y1) / 2,
+        textColor: pickContrastText(color),
+      }
+    })
+    return {
+      ...empty,
+      plot,
+      funnelSegments: segments,
+    }
+  }
+
+  // ---- Radar --------------------------------------------------------
+  // Polar coordinates: each `category` is a spoke (axis); each `series`
+  // contributes a polygon connecting its values across the spokes. All
+  // series share the same scale (max across every value). Concentric
+  // ring count derived from data, capped at 5 for legibility.
+  if (spec.type === 'radar') {
+    if (!series.length || !spec.categories.length) return { ...empty }
+    const padL = 30, padR = 30, padT = 24, padB = 24
+    const plotW = Math.max(1, width - padL - padR)
+    const plotH = Math.max(1, height - padT - padB)
+    const plot = { x: padL, y: padT, w: plotW, h: plotH }
+    const cx = padL + plotW / 2
+    const cy = padT + plotH / 2
+    const r = Math.max(20, Math.min(plotW, plotH) / 2 - 20)
+    const axes = spec.categories
+    const k = axes.length
+    let vMax = 0
+    for (const s of series) for (const v of s.values) {
+      if (Number.isFinite(v) && v > vMax) vMax = v
+    }
+    if (vMax === 0) vMax = 1
+    const ringCount = 5
+    const ringValues = Array.from({ length: ringCount }, (_, i) => ((i + 1) / ringCount) * vMax)
+    /** Convert (axis index, value) to (x, y). Angles start at 12 o'clock,
+     *  proceed clockwise so axes lay out left-to-right when k <= 4. */
+    const angleAt = (i: number) => -Math.PI / 2 + (i / k) * Math.PI * 2
+    const pointAt = (i: number, v: number) => {
+      const t = v / vMax
+      const a = angleAt(i)
+      return { x: round(cx + r * t * Math.cos(a)), y: round(cy + r * t * Math.sin(a)) }
+    }
+    const radarAxes: ChartRadarAxis[] = axes.map((label, i) => {
+      const p = pointAt(i, vMax)
+      return { label, x: p.x, y: p.y }
+    })
+    const radarSeriesGeo: ChartRadarSeries[] = series.map((s, si) => {
+      const pts = s.values.map((v, i) => {
+        const safe = Number.isFinite(v) ? v : 0
+        const p = pointAt(i, safe)
+        return { x: p.x, y: p.y, value: v, axis: axes[i] ?? '' }
+      })
+      const path = pts.length
+        ? pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z'
+        : ''
+      const palette = spec.palette ?? DEFAULT_PALETTE
+      return { label: s.label, color: s.color ?? palette[si % palette.length]!, path, points: pts }
+    })
+    return {
+      ...empty,
+      plot,
+      radarRings: ringValues,
+      radarAxes,
+      radarSeries: radarSeriesGeo,
+      radarCenter: { cx, cy, r },
+    }
+  }
+
+  // ---- Calendar heatmap --------------------------------------------
+  // GitHub-style year-of-days view: 7 rows (Sun..Sat) x N weeks. Each
+  // cell is a small square shaded by `calendarValues[i].value` via the
+  // sequential color scale. Days with no value render blank (border only)
+  // so missing data is visually obvious.
+  if (spec.type === 'calendar') {
+    const values = spec.calendarValues ?? []
+    if (!values.length && !spec.calendarStart) return { ...empty }
+    // Build a value lookup + figure out the date range.
+    const valueByDate = new Map<string, number>()
+    let vMin = Infinity, vMax = -Infinity
+    for (const v of values) {
+      valueByDate.set(v.date, v.value)
+      if (Number.isFinite(v.value)) {
+        if (v.value < vMin) vMin = v.value
+        if (v.value > vMax) vMax = v.value
+      }
+    }
+    if (vMin === Infinity) { vMin = 0; vMax = 1 }
+    if (vMin === vMax) vMax = vMin + 1
+    const stops = resolveColorScale(spec.colorScale, vMin, vMax, theme)
+    const colorAt = (v: number) => sampleGradient(stops, (v - vMin) / (vMax - vMin))
+    // Determine date range. If calendarStart/End set, use them, otherwise
+    // span the data + round to whole weeks (Sun..Sat).
+    const sorted = values.map((v) => v.date).sort()
+    const startStr = spec.calendarStart ?? sorted[0] ?? '2026-01-01'
+    const endStr   = spec.calendarEnd   ?? sorted[sorted.length - 1] ?? startStr
+    const start = new Date(startStr + 'T00:00:00Z')
+    const end   = new Date(endStr + 'T00:00:00Z')
+    // Roll start back to its Sunday, end forward to its Saturday.
+    start.setUTCDate(start.getUTCDate() - start.getUTCDay())
+    end.setUTCDate(end.getUTCDate() + (6 - end.getUTCDay()))
+    const totalDays = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1
+    const weeks = Math.ceil(totalDays / 7)
+    const padL = 36, padR = 80, padT = 26, padB = 16
+    const plotW = Math.max(1, width - padL - padR)
+    const plotH = Math.max(1, height - padT - padB)
+    // Cell size: fit weeks across width, 7 rows down height.
+    const cellW = Math.floor(plotW / weeks)
+    const cellH = Math.floor(plotH / 7)
+    const cellSize = Math.max(6, Math.min(cellW, cellH))
+    const plot = { x: padL, y: padT, w: cellSize * weeks, h: cellSize * 7 }
+    const cells: ChartCalendarCell[] = []
+    let lastMonth = -1
+    const monthTicks: ChartCategoryTick[] = []
+    for (let i = 0; i < totalDays; i += 1) {
+      const day = new Date(start.getTime() + i * 86_400_000)
+      const col = Math.floor(i / 7)
+      const row = i % 7
+      const date = day.toISOString().slice(0, 10)
+      const has = valueByDate.has(date)
+      const v = valueByDate.get(date) ?? 0
+      cells.push({
+        x: padL + col * cellSize,
+        y: padT + row * cellSize,
+        size: cellSize,
+        date, value: v,
+        defined: has,
+        color: has ? colorAt(v) : 'transparent',
+      })
+      if (day.getUTCDate() === 1 && day.getUTCMonth() !== lastMonth) {
+        lastMonth = day.getUTCMonth()
+        monthTicks.push({
+          label: day.toLocaleDateString(undefined, { month: 'short' }),
+          x: padL + col * cellSize,
+        })
+      }
+    }
+    const legend = Array.from({ length: 5 }, (_, i) => {
+      const t = i / 4
+      const value = vMin + (vMax - vMin) * t
+      return { value, color: colorAt(value), label: fmtTick(value) }
+    })
+    return {
+      ...empty,
+      plot,
+      calendarCells: cells,
+      calendarMonthTicks: monthTicks,
+      calendarLegend: legend,
+    }
+  }
+
+  // ---- Gauge --------------------------------------------------------
+  // Semicircle dial: track arc + value arc + optional colored range bands
+  // + optional target tick. Reads spec.gaugeValue / gaugeMin / gaugeMax.
+  if (spec.type === 'gauge') {
+    const min = spec.gaugeMin ?? 0
+    const max = spec.gaugeMax ?? 100
+    const value = Math.max(min, Math.min(max, spec.gaugeValue ?? 0))
+    const target = spec.gaugeTarget
+    const cx = width / 2
+    const cy = height * 0.78
+    const r = Math.min(width * 0.42, height * 0.65)
+    // Start angle 180deg, end 360deg (drawn clockwise from 9 o'clock to 3).
+    const A0 = Math.PI
+    const A1 = 2 * Math.PI
+    const angleAt = (v: number) => A0 + ((v - min) / (max - min || 1)) * (A1 - A0)
+    const arc = (a0: number, a1: number, radius: number): string => {
+      const x1 = cx + radius * Math.cos(a0)
+      const y1 = cy + radius * Math.sin(a0)
+      const x2 = cx + radius * Math.cos(a1)
+      const y2 = cy + radius * Math.sin(a1)
+      const large = a1 - a0 > Math.PI ? 1 : 0
+      return `M${x1},${y1} A${radius},${radius} 0 ${large} 1 ${x2},${y2}`
+    }
+    const trackPath = arc(A0, A1, r)
+    const valuePath = arc(A0, angleAt(value), r)
+    const rangePaths = (spec.gaugeRanges ?? []).map((band) => ({
+      path: arc(angleAt(band.from), angleAt(band.to), r - 9),
+      color: band.color, from: band.from, to: band.to,
+    }))
+    let targetPx: ChartGaugeLayout['target'] = null
+    if (target != null && Number.isFinite(target)) {
+      const a = angleAt(Math.max(min, Math.min(max, target)))
+      const inner = r - 12
+      const outer = r + 4
+      targetPx = {
+        x1: cx + inner * Math.cos(a), y1: cy + inner * Math.sin(a),
+        x2: cx + outer * Math.cos(a), y2: cy + outer * Math.sin(a),
+      }
+    }
+    // Tick marks just outside the track: a major tick every 1/4 of the scale,
+    // with 4 minor ticks between each. Gives the dial a measured, instrument feel.
+    const ticks: ChartGaugeLayout['ticks'] = []
+    const TICK_MAJOR = 4, TICK_MINOR = 5, TICK_TOTAL = TICK_MAJOR * TICK_MINOR
+    for (let i = 0; i <= TICK_TOTAL; i++) {
+      const a = A0 + (i / TICK_TOTAL) * (A1 - A0)
+      const major = i % TICK_MINOR === 0
+      const inner = r + 9
+      const outer = r + (major ? 17 : 13)
+      ticks.push({
+        x1: cx + inner * Math.cos(a), y1: cy + inner * Math.sin(a),
+        x2: cx + outer * Math.cos(a), y2: cy + outer * Math.sin(a),
+        major,
+      })
+    }
+    // Pointer needle: a kite (long tip toward the value, short counterweight
+    // tail) pivoting on a center hub.
+    const aV = angleAt(value)
+    const tipR = r - 16, tailR = 18, baseR = 6
+    const aPerp = aV + Math.PI / 2
+    const pt = (rad: number, ang: number) => `${round(cx + rad * Math.cos(ang))},${round(cy + rad * Math.sin(ang))}`
+    const needlePath =
+      `M${pt(baseR, aPerp)} L${pt(tipR, aV)} L${pt(baseR, aPerp + Math.PI)} L${pt(tailR, aV + Math.PI)} Z`
+    // Color the value arc by the band the value currently sits in.
+    let valueColor: string | null = null
+    for (const band of spec.gaugeRanges ?? []) {
+      if (value >= band.from && value <= band.to) valueColor = band.color
+    }
+    return {
+      ...empty,
+      plot: { x: 0, y: 0, w: width, h: height },
+      gauge: {
+        cx, cy, r, trackPath, valuePath, rangePaths, target: targetPx,
+        ticks, needle: { path: needlePath, hubR: 7 }, valueColor,
+        minLabel: { x: cx - r, y: cy + 20 },
+        maxLabel: { x: cx + r, y: cy + 20 },
+        value, min, max, unit: spec.gaugeUnit ?? '',
+      },
+    }
+  }
+
+  // ---- Tree-map -----------------------------------------------------
+  // Squarified tree-map (Bruls et al. 2000): each level recursively
+  // partitions its rectangle in proportion to its children, picking the
+  // split orientation that keeps aspect ratios closest to 1.
+  if (spec.type === 'treemap') {
+    const root = spec.treemap
+    if (!root) return { ...empty }
+    const padL = 4, padR = 4, padT = 4, padB = 4
+    const plotW = Math.max(1, width - padL - padR)
+    const plotH = Math.max(1, height - padT - padB)
+    const plot = { x: padL, y: padT, w: plotW, h: plotH }
+    const palette = spec.palette ?? DEFAULT_PALETTE
+    const cells: ChartTreemapCell[] = []
+    function totalOf(n: TreeNode): number {
+      if (n.children?.length) return n.children.reduce((s, c) => s + totalOf(c), 0)
+      return Math.max(0, n.value ?? 0)
+    }
+    function squarify(items: TreeNode[], x: number, y: number, w: number, h: number, depth: number) {
+      if (!items.length || w <= 0 || h <= 0) return
+      const totals = items.map(totalOf)
+      const sum = totals.reduce((a, b) => a + b, 0)
+      if (sum <= 0) return
+      // Process largest-first so big items dominate the first row.
+      const ordered = items
+        .map((n, i) => ({ node: n, value: totals[i]! }))
+        .sort((a, b) => b.value - a.value)
+      let cx = x, cy = y, cw = w, ch = h, remaining = sum
+      let row: typeof ordered = []
+      const worstRatio = (vals: number[], shortSide: number, rowSum: number, scale: number): number => {
+        if (rowSum <= 0) return Infinity
+        const rowArea = rowSum * scale
+        const rowSide = rowArea / shortSide
+        let worst = 0
+        for (const v of vals) {
+          const cell = v * scale
+          const long = cell / rowSide
+          const r = Math.max(shortSide / long, long / shortSide)
+          if (r > worst) worst = r
+        }
+        return worst
+      }
+      function flushRow() {
+        if (!row.length) return
+        const rowSum = row.reduce((a, b) => a + b.value, 0)
+        const scale = (cw * ch) / remaining
+        const horizontal = cw >= ch
+        const shortSide = horizontal ? ch : cw
+        const rowSide = (rowSum * scale) / shortSide
+        let offset = 0
+        for (const it of row) {
+          const cellSize = (it.value * scale) / rowSide
+          const cx2 = horizontal ? cx : cx + offset
+          const cy2 = horizontal ? cy + offset : cy
+          const ww  = horizontal ? rowSide : cellSize
+          const hh  = horizontal ? cellSize : rowSide
+          const color = it.node.color ?? palette[(depth + cells.length) % palette.length]!
+          // Leaf: emit a cell. Branch: recurse into the rect minus a label gutter.
+          if (it.node.children?.length) {
+            cells.push({
+              x: round(cx2), y: round(cy2), w: round(ww), h: round(hh),
+              color, textColor: pickContrastText(color),
+              name: it.node.name, value: it.value, depth,
+            })
+            const labelH = Math.min(18, hh * 0.25)
+            squarify(it.node.children, cx2 + 1, cy2 + labelH, ww - 2, hh - labelH - 1, depth + 1)
+          } else {
+            cells.push({
+              x: round(cx2), y: round(cy2), w: round(ww), h: round(hh),
+              color, textColor: pickContrastText(color),
+              name: it.node.name, value: it.value, depth,
+            })
+          }
+          offset += cellSize
+        }
+        // Shrink the remaining strip.
+        if (horizontal) { cx += rowSide; cw -= rowSide } else { cy += rowSide; ch -= rowSide }
+        remaining -= rowSum
+        row = []
+      }
+      for (const it of ordered) {
+        const scale = (cw * ch) / remaining
+        const shortSide = Math.min(cw, ch)
+        const rowSum = row.reduce((a, b) => a + b.value, 0)
+        const currWorst = worstRatio(row.map((r) => r.value), shortSide, rowSum, scale)
+        const nextWorst = worstRatio([...row.map((r) => r.value), it.value], shortSide, rowSum + it.value, scale)
+        if (row.length && nextWorst > currWorst) {
+          flushRow()
+        }
+        row.push(it)
+      }
+      flushRow()
+    }
+    const seedItems = root.children ?? [root]
+    squarify(seedItems, padL, padT, plotW, plotH, 0)
+    return { ...empty, plot, treemapCells: cells }
+  }
+
+  // ---- Sankey -------------------------------------------------------
+  // Multi-column flow layout. Each node assigned to a column by longest
+  // path from any source. Within a column, nodes are stacked vertically;
+  // height proportional to max(totalIn, totalOut). Links render as
+  // bezier ribbons whose width is the link value (in pixels).
+  if (spec.type === 'sankey') {
+    const nodes = spec.sankeyNodes ?? []
+    const links = spec.sankeyLinks ?? []
+    if (!nodes.length || !links.length) return { ...empty }
+    const padL = 10, padR = 10, padT = 14, padB = 14
+    const plotW = Math.max(1, width - padL - padR)
+    const plotH = Math.max(1, height - padT - padB)
+    const plot = { x: padL, y: padT, w: plotW, h: plotH }
+    const palette = spec.palette ?? DEFAULT_PALETTE
+    const nodeById = new Map(nodes.map((n) => [n.id, n]))
+    // Column = longest path from any node with no incoming edges.
+    const targets = new Set(links.map((l) => l.target))
+    const sources = nodes.filter((n) => !targets.has(n.id))
+    const column = new Map<string, number>()
+    function visit(id: string, depth: number, seen: Set<string>) {
+      if (seen.has(id)) return
+      seen.add(id)
+      const cur = column.get(id) ?? 0
+      if (depth > cur || !column.has(id)) column.set(id, depth)
+      for (const l of links) if (l.source === id) visit(l.target, depth + 1, seen)
+      seen.delete(id)
+    }
+    for (const s of sources) visit(s.id, 0, new Set())
+    // Cover any nodes with no path from a source (orphan rings).
+    for (const n of nodes) if (!column.has(n.id)) column.set(n.id, 0)
+    const maxCol = Math.max(...column.values())
+    const cols = maxCol + 1
+    const nodeW = 14
+    const gapBetweenColumns = cols > 1 ? (plotW - nodeW * cols) / (cols - 1) : 0
+    // Totals per node.
+    const totalIn = new Map<string, number>()
+    const totalOut = new Map<string, number>()
+    for (const l of links) {
+      totalIn.set(l.target, (totalIn.get(l.target) ?? 0) + l.value)
+      totalOut.set(l.source, (totalOut.get(l.source) ?? 0) + l.value)
+    }
+    // Per-column groups + max total in that column.
+    const byCol: Map<number, string[]> = new Map()
+    for (const n of nodes) {
+      const c = column.get(n.id) ?? 0
+      const arr = byCol.get(c) ?? []
+      arr.push(n.id); byCol.set(c, arr)
+    }
+    // Per-column total height + node height scale.
+    let maxColTotal = 0
+    for (const ids of byCol.values()) {
+      const t = ids.reduce((s, id) => s + Math.max(totalIn.get(id) ?? 0, totalOut.get(id) ?? 0), 0)
+      if (t > maxColTotal) maxColTotal = t
+    }
+    if (maxColTotal === 0) return { ...empty, plot }
+    const nodeGapPx = 8
+    const heightScale = (plotH - nodeGapPx * 8) / maxColTotal  // leave gap room
+    const placed: ChartSankeyNode[] = []
+    for (const [c, ids] of byCol) {
+      const heights = ids.map((id) => Math.max(8, Math.max(totalIn.get(id) ?? 0, totalOut.get(id) ?? 0) * heightScale))
+      const totalH = heights.reduce((s, h) => s + h, 0) + nodeGapPx * (ids.length - 1)
+      let yCursor = padT + (plotH - totalH) / 2
+      const xCol = padL + c * (nodeW + gapBetweenColumns)
+      ids.forEach((id, idx) => {
+        const node = nodeById.get(id)!
+        const h = heights[idx]!
+        placed.push({
+          id,
+          label: node.label ?? id,
+          color: node.color ?? palette[(placed.length) % palette.length]!,
+          x: xCol, y: yCursor, w: nodeW, h,
+          column: c,
+          totalIn: totalIn.get(id) ?? 0,
+          totalOut: totalOut.get(id) ?? 0,
+        })
+        yCursor += h + nodeGapPx
+      })
+    }
+    const placedById = new Map(placed.map((n) => [n.id, n]))
+    // Per-node sub-cursor so multiple links from one node stack vertically.
+    const inCursor = new Map<string, number>()
+    const outCursor = new Map<string, number>()
+    const builtLinks: ChartSankeyLink[] = []
+    // Sort links so wider ribbons render first (so thin ribbons stack on top).
+    const sortedLinks = links.slice().sort((a, b) => b.value - a.value)
+    for (const link of sortedLinks) {
+      const a = placedById.get(link.source)
+      const b = placedById.get(link.target)
+      if (!a || !b) continue
+      const linkH = Math.max(1, link.value * heightScale)
+      const aY = a.y + (outCursor.get(a.id) ?? 0) + linkH / 2
+      const bY = b.y + (inCursor.get(b.id) ?? 0) + linkH / 2
+      outCursor.set(a.id, (outCursor.get(a.id) ?? 0) + linkH)
+      inCursor.set(b.id, (inCursor.get(b.id) ?? 0) + linkH)
+      const x0 = a.x + a.w
+      const x1 = b.x
+      const mid = (x0 + x1) / 2
+      const path = `M${x0},${aY} C${mid},${aY} ${mid},${bY} ${x1},${bY}`
+      builtLinks.push({
+        path, color: link.color ?? a.color, width: linkH,
+        source: link.source, target: link.target, value: link.value,
+      })
+    }
+    return { ...empty, plot, sankeyNodes: placed, sankeyLinks: builtLinks }
+  }
+
+  // ---- Heatmap ------------------------------------------------------
+  // Each series is one row, series.values are the cells across categories.
+  // Color comes from a sequential/diverging/custom palette mapped to the
+  // global value range. Cell text contrasts black/white against the cell.
+  if (spec.type === 'heatmap') {
+    if (!series.length || !spec.categories.length) return { ...empty, plot: { x: 0, y: 0, w: width, h: height } }
+    // Layout: left gutter for row labels, bottom for column labels.
+    const maxRowLabel = series.reduce((m, s) => Math.max(m, s.label.length), 0)
+    const padL = 12 + Math.min(180, Math.max(60, maxRowLabel * 7))
+    const padR = 64   // room for the right-side legend bar
+    const padT = 12
+    const padB = 32
+    const plotW = Math.max(1, width - padL - padR)
+    const plotH = Math.max(1, height - padT - padB)
+    const plot = { x: padL, y: padT, w: plotW, h: plotH }
+    const cellW = plotW / spec.categories.length
+    const cellH = plotH / series.length
+    // Resolve value range across the whole matrix.
+    let vMin = Infinity, vMax = -Infinity
+    for (const s of series) for (const v of s.values) {
+      if (!Number.isFinite(v)) continue
+      if (v < vMin) vMin = v
+      if (v > vMax) vMax = v
+    }
+    if (vMin === Infinity) { vMin = 0; vMax = 1 }
+    if (vMin === vMax) vMax = vMin + 1
+    // Pick the palette stops.
+    const stops = resolveColorScale(spec.colorScale, vMin, vMax, theme)
+    const colorAt = (v: number) => sampleGradient(stops, (v - vMin) / (vMax - vMin))
+    const heatmapCells: ChartHeatmapCell[] = []
+    series.forEach((s, ri) => {
+      s.values.forEach((v, ci) => {
+        if (!Number.isFinite(v)) return
+        const color = colorAt(v)
+        heatmapCells.push({
+          x: round(padL + cellW * ci),
+          y: round(padT + cellH * ri),
+          w: round(cellW),
+          h: round(cellH),
+          color,
+          textColor: pickContrastText(color),
+          value: v,
+          rowLabel: s.label,
+          colLabel: spec.categories[ci] ?? '',
+        })
+      })
+    })
+    const heatmapRowTicks: ChartAxisTick[] = series.map((s, i) => ({
+      value: i,
+      y: round(padT + cellH * i + cellH / 2),
+      label: s.label,
+    }))
+    const heatmapColTicks: ChartCategoryTick[] = spec.categories.map((label, i) => ({
+      label,
+      x: round(padL + cellW * i + cellW / 2),
+    }))
+    // Legend: sample 5 stops across the range.
+    const heatmapLegend = Array.from({ length: 5 }, (_, i) => {
+      const t = i / 4
+      const value = vMin + (vMax - vMin) * t
+      return { value, color: colorAt(value), label: fmtTick(value) }
+    })
+    return {
+      ...empty,
+      plot,
+      heatmapCells,
+      heatmapRowTicks,
+      heatmapColTicks,
+      heatmapLegend,
+    }
   }
 
   if (spec.type === 'pie') {
@@ -569,20 +1746,28 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
 
   const refsLeft = (spec.referenceLines ?? []).filter((r) => r.axis !== 'right').map((r) => r.value)
   const refsRight = (spec.referenceLines ?? []).filter((r) => r.axis === 'right').map((r) => r.value)
+  const leftLog = spec.yScale === 'log'
+  const rightLog = spec.y2Scale === 'log'
   const leftDom = spec.stacked100
     ? niceScale(0, 100)
-    : axisDomain(leftSeries, spec.categories, stacked, refsLeft)
+    : axisDomain(leftSeries, spec.categories, stacked, refsLeft, leftLog)
   const rightDom = hasRightAxis
     ? spec.stacked100
       ? niceScale(0, 100)
-      : axisDomain(rightSeries, spec.categories, stacked, refsRight)
+      : axisDomain(rightSeries, spec.categories, stacked, refsRight, rightLog)
     : null
 
-  const yOf = (dom: NiceScale, v: number) =>
-    round(padT + plotH - ((v - dom.min) / (dom.max - dom.min || 1)) * plotH)
-  const yLeft = (v: number) => yOf(leftDom, v)
-  const yRight = (v: number) => yOf(rightDom ?? leftDom, v)
+  /** Map a data value to a y pixel. Returns NaN for non-positive values on
+   *  a log axis so callers can drop the point (line gap / missing bar). */
+  const yOf = (dom: NiceScale, v: number, isLog = false) => {
+    const t = project(v, dom.min, dom.max, isLog)
+    if (t === null) return NaN
+    return round(padT + plotH - t * plotH)
+  }
+  const yLeft = (v: number) => yOf(leftDom, v, leftLog)
+  const yRight = (v: number) => yOf(rightDom ?? leftDom, v, rightLog)
   const domOf = (s: ResolvedSeries) => (s.axis === 'right' ? rightDom ?? leftDom : leftDom)
+  const isLogOf = (s: ResolvedSeries) => (s.axis === 'right' ? rightLog : leftLog)
 
   const n = spec.categories.length
   const slot = plotW / Math.max(1, n)
@@ -662,11 +1847,15 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
       const barW = inner / barSeries.length
       barSeries.forEach((s, bi) => {
         const dom = domOf(s)
-        const base = yOf(dom, Math.min(Math.max(0, dom.min), dom.max))
+        const log = isLogOf(s)
+        // Log axis: bars grow from the axis floor (dom.min) up to v rather
+        // than from 0, since 0 is invalid in log space.
+        const base = log ? yOf(dom, dom.min, log) : yOf(dom, Math.min(Math.max(0, dom.min), dom.max), log)
         s.values.forEach((v, i) => {
           if (!Number.isFinite(v)) return
+          if (log && v <= 0) return
           const x = padL + slot * i + groupPad / 2 + barW * bi
-          const yV = yOf(dom, v)
+          const yV = yOf(dom, v, log)
           bars.push({
             x: round(x),
             y: Math.min(yV, base),
@@ -707,7 +1896,8 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
   for (const s of series) {
     if (s.kind === 'bar') continue
     const dom = domOf(s)
-    const yA = (v: number) => yOf(dom, v)
+    const log = isLogOf(s)
+    const yA = (v: number) => yOf(dom, v, log)
     const isStackedArea = stacked && s.kind === 'area'
     const px = (i: number) => xCenter(i)
     let pts: ChartLinePoint[]
@@ -732,24 +1922,21 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
         return { x: px(i), y: ok ? yA(v) : NaN, label: spec.categories[i] ?? String(i), value: v, defined: ok }
       })
     }
-    // Build the line in segments, breaking at gaps (undefined points).
-    let path = ''
-    let pen = false
-    for (const p of pts) {
-      if (!p.defined) {
-        pen = false
-        continue
-      }
-      path += `${pen ? 'L' : 'M'}${p.x},${p.y} `
-      pen = true
-    }
-    path = path.trim()
+    // Build the line - smoothed via monotone cubic when requested, else
+    // straight polylines. Either way, gaps break the path cleanly.
+    const smooth = !!s.smooth
+    const path = buildLinePath(pts, smooth)
 
     let areaPath = ''
     if (s.kind === 'area' && pts.length) {
       if (baselinePts) {
-        const top = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-        const back = baselinePts.slice().reverse().map((p) => `L${p.x},${p.y}`).join(' ')
+        const top = smooth
+          ? monotoneCubicPath(pts.map((p) => ({ x: p.x, y: p.y })))
+          : pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+        const back = smooth
+          ? `L${baselinePts[baselinePts.length - 1]!.x},${baselinePts[baselinePts.length - 1]!.y} ` +
+            monotoneCubicPath(baselinePts.slice().reverse()).replace(/^M[^ ]+ /, '')
+          : baselinePts.slice().reverse().map((p) => `L${p.x},${p.y}`).join(' ')
         areaPath = `${top} ${back} Z`
       } else {
         // One filled polygon per contiguous run of defined points.
@@ -766,39 +1953,138 @@ export function buildChart(spec: ChartSpec): ChartGeometry {
         if (cur.length) runs.push(cur)
         areaPath = runs
           .map((run) => {
-            const top = run.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+            const top = smooth
+              ? monotoneCubicPath(run.map((p) => ({ x: p.x, y: p.y })))
+              : run.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
             return `${top} L${run[run.length - 1]!.x},${baseY} L${run[0]!.x},${baseY} Z`
           })
           .join(' ')
       }
     }
-    lines.push({ path, areaPath, color: s.color, label: s.label, points: pts })
+
+    // Confidence band: shaded envelope between upperValues / lowerValues.
+    // Both arrays must be present and aligned to the value array.
+    let bandPath = ''
+    if (s.upperValues?.length === s.values.length && s.lowerValues?.length === s.values.length) {
+      const upperPts: Array<{ x: number; y: number }> = []
+      const lowerPts: Array<{ x: number; y: number }> = []
+      for (let i = 0; i < s.values.length; i += 1) {
+        const u = s.upperValues[i]!
+        const lo = s.lowerValues[i]!
+        if (!Number.isFinite(u) || !Number.isFinite(lo)) continue
+        if (log && (u <= 0 || lo <= 0)) continue
+        upperPts.push({ x: px(i), y: yA(u) })
+        lowerPts.push({ x: px(i), y: yA(lo) })
+      }
+      if (upperPts.length >= 2) {
+        const top = smooth
+          ? monotoneCubicPath(upperPts)
+          : upperPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+        const back = smooth
+          ? `L${lowerPts[lowerPts.length - 1]!.x},${lowerPts[lowerPts.length - 1]!.y} ` +
+            monotoneCubicPath(lowerPts.slice().reverse()).replace(/^M[^ ]+ /, '')
+          : lowerPts.slice().reverse().map((p) => `L${p.x},${p.y}`).join(' ')
+        bandPath = `${top} ${back} Z`
+      }
+    }
+
+    lines.push({ path, areaPath, color: s.color, label: s.label, points: pts, bandPath })
   }
 
-  const tickFor = (dom: NiceScale): ChartAxisTick[] =>
-    dom.ticks.map((value) => ({ value, y: yOf(dom, value), label: fmtTick(value) }))
+  const tickFor = (dom: NiceScale, log: boolean): ChartAxisTick[] =>
+    dom.ticks.map((value) => ({ value, y: yOf(dom, value, log), label: fmtTick(value) }))
 
   const referenceLines: ChartRefLineGeo[] = (spec.referenceLines ?? []).map((ref) => {
-    const dom = ref.axis === 'right' ? (rightDom ?? leftDom) : leftDom
+    const onRight = ref.axis === 'right'
+    const dom = onRight ? (rightDom ?? leftDom) : leftDom
+    const log = onRight ? rightLog : leftLog
     return {
-      y: yOf(dom, ref.value),
+      y: yOf(dom, ref.value, log),
       label: ref.label ?? fmtTick(ref.value),
       color: ref.color ?? '#ef4444',
       dashed: ref.dashed !== false,
     }
   })
 
+  // ---- Overlays: trendline / moving average ------------------------
+  // For every series with an `overlay`, compute the smoothed values and
+  // render as a dashed line in the source series' color (or overlayColor).
+  const overlays: ChartLine[] = []
+  for (const s of series) {
+    if (!s.overlay) continue
+    const dom = domOf(s)
+    const log = isLogOf(s)
+    const overlayVals = computeOverlay(s.values, s.overlay)
+    const color = s.overlayColor ?? s.color
+    const pts: ChartLinePoint[] = overlayVals.map((v, i) => {
+      const ok = Number.isFinite(v) && (!log || v > 0)
+      return {
+        x: xCenter(i),
+        y: ok ? yOf(dom, v, log) : NaN,
+        label: spec.categories[i] ?? String(i),
+        value: v,
+        defined: ok,
+      }
+    })
+    const path = buildLinePath(pts, !!s.smooth)
+    overlays.push({
+      path,
+      areaPath: '',
+      color,
+      label: `${s.label} (${s.overlay})`,
+      points: pts,
+    })
+  }
+
+  // ---- Annotations: resolve data-space anchors to pixel coords ------
+  const annotations: ChartGeometry['annotations'] = []
+  for (const a of (spec.annotations ?? [])) {
+    let ax: number | null = null
+    let ay: number | null = null
+    if ('category' in a.at) {
+      const ci = spec.categories.indexOf(a.at.category)
+      if (ci < 0) continue
+      ax = xCenter(ci)
+      // Anchor to the named series' value at that category, else just
+      // mid-plot. Picks the first matching series if `series` is set.
+      const seriesName = a.at.series
+      const s = seriesName ? series.find((x) => x.label === seriesName) : series[0]
+      if (s) {
+        const v = s.values[ci]
+        if (Number.isFinite(v)) ay = yOf(domOf(s), v as number, isLogOf(s))
+      }
+      if (ay == null) ay = padT + plotH / 2
+    } else {
+      // Raw x/y in data space (x ignored for category x-axis; takes the
+      // mid-plot in that case). y projects through the left axis.
+      ax = padL + plotW / 2
+      if (Number.isFinite(a.at.y as number)) ay = yOf(leftDom, a.at.y as number, leftLog)
+      else ay = padT + plotH / 2
+    }
+    if (ax != null && ay != null && Number.isFinite(ay)) {
+      annotations.push({
+        x: ax,
+        y: ay,
+        label: a.label,
+        color: a.color ?? '#0f172a',
+        placement: a.placement ?? 'top',
+      })
+    }
+  }
+
   return {
     ...empty,
     plot,
     bars,
     lines,
-    yTicks: tickFor(leftDom),
-    y2Ticks: rightDom ? tickFor(rightDom) : [],
+    yTicks: tickFor(leftDom, leftLog),
+    y2Ticks: rightDom ? tickFor(rightDom, rightLog) : [],
     hasRightAxis,
     xTicks,
     xLabelRotated: timeOk ? false : xLabelRotated,
     referenceLines,
+    overlays,
+    annotations,
   }
 }
 
@@ -831,6 +2117,10 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
     topN?: number
     /** Label for the bucketed remainder. Default "Other". */
     otherLabel?: string
+    /** Field carrying each row's stable id. When set, the resulting spec's
+     *  series carry `rowIds` arrays so click handlers can drill back to
+     *  the source rows. */
+    idField?: keyof T & string
   },
 ): ChartSpec {
   const reduce = opts.reduce ?? 'sum'
@@ -850,8 +2140,9 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
     return idx
   }
 
-  // Series keyed by name -> per-category {sum,count}.
-  const seriesMap = new Map<string, { sum: number; count: number }[]>()
+  // Series keyed by name -> per-category {sum,count,rowIds}.
+  type Cell = { sum: number; count: number; rowIds: Array<string | number> }
+  const seriesMap = new Map<string, Cell[]>()
   const ensureSeries = (name: string) => {
     let arr = seriesMap.get(name)
     if (!arr) {
@@ -861,26 +2152,30 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
     return arr
   }
 
+  const trackIds = opts.idField !== undefined
   for (const row of rows) {
     const cat = String(row[opts.category] ?? '')
     const ci = ensureCat(cat)
+    const rowId = trackIds ? (row[opts.idField as keyof T] as string | number) : undefined
     if (opts.series) {
       const sName = String(row[opts.series] ?? '')
       const arr = ensureSeries(sName)
       const num = Number(row[valueFields[0]!])
-      const cell = (arr[ci] ??= { sum: 0, count: 0 })
+      const cell = (arr[ci] ??= { sum: 0, count: 0, rowIds: [] })
       if (Number.isFinite(num)) {
         cell.sum += num
         cell.count += 1
+        if (rowId !== undefined) cell.rowIds.push(rowId)
       }
     } else {
       for (const vf of valueFields) {
         const arr = ensureSeries(vf)
         const num = Number(row[vf])
-        const cell = (arr[ci] ??= { sum: 0, count: 0 })
+        const cell = (arr[ci] ??= { sum: 0, count: 0, rowIds: [] })
         if (Number.isFinite(num)) {
           cell.sum += num
           cell.count += 1
+          if (rowId !== undefined) cell.rowIds.push(rowId)
         }
       }
     }
@@ -889,9 +2184,12 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
   const entries = [...seriesMap.entries()].map(([name, arr]) => ({
     label: opts.series ? name : opts.seriesLabel && valueFields.length === 1 ? opts.seriesLabel : name,
     values: categories.map((_, i) => {
-      const cell = arr[i] ?? { sum: 0, count: 0 }
+      const cell = arr[i] ?? { sum: 0, count: 0, rowIds: [] as Array<string | number> }
       return reduceCell(cell.sum, cell.count)
     }),
+    rowIds: trackIds
+      ? categories.map((_, i) => (arr[i]?.rowIds ?? []).slice())
+      : undefined,
   }))
 
   // ---- Sort + top-N -----------------------------------------------------
@@ -915,10 +2213,17 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
       values: keep
         .map((i) => e.values[i]!)
         .concat(rest.reduce((sum, i) => sum + (Number.isFinite(e.values[i]!) ? e.values[i]! : 0), 0)),
+      rowIds: e.rowIds
+        ? keep.map((i) => e.rowIds![i]!).concat([rest.flatMap((i) => e.rowIds![i] ?? [])])
+        : undefined,
     }))
   } else {
     finalCategories = order.map((i) => categories[i]!)
-    finalSeries = entries.map((e) => ({ label: e.label, values: order.map((i) => e.values[i]!) }))
+    finalSeries = entries.map((e) => ({
+      label: e.label,
+      values: order.map((i) => e.values[i]!),
+      rowIds: e.rowIds ? order.map((i) => e.rowIds![i]!) : undefined,
+    }))
   }
 
   return {
