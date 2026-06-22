@@ -1,80 +1,49 @@
-# Supporters
+# Support & licensing
 
 SvGrid is built and maintained by [Boyko Markov](https://github.com/bmarkov) and
-the [jQWidgets](https://www.jqwidgets.com) team. The MIT core ([`@svgrid/grid`](packages/grid/))
-is free for commercial use, and we intend to keep it that way.
+the [jQWidgets](https://www.jqwidgets.com) team. It is **open core**: the MIT
+core ([`@svgrid/grid`](packages/grid/)) is free for any use, including
+commercial, and we intend to keep it that way. The project is funded by
+Enterprise licenses, not donations - buying Enterprise is what keeps the MIT
+core moving forward.
 
-The people and organizations listed below have decided to support that work
-through GitHub Sponsors. **Their support keeps the MIT core moving forward**:
-faster issue triage, more demos, better documentation, and an MCP server that
-keeps pace with the package.
+## Community support (free)
 
-> Want to be listed here? [Sponsor SvGrid on GitHub](https://github.com/sponsors/bmarkov).
->
-> If you need the Enterprise feature pack (export, pivot, AI helpers, paid
-> support), see the [pricing page](https://svgrid.com/pricing) instead.
-> Enterprise is the path for commercial features; sponsorship is a separate,
-> recognition-only track.
+For the MIT core, everyone gets the same channels:
 
----
+- **Bugs and feature requests** - open an issue at
+  [github.com/sv-grid/sv-grid/issues](https://github.com/sv-grid/sv-grid/issues).
+- **Usage questions** - check the [docs](https://svgrid.com/docs) and the
+  [150+ demos](https://svgrid.com/demos) first; if you are still stuck, open an
+  issue with a minimal reproduction.
 
-## Gold sponsors
+Community support is best-effort. We triage as fast as we can, but there is no
+SLA on the free tier.
 
-<!--
-  Gold sponsors ($500/month) get a featured listing here (name + optional
-  one-line description + link) and one vote per quarter on the public
-  roadmap priorities. Recognition lives on GitHub only.
+## Commercial support (Enterprise)
 
-  Add new sponsors at the bottom of this section. Format:
+Priority support comes bundled with an [Enterprise](https://svgrid.com/pricing)
+license, alongside the commercial feature pack ([`@svgrid/enterprise`](packages/enterprise/):
+export, import, print, pivot, AI helpers). Depending on the tier, Enterprise can
+include:
 
-  - **[Company Name](https://example.com)** - one-line description.
--->
+- A guaranteed response-time SLA and a private support channel.
+- Help with integration, migration, and architecture review.
+- An MSA / custom contractual terms for procurement.
 
-_None yet. [Could be you.](https://github.com/sponsors/bmarkov)_
+See the [pricing page](https://svgrid.com/pricing) for the current tiers.
 
-## Silver sponsors
+## Open-source projects
 
-<!-- $100/month: listing here (name + optional one-line description + link). -->
+Projects under an [OSI-approved license](https://opensource.org/licenses) can
+get an **Enterprise OSS key for free** - it removes the unlicensed-build
+watermark on Enterprise features for non-commercial open-source use. Open an
+issue (or email the address on the pricing page) with a link to your repository
+to request one.
 
-_None yet._
+## What the MIT license already gives you
 
-## Bronze sponsors
-
-<!-- $25/month: listing here (name + optional link). -->
-
-_None yet._
-
-## Backers
-
-<!--
-  $5/month: name (and optional handle) here, in the order they signed up.
--->
-
-_None yet._
-
-## One-time supporters
-
-<!--
-  $10 / $25 / $100 / $500 one-time tips. Listed for the calendar year
-  the tip was received. Reset on January 1.
--->
-
-_None yet._
-
----
-
-## A note on what sponsorship does (and does not)
-
-Sponsorship is **recognition, not a license**. The MIT license already grants
-commercial use of `@svgrid/grid`; sponsorship is purely a way to say thanks and
-help us prioritize the open core.
-
-Sponsorship does **not**:
-
-- Grant a license to `@svgrid/enterprise` (the commercial feature pack).
-- Remove the unlicensed-build watermark on Enterprise features.
-- Replace paid support, an MSA, or any contractual obligation.
-
-If your team needs any of those, see the [Enterprise tiers](https://svgrid.com/pricing).
-OSS projects under an [OSI-approved license](https://opensource.org/licenses)
-get an Enterprise OSS key for free.
+The MIT license on `@svgrid/grid` **already grants commercial use** of the core.
+You do not need a license, a subscription, or a sponsorship to ship the MIT grid
+in a commercial product. Enterprise is only required when you want the
+commercial feature pack or paid support - it is not a license for the core.

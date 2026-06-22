@@ -98,6 +98,15 @@ SvGrid is built by [jQWidgets](https://www.jqwidgets.com), the team behind jqwid
 
 ---
 
+## Support
+
+SvGrid is open core: the MIT `@svgrid/grid` is free for any use, and the project is funded by Enterprise licenses, not donations.
+
+- **Found a bug or have a question?** Open an issue at [github.com/sv-grid/sv-grid/issues](https://github.com/sv-grid/sv-grid/issues).
+- **Need commercial or priority support?** It is included with [Enterprise](https://svgrid.com/pricing). OSS projects under an [OSI-approved license](https://opensource.org/licenses) get an Enterprise OSS key for free.
+
+---
+
 ## Repository layout
 
 This is a **pnpm workspace** monorepo:
