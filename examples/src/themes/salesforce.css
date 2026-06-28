@@ -24,9 +24,16 @@ html[data-preset='salesforce'] .demo-page {
   --sg-pill-inactive-fg: #ba0517;
   --sg-radius: 4px;                /* border-radius-medium */
   --sg-cell-px: 12px;              /* spacing-x-small */
+  /* Header: SLDS data table header */
+  --sg-header-min-height: 40px;
   background: #ffffff;
   color: #181818;
   font-family: 'Salesforce Sans', 'SF Pro', Helvetica, Arial, sans-serif;
+  /* Scrollbar - SLDS neutrals. SLDS ships native scrollbars (custom mixin removed in v2.2.0); grey on drag, never brand. */
+  --sg-scrollbar-bg: #f3f3f3; --sg-scrollbar-border: #c9c9c9;
+  --sg-scrollbar-thumb: #c9c9c9; --sg-scrollbar-thumb-hover: #aeaeae; --sg-scrollbar-thumb-active: #949494;
+  --sg-scrollbar-arrow: #444444; --sg-scrollbar-arrow-hover: #181818; --sg-scrollbar-arrow-hover-bg: #ececec;
+  --sg-scrollbar-arrow-active: #181818; --sg-scrollbar-arrow-active-bg: #c9c9c9; --sg-scrollbar-arrow-disabled: #d8d8d8;
 }
 html[data-preset='salesforce'] .demo-page .demo-aside {
   background: #f3f3f3;
@@ -53,6 +60,11 @@ html[data-preset='salesforce'][data-theme='dark'] .demo-page {
   --sg-pill-inactive-fg: #ffa39e;
   background: #181818;
   color: #ffffff;
+  /* Scrollbar - SLDS dark neutrals (neutral, no brand on drag) */
+  --sg-scrollbar-bg: #2e2e2e; --sg-scrollbar-border: #3e3e3c;
+  --sg-scrollbar-thumb: #5c5c5c; --sg-scrollbar-thumb-hover: #767676; --sg-scrollbar-thumb-active: #949494;
+  --sg-scrollbar-arrow: #c9c9c9; --sg-scrollbar-arrow-hover: #ffffff; --sg-scrollbar-arrow-hover-bg: #3a3a3a;
+  --sg-scrollbar-arrow-active: #ffffff; --sg-scrollbar-arrow-active-bg: #3e3e3c; --sg-scrollbar-arrow-disabled: #4a4a4a;
 }
 html[data-preset='salesforce'][data-theme='dark'] .demo-page .demo-aside {
   background: #2e2e2e;

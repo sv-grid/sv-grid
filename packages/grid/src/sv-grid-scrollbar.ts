@@ -34,7 +34,11 @@ const STYLE_TEMPLATE = `
     display: flex;
     user-select: none;
     background: var(--sg-scrollbar-bg, #eef2f8);
-    box-shadow: inset 0 0 0 1px var(--sg-scrollbar-border, rgba(15, 23, 42, 0.04));
+    /* The 1px separator is drawn on the INNER edge only (the edge facing
+       the grid body) via the orientation rules below. A full inset box
+       here doubled up with the grid's own frame border on the outer edge,
+       reading as a 2px border - most visible in dense-gridline themes
+       like Excel, which should show a single 1px line. */
     /* Start hidden + non-interactive - viewport/content sizes are 0 until
        after the first layout pass, so without this default the scrollbar
        paints visible for one frame and then JS hides it on mount. That
@@ -48,10 +52,18 @@ const STYLE_TEMPLATE = `
   :host([orientation="vertical"]) {
     flex-direction: column;
     width: ${ARROW_SIZE}px;
+    /* LTR: vertical scrollbar sits at the right, inner edge is the left. */
+    box-shadow: inset 1px 0 0 0 var(--sg-scrollbar-border, rgba(15, 23, 42, 0.04));
+  }
+  :host([orientation="vertical"]:dir(rtl)) {
+    /* RTL flips the scrollbar to the left, so the inner edge is the right. */
+    box-shadow: inset -1px 0 0 0 var(--sg-scrollbar-border, rgba(15, 23, 42, 0.04));
   }
   :host([orientation="horizontal"]) {
     flex-direction: row;
     height: ${ARROW_SIZE}px;
+    /* Horizontal scrollbar sits at the bottom, inner edge is the top. */
+    box-shadow: inset 0 1px 0 0 var(--sg-scrollbar-border, rgba(15, 23, 42, 0.04));
   }
   .arrow {
     flex: none;

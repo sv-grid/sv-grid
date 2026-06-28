@@ -32,6 +32,49 @@ function clamp01(value: number): number {
   return value
 }
 
+/** Below this a reading is junk (0 from jsdom, a sub-cap layout quirk, etc). */
+const MAX_DOM_HEIGHT_SANITY_FLOOR = 100_000
+/** At/above this the browser didn't clamp (returned ~the 1e9 we asked for). */
+const MAX_DOM_HEIGHT_SANITY_CEIL = 900_000_000
+/**
+ * Shave a hair off the detected cap so the spacer never sits at the exact
+ * physical edge, where sub-pixel rounding could leave the final row a touch
+ * out of reach. 0.5% is invisible at desktop caps (~33.5M -> ~33.3M) yet
+ * keeps a safety gap proportional to the cap.
+ */
+const MAX_DOM_HEIGHT_SAFETY = 0.995
+
+/**
+ * Resolve the usable max element height from the two raw DOM signals.
+ *
+ * `layoutCap` is a tall probe's clamped `offsetHeight` - the height layout
+ * assigns the element. `scrollCap` is the `scrollHeight` a real `overflow:auto`
+ * container exposes for that same probe - the height the user can actually
+ * scroll through. They differ on mobile / high-DPR engines, which report a
+ * generous `offsetHeight` but then expose a SMALLER scrollable range (the
+ * physical limit is in device px, so a 3x-DPR phone has ~1/3 the CSS-px scroll
+ * cap). Trusting `offsetHeight` alone is exactly what strands the last rows of
+ * a huge grid on a phone, so we take the smaller of the two.
+ *
+ * A junk reading (<= the sanity floor, or so large the browser clearly didn't
+ * clamp) is dropped; if neither signal survives, the caller's conservative
+ * `fallback` is returned unchanged.
+ */
+export function resolveMaxDomHeight(
+  layoutCap: number,
+  scrollCap: number,
+  fallback: number,
+): number {
+  const usable = [layoutCap, scrollCap].filter(
+    (v) =>
+      Number.isFinite(v) &&
+      v > MAX_DOM_HEIGHT_SANITY_FLOOR &&
+      v < MAX_DOM_HEIGHT_SANITY_CEIL,
+  )
+  if (usable.length === 0) return fallback
+  return Math.floor(Math.min(...usable) * MAX_DOM_HEIGHT_SAFETY)
+}
+
 /**
  * Build the scaling mapping for one axis.
  *

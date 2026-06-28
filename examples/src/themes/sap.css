@@ -26,9 +26,16 @@ html[data-preset='sap'] .demo-page {
   --sg-pill-inactive-fg: #aa0808;
   --sg-radius: 6px;                /* sapElement_BorderCornerRadius */
   --sg-cell-px: 12px;
+  /* Header: SAP Fiori table header - bold */
+  --sg-header-weight: 700; --sg-header-min-height: 44px;
   background: #ffffff;
   color: #1d2d3e;
   font-family: '72', '72full', 'Arial', sans-serif;
+  /* Scrollbar - real SAP Horizon tokens (sap_horizon): slate FaceColor thumb, white track, brand-blue arrow symbol. */
+  --sg-scrollbar-bg: #ffffff; --sg-scrollbar-border: #d5dadd;
+  --sg-scrollbar-thumb: #7b91a8; --sg-scrollbar-thumb-hover: #6a8099; --sg-scrollbar-thumb-active: #5a7088;
+  --sg-scrollbar-arrow: #0064d9; --sg-scrollbar-arrow-hover: #0058c0; --sg-scrollbar-arrow-hover-bg: #ecf0f1;
+  --sg-scrollbar-arrow-active: #0058c0; --sg-scrollbar-arrow-active-bg: #d6e4ff; --sg-scrollbar-arrow-disabled: #b5c0cc;
 }
 html[data-preset='sap'] .demo-page .demo-aside {
   background: #f7f7f7;             /* sapShellGroupTextColor area */
@@ -55,6 +62,11 @@ html[data-preset='sap'][data-theme='dark'] .demo-page {
   --sg-pill-inactive-fg: #ffb3aa;
   background: #29313a;
   color: #eaecee;
+  /* Scrollbar - real SAP Horizon dark tokens (sap_horizon_dark): slate thumb, dark track, blue arrow. */
+  --sg-scrollbar-bg: #1d232a; --sg-scrollbar-border: #4a5560;
+  --sg-scrollbar-thumb: #647891; --sg-scrollbar-thumb-hover: #566b85; --sg-scrollbar-thumb-active: #7187a0;
+  --sg-scrollbar-arrow: #4db1ff; --sg-scrollbar-arrow-hover: #6cc0ff; --sg-scrollbar-arrow-hover-bg: #353e48;
+  --sg-scrollbar-arrow-active: #6cc0ff; --sg-scrollbar-arrow-active-bg: #1f3a52; --sg-scrollbar-arrow-disabled: #4a5560;
 }
 html[data-preset='sap'][data-theme='dark'] .demo-page .demo-aside {
   background: #2b323b;

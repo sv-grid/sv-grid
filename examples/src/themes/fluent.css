@@ -24,9 +24,16 @@ html[data-preset='fluent'] .demo-page {
   --sg-pill-inactive-fg: #a80000;
   --sg-radius: 4px;                /* borderRadiusMedium */
   --sg-cell-px: 11px;              /* spacingHorizontalM */
+  /* Header: Fluent DetailsList header height */
+  --sg-header-min-height: 42px;
   background: #ffffff;
   color: #242424;
   font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  /* Scrollbar - Windows 11 Fluent overlay grey (#8b8b8b ramp, per Chromium); no blue on drag. */
+  --sg-scrollbar-bg: #f5f5f5; --sg-scrollbar-border: #e0e0e0;
+  --sg-scrollbar-thumb: #8b8b8b; --sg-scrollbar-thumb-hover: #5d5d5d; --sg-scrollbar-thumb-active: #404040;
+  --sg-scrollbar-arrow: #616161; --sg-scrollbar-arrow-hover: #242424; --sg-scrollbar-arrow-hover-bg: #f0f0f0;
+  --sg-scrollbar-arrow-active: #242424; --sg-scrollbar-arrow-active-bg: #e0e0e0; --sg-scrollbar-arrow-disabled: #c8c6c4;
 }
 html[data-preset='fluent'] .demo-page .demo-aside {
   background: #f5f5f5;
@@ -53,6 +60,11 @@ html[data-preset='fluent'][data-theme='dark'] .demo-page {
   --sg-pill-inactive-fg: #ff99a4;
   background: #1f1f1f;
   color: #ffffff;
+  /* Scrollbar - Fluent dark overlay grey (neutral, no blue on drag) */
+  --sg-scrollbar-bg: #2b2b2b; --sg-scrollbar-border: #424242;
+  --sg-scrollbar-thumb: #4d4d4d; --sg-scrollbar-thumb-hover: #5a5a5a; --sg-scrollbar-thumb-active: #767676;
+  --sg-scrollbar-arrow: #d4d4d4; --sg-scrollbar-arrow-hover: #ffffff; --sg-scrollbar-arrow-hover-bg: #383838;
+  --sg-scrollbar-arrow-active: #ffffff; --sg-scrollbar-arrow-active-bg: #424242; --sg-scrollbar-arrow-disabled: #4d4d4d;
 }
 html[data-preset='fluent'][data-theme='dark'] .demo-page .demo-aside {
   background: #2b2b2b;

@@ -398,6 +398,12 @@ export function createEditing<
   }
 
   async function pasteFromClipboard() {
+    // Preferred path: the async Clipboard API. Requires a secure context
+    // (HTTPS or localhost) AND read permission; it also works on Firefox,
+    // where the native `paste` event does NOT fire on a non-editable element.
+    // On plain HTTP (a XAMPP/Apache LAN host) `navigator.clipboard` is
+    // undefined - there the Ctrl+V keydown handler skips preventDefault and
+    // lets the browser deliver a native `paste` event to `onGridPaste`.
     if (!navigator.clipboard?.readText) return;
     let text: string;
     try {
@@ -405,6 +411,28 @@ export function createEditing<
     } catch {
       return;
     }
+    applyPastedText(text);
+  }
+
+  /**
+   * Native `paste` ClipboardEvent fallback (insecure-context path). A real
+   * Ctrl/Cmd+V on the focused grid root fires this with `clipboardData`
+   * readable even over plain HTTP and with no permission prompt. Wired on the
+   * grid root in SvGrid.svelte; the keydown handler lets the gesture through
+   * (no preventDefault) whenever the async API is unavailable.
+   */
+  function onGridPaste(event: ClipboardEvent) {
+    // When the async API is available the keydown handler already pasted via
+    // pasteFromClipboard(); ignore the (suppressed) native event so we don't
+    // paste twice.
+    if (typeof navigator.clipboard?.readText === "function") return;
+    const text = event.clipboardData?.getData("text/plain") ?? "";
+    if (!text) return;
+    event.preventDefault();
+    applyPastedText(text);
+  }
+
+  function applyPastedText(text: string) {
     const anchor = ctx.selectionRange.anchor ?? ctx.grid.getState().activeCell;
     if (!anchor) return;
     const focus = ctx.selectionRange.focus ?? anchor;
@@ -480,5 +508,6 @@ export function createEditing<
     focusOnMount,
     onCellDoubleClick,
     pasteFromClipboard,
+    onGridPaste,
   };
 }

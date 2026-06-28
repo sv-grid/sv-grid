@@ -187,4 +187,37 @@ describe('SvGrid wrapper - multi-cell paste + cut + delete', () => {
     expect(source).toMatch(/event\.key === "Delete" \|\| event\.key === "Backspace"/)
     expect(source).toMatch(/if \((?:ctx\.)?clearSelectedCells\(\)\)\s*\{/)
   })
+
+  // Regression: the controller's ctx is an object literal of getters, and the
+  // copy/cut/paste handlers in keyboard-handlers + menus reach the functions
+  // via `ctx.<name>()`. A refactor once shipped the `ctx.cutSelectionToClipboard`
+  // / `ctx.pasteFromClipboard` CALLS but dropped their getters, so those threw
+  // "is not a function" at runtime - copy worked, cut + paste were dead. Assert
+  // every clipboard function called through ctx has a matching getter.
+  it('exposes a ctx getter for every clipboard command it calls through ctx', () => {
+    for (const fn of [
+      'copySelectionToClipboard',
+      'cutSelectionToClipboard',
+      'pasteFromClipboard',
+      'onGridPaste',
+      'clearSelectedCells',
+    ]) {
+      expect(source).toMatch(new RegExp(`get ${fn}\\(\\)\\s*\\{\\s*return ${fn};?\\s*\\}`))
+    }
+  })
+
+  it('copy/cut fall back to execCommand when navigator.clipboard is absent (insecure context)', () => {
+    expect(source).toMatch(/function writeClipboardText\(/)
+    expect(source).toMatch(/document\.execCommand\("copy"\)/)
+  })
+
+  it('paste falls back to a native paste event when the async API is unavailable', () => {
+    // keydown only preventDefaults (and uses the async API) in a secure context;
+    // otherwise it lets the browser deliver a native paste event to onGridPaste.
+    expect(source).toMatch(/if \(navigator\.clipboard\?\.readText\)/)
+    expect(source).toMatch(/function onGridPaste\(event: ClipboardEvent\)/)
+    expect(source).toMatch(/clipboardData\?\.getData\("text\/plain"\)/)
+    // The grid root wires the handler.
+    expect(source).toMatch(/onpaste=\{onGridPaste\}/)
+  })
 })

@@ -25,9 +25,16 @@ html[data-preset='github'] .demo-page {
   --sg-pill-inactive-fg: #cf222e;  /* fgColor.danger */
   --sg-radius: 6px;                /* borderRadius.medium */
   --sg-cell-px: 12px;              /* base.size.12 */
+  /* Header: Primer table - semibold, muted, small */
+  --sg-header-size: 12px; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 40px;
   background: #ffffff;
   color: #1f2328;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  /* Scrollbar - Primer v8 neutrals. GitHub uses native scrollbars; border/neutral tokens, no accent on drag. */
+  --sg-scrollbar-bg: #f6f8fa; --sg-scrollbar-border: #d1d9e0;
+  --sg-scrollbar-thumb: #d1d9e0; --sg-scrollbar-thumb-hover: #818b98; --sg-scrollbar-thumb-active: #59636e;
+  --sg-scrollbar-arrow: #59636e; --sg-scrollbar-arrow-hover: #1f2328; --sg-scrollbar-arrow-hover-bg: #eaeef2;
+  --sg-scrollbar-arrow-active: #1f2328; --sg-scrollbar-arrow-active-bg: #d1d9e0; --sg-scrollbar-arrow-disabled: #d1d9e0;
 }
 html[data-preset='github'] .demo-page .demo-aside {
   background: #f6f8fa;
@@ -54,6 +61,11 @@ html[data-preset='github'][data-theme='dark'] .demo-page {
   --sg-pill-inactive-fg: #ff8182;
   background: #0d1117;
   color: #f0f6fc;
+  /* Scrollbar - Primer v8 dark neutrals (neutral, no accent on drag) */
+  --sg-scrollbar-bg: #151b23; --sg-scrollbar-border: #3d444d;
+  --sg-scrollbar-thumb: #3d444d; --sg-scrollbar-thumb-hover: #656c76; --sg-scrollbar-thumb-active: #9198a1;
+  --sg-scrollbar-arrow: #9198a1; --sg-scrollbar-arrow-hover: #f0f6fc; --sg-scrollbar-arrow-hover-bg: #212830;
+  --sg-scrollbar-arrow-active: #f0f6fc; --sg-scrollbar-arrow-active-bg: #3d444d; --sg-scrollbar-arrow-disabled: #3d444d;
 }
 html[data-preset='github'][data-theme='dark'] .demo-page .demo-aside {
   background: #151b23;

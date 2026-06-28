@@ -25,9 +25,16 @@ html[data-preset='atlassian'] .demo-page {
   --sg-pill-inactive-fg: #c9372c;  /* color.text.danger */
   --sg-radius: 3px;                /* border.radius / smallest */
   --sg-cell-px: 8px;
+  /* Header: Atlassian table - uppercase, subtle, tracked (the classic Jira look) */
+  --sg-header-weight: 700; --sg-header-transform: uppercase; --sg-header-size: 11px; --sg-header-tracking: 0.04em; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 40px;
   background: #ffffff;
   color: #172b4d;
   font-family: 'Charlie Display', 'Atlassian Sans', -apple-system, 'Segoe UI', sans-serif;
+  /* Scrollbar - ADS N-series neutrals. Atlassian uses native scrollbars; neutral greys, no brand on drag. */
+  --sg-scrollbar-bg: #fafbfc; --sg-scrollbar-border: #dcdfe4;
+  --sg-scrollbar-thumb: #c1c7d0; --sg-scrollbar-thumb-hover: #a5adba; --sg-scrollbar-thumb-active: #8993a4;
+  --sg-scrollbar-arrow: #44546f; --sg-scrollbar-arrow-hover: #172b4d; --sg-scrollbar-arrow-hover-bg: #f1f2f4;
+  --sg-scrollbar-arrow-active: #172b4d; --sg-scrollbar-arrow-active-bg: #dcdfe4; --sg-scrollbar-arrow-disabled: #dcdfe4;
 }
 html[data-preset='atlassian'] .demo-page .demo-aside {
   background: #fafbfc;
@@ -54,6 +61,11 @@ html[data-preset='atlassian'][data-theme='dark'] .demo-page {
   --sg-pill-inactive-fg: #ff9c8f;
   background: #1d2125;
   color: #b6c2cf;
+  /* Scrollbar - ADS DarkNeutral greys (neutral, no brand on drag) */
+  --sg-scrollbar-bg: #22272b; --sg-scrollbar-border: #38414a;
+  --sg-scrollbar-thumb: #454f59; --sg-scrollbar-thumb-hover: #596773; --sg-scrollbar-thumb-active: #738496;
+  --sg-scrollbar-arrow: #8590a2; --sg-scrollbar-arrow-hover: #b6c2cf; --sg-scrollbar-arrow-hover-bg: #2c333a;
+  --sg-scrollbar-arrow-active: #b6c2cf; --sg-scrollbar-arrow-active-bg: #38414a; --sg-scrollbar-arrow-disabled: #38414a;
 }
 html[data-preset='atlassian'][data-theme='dark'] .demo-page .demo-aside {
   background: #22272b;

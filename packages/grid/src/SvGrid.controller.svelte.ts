@@ -22,7 +22,10 @@ import {
     type RowData,
     type TableFeatures,
   } from "./index";
-import { createRowScrollScaling } from "./virtualization/scroll-scaling";
+import {
+  createRowScrollScaling,
+  resolveMaxDomHeight,
+} from "./virtualization/scroll-scaling";
 import "./sv-grid-scrollbar";
 import {
     computeColumnStat,
@@ -109,11 +112,20 @@ import {
 const MAX_DOM_SCROLL_HEIGHT_FALLBACK = 8_000_000;
 
 /**
- * The browser's actual maximum element height in CSS px. Browsers clamp how
- * tall a single element may be (and mobile / high-DPR caps differ), so we
- * measure it once by reading the clamped `offsetHeight` of an absurdly tall
- * probe kept inside a 1x1 `overflow:hidden` wrapper (so it never affects page
- * layout or scroll). Cached for the page lifetime; constant per browser.
+ * The browser's actual maximum *scrollable* element height in CSS px. Browsers
+ * clamp how tall a single element may be, and the cap is lower on mobile /
+ * high-DPR devices (the physical limit is in device px, so a 3x-DPR phone has
+ * ~1/3 the CSS-px cap of a 1x desktop). Past that cap a scroll container
+ * silently clamps its `scrollHeight` and the tail rows of a huge virtualized
+ * grid become unreachable.
+ *
+ * We measure two signals from one offscreen probe and keep the smaller (see
+ * `resolveMaxDomHeight`): the probe's clamped `offsetHeight`, AND the
+ * `scrollHeight` a real `overflow:auto` container exposes for it. The second
+ * matters because mobile WebKit/Blink can report a generous `offsetHeight` yet
+ * expose a smaller scrollable range - trusting the layout height alone is what
+ * stranded the last rows on phones. Using a real scroll container also folds in
+ * DPR clamping for free. Cached for the page lifetime; constant per browser.
  */
 let detectedMaxDomHeight: number | null = null;
 /**
@@ -148,26 +160,43 @@ function initialHiddenColumns<
 }
 
 function getMaxDomScrollHeight(): number {
+  // Escape hatch: a page may pin the cap via `window.__svgridMaxDomHeight`.
+  // Checked before the cache so it always wins. Two uses: reproducing a
+  // phone's lower element-height limit on desktop (and our e2e coverage of
+  // the huge-list path), and overriding detection on a device where it reads
+  // wrong. A non-positive / non-finite value is ignored.
+  if (typeof window !== "undefined") {
+    const forced = (window as unknown as { __svgridMaxDomHeight?: unknown })
+      .__svgridMaxDomHeight;
+    if (typeof forced === "number" && Number.isFinite(forced) && forced > 0) {
+      return forced;
+    }
+  }
   if (detectedMaxDomHeight != null) return detectedMaxDomHeight;
   if (typeof document === "undefined" || !document.body) {
     return MAX_DOM_SCROLL_HEIGHT_FALLBACK;
   }
   try {
+    // The wrapper is itself an `overflow:auto` scroll container (kept tiny and
+    // offscreen so it never affects page layout or scroll), so we can read the
+    // height it actually exposes as scrollable - not just the probe's layout
+    // height. On high-DPR mobile the two diverge and the scrollable one is the
+    // limit that matters.
     const wrap = document.createElement("div");
     wrap.style.cssText =
-      "position:fixed;top:0;left:-9999px;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none;";
+      "position:fixed;top:0;left:-9999px;width:1px;height:100px;overflow:auto;visibility:hidden;pointer-events:none;";
     const probe = document.createElement("div");
     probe.style.cssText = "width:1px;height:1000000000px;";
     wrap.appendChild(probe);
     document.body.appendChild(wrap);
-    const measured = probe.offsetHeight;
+    const layoutCap = probe.offsetHeight;
+    const scrollCap = wrap.scrollHeight;
     document.body.removeChild(wrap);
-    // A clamped read is a large finite number well under the 1e9 we asked for.
-    // If the browser did not clamp (returned ~1e9) or returned junk, fall back.
-    detectedMaxDomHeight =
-      measured > 100_000 && measured < 900_000_000
-        ? measured
-        : MAX_DOM_SCROLL_HEIGHT_FALLBACK;
+    detectedMaxDomHeight = resolveMaxDomHeight(
+      layoutCap,
+      scrollCap,
+      MAX_DOM_SCROLL_HEIGHT_FALLBACK,
+    );
   } catch {
     detectedMaxDomHeight = MAX_DOM_SCROLL_HEIGHT_FALLBACK;
   }
@@ -1560,8 +1589,17 @@ export function createSvGridController<
     if (!cols.length) return null;
     const rowNumberWidth = showRowNumbersEffective ? rowNumberColumnWidth : 0;
     const selectionWidth = showRowSelectionEffective ? selectionColumnWidth : 0;
+    // Reserve the custom vertical scrollbar's width when it's visible. It
+    // overlays the right 16px of the viewport (absolute, z-index 40) and
+    // does NOT shrink clientWidth, so without this the last fitted column
+    // slides under it and its right-aligned content (e.g. a number column)
+    // is hidden behind the opaque scrollbar.
+    const scrollbarWidth = hasVerticalOverflow ? 16 : 0;
     const target =
-      (scrollContainer?.clientWidth ?? 0) - rowNumberWidth - selectionWidth;
+      (scrollContainer?.clientWidth ?? 0) -
+      rowNumberWidth -
+      selectionWidth -
+      scrollbarWidth;
     if (target <= 0) return null;
 
     // Split base widths into pinned (user-resized) and scalable.
@@ -2076,6 +2114,9 @@ export function createSvGridController<
     get onCellClick() { return onCellClick; },
     get emitCellDoubleClick() { return emitCellDoubleClick; },
     get copySelectionToClipboard() { return copySelectionToClipboard; },
+    get cutSelectionToClipboard() { return cutSelectionToClipboard; },
+    get pasteFromClipboard() { return pasteFromClipboard; },
+    get onGridPaste() { return onGridPaste; },
     get clearSelectedCells() { return clearSelectedCells; },
     get onCellDoubleClick() { return onCellDoubleClick; },
     get startEditingWithChar() { return startEditingWithChar; },
@@ -2145,7 +2186,7 @@ export function createSvGridController<
   const { computeSummaries, hasRenderedColumn } = createSummaries<TFeatures, TData>(ctx);
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellNote, getColumnEditorOptions, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
-  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, focusOnMount, onCellDoubleClick, pasteFromClipboard } = createEditing<TFeatures, TData>(ctx);
+  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, isInFillPreview, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, startColumnResize, onColumnResizeMove, endColumnResize, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);

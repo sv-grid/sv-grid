@@ -24,9 +24,18 @@ html[data-preset='excel'] .demo-page {
   --sg-pill-inactive-fg: #a4262c;
   --sg-radius: 0;          /* Excel uses sharp cells */
   --sg-cell-px: 5px;       /* Tighter spreadsheet density */
+  /* Header: Excel worksheet column headers - regular weight, centered,
+     dark-grey label (the A/B/C header look, not a bold table header). */
+  --sg-header-weight: 400;
+  --sg-header-label-color: #444444;
   background: #ffffff;
   color: #323130;
   font-family: 'Aptos', 'Segoe UI', Calibri, Arial, sans-serif;
+  /* Scrollbar - classic Office grey, sharp thumb. Excel/Windows scrollbars stay grey; no green on drag. */
+  --sg-scrollbar-bg: #f3f2f1; --sg-scrollbar-border: #d2d0ce;
+  --sg-scrollbar-thumb: #c8c6c4; --sg-scrollbar-thumb-hover: #a19f9d; --sg-scrollbar-thumb-active: #8a8886; --sg-scrollbar-thumb-radius: 0;
+  --sg-scrollbar-arrow: #605e5c; --sg-scrollbar-arrow-hover: #323130; --sg-scrollbar-arrow-hover-bg: #edebe9;
+  --sg-scrollbar-arrow-active: #323130; --sg-scrollbar-arrow-active-bg: #d2d0ce; --sg-scrollbar-arrow-disabled: #c8c6c4;
 }
 html[data-preset='excel'] .demo-page .demo-aside {
   background: #f3f2f1;
@@ -53,6 +62,14 @@ html[data-preset='excel'][data-theme='dark'] .demo-page {
   --sg-pill-inactive-fg: #ffb3b5;
   background: #1b1a19;
   color: #f3f2f1;
+  /* Header label: light grey in dark mode (the light-block #444444 would
+     otherwise carry over and vanish on the dark header). */
+  --sg-header-label-color: #c8c6c4;
+  /* Scrollbar - dark Office grey, sharp thumb (neutral, no green on drag) */
+  --sg-scrollbar-bg: #252423; --sg-scrollbar-border: #3b3a39;
+  --sg-scrollbar-thumb: #484644; --sg-scrollbar-thumb-hover: #605e5c; --sg-scrollbar-thumb-active: #797775;
+  --sg-scrollbar-arrow: #c8c6c4; --sg-scrollbar-arrow-hover: #f3f2f1; --sg-scrollbar-arrow-hover-bg: #323130;
+  --sg-scrollbar-arrow-active: #f3f2f1; --sg-scrollbar-arrow-active-bg: #3b3a39; --sg-scrollbar-arrow-disabled: #484644;
 }
 html[data-preset='excel'][data-theme='dark'] .demo-page .demo-aside {
   background: #252423;

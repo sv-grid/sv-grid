@@ -87,6 +87,7 @@ import CellMergingDemo     from '../demos/170-cell-merging.svelte'
 import PersistentState     from '../demos/171-persistent-state.svelte'
 import AutosizeColumns     from '../demos/172-autosize-columns.svelte'
 import HyperFormulaDemo    from '../demos/173-hyperformula.svelte'
+import ZebraRows           from '../demos/174-zebra-rows.svelte'
 import EditorTypes      from '../demos/84-editor-types.svelte'
 import TooltipsAndNotes from '../demos/85-tooltips-and-notes.svelte'
 import UndoRedo         from '../demos/86-undo-redo.svelte'
@@ -315,6 +316,7 @@ export const demos: Demo[] = [
 
   // ----- Rows & Cells
   demo('10-custom-cells-and-themes','Custom cells + themes',       'Avatars, sparklines, progress bars, density toggle, dark mode, full a11y.', 'Rows & Cells', CustomCells),
+  demo('174-zebra-rows',            'Zebra rows',                  'Set the zebraRows prop and alternating data rows take the theme\'s --sg-row-alt-bg color. Only data rows stripe - pinned, group, detail, and summary rows keep a single background (the pinned Total row stays one band). Toggle it live.', 'Rows & Cells', ZebraRows),
   demo('140-sparkline-cells',       'Sparkline cells',             'In-cell mini charts as a first-class column type: set `sparkline` on a number-array column and the grid paints an inline SVG. Line, area, bar (with +/- coloring), and win/loss - no chart library, no custom snippet.', 'Rows & Cells', SparklineCells),
   demo('141-conditional-formatting','Conditional formatting (engine)',      'Excel-style value-driven cell coloring as a declarative `conditionalFormats` engine prop: color scales, in-cell data bars, icon sets (arrows/traffic/triangles), and predicate rules - scoped per column, no per-cell snippet.', 'Rows & Cells', ConditionalFormattingEngine),
   demo('62-conditional-styling',    'Conditional styling',         'Support-ticket triage board: rowClass highlights SLA breach + at-risk rows with side-bar accents; cellClass paints priority pills, status badges, agent-load progress bars, and CSAT highlights.', 'Rows & Cells', ConditionalStyling),

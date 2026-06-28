@@ -147,8 +147,13 @@ export function createKeyboard<
         return;
       }
       if (lower === "v") {
-        event.preventDefault();
-        void ctx.pasteFromClipboard();
+        // Secure context: read via the async Clipboard API and swallow the
+        // key. Insecure context (no navigator.clipboard): DON'T preventDefault
+        // so the browser delivers a native `paste` event to `onGridPaste`.
+        if (typeof navigator.clipboard?.readText === "function") {
+          event.preventDefault();
+          void ctx.pasteFromClipboard();
+        }
         return;
       }
       if (lower === "x") {

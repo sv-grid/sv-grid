@@ -311,6 +311,14 @@
   background: var(--sg-pinned-header-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 60%, var(--sg-accent, #2563eb) 14%));
   font-weight: 600;
 }
+/* Zebra striping, opt-in via the `zebraRows` prop (which adds
+   `.sv-grid-row-alt` to alternating DATA rows only - pinned, group,
+   detail, and summary rows never get the class, so they keep a single
+   background). This rule sits before `.sv-grid-row-selected` /
+   `:hover` so those states paint over the stripe. */
+.sv-grid-row-alt > .sv-grid-cell {
+  background: var(--sg-row-alt-bg, #f8fafc);
+}
 /* Zebra rows: keep the pinned tint visible (don't let the row-alt
    background bleed through) by re-painting the pinned cells. */
 .sv-grid-row-alt > .sv-grid-cell[data-pinned] {
@@ -380,7 +388,7 @@
 
 .sv-grid-resize-handle:hover,
 .sv-grid-resize-handle.is-resizing {
-  background: rgba(11, 99, 243, 0.3);
+  background: color-mix(in srgb, var(--sg-accent, #0b63f3) 30%, transparent);
 }
 
 /* Row resize handle (counterpart of the column resize handle). Lives
@@ -395,7 +403,7 @@
 }
 .sv-grid-row-resize-handle:hover,
 .sv-grid-row-resize-handle.is-resizing {
-  background: rgba(11, 99, 243, 0.3);
+  background: color-mix(in srgb, var(--sg-accent, #0b63f3) 30%, transparent);
 }
 
 .sv-grid-head {
@@ -408,6 +416,22 @@
      "floating" symbol / pnl cells at the top of the viewport. */
   z-index: 35;
   background: var(--sg-header-bg, #f5f7fb);
+}
+/* Column-header cells take the header background (and header foreground)
+   so the header row paints as a solid band rather than body-colored
+   cells over the sticky header strip. Together with the row-number
+   gutter below - which uses the same --sg-header-bg - the column headers
+   and row headers read as one continuous header chrome. */
+.sv-grid-head .sv-grid-column {
+  background: var(--sg-header-bg, #f5f7fb);
+  /* Header typography is themeable so each design-system preset can match
+     its real grid header (e.g. Excel bold, Atlassian uppercase + subtle,
+     shadcn medium + muted). The label/sort-button inherit these. */
+  color: var(--sg-header-label-color, var(--sg-header-fg, var(--sg-fg, #0f172a)));
+  font-weight: var(--sg-header-weight, 600);
+  font-size: var(--sg-header-size, inherit);
+  text-transform: var(--sg-header-transform, none);
+  letter-spacing: var(--sg-header-tracking, normal);
 }
 
 /* Header drag-to-reorder. The `draggable` attribute is only set
@@ -602,6 +626,9 @@
   position: sticky;
   left: 0;
   z-index: 4;
+  /* Match the column-header band so the row-number gutter and the column
+     headers form one continuous header chrome. */
+  background: var(--sg-header-bg, #f5f7fb);
   color: var(--sg-muted, #64748b);
   font-variant-numeric: tabular-nums;
 }
@@ -635,9 +662,9 @@
   animation: sv-grid-filter-pulse 700ms ease-out;
 }
 @keyframes sv-grid-filter-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(11, 99, 243, 0.55); }
-  70%  { box-shadow: 0 0 0 6px rgba(11, 99, 243, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(11, 99, 243, 0); }
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sg-accent, #0b63f3) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--sg-accent, #0b63f3) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sg-accent, #0b63f3) 0%, transparent); }
 }
 
 .sv-grid-checkbox {
@@ -802,12 +829,18 @@
   transform-origin: bottom right;
 }
 
-/* Fill-preview overlay paints a dashed accent border on the cells the
-   user is about to fill. Source cells (still in the selection range)
-   keep their normal range styling. */
+/* Fill-preview overlay paints an accent border on the cells the user is
+   about to fill. Source cells (still in the selection range) keep their
+   normal range styling. The border + tint derive from the theme accent
+   (`--sg-accent`) so they match each theme instead of a fixed blue;
+   `--sg-fill-preview-border` / `--sg-fill-preview-bg` let a theme override
+   them directly. */
 .sv-grid-cell[data-fill-preview="true"] {
-  box-shadow: inset 0 0 0 2px rgba(11, 99, 243, 0.5);
-  background: rgba(11, 99, 243, 0.08);
+  box-shadow: inset 0 0 0 2px
+    var(--sg-fill-preview-border,
+      color-mix(in srgb, var(--sg-accent, #0b63f3) 50%, transparent));
+  background: var(--sg-fill-preview-bg,
+    color-mix(in srgb, var(--sg-accent, #0b63f3) 8%, transparent));
 }
 
 .sv-grid-cell-editing {
@@ -1119,6 +1152,11 @@
   gap: 2px;
   width: 100%;
   min-width: 0;
+  /* Themeable header height. Defaults to auto (content-driven); presets
+     can set a taller header (e.g. Material's roomy data-table header).
+     The component measures the rendered header height for sticky offsets,
+     so this propagates to --sg-thead-h automatically. */
+  min-height: var(--sg-header-min-height, auto);
 }
 
 .sv-grid-header-sort {

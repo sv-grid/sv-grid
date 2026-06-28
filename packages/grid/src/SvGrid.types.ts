@@ -185,6 +185,12 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   showRowNumbers?: boolean;
   /**
+   * Paint alternating data rows with the `--sg-row-alt-bg` color (zebra
+   * striping). Only data rows stripe - pinned, group, detail, and summary
+   * rows keep their single background. Defaults to `false`.
+   */
+  zebraRows?: boolean;
+  /**
    * Width (px) of the row-number column. Defaults to 56, which fits up
    * to "99,999"; bump this when the dataset crosses six digits so the
    * largest row number stays fully visible at the bottom of a scroll.

@@ -24,9 +24,17 @@ html[data-preset='material'] .demo-page {
   --sg-pill-inactive-fg: #410002;
   --sg-radius: 8px;        /* Material 3 medium shape */
   --sg-cell-px: 16px;      /* 16dp standard padding */
+  /* Header: Material data table - medium weight, roomy header height */
+  --sg-header-weight: 500;
+  --sg-header-min-height: 44px;
   background: #fffbfe;
   color: #1d1b20;
   font-family: 'Roboto Flex', Roboto, 'Segoe UI', system-ui, sans-serif;
+  /* Scrollbar - thin tonal overlay. MUI/M3 scrollbars stay neutral grey; no primary tint on drag. */
+  --sg-scrollbar-bg: #f3edf7; --sg-scrollbar-border: #cac4d0;
+  --sg-scrollbar-thumb: rgba(73, 69, 79, 0.30); --sg-scrollbar-thumb-hover: rgba(73, 69, 79, 0.50); --sg-scrollbar-thumb-active: rgba(73, 69, 79, 0.65); --sg-scrollbar-thumb-radius: 8px;
+  --sg-scrollbar-arrow: #49454f; --sg-scrollbar-arrow-hover: #1d1b20; --sg-scrollbar-arrow-hover-bg: #ece6f0;
+  --sg-scrollbar-arrow-active: #1d1b20; --sg-scrollbar-arrow-active-bg: #cac4d0; --sg-scrollbar-arrow-disabled: rgba(73, 69, 79, 0.20);
 }
 html[data-preset='material'] .demo-page .demo-aside {
   background: #f3edf7;
@@ -53,6 +61,11 @@ html[data-preset='material'][data-theme='dark'] .demo-page {
   --sg-pill-inactive-fg: #ffdad6;
   background: #141218;
   color: #e6e0e9;
+  /* Scrollbar - thin tonal overlay dark (neutral, no primary tint on drag) */
+  --sg-scrollbar-bg: #1d1b20; --sg-scrollbar-border: #49454f;
+  --sg-scrollbar-thumb: rgba(202, 196, 208, 0.28); --sg-scrollbar-thumb-hover: rgba(202, 196, 208, 0.45); --sg-scrollbar-thumb-active: rgba(202, 196, 208, 0.60);
+  --sg-scrollbar-arrow: #cac4d0; --sg-scrollbar-arrow-hover: #e6e0e9; --sg-scrollbar-arrow-hover-bg: #2b2930;
+  --sg-scrollbar-arrow-active: #e6e0e9; --sg-scrollbar-arrow-active-bg: #49454f; --sg-scrollbar-arrow-disabled: rgba(202, 196, 208, 0.20);
 }
 html[data-preset='material'][data-theme='dark'] .demo-page .demo-aside {
   background: #1d1b20;

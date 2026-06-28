@@ -24,9 +24,16 @@ html[data-preset='ag-alpine'] .demo-page {
   --sg-pill-inactive-fg: #721c24;
   --sg-radius: 3px;
   --sg-cell-px: 16px;              /* cellHorizontalPadding (AG default) */
+  /* Header: AG Grid Alpine - bold header */
+  --sg-header-weight: 700; --sg-header-min-height: 48px;
   background: #ffffff;
   color: #181d1f;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Scrollbar - native-like neutrals. AG Grid ships native scrollbars; neutral grey, no accent on drag. */
+  --sg-scrollbar-bg: #f8f8f8; --sg-scrollbar-border: #babfc7;
+  --sg-scrollbar-thumb: #b7b7b7; --sg-scrollbar-thumb-hover: #999999; --sg-scrollbar-thumb-active: #787878; --sg-scrollbar-thumb-radius: 3px;
+  --sg-scrollbar-arrow: #525e64; --sg-scrollbar-arrow-hover: #181d1f; --sg-scrollbar-arrow-hover-bg: #ecf0f1;
+  --sg-scrollbar-arrow-active: #181d1f; --sg-scrollbar-arrow-active-bg: #babfc7; --sg-scrollbar-arrow-disabled: #cdcdcd;
 }
 html[data-preset='ag-alpine'] .demo-page .demo-aside {
   background: #f8f8f8;
@@ -53,6 +60,11 @@ html[data-preset='ag-alpine'][data-theme='dark'] .demo-page {
   --sg-pill-inactive-fg: #ffa5ab;
   background: #181d1f;
   color: #ffffff;
+  /* Scrollbar - native-like dark neutrals (neutral, no accent on drag) */
+  --sg-scrollbar-bg: #222628; --sg-scrollbar-border: #68686e;
+  --sg-scrollbar-thumb: #55585b; --sg-scrollbar-thumb-hover: #6d7174; --sg-scrollbar-thumb-active: #858585;
+  --sg-scrollbar-arrow: #ababab; --sg-scrollbar-arrow-hover: #ffffff; --sg-scrollbar-arrow-hover-bg: #2a2e30;
+  --sg-scrollbar-arrow-active: #ffffff; --sg-scrollbar-arrow-active-bg: #68686e; --sg-scrollbar-arrow-disabled: #44484a;
 }
 html[data-preset='ag-alpine'][data-theme='dark'] .demo-page .demo-aside {
   background: #222628;

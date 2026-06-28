@@ -24,9 +24,16 @@ html[data-preset='shadcn'] .demo-page {
   --sg-pill-inactive-fg: #b91c1c;
   --sg-radius: 6px;
   --sg-cell-px: 12px;
+  /* Header: shadcn TableHead - medium weight, muted label */
+  --sg-header-weight: 500; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 48px;
   background: #ffffff;
   color: #09090b;
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Scrollbar - zinc neutrals. shadcn ScrollArea thumb is the neutral `border` token; no accent on drag. */
+  --sg-scrollbar-bg: #fafafa; --sg-scrollbar-border: #e4e4e7;
+  --sg-scrollbar-thumb: #d4d4d8; --sg-scrollbar-thumb-hover: #a1a1aa; --sg-scrollbar-thumb-active: #71717a;
+  --sg-scrollbar-arrow: #71717a; --sg-scrollbar-arrow-hover: #18181b; --sg-scrollbar-arrow-hover-bg: #f4f4f5;
+  --sg-scrollbar-arrow-active: #18181b; --sg-scrollbar-arrow-active-bg: #e4e4e7; --sg-scrollbar-arrow-disabled: #d4d4d8;
 }
 html[data-preset='shadcn'] .demo-page .demo-aside {
   background: #fafafa;
@@ -53,6 +60,11 @@ html[data-preset='shadcn'][data-theme='dark'] .demo-page {
   --sg-pill-inactive-fg: #fecaca;
   background: #0a0a0a;
   color: #fafafa;
+  /* Scrollbar - zinc dark (neutral, no accent on drag) */
+  --sg-scrollbar-bg: #18181b; --sg-scrollbar-border: #27272a;
+  --sg-scrollbar-thumb: #3f3f46; --sg-scrollbar-thumb-hover: #52525b; --sg-scrollbar-thumb-active: #71717a;
+  --sg-scrollbar-arrow: #a1a1aa; --sg-scrollbar-arrow-hover: #fafafa; --sg-scrollbar-arrow-hover-bg: #27272a;
+  --sg-scrollbar-arrow-active: #fafafa; --sg-scrollbar-arrow-active-bg: #3f3f46; --sg-scrollbar-arrow-disabled: #3f3f46;
 }
 html[data-preset='shadcn'][data-theme='dark'] .demo-page .demo-aside {
   background: #18181b;

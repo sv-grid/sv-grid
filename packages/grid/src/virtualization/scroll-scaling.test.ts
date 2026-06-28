@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { createRowScrollScaling } from './scroll-scaling'
+import { createRowScrollScaling, resolveMaxDomHeight } from './scroll-scaling'
 
 const VIEWPORT = 600
+const FALLBACK = 8_000_000
 
 describe('createRowScrollScaling - inert (content fits under the cap)', () => {
   // 1M rows * 18px = 18M, under a 33.5M (Chrome) cap -> no scaling.
@@ -71,6 +72,53 @@ describe('createRowScrollScaling - active (content exceeds the cap)', () => {
       expect(dom).toBeGreaterThanOrEqual(prevD)
       prevD = dom
     }
+  })
+})
+
+describe('resolveMaxDomHeight - picks the smaller, real scrollable cap', () => {
+  it('keeps the desktop cap when both signals agree', () => {
+    // Chrome ~33.5M; offsetHeight and scrollHeight match. 0.5% safety shave.
+    const cap = resolveMaxDomHeight(33_554_400, 33_554_400, FALLBACK)
+    expect(cap).toBeLessThan(33_554_400)
+    expect(cap).toBeGreaterThan(33_000_000)
+  })
+
+  it('uses the SCROLL cap when a phone over-reports offsetHeight', () => {
+    // High-DPR mobile: layout says 24M, but the container only scrolls ~6M.
+    // Trusting offsetHeight is exactly what stranded the last rows.
+    const cap = resolveMaxDomHeight(24_000_000, 6_000_000, FALLBACK)
+    expect(cap).toBeLessThanOrEqual(6_000_000)
+    expect(cap).toBeGreaterThan(5_900_000)
+  })
+
+  it('shaves a safety margin so the spacer never sits at the exact edge', () => {
+    const cap = resolveMaxDomHeight(10_000_000, 10_000_000, FALLBACK)
+    expect(cap).toBeLessThan(10_000_000)
+  })
+
+  it('falls back when both readings are junk (jsdom returns 0)', () => {
+    expect(resolveMaxDomHeight(0, 0, FALLBACK)).toBe(FALLBACK)
+  })
+
+  it('falls back when the browser did not clamp (returned ~1e9)', () => {
+    expect(resolveMaxDomHeight(1_000_000_000, 1_000_000_000, FALLBACK)).toBe(FALLBACK)
+  })
+
+  it('ignores a junk signal but trusts the valid one', () => {
+    // offsetHeight unclamped/garbage, scrollHeight is the real cap.
+    const cap = resolveMaxDomHeight(1_000_000_000, 5_000_000, FALLBACK)
+    expect(cap).toBeLessThanOrEqual(5_000_000)
+    expect(cap).toBeGreaterThan(4_900_000)
+  })
+
+  it('feeds straight into the scaler so the last row stays reachable', () => {
+    const maxDom = resolveMaxDomHeight(24_000_000, 6_000_000, FALLBACK)
+    const trueTotal = 500_000 * 32 // 16M px of rows, over the phone cap
+    const s = createRowScrollScaling(trueTotal, maxDom, VIEWPORT)
+    expect(s.active).toBe(true)
+    expect(s.domTotal).toBeLessThanOrEqual(maxDom)
+    const domMax = s.domTotal - VIEWPORT
+    expect(s.domToLogical(domMax)).toBeCloseTo(trueTotal - VIEWPORT, 0)
   })
 })
 

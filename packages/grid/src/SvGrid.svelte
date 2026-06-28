@@ -170,6 +170,7 @@
   const focusOnMount = $derived(ctrl.focusOnMount);
   const onHeaderSortClick = $derived(ctrl.onHeaderSortClick);
   const onGridKeyDown = $derived(ctrl.onGridKeyDown);
+  const onGridPaste = $derived(ctrl.onGridPaste);
   const changePage = $derived(ctrl.changePage);
   const goToPage = $derived(ctrl.goToPage);
   const setPageSize = $derived(ctrl.setPageSize);
@@ -978,6 +979,7 @@
             colCount: allColumns.length,
           })}
           onkeydown={onGridKeyDown}
+          onpaste={onGridPaste}
           style={`min-width: ${totalColumnWidth}px;`}
         >
           <!-- svelte-ignore a11y_no_redundant_roles -->
@@ -1416,6 +1418,7 @@
                     <tr
                       class={`sv-grid-row ${userRowClass}`}
                       class:sv-grid-row-selected={isRowSelected(row.id)}
+                      class:sv-grid-row-alt={props.zebraRows && rowIndex % 2 === 1}
                       {...getGridRowA11yProps(rowIndex + 1)}
                       style={`height: ${rowItem.size}px;`}
                     >
@@ -1613,6 +1616,7 @@
                   <tr
                     class={`sv-grid-row ${userRowClass}`}
                     class:sv-grid-row-selected={isRowSelected(row.id)}
+                    class:sv-grid-row-alt={props.zebraRows && rowIndex % 2 === 1}
                     {...getGridRowA11yProps(rowIndex + 1)}
                   >
                     {#if showRowNumbersEffective}

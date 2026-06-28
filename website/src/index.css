@@ -184,6 +184,14 @@ section select option {
   background: var(--sg-header-bg) !important;
   color: var(--sg-header-fg);
 }
+/* Column-header cells share the row-number gutter's --sg-header-bg so the
+ * row headers (left number column) and the column-header bar read as one
+ * continuous header band, instead of grey row-headers next to white
+ * column-headers. Higher specificity than the .sv-grid-column rule above. */
+.sv-grid-head .sv-grid-column {
+  background: var(--sg-header-bg) !important;
+  color: var(--sg-header-label-color, var(--sg-header-fg));
+}
 .sv-grid-foot {
   background: var(--sg-header-bg) !important;
   color: var(--sg-header-fg);
@@ -543,9 +551,6 @@ section select option {
   opacity: 1;
 }
 
-.sv-grid-table tbody tr:nth-child(even) .sv-grid-cell {
-  background: var(--sg-row-alt-bg) !important;
-}
 .sv-grid-table tbody tr:hover .sv-grid-cell {
   background: var(--sg-row-hover-bg) !important;
 }
@@ -583,6 +588,15 @@ a:focus-visible,
 [tabindex]:focus-visible {
   outline: none;
   box-shadow: var(--sg-focus-ring);
+}
+/* The grid <table> carries a tabindex for keyboard nav, so the global
+ * focus ring above lands on it - and the scroll container's overflow
+ * clips it into a stray blue line along the bottom edge. The grid shows
+ * focus via its active-cell ring, so suppress the table's own ring. */
+.sv-grid-table:focus,
+.sv-grid-table:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .sparkbar {

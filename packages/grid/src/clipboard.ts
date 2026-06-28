@@ -371,6 +371,49 @@ export function createClipboard<
     ctx.grid.store.setState((prev: any) => ({ ...prev }));
   }
 
+  /**
+   * Write text to the OS clipboard, with a legacy fallback for insecure
+   * contexts. The async Clipboard API requires a secure context (HTTPS or
+   * localhost); on plain HTTP - e.g. a grid served by XAMPP/Apache over a LAN
+   * host - `navigator.clipboard` is undefined and copy/cut would silently do
+   * nothing. There we fall back to a temporary <textarea> + execCommand('copy'),
+   * which still works in an insecure context. This MUST be called synchronously
+   * from the user gesture (the keydown handler) so execCommand is allowed.
+   */
+  function writeClipboardText(text: string) {
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(text).catch(() => legacyCopyText(text));
+      return;
+    }
+    legacyCopyText(text);
+  }
+
+  function legacyCopyText(text: string): boolean {
+    if (typeof document === "undefined") return false;
+    const active = document.activeElement as HTMLElement | null;
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    // Offscreen but still selectable; opacity/0-size can suppress selection.
+    ta.style.cssText =
+      "position:fixed;top:0;left:-9999px;width:1px;height:1px;padding:0;border:0;";
+    document.body.appendChild(ta);
+    let ok = false;
+    try {
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    }
+    document.body.removeChild(ta);
+    // Restore focus to the grid root so keyboard nav keeps working afterward.
+    (active ?? (ctx.gridRootEl as HTMLElement | null))?.focus?.({
+      preventScroll: true,
+    });
+    return ok;
+  }
+
   function copySelectionToClipboard() {
     const anchor = ctx.selectionRange.anchor;
     const focus = ctx.selectionRange.focus;
@@ -397,7 +440,7 @@ export function createClipboard<
       lines.push(cells.join("\t"));
     }
     const text = lines.join("\n");
-    void navigator.clipboard?.writeText(text).catch(() => {});
+    writeClipboardText(text);
   }
 
   /**
