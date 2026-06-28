@@ -118,3 +118,51 @@ export function createNamedViews(
     },
   }
 }
+
+export type AutoSavedViewOptions = {
+  /** Slot name inside the NamedViews store. Default `'__autosave'`. */
+  name?: string
+  /** Sample interval in ms. Default 800. */
+  intervalMs?: number
+  /** Skip restore-on-mount (e.g. you already loaded a URL view first). */
+  skipRestore?: boolean
+}
+
+/**
+ * Attach an "always-save-current-layout" slot to a `NamedViews` manager.
+ * Restores once on attach (if a saved view exists under `name`) and
+ * polls `host.getState()` thereafter, saving when the JSON snapshot
+ * changes.
+ *
+ * Returns a `detach()` that stops polling - call it from `onDestroy`.
+ *
+ * ```ts
+ * const views = createNamedViews(api, { storage: localStorageViews('myapp:views') })
+ * const off = attachAutoSavedView(api, views)
+ * onDestroy(off)
+ * ```
+ *
+ * Distinct from a user-saved named view: the slot is a single, fixed
+ * name reserved for "what the user left the page looking at." The user
+ * can still call `views.save('Q3 review')` etc. through the same store.
+ */
+export function attachAutoSavedView(
+  host: ViewStateHost,
+  views: NamedViews,
+  opts: AutoSavedViewOptions = {},
+): () => void {
+  const name = opts.name ?? '__autosave'
+  if (!opts.skipRestore && views.has(name)) views.load(name)
+
+  const interval = Math.max(100, opts.intervalMs ?? 800)
+  let last = JSON.stringify(host.getState())
+  const handle = setInterval(() => {
+    let next: string
+    try { next = JSON.stringify(host.getState()) } catch { return }
+    if (next === last) return
+    last = next
+    views.save(name)
+  }, interval)
+
+  return () => clearInterval(handle)
+}

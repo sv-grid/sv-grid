@@ -1,36 +1,98 @@
-SV-GRID PRO COMMERCIAL LICENSE
+SVGRID ENTERPRISE COMMERCIAL LICENSE
 Version 1.0
 
-Copyright (c) 2026 Boyko Markov <boikom@jqwidgets.com>
+Copyright (c) 2011-2026 jQWidgets Ltd.
+Author contact: Boyko Markov <boikom@jqwidgets.com>
 Project: @svgrid/enterprise
 
-This software is licensed, not sold. Use requires a valid, paid Pro
-license key issued by the Author. Without a license key, the runtime
-will throw at the first call to a Pro feature.
+This software is licensed, not sold. It is the commercial Enterprise
+Package of SvGrid. The free Community Edition (`@svgrid/grid` and
+`@svgrid/mcp`) is licensed separately under the MIT License.
+
+This file is a summary of the commercial terms. The full, authoritative
+agreement is the SvGrid End User License Agreement (EULA). In case of any
+conflict, the EULA governs.
+
+  EULA: https://svgrid.com/eula  (also docs/legal/EULA.md in the repo)
 
 ------------------------------------------------------------------------
 1. GRANT (with valid license key)
 ------------------------------------------------------------------------
 
-Subject to the Subscriber's compliance with this License and continued
-payment of the applicable license fee, the Author grants the Subscriber
-a non-exclusive, non-transferable, non-sublicensable license to:
+Subject to the Subscriber's compliance with this License and, where an
+updates-and-support term is in effect, continued payment of the
+applicable license fee, the Author grants the Subscriber a
+non-exclusive, non-transferable, non-sublicensable license to:
 
-  (a) install and use the Software on developer workstations and in
-      production deployments belonging to the Subscriber;
+  (a) install and use the Software on developer workstations and in the
+      Subscriber's development, staging, and production deployments;
   (b) modify the Software for the Subscriber's internal use, provided
       that all copyright notices and license terms are preserved;
   (c) distribute the Software bundled inside the Subscriber's own
-      compiled application, provided the Software is not the primary
-      product distributed and remains under this License.
+      application, provided the Software is not the primary product
+      distributed and remains under this License.
 
-The number of developer seats covered is determined by the Subscriber's
-order. A "developer" is any individual who writes or modifies source
-code that imports `@svgrid/enterprise`. Read-only users and end users do not
-count toward seats.
+Deployment scope is set by the Subscriber's order:
+
+  - Single Application Developer License: one (1) deployed production
+    application, plus unlimited internal dev / staging environments.
+  - Multiple Application Developer License: unlimited deployed
+    production applications within the Subscriber's organization.
+  - Enterprise / Custom (Site or Org-wide): scope per the negotiated
+    order or master agreement.
 
 ------------------------------------------------------------------------
-2. RESTRICTIONS
+2. SEATS
+------------------------------------------------------------------------
+
+The Software is licensed per developer. The number of seats is set by
+the Subscriber's order. A "developer" is any individual who writes or
+modifies source code that imports `@svgrid/enterprise`. Read-only users
+and end users do not count toward seats and are unlimited. One license
+key activates every grid instance in scope; there is no per-page or
+per-component accounting. A seat is tied to a role: if a developer
+leaves and is replaced, the seat transfers to the replacement at no
+additional cost.
+
+------------------------------------------------------------------------
+3. PERPETUAL LICENSE AND UPDATES/SUPPORT TERM
+------------------------------------------------------------------------
+
+The license is perpetual: the Subscriber may use the versions released
+during a paid term forever. Each order includes one (1) year of updates
+and support, which renews automatically each year at the then-current
+rate until cancelled. The Subscriber may cancel at any time. On
+cancellation or lapse:
+
+  (a) every version released during a paid term keeps working and keeps
+      validating against the Subscriber's license key;
+  (b) the Subscriber stops receiving releases and support issued after
+      the paid term ends.
+
+The Author will not disable working features of a paying or previously
+paying Subscriber.
+
+------------------------------------------------------------------------
+4. EVALUATION, SOFT-GATE, AND OPEN SOURCE
+------------------------------------------------------------------------
+
+The Software is soft-gated. Every feature is fully functional without a
+license key for evaluation. While unlicensed, the grid shows a small
+"Unlicensed @svgrid/enterprise" watermark and emits a one-time console
+notice; setting a valid key removes both. There is no time limit and no
+disabled functionality during evaluation. Time-limited evaluation keys
+that remove the watermark are available on request.
+
+Projects that are open source under an OSI-approved license, hosted in a
+public repository, and not a paid product qualify for a free Enterprise
+key with the full feature set and no watermark, renewable annually.
+
+License key validation is performed entirely client-side, signed against
+the Author's public key. No network call is made to validate, and no
+telemetry is sent. Air-gapped deployments are supported.
+
+------------------------------------------------------------------------
+5. RESTRICTIONS
 ------------------------------------------------------------------------
 
 The Subscriber may NOT:
@@ -39,27 +101,25 @@ The Subscriber may NOT:
       component;
   (b) sublicense, rent, lease, or sell the Software to third parties;
   (c) remove, obscure, or disable the license-key check or any
-      copyright notices;
-  (d) use the Software to develop a directly competing data-grid or
-      table component product for third parties;
+      copyright or proprietary notices;
+  (d) use the Software to develop a data-grid or table component product
+      that competes with the Software for distribution to third parties;
   (e) share license keys outside of the developer seats covered by the
       Subscriber's order.
 
 ------------------------------------------------------------------------
-3. SUBSCRIPTION AND TERMINATION
+6. TERMINATION
 ------------------------------------------------------------------------
 
-The license is granted for the term specified in the Subscriber's
-order (typically one year, renewable). On non-renewal or material
-breach of Sections 1 or 2, the license terminates automatically and
-the Subscriber must cease all use of the Software, remove it from
-development environments, and stop deploying new versions of any
-application that depends on it. Existing deployed copies in production
-may continue to operate until the next release cycle, but no new
-deployments are permitted.
+On material breach of Sections 1, 2, or 5, the license terminates
+automatically and the Subscriber must cease all use of the Software,
+remove it from development environments, and stop deploying new versions
+of any application that depends on it. Existing deployed copies in
+production may continue to operate, but no new deployments are permitted.
+Fees for licenses cancelled due to violation are non-refundable.
 
 ------------------------------------------------------------------------
-4. WARRANTY DISCLAIMER AND LIABILITY
+7. WARRANTY DISCLAIMER AND LIABILITY
 ------------------------------------------------------------------------
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
@@ -74,7 +134,7 @@ exceed the license fees paid by the Subscriber in the twelve months
 preceding the event giving rise to the claim.
 
 ------------------------------------------------------------------------
-5. THIRD-PARTY COMPONENTS
+8. THIRD-PARTY COMPONENTS
 ------------------------------------------------------------------------
 
 This Software includes a vendored copy of the data-export utility
@@ -87,11 +147,13 @@ respective authors under their own terms (MIT). They are not bundled
 into this package; consumers install them separately.
 
 ------------------------------------------------------------------------
-6. CONTACT
+9. CONTACT
 ------------------------------------------------------------------------
 
-To purchase a license, request a quote, or report unauthorized use,
-contact: boikom@jqwidgets.com
-Pricing: https://sv-grid.dev/pricing
+To purchase a license, request a quote, or report unauthorized use:
+  Sales:   sales@jqwidgets.com
+  Support: support@jqwidgets.com
+  General: info@jqwidgets.com
+Pricing: https://svgrid.com/pricing
 
 END OF LICENSE

@@ -267,10 +267,25 @@ export function createKeyboard<
       return;
     }
 
+    // Excel-style page step: PageUp/PageDown jump by ~one visible
+    // page minus one row of overlap. Falls back to grid pagination's
+    // pageSize when pagination is on, or 10 as a final fallback.
+    function pageStep(): number {
+      const pageSize = ctx.grid.getState().pagination?.pageSize as number | undefined
+      if (pageSize && pageSize > 0) return pageSize
+      const clientHeight = ctx.scrollContainer?.clientHeight ?? 0
+      const headerHeight = ctx.headerHeight ?? 0
+      const rowHeight =
+        typeof ctx.props.rowHeight === 'function'
+          ? (ctx.props.rowHeight(current.rowIndex) ?? 30)
+          : (ctx.props.rowHeight ?? 30)
+      const usable = Math.max(0, clientHeight - headerHeight)
+      return Math.max(1, Math.floor(usable / Math.max(rowHeight, 1)) - 1)
+    }
     const next = getNextActiveCell(current, intent, {
       maxRow: Math.max(ctx.allRows.length - 1, 0),
       maxCol: Math.max(ctx.allColumns.length - 1, 0),
-      pageSize: ctx.grid.getState().pagination?.pageSize ?? 10,
+      pageSize: pageStep(),
     });
     ctx.setActiveCell(next.rowIndex, next.colIndex);
     ctx.scrollActiveCellIntoView(next.rowIndex, next.colIndex);

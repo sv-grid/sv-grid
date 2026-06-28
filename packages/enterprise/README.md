@@ -1,6 +1,6 @@
 # @svgrid/enterprise
 
-The paid feature pack for [sv-grid](https://sv-grid.dev).
+The paid feature pack for [sv-grid](https://svgrid.com).
 
 Ships data export to **Excel (xlsx), PDF, CSV, TSV, HTML** and a
 **Print** action that opens a paginated, printable view of the grid.
@@ -34,4 +34,4 @@ object with `exportData` and `print` added on top.
 ## License
 
 Commercial. A valid Pro key is required at runtime; calls throw
-otherwise. Buy a key at <https://sv-grid.dev/pricing>.
+otherwise. Buy a key at <https://svgrid.com/pricing>.

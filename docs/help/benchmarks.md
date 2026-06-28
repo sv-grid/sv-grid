@@ -184,7 +184,7 @@ holds the visible window regardless of total row count.
 
 ### Is SvGrid faster than AG Grid or TanStack Table?
 
-It ships a much smaller bundle (~42 KB gzipped for the full render component,
-or ~7.5 KB for the headless core) and virtualizes by default. Raw scroll
+It ships a much smaller bundle (~60 KB gzipped for the full render component,
+or ~9.4 KB for the headless core) and virtualizes by default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.

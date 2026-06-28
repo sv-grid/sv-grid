@@ -1,0 +1,58 @@
+/* ============================================================
+ * TAILWIND - slate + indigo. Inter font.
+ * ============================================================ */
+html[data-preset='tailwind'] .demo-page {
+  --sg-bg: #ffffff;
+  --sg-fg: #0f172a;
+  --sg-muted: #64748b;
+  --sg-border: #e2e8f0;
+  --sg-header-bg: #f8fafc;
+  --sg-header-fg: #0f172a;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f1f5f9;
+  --sg-selection-bg: #e0e7ff;
+  --sg-accent: #4f46e5;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #cbd5e1;
+  --sg-pill-active: #dcfce7;
+  --sg-pill-active-fg: #166534;
+  --sg-pill-pending: #fef3c7;
+  --sg-pill-pending-fg: #92400e;
+  --sg-pill-inactive: #fee2e2;
+  --sg-pill-inactive-fg: #991b1b;
+  --sg-radius: 6px;
+  --sg-cell-px: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+html[data-preset='tailwind'] .demo-page .demo-aside {
+  background: #f8fafc;
+  border-color: #e2e8f0 !important;
+}
+html[data-preset='tailwind'][data-theme='dark'] .demo-page {
+  --sg-bg: #0f172a;
+  --sg-fg: #f8fafc;
+  --sg-muted: #94a3b8;
+  --sg-border: #334155;
+  --sg-header-bg: #1e293b;
+  --sg-header-fg: #f8fafc;
+  --sg-row-alt-bg: #0f172a;
+  --sg-row-hover-bg: #1e293b;
+  --sg-selection-bg: #312e81;
+  --sg-accent: #818cf8;
+  --sg-input-bg: #1e293b;
+  --sg-input-border: #475569;
+  --sg-pill-active: #064e3b;
+  --sg-pill-active-fg: #6ee7b7;
+  --sg-pill-pending: #78350f;
+  --sg-pill-pending-fg: #fcd34d;
+  --sg-pill-inactive: #7f1d1d;
+  --sg-pill-inactive-fg: #fca5a5;
+  background: #0f172a;
+  color: #f8fafc;
+}
+html[data-preset='tailwind'][data-theme='dark'] .demo-page .demo-aside {
+  background: #1e293b;
+  border-color: #334155 !important;
+}

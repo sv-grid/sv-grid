@@ -313,6 +313,6 @@ instance.
 ## See also
 
 - [First grid](../getting-started/2-first-grid.md) - using SvGrid directly in Svelte
-- [Starters & scaffolding](../getting-started/starters.md) - `npm create sv-grid`
+- [Starters & scaffolding](../getting-started/starters.md) - `npm create @svgrid`
 - [Tailwind integration](./tailwind.md) - the `--sg-*` theme tokens
 - [Architecture](./architecture.md) - headless core vs. render component

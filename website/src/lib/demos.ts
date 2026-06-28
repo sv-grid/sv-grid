@@ -171,6 +171,7 @@ export const demos: Demo[] = [
   demo('146-tool-panel',            'Columns tool panel',          'The docked enterprise sidebar for managing columns without a right-click: toggle visibility, reorder up/down, and group by a column. Enable with the toolPanel prop; a button appears at the grid top-right and the panel docks on the right edge.', 'Columns'),
   demo('104-column-reorder',        'Column reorder (drag)',       'Drag any column header left or right to reorder. Vertical drop indicator. Order persists across reloads via localStorage.', 'Columns'),
   demo('109-column-reorder-engine', 'Column reorder (engine prop)','Set enableColumnReorder on <SvGrid>; api.setColumnOrder / getColumnOrder + onColumnOrderChange event.', 'Columns'),
+  demo('172-autosize-columns',      'Autosize columns',            'api.autosizeColumn(id) and api.autosizeAllColumns() snap columns to the widest visible cell via canvas-based text measurement. The column header menu has an "Autosize" item that calls the same code. Manual drag-resize still works.', 'Columns'),
 
   // ----- Rows & Cells
   demo('10-custom-cells-and-themes','Custom cells + themes',       'Avatars, sparklines, progress bars, density toggle, dark mode, full a11y.', 'Rows & Cells'),
@@ -184,6 +185,7 @@ export const demos: Demo[] = [
   demo('105-row-reorder',           'Row reorder (drag rows)',     'Priority queue with a ⋮⋮ drag handle column. Multi-select aware - drag a group of rows as a block. Auto-scroll near edges.', 'Rows & Cells'),
   demo('107-pinned-rows',           'Pinned rows (top / bottom)',  'Frozen "Account totals" row at the top + sticky "Page totals" at the bottom that reacts to filters. Right-click any row to pin it.', 'Rows & Cells'),
   demo('108-pinned-rows-engine',    'Pinned rows (engine prop)',   'Pass pinnedTopRows / pinnedBottomRows arrays straight to <SvGrid>. Sticky cells, same table, same column schema.', 'Rows & Cells'),
+  demo('171-persistent-state',      'State maintenance (auto)',    'CRM contacts grid with editable cells. attachAutoSavedView reserves one slot inside createNamedViews + localStorageViews and mirrors the grid view to it: sort / filter / hide / reorder / resize a column, reload the tab, the layout is right where you left it. Same store is reusable for additional named layouts.', 'Rows & Cells'),
 
   // ----- Tree & Hierarchy
   demo('28-org-chart-tree',         'Org chart tree',              '5-level employee hierarchy with role pills, department, headcount roll-up. Expand/collapse, expand-all/collapse-all.', 'Tree & Hierarchy'),
@@ -224,6 +226,9 @@ export const demos: Demo[] = [
   // ----- Spreadsheet
   demo('27-spreadsheet-ribbon',     'Spreadsheet + Ribbon bar',    'Excel-style Ribbon UI driving the grid via SvGridApi: cell formatting (bold, color, number format), insert/delete row, sort, live SUM/AVG/COUNT.', 'Spreadsheet'),
   demo('83-spreadsheet-formulas',   'Spreadsheet + formulas',      'Real formula engine inside the grid: cell refs (A1), ranges (A1:A10), SUM / AVG / IF / COUNTIF / ROUND, arithmetic, string concat, cycle detection.', 'Spreadsheet'),
+  demo('169-cell-borders',          'Per-cell custom borders (KPI)','Editable KPI scorecard. spreadsheetLayout paints HOT-style per-edge custom borders via an absolute-positioned overlay (no border-collapse conflicts). Edit any quarter or target - the borders re-derive: green double = beat target, blue solid = hit, amber dotted = near miss, red dashed = bad miss; row champion gets a colored full frame.', 'Spreadsheet'),
+  demo('170-cell-merging',          'Cell merging (spreadsheet shell)','A real invoice rendered on an Excel-style shell: A / B / C / D / E column letters across the top, row numbers down the left. Brand band, bill-from / bill-to address blocks, meta block, line items, totals, notes, signatures - all assembled from MergeSpec + CellBorderSpec. Editable Qty / Rate / addresses / notes; totals recompute live.', 'Spreadsheet'),
+  demo('173-hyperformula',          'HyperFormula integration',    'Full HyperFormula engine wired into the grid as a peer-optional dep. Editable spreadsheet with A1-style cell refs, dozens of formulas across math (SUM / SUMIF), lookup (VLOOKUP / INDEX-MATCH), text (CONCAT / UPPER), date (TODAY / DATEDIF), logical (IF nests), financial (PMT / IRR / NPV), statistical (AVERAGE / MAX / RANK).', 'Spreadsheet'),
 
   // ----- Charts (zero-dependency SvGridChart, driven by the grid's rows)
   demo('147-integrated-charts',     'Integrated charts (no deps)', 'Chart the grid data with no external charting library. SvGridChart renders a ChartSpec; rowsToChartSpec aggregates the grid current (filtered/sorted) rows into one. Bar, line, area, pie - plus 100% stacked, top-N + Other, an average reference line, and double-click-to-isolate a series. Filter the grid and the chart re-aggregates live.', 'Charts'),

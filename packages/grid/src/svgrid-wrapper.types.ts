@@ -197,6 +197,15 @@ export type SvGridApi<
    */
   getColumnWidths(): Record<string, number>
   /**
+   * Snap one column's width to its widest visible cell (header text +
+   * any rendered body cell). Equivalent to double-clicking the column's
+   * resize handle. The grid also exposes this through the column menu's
+   * "Autosize" item.
+   */
+  autosizeColumn(columnId: string): void
+  /** Run `autosizeColumn` on every column. */
+  autosizeAllColumns(): void
+  /**
    * Replace the column-pinning state in one call. Each entry is a
    * column id; the order in the array becomes the visible order along
    * the pinned edge.
@@ -366,7 +375,9 @@ export type SvGridWrapperProps<
   showRowSelection?: boolean
   showPagination?: boolean
   virtualization?: boolean
-  rowHeight?: number
+  /** Row height in pixels. Pass a function `(rowIndex) => px` for per-row
+   *  variable heights (e.g. when wiring up an interactive row-resize). */
+  rowHeight?: number | ((rowIndex: number) => number)
   overscan?: number
   containerHeight?: number
   columnVirtualization?: boolean

@@ -104,6 +104,20 @@ export {
   type SparklineGeometry,
 } from './sparkline'
 export {
+  spreadsheetLayout,
+  type SpreadsheetActionOptions,
+  type MergeSpec,
+  type CellBorderSpec,
+  type BorderSpec,
+} from './spreadsheet'
+export { rowResize, type RowResizeOptions } from './row-resize'
+export {
+  createHyperFormulaSheet,
+  type HyperFormulaSheet,
+  type HyperFormulaSheetConfig,
+  type HyperFormulaInstance,
+} from './hyperformula-adapter'
+export {
   createCollaboration,
   broadcastChannelTransport,
   type CollabUser,
@@ -127,9 +141,11 @@ export {
   createNamedViews,
   memoryViews,
   localStorageViews,
+  attachAutoSavedView,
   type SavedView,
   type ViewStorage,
   type NamedViews,
+  type AutoSavedViewOptions,
 } from './named-views'
 export {
   resolveCellFormat,

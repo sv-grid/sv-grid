@@ -101,7 +101,7 @@
   width: 30px;
   height: 30px;
   border: 1px solid var(--sg-border, #e2e8f0);
-  border-radius: 6px;
+  border-radius: var(--sg-radius, 6px);
   background: var(--sg-bg, #fff);
   color: var(--sg-muted, #64748b);
   cursor: pointer;
@@ -347,17 +347,17 @@
  * left gap; right-aligned numbers/dates get a 7px right gap. */
 .sv-grid-cell[data-align="left"],
 .sv-grid-column[data-align="left"] {
-  padding-left: 7px;
+  padding-left: var(--sg-cell-px, 7px);
 }
 .sv-grid-cell[data-align="right"] {
   text-align: right;
-  padding-right: 7px;
+  padding-right: var(--sg-cell-px, 7px);
 }
 .sv-grid-cell[data-align="center"] {
   text-align: center;
 }
 .sv-grid-column[data-align="right"] {
-  padding-right: 7px;
+  padding-right: var(--sg-cell-px, 7px);
 }
 .sv-grid-column[data-align="right"] .sv-grid-header-sort {
   justify-content: flex-end;
@@ -383,10 +383,30 @@
   background: rgba(11, 99, 243, 0.3);
 }
 
+/* Row resize handle (counterpart of the column resize handle). Lives
+   at the bottom of the row-header gutter cell; the consumer opts in
+   by attaching the `rowResize` action and setting
+   `cellClass: 'sv-row-gutter'` on the row-header column. */
+.sv-grid-row-resize-handle {
+  /* Geometry + interactivity are also set inline by the rowResize
+     action so the strip works even if this stylesheet hasn't been
+     parsed yet. This rule only owns the hover/active tint. */
+  transition: background-color 100ms ease;
+}
+.sv-grid-row-resize-handle:hover,
+.sv-grid-row-resize-handle.is-resizing {
+  background: rgba(11, 99, 243, 0.3);
+}
+
 .sv-grid-head {
   position: sticky;
   top: 0;
-  z-index: 6;
+  /* Above pinned body cells (z-index 30 via cellPinStyle). Without
+     this, when a row scrolls partially behind the sticky header,
+     its pinned cells (left + right) paint OVER the header while the
+     middle non-pinned cells are correctly hidden behind it, leaving
+     "floating" symbol / pnl cells at the top of the viewport. */
+  z-index: 35;
   background: var(--sg-header-bg, #f5f7fb);
 }
 
@@ -499,6 +519,11 @@
    * Turning anchoring off lets the virtualizer own the scroll
    * position outright. */
   overflow-anchor: none;
+  /* Tell the browser that the sticky thead occupies the top
+     `--sg-thead-h` pixels of the scroll container. `scrollIntoView`
+     and friends use this to avoid scrolling a row underneath the
+     sticky header - critical for Excel-style keyboard nav. */
+  scroll-padding-top: var(--sg-thead-h, 36px);
 }
 
 .sv-grid-container.sv-grid-container-custom-scrollbars {
@@ -801,20 +826,47 @@
     var(--sv-range-left), var(--sv-range-right);
 }
 
+/* Selection-range edges as inset box-shadows. We tried `border-*: 2px
+   solid` to dodge the 1px-notch artifact at cell boundaries, but
+   border width changes force a full table reflow on every selection
+   change - catastrophic during keyboard nav (every arrow key pressed
+   re-flows ~30 visible rows + their neighbours under border-collapse).
+   Box-shadow inset paints on the compositor only - no reflow. */
 .sv-grid-cell[data-range-top="true"] {
   --sv-range-top: inset 0 2px 0 var(--sg-accent, #0b63f3);
 }
-
 .sv-grid-cell[data-range-bottom="true"] {
   --sv-range-bottom: inset 0 -2px 0 var(--sg-accent, #0b63f3);
 }
-
 .sv-grid-cell[data-range-left="true"] {
   --sv-range-left: inset 2px 0 0 var(--sg-accent, #0b63f3);
 }
-
 .sv-grid-cell[data-range-right="true"] {
   --sv-range-right: inset -2px 0 0 var(--sg-accent, #0b63f3);
+}
+
+/* Lift edge cells above their neighbours so the inset shadow renders
+   above adjacent cells' (collapsed) borders rather than under them. */
+.sv-grid-cell[data-range-top="true"],
+.sv-grid-cell[data-range-bottom="true"],
+.sv-grid-cell[data-range-left="true"],
+.sv-grid-cell[data-range-right="true"],
+.sv-grid-cell.sv-merge-edge-right,
+.sv-grid-cell.sv-merge-edge-bottom {
+  position: relative;
+  z-index: 3;
+}
+
+/* Inherited selection-range edges from `spreadsheetLayout` merges.
+   Same inset-shadow technique - no layout impact when toggling. */
+.sv-grid-cell.sv-merge-edge-right {
+  box-shadow: inset -2px 0 0 var(--sg-accent, #0b63f3);
+}
+.sv-grid-cell.sv-merge-edge-bottom {
+  box-shadow: inset 0 -2px 0 var(--sg-accent, #0b63f3);
+}
+.sv-grid-cell.sv-merge-in-range {
+  background: var(--sg-selection-bg, #eef4ff);
 }
 
 .sv-grid-cell-editor {
@@ -899,7 +951,7 @@
   display: flex;
   align-items: flex-start;
   border: 1px solid var(--sg-accent, #2563eb);
-  border-radius: 6px;
+  border-radius: var(--sg-radius, 6px);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
 /* When the chips editor is mounted, the parent .sv-grid-cell-editing
@@ -1101,6 +1153,12 @@
 }
 
 .sv-grid-header-label {
+  /* min-width:0 lets this flex item shrink below its text width so a long
+     label truncates to a single line with an ellipsis instead of overflowing
+     or forcing the header taller. flex:0 1 auto keeps the sort icon snug to
+     the label rather than pushed to the far edge. */
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1530,7 +1588,7 @@
   padding: 8px 10px;
   background: #0f172a;
   color: #f1f5f9;
-  border-radius: 6px;
+  border-radius: var(--sg-radius, 6px);
   font-size: 12px;
   line-height: 1.45;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28);
@@ -1573,7 +1631,7 @@
   padding: 4px;
   background: var(--sg-bg, #fff);
   border: 1px solid var(--sg-border, #d6dee9);
-  border-radius: 6px;
+  border-radius: var(--sg-radius, 6px);
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
 }
 .sv-grid-autocomplete-option {

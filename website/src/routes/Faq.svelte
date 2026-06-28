@@ -28,7 +28,7 @@
         },
         {
           q: 'How big is the bundle?',
-          a: 'Measured gzipped with Svelte as an excluded peer dependency: the headless core (createSvGrid + a row model) is about 7.5 kB, and the full <SvGrid> render component - virtualization, Excel-style filters, inline editing, grouping, tree, and accessibility in one import - is about 42 kB (around 189 kB minified). The library ships as ESM; @svgrid/enterprise features are separate subpath imports that lazy-load.',
+          a: 'Measured gzipped with Svelte as an excluded peer dependency: the headless core (createSvGrid + a row model) is about 9.4 kB, and the full <SvGrid> render component - virtualization, Excel-style filters, inline editing, grouping, tree, and accessibility in one import - is about 60 kB (around 273 kB minified). The library ships as ESM; @svgrid/enterprise features are separate subpath imports that lazy-load.',
         },
       ],
     },

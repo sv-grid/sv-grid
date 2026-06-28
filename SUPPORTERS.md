@@ -1,7 +1,8 @@
 # Support & licensing
 
-SvGrid is built and maintained by [Boyko Markov](https://github.com/bmarkov) and
-the [jQWidgets](https://www.jqwidgets.com) team. It is **open core**: the MIT
+SvGrid is built and maintained by [jQWidgets Ltd](https://www.jqwidgets.com) -
+the company founded by [Boyko Markov](https://github.com/bmarkov). It is
+**open core**: the MIT
 core ([`@svgrid/grid`](packages/grid/)) is free for any use, including
 commercial, and we intend to keep it that way. The project is funded by
 Enterprise licenses, not donations - buying Enterprise is what keeps the MIT

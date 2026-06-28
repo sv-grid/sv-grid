@@ -14,6 +14,10 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Getting started with SvGrid](https://svgrid.com/getting-started): SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,0…
 - [Why headless?](https://svgrid.com/why-headless): SvGrid is **headless at the core**, with a fully-styled Svelte component shipped on top. That two-layer split is deliberate, and worth understanding before you reach for either.
 
+## brand
+
+- [SvGrid - Company / Brand Description](https://svgrid.com/brand/company-description): *About the company and brand behind SvGrid. For partner listings, press kits, marketplace profiles, and procurement forms. Product descriptions live elsewhere.*
+
 ## Compliance
 
 - [Audit log integration](https://svgrid.com/compliance/audit-log): A typed, tamper-evident audit trail of every user action in the grid, in under 50 lines. Pattern works for any backend - your existing audit table, Datadog logs, an immutable ledger (DynamoDB with …
@@ -182,6 +186,10 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 ## help/state
 
 - [Named views](https://svgrid.com/help/state/named-views): A "view" is a saved snapshot of the grid's state - sort, filters, column order/width/visibility, page, grouping. Named views let a user save the layout they like and switch between them. SvGrid shi…
+
+## legal
+
+- [SVGRID END USER LICENSE AGREEMENT](https://svgrid.com/legal/EULA): Version 1.0
 
 ## Recipes / cookbook
 

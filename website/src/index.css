@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '../../examples/src/themes.css';
 
 /* The site re-hosts every demo from the examples package (via the `@demos`
  * alias). Tailwind v4 auto-detects sources from this project only, so without

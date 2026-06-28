@@ -1,0 +1,60 @@
+/* ============================================================
+ * SHADCN/UI - zinc neutrals + sky-blue accent. Tight 6px rounding
+ * matches shadcn's `--radius: 0.5rem` default scaled down for the
+ * grid's tighter controls. System font.
+ * ============================================================ */
+html[data-preset='shadcn'] .demo-page {
+  --sg-bg: #ffffff;
+  --sg-fg: #09090b;
+  --sg-muted: #71717a;
+  --sg-border: #e4e4e7;
+  --sg-header-bg: #fafafa;
+  --sg-header-fg: #18181b;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f4f4f5;
+  --sg-selection-bg: #e0f2fe;
+  --sg-accent: #0ea5e9;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #e4e4e7;
+  --sg-pill-active: #ecfdf5;
+  --sg-pill-active-fg: #047857;
+  --sg-pill-pending: #fffbeb;
+  --sg-pill-pending-fg: #b45309;
+  --sg-pill-inactive: #fef2f2;
+  --sg-pill-inactive-fg: #b91c1c;
+  --sg-radius: 6px;
+  --sg-cell-px: 12px;
+  background: #ffffff;
+  color: #09090b;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+html[data-preset='shadcn'] .demo-page .demo-aside {
+  background: #fafafa;
+  border-color: #e4e4e7 !important;
+}
+html[data-preset='shadcn'][data-theme='dark'] .demo-page {
+  --sg-bg: #0a0a0a;
+  --sg-fg: #fafafa;
+  --sg-muted: #a1a1aa;
+  --sg-border: #27272a;
+  --sg-header-bg: #18181b;
+  --sg-header-fg: #fafafa;
+  --sg-row-alt-bg: #0a0a0a;
+  --sg-row-hover-bg: #18181b;
+  --sg-selection-bg: #0c4a6e;
+  --sg-accent: #38bdf8;
+  --sg-input-bg: #18181b;
+  --sg-input-border: #27272a;
+  --sg-pill-active: #064e3b;
+  --sg-pill-active-fg: #6ee7b7;
+  --sg-pill-pending: #78350f;
+  --sg-pill-pending-fg: #fde68a;
+  --sg-pill-inactive: #7f1d1d;
+  --sg-pill-inactive-fg: #fecaca;
+  background: #0a0a0a;
+  color: #fafafa;
+}
+html[data-preset='shadcn'][data-theme='dark'] .demo-page .demo-aside {
+  background: #18181b;
+  border-color: #27272a !important;
+}

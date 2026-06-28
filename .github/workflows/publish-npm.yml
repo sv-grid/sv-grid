@@ -1,0 +1,103 @@
+name: Publish npm package
+
+# Daily auto-publish of @svgrid/grid, but ONLY when its source changed since the
+# last release (tools/release-grid.mjs decides). Days with no changes are no-ops,
+# so the registry never sees an empty version bump - important for the enterprise
+# consumers that depend on the grid.
+#
+# Scope: @svgrid/grid only. @svgrid/enterprise is the paid SKU and is deliberately
+# NOT auto-published here. To add another public package later, give it the same
+# detect/bump/tag treatment (a per-package `<name>-v*` tag marks its last release).
+#
+# Required repo secret:
+#   NPM_TOKEN - an npm automation token with publish rights to the @svgrid scope.
+#
+# 06:37 UTC: off-peak and a non-round minute (GitHub delays jobs scheduled on the
+# hour). Runs after the daily blog job (05:23) and before the website rebuild (07:12).
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Publish even if no changes were detected'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '37 6 * * *'
+
+# Push the version-bump commit + release tag back to main.
+permissions:
+  contents: write
+  id-token: write # npm provenance
+
+concurrency:
+  group: publish-grid
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need full history + tags for change detection
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Detect changes and bump version
+        id: release
+        run: node tools/release-grid.mjs
+
+      # First run lays down the baseline tag at the current version without
+      # publishing (the package is already on npm at this version).
+      - name: Establish baseline tag (first run)
+        if: steps.release.outputs.changed == 'false' && inputs.force != true
+        run: |
+          tag="grid-v${{ steps.release.outputs.version }}"
+          if git rev-parse "$tag" >/dev/null 2>&1; then
+            echo "Tag $tag already exists - nothing to do."
+          else
+            echo "Creating baseline tag $tag."
+            git tag "$tag"
+            git push origin "$tag"
+          fi
+
+      - name: Install dependencies
+        if: steps.release.outputs.changed == 'true' || inputs.force == true
+        run: pnpm install --frozen-lockfile
+
+      - name: Build library
+        if: steps.release.outputs.changed == 'true' || inputs.force == true
+        run: pnpm --filter @svgrid/grid build
+
+      - name: Verify package is publishable
+        if: steps.release.outputs.changed == 'true' || inputs.force == true
+        run: pnpm --filter @svgrid/grid test:build
+
+      - name: Publish to npm
+        if: steps.release.outputs.changed == 'true' || inputs.force == true
+        run: npm publish --provenance --access public
+        working-directory: packages/grid
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Commit version bump and tag the release
+        if: steps.release.outputs.changed == 'true' || inputs.force == true
+        run: |
+          version="${{ steps.release.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/grid/package.json
+          git commit -m "release: @svgrid/grid v${version} [skip ci]" || echo "nothing to commit"
+          git tag "grid-v${version}"
+          git push origin HEAD:main
+          git push origin "grid-v${version}"

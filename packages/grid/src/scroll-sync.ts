@@ -156,7 +156,8 @@ export function createScrollSync<
   function flushScheduledScrollSync() {
     ctx.scrollSyncRaf = null;
     ctx.scrollVersion += 1;
-    if (ctx.rowVirtualizationEnabled) ctx.virtualizer.setScrollOffset(ctx.pendingScrollTop);
+    if (ctx.rowVirtualizationEnabled)
+      ctx.virtualizer.setScrollOffset(ctx.domToLogicalRowOffset(ctx.pendingScrollTop));
     if (ctx.columnVirtualizationEnabled)
       ctx.columnVirtualizer.setHorizontalOffset(ctx.pendingScrollLeft);
   }

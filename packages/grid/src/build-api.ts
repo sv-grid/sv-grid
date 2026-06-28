@@ -375,19 +375,31 @@ export function createGridApi<
         return ctx.internalData;
       },
       getColumns() {
-        // Snapshot every column in visual order with its human-readable
-        // label and visibility flag. Used by external code (exporters,
-        // column pickers) so they don't have to re-walk the columnDef
-        // tree themselves.
-        return ctx.allColumns.map((c: any) => ({
+        // Snapshot every column with its human-readable label and
+        // visibility flag. Used by external code (exporters, column
+        // pickers) so they don't have to re-walk the columnDef tree.
+        // Hidden columns ARE included (with `visible: false`) so a column
+        // picker can re-enable them - callers that only want what's
+        // rendered filter by `.visible` (e.g. the exporter does).
+        const describe = (c: any, visible: boolean) => ({
           id: c.id,
           field: (c.columnDef as { field?: string }).field,
           header:
             typeof c.columnDef.header === "string"
               ? c.columnDef.header
               : c.id,
-          visible: !ctx.hiddenColumns[c.id],
-        }));
+          visible,
+        });
+        // Visible columns first, in their current visual order...
+        const out = ctx.allColumns.map((c: any) => describe(c, true));
+        // ...then any column hidden via `visible: false` / setColumnVisible.
+        // Those aren't in `allColumns` (that list is visible-only), so pull
+        // them straight from the engine's leaf set.
+        const visibleIds = new Set(out.map((c: { id: string }) => c.id));
+        for (const c of ctx.grid.getAllColumns() as any[]) {
+          if (!visibleIds.has(c.id)) out.push(describe(c, false));
+        }
+        return out;
       },
       clearRowSelection() {
         // Wipe the internal selection map AND emit the change so any
@@ -406,6 +418,12 @@ export function createGridApi<
         const out: Record<string, number> = {};
         for (const c of ctx.allColumns) out[c.id] = ctx.getColumnWidth(c.id);
         return out;
+      },
+      autosizeColumn(columnId: string) {
+        ctx.autosizeColumn(columnId);
+      },
+      autosizeAllColumns() {
+        ctx.autosizeAllColumns();
       },
       setColumnPinning(pinning) {
         // Defensive copy + dedupe so callers can't mutate our state.
@@ -543,10 +561,13 @@ export function createGridApi<
       // ---- Navigation / scrolling
       scrollToRow(rowIndex) {
         if (!ctx.scrollContainer) return;
-        const rh = ctx.props.rowHeight ?? 36;
         const maxIndex = Math.max(0, ctx.allRows.length - 1);
         const clamped = Math.max(0, Math.min(rowIndex, maxIndex));
-        ctx.scrollContainer.scrollTop = clamped * rh;
+        // Logical offset from the virtualizer (honors uniform OR per-row
+        // sizing), then mapped into the capped DOM scroll space so it lands
+        // correctly on huge grids where the DOM height is scaled down.
+        const logical = ctx.virtualizer.getOffsetForIndex(clamped);
+        ctx.scrollContainer.scrollTop = ctx.logicalToDomRowOffset(logical);
         ctx.scheduleScrollSync(
           ctx.scrollContainer.scrollTop,
           ctx.scrollContainer.scrollLeft,

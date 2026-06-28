@@ -1,0 +1,60 @@
+/* ============================================================
+ * FLUENT UI 2 (Microsoft 365 web). communication blue accent,
+ * mediumRadius (4px) corners, Segoe UI Variable.
+ * Token names verified against the Fluent UI 2 design token spec.
+ * ============================================================ */
+html[data-preset='fluent'] .demo-page {
+  --sg-bg: #ffffff;                /* neutralBackground1 */
+  --sg-fg: #242424;                /* neutralForeground1 */
+  --sg-muted: #616161;             /* neutralForeground2 */
+  --sg-border: #e0e0e0;            /* neutralStroke1 */
+  --sg-header-bg: #f5f5f5;         /* neutralBackground2 */
+  --sg-header-fg: #242424;
+  --sg-row-alt-bg: #fafafa;        /* neutralBackground1Selected */
+  --sg-row-hover-bg: #f0f0f0;
+  --sg-selection-bg: #deecf9;
+  --sg-accent: #0078d4;            /* communicationPrimary / brand 80 */
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #d1d1d1;
+  --sg-pill-active: #dff6dd;
+  --sg-pill-active-fg: #107c10;
+  --sg-pill-pending: #fff4ce;
+  --sg-pill-pending-fg: #797673;
+  --sg-pill-inactive: #fed9cc;
+  --sg-pill-inactive-fg: #a80000;
+  --sg-radius: 4px;                /* borderRadiusMedium */
+  --sg-cell-px: 11px;              /* spacingHorizontalM */
+  background: #ffffff;
+  color: #242424;
+  font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+}
+html[data-preset='fluent'] .demo-page .demo-aside {
+  background: #f5f5f5;
+  border-color: #e0e0e0 !important;
+}
+html[data-preset='fluent'][data-theme='dark'] .demo-page {
+  --sg-bg: #1f1f1f;
+  --sg-fg: #ffffff;
+  --sg-muted: #d4d4d4;
+  --sg-border: #424242;
+  --sg-header-bg: #2b2b2b;
+  --sg-header-fg: #ffffff;
+  --sg-row-alt-bg: #292929;
+  --sg-row-hover-bg: #383838;
+  --sg-selection-bg: #003a6e;
+  --sg-accent: #4cc2ff;
+  --sg-input-bg: #2b2b2b;
+  --sg-input-border: #5a5a5a;
+  --sg-pill-active: #054b16;
+  --sg-pill-active-fg: #92c353;
+  --sg-pill-pending: #463500;
+  --sg-pill-pending-fg: #fce100;
+  --sg-pill-inactive: #5c0000;
+  --sg-pill-inactive-fg: #ff99a4;
+  background: #1f1f1f;
+  color: #ffffff;
+}
+html[data-preset='fluent'][data-theme='dark'] .demo-page .demo-aside {
+  background: #2b2b2b;
+  border-color: #424242 !important;
+}

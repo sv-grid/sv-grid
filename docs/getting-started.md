@@ -9,12 +9,12 @@ filtering, server-side data, and full keyboard and screen-reader support.
 This guide is six short pages. Read them in order if you're new; jump
 straight to the one you need if you're not.
 
-> In a hurry? `npm create sv-grid@latest` scaffolds a working project in
+> In a hurry? `npm create @svgrid@latest` scaffolds a working project in
 > one command - see [Starters & scaffolding](./getting-started/starters.md).
 
 | #   | Page                                                          | What it covers                                                              |
 | --- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| 0   | [Starters & scaffolding](./getting-started/starters.md)       | `npm create sv-grid`, the minimal + SvelteKit admin templates, Deploy to Vercel. |
+| 0   | [Starters & scaffolding](./getting-started/starters.md)       | `npm create @svgrid`, the minimal + SvelteKit admin templates, Deploy to Vercel. |
 | 1   | [Install](./getting-started/1-install.md)                     | `pnpm add @svgrid/grid`, requirements, smoke-test.                     |
 | 2   | [First grid](./getting-started/2-first-grid.md)               | The minimum runnable example, explained line by line.                       |
 | 3   | [Data and columns](./getting-started/3-data-and-columns.md)   | What goes in `data` and `columns`. Custom cells via `renderSnippet`.        |

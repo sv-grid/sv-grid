@@ -259,6 +259,32 @@ export function createVirtualizer(initial: VirtualizerOptions) {
     getTotalSize() {
       return state.totalSize
     },
+    /** Cumulative offset of row `index` from the top in px, regardless
+     *  of whether `estimateSize` is uniform or per-index. Uses the
+     *  cached offsets array under function-form sizing so the lookup
+     *  is O(1) instead of O(index). */
+    getOffsetForIndex(index: number): number {
+      if (index <= 0) return 0
+      const count = Math.max(options.count, 0)
+      const bounded = Math.min(index, count)
+      if (typeof options.estimateSize === 'function') {
+        const offsets = getOffsets()
+        if (offsets) return offsets[bounded] ?? 0
+        let acc = 0
+        const fn = options.estimateSize
+        for (let i = 0; i < bounded; i += 1) acc += Math.max(fn(i), 1)
+        return acc
+      }
+      return bounded * Math.max(options.estimateSize, 1)
+    },
+    /** Height of row `index` in px (whichever estimateSize provides). */
+    getSizeForIndex(index: number): number {
+      if (index < 0 || index >= options.count) return 0
+      if (typeof options.estimateSize === 'function') {
+        return Math.max(options.estimateSize(index), 1)
+      }
+      return Math.max(options.estimateSize, 1)
+    },
     getState() {
       return state
     },

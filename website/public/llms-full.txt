@@ -1,6 +1,117 @@
 # sv-grid - full documentation
 
-Generated 2026-06-16 from 195 pages.
+Generated 2026-06-28 from 197 pages.
+
+<!-- =================================================================
+     /brand/company-description  (community)
+     ================================================================== -->
+
+# SvGrid - Company / Brand Description
+
+*About the company and brand behind SvGrid. For partner listings, press kits,
+marketplace profiles, and procurement forms. Product descriptions live
+elsewhere.*
+
+## Positioning statement
+
+SvGrid is the AG Grid for Svelte: the enterprise-grade data grid that the Svelte
+ecosystem was missing, built natively for Svelte 5 by a team that has engineered
+data grids since 2011.
+
+## One-liner
+
+SvGrid is the enterprise data grid standard for Svelte, built by jQWidgets.
+
+## Short (50 words)
+
+SvGrid is the AG Grid for Svelte: the enterprise-grade data grid for the Svelte
+ecosystem, built natively for Svelte 5 by jQWidgets, the team behind jqxGrid and
+the Smart UI web components. Since 2011 our grids have run inside enterprise
+software at companies including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and
+Intel.
+
+## Standard (100 words)
+
+SvGrid is the AG Grid for Svelte: the enterprise-grade data grid the Svelte
+ecosystem was missing. It is built by jQWidgets, a software company that has
+engineered data grids since 2011, first with jqxGrid in the jQuery era, then with
+the Smart UI web components on htmlelements.com. Where other grids reach Svelte
+through wrappers, SvGrid is written natively for Svelte 5 and its fine-grained
+reactivity. Across fifteen years our grids have powered enterprise software at
+companies including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel, and
+Smart UI was a Gold Winner in Visual Studio Magazine's 2025 Readers' Choice
+Awards. SvGrid brings that pedigree, and an AI-ready toolchain, to Svelte.
+
+## Long (company profile)
+
+SvGrid is the AG Grid for Svelte: the enterprise-grade data grid that brings to
+the Svelte ecosystem what AG Grid brought to React, Angular, and Vue, a complete,
+professional, performance-first grid that serious applications can standardize on.
+
+It is built by jQWidgets, an independent software company that has specialized in
+high-performance UI components since 2011. The company's first product,
+jQWidgets, anchored by the jqxGrid data grid, set a principle that still defines
+the team: a grid is a performance product first. Components that stutter when a
+user scrolls, sorts, or filters do not survive in real enterprise software, so
+virtualization, stable references, and minimal repaints are designed in from the
+start rather than bolted on later.
+
+As the web platform matured, the team rebuilt its suite on web standards and
+launched it as Smart UI on htmlelements.com, letting a single component run across
+React, Angular, Vue, and plain HTML. Across both generations of products,
+jQWidgets and Smart UI components have been used in enterprise software at
+companies including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel, among
+thousands of organizations worldwide. Smart UI was voted Gold Winner among
+software development service providers in Visual Studio Magazine's 2025 Readers'
+Choice Awards.
+
+SvGrid is the team's native grid for Svelte 5. Rather than wrap an engine designed
+for another framework, it was written from scratch to exploit Svelte's
+fine-grained reactivity, and built for an AI-native future in which assistants are
+first-class consumers of the library. The goal is straightforward: to be the
+default, enterprise-ready data grid for Svelte, the way AG Grid is the default for
+the frameworks that came before it. The company is led by founder Boyko Markov and
+is the same team that has shipped grids for over a decade.
+
+## Why "the AG Grid for Svelte"
+
+- **Category standard.** AG Grid is the data grid teams reach for on React,
+  Angular, and Vue. SvGrid is built to be that default for Svelte.
+- **Enterprise depth.** Sorting, filtering, grouping, pivoting, editing, export,
+  and virtualization at the depth enterprise applications actually require.
+- **Native, not a wrapper.** Written for Svelte 5 runes, not bridged from another
+  framework's engine.
+- **Proven lineage.** Fifteen years of grid engineering behind it, not a first
+  attempt.
+
+## Principles (carry across every product)
+
+- Performance is a feature, not an optimization.
+- Accessibility is the default, not a setting.
+- Meet developers where they are - jQuery, web components, native Svelte, and now
+  AI assistants.
+- Honesty builds trust. Our comparison pages name the cases where a competitor is
+  the better choice.
+
+## Facts (for forms)
+
+- Company / vendor name: jQWidgets
+- Founder: Boyko Markov
+- Founded: 2011
+- Products: jQWidgets (jqxGrid), Smart UI (htmlelements.com), SvGrid
+- Customers include: Samsung, Boeing, NVIDIA, Microsoft, Nokia, Intel
+- Recognition: Gold Winner, Visual Studio Magazine 2025 Readers' Choice Awards
+  (Smart UI)
+- Services / consulting partner: Resolute Software (resolutesoftware.com)
+- Contact: sales@jqwidgets.com / support@jqwidgets.com
+
+## Boilerplate (drop-in press footer)
+
+> SvGrid is the AG Grid for Svelte, the enterprise-grade data grid for the Svelte
+> ecosystem, built by jQWidgets. The team has engineered data grids since 2011,
+> from jqxGrid to the Smart UI web components, and SvGrid components run in
+> enterprise software at companies including Samsung, Boeing, NVIDIA, Microsoft,
+> Nokia, and Intel.
 
 <!-- =================================================================
      /changelog  (community)
@@ -1053,7 +1164,7 @@ setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
 For dev builds, the demos use `setLicenseKey('SVENTERPRISE-DEV-DEMO')` to
 suppress the watermark in screenshots.
 
-Pricing + multi-app licensing: <https://sv-grid.dev/pricing>.
+Pricing + multi-app licensing: <https://svgrid.com/pricing>.
 
 ## How Enterprise integrates
 
@@ -2066,12 +2177,12 @@ filtering, server-side data, and full keyboard and screen-reader support.
 This guide is six short pages. Read them in order if you're new; jump
 straight to the one you need if you're not.
 
-> In a hurry? `npm create sv-grid@latest` scaffolds a working project in
+> In a hurry? `npm create @svgrid@latest` scaffolds a working project in
 > one command - see [Starters & scaffolding](./getting-started/starters.md).
 
 | #   | Page                                                          | What it covers                                                              |
 | --- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| 0   | [Starters & scaffolding](./getting-started/starters.md)       | `npm create sv-grid`, the minimal + SvelteKit admin templates, Deploy to Vercel. |
+| 0   | [Starters & scaffolding](./getting-started/starters.md)       | `npm create @svgrid`, the minimal + SvelteKit admin templates, Deploy to Vercel. |
 | 1   | [Install](./getting-started/1-install.md)                     | `pnpm add @svgrid/grid`, requirements, smoke-test.                     |
 | 2   | [First grid](./getting-started/2-first-grid.md)               | The minimum runnable example, explained line by line.                       |
 | 3   | [Data and columns](./getting-started/3-data-and-columns.md)   | What goes in `data` and `columns`. Custom cells via `renderSnippet`.        |
@@ -4863,8 +4974,8 @@ holds the visible window regardless of total row count.
 
 ### Is SvGrid faster than AG Grid or TanStack Table?
 
-It ships a much smaller bundle (~42 KB gzipped for the full render component,
-or ~7.5 KB for the headless core) and virtualizes by default. Raw scroll
+It ships a much smaller bundle (~60 KB gzipped for the full render component,
+or ~9.4 KB for the headless core) and virtualizes by default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.
 
@@ -6669,8 +6780,19 @@ For computed headers, pass a function returning a `renderSnippet` /
 
 ## Header height
 
-There is no `headerHeight` prop. Header height is determined by content +
-padding. Override via CSS:
+Set a fixed height per header **level** with the `headerHeight` prop on
+`<SvGrid>`:
+
+```svelte
+<SvGrid {data} {columns} headerHeight={44} />
+```
+
+With multi-level (grouped) headers the total header height is
+`levels * headerHeight` - each level renders as its own row, so a two-level
+header at `headerHeight={44}` is 88px tall. The filter row is not affected.
+
+When omitted, header rows size to their content (the default). You can also
+size headers purely with CSS instead of the prop:
 
 ```css
 table[role='grid'] thead th {
@@ -6680,8 +6802,25 @@ table[role='grid'] thead th {
 ```
 
 If you set a fixed virtualizer row height (`rowHeight={36}` on `<SvGrid>`)
-the header is **independent** of that - the virtualizer measures it once
-at mount to compute the visible viewport.
+the header is **independent** of that - the virtualizer measures the header
+once at mount (and on resize) to compute the visible viewport.
+
+## Long labels (truncation)
+
+A header label wider than its column truncates to a single line with an
+ellipsis (`…`) instead of wrapping or pushing the header taller - so a fixed
+`headerHeight` stays intact. This applies to plain string headers. With
+[custom header components](./custom-header-components.md) you own the markup,
+so apply the same rule to your label element to get the effect:
+
+```css
+.my-header-label {
+  min-width: 0;            /* required inside the header's flex row */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+```
 
 ## Header colour, weight, alignment
 
@@ -7243,7 +7382,11 @@ Wrap whichever subset you need into your own helper if you do this often.
 The `header` field on a `ColumnDef` accepts a function that returns either
 a `renderSnippet(...)` or `renderComponent(...)`. The function receives a
 `HeaderContext` so it can access the column, header, and grid.
-<div data-docs-demo="10-custom-cells-and-themes" data-height="540"></div>
+
+In the demo below, the **column headers** are custom: each quarter header and
+each measure header (with its icon) is rendered from a snippet via
+`header: () => renderSnippet(...)`.
+<div data-docs-demo="121-pivot-conditional-cells" data-height="540"></div>
 
 ## With a snippet
 
@@ -7304,6 +7447,29 @@ ctx.column.getToggleSortingHandler()        // () => void
 Anything that needs more than a string belongs here - multi-line headers,
 filter icons inside the header, units, tooltips, custom sort indicators,
 a "select all" checkbox in a leading column.
+
+## Interactive elements inside a header
+
+Custom headers can contain real interactive controls - buttons, inputs,
+dropdowns, menus - and the grid routes clicks correctly:
+
+- A click that lands on an interactive element (`<button>`, `<a>`, `<input>`,
+  `<select>`, `<textarea>`, or anything with `role="button"` / `role="menuitem"`)
+  is handled by that element - it does **not** trigger a sort.
+- A click on the blank header area still toggles sorting when the column is
+  sortable (Enter / Space work too).
+
+So you can drop a filter dropdown or a small toolbar straight into a header
+without fighting the sort handler:
+
+```svelte
+{#snippet StatusHeader()}
+  <span class="inline-flex items-center gap-2">
+    <span>Status</span>
+    <button type="button" onclick={openStatusFilter} aria-label="Filter status">⏷</button>
+  </span>
+{/snippet}
+```
 
 ## Gotchas
 
@@ -7453,7 +7619,7 @@ on your stack, your budget, and which constraints bite hardest.
 
 | Project              | Lives in                                 | Ships                                   | Bundle (typical) | License            |
 | -------------------- | ---------------------------------------- | --------------------------------------- | ---------------- | ------------------ |
-| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~7.5 KB headless / ~42 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
+| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~9.4 KB headless / ~60 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
 | **AG Grid Community**| React, Angular, Vue, plain JS            | Full grid + renderer                    | ~340 KB                                   | MIT                                |
 | **AG Grid Enterprise**| same                                    | Adds pivot, integrated charts, server-side row model, more | ~600 KB+ | Commercial                         |
 | **TanStack Table**   | React, Vue, Svelte, Solid, Qwik, Lit, JS | Headless engine **only**                | ~12-14 KB                                 | MIT                                |
@@ -7536,8 +7702,8 @@ Measured gzipped, with Svelte treated as a peer dependency and excluded
 
 | @svgrid/grid path                          | Gzipped | Minified |
 | ----------------------------------------------- | ------- | -------- |
-| Headless core (`createSvGrid` + a row model)    | ~7.5 KB | ~35 KB   |
-| Full `<SvGrid>` render component                | ~42 KB  | ~189 KB  |
+| Headless core (`createSvGrid` + a row model)    | ~9.4 KB | ~48 KB   |
+| Full `<SvGrid>` render component                | ~60 KB  | ~273 KB  |
 
 The full render component is the whole grid - virtualization, Excel-style
 filters, inline editing, grouping, tree, master/detail, and accessibility -
@@ -7571,7 +7737,7 @@ TanStack Table's React adapter in 90% of cases. The big differences:
 
 SvGrid Community is MIT - free for commercial use, no attribution
 required at runtime. SvGrid Enterprise is a paid license; see
-<https://sv-grid.dev/pricing> for per-seat / per-app / multi-app tiers.
+<https://svgrid.com/pricing> for per-seat / per-app / multi-app tiers.
 
 AG Grid Community is MIT. AG Grid Enterprise pricing is on
 ag-grid.com; expect a per-developer annual license plus a separate
@@ -7601,8 +7767,8 @@ bridge into Svelte 5.
 
 ### Is SvGrid a good AG Grid alternative?
 
-Yes, for Svelte projects. SvGrid ships a much smaller bundle (~42 KB gzipped
-for the full render component, ~7.5 KB headless) than AG Grid Community, is
+Yes, for Svelte projects. SvGrid ships a much smaller bundle (~60 KB gzipped
+for the full render component, ~9.4 KB headless) than AG Grid Community, is
 MIT-licensed for commercial use, and offers `@svgrid/enterprise` for
 export/pivot/import at a per-developer price instead of AG Grid Enterprise's
 per-deployment licensing. It does not yet match every AG Grid Enterprise
@@ -7617,8 +7783,8 @@ virtualization, and editing UI yourself. Both are MIT-licensed.
 
 ### How big is the SvGrid bundle?
 
-Measured gzipped (Svelte excluded as a peer dependency): ~7.5 KB for the
-headless core and ~42 KB for the full `<SvGrid>` render component (~189 KB
+Measured gzipped (Svelte excluded as a peer dependency): ~9.4 KB for the
+headless core and ~60 KB for the full `<SvGrid>` render component (~273 KB
 minified). Enterprise features are separate, lazy-loaded subpath imports, so you ship
 only what you import.
 
@@ -9118,7 +9284,7 @@ them.
 | `SVENTERPRISE-DEV-...` or `SVENTERPRISE-EVAL-...`        | Works. One-time console.info notice. No watermark. |
 | Any other `SVENTERPRISE-...`                      | Works silently. |
 
-Buy a production key at <https://sv-grid.dev/pricing> ($599 / developer /
+Buy a production key at <https://svgrid.com/pricing> ($599 / developer /
 year). `SVENTERPRISE-DEV-...` and `SVENTERPRISE-EVAL-...` keys cover local development
 and 14-day trials respectively.
 
@@ -11747,7 +11913,7 @@ We tell you when **not** to switch at the bottom.
 | --- | --- | --- | --- | --- |
 | **License** | MIT | Commercial (~$999/dev/yr) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
 | **Svelte 5 native** | ❌ (wrapper) | ❌ (wrapper) | ✅ | ✅ |
-| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~7.5 KB headless / ~42 KB full | lazy-loaded subpaths |
+| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~9.4 KB headless / ~60 KB full | lazy-loaded subpaths |
 | **Sorting / filtering / grouping** | ✅ | ✅ | ✅ | (in Community) |
 | **Master/detail, tree, range select** | ❌ Enterprise only | ✅ | ✅ (free) | (in Community) |
 | **Excel export** | ❌ | ✅ Enterprise | ❌ | ✅ |
@@ -11998,14 +12164,14 @@ AG Grid Enterprise's `rowGroupPanelShow: 'always'` + `aggFunc: 'sum'` translates
 ### Master / detail
 
 AG Grid Enterprise feature; **free in SvGrid Community**. See
-[demo 08](https://sv-grid.dev/#/demos/08-tree-and-master-detail) for the exact pattern.
+[demo 08](https://svgrid.com/#/demos/08-tree-and-master-detail) for the exact pattern.
 
 ### Server-side data
 
 AG Grid uses an `IServerSideDatasource` interface. SvGrid uses
 `externalSort` + `externalFilter` props - your code keeps full control
 over the query, and the grid records UI state but doesn't re-order rows
-locally. See [demo 09](https://sv-grid.dev/#/demos/09-server-side).
+locally. See [demo 09](https://svgrid.com/#/demos/09-server-side).
 
 ### Excel / PDF export
 
@@ -12092,7 +12258,7 @@ pre-sales questions.
 - [Getting started](../getting-started.md) - full SvGrid walkthrough
 - [Why headless?](../why-headless.md) - the headless / render-component split
 - [Data export and printing](./export.md) - the `@svgrid/enterprise` feature pack
-- [SvGrid vs AG Grid comparison page](https://sv-grid.dev/#/compare/ag-grid)
+- [SvGrid vs AG Grid comparison page](https://svgrid.com/#/compare/ag-grid)
 
 ## Frequently asked questions
 
@@ -12119,7 +12285,7 @@ and no framework bridge to keep in sync.
 
 ### Will my AG Grid bundle size shrink?
 
-Almost always. SvGrid's full render component is ~42 KB gzipped (or ~7.5 KB
+Almost always. SvGrid's full render component is ~60 KB gzipped (or ~9.4 KB
 for the headless core) versus a much heavier AG Grid Community bundle, and you
 only add `@svgrid/enterprise` features you actually use - so you ship a fraction of
 the JavaScript.
@@ -13077,7 +13243,7 @@ bind your own MUI inputs inside custom cell components.
 SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterprise`
 is priced per developer ($599 single-app / $999 multi-app) rather than
 per seat with Premium add-ons. Compare your team size and feature needs against
-the [pricing page](https://sv-grid.dev/#/pricing).
+the [pricing page](https://svgrid.com/#/pricing).
 
 <!-- =================================================================
      /help/migrating-from-primevue-datatable  (community)
@@ -15077,8 +15243,8 @@ Measured gzipped, with Svelte excluded as a peer dependency:
 
 | What you import                                       | Gzipped | Minified |
 | ----------------------------------------------------- | ------- | -------- |
-| Headless core (`createSvGrid` + `createCoreRowModel`) | ~7.5 KB | ~35 KB   |
-| Full `<SvGrid>` render component (everything)         | ~42 KB  | ~189 KB  |
+| Headless core (`createSvGrid` + `createCoreRowModel`) | ~9.4 KB | ~48 KB   |
+| Full `<SvGrid>` render component (everything)         | ~60 KB  | ~273 KB  |
 
 The `<SvGrid>` component is batteries-included: virtualization, Excel-style
 filters, inline editing, grouping, tree, master/detail, and accessibility are
@@ -19706,9 +19872,238 @@ instance.
 ## See also
 
 - [First grid](../getting-started/2-first-grid.md) - using SvGrid directly in Svelte
-- [Starters & scaffolding](../getting-started/starters.md) - `npm create sv-grid`
+- [Starters & scaffolding](../getting-started/starters.md) - `npm create @svgrid`
 - [Tailwind integration](./tailwind.md) - the `--sg-*` theme tokens
 - [Architecture](./architecture.md) - headless core vs. render component
+
+<!-- =================================================================
+     /legal/EULA  (community)
+     ================================================================== -->
+
+# SVGRID END USER LICENSE AGREEMENT
+
+Version 1.0
+
+This End User License Agreement ("EULA") governs your use of SvGrid. Please read
+it carefully before downloading, installing, or using any portion of the
+Software. By downloading, installing, or using the Software you agree to be bound
+by the terms and conditions of this EULA. If you do not agree, you are not
+permitted to use the Software or any portion of it.
+
+SvGrid is distributed in two editions under two different sets of terms:
+
+- The **Community Edition** (`@svgrid/grid` and `@svgrid/mcp`) is free and open
+  source under the **MIT License**. Sections 2 and 3 apply to it.
+- The **Enterprise Package** (`@svgrid/enterprise`) is commercial software
+  licensed, not sold, under the terms in Sections 4 through 12.
+
+## 1. DEFINITIONS
+
+- **"Software"** means SvGrid, including its modules, components, program files,
+  source code, examples, media, and documentation, as well as any portion of
+  them.
+- **"Community Edition"** means the `@svgrid/grid` and `@svgrid/mcp` packages and
+  any other SvGrid package published under the MIT License.
+- **"Enterprise Package"** means the `@svgrid/enterprise` package and any other
+  SvGrid package published under this commercial license.
+- **"Author"** means jQWidgets Ltd.
+- **"Subscriber"** means the individual or organization that has obtained a valid
+  Enterprise license.
+- **"Developer"** means any individual who writes or modifies source code that
+  imports the Enterprise Package. Read-only users and end users are not
+  Developers.
+- **"License Key"** means a key issued by the Author that activates the
+  Enterprise Package for the number of Developer seats covered by the
+  Subscriber's order.
+
+## 2. COMMUNITY EDITION - MIT LICENSE
+
+The Community Edition is licensed under the MIT License. You may use, copy,
+modify, merge, publish, distribute, sublicense, and sell copies of the Community
+Edition, including in proprietary and commercial products, free of charge,
+subject only to the conditions of the MIT License (preservation of the copyright
+and permission notice). No License Key is required, there is no row-count cap,
+and there is no usage reporting. The full text of the MIT License is included in
+the repository at `packages/grid/LICENSE`.
+
+## 3. COMMUNITY EDITION - NO WARRANTY
+
+The Community Edition is provided "as is" under the MIT License, without warranty
+of any kind. The warranty disclaimer and limitation of liability of the MIT
+License apply to it.
+
+## 4. ENTERPRISE LICENSE - GRANT
+
+Subject to the Subscriber's compliance with this EULA and to continued payment of
+the applicable license fee where an updates-and-support term is in effect, the
+Author grants the Subscriber a non-exclusive, non-transferable,
+non-sublicensable license to:
+
+  (a) install and use the Enterprise Package on developer workstations and in
+      the Subscriber's development, staging, and production deployments;
+  (b) modify the Enterprise Package for the Subscriber's internal use, provided
+      that all copyright notices and license terms are preserved;
+  (c) distribute the Enterprise Package bundled inside the Subscriber's own
+      application, provided that the Enterprise Package is not the primary product
+      distributed and remains under this EULA.
+
+The scope of deployment is determined by the Subscriber's order:
+
+- A **Single Application Developer License** covers one (1) deployed production
+  application, plus any number of internal development and staging environments.
+- A **Multiple Application Developer License** covers an unlimited number of
+  deployed production applications within the Subscriber's organization,
+  including subsidiaries and sister products.
+- An **Enterprise / Custom (Site or Organization-wide) License** covers the scope
+  defined in the separately negotiated order or master agreement.
+
+## 5. ENTERPRISE LICENSE - SEATS
+
+The Enterprise Package is licensed per Developer. The number of Developer seats
+is determined by the Subscriber's order. Production seats and end users are
+unlimited and are not counted. One License Key activates every grid instance in
+scope; there is no per-page or per-component accounting. A seat is tied to a role,
+not to a named individual: if a Developer leaves and is replaced, the seat
+transfers to the replacement at no additional cost. License Keys must not be
+shared outside the Developer seats covered by the Subscriber's order.
+
+## 6. ENTERPRISE LICENSE - PERPETUAL LICENSE AND UPDATES/SUPPORT TERM
+
+The Enterprise license is **perpetual**: the Subscriber owns the right to use the
+versions of the Enterprise Package released during a paid term forever. Each
+order includes a one (1) year term of software updates and support, which
+**renews automatically each year** at the then-current rate until cancelled. The
+Subscriber may **cancel at any time**. On cancellation or lapse of the
+updates-and-support term:
+
+  (a) every version of the Enterprise Package released during a paid term keeps
+      working and keeps validating against the Subscriber's License Key;
+  (b) the Subscriber stops receiving new releases and support issued after the
+      paid term ends.
+
+The Author will not disable working features of a paying or previously paying
+Subscriber.
+
+## 7. ENTERPRISE LICENSE - EVALUATION AND SOFT-GATE
+
+The Enterprise Package is soft-gated. All Enterprise features are fully functional
+without a License Key for the purpose of evaluation. While unlicensed, the grid
+displays a small "Unlicensed @svgrid/enterprise" watermark and emits a one-time
+console notice. There is no time limit and no disabled functionality during
+evaluation. Setting a valid License Key removes the watermark and the notice.
+On request, the Author issues a time-limited evaluation key that removes the
+watermark during evaluation. Any sentinel or development key published by the
+Author for local development and testing must not be used in production.
+
+## 8. ENTERPRISE LICENSE - OPEN SOURCE PROJECTS
+
+The Author issues a free Enterprise License Key for projects that are open source
+under an OSI-approved license, hosted in a public repository, and are not a paid
+product. Such keys provide the full Enterprise feature set with no watermark and
+are renewable annually for as long as the project remains open source. Requests
+are made to the Author with the repository URL.
+
+## 9. ENTERPRISE LICENSE - LICENSE KEY AND VALIDATION
+
+License Key validation is performed entirely client-side, signed against the
+Author's public key. No network call is made to validate a License Key, and no
+telemetry is sent. Air-gapped deployments are supported. Each License Key embeds
+a stable identifier used only to cross-reference the Subscriber's order during
+support. The Subscriber must not remove, obscure, or disable the License Key
+check.
+
+## 10. ENTERPRISE LICENSE - RESTRICTIONS
+
+The Subscriber may NOT:
+
+  (a) redistribute the Enterprise Package as a standalone package, library, or
+      component;
+  (b) sublicense, rent, lease, or sell the Enterprise Package to third parties;
+  (c) remove, obscure, or disable the License Key check or any copyright or
+      proprietary notices;
+  (d) use the Enterprise Package to develop a data-grid or table component
+      product that competes with the Software for distribution to third parties;
+  (e) share License Keys outside of the Developer seats covered by the
+      Subscriber's order.
+
+## 11. INTELLECTUAL PROPERTY
+
+All intellectual property rights in the Enterprise Package, including patents,
+trademarks, copyrights, and trade secret rights, are and remain the property of
+the Author. The Enterprise Package is licensed, not sold. Purchasing a license,
+including a license that provides access to source code, does not transfer any
+intellectual property rights or ownership in the Software. "SvGrid", "jQWidgets",
+and "HTMLElements" are trademarks of the Author. All rights not expressly granted
+by this EULA are reserved. This Section does not restrict any right granted to you
+for the Community Edition under the MIT License.
+
+## 12. THIRD-PARTY COMPONENTS
+
+The Enterprise Package includes a vendored copy of the data-export utility from
+Smart UI / jQWidgets, redistributed under the same ownership (Copyright (c)
+2011-2026 jQWidgets). Optional peer dependencies, including `jszip` and `pdfmake`,
+are licensed by their respective authors under their own terms (MIT) and are not
+bundled into the package; you install them separately.
+
+## 13. DISCLAIMER OF WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING WITHOUT LIMITATION THE IMPLIED WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. THE AUTHOR DOES NOT
+WARRANT THAT THE SOFTWARE WILL MEET YOUR REQUIREMENTS OR THAT ITS OPERATION WILL
+BE UNINTERRUPTED OR ERROR FREE. YOU ASSUME RESPONSIBILITY FOR SELECTING THE
+SOFTWARE TO ACHIEVE YOUR INTENDED RESULTS AND FOR THE RESULTS OBTAINED FROM IT.
+
+## 14. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR
+CONSEQUENTIAL DAMAGES, OR FOR ANY DAMAGES WHATSOEVER INCLUDING BUT NOT LIMITED TO
+LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, OR LOSS OF BUSINESS INFORMATION,
+ARISING OUT OF THE USE OF OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGES. REGARDLESS OF THE FORM OF ACTION, THE AUTHOR'S
+AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THIS EULA SHALL NOT EXCEED THE
+LICENSE FEES PAID BY THE SUBSCRIBER IN THE TWELVE (12) MONTHS PRECEDING THE EVENT
+GIVING RISE TO THE CLAIM. THE FOREGOING LIMITATIONS SHALL APPLY TO THE MAXIMUM
+EXTENT ALLOWED BY APPLICABLE LAW.
+
+## 15. TERMINATION
+
+This EULA, with respect to the Enterprise Package, terminates automatically upon
+the Subscriber's material breach of Sections 4, 5, 10, or 11. On termination for
+breach, the Subscriber must cease all use of the Enterprise Package, remove it
+from development environments, and stop deploying new versions of any application
+that depends on it. Existing copies already deployed to production may continue to
+operate, but no new deployments are permitted. License fees for licenses
+cancelled due to violation of this EULA are non-refundable. Any provision
+intended to survive termination will survive. Termination of the Enterprise
+license does not affect rights granted for the Community Edition under the MIT
+License.
+
+## 16. SEVERABILITY
+
+If any provision of this EULA is held invalid or unenforceable, that provision
+will be enforced to the maximum extent permissible and the remaining provisions
+will remain in full force and effect.
+
+## 17. EXPORT REGULATIONS
+
+The Software may be subject to export or import regulations, and you agree to
+comply strictly with all such laws and regulations.
+
+## 18. GOVERNING LAW
+
+This EULA is governed by the laws of the jurisdiction in which the Author is
+registered, and any dispute arising out of or related to it will be handled
+there.
+
+## 19. CONTACT
+
+- Sales and licensing: sales@jqwidgets.com
+- Support: support@jqwidgets.com
+- General: info@jqwidgets.com
+- Pricing: https://svgrid.com/pricing
+
+END OF AGREEMENT
 
 <!-- =================================================================
      /recipes/autosave-with-debounce  (community)

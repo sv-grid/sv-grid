@@ -62,7 +62,7 @@ Optional:
               eval  - 14-day trial (console notice on first use)
               dev   - local development / internal (console notice)
               oss   - free key for open-source projects (no notice, no watermark);
-                      see https://sv-grid.dev/pricing#oss for the policy
+                      see https://svgrid.com/pricing#oss for the policy
   --out      Output directory. Defaults to tools/licenses/
 
 Examples:

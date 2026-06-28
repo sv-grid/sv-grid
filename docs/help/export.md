@@ -103,7 +103,7 @@ them.
 | `SVENTERPRISE-DEV-...` or `SVENTERPRISE-EVAL-...`        | Works. One-time console.info notice. No watermark. |
 | Any other `SVENTERPRISE-...`                      | Works silently. |
 
-Buy a production key at <https://sv-grid.dev/pricing> ($599 / developer /
+Buy a production key at <https://svgrid.com/pricing> ($599 / developer /
 year). `SVENTERPRISE-DEV-...` and `SVENTERPRISE-EVAL-...` keys cover local development
 and 14-day trials respectively.
 

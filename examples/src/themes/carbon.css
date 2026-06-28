@@ -1,0 +1,60 @@
+/* ============================================================
+ * IBM CARBON v11 - sharp corners (0 radius), 8px grid, blue-60
+ * accent. Tokens verified against carbon-elements/themes white +
+ * gray100. IBM Plex Sans.
+ * ============================================================ */
+html[data-preset='carbon'] .demo-page {
+  --sg-bg: #ffffff;                /* layer-01 */
+  --sg-fg: #161616;                /* text-primary */
+  --sg-muted: #525252;             /* text-secondary */
+  --sg-border: #e0e0e0;            /* border-subtle-01 */
+  --sg-header-bg: #f4f4f4;         /* layer-02 / gray-10 */
+  --sg-header-fg: #161616;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #e8e8e8;      /* layer-hover-02 */
+  --sg-selection-bg: #d0e2ff;      /* blue-20 */
+  --sg-accent: #0f62fe;            /* blue-60 */
+  --sg-input-bg: #f4f4f4;          /* field-01 */
+  --sg-input-border: #8d8d8d;      /* border-strong-01 */
+  --sg-pill-active: #defbe6;       /* green-10 */
+  --sg-pill-active-fg: #0e6027;    /* green-70 */
+  --sg-pill-pending: #fcf4d6;      /* yellow-10 */
+  --sg-pill-pending-fg: #b28600;   /* yellow-70 */
+  --sg-pill-inactive: #ffd7d9;     /* red-10 */
+  --sg-pill-inactive-fg: #a2191f;  /* red-70 */
+  --sg-radius: 0;                  /* Carbon = sharp corners */
+  --sg-cell-px: 16px;              /* spacing-05 */
+  background: #ffffff;
+  color: #161616;
+  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+}
+html[data-preset='carbon'] .demo-page .demo-aside {
+  background: #f4f4f4;
+  border-color: #e0e0e0 !important;
+}
+html[data-preset='carbon'][data-theme='dark'] .demo-page {
+  --sg-bg: #161616;                /* gray-100 */
+  --sg-fg: #f4f4f4;
+  --sg-muted: #c6c6c6;
+  --sg-border: #393939;
+  --sg-header-bg: #262626;
+  --sg-header-fg: #f4f4f4;
+  --sg-row-alt-bg: #161616;
+  --sg-row-hover-bg: #353535;
+  --sg-selection-bg: #0043ce;      /* blue-70 */
+  --sg-accent: #4589ff;            /* blue-50 */
+  --sg-input-bg: #262626;
+  --sg-input-border: #6f6f6f;
+  --sg-pill-active: #044317;
+  --sg-pill-active-fg: #6fdc8c;
+  --sg-pill-pending: #483700;
+  --sg-pill-pending-fg: #fddc69;
+  --sg-pill-inactive: #750e13;
+  --sg-pill-inactive-fg: #ffb3b8;
+  background: #161616;
+  color: #f4f4f4;
+}
+html[data-preset='carbon'][data-theme='dark'] .demo-page .demo-aside {
+  background: #262626;
+  border-color: #393939 !important;
+}

@@ -148,7 +148,7 @@
       summaryLabel: 'ARR',
       leaves: [
         { id: 'arr',         field: 'arr',         label: 'ARR',         width: 130, align: 'right' },
-        { id: 'probability', field: 'probability', label: 'Prob.',       width: 80,  align: 'right' },
+        { id: 'probability', field: 'probability', label: 'Probability', width: 80,  align: 'right' },
         { id: 'currency',    field: 'currency',    label: 'Currency',    width: 110 },
       ],
     },
@@ -502,6 +502,7 @@
       enableInlineEditing={false}
       enableCellSelection={false}
       enableRowSummaries={false}
+      headerHeight={44}
       rowHeight={48}
       containerHeight="100%"
       fitColumns={false}

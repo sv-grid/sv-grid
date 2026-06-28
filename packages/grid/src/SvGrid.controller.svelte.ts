@@ -22,6 +22,7 @@ import {
     type RowData,
     type TableFeatures,
   } from "./index";
+import { createRowScrollScaling } from "./virtualization/scroll-scaling";
 import "./sv-grid-scrollbar";
 import {
     computeColumnStat,
@@ -99,6 +100,79 @@ import {
     getColumnAccessorValue,
     columnDefMatchesId,
   } from "./cell-values";
+
+/**
+ * Conservative fallback for the browser's max element height, used during SSR
+ * or if runtime detection fails. 8M is below every known engine cap (Firefox
+ * ~17.9M, Chrome/Safari ~33.5M) so it is always safe, if coarser than needed.
+ */
+const MAX_DOM_SCROLL_HEIGHT_FALLBACK = 8_000_000;
+
+/**
+ * The browser's actual maximum element height in CSS px. Browsers clamp how
+ * tall a single element may be (and mobile / high-DPR caps differ), so we
+ * measure it once by reading the clamped `offsetHeight` of an absurdly tall
+ * probe kept inside a 1x1 `overflow:hidden` wrapper (so it never affects page
+ * layout or scroll). Cached for the page lifetime; constant per browser.
+ */
+let detectedMaxDomHeight: number | null = null;
+/**
+ * Seed the `hiddenColumns` map from any column def marked `visible: false`.
+ * Walks groups so a hidden group hides all of its leaf columns. Keyed by the
+ * same id `setColumnVisible` uses (`id ?? field`), so user toggles afterward
+ * stay consistent. Run once at mount; prop changes don't re-apply it.
+ */
+function initialHiddenColumns<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  defs: ReadonlyArray<ColumnDef<TFeatures, TData>>,
+): Record<string, boolean> {
+  const hidden: Record<string, boolean> = {};
+  const walk = (
+    cols: ReadonlyArray<ColumnDef<TFeatures, TData>>,
+    inheritedHidden: boolean,
+  ) => {
+    for (const def of cols) {
+      const hide = inheritedHidden || def.visible === false;
+      if (def.columns?.length) {
+        walk(def.columns, hide);
+      } else if (hide) {
+        const id = def.id ?? def.field;
+        if (id) hidden[id] = true;
+      }
+    }
+  };
+  walk(defs, false);
+  return hidden;
+}
+
+function getMaxDomScrollHeight(): number {
+  if (detectedMaxDomHeight != null) return detectedMaxDomHeight;
+  if (typeof document === "undefined" || !document.body) {
+    return MAX_DOM_SCROLL_HEIGHT_FALLBACK;
+  }
+  try {
+    const wrap = document.createElement("div");
+    wrap.style.cssText =
+      "position:fixed;top:0;left:-9999px;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none;";
+    const probe = document.createElement("div");
+    probe.style.cssText = "width:1px;height:1000000000px;";
+    wrap.appendChild(probe);
+    document.body.appendChild(wrap);
+    const measured = probe.offsetHeight;
+    document.body.removeChild(wrap);
+    // A clamped read is a large finite number well under the 1e9 we asked for.
+    // If the browser did not clamp (returned ~1e9) or returned junk, fall back.
+    detectedMaxDomHeight =
+      measured > 100_000 && measured < 900_000_000
+        ? measured
+        : MAX_DOM_SCROLL_HEIGHT_FALLBACK;
+  } catch {
+    detectedMaxDomHeight = MAX_DOM_SCROLL_HEIGHT_FALLBACK;
+  }
+  return detectedMaxDomHeight;
+}
 
 /**
  * SvGrid controller. The component's entire reactive core - every $state,
@@ -345,7 +419,10 @@ export function createSvGridController<
   let internalColumns = $state.raw<Array<ColumnDef<TFeatures, TData>>>(
     props.columns,
   );
-  let hiddenColumns = $state<Record<string, boolean>>({});
+  // svelte-ignore state_referenced_locally
+  let hiddenColumns = $state<Record<string, boolean>>(
+    initialHiddenColumns(props.columns),
+  );
 
   $effect(() => {
     // When the consumer replaces `data` (e.g. a "Reset" button), drop any
@@ -1069,6 +1146,60 @@ export function createSvGridController<
   const virtualRowBottomSpacer = $derived.by(() =>
     Math.max(virtualRowTotalSize - virtualRowEnd, 0),
   );
+
+  // --- Huge-list scroll scaling -----------------------------------------
+  // Browsers cap how tall a single element may be, and mobile caps sit well
+  // below desktop. Past a few hundred thousand rows the true content height
+  // (count * rowHeight) exceeds that cap, the scroll container silently
+  // clamps its scrollHeight, and the last rows become unreachable - e.g. a
+  // 1,000,000-row grid that only scrolls to ~994,000 on a phone.
+  //
+  // When the true height exceeds the browser's max element height we cap the
+  // DOM scroll height and map between the limited DOM scroll range and the
+  // full logical range (the "scaling" technique from react-virtualized): the
+  // spacers are sized in the capped DOM space, while the virtualizer keeps
+  // working in true logical pixels. We detect the real per-browser cap at
+  // runtime (Chrome ~33.5M, Firefox ~17.9M, mobile lower) rather than guess a
+  // constant, so scaling activates only when genuinely needed and stays as
+  // fine-grained as the browser allows. For normal-sized grids scaling is
+  // inert and every value below reduces to the original behavior.
+  // Build the scaling mapping from the current true height + detected browser
+  // cap + viewport. The pure, unit-tested math lives in
+  // ./virtualization/scroll-scaling; here we only feed it reactive inputs.
+  // Inert (identity) for normal-sized grids.
+  const rowScrollScaling = $derived(
+    createRowScrollScaling(
+      virtualRowTotalSize,
+      getMaxDomScrollHeight(),
+      viewportHeight,
+    ),
+  );
+  const rowDomTotalSize = $derived(rowScrollScaling.domTotal);
+  const rowScrollScalingActive = $derived(rowScrollScaling.active);
+  // Map a DOM scrollTop to the virtualizer's logical scroll offset, and back.
+  function domToLogicalRowOffset(domTop: number): number {
+    return rowScrollScaling.domToLogical(domTop);
+  }
+  function logicalToDomRowOffset(logical: number): number {
+    return rowScrollScaling.logicalToDom(logical);
+  }
+  // px the logical row positions must shift to land inside the capped DOM
+  // coordinate space (0 when not scaling). Derived from the virtualizer's
+  // OWN committed scroll offset - not the live DOM scrollTop - so the spacer
+  // shift and the rendered window are always computed from the same state and
+  // can never skew by a frame (which would jitter at extreme scale).
+  const rowOffsetAdjustment = $derived.by(() => {
+    if (!rowScrollScalingActive) return 0;
+    virtualizer.version;
+    const logical = virtualizer.getState().scrollOffset;
+    return logical - rowScrollScaling.logicalToDom(logical);
+  });
+  // Spacer heights in DOM space. With scaling inert these equal the original
+  // virtualRowStart / virtualRowBottomSpacer.
+  const rowTopSpacer = $derived(Math.max(virtualRowStart - rowOffsetAdjustment, 0));
+  const rowBottomSpacer = $derived(
+    Math.max(rowDomTotalSize - (virtualRowEnd - rowOffsetAdjustment), 0),
+  );
   const virtualColumns = $derived.by(() => {
     columnVirtualizerVersion;
     return columnVirtualizer.getVirtualItems();
@@ -1291,9 +1422,10 @@ export function createSvGridController<
       typeof props.containerHeight === "string"
         ? (scrollContainer?.clientHeight ?? 520)
         : (props.containerHeight ?? 520);
+    const rh = props.rowHeight;
     virtualizer.setOptions({
       count: allRows.length,
-      estimateSize: props.rowHeight ?? 36,
+      estimateSize: typeof rh === "function" ? rh : (rh ?? 30),
       overscan: props.overscan ?? 8,
       viewportHeight,
     });
@@ -1344,7 +1476,7 @@ export function createSvGridController<
   $effect(() => {
     if (!scrollContainer) return;
     if (rowVirtualizationEnabled)
-      virtualizer.setScrollOffset(scrollContainer.scrollTop);
+      virtualizer.setScrollOffset(domToLogicalRowOffset(scrollContainer.scrollTop));
     if (columnVirtualizationEnabled)
       columnVirtualizer.setHorizontalOffset(scrollContainer.scrollLeft);
   });
@@ -1863,6 +1995,12 @@ export function createSvGridController<
     get virtualRowStart() { return virtualRowStart; },
     get virtualRowEnd() { return virtualRowEnd; },
     get virtualRowBottomSpacer() { return virtualRowBottomSpacer; },
+    get rowDomTotalSize() { return rowDomTotalSize; },
+    get rowScrollScalingActive() { return rowScrollScalingActive; },
+    get rowTopSpacer() { return rowTopSpacer; },
+    get rowBottomSpacer() { return rowBottomSpacer; },
+    get domToLogicalRowOffset() { return domToLogicalRowOffset; },
+    get logicalToDomRowOffset() { return logicalToDomRowOffset; },
     get virtualColumns() { return virtualColumns; },
     get virtualColumnTotalSize() { return virtualColumnTotalSize; },
     get renderedColumnItems() { return renderedColumnItems; },

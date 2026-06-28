@@ -15,8 +15,19 @@ For computed headers, pass a function returning a `renderSnippet` /
 
 ## Header height
 
-There is no `headerHeight` prop. Header height is determined by content +
-padding. Override via CSS:
+Set a fixed height per header **level** with the `headerHeight` prop on
+`<SvGrid>`:
+
+```svelte
+<SvGrid {data} {columns} headerHeight={44} />
+```
+
+With multi-level (grouped) headers the total header height is
+`levels * headerHeight` - each level renders as its own row, so a two-level
+header at `headerHeight={44}` is 88px tall. The filter row is not affected.
+
+When omitted, header rows size to their content (the default). You can also
+size headers purely with CSS instead of the prop:
 
 ```css
 table[role='grid'] thead th {
@@ -26,8 +37,25 @@ table[role='grid'] thead th {
 ```
 
 If you set a fixed virtualizer row height (`rowHeight={36}` on `<SvGrid>`)
-the header is **independent** of that - the virtualizer measures it once
-at mount to compute the visible viewport.
+the header is **independent** of that - the virtualizer measures the header
+once at mount (and on resize) to compute the visible viewport.
+
+## Long labels (truncation)
+
+A header label wider than its column truncates to a single line with an
+ellipsis (`…`) instead of wrapping or pushing the header taller - so a fixed
+`headerHeight` stays intact. This applies to plain string headers. With
+[custom header components](./custom-header-components.md) you own the markup,
+so apply the same rule to your label element to get the effect:
+
+```css
+.my-header-label {
+  min-width: 0;            /* required inside the header's flex row */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+```
 
 ## Header colour, weight, alignment
 

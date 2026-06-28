@@ -51,7 +51,7 @@
   // ---- Headline stats (single source of truth, used across the page) ------
   const stats = [
     { n: 'Svelte 5', l: 'native runes' },
-    { n: '42 KB', l: 'gzip (7.5 KB core)' },
+    { n: '60 KB', l: 'gzip (9.4 KB core)' },
     { n: 'MIT', l: 'free, commercial' },
     { n: '150+', l: 'live demos' },
     { n: 'MCP', l: 'AI-ready' },

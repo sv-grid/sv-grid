@@ -35,6 +35,65 @@
     sourceText = await current.loadSource()
   }
 
+  // ---- Theme preset chooser (shadcn / Excel / Fluent / Material) ----------
+  type Preset =
+    | 'default' | 'shadcn' | 'tailwind' | 'material'
+    | 'excel' | 'fluent'
+    | 'carbon' | 'sap' | 'salesforce' | 'atlassian' | 'github' | 'antd'
+    | 'ag-alpine'
+  type PresetGroup = { label: string; presets: { id: Preset; label: string }[] }
+  const PRESET_GROUPS: PresetGroup[] = [
+    {
+      label: 'Modern design systems',
+      presets: [
+        { id: 'default',  label: 'Default'  },
+        { id: 'shadcn',   label: 'shadcn'   },
+        { id: 'tailwind', label: 'Tailwind' },
+        { id: 'material', label: 'Material' },
+      ],
+    },
+    {
+      label: 'Microsoft',
+      presets: [
+        { id: 'excel',  label: 'Excel'  },
+        { id: 'fluent', label: 'Fluent' },
+      ],
+    },
+    {
+      label: 'Enterprise',
+      presets: [
+        { id: 'carbon',     label: 'IBM Carbon'        },
+        { id: 'sap',        label: 'SAP Fiori'         },
+        { id: 'salesforce', label: 'Salesforce'        },
+        { id: 'atlassian',  label: 'Atlassian'         },
+        { id: 'github',     label: 'GitHub Primer'     },
+        { id: 'antd',       label: 'Ant Design'        },
+      ],
+    },
+    {
+      label: 'Grid look-alikes',
+      presets: [
+        { id: 'ag-alpine', label: 'Alpine' },
+      ],
+    },
+  ]
+  const PRESETS: { id: Preset; label: string }[] =
+    PRESET_GROUPS.flatMap((g) => g.presets)
+  function readPreset(): Preset {
+    if (typeof localStorage === 'undefined') return 'default'
+    const stored = localStorage.getItem('sg-preset')
+    return (PRESETS.some((p) => p.id === stored) ? stored : 'default') as Preset
+  }
+  let preset = $state<Preset>(readPreset())
+  $effect(() => {
+    if (preset === 'default') {
+      document.documentElement.removeAttribute('data-preset')
+    } else {
+      document.documentElement.setAttribute('data-preset', preset)
+    }
+    try { localStorage.setItem('sg-preset', preset) } catch { /* ignore */ }
+  })
+
   // ---- Smart demo search (mirrors examples/src/App.svelte) ---------------
   let query = $state('')
   let searchEl = $state<HTMLInputElement | null>(null)
@@ -131,9 +190,46 @@
   function toggleGroup(cat: string) {
     openGroups = { ...openGroups, [cat]: !(openGroups[cat] ?? false) }
   }
+
+  // ---- Live GitHub star count -------------------------------------------
+  // Fetched once, cached in localStorage for 6h so we stay well under the
+  // unauthenticated GitHub API limit (60/hr per IP). If the fetch fails the
+  // count is simply hidden and the link still works.
+  const GH_REPO = 'sv-grid/sv-grid'
+  let stars = $state<number | null>(null)
+
+  function formatStars(n: number): string {
+    if (n < 1000) return String(n)
+    const k = n / 1000
+    return (k >= 10 ? Math.round(k) : Math.round(k * 10) / 10) + 'k'
+  }
+
+  $effect(() => {
+    const KEY = 'sg-gh-stars'
+    const TTL = 6 * 60 * 60 * 1000
+    try {
+      const raw = localStorage.getItem(KEY)
+      if (raw) {
+        const { n, t } = JSON.parse(raw)
+        if (typeof n === 'number' && Date.now() - t < TTL) {
+          stars = n
+          return
+        }
+      }
+    } catch { /* ignore */ }
+    fetch(`https://api.github.com/repos/${GH_REPO}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d.stargazers_count === 'number') {
+          stars = d.stargazers_count
+          try { localStorage.setItem(KEY, JSON.stringify({ n: stars, t: Date.now() })) } catch { /* ignore */ }
+        }
+      })
+      .catch(() => { /* offline / rate-limited: leave count hidden */ })
+  })
 </script>
 
-<div class="flex h-full min-h-0">
+<div class="demo-page flex h-full min-h-0">
   {#if mobileNav}
     <button
       type="button"
@@ -159,6 +255,25 @@
         onclick={() => (mobileNav = false)}
       >×</button>
     </div>
+
+    <label class="preset-row mb-4 flex items-center justify-between gap-2 text-xs">
+      <span style="color: var(--sg-muted)">Theme</span>
+      <select
+        class="preset-select rounded border px-2 py-1"
+        style="background: var(--sg-input-bg, var(--sg-bg)); color: var(--sg-fg); border-color: var(--sg-input-border, var(--sg-border));"
+        value={preset}
+        onchange={(e) => (preset = (e.currentTarget as HTMLSelectElement).value as Preset)}
+        aria-label="Theme preset"
+      >
+        {#each PRESET_GROUPS as group (group.label)}
+          <optgroup label={group.label}>
+            {#each group.presets as p (p.id)}
+              <option value={p.id}>{p.label}</option>
+            {/each}
+          </optgroup>
+        {/each}
+      </select>
+    </label>
 
     <div class="demo-search-wrap mb-4">
       <svg class="demo-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -267,6 +382,22 @@
       Each demo is a single .svelte file under <code>examples/src/demos/</code>. Read the source
       alongside the running app - it is what you would copy into your own project.
     </p>
+
+    <a
+      class="gh-star mt-4 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs"
+      style="border-color: var(--sg-border); color: var(--sg-muted);"
+      href="https://github.com/sv-grid/sv-grid"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <svg class="gh-star-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+      <span class="flex-1">If SvGrid is useful, star it on GitHub</span>
+      {#if stars !== null}
+        <span class="gh-star-count">{formatStars(stars)}</span>
+      {/if}
+    </a>
   </aside>
 
   <main class="flex flex-col flex-1 overflow-x-hidden p-3 sm:p-6 min-h-0">
@@ -487,5 +618,39 @@
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     box-shadow: 0 0 0 2px color-mix(in oklab, #8b5cf6 30%, transparent);
     flex-shrink: 0;
+  }
+
+  /* Quiet "star on GitHub" nudge: muted until hovered, then the star warms to
+     gold. No animation or fill-pop - present, not pushy. */
+  .gh-star {
+    text-decoration: none;
+    transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+  }
+  .gh-star:hover {
+    color: var(--sg-fg);
+    border-color: #f59e0b;
+    background: color-mix(in oklab, #f59e0b 8%, transparent);
+  }
+  .gh-star-icon {
+    flex-shrink: 0;
+    transition: color 140ms ease, fill 140ms ease;
+  }
+  .gh-star:hover .gh-star-icon {
+    color: #f59e0b;
+    fill: #f59e0b;
+  }
+  .gh-star-count {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--sg-muted);
+    background: var(--sg-row-hover-bg, rgba(148, 163, 184, 0.15));
+    border-radius: 10px;
+    padding: 1px 7px;
+  }
+  .gh-star:hover .gh-star-count {
+    color: #f59e0b;
+    background: color-mix(in oklab, #f59e0b 14%, transparent);
   }
 </style>

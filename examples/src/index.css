@@ -1,4 +1,5 @@
 ﻿@import 'tailwindcss';
+@import './themes.css';
 
 /* Tailwind's `dark:` modifier follows our data-theme attribute, so theme
  * switching is in sync with our own --sg-* tokens. App.svelte writes the
@@ -347,11 +348,16 @@ section select option {
   font-weight: 600;
 }
 
-/* Row-number column: themed muted text and matched background tokens. */
+/* Row-number column: themed muted text and matched background tokens.
+ * No right-border so the row-number gutter visually fuses into the
+ * column-header bar in both light + dark themes (otherwise dark mode
+ * shows a subtle dividing line between the column header and the
+ * first row-number, breaking the "header bar" feel). */
 .sv-grid-row-number-column,
 .sv-grid-row-number-cell {
   color: var(--sg-muted) !important;
   background: var(--sg-header-bg) !important;
+  border-right-color: var(--sg-header-bg) !important;
 }
 
 /* Group row background (selection rules live below the zebra rule so they

@@ -174,25 +174,65 @@ export function createSelection<
     if (colIndex < 0 || colIndex >= ctx.allColumns.length) return;
 
     if (ctx.rowVirtualizationEnabled) {
-      // Scroll only when the target row is not already fully visible. The grid
-      // header is sticky, so the usable row area starts below it.
-      const rowHeight = ctx.props.rowHeight ?? 36;
-      const headerHeight = ctx.theadEl?.offsetHeight ?? 0;
-      const rowTop = rowIndex * rowHeight;
-      const rowBottom = rowTop + rowHeight;
-      const currentTop = ctx.scrollContainer.scrollTop;
-      const clientHeight = ctx.scrollContainer.clientHeight;
-      let nextTop = currentTop;
-      if (rowTop < currentTop) {
-        nextTop = rowTop;
-      } else if (ctx.headerHeight + rowBottom - currentTop > clientHeight) {
-        nextTop = ctx.headerHeight + rowBottom - clientHeight;
-      }
-      nextTop = Math.max(nextTop, 0);
-      if (nextTop !== currentTop) {
-        ctx.scrollContainer.scrollTop = nextTop;
-        ctx.virtualizer.setScrollOffset(nextTop);
-        ctx.scrollVersion += 1;
+      // Prefer the browser's native `scrollIntoView({ block: 'nearest' })`
+      // when the target row is already mounted. It does Excel-style
+      // minimum-scroll, respects the sticky thead via the
+      // `scroll-padding-top` we set on the scroll container, and runs
+      // on the compositor so it doesn't jump.
+      const root = ctx.scrollContainer as HTMLElement
+      const trEl = root.querySelector<HTMLElement>(
+        `tr.sv-grid-row [data-svgrid-row="${rowIndex}"]`,
+      )?.closest('tr.sv-grid-row') as HTMLElement | null
+      if (trEl) {
+        // `behavior: 'instant'` skips any user-agent smooth-scroll
+        // animation. Without it, fast key-repeat queues multiple
+        // overlapping animated scrolls and the viewport visibly
+        // overshoots / jumps as they collide.
+        trEl.scrollIntoView({
+          block: 'nearest',
+          inline: 'nearest',
+          behavior: 'instant' as ScrollBehavior,
+        })
+      } else if (ctx.rowScrollScalingActive) {
+        // Huge-list scroll scaling: the logical row offset does NOT map 1:1
+        // to a DOM scrollTop (the DOM scroll range is capped), so the plain
+        // offset math below would clamp and never reach the target. Map the
+        // logical offset into DOM space and align the row just under the
+        // sticky header. Rows are sub-pixel tall in DOM space here, so exact
+        // minimum-scroll is meaningless; once the row mounts the native
+        // `scrollIntoView` path above fine-tunes on the next navigation.
+        const headerHeight = (ctx.theadEl as HTMLElement | null)?.offsetHeight
+          ?? ctx.headerHeight ?? 0
+        const rowLogicalTop = ctx.virtualizer.getOffsetForIndex(rowIndex)
+        const nextTop = Math.max(
+          ctx.logicalToDomRowOffset(rowLogicalTop) - headerHeight,
+          0,
+        )
+        if (Math.abs(nextTop - root.scrollTop) > 0.5) {
+          root.scrollTop = nextTop
+        }
+      } else {
+        // Row outside the rendered virtualizer window. Compute the
+        // scroll-coordinate target manually and set scrollTop. On the
+        // next render the row will mount and subsequent navigations
+        // use the native path above.
+        const currentTop   = root.scrollTop
+        const clientHeight = root.clientHeight
+        const headerHeight = (ctx.theadEl as HTMLElement | null)?.offsetHeight
+          ?? ctx.headerHeight ?? 0
+        const rowTopScroll = headerHeight + ctx.virtualizer.getOffsetForIndex(rowIndex)
+        const rowHeight    = ctx.virtualizer.getSizeForIndex(rowIndex)
+        const rowBottom    = rowTopScroll + rowHeight
+        let nextTop = currentTop
+        if (rowTopScroll < currentTop + headerHeight) {
+          nextTop = rowTopScroll - headerHeight
+        } else if (rowBottom > currentTop + clientHeight) {
+          nextTop = rowBottom - clientHeight
+        }
+        nextTop = Math.max(nextTop, 0)
+        if (nextTop !== currentTop) {
+          root.scrollTop = nextTop
+        }
       }
     } else {
       // Non-virtualized mode: the cell's <td> is already in the DOM.
@@ -219,24 +259,28 @@ export function createSelection<
         nextTop = Math.max(nextTop, 0);
         if (nextTop !== ctx.scrollContainer.scrollTop) {
           ctx.scrollContainer.scrollTop = nextTop;
-          ctx.scrollVersion += 1;
         }
       }
     }
 
+    // Prefer the rendered item (cached size from the layout pass).
+    // Fall back to the column virtualizer's offset helper - that
+    // handles per-column variable widths correctly, unlike the
+    // previous flat `colIndex * fallbackWidth` estimate.
     const item = ctx.renderedColumnItems.find((entry: any) => entry.index === colIndex);
     const fallbackWidth = ctx.props.columnWidth ?? 140;
-    const cellStart = item?.start ?? colIndex * fallbackWidth;
-    const cellEnd = cellStart + (item?.size ?? fallbackWidth);
+    const cellStart = item?.start ?? ctx.columnVirtualizer?.getOffsetForIndex?.(colIndex) ?? (colIndex * fallbackWidth);
+    const cellSize  = item?.size  ?? ctx.columnVirtualizer?.getSizeForIndex?.(colIndex)  ?? fallbackWidth;
+    const cellEnd = cellStart + cellSize;
     const viewStart = ctx.scrollContainer.scrollLeft;
     const viewEnd = viewStart + ctx.scrollContainer.clientWidth;
     if (cellStart < viewStart) {
       ctx.scrollContainer.scrollLeft = cellStart;
-      ctx.scrollVersion += 1;
     } else if (cellEnd > viewEnd) {
       ctx.scrollContainer.scrollLeft = cellEnd - ctx.scrollContainer.clientWidth;
-      ctx.scrollVersion += 1;
     }
+    // No inline scrollVersion bump - the `scroll` event triggers
+    // onBodyScroll which flushes via rAF, doing one batched update.
   }
 
   function setSelection(rowIndex: number, colIndex: number) {

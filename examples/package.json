@@ -12,14 +12,14 @@
   "devDependencies": {
     "@rollup/plugin-replace": "^6.0.3",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@svgrid/enterprise": "workspace:*",
+    "@svgrid/grid": "workspace:*",
     "@tailwindcss/postcss": "^4.2.4",
     "@tsconfig/svelte": "^5.0.8",
     "autoprefixer": "^10.5.0",
     "jszip": "^3.10.1",
     "pdfmake": "^0.2.10",
     "postcss": "^8.5.12",
-    "@svgrid/grid": "workspace:*",
-    "@svgrid/enterprise": "workspace:*",
     "svelte": "^5.55.5",
     "svelte-check": "^4.4.6",
     "tailwindcss": "^4.2.4",
@@ -29,6 +29,7 @@
   "dependencies": {
     "ag-grid-community": "^35.3.1",
     "chart.js": "^4.5.1",
+    "hyperformula": "^3.3.0",
     "smart-webcomponents": "^26.0.0"
   }
 }

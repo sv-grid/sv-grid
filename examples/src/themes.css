@@ -1,0 +1,28 @@
+/*
+ * Theme presets for the SvGrid demos page. Each preset overrides the
+ * --sg-* design tokens AND the page chrome (sidebar bg / text, font,
+ * border-radius, cell density) so the entire demo experience reads
+ * as one cohesive theme.
+ *
+ * Scoped to `.demo-page` so the rest of the website chrome (top-nav,
+ * landing-page sections) keeps the gallery's default tokens.
+ *
+ * Tokens documented against each source design system's published
+ * token tables. Where a value is approximate vs. specified, that's
+ * marked in the comment.
+ */
+
+/* Each preset now lives in its own file under ./themes/. This barrel keeps
+ * the single `@import './themes.css'` entry point both consumers use. */
+@import './themes/shadcn.css';
+@import './themes/tailwind.css';
+@import './themes/material.css';
+@import './themes/excel.css';
+@import './themes/fluent.css';
+@import './themes/carbon.css';
+@import './themes/sap.css';
+@import './themes/salesforce.css';
+@import './themes/atlassian.css';
+@import './themes/github.css';
+@import './themes/antd.css';
+@import './themes/ag-alpine.css';

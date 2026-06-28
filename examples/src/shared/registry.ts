@@ -82,6 +82,11 @@ import CellTypesShowcase from '../demos/80-cell-types-showcase.svelte'
 import MobileCardView from '../demos/81-mobile-card-view.svelte'
 import ConditionalFormSchema from '../demos/82-conditional-form-schema.svelte'
 import SpreadsheetFormulas from '../demos/83-spreadsheet-formulas.svelte'
+import CellBordersDemo     from '../demos/169-cell-borders.svelte'
+import CellMergingDemo     from '../demos/170-cell-merging.svelte'
+import PersistentState     from '../demos/171-persistent-state.svelte'
+import AutosizeColumns     from '../demos/172-autosize-columns.svelte'
+import HyperFormulaDemo    from '../demos/173-hyperformula.svelte'
 import EditorTypes      from '../demos/84-editor-types.svelte'
 import TooltipsAndNotes from '../demos/85-tooltips-and-notes.svelte'
 import UndoRedo         from '../demos/86-undo-redo.svelte'
@@ -306,6 +311,7 @@ export const demos: Demo[] = [
   demo('146-tool-panel',            'Columns tool panel',          'The docked enterprise sidebar for managing columns without a right-click: toggle visibility, reorder up/down, and group by a column. Enable with the toolPanel prop; a button appears at the grid top-right and the panel docks on the right edge.', 'Columns', ToolPanel),
   demo('104-column-reorder',        'Column reorder (drag)',       'Drag any column header left or right to reorder. Vertical drop indicator. Order persists across reloads via localStorage. Works through the existing data-svgrid-header-col attribute - no library change needed.', 'Columns', ColumnReorder),
   demo('109-column-reorder-engine', 'Column reorder (engine prop)','Set `enableColumnReorder` on <SvGrid> and every header becomes draggable. api.setColumnOrder / getColumnOrder + onColumnOrderChange event. Toolbar buttons drive imperative reorders.', 'Columns', ColumnReorderEngine),
+  demo('172-autosize-columns',      'Autosize columns',            'api.autosizeColumn(id) and api.autosizeAllColumns() snap columns to the widest visible cell via canvas-based text measurement. The column header menu has an "Autosize" item that calls the same code. Manual drag-resize still works.', 'Columns', AutosizeColumns),
 
   // ----- Rows & Cells
   demo('10-custom-cells-and-themes','Custom cells + themes',       'Avatars, sparklines, progress bars, density toggle, dark mode, full a11y.', 'Rows & Cells', CustomCells),
@@ -314,6 +320,7 @@ export const demos: Demo[] = [
   demo('62-conditional-styling',    'Conditional styling',         'Support-ticket triage board: rowClass highlights SLA breach + at-risk rows with side-bar accents; cellClass paints priority pills, status badges, agent-load progress bars, and CSAT highlights.', 'Rows & Cells', ConditionalStyling),
   demo('85-tooltips-and-notes',     'Tooltips + per-cell notes',   'Column-level `tooltip` prop (static or value-driven) plus per-cell notes via the `notes` prop on `<SvGrid>` - corner indicator + edit modal.', 'Rows & Cells', TooltipsAndNotes),
   demo('55-state-maintenance',      'State maintenance',           'Capture / restore the grid\'s sort, filters, visibility, widths, page, selection, expansion. Includes undo / redo history, named bookmarks, JSON import/export, debounced localStorage auto-save.', 'Rows & Cells', StateMaintenance),
+  demo('171-persistent-state',      'State maintenance (auto)',    'CRM contacts grid with editable cells. attachAutoSavedView reserves one slot inside createNamedViews + localStorageViews and mirrors the grid view to it: sort / filter / hide / reorder / resize a column, reload the tab, the layout is right where you left it. Same store is reusable for additional named layouts.', 'Rows & Cells', PersistentState),
   demo('143-named-views',           'Named views',                 'Save the grid sort + filter + layout as a named view and restore it in one click. createNamedViews(api, { storage }) wraps getState/setState; localStorageViews persists across reloads, or plug your own server adapter.', 'Rows & Cells', NamedViews),
   demo('94-conditional-formatting', 'Conditional formatting',      'Excel-style color scale, data bars, icon sets, and heatmap tint - all via user-land cellRenderers. Per-formatter toggles to compare on/off. The "P&L preset" lights up the whole grid.', 'Rows & Cells', ConditionalFormatting),
   demo('105-row-reorder',           'Row reorder (drag rows)',     'Priority queue with a ⋮⋮ drag handle column. Multi-select aware - check several rows, drag the group as a block. Auto-scroll near viewport edges.', 'Rows & Cells', RowReorder),
@@ -376,6 +383,9 @@ export const demos: Demo[] = [
   // ----- Spreadsheet
   demo('27-spreadsheet-ribbon',     'Spreadsheet + Ribbon bar',    'Excel-style Ribbon UI driving the grid via SvGridApi: cell formatting (bold, color, number format), insert/delete row, sort, live SUM/AVG/COUNT.', 'Spreadsheet', SpreadsheetRibbon),
   demo('83-spreadsheet-formulas',   'Spreadsheet + formulas',      'Real formula engine inside the grid: cell refs (A1), ranges (A1:A10), SUM / AVG / IF / COUNTIF / ROUND, arithmetic, string concat, cycle detection. Excel-like calc without bundling HyperFormula.', 'Spreadsheet', SpreadsheetFormulas),
+  demo('169-cell-borders',          'Per-cell custom borders (KPI)','Editable KPI scorecard. spreadsheetLayout paints HOT-style per-edge custom borders via an absolute-positioned overlay (no border-collapse conflicts). Edit any quarter or target - the borders re-derive: green double = beat target, blue solid = hit, amber dotted = near miss, red dashed = bad miss; row champion gets a colored full frame.', 'Spreadsheet', CellBordersDemo),
+  demo('170-cell-merging',          'Cell merging (spreadsheet shell)','A real invoice rendered on an Excel-style shell: A / B / C / D / E column letters across the top, row numbers down the left. Brand band, bill-from / bill-to address blocks, meta block, line items, totals, notes, signatures - all assembled from MergeSpec + CellBorderSpec. Editable Qty / Rate / addresses / notes; totals recompute live.', 'Spreadsheet', CellMergingDemo),
+  demo('173-hyperformula',          'HyperFormula integration',    'Full HyperFormula engine wired into the grid as a peer-optional dep. Editable spreadsheet with A1-style cell refs, dozens of formulas across math (SUM / SUMIF), lookup (VLOOKUP / INDEX-MATCH), text (CONCAT / UPPER), date (TODAY / DATEDIF), logical (IF nests), financial (PMT / IRR / NPV), statistical (AVERAGE / MAX / RANK).', 'Spreadsheet', HyperFormulaDemo),
 
   // ----- Themes & Styling
   demo('37-theming-studio',         'Theming studio',              'Live token playground: brand color, density, radius, font, dark/light, zebra. Copy-ready CSS snippet, persists across reloads.', 'Themes & Styling', ThemingStudio),

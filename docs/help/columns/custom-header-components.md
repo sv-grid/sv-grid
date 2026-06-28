@@ -3,7 +3,11 @@
 The `header` field on a `ColumnDef` accepts a function that returns either
 a `renderSnippet(...)` or `renderComponent(...)`. The function receives a
 `HeaderContext` so it can access the column, header, and grid.
-<div data-docs-demo="10-custom-cells-and-themes" data-height="540"></div>
+
+In the demo below, the **column headers** are custom: each quarter header and
+each measure header (with its icon) is rendered from a snippet via
+`header: () => renderSnippet(...)`.
+<div data-docs-demo="121-pivot-conditional-cells" data-height="540"></div>
 
 ## With a snippet
 
@@ -64,6 +68,29 @@ ctx.column.getToggleSortingHandler()        // () => void
 Anything that needs more than a string belongs here - multi-line headers,
 filter icons inside the header, units, tooltips, custom sort indicators,
 a "select all" checkbox in a leading column.
+
+## Interactive elements inside a header
+
+Custom headers can contain real interactive controls - buttons, inputs,
+dropdowns, menus - and the grid routes clicks correctly:
+
+- A click that lands on an interactive element (`<button>`, `<a>`, `<input>`,
+  `<select>`, `<textarea>`, or anything with `role="button"` / `role="menuitem"`)
+  is handled by that element - it does **not** trigger a sort.
+- A click on the blank header area still toggles sorting when the column is
+  sortable (Enter / Space work too).
+
+So you can drop a filter dropdown or a small toolbar straight into a header
+without fighting the sort handler:
+
+```svelte
+{#snippet StatusHeader()}
+  <span class="inline-flex items-center gap-2">
+    <span>Status</span>
+    <button type="button" onclick={openStatusFilter} aria-label="Filter status">⏷</button>
+  </span>
+{/snippet}
+```
 
 ## Gotchas
 

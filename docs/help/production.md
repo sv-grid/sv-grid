@@ -27,8 +27,8 @@ Measured gzipped, with Svelte excluded as a peer dependency:
 
 | What you import                                       | Gzipped | Minified |
 | ----------------------------------------------------- | ------- | -------- |
-| Headless core (`createSvGrid` + `createCoreRowModel`) | ~7.5 KB | ~35 KB   |
-| Full `<SvGrid>` render component (everything)         | ~42 KB  | ~189 KB  |
+| Headless core (`createSvGrid` + `createCoreRowModel`) | ~9.4 KB | ~48 KB   |
+| Full `<SvGrid>` render component (everything)         | ~60 KB  | ~273 KB  |
 
 The `<SvGrid>` component is batteries-included: virtualization, Excel-style
 filters, inline editing, grouping, tree, master/detail, and accessibility are

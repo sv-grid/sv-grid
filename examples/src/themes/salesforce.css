@@ -1,0 +1,60 @@
+/* ============================================================
+ * SALESFORCE LIGHTNING SLDS 2 - corrected against the Lightning
+ * Web Components Workbench tokens. 3px corners on inputs/tags.
+ * Salesforce Sans (falls back to system Helvetica/Arial).
+ * ============================================================ */
+html[data-preset='salesforce'] .demo-page {
+  --sg-bg: #ffffff;                /* color-background */
+  --sg-fg: #181818;                /* color-text-default */
+  --sg-muted: #444444;             /* color-text-weak */
+  --sg-border: #c9c9c9;            /* color-border */
+  --sg-header-bg: #f3f3f3;         /* color-background-alt-2 */
+  --sg-header-fg: #181818;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f3f3f3;      /* color-background-row-hover */
+  --sg-selection-bg: #cfe3f8;      /* color-background-row-selected */
+  --sg-accent: #0176d3;            /* color-brand */
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #aeaeae;      /* color-border-input */
+  --sg-pill-active: #cdefc4;
+  --sg-pill-active-fg: #2e844a;
+  --sg-pill-pending: #fff7c2;
+  --sg-pill-pending-fg: #8c4b00;
+  --sg-pill-inactive: #ffe5e1;
+  --sg-pill-inactive-fg: #ba0517;
+  --sg-radius: 4px;                /* border-radius-medium */
+  --sg-cell-px: 12px;              /* spacing-x-small */
+  background: #ffffff;
+  color: #181818;
+  font-family: 'Salesforce Sans', 'SF Pro', Helvetica, Arial, sans-serif;
+}
+html[data-preset='salesforce'] .demo-page .demo-aside {
+  background: #f3f3f3;
+  border-color: #c9c9c9 !important;
+}
+html[data-preset='salesforce'][data-theme='dark'] .demo-page {
+  --sg-bg: #181818;
+  --sg-fg: #ffffff;
+  --sg-muted: #c9c9c9;
+  --sg-border: #3e3e3c;
+  --sg-header-bg: #2e2e2e;
+  --sg-header-fg: #ffffff;
+  --sg-row-alt-bg: #181818;
+  --sg-row-hover-bg: #2e2e2e;
+  --sg-selection-bg: #1e4d8e;
+  --sg-accent: #1b96ff;
+  --sg-input-bg: #2e2e2e;
+  --sg-input-border: #5c5c5c;
+  --sg-pill-active: #0e3925;
+  --sg-pill-active-fg: #94e3a8;
+  --sg-pill-pending: #4d3700;
+  --sg-pill-pending-fg: #ffd478;
+  --sg-pill-inactive: #5c1010;
+  --sg-pill-inactive-fg: #ffa39e;
+  background: #181818;
+  color: #ffffff;
+}
+html[data-preset='salesforce'][data-theme='dark'] .demo-page .demo-aside {
+  background: #2e2e2e;
+  border-color: #3e3e3c !important;
+}

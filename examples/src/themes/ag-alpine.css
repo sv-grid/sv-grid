@@ -1,0 +1,60 @@
+/* ============================================================
+ * AG GRID ALPINE - AG Grid's flagship theme. Sharp corners,
+ * quartz-blue accent. Verified against ag-grid-community/styles
+ * ag-theme-alpine.css.
+ * ============================================================ */
+html[data-preset='ag-alpine'] .demo-page {
+  --sg-bg: #ffffff;
+  --sg-fg: #181d1f;                /* foregroundColor */
+  --sg-muted: #525e64;
+  --sg-border: #babfc7;            /* borderColor */
+  --sg-header-bg: #f8f8f8;         /* headerBackgroundColor */
+  --sg-header-fg: #181d1f;
+  --sg-row-alt-bg: #fcfcfc;
+  --sg-row-hover-bg: #ecf0f1;      /* rowHoverColor */
+  --sg-selection-bg: #b7e4ff;      /* selectedRowBackgroundColor */
+  --sg-accent: #2196f3;            /* Alpine accent (Material-derived) */
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #babfc7;
+  --sg-pill-active: #d4edda;
+  --sg-pill-active-fg: #155724;
+  --sg-pill-pending: #fff3cd;
+  --sg-pill-pending-fg: #856404;
+  --sg-pill-inactive: #f8d7da;
+  --sg-pill-inactive-fg: #721c24;
+  --sg-radius: 3px;
+  --sg-cell-px: 16px;              /* cellHorizontalPadding (AG default) */
+  background: #ffffff;
+  color: #181d1f;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+html[data-preset='ag-alpine'] .demo-page .demo-aside {
+  background: #f8f8f8;
+  border-color: #babfc7 !important;
+}
+html[data-preset='ag-alpine'][data-theme='dark'] .demo-page {
+  --sg-bg: #181d1f;
+  --sg-fg: #ffffff;
+  --sg-muted: #ababab;
+  --sg-border: #68686e;
+  --sg-header-bg: #222628;
+  --sg-header-fg: #ffffff;
+  --sg-row-alt-bg: #1d2225;
+  --sg-row-hover-bg: #2a2e30;
+  --sg-selection-bg: #1a3c5b;
+  --sg-accent: #4ac1ff;
+  --sg-input-bg: #181d1f;
+  --sg-input-border: #68686e;
+  --sg-pill-active: #0c3d20;
+  --sg-pill-active-fg: #8ddb9f;
+  --sg-pill-pending: #4d3a00;
+  --sg-pill-pending-fg: #ffd35a;
+  --sg-pill-inactive: #5a1b1f;
+  --sg-pill-inactive-fg: #ffa5ab;
+  background: #181d1f;
+  color: #ffffff;
+}
+html[data-preset='ag-alpine'][data-theme='dark'] .demo-page .demo-aside {
+  background: #222628;
+  border-color: #68686e !important;
+}

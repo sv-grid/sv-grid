@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://svgrid.com/brand/svgrid-logo-icon-1200.png" alt="SvGrid" width="100" height="100" />
+</p>
+
 # SvGrid
 
 [![npm version](https://img.shields.io/npm/v/%40svgrid%2Fgrid.svg?label=%40svgrid%2Fgrid)](https://www.npmjs.com/package/@svgrid/grid)
@@ -19,7 +23,7 @@ A modern data grid built from the first line for Svelte 5 runes, not a React gri
 Scaffold a working Vite + Svelte 5 app with SvGrid wired up in one command:
 
 ```bash
-npm create sv-grid@latest
+npm create @svgrid@latest
 ```
 
 Or add it to an existing app:
@@ -112,13 +116,13 @@ SvGrid is open core: the MIT `@svgrid/grid` is free for any use, and the project
 This is a **pnpm workspace** monorepo:
 
 ```
-packages/grid/        @svgrid/grid        - MIT data grid
-packages/enterprise/  @svgrid/enterprise  - paid feature pack
-packages/mcp/         @svgrid/mcp         - MCP server
-packages/create/      create-sv-grid      - scaffolder
-examples/                                 - 150+ live demos
-website/                                  - svgrid.com source
-docs/                                     - markdown docs
+packages/grid/            @svgrid/grid        - MIT data grid
+packages/enterprise/      @svgrid/enterprise  - paid feature pack
+packages/mcp/             @svgrid/mcp         - MCP server
+packages/create-sv-grid/  @svgrid/create      - scaffolder
+examples/                                     - 150+ live demos
+website/                                      - svgrid.com source
+docs/                                         - markdown docs
 ```
 
 ### Requirements

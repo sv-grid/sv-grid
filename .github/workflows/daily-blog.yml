@@ -1,0 +1,68 @@
+name: Daily blog post
+
+# Generate one brand-new blog post per day with the Anthropic API and commit it.
+# The post is appended to the END of the publish queue (dated after the last
+# scheduled post), so it goes live on its own day via the existing drip - it is
+# never published the same day. The daily website rebuild (deploy-website.yml,
+# 07:12 UTC) renders whichever post's date has arrived, hero image included.
+#
+# Required repo secret:
+#   ANTHROPIC_API_KEY - Anthropic API key.
+# Optional repo variable:
+#   BLOG_MODEL - model id (default: claude-sonnet-4-6).
+#
+# 05:23 UTC: off-peak, non-round minute, before the npm publish (06:37) and the
+# website rebuild (07:12).
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Generate and print the post, but do not commit'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '23 5 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-blog
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Generate post
+        id: gen
+        run: node tools/generate-blog-post.mjs ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BLOG_MODEL: ${{ vars.BLOG_MODEL }}
+
+      - name: Commit and push
+        if: inputs.dry_run != true && steps.gen.outputs.slug != ''
+        # Title comes from the model, so pass it through the environment and
+        # quote it in the shell rather than interpolating it into the script.
+        env:
+          SLUG: ${{ steps.gen.outputs.slug }}
+          TITLE: ${{ steps.gen.outputs.title }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "website/src/content/blog/${SLUG}.md"
+          git commit -m "blog: ${TITLE} [skip ci]"
+          git push origin HEAD:main

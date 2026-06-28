@@ -92,7 +92,7 @@ setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
 For dev builds, the demos use `setLicenseKey('SVENTERPRISE-DEV-DEMO')` to
 suppress the watermark in screenshots.
 
-Pricing + multi-app licensing: <https://sv-grid.dev/pricing>.
+Pricing + multi-app licensing: <https://svgrid.com/pricing>.
 
 ## How Enterprise integrates
 

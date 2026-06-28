@@ -193,4 +193,4 @@ bind your own MUI inputs inside custom cell components.
 SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterprise`
 is priced per developer ($599 single-app / $999 multi-app) rather than
 per seat with Premium add-ons. Compare your team size and feature needs against
-the [pricing page](https://sv-grid.dev/#/pricing).
+the [pricing page](https://svgrid.com/#/pricing).

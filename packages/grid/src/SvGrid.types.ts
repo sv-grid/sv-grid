@@ -106,7 +106,17 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   /** Initial page size when pagination is enabled. Defaults to 10. */
   pageSize?: number;
   virtualization?: boolean;
-  rowHeight?: number;
+  /** Row height in pixels. Pass a function `(rowIndex) => px` for
+   *  per-row variable heights (e.g. an interactive row-resize feature).
+   *  Defaults to 30. */
+  rowHeight?: number | ((rowIndex: number) => number);
+  /**
+   * Height (px) of a single column-header level row. With multi-level
+   * (grouped) headers the total header height is `levels * headerHeight`,
+   * since each level renders as its own row. When omitted, header rows size
+   * to their content (the default). Does not affect the filter row.
+   */
+  headerHeight?: number;
   overscan?: number;
   /**
    * Height of the grid's scrollable shell. A number is treated as pixels;

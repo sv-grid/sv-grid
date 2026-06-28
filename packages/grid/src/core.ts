@@ -262,6 +262,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   /** Initial column width in pixels. Falls back to the grid's `columnWidth` prop. */
   width?: number
   /**
+   * Initial visibility. Set `false` to start the column hidden while still
+   * listing it in the Choose Columns UI for the user to re-enable. Applied
+   * once at mount; after that `api.setColumnVisible` / user toggles win.
+   * On a group column, `false` hides the whole group's leaf columns.
+   */
+  visible?: boolean
+  /**
    * Horizontal alignment for header and body cells. When omitted, the
    * default is inferred from `editorType`:
    *   - `'number' | 'date' | 'datetime'` → `'right'`

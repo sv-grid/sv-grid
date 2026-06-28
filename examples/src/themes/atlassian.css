@@ -1,0 +1,61 @@
+/* ============================================================
+ * ATLASSIAN DESIGN SYSTEM v2 (2023+) - migrated from legacy to
+ * the new functional token names. Brand blue is now `#0C66E4`
+ * (blue.700 bold). Slightly cooler text + border palette.
+ * Charlie Display family on macOS, Segoe UI elsewhere.
+ * ============================================================ */
+html[data-preset='atlassian'] .demo-page {
+  --sg-bg: #ffffff;                /* color.background.surface */
+  --sg-fg: #172b4d;                /* color.text */
+  --sg-muted: #44546f;             /* color.text.subtle (ADS v2 - was #6b778c in v1) */
+  --sg-border: #dcdfe4;            /* color.border (ADS v2 - was #dfe1e6 in v1) */
+  --sg-header-bg: #fafbfc;         /* color.background.neutral.subtle */
+  --sg-header-fg: #172b4d;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f1f2f4;      /* color.background.neutral.hovered (v2) */
+  --sg-selection-bg: #e9f2ff;      /* color.background.selected (v2 - was #deebff) */
+  --sg-accent: #0c66e4;            /* color.background.brand.bold (v2 - was #0052cc) */
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #c1c7d0;
+  --sg-pill-active: #dffbe7;       /* color.background.success.subtle */
+  --sg-pill-active-fg: #1f845a;    /* color.text.success */
+  --sg-pill-pending: #fff7d6;      /* color.background.warning.subtle */
+  --sg-pill-pending-fg: #946f00;   /* color.text.warning */
+  --sg-pill-inactive: #ffeceb;     /* color.background.danger.subtle */
+  --sg-pill-inactive-fg: #c9372c;  /* color.text.danger */
+  --sg-radius: 3px;                /* border.radius / smallest */
+  --sg-cell-px: 8px;
+  background: #ffffff;
+  color: #172b4d;
+  font-family: 'Charlie Display', 'Atlassian Sans', -apple-system, 'Segoe UI', sans-serif;
+}
+html[data-preset='atlassian'] .demo-page .demo-aside {
+  background: #fafbfc;
+  border-color: #dcdfe4 !important;
+}
+html[data-preset='atlassian'][data-theme='dark'] .demo-page {
+  --sg-bg: #1d2125;                /* color.background.surface dark */
+  --sg-fg: #b6c2cf;                /* color.text dark (ADS v2) */
+  --sg-muted: #8590a2;             /* color.text.subtle dark (was #8c9bab) */
+  --sg-border: #38414a;            /* color.border dark (was #2c333a) */
+  --sg-header-bg: #22272b;         /* color.background.neutral.subtle dark */
+  --sg-header-fg: #b6c2cf;
+  --sg-row-alt-bg: #1d2125;
+  --sg-row-hover-bg: #2c333a;
+  --sg-selection-bg: #09326c;      /* color.background.selected dark (v2) */
+  --sg-accent: #579dff;            /* color.background.brand.bold dark (v2) */
+  --sg-input-bg: #22272b;
+  --sg-input-border: #38414a;
+  --sg-pill-active: #1c3329;
+  --sg-pill-active-fg: #7ee2b8;
+  --sg-pill-pending: #3f2f15;
+  --sg-pill-pending-fg: #f5cd47;
+  --sg-pill-inactive: #42221f;
+  --sg-pill-inactive-fg: #ff9c8f;
+  background: #1d2125;
+  color: #b6c2cf;
+}
+html[data-preset='atlassian'][data-theme='dark'] .demo-page .demo-aside {
+  background: #22272b;
+  border-color: #38414a !important;
+}

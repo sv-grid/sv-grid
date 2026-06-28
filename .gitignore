@@ -45,3 +45,9 @@ Thumbs.db
 # committed to the public repo. The issuer script lives at
 # tools/issue-license.mjs (committed) and writes here.
 tools/licenses/
+
+# One-off / scratch scripts kept locally but not part of the product build.
+extract-part.mjs
+
+# Generated PDF (rebuilt from docs/legal/EULA.md by tools/eula-to-pdf.mjs).
+docs/legal/SvGrid-EULA.pdf

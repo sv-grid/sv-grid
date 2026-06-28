@@ -441,6 +441,28 @@ describe('SvGrid - column add / remove / visibility', () => {
       destroy()
     }
   })
+
+  it('columns marked `visible: false` start hidden but stay listed', async () => {
+    const columns: ColumnDef<typeof fullFeatures, Person>[] = personColumns.map(
+      (c) => (c.field === 'team' ? { ...c, visible: false } : c),
+    )
+    const { api, destroy } = await mountGrid({ columns })
+    try {
+      // Starts hidden...
+      expect(api.isColumnVisible('team')).toBe(false)
+      // ...but is still listed in getColumns() (so a Choose Columns UI
+      // can offer it), just with visible=false.
+      const team = api.getColumns().find((c) => c.id === 'team')
+      expect(team).toBeDefined()
+      expect(team?.visible).toBe(false)
+      // A later user toggle wins over the initial flag.
+      api.setColumnVisible('team', true)
+      await tick()
+      expect(api.isColumnVisible('team')).toBe(true)
+    } finally {
+      destroy()
+    }
+  })
 })
 
 describe('SvGrid - row add / remove', () => {

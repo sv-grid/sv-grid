@@ -19,6 +19,8 @@ export function createSvelteVirtualizer(options: VirtualizerOptions) {
     scrollToIndex: virtualizer.scrollToIndex,
     getVirtualItems: virtualizer.getVirtualItems,
     getTotalSize: virtualizer.getTotalSize,
+    getOffsetForIndex: virtualizer.getOffsetForIndex,
+    getSizeForIndex: virtualizer.getSizeForIndex,
     getState: virtualizer.getState,
   }
 }

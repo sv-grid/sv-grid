@@ -1,7 +1,7 @@
 SV-GRID-MCP COMMERCIAL LICENSE
 Version 1.0
 
-Copyright (c) 2026 Boyko Markov <boikom@jqwidgets.com>
+Copyright (c) 2026 jQWidgets Ltd
 Project: @svgrid/mcp
 
 This software is licensed, not sold. Use requires a valid, paid SvGrid
@@ -77,6 +77,6 @@ preceding the event giving rise to the claim.
 
 To purchase a license, request a quote, or report unauthorized use,
 contact: boikom@jqwidgets.com
-Pricing: https://sv-grid.dev/pricing
+Pricing: https://svgrid.com/pricing
 
 END OF LICENSE

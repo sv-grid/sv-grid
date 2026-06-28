@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://svgrid.com/brand/svgrid-logo-icon-1200.png" alt="SvGrid" width="100" height="100" />
+</p>
+
 # @svgrid/grid
 
 Headless-first independent Svelte-native grid engine and render utilities.

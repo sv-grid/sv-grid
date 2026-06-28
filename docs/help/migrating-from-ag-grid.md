@@ -16,7 +16,7 @@ We tell you when **not** to switch at the bottom.
 | --- | --- | --- | --- | --- |
 | **License** | MIT | Commercial (~$999/dev/yr) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
 | **Svelte 5 native** | ❌ (wrapper) | ❌ (wrapper) | ✅ | ✅ |
-| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~7.5 KB headless / ~42 KB full | lazy-loaded subpaths |
+| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~9.4 KB headless / ~60 KB full | lazy-loaded subpaths |
 | **Sorting / filtering / grouping** | ✅ | ✅ | ✅ | (in Community) |
 | **Master/detail, tree, range select** | ❌ Enterprise only | ✅ | ✅ (free) | (in Community) |
 | **Excel export** | ❌ | ✅ Enterprise | ❌ | ✅ |
@@ -267,14 +267,14 @@ AG Grid Enterprise's `rowGroupPanelShow: 'always'` + `aggFunc: 'sum'` translates
 ### Master / detail
 
 AG Grid Enterprise feature; **free in SvGrid Community**. See
-[demo 08](https://sv-grid.dev/#/demos/08-tree-and-master-detail) for the exact pattern.
+[demo 08](https://svgrid.com/#/demos/08-tree-and-master-detail) for the exact pattern.
 
 ### Server-side data
 
 AG Grid uses an `IServerSideDatasource` interface. SvGrid uses
 `externalSort` + `externalFilter` props - your code keeps full control
 over the query, and the grid records UI state but doesn't re-order rows
-locally. See [demo 09](https://sv-grid.dev/#/demos/09-server-side).
+locally. See [demo 09](https://svgrid.com/#/demos/09-server-side).
 
 ### Excel / PDF export
 
@@ -361,7 +361,7 @@ pre-sales questions.
 - [Getting started](../getting-started.md) - full SvGrid walkthrough
 - [Why headless?](../why-headless.md) - the headless / render-component split
 - [Data export and printing](./export.md) - the `@svgrid/enterprise` feature pack
-- [SvGrid vs AG Grid comparison page](https://sv-grid.dev/#/compare/ag-grid)
+- [SvGrid vs AG Grid comparison page](https://svgrid.com/#/compare/ag-grid)
 
 ## Frequently asked questions
 
@@ -388,7 +388,7 @@ and no framework bridge to keep in sync.
 
 ### Will my AG Grid bundle size shrink?
 
-Almost always. SvGrid's full render component is ~42 KB gzipped (or ~7.5 KB
+Almost always. SvGrid's full render component is ~60 KB gzipped (or ~9.4 KB
 for the headless core) versus a much heavier AG Grid Community bundle, and you
 only add `@svgrid/enterprise` features you actually use - so you ship a fraction of
 the JavaScript.

@@ -116,9 +116,13 @@
   const rowVirtualizationEnabled = $derived(ctrl.rowVirtualizationEnabled);
   const columnVirtualizationEnabled = $derived(ctrl.columnVirtualizationEnabled);
   const virtualRows = $derived(ctrl.virtualRows);
-  const virtualRowTotalSize = $derived(ctrl.virtualRowTotalSize);
-  const virtualRowStart = $derived(ctrl.virtualRowStart);
-  const virtualRowBottomSpacer = $derived(ctrl.virtualRowBottomSpacer);
+  // DOM-space spacer heights + capped total: identical to the logical
+  // virtualizer values for normal grids, scaled down past
+  // MAX_DOM_SCROLL_HEIGHT so huge grids stay scrollable to the last row on
+  // mobile (where the max element height is lowest).
+  const rowTopSpacer = $derived(ctrl.rowTopSpacer);
+  const rowBottomSpacer = $derived(ctrl.rowBottomSpacer);
+  const rowDomTotalSize = $derived(ctrl.rowDomTotalSize);
   const renderedColumns = $derived(ctrl.renderedColumns);
   const totalColumnWidth = $derived(ctrl.totalColumnWidth);
   const hasHorizontalOverflow = $derived(ctrl.hasHorizontalOverflow);
@@ -957,7 +961,7 @@
         typeof props.containerHeight === "string"
           ? props.containerHeight
           : `${props.containerHeight ?? 520}px`
-      }; --sg-thead-h: ${headerHeight}px; --sg-pinned-row-h: ${(props.rowHeight ?? 36)}px;`}
+      }; --sg-thead-h: ${headerHeight}px; --sg-pinned-row-h: ${(typeof props.rowHeight === 'number' ? props.rowHeight : 30)}px;`}
     >
       <div
         class="sv-grid-container sv-grid-container-custom-scrollbars"
@@ -986,6 +990,9 @@
               <tr
                 class="sv-grid-row sv-grid-header-row sv-grid-group-header-row"
                 {...getGridRowA11yProps()}
+                style={props.headerHeight
+                  ? `height: ${props.headerHeight}px;`
+                  : undefined}
               >
                 {#if showRowNumbersEffective}
                   <th
@@ -1019,6 +1026,9 @@
               <tr
                 class="sv-grid-row sv-grid-header-row"
                 {...getGridRowA11yProps()}
+                style={props.headerHeight
+                  ? `height: ${props.headerHeight}px;`
+                  : undefined}
               >
                 {#if showRowNumbersEffective}
                   <th
@@ -1363,11 +1373,11 @@
                 </td>
               </tr>
             {:else if rowVirtualizationEnabled}
-              {#if virtualRowStart > 0}
+              {#if rowTopSpacer > 0}
                 <tr class="sv-grid-row sv-grid-row-spacer" aria-hidden="true">
                   <td
                     class="sv-grid-cell sv-grid-cell-spacer"
-                    style={`height: ${virtualRowStart}px; padding: 0; border: 0;`}
+                    style={`height: ${rowTopSpacer}px; padding: 0; border: 0;`}
                     colSpan={allColumns.length +
                       (showRowNumbersEffective ? 1 : 0) +
                       (showRowSelectionEffective ? 1 : 0)}
@@ -1563,11 +1573,11 @@
                   {/if}
                 {/if}
               {/each}
-              {#if virtualRowBottomSpacer > 0}
+              {#if rowBottomSpacer > 0}
                 <tr class="sv-grid-row sv-grid-row-spacer" aria-hidden="true">
                   <td
                     class="sv-grid-cell sv-grid-cell-spacer"
-                    style={`height: ${virtualRowBottomSpacer}px; padding: 0; border: 0;`}
+                    style={`height: ${rowBottomSpacer}px; padding: 0; border: 0;`}
                     colSpan={allColumns.length +
                       (showRowNumbersEffective ? 1 : 0) +
                       (showRowSelectionEffective ? 1 : 0)}
@@ -1850,9 +1860,9 @@
           orientation="vertical"
           viewport-size={viewportHeight}
           content-size={scrollMetrics.scrollHeight ||
-            virtualRowTotalSize + headerHeight}
+            rowDomTotalSize + headerHeight}
           value={scrollMetrics.scrollTop}
-          step={props.rowHeight ?? 36}
+          step={typeof props.rowHeight === 'number' ? props.rowHeight : 30}
           style={`top: ${headerHeight}px; height: calc(100% - ${headerHeight + (hasHorizontalOverflow ? 16 : 0)}px);`}
         ></sv-grid-scrollbar>
       {/if}
@@ -1866,7 +1876,7 @@
           bind:this={ctrl.horizontalScrollbarEl}
           orientation="horizontal"
           viewport-size={viewportWidth}
-          content-size={horizontalContentSize}
+          content-size={scrollMetrics.scrollWidth || horizontalContentSize}
           value={scrollMetrics.scrollLeft}
           step={props.columnWidth ?? 140}
           style={`width: calc(100% - ${hasVerticalOverflow ? 16 : 0}px);`}

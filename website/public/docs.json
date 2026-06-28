@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-06-16T18:57:38.422Z",
+  "generatedAt": "2026-06-28T13:09:20.053Z",
   "counts": {
-    "pages": 195,
+    "pages": 197,
     "enterprise": 9,
     "withDemo": 72
   },
@@ -16,6 +16,13 @@
         "getting-started-full.md",
         "getting-started.md",
         "why-headless.md"
+      ]
+    },
+    {
+      "id": "brand",
+      "title": "brand",
+      "pages": [
+        "brand/company-description.md"
       ]
     },
     {
@@ -224,6 +231,13 @@
       ]
     },
     {
+      "id": "legal",
+      "title": "legal",
+      "pages": [
+        "legal/EULA.md"
+      ]
+    },
+    {
       "id": "recipes",
       "title": "Recipes / cookbook",
       "pages": [
@@ -295,6 +309,17 @@
     }
   ],
   "pages": [
+    {
+      "path": "brand/company-description.md",
+      "url": "/brand/company-description",
+      "title": "SvGrid - Company / Brand Description",
+      "summary": "*About the company and brand behind SvGrid. For partner listings, press kits, marketplace profiles, and procurement forms. Product descriptions live elsewhere.*",
+      "section": "brand",
+      "tier": "community",
+      "words": 796,
+      "lastUpdated": "2026-06-22",
+      "demoIds": []
+    },
     {
       "path": "changelog.md",
       "url": "/changelog",
@@ -391,7 +416,7 @@
       "section": "enterprise",
       "tier": "enterprise",
       "words": 772,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-06-22",
       "demoIds": []
     },
     {
@@ -424,7 +449,7 @@
       "section": "",
       "tier": "community",
       "words": 524,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-06-22",
       "demoIds": []
     },
     {
@@ -603,7 +628,7 @@
       "section": "help",
       "tier": "community",
       "words": 1252,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-06-28",
       "demoIds": [
         "06-large-dataset"
       ]
@@ -835,8 +860,8 @@
       "summary": "Headers are rendered as <th> inside a <thead> with role=\"row\". Style them with regular CSS - there are no header-specific Svelte props. <div data-docs-demo=\"01-quick-start\" data-height=\"540\"></div>",
       "section": "help/columns",
       "tier": "community",
-      "words": 233,
-      "lastUpdated": "2026-06-08",
+      "words": 381,
+      "lastUpdated": "2026-06-27",
       "demoIds": [
         "01-quick-start"
       ]
@@ -908,13 +933,13 @@
       "path": "help/columns/custom-header-components.md",
       "url": "/help/columns/custom-header-components",
       "title": "Custom header components",
-      "summary": "The header field on a ColumnDef accepts a function that returns either a renderSnippet(...) or renderComponent(...). The function receives a HeaderContext so it can access the column, header, and grid. <div data-docs-demo=\"10-custom-cells-and-themes\" data-height=\"540\"></div>",
+      "summary": "The header field on a ColumnDef accepts a function that returns either a renderSnippet(...) or renderComponent(...). The function receives a HeaderContext so it can access the column, header, and grid.",
       "section": "help/columns",
       "tier": "community",
-      "words": 290,
-      "lastUpdated": "2026-06-16",
+      "words": 433,
+      "lastUpdated": "2026-06-27",
       "demoIds": [
-        "10-custom-cells-and-themes"
+        "121-pivot-conditional-cells"
       ]
     },
     {
@@ -947,7 +972,7 @@
       "section": "help",
       "tier": "community",
       "words": 1480,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-06-28",
       "demoIds": []
     },
     {
@@ -1099,7 +1124,7 @@
       "section": "help",
       "tier": "enterprise",
       "words": 1138,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-06-22",
       "demoIds": [
         "21-export-and-print"
       ]
@@ -1339,7 +1364,7 @@
       "section": "help",
       "tier": "community",
       "words": 2129,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-06-28",
       "demoIds": []
     },
     {
@@ -1416,7 +1441,7 @@
       "section": "help",
       "tier": "community",
       "words": 871,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-06-22",
       "demoIds": []
     },
     {
@@ -1585,7 +1610,7 @@
       "section": "help",
       "tier": "community",
       "words": 1090,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-06-28",
       "demoIds": [
         "22-admin-template"
       ]
@@ -1956,7 +1981,18 @@
       "section": "help",
       "tier": "community",
       "words": 1425,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-06-22",
+      "demoIds": []
+    },
+    {
+      "path": "legal/EULA.md",
+      "url": "/legal/EULA",
+      "title": "SVGRID END USER LICENSE AGREEMENT",
+      "summary": "Version 1.0",
+      "section": "legal",
+      "tier": "community",
+      "words": 1680,
+      "lastUpdated": "2026-06-22",
       "demoIds": []
     },
     {

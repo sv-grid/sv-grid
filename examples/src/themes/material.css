@@ -1,0 +1,60 @@
+/* ============================================================
+ * MATERIAL 3 - purple primary tonal palette. Roboto Flex.
+ * Material data tables use square cells + medium rounding (8px)
+ * for elevated containers.
+ * ============================================================ */
+html[data-preset='material'] .demo-page {
+  --sg-bg: #fffbfe;
+  --sg-fg: #1d1b20;
+  --sg-muted: #49454f;
+  --sg-border: #cac4d0;
+  --sg-header-bg: #f3edf7;
+  --sg-header-fg: #1d1b20;
+  --sg-row-alt-bg: #fffbfe;
+  --sg-row-hover-bg: #ece6f0;
+  --sg-selection-bg: #e8def8;
+  --sg-accent: #6750a4;
+  --sg-input-bg: #fffbfe;
+  --sg-input-border: #79747e;
+  --sg-pill-active: #b8f2c7;
+  --sg-pill-active-fg: #003918;
+  --sg-pill-pending: #ffdbcb;
+  --sg-pill-pending-fg: #5f1500;
+  --sg-pill-inactive: #ffdad6;
+  --sg-pill-inactive-fg: #410002;
+  --sg-radius: 8px;        /* Material 3 medium shape */
+  --sg-cell-px: 16px;      /* 16dp standard padding */
+  background: #fffbfe;
+  color: #1d1b20;
+  font-family: 'Roboto Flex', Roboto, 'Segoe UI', system-ui, sans-serif;
+}
+html[data-preset='material'] .demo-page .demo-aside {
+  background: #f3edf7;
+  border-color: #cac4d0 !important;
+}
+html[data-preset='material'][data-theme='dark'] .demo-page {
+  --sg-bg: #141218;
+  --sg-fg: #e6e0e9;
+  --sg-muted: #cac4d0;
+  --sg-border: #49454f;
+  --sg-header-bg: #1d1b20;
+  --sg-header-fg: #e6e0e9;
+  --sg-row-alt-bg: #141218;
+  --sg-row-hover-bg: #2b2930;
+  --sg-selection-bg: #4a4458;
+  --sg-accent: #d0bcff;
+  --sg-input-bg: #211f26;
+  --sg-input-border: #79747e;
+  --sg-pill-active: #00390f;
+  --sg-pill-active-fg: #9bf2ad;
+  --sg-pill-pending: #3a1500;
+  --sg-pill-pending-fg: #ffd2bc;
+  --sg-pill-inactive: #93000a;
+  --sg-pill-inactive-fg: #ffdad6;
+  background: #141218;
+  color: #e6e0e9;
+}
+html[data-preset='material'][data-theme='dark'] .demo-page .demo-aside {
+  background: #1d1b20;
+  border-color: #49454f !important;
+}

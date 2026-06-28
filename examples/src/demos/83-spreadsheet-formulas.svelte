@@ -521,10 +521,12 @@
   {@const r = props.row.rowIndex}
   {@const c = props.colIndex}
   {@const v = props.row.cells[c] ?? ''}
-  {@const active = activeRow === r && activeCol === c}
   {@const isErr = isError(v)}
+  <!-- The active-cell ring is drawn by the grid itself (.sv-grid-cell-active),
+       so this span must NOT redraw one - doing so painted a second, inset
+       rectangle inside the selected cell. -->
   <span
-    class={`ss-cell ${active ? 'ss-cell-active' : ''} ${isErr ? 'ss-cell-error' : ''}`}
+    class={`ss-cell ${isErr ? 'ss-cell-error' : ''}`}
     onclick={() => selectCell(r, c)}
     title={raw[r]?.[c] ?? ''}
   >{formatValue(v)}</span>
@@ -688,10 +690,6 @@
     line-height: 1.1;
     cursor: pointer;
     font-variant-numeric: tabular-nums;
-  }
-  :global(.ss-cell-active) {
-    box-shadow: inset 0 0 0 2px var(--sg-accent, #2563eb);
-    background: color-mix(in oklab, var(--sg-accent, #2563eb) 12%, transparent);
   }
   :global(.ss-cell-error) {
     color: #dc2626;
