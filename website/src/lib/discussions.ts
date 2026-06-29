@@ -136,16 +136,20 @@ export function relativeTime(iso: string, now: number = Date.now()): string {
 }
 
 export type SortKey = 'updated' | 'created' | 'comments'
+export type AnsweredFilter = 'all' | 'answered' | 'open'
 
-/** Filter by category slug ('' = all) + free-text query, then sort. */
+/** Filter by category slug ('' = all) + free-text query + answered status, then sort. */
 export function selectDiscussions(
   categorySlug: string,
   query: string,
   sort: SortKey,
+  answered: AnsweredFilter = 'all',
 ): Discussion[] {
   const q = query.trim().toLowerCase()
   let list = discussions.filter((d) => {
     if (categorySlug && d.category?.slug !== categorySlug) return false
+    if (answered === 'answered' && !d.answered) return false
+    if (answered === 'open' && d.answered) return false
     if (q) {
       const hay = `${d.title} ${d.author?.login ?? ''} ${d.category?.name ?? ''}`.toLowerCase()
       if (!hay.includes(q)) return false
