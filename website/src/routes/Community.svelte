@@ -20,6 +20,9 @@
   const counts = countsByCategory()
   const hasData = discussions.length > 0
   const visible = $derived(selectDiscussions(activeCategory, query, sort))
+  const activeCat = $derived(
+    discussionCategories.find((c) => c.slug === activeCategory) ?? null,
+  )
 
   const SORTS: { key: SortKey; label: string }[] = [
     { key: 'updated', label: 'Latest activity' },
@@ -177,9 +180,20 @@
         </ul>
 
         {#if visible.length === 0}
-          <p class="rounded-2xl border p-8 text-center text-sm" style="border-color: var(--sg-border); color: var(--site-muted);">
-            No discussions match your search.
-          </p>
+          <div class="rounded-2xl border p-8 text-center" style="border-color: var(--sg-border);">
+            {#if query.trim()}
+              <p class="text-sm" style="color: var(--site-muted);">No discussions match "{query.trim()}".</p>
+            {:else if activeCat}
+              <p class="text-sm" style="color: var(--site-muted);">
+                No discussions in {activeCat.emoji} {activeCat.name} yet.
+              </p>
+              <a href={newDiscussionUrl(activeCat.slug)} target="_blank" rel="noopener external" class="btn btn-primary mt-4 inline-flex">
+                Start one in {activeCat.name}
+              </a>
+            {:else}
+              <p class="text-sm" style="color: var(--site-muted);">No discussions yet.</p>
+            {/if}
+          </div>
         {/if}
       {:else}
         <!-- No baked data yet (empty repo discussions, or a no-token build). -->
