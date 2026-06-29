@@ -6,13 +6,13 @@
 html[data-preset='salesforce'] .demo-page {
   --sg-bg: #ffffff;                /* color-background */
   --sg-fg: #181818;                /* color-text-default */
-  --sg-muted: #444444;             /* color-text-weak */
-  --sg-border: #c9c9c9;            /* color-border */
-  --sg-header-bg: #f3f3f3;         /* color-background-alt-2 */
+  --sg-muted: #757575;             /* on-surface-1 (neutral-50) */
+  --sg-border: #c9c9c9;            /* border-1 (neutral-80) */
+  --sg-header-bg: #f3f3f3;         /* surface-2 */
   --sg-header-fg: #181818;
   --sg-row-alt-bg: #ffffff;
-  --sg-row-hover-bg: #f3f3f3;      /* color-background-row-hover */
-  --sg-selection-bg: #cfe3f8;      /* color-background-row-selected */
+  --sg-row-hover-bg: #f3f3f3;      /* surface-2 */
+  --sg-selection-bg: #ecebea;      /* row-selected (neutral) */
   --sg-accent: #0176d3;            /* color-brand */
   --sg-input-bg: #ffffff;
   --sg-input-border: #aeaeae;      /* color-border-input */
@@ -24,8 +24,8 @@ html[data-preset='salesforce'] .demo-page {
   --sg-pill-inactive-fg: #ba0517;
   --sg-radius: 4px;                /* border-radius-medium */
   --sg-cell-px: 12px;              /* spacing-x-small */
-  /* Header: SLDS data table header */
-  --sg-header-min-height: 40px;
+  /* Header: SLDS data table header - bold */
+  --sg-header-weight: 700; --sg-header-min-height: 40px;
   background: #ffffff;
   color: #181818;
   font-family: 'Salesforce Sans', 'SF Pro', Helvetica, Arial, sans-serif;

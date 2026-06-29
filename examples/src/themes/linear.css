@@ -1,0 +1,66 @@
+/* ============================================================
+ * LINEAR - the dark, low-contrast indigo aesthetic Linear made
+ * famous (#5e6ad2), plus its lighter theme. Muted medium-weight
+ * headers, Inter, 6px radius.
+ * ============================================================ */
+html[data-preset='linear'] .demo-page {
+  --sg-bg: #ffffff;
+  --sg-fg: #282a30;
+  --sg-muted: #6b6f76;
+  --sg-border: #e9e9eb;
+  --sg-header-bg: #f7f8f8;
+  --sg-header-fg: #282a30;
+  --sg-row-alt-bg: #fbfbfc;
+  --sg-row-hover-bg: #f4f4f5;
+  --sg-selection-bg: #e8eafd;
+  --sg-accent: #5e6ad2;            /* Linear indigo */
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #e0e0e3;
+  --sg-pill-active: #e6f5ec; --sg-pill-active-fg: #1a7f4f;
+  --sg-pill-pending: #fdf4e3; --sg-pill-pending-fg: #9a6700;
+  --sg-pill-inactive: #fdecea; --sg-pill-inactive-fg: #c8453a;
+  --sg-radius: 6px;
+  --sg-cell-px: 12px;
+  /* Header: Linear - quiet medium-weight muted header */
+  --sg-header-weight: 500; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 40px;
+  /* Scrollbar - neutral greys */
+  --sg-scrollbar-bg: #f9f9fb; --sg-scrollbar-border: #e9e9eb;
+  --sg-scrollbar-thumb: #d0d0d6; --sg-scrollbar-thumb-hover: #a8a8b0; --sg-scrollbar-thumb-active: #6b6f76;
+  --sg-scrollbar-arrow: #6b6f76; --sg-scrollbar-arrow-hover: #282a30; --sg-scrollbar-arrow-hover-bg: #f4f4f5;
+  --sg-scrollbar-arrow-active: #282a30; --sg-scrollbar-arrow-active-bg: #e9e9eb; --sg-scrollbar-arrow-disabled: #d0d0d6;
+  background: #ffffff;
+  color: #282a30;
+  font-family: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+html[data-preset='linear'] .demo-page .demo-aside {
+  background: #f9f9fb;
+  border-color: #e9e9eb !important;
+}
+html[data-preset='linear'][data-theme='dark'] .demo-page {
+  --sg-bg: #08090a;                /* Linear canvas */
+  --sg-fg: #f7f8f8;                /* Linear ink */
+  --sg-muted: #8a8f98;             /* Linear ink-subtle */
+  --sg-border: #23252a;
+  --sg-header-bg: #0f1011;         /* surface-1 */
+  --sg-header-fg: #f7f8f8;
+  --sg-row-alt-bg: #111214;
+  --sg-row-hover-bg: #1a1b1e;
+  --sg-selection-bg: #2a2d4a;
+  --sg-accent: #5e6ad2;            /* Linear indigo (brand) */
+  --sg-input-bg: #161719;
+  --sg-input-border: #2c2e33;
+  --sg-pill-active: #0e2a1c; --sg-pill-active-fg: #6dd49d;
+  --sg-pill-pending: #2e2510; --sg-pill-pending-fg: #e6c34d;
+  --sg-pill-inactive: #2e1416; --sg-pill-inactive-fg: #f08a86;
+  /* Scrollbar - dark neutrals */
+  --sg-scrollbar-bg: #161719; --sg-scrollbar-border: #23252a;
+  --sg-scrollbar-thumb: #2c2e33; --sg-scrollbar-thumb-hover: #41444b; --sg-scrollbar-thumb-active: #5e6470;
+  --sg-scrollbar-arrow: #8a8f98; --sg-scrollbar-arrow-hover: #e6e6e6; --sg-scrollbar-arrow-hover-bg: #1a1b1e;
+  --sg-scrollbar-arrow-active: #e6e6e6; --sg-scrollbar-arrow-active-bg: #23252a; --sg-scrollbar-arrow-disabled: #2c2e33;
+  background: #0d0e10;
+  color: #e6e6e6;
+}
+html[data-preset='linear'][data-theme='dark'] .demo-page .demo-aside {
+  background: #161719;
+  border-color: #23252a !important;
+}

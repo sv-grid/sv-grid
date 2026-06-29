@@ -1,0 +1,66 @@
+/* ============================================================
+ * VERCEL / GEIST - the minimalist black-and-white Geist system.
+ * Pure mono neutrals, a quiet muted header, Vercel blue #0070f3
+ * for selection/accent. Geist Sans, 6px radius.
+ * ============================================================ */
+html[data-preset='vercel'] .demo-page {
+  --sg-bg: #ffffff;
+  --sg-fg: #000000;
+  --sg-muted: #666666;             /* geist accents-5 */
+  --sg-border: #eaeaea;            /* geist accents-2 */
+  --sg-header-bg: #fafafa;         /* geist accents-1 */
+  --sg-header-fg: #000000;
+  --sg-row-alt-bg: #fafafa;
+  --sg-row-hover-bg: #f5f5f5;
+  --sg-selection-bg: #e8f0fe;
+  --sg-accent: #0070f3;            /* Vercel blue */
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #eaeaea;
+  --sg-pill-active: #edf9f0; --sg-pill-active-fg: #1a7f37;
+  --sg-pill-pending: #fff8e6; --sg-pill-pending-fg: #946800;
+  --sg-pill-inactive: #fdeeee; --sg-pill-inactive-fg: #c5221f;
+  --sg-radius: 6px;
+  --sg-cell-px: 12px;
+  /* Header: Geist tables - quiet medium-weight muted header */
+  --sg-header-weight: 400; --sg-header-size: 12px; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 40px;
+  /* Scrollbar - mono neutrals */
+  --sg-scrollbar-bg: #fafafa; --sg-scrollbar-border: #eaeaea;
+  --sg-scrollbar-thumb: #d4d4d4; --sg-scrollbar-thumb-hover: #999999; --sg-scrollbar-thumb-active: #666666;
+  --sg-scrollbar-arrow: #666666; --sg-scrollbar-arrow-hover: #000000; --sg-scrollbar-arrow-hover-bg: #f0f0f0;
+  --sg-scrollbar-arrow-active: #000000; --sg-scrollbar-arrow-active-bg: #eaeaea; --sg-scrollbar-arrow-disabled: #d4d4d4;
+  background: #ffffff;
+  color: #000000;
+  font-family: "Geist", "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+html[data-preset='vercel'] .demo-page .demo-aside {
+  background: #fafafa;
+  border-color: #eaeaea !important;
+}
+html[data-preset='vercel'][data-theme='dark'] .demo-page {
+  --sg-bg: #000000;
+  --sg-fg: #ffffff;
+  --sg-muted: #888888;
+  --sg-border: #333333;
+  --sg-header-bg: #111111;         /* geist accents_1 dark */
+  --sg-header-fg: #ffffff;
+  --sg-row-alt-bg: #0a0a0a;
+  --sg-row-hover-bg: #1a1a1a;
+  --sg-selection-bg: #0d2847;
+  --sg-accent: #3291ff;
+  --sg-input-bg: #0a0a0a;
+  --sg-input-border: #333333;
+  --sg-pill-active: #0a2417; --sg-pill-active-fg: #62c98d;
+  --sg-pill-pending: #2a2200; --sg-pill-pending-fg: #f5c518;
+  --sg-pill-inactive: #2a0f0f; --sg-pill-inactive-fg: #ff6166;
+  /* Scrollbar - dark mono neutrals */
+  --sg-scrollbar-bg: #0a0a0a; --sg-scrollbar-border: #333333;
+  --sg-scrollbar-thumb: #333333; --sg-scrollbar-thumb-hover: #555555; --sg-scrollbar-thumb-active: #888888;
+  --sg-scrollbar-arrow: #888888; --sg-scrollbar-arrow-hover: #ffffff; --sg-scrollbar-arrow-hover-bg: #1a1a1a;
+  --sg-scrollbar-arrow-active: #ffffff; --sg-scrollbar-arrow-active-bg: #333333; --sg-scrollbar-arrow-disabled: #333333;
+  background: #000000;
+  color: #ffffff;
+}
+html[data-preset='vercel'][data-theme='dark'] .demo-page .demo-aside {
+  background: #0a0a0a;
+  border-color: #333333 !important;
+}

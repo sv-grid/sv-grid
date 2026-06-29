@@ -1,0 +1,67 @@
+/* ============================================================
+ * CATPPUCCIN - the soothing pastel theme. Mocha for dark, Latte
+ * for light, signature Mauve accent (#cba6f7 / #8839ef). Verified
+ * against the official Catppuccin palette. 8px radius.
+ * ============================================================ */
+html[data-preset='catppuccin'] .demo-page {
+  --sg-bg: #eff1f5;                /* latte base */
+  --sg-fg: #4c4f69;                /* latte text */
+  --sg-muted: #6c6f85;             /* latte subtext0 */
+  --sg-border: #ccd0da;            /* latte surface0 */
+  --sg-header-bg: #e6e9ef;         /* latte mantle */
+  --sg-header-fg: #4c4f69;
+  --sg-row-alt-bg: #e6e9ef;
+  --sg-row-hover-bg: #dce0e8;      /* latte crust */
+  --sg-selection-bg: #dce0e8;
+  --sg-accent: #8839ef;            /* latte mauve */
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #ccd0da;
+  --sg-pill-active: #d9ecd2; --sg-pill-active-fg: #40a02b;    /* green */
+  --sg-pill-pending: #f7eccf; --sg-pill-pending-fg: #df8e1d;  /* yellow */
+  --sg-pill-inactive: #f5d7dc; --sg-pill-inactive-fg: #d20f39;/* red */
+  --sg-radius: 8px;
+  --sg-cell-px: 12px;
+  /* Header: semibold */
+  --sg-header-weight: 600; --sg-header-min-height: 44px;
+  /* Scrollbar - Latte greys, mauve-neutral thumb */
+  --sg-scrollbar-bg: #e6e9ef; --sg-scrollbar-border: #ccd0da;
+  --sg-scrollbar-thumb: #bcc0cc; --sg-scrollbar-thumb-hover: #9ca0b0; --sg-scrollbar-thumb-active: #6c6f85;
+  --sg-scrollbar-arrow: #6c6f85; --sg-scrollbar-arrow-hover: #4c4f69; --sg-scrollbar-arrow-hover-bg: #dce0e8;
+  --sg-scrollbar-arrow-active: #4c4f69; --sg-scrollbar-arrow-active-bg: #ccd0da; --sg-scrollbar-arrow-disabled: #bcc0cc;
+  background: #eff1f5;
+  color: #4c4f69;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+html[data-preset='catppuccin'] .demo-page .demo-aside {
+  background: #e6e9ef;
+  border-color: #ccd0da !important;
+}
+html[data-preset='catppuccin'][data-theme='dark'] .demo-page {
+  --sg-bg: #1e1e2e;                /* mocha base */
+  --sg-fg: #cdd6f4;                /* mocha text */
+  --sg-muted: #a6adc8;             /* mocha subtext0 (per style guide) */
+  --sg-border: #313244;            /* mocha surface0 */
+  --sg-header-bg: #181825;         /* mocha mantle */
+  --sg-header-fg: #cdd6f4;
+  --sg-row-alt-bg: #1a1a28;
+  --sg-row-hover-bg: #313244;       /* mocha surface0 */
+  --sg-selection-bg: #45475a;      /* mocha surface1 */
+  --sg-accent: #cba6f7;            /* mocha mauve */
+  --sg-on-accent: #1e1e2e;         /* dark check on the light mauve accent */
+  --sg-input-bg: #181825;
+  --sg-input-border: #45475a;
+  --sg-pill-active: #1f3a2a; --sg-pill-active-fg: #a6e3a1;
+  --sg-pill-pending: #3a3520; --sg-pill-pending-fg: #f9e2af;
+  --sg-pill-inactive: #3a2230; --sg-pill-inactive-fg: #f38ba8;
+  /* Scrollbar - Mocha surfaces */
+  --sg-scrollbar-bg: #181825; --sg-scrollbar-border: #313244;
+  --sg-scrollbar-thumb: #45475a; --sg-scrollbar-thumb-hover: #585b70; --sg-scrollbar-thumb-active: #6c7086;
+  --sg-scrollbar-arrow: #9399b2; --sg-scrollbar-arrow-hover: #cdd6f4; --sg-scrollbar-arrow-hover-bg: #292a3d;
+  --sg-scrollbar-arrow-active: #cdd6f4; --sg-scrollbar-arrow-active-bg: #313244; --sg-scrollbar-arrow-disabled: #45475a;
+  background: #1e1e2e;
+  color: #cdd6f4;
+}
+html[data-preset='catppuccin'][data-theme='dark'] .demo-page .demo-aside {
+  background: #181825;
+  border-color: #313244 !important;
+}

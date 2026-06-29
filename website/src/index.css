@@ -275,7 +275,7 @@ section select option {
 }
 .sv-grid-menu-operator-btn.is-active {
   background: var(--sg-accent) !important;
-  color: #fff !important;
+  color: var(--sg-on-accent, #fff) !important;
   border-color: var(--sg-accent) !important;
 }
 
@@ -331,7 +331,7 @@ section select option {
 }
 .sv-grid-menu-btn-primary {
   background: var(--sg-accent) !important;
-  color: #fff !important;
+  color: var(--sg-on-accent, #fff) !important;
   border-color: var(--sg-accent) !important;
 }
 
@@ -408,7 +408,7 @@ section select option {
 .sv-grid-checkbox[aria-checked='mixed'] {
   background: var(--sg-accent) !important;
   border-color: var(--sg-accent) !important;
-  color: #fff !important;
+  color: var(--sg-on-accent, #fff) !important;
 }
 
 .sv-grid-filter-operator-btn {

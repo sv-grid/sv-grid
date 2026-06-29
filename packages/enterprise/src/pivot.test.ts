@@ -7,6 +7,7 @@ import {
   createPivotModel,
   filterCollapsedPivotRows,
   pivotAggregators,
+  type PivotConfig,
   type PivotRow,
 } from './pivot'
 
@@ -184,10 +185,10 @@ describe('createPivotModel - configuration toggles', () => {
   })
 
   it('keeps the grand-total value identical whether or not subtotals show', () => {
-    const base = {
-      rows: ['region', 'salesPerson'] as string[],
-      cols: ['quarter'] as string[],
-      values: [{ field: 'amount', agg: 'sum' as const }],
+    const base: PivotConfig<Sale> = {
+      rows: ['region', 'salesPerson'],
+      cols: ['quarter'],
+      values: [{ field: 'amount', agg: 'sum' }],
     }
     const withSub = createPivotModel(facts, { ...base, rowSubtotals: true })
     const noSub = createPivotModel(facts, { ...base, rowSubtotals: false })

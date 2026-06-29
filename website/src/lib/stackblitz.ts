@@ -15,10 +15,21 @@ import type { Demo } from './demos'
 // the examples app. Bundled as text and written into each StackBlitz project.
 import gridThemeCss from '../../../examples/src/index.css?raw'
 
+// index.css pulls in the design-system PRESET themes via `@import './themes.css'`
+// (which itself fans out to themes/*.css). A standalone StackBlitz demo only
+// ships this one stylesheet and never sets `data-preset`, so those preset rules
+// are unused - and the bare `@import` would fail to resolve in the WebContainer
+// ("themes.css cannot be imported"). Strip it; the :root + dark base tokens that
+// the demos actually use stay intact.
+const gridBaseCss = gridThemeCss.replace(
+  /^[ \t]*@import\s+['"]\.\/themes\.css['"];?[ \t]*\r?\n?/m,
+  '',
+)
+
 // app.css = the gallery theme/Tailwind, plus a host that gives the WebContainer
 // page a real height. Demos use `flex-1` / `containerHeight="100%"`, which
 // collapse to 0px unless #app is a sized, flex-column container.
-const APP_CSS = `${gridThemeCss}
+const APP_CSS = `${gridBaseCss}
 /* --- StackBlitz host (not part of the gallery stylesheet) --- */
 html, body { height: 100%; margin: 0; }
 body { background: var(--sg-bg); color: var(--sg-fg); font-family: system-ui, -apple-system, sans-serif; }

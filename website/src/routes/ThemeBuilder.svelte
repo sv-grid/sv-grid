@@ -6,8 +6,11 @@
    *   - One brand color drives a full derived palette (auto), OR
    *     override any individual token
    *   - Light + dark, side-by-side preview
-   *   - 9 brand presets (Linear / Notion / Stripe / Vercel / GitHub /
-   *     Material / Mono / Sunset / Nimber)
+   *   - 19 design-system presets that reproduce SvGrid's built-in themes
+   *     (shadcn / Tailwind / Material / Excel / Fluent / Carbon / SAP /
+   *     Salesforce / Atlassian / GitHub / Ant Design / Alpine / Bootstrap /
+   *     Vercel / Linear / Notion / Nord / Dracula / Catppuccin), each with
+   *     its own palette, header typography, and scrollbar
    *   - Accordion-grouped controls per grid PART:
    *       Surface · Header · Body & rows · Interaction · Cells &
    *       borders · Pinned columns · Typography
@@ -273,22 +276,118 @@
   }
 
   // ---- Presets -------------------------------------------------------
+  // Faithful reproductions of SvGrid's built-in design-system themes
+  // (the same tokens that ship in examples/src/themes/*.css). Each preset
+  // carries an explicit light + dark palette plus its header typography,
+  // so selecting it reproduces the real theme rather than a brand-derived
+  // approximation. `headerFg` doubles as the column-header label color, so
+  // muted-header systems (shadcn / GitHub / Atlassian / Excel) set it to
+  // their subtle token.
+  type PCore = {
+    bg: string; fg: string; muted: string; border: string
+    headerBg: string; headerFg: string; accent: string
+    rowAlt: string; rowHover: string; selectionBg: string
+  }
   type Preset = {
-    id: string; name: string; brand: string;
-    mode: 'light' | 'dark'; radius: number; font: string;
+    id: string; name: string; defaultMode: 'dark' | 'dark'
+    radius: number; font: string
+    hWeight: number; hTransform: 'none' | 'uppercase' | 'capitalize'
+    hSize: number; hTracking: number; hHeight: number
+    light: PCore; dark: PCore
   }
   const PRESETS: Preset[] = [
-    { id: 'linear',   name: 'Linear',   brand: '#5e6ad2', mode: 'dark',  radius: 6,  font: 'Inter, ui-sans-serif, system-ui' },
-    { id: 'notion',   name: 'Notion',   brand: '#2eaadc', mode: 'light', radius: 4,  font: 'ui-sans-serif, system-ui' },
-    { id: 'stripe',   name: 'Stripe',   brand: '#635bff', mode: 'light', radius: 8,  font: 'ui-sans-serif, system-ui' },
-    { id: 'vercel',   name: 'Vercel',   brand: '#0070f3', mode: 'dark',  radius: 6,  font: 'Geist, Inter, ui-sans-serif' },
-    { id: 'github',   name: 'GitHub',   brand: '#2da44e', mode: 'dark',  radius: 6,  font: 'ui-sans-serif, system-ui' },
-    { id: 'material', name: 'Material', brand: '#1976d2', mode: 'light', radius: 4,  font: 'Roboto, ui-sans-serif, system-ui' },
-    { id: 'mono',     name: 'Mono',     brand: '#1f2937', mode: 'dark',  radius: 2,  font: 'ui-monospace, SFMono-Regular' },
-    { id: 'sunset',   name: 'Sunset',   brand: '#f97316', mode: 'light', radius: 10, font: 'ui-sans-serif, system-ui' },
-    // ni.com-inspired green; named "Nimber" per request.
-    { id: 'nimber',   name: 'Nimber',   brand: '#03b585', mode: 'dark',  radius: 4,  font: 'ui-sans-serif, system-ui' },
+    { id: 'shadcn', name: 'shadcn/ui', defaultMode: 'dark', radius: 6, font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+      hWeight: 500, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 48,
+      light: { bg: '#ffffff', fg: '#09090b', muted: '#71717a', border: '#e4e4e7', headerBg: '#fafafa', headerFg: '#71717a', accent: '#18181b', rowAlt: '#ffffff', rowHover: '#f4f4f5', selectionBg: '#f4f4f5' },
+      dark:  { bg: '#0a0a0a', fg: '#fafafa', muted: '#a1a1aa', border: '#27272a', headerBg: '#18181b', headerFg: '#a1a1aa', accent: '#fafafa', rowAlt: '#0a0a0a', rowHover: '#18181b', selectionBg: '#27272a' } },
+    { id: 'tailwind', name: 'Tailwind', defaultMode: 'dark', radius: 6, font: 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+      hWeight: 600, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 44,
+      light: { bg: '#ffffff', fg: '#0f172a', muted: '#64748b', border: '#e2e8f0', headerBg: '#f8fafc', headerFg: '#0f172a', accent: '#4f46e5', rowAlt: '#ffffff', rowHover: '#f1f5f9', selectionBg: '#e0e7ff' },
+      dark:  { bg: '#0f172a', fg: '#f8fafc', muted: '#94a3b8', border: '#334155', headerBg: '#1e293b', headerFg: '#f8fafc', accent: '#818cf8', rowAlt: '#0f172a', rowHover: '#1e293b', selectionBg: '#312e81' } },
+    { id: 'material', name: 'Material 3', defaultMode: 'dark', radius: 8, font: '"Roboto Flex", Roboto, "Segoe UI", system-ui, sans-serif',
+      hWeight: 500, hTransform: 'none', hSize: 14, hTracking: 0, hHeight: 44,
+      light: { bg: '#fef7ff', fg: '#1d1b20', muted: '#49454f', border: '#cac4d0', headerBg: '#f3edf7', headerFg: '#1d1b20', accent: '#6750a4', rowAlt: '#fffbfe', rowHover: '#ece6f0', selectionBg: '#e8def8' },
+      dark:  { bg: '#141218', fg: '#e6e0e9', muted: '#cac4d0', border: '#49454f', headerBg: '#211f26', headerFg: '#e6e0e9', accent: '#d0bcff', rowAlt: '#141218', rowHover: '#2b2930', selectionBg: '#4a4458' } },
+    { id: 'excel', name: 'Excel', defaultMode: 'dark', radius: 0, font: '"Aptos", "Segoe UI", Calibri, Arial, sans-serif',
+      hWeight: 400, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 32,
+      light: { bg: '#ffffff', fg: '#323130', muted: '#605e5c', border: '#d2d0ce', headerBg: '#f3f2f1', headerFg: '#444444', accent: '#107c41', rowAlt: '#ffffff', rowHover: '#edebe9', selectionBg: 'rgba(16, 124, 65, 0.10)' },
+      dark:  { bg: '#1b1a19', fg: '#f3f2f1', muted: '#c8c6c4', border: '#3b3a39', headerBg: '#252423', headerFg: '#c8c6c4', accent: '#58c188', rowAlt: '#1b1a19', rowHover: '#323130', selectionBg: 'rgba(88, 193, 136, 0.16)' } },
+    { id: 'fluent', name: 'Fluent 2', defaultMode: 'dark', radius: 4, font: '"Segoe UI Variable", "Segoe UI", system-ui, sans-serif',
+      hWeight: 600, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 42,
+      light: { bg: '#ffffff', fg: '#242424', muted: '#616161', border: '#e0e0e0', headerBg: '#f5f5f5', headerFg: '#242424', accent: '#0f6cbd', rowAlt: '#fafafa', rowHover: '#f0f0f0', selectionBg: '#ebebeb' },
+      dark:  { bg: '#1f1f1f', fg: '#ffffff', muted: '#d6d6d6', border: '#666666', headerBg: '#141414', headerFg: '#ffffff', accent: '#479ef5', rowAlt: '#1a1a1a', rowHover: '#3d3d3d', selectionBg: '#383838' } },
+    { id: 'carbon', name: 'Carbon', defaultMode: 'dark', radius: 0, font: '"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif',
+      hWeight: 600, hTransform: 'none', hSize: 14, hTracking: 0, hHeight: 48,
+      light: { bg: '#ffffff', fg: '#161616', muted: '#525252', border: '#e0e0e0', headerBg: '#e0e0e0', headerFg: '#161616', accent: '#0f62fe', rowAlt: '#f4f4f4', rowHover: '#e8e8e8', selectionBg: '#d0e2ff' },
+      dark:  { bg: '#161616', fg: '#f4f4f4', muted: '#c6c6c6', border: '#393939', headerBg: '#393939', headerFg: '#f4f4f4', accent: '#78a9ff', rowAlt: '#262626', rowHover: '#333333', selectionBg: '#393939' } },
+    { id: 'sap', name: 'SAP Fiori', defaultMode: 'dark', radius: 6, font: '"72", "72full", "Arial", sans-serif',
+      hWeight: 700, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 44,
+      light: { bg: '#f5f6f7', fg: '#131e29', muted: '#556b82', border: '#e5e5e5', headerBg: '#ffffff', headerFg: '#131e29', accent: '#0070f2', rowAlt: '#f5f6f7', rowHover: '#eaecee', selectionBg: '#ebf8ff' },
+      dark:  { bg: '#12171c', fg: '#f5f6f7', muted: '#8396a8', border: '#2e3742', headerBg: '#1d232a', headerFg: '#f5f6f7', accent: '#4db1ff', rowAlt: '#12171c', rowHover: '#222b35', selectionBg: '#1d2d3e' } },
+    { id: 'salesforce', name: 'Salesforce', defaultMode: 'dark', radius: 4, font: '"Salesforce Sans", "SF Pro", Helvetica, Arial, sans-serif',
+      hWeight: 700, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 40,
+      light: { bg: '#ffffff', fg: '#181818', muted: '#757575', border: '#c9c9c9', headerBg: '#f3f3f3', headerFg: '#181818', accent: '#0176d3', rowAlt: '#ffffff', rowHover: '#f3f3f3', selectionBg: '#ecebea' },
+      dark:  { bg: '#181818', fg: '#ffffff', muted: '#c9c9c9', border: '#3e3e3c', headerBg: '#2e2e2e', headerFg: '#ffffff', accent: '#1b96ff', rowAlt: '#181818', rowHover: '#2e2e2e', selectionBg: '#1e4d8e' } },
+    { id: 'atlassian', name: 'Atlassian', defaultMode: 'dark', radius: 3, font: '"Charlie Display", "Atlassian Sans", -apple-system, "Segoe UI", sans-serif',
+      hWeight: 700, hTransform: 'uppercase', hSize: 11, hTracking: 4, hHeight: 40,
+      light: { bg: '#ffffff', fg: '#172b4d', muted: '#44546f', border: '#dcdfe4', headerBg: '#fafbfc', headerFg: '#44546f', accent: '#0c66e4', rowAlt: '#ffffff', rowHover: '#f1f2f4', selectionBg: '#e9f2ff' },
+      dark:  { bg: '#1d2125', fg: '#b6c2cf', muted: '#8590a2', border: '#38414a', headerBg: '#22272b', headerFg: '#8590a2', accent: '#579dff', rowAlt: '#1d2125', rowHover: '#2c333a', selectionBg: '#09326c' } },
+    { id: 'github', name: 'GitHub', defaultMode: 'dark', radius: 6, font: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif',
+      hWeight: 600, hTransform: 'none', hSize: 12, hTracking: 0, hHeight: 40,
+      light: { bg: '#ffffff', fg: '#1f2328', muted: '#59636e', border: '#d1d9e0', headerBg: '#f6f8fa', headerFg: '#59636e', accent: '#0969da', rowAlt: '#ffffff', rowHover: '#f6f8fa', selectionBg: '#ddf4ff' },
+      dark:  { bg: '#0d1117', fg: '#f0f6fc', muted: '#9198a1', border: '#3d444d', headerBg: '#151b23', headerFg: '#9198a1', accent: '#4493f8', rowAlt: '#0d1117', rowHover: '#151b23', selectionBg: 'rgba(56, 139, 253, 0.10)' } },
+    { id: 'antd', name: 'Ant Design', defaultMode: 'dark', radius: 6, font: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif',
+      hWeight: 600, hTransform: 'none', hSize: 14, hTracking: 0, hHeight: 48,
+      light: { bg: '#ffffff', fg: 'rgba(0, 0, 0, 0.88)', muted: 'rgba(0, 0, 0, 0.65)', border: '#d9d9d9', headerBg: '#fafafa', headerFg: 'rgba(0, 0, 0, 0.88)', accent: '#1677ff', rowAlt: '#ffffff', rowHover: '#f5f5f5', selectionBg: '#e6f4ff' },
+      dark:  { bg: '#141414', fg: 'rgba(255, 255, 255, 0.85)', muted: 'rgba(255, 255, 255, 0.65)', border: '#424242', headerBg: '#1f1f1f', headerFg: 'rgba(255, 255, 255, 0.85)', accent: '#177ddc', rowAlt: '#141414', rowHover: '#262626', selectionBg: '#111a2c' } },
+    { id: 'ag-alpine', name: 'Alpine', defaultMode: 'dark', radius: 3, font: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      hWeight: 700, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 48,
+      light: { bg: '#ffffff', fg: '#181d1f', muted: 'rgba(24, 29, 31, 0.5)', border: '#babfc7', headerBg: '#f8f8f8', headerFg: '#181d1f', accent: '#2196f3', rowAlt: '#fcfcfc', rowHover: 'rgba(33, 150, 243, 0.1)', selectionBg: 'rgba(33, 150, 243, 0.3)' },
+      dark:  { bg: '#181d1f', fg: '#ffffff', muted: 'rgba(255, 255, 255, 0.5)', border: '#68686e', headerBg: '#222628', headerFg: '#ffffff', accent: '#2196f3', rowAlt: '#222628', rowHover: 'rgba(33, 150, 243, 0.1)', selectionBg: 'rgba(33, 150, 243, 0.3)' } },
+    { id: 'bootstrap', name: 'Bootstrap 5', defaultMode: 'dark', radius: 6, font: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      hWeight: 700, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 44,
+      light: { bg: '#ffffff', fg: '#212529', muted: '#6c757d', border: '#dee2e6', headerBg: '#f8f9fa', headerFg: '#212529', accent: '#0d6efd', rowAlt: '#fcfcfd', rowHover: '#f2f2f2', selectionBg: '#cfe2ff' },
+      dark:  { bg: '#212529', fg: '#dee2e6', muted: '#adb5bd', border: '#495057', headerBg: '#2b3035', headerFg: '#dee2e6', accent: '#0d6efd', rowAlt: '#25292e', rowHover: '#2c3034', selectionBg: '#031633' } },
+    { id: 'vercel', name: 'Vercel', defaultMode: 'dark', radius: 6, font: '"Geist", "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      hWeight: 400, hTransform: 'none', hSize: 12, hTracking: 0, hHeight: 40,
+      light: { bg: '#ffffff', fg: '#000000', muted: '#666666', border: '#eaeaea', headerBg: '#fafafa', headerFg: '#666666', accent: '#0070f3', rowAlt: '#fafafa', rowHover: '#f5f5f5', selectionBg: '#e8f0fe' },
+      dark:  { bg: '#000000', fg: '#ffffff', muted: '#888888', border: '#333333', headerBg: '#111111', headerFg: '#888888', accent: '#3291ff', rowAlt: '#0a0a0a', rowHover: '#1a1a1a', selectionBg: '#0d2847' } },
+    { id: 'linear', name: 'Linear', defaultMode: 'dark', radius: 6, font: '"Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      hWeight: 500, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 40,
+      light: { bg: '#ffffff', fg: '#282a30', muted: '#6b6f76', border: '#e9e9eb', headerBg: '#f7f8f8', headerFg: '#6b6f76', accent: '#5e6ad2', rowAlt: '#fbfbfc', rowHover: '#f4f4f5', selectionBg: '#e8eafd' },
+      dark:  { bg: '#08090a', fg: '#f7f8f8', muted: '#8a8f98', border: '#23252a', headerBg: '#0f1011', headerFg: '#8a8f98', accent: '#5e6ad2', rowAlt: '#0f1011', rowHover: '#1a1b1e', selectionBg: '#2a2d4a' } },
+    { id: 'notion', name: 'Notion', defaultMode: 'dark', radius: 4, font: 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+      hWeight: 500, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 40,
+      light: { bg: '#ffffff', fg: '#37352f', muted: '#787774', border: '#e9e9e7', headerBg: '#f7f6f3', headerFg: '#787774', accent: '#2383e2', rowAlt: '#fbfbfa', rowHover: '#f1f1ef', selectionBg: '#d9eaf7' },
+      dark:  { bg: '#191919', fg: '#d4d4d4', muted: '#9b9b9b', border: '#2f2f2f', headerBg: '#202020', headerFg: '#9b9b9b', accent: '#529cca', rowAlt: '#1c1c1c', rowHover: '#252525', selectionBg: '#20415c' } },
+    { id: 'nord', name: 'Nord', defaultMode: 'dark', radius: 4, font: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      hWeight: 600, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 42,
+      light: { bg: '#eceff4', fg: '#2e3440', muted: '#4c566a', border: '#d8dee9', headerBg: '#e5e9f0', headerFg: '#2e3440', accent: '#5e81ac', rowAlt: '#e5e9f0', rowHover: '#dde3ec', selectionBg: '#d8dee9' },
+      dark:  { bg: '#2e3440', fg: '#d8dee9', muted: '#4c566a', border: '#434c5e', headerBg: '#3b4252', headerFg: '#e5e9f0', accent: '#88c0d0', rowAlt: '#333b48', rowHover: '#3b4252', selectionBg: '#434c5e' } },
+    { id: 'dracula', name: 'Dracula', defaultMode: 'dark', radius: 6, font: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      hWeight: 600, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 42,
+      light: { bg: '#fffbeb', fg: '#1f1f1f', muted: '#6c664b', border: '#dedccf', headerBg: '#ece9df', headerFg: '#1f1f1f', accent: '#644ac9', rowAlt: '#fffdf5', rowHover: '#f2efe3', selectionBg: '#cfcfde' },
+      dark:  { bg: '#282a36', fg: '#f8f8f2', muted: '#6272a4', border: '#44475a', headerBg: '#21222c', headerFg: '#f8f8f2', accent: '#bd93f9', rowAlt: '#2d2f3b', rowHover: '#343746', selectionBg: '#44475a' } },
+    { id: 'catppuccin', name: 'Catppuccin', defaultMode: 'dark', radius: 8, font: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      hWeight: 600, hTransform: 'none', hSize: 13, hTracking: 0, hHeight: 44,
+      light: { bg: '#eff1f5', fg: '#4c4f69', muted: '#6c6f85', border: '#ccd0da', headerBg: '#e6e9ef', headerFg: '#4c4f69', accent: '#8839ef', rowAlt: '#e6e9ef', rowHover: '#dce0e8', selectionBg: '#dce0e8' },
+      dark:  { bg: '#1e1e2e', fg: '#cdd6f4', muted: '#a6adc8', border: '#313244', headerBg: '#181825', headerFg: '#cdd6f4', accent: '#cba6f7', rowAlt: '#1a1a28', rowHover: '#313244', selectionBg: '#45475a' } },
   ]
+  /** Expand a preset's compact per-mode palette into the full Tokens shape,
+   *  deriving the secondary tokens (hover/selection fg, focus ring, pinned)
+   *  the same way the rest of the builder does. */
+  function presetCoreToTokens(c: PCore): Tokens {
+    return {
+      bg: c.bg, fg: c.fg, muted: c.muted, border: c.border,
+      headerBg: c.headerBg, headerFg: c.headerFg, accent: c.accent,
+      rowAlt: c.rowAlt, rowHover: c.rowHover, rowHoverFg: c.fg,
+      selectionBg: c.selectionBg, selectionFg: c.fg, focusRing: c.accent,
+      pinnedBg: c.headerBg, pinnedBorder: c.border, pinnedHeaderBg: c.headerBg,
+    }
+  }
+  /** The preset whose explicit palette is currently driving the preview,
+   *  or null when the auto (brand-derived) palette is in effect. */
+  let activePresetData = $state<Preset | null>(null)
   const DEFAULTS = {
     brand: '#6366f1',
     mode: 'dark' as 'light' | 'dark',         // ← dark mode by default
@@ -355,8 +454,13 @@
     // ---- Scrollbar styling -----------------------------------------
     scrollRadius: 8,
     scrollTrack: '',
+    scrollBorder: '',            // track border / outline
     scrollThumb: '',
+    scrollThumbHover: '',        // thumb on hover
+    scrollThumbActive: '',       // thumb while dragging
     scrollArrow: '',             // arrow glyph color on scrollbar buttons
+    scrollArrowHover: '',        // arrow glyph on hover
+    scrollArrowActive: '',       // arrow glyph while pressed
     zebra: true,
     tokenMode: 'auto' as 'auto' | 'manual',
   }
@@ -422,8 +526,13 @@
   // Scrollbar
   let scrollRadius = $state<number>(DEFAULTS.scrollRadius)
   let scrollTrack = $state<string>(DEFAULTS.scrollTrack)
+  let scrollBorder = $state<string>(DEFAULTS.scrollBorder)
   let scrollThumb = $state<string>(DEFAULTS.scrollThumb)
+  let scrollThumbHover = $state<string>(DEFAULTS.scrollThumbHover)
+  let scrollThumbActive = $state<string>(DEFAULTS.scrollThumbActive)
   let scrollArrow = $state<string>(DEFAULTS.scrollArrow)
+  let scrollArrowHover = $state<string>(DEFAULTS.scrollArrowHover)
+  let scrollArrowActive = $state<string>(DEFAULTS.scrollArrowActive)
   let zebra    = $state<boolean>(DEFAULTS.zebra)
   let tokenMode = $state<'auto' | 'manual'>(DEFAULTS.tokenMode)
   let activePreset = $state<string | null>(null)
@@ -530,7 +639,9 @@
     }
   }
   function tokens(m: 'light' | 'dark'): Tokens {
-    const base = autoPalette(brand, m)
+    const base = activePresetData
+      ? presetCoreToTokens(m === 'light' ? activePresetData.light : activePresetData.dark)
+      : autoPalette(brand, m)
     if (tokenMode === 'manual') return { ...base, ...overrides }
     return base
   }
@@ -539,13 +650,37 @@
   const activeTokens = $derived(mode === 'light' ? lightTokens : darkTokens)
 
   function applyPreset(p: Preset) {
-    brand = p.brand
-    mode = p.mode
+    activePresetData = p
+    brand = p.light.accent
+    mode = p.defaultMode
     radius = p.radius
     font = p.font
+    // Header typography from the design system.
+    headerFontWeight = p.hWeight
+    headerTransform = p.hTransform
+    headerFontSize = p.hSize
+    headerLetterSpacing = p.hTracking
+    headerHeight = p.hHeight
+    headerAlign = DEFAULTS.headerAlign
+    // Let the scrollbar fall through to the palette-derived defaults
+    // (track = header bg, thumb = muted) so it matches the preset.
+    scrollTrack = ''
+    scrollBorder = ''
+    scrollThumb = ''
+    scrollThumbHover = ''
+    scrollThumbActive = ''
+    scrollArrow = ''
+    scrollArrowHover = ''
+    scrollArrowActive = ''
     tokenMode = 'auto'
     overrides = {}
     activePreset = p.id
+  }
+  // Switching to the brand-color flow (or editing the base brand) drops the
+  // explicit preset palette so the auto-derived tokens take over.
+  function onBrandEdit() {
+    activePresetData = null
+    activePreset = null
   }
   function onUserEdit() { activePreset = null }
   function setOverride<K extends keyof Tokens>(key: K, value: string) {
@@ -608,11 +743,17 @@
     editorShadowColor = DEFAULTS.editorShadowColor
     scrollRadius = DEFAULTS.scrollRadius
     scrollTrack = DEFAULTS.scrollTrack
+    scrollBorder = DEFAULTS.scrollBorder
     scrollThumb = DEFAULTS.scrollThumb
+    scrollThumbHover = DEFAULTS.scrollThumbHover
+    scrollThumbActive = DEFAULTS.scrollThumbActive
     scrollArrow = DEFAULTS.scrollArrow
+    scrollArrowHover = DEFAULTS.scrollArrowHover
+    scrollArrowActive = DEFAULTS.scrollArrowActive
     zebra = DEFAULTS.zebra
     tokenMode = DEFAULTS.tokenMode
     overrides = {}
+    activePresetData = null
     activePreset = null
   }
 
@@ -635,6 +776,7 @@
       brand = DEFAULTS.brand
       tokenMode = DEFAULTS.tokenMode
       clearTokenOverrides(['bg','fg','muted','border'])
+      activePresetData = null
       activePreset = null
     } else if (tab === 'header') {
       headerHeight = DEFAULTS.headerHeight
@@ -689,8 +831,13 @@
     } else if (tab === 'scrollbar') {
       scrollRadius = DEFAULTS.scrollRadius
       scrollTrack = DEFAULTS.scrollTrack
+      scrollBorder = DEFAULTS.scrollBorder
       scrollThumb = DEFAULTS.scrollThumb
+      scrollThumbHover = DEFAULTS.scrollThumbHover
+      scrollThumbActive = DEFAULTS.scrollThumbActive
       scrollArrow = DEFAULTS.scrollArrow
+      scrollArrowHover = DEFAULTS.scrollArrowHover
+      scrollArrowActive = DEFAULTS.scrollArrowActive
     } else if (tab === 'type') {
       font = DEFAULTS.font
     }
@@ -763,6 +910,7 @@
       --sg-header-bg:       ${t.headerBg};
       --sg-header-fg:       ${t.headerFg};
       --sg-accent:          ${t.accent};
+      --sg-on-accent:       ${relLum(t.accent) > 0.5 ? '#111111' : '#ffffff'};
       --sg-row-hover-bg:    ${t.rowHover};
       --sg-selection-bg:    ${t.selectionBg};
       --sg-focus-ring:      ${t.focusRing};
@@ -844,6 +992,7 @@
   --sg-header-bg:        ${t.headerBg};
   --sg-header-fg:        ${t.headerFg};
   --sg-accent:           ${t.accent};
+  --sg-on-accent:        ${relLum(t.accent) > 0.5 ? '#111111' : '#ffffff'};
   --sg-row-alt-bg:       ${zebra ? t.rowAlt : t.bg};
   --sg-row-hover-bg:     ${t.rowHover};
   --sg-selection-bg:     ${t.selectionBg};
@@ -851,7 +1000,21 @@
   --sg-pinned-bg:        ${t.pinnedBg};
   --sg-pinned-border:    ${t.pinnedBorder};
   --sg-pinned-header-bg: ${t.pinnedHeaderBg};
-  --sg-thead-h:          ${headerHeight}px;
+  --sg-header-label-color: ${t.headerFg};
+  --sg-header-weight:    ${headerFontWeight};
+  --sg-header-transform: ${headerTransform};
+  --sg-header-size:      ${headerFontSize}px;
+  --sg-header-tracking:  ${(headerLetterSpacing / 100).toFixed(2)}em;
+  --sg-header-min-height:${headerHeight}px;
+  --sg-scrollbar-bg:     ${scrollTrack || t.headerBg};
+  --sg-scrollbar-border: ${scrollBorder || t.border};
+  --sg-scrollbar-thumb:  ${scrollThumb || t.muted};
+  --sg-scrollbar-thumb-hover:  ${scrollThumbHover || scrollThumb || t.muted};
+  --sg-scrollbar-thumb-active: ${scrollThumbActive || scrollThumb || t.muted};
+  --sg-scrollbar-arrow:  ${scrollArrow || t.muted};
+  --sg-scrollbar-arrow-hover:  ${scrollArrowHover || scrollArrow || t.muted};
+  --sg-scrollbar-arrow-active: ${scrollArrowActive || scrollArrow || t.muted};
+  --sg-scrollbar-thumb-radius: ${scrollRadius}px;
   --sg-radius:           ${radius}px;
   font-family:           ${font};
   font-size:             ${bodyFontSize}px;
@@ -896,9 +1059,8 @@ ${cssBlock(lightTokens, 'light')}
 ${cssBlock(darkTokens, 'dark')}
 
 .my-grid-themed .sv-grid-header-cell {
-  font-weight:     ${headerFontWeight};
-  text-transform:  ${headerTransform};
-  letter-spacing:  ${(headerLetterSpacing / 100).toFixed(2)}em;
+  padding:         0 ${headerPaddingX}px;
+  justify-content: ${headerAlign === 'left' ? 'flex-start' : headerAlign === 'right' ? 'flex-end' : 'center'};
 }
 .my-grid-themed .sv-grid-cell {
   padding:         ${cellPaddingY}px ${cellPaddingX}px;
@@ -1046,13 +1208,20 @@ module.exports = {
     editorShadowColor: string;
     scrollRadius: number;
     scrollTrack: string;
+    scrollBorder: string;
     scrollThumb: string;
+    scrollThumbHover: string;
+    scrollThumbActive: string;
     scrollArrow: string;
+    scrollArrowHover: string;
+    scrollArrowActive: string;
     zebra: boolean; tokenMode: 'auto' | 'manual';
     overrides: Overrides;
+    presetId?: string | null;
   }
   function snapshot(): Snapshot {
     return {
+      presetId: activePresetData?.id ?? null,
       brand, mode, radius,
       rowHeight, headerHeight,
       cellPaddingX, cellPaddingY,
@@ -1069,11 +1238,14 @@ module.exports = {
       horizontalBorderColor, verticalBorderColor, selectionBorderColor,
       successBg, errorBg, readOnlyBg,
       editorBorderWidth, editorBorderColor, editorFg, editorBg, editorShadowBlur, editorShadowColor,
-      scrollRadius, scrollTrack, scrollThumb, scrollArrow,
+      scrollRadius, scrollTrack, scrollBorder,
+      scrollThumb, scrollThumbHover, scrollThumbActive,
+      scrollArrow, scrollArrowHover, scrollArrowActive,
       zebra, tokenMode, overrides,
     }
   }
   function restore(s: Partial<Snapshot>) {
+    activePresetData = s.presetId ? (PRESETS.find((p) => p.id === s.presetId) ?? null) : null
     brand            = s.brand ?? DEFAULTS.brand
     mode             = s.mode ?? DEFAULTS.mode
     radius           = s.radius ?? DEFAULTS.radius
@@ -1129,12 +1301,17 @@ module.exports = {
     editorShadowColor = s.editorShadowColor ?? DEFAULTS.editorShadowColor
     scrollRadius     = s.scrollRadius ?? DEFAULTS.scrollRadius
     scrollTrack      = s.scrollTrack ?? DEFAULTS.scrollTrack
+    scrollBorder      = s.scrollBorder ?? DEFAULTS.scrollBorder
     scrollThumb      = s.scrollThumb ?? DEFAULTS.scrollThumb
+    scrollThumbHover  = s.scrollThumbHover ?? DEFAULTS.scrollThumbHover
+    scrollThumbActive = s.scrollThumbActive ?? DEFAULTS.scrollThumbActive
     scrollArrow      = s.scrollArrow ?? DEFAULTS.scrollArrow
+    scrollArrowHover  = s.scrollArrowHover ?? DEFAULTS.scrollArrowHover
+    scrollArrowActive = s.scrollArrowActive ?? DEFAULTS.scrollArrowActive
     zebra            = s.zebra ?? DEFAULTS.zebra
     tokenMode        = s.tokenMode ?? DEFAULTS.tokenMode
     overrides        = s.overrides ?? {}
-    activePreset     = null
+    activePreset     = activePresetData?.id ?? null
   }
   function loadFromUrl(): Partial<Snapshot> | null {
     try {
@@ -1307,6 +1484,7 @@ module.exports = {
     if (found > 0) {
       overrides = { ...overrides, ...next }
       tokenMode = 'manual'
+      activePresetData = null
       activePreset = null
       importMsg = `Imported ${found} token${found === 1 ? '' : 's'}.`
     } else {
@@ -1610,13 +1788,13 @@ module.exports = {
       const arrow = scrollArrow || activeTokens.muted
       parts.push(' .tb-live-instance { ')
       parts.push('--sg-scrollbar-bg: ' + track + '; ')
-      parts.push('--sg-scrollbar-border: ' + activeTokens.border + '; ')
+      parts.push('--sg-scrollbar-border: ' + (scrollBorder || activeTokens.border) + '; ')
       parts.push('--sg-scrollbar-thumb: ' + thumb + '; ')
-      parts.push('--sg-scrollbar-thumb-hover: ' + thumb + '; ')
-      parts.push('--sg-scrollbar-thumb-active: ' + thumb + '; ')
+      parts.push('--sg-scrollbar-thumb-hover: ' + (scrollThumbHover || thumb) + '; ')
+      parts.push('--sg-scrollbar-thumb-active: ' + (scrollThumbActive || thumb) + '; ')
       parts.push('--sg-scrollbar-arrow: ' + arrow + '; ')
-      parts.push('--sg-scrollbar-arrow-hover: ' + arrow + '; ')
-      parts.push('--sg-scrollbar-arrow-active: ' + arrow + '; ')
+      parts.push('--sg-scrollbar-arrow-hover: ' + (scrollArrowHover || arrow) + '; ')
+      parts.push('--sg-scrollbar-arrow-active: ' + (scrollArrowActive || arrow) + '; ')
       parts.push('--sg-scrollbar-arrow-disabled: ' + arrow + '; ')
       parts.push('--sg-scrollbar-arrow-hover-bg: ' + activeTokens.rowHover + '; ')
       parts.push('--sg-scrollbar-arrow-active-bg: ' + activeTokens.selectionBg + '; ')
@@ -1854,22 +2032,24 @@ module.exports = {
   <!-- Preset row - small previews so users see the actual palette before clicking -->
   <div class="tb-presets" role="group" aria-label="Brand presets">
     <span class="tb-presets-label">Presets:</span>
-    {#each PRESETS as p (p.id)}
-      {@const t = autoPalette(p.brand, p.mode)}
-      <button
-        type="button"
-        class="tb-preset"
-        class:active={activePreset === p.id}
-        onclick={() => applyPreset(p)}
-        title={`${p.name} · ${p.mode}`}
-      >
-        <span class="tb-preset-mini" style={`background:${t.bg}`}>
-          <span class="tb-preset-mini-hdr" style={`background:${t.headerBg}`}></span>
-          <span class="tb-preset-mini-dot" style={`background:${p.brand}`}></span>
-        </span>
-        <span class="tb-preset-name">{p.name}</span>
-      </button>
-    {/each}
+    <div class="tb-presets-scroll">
+      {#each PRESETS as p (p.id)}
+        {@const t = p.defaultMode === 'dark' ? p.dark : p.light}
+        <button
+          type="button"
+          class="tb-preset"
+          class:active={activePreset === p.id}
+          onclick={() => applyPreset(p)}
+          title={`${p.name} · ${p.defaultMode}`}
+        >
+          <span class="tb-preset-mini" style={`background:${t.bg}`}>
+            <span class="tb-preset-mini-hdr" style={`background:${t.headerBg}`}></span>
+            <span class="tb-preset-mini-dot" style={`background:${t.accent}`}></span>
+          </span>
+          <span class="tb-preset-name">{p.name}</span>
+        </button>
+      {/each}
+    </div>
   </div>
 
   <!-- Workspace -->
@@ -1913,8 +2093,8 @@ module.exports = {
             <span class="tb-field-hint">drives every other token</span>
           </div>
           <div class="tb-row">
-            <input type="color" bind:value={brand} oninput={onUserEdit} aria-label="Brand color" />
-            <input type="text" class="tb-hex" bind:value={brand} oninput={onUserEdit} spellcheck="false" />
+            <input type="color" bind:value={brand} oninput={onBrandEdit} aria-label="Brand color" />
+            <input type="text" class="tb-hex" bind:value={brand} oninput={onBrandEdit} spellcheck="false" />
           </div>
 
           <div class="tb-field-row">
@@ -2414,25 +2594,69 @@ module.exports = {
               <input type="range" min="0" max="12" step="1" bind:value={scrollRadius} oninput={onUserEdit} />
             </label>
           </div>
+          <div class="tb-field-row">
+            <label class="tb-field-label">Track</label>
+            <span class="tb-field-hint">background + outline</span>
+          </div>
           <div class="tb-col-color">
             <input type="color" value={scrollTrack || 'transparent'}
               oninput={(e) => { scrollTrack = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Track color" />
             <span class="tb-col-color-label">Track color</span>
-            <button type="button" class="tb-col-reset" title="Clear" disabled={!scrollTrack} onclick={() => (scrollTrack = '')}>↺</button>
+            <button type="button" class="tb-col-reset" title="Match header" disabled={!scrollTrack} onclick={() => (scrollTrack = '')}>↺</button>
+          </div>
+          <div class="tb-col-color">
+            <input type="color" value={scrollBorder || activeTokens.border.slice(0, 7)}
+              oninput={(e) => { scrollBorder = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Track border color" />
+            <span class="tb-col-color-label">Track border</span>
+            <button type="button" class="tb-col-reset" title="Match border" disabled={!scrollBorder} onclick={() => (scrollBorder = '')}>↺</button>
+          </div>
+
+          <div class="tb-field-row">
+            <label class="tb-field-label">Thumb</label>
+            <span class="tb-field-hint">rest · hover · drag</span>
           </div>
           <div class="tb-col-color">
             <input type="color" value={scrollThumb || activeTokens.muted.slice(0, 7)}
               oninput={(e) => { scrollThumb = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Thumb color" />
-            <span class="tb-col-color-label">Thumb color</span>
+            <span class="tb-col-color-label">Thumb</span>
             <button type="button" class="tb-col-reset" title="Match muted" disabled={!scrollThumb} onclick={() => (scrollThumb = '')}>↺</button>
+          </div>
+          <div class="tb-col-color">
+            <input type="color" value={scrollThumbHover || scrollThumb || activeTokens.muted.slice(0, 7)}
+              oninput={(e) => { scrollThumbHover = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Thumb hover color" />
+            <span class="tb-col-color-label">Thumb · hover</span>
+            <button type="button" class="tb-col-reset" title="Match thumb" disabled={!scrollThumbHover} onclick={() => (scrollThumbHover = '')}>↺</button>
+          </div>
+          <div class="tb-col-color">
+            <input type="color" value={scrollThumbActive || scrollThumb || activeTokens.muted.slice(0, 7)}
+              oninput={(e) => { scrollThumbActive = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Thumb active color" />
+            <span class="tb-col-color-label">Thumb · drag</span>
+            <button type="button" class="tb-col-reset" title="Match thumb" disabled={!scrollThumbActive} onclick={() => (scrollThumbActive = '')}>↺</button>
+          </div>
+
+          <div class="tb-field-row">
+            <label class="tb-field-label">Arrows</label>
+            <span class="tb-field-hint">rest · hover · press</span>
           </div>
           <div class="tb-col-color">
             <input type="color" value={scrollArrow || activeTokens.muted.slice(0, 7)}
               oninput={(e) => { scrollArrow = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Arrow color" />
-            <span class="tb-col-color-label">Arrow color</span>
+            <span class="tb-col-color-label">Arrow</span>
             <button type="button" class="tb-col-reset" title="Match muted" disabled={!scrollArrow} onclick={() => (scrollArrow = '')}>↺</button>
           </div>
-          <p class="tb-field-hint">Styles SvGrid's custom scrollbar. Arrow color applies to the chevron glyphs on the scroll buttons.</p>
+          <div class="tb-col-color">
+            <input type="color" value={scrollArrowHover || scrollArrow || activeTokens.muted.slice(0, 7)}
+              oninput={(e) => { scrollArrowHover = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Arrow hover color" />
+            <span class="tb-col-color-label">Arrow · hover</span>
+            <button type="button" class="tb-col-reset" title="Match arrow" disabled={!scrollArrowHover} onclick={() => (scrollArrowHover = '')}>↺</button>
+          </div>
+          <div class="tb-col-color">
+            <input type="color" value={scrollArrowActive || scrollArrow || activeTokens.muted.slice(0, 7)}
+              oninput={(e) => { scrollArrowActive = (e.target as HTMLInputElement).value; onUserEdit() }} aria-label="Arrow active color" />
+            <span class="tb-col-color-label">Arrow · press</span>
+            <button type="button" class="tb-col-reset" title="Match arrow" disabled={!scrollArrowActive} onclick={() => (scrollArrowActive = '')}>↺</button>
+          </div>
+          <p class="tb-field-hint">Styles SvGrid's custom scrollbar across every state. Empty states inherit the rest color; arrow colors apply to the chevron glyphs on the scroll buttons.</p>
         </div>
       {/if}
 
@@ -2824,7 +3048,7 @@ for (const [k, v] of Object.entries(theme.tokens)) {`{`}
   .tb-import-msg { font-size: 12px; color: #15803d; font-weight: 600; }
 
   .tb-presets {
-    display: flex; flex-wrap: wrap; gap: 6px;
+    display: flex; flex-wrap: nowrap; gap: 8px;
     align-items: center;
     padding: 10px 12px;
     border: 1px solid var(--sg-border, #e2e8f0);
@@ -2832,7 +3056,23 @@ for (const [k, v] of Object.entries(theme.tokens)) {`{`}
     background: var(--site-bg, #ffffff);
     margin-bottom: 14px;
   }
+  /* Single horizontally-scrolling track so the (now 19) presets stay on
+     one tidy row instead of wrapping. Label stays pinned at the left. */
+  .tb-presets-label { flex: 0 0 auto; }
+  .tb-presets-scroll {
+    display: flex; align-items: center; gap: 6px;
+    flex: 1 1 auto; min-width: 0;
+    overflow-x: auto; overflow-y: hidden;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--sg-border, #cbd5e1) transparent;
+  }
+  .tb-presets-scroll::-webkit-scrollbar { height: 6px; }
+  .tb-presets-scroll::-webkit-scrollbar-thumb {
+    background: var(--sg-border, #cbd5e1); border-radius: 999px;
+  }
   .tb-preset {
+    flex: 0 0 auto;
     display: inline-flex; align-items: center; gap: 8px;
     border: 1px solid var(--sg-border, #cbd5e1);
     background: var(--site-bg, #ffffff);
@@ -2903,8 +3143,7 @@ for (const [k, v] of Object.entries(theme.tokens)) {`{`}
        bottom of this stylesheet so it wins over the desktop base rule). */
     .tb-controls { height: auto; max-height: 60vh; }
     .tb-export-inner, .tb-wcag-inner { max-height: 320px; overflow: auto; }
-    /* Page-header presets row wraps cleanly */
-    .tb-presets { overflow-x: auto; flex-wrap: nowrap; }
+    /* Presets already scroll via .tb-presets-scroll at every width. */
   }
   @media (max-width: 600px) {
     .tb-title { font-size: 18px; }

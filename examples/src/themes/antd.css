@@ -48,7 +48,7 @@ html[data-preset='antd'][data-theme='dark'] .demo-page {
   --sg-header-fg: rgba(255, 255, 255, 0.85);
   --sg-row-alt-bg: #141414;
   --sg-row-hover-bg: #262626;
-  --sg-selection-bg: #111d2c;      /* controlItemBgActive dark */
+  --sg-selection-bg: #111a2c;      /* colorPrimaryBg dark */
   --sg-accent: #177ddc;
   --sg-input-bg: #141414;
   --sg-input-border: #424242;

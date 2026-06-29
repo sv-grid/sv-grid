@@ -1,10 +1,15 @@
 // Vitest setup. jsdom doesn't ship ResizeObserver, IntersectionObserver,
 // or the layout APIs SvGrid touches inside its mount effects. Provide
 // minimal no-op stubs so component mounting completes without crashing.
+//
+// These assign to globals/prototypes the jsdom env doesn't fully type, so
+// the targets are cast to `any`. We deliberately avoid expect-error
+// suppression directives: when a stub happens to line up with the lib types,
+// such a directive becomes "unused" and svelte-check fails the build (an
+// unused expect-error directive is itself an error).
 
 if (typeof globalThis.ResizeObserver === 'undefined') {
-  // @ts-expect-error - assigning to a globalThis property the env doesn't ship
-  globalThis.ResizeObserver = class {
+  ;(globalThis as any).ResizeObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
@@ -12,8 +17,7 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
 }
 
 if (typeof globalThis.IntersectionObserver === 'undefined') {
-  // @ts-expect-error - same
-  globalThis.IntersectionObserver = class {
+  ;(globalThis as any).IntersectionObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
@@ -26,8 +30,7 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
 // jsdom's HTMLElement.scrollIntoView is a no-op; some grid code calls it
 // during the first effect. Make sure the method exists on every element.
 if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
-  // @ts-expect-error - patching a missing DOM method
-  Element.prototype.scrollIntoView = function () {}
+  ;(Element.prototype as any).scrollIntoView = function () {}
 }
 
 // jsdom returns 0 for offset* and getBoundingClientRect; the grid only uses

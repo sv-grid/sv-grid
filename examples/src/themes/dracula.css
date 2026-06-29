@@ -1,0 +1,68 @@
+/* ============================================================
+ * DRACULA - the iconic dark theme. Background #282a36, foreground
+ * #f8f8f2, comment #6272a4, purple #bd93f9 accent, selection
+ * #44475a. Verified against the official Dracula spec. Light
+ * variant is an Alucard-style inversion. 6px radius.
+ * ============================================================ */
+html[data-preset='dracula'] .demo-page {
+  --sg-bg: #fffbeb;                /* Alucard background (warm cream) */
+  --sg-fg: #1f1f1f;
+  --sg-muted: #6c664b;             /* Alucard comment */
+  --sg-border: #dedccf;            /* Alucard BGLight */
+  --sg-header-bg: #ece9df;         /* Alucard BGLighter */
+  --sg-header-fg: #1f1f1f;
+  --sg-row-alt-bg: #fffdf5;
+  --sg-row-hover-bg: #f2efe3;
+  --sg-selection-bg: #cfcfde;      /* Alucard selection */
+  --sg-accent: #644ac9;            /* Alucard purple */
+  --sg-input-bg: #fffbeb;
+  --sg-input-border: #dedccf;
+  --sg-pill-active: #e3f7e8; --sg-pill-active-fg: #1f7a3d;
+  --sg-pill-pending: #fdf6d6; --sg-pill-pending-fg: #8a6d00;
+  --sg-pill-inactive: #fde3e3; --sg-pill-inactive-fg: #c23636;
+  --sg-radius: 6px;
+  --sg-cell-px: 12px;
+  /* Header: semibold */
+  --sg-header-weight: 600; --sg-header-min-height: 42px;
+  /* Scrollbar - light lavender-grey */
+  --sg-scrollbar-bg: #f4f2fb; --sg-scrollbar-border: #e6e4ef;
+  --sg-scrollbar-thumb: #d6d2e6; --sg-scrollbar-thumb-hover: #b1aacf; --sg-scrollbar-thumb-active: #6272a4;
+  --sg-scrollbar-arrow: #6272a4; --sg-scrollbar-arrow-hover: #282a36; --sg-scrollbar-arrow-hover-bg: #f1eefb;
+  --sg-scrollbar-arrow-active: #282a36; --sg-scrollbar-arrow-active-bg: #e6e4ef; --sg-scrollbar-arrow-disabled: #d6d2e6;
+  background: #fffbeb;
+  color: #1f1f1f;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+html[data-preset='dracula'] .demo-page .demo-aside {
+  background: #ece9df;
+  border-color: #dedccf !important;
+}
+html[data-preset='dracula'][data-theme='dark'] .demo-page {
+  --sg-bg: #282a36;                /* background */
+  --sg-fg: #f8f8f2;                /* foreground */
+  --sg-muted: #6272a4;             /* comment */
+  --sg-border: #44475a;            /* current line / selection */
+  --sg-header-bg: #21222c;
+  --sg-header-fg: #f8f8f2;
+  --sg-row-alt-bg: #2d2f3b;
+  --sg-row-hover-bg: #343746;
+  --sg-selection-bg: #44475a;
+  --sg-accent: #bd93f9;            /* purple */
+  --sg-on-accent: #282a36;         /* dark check on the light purple accent */
+  --sg-input-bg: #21222c;
+  --sg-input-border: #44475a;
+  --sg-pill-active: #1c3526; --sg-pill-active-fg: #69ff94;    /* green */
+  --sg-pill-pending: #3a3717; --sg-pill-pending-fg: #f4fa9e;  /* yellow */
+  --sg-pill-inactive: #3a1f24; --sg-pill-inactive-fg: #ff7777;/* red */
+  /* Scrollbar - dark slate, purple-grey thumb */
+  --sg-scrollbar-bg: #21222c; --sg-scrollbar-border: #44475a;
+  --sg-scrollbar-thumb: #44475a; --sg-scrollbar-thumb-hover: #565a73; --sg-scrollbar-thumb-active: #6272a4;
+  --sg-scrollbar-arrow: #6272a4; --sg-scrollbar-arrow-hover: #f8f8f2; --sg-scrollbar-arrow-hover-bg: #343746;
+  --sg-scrollbar-arrow-active: #f8f8f2; --sg-scrollbar-arrow-active-bg: #44475a; --sg-scrollbar-arrow-disabled: #44475a;
+  background: #282a36;
+  color: #f8f8f2;
+}
+html[data-preset='dracula'][data-theme='dark'] .demo-page .demo-aside {
+  background: #21222c;
+  border-color: #44475a !important;
+}

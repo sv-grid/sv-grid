@@ -12,8 +12,8 @@ html[data-preset='shadcn'] .demo-page {
   --sg-header-fg: #18181b;
   --sg-row-alt-bg: #ffffff;
   --sg-row-hover-bg: #f4f4f5;
-  --sg-selection-bg: #e0f2fe;
-  --sg-accent: #0ea5e9;
+  --sg-selection-bg: #f4f4f5;       /* accent surface (neutral) */
+  --sg-accent: #18181b;            /* primary (near-black, no blue) */
   --sg-input-bg: #ffffff;
   --sg-input-border: #e4e4e7;
   --sg-pill-active: #ecfdf5;
@@ -48,8 +48,9 @@ html[data-preset='shadcn'][data-theme='dark'] .demo-page {
   --sg-header-fg: #fafafa;
   --sg-row-alt-bg: #0a0a0a;
   --sg-row-hover-bg: #18181b;
-  --sg-selection-bg: #0c4a6e;
-  --sg-accent: #38bdf8;
+  --sg-selection-bg: #27272a;       /* accent surface (neutral) */
+  --sg-accent: #fafafa;            /* primary (near-white, no blue) */
+  --sg-on-accent: #18181b;         /* dark check/label on the light accent */
   --sg-input-bg: #18181b;
   --sg-input-border: #27272a;
   --sg-pill-active: #064e3b;

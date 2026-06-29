@@ -1,0 +1,66 @@
+/* ============================================================
+ * NORD - the arctic, north-bluish palette. Polar Night for dark,
+ * Snow Storm for light, Frost #88c0d0 / #5e81ac accent. Verified
+ * against the official Nord color reference. 4px radius.
+ * ============================================================ */
+html[data-preset='nord'] .demo-page {
+  --sg-bg: #eceff4;                /* nord6 */
+  --sg-fg: #2e3440;                /* nord0 */
+  --sg-muted: #4c566a;             /* nord3 */
+  --sg-border: #d8dee9;            /* nord4 */
+  --sg-header-bg: #e5e9f0;         /* nord5 */
+  --sg-header-fg: #2e3440;
+  --sg-row-alt-bg: #e5e9f0;
+  --sg-row-hover-bg: #dde3ec;
+  --sg-selection-bg: #d8dee9;
+  --sg-accent: #5e81ac;            /* nord10 */
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #d8dee9;
+  --sg-pill-active: #e3ecd6; --sg-pill-active-fg: #4b6b2e;    /* nord14 green */
+  --sg-pill-pending: #f7ecd2; --sg-pill-pending-fg: #8a6d1a;  /* nord13 yellow */
+  --sg-pill-inactive: #f4dcdd; --sg-pill-inactive-fg: #97323b;/* nord11 red */
+  --sg-radius: 4px;
+  --sg-cell-px: 12px;
+  /* Header: semibold */
+  --sg-header-weight: 600; --sg-header-min-height: 42px;
+  /* Scrollbar - Snow Storm greys, Frost accent */
+  --sg-scrollbar-bg: #e5e9f0; --sg-scrollbar-border: #d8dee9;
+  --sg-scrollbar-thumb: #c2cad8; --sg-scrollbar-thumb-hover: #9aa6bd; --sg-scrollbar-thumb-active: #4c566a;
+  --sg-scrollbar-arrow: #4c566a; --sg-scrollbar-arrow-hover: #2e3440; --sg-scrollbar-arrow-hover-bg: #dde3ec;
+  --sg-scrollbar-arrow-active: #2e3440; --sg-scrollbar-arrow-active-bg: #d8dee9; --sg-scrollbar-arrow-disabled: #c2cad8;
+  background: #eceff4;
+  color: #2e3440;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+html[data-preset='nord'] .demo-page .demo-aside {
+  background: #e5e9f0;
+  border-color: #d8dee9 !important;
+}
+html[data-preset='nord'][data-theme='dark'] .demo-page {
+  --sg-bg: #2e3440;                /* nord0 */
+  --sg-fg: #d8dee9;                /* nord4 */
+  --sg-muted: #4c566a;             /* nord3 - official "subtle UI text" */
+  --sg-border: #434c5e;            /* nord2 */
+  --sg-header-bg: #3b4252;
+  --sg-header-fg: #e5e9f0;
+  --sg-row-alt-bg: #333b48;
+  --sg-row-hover-bg: #3b4252;
+  --sg-selection-bg: #434c5e;      /* nord2 */
+  --sg-accent: #88c0d0;            /* nord8 frost */
+  --sg-input-bg: #3b4252;
+  --sg-input-border: #4c566a;
+  --sg-pill-active: #3b4a36; --sg-pill-active-fg: #a3be8c;
+  --sg-pill-pending: #4a4326; --sg-pill-pending-fg: #ebcb8b;
+  --sg-pill-inactive: #4a3236; --sg-pill-inactive-fg: #d08a92;
+  /* Scrollbar - Polar Night greys */
+  --sg-scrollbar-bg: #3b4252; --sg-scrollbar-border: #434c5e;
+  --sg-scrollbar-thumb: #4c566a; --sg-scrollbar-thumb-hover: #5a677d; --sg-scrollbar-thumb-active: #6e7d94;
+  --sg-scrollbar-arrow: #8a93a5; --sg-scrollbar-arrow-hover: #eceff4; --sg-scrollbar-arrow-hover-bg: #434c5e;
+  --sg-scrollbar-arrow-active: #eceff4; --sg-scrollbar-arrow-active-bg: #4c566a; --sg-scrollbar-arrow-disabled: #4c566a;
+  background: #2e3440;
+  color: #d8dee9;
+}
+html[data-preset='nord'][data-theme='dark'] .demo-page .demo-aside {
+  background: #3b4252;
+  border-color: #434c5e !important;
+}

@@ -49,7 +49,7 @@ html[data-preset='github'][data-theme='dark'] .demo-page {
   --sg-header-fg: #f0f6fc;
   --sg-row-alt-bg: #0d1117;
   --sg-row-hover-bg: #151b23;
-  --sg-selection-bg: rgba(56, 139, 253, 0.15);
+  --sg-selection-bg: rgba(56, 139, 253, 0.10);
   --sg-accent: #4493f8;
   --sg-input-bg: #0d1117;
   --sg-input-border: #3d444d;

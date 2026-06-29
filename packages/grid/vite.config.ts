@@ -48,8 +48,12 @@ export default defineConfig({
       exclude: [
         // Custom-element scrollbar paint loop (needs real layout dimensions)
         'src/sv-grid-scrollbar.ts',
-        // Pure re-export module
+        // Pure re-export modules (no logic of their own)
         'src/static-functions.ts',
+        'src/index.ts',
+        // Stylesheet - not executable code; only listed because the Svelte
+        // plugin emits a module for it. Counting it at 0% is meaningless.
+        'src/SvGrid.css',
         // Thin downstream adapter, exercised in consuming app integrations
         'src/createGridState.svelte.ts',
         // Render component: a 4000-line file whose layout / scroll / paint
@@ -60,6 +64,21 @@ export default defineConfig({
         // Helper component, exercised by SvGrid in production usage and by
         // its own flex-render.test.ts file.
         'src/FlexRender.svelte',
+        // Sibling render components, same rationale as SvGrid.svelte: their
+        // paint / layout / pointer branches depend on real DOM metrics that
+        // jsdom reports as zero. Each has behavioral mount tests instead
+        // (SvGridChart.test.ts, svgrid.context-menu.test.ts, the wrapper +
+        // interaction suites) and is verified on every demo + Playwright.
+        'src/SvGridChart.svelte',
+        'src/SvGridDropdown.svelte',
+        'src/GridMenus.svelte',
+        'src/GridFooter.svelte',
+        // The render component's reactive state machine ($state/$derived/$effect
+        // glue extracted out of SvGrid.svelte). It only runs meaningfully while
+        // the component is mounted, so it is exercised through the 60+ behavioral
+        // mount tests (svgrid.behavior / interaction / api / features suites)
+        // rather than measured by line coverage - same rationale as SvGrid.svelte.
+        'src/SvGrid.controller.svelte.ts',
         // Test scaffolding
         'src/test-fixtures/**',
         'src/test-setup.ts',

@@ -6,15 +6,15 @@
  * Blue #0070F2. "72" font family.
  * ============================================================ */
 html[data-preset='sap'] .demo-page {
-  --sg-bg: #ffffff;                /* sapBackgroundColor */
-  --sg-fg: #1d2d3e;                /* sapTextColor */
-  --sg-muted: #5b738b;             /* sapContent_LabelColor */
-  --sg-border: #d5dadd;            /* sapList_BorderColor (Horizon) */
-  --sg-header-bg: #ffffff;         /* Horizon: white headers with bottom rule */
-  --sg-header-fg: #1d2d3e;
-  --sg-row-alt-bg: #ffffff;
-  --sg-row-hover-bg: #ecf0f1;      /* sapList_Hover_Background */
-  --sg-selection-bg: #ecf2ff;      /* sapList_SelectionBackgroundColor */
+  --sg-bg: #f5f6f7;                /* sapBackgroundColor (Horizon) */
+  --sg-fg: #131e29;                /* sapTextColor */
+  --sg-muted: #556b82;             /* sapContent_LabelColor */
+  --sg-border: #e5e5e5;            /* sapList_BorderColor */
+  --sg-header-bg: #ffffff;         /* sapList_HeaderBackground */
+  --sg-header-fg: #131e29;
+  --sg-row-alt-bg: #f5f6f7;
+  --sg-row-hover-bg: #eaecee;      /* sapList_Hover_Background */
+  --sg-selection-bg: #ebf8ff;      /* sapList_SelectionBackgroundColor */
   --sg-accent: #0070f2;            /* Horizon Blue */
   --sg-input-bg: #ffffff;
   --sg-input-border: #889ab1;      /* sapField_BorderColor */
@@ -28,8 +28,8 @@ html[data-preset='sap'] .demo-page {
   --sg-cell-px: 12px;
   /* Header: SAP Fiori table header - bold */
   --sg-header-weight: 700; --sg-header-min-height: 44px;
-  background: #ffffff;
-  color: #1d2d3e;
+  background: #f5f6f7;
+  color: #131e29;
   font-family: '72', '72full', 'Arial', sans-serif;
   /* Scrollbar - real SAP Horizon tokens (sap_horizon): slate FaceColor thumb, white track, brand-blue arrow symbol. */
   --sg-scrollbar-bg: #ffffff; --sg-scrollbar-border: #d5dadd;
@@ -42,16 +42,16 @@ html[data-preset='sap'] .demo-page .demo-aside {
   border-color: #d5dadd !important;
 }
 html[data-preset='sap'][data-theme='dark'] .demo-page {
-  --sg-bg: #29313a;                /* Horizon Dark sapBackgroundColor */
-  --sg-fg: #eaecee;
-  --sg-muted: #b5bfca;
-  --sg-border: #4a5560;
-  --sg-header-bg: #29313a;
-  --sg-header-fg: #eaecee;
-  --sg-row-alt-bg: #29313a;
-  --sg-row-hover-bg: #353e48;
-  --sg-selection-bg: #1f4a72;
-  --sg-accent: #1d97f5;
+  --sg-bg: #12171c;                /* Horizon Dark sapBackgroundColor */
+  --sg-fg: #f5f6f7;
+  --sg-muted: #8396a8;
+  --sg-border: #2e3742;
+  --sg-header-bg: #1d232a;         /* sapList_HeaderBackground dark */
+  --sg-header-fg: #f5f6f7;
+  --sg-row-alt-bg: #12171c;
+  --sg-row-hover-bg: #222b35;
+  --sg-selection-bg: #1d2d3e;
+  --sg-accent: #4db1ff;            /* sapHighlightColor dark */
   --sg-input-bg: #2b323b;
   --sg-input-border: #6e7a86;
   --sg-pill-active: #143820;
@@ -60,8 +60,8 @@ html[data-preset='sap'][data-theme='dark'] .demo-page {
   --sg-pill-pending-fg: #f8e078;
   --sg-pill-inactive: #5a1716;
   --sg-pill-inactive-fg: #ffb3aa;
-  background: #29313a;
-  color: #eaecee;
+  background: #12171c;
+  color: #f5f6f7;
   /* Scrollbar - real SAP Horizon dark tokens (sap_horizon_dark): slate thumb, dark track, blue arrow. */
   --sg-scrollbar-bg: #1d232a; --sg-scrollbar-border: #4a5560;
   --sg-scrollbar-thumb: #647891; --sg-scrollbar-thumb-hover: #566b85; --sg-scrollbar-thumb-active: #7187a0;
@@ -69,6 +69,6 @@ html[data-preset='sap'][data-theme='dark'] .demo-page {
   --sg-scrollbar-arrow-active: #6cc0ff; --sg-scrollbar-arrow-active-bg: #1f3a52; --sg-scrollbar-arrow-disabled: #4a5560;
 }
 html[data-preset='sap'][data-theme='dark'] .demo-page .demo-aside {
-  background: #2b323b;
-  border-color: #4a5560 !important;
+  background: #1d232a;
+  border-color: #2e3742 !important;
 }

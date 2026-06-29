@@ -41,6 +41,8 @@
     | 'excel' | 'fluent'
     | 'carbon' | 'sap' | 'salesforce' | 'atlassian' | 'github' | 'antd'
     | 'ag-alpine'
+    | 'bootstrap' | 'vercel' | 'linear' | 'notion'
+    | 'nord' | 'dracula' | 'catppuccin'
   type PresetGroup = { label: string; presets: { id: Preset; label: string }[] }
   const PRESET_GROUPS: PresetGroup[] = [
     {
@@ -74,6 +76,23 @@
       label: 'Grid look-alikes',
       presets: [
         { id: 'ag-alpine', label: 'Alpine' },
+      ],
+    },
+    {
+      label: 'Product & startups',
+      presets: [
+        { id: 'bootstrap', label: 'Bootstrap 5' },
+        { id: 'vercel',    label: 'Vercel'      },
+        { id: 'linear',    label: 'Linear'      },
+        { id: 'notion',    label: 'Notion'      },
+      ],
+    },
+    {
+      label: 'Editor themes',
+      presets: [
+        { id: 'nord',       label: 'Nord'       },
+        { id: 'dracula',    label: 'Dracula'    },
+        { id: 'catppuccin', label: 'Catppuccin' },
       ],
     },
   ]

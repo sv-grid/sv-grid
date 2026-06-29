@@ -1,0 +1,68 @@
+/* ============================================================
+ * NOTION - the calm, neutral document aesthetic. Signature
+ * brown-grey text #37352f, quiet muted database headers, Notion
+ * blue #2383e2 accent. Small 4px radius.
+ * ============================================================ */
+html[data-preset='notion'] .demo-page {
+  --sg-bg: #ffffff;
+  --sg-fg: #37352f;                /* Notion default text */
+  --sg-muted: #787774;             /* Notion gray text */
+  --sg-border: #e9e9e7;
+  --sg-header-bg: #f7f6f3;         /* Notion subtle bg */
+  --sg-header-fg: #37352f;
+  --sg-row-alt-bg: #fbfbfa;
+  --sg-row-hover-bg: #f1f1ef;      /* hover rgba(55,53,47,.08) */
+  --sg-selection-bg: #d9eaf7;      /* Notion blue bg */
+  --sg-accent: #2383e2;            /* Notion blue */
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #e0dfdc;
+  --sg-pill-active: #ddedea; --sg-pill-active-fg: #1c6b5b;    /* Notion green */
+  --sg-pill-pending: #faf3dd; --sg-pill-pending-fg: #8a6e2f;  /* Notion yellow */
+  --sg-pill-inactive: #fbe4e4; --sg-pill-inactive-fg: #a8362f;/* Notion red */
+  --sg-radius: 4px;
+  --sg-cell-px: 12px;
+  /* Header: Notion database header - quiet medium-weight muted */
+  --sg-header-weight: 500; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 40px;
+  /* Scrollbar - warm greys */
+  --sg-scrollbar-bg: #f7f6f3; --sg-scrollbar-border: #e9e9e7;
+  --sg-scrollbar-thumb: #d3d1cb; --sg-scrollbar-thumb-hover: #aeaca4; --sg-scrollbar-thumb-active: #787774;
+  --sg-scrollbar-arrow: #787774; --sg-scrollbar-arrow-hover: #37352f; --sg-scrollbar-arrow-hover-bg: #f1f1ef;
+  --sg-scrollbar-arrow-active: #37352f; --sg-scrollbar-arrow-active-bg: #e9e9e7; --sg-scrollbar-arrow-disabled: #d3d1cb;
+  background: #ffffff;
+  color: #37352f;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif;
+}
+html[data-preset='notion'] .demo-page .demo-aside {
+  background: #f7f6f3;
+  border-color: #e9e9e7 !important;
+}
+html[data-preset='notion'][data-theme='dark'] .demo-page {
+  --sg-bg: #191919;                /* Notion dark bg */
+  --sg-fg: #d4d4d4;
+  --sg-muted: #9b9b9b;
+  --sg-border: #2f2f2f;
+  --sg-header-bg: #202020;
+  --sg-header-fg: #d4d4d4;
+  --sg-row-alt-bg: #1c1c1c;
+  --sg-row-hover-bg: #252525;
+  --sg-selection-bg: #20415c;
+  --sg-accent: #529cca;
+  --sg-input-bg: #202020;
+  --sg-input-border: #373737;
+  --sg-pill-active: #14352e; --sg-pill-active-fg: #4dab9a;
+  --sg-pill-pending: #3a3115; --sg-pill-pending-fg: #d9b03a;
+  --sg-pill-inactive: #3a201f; --sg-pill-inactive-fg: #e06b63;
+  /* Header label: light grey in dark (light-block muted would carry over). */
+  --sg-header-label-color: #9b9b9b;
+  /* Scrollbar - dark warm greys */
+  --sg-scrollbar-bg: #202020; --sg-scrollbar-border: #2f2f2f;
+  --sg-scrollbar-thumb: #373737; --sg-scrollbar-thumb-hover: #525252; --sg-scrollbar-thumb-active: #6e6e6e;
+  --sg-scrollbar-arrow: #9b9b9b; --sg-scrollbar-arrow-hover: #d4d4d4; --sg-scrollbar-arrow-hover-bg: #252525;
+  --sg-scrollbar-arrow-active: #d4d4d4; --sg-scrollbar-arrow-active-bg: #373737; --sg-scrollbar-arrow-disabled: #373737;
+  background: #191919;
+  color: #d4d4d4;
+}
+html[data-preset='notion'][data-theme='dark'] .demo-page .demo-aside {
+  background: #202020;
+  border-color: #2f2f2f !important;
+}

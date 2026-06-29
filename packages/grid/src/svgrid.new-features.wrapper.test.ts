@@ -214,7 +214,9 @@ describe('SvGrid wrapper - multi-cell paste + cut + delete', () => {
   it('paste falls back to a native paste event when the async API is unavailable', () => {
     // keydown only preventDefaults (and uses the async API) in a secure context;
     // otherwise it lets the browser deliver a native paste event to onGridPaste.
-    expect(source).toMatch(/if \(navigator\.clipboard\?\.readText\)/)
+    // Accept either the positive branch or the inverted early-return guard
+    // (`if (!navigator.clipboard?.readText) return`) - both gate on the async API.
+    expect(source).toMatch(/if \(!?navigator\.clipboard\?\.readText\)/)
     expect(source).toMatch(/function onGridPaste\(event: ClipboardEvent\)/)
     expect(source).toMatch(/clipboardData\?\.getData\("text\/plain"\)/)
     // The grid root wires the handler.
