@@ -50,7 +50,7 @@
     </a>
   </header>
 
-  <div class="grid gap-8 md:grid-cols-[220px_1fr]">
+  <div class="grid gap-8 md:grid-cols-[240px_1fr]">
     <!-- Category sidebar -->
     <aside class="md:sticky md:top-6 self-start">
       <h2 class="mb-2 px-2 text-xs font-semibold uppercase tracking-wider" style="color: var(--site-muted);">
@@ -81,11 +81,12 @@
           <button
             type="button"
             onclick={() => (activeCategory = '')}
-            class="flex flex-1 items-center justify-between px-3 py-2 text-left text-sm"
+            class="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-sm"
             style:color={activeCategory === '' ? 'var(--site-accent)' : 'var(--site-fg)'}
           >
-            <span class="flex items-center gap-2"><span aria-hidden="true">💬</span> View all</span>
-            <span style="color: var(--site-muted);">{discussionsTotal || discussions.length}</span>
+            <span aria-hidden="true" class="flex-none">💬</span>
+            <span class="min-w-0 flex-1 truncate">View all</span>
+            <span class="flex-none pl-1 tabular-nums" style="color: var(--site-muted);">{discussionsTotal || discussions.length}</span>
           </button>
           {@render extLink(DISCUSSIONS_URL, 'Open all discussions on GitHub')}
         </div>
@@ -99,11 +100,12 @@
             <button
               type="button"
               onclick={() => (activeCategory = c.slug)}
-              class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left text-sm"
+              class="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-sm"
               style:color={active ? 'var(--site-accent)' : 'var(--site-fg)'}
             >
-              <span class="flex items-center gap-2 truncate"><span aria-hidden="true">{c.emoji}</span> {c.name}</span>
-              <span style="color: var(--site-muted);">{counts[c.slug] ?? 0}</span>
+              <span aria-hidden="true" class="flex-none">{c.emoji}</span>
+              <span class="min-w-0 flex-1 truncate">{c.name}</span>
+              <span class="flex-none pl-1 tabular-nums" style="color: var(--site-muted);">{counts[c.slug] ?? 0}</span>
             </button>
             {@render extLink(categoryHref(c.slug), `Open ${c.name} on GitHub`)}
           </div>

@@ -39,7 +39,29 @@ export type DiscussionsData = {
 
 export const discussionsData = raw as DiscussionsData
 
-export const discussions = discussionsData.discussions
+// GitHub's GraphQL returns a category's emoji as a shortcode (":bulb:"), not a
+// glyph. Map the common ones (GitHub's default discussion categories + popular
+// custom picks) to Unicode; unknown shortcodes fall back to a speech balloon.
+const SHORTCODE_EMOJI: Record<string, string> = {
+  mega: '📣', loudspeaker: '📢', speech_balloon: '💬', bulb: '💡', ballot_box: '🗳️',
+  pray: '🙏', raised_hands: '🙌', wave: '👋', rocket: '🚀', question: '❓', grey_question: '❓',
+  bell: '🔔', hammer_and_wrench: '🛠️', sparkles: '✨', tada: '🎉', heart: '❤️', books: '📚',
+  white_check_mark: '✅', computer: '💻', bug: '🐛', art: '🎨', memo: '📝', star: '⭐',
+  handshake: '🤝', busts_in_silhouette: '👥', open_book: '📖', gear: '⚙️', warning: '⚠️',
+}
+
+/** Resolve a GitHub emoji shortcode (or pass through an existing glyph). */
+export function toEmoji(raw: string | undefined | null): string {
+  if (!raw) return '💬'
+  const m = /^:([a-z0-9_+-]+):$/i.exec(raw.trim())
+  if (!m) return raw // already a glyph (e.g. our DEFAULT_CATEGORIES)
+  return SHORTCODE_EMOJI[m[1].toLowerCase()] ?? '💬'
+}
+
+export const discussions: Discussion[] = discussionsData.discussions.map((d) => ({
+  ...d,
+  category: d.category ? { ...d.category, emoji: toEmoji(d.category.emoji) } : null,
+}))
 export const discussionsTotal = discussionsData.totalCount
 
 /**
@@ -58,9 +80,12 @@ export const DEFAULT_CATEGORIES: DiscussionCategory[] = [
   { name: 'Show and tell', emoji: '🙌', slug: 'show-and-tell', description: 'Show off something you have made', isAnswerable: false },
 ]
 
-/** Categories to render: the baked set, or the GitHub defaults when empty. */
+/** Categories to render: the baked set (with emoji shortcodes resolved to
+ *  glyphs), or the GitHub defaults when empty. */
 export const discussionCategories: DiscussionCategory[] =
-  discussionsData.categories.length ? discussionsData.categories : DEFAULT_CATEGORIES
+  discussionsData.categories.length
+    ? discussionsData.categories.map((c) => ({ ...c, emoji: toEmoji(c.emoji) }))
+    : DEFAULT_CATEGORIES
 
 /** Link to open a new discussion (optionally pre-filtered to a category slug). */
 export function newDiscussionUrl(categorySlug?: string): string {
