@@ -18,11 +18,21 @@ on:
   # is an off-peak, non-round minute (GitHub delays jobs scheduled on the hour).
   schedule:
     - cron: '12 7 * * *'
+  # Rebuild when a discussion changes so the Community page's baked list stays
+  # near-real-time (created / edited / answered etc.) instead of only refreshing
+  # on the daily cron. Per-comment events (discussion_comment) are intentionally
+  # not included - they would rebuild on every reply; comment counts catch up on
+  # the next discussion-level change or the daily build.
+  discussion:
+    types: [created, edited, deleted, answered, unanswered, category_changed]
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  # Lets the build read this repo's GitHub Discussions (GraphQL) so the
+  # Community page can bake them into a static browse list.
+  discussions: read
 
 concurrency:
   group: pages
@@ -57,6 +67,9 @@ jobs:
           SVGRID_SITE_ORIGIN: https://svgrid.com
           # Exposed to the client build (canonical URLs in src/lib/seo.ts).
           VITE_SITE_ORIGIN: https://svgrid.com
+          # Build-time GitHub Discussions fetch (website prebuild). Falls back to
+          # an empty dataset if absent, so the build never fails on this.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add .nojekyll
         run: touch website/dist/.nojekyll

@@ -28,6 +28,7 @@
     { id: 'theme-builder', label: 'Theme Builder', href: '#/theme-builder' },
     { id: 'compare', label: 'Compare', href: '#/compare' },
     { id: 'blog', label: 'Blog', href: '#/blog' },
+    { id: 'community', label: 'Community', href: '#/community' },
     { id: 'roadmap', label: 'Roadmap', href: '#/roadmap' },
     { id: 'mcp', label: 'MCP', href: '#/mcp' },
     { id: 'pricing', label: 'Pricing', href: '#/pricing' },

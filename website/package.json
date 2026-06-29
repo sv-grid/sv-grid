@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "fetch-discussions": "node ../tools/fetch-discussions.mjs",
+    "prebuild": "node ../tools/fetch-discussions.mjs",
     "build": "vite build",
     "postbuild": "node ../tools/prerender-site.mjs",
     "prerender": "node ../tools/prerender-site.mjs",

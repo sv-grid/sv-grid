@@ -137,6 +137,13 @@ const ROUTES: Record<string, RouteSeo> = {
     description: 'SvGrid website terms of use and software license summary.',
     path: '/terms',
   },
+  community: {
+    title: 'Community - SvGrid Discussions, Q&A, and Ideas',
+    description:
+      'Ask questions, share what you built, propose features, and follow announcements. The SvGrid community runs on GitHub Discussions - post with your GitHub account.',
+    keywords: ['sv-grid community', 'svelte data grid help', 'sv-grid discussions', 'sv-grid q&a'],
+    path: '/community',
+  },
 }
 
 export function getRouteSeo(section: string): RouteSeo {

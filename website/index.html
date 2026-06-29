@@ -72,17 +72,24 @@
     />
     <meta name="twitter:image" content="https://svgrid.com/og-image.png" />
 
-    <!-- Favicon: the SvGrid mark - a flat data-table glyph on a solid plate.
+    <!-- Favicon set: the SvGrid mark - a flat data-table glyph on a solid plate.
          Simplified for small sizes: a header row + 2 body rows (not 3) with the
          right "active/sorted" column solid brand-orange top-to-bottom, so it
          stays legible as a grid down to 16px (the older 3-row + sort-caret
-         version muddied into a smudge in the tab). Regenerate via
-         tools/render-favicon.mjs. Inlined as a data URI. -->
+         version muddied into a smudge in the tab). The SVG below is inlined as a
+         data URI (modern browsers); the .png / .ico / apple-touch files cover
+         Safari/iOS + legacy fallbacks. Regenerate ALL of them via
+         tools/render-favicon.mjs. -->
     <link
       rel="icon"
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20width%3D%2224%22%20height%3D%2224%22%3E%3Crect%20x%3D%22.5%22%20y%3D%22.5%22%20width%3D%2223%22%20height%3D%2223%22%20rx%3D%225%22%20fill%3D%22%23111a2e%22%2F%3E%3Crect%20x%3D%22.5%22%20y%3D%22.5%22%20width%3D%2223%22%20height%3D%2223%22%20rx%3D%225%22%20fill%3D%22none%22%20stroke%3D%22rgba(148%2C163%2C184%2C0.28)%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%224.5%22%20y%3D%224.5%22%20width%3D%226%22%20height%3D%223.6%22%20rx%3D%221.2%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.95%22%2F%3E%3Crect%20x%3D%2211.5%22%20y%3D%224.5%22%20width%3D%223.2%22%20height%3D%223.6%22%20rx%3D%221.2%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.95%22%2F%3E%3Crect%20x%3D%2215.7%22%20y%3D%224.5%22%20width%3D%223.8%22%20height%3D%223.6%22%20rx%3D%221.2%22%20fill%3D%22%23ff5a1f%22%2F%3E%3Crect%20x%3D%224.5%22%20y%3D%2210.2%22%20width%3D%226%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2211.5%22%20y%3D%2210.2%22%20width%3D%223.2%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2215.7%22%20y%3D%2210.2%22%20width%3D%223.8%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%23ff5a1f%22%2F%3E%3Crect%20x%3D%224.5%22%20y%3D%2215.9%22%20width%3D%226%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2211.5%22%20y%3D%2215.9%22%20width%3D%223.2%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%23e7edf5%22%20opacity%3D%22.32%22%2F%3E%3Crect%20x%3D%2215.7%22%20y%3D%2215.9%22%20width%3D%223.8%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%23ff5a1f%22%2F%3E%3C%2Fsvg%3E"
     />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <!-- Legacy fallback for browsers that only request /favicon.ico. -->
+    <link rel="alternate icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
 
     <!-- Structured data: Organization + SoftwareApplication.
          Helps Google generate rich results for product searches. -->

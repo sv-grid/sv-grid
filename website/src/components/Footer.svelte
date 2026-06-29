@@ -31,6 +31,7 @@
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/api">API</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/compare">Compare</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/blog">Blog</a></li>
+        <li><a class="hover:text-[color:var(--site-accent)]" href="#/community">Community</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/mcp">MCP server</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/ai-prompts">AI Prompts</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/pricing">Pricing</a></li>

@@ -415,6 +415,23 @@ function demosIndexBody(demos) {
   return html + `</main>`
 }
 
+function communityIndexBody(data) {
+  const discussions = data.discussions ?? []
+  const ghUrl = 'https://github.com/sv-grid/sv-grid/discussions'
+  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Community - Discussions, Q&amp;A, and Ideas</h1><p>Ask questions, propose ideas, and share what you built. The SvGrid community runs on GitHub Discussions - browse threads below or <a href="${ghUrl}">open Discussions on GitHub</a>.</p>`
+  if (discussions.length) {
+    html += `<ul>`
+    for (const d of discussions) {
+      const cat = d.category ? `${escapeAttr(d.category.name)}: ` : ''
+      html += `<li><a href="${escapeAttr(d.url)}">${cat}${escapeAttr(d.title)}</a> - ${d.comments ?? 0} comments</li>`
+    }
+    html += `</ul>`
+  } else {
+    html += `<p>No discussions yet. <a href="${ghUrl}/new">Start the first one.</a></p>`
+  }
+  return html + `</main>`
+}
+
 function docsIndexBody(docs) {
   const bySec = new Map()
   for (const d of docs) { const s = SECTION_LABEL[d.section] ?? 'Docs'; if (!bySec.has(s)) bySec.set(s, []); bySec.get(s).push(d) }
@@ -573,6 +590,14 @@ async function main() {
   // or after their date (the daily deploy cron handles the drip).
   const buildDate = new Date().toISOString().slice(0, 10)
   const blogPosts = (await parseBlog()).filter((p) => p.date <= buildDate)
+  // Community discussions baked by tools/fetch-discussions.mjs (runs as the
+  // website prebuild, before this). Empty when no token / no discussions.
+  let discussionsData = { discussions: [], categories: [], totalCount: 0 }
+  try {
+    discussionsData = JSON.parse(
+      await readFile(join(ROOT, 'website', 'src', 'lib', 'discussions-data.json'), 'utf-8'),
+    )
+  } catch { /* keep the empty default */ }
 
   // Generate per-section Open Graph cards into /og/*.svg.
   const ogDir = join(DIST, 'og')
@@ -709,6 +734,7 @@ async function main() {
     ['faq', 'FAQ - Common Questions about SvGrid', 'Answers about SvGrid: production readiness, comparisons, bundle size, SvelteKit / SSR support, licensing, and the MCP server.'],
     ['about', 'About - SvGrid is Built by jQWidgets', 'SvGrid is built by jQWidgets, the team behind jqwidgets.com and htmlelements.com - UI components shipped since 2011 to 5,000+ companies.'],
     ['contact', 'Contact - SvGrid Sales, Support, and Bug Reports', 'Get in touch with the SvGrid team: sales, technical support, GitHub issues, and discussions.'],
+    ['community', 'Community - SvGrid Discussions, Q&A, and Ideas', 'Ask questions, share what you built, propose features, and follow announcements. The SvGrid community runs on GitHub Discussions.'],
   ]
   for (const [route, title, description] of STATIC_ROUTES) {
     const url = `${CANON}/${route}`
@@ -731,6 +757,11 @@ async function main() {
     } else if (route === 'blog') {
       body = blogIndexBody(blogPosts)
       html = injectJsonLd(html, collectionLd('SvGrid Blog', url, blogPosts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}` }))))
+    } else if (route === 'community') {
+      body = communityIndexBody(discussionsData)
+      if (discussionsData.discussions?.length) {
+        html = injectJsonLd(html, collectionLd('SvGrid Community Discussions', url, discussionsData.discussions.map((d) => ({ name: d.title, url: d.url }))))
+      }
     } else if (route === 'faq') {
       body = faqIndexBody(faqItems)
       if (faqItems.length) html = injectJsonLd(html, faqLd(faqItems))

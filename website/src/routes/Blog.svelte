@@ -2,6 +2,7 @@
   import { Marked } from 'marked'
   import { blogPosts, pinnedPosts, blogGroups, findPost, formatPostDate, relatedPosts } from '../lib/blog'
   import { router } from '../lib/router.svelte'
+  import Giscus from '../components/Giscus.svelte'
 
   type Props = { slug: string }
   let { slug }: Props = $props()
@@ -209,6 +210,13 @@
 
     <!-- eslint-disable-next-line svelte/no-at-html-tags - trusted local markdown -->
     <div class="prose">{@html html}</div>
+
+    <!-- Per-post comments via GitHub Discussions. Keyed on the slug so the
+         giscus widget remounts (and maps to the right discussion) on
+         client-side navigation between posts. -->
+    {#key current.slug}
+      <Giscus term={`blog/${current.slug}`} heading="Comments" />
+    {/key}
 
     {#if related.length}
       <section class="mt-16 border-t pt-8" style="border-color: var(--sg-border);">

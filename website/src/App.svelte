@@ -26,6 +26,7 @@
     logoLab: () => import('./routes/LogoLab.svelte'),
     blog: () => import('./routes/Blog.svelte'),
     themeBuilder: () => import('./routes/ThemeBuilder.svelte'),
+    community: () => import('./routes/Community.svelte'),
   }
 
   import { applyRouteSeo, applyDocSeo, applyDemoSeo, applyCompareSeo, applyBlogSeo } from './lib/seo'
@@ -89,7 +90,7 @@
   const MARKETING = new Set([
     '', 'pricing', 'about', 'faq', 'contact', 'privacy', 'terms',
     'roadmap', 'compare', 'ai-prompts', 'mcp', 'logo-lab', 'blog',
-    'theme-builder',
+    'theme-builder', 'community',
   ])
   const isMarketing = $derived(MARKETING.has(route.section))
   // App-shell routes lock the layout to the viewport: the nav + content
@@ -173,6 +174,8 @@
       <LazyRoute loader={ROUTES.roadmap} />
     {:else if route.section === 'blog'}
       <LazyRoute loader={ROUTES.blog} props={{ slug: route.rest }} />
+    {:else if route.section === 'community'}
+      <LazyRoute loader={ROUTES.community} />
     {:else if route.section === 'logo-lab'}
       <LazyRoute loader={ROUTES.logoLab} />
     {:else if route.section === 'theme-builder'}
