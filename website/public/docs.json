@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-06-28T13:09:20.053Z",
+  "generatedAt": "2026-06-30T22:16:59.319Z",
   "counts": {
-    "pages": 197,
+    "pages": 198,
     "enterprise": 9,
     "withDemo": 72
   },
@@ -22,7 +22,8 @@
       "id": "brand",
       "title": "brand",
       "pages": [
-        "brand/company-description.md"
+        "brand/company-description.md",
+        "brand/social/README.md"
       ]
     },
     {
@@ -318,6 +319,17 @@
       "tier": "community",
       "words": 796,
       "lastUpdated": "2026-06-22",
+      "demoIds": []
+    },
+    {
+      "path": "brand/social/README.md",
+      "url": "/brand/social/README",
+      "title": "GitHub social preview images",
+      "summary": "On-brand 1280x640 cards for GitHub's repo **Social preview** (Settings -> General -> Social preview). All are PNG, 1280x640 (GitHub's recommended size), and well under the 1 MB upload limit.",
+      "section": "brand",
+      "tier": "community",
+      "words": 200,
+      "lastUpdated": "2026-06-29",
       "demoIds": []
     },
     {
@@ -1934,8 +1946,8 @@
       "summary": "SvGrid ships with a comprehensive automated test suite. This page is the honest accounting of what we test, what we don't, and where coverage stands today.",
       "section": "help",
       "tier": "community",
-      "words": 914,
-      "lastUpdated": "2026-06-16",
+      "words": 938,
+      "lastUpdated": "2026-06-30",
       "demoIds": []
     },
     {

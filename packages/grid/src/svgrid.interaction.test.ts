@@ -309,6 +309,36 @@ describe('SvGrid interactions - cell pointer events', () => {
       destroy()
     }
   })
+
+  // issue #23: a mouse drag extends the cell range, but a touch drag must NOT -
+  // it should leave the single tapped cell selected so the finger-drag scrolls.
+  async function dragSelectCount(pointerType: 'mouse' | 'touch'): Promise<number> {
+    const { target, destroy } = await mountInteractive()
+    try {
+      const a = target.querySelector('[data-svgrid-row="0"][data-svgrid-col="0"]') as HTMLElement | null
+      const c = target.querySelector('[data-svgrid-row="0"][data-svgrid-col="2"]') as HTMLElement | null
+      if (!a || !c) return -1 // jsdom didn't lay the cells out; caller skips
+      a.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, button: 0, pointerType }))
+      await tick()
+      c.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true, pointerId: 1, pointerType }))
+      await tick()
+      return target.querySelectorAll('[data-selected-range="true"]').length
+    } finally {
+      destroy()
+    }
+  }
+
+  it('mouse drag extends the selection across cells', async () => {
+    const n = await dragSelectCount('mouse')
+    if (n < 0) return
+    expect(n).toBeGreaterThan(1) // (0,0) -> (0,2) selects the row's 3 cells
+  })
+
+  it('touch drag does not start a range selection (issue #23)', async () => {
+    const n = await dragSelectCount('touch')
+    if (n < 0) return
+    expect(n).toBeLessThanOrEqual(1) // only the tapped cell; finger-drag scrolls
+  })
 })
 
 describe('SvGrid interactions - copy', () => {

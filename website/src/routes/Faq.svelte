@@ -16,7 +16,7 @@
         },
         {
           q: 'Is the library covered by tests?',
-          a: 'Yes. 168 tests across 14 files. Vitest suite with mounted-component behavioral tests against the real <SvGrid /> render layer plus pure unit tests for the headless engine, virtualization, accessibility, and formatting helpers. v1.0 coverage: 92.2% lines / 90.9% statements / 82.9% functions / 82.2% branches on the measurable surface (the SvGrid render component is covered separately by 60+ behavioral mount tests because its layout / paint branches depend on real browser metrics). Full breakdown on the Testing & Quality page.',
+          a: 'Yes. 1,191 tests across 61 files. Vitest suite with mounted-component behavioral tests against the real <SvGrid /> render layer plus pure unit tests for the headless engine, virtualization, accessibility, and formatting helpers. v1.0 coverage: 96.8% lines / 94.8% statements / 94.6% functions / 85.2% branches on the measurable surface (the SvGrid render component is covered separately by 60+ behavioral mount tests because its layout / paint branches depend on real browser metrics). Full breakdown on the Testing & Quality page.',
         },
         {
           q: 'Does it support Svelte 4?',

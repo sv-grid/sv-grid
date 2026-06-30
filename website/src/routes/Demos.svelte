@@ -7,6 +7,7 @@
    */
   import { demos, demoGroups, findDemo } from '../lib/demos'
   import SourceModal from '../components/SourceModal.svelte'
+  import DemoPicker from '../components/DemoPicker.svelte'
   import { openInStackBlitz } from '../lib/stackblitz'
   import { router } from '../lib/router.svelte'
 
@@ -117,6 +118,25 @@
   let query = $state('')
   let searchEl = $state<HTMLInputElement | null>(null)
 
+  // Clicking the search box opens a full visual picker (all demos as cards
+  // with thumbnails + descriptions), Bryntum-style. Landing on /demos with no
+  // specific demo (or /demos/browse) opens it too, so it's the front door.
+  let pickerOpen = $state(false)
+  function openPicker() {
+    if (pickerOpen) return
+    pickerOpen = true
+    searchEl?.blur()
+  }
+  function closePicker() {
+    pickerOpen = false
+    // Return focus to the trigger. Safe: the box no longer opens on focus,
+    // only on click / Enter / ArrowDown, so this won't reopen the modal.
+    queueMicrotask(() => searchEl?.focus())
+  }
+  $effect(() => {
+    if (demoId === '' || demoId === 'browse') pickerOpen = true
+  })
+
   function tokens(q: string): string[] {
     return q.toLowerCase().split(/\s+/).filter(Boolean)
   }
@@ -179,8 +199,7 @@
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
       e.preventDefault()
-      searchEl?.focus()
-      searchEl?.select()
+      openPicker()
     }
     window.addEventListener('keydown', onGlobalKey)
     return () => window.removeEventListener('keydown', onGlobalKey)
@@ -301,18 +320,21 @@
       </svg>
       <input
         bind:this={searchEl}
-        bind:value={query}
         type="search"
-        placeholder="Search demos…"
-        aria-label="Search demos"
+        value=""
+        placeholder="Browse demos…"
+        aria-label="Browse demos"
         class="demo-search-input"
-        onkeydown={onSearchKey}
+        readonly
+        onmousedown={(e) => { e.preventDefault(); openPicker() }}
+        onkeydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+            e.preventDefault()
+            openPicker()
+          }
+        }}
       />
-      {#if query}
-        <button type="button" class="demo-search-clear" aria-label="Clear search" onclick={() => (query = '')}>×</button>
-      {:else}
-        <kbd class="demo-search-kbd" aria-hidden="true">/</kbd>
-      {/if}
+      <kbd class="demo-search-kbd" aria-hidden="true">/</kbd>
     </div>
 
     <nav aria-label="Examples">
@@ -493,6 +515,14 @@
   />
 {/if}
 
+{#if pickerOpen}
+  <DemoPicker
+    currentId={current.id}
+    onSelect={(id) => { pickerOpen = false; go(id) }}
+    onClose={closePicker}
+  />
+{/if}
+
 <style>
   /* ---- Mobile sidebar drawer ------------------------------------------
      On >=768px the sidebar is a normal in-flow column. Below that it
@@ -575,17 +605,6 @@
     background: var(--sg-header-bg, transparent);
     pointer-events: none;
   }
-  .demo-search-clear {
-    position: absolute; right: 6px;
-    width: 22px; height: 22px;
-    display: inline-flex; align-items: center; justify-content: center;
-    border: 0; background: transparent;
-    color: var(--sg-muted, #94a3b8);
-    font-size: 18px; line-height: 1; cursor: pointer;
-    border-radius: 4px;
-  }
-  .demo-search-clear:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.15)); color: var(--sg-fg, #e2e8f0); }
-
   .demo-row { display: flex; align-items: baseline; gap: 8px; }
   .demo-row-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .demo-row-cat {

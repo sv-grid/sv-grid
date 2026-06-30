@@ -392,6 +392,49 @@ function collectionLd(name, url, items) {
   }
 }
 
+/** Parse the roadmap items (planned, grouped by area, + recently shipped) from
+ *  Roadmap.svelte so /roadmap gets a crawlable body + ItemList JSON-LD. */
+async function parseRoadmap() {
+  const src = await readFile(join(ROOT, 'website', 'src', 'routes', 'Roadmap.svelte'), 'utf-8')
+  const pStart = src.indexOf('const planned')
+  const pEnd = src.indexOf('const shipped', pStart)
+  const groups = []
+  let cur = null
+  for (const line of src.slice(pStart, pEnd).split('\n')) {
+    const am = line.match(/area:\s*'((?:\\.|[^'\\])*)'/)
+    if (am) { cur = { area: unesc(am[1]), items: [] }; groups.push(cur); continue }
+    const tm = line.match(/title:\s*'((?:\\.|[^'\\])*)'/)
+    const em = line.match(/effort:\s*'([SML])'/)
+    if (tm && em && cur) {
+      const nm = line.match(/note:\s*'((?:\\.|[^'\\])*)'/)
+      cur.items.push({ title: unesc(tm[1]), effort: em[1], note: nm ? unesc(nm[1]) : '' })
+    }
+  }
+  // Shipped titles can be single- OR double-quoted (some contain apostrophes).
+  const sBlock = src.slice(src.indexOf('const shipped'), src.indexOf('const effortLabel'))
+  const sre = /title:\s*(?:'((?:\\.|[^'\\])*)'|"((?:\\.|[^"\\])*)")/g
+  const shipped = []
+  let sm
+  while ((sm = sre.exec(sBlock))) shipped.push(unesc(sm[1] ?? sm[2]))
+  return { groups, shipped }
+}
+
+function roadmapIndexBody(roadmap) {
+  const total = roadmap.groups.reduce((n, g) => n + g.items.length, 0)
+  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Roadmap - What We Are Building Next</h1><p>${total} planned features for the SvGrid Svelte 5 data grid, grouped by area, plus ${roadmap.shipped.length} recently shipped. An honest, living account - the <a href="${BASE}docs/help/missing-features">full accounting</a> lists workarounds available today.</p>`
+  for (const g of roadmap.groups) {
+    html += `<h2>${escapeAttr(g.area)}</h2><ul>`
+    for (const it of g.items) html += `<li>${escapeAttr(it.title)}${it.note ? ' - ' + escapeAttr(it.note) : ''}</li>`
+    html += `</ul>`
+  }
+  if (roadmap.shipped.length) {
+    html += `<h2>Recently shipped</h2><ul>`
+    for (const t of roadmap.shipped) html += `<li>${escapeAttr(t)}</li>`
+    html += `</ul>`
+  }
+  return html + `</main>`
+}
+
 function faqLd(items) {
   return {
     '@context': 'https://schema.org',
@@ -590,6 +633,7 @@ async function main() {
   // or after their date (the daily deploy cron handles the drip).
   const buildDate = new Date().toISOString().slice(0, 10)
   const blogPosts = (await parseBlog()).filter((p) => p.date <= buildDate)
+  const roadmap = await parseRoadmap()
   // Community discussions baked by tools/fetch-discussions.mjs (runs as the
   // website prebuild, before this). Empty when no token / no discussions.
   let discussionsData = { discussions: [], categories: [], totalCount: 0 }
@@ -762,6 +806,9 @@ async function main() {
       if (discussionsData.discussions?.length) {
         html = injectJsonLd(html, collectionLd('SvGrid Community Discussions', url, discussionsData.discussions.map((d) => ({ name: d.title, url: d.url }))))
       }
+    } else if (route === 'roadmap') {
+      body = roadmapIndexBody(roadmap)
+      html = injectJsonLd(html, collectionLd('SvGrid Roadmap', url, roadmap.groups.flatMap((g) => g.items.map((it) => ({ name: it.title })))))
     } else if (route === 'faq') {
       body = faqIndexBody(faqItems)
       if (faqItems.length) html = injectJsonLd(html, faqLd(faqItems))

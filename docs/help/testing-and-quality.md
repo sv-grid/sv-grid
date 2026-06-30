@@ -6,7 +6,7 @@ stands today.
 
 ## Headline numbers (v1.0)
 
-> **92.2% line coverage** on the testable surface
+> **96.8% line coverage** on the testable surface
 > (`pnpm --filter @svgrid/grid test:lib`)
 
 | Metric | Coverage | Threshold |
@@ -96,7 +96,7 @@ and is documented inline with the reasoning for each entry.
 | `a11y.test.ts`, `a11y.contract.test.ts` | ARIA prop builders + contract | Pure unit |
 | `core.performance.test.ts` | Engine performance under large row counts | Benchmark |
 
-Total: **168 tests** across **14 test files**.
+Total: **1,191 tests** across **61 test files** (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
 
 ## Quality controls beyond unit tests
 

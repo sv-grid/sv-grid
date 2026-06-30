@@ -8,93 +8,129 @@
    *
    * Effort: S (small) / M (medium) / L (large) - same scale as the doc.
    */
+  import {
+    SvGrid,
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    renderSnippet,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
   type Effort = 'S' | 'M' | 'L'
-  type Item = { title: string; effort: Effort; note?: string }
+  type Lane = 'planned' | 'in_progress' | 'shipped'
+  // status defaults to planned; tag the few in-flight items with 'in_progress'.
+  type Item = { title: string; effort: Effort; note?: string; discussion?: number; status?: 'in_progress' }
   type Group = { area: string; items: Item[] }
 
   const planned: Group[] = [
     {
       area: 'Columns',
       items: [
-        { title: 'Column spanning (colSpan on cell context)', effort: 'L' },
+        { discussion: 3, title: 'Column spanning (colSpan on cell context)', effort: 'L' },
       ],
     },
     {
       area: 'Rows',
       items: [
-        { title: 'Engine-level full-width detail row API', effort: 'M', note: 'Demo 106 ships the sentinel-row pattern today.' },
-        { title: 'Built-in row dragging - managed, unmanaged, drop zones, grid-to-grid', effort: 'L', note: 'Demo 105 covers the basic single-grid case in user-land.' },
-        { title: 'Variable row height on the <SvGrid> component', effort: 'M', note: 'Available via the headless virtualizer today.' },
-        { title: 'Row spanning (merged cells across rows)', effort: 'L' },
+        { status: 'in_progress', discussion: 4, title: 'Engine-level full-width detail row API', effort: 'M', note: 'Demo 106 ships the sentinel-row pattern today.' },
+        { status: 'in_progress', discussion: 5, title: 'Built-in row dragging - managed, unmanaged, drop zones, grid-to-grid', effort: 'L', note: 'Demo 105 covers the basic single-grid case in user-land.' },
+        { discussion: 6, title: 'Variable row height on the <SvGrid> component', effort: 'M', note: 'Available via the headless virtualizer today.' },
+        { discussion: 7, title: 'Row spanning (merged cells across rows)', effort: 'L' },
+        { title: 'Built-in tree data - native expand/collapse for hierarchical rows, with lazy children', effort: 'L', note: 'Works today via your own derived state (demo 28 + the tree-rows guide); this brings a real tree row model into the engine.', discussion: 26 },
       ],
     },
     {
       area: 'Cells',
       items: [
-        { title: 'Built-in cell flash / animated change highlight on ColumnDef', effort: 'S', note: 'Demos roll their own today via renderSnippet.' },
-        { title: 'Formula language / formula editor (enterprise parity)', effort: 'L', note: 'Demo 83 ships an in-grid formula engine (refs, ranges, SUM/AVG/IF/COUNTIF, cycle detection); this moves it into the engine.' },
-        { title: 'Built-in rich-text / Markdown cell renderer with safe sanitization', effort: 'M' },
+        { discussion: 8, title: 'Built-in cell flash / animated change highlight on ColumnDef', effort: 'S', note: 'Demos roll their own today via renderSnippet.' },
+        { discussion: 9, title: 'Formula language / formula editor (enterprise parity)', effort: 'L', note: 'Demo 83 ships an in-grid formula engine (refs, ranges, SUM/AVG/IF/COUNTIF, cycle detection); this moves it into the engine.' },
+        { discussion: 10, title: 'Built-in rich-text / Markdown cell renderer with safe sanitization', effort: 'M' },
       ],
     },
     {
       area: 'Filtering',
       items: [
-        { title: 'Floating filters with per-operator parity', effort: 'M', note: 'Inline filter row exists; this adds the per-operator UI under the funnel.' },
-        { title: 'Multi-filter on a single column (AND / OR within a column)', effort: 'M' },
+        { status: 'in_progress', discussion: 11, title: 'Floating filters with per-operator parity', effort: 'M', note: 'Inline filter row exists; this adds the per-operator UI under the funnel.' },
+        { discussion: 12, title: 'Multi-filter on a single column (AND / OR within a column)', effort: 'M' },
       ],
     },
     {
       area: 'Editing',
       items: [
-        { title: 'Per-column valueParser', effort: 'S' },
-        { title: 'Per-column validate() returning string | true', effort: 'S', note: 'Async validation is demonstrated end-to-end in demo 103; this folds the per-column validate hook into the engine.' },
-        { title: 'Programmatic api.startEditing() / stopEditing()', effort: 'S' },
-        { title: 'Full-row editing mode', effort: 'M' },
-        { title: 'Custom calendar systems for the date editor (Hijri, Buddhist, fiscal-year, custom holidays)', effort: 'M', note: 'Gregorian date / datetime / time editors already ship as editorType.' },
-        { title: 'Async option loading + virtualized dropdown for the rich-select editor', effort: 'M', note: 'The combobox itself ships as editorType: rich-select; this adds async sources and a virtualized list for 10k+ options.' },
+        { discussion: 13, title: 'Per-column valueParser', effort: 'S' },
+        { discussion: 14, title: 'Per-column validate() returning string | true', effort: 'S', note: 'Async validation is demonstrated end-to-end in demo 103; this folds the per-column validate hook into the engine.' },
+        { discussion: 15, title: 'Programmatic api.startEditing() / stopEditing()', effort: 'S' },
+        { discussion: 16, title: 'Full-row editing mode', effort: 'M' },
+        { discussion: 17, title: 'Custom calendar systems for the date editor (Hijri, Buddhist, fiscal-year, custom holidays)', effort: 'M', note: 'Gregorian date / datetime / time editors already ship as editorType.' },
+        { discussion: 18, title: 'Async option loading + virtualized dropdown for the rich-select editor', effort: 'M', note: 'The combobox itself ships as editorType: rich-select; this adds async sources and a virtualized list for 10k+ options.' },
       ],
     },
     {
       area: 'Menus',
       items: [
-        { title: 'Custom column menu items / actions API to extend the built-in menu with your own commands', effort: 'S' },
-        { title: 'Built-in row + cell context menu API driven by Svelte snippets', effort: 'M', note: 'Demo 67 ships the user-land pattern today; this moves it into the engine.' },
-        { title: 'Cascading multi-level menus with keyboard navigation', effort: 'M' },
-        { title: 'Programmatic api.openColumnMenu(colId) / api.openContextMenu(rowId, colId)', effort: 'S' },
-        { title: 'Menu theming hooks (per-item icon, separator, danger style, disabled state)', effort: 'S' },
+        { discussion: 19, title: 'Custom column menu items / actions API to extend the built-in menu with your own commands', effort: 'S' },
+        { discussion: 20, title: 'Built-in row + cell context menu API driven by Svelte snippets', effort: 'M', note: 'Demo 67 ships the user-land pattern today; this moves it into the engine.' },
+        { discussion: 21, title: 'Cascading multi-level menus with keyboard navigation', effort: 'M' },
+        { discussion: 22, title: 'Programmatic api.openColumnMenu(colId) / api.openContextMenu(rowId, colId)', effort: 'S' },
+        { discussion: 31, title: 'Menu theming hooks (per-item icon, separator, danger style, disabled state)', effort: 'S' },
       ],
     },
     {
       area: 'Pivot (@svgrid/enterprise)',
       items: [
-        { title: 'Custom aggregation functions registered on the Pivot Designer', effort: 'S' },
-        { title: 'Per-measure value formatters (currency, percent, accounting, custom)', effort: 'S' },
-        { title: 'Saved pivot layouts with per-user persistence + shareable URL', effort: 'M', note: 'Named views (demo 143) save grid state today; this is the pivot-specific layout snapshot.' },
+        { discussion: 32, title: 'Custom aggregation functions registered on the Pivot Designer', effort: 'S' },
+        { discussion: 33, title: 'Per-measure value formatters (currency, percent, accounting, custom)', effort: 'S' },
+        { discussion: 34, title: 'Saved pivot layouts with per-user persistence + shareable URL', effort: 'M', note: 'Named views (demo 143) save grid state today; this is the pivot-specific layout snapshot.' },
       ],
     },
     {
       area: 'Export (@svgrid/enterprise)',
       items: [
-        { title: 'PDF export layout extensions: portrait / landscape toggle, cover page, repeating section headers, multi-section reports', effort: 'M', note: 'Branded headers, footers, and logo (demo 57) already ship; this is the page-layout pass.' },
-        { title: 'PDF export with charts and KPI strip alongside the table', effort: 'L' },
-        { title: 'Server-side export pipeline that streams large datasets without the browser-memory ceiling', effort: 'L' },
-        { title: 'Saveable export templates / presets the user can reuse across reports', effort: 'S' },
+        { discussion: 35, title: 'PDF export layout extensions: portrait / landscape toggle, cover page, repeating section headers, multi-section reports', effort: 'M', note: 'Branded headers, footers, and logo (demo 57) already ship; this is the page-layout pass.' },
+        { discussion: 36, title: 'PDF export with charts and KPI strip alongside the table', effort: 'L' },
+        { discussion: 37, title: 'Server-side export pipeline that streams large datasets without the browser-memory ceiling', effort: 'L' },
+        { discussion: 38, title: 'Saveable export templates / presets the user can reuse across reports', effort: 'S' },
       ],
     },
     {
       area: 'Data adapters and integrations',
       items: [
-        { title: 'Packaged first-class adapters for OData, Supabase, Firestore', effort: 'M', note: 'GraphQL and REST adapters ship as demos 72 and 79; this formalises the contract and adds three new sources.' },
-        { title: 'Streaming adapter for Kafka / Pulsar / Redpanda over a thin server proxy', effort: 'L' },
-        { title: 'Auth helpers for data adapters: Bearer, OAuth flow, signed-URL refresh', effort: 'S' },
+        { discussion: 39, title: 'Packaged first-class adapters for OData, Supabase, Firestore', effort: 'M', note: 'GraphQL and REST adapters ship as demos 72 and 79; this formalises the contract and adds three new sources.' },
+        { discussion: 40, title: 'Streaming adapter for Kafka / Pulsar / Redpanda over a thin server proxy', effort: 'L' },
+        { discussion: 41, title: 'Auth helpers for data adapters: Bearer, OAuth flow, signed-URL refresh', effort: 'S' },
       ],
     },
     {
       area: 'Templates and starters',
       items: [
-        { title: 'Additional industry templates: ticketing, field-service intake, multi-site retail ops, telco service-assurance', effort: 'M', note: 'CRM (48), EMR (41), logistics (42), industrial (14, 20), test-systems (120), realtime orders (34), and admin dashboards (22, 49) already ship.' },
-        { title: 'SvelteKit + REST starter with auth scaffold (cookies, role gating, server load)', effort: 'M' },
-        { title: 'Pivot + drill-through dashboard template combining demo 122 + demo 125 into one ready-to-deploy starter', effort: 'M' },
+        { discussion: 42, title: 'Additional industry templates: ticketing, field-service intake, multi-site retail ops, telco service-assurance', effort: 'M', note: 'CRM (48), EMR (41), logistics (42), industrial (14, 20), test-systems (120), realtime orders (34), and admin dashboards (22, 49) already ship.' },
+        { discussion: 43, title: 'SvelteKit + REST starter with auth scaffold (cookies, role gating, server load)', effort: 'M' },
+        { discussion: 44, title: 'Pivot + drill-through dashboard template combining demo 122 + demo 125 into one ready-to-deploy starter', effort: 'M' },
+      ],
+    },
+    {
+      area: 'AI (@svgrid/enterprise)',
+      items: [
+        { title: 'Generate columns - and whole grids - from a prompt', effort: 'L', note: 'Builds on the AI pack (natural-language filter, smart fill, summarise); this points AI at authoring, not just querying.', discussion: 27 },
+      ],
+    },
+    {
+      area: 'SvelteKit',
+      items: [
+        { title: 'Official SvelteKit integration - load helpers, form actions, streaming SSR', effort: 'M', note: 'The create-svgrid scaffold and admin template exist today; this is a first-party module that makes the grid feel native to SvelteKit.', discussion: 28 },
+      ],
+    },
+    {
+      area: 'Mobile',
+      items: [
+        { title: 'Built-in responsive mode - auto card view under a breakpoint, with touch-friendly editing', effort: 'M', note: 'The mobile card view is a userland pattern today (demo 81); this makes it a first-class mode.', discussion: 29 },
+      ],
+    },
+    {
+      area: 'Charts',
+      items: [
+        { title: 'Range-charting and cross-filter dashboards', effort: 'M', note: 'Charts already ship (SvGridChart); this adds select-a-range-to-chart and click-to-filter across grids.', discussion: 30 },
       ],
     },
   ]
@@ -203,9 +239,74 @@
     M: '#f59e0b',
     L: '#ef4444',
   }
+
+  // ---- Kanban model: one dataset, two views (board + grid) ----------------
+  type Card = {
+    lane: Lane
+    area: string
+    title: string
+    effort: Effort | ''
+    note?: string
+    discussion?: number
+    demo?: string
+  }
+  const LANES: { id: Lane; label: string; tint: string; blurb: string }[] = [
+    { id: 'planned',     label: 'Planned',     tint: '#64748b', blurb: 'Accounted for, not started.' },
+    { id: 'in_progress', label: 'In progress', tint: '#f59e0b', blurb: 'A demo exists; moving it into the engine.' },
+    { id: 'shipped',     label: 'Shipped',     tint: '#22c55e', blurb: 'Landed in v1.' },
+  ]
+  const STATUS_LABEL: Record<Lane, string> = { planned: 'Planned', in_progress: 'In progress', shipped: 'Shipped' }
+  const STATUS_TINT: Record<Lane, string> = { planned: '#64748b', in_progress: '#f59e0b', shipped: '#22c55e' }
+
+  const cards: Card[] = [
+    ...planned.flatMap((g) =>
+      g.items.map((i): Card => ({
+        lane: i.status === 'in_progress' ? 'in_progress' : 'planned',
+        area: g.area,
+        title: i.title,
+        effort: i.effort,
+        note: i.note,
+        discussion: i.discussion,
+      })),
+    ),
+    ...shipped.map((s): Card => ({ lane: 'shipped', area: 'Shipped', title: s.title, effort: '', demo: s.demo })),
+  ]
+  const byLane = (id: Lane) => cards.filter((c) => c.lane === id)
+
+  let view = $state<'board' | 'table'>('board')
+
+  // Table view dogfoods the grid itself: the same `cards` rendered through SvGrid.
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+  const tableColumns: ColumnDef<typeof features, Card>[] = [
+    { field: 'lane', header: 'Status', width: 140, cell: (c) => renderSnippet(StatusCell, { s: c.row.original.lane }) },
+    { field: 'area', header: 'Area', width: 160 },
+    { field: 'title', header: 'Item', width: 460 },
+    { field: 'effort', header: 'Effort', width: 110, cell: (c) => renderSnippet(EffortCell, { e: c.row.original.effort }) },
+  ]
 </script>
 
-<section class="mx-auto max-w-5xl px-6 py-16">
+{#snippet EffortCell(props: { e: Effort | '' })}
+  {#if props.e}
+    <span class="inline-flex items-center gap-1.5 text-xs" style="color: var(--site-muted);">
+      <span class="inline-block h-2.5 w-2.5 rounded-full" style:background={effortColor[props.e]}></span>
+      {effortLabel[props.e]}
+    </span>
+  {:else}
+    <span class="text-xs" style="color: var(--site-muted);">&ndash;</span>
+  {/if}
+{/snippet}
+{#snippet StatusCell(props: { s: Lane })}
+  <span
+    class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold"
+    style:color={STATUS_TINT[props.s]}
+    style:background={`color-mix(in oklab, ${STATUS_TINT[props.s]} 15%, transparent)`}
+  >
+    <span class="inline-block h-1.5 w-1.5 rounded-full" style:background={STATUS_TINT[props.s]}></span>
+    {STATUS_LABEL[props.s]}
+  </span>
+{/snippet}
+
+<section class="mx-auto max-w-7xl px-6 py-16">
   <header class="mb-10">
     <p class="text-xs font-semibold uppercase tracking-[0.18em]" style="color: var(--site-accent-2);">
       Public roadmap
@@ -234,77 +335,76 @@
     </div>
   </header>
 
-  <!-- Effort legend -->
-  <div class="mb-8 flex flex-wrap items-center gap-4 text-xs" style="color: var(--site-muted);">
-    <span class="font-semibold uppercase tracking-wider">Effort</span>
-    {#each ['S', 'M', 'L'] as const as e}
-      <span class="inline-flex items-center gap-1.5">
-        <span class="inline-block h-2.5 w-2.5 rounded-full" style:background={effortColor[e]}></span>
-        {effortLabel[e]}
-      </span>
-    {/each}
-  </div>
-
-  <div class="grid gap-6 md:grid-cols-2">
-    {#each planned as group}
-      <div
-        class="rounded-xl border p-5"
-        style="border-color: var(--site-border); background: var(--site-bg-elev);"
-      >
-        <h2 class="mb-3 text-lg font-bold" style="color: var(--sg-fg);">{group.area}</h2>
-        <ul class="space-y-3">
-          {#each group.items as item}
-            <li class="flex items-start gap-3">
-              <span
-                class="mt-1.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                style:background={effortColor[item.effort]}
-                title={effortLabel[item.effort] + ' effort'}
-              ></span>
-              <span>
-                <span class="text-sm font-medium" style="color: var(--sg-fg);">{item.title}</span>
-                {#if item.note}
-                  <span class="mt-0.5 block text-xs" style="color: var(--site-muted);">{item.note}</span>
-                {/if}
-              </span>
-            </li>
-          {/each}
-        </ul>
-      </div>
-    {/each}
-  </div>
-
-  <!-- Recently shipped -->
-  <section class="mt-14">
-    <h2 class="mb-1 text-2xl font-bold tracking-tight" style="color: var(--sg-fg);">
-      Recently shipped
-    </h2>
-    <p class="mb-5 text-sm" style="color: var(--site-muted);">
-      Items that were on this roadmap and have since landed in v1.0.
-    </p>
-    <ul class="grid gap-2 sm:grid-cols-2">
-      {#each shipped as item (item.title)}
-        <li class="flex items-start gap-2 text-sm" style="color: var(--site-fg);">
-          <svg
-            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e"
-            stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
-            aria-hidden="true" class="mt-0.5 shrink-0"
-          >
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-          <span>
-            <span>{item.title}</span>
-            {#if item.demo}
-              <a class="ml-1.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                style="color: var(--site-accent-2); background: color-mix(in oklab, var(--site-accent-2) 12%, transparent);"
-                href={`#/demos/${item.demo}`}>
-                demo
-              </a>
-            {/if}
-          </span>
-        </li>
+  <!-- Toolbar: effort legend + board/table toggle. This page dogfoods the
+       grid's "Kanban board + grid, one dataset, two views" pattern (demo 76). -->
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center gap-4 text-xs" style="color: var(--site-muted);">
+      <span class="font-semibold uppercase tracking-wider">Effort</span>
+      {#each ['S', 'M', 'L'] as const as e}
+        <span class="inline-flex items-center gap-1.5">
+          <span class="inline-block h-2.5 w-2.5 rounded-full" style:background={effortColor[e]}></span>
+          {effortLabel[e]}
+        </span>
       {/each}
-    </ul>
-  </section>
+    </div>
+    <div class="rm-seg" role="tablist" aria-label="Roadmap view">
+      <button type="button" role="tab" aria-selected={view === 'board'} class:active={view === 'board'} onclick={() => (view = 'board')}>Board</button>
+      <button type="button" role="tab" aria-selected={view === 'table'} class:active={view === 'table'} onclick={() => (view = 'table')}>Table</button>
+    </div>
+  </div>
+
+  {#if view === 'board'}
+    <div class="rm-board">
+      {#each LANES as lane}
+        <section class="rm-lane" aria-label={lane.label}>
+          <header class="rm-lane-head">
+            <span class="rm-lane-dot" style:background={lane.tint}></span>
+            <span class="rm-lane-label">{lane.label}</span>
+            <span class="rm-lane-count">{byLane(lane.id).length}</span>
+          </header>
+          <p class="rm-lane-blurb">{lane.blurb}</p>
+          <div class="rm-lane-body">
+            {#each byLane(lane.id) as c (c.title)}
+              <article class="rm-card">
+                <div class="rm-card-top">
+                  <span class="rm-area">{c.area}</span>
+                  {#if c.effort}
+                    <span class="rm-effort" style:background={effortColor[c.effort]} title={`${effortLabel[c.effort]} effort`}></span>
+                  {/if}
+                </div>
+                <div class="rm-card-title">{c.title}</div>
+                {#if c.note}<p class="rm-card-note">{c.note}</p>{/if}
+                {#if c.discussion || c.demo}
+                  <div class="rm-card-links">
+                    {#if c.discussion}
+                      <a href={`https://github.com/orgs/sv-grid/discussions/${c.discussion}`} target="_blank" rel="noopener external">Discuss &rarr;</a>
+                    {/if}
+                    {#if c.demo}
+                      <a href={`#/demos/${c.demo}`}>Demo</a>
+                    {/if}
+                  </div>
+                {/if}
+              </article>
+            {/each}
+          </div>
+        </section>
+      {/each}
+    </div>
+  {:else}
+    <div class="rm-table">
+      <SvGrid
+        data={cards}
+        columns={tableColumns}
+        features={features}
+        filterMode="menu"
+        showPagination={false}
+        virtualization={true}
+        rowHeight={40}
+        containerHeight="640px"
+        fitColumns={true}
+      />
+    </div>
+  {/if}
 
   <!-- Test coverage / quality -->
   <section class="mt-14">
@@ -319,14 +419,14 @@
     <div class="grid gap-4 sm:grid-cols-2 mb-4">
       <div class="rounded-xl border p-5" style="border-color: var(--site-border); background: var(--site-bg-elev);">
         <div class="flex items-baseline gap-3 mb-2">
-          <span class="text-3xl font-extrabold" style="color: var(--site-accent-2);">314</span>
+          <span class="text-3xl font-extrabold" style="color: var(--site-accent-2);">1,191</span>
           <span class="text-sm font-semibold uppercase tracking-wider" style="color: var(--site-muted);">
             unit + jsdom tests
           </span>
         </div>
         <p class="text-sm" style="color: var(--sg-fg);">
-          27 vitest files. Pure helpers, mounted-grid component tests, API exercises, DOM-attribute invariants.
-          Runs in <span class="font-semibold">~10s</span>. Command: <code class="text-xs">pnpm test</code>.
+          61 vitest files. Pure helpers, mounted-grid component tests, API exercises, DOM-attribute invariants.
+          Runs in <span class="font-semibold">~20s</span>. Command: <code class="text-xs">pnpm test</code>.
         </p>
       </div>
 
@@ -376,3 +476,103 @@
     features</a> page for workarounds available today.
   </p>
 </section>
+
+<style>
+  /* Board/table toggle */
+  .rm-seg {
+    display: inline-flex;
+    border: 1px solid var(--site-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--site-bg-elev);
+  }
+  .rm-seg button {
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--site-muted);
+    background: transparent;
+    cursor: pointer;
+  }
+  .rm-seg button.active {
+    color: #fff;
+    background: var(--site-accent, #2563eb);
+  }
+
+  /* Kanban board */
+  .rm-board {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  @media (min-width: 860px) {
+    .rm-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  .rm-lane {
+    border: 1px solid var(--site-border);
+    border-radius: 14px;
+    background: var(--site-bg-elev);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .rm-lane-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--sg-fg);
+  }
+  .rm-lane-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .rm-lane-label { font-size: 15px; }
+  .rm-lane-count {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--site-muted);
+    background: color-mix(in oklab, var(--site-muted) 16%, transparent);
+    border-radius: 999px;
+    padding: 1px 9px;
+  }
+  .rm-lane-blurb { margin-top: 3px; font-size: 12px; color: var(--site-muted); }
+  .rm-lane-body {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 68vh;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  /* Cards */
+  .rm-card {
+    border: 1px solid var(--site-border);
+    border-radius: 10px;
+    background: var(--sg-bg, #fff);
+    padding: 11px 12px;
+  }
+  .rm-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .rm-area {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--site-accent-2);
+  }
+  .rm-effort { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .rm-card-title { margin-top: 5px; font-size: 13.5px; font-weight: 600; line-height: 1.35; color: var(--sg-fg); }
+  .rm-card-note { margin-top: 5px; font-size: 12px; line-height: 1.4; color: var(--site-muted); }
+  .rm-card-links { margin-top: 8px; display: flex; gap: 14px; }
+  .rm-card-links a { font-size: 12px; font-weight: 600; color: var(--site-accent-2); }
+  .rm-card-links a:hover { text-decoration: underline; }
+
+  /* Table view */
+  .rm-table {
+    border: 1px solid var(--site-border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+</style>

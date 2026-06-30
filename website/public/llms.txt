@@ -17,6 +17,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 ## brand
 
 - [SvGrid - Company / Brand Description](https://svgrid.com/brand/company-description): *About the company and brand behind SvGrid. For partner listings, press kits, marketplace profiles, and procurement forms. Product descriptions live elsewhere.*
+- [GitHub social preview images](https://svgrid.com/brand/social/README): On-brand 1280x640 cards for GitHub's repo **Social preview** (Settings -> General -> Social preview). All are PNG, 1280x640 (GitHub's recommended size), and well under the 1 MB upload limit.
 
 ## Compliance
 

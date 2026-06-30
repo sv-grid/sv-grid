@@ -8,9 +8,12 @@
 //   - Capped with --limit (default 15) so you control how many get created.
 //
 // You run this with YOUR token (the discussions are authored by that account):
-//   - A classic PAT with `repo` + `write:discussion`, or a fine-grained PAT
-//     with Discussions: Read and write on sv-grid/sv-grid.
-//   - Or `gh auth token` (if your gh login has discussion write scope).
+//   - Classic PAT: `public_repo` scope (this repo is public) or `repo`. NOTE the
+//     classic `write:discussion` scope is for TEAM discussions, not repository
+//     discussions - it will NOT work here; use `public_repo`/`repo`.
+//   - Fine-grained PAT: "Discussions: Read and write" - found under *Repository*
+//     permissions after scoping the token to sv-grid/sv-grid (not Account perms).
+//   - Or `gh auth token` (if your gh login can write this repo's discussions).
 //
 //   GITHUB_TOKEN=ghp_xxx node tools/seed-discussions.mjs                 # dry-run
 //   GITHUB_TOKEN=ghp_xxx node tools/seed-discussions.mjs --create        # post them
@@ -31,6 +34,7 @@ const flag = (k, d) => {
   return hit ? hit.slice(k.length + 3) : d
 }
 const DO_CREATE = args.includes('--create')
+const PREVIEW = args.includes('--preview') // offline: parse + print, no GitHub calls
 const CATEGORY = flag('category', 'Ideas')
 const LIMIT = Number(flag('limit', '15'))
 const SOURCE = flag('source', 'planned') // 'planned' | 'shipped'
@@ -96,6 +100,22 @@ async function gql(query, variables) {
 }
 
 async function main() {
+  // Offline preview - no token, no network. Shows exactly what would be posted.
+  if (PREVIEW) {
+    const items = (await parseRoadmap(SOURCE)).slice(0, Math.max(0, LIMIT))
+    console.log(
+      `PREVIEW (offline) - ${items.length} discussion(s) would be created in "${CATEGORY}" from source "${SOURCE}":\n`,
+    )
+    items.forEach((it, i) =>
+      console.log(`  ${i + 1}. ${it.title}  [${it.area}${it.effort ? '/' + it.effort : ''}]`),
+    )
+    if (items[0]) {
+      console.log('\n--- example body (item 1) ---')
+      console.log(bodyFor(items[0]))
+    }
+    console.log('\nTo post: re-run with --create and a GITHUB_TOKEN. Existing titles are skipped.')
+    return
+  }
   if (!TOKEN) {
     console.error('Missing GITHUB_TOKEN (PAT with discussion write, or `gh auth token`).')
     process.exit(1)

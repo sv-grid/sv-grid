@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-06-28 from 197 pages.
+Generated 2026-06-30 from 198 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -112,6 +112,43 @@ is the same team that has shipped grids for over a decade.
 > from jqxGrid to the Smart UI web components, and SvGrid components run in
 > enterprise software at companies including Samsung, Boeing, NVIDIA, Microsoft,
 > Nokia, and Intel.
+
+<!-- =================================================================
+     /brand/social/README  (community)
+     ================================================================== -->
+
+# GitHub social preview images
+
+On-brand 1280x640 cards for GitHub's repo **Social preview** (Settings ->
+General -> Social preview). All are PNG, 1280x640 (GitHub's recommended size),
+and well under the 1 MB upload limit.
+
+| File | Use |
+| --- | --- |
+| `svgrid-github-social.png` | Primary. Headline lockup: "The Svelte 5 data grid. / Headless-first. Render-ready." |
+| `svgrid-github-social-product.png` | Product card: headline + a mini-grid showing an accent-highlighted cell. |
+| `svgrid-github-social-centered.png` | Centered, minimal: mark + wordmark + tagline. |
+
+## Apply on GitHub
+
+1. Repo -> **Settings** -> **General**.
+2. Scroll to **Social preview** -> **Edit** -> upload one of the PNGs above.
+
+(The image lives in GitHub's settings, not in code - it is not auto-read from
+the repo. These files are kept here as the source of truth + for reuse on other
+social cards.)
+
+## Regenerate
+
+```bash
+node tools/render-social-preview.mjs
+```
+
+Renders all three via Chromium (Playwright) at 1280x640. Brand tokens (dark
+navy gradient, the 4-tile mark, the Svelte orange->red accent) are lifted from
+`website/public/og-image.svg`; edit the variant markup in the script to tweak
+copy or layout. Inter is pulled from Google Fonts when online and falls back to
+the system sans otherwise.
 
 <!-- =================================================================
      /changelog  (community)
@@ -18899,7 +18936,7 @@ stands today.
 
 ## Headline numbers (v1.0)
 
-> **92.2% line coverage** on the testable surface
+> **96.8% line coverage** on the testable surface
 > (`pnpm --filter @svgrid/grid test:lib`)
 
 | Metric | Coverage | Threshold |
@@ -18989,7 +19026,7 @@ and is documented inline with the reasoning for each entry.
 | `a11y.test.ts`, `a11y.contract.test.ts` | ARIA prop builders + contract | Pure unit |
 | `core.performance.test.ts` | Engine performance under large row counts | Benchmark |
 
-Total: **168 tests** across **14 test files**.
+Total: **1,191 tests** across **61 test files** (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
 
 ## Quality controls beyond unit tests
 

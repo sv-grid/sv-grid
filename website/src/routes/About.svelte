@@ -87,8 +87,8 @@
       what a user actually sees. TypeScript runs in strict mode across both packages.
     </p>
     <p class="mt-3 text-base" style="color: var(--sg-fg);">
-      Current coverage at v1.0: <strong>92.2% lines / 90.9% statements</strong> on the
-      measurable surface (168 tests across 14 files). The render component
+      Current coverage at v1.0: <strong>96.8% lines / 94.8% statements</strong> on the
+      measurable surface (1,191 tests across 61 files). The render component
       (<code>&lt;SvGrid /&gt;</code>) is covered separately by 60+ behavioral mount tests because
       its layout / paint branches depend on real browser metrics that jsdom doesn't expose.
       Full breakdown on the

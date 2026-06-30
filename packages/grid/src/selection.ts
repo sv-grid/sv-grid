@@ -399,7 +399,12 @@ export function createSelection<
     } else {
       setActiveCell(rowIndex, colIndex);
       setSelection(rowIndex, colIndex);
-      ctx.isDraggingSelection = true;
+      // Range drag-select is a mouse/pen affordance. On touch, starting a drag
+      // here would rubber-band a selection AND fight the browser's native
+      // scroll (we never preventDefault), so a finger-drag to scroll the grid
+      // instead selected cells. Tap still selects the single cell above; we
+      // just don't enter drag-select mode for touch. (issue #23)
+      if (event.pointerType !== "touch") ctx.isDraggingSelection = true;
     }
   }
 
