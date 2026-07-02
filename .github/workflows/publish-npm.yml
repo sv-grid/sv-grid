@@ -37,8 +37,13 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Cap the run so a stuck step (classically `npm publish` blocking on a 2FA
+    # OTP prompt when NPM_TOKEN is not an *automation* token) can't hold the
+    # `publish-grid` concurrency lock for the default 6h and leave the next
+    # scheduled run sitting in "Waiting".
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # need full history + tags for change detection
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -47,7 +52,7 @@ jobs:
         with:
           version: 10.33.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: pnpm
