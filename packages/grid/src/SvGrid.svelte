@@ -3,53 +3,48 @@
   generics="TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData"
 >
   import {
-      getGridCellA11yProps,
-      getGridCellDomId,
-      getGridHeaderA11yProps,
-      getGridRootA11yProps,
-      getGridRowA11yProps,
-      type EditorContext,
-      type CellEditorOption,
-      type Column,
-      type Row,
-      type RowData,
-      type TableFeatures,
-    } from "./index";
+    getGridCellA11yProps,
+    getGridCellDomId,
+    getGridHeaderA11yProps,
+    getGridRootA11yProps,
+    getGridRowA11yProps,
+    type EditorContext,
+    type CellEditorOption,
+    type Column,
+    type Row,
+    type RowData,
+    type TableFeatures,
+  } from "./index";
   import "./sv-grid-scrollbar";
   import "./SvGrid.css";
   import type { Snippet } from "svelte";
   import {
-      RenderSnippetConfig,
-      RenderComponentConfig,
-    } from "./render-component";
-  import {
-      buildSparkline,
-      toSparklineValues,
-    } from "./sparkline";
+    RenderSnippetConfig,
+    RenderComponentConfig,
+  } from "./render-component";
+  import { buildSparkline, toSparklineValues } from "./sparkline";
   import SvGridDropdown from "./SvGridDropdown.svelte";
   import type {
-      Props,
-      SelectionPoint,
-      SelectionRange,
-      CellEditState,
-      FilterOperator,
-      FilterOption,
-      MenuPosition,
-    } from "./SvGrid.types";
+    Props,
+    SelectionPoint,
+    SelectionRange,
+    CellEditState,
+    FilterOperator,
+    FilterOption,
+    MenuPosition,
+  } from "./SvGrid.types";
   import {
-      cfTextStyle,
-      fmtStat,
-      getEditableInputValue,
-      getEditorInputType,
-      toValueArray,
-      getOptionLabel,
-      getOptionColor,
-      colorfulChipStyle,
-      getEditorClass,
-    } from "./SvGrid.helpers";
-  import {
-      createSvGridController,
-    } from "./SvGrid.controller.svelte";
+    cfTextStyle,
+    fmtStat,
+    getEditableInputValue,
+    getEditorInputType,
+    toValueArray,
+    getOptionLabel,
+    getOptionColor,
+    colorfulChipStyle,
+    getEditorClass,
+  } from "./SvGrid.helpers";
+  import { createSvGridController } from "./SvGrid.controller.svelte";
   import GridMenus from "./GridMenus.svelte";
   import GridFooter from "./GridFooter.svelte";
   let props: Props<TFeatures, TData> = $props();
@@ -78,7 +73,9 @@
   const hasVerticalOverflow = $derived(ctrl.hasVerticalOverflow);
   const showGlobalFilterEffective = $derived(ctrl.showGlobalFilterEffective);
   const showFilterRowEffective = $derived(ctrl.showFilterRowEffective);
-  const showInlineColumnFilterEffective = $derived(ctrl.showInlineColumnFilterEffective);
+  const showInlineColumnFilterEffective = $derived(
+    ctrl.showInlineColumnFilterEffective,
+  );
   const showRowSelectionEffective = $derived(ctrl.showRowSelectionEffective);
   const grid = $derived(ctrl.grid);
   const allColumns = $derived(ctrl.allColumns);
@@ -144,7 +141,9 @@
   const toggleGroupInPanel = $derived(ctrl.toggleGroupInPanel);
   const virtualizer = $derived(ctrl.virtualizer);
   const rowVirtualizationEnabled = $derived(ctrl.rowVirtualizationEnabled);
-  const columnVirtualizationEnabled = $derived(ctrl.columnVirtualizationEnabled);
+  const columnVirtualizationEnabled = $derived(
+    ctrl.columnVirtualizationEnabled,
+  );
   const virtualRows = $derived(ctrl.virtualRows);
   // DOM-space spacer heights + capped total: identical to the logical
   // virtualizer values for normal grids, scaled down past
@@ -163,12 +162,22 @@
   // does. Inert (active:false) for columns without `cellFlash`.
   function cellFlashAction(
     node: HTMLElement,
-    params: { rowId: string; value: unknown; active: boolean; className: string },
+    params: {
+      rowId: string;
+      value: unknown;
+      active: boolean;
+      className: string;
+    },
   ) {
     let prevRow = params.rowId;
     let prev = params.value;
     return {
-      update(next: { rowId: string; value: unknown; active: boolean; className: string }) {
+      update(next: {
+        rowId: string;
+        value: unknown;
+        active: boolean;
+        className: string;
+      }) {
         if (next.rowId !== prevRow) {
           // A different row scrolled into this recycled slot - reset, no flash.
           prevRow = next.rowId;
@@ -184,7 +193,10 @@
       },
     };
   }
-  function flashClassFor(cfg: boolean | { className?: string } | undefined): string {
+  function flashClassFor(
+    cfg: boolean | { className?: string } | undefined,
+  ): string {
+    console.log("flash cell");
     if (cfg && typeof cfg === "object" && cfg.className) return cfg.className;
     return "sv-grid-cell-flash";
   }
@@ -546,7 +558,10 @@
       <!-- Custom editor slot. The columnDef provides a snippet that
            receives the editor context (value + commit + cancel) so the
            consumer fully owns the in-cell UI. -->
-      {@const customEditor = column.columnDef.cellEditor as unknown as import('svelte').Snippet<[EditorContext<TData>]>}
+      {@const customEditor = column.columnDef
+        .cellEditor as unknown as import("svelte").Snippet<
+        [EditorContext<TData>]
+      >}
       {@render customEditor({
         cell: row.getAllCells().find((c) => c.column.id === column.id)!,
         row,
@@ -557,19 +572,23 @@
         update: (next: unknown) => {
           // Stage the draft without closing. Live-preview controls
           // (sliders, color pickers) call this on every input tick.
-          ctrl.editingCell = ctrl.editingCell ? { ...ctrl.editingCell, value: next } : ctrl.editingCell
+          ctrl.editingCell = ctrl.editingCell
+            ? { ...ctrl.editingCell, value: next }
+            : ctrl.editingCell;
         },
         commit: (next?: unknown) => {
           // Write + close. If the caller passed a value, stage it
           // first; otherwise save whatever update() last wrote.
           if (next !== undefined) {
-            ctrl.editingCell = ctrl.editingCell ? { ...ctrl.editingCell, value: next } : ctrl.editingCell
+            ctrl.editingCell = ctrl.editingCell
+              ? { ...ctrl.editingCell, value: next }
+              : ctrl.editingCell;
           }
-          saveEditingCell()
+          saveEditingCell();
         },
         cancel: () => {
-          ctrl.editingCell = null
-          ctrl.gridRootEl?.focus({ preventScroll: true })
+          ctrl.editingCell = null;
+          ctrl.gridRootEl?.focus({ preventScroll: true });
         },
       })}
     {:else if ctrl.editingCell?.editorType === "checkbox"}
@@ -623,12 +642,11 @@
       {@const selectedArr = toValueArray(ctrl.editingCell?.value)}
       {@render chipsEditor(opts, multi, selectedArr)}
     {:else if ctrl.editingCell?.editorType === "rating"}
-      {@const ratingVal = Math.max(0, Math.min(5, Math.round(Number(ctrl.editingCell?.value) || 0)))}
-      <span
-        class="sv-grid-rating-editor"
-        role="radiogroup"
-        aria-label="Rating"
-      >
+      {@const ratingVal = Math.max(
+        0,
+        Math.min(5, Math.round(Number(ctrl.editingCell?.value) || 0)),
+      )}
+      <span class="sv-grid-rating-editor" role="radiogroup" aria-label="Rating">
         {#each [1, 2, 3, 4, 5] as n (n)}
           <button
             type="button"
@@ -644,8 +662,8 @@
                 : ctrl.editingCell;
               saveEditingCell();
             }}
-            onkeydown={onEditorKeyDown}
-          >★</button>
+            onkeydown={onEditorKeyDown}>★</button
+          >
         {/each}
         <button
           type="button"
@@ -658,8 +676,8 @@
               ? { ...ctrl.editingCell, value: 0 }
               : ctrl.editingCell;
             saveEditingCell();
-          }}
-        >×</button>
+          }}>×</button
+        >
       </span>
     {:else if ctrl.editingCell?.editorType === "select"}
       <!-- Custom dropdown: opens a themed popover identical in feel to
@@ -717,18 +735,21 @@
             (event.currentTarget as HTMLTextAreaElement).value,
           )}
         onkeydown={(event) => {
-          event.stopPropagation()
+          event.stopPropagation();
           if (event.key === "Escape") {
-            event.preventDefault()
-            ctrl.editingCell = null
-            ctrl.gridRootEl?.focus({ preventScroll: true })
-            return
+            event.preventDefault();
+            ctrl.editingCell = null;
+            ctrl.gridRootEl?.focus({ preventScroll: true });
+            return;
           }
           // Tab and Ctrl/Cmd+Enter both commit. Plain Enter inserts a newline.
-          if (event.key === "Tab" || (event.key === "Enter" && (event.ctrlKey || event.metaKey))) {
-            event.preventDefault()
-            saveEditingCell()
-            ctrl.gridRootEl?.focus({ preventScroll: true })
+          if (
+            event.key === "Tab" ||
+            (event.key === "Enter" && (event.ctrlKey || event.metaKey))
+          ) {
+            event.preventDefault();
+            saveEditingCell();
+            ctrl.gridRootEl?.focus({ preventScroll: true });
           }
         }}
         onblur={() => saveEditingCell()}
@@ -772,8 +793,8 @@
                     ? { ...ctrl.editingCell, value: opt.value }
                     : ctrl.editingCell;
                   saveEditingCell();
-                }}
-              >{opt.label}</button>
+                }}>{opt.label}</button
+              >
             {/each}
           </div>
         {/if}
@@ -833,7 +854,8 @@
         type="checkbox"
         class="sv-grid-fr-editor sv-grid-fr-checkbox"
         checked={Boolean(val)}
-        onchange={(e) => ctrl.setFullRowDraft(column.id, e.currentTarget.checked)}
+        onchange={(e) =>
+          ctrl.setFullRowDraft(column.id, e.currentTarget.checked)}
         onkeydown={fullRowKeydown}
         onpointerdown={(e) => e.stopPropagation()}
         onclick={(e) => e.stopPropagation()}
@@ -854,12 +876,17 @@
       </select>
     {:else}
       {@const inputType =
-        et === "number" ? "number"
-        : et === "date" ? "date"
-        : et === "datetime" ? "datetime-local"
-        : et === "time" ? "time"
-        : et === "password" ? "password"
-        : "text"}
+        et === "number"
+          ? "number"
+          : et === "date"
+            ? "date"
+            : et === "datetime"
+              ? "datetime-local"
+              : et === "time"
+                ? "time"
+                : et === "password"
+                  ? "password"
+                  : "text"}
       <input
         type={inputType}
         class="sv-grid-cell-editor sv-grid-fr-editor"
@@ -1055,7 +1082,11 @@
        inline editing, no row-selection checkbox, no fill handle.
        Position-sticky CSS keeps it anchored to the top of the body or
        the bottom of the viewport while the rest scrolls. -->
-  {#snippet pinnedRowBody(rowData: TData, where: "top" | "bottom", index: number)}
+  {#snippet pinnedRowBody(
+    rowData: TData,
+    where: "top" | "bottom",
+    index: number,
+  )}
     <tr
       class={`sv-grid-row sv-grid-pinned-row sv-grid-pinned-row-${where}`}
       data-pinned-row={where}
@@ -1065,7 +1096,8 @@
         <td
           class="sv-grid-cell sv-grid-row-number-cell"
           style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
-        >{where === "top" ? "↑" : "↓"}</td>
+          >{where === "top" ? "↑" : "↓"}</td
+        >
       {/if}
       {#if showRowSelectionEffective}
         <td
@@ -1082,13 +1114,17 @@
       {/if}
       {#each renderedColumns as rendered (rendered.column.id)}
         {@const value = getPinnedCellValue(rowData, rendered.column)}
-        {@const userCellClass = computePinnedCellClass(rowData, rendered.column)}
+        {@const userCellClass = computePinnedCellClass(
+          rowData,
+          rendered.column,
+        )}
         <td
           class={`sv-grid-cell ${userCellClass}`}
           data-col-id={rendered.column.id}
           data-pinned={isColumnPinned(rendered.column.id) ?? undefined}
           style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
-        >{formatPinnedValue(rendered.column, value)}</td>
+          >{formatPinnedValue(rendered.column, value)}</td
+        >
       {/each}
       {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
         <td
@@ -1117,11 +1153,23 @@
           type="button"
           class="sv-grid-toolbar-btn"
           class:is-active={ctrl.toolPanelOpen}
-          aria-label={ctrl.toolPanelOpen ? "Close tool panel" : "Open tool panel (columns & filters)"}
+          aria-label={ctrl.toolPanelOpen
+            ? "Close tool panel"
+            : "Open tool panel (columns & filters)"}
           aria-expanded={ctrl.toolPanelOpen}
           onclick={() => (ctrl.toolPanelOpen = !ctrl.toolPanelOpen)}
         >
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            width="15"
+            height="15"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             <rect x="3" y="4" width="6" height="16" rx="1" />
             <rect x="11" y="4" width="4" height="16" rx="1" />
             <rect x="17" y="4" width="4" height="16" rx="1" />
@@ -1137,7 +1185,7 @@
         typeof props.containerHeight === "string"
           ? props.containerHeight
           : `${props.containerHeight ?? 520}px`
-      }; --sg-thead-h: ${headerHeight}px; --sg-pinned-row-h: ${(typeof props.rowHeight === 'number' ? props.rowHeight : 30)}px;`}
+      }; --sg-thead-h: ${headerHeight}px; --sg-pinned-row-h: ${typeof props.rowHeight === "number" ? props.rowHeight : 30}px;`}
     >
       <div
         class="sv-grid-container sv-grid-container-custom-scrollbars"
@@ -1199,17 +1247,36 @@
                           class="sv-grid-group-toggle"
                           class:is-collapsed={cell.collapsed}
                           aria-expanded={!cell.collapsed}
-                          aria-label={cell.collapsed ? `Expand ${cell.label}` : `Collapse ${cell.label}`}
-                          title={cell.collapsed ? "Expand group" : "Collapse group"}
+                          aria-label={cell.collapsed
+                            ? `Expand ${cell.label}`
+                            : `Collapse ${cell.label}`}
+                          title={cell.collapsed
+                            ? "Expand group"
+                            : "Collapse group"}
                           onclick={() => ctrl.toggleColumnGroup(cell.groupId!)}
                         >
-                          <span class="sv-grid-group-header-label">{cell.label}</span>
-                          <svg class="sv-grid-group-caret" viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <span class="sv-grid-group-header-label"
+                            >{cell.label}</span
+                          >
+                          <svg
+                            class="sv-grid-group-caret"
+                            viewBox="0 0 16 16"
+                            width="10"
+                            height="10"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
                             <polyline points="4 6 8 10 12 6"></polyline>
                           </svg>
                         </button>
                       {:else}
-                        <span class="sv-grid-group-header-label">{cell.label}</span>
+                        <span class="sv-grid-group-header-label"
+                          >{cell.label}</span
+                        >
                       {/if}
                     {/if}
                   </th>
@@ -1271,14 +1338,18 @@
                     )}
                     <th
                       class="sv-grid-column"
-                      class:is-drag-target-before={colDropOnId === header.column.id && colDropSide === "before"}
-                      class:is-drag-target-after={colDropOnId === header.column.id && colDropSide === "after"}
+                      class:is-drag-target-before={colDropOnId ===
+                        header.column.id && colDropSide === "before"}
+                      class:is-drag-target-after={colDropOnId ===
+                        header.column.id && colDropSide === "after"}
                       class:is-dragging={colDragId === header.column.id}
                       data-svgrid-header-col={header.column.id}
                       data-align={getColumnAlign(rendered.column)}
                       data-pinned={isColumnPinned(rendered.column.id) ??
                         undefined}
-                      draggable={(props.enableColumnReorder ?? false) ? true : undefined}
+                      draggable={(props.enableColumnReorder ?? false)
+                        ? true
+                        : undefined}
                       ondragstart={(e) =>
                         (props.enableColumnReorder ?? false) &&
                         onColumnHeaderDragStart(e, header.column.id)}
@@ -1308,7 +1379,9 @@
                       {#if !header.isPlaceholder}
                         <div class="sv-grid-header-cell">
                           {#if typeof header.column.columnDef.header === "function"}
-                            {@const rendered = header.column.columnDef.header(header.getContext())}
+                            {@const rendered = header.column.columnDef.header(
+                              header.getContext(),
+                            )}
                             <!-- Custom header (snippet/component): rendered
                                  OUTSIDE the sort button so the consumer's
                                  own interactive elements (menu buttons,
@@ -1321,20 +1394,30 @@
                               role="button"
                               tabindex="-1"
                               onclick={(event) => {
-                                if (!header.column.getCanSort()) return
+                                if (!header.column.getCanSort()) return;
                                 // If the click landed on an interactive
                                 // element inside the custom header, let
                                 // that element handle it.
-                                const t = event.target as HTMLElement | null
-                                if (t && t.closest('button, a, input, select, textarea, [role="button"], [role="menuitem"]') &&
-                                    !(t.classList.contains('sv-grid-header-custom'))) return
-                                onHeaderSortClick(event, header.column.id)
+                                const t = event.target as HTMLElement | null;
+                                if (
+                                  t &&
+                                  t.closest(
+                                    'button, a, input, select, textarea, [role="button"], [role="menuitem"]',
+                                  ) &&
+                                  !t.classList.contains("sv-grid-header-custom")
+                                )
+                                  return;
+                                onHeaderSortClick(event, header.column.id);
                               }}
                               onkeydown={(event) => {
-                                if (event.key !== 'Enter' && event.key !== ' ') return
-                                if (!header.column.getCanSort()) return
-                                event.preventDefault()
-                                onHeaderSortClick(event as unknown as MouseEvent, header.column.id)
+                                if (event.key !== "Enter" && event.key !== " ")
+                                  return;
+                                if (!header.column.getCanSort()) return;
+                                event.preventDefault();
+                                onHeaderSortClick(
+                                  event as unknown as MouseEvent,
+                                  header.column.id,
+                                );
                               }}
                             >
                               {#if rendered instanceof RenderSnippetConfig}
@@ -1349,10 +1432,12 @@
                               {#if header.column.getCanSort()}
                                 {#if sortDirection === "asc"}
                                   <span class="sv-grid-header-icon"
-                                    >{@render icon("sort-asc")}</span>
+                                    >{@render icon("sort-asc")}</span
+                                  >
                                 {:else if sortDirection === "desc"}
                                   <span class="sv-grid-header-icon"
-                                    >{@render icon("sort-desc")}</span>
+                                    >{@render icon("sort-desc")}</span
+                                  >
                                 {/if}
                               {/if}
                             </div>
@@ -1364,7 +1449,8 @@
                                 onHeaderSortClick(event, header.column.id)}
                             >
                               <span class="sv-grid-header-label">
-                                {typeof header.column.columnDef.header === "string"
+                                {typeof header.column.columnDef.header ===
+                                "string"
                                   ? header.column.columnDef.header
                                   : header.id}
                               </span>
@@ -1525,7 +1611,9 @@
                           <input
                             class="sv-grid-filter-value"
                             type={frType}
-                            placeholder={activeOperator === "between" ? "From" : "Filter…"}
+                            placeholder={activeOperator === "between"
+                              ? "From"
+                              : "Filter…"}
                             data-svgrid-filter-col={rendered.column.id}
                             value={filterRowValues[rendered.column.id] ?? ""}
                             oninput={(event) =>
@@ -1539,11 +1627,13 @@
                               class="sv-grid-filter-value sv-grid-filter-value-to"
                               type={frType}
                               placeholder="To"
-                              value={filterMenuValues[rendered.column.id]?.valueTo ?? ""}
+                              value={filterMenuValues[rendered.column.id]
+                                ?.valueTo ?? ""}
                               oninput={(event) =>
                                 updateFilterMenuValueTo(
                                   rendered.column.id,
-                                  (event.currentTarget as HTMLInputElement).value,
+                                  (event.currentTarget as HTMLInputElement)
+                                    .value,
                                 )}
                             />
                           {/if}
@@ -1564,7 +1654,10 @@
           </thead>
           {#if props.pinnedTopRows && props.pinnedTopRows.length > 0}
             <!-- svelte-ignore a11y_no_redundant_roles -->
-            <tbody class="sv-grid-pinned sv-grid-pinned-top-body" role="rowgroup">
+            <tbody
+              class="sv-grid-pinned sv-grid-pinned-top-body"
+              role="rowgroup"
+            >
               {#each props.pinnedTopRows as r, i (i)}
                 {@render pinnedRowBody(r, "top", i)}
               {/each}
@@ -1574,7 +1667,9 @@
           <tbody
             class="sv-grid-body"
             role="rowgroup"
-            ondragover={rowDragManagedEffective ? onRowsContainerDragOver : undefined}
+            ondragover={rowDragManagedEffective
+              ? onRowsContainerDragOver
+              : undefined}
             ondrop={rowDragManagedEffective ? onRowsContainerDrop : undefined}
           >
             {#if !allRows.length && !(props.loading && props.loadingOverlay)}
@@ -1632,7 +1727,8 @@
                     <tr
                       class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
                       class:sv-grid-row-selected={isRowSelected(row.id)}
-                      class:sv-grid-row-alt={props.zebraRows && rowIndex % 2 === 1}
+                      class:sv-grid-row-alt={props.zebraRows &&
+                        rowIndex % 2 === 1}
                       class:sv-grid-row-draggable={rowDragManagedEffective}
                       {...getGridRowA11yProps(rowIndex + 1)}
                       {...rowDragAttrs(rowIndex)}
@@ -1690,7 +1786,8 @@
                         {@const isEditing =
                           ctrl.editingCell?.rowId === row.id &&
                           ctrl.editingCell?.columnId === rendered.column.id}
-                        {@const inRowEdit = !!fullRowEdit &&
+                        {@const inRowEdit =
+                          !!fullRowEdit &&
                           fullRowEdit.rowId === row.id &&
                           rendered.column.id in fullRowEdit.draft}
                         {@const rangeEdges = getCellRangeEdges(
@@ -1701,9 +1798,18 @@
                           fillHandleCell &&
                           fillHandleCell.rowIndex === rowIndex &&
                           fillHandleCell.colIndex === colIndex}
-                        {@const userCellClass = computeCellClass(row, rendered.column)}
-                        {@const cellTooltip = computeCellTooltip(row, rendered.column)}
-                        {@const cellNote    = computeCellNote(row, rendered.column)}
+                        {@const userCellClass = computeCellClass(
+                          row,
+                          rendered.column,
+                        )}
+                        {@const cellTooltip = computeCellTooltip(
+                          row,
+                          rendered.column,
+                        )}
+                        {@const cellNote = computeCellNote(
+                          row,
+                          rendered.column,
+                        )}
                         <td
                           class={`sv-grid-cell ${userCellClass}`}
                           class:sv-grid-cell-editing={isEditing || inRowEdit}
@@ -1741,12 +1847,19 @@
                             emitCellDoubleClick(rowIndex, colIndex)}
                           onclick={() => onCellClick(rowIndex, colIndex)}
                           oncontextmenu={(event) =>
-                            openContextMenu(event, rowIndex, colIndex, rendered.column.id)}
+                            openContextMenu(
+                              event,
+                              rowIndex,
+                              colIndex,
+                              rendered.column.id,
+                            )}
                           use:cellFlashAction={{
                             rowId: row.id,
                             value: cellValue,
                             active: !!rendered.column.columnDef.cellFlash,
-                            className: flashClassFor(rendered.column.columnDef.cellFlash),
+                            className: flashClassFor(
+                              rendered.column.columnDef.cellFlash,
+                            ),
                           }}
                           {...getGridCellA11yProps({
                             id: getGridCellDomId("svgrid", rowIndex, colIndex),
@@ -1760,7 +1873,11 @@
                           {:else if isEditing}
                             {@render editorBody(rendered.column, row)}
                           {:else}
-                            {@render cellBodyWithFormat(row, rendered.column, cellValue)}
+                            {@render cellBodyWithFormat(
+                              row,
+                              rendered.column,
+                              cellValue,
+                            )}
                           {/if}
                           {#if !isEditing && fillHandleCell && fillHandleCell.rowIndex === rowIndex && fillHandleCell.colIndex === colIndex}
                             <!-- Excel-style fill handle: drag down/right to
@@ -1781,12 +1898,15 @@
                               class="sv-grid-cell-note-corner"
                               aria-label="Note"
                               onpointerenter={(event) => {
-                                event.stopPropagation()
-                                showTooltipFor(event.currentTarget as HTMLElement, cellNote)
+                                event.stopPropagation();
+                                showTooltipFor(
+                                  event.currentTarget as HTMLElement,
+                                  cellNote,
+                                );
                               }}
                               onpointerleave={(event) => {
-                                event.stopPropagation()
-                                hideTooltip()
+                                event.stopPropagation();
+                                hideTooltip();
                               }}
                             ></span>
                           {/if}
@@ -1843,7 +1963,8 @@
                   <tr
                     class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
                     class:sv-grid-row-selected={isRowSelected(row.id)}
-                    class:sv-grid-row-alt={props.zebraRows && rowIndex % 2 === 1}
+                    class:sv-grid-row-alt={props.zebraRows &&
+                      rowIndex % 2 === 1}
                     class:sv-grid-row-draggable={rowDragManagedEffective}
                     {...getGridRowA11yProps(rowIndex + 1)}
                     {...rowDragAttrs(rowIndex)}
@@ -1900,16 +2021,23 @@
                       {@const isEditing =
                         ctrl.editingCell?.rowId === row.id &&
                         ctrl.editingCell?.columnId === rendered.column.id}
-                      {@const inRowEdit = !!fullRowEdit &&
+                      {@const inRowEdit =
+                        !!fullRowEdit &&
                         fullRowEdit.rowId === row.id &&
                         rendered.column.id in fullRowEdit.draft}
                       {@const rangeEdges = getCellRangeEdges(
                         rowIndex,
                         colIndex,
                       )}
-                      {@const userCellClass = computeCellClass(row, rendered.column)}
-                      {@const cellTooltip = computeCellTooltip(row, rendered.column)}
-                      {@const cellNote    = computeCellNote(row, rendered.column)}
+                      {@const userCellClass = computeCellClass(
+                        row,
+                        rendered.column,
+                      )}
+                      {@const cellTooltip = computeCellTooltip(
+                        row,
+                        rendered.column,
+                      )}
+                      {@const cellNote = computeCellNote(row, rendered.column)}
                       <td
                         class={`sv-grid-cell ${userCellClass}`}
                         class:sv-grid-cell-editing={isEditing || inRowEdit}
@@ -1935,23 +2063,35 @@
                         onpointerdown={(event) =>
                           onCellPointerDown(rowIndex, colIndex, event)}
                         onpointerenter={(event) => {
-                          onCellPointerEnter(rowIndex, colIndex)
+                          onCellPointerEnter(rowIndex, colIndex);
                           // Column tooltip fires on whole-cell hover.
                           // Per-cell notes are gated on the corner hot-
                           // zone below (Excel-style: hover the small
                           // triangle to read the note).
-                          if (cellTooltip) showTooltipFor(event.currentTarget as HTMLElement, cellTooltip)
+                          if (cellTooltip)
+                            showTooltipFor(
+                              event.currentTarget as HTMLElement,
+                              cellTooltip,
+                            );
                         }}
                         onpointerleave={hideTooltip}
-                        ondblclick={() => emitCellDoubleClick(rowIndex, colIndex)}
+                        ondblclick={() =>
+                          emitCellDoubleClick(rowIndex, colIndex)}
                         onclick={() => onCellClick(rowIndex, colIndex)}
                         oncontextmenu={(event) =>
-                          openContextMenu(event, rowIndex, colIndex, rendered.column.id)}
+                          openContextMenu(
+                            event,
+                            rowIndex,
+                            colIndex,
+                            rendered.column.id,
+                          )}
                         use:cellFlashAction={{
                           rowId: row.id,
                           value: cellValue,
                           active: !!rendered.column.columnDef.cellFlash,
-                          className: flashClassFor(rendered.column.columnDef.cellFlash),
+                          className: flashClassFor(
+                            rendered.column.columnDef.cellFlash,
+                          ),
                         }}
                         {...getGridCellA11yProps({
                           id: getGridCellDomId("svgrid", rowIndex, colIndex),
@@ -1965,7 +2105,11 @@
                         {:else if isEditing}
                           {@render editorBody(rendered.column, row)}
                         {:else}
-                          {@render cellBodyWithFormat(row, rendered.column, cellValue)}
+                          {@render cellBodyWithFormat(
+                            row,
+                            rendered.column,
+                            cellValue,
+                          )}
                         {/if}
                         {#if cellNote != null && !isEditing}
                           <!-- Excel-style per-cell note indicator. The
@@ -1979,12 +2123,15 @@
                             class="sv-grid-cell-note-corner"
                             aria-label="Note"
                             onpointerenter={(event) => {
-                              event.stopPropagation()
-                              showTooltipFor(event.currentTarget as HTMLElement, cellNote)
+                              event.stopPropagation();
+                              showTooltipFor(
+                                event.currentTarget as HTMLElement,
+                                cellNote,
+                              );
                             }}
                             onpointerleave={(event) => {
-                              event.stopPropagation()
-                              hideTooltip()
+                              event.stopPropagation();
+                              hideTooltip();
                             }}
                           ></span>
                         {/if}
@@ -2004,7 +2151,10 @@
           </tbody>
           {#if props.pinnedBottomRows && props.pinnedBottomRows.length > 0}
             <!-- svelte-ignore a11y_no_redundant_roles -->
-            <tbody class="sv-grid-pinned sv-grid-pinned-bottom-body" role="rowgroup">
+            <tbody
+              class="sv-grid-pinned sv-grid-pinned-bottom-body"
+              role="rowgroup"
+            >
               {#each props.pinnedBottomRows as r, i (i)}
                 {@render pinnedRowBody(r, "bottom", i)}
               {/each}
@@ -2106,7 +2256,7 @@
           content-size={scrollMetrics.scrollHeight ||
             rowDomTotalSize + headerHeight}
           value={scrollMetrics.scrollTop}
-          step={typeof props.rowHeight === 'number' ? props.rowHeight : 30}
+          step={typeof props.rowHeight === "number" ? props.rowHeight : 30}
           style={`top: ${headerHeight}px; height: calc(100% - ${headerHeight + (hasHorizontalOverflow ? 16 : 0)}px);`}
         ></sv-grid-scrollbar>
       {/if}
@@ -2139,8 +2289,23 @@
            Enter cycles to the next hit; Esc closes. -->
       <div class="sv-grid-find" role="search" aria-label="Find in grid">
         <svg class="sv-grid-find-icon" viewBox="0 0 16 16" aria-hidden="true">
-          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
-          <line x1="10.2" y1="10.2" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle
+            cx="7"
+            cy="7"
+            r="4.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          />
+          <line
+            x1="10.2"
+            y1="10.2"
+            x2="14"
+            y2="14"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
         </svg>
         <input
           class="sv-grid-find-input"
@@ -2150,40 +2315,73 @@
           bind:value={ctrl.findQuery}
           oninput={() => (ctrl.findHitIndex = 0)}
           onkeydown={(event) => {
-            event.stopPropagation()
-            if (event.key === 'Enter') {
-              event.preventDefault()
-              if (findHits.length === 0) return
-              ctrl.findHitIndex = (ctrl.findHitIndex + (event.shiftKey ? -1 : 1) + findHits.length) % findHits.length
-              const hit = findHits[ctrl.findHitIndex]
-              if (hit) { setActiveCell(hit.rowIndex, hit.colIndex); scrollActiveCellIntoView(hit.rowIndex, hit.colIndex) }
+            event.stopPropagation();
+            if (event.key === "Enter") {
+              event.preventDefault();
+              if (findHits.length === 0) return;
+              ctrl.findHitIndex =
+                (ctrl.findHitIndex +
+                  (event.shiftKey ? -1 : 1) +
+                  findHits.length) %
+                findHits.length;
+              const hit = findHits[ctrl.findHitIndex];
+              if (hit) {
+                setActiveCell(hit.rowIndex, hit.colIndex);
+                scrollActiveCellIntoView(hit.rowIndex, hit.colIndex);
+              }
             }
-            if (event.key === 'Escape') { event.preventDefault(); ctrl.findOpen = false; ctrl.findQuery = '' }
+            if (event.key === "Escape") {
+              event.preventDefault();
+              ctrl.findOpen = false;
+              ctrl.findQuery = "";
+            }
           }}
         />
         <span class="sv-grid-find-count">
           {findHits.length === 0 && ctrl.findQuery.trim()
-            ? 'No matches'
+            ? "No matches"
             : findHits.length === 0
-              ? ''
+              ? ""
               : `${ctrl.findHitIndex + 1} of ${findHits.length}`}
         </span>
-        <button type="button" class="sv-grid-find-step" aria-label="Previous match"
+        <button
+          type="button"
+          class="sv-grid-find-step"
+          aria-label="Previous match"
           disabled={findHits.length === 0}
           onclick={() => {
-            ctrl.findHitIndex = (ctrl.findHitIndex - 1 + findHits.length) % findHits.length
-            const hit = findHits[ctrl.findHitIndex]
-            if (hit) { setActiveCell(hit.rowIndex, hit.colIndex); scrollActiveCellIntoView(hit.rowIndex, hit.colIndex) }
-          }}>↑</button>
-        <button type="button" class="sv-grid-find-step" aria-label="Next match"
+            ctrl.findHitIndex =
+              (ctrl.findHitIndex - 1 + findHits.length) % findHits.length;
+            const hit = findHits[ctrl.findHitIndex];
+            if (hit) {
+              setActiveCell(hit.rowIndex, hit.colIndex);
+              scrollActiveCellIntoView(hit.rowIndex, hit.colIndex);
+            }
+          }}>↑</button
+        >
+        <button
+          type="button"
+          class="sv-grid-find-step"
+          aria-label="Next match"
           disabled={findHits.length === 0}
           onclick={() => {
-            ctrl.findHitIndex = (ctrl.findHitIndex + 1) % findHits.length
-            const hit = findHits[ctrl.findHitIndex]
-            if (hit) { setActiveCell(hit.rowIndex, hit.colIndex); scrollActiveCellIntoView(hit.rowIndex, hit.colIndex) }
-          }}>↓</button>
-        <button type="button" class="sv-grid-find-close" aria-label="Close find"
-          onclick={() => { ctrl.findOpen = false; ctrl.findQuery = '' }}>✕</button>
+            ctrl.findHitIndex = (ctrl.findHitIndex + 1) % findHits.length;
+            const hit = findHits[ctrl.findHitIndex];
+            if (hit) {
+              setActiveCell(hit.rowIndex, hit.colIndex);
+              scrollActiveCellIntoView(hit.rowIndex, hit.colIndex);
+            }
+          }}>↓</button
+        >
+        <button
+          type="button"
+          class="sv-grid-find-close"
+          aria-label="Close find"
+          onclick={() => {
+            ctrl.findOpen = false;
+            ctrl.findQuery = "";
+          }}>✕</button
+        >
       </div>
     {/if}
 
@@ -2253,7 +2451,9 @@
                       checked={visible}
                       onchange={() => toggleColumnVisibleInPanel(column.id)}
                     />
-                    <span class="sv-grid-tool-panel-name">{toolPanelHeaderLabel(column)}</span>
+                    <span class="sv-grid-tool-panel-name"
+                      >{toolPanelHeaderLabel(column)}</span
+                    >
                   </label>
                   <span class="sv-grid-tool-panel-actions">
                     <button
@@ -2288,11 +2488,20 @@
             <div class="sv-grid-tool-panel-filters">
               {#each toolPanelColumns as column (column.id)}
                 {#if column.columnDef.field && column.columnDef.filterable !== false}
-                  {@const active = filterMenuValues[column.id]?.operator ?? defaultOperatorFor(column)}
-                  {@const fType = getEditorInputType(column.columnDef.editorType ?? "text")}
-                  <div class="sv-grid-tp-filter" class:is-filtered={isColumnFiltered(column.id)}>
+                  {@const active =
+                    filterMenuValues[column.id]?.operator ??
+                    defaultOperatorFor(column)}
+                  {@const fType = getEditorInputType(
+                    column.columnDef.editorType ?? "text",
+                  )}
+                  <div
+                    class="sv-grid-tp-filter"
+                    class:is-filtered={isColumnFiltered(column.id)}
+                  >
                     <div class="sv-grid-tp-filter-head">
-                      <span class="sv-grid-tp-filter-name">{toolPanelHeaderLabel(column)}</span>
+                      <span class="sv-grid-tp-filter-name"
+                        >{toolPanelHeaderLabel(column)}</span
+                      >
                       {#if isColumnFiltered(column.id)}
                         <button
                           type="button"
@@ -2307,10 +2516,16 @@
                       class="sv-grid-tp-filter-op"
                       aria-label={`${toolPanelHeaderLabel(column)} filter condition`}
                       value={active}
-                      onchange={(e) => updateFilterOperator(column.id, e.currentTarget.value as FilterOperator)}
+                      onchange={(e) =>
+                        updateFilterOperator(
+                          column.id,
+                          e.currentTarget.value as FilterOperator,
+                        )}
                     >
                       {#each operatorsForColumn(column) as option (option.value)}
-                        <option value={option.value}>{operatorOption(option.value).label}</option>
+                        <option value={option.value}
+                          >{operatorOption(option.value).label}</option
+                        >
                       {/each}
                     </select>
                     {#if active !== "isBlank"}
@@ -2319,7 +2534,11 @@
                         type={fType}
                         placeholder={active === "between" ? "From" : "Filter…"}
                         value={filterMenuValues[column.id]?.value ?? ""}
-                        oninput={(e) => updateFilterMenuValue(column.id, e.currentTarget.value)}
+                        oninput={(e) =>
+                          updateFilterMenuValue(
+                            column.id,
+                            e.currentTarget.value,
+                          )}
                       />
                       {#if active === "between"}
                         <input
@@ -2327,7 +2546,11 @@
                           type={fType}
                           placeholder="To"
                           value={filterMenuValues[column.id]?.valueTo ?? ""}
-                          oninput={(e) => updateFilterMenuValueTo(column.id, e.currentTarget.value)}
+                          oninput={(e) =>
+                            updateFilterMenuValueTo(
+                              column.id,
+                              e.currentTarget.value,
+                            )}
                         />
                       {/if}
                     {/if}
