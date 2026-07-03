@@ -117,6 +117,8 @@ and body and ranks matches by where they hit.
 - [Column moving](./columns/column-moving.md)
 - [Column pinning](./columns/column-pinning.md)
 - [Column spanning](./columns/column-spanning.md)
+- [Aligned grids](./columns/aligned-grids.md)
+- [Column menu](./columns/column-menu.md)
 - [Custom header components](./columns/custom-header-components.md)
 
 ### Rows
@@ -131,6 +133,7 @@ and body and ranks matches by where they hit.
 - [Accessing rows](./rows/accessing-rows.md)
 - [Row dragging](./rows/row-dragging.md)
 - [Full-width rows](./rows/full-width-rows.md)
+- [Master / detail (nested grids)](./rows/master-detail.md)
 - [Tree rows (expand / collapse)](./rows/tree-rows.md)
 
 ### Cells

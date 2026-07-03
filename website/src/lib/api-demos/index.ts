@@ -28,9 +28,9 @@ export const apiDemos: Record<string, Component<any>> = {
   'render-helpers': RenderHelpersDemo,
   'svgrid-chart': SvGridChartDemo,
   sparkline: SparklineDemo,
-  'pro-export': ExportDemo,
-  'pro-pivot': PivotDemo,
-  'pro-staged-editing': StagedEditingDemo,
+  'enterprise-export': ExportDemo,
+  'enterprise-pivot': PivotDemo,
+  'enterprise-staged-editing': StagedEditingDemo,
 }
 
 export function getApiDemo(id: string | undefined): Component<any> | null {

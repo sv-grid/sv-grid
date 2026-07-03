@@ -63,6 +63,24 @@ function makeCtx(opts: FakeOptions = {}) {
     },
     _rows: buildRows(),
     selectionRange: { anchor: null, focus: null },
+    selectionRanges: [] as Array<{ anchor: any; focus: any }>,
+    // Mirrors the real controller's getSelectionRects: committed ranges + active.
+    getSelectionRects(): Array<{ minRow: number; maxRow: number; minCol: number; maxCol: number }> {
+      const rects: Array<{ minRow: number; maxRow: number; minCol: number; maxCol: number }> = []
+      const norm = (r: { anchor: any; focus: any }) =>
+        r?.anchor && r?.focus
+          ? {
+              minRow: Math.min(r.anchor.rowIndex, r.focus.rowIndex),
+              maxRow: Math.max(r.anchor.rowIndex, r.focus.rowIndex),
+              minCol: Math.min(r.anchor.colIndex, r.focus.colIndex),
+              maxCol: Math.max(r.anchor.colIndex, r.focus.colIndex),
+            }
+          : null
+      for (const r of ctx.selectionRanges) { const n = norm(r); if (n) rects.push(n) }
+      const active = norm(ctx.selectionRange)
+      if (active) rects.push(active)
+      return rects
+    },
     fillDrag: null,
     editedCellValues: {},
     userHasActivatedCell: false,
@@ -526,6 +544,37 @@ describe('copySelectionToClipboard', () => {
     const cb = createClipboard(ctx)
     cb.copySelectionToClipboard()
     expect(writeText).toHaveBeenCalledWith('a0\tb0\na1\tb1')
+  })
+
+  it('prepends a header row when copyHeadersToClipboard is set', () => {
+    const ctx = makeCtx({
+      data: [
+        { a: 'a0', b: 'b0' },
+        { a: 'a1', b: 'b1' },
+      ],
+    })
+    ctx.props.copyHeadersToClipboard = true
+    ctx.selectionRange = {
+      anchor: { rowIndex: 0, colIndex: 0 },
+      focus: { rowIndex: 1, colIndex: 1 },
+    }
+    const cb = createClipboard(ctx)
+    cb.copySelectionToClipboard()
+    expect(writeText).toHaveBeenCalledWith('a\tb\na0\tb0\na1\tb1')
+  })
+
+  it('runs each value through processCellForClipboard', () => {
+    const ctx = makeCtx({
+      data: [{ a: 'a0', b: 'b0' }],
+    })
+    ctx.props.processCellForClipboard = ({ value }: { value: unknown }) => `[${value}]`
+    ctx.selectionRange = {
+      anchor: { rowIndex: 0, colIndex: 0 },
+      focus: { rowIndex: 0, colIndex: 1 },
+    }
+    const cb = createClipboard(ctx)
+    cb.copySelectionToClipboard()
+    expect(writeText).toHaveBeenCalledWith('[a0]\t[b0]')
   })
 
   it('emits empty strings for missing columns and nullish values', () => {

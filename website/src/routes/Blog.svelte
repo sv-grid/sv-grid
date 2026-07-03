@@ -195,6 +195,13 @@
       <p class="mt-3 text-base md:text-lg" style="color: var(--site-muted);">{current.description}</p>
       <p class="mt-4 text-sm" style="color: var(--site-muted);">
         By {current.author} · {formatPostDate(current.date)}
+        {#if current.updated && current.updated > current.date}
+          <span class="ml-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
+                style="border-color: var(--sg-border); color: var(--site-muted);"
+                title={`Substantially rewritten on ${current.updated}`}>
+            Updated {formatPostDate(current.updated)}
+          </span>
+        {/if}
       </p>
       {#if current.tags.length}
         <div class="mt-4 flex flex-wrap gap-2">

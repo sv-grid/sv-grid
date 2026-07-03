@@ -1,56 +1,97 @@
 # Row dragging
 
-Drag-to-reorder for rows is a common interaction (kanban-like reordering,
-moving items between two grids, dragging rows out to an external drop
-zone).
-<div data-docs-demo="23-bulk-actions" data-height="540"></div>
+Managed row dragging lets users **reorder rows** within a grid and **move rows
+between grids**. Turn on `rowDragManaged` and every row becomes a drag source
+(grab cursor + a grip in the row-number cell); a glowing line shows where the
+row will land, and the grid splices its own data on drop.
+<div data-docs-demo="180-row-dragging" data-height="560"></div>
 
-## Status
+## Reorder within one grid
 
-Row dragging is **not yet built in**. There is no managed-drag prop and no
-unmanaged-drag hook. There is no row drop zone support, and no
-grid-to-grid drag.
-
-## Workaround - HTML5 DnD on a leading "handle" column
-
-Add a leading column whose cell renders a draggable handle. Use a row id
-in the dataTransfer payload and reorder the data array on drop. A working
-sketch - drop into your column array:
-
-```ts
-import { renderSnippet } from '@svgrid/grid'
-
-{#snippet Handle(p: { id: string })}
-  <span
-    draggable="true"
-    ondragstart={(e) => e.dataTransfer?.setData('text/plain', p.id)}
-    aria-label="Drag row"
-  >⋮⋮</span>
-{/snippet}
-
-const columns = [
-  {
-    id: 'drag',
-    header: '',
-    width: 24,
-    cell: (ctx) => renderSnippet(Handle, { id: ctx.row.original.id }),
-  },
-  // ... rest of your columns
-]
+```svelte
+<SvGrid {data} {columns} showRowNumbers rowDragManaged />
 ```
 
-The receiving row needs `ondragover` / `ondrop` handlers - register them
-via a custom `cell` renderer on a column the user can drop onto, or via a
-row-level event listener on the grid container (only the leftmost cell of
-each row is enough to act as the drop target if the grid stretches to the
-viewport width).
+Drag a row by its grip and drop it above or below another row. The grid mutates
+its internal data so the new order sticks - no wiring required.
 
-## Tracked at
+## Move rows between grids
 
-[Missing features](../missing-features.md) - first-class row dragging,
-external drop zones, grid-to-grid moves.
+Give two (or more) grids the **same** `rowDragGroup`. A row dragged out of one
+and dropped into another is removed from the source and inserted into the
+target:
+
+```svelte
+<SvGrid data={backlog} {columns} showRowNumbers
+        rowDragManaged rowDragGroup="sprint-board" />
+
+<SvGrid data={sprint} {columns} showRowNumbers
+        rowDragManaged rowDragGroup="sprint-board" />
+```
+
+Grids with **different** groups (or no group) can only reorder within
+themselves. Drop below the last row - or into an empty grid - to append.
+
+## External drop zones
+
+Drop a dragged row onto any element outside the grid - a trash can, an
+"assign to" bucket, a second pane - with the `rowDropZone` action. It accepts
+managed drags from a grid with the matching `rowDragGroup`, removes the row from
+its source grid, and hands it to your `onDrop`:
+
+```svelte
+<script>
+  import { SvGrid, rowDropZone } from '@svgrid/grid'
+  let archived = $state([])
+</script>
+
+<SvGrid {data} {columns} rowDragManaged rowDragGroup="tasks" />
+
+<div use:rowDropZone={{ group: 'tasks', onDrop: (e) => (archived = [...archived, e.row]) }}>
+  Drop here to archive
+</div>
+```
+
+The element gets a `sv-grid-row-dropzone-over` class while a matching row hovers
+it (style it or override). Omit `group` to accept a managed drag from any grid.
+
+<div data-docs-demo="184-external-drop-zone" data-height="420"></div>
+
+## React to a move
+
+`onRowDragEnd` fires on the **receiving** grid after the drop settles. The grid
+has already applied the change to its own data; use the event to mirror the move
+into your own state (persistence, server sync):
+
+```svelte
+<SvGrid
+  {data} {columns}
+  rowDragManaged rowDragGroup="sprint-board"
+  onRowDragEnd={(e) => {
+    // e.row       - the moved row (your data object)
+    // e.toIndex   - landing index in this grid
+    // e.sameGrid  - true = reorder, false = arrived from another grid
+    // e.fromGridId / e.toGridId - stable numeric ids of source / target
+    console.log(e.sameGrid ? 'reordered' : 'received', e.row, '→', e.toIndex)
+  }}
+/>
+```
+
+## Notes
+
+- **Managed data.** On drop the grid updates its internal data directly, so
+  dragging works out of the box. If you later replace the `data` prop with a new
+  array (a "Reset" button), the grid re-syncs to it. Use `onRowDragEnd` to keep
+  your own array in step if you need it as the source of truth.
+- **Row matching.** Rows are moved by object identity, so `getRowId` is not
+  required - though setting it is still recommended for stable selection and
+  keyed rendering.
+- **Discoverability.** The grip is drawn in the row-number cell, so pair
+  `rowDragManaged` with `showRowNumbers`. Without row numbers the whole row is
+  still draggable (grab cursor).
 
 ## See also
 
-- [Custom cells](../cells/cell-components.md)
 - [Updating data](./row-data.md)
+- [Transactions](./transactions.md)
+- [Row sorting](./row-sorting.md) - drag order is manual; sorting overrides it

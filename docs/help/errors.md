@@ -29,14 +29,14 @@ the trailing detail at the patch level if the diagnostic improves.
 - **Fix:** Use `bind:this={el}` on a real `<div>` and pass `el` as the
   target.
 
-### `Error: Column "<id>" has no field, accessorFn, or cell renderer`
+### `Error: Column "<id>" has no field, fieldFn, or cell renderer`
 
 - **Class:** `Error`
 - **When:** A `ColumnDef` was registered with neither a `field`, an
-  `accessorFn`, nor a `cell` template. The grid has no way to produce
+  `fieldFn`, nor a `cell` template. The grid has no way to produce
   a value for that column.
 - **Fix:** Add one of the three. For computed display-only columns,
-  `accessorFn: (row) => /* ... */` is usually right.
+  `fieldFn: (row) => /* ... */` is usually right.
 
 ### `Error: Duplicate column id "<id>"`
 

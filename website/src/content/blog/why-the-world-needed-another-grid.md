@@ -1,62 +1,147 @@
 ---
 title: Why the World Needed Another Grid
-description: Every framework era gets the data grid it deserves - jqxGrid for the jQuery age, the grids that followed for the Angular and React age, and now a grid built natively on Svelte 5 runes.
+description: Every framework era produces the data grid it deserves. jqxGrid for jQuery, component-based grids for Angular and React, and now SvGrid - built natively on Svelte 5 runes, not adapted to them.
 date: 2026-06-12
+updated: "2026-07-02"
 category: Company
 tags: company, jqxgrid, history, svelte data grid, reactivity, story
 author: Boyko Markov
 pinned: true
 ---
 
-Every few years someone ships a new data grid and the rest of us roll our eyes. Does the world really need another one? I have asked it myself, and since I have spent the better part of fifteen years building the things, I feel entitled to the cynicism.
+I have spent fifteen years building data grids. That earns me some skepticism when a new one shows up, because I have seen the cycle. Someone declares the existing options inadequate, ships a new grid, and a few years later their grid is the one being called inadequate. So when I say the world needed another grid, I mean it carefully: not every few years, but every time the framework model of reactivity changes. That is the only trigger that matters.
 
 ![A real-time trading desk built with SvGrid.](/blog-media/trading-desk.png)
 *A real-time trading desk built with SvGrid.*
 
-Here is where I have landed. The world does periodically need a new grid, and it is never because the old ones got worse. It is because the ground moves. A data grid is really a reactivity engine wearing a table's clothes, and reactivity is the one part you cannot bolt on later. So every time the way frameworks handle reactivity shifts, the grids built for the previous model start to feel like a guest who overstayed: technically still here, faintly out of place.
+## A data grid is a reactivity engine in disguise
 
-## A grid is native to the era it was born in
+Strip away the headers, the sort arrows, the pagination controls, and what you have is a machine that watches state and repaints exactly the cells that changed. Get that wrong and you repaint too much - sluggish on large datasets. Get it really wrong and you repaint too little - stale data on screen, the kind of bug that surfaces in a demo for a large customer.
 
-Go back to 2011. The web ran on jQuery, and reactivity meant imperative DOM manipulation: find the node, change the node. We built jqxGrid for that world, and it was fast and capable in it. It went into enterprise software at companies like Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel.
+This is why "wrap an existing grid in a Svelte adapter" was never going to be the answer. When AG Grid published their origin post [Why The World Needed Another Angular Grid](https://blog.ag-grid.com/why-the-world-needed-another-angular-grid/), the argument was the same one: the grids of 2014 were built for a different reactivity model, so adapting them to Angular always left a seam. The author was right to build something new. That is how the category actually advances.
 
-Then the ground moved. AngularJS arrived with declarative data binding, and a jQuery-era grid - any jQuery-era grid - was never going to feel native inside it. It could be made to work, but it spoke a different language. This is not a knock on those grids; it is just physics. AG Grid's own well-known origin post, [Why The World Needed Another Angular Grid](https://blog.ag-grid.com/why-the-world-needed-another-angular-grid/), makes exactly this point: the grids of 2014 were not built for Angular's model, so the author built one that was. He was right to. That is how the category moves forward.
+The pattern:
 
-The pattern repeats every time:
+- **jQuery era:** imperative DOM - find the node, mutate the node. jqxGrid was native here, and it ended up in production at Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel.
+- **Angular/React era:** component trees, virtual DOM, one-way data flow. A new generation of grids was built for this model and thrived.
+- **Svelte 5 era:** signal-based, fine-grained reactivity via runes. The grids built for virtual DOM are now the guests who overstayed.
 
-- **jQuery era:** imperative DOM. jqxGrid and its peers were native here.
-- **Angular / React era:** component trees and virtual DOM. A new generation of grids was built natively for that model.
-- **Svelte 5 era:** signal-based, fine-grained reactivity. Which grid was built natively for *this*?
+## Why Svelte 5 runes change the equation
 
-## Why Svelte 5 specifically needed one
+Svelte 5 `$state` and `$derived` are not syntactic sugar over stores. They are a compiler-level, fine-grained signal graph: a derived value recomputes only when the exact state slice it reads changes, nothing else. For most components that is a convenience. For a grid rendering a hundred thousand cells, it is the architecture.
 
-Svelte 5 introduced runes - `$state`, `$derived`, `$effect` - a signal-based reactivity model where a derived value recomputes only when the exact state it reads changes. For most components that is a pleasant ergonomic upgrade. For a data grid it is the whole ballgame, because a grid is a hundred thousand cells, any of which can change, and the entire job is to repaint exactly what moved and nothing else.
+Consider filtered, sorted, grouped rows. In a store-based approach you subscribe to the whole row array and recompute the view on any change. With runes you express the pipeline as a chain of `$derived` values - filter first, then sort, then group - and each layer only recomputes when its own inputs change. A single cell edit does not re-sort unless the sort column changed. A filter change does not re-run grouping unless the filtered set actually changed.
 
-You can take a framework-agnostic grid engine, wrap it in a Svelte adapter, bridge it with stores, and ship something that works. But you pay a translation tax on every update, and the result feels a half-step off, the same "works, but not quite native" sensation a jQuery grid gave an Angular app a decade ago. The lesson of every previous era is that the half-step never fully closes. Reactivity has to be designed in, not adapted on.
+```svelte
+<script>
+  import { createGrid, tableFeatures, rowSortingFeature,
+           columnFilteringFeature, rowSelectionFeature } from '@svgrid/grid'
+  import type { ColumnDef } from '@svgrid/grid'
 
-So we built [SvGrid](/) natively on runes. No store wrappers, no adapter layer, no translation. State is just state; derived rows are just derived. The grid speaks the framework's own language because it is written in it.
+  type Row = { id: number; name: string; revenue: number; region: string }
 
-## What that buys you
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowSelectionFeature,
+  })
 
-Building native to Svelte 5 is not an aesthetic preference; it shows up in the product:
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { id: 'name',    field: 'name',    header: 'Name',    width: 200, pinned: 'left' },
+    { id: 'revenue', field: 'revenue', header: 'Revenue', width: 130, type: 'number' },
+    { id: 'region',  field: 'region',  header: 'Region',  width: 140 },
+  ]
 
-- A headless core (`createSvGrid`) for full control, and a render component (`<SvGrid>`) for speed, same column definitions, switch freely.
-- Row and column virtualization, so 100,000 rows by 100 columns stay smooth.
-- Excel-style filtering, grouping with aggregation, tree and master-detail rows, inline editing with validation, and server-side data.
-- WAI-ARIA accessibility and full keyboard navigation on by default.
-- An MIT-licensed core that is free for commercial use, plus an optional Enterprise pack for export, import, print, pivot, and AI.
+  // $state is real Svelte 5 rune state - no store wrapper, no adapter
+  let rows = $state<Row[]>([])
 
-## The throughline
+  const grid = createGrid({
+    data: rows,
+    columns,
+    features,
+    options: {
+      sorting:      { state: $state([]) },
+      rowSelection: { state: $state({}) },
+      filtering:    { columnFilters: $state([]) },
+    },
+  })
+</script>
+```
 
-We have now built a grid for every era the web has handed us: jqxGrid in the jQuery days, the Smart UI web components on [htmlelements.com](https://www.htmlelements.com) through the cross-framework years, and SvGrid for Svelte. The technology keeps changing; the conviction does not. A grid should be native to the framework it lives in, fast, accessible, and genuinely pleasant to extend.
+Nothing there is a compatibility shim. `createGrid` is implemented in runes. The options accept rune state directly. When Svelte compiles this component, the grid's internal derived values participate in the same reactive graph as everything else on the page.
 
-So, does the world need another grid? When a framework shows up with a better model of reactivity, I think it does. Svelte 5 was that arrival for me, and SvGrid is my answer to it.
+## The headless/render split
 
-## Frequently asked questions
+One thing we deliberately separated is the headless core from the render layer. `createGrid` gives you a reactive grid model with no DOM dependency. `<SvGrid>` is an opinionated render layer on top of it. You can use either, or both, with the same column definitions.
 
-### Why build a new grid for Svelte instead of adapting an existing one?
+```svelte
+<script>
+  import SvGrid from '@svgrid/grid'
+  import type { ColumnDef, SvGridApi, TableFeatures } from '@svgrid/grid'
 
-A data grid is a reactivity engine, and reactivity cannot be bolted on. A grid feels native only in the framework it was built for. SvGrid is written natively on Svelte 5 runes, avoiding the adapter and store layers that make a ported grid feel a half-step off in Svelte.
+  let api: SvGridApi | undefined = $state()
 
-### Has the SvGrid team built data grids before?
+  // Same column defs work headless or with the component
+  const columns: ColumnDef<TableFeatures, Row>[] = [
+    { id: 'id',     field: 'id',     header: 'ID',     width: 80  },
+    { id: 'name',   field: 'name',   header: 'Name',   width: 200 },
+    { id: 'status', field: 'status', header: 'Status', width: 120,
+      cell: statusSnippet },
+  ]
+</script>
 
-Yes. The same team has shipped jqxGrid for the jQuery era and the Smart UI web components on htmlelements.com for the cross-framework era. SvGrid is its native Svelte 5 grid.
+<SvGrid
+  data={rows}
+  {columns}
+  sortable
+  filterable
+  groupable
+  pageable
+  virtualization={true}
+  rowHeight={32}
+  showFilterRow={true}
+  enableCellSelection={true}
+  onApiReady={(a) => { api = a }}
+/>
+
+{#snippet statusSnippet({ value })}
+  <span class="badge" class:active={value === 'active'}>{value}</span>
+{/snippet}
+```
+
+When `onApiReady` fires, you get an imperative handle for everything the UI exposes declaratively: `api.setSort`, `api.setFilter`, `api.applyTransaction`, `api.getState` / `api.setState` for save/restore. You are not forced to choose between reactive props and imperative control - you get both.
+
+## Server-side data without glue code
+
+The other place where native design pays off is server-side pagination and filtering. Because the grid's internal pagination and filter state are just rune state, wiring them to a server fetch is straightforward.
+
+```typescript
+import { createServerDataSource } from '@svgrid/grid'
+
+const ds = createServerDataSource({
+  fetch: async ({ page, pageSize, sort, filters }) => {
+    const params = new URLSearchParams({
+      page:     String(page),
+      size:     String(pageSize),
+      sort:     sort.map(s => `${s.id}:${s.desc ? 'desc' : 'asc'}`).join(','),
+      filters:  JSON.stringify(filters),
+    })
+    const res  = await fetch(`/api/rows?${params}`)
+    const json = await res.json()
+    return { rows: json.data, total: json.total }
+  },
+})
+
+// Pass the data source directly - pagination, sort, filter all wire automatically
+// <SvGrid data={ds} {columns} pageable sortable filterable />
+```
+
+The data source receives the current page, sort, and filter state on every change and returns rows plus a total count. The grid handles debouncing, loading states, and cache invalidation. There is no external state manager required, no effect that manually watches filter changes and fires a fetch - the reactive graph does it.
+
+## The same conviction, different era
+
+We have now built a grid for three distinct framework eras. jqxGrid for the jQuery world. The Smart UI web components on [htmlelements.com](https://www.htmlelements.com) across the cross-framework years. And SvGrid natively for Svelte 5.
+
+The technology keeps shifting. The underlying conviction does not: a grid has to be native to its framework's reactivity model or it will always be half a step behind. Not obviously broken, just slightly wrong in ways that accumulate - performance that is good but not great, code that works but reads like a translation, integrations that fit but require maintenance glue.
+
+Svelte 5 runes are a genuine change in how reactive state works, not an incremental improvement on stores. That made it worth building something new rather than adapting something old. SvGrid is the answer to that particular question, for this particular era. When the ground moves again, someone will need to ask it again.

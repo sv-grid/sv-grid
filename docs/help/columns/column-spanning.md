@@ -1,40 +1,77 @@
-﻿# Column spanning
+# Column & row spanning (merged cells)
 
-"Column spanning" lets a single body cell span across **multiple columns** -
-useful for full-width subtotals, group banner rows, or notes embedded inside
-a wide grid.
+Spanning lets a single body cell cover **multiple columns** and/or **rows** -
+merged report headers, grouped labels, financial statements. SvGrid does this
+with a real `colspan` / `rowspan` merge engine; there are two ways to drive it.
 
-## Status
+## 1. Explicit merges (spreadsheet-style)
 
-This is **not yet built in** to the community grid. There is no `colSpan`
-field on `ColumnDef` or `CellContext`.
-
-There are two close-enough workarounds:
-
-## 1. Full-width "row banner" via grouping
-
-If your span semantics are "render an aggregate above each group", the
-[grouping](../rows/row-data.md#grouping) pipeline gives you a group row
-that fills the row width via the group label column. See
-[examples/src/demos/07-grouping-aggregation.svelte](../../../examples/src/demos/07-grouping-aggregation.svelte).
-
-## 2. Custom cell with `position: absolute`
-
-If you need an irregular full-width content cell inside an otherwise normal
-row, render a regular cell whose content spills across columns:
+Declare exact merges as `MergeSpec[]` and apply them with the
+`spreadsheetLayout` action. The origin cell `(rowIndex, columnId)` spans
+`colspan` columns right and `rowspan` rows down; covered cells are hidden.
 
 ```svelte
-{#snippet Banner(p: { row: Row })}
-  <span class="absolute left-0 right-0 px-2 bg-yellow-100">
-    {p.row.note}
-  </span>
-{/snippet}
+<script lang="ts">
+  import { spreadsheetLayout, type MergeSpec } from '@svgrid/grid'
+
+  const merges: MergeSpec[] = [
+    { rowIndex: 0, columnId: 'A', colspan: 6 },       // title bar
+    { rowIndex: 14, columnId: 'A', colspan: 3 },      // "Total" label
+  ]
+</script>
+
+<div use:spreadsheetLayout={{ merges, columnOrder: columns.map((c) => c.id) }}>
+  <SvGrid {data} {columns} />
+</div>
 ```
 
-You'll need a CSS contortion to disable borders on the covered cells. This
-is fragile - only use it for one-off rows like "no results" placeholders.
+See [demos/170-cell-merging.svelte](../../../examples/src/demos/170-cell-merging.svelte).
+
+## 2. Declarative `colSpan` / `rowSpan` (value-driven)
+
+For data-driven spanning - "merge each run of equal values", "this cell spans 2
+columns when X" - put `colSpan` / `rowSpan` callbacks on the column and turn
+them into merges with `spansToMerges`. This runs on the **same** merge engine
+as option 1 (no separate code path).
+
+```svelte
+<script lang="ts">
+  import { spreadsheetLayout, spansToMerges, type ColumnDef } from '@svgrid/grid'
+
+  const columns: ColumnDef<F, Row>[] = [
+    { id: 'region', field: 'region',
+      // merge each vertical run of equal regions
+      rowSpan: ({ data, rowIndex }) => {
+        if (rowIndex > 0 && rows[rowIndex - 1].region === data.region) return 1 // covered
+        let n = 1
+        while (rows[rowIndex + n]?.region === data.region) n += 1
+        return n
+      } },
+    { id: 'country', field: 'country' },
+    { id: 'amount', field: 'amount' },
+  ]
+
+  // Recompute after sort / filter - indexes are display-row indexes.
+  const merges = $derived(spansToMerges(rows, columns))
+</script>
+
+<div use:spreadsheetLayout={{ merges, columnOrder: columns.map((c) => c.id) }}>
+  <SvGrid {data} {columns} />
+</div>
+```
+
+`colSpan` / `rowSpan` receive `CellSpanParams` (`{ data, rowIndex, columnId,
+value }`) and return the span count (1 = no span). `spansToMerges` handles
+covered-cell bookkeeping so overlapping spans never double-emit.
+
+## Virtualization note
+
+`rowSpan` uses real `rowspan`, which needs the covered rows mounted in the
+render window. For very large spanning grids, keep spans modest or disable row
+virtualization (`virtualization={false}`) on that grid so the origin cell stays
+mounted while its covered rows are on screen.
 
 ## See also
 
-- [Row spanning](../rows/row-spanning.md) - the row-side analogue, also not built in.
-- [Missing features](../missing-features.md)
+- [Cell merging demo](../../../examples/src/demos/170-cell-merging.svelte)
+- [Row spanning](../rows/row-spanning.md)

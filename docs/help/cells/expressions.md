@@ -1,7 +1,7 @@
 # Expressions
 
 SvGrid does not ship a formula / expression language for cells. Computed
-values are JavaScript - either via `accessorFn` or inside a `cell`
+values are JavaScript - either via `fieldFn` or inside a `cell`
 callback.
 <div data-docs-demo="83-spreadsheet-formulas" data-height="540"></div>
 
@@ -11,12 +11,12 @@ callback.
 {
   id: 'totalCost',
   header: 'Total',
-  accessorFn: (row) => row.unitPrice * row.quantity,
+  fieldFn: (row) => row.unitPrice * row.quantity,
   format: { type: 'currency', currency: 'USD' },
 }
 ```
 
-`accessorFn` runs every time the row's value is needed (display, sort,
+`fieldFn` runs every time the row's value is needed (display, sort,
 filter, copy). The result is treated as a plain value of the resulting
 type, so `format` / `formatter` / `editorType` all apply.
 
@@ -47,7 +47,7 @@ The grid's row pipeline runs **per row** - it does not give you a hook for
 A spreadsheet-style formula language (cells like `=A1+B2`) is **not** in the
 SvGrid community build. There is no formula parser or formula editor. If you
 need spreadsheet-style cells, that's a separate library - wire its output
-into a column's `accessorFn`.
+into a column's `fieldFn`.
 
 ## See also
 

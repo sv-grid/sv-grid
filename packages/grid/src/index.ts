@@ -19,6 +19,8 @@ export {
   tableFeatures,
   type Cell,
   type CellContext,
+  type CellSpanParams,
+  type ValueParserParams,
   type EditorContext,
   type CellData,
   type ActiveCellState,
@@ -105,12 +107,22 @@ export {
 } from './sparkline'
 export {
   spreadsheetLayout,
+  spansToMerges,
+  type SpanColumn,
   type SpreadsheetActionOptions,
   type MergeSpec,
   type CellBorderSpec,
   type BorderSpec,
 } from './spreadsheet'
 export { rowResize, type RowResizeOptions } from './row-resize'
+export { rowDropZone, type RowDragEndEvent, type RowDropZoneOptions } from './row-drag'
+export { resolveColumnTypes, inferCellDataType, type CellDataType } from './column-types'
+export {
+  computeColumnGroupMeta,
+  hiddenLeavesForCollapse,
+  type ColumnGroupMeta,
+  type ColumnGroupShow,
+} from './column-groups'
 export {
   createHyperFormulaSheet,
   type HyperFormulaSheet,

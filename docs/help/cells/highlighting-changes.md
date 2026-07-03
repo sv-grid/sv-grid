@@ -1,8 +1,27 @@
 # Highlighting changes
 
-There is no built-in "flash on change" highlight. You build it with a
-diff against a frozen snapshot of the data.
+## Built-in cell flash (`cellFlash`)
+
+Set `cellFlash` on a column and the grid flashes that cell whenever its value
+changes - edits, streaming feeds, server pushes. It is keyed by row identity,
+so scrolling a virtualized grid (which recycles `<td>` nodes) never triggers a
+false flash; only a same-row value change does. It respects
+`prefers-reduced-motion`.
+
+```ts
+{ field: 'price',  cellFlash: true }                              // default tint
+{ field: 'change', cellFlash: { className: 'flash-up-down' } }    // your own animation
+```
+
+The default flash fades a theme-tinted background (`--sg-cell-flash`, or the
+accent). For directional colouring (green up / red down) pass your own class
+and toggle it from a `cellClass` callback, or animate `flash-up-down` in CSS.
 <div data-docs-demo="11-stock-market" data-height="540"></div>
+
+## Rolling your own
+
+If you need more than a flash (persistent dirty markers, diff badges), you can
+still build it by hand with a diff against a frozen snapshot of the data.
 
 ## Dirty cells while editing
 

@@ -45,6 +45,64 @@ export type MergeSpec = {
   colspan?: number
 }
 
+/** A column with declarative spanning callbacks, as accepted by
+ *  `spansToMerges`. Matches the relevant slice of `ColumnDef`. */
+export type SpanColumn<TData = Record<string, unknown>> = {
+  id: string
+  field?: string
+  colSpan?: (params: { data: TData; rowIndex: number; columnId: string; value: unknown }) => number
+  rowSpan?: (params: { data: TData; rowIndex: number; columnId: string; value: unknown }) => number
+}
+
+/**
+ * Turn declarative per-column `colSpan` / `rowSpan` callbacks into a
+ * `MergeSpec[]` you can hand to `spreadsheetLayout` - so value-driven,
+ * AG-Grid-style spanning runs on the SAME real colspan/rowspan merge engine
+ * instead of a second code path. Recompute after sort/filter (indexes are
+ * display-row indexes). A common pattern is "merge runs of equal values":
+ *
+ *   { field: 'region', rowSpan: ({ data, rowIndex }) =>
+ *       rows.filter((r, i) => i >= rowIndex && r.region === data.region &&
+ *         (i === rowIndex || rows[i-1].region === data.region)).length }
+ */
+export function spansToMerges<TData = Record<string, unknown>>(
+  rows: ReadonlyArray<TData>,
+  columns: ReadonlyArray<SpanColumn<TData>>,
+  getValue?: (row: TData, columnId: string) => unknown,
+): MergeSpec[] {
+  const merges: MergeSpec[] = []
+  const covered = new Set<string>()
+  for (let r = 0; r < rows.length; r += 1) {
+    const row = rows[r]!
+    for (let ci = 0; ci < columns.length; ci += 1) {
+      const col = columns[ci]!
+      if (!col.colSpan && !col.rowSpan) continue
+      const key = `${r}:${ci}`
+      if (covered.has(key)) continue
+      const value = getValue
+        ? getValue(row, col.id)
+        : (row as Record<string, unknown>)[col.field ?? col.id]
+      const params = { data: row, rowIndex: r, columnId: col.id, value }
+      const cs = Math.max(1, Math.floor(col.colSpan?.(params) ?? 1))
+      const rs = Math.max(1, Math.floor(col.rowSpan?.(params) ?? 1))
+      if (cs <= 1 && rs <= 1) continue
+      merges.push({
+        rowIndex: r,
+        columnId: col.id,
+        colspan: cs > 1 ? cs : undefined,
+        rowspan: rs > 1 ? rs : undefined,
+      })
+      for (let dr = 0; dr < rs; dr += 1) {
+        for (let dc = 0; dc < cs; dc += 1) {
+          if (dr === 0 && dc === 0) continue
+          covered.add(`${r + dr}:${ci + dc}`)
+        }
+      }
+    }
+  }
+  return merges
+}
+
 /** Borders for one cell. Edges left unset render as the default
  *  cell border (i.e. no override). */
 export type CellBorderSpec = {

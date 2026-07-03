@@ -1,121 +1,215 @@
 ---
 title: Server-Side Data - Pagination, Sorting, and Filtering on the Backend
-description: Drive a Svelte data grid from your API. Let SvGrid own the UI state while your server owns paging, sorting, and filtering.
+description: Keep 100,000+ rows on the server. SvGrid owns the UI state for sort, filter, and pagination controls - your API owns the data.
 date: 2026-03-31
+updated: 2026-07-02
 category: Data
 tags: server-side, pagination, api, svelte data grid
 author: Boyko Markov
 ---
 
-Once a table has millions of rows, shipping them all to the browser stops being an option, the tab grinds, the user waits, everyone loses. The fix is server-side data: the grid keeps the sort, filter, and page UI, and your backend hands back only the rows for the view on screen. SvGrid's external mode exists for exactly this.
+Most grids break at around 50,000 rows - not because rendering is hard, but because fetching and parsing a 40 MB JSON payload on every filter change is hard. The right split of responsibility is clear once you name it: the grid owns what the user sees (sort state, filter inputs, current page), and the server owns the data (filtering, sorting, slicing). SvGrid is built with this split in mind.
 
-![Server-side data in SvGrid](/blog-media/server-side.png)
-*Server-side sorting, filtering, and paging in SvGrid.*
+## What "server-side mode" actually means
 
-## The contract
+When you register `rowSortingFeature` and `columnFilteringFeature` without wiring up local row models, SvGrid stops processing your data array internally. It renders whatever rows you give it, tracks the sort and filter state in its own reactive stores, and fires callbacks when the user changes either. You decide what to do with those callbacks - usually, fetch from your API and hand back a fresh slice.
 
-In external mode the grid records what the user clicked but does not reorder or slice the rows itself. You:
+The binding stays simple. You bind `data` to a small array (say, 25 rows per page), set `totalRows` to the server-reported count, and the pagination controls do the right math without ever seeing the full dataset.
 
-1. Read the sort, filter, and page state from the grid's callbacks.
-2. Fetch the matching page from your API.
-3. Pass the returned rows back as `data` and the total count for the pager.
+## Wiring up `createServerDataSource`
+
+SvGrid ships a helper that wraps this pattern into a clean interface. You hand it a `fetch` function and it handles the bookkeeping:
+
+```ts
+// lib/people-source.ts
+import { createServerDataSource } from '@svgrid/grid'
+
+export const peopleSource = createServerDataSource({
+  fetch: async ({ page, pageSize, sort, filters }) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      size: String(pageSize),
+    })
+
+    if (sort.length) {
+      params.set('sortBy', sort[0].id)
+      params.set('sortDesc', String(sort[0].desc))
+    }
+
+    for (const f of filters) {
+      params.set(`filter_${f.id}`, `${f.operator}:${f.value}`)
+    }
+
+    const res = await fetch(`/api/people?${params}`)
+    if (!res.ok) throw new Error(`API error ${res.status}`)
+
+    const json = await res.json()
+    return { rows: json.data, total: json.total }
+  },
+})
+```
+
+Then in your component, pass the source directly as `data`:
 
 ```svelte
 <script lang="ts">
-  let rows = $state<Person[]>([])
-  let total = $state(0)
-  let sorting = $state([])
-  let filters = $state([])
-  let page = $state(0)
+  import {
+    SvGrid,
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+  import { peopleSource } from '$lib/people-source'
+  import type { Person } from '$lib/types'
 
-  async function load() {
-    const res = await api.query({ sorting, filters, page, pageSize: 50 })
-    rows = res.items
-    total = res.total
-  }
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+  })
+
+  const columns: ColumnDef<typeof features, Person>[] = [
+    { id: 'firstName',  field: 'firstName',  header: 'First name',  width: 160 },
+    { id: 'lastName',   field: 'lastName',   header: 'Last name',   width: 160 },
+    { id: 'department', field: 'department', header: 'Department',  width: 180 },
+    { id: 'country',    field: 'country',    header: 'Country',     width: 140 },
+    { id: 'age',        field: 'age',        header: 'Age',         width: 80,  type: 'number' },
+    {
+      id: 'salary',
+      field: 'salary',
+      header: 'Salary',
+      width: 130,
+      type: 'number',
+      format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } },
+    },
+  ]
 </script>
 
 <SvGrid
-  data={rows}
-  columns={columns}
-  features={features}
-  showPagination={true}
-  pageSize={50}
-  rowCount={total}
-  onSortingChange={(s) => { sorting = s; load() }}
-  onFiltersChange={(f) => { filters = f.columns; load() }}
-  onPaginationChange={(p) => { page = p.pageIndex; load() }}
+  {features}
+  {columns}
+  data={peopleSource}
+  pageable
+  sortable
+  filterable
+  showFilterRow={true}
+  pageSize={25}
 />
 ```
 
-## Why pass a total `rowCount`
+That is the full component. No manual `$effect` calls, no `onSortChange` wiring, no sequence counters. The source adapter handles debouncing and in-flight request cancellation internally.
 
-The pager needs to know how many rows exist on the server to render the right number of pages and the "showing 51-100 of 12,480" label. Pass the server's total count so the footer stays accurate even though only one page is in memory.
+## When you need manual control
 
-## Keep requests in check
+`createServerDataSource` covers 90% of cases. The other 10% is when you have complex query logic - multi-field search, GraphQL fragments, request batching - and the adapter's signature gets in the way. In that case, manage state yourself:
 
-- **Debounce filters** so typing in a filter box does not fire a request per keystroke.
-- **Cancel stale requests**: if a new query starts before the last resolves, ignore the older response so the grid never shows out-of-order pages.
-- **Cache pages** the user has already seen for instant back-and-forth paging.
+```svelte
+<script lang="ts">
+  import {
+    SvGrid,
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    type ColumnDef,
+    type SvGridApi,
+  } from '@svgrid/grid'
+  import type { Person } from '$lib/types'
 
-## Combine with virtualization
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-Server paging and row virtualization are complementary. Page from the server to bound the data you transfer, and let virtualization bound the DOM for whatever page is loaded. Together they keep both the network and the browser light.
+  // Only the current page lives here. The server holds the rest.
+  let rows    = $state<Person[]>([])
+  let total   = $state(0)
+  let page    = $state(0)
+  let loading = $state(false)
+  let api     = $state<SvGridApi<typeof features, Person> | null>(null)
 
-## A complete request lifecycle
+  // Sequence counter prevents stale responses from overwriting fresh ones.
+  let seq = 0
 
-It is worth tracing one full interaction end to end, because the details are where server-side grids go wrong. Say the user types in a filter box:
+  async function load(params: {
+    page: number
+    sort: { id: string; desc: boolean }[]
+    filters: { id: string; operator: string; value: string }[]
+  }) {
+    const thisSeq = ++seq
+    loading = true
 
-1. The grid fires `onFiltersChange` with the new filter model.
-2. You debounce - wait until typing pauses - so you do not fire a request per keystroke.
-3. You build a query from the sort, filter, and page state and send it, tagging it with a request id.
-4. The response arrives. You check that its request id is the latest; if a newer request already started, you discard this one.
-5. You set `rows` and `total`, and the grid repaints with the new page and an accurate pager.
+    try {
+      const res = await fetch('/api/people', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      })
+      const json = await res.json()
 
-Skip step 2 and you hammer your backend. Skip step 4 and you get the classic bug where a slow earlier response overwrites a fast later one, and the grid shows the wrong page.
+      if (thisSeq !== seq) return  // a newer request already landed
+      rows  = json.data
+      total = json.total
+    } finally {
+      if (thisSeq === seq) loading = false
+    }
+  }
 
-## Translating the grid model to a query
+  $effect(() => {
+    load({ page: 0, sort: [], filters: [] })
+  })
+</script>
 
-The grid hands you structured state; your job is to turn it into a backend query. The shapes are small and predictable:
-
-```ts
-type Query = {
-  sort: { id: string; desc: boolean }[]
-  filters: { id: string; operator: string; value: unknown }[]
-  page: number
-  pageSize: number
-}
-
-function toSql(q: Query) {
-  // ORDER BY built from q.sort, WHERE from q.filters,
-  // LIMIT/OFFSET (or a cursor) from q.page/q.pageSize.
-}
+<SvGrid
+  {features}
+  {columns}
+  data={rows}
+  totalRows={total}
+  currentPage={page}
+  pageSize={25}
+  onSortChange={(sort) => { page = 0; load({ page: 0, sort, filters: [] }) }}
+  onFilterChange={(filters) => { page = 0; load({ page: 0, sort: [], filters }) }}
+  onPageChange={(p) => { page = p; load({ page: p, sort: [], filters: [] }) }}
+  onApiReady={(a) => { api = a }}
+/>
 ```
 
-Whether your backend is SQL, a search index, or a third-party API, the mapping is the same: sort becomes ordering, filters become predicates, page becomes a slice.
+The sequence counter pattern on line 30 is not optional in production. Without it, a slow sort request started before a fast filter request can resolve after it, replacing valid filtered data with stale sorted data. You will not see this in development with sub-10 ms local responses, but you will see it in production with real network variance.
 
-## Keep the UI honest while loading
+## Three things that break silently
 
-Server round trips take time, and an unresponsive grid feels broken. A few touches keep it trustworthy:
+**Forgetting to reset `page` on sort or filter changes.** The user is on page 8, applies a status filter, and your code keeps `page = 8`. The API gets `offset=200` against a result set of 40 rows and returns zero items. The grid shows nothing. Always reset to page 0 inside sort and filter callbacks.
 
-- **Loading state.** Show a subtle overlay or skeleton while a page is in flight, so the user knows something is happening.
-- **Preserve scroll and selection.** Do not reset the user's scroll position or clear their selection just because a new page loaded, unless the query itself changed the result set.
-- **Empty and error states.** "No rows match these filters" and "Could not load, retry" are part of the feature, not an afterthought.
+**Binding `data` to the full dataset.** If you fetch all 100,000 rows up front and bind them all to `data`, SvGrid will cheerfully render them - or rather, it will try to, and the virtualization will keep paint cost low, but the initial parse and the filter-row model scan will still run against 100,000 items. Passing a full dataset to a "server-side" grid defeats the entire exercise.
 
-## Caching for instant back-and-forth
+**Omitting `totalRows`.** Without it, the pagination controls calculate page count from `data.length`. If `data` has 25 rows, the grid thinks you have 1 page of 25 items. Users can never navigate beyond what is loaded. Always pass the count the server reported.
 
-Users page back and forth constantly. Caching pages you have already fetched - keyed by the full query plus page number - makes that navigation feel instant and takes load off your server. Invalidate the cache when the data changes, and cap its size so it does not grow without bound.
+## Debouncing filter input
 
-## When to stay client-side
+The grid fires `onFilterChange` on every keystroke in a filter cell. That is correct behavior - your code decides how often to actually fetch. A 300 ms debounce is the practical minimum for text filters:
 
-Server-side data is the right tool for large or sensitive datasets, but it adds complexity. If your full dataset is a few thousand rows and not sensitive, shipping it once and letting the grid sort and filter in memory is simpler, faster to interact with, and easier to reason about. Reach for server-side mode when the data is too big to transfer, changes too often to cache, or must not all leave the server.
+```ts
+// lib/debounce.ts
+export function debounce<T extends (...args: Parameters<T>) => void>(
+  fn: T,
+  ms: number
+): T {
+  let timer: ReturnType<typeof setTimeout>
+  return ((...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), ms)
+  }) as T
+}
 
-## Frequently asked questions
+// In component:
+const debouncedFilter = debounce((filters) => {
+  page = 0
+  load({ page: 0, sort: currentSort, filters })
+}, 300)
+```
 
-### How do I do server-side pagination with a Svelte data grid?
+Number filters and dropdown filters (where the user picks from a list rather than typing) do not need debouncing - the value is final when the callback fires.
 
-Use SvGrid's external mode: listen to `onPaginationChange`, `onSortingChange`, and `onFiltersChange`, fetch the matching page from your API, and pass the result plus a total `rowCount` back to the grid.
+## API-driven sorts and filters
 
-### How does the pager know the total when only one page is loaded?
+`api.setSort('salary', 'desc')` and `api.setFilter('department', { operator: 'equals', value: 'Engineering' })` both update the grid's internal state and fire the corresponding `onSortChange` or `onFilterChange` callback. This means programmatic control from a toolbar or a URL param restoration goes through the exact same code path as user interaction. No special handling needed.
 
-Pass the server's total count via `rowCount`. SvGrid uses it to render the page controls and the row-range label.
+`api.getState()` captures the full current view state - sort, filter, pagination, column visibility, widths - and `api.setState(savedState)` restores it. Persist this to `localStorage` or a URL param and your users keep their grid configuration across sessions with zero extra code.

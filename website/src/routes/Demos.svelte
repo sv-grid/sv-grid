@@ -5,7 +5,8 @@
    * The only changes vs. the original: hash-routed under /demos, theme
    * locked to dark, no theme toggle.
    */
-  import { demos, demoGroups, findDemo } from '../lib/demos'
+  import { tick, untrack } from 'svelte'
+  import { demoGroups, findDemo } from '../lib/demos'
   import SourceModal from '../components/SourceModal.svelte'
   import DemoPicker from '../components/DemoPicker.svelte'
   import { openInStackBlitz } from '../lib/stackblitz'
@@ -114,84 +115,39 @@
     try { localStorage.setItem('sg-preset', preset) } catch { /* ignore */ }
   })
 
-  // ---- Smart demo search (mirrors examples/src/App.svelte) ---------------
-  let query = $state('')
-  let searchEl = $state<HTMLInputElement | null>(null)
-
-  // Clicking the search box opens a full visual picker (all demos as cards
-  // with thumbnails + descriptions), Bryntum-style. Landing on /demos with no
-  // specific demo (or /demos/browse) opens it too, so it's the front door.
+  // ---- Demo browser (modal picker) --------------------------------------
+  // Discovery lives in a full visual picker (thumbnails + search + category
+  // filter). The sidebar is only for fast in-context switching once you're in
+  // a demo. A "Browse all demos" button (and the `/` shortcut) open the picker.
   let pickerOpen = $state(false)
+  let browseBtnEl = $state<HTMLButtonElement | null>(null)
   function openPicker() {
-    if (pickerOpen) return
     pickerOpen = true
-    searchEl?.blur()
   }
   function closePicker() {
     pickerOpen = false
-    // Return focus to the trigger. Safe: the box no longer opens on focus,
-    // only on click / Enter / ArrowDown, so this won't reopen the modal.
-    queueMicrotask(() => searchEl?.focus())
+    queueMicrotask(() => browseBtnEl?.focus())
   }
+
+  // Auto-open the picker only the FIRST time you land on the demos index in a
+  // session (the front-door first impression), plus always on the explicit
+  // /demos/browse URL. Refresh / back / repeat visits don't nag.
   $effect(() => {
-    if (demoId === '' || demoId === 'browse') pickerOpen = true
-  })
-
-  function tokens(q: string): string[] {
-    return q.toLowerCase().split(/\s+/).filter(Boolean)
-  }
-
-  function scoreDemo(d: typeof demos[number], toks: string[]): number {
-    if (toks.length === 0) return 0
-    const title = d.title.toLowerCase()
-    const blurb = d.blurb.toLowerCase()
-    const category = d.category.toLowerCase()
-    const id = d.id.toLowerCase()
-    let total = 0
-    for (const tok of toks) {
-      let s = 0
-      if (title.startsWith(tok)) s += 60
-      else if (title.includes(' ' + tok) || title.includes('-' + tok)) s += 45
-      else if (title.includes(tok)) s += 30
-      if (id.includes(tok)) s += 18
-      if (category.includes(tok)) s += 12
-      if (blurb.includes(tok)) s += 8
-      if (s === 0) return -1
-      total += s
+    if (demoId === 'browse') {
+      pickerOpen = true
+      return
     }
-    return total
-  }
-
-  const searchResults = $derived.by(() => {
-    const toks = tokens(query)
-    if (toks.length === 0) return null
-    return demos
-      .map((d) => ({ demo: d, score: scoreDemo(d, toks) }))
-      .filter((r) => r.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map((r) => r.demo)
-  })
-
-  function highlight(text: string, toks: string[]): string {
-    if (toks.length === 0) return text
-    const pattern = toks
-      .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .sort((a, b) => b.length - a.length)
-      .join('|')
-    const re = new RegExp(`(${pattern})`, 'gi')
-    return text.replace(re, '<mark class="demo-search-hit">$1</mark>')
-  }
-
-  function onSearchKey(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      query = ''
-      searchEl?.blur()
-    } else if (e.key === 'Enter' && searchResults && searchResults.length > 0) {
-      e.preventDefault()
-      go(searchResults[0]!.id)
+    if (demoId === '') {
+      try {
+        if (!sessionStorage.getItem('sg-demos-browsed')) {
+          sessionStorage.setItem('sg-demos-browsed', '1')
+          pickerOpen = true
+        }
+      } catch {
+        pickerOpen = true
+      }
     }
-  }
+  })
 
   $effect(() => {
     const onGlobalKey = (e: KeyboardEvent) => {
@@ -214,12 +170,25 @@
     return {}
   }
   let openGroups = $state<Record<string, boolean>>(loadOpenGroups())
+  let asideEl = $state<HTMLElement | null>(null)
 
+  // When the active demo changes, make sure its group is open and scroll the
+  // tree so the active item is in view. `untrack` reading openGroups keeps this
+  // from re-firing (and reopening) when the user later collapses a group.
   $effect(() => {
+    const id = current.id
     const cat = current.category
-    if (!(cat in openGroups)) {
-      openGroups = { ...openGroups, [cat]: true, 'Getting Started': true }
-    }
+    untrack(() => {
+      if (!(cat in openGroups)) {
+        openGroups = { ...openGroups, [cat]: true, 'Getting Started': true }
+      } else if (!openGroups[cat]) {
+        openGroups = { ...openGroups, [cat]: true }
+      }
+    })
+    tick().then(() => {
+      const el = asideEl?.querySelector<HTMLElement>(`[data-demo-id="${CSS.escape(id)}"]`)
+      el?.scrollIntoView({ block: 'nearest' })
+    })
   })
   $effect(() => {
     try { localStorage.setItem('sg-demo-groups', JSON.stringify(openGroups)) } catch { /* ignore */ }
@@ -277,6 +246,7 @@
     ></button>
   {/if}
   <aside
+    bind:this={asideEl}
     class="demo-aside w-72 shrink-0 border-r p-4 overflow-y-auto"
     class:is-open={mobileNav}
     style="border-color: var(--sg-border)"
@@ -313,70 +283,25 @@
       </select>
     </label>
 
-    <div class="demo-search-wrap mb-4">
-      <svg class="demo-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="11" cy="11" r="7" />
-        <path d="M21 21l-4.3-4.3" />
+    <button
+      type="button"
+      bind:this={browseBtnEl}
+      class="demo-browse-btn mb-4"
+      onclick={openPicker}
+      title="Browse all demos with thumbnails and search"
+    >
+      <svg class="demo-browse-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
+        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
+        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
       </svg>
-      <input
-        bind:this={searchEl}
-        type="search"
-        value=""
-        placeholder="Browse demos…"
-        aria-label="Browse demos"
-        class="demo-search-input"
-        readonly
-        onmousedown={(e) => { e.preventDefault(); openPicker() }}
-        onkeydown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
-            e.preventDefault()
-            openPicker()
-          }
-        }}
-      />
-      <kbd class="demo-search-kbd" aria-hidden="true">/</kbd>
-    </div>
+      <span class="demo-browse-label">Browse all demos</span>
+      <kbd class="demo-browse-kbd" aria-hidden="true">/</kbd>
+    </button>
 
     <nav aria-label="Examples">
-      {#if searchResults !== null}
-        {@const toks = tokens(query)}
-        <div class="mb-2 px-2 text-[11px] uppercase tracking-wider" style="color: var(--sg-muted);">
-          {#if searchResults.length === 0}
-            No matches
-          {:else}
-            {searchResults.length} match{searchResults.length === 1 ? '' : 'es'}
-            <span class="normal-case tracking-normal" style="color: var(--sg-muted); opacity: 0.7;"> · Enter to open top hit</span>
-          {/if}
-        </div>
-        {#if searchResults.length === 0}
-          <p class="px-3 py-4 text-xs" style="color: var(--sg-muted);">
-            Nothing matches <em>"{query}"</em>. Try a feature ("pivot", "tree", "export") or an industry ("CRM", "healthcare").
-          </p>
-        {:else}
-          <ul class="space-y-0.5">
-            {#each searchResults as demo (demo.id)}
-              {@const active = demo.id === current.id}
-              <li>
-                <button
-                  type="button"
-                  onclick={() => go(demo.id)}
-                  class="demo-row w-full text-left rounded px-3 py-1.5 text-sm transition-colors"
-                  style:background={active ? 'var(--sg-row-hover-bg)' : 'transparent'}
-                  style:color="var(--sg-fg)"
-                  style:font-weight={active ? '600' : '400'}
-                >
-                  <span class="demo-row-title">
-                    {@html highlight(demo.title, toks)}
-                    {#if demo.pro}<span class="demo-pro-dot" title="Enterprise feature" aria-label="Enterprise"></span>{/if}
-                  </span>
-                  <span class="demo-row-cat" style="color: var(--sg-muted);">{demo.category}</span>
-                </button>
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      {:else}
-        {#each demoGroups as group (group.category)}
+      {#each demoGroups as group (group.category)}
           {@const isOpen = openGroups[group.category] ?? false}
           <div class="mb-1">
             <button
@@ -402,6 +327,7 @@
                   <li>
                     <button
                       type="button"
+                      data-demo-id={demo.id}
                       onclick={() => go(demo.id)}
                       class="demo-leaf w-full text-left rounded pl-6 pr-3 py-1.5 text-sm transition-colors"
                       style:background={active ? 'var(--sg-row-hover-bg)' : 'transparent'}
@@ -417,7 +343,6 @@
             {/if}
           </div>
         {/each}
-      {/if}
     </nav>
     <p class="mt-8 text-xs" style="color: var(--sg-muted)">
       Each demo is a single .svelte file under <code>examples/src/demos/</code>. Read the source
@@ -524,6 +449,28 @@
 {/if}
 
 <style>
+  /* Navigation-tree scrollbar. Uses the same `--sg-scrollbar-*` tokens the grid
+     styles its own scrollbar with - each theme preset (and light/dark) sets
+     them on `.demo-page`, so the sidebar scrollbar matches the chosen theme's
+     surface + neutral tones exactly, instead of an accent-colored thumb. */
+  .demo-aside {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sg-scrollbar-thumb, #b1bccd) var(--sg-scrollbar-bg, transparent);
+  }
+  .demo-aside::-webkit-scrollbar { width: 12px; height: 12px; }
+  .demo-aside::-webkit-scrollbar-track {
+    background: var(--sg-scrollbar-bg, transparent);
+    box-shadow: inset 1px 0 0 0 var(--sg-scrollbar-border, transparent);
+  }
+  .demo-aside::-webkit-scrollbar-thumb {
+    background: var(--sg-scrollbar-thumb, #b1bccd);
+    border-radius: var(--sg-scrollbar-thumb-radius, 6px);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  .demo-aside::-webkit-scrollbar-thumb:hover { background: var(--sg-scrollbar-thumb-hover, #8693a7); }
+  .demo-aside::-webkit-scrollbar-thumb:active { background: var(--sg-scrollbar-thumb-active, #64748b); }
+
   /* ---- Mobile sidebar drawer ------------------------------------------
      On >=768px the sidebar is a normal in-flow column. Below that it
      becomes a fixed slide-in drawer so the demo gets the full width. */
@@ -568,34 +515,32 @@
     }
   }
 
-  .demo-search-wrap {
-    position: relative;
-    display: flex; align-items: center;
-  }
-  .demo-search-icon {
-    position: absolute; left: 10px;
-    color: var(--sg-muted, #94a3b8);
-    pointer-events: none;
-  }
-  .demo-search-input {
-    width: 100%;
+  /* "Browse all demos" opens the visual picker. The sidebar tree below is for
+     fast in-context switching; discovery/search lives in the picker. */
+  .demo-browse-btn {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; cursor: pointer;
     border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1));
     background: var(--sg-input-bg, var(--sg-bg, #0b1220));
     color: var(--sg-fg, #e2e8f0);
     border-radius: 8px;
-    padding: 7px 36px 7px 32px;
+    padding: 8px 10px;
     font-size: 13px;
-    outline: none;
-    transition: border-color 120ms ease, box-shadow 120ms ease;
+    transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
   }
-  .demo-search-input::placeholder { color: var(--sg-muted, #94a3b8); }
-  .demo-search-input:focus {
+  .demo-browse-btn:hover {
+    border-color: var(--sg-accent, #3b82f6);
+    background: color-mix(in oklab, var(--sg-accent, #3b82f6) 8%, var(--sg-input-bg, var(--sg-bg, #0b1220)));
+  }
+  .demo-browse-btn:focus-visible {
+    outline: none;
     border-color: var(--sg-accent, #3b82f6);
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--sg-accent, #3b82f6) 22%, transparent);
   }
-  .demo-search-input::-webkit-search-cancel-button { display: none; }
-  .demo-search-kbd {
-    position: absolute; right: 8px;
+  .demo-browse-icon { color: var(--sg-accent, #3b82f6); flex-shrink: 0; }
+  .demo-browse-label { flex: 1; text-align: left; font-weight: 600; }
+  .demo-browse-kbd {
+    flex-shrink: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 11px;
     padding: 1px 6px;
@@ -603,19 +548,6 @@
     border-radius: 4px;
     color: var(--sg-muted, #94a3b8);
     background: var(--sg-header-bg, transparent);
-    pointer-events: none;
-  }
-  .demo-row { display: flex; align-items: baseline; gap: 8px; }
-  .demo-row-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .demo-row-cat {
-    font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
-    flex-shrink: 0;
-  }
-  :global(.demo-search-hit) {
-    background: color-mix(in oklab, var(--sg-accent, #3b82f6) 30%, transparent);
-    color: inherit;
-    border-radius: 2px;
-    padding: 0 1px;
   }
 
   /* Collapsible category groups (DevExpress / Kendo style sidebar) */

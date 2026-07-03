@@ -1,117 +1,265 @@
 ---
 title: Excel-Style Filtering for Your Svelte Data Grid
-description: Add per-column filter menus, a filter row, and global search to SvGrid - plus how to drive filtering from the server.
+description: Per-column filter menus, a filter row, global search, and server-side filtering - all wired through a single columnFilteringFeature in SvGrid.
 date: 2026-05-12
+updated: 2026-07-02
 category: Filtering
 tags: filtering, excel filters, search, svelte data grid
 author: Victor Vidolov
 ---
 
-People do not learn how to filter your table; they arrive already knowing, because they have used a spreadsheet. Meet that expectation and the grid feels obvious. SvGrid's `columnFilteringFeature` gives you the Excel-style per-column menus, an optional filter row, and a global search box from a single feature.
+Most users know exactly what to expect from a filter UI the moment they see a column header with a funnel icon. Spreadsheets taught them this. Click the icon, pick values from a checklist, enter a range for numbers, hit apply. When a data grid delivers something different - a separate drawer, a custom query builder, a sidebar panel - it creates friction that has nothing to do with the actual data. The familiar thing is the right thing here.
 
-![SvGrid's Excel-style column filter menu](/blog-media/excel-filters.png)
-*SvGrid's Excel-style per-column filter menu.*
+SvGrid ships that exact interaction out of the box through `columnFilteringFeature`: per-column popup menus with distinct-value checklists, numeric and date range operators, an inline filter row beneath the headers, global cross-column search, and a path to server-side filtering when the dataset lives on the backend. This post walks through all of it, including a few behaviors that catch people off guard.
 
-## Enable filtering
+## Adding filtering to an existing grid
 
-```svelte
-<script lang="ts">
-  import { SvGrid, tableFeatures, columnFilteringFeature } from '@svgrid/grid'
-  const features = tableFeatures({ columnFilteringFeature })
-</script>
+Filtering is tree-shakable and additive. Your existing column definitions, data bindings, and sort setup do not change. The only additions are importing `columnFilteringFeature` and including it in `tableFeatures`:
 
-<SvGrid data={rows} columns={columns} features={features} filterMode="menu" />
+```ts
+import {
+  tableFeatures,
+  rowSortingFeature,
+  columnFilteringFeature,
+} from '@svgrid/grid'
+
+// Pass both together - sort runs before filter in the row model pipeline
+export const features = tableFeatures({
+  rowSortingFeature,
+  columnFilteringFeature,
+})
 ```
 
-The `filterMode` prop chooses the UI:
+Sorting and filtering are independent transforms in the row model, but you almost always want both. Order matters: sort runs first, then filter. That means `api.getDisplayedRows()` always returns a correctly ordered, correctly filtered slice without any extra plumbing on your side.
 
-- `"menu"`, a dropdown filter menu per column header (Excel-style).
-- `"row"`, an inline filter row under the header.
+## The filter API in three forms
 
-## Operators per data type
+Before showing a full component, it helps to see the three ways you can apply filters, because each fits a different use case.
 
-Text columns get `contains`, `equals`, `starts with`, and `ends with`. Numeric and date columns get range operators like `greater than`, `less than`, and `between`. SvGrid infers sensible operators from the column's value type, so you usually do not configure anything.
+**From the UI** - the most common path. Users click the funnel icon in a column header or type in the filter row. No code required.
 
-## Observe the active filters
+**Via `api.setFilter`** - useful for pre-populating filters on mount, wiring filters to URL params, or building a custom filter panel outside the grid:
 
-To sync filters to the URL or show a "3 filters active" badge, listen with `onFiltersChange`:
+```ts
+// Inside onApiReady or a reactive effect
+api.setFilter('region', { type: 'set', values: ['EMEA', 'APAC'] })
+api.setFilter('amount',  { type: 'number', operator: 'between', value: 500, valueTo: 2000 })
+api.setFilter('placedAt', { type: 'date', operator: 'greaterThan', value: '2025-01-01' })
 
-```svelte
-<script lang="ts">
-  let filters = $state<Array<{ id: string; operator: string; value: string }>>([])
-</script>
+// Read back the current filter state (useful before serializing to localStorage)
+const currentFilters = api.getFilters()
 
-<SvGrid
-  data={rows}
-  columns={columns}
-  features={features}
-  filterMode="menu"
-  onFiltersChange={(next) => (filters = next.columns)}
-/>
+// Reset everything at once
+api.clearAllFilters()
 ```
 
-## Server-side filtering
-
-When the dataset is too large to ship to the browser, filter on the server. Read the filter model from `onFiltersChange`, translate it to a query, and feed the filtered rows back as `data`. The grid keeps the menus and the filter row in sync without re-filtering locally.
-
-## Performance note
-
-In-memory filtering on tens of thousands of rows is fast because SvGrid filters once per change and reuses the result across renders. Combine filtering with virtualization and the visible row count stays tiny no matter how big the source array is.
-
-## Menu vs row: choosing a filter UI
-
-The two filter modes suit different workflows:
-
-- **`filterMode="menu"`** keeps the header clean and tucks filters behind a dropdown. Best when filtering is occasional and you do not want a permanent filter row eating vertical space.
-- **`filterMode="row"`** puts an always-visible input under each header. Best for data-entry and analysis screens where users filter constantly and want zero clicks to start typing.
-
-There is no wrong answer; pick the one that matches how often your users filter.
-
-## Global search alongside column filters
-
-Column filters answer "show me rows where *this column* matches." A global search answers "show me rows that mention *this anywhere*." The two compose: a user can type "berlin" in global search to narrow to matching rows, then apply a status filter on top. Wire a search box to the grid's global filter and let it work in tandem with the per-column menus.
-
-## Combining filters across columns
-
-Filters join with AND across columns: a status filter plus a date range plus a price threshold returns only the rows that satisfy all three. The grid tracks the complete filter model, so a single `onFiltersChange` handler gives you the full picture, ideal for syncing filters to the URL so a filtered view is shareable and survives a refresh.
+**Via `globalFilter` prop** - a cross-column text search that runs as a second pass over the column-filtered rows:
 
 ```svelte
 <SvGrid
-  data={rows}
-  columns={columns}
-  features={features}
-  filterMode="menu"
-  onFiltersChange={(next) => {
-    filters = next.columns
-    syncToUrl(filters) // make the view linkable
-  }}
+  {features}
+  {rows}
+  {columns}
+  globalFilter={searchQuery}
+  showFilterRow={true}
+  height={520}
+  onApiReady={(g) => { api = g }}
 />
 ```
 
-## Operators worth knowing
+Global filter and column filters stack with `AND` semantics - they do not replace each other. A common mistake is clearing `globalFilter` and assuming everything is reset. Column filters set through the UI or `api.setFilter` are a separate state. You need both `api.clearAllFilters()` and resetting the `globalFilter` binding to get a true "show all rows" state.
 
-Type-aware operators are what make filtering feel like a spreadsheet:
+## A working orders grid
 
-- **Text:** contains, equals, starts with, ends with, is empty.
-- **Number:** equals, greater than, less than, between.
-- **Date:** before, after, between, and relative ranges like "this month".
+Here is a complete component for an orders table with every filter type active - text, set, number, and date. Drop this into a Svelte 5 project and it works without any backend:
 
-SvGrid infers a sensible default operator from the column's value type, so users get the right choices without you configuring each column.
+```svelte
+<script lang="ts">
+  import {
+    SvGrid,
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    type ColumnDef,
+    type SvGridApi,
+  } from '@svgrid/grid'
 
-## Debounce on large or remote data
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-Filtering in memory is cheap, but firing a server request on every keystroke is not. When filtering drives a backend query, debounce the input so the request fires when typing pauses, and cancel stale requests so a slow earlier response cannot overwrite a newer one. The same filter UI then works whether the data is local or remote.
+  type Order = {
+    id: string
+    customer: string
+    region: 'Americas' | 'EMEA' | 'APAC'
+    amount: number
+    placedAt: string
+  }
 
-## Empty states matter
+  // Deterministic PRNG - stable values across hot-reloads
+  let seed = 0x5EED01
+  function rand() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0xFFFFFFFF }
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(rand() * arr.length)]! }
+  function int(min: number, max: number) { return Math.floor(min + rand() * (max - min + 1)) }
 
-A filter that matches nothing should say so. "No rows match these filters" with a one-click "Clear filters" action turns a confusing blank grid into an obvious next step. Treat the empty state as part of the filtering feature, not an edge case.
+  const REGIONS = ['Americas', 'EMEA', 'APAC'] as const
+  const NAMES = ['Ava Thompson', 'Liam Park', 'Noah Singh', 'Emma Garcia',
+                 'Olivia Chen', 'Mason Rivera', 'Sophia Brown', 'Lucas Kim']
 
-## Frequently asked questions
+  const rows: Order[] = Array.from({ length: 320 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - int(0, 365))
+    return {
+      id:       `ORD-${40_000 + i}`,
+      customer: pick(NAMES),
+      region:   pick(REGIONS),
+      amount:   Math.round(rand() * 9_500 + 500),
+      placedAt: d.toISOString().slice(0, 10),
+    }
+  })
 
-### How do I add Excel-style filters to a Svelte table?
+  const columns: ColumnDef<typeof features, Order>[] = [
+    { field: 'id',       header: 'Order ID',  width: 120 },
+    { field: 'customer', header: 'Customer',  width: 180 },
+    {
+      field: 'region',
+      header: 'Region',
+      width: 110,
+      filterType: 'set',       // renders a distinct-value checklist in the popup
+    },
+    {
+      field: 'amount',
+      header: 'Amount',
+      width: 120,
+      align: 'right',
+      format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } },
+      filterType: 'number',    // renders min/max range inputs
+    },
+    {
+      field: 'placedAt',
+      header: 'Placed',
+      width: 120,
+      filterType: 'date',      // renders from/to date pickers
+    },
+  ]
 
-Register `columnFilteringFeature` and set `filterMode="menu"`. Each header gets a dropdown with type-aware operators.
+  let api = $state<SvGridApi<typeof features, Order> | null>(null)
+  let globalSearch = $state('')
 
-### Can SvGrid filter on the server?
+  function resetAll() {
+    api?.clearAllFilters()
+    globalSearch = ''
+    api?.setPage(0)   // avoid landing on an empty page after filter clears
+  }
+</script>
 
-Yes. Listen to `onFiltersChange`, build your backend query from the filter model, and pass the filtered page back as `data`.
+<div class="toolbar">
+  <input
+    type="search"
+    placeholder="Search all columns..."
+    bind:value={globalSearch}
+  />
+  <button onclick={resetAll}>Clear all</button>
+</div>
+
+<SvGrid
+  {features}
+  {rows}
+  {columns}
+  globalFilter={globalSearch}
+  showFilterRow={true}
+  height={540}
+  pageable
+  onApiReady={(g) => { api = g }}
+/>
+```
+
+The `showFilterRow` prop adds a persistent input row beneath the headers - the fastest path for power users who prefer typing over opening menus. The popup menu and the filter row write to the same state, so conditions from both sources accumulate on the same column. That is almost always desirable, but it means users can have active conditions they cannot see if they only look at one of the two UI surfaces. Surfacing `api.getFilters()` in an "active filters" badge prevents confusion.
+
+## Filtering on computed values
+
+Sometimes the column you want to filter on is not a raw field - it is a derived value. A `valueGetter` covers this case. The filter predicates operate on whatever `valueGetter` returns, not on the underlying field:
+
+```ts
+// Filter on the year extracted from a date string
+{
+  id: 'year',
+  header: 'Year',
+  width: 80,
+  filterType: 'number',
+  valueGetter: (row: Order) => new Date(row.placedAt).getFullYear(),
+}
+
+// Filter on full name from two separate fields
+{
+  id: 'fullName',
+  header: 'Name',
+  width: 200,
+  valueGetter: (row) => `${row.firstName} ${row.lastName}`,
+}
+```
+
+This also covers the type-mismatch trap. If your amount column stores strings like `"1,200"`, a `filterType: 'number'` range will silently match nothing because the comparison operates on string data. A `valueGetter` that parses to a numeric primitive fixes it: `valueGetter: (row) => parseFloat(row.amount.replace(/,/g, ''))`.
+
+## Moving filter logic to the server
+
+For datasets too large to send to the browser, `createServerDataSource` handles the plumbing. You receive the current filter state in your `fetch` callback, forward it to your API, and return rows plus a total count:
+
+```ts
+import { createServerDataSource } from '@svgrid/grid'
+
+const ds = createServerDataSource({
+  fetch: async ({ page, pageSize, sort, filters }) => {
+    const params = new URLSearchParams({
+      page:     String(page),
+      pageSize: String(pageSize),
+      sort:     JSON.stringify(sort),
+      filters:  JSON.stringify(filters),   // includes all active column filters
+    })
+    const res  = await fetch(`/api/orders?${params}`)
+    const json = await res.json()
+    return { rows: json.data, total: json.total }
+  },
+})
+```
+
+Then swap `rows` for `ds` in the component:
+
+```svelte
+<SvGrid
+  {features}
+  data={ds}
+  {columns}
+  pageable
+  showFilterRow={true}
+/>
+```
+
+The grid re-fetches whenever any filter, sort, or page changes. The `filters` object passed to your callback mirrors the shape returned by `api.getFilters()`, so you can use the same serialization logic for both URL persistence and the server request.
+
+## Date filters need sortable strings
+
+This one bites people regularly. SvGrid's date filter compares strings lexicographically when the column stores `string` data. ISO 8601 (`YYYY-MM-DD`) sorts and compares correctly because the most significant components come first. Locale-formatted strings like `"03/14/2024"` or `"14.03.2024"` do not.
+
+If your data is already in locale format, the fastest fix is a `valueGetter` that parses to a timestamp: `valueGetter: (row) => new Date(row.placedAt).getTime()` with `filterType: 'number'`. Not elegant, but reliable. The cleaner path is storing ISO strings at the data layer and formatting only at display time via the column's `format` option.
+
+## Pre-loading filters from URL params
+
+A pattern worth keeping in your toolkit: apply filters immediately after the API is ready, before the first render is visible to the user:
+
+```ts
+function onApiReady(g: SvGridApi<typeof features, Order>) {
+  api = g
+
+  // Read from URL search params on mount
+  const params = new URLSearchParams(window.location.search)
+  const region = params.get('region')
+  if (region) {
+    g.setFilter('region', { type: 'set', values: region.split(',') })
+  }
+  const minAmount = params.get('minAmount')
+  if (minAmount) {
+    g.setFilter('amount', { type: 'number', operator: 'greaterThan', value: Number(minAmount) })
+  }
+}
+```
+
+The grid renders with those filters already active, and the header icons and filter row inputs reflect the state correctly - no reconciliation needed on your part. Pair this with a reactive effect that writes `api.getFilters()` back to the URL and you get shareable filter links with about 20 lines of glue code.

@@ -28,12 +28,44 @@ The cell must also be **editable** - its column must have an
 
 ## Programmatic start/stop
 
-There is no public `api.startEditing(rowIndex, columnId)` or `stopEditing()`
-on `SvGridApi` today. To force-edit a cell from outside, set the active
-cell (also not yet exposed on the public API) and dispatch a synthetic
-`F2` to the grid's root.
+Drive the editor from outside the grid with the `SvGridApi`:
 
-This is on the [gap list](../missing-features.md).
+```ts
+// begin editing a cell (as a double-click would); returns true if it started
+api.startEditing(rowIndex, columnId)
+
+api.stopEditing()      // commit the active edit (default)
+api.stopEditing(true)  // cancel / discard the active edit
+```
+
+`startEditing` returns `false` when the cell doesn't exist, isn't editable, or
+inline editing is disabled. `stopEditing` returns `true` if an edit was in
+progress. Combine with `selectCells` and `onActiveCellChange` to build
+form-style / guided-entry flows entirely on the API:
+
+> **`rowIndex` is the displayed index.** `startEditing`, `selectCells` and
+> `onActiveCellChange` all address rows by their position **as rendered** -
+> after a sort or filter that differs from your source data array. If you scan
+> your own data to decide what to edit next, walk `api.getDisplayedRows()` (it
+> returns the rows in display order) and use that index - indexing your unsorted
+> source array would open the wrong cell once the grid is sorted.
+
+```svelte
+<script lang="ts">
+  let api = $state<SvGridApi<F, Lead> | null>(null)
+  let active = $state<{ rowIndex: number; columnId: string } | null>(null)
+</script>
+
+<button onclick={() => active && api?.startEditing(active.rowIndex, active.columnId)}>Edit</button>
+<button onclick={() => api?.stopEditing()}>Save</button>
+<button onclick={() => api?.stopEditing(true)}>Cancel</button>
+
+<SvGrid {data} {columns} enableInlineEditing
+  onApiReady={(a) => (api = a)}
+  onActiveCellChange={(e) => (active = { rowIndex: e.rowIndex, columnId: e.columnId })} />
+```
+
+<div data-docs-demo="176-programmatic-editing" data-height="520"></div>
 
 ## See also
 

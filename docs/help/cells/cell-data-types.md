@@ -26,6 +26,43 @@ Even if you do not enable inline editing, set `editorType` so sort and
 filter behave correctly for the column's data type. A `number` column
 without `editorType` sorts as lexical strings.
 
+## `cellDataType` shorthand
+
+`cellDataType` is a higher-level alias that resolves to the right `editorType`,
+alignment, date `format`, and filter operators in one word - so you don't hand-set
+each:
+
+```ts
+const columns = [
+  { field: 'name',   cellDataType: 'text' },
+  { field: 'age',    cellDataType: 'number' },     // number editor, right-aligned, numeric filters
+  { field: 'active', cellDataType: 'boolean' },    // checkbox editor, centered
+  { field: 'joined', cellDataType: 'date' },       // Date values, `{ type: 'date' }` format
+  { field: 'due',    cellDataType: 'dateString' }, // ISO date STRINGS ('2026-06-27')
+]
+```
+
+| `cellDataType` | resolves to `editorType` | + format |
+| --- | --- | --- |
+| `text` | `text` | - |
+| `number` | `number` | - |
+| `boolean` | `checkbox` | - |
+| `date` | `date` | `{ type: 'date' }` |
+| `dateString` | `date` | - |
+
+Anything you set explicitly (`editorType`, `align`, `format`) always wins -
+`cellDataType` only fills the gaps.
+
+## Inferring types from the data
+
+Set `inferColumnTypes` on the grid and any column that declares **neither**
+`editorType` **nor** `cellDataType` has its type inferred from the first data
+row (number / boolean / `Date` / ISO date-string / text):
+
+```svelte
+<SvGrid {data} {columns} inferColumnTypes />
+```
+
 ## Built-in types
 
 | `editorType` | accepted value space |
@@ -42,7 +79,7 @@ There is no plug-in "register a new cell data type" API. To use a custom
 type:
 
 - Render with a custom `cell` (see [Cell components](./cell-components.md))
-- Sort with a custom value through `accessorFn` that normalises to a
+- Sort with a custom value through `fieldFn` that normalises to a
   comparable primitive
 - Filter with a custom operator UI in your own header component
 

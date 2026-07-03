@@ -205,14 +205,14 @@
     {
       id: 'name',
       header: 'Geography',
-      accessorFn: (row) => (isPlaceholder(row) ? '...' : row.name),
+      fieldFn: (row) => (isPlaceholder(row) ? '...' : row.name),
       cell: (ctx) => renderSnippet(NameCell, { row: ctx.row.original }),
       width: 380,
     },
     {
       id: 'kind',
       header: 'Type',
-      accessorFn: (row) => (isPlaceholder(row) ? '' : row.kind),
+      fieldFn: (row) => (isPlaceholder(row) ? '' : row.kind),
       width: 130,
       cell: (ctx) => renderSnippet(KindCell, { row: ctx.row.original }),
     },
@@ -220,14 +220,14 @@
       id: 'population',
       header: 'Population',
       width: 200,
-      accessorFn: (row) => (isPlaceholder(row) ? null : row.population),
+      fieldFn: (row) => (isPlaceholder(row) ? null : row.population),
       cell: (ctx) => renderSnippet(PopulationCell, { row: ctx.row.original }),
     },
     {
       id: 'revenue',
       header: 'Revenue',
       width: 180,
-      accessorFn: (row) => (isPlaceholder(row) ? null : row.revenue),
+      fieldFn: (row) => (isPlaceholder(row) ? null : row.revenue),
       cell: (ctx) => renderSnippet(RevenueCell, { row: ctx.row.original }),
     },
   ]

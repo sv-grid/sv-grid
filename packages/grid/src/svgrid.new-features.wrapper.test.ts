@@ -70,7 +70,7 @@ describe('SvGrid wrapper - cellClass + rowClass', () => {
   it('computes the row-level class once per render row and threads it onto the <tr>', () => {
     expect(source).toMatch(/function computeRowClass/)
     expect(source).toMatch(/userRowClass = computeRowClass\(row, rowIndex\)/)
-    expect(source).toMatch(/class=\{`sv-grid-row \$\{userRowClass\}`\}/)
+    expect(source).toMatch(/class=\{`sv-grid-row \$\{userRowClass\}/)
   })
 
   it('computes the cell-level class per column and threads it onto the <td>', () => {
@@ -137,7 +137,7 @@ describe('SvGrid wrapper - between filter operator', () => {
   })
 
   it('forwards valueTo through applyExcelFilter', () => {
-    expect(source).toMatch(/valueTo: filter\.operator === "between" \? filter\.valueTo : undefined/)
+    expect(source).toMatch(/valueTo:\s*(filter\.operator|op) === "between" \? (filter\.valueTo|valueTo) : undefined/)
   })
 
   it('publishes valueTo in the onFiltersChange payload only for between clauses', () => {

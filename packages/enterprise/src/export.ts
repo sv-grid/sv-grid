@@ -126,6 +126,30 @@ export type ExportOptions<TData> = {
    * Mutually exclusive with `groupBy`. xlsx only.
    */
   hierarchical?: boolean
+  /**
+   * Merged cells to write into the sheet (xlsx / pdf). Each entry spans
+   * `colSpan` columns and `rowSpan` rows starting at the given zero-based
+   * **body** row / column index (the header row is not counted). Mirrors the
+   * grid's own `MergeSpec` shape closely, so grid merges map straight through -
+   * convert a `MergeSpec` (`{ rowIndex, columnId, rowspan, colspan }`) by
+   * resolving `columnId` to its column index. Mutually exclusive with
+   * `groupBy` / `hierarchical`.
+   */
+  merges?: ReadonlyArray<ExportMerge>
+}
+
+/**
+ * A merged cell region for {@link ExportOptions.merges}. `row` / `col` are
+ * zero-based indices into the exported body (header excluded). A cell that
+ * spans two columns to the right is `{ row, col, colSpan: 2 }`.
+ */
+export type ExportMerge = {
+  row: number
+  col: number
+  /** Columns to span (default 1). */
+  colSpan?: number
+  /** Rows to span (default 1). */
+  rowSpan?: number
 }
 
 let exporterCtorPromise: Promise<
@@ -398,6 +422,19 @@ function buildExporterOptions<TData>(
   // hierarchical through here and groupBy through the constructor call
   // site in exportGrid.
   if (opts.hierarchical) out.hierarchical = true
+  // Merged cells: translate the friendly {row, col, rowSpan, colSpan} shape to
+  // Smart's native {cell: [row, col], rowspan, colspan}. Skip 1x1 "merges"
+  // (nothing to span). Ignored when grouping/hierarchy owns the row layout.
+  if (opts.merges?.length && !opts.groupBy?.length && !opts.hierarchical) {
+    const mergedCells = opts.merges
+      .map((m) => ({
+        cell: [m.row, m.col],
+        rowspan: Math.max(1, Math.floor(m.rowSpan ?? 1)),
+        colspan: Math.max(1, Math.floor(m.colSpan ?? 1)),
+      }))
+      .filter((m) => m.rowspan > 1 || m.colspan > 1)
+    if (mergedCells.length) out.mergedCells = mergedCells
+  }
   return out
 }
 

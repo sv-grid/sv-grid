@@ -251,29 +251,43 @@ export function createEditing<
       },
     );
     let oldValue: unknown = undefined;
+    let finalValue: unknown = parsedValue;
     if (row?.original && column?.columnDef.field) {
       oldValue = (row.original as Record<string, unknown>)[
         column.columnDef.field
       ];
+      // Per-column valueParser refines the type-coerced value before storing.
+      const parser = (
+        column.columnDef as { valueParser?: (p: unknown) => unknown }
+      ).valueParser;
+      if (parser) {
+        finalValue = parser({
+          newValue: parsedValue,
+          oldValue,
+          rawInput: ctx.editingCell.value,
+          data: row.original,
+          columnId: ctx.editingCell.columnId,
+        });
+      }
       (row.original as Record<string, unknown>)[column.columnDef.field] =
-        parsedValue;
+        finalValue;
     }
     const key = getCellKey(ctx.editingCell.rowId, ctx.editingCell.columnId);
     ctx.editedCellValues = {
       ...ctx.editedCellValues,
-      [key]: parsedValue,
+      [key]: finalValue,
     };
     ctx.grid.store.setState((prev: any) => ({ ...prev }));
     // Record into the history at the current pointer. Any forward
     // history (steps the user could have redone) is truncated - this
     // is the standard "edit invalidates redo" rule.
-    if (oldValue !== parsedValue && row?.original && column?.columnDef.field) {
+    if (oldValue !== finalValue && row?.original && column?.columnDef.field) {
       const step: HistoryStep = {
         rowId:    ctx.editingCell.rowId,
         columnId: ctx.editingCell.columnId,
         field:    column.columnDef.field as string,
         before:   oldValue,
-        after:    parsedValue,
+        after:    finalValue,
       }
       const truncated = ctx.history.slice(0, ctx.historyPtr + 1)
       truncated.push(step)
@@ -298,7 +312,7 @@ export function createEditing<
         rowIndex,
         columnId: column.id,
         oldValue,
-        newValue: parsedValue,
+        newValue: finalValue,
         row: row.original as TData,
       });
     }
@@ -368,6 +382,12 @@ export function createEditing<
     const column = ctx.allColumns[colIndex];
     if (!row || !column) return;
     if (isGroupRow(row)) return;
+    // Full-row editing: put the whole row into edit instead of one cell.
+    if (ctx.props.fullRowEditing) {
+      if (ctx.fullRowEdit?.rowId === row.id) return;
+      startFullRowEdit(rowIndex);
+      return;
+    }
     if (!isCellEditable(column, row)) return;
     if (ctx.editingCell?.rowId === row.id && ctx.editingCell?.columnId === column.id)
       return;
@@ -495,12 +515,148 @@ export function createEditing<
     ctx.grid.store.setState((prev: any) => ({ ...prev }));
   }
 
+  /** Programmatically begin editing a cell (mirrors a double-click). */
+  function startEditing(rowIndex: number, columnId: string): boolean {
+    if (!ctx.editingEnabled) return false;
+    const row = ctx.allRows[rowIndex];
+    if (!row || isGroupRow(row)) return false;
+    const colIndex = ctx.allColumns.findIndex((c: any) => c.id === columnId);
+    if (colIndex < 0) return false;
+    const column = ctx.allColumns[colIndex];
+    if (!isCellEditable(column, row)) return false;
+    if (
+      ctx.editingCell?.rowId === row.id &&
+      ctx.editingCell?.columnId === columnId
+    )
+      return true;
+    onCellDoubleClick(rowIndex, colIndex);
+    return (
+      ctx.editingCell?.rowId === row.id &&
+      ctx.editingCell?.columnId === columnId
+    );
+  }
+
+  /** Commit (default) or cancel the active edit, if any. */
+  function stopEditing(cancel = false): boolean {
+    if (!ctx.editingCell) return false;
+    if (cancel) {
+      ctx.editingCell = null;
+    } else {
+      saveEditingCell();
+    }
+    return true;
+  }
+
+  // ---- Full-row editing -------------------------------------------------
+  /** Put the whole row into edit mode, seeding a draft per editable column. */
+  function startFullRowEdit(rowIndex: number): boolean {
+    if (!ctx.editingEnabled || !ctx.props.fullRowEditing) return false;
+    const row = ctx.allRows[rowIndex];
+    if (!row || isGroupRow(row)) return false;
+    if (ctx.fullRowEdit && ctx.fullRowEdit.rowId !== row.id) commitFullRowEdit();
+    ctx.editingCell = null; // never both at once
+    const draft: Record<string, unknown> = {};
+    for (const column of ctx.allColumns) {
+      if (!column.columnDef.field) continue;
+      if (!isCellEditable(column, row)) continue;
+      draft[column.id] = getCellDisplayValue(
+        row.id,
+        column.id,
+        row.getCellValueByColumnId(column.id),
+      );
+    }
+    ctx.fullRowEdit = { rowId: row.id, draft };
+    ctx.setActiveCell(rowIndex, Math.max(0, ctx.allColumns.findIndex((c: any) => c.id in draft)));
+    return true;
+  }
+
+  /** Stage one column's draft value during full-row editing. */
+  function setFullRowDraft(columnId: string, value: unknown): void {
+    const fr = ctx.fullRowEdit;
+    if (!fr) return;
+    ctx.fullRowEdit = { rowId: fr.rowId, draft: { ...fr.draft, [columnId]: value } };
+  }
+
+  /** Commit every drafted column of the full-row edit in one data update. */
+  function commitFullRowEdit(): void {
+    const fr = ctx.fullRowEdit;
+    if (!fr) return;
+    const row = ctx.allRows.find((r: any) => r.id === fr.rowId);
+    if (!row?.original) {
+      ctx.fullRowEdit = null;
+      return;
+    }
+    const changed: Array<{ columnId: string; field: string; before: unknown; after: unknown }> = [];
+    for (const column of ctx.allColumns) {
+      if (!(column.id in fr.draft)) continue;
+      const field = column.columnDef.field as string | undefined;
+      if (!field) continue;
+      const editorType = (column.columnDef.editorType ?? "text") as CellEditorType;
+      const parsed = parseEditorValue(editorType, fr.draft[column.id], {
+        multiple: column.columnDef.editorMultiple === true,
+      });
+      const oldValue = (row.original as Record<string, unknown>)[field];
+      const parser = (column.columnDef as { valueParser?: (p: unknown) => unknown }).valueParser;
+      const finalValue = parser
+        ? parser({
+            newValue: parsed,
+            oldValue,
+            rawInput: String(fr.draft[column.id] ?? ""),
+            data: row.original,
+            columnId: column.id,
+          })
+        : parsed;
+      if (oldValue !== finalValue) {
+        (row.original as Record<string, unknown>)[field] = finalValue;
+        const key = getCellKey(fr.rowId, column.id);
+        ctx.editedCellValues = { ...ctx.editedCellValues, [key]: finalValue };
+        changed.push({ columnId: column.id, field, before: oldValue, after: finalValue });
+      }
+    }
+    // Record the whole-row change as consecutive history steps.
+    if (changed.length) {
+      let hist = ctx.history.slice(0, ctx.historyPtr + 1);
+      for (const c of changed) {
+        hist.push({ rowId: fr.rowId, columnId: c.columnId, field: c.field, before: c.before, after: c.after });
+      }
+      if (hist.length > ctx.UNDO_LIMIT) hist = hist.slice(hist.length - ctx.UNDO_LIMIT);
+      ctx.history = hist;
+      ctx.historyPtr = ctx.history.length - 1;
+      ctx.historyVersion += 1;
+    }
+    ctx.grid.store.setState((prev: any) => ({ ...prev }));
+    if (ctx.props.onCellValueChange && changed.length) {
+      const rowIndex = ctx.internalData.indexOf(row.original as TData);
+      for (const c of changed) {
+        ctx.props.onCellValueChange({
+          rowIndex,
+          columnId: c.columnId,
+          oldValue: c.before,
+          newValue: c.after,
+          row: row.original as TData,
+        });
+      }
+    }
+    ctx.fullRowEdit = null;
+  }
+
+  /** Discard the full-row edit. */
+  function cancelFullRowEdit(): void {
+    ctx.fullRowEdit = null;
+  }
+
   return {
     isCellEditable,
     isCellEditableAt,
     getRowColumnValue,
     getCellDisplayValue,
     startEditingWithChar,
+    startEditing,
+    stopEditing,
+    startFullRowEdit,
+    setFullRowDraft,
+    commitFullRowEdit,
+    cancelFullRowEdit,
     saveEditingCell,
     applyHistoryStep,
     updateEditingCellValue,

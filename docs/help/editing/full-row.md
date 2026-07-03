@@ -1,54 +1,55 @@
 # Full-row editing
 
-"Full-row editing" means the user opens an entire row for edit (every
-editable cell becomes an editor simultaneously) and commits all changes
-at once.
-<div data-docs-demo="40-forms-master-detail" data-height="540"></div>
+Full-row editing opens an **entire row** for edit at once: every editable cell
+shows an inline editor, a single Enter (or clicking away) commits all of them in
+one update, and Esc cancels the whole row. It's a form-style entry experience
+with the density of a grid.
 
-## Status
+## Enable it
 
-This is **not** built in. SvGrid edits one cell at a time.
-
-## Workaround - overlay form
-
-Trigger an edit form from a row action and write changes back via
-`api.setCellValue` for each field:
+Set `fullRowEditing` (alongside `enableInlineEditing`) on `<SvGrid>`:
 
 ```svelte
-<script lang="ts">
-  let editing = $state<Person | null>(null)
-
-  function commit(updated: Person) {
-    if (!api || !editing) return
-    const idx = api.getData().findIndex((r) => r.id === editing!.id)
-    if (idx === -1) return
-    for (const key of Object.keys(updated) as Array<keyof Person>) {
-      api.setCellValue(idx, key, updated[key])
-    }
-    editing = null
-  }
-</script>
-
-{#if editing}
-  <dialog open>
-    <!-- a regular form bound to a copy of `editing` -->
-  </dialog>
-{/if}
-
-<SvGrid {data} {columns} features={features}
-  enableInlineEditing={false}
-  onApiReady={(next) => (api = next)} />
+<SvGrid {data} {columns} enableInlineEditing fullRowEditing />
 ```
 
-This is often *better UX* than full-row editing for keyboard-heavy users -
-the form can have proper field labels and a save button.
+- **Double-click a row** (or `F2` / Enter on a focused cell) to enter full-row edit.
+- **Enter** or **click away** commits every drafted cell in a single update
+  (one re-render; `onCellValueChange` fires once per changed cell; each change
+  is captured in the undo history).
+- **Esc** cancels the whole row - nothing is written.
 
-## Tracked at
+<div data-docs-demo="177-full-row-editing" data-height="520"></div>
 
-[Missing features](../missing-features.md) - full-row editing as a built-
-in mode.
+## Supported editors
+
+The full-row editor renders a lightweight inline control per editable column:
+
+| `editorType` | Control |
+| --- | --- |
+| `text` / `password` | text / password input |
+| `number` | number input |
+| `date` / `datetime` / `time` | native date / datetime-local / time input |
+| `checkbox` | checkbox |
+| `list` / `select` / `rich-select` | single-select dropdown from `editorOptions` |
+
+Per-column `valueParser` still runs on commit, so the same normalization you use
+for single-cell edits applies to full-row commits too.
+
+> Rich single-cell editors (chips multi-select, star rating, color, custom
+> `cellEditor` snippets) render in **cell** editing. In full-row mode those
+> columns fall back to a text input - use cell editing for a column that needs a
+> bespoke control.
+
+## Cell vs full-row editing
+
+Leave `fullRowEditing` off (the default) for classic **cell** editing: a
+double-click edits one cell, Tab moves to the next. Turn it on when your users
+think in records - onboarding forms, roster edits, CRUD tables - and want to
+fill or fix a whole row before saving.
 
 ## See also
 
-- [Provided editors](./provided-editors.md)
-- [Saving values](./saving-values.md)
+- [Start / stop editing](./start-stop-editing.md)
+- [Parsing values](./parsing-values.md)
+- [Validation](./validation.md)

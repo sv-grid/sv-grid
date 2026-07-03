@@ -133,8 +133,8 @@ export function createGridApi<
         const row = ctx.internalData[rowIndex];
         const column = findColumn(columnId);
         if (!row || !column) return undefined;
-        if (column.columnDef.accessorFn)
-          return column.columnDef.accessorFn(row);
+        if (column.columnDef.fieldFn)
+          return column.columnDef.fieldFn(row);
         if (column.columnDef.field)
           return (row as Record<string, unknown>)[column.columnDef.field];
         return undefined;
@@ -147,40 +147,49 @@ export function createGridApi<
         next[rowIndex] = { ...row, [column.columnDef.field]: value } as TData;
         ctx.internalData = next;
       },
+      startEditing(rowIndex, columnId) {
+        return ctx.startEditing(rowIndex, columnId);
+      },
+      stopEditing(cancel) {
+        return ctx.stopEditing(cancel ?? false);
+      },
       selectCells(ranges) {
-        // Engine supports a single anchor/focus rectangle today. Honour
-        // the first entry; ignore the rest. Empty array clears.
+        // Multiple rectangles are supported. Empty array clears everything.
         if (!ranges || ranges.length === 0) {
           ctx.selectionRange = { anchor: null, focus: null };
+          ctx.selectionRanges = [];
           return;
         }
-        const [r1, c1, r2, c2] = ranges[0]!;
         const rowCount = ctx.internalData.length;
         const colCount = ctx.allColumns.length;
         if (rowCount === 0 || colCount === 0) return;
         // Clamp to the visible grid bounds so callers can pass open-ended
         // values like `[0, 0, Infinity, Infinity]` to mean "select all".
-        const aRow = Math.max(0, Math.min(rowCount - 1, Math.min(r1, r2)));
-        const fRow = Math.max(0, Math.min(rowCount - 1, Math.max(r1, r2)));
-        const aCol = Math.max(0, Math.min(colCount - 1, Math.min(c1, c2)));
-        const fCol = Math.max(0, Math.min(colCount - 1, Math.max(c1, c2)));
-        ctx.selectionRange = {
-          anchor: { rowIndex: aRow, colIndex: aCol },
-          focus:  { rowIndex: fRow, colIndex: fCol },
-        };
-        // Move the active cell to the range's top-left so keyboard
+        const toRange = ([r1, c1, r2, c2]: readonly [number, number, number, number]) => ({
+          anchor: {
+            rowIndex: Math.max(0, Math.min(rowCount - 1, Math.min(r1, r2))),
+            colIndex: Math.max(0, Math.min(colCount - 1, Math.min(c1, c2))),
+          },
+          focus: {
+            rowIndex: Math.max(0, Math.min(rowCount - 1, Math.max(r1, r2))),
+            colIndex: Math.max(0, Math.min(colCount - 1, Math.max(c1, c2))),
+          },
+        });
+        const built = ranges.map(toRange);
+        // Last range is the active one; the rest are committed extras.
+        ctx.selectionRanges = built.slice(0, -1);
+        const active = built[built.length - 1]!;
+        ctx.selectionRange = active;
+        // Move the active cell to the last range's top-left so keyboard
         // navigation continues from there.
-        ctx.setActiveCell(aRow, aCol);
+        ctx.setActiveCell(active.anchor.rowIndex, active.anchor.colIndex);
       },
       getSelected() {
-        const a = ctx.selectionRange.anchor;
-        const f = ctx.selectionRange.focus;
-        if (!a || !f) return [];
-        const r1 = Math.min(a.rowIndex, f.rowIndex);
-        const r2 = Math.max(a.rowIndex, f.rowIndex);
-        const c1 = Math.min(a.colIndex, f.colIndex);
-        const c2 = Math.max(a.colIndex, f.colIndex);
-        return [[r1, c1, r2, c2]];
+        return ctx
+          .getSelectionRects()
+          .map((r: { minRow: number; minCol: number; maxRow: number; maxCol: number }) =>
+            [r.minRow, r.minCol, r.maxRow, r.maxCol] as [number, number, number, number],
+          );
       },
       addRow(row, position = "bottom") {
         this.addRows([row], position);
@@ -312,6 +321,17 @@ export function createGridApi<
             value: filter.value ?? "",
             ...(filter.operator === "between"
               ? { valueTo: filter.valueTo ?? "" }
+              : {}),
+            // Optional second condition + join (multi-condition filtering).
+            ...(filter.operator2
+              ? {
+                  operator2: filter.operator2,
+                  value2: filter.value2 ?? "",
+                  join: filter.join ?? "AND",
+                  ...(filter.operator2 === "between"
+                    ? { valueTo2: filter.valueTo2 ?? "" }
+                    : {}),
+                }
               : {}),
           },
         };

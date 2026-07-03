@@ -114,7 +114,7 @@ const columns: ColumnDef<typeof features, Row>[] = [
 | `sortable: true` | (default) | Sorting is on when `rowSortingFeature` is registered. |
 | `filter: true` | (default) | Filtering is on when `columnFilteringFeature` is registered. |
 | `valueFormatter` | `format: { ... }` | Built-in types: `number`, `currency`, `percent`, `date`. For custom, use `cell`. |
-| `valueGetter` | `accessorFn` | Returns the value for sorting/filtering. |
+| `valueGetter` | `fieldFn` | Returns the value for sorting/filtering. |
 | `cellRenderer` + `cellRendererParams` | `cell: renderComponent(C, ctx => props)` | One call, type-checked. |
 | `cellEditor: 'agTextCellEditor'` | `editorType: 'text'` | Built-in: `text`, `number`, `checkbox`, `date`. |
 | `editable: true` | `enableInlineEditing` prop on `<SvGrid>` | Per-grid, not per-column. (Per-column control on the roadmap.) |
@@ -304,7 +304,7 @@ miss it - it's a power-user feature.
 
 ### 3. AG Grid `valueGetter` chains
 AG Grid's `valueGetter` can read other column values via the API. In
-SvGrid, `accessorFn` only receives the row; if you need cross-column
+SvGrid, `fieldFn` only receives the row; if you need cross-column
 computed values, do it in the cell renderer with `ctx.row.original` or
 compute the derived value upstream and store it in the row.
 

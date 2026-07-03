@@ -1,46 +1,172 @@
 ---
 title: Choosing the Most Accessible Svelte Data Grid
-description: How to evaluate a data grid's accessibility - ARIA roles, keyboard navigation, focus management, screen-reader support - with a checklist.
+description: A practical guide to testing data grid accessibility - ARIA roles, keyboard navigation, focus management under virtualization, and screen-reader behavior - so you can verify claims yourself.
 date: 2026-08-19
+updated: "2026-07-02"
 category: Comparisons
 tags: accessibility, comparison, wcag, svelte data grid
 author: Boyko Markov
 ---
 
-Accessibility is a hard requirement for many teams - government, finance, healthcare, anyone with a procurement checklist - and it is the area where data grids vary most. Here is how to evaluate a Svelte grid's accessibility rather than take a checkbox on a feature page at face value.
+Most data grid accessibility stories go like this: a vendor's feature page has a green checkbox next to "WCAG 2.1 AA". A procurement team checks the box. Six months later, a screen-reader user files a support ticket because they cannot navigate past column 3.
+
+Accessibility claims are cheap. The real question is how to verify them before you commit to a component.
 
 ![A high-contrast, accessible SvGrid theme.](/blog-media/high-contrast.png)
 *A high-contrast, accessible SvGrid theme.*
 
-## The checklist
+## What the WAI-ARIA grid pattern actually requires
 
-Test these directly; do not trust claims:
+The W3C defines a [composite widget](https://www.w3.org/WAI/ARIA/apg/patterns/grid/) called `grid` that is meant for grids of interactive cells - not for static data tables. The DOM requirements are specific:
 
-1. **ARIA roles.** Does it render the [grid pattern](wai-aria-grid-pattern-explained) - `role="grid"`, `row`, `columnheader`, `gridcell` - or just styled `<div>`s? Inspect the DOM.
-2. **Keyboard navigation.** Unplug the mouse. Can you move with arrows, jump with Home/End and Ctrl+Home/End, edit with F2/Enter, cancel with Escape?
-3. **Roving focus.** Is the grid a single tab stop with arrow-key movement, or does Tab walk through thousands of cells (a trap)?
-4. **Focus survives virtualization.** Scroll a focused row off-screen and back, is focus preserved, or lost when the DOM node recycles? This is where many grids quietly fail.
-5. **Screen-reader announcements.** With a screen reader on, are cells, headers, and row/column positions announced? Are sort and selection states conveyed?
-6. **Visible focus indicator** and sufficient contrast.
+- The container gets `role="grid"`
+- Each row gets `role="row"`
+- Header cells get `role="columnheader"`
+- Data cells get `role="gridcell"`
 
-## Why it cannot be retrofitted
+Inspect any Svelte grid candidate with DevTools before trusting the docs. A library that renders `<div class="cell">` with no ARIA role fails this immediately - assistive technology has nothing to announce.
 
-The roving-focus model and ARIA roles shape a grid's architecture. A grid built without them cannot be patched into compliance, it gets rebuilt. So the real question is whether accessibility was designed in from the start, which you verify by testing, not by reading a feature list. See [accessible data tables](accessible-data-table-wcag).
+Beyond roles, the pattern requires that the grid function as a **single tab stop**. You Tab into it, arrow keys move focus between cells, and Tab again takes you out. If Tab walks through every cell in a 1000-row table, that is a keyboard trap by a different name, and it fails WCAG 2.1 criterion 2.1.2.
 
-## Custom cells are your responsibility too
+## The four things you must test yourself
 
-Even the most accessible grid can be undone by inaccessible custom cells. Use real `<button>`/`<a>` elements, label icon-only controls, and do not trap focus, see [keyboard navigation and accessibility](keyboard-navigation-and-accessibility). Evaluate how easy a grid makes it to keep custom cells accessible.
+Feature pages lie by omission. These four tests take under ten minutes and tell you almost everything:
 
-## Where SvGrid stands
+**1. Keyboard navigation without a mouse.** Open the grid, tab into it, and try to reach the last cell using only arrow keys, Home, End, Page Up, Page Down, Ctrl+Home, and Ctrl+End. Try editing with F2 or Enter and cancelling with Escape. A grid that supports only arrow movement but drops the rest fails in practice.
 
-SvGrid renders the WAI-ARIA grid pattern and full keyboard navigation by default, from the first render, and preserves focus across virtualized row recycling. But do not take our word for it, run the checklist above against SvGrid and the alternatives. Accessibility is too important to adopt on faith.
+**2. Focus survival under virtualization.** This is where most grids quietly break. Virtualization recycles DOM nodes as you scroll - when a focused row leaves the viewport, the grid may destroy the node that held focus. Navigate to a row near the bottom of the viewport, scroll it off screen, then scroll back. Is the focused cell still focused, or did focus silently move to `<body>`?
 
-## Frequently asked questions
+**3. Screen-reader announcements.** With VoiceOver or NVDA running, navigate with arrow keys. You should hear the cell content, the column header, and the row/column position (e.g. "row 5, column 3"). Sort state changes should be announced via `aria-sort`. Row selection should be announced via `aria-selected`.
 
-### How do I evaluate a data grid's accessibility?
+**4. Custom cell accessibility.** This one is your responsibility, but the grid shapes how easy or hard it is. Render an action column with a button in each cell, then keyboard-navigate to it. Does focus land inside the cell correctly? Does pressing Space or Enter activate the button? A grid that puts interactive elements inside `gridcell` correctly will make this straightforward.
 
-Test it directly: inspect for ARIA grid roles, navigate by keyboard only (arrows, Home/End, F2, Escape), check that the grid is a single tab stop with roving focus, confirm focus survives virtualized scrolling, and verify screen-reader announcements, rather than trusting a feature-page claim.
+## How to build accessible custom cells in SvGrid
 
-### Why can't accessibility be added to a grid later?
+Even a grid with perfect built-in accessibility can be broken by the cells you write. Here is the pattern that keeps things correct:
 
-Because the roving-focus model and semantic roles shape the architecture; a grid built without them must be rebuilt, not patched. Choose a grid that was designed accessible from the start, and verify it by testing.
+```svelte
+<script lang="ts">
+  import SvGrid from '@svgrid/grid'
+  import type { ColumnDef } from '@svgrid/grid'
+
+  const columns: ColumnDef[] = [
+    { id: 'name', field: 'name', header: 'Name', width: 200 },
+    { id: 'status', field: 'status', header: 'Status', width: 120, cell: statusCell },
+    { id: 'actions', header: 'Actions', width: 100, cell: actionsCell },
+  ]
+</script>
+
+{#snippet statusCell({ value })}
+  <!-- Use semantic text, not color alone - WCAG 1.4.1 -->
+  <span
+    class="badge"
+    class:active={value === 'active'}
+    aria-label={value === 'active' ? 'Status: active' : 'Status: inactive'}
+  >
+    {value}
+  </span>
+{/snippet}
+
+{#snippet actionsCell({ row })}
+  <!-- Real <button> elements, not divs with click handlers -->
+  <button
+    type="button"
+    aria-label={`Edit ${row.name}`}
+    onclick={() => openEditor(row)}
+  >
+    Edit
+  </button>
+{/snippet}
+
+<SvGrid
+  {data}
+  {columns}
+  enableCellSelection={true}
+/>
+```
+
+The two rules that matter: use real `<button>` and `<a>` elements for interactive content inside cells (not `<div onclick>`), and label icon-only controls so a screen reader has something to announce. The grid handles focus movement between cells; you handle what lives inside them.
+
+## Conditional formatting without accessibility regression
+
+Visual formatting is common in grids - red for negative numbers, yellow for warnings. The accessibility risk is relying on color alone to convey meaning (WCAG 1.4.1 fails). Here is the correct approach:
+
+```svelte
+<script lang="ts">
+  import SvGrid from '@svgrid/grid'
+  import type { ColumnDef } from '@svgrid/grid'
+
+  const columns: ColumnDef[] = [
+    { id: 'name', field: 'name', header: 'Name', width: 200 },
+    {
+      id: 'score',
+      field: 'score',
+      header: 'Score',
+      width: 100,
+      type: 'number',
+      conditionalFormat: [
+        {
+          condition: ({ value }) => value < 50,
+          style: { color: 'var(--color-danger)', fontWeight: 'bold' },
+        },
+        {
+          condition: ({ value }) => value >= 90,
+          style: { color: 'var(--color-success)' },
+        },
+      ],
+      // Provide a text suffix so color is not the only signal
+      cell: scoreCell,
+    },
+  ]
+</script>
+
+{#snippet scoreCell({ value })}
+  <span aria-label={`${value} ${value < 50 ? '(below threshold)' : value >= 90 ? '(excellent)' : ''}`}>
+    {value}
+    {#if value < 50}
+      <span aria-hidden="true"> ↓</span>
+    {:else if value >= 90}
+      <span aria-hidden="true"> ↑</span>
+    {/if}
+  </span>
+{/snippet}
+
+<SvGrid {data} {columns} />
+```
+
+The pattern: use `aria-hidden="true"` on decorative icons, and provide an `aria-label` that includes the meaning in text, not just the value. The visual arrow is supplementary, not the only signal.
+
+## The focus-under-virtualization problem in detail
+
+Virtualization is where grids most commonly break accessibility silently. When you have 100,000 rows, the grid only renders the visible slice - maybe 30 rows at a time. As you scroll, rows leaving the viewport are unmounted and their DOM nodes are reused.
+
+If a focused cell's row gets unmounted, the browser moves focus to `<body>`. The user pressing an arrow key next gets no response, or focus jumps somewhere unexpected. They might not even notice immediately - it just feels broken.
+
+The correct implementation maintains a virtual focus position separate from the DOM focus. When a previously-focused row re-enters the viewport, the grid restores focus to the right DOM node automatically. Testing this is simple: Tab into the grid, arrow down to a row near the bottom of the visible area, then hold the down arrow until that row scrolls off screen. If focus survives, the implementation is correct.
+
+## A keyboard navigation test script
+
+Run this directly on any grid you are evaluating:
+
+```
+1. Tab into the grid - focus should land on the first cell, not a container div.
+2. Arrow right/left/up/down - focus should move one cell at a time.
+3. Home - focus should move to column 1 of the current row.
+4. End - focus should move to the last column.
+5. Ctrl+Home - focus should move to row 1, column 1.
+6. Ctrl+End - focus should move to the last row, last column.
+7. F2 or Enter on an editable cell - cell should enter edit mode.
+8. Escape - cell should exit edit mode without saving.
+9. Tab out of the grid - focus should leave the grid to the next element in page order.
+10. Scroll a focused row off screen and back - focus should be preserved.
+```
+
+A grid that passes all ten is doing accessibility correctly at the structural level. Most fail on 6 (Ctrl+End in large datasets requires virtualized focus tracking) and 10 (focus survival).
+
+## SvGrid's approach
+
+SvGrid renders the WAI-ARIA grid pattern from the first render - `role="grid"`, `role="row"`, `role="columnheader"`, `role="gridcell"` - with roving focus managed via `tabindex` shifting. Keyboard navigation covers the full shortcut set including Ctrl+Home/End, F2/Escape for editing, and Page Up/Down. Focus is tracked as a virtual position independent of the DOM, so virtualized scrolling does not drop it.
+
+That said: run the ten-step test above against SvGrid and against any alternative you are considering. Accessibility is too important to take on a vendor's word. The test takes ten minutes and the results are definitive.
+
+For government, healthcare, or finance procurement where WCAG 2.1 AA is a hard requirement, test with an actual screen reader too - NVDA on Windows and VoiceOver on macOS are both free. What you hear is what your users experience.

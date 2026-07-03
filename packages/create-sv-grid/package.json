@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/create",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Scaffold a Svelte app powered by SvGrid in one command: npm create @svgrid@latest",
   "type": "module",
   "license": "MIT",

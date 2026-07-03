@@ -13,7 +13,7 @@ import { formatNumericWithConfig } from "./cell-formatting";
 
 export function getColumnBaseValue<TData extends RowData>(row: Row<TData>, column: Column<TData>) {
   const def = column.columnDef;
-  if (def.accessorFn) return def.accessorFn(row.original);
+  if (def.fieldFn) return def.fieldFn(row.original);
   if (def.field) return row.original[def.field];
   return row.getCellValueByColumnId(column.id);
 }
@@ -85,7 +85,7 @@ export function getColumnAlign<TData extends RowData>(column: Column<TData>): "l
 /**
  * Read a cell value from a PINNED row. Pinned rows aren't bound to a
  * TanStack Row<TData>, so we resolve the value directly off the raw
- * TData via `accessorFn` or `field`. Mirrors `getColumnBaseValue`'s
+ * TData via `fieldFn` or `field`. Mirrors `getColumnBaseValue`'s
  * lookup path minus the Row indirection.
  */
 export function getPinnedCellValue<TData extends RowData>(
@@ -93,7 +93,7 @@ export function getPinnedCellValue<TData extends RowData>(
   column: Column<TData>,
 ): unknown {
   const def = column.columnDef;
-  if (def.accessorFn) return def.accessorFn(rowData);
+  if (def.fieldFn) return def.fieldFn(rowData);
   const field = def.field as string | undefined;
   if (!field) return undefined;
   return (rowData as unknown as Record<string, unknown>)[field];
@@ -101,7 +101,7 @@ export function getPinnedCellValue<TData extends RowData>(
 
 export function getColumnAccessorValue<TData extends RowData>(rowData: TData, column: Column<TData>) {
   const def = column.columnDef;
-  if (def.accessorFn) return def.accessorFn(rowData);
+  if (def.fieldFn) return def.fieldFn(rowData);
   if (def.field) return rowData[def.field];
   return undefined;
 }

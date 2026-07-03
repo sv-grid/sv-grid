@@ -74,7 +74,7 @@ const columns: ColumnDef<{}, Person>[] = [
   {
     id: 'fullName',
     header: 'Full name',
-    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+    fieldFn: (row) => `${row.firstName} ${row.lastName}`,
   },
 
   // Numeric, with locale-aware formatting
@@ -112,8 +112,8 @@ const columns: ColumnDef<{}, Person>[] = [
 | Property      | Purpose                                                                                                  |
 | ------------- | -------------------------------------------------------------------------------------------------------- |
 | `field`       | Reads `row[key]`.                                                                                        |
-| `accessorFn`  | Computes the value from the row. Required when there's no underlying field.                              |
-| `id`          | Stable column id. Required when you use `accessorFn` (no field to derive from).                          |
+| `fieldFn`  | Computes the value from the row. Required when there's no underlying field.                              |
+| `id`          | Stable column id. Required when you use `fieldFn` (no field to derive from).                          |
 | `header`      | String or render snippet for the header.                                                                 |
 | `footer`      | String or render snippet for the footer row.                                                             |
 | `cell`        | Render snippet / component for the body cell. See [Cell components](../help/cells/cell-components.md).   |
@@ -153,7 +153,7 @@ For anything beyond a stringified value, render with `renderSnippet`:
     {
       id: 'person',
       header: 'Person',
-      accessorFn: (r) => `${r.firstName} ${r.lastName}`,
+      fieldFn: (r) => `${r.firstName} ${r.lastName}`,
       cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
     },
     { field: 'age', header: 'Age' },

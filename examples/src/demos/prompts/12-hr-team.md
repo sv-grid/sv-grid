@@ -14,7 +14,7 @@ date, tenure, status, comp.
 Showcases:
   - `columnGroupingFeature` with a default group-by ("team")
   - `renderSnippet` for the avatar cell and status badge
-  - A derived `tenure` column (no `field` - `accessorFn`)
+  - A derived `tenure` column (no `field` - `fieldFn`)
   - Sort by any column; group rows fold to a summary line
 
 ## Imports

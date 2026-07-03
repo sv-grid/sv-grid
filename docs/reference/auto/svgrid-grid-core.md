@@ -207,7 +207,7 @@ _No JSDoc yet._
 export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = {
   id?: string
   field?: keyof TData & string
-  accessorFn?: (row: TData) => unknown
+  fieldFn?: (row: TData) => unknown
   header?: ColumnDefTemplate<HeaderContext<TData>>
   footer?: ColumnDefTemplate<HeaderContext<TData>>
   cell?: ColumnDefTemplate<CellContext<TData>>

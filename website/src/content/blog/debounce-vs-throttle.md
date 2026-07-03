@@ -1,59 +1,174 @@
 ---
 title: Debounce vs Throttle (for Grids and Beyond)
-description: Two ways to tame too-frequent events - debounce and throttle. What each does, when to use which, and where they show up in a data grid.
+description: Debounce and throttle are not interchangeable. Here is when each one belongs in your data grid, with real code for filter inputs, live feeds, and scroll.
 date: 2026-07-22
+updated: "2026-07-02"
 category: Concepts
 tags: debounce, throttle, performance, concepts, data grid
 author: Kamelia M
 ---
 
-Debounce and throttle both rein in how often a function runs, and they get mixed up constantly, which is how you end up with a search box that lags or a live feed that drops updates. They are not interchangeable.
+Developers mix these up constantly. The result is a filter box that fires a server request on every keystroke, or a live price feed that delivers one burst at the end and looks frozen the rest of the time. Both are fixable in ten lines of code - once you know which tool to reach for.
 
-![Live updates streaming into a SvGrid grid.](/blog-media/websocket-live.png)
-*Live updates streaming into a SvGrid grid.*
+The core distinction is about *when* you care about the value. Do you want it after the activity settles, or at a controlled rate while it is still happening? Those are two different problems.
 
-## The difference in one line
+## What debounce actually does
 
-- **Debounce**: wait until the activity *stops*, then run once. "Do it when they are done."
-- **Throttle**: run at most once per interval *during* the activity. "Do it at a steady rate."
-
-## Debounce: filter input
-
-When a user types in a filter box, you do not want to query on every keystroke, you want to query once they pause. That is debounce:
+Debounce delays execution until after a burst of calls has stopped. Each new call resets the timer. Only the last one fires.
 
 ```ts
 let timer: ReturnType<typeof setTimeout>
-function onInput(value: string) {
-  clearTimeout(timer)
-  timer = setTimeout(() => runFilter(value), 250) // fires 250ms after typing stops
+
+function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number): T {
+  return ((...args: Parameters<T>) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), delay)
+  }) as T
+}
+
+// Typical usage with a SvGrid filter input
+const debouncedFilter = debounce((value: string) => {
+  api.setFilter('name', { operator: 'contains', value })
+}, 300)
+```
+
+The 300ms window is common for search inputs. Under 150ms and you might as well not bother - the network round trip will dominate anyway. Over 500ms and users start to feel the lag.
+
+## What throttle actually does
+
+Throttle lets a function run at most once per interval, even if it is called hundreds of times during that interval. It does not wait for the activity to stop - it runs *during* it, on a schedule.
+
+```ts
+function throttle<T extends (...args: unknown[]) => void>(fn: T, interval: number): T {
+  let lastRun = 0
+  return ((...args: Parameters<T>) => {
+    const now = Date.now()
+    if (now - lastRun >= interval) {
+      lastRun = now
+      fn(...args)
+    }
+  }) as T
+}
+
+// Throttle a scroll handler - runs at most every 100ms
+const onScroll = throttle((event: Event) => {
+  // custom scroll tracking, analytics, etc.
+  const target = event.target as HTMLElement
+  updateScrollPosition(target.scrollTop)
+}, 100)
+```
+
+For DOM-driven throttling like scroll or resize, `requestAnimationFrame` is often a better throttle than a time-based one, because it aligns with the browser's render cycle rather than an arbitrary millisecond interval.
+
+## Applying this to a data grid
+
+A data grid surfaces both patterns in concrete, everyday situations.
+
+### Filter inputs (debounce)
+
+Server-side filtering is the canonical debounce case. You are wiring a text input to an API call, and you want exactly one call per "finished thought" from the user, not one per character.
+
+```svelte
+<script>
+  import SvGrid from '@svgrid/grid'
+  import { createServerDataSource } from '@svgrid/grid'
+  import type { SvGridApi } from '@svgrid/grid'
+
+  let api: SvGridApi | undefined = $state(undefined)
+
+  const ds = createServerDataSource({
+    fetch: async ({ page, pageSize, filters }) => {
+      const params = new URLSearchParams({
+        page: String(page),
+        size: String(pageSize),
+      })
+      // filters is the processed filter state from SvGrid
+      if (filters.name) {
+        params.set('name', String(filters.name.value))
+      }
+      const res = await fetch(`/api/products?${params}`)
+      const json = await res.json()
+      return { rows: json.data, total: json.total }
+    }
+  })
+
+  const columns = [
+    { id: 'name', field: 'name', header: 'Name', width: 220 },
+    { id: 'price', field: 'price', header: 'Price', width: 120, type: 'number' as const },
+    { id: 'sku', field: 'sku', header: 'SKU', width: 140 },
+  ]
+
+  let timer: ReturnType<typeof setTimeout>
+
+  function onSearchInput(e: Event) {
+    const value = (e.target as HTMLInputElement).value
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      // This triggers a refetch through the server data source
+      api?.setFilter('name', { operator: 'contains', value })
+    }, 300)
+  }
+</script>
+
+<input type="search" oninput={onSearchInput} placeholder="Search products..." />
+<SvGrid data={ds} {columns} pageable onApiReady={(a) => { api = a }} />
+```
+
+The key detail: `api.setFilter` triggers a refetch through the `createServerDataSource`. Without the debounce, a user typing "laptop" would fire six requests. With it, one request fires 300ms after they stop.
+
+### Live data feeds (throttle with rAF)
+
+A WebSocket price feed can push dozens of updates per second. Rendering each one individually would destroy performance. The right pattern is to accumulate updates and flush them on animation frames.
+
+```ts
+import { createServerDataSource } from '@svgrid/grid'
+import type { SvGridApi } from '@svgrid/grid'
+
+let api: SvGridApi | undefined
+let pending: Record<string, unknown>[] = []
+let scheduled = false
+
+function flush() {
+  if (pending.length > 0) {
+    api?.applyTransaction({ update: pending })
+    pending = []
+  }
+  scheduled = false
+}
+
+function onPriceUpdate(row: Record<string, unknown>) {
+  pending.push(row)
+  if (!scheduled) {
+    scheduled = true
+    requestAnimationFrame(flush)
+  }
+}
+
+// Wire to WebSocket
+const socket = new WebSocket('wss://prices.example.com')
+socket.onmessage = (event) => {
+  const data = JSON.parse(event.data)
+  onPriceUpdate(data)
 }
 ```
 
-If they keep typing, the timer keeps resetting; the filter runs once, at the end. This is the right tool for [server-side filtering](svelte-data-grid-rest-api) and URL sync.
+This pattern means the grid re-renders at 60fps maximum, regardless of how fast the feed comes in. The `scheduled` flag prevents stacking multiple rAF calls.
 
-## Throttle: live feeds and scroll
+## The decision in plain terms
 
-When updates arrive continuously - a price feed, scroll events - you want regular updates, not one at the end. That is throttle: run at most once per interval while the stream continues. For rendering, the best "throttle" is the animation frame:
+| Situation | Tool | Why |
+|---|---|---|
+| Filter/search input | Debounce (250-350ms) | You want the result after typing ends |
+| Autosave while editing | Debounce (1-2s) | Save once per "pause", not per keystroke |
+| WebSocket / live feed | Throttle (rAF) | You want updates at a steady rate during the stream |
+| Window resize handler | Debounce or rAF | Depends - recompute layout after done (debounce), or track position live (rAF) |
+| Scroll position tracking | rAF throttle | Continuous, but at frame rate |
+| Column drag / row drag | rAF throttle | Smooth visual feedback requires frame-aligned updates |
 
-```ts
-// run at most once per frame, regardless of how many updates arrive
-if (!scheduled) { scheduled = true; requestAnimationFrame(flush) }
-```
+## The common swap mistake
 
-See [throttling live updates](throttle-live-updates-animation-frames).
+If you debounce a live feed, the grid appears frozen for the duration of the feed and then jumps to the latest value when the stream pauses. That is confusing and looks like a bug.
 
-## How to choose
+If you throttle a search input, queries fire mid-word. "lap" triggers a request before "laptop" is finished. On a slow backend that can cause stale results to arrive after the correct ones, depending on response ordering.
 
-Ask: do I want the result *after the activity ends*, or *at a steady rate during it*?
-
-| Situation | Use |
-| --- | --- |
-| Search/filter input | Debounce |
-| Autosave while typing | Debounce |
-| Live data feed render | Throttle (rAF) |
-| Scroll/resize handlers | Throttle (rAF) |
-| Window resize, then recompute | Debounce (trailing) |
-
-## A common bug
-
-Debouncing a live feed makes it feel frozen (you only see the last value after it stops); throttling a search box fires queries mid-typing. Match the tool to whether you care about the *end* of activity or its *rate*.
+The decision is about whether you care about *the latest value after things settle* or *the current value at regular intervals*. Those are different questions. Pick the right one and the implementation is five lines.

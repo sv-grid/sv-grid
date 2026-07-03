@@ -1,6 +1,6 @@
 <script lang="ts">
   // Interactive demo for ColumnDef: each column shows off a different
-  // capability - editorType, align, format, accessorFn, cellClass, custom
+  // capability - editorType, align, format, fieldFn, cellClass, custom
   // cell renderer (renderSnippet), and a value-driven tooltip.
   import {
     SvGrid,
@@ -17,9 +17,9 @@
   // Columns are built lazily in a $derived so the StatusPill snippet (declared
   // in markup below) is in scope by the time a cell renderer runs.
   const columns: ColumnDef<typeof features, Order>[] = [
-    // accessorFn: derived value with no backing field
+    // fieldFn: derived value with no backing field
     { id: 'idx', header: '#', width: 50, align: 'right', sortable: false,
-      accessorFn: (r) => rows.indexOf(r) + 1 },
+      fieldFn: (r) => rows.indexOf(r) + 1 },
     { field: 'customer', header: 'Customer', width: 180, editorType: 'text',
       tooltip: (ctx) => `Region: ${ctx.row.original.region}` },
     { field: 'qty', header: 'Qty', width: 80, editorType: 'number', align: 'right' },
@@ -65,7 +65,7 @@
 </div>
 
 <p class="mt-2 text-xs" style="color: var(--sg-muted);">
-  "#" uses <code>accessorFn</code> · Total is <code>format: currency</code> with a
+  "#" uses <code>fieldFn</code> · Total is <code>format: currency</code> with a
   value-driven <code>cellClass</code> · Margin is <code>format: percent</code> ·
   Status is a custom <code>cell</code> snippet · hover Customer for a
   value-driven <code>tooltip</code>. Double-click any editable cell to edit.

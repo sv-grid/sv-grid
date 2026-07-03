@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-06-30T22:16:59.319Z",
+  "generatedAt": "2026-07-03T14:23:55.666Z",
   "counts": {
-    "pages": 198,
+    "pages": 207,
     "enterprise": 9,
-    "withDemo": 72
+    "withDemo": 82
   },
   "sections": [
     {
@@ -68,7 +68,6 @@
         "help/agents.md",
         "help/ai-smart-paste.md",
         "help/ai.md",
-        "help/api-reference.md",
         "help/api-stability.md",
         "help/architecture.md",
         "help/benchmarks.md",
@@ -148,9 +147,11 @@
       "id": "help/columns",
       "title": "Columns",
       "pages": [
+        "help/columns/aligned-grids.md",
         "help/columns/column-definitions.md",
         "help/columns/column-groups.md",
         "help/columns/column-headers.md",
+        "help/columns/column-menu.md",
         "help/columns/column-moving.md",
         "help/columns/column-pinning.md",
         "help/columns/column-sizing.md",
@@ -200,11 +201,25 @@
       ]
     },
     {
+      "id": "help/headless",
+      "title": "help/headless",
+      "pages": [
+        "help/headless/build-a-table.md",
+        "help/headless/controlled-state.md",
+        "help/headless/overview.md",
+        "help/headless/row-models.md",
+        "help/headless/server-side.md",
+        "help/headless/styling.md",
+        "help/headless/virtualization.md"
+      ]
+    },
+    {
       "id": "help/rows",
       "title": "Rows",
       "pages": [
         "help/rows/accessing-rows.md",
         "help/rows/full-width-rows.md",
+        "help/rows/master-detail.md",
         "help/rows/row-data.md",
         "help/rows/row-dragging.md",
         "help/rows/row-height.md",
@@ -450,7 +465,7 @@
       "section": "",
       "tier": "community",
       "words": 3330,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -496,7 +511,7 @@
       "section": "getting-started",
       "tier": "community",
       "words": 701,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -600,17 +615,6 @@
       ]
     },
     {
-      "path": "help/api-reference.md",
-      "url": "/help/api-reference",
-      "title": "API reference",
-      "summary": "A flat index of every Stable export. Each entry links to the topic page that covers it in depth. For the formal TypeScript shapes, inspect the .d.ts files in node_modules/@svgrid/grid/dist - they're the source of truth and ship with full JSDoc.",
-      "section": "help",
-      "tier": "community",
-      "words": 1553,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
       "path": "help/api-stability.md",
       "url": "/help/api-stability",
       "title": "API stability & semver policy",
@@ -664,7 +668,7 @@
       "section": "help/cells",
       "tier": "community",
       "words": 330,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -676,8 +680,8 @@
       "summary": "The editorType field on a column tags the column with a type. This drives three different behaviours: <div data-docs-demo=\"01-quick-start\" data-height=\"540\"></div>",
       "section": "help/cells",
       "tier": "community",
-      "words": 346,
-      "lastUpdated": "2026-06-16",
+      "words": 551,
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "01-quick-start"
       ]
@@ -689,8 +693,8 @@
       "summary": "By default the grid has **cell-range selection** (drag across cells, range highlight, copy as TSV). Standard browser text-selection inside a cell is **not** the default - clicking-and-dragging across a cell creates a range selection, not a text selection. <div data-docs-demo=\"04-selection-copy-paste\" data-height=\"540\"></div>",
       "section": "help/cells",
       "tier": "community",
-      "words": 252,
-      "lastUpdated": "2026-06-08",
+      "words": 324,
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "04-selection-copy-paste"
       ]
@@ -710,11 +714,11 @@
       "path": "help/cells/expressions.md",
       "url": "/help/cells/expressions",
       "title": "Expressions",
-      "summary": "SvGrid does not ship a formula / expression language for cells. Computed values are JavaScript - either via accessorFn or inside a cell callback. <div data-docs-demo=\"83-spreadsheet-formulas\" data-height=\"540\"></div>",
+      "summary": "SvGrid does not ship a formula / expression language for cells. Computed values are JavaScript - either via fieldFn or inside a cell callback. <div data-docs-demo=\"83-spreadsheet-formulas\" data-height=\"540\"></div>",
       "section": "help/cells",
       "tier": "community",
       "words": 246,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "83-spreadsheet-formulas"
       ]
@@ -727,7 +731,7 @@
       "section": "help/cells",
       "tier": "community",
       "words": 219,
-      "lastUpdated": "2026-06-08",
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "04-selection-copy-paste"
       ]
@@ -736,11 +740,11 @@
       "path": "help/cells/highlighting-changes.md",
       "url": "/help/cells/highlighting-changes",
       "title": "Highlighting changes",
-      "summary": "There is no built-in \"flash on change\" highlight. You build it with a diff against a frozen snapshot of the data. <div data-docs-demo=\"11-stock-market\" data-height=\"540\"></div>",
+      "summary": "Set cellFlash on a column and the grid flashes that cell whenever its value changes - edits, streaming feeds, server pushes. It is keyed by row identity, so scrolling a virtualized grid (which recycles <td> nodes) never triggers a false flash; only a same-row value change does. It respects prefers-reduced-motion.",
       "section": "help/cells",
       "tier": "community",
-      "words": 264,
-      "lastUpdated": "2026-06-08",
+      "words": 390,
+      "lastUpdated": "2026-07-01",
       "demoIds": [
         "11-stock-market"
       ]
@@ -777,7 +781,7 @@
       "section": "help/cells",
       "tier": "community",
       "words": 336,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "13-finances"
       ]
@@ -840,6 +844,19 @@
       ]
     },
     {
+      "path": "help/columns/aligned-grids.md",
+      "url": "/help/columns/aligned-grids",
+      "title": "Aligned grids",
+      "summary": "Aligned grids are two or more independent <SvGrid> instances kept in lockstep: **horizontal scroll** and **column-resize widths** propagate between them. Use it for a budget-vs-actuals comparison, or a totals grid pinned under a body grid, where the columns must stay lined up.",
+      "section": "help/columns",
+      "tier": "community",
+      "words": 209,
+      "lastUpdated": "2026-07-02",
+      "demoIds": [
+        "182-aligned-grids"
+      ]
+    },
+    {
       "path": "help/columns/column-definitions.md",
       "url": "/help/columns/column-definitions",
       "title": "Column definitions",
@@ -847,7 +864,7 @@
       "section": "help/columns",
       "tier": "community",
       "words": 591,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "01-quick-start"
       ]
@@ -859,10 +876,11 @@
       "summary": "A column group is a ColumnDef whose columns array contains children. The parent renders a spanning header above its children. The pivot demo below shows three levels of grouped headers in action - Year wraps Quarter wraps measure:",
       "section": "help/columns",
       "tier": "community",
-      "words": 305,
-      "lastUpdated": "2026-06-05",
+      "words": 445,
+      "lastUpdated": "2026-07-02",
       "demoIds": [
-        "52-pivot-table"
+        "52-pivot-table",
+        "183-collapsible-column-groups"
       ]
     },
     {
@@ -877,6 +895,17 @@
       "demoIds": [
         "01-quick-start"
       ]
+    },
+    {
+      "path": "help/columns/column-menu.md",
+      "url": "/help/columns/column-menu",
+      "title": "Column menu",
+      "summary": "Every column header carries a menu button (⋮). By default it's a flat list of actions plus a \"Choose columns\" submenu. Opt into the AG-Grid **tabbed** layout with columnMenuTabs:",
+      "section": "help/columns",
+      "tier": "community",
+      "words": 201,
+      "lastUpdated": "2026-07-02",
+      "demoIds": []
     },
     {
       "path": "help/columns/column-moving.md",
@@ -920,12 +949,12 @@
     {
       "path": "help/columns/column-spanning.md",
       "url": "/help/columns/column-spanning",
-      "title": "Column spanning",
-      "summary": "\"Column spanning\" lets a single body cell span across **multiple columns** - useful for full-width subtotals, group banner rows, or notes embedded inside a wide grid.",
+      "title": "Column & row spanning (merged cells)",
+      "summary": "Spanning lets a single body cell cover **multiple columns** and/or **rows** - merged report headers, grouped labels, financial statements. SvGrid does this with a real colspan / rowspan merge engine; there are two ways to drive it.",
       "section": "help/columns",
       "tier": "community",
-      "words": 182,
-      "lastUpdated": "2026-06-05",
+      "words": 386,
+      "lastUpdated": "2026-07-01",
       "demoIds": []
     },
     {
@@ -957,12 +986,12 @@
     {
       "path": "help/columns/tool-panel.md",
       "url": "/help/columns/tool-panel",
-      "title": "Columns tool panel",
-      "summary": "The tool panel is the docked sidebar - standard in enterprise grids - for managing columns without hunting through a right-click menu. Turn it on with the toolPanel prop:",
+      "title": "Tool panel (Columns + Filters)",
+      "summary": "The tool panel is the docked sidebar - standard in enterprise grids - for managing columns and filters without hunting through a right-click menu. Turn it on with the toolPanel prop:",
       "section": "help/columns",
       "tier": "community",
-      "words": 177,
-      "lastUpdated": "2026-06-13",
+      "words": 320,
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -1017,13 +1046,13 @@
       "path": "help/editing/full-row.md",
       "url": "/help/editing/full-row",
       "title": "Full-row editing",
-      "summary": "\"Full-row editing\" means the user opens an entire row for edit (every editable cell becomes an editor simultaneously) and commits all changes at once. <div data-docs-demo=\"40-forms-master-detail\" data-height=\"540\"></div>",
+      "summary": "Full-row editing opens an **entire row** for edit at once: every editable cell shows an inline editor, a single Enter (or clicking away) commits all of them in one update, and Esc cancels the whole row. It's a form-style entry experience with the density of a grid.",
       "section": "help/editing",
       "tier": "community",
-      "words": 189,
-      "lastUpdated": "2026-06-08",
+      "words": 324,
+      "lastUpdated": "2026-07-01",
       "demoIds": [
-        "40-forms-master-detail"
+        "177-full-row-editing"
       ]
     },
     {
@@ -1046,10 +1075,11 @@
       "summary": "When the user commits an edit, the editor's DOM value (a string for text / number / date inputs, a boolean for checkboxes) is parsed by parseEditorValue into the canonical value for the column's type. <div data-docs-demo=\"24-validation\" data-height=\"540\"></div>",
       "section": "help/editing",
       "tier": "community",
-      "words": 215,
-      "lastUpdated": "2026-06-16",
+      "words": 327,
+      "lastUpdated": "2026-07-01",
       "demoIds": [
-        "24-validation"
+        "24-validation",
+        "175-value-parser"
       ]
     },
     {
@@ -1085,10 +1115,11 @@
       "summary": "The cell must be **focused** (the grid's active cell). Click any cell or use the arrow keys to set focus.",
       "section": "help/editing",
       "tier": "community",
-      "words": 243,
-      "lastUpdated": "2026-06-08",
+      "words": 419,
+      "lastUpdated": "2026-07-02",
       "demoIds": [
-        "05-inline-editing"
+        "05-inline-editing",
+        "176-programmatic-editing"
       ]
     },
     {
@@ -1125,7 +1156,7 @@
       "section": "help",
       "tier": "community",
       "words": 1205,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -1135,8 +1166,8 @@
       "summary": "Export the grid to **Excel (xlsx)**, **PDF**, **CSV**, **TSV**, **HTML**, or open a printable view in a new window. Ships in the paid **@svgrid/enterprise** add-on; the Community build does not include these features.",
       "section": "help",
       "tier": "enterprise",
-      "words": 1138,
-      "lastUpdated": "2026-06-22",
+      "words": 1299,
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "21-export-and-print"
       ]
@@ -1200,23 +1231,24 @@
       "summary": "A \"filter condition\" is a (column, operator, value) triple. The grid stores filter conditions in state.columnFilters. <div data-docs-demo=\"03-excel-filters\" data-height=\"540\"></div>",
       "section": "help/filtering",
       "tier": "community",
-      "words": 276,
-      "lastUpdated": "2026-06-16",
+      "words": 347,
+      "lastUpdated": "2026-07-01",
       "demoIds": [
-        "03-excel-filters"
+        "03-excel-filters",
+        "178-multi-condition-filter"
       ]
     },
     {
       "path": "help/filtering/floating-filters.md",
       "url": "/help/filtering/floating-filters",
       "title": "Floating filters",
-      "summary": "\"Floating filters\" are the always-visible filter inputs that sit **between** the header row and the body - same idea as a filter row, but matched per-operator to the underlying column menu. <div data-docs-demo=\"03-excel-filters\" data-height=\"540\"></div>",
+      "summary": "\"Floating filters\" are the always-visible filter inputs that sit **between** the header row and the body. In SvGrid the filter row is **per-operator and per-type**: each cell has a funnel to pick the operator, the value input matches the column's type, and between shows a second inline \"To\" input. <div data-docs-demo=\"179-floating-filters\" data-height=\"520\"></div>",
       "section": "help/filtering",
       "tier": "community",
-      "words": 222,
-      "lastUpdated": "2026-06-08",
+      "words": 248,
+      "lastUpdated": "2026-07-01",
       "demoIds": [
-        "03-excel-filters"
+        "179-floating-filters"
       ]
     },
     {
@@ -1280,7 +1312,7 @@
       "section": "help",
       "tier": "community",
       "words": 1173,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -1306,6 +1338,97 @@
       "words": 398,
       "lastUpdated": "2026-06-16",
       "demoIds": []
+    },
+    {
+      "path": "help/headless/build-a-table.md",
+      "url": "/help/headless/build-a-table",
+      "title": "Build a table from scratch",
+      "summary": "This is the whole point of headless: the engine computes the rows, **you** emit the markup. Here's a complete, sortable, filterable <table> in one Svelte component - no <SvGrid>, no grid CSS.",
+      "section": "help/headless",
+      "tier": "community",
+      "words": 580,
+      "lastUpdated": "2026-07-02",
+      "demoIds": [
+        "186-headless-table"
+      ]
+    },
+    {
+      "path": "help/headless/controlled-state.md",
+      "url": "/help/headless/controlled-state",
+      "title": "Controlled state",
+      "summary": "The engine never owns its state - **you do**. You pass state in and the engine calls your onXxxChange handlers with the next value. That one rule is what makes headless SvGrid click with Svelte 5 $state, and it's what lets state survive an unmount or be shared across two grids.",
+      "section": "help/headless",
+      "tier": "community",
+      "words": 510,
+      "lastUpdated": "2026-07-02",
+      "demoIds": [
+        "189-headless-shared-state"
+      ]
+    },
+    {
+      "path": "help/headless/overview.md",
+      "url": "/help/headless/overview",
+      "title": "Headless overview",
+      "summary": "<SvGrid> is the **renderer**. createSvGrid is the **engine** that powers it. They're independent: you can use the engine on its own to build a custom UI, render a plain <table> for print or email, run the row pipeline in a Web Worker or on a server, or unit-test sort / filter / aggregation logic with no DOM at all.",
+      "section": "help/headless",
+      "tier": "community",
+      "words": 465,
+      "lastUpdated": "2026-07-03",
+      "demoIds": [
+        "186-headless-table"
+      ]
+    },
+    {
+      "path": "help/headless/row-models.md",
+      "url": "/help/headless/row-models",
+      "title": "Row models",
+      "summary": "The engine turns your raw data into the rows you render by running it through a **pipeline** of row models. You opt into the steps you need; everything else is tree-shaken out.",
+      "section": "help/headless",
+      "tier": "community",
+      "words": 540,
+      "lastUpdated": "2026-07-03",
+      "demoIds": [
+        "190-headless-row-models"
+      ]
+    },
+    {
+      "path": "help/headless/server-side.md",
+      "url": "/help/headless/server-side",
+      "title": "Server-side data (load on demand)",
+      "summary": "When the rows live behind an API and there are too many to ship to the browser, the server does the work: **sorting**, **filtering**, and **paging** become query params, and it returns only the current page plus a total count. The headless engine wraps that page and nothing else - it never sees the rest of the dataset.",
+      "section": "help/headless",
+      "tier": "community",
+      "words": 725,
+      "lastUpdated": "2026-07-03",
+      "demoIds": [
+        "191-headless-server-side"
+      ]
+    },
+    {
+      "path": "help/headless/styling.md",
+      "url": "/help/headless/styling",
+      "title": "Styling a headless table",
+      "summary": "With the headless engine you render your own markup, so **you own every pixel of styling** - there is no grid stylesheet to fight. The same createSvGrid engine can drive a minimal underlined table, a fully bordered grid, or floating row cards. Flip the controls in the demo; the engine and rows are identical, only the CSS changes.",
+      "section": "help/headless",
+      "tier": "community",
+      "words": 456,
+      "lastUpdated": "2026-07-02",
+      "demoIds": [
+        "188-headless-styled"
+      ]
+    },
+    {
+      "path": "help/headless/virtualization.md",
+      "url": "/help/headless/virtualization",
+      "title": "Headless virtualization",
+      "summary": "<SvGrid> virtualizes rows and columns for you. When you render your own markup, you virtualize yourself with the same engine SvGrid uses - createSvelteVirtualizer (reactive) or createVirtualizer (framework-agnostic). Only the rows in view get DOM nodes, so 100k rows stay smooth.",
+      "section": "help/headless",
+      "tier": "community",
+      "words": 523,
+      "lastUpdated": "2026-07-02",
+      "demoIds": [
+        "187-headless-virtual"
+      ]
     },
     {
       "path": "help/i18n-rtl.md",
@@ -1340,8 +1463,8 @@
       "summary": "Topic-oriented documentation for SvGrid. Each page is a focused explanation of one feature with copy-paste code that runs against the shipping library - written for SvGrid, not translated from another grid.",
       "section": "help",
       "tier": "community",
-      "words": 1255,
-      "lastUpdated": "2026-06-16",
+      "words": 1267,
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "00-trading-desk"
       ]
@@ -1376,7 +1499,7 @@
       "section": "help",
       "tier": "community",
       "words": 2129,
-      "lastUpdated": "2026-06-28",
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -1508,7 +1631,7 @@
       "section": "help",
       "tier": "community",
       "words": 670,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -1541,7 +1664,7 @@
       "section": "help",
       "tier": "community",
       "words": 870,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -1570,11 +1693,11 @@
       "path": "help/missing-features.md",
       "url": "/help/missing-features",
       "title": "Missing features",
-      "summary": "This is the honest accounting of capabilities the help topics flagged as **not yet implemented** in the community build. Each entry has:",
+      "summary": "An honest accounting of what is **not yet built**, audited against the shipped demo catalog. Most of what used to live here has shipped; the remaining gaps are small and clearly marked. Each entry has a rough effort estimate (S / M / L).",
       "section": "help",
       "tier": "community",
-      "words": 1183,
-      "lastUpdated": "2026-06-16",
+      "words": 1377,
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -1696,10 +1819,23 @@
       "summary": "\"Full-width rows\" are rows whose content takes the entire grid width instead of being cell-by-cell - useful for inline editors, banner ads, section dividers, and detail-row expansions. <div data-docs-demo=\"08-tree-and-master-detail\" data-height=\"540\"></div>",
       "section": "help/rows",
       "tier": "community",
-      "words": 159,
-      "lastUpdated": "2026-06-08",
+      "words": 124,
+      "lastUpdated": "2026-07-02",
       "demoIds": [
         "08-tree-and-master-detail"
+      ]
+    },
+    {
+      "path": "help/rows/master-detail.md",
+      "url": "/help/rows/master-detail",
+      "title": "Master / detail (nested grids)",
+      "summary": "Master/detail is the AG-Grid pattern where each **master** row expands to reveal a **detail** panel - most often a nested grid of the row's child records. SvGrid builds it from two props on <SvGrid>:",
+      "section": "help/rows",
+      "tier": "community",
+      "words": 354,
+      "lastUpdated": "2026-07-02",
+      "demoIds": [
+        "181-master-detail-grid"
       ]
     },
     {
@@ -1719,13 +1855,14 @@
       "path": "help/rows/row-dragging.md",
       "url": "/help/rows/row-dragging",
       "title": "Row dragging",
-      "summary": "Drag-to-reorder for rows is a common interaction (kanban-like reordering, moving items between two grids, dragging rows out to an external drop zone). <div data-docs-demo=\"23-bulk-actions\" data-height=\"540\"></div>",
+      "summary": "Managed row dragging lets users **reorder rows** within a grid and **move rows between grids**. Turn on rowDragManaged and every row becomes a drag source (grab cursor + a grip in the row-number cell); a glowing line shows where the row will land, and the grid splices its own data on drop. <div data-docs-demo=\"180-row-dragging\" data-height=\"560\"></div>",
       "section": "help/rows",
       "tier": "community",
-      "words": 232,
-      "lastUpdated": "2026-06-16",
+      "words": 527,
+      "lastUpdated": "2026-07-02",
       "demoIds": [
-        "23-bulk-actions"
+        "180-row-dragging",
+        "184-external-drop-zone"
       ]
     },
     {
@@ -1993,7 +2130,7 @@
       "section": "help",
       "tier": "community",
       "words": 1425,
-      "lastUpdated": "2026-06-22",
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -2545,7 +2682,7 @@
       "section": "reference",
       "tier": "community",
       "words": 2791,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -2577,8 +2714,8 @@
       "summary": "A column definition is the contract between the grid and one column of data. Pass an array of these as the columns prop to <SvGrid>.",
       "section": "reference",
       "tier": "community",
-      "words": 848,
-      "lastUpdated": "2026-06-16",
+      "words": 903,
+      "lastUpdated": "2026-07-02",
       "demoIds": []
     },
     {
@@ -2654,9 +2791,11 @@
       "summary": "SvGrid is **headless at the core**, with a fully-styled Svelte component shipped on top. That two-layer split is deliberate, and worth understanding before you reach for either.",
       "section": "",
       "tier": "community",
-      "words": 831,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "words": 863,
+      "lastUpdated": "2026-07-02",
+      "demoIds": [
+        "186-headless-table"
+      ]
     }
   ]
 }

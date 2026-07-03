@@ -26,7 +26,7 @@ type ColumnDef<TFeatures, TData> = {
   // Identity
   id?: string
   field?: keyof TData & string
-  accessorFn?: (row: TData) => unknown
+  fieldFn?: (row: TData) => unknown
 
   // Rendering
   header?: string | RenderFn
@@ -36,8 +36,9 @@ type ColumnDef<TFeatures, TData> = {
   formatter?: CellFormatter<TData>
 
   // Layout
-  width?: number
-  align?: 'left' | 'right' | 'center'
+  width?:   number
+  visible?: boolean
+  align?:   'left' | 'right' | 'center'
 
   // Editing
   editorType?: 'text' | 'number' | 'date' | 'datetime' | 'checkbox'
@@ -49,7 +50,7 @@ type ColumnDef<TFeatures, TData> = {
 
 ## Identity
 
-One of `field`, `accessorFn`, or `id` must be set. The grid derives the
+One of `field`, `fieldFn`, or `id` must be set. The grid derives the
 column id in that order:
 
 1. Explicit `id` wins if present.
@@ -59,9 +60,9 @@ column id in that order:
 
 | Field         | Type                              | Notes                                                                  |
 | ------------- | --------------------------------- | ---------------------------------------------------------------------- |
-| `id`          | `string`                          | Stable column id. Required when you use `accessorFn`.                  |
+| `id`          | `string`                          | Stable column id. Required when you use `fieldFn`.                  |
 | `field`       | `keyof TData & string`            | Reads `row[field]`. The clean default.                                 |
-| `accessorFn`  | `(row: TData) => unknown`         | Computed value. Pair with `id`.                                        |
+| `fieldFn`  | `(row: TData) => unknown`         | Computed value. Pair with `id`.                                        |
 
 ## Rendering
 
@@ -112,8 +113,9 @@ Example: `{ type: 'date', pattern: 'y-m-d' }` ⇒ `2026-06-05`.
 
 | Field   | Type                                 | Notes                                                                                 |
 | ------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
-| `width` | `number`                             | Initial width in pixels. Falls back to the wrapper's `columnWidth` prop (default 140). |
-| `align` | `'left' \| 'right' \| 'center'`      | Header + cell alignment. Inferred from `editorType` when omitted: number/date → right, checkbox → center, else left. |
+| `width`   | `number`                             | Initial width in pixels. Falls back to the wrapper's `columnWidth` prop (default 140). |
+| `visible` | `boolean`                            | Initial visibility. Set `false` to start the column hidden while still listing it in the Choose Columns / tool panel for the user to re-enable. Applied once at mount; after that `api.setColumnVisible` and user toggles win. On a group column, `false` hides the whole group's leaf columns. |
+| `align`   | `'left' \| 'right' \| 'center'`      | Header + cell alignment. Inferred from `editorType` when omitted: number/date → right, checkbox → center, else left. |
 
 ## Editing
 
@@ -171,7 +173,7 @@ import { renderSnippet } from '@svgrid/grid'
 {
   id: 'name',
   header: 'Name',
-  accessorFn: (r) => `${r.firstName} ${r.lastName}`,
+  fieldFn: (r) => `${r.firstName} ${r.lastName}`,
   cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
 }
 ```

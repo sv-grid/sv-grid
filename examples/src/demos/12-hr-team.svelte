@@ -9,7 +9,7 @@
    * Showcases:
    *   - `columnGroupingFeature` with a default group-by ("team")
    *   - `renderSnippet` for the avatar cell and status badge
-   *   - A derived `tenure` column (no `field` - `accessorFn`)
+   *   - A derived `tenure` column (no `field` - `fieldFn`)
    *   - Sort by any column; group rows fold to a summary line
    */
   import {
@@ -152,7 +152,7 @@
 
   const rows = makePeople()
 
-  // Tenure in years, derived from startDate; used by an `accessorFn` column.
+  // Tenure in years, derived from startDate; used by an `fieldFn` column.
   function tenureYears(p: Person): number {
     const start = new Date(p.startDate).getTime()
     const now = Date.now()
@@ -226,7 +226,7 @@
         {
           id: 'person',
           header: 'Person',
-          accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+          fieldFn: (row) => `${row.firstName} ${row.lastName}`,
           cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
           width: 240,
         },
@@ -241,7 +241,7 @@
         },
         {
           id: 'tenure', header: 'Tenure', editorType: 'number',
-          accessorFn: (row) => tenureYears(row),
+          fieldFn: (row) => tenureYears(row),
           width: 100,
           cell: (ctx) => `${(ctx.getValue() as number).toFixed(1)}y`,
         },

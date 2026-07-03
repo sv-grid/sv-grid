@@ -186,7 +186,7 @@
     {
       id: 'progress',
       header: 'Progress',
-      accessorFn: (r) => r.produced,
+      fieldFn: (r) => r.produced,
       cell: (ctx) => renderSnippet(ProgressCell, { run: ctx.row.original }),
       width: 220,
     },

@@ -108,6 +108,7 @@
   const operatorMenuPos = $derived(ctrl.operatorMenuPos);
   const chooseColumnsPos = $derived(ctrl.chooseColumnsPos);
   const showColumnFiltersEffective = $derived(ctrl.showColumnFiltersEffective);
+  const columnMenuTabsEnabled = $derived(ctrl.props.columnMenuTabs === true);
   const grid = $derived(ctrl.grid);
   const allColumns = $derived(ctrl.allColumns);
   const isColumnPinned = $derived(ctrl.isColumnPinned);
@@ -123,6 +124,15 @@
   const operatorsForColumn = $derived(ctrl.operatorsForColumn);
   const defaultOperatorFor = $derived(ctrl.defaultOperatorFor);
   const operatorLabelFor = $derived(ctrl.operatorLabelFor);
+
+  // Patch a column's menu filter (used for the optional 2nd condition + join
+  // of multi-condition filtering). Merges into the existing entry, creating a
+  // base entry from the column's default operator when none exists yet.
+  function patchFilter(columnId: string, patch: Record<string, unknown>) {
+    const col = allColumns.find((c) => c.id === columnId);
+    const cur = ctrl.filterMenuValues[columnId] ?? { operator: defaultOperatorFor(col), value: "" };
+    ctrl.filterMenuValues = { ...ctrl.filterMenuValues, [columnId]: { ...cur, ...patch } };
+  }
   const isColumnFiltered = $derived(ctrl.isColumnFiltered);
   const closeMenus = $derived(ctrl.closeMenus);
   const autosizeColumn = $derived(ctrl.autosizeColumn);
@@ -169,15 +179,190 @@
     ></div>
   {/if}
 
+  <!-- Shared filter UI: rendered both in the funnel popover and in the column
+       menu's Filter tab, so the two never diverge. -->
+  {#snippet filterPanelBody(colId: string)}
+    {@const menuColumn = allColumns.find((c) => c.id === colId)}
+    {@const menuOperatorOptions = operatorsForColumn(menuColumn)}
+    {@const menuActiveOperator = filterMenuValues[colId]?.operator ?? defaultOperatorFor(menuColumn)}
+    {@const menuInputType = getEditorInputType((menuColumn?.columnDef.editorType ?? "text") as CellEditorType)}
+    <div class="sv-grid-menu-filter">
+      <div class="sv-grid-menu-filter-head">
+        <span class="sv-grid-header-icon">{@render icon("filter")}</span> Filter
+        condition
+      </div>
+      <select
+        class="sv-grid-menu-operator-select"
+        aria-label="Filter condition"
+        value={menuActiveOperator}
+        onchange={(event) =>
+          updateFilterOperator(colId, (event.currentTarget as HTMLSelectElement).value as FilterOperator)}
+      >
+        {#each menuOperatorOptions as option (option.value)}
+          <option value={option.value}>{operatorLabelFor(option, menuColumn)}</option>
+        {/each}
+      </select>
+      {#if menuActiveOperator !== "isBlank"}
+        <input
+          class="sv-grid-menu-condition-value"
+          type={menuInputType}
+          value={filterMenuValues[colId]?.value ?? ""}
+          placeholder={menuActiveOperator === "between" ? "From" : "Filter value..."}
+          oninput={(event) => updateFilterMenuValue(colId, (event.currentTarget as HTMLInputElement).value)}
+        />
+        {#if menuActiveOperator === "between"}
+          <input
+            class="sv-grid-menu-condition-value"
+            type={menuInputType}
+            value={filterMenuValues[colId]?.valueTo ?? ""}
+            placeholder="To"
+            oninput={(event) => updateFilterMenuValueTo(colId, (event.currentTarget as HTMLInputElement).value)}
+          />
+        {/if}
+        {@const mf = filterMenuValues[colId]}
+        {#if mf?.operator2}
+          {@const op2 = mf.operator2 ?? defaultOperatorFor(menuColumn)}
+          <div class="sv-grid-menu-join" role="radiogroup" aria-label="Combine conditions">
+            <button type="button" class:is-on={(mf.join ?? "AND") === "AND"}
+              onclick={() => patchFilter(colId, { join: "AND" })}>AND</button>
+            <button type="button" class:is-on={mf.join === "OR"}
+              onclick={() => patchFilter(colId, { join: "OR" })}>OR</button>
+            <button type="button" class="sv-grid-menu-join-x" title="Remove second condition"
+              aria-label="Remove second condition"
+              onclick={() => patchFilter(colId, { operator2: undefined, value2: undefined, valueTo2: undefined, join: undefined })}>×</button>
+          </div>
+          <select
+            class="sv-grid-menu-operator-select"
+            aria-label="Second filter condition"
+            value={op2}
+            onchange={(event) =>
+              patchFilter(colId, { operator2: (event.currentTarget as HTMLSelectElement).value as FilterOperator })}
+          >
+            {#each menuOperatorOptions as option (option.value)}
+              <option value={option.value}>{operatorLabelFor(option, menuColumn)}</option>
+            {/each}
+          </select>
+          {#if op2 !== "isBlank"}
+            <input
+              class="sv-grid-menu-condition-value"
+              type={menuInputType}
+              value={mf.value2 ?? ""}
+              placeholder={op2 === "between" ? "From" : "Filter value..."}
+              oninput={(event) => patchFilter(colId, { value2: (event.currentTarget as HTMLInputElement).value })}
+            />
+            {#if op2 === "between"}
+              <input
+                class="sv-grid-menu-condition-value"
+                type={menuInputType}
+                value={mf.valueTo2 ?? ""}
+                placeholder="To"
+                oninput={(event) => patchFilter(colId, { valueTo2: (event.currentTarget as HTMLInputElement).value })}
+              />
+            {/if}
+          {/if}
+        {:else}
+          <button type="button" class="sv-grid-menu-add-cond"
+            onclick={() => patchFilter(colId, { operator2: defaultOperatorFor(menuColumn), value2: "", join: "AND" })}>
+            + Add condition
+          </button>
+        {/if}
+      {/if}
+      <div class="sv-grid-menu-sep"></div>
+      <div class="sv-grid-menu-filter-head">Values</div>
+      <input
+        class="sv-grid-menu-search"
+        placeholder="Search values..."
+        bind:value={ctrl.columnMenuSearch}
+      />
+      <label class="sv-grid-facet sv-grid-facet-all">
+        <input type="checkbox" checked={isAllFacetsChecked(colId)} onchange={() => toggleAllFacets(colId)} />
+        <span class="sv-grid-facet-label">(Select all)</span>
+      </label>
+      <div class="sv-grid-facet-list">
+        {#each columnMenuVisibleFacets as value (value)}
+          <label class="sv-grid-facet">
+            <input type="checkbox" checked={isFacetChecked(colId, value)} onchange={() => toggleFacetValue(colId, value)} />
+            <span class="sv-grid-facet-label">{value === "" ? "(Blanks)" : value}</span>
+          </label>
+        {:else}
+          <div class="sv-grid-facet-empty">No values</div>
+        {/each}
+      </div>
+      {#if columnMenuFacetValues.length > columnMenuVisibleFacets.length}
+        <div class="sv-grid-facet-note">
+          Showing {columnMenuVisibleFacets.length} of {columnMenuFacetValues.length}
+        </div>
+      {/if}
+      <div class="sv-grid-menu-actions">
+        <button
+          type="button"
+          class="sv-grid-menu-btn"
+          disabled={!isColumnFiltered(colId)}
+          onclick={() => clearColumnFilter(colId)}
+        >
+          Clear filter
+        </button>
+        <button type="button" class="sv-grid-menu-btn sv-grid-menu-btn-primary" onclick={closeMenus}>
+          Done
+        </button>
+      </div>
+    </div>
+  {/snippet}
+
   {#if columnMenuFor}
     {@const menuColumnId = columnMenuFor}
     {@const menuCol = allColumns.find((c) => c.id === menuColumnId)}
     {@const menuCanSort = menuCol?.getCanSort?.() ?? false}
+    {@const menuCanFilter = (menuCol?.columnDef.field != null) && (menuCol?.columnDef.filterable !== false)}
+    {@const menuTab = ctrl.columnMenuTab}
     <div
       class="sv-grid-menu sv-grid-column-menu"
       role="menu"
-      style={`left: ${columnMenuPos.x}px; top: ${columnMenuPos.y}px;`}
+      style={`left: ${columnMenuPos.x}px; top: ${columnMenuPos.y}px; max-height: calc(100vh - ${columnMenuPos.y}px - 12px);`}
     >
+      {#if columnMenuTabsEnabled}
+        <div class="sv-grid-menu-tabs" role="tablist">
+          <button type="button" class="sv-grid-menu-tab" class:is-active={menuTab === "general"}
+            role="tab" aria-selected={menuTab === "general"}
+            onclick={() => (ctrl.columnMenuTab = "general")}>General</button>
+          {#if menuCanFilter && showColumnFiltersEffective}
+            <button type="button" class="sv-grid-menu-tab" class:is-active={menuTab === "filter"}
+              role="tab" aria-selected={menuTab === "filter"}
+              onclick={() => (ctrl.columnMenuTab = "filter")}>Filter</button>
+          {/if}
+          <button type="button" class="sv-grid-menu-tab" class:is-active={menuTab === "columns"}
+            role="tab" aria-selected={menuTab === "columns"}
+            onclick={() => (ctrl.columnMenuTab = "columns")}>Columns</button>
+        </div>
+      {/if}
+      {#if columnMenuTabsEnabled && menuTab === "filter" && menuCanFilter && showColumnFiltersEffective}
+        {@render filterPanelBody(menuColumnId)}
+      {:else if columnMenuTabsEnabled && menuTab === "columns"}
+        <div class="sv-grid-menu-filter-head">Visible columns</div>
+        <div class="sv-grid-facet-list">
+          {#each grid.getAllColumns() as column (column.id)}
+            <label class="sv-grid-facet">
+              <input
+                type="checkbox"
+                checked={!ctrl.hiddenColumns[column.id]}
+                onchange={(event) => {
+                  const visible = (event.currentTarget as HTMLInputElement).checked;
+                  if (visible) {
+                    const next = { ...ctrl.hiddenColumns };
+                    delete next[column.id];
+                    ctrl.hiddenColumns = next;
+                  } else {
+                    ctrl.hiddenColumns = { ...ctrl.hiddenColumns, [column.id]: true };
+                  }
+                }}
+              />
+              <span class="sv-grid-facet-label"
+                >{typeof column.columnDef.header === "string" ? column.columnDef.header : column.id}</span
+              >
+            </label>
+          {/each}
+        </div>
+      {:else}
       {#if menuCanSort}
         <button
           type="button"
@@ -290,21 +475,23 @@
         </button>
       {/if}
       <div class="sv-grid-menu-sep"></div>
-      <button
-        type="button"
-        class="sv-grid-menu-item"
-        class:is-open={chooseColumnsPos !== null}
-        role="menuitem"
-        aria-haspopup="menu"
-        aria-expanded={chooseColumnsPos !== null}
-        onclick={(event) => openChooseColumns(event)}
-      >
-        <span class="sv-grid-header-icon">{@render icon("columns")}</span>
-        Choose columns
-        <span class="sv-grid-header-icon sv-grid-menu-item-chevron"
-          >{@render icon("chevron-down")}</span
+      {#if !columnMenuTabsEnabled}
+        <!-- Flat menu: reach the column chooser via a submenu (tabbed mode has
+             a Columns tab instead). -->
+        <button
+          type="button"
+          class="sv-grid-menu-item"
+          class:is-open={chooseColumnsPos !== null}
+          role="menuitem"
+          aria-haspopup="menu"
+          aria-expanded={chooseColumnsPos !== null}
+          onclick={(event) => openChooseColumns(event)}
         >
-      </button>
+          <span class="sv-grid-header-icon">{@render icon("columns")}</span>
+          Choose columns
+          <span class="sv-grid-header-icon sv-grid-menu-item-chevron">{@render icon("chevron-down")}</span>
+        </button>
+      {/if}
       <button
         type="button"
         class="sv-grid-menu-item"
@@ -316,126 +503,17 @@
       >
         <span class="sv-grid-header-icon">{@render icon("reset")}</span> Reset columns
       </button>
+      {/if}
     </div>
   {/if}
 
   {#if filterMenuFor && showColumnFiltersEffective}
-    {@const menuColumnId = filterMenuFor}
-    {@const menuColumn = allColumns.find((c) => c.id === menuColumnId)}
-    {@const menuOperatorOptions = operatorsForColumn(menuColumn)}
-    {@const menuActiveOperator =
-      filterMenuValues[menuColumnId]?.operator ??
-      defaultOperatorFor(menuColumn)}
-    {@const menuInputType = getEditorInputType(
-      (menuColumn?.columnDef.editorType ?? "text") as CellEditorType,
-    )}
     <div
       class="sv-grid-menu sv-grid-filter-menu"
       role="menu"
-      style={`left: ${filterMenuPos.x}px; top: ${filterMenuPos.y}px;`}
+      style={`left: ${filterMenuPos.x}px; top: ${filterMenuPos.y}px; max-height: calc(100vh - ${filterMenuPos.y}px - 12px);`}
     >
-      <div class="sv-grid-menu-filter">
-        <div class="sv-grid-menu-filter-head">
-          <span class="sv-grid-header-icon">{@render icon("filter")}</span> Filter
-          condition
-        </div>
-        <select
-          class="sv-grid-menu-operator-select"
-          aria-label="Filter condition"
-          value={menuActiveOperator}
-          onchange={(event) =>
-            updateFilterOperator(
-              menuColumnId,
-              (event.currentTarget as HTMLSelectElement)
-                .value as FilterOperator,
-            )}
-        >
-          {#each menuOperatorOptions as option (option.value)}
-            <option value={option.value}
-              >{operatorLabelFor(option, menuColumn)}</option
-            >
-          {/each}
-        </select>
-        {#if menuActiveOperator !== "isBlank"}
-          <input
-            class="sv-grid-menu-condition-value"
-            type={menuInputType}
-            value={filterMenuValues[menuColumnId]?.value ?? ""}
-            placeholder={menuActiveOperator === "between" ? "From" : "Filter value..."}
-            oninput={(event) =>
-              updateFilterMenuValue(
-                menuColumnId,
-                (event.currentTarget as HTMLInputElement).value,
-              )}
-          />
-          {#if menuActiveOperator === "between"}
-            <input
-              class="sv-grid-menu-condition-value"
-              type={menuInputType}
-              value={filterMenuValues[menuColumnId]?.valueTo ?? ""}
-              placeholder="To"
-              oninput={(event) =>
-                updateFilterMenuValueTo(
-                  menuColumnId,
-                  (event.currentTarget as HTMLInputElement).value,
-                )}
-            />
-          {/if}
-        {/if}
-        <div class="sv-grid-menu-sep"></div>
-        <div class="sv-grid-menu-filter-head">Values</div>
-        <input
-          class="sv-grid-menu-search"
-          placeholder="Search values..."
-          bind:value={ctrl.columnMenuSearch}
-        />
-        <label class="sv-grid-facet sv-grid-facet-all">
-          <input
-            type="checkbox"
-            checked={isAllFacetsChecked(menuColumnId)}
-            onchange={() => toggleAllFacets(menuColumnId)}
-          />
-          <span class="sv-grid-facet-label">(Select all)</span>
-        </label>
-        <div class="sv-grid-facet-list">
-          {#each columnMenuVisibleFacets as value (value)}
-            <label class="sv-grid-facet">
-              <input
-                type="checkbox"
-                checked={isFacetChecked(menuColumnId, value)}
-                onchange={() => toggleFacetValue(menuColumnId, value)}
-              />
-              <span class="sv-grid-facet-label"
-                >{value === "" ? "(Blanks)" : value}</span
-              >
-            </label>
-          {:else}
-            <div class="sv-grid-facet-empty">No values</div>
-          {/each}
-        </div>
-        {#if columnMenuFacetValues.length > columnMenuVisibleFacets.length}
-          <div class="sv-grid-facet-note">
-            Showing {columnMenuVisibleFacets.length} of {columnMenuFacetValues.length}
-          </div>
-        {/if}
-        <div class="sv-grid-menu-actions">
-          <button
-            type="button"
-            class="sv-grid-menu-btn"
-            disabled={!isColumnFiltered(menuColumnId)}
-            onclick={() => clearColumnFilter(menuColumnId)}
-          >
-            Clear filter
-          </button>
-          <button
-            type="button"
-            class="sv-grid-menu-btn sv-grid-menu-btn-primary"
-            onclick={closeMenus}
-          >
-            Done
-          </button>
-        </div>
-      </div>
+      {@render filterPanelBody(filterMenuFor)}
     </div>
   {/if}
 

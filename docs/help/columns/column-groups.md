@@ -60,6 +60,35 @@ Groups can nest arbitrarily. The grid emits one header row per depth level:
 },
 ```
 
+## Collapsible groups (`columnGroupShow`)
+
+Give a group a collapse toggle by tagging its child columns:
+
+- `columnGroupShow: 'open'` - the child shows **only while the group is expanded**,
+- `columnGroupShow: 'closed'` - shows **only while collapsed**,
+- omitted - always shown.
+
+Setting it on any direct child adds a caret to the group header. Use
+`openByDefault` on the group to start expanded (default is collapsed, matching
+AG Grid).
+
+```ts
+{
+  id: 'q1', header: 'Q1', openByDefault: true,
+  columns: [
+    { field: 'q1Total', header: 'Total' },                    // always visible
+    { field: 'jan', header: 'Jan', columnGroupShow: 'open' },  // only when expanded
+    { field: 'feb', header: 'Feb', columnGroupShow: 'open' },
+    { field: 'mar', header: 'Mar', columnGroupShow: 'open' },
+  ],
+}
+```
+
+Collapsing/expanding hides or shows the tagged leaves and the group header's
+`colSpan` recomputes so the multi-level header stays aligned.
+
+<div data-docs-demo="183-collapsible-column-groups" data-height="480"></div>
+
 ## Group with a custom header
 
 The same `header: (ctx) => renderSnippet(...)` pattern from

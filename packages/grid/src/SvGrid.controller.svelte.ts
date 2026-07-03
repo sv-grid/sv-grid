@@ -70,6 +70,19 @@ import {
     createColumns,
   } from "./columns";
 import {
+    createRowDrag,
+  } from "./row-drag";
+import {
+    createAlignedGrids,
+  } from "./aligned-grids";
+import {
+    resolveColumnTypes,
+  } from "./column-types";
+import {
+    computeColumnGroupMeta,
+    hiddenLeavesForCollapse,
+  } from "./column-groups";
+import {
     createGridApi,
   } from "./build-api";
 import {
@@ -242,7 +255,20 @@ export function createSvGridController<
   let gridRootEl: HTMLElement | null = $state(null);
   let filterRowValues = $state<Record<string, string>>({});
   let filterMenuValues = $state<
-    Record<string, { operator: FilterOperator; value: string; valueTo?: string }>
+    Record<
+      string,
+      {
+        operator: FilterOperator;
+        value: string;
+        valueTo?: string;
+        // Optional second condition + join for multi-condition filtering
+        // within a single column (AND / OR).
+        operator2?: FilterOperator;
+        value2?: string;
+        valueTo2?: string;
+        join?: "AND" | "OR";
+      }
+    >
   >({});
   let verticalScrollbarEl: HTMLElement | null = $state(null);
   let horizontalScrollbarEl: HTMLElement | null = $state(null);
@@ -259,6 +285,10 @@ export function createSvGridController<
   let pendingScrollLeft = 0;
   let scrollSyncRaf: number | null = null;
   let selectionRange = $state<SelectionRange>({ anchor: null, focus: null });
+  // Extra committed ranges for multi-range (Ctrl+drag) selection. The
+  // `selectionRange` above is always the ACTIVE range being manipulated; these
+  // are the finished ones. Full selection = these + the active range.
+  let selectionRanges = $state.raw<SelectionRange[]>([]);
   let isDraggingSelection = $state(false);
   /** Excel-style fill handle drag state. While non-null we paint a "fill
    *  preview" overlay on cells between the source range and the pointer
@@ -273,6 +303,9 @@ export function createSvGridController<
   } | null>(null);
   let activeAtPointerDown: { rowIndex: number; colIndex: number } | null = null;
   let editingCell = $state<CellEditState>(null);
+  // Full-row editing: the row currently in whole-row edit + its per-column
+  // draft (keyed by column id). Null when not in full-row mode.
+  let fullRowEdit = $state<{ rowId: string; draft: Record<string, unknown> } | null>(null);
   let editedCellValues = $state<Record<string, unknown>>({});
 
   // ---- Undo / redo (history + pointer model) ---------------------------
@@ -351,6 +384,7 @@ export function createSvGridController<
   const rowNumberColumnWidth = $derived(props.rowNumberWidth ?? 56);
   const showRowNumbersEffective = $derived(props.showRowNumbers ?? false);
   let columnMenuFor = $state<string | null>(null);
+  let columnMenuTab = $state<"general" | "filter" | "columns">("general");
   let columnMenuPos = $state<MenuPosition>({ x: 0, y: 0 });
   let columnMenuSearch = $state("");
   let filterMenuFor = $state<string | null>(null);
@@ -444,14 +478,47 @@ export function createSvGridController<
   // mutates these so add/remove operations don't need a callback round-trip.
   // svelte-ignore state_referenced_locally
   let internalData = $state.raw<ReadonlyArray<TData>>(props.data);
+  // Resolve `cellDataType` / `inferColumnTypes` into concrete editorType +
+  // format defaults once, up front, so every downstream reader sees a normal
+  // column. Explicit fields on the ColumnDef always win.
+  // svelte-ignore state_referenced_locally
+  const resolveCols = (cols: Array<ColumnDef<TFeatures, TData>>) =>
+    resolveColumnTypes(cols, props.data?.[0], props.inferColumnTypes === true);
   // svelte-ignore state_referenced_locally
   let internalColumns = $state.raw<Array<ColumnDef<TFeatures, TData>>>(
-    props.columns,
+    resolveCols(props.columns),
   );
   // svelte-ignore state_referenced_locally
   let hiddenColumns = $state<Record<string, boolean>>(
     initialHiddenColumns(props.columns),
   );
+
+  // Collapsible column groups (columnGroupShow). Meta is derived from the tree;
+  // `collapsedColumnGroups` is the live set of collapsed group ids, seeded once
+  // from each collapsible group's `openByDefault` (default: collapsed).
+  const columnGroupMeta = $derived(computeColumnGroupMeta(props.columns as unknown as Array<any>));
+  // svelte-ignore state_referenced_locally
+  let collapsedColumnGroups = $state<Set<string>>(
+    (() => {
+      const meta = computeColumnGroupMeta(props.columns as unknown as Array<any>);
+      const s = new Set<string>();
+      for (const id of meta.collapsibleGroupIds) if (!meta.defaultOpen.get(id)) s.add(id);
+      return s;
+    })(),
+  );
+  // Leaf ids hidden right now because their group is collapsed/expanded.
+  const hiddenByGroupCollapse = $derived(
+    hiddenLeavesForCollapse(columnGroupMeta, collapsedColumnGroups),
+  );
+  function toggleColumnGroup(groupId: string) {
+    const next = new Set(collapsedColumnGroups);
+    if (next.has(groupId)) next.delete(groupId);
+    else next.add(groupId);
+    collapsedColumnGroups = next;
+  }
+  function isColumnGroupCollapsed(groupId: string) {
+    return collapsedColumnGroups.has(groupId);
+  }
 
   $effect(() => {
     // When the consumer replaces `data` (e.g. a "Reset" button), drop any
@@ -462,7 +529,7 @@ export function createSvGridController<
     editedCellValues = {};
   });
   $effect(() => {
-    internalColumns = props.columns;
+    internalColumns = resolveCols(props.columns);
   });
 
   // Captured ONCE at mount: `externalSort` is a structural choice (tree vs
@@ -554,7 +621,7 @@ export function createSvGridController<
   const allColumns = $derived.by(() => {
     let raw = grid
       .getAllColumns()
-      .filter((column) => !hiddenColumns[column.id]);
+      .filter((column) => !hiddenColumns[column.id] && !hiddenByGroupCollapse[column.id]);
     // Apply user reorder (if any). Unknown ids in userColumnOrder are
     // skipped; columns not in userColumnOrder keep their original
     // relative order after the user-ordered ones.
@@ -626,6 +693,10 @@ export function createSvGridController<
      *  multi-level value tree). They render as empty cells so the
      *  layout stays aligned without showing duplicate labels. */
     isPlaceholder: boolean;
+    /** Set when this group cell has a collapse toggle. */
+    groupId?: string;
+    collapsible: boolean;
+    collapsed: boolean;
   };
   const groupHeaderRows = $derived.by(() => {
     const userCols: Array<ColumnDef<any, TData>> =
@@ -652,6 +723,10 @@ export function createSvGridController<
     function buildId(def: ColumnDef<any, TData>, parentId: string | undefined, fallbackIx: number): string {
       return def.id ?? def.field ?? `${parentId ?? 'col'}_d_${fallbackIx}`;
     }
+    // Leaves hidden by a collapsed/expanded group are skipped everywhere here,
+    // so group colSpan + widthPx exclude them and stay aligned with the leaves
+    // the body actually renders.
+    const hiddenLeaf = hiddenByGroupCollapse;
     function collectLeaves(
       defs: Array<ColumnDef<any, TData>>,
       parentId: string | undefined,
@@ -661,7 +736,7 @@ export function createSvGridController<
         const id = buildId(def, parentId, ix);
         if (def.columns?.length) {
           collectLeaves(def.columns, id, depthHere + 1);
-        } else {
+        } else if (!hiddenLeaf[id]) {
           leafEntries.push({ id, widthPx: getColumnWidth(id) });
         }
       });
@@ -679,6 +754,9 @@ export function createSvGridController<
       const nodes: NodeAt[] = [];
       for (const def of defs) {
         const id = buildId(def, parentId, nodes.length);
+        // Skip leaves the collapse state hides, so leaf indices/colSpans match
+        // `leafEntries` (and the body's rendered columns) exactly.
+        if (!def.columns?.length && hiddenLeaf[id]) continue;
         const leafStart = cursor.leaf;
         if (def.columns?.length) {
           indexTree(def.columns, id, cursor);
@@ -728,6 +806,7 @@ export function createSvGridController<
         const isLeafEarly = !n.def.columns?.length;
         const headerText =
           typeof n.def.header === 'string' ? n.def.header : '';
+        const collapsible = columnGroupMeta.collapsibleGroupIds.has(n.id);
         return {
           key: `${n.id}_d${d}`,
           label: isLeafEarly ? '' : headerText,
@@ -735,6 +814,9 @@ export function createSvGridController<
           widthPx: sumLeafWidths(n.leafStart, n.leafEnd),
           firstLeafIndex: n.leafStart,
           isPlaceholder: isLeafEarly,
+          groupId: collapsible ? n.id : undefined,
+          collapsible,
+          collapsed: collapsible && collapsedColumnGroups.has(n.id),
         };
       });
       rows.push({ id: `gh_${d}`, cells });
@@ -772,6 +854,13 @@ export function createSvGridController<
   let colDropOnId  = $state<string | null>(null);
   let colDropSide  = $state<"before" | "after" | null>(null);
 
+  // Live drag state for managed row dragging. Only meaningful while a row is
+  // being dragged (`props.rowDragManaged`). `rowDropIndex` is the visible row
+  // index currently hovered; `rowDropSide` says which edge the drop line paints.
+  let rowDragActive = $state<boolean>(false);
+  let rowDropIndex  = $state<number | null>(null);
+  let rowDropSide   = $state<"before" | "after" | null>(null);
+
 
 
 
@@ -800,13 +889,13 @@ export function createSvGridController<
       );
       if (!needs) continue;
       const def = column.columnDef;
-      const accessorFn = def.accessorFn;
+      const fieldFn = def.fieldFn;
       const field = def.field;
       const stat = computeColumnStat(
         (function* () {
           for (const row of allRows) {
-            yield accessorFn
-              ? accessorFn(row.original)
+            yield fieldFn
+              ? fieldFn(row.original)
               : field
                 ? (row.original as Record<string, unknown>)[field]
                 : row.getCellValueByColumnId(column.id);
@@ -872,29 +961,44 @@ export function createSvGridController<
       );
     }
 
-    const menuFilters = Object.entries(filterMenuValues).filter(
-      ([_, filter]) => {
-        if (filter.operator === "isBlank") return true;
-        // `between` needs both endpoints; otherwise treat as inactive.
-        if (filter.operator === "between") {
-          return (
-            filter.value.trim().length > 0 &&
-            (filter.valueTo ?? "").trim().length > 0
-          );
-        }
-        return filter.value.trim().length > 0;
-      },
-    );
+    // A single condition is "active" if it has the value(s) it needs.
+    const condActive = (op: FilterOperator, value: string, valueTo?: string): boolean => {
+      if (op === "isBlank") return true;
+      if (op === "between") return value.trim().length > 0 && (valueTo ?? "").trim().length > 0;
+      return value.trim().length > 0;
+    };
+    const evalCond = (
+      cellValue: unknown,
+      columnId: string,
+      op: FilterOperator,
+      value: string,
+      valueTo?: string,
+    ): boolean =>
+      applyExcelFilter(
+        cellValue,
+        { id: columnId, operator: op, value, valueTo: op === "between" ? valueTo : undefined },
+        { locale: props.filterLocale },
+      );
+    // A column filter is active if either of its (up to two) conditions is.
+    const menuFilters = Object.entries(filterMenuValues).filter(([_, f]) => {
+      const a = condActive(f.operator, f.value, f.valueTo);
+      const b = !!f.operator2 && condActive(f.operator2, f.value2 ?? "", f.valueTo2);
+      return a || b;
+    });
     if (menuFilters.length) {
       rows = rows.filter((row) =>
-        menuFilters.every(([columnId, filter]) =>
-          applyExcelFilter(getRowColumnValue(row, columnId), {
-            id: columnId,
-            operator: filter.operator,
-            value: filter.value,
-            valueTo: filter.operator === "between" ? filter.valueTo : undefined,
-          }, { locale: props.filterLocale }),
-        ),
+        menuFilters.every(([columnId, f]) => {
+          const cellValue = getRowColumnValue(row, columnId);
+          const aActive = condActive(f.operator, f.value, f.valueTo);
+          const bActive = !!f.operator2 && condActive(f.operator2, f.value2 ?? "", f.valueTo2);
+          const ra = aActive ? evalCond(cellValue, columnId, f.operator, f.value, f.valueTo) : null;
+          const rb = bActive
+            ? evalCond(cellValue, columnId, f.operator2 as FilterOperator, f.value2 ?? "", f.valueTo2)
+            : null;
+          if (ra === null) return rb ?? true;
+          if (rb === null) return ra;
+          return f.join === "OR" ? ra || rb : ra && rb;
+        }),
       );
     }
 
@@ -1040,7 +1144,10 @@ export function createSvGridController<
 
 
   // ---- Tool panel (docked columns sidebar) -------------------------------
-  let toolPanelOpen = $state(false);
+  // svelte-ignore state_referenced_locally
+  let toolPanelOpen = $state(props.toolPanelDefaultOpen === true);
+  // svelte-ignore state_referenced_locally
+  let toolPanelTab = $state<"columns" | "filters">(props.toolPanelDefaultTab ?? "columns");
   const toolPanelEnabled = $derived(props.toolPanel === true);
   // Every column (including hidden ones) in the user's current order, so the
   // panel can toggle/reorder anything. Group columns are flagged live.
@@ -1393,6 +1500,7 @@ export function createSvGridController<
     if (isFirstRender) return;
 
     selectionRange = { anchor: null, focus: null };
+    selectionRanges = [];
     editingCell = null;
     if (scrollContainer) {
       scrollContainer.scrollTop = 0;
@@ -1773,7 +1881,9 @@ export function createSvGridController<
   });
 
   const columnMenuFacetValues = $derived.by(() => {
-    const columnId = filterMenuFor;
+    // The funnel popover drives via `filterMenuFor`; the column menu's Filter
+    // tab drives via `columnMenuFor`. Support whichever is open.
+    const columnId = filterMenuFor ?? columnMenuFor;
     if (!columnId) return [] as Array<string>;
     const column = allColumns.find((entry) => entry.id === columnId);
     if (!column) return [] as Array<string>;
@@ -1853,6 +1963,8 @@ export function createSvGridController<
     set scrollSyncRaf(v) { scrollSyncRaf = v as never; },
     get selectionRange() { return selectionRange; },
     set selectionRange(v) { selectionRange = v as never; },
+    get selectionRanges() { return selectionRanges; },
+    set selectionRanges(v) { selectionRanges = v as never; },
     get isDraggingSelection() { return isDraggingSelection; },
     set isDraggingSelection(v) { isDraggingSelection = v as never; },
     get fillDrag() { return fillDrag; },
@@ -1861,6 +1973,8 @@ export function createSvGridController<
     set activeAtPointerDown(v) { activeAtPointerDown = v as never; },
     get editingCell() { return editingCell; },
     set editingCell(v) { editingCell = v as never; },
+    get fullRowEdit() { return fullRowEdit; },
+    set fullRowEdit(v) { fullRowEdit = v as never; },
     get editedCellValues() { return editedCellValues; },
     set editedCellValues(v) { editedCellValues = v as never; },
     get UNDO_LIMIT() { return UNDO_LIMIT; },
@@ -1913,6 +2027,8 @@ export function createSvGridController<
     get DATE_OPERATORS() { return DATE_OPERATORS; },
     get CHECKBOX_OPERATORS() { return CHECKBOX_OPERATORS; },
     get columnMenuFor() { return columnMenuFor; },
+    get columnMenuTab() { return columnMenuTab; },
+    set columnMenuTab(v) { columnMenuTab = v as never; },
     set columnMenuFor(v) { columnMenuFor = v as never; },
     get columnMenuPos() { return columnMenuPos; },
     set columnMenuPos(v) { columnMenuPos = v as never; },
@@ -1958,6 +2074,8 @@ export function createSvGridController<
     set internalColumns(v) { internalColumns = v as never; },
     get hiddenColumns() { return hiddenColumns; },
     set hiddenColumns(v) { hiddenColumns = v as never; },
+    get toggleColumnGroup() { return toggleColumnGroup; },
+    get isColumnGroupCollapsed() { return isColumnGroupCollapsed; },
     get externalSortEnabled() { return externalSortEnabled; },
     get externalFilterEnabled() { return externalFilterEnabled; },
     get passthroughSortedRowModel() { return passthroughSortedRowModel; },
@@ -1979,6 +2097,20 @@ export function createSvGridController<
     set colDropOnId(v) { colDropOnId = v as never; },
     get colDropSide() { return colDropSide; },
     set colDropSide(v) { colDropSide = v as never; },
+    get rowDragActive() { return rowDragActive; },
+    set rowDragActive(v) { rowDragActive = v as never; },
+    get rowDropIndex() { return rowDropIndex; },
+    set rowDropIndex(v) { rowDropIndex = v as never; },
+    get rowDropSide() { return rowDropSide; },
+    set rowDropSide(v) { rowDropSide = v as never; },
+    get onRowDragStart() { return onRowDragStart; },
+    get onRowDragOver() { return onRowDragOver; },
+    get onRowDragLeave() { return onRowDragLeave; },
+    get onRowDrop() { return onRowDrop; },
+    get onRowsContainerDragOver() { return onRowsContainerDragOver; },
+    get onRowsContainerDrop() { return onRowsContainerDrop; },
+    get onRowDragEnd() { return onRowDragEnd; },
+    get broadcastAlignedScroll() { return broadcastAlignedScroll; },
     get getCurrentColumnOrder() { return getCurrentColumnOrder; },
     get emitColumnOrder() { return emitColumnOrder; },
     get setColumnOrderInternal() { return setColumnOrderInternal; },
@@ -2014,6 +2146,8 @@ export function createSvGridController<
     get statusBarStats() { return statusBarStats; },
     get toolPanelOpen() { return toolPanelOpen; },
     set toolPanelOpen(v) { toolPanelOpen = v as never; },
+    get toolPanelTab() { return toolPanelTab; },
+    set toolPanelTab(v) { toolPanelTab = v as never; },
     get toolPanelEnabled() { return toolPanelEnabled; },
     get toolPanelColumns() { return toolPanelColumns; },
     get toolPanelHeaderLabel() { return toolPanelHeaderLabel; },
@@ -2096,6 +2230,7 @@ export function createSvGridController<
     get extendSelection() { return extendSelection; },
     get isCellInSelectedRange() { return isCellInSelectedRange; },
     get getCellRangeEdges() { return getCellRangeEdges; },
+    get getSelectionRects() { return getSelectionRects; },
     get fillHandleCell() { return fillHandleCell; },
     get isInFillPreview() { return isInFillPreview; },
     get findColumnById() { return findColumnById; },
@@ -2120,6 +2255,12 @@ export function createSvGridController<
     get clearSelectedCells() { return clearSelectedCells; },
     get onCellDoubleClick() { return onCellDoubleClick; },
     get startEditingWithChar() { return startEditingWithChar; },
+    get startEditing() { return startEditing; },
+    get stopEditing() { return stopEditing; },
+    get startFullRowEdit() { return startFullRowEdit; },
+    get setFullRowDraft() { return setFullRowDraft; },
+    get commitFullRowEdit() { return commitFullRowEdit; },
+    get cancelFullRowEdit() { return cancelFullRowEdit; },
     get saveEditingCell() { return saveEditingCell; },
     get applyHistoryStep() { return applyHistoryStep; },
     get updateEditingCellValue() { return updateEditingCellValue; },
@@ -2186,10 +2327,26 @@ export function createSvGridController<
   const { computeSummaries, hasRenderedColumn } = createSummaries<TFeatures, TData>(ctx);
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellNote, getColumnEditorOptions, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
-  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
-  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, isInFillPreview, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
+  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
+  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, startColumnResize, onColumnResizeMove, endColumnResize, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
+  const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd } = createRowDrag<TFeatures, TData>(ctx);
+  const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
   const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
+
+  // Aligned grids: register in the shared group on mount, and mirror column
+  // resizes to peers whenever columnWidths changes. Horizontal-scroll mirroring
+  // is driven from onBodyScroll (via ctx.broadcastAlignedScroll).
+  $effect(() => {
+    if (props.alignedGridGroup == null) return;
+    return registerAlignedGrid();
+  });
+  $effect(() => {
+    // Track columnWidths reactively, then broadcast to aligned peers.
+    void columnWidths;
+    broadcastAlignedWidths();
+  });
+
   return ctx;
 }

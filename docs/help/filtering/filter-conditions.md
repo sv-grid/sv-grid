@@ -19,17 +19,35 @@ Through the wrapper, the menu uses a richer per-column representation
 (operator + value) - the wrapper converts between the two when state
 crosses the boundary.
 
-## AND vs. OR
+## Multiple conditions on one column (AND / OR)
 
-Multiple filter conditions for **different columns** AND together. Two
-filters on the **same column** are not natively supported - the second
-write overwrites the first.
+A single column can hold **two** conditions joined by `AND` or `OR` - a
+numeric band, an either/or text match, an outlier filter. In the UI, open a
+column's funnel menu and click **"+ Add condition"**, pick a second operator +
+value, and toggle **AND / OR**. From the API, pass the second condition to
+`setFilter`:
 
-To express OR within a column (`status = active OR pending`), use the
-[set filter](./set-filter.md) pattern.
+```ts
+// salary band: > 80,000 AND < 150,000
+api.setFilter('salary', {
+  operator: 'greaterThan', value: '80000',
+  operator2: 'lessThan',   value2: '150000',
+  join: 'AND',
+})
 
-To express OR across columns (`firstName = ada OR lastName = lovelace`),
-do it outside the grid by filtering the data array before passing it in.
+// age outliers: < 25 OR > 60
+api.setFilter('age', {
+  operator: 'lessThan',    value: '25',
+  operator2: 'greaterThan', value2: '60',
+  join: 'OR',
+})
+```
+
+<div data-docs-demo="178-multi-condition-filter" data-height="520"></div>
+
+Conditions on **different columns** always AND together. For a set / value
+checklist ("status in {active, pending}") use the [set filter](./set-filter.md);
+for OR **across** columns, use the [advanced filter builder](../../../examples/src/demos/98-advanced-filter-builder.svelte).
 
 ## Conditions via the imperative API
 

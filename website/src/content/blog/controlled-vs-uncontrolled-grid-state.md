@@ -1,66 +1,244 @@
 ---
 title: Controlled vs Uncontrolled Grid State
-description: Should the grid own its sort/filter/page state, or should you? The difference between uncontrolled, observable, and external modes - and when to use each.
+description: Who owns sort, filter, and page state - you or the grid? The answer shapes your whole integration. Here is how to think about it and when each mode pays off.
 date: 2026-07-15
+updated: "2026-07-02"
 category: Concepts
 tags: concepts, state management, controlled, data grid
 author: Victor Vidolov
 ---
 
-Almost every integration headache with a data grid traces back to one question you answered without realizing it: who owns the state? The grid can run its own sorting, filtering, and pagination, or you can hold the reins. Pick deliberately and the rest gets easy; here is the spectrum.
+The single biggest source of confusion when wiring up a data grid is not the column API or the filter syntax - it is a question most developers never explicitly ask: who owns the sort, filter, and pagination state? Get that wrong and you end up fighting the grid for the rest of the integration.
 
-![Named, saved views in SvGrid.](/blog-media/named-views.png)
-*Named, saved views in SvGrid.*
+SvGrid gives you three distinct positions on this spectrum. I will walk through each one with real code, explain where the boundaries are, and tell you when to move from one to the next.
 
-## Three modes
+## The default position: uncontrolled state
 
-SvGrid (like most good grids) supports three levels of control per dimension (sort, filter, page):
-
-1. **Uncontrolled**: the grid owns the state. You pass initial config and forget it. Simplest.
-2. **Observable**: the grid owns the state but tells you when it changes via callbacks. Use when something outside the grid needs to react (a URL, a "3 filters active" pill, an analytics event).
-3. **External (controlled)**: you own the state. The grid records the user's intent but does not transform the rows; you do. Required for server-side data.
-
-## Uncontrolled: let the grid handle it
+When you drop in a `<SvGrid>` with `sortable`, `filterable`, and `pageable`, you get uncontrolled mode for free. The grid holds all its own state in Svelte `$state` internally and manages every transition itself.
 
 ```svelte
-<SvGrid data={rows} columns={columns} features={features} showPagination pageSize={25} />
+<script lang="ts">
+  import SvGrid from '@svgrid/grid'
+  import {
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+  })
+
+  const columns: ColumnDef<typeof features, Product>[] = [
+    { id: 'name',     field: 'name',     header: 'Name',     width: 200 },
+    { id: 'category', field: 'category', header: 'Category', width: 150 },
+    { id: 'price',    field: 'price',    header: 'Price',    width: 100, type: 'number' },
+    { id: 'stock',    field: 'stock',    header: 'In Stock', width: 100, type: 'number' },
+  ]
+</script>
+
+<SvGrid
+  data={products}
+  {columns}
+  {features}
+  sortable
+  filterable
+  pageable
+  pageSize={25}
+  showFilterRow
+/>
 ```
 
-The grid sorts, filters, and pages internally. Perfect for in-memory data and a self-contained grid.
+This is the right default for in-memory datasets where the grid is self-contained. Nothing to wire up, nothing to maintain. The user clicks a column header to sort, types in a filter cell, navigates pages - and none of it requires a line of application code.
 
-## Observable: react to changes
+The limitation shows up the moment something outside the grid needs to react to grid state. You cannot easily drive a "3 filters active" badge, sync the URL, or log analytics events in uncontrolled mode without reaching for a callback.
+
+## Observing state without owning it
+
+Observable mode is the middle ground. The grid still owns and manages the state - it sorts and filters the rows itself - but it fires callbacks whenever something changes. You subscribe and react without taking responsibility for the transformation.
 
 ```svelte
-<SvGrid data={rows} columns={columns} features={features}
-  onSortingChange={(s) => syncUrl(s)}
-  onFiltersChange={(f) => (filters = f.columns)} />
+<script lang="ts">
+  import { goto } from '$app/navigation'
+  import { page } from '$app/stores'
+  import SvGrid from '@svgrid/grid'
+  import {
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+    type SvGridApi,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+  })
+
+  let activeFilterCount = $state(0)
+  let api: SvGridApi<typeof features>
+
+  function syncToUrl(sort: any[], filters: any) {
+    const params = new URLSearchParams($page.url.searchParams)
+    if (sort.length) {
+      params.set('sort', sort[0].id)
+      params.set('dir',  sort[0].desc ? 'desc' : 'asc')
+    } else {
+      params.delete('sort')
+      params.delete('dir')
+    }
+    goto(`?${params.toString()}`, { replaceState: true, noScroll: true })
+  }
+</script>
+
+<div class="toolbar">
+  {#if activeFilterCount > 0}
+    <span class="badge">{activeFilterCount} filters active</span>
+    <button onclick={() => api.clearAllFilters()}>Clear</button>
+  {/if}
+</div>
+
+<SvGrid
+  data={products}
+  {columns}
+  {features}
+  sortable
+  filterable
+  pageable
+  showFilterRow
+  onApiReady={(a) => (api = a)}
+  onSortingChange={(sorting) => syncToUrl(sorting, null)}
+  onFiltersChange={(state) => {
+    activeFilterCount = Object.values(state.columns).filter(
+      (f) => f?.value != null && f.value !== ''
+    ).length
+  }}
+/>
 ```
 
-The grid still owns the state; you just observe it. Great for [URL sync](sync-grid-state-to-url) or selection-count UI.
+This covers the majority of production cases that go beyond pure in-memory grids. URL state, analytics events, sibling-component reactions, persisting the current view to localStorage - all of these fit here without you needing to manage the actual row transformations.
 
-## External: you own it
+## External (controlled) mode: you own the data pipeline
+
+Controlled mode is not about preference - it is a hard requirement when you have server-side data. The full dataset never exists in the browser, so the grid cannot sort or filter it. Instead, the grid records what the user requested and hands that intent back to you through callbacks. You fetch, you return the rows.
 
 ```svelte
-<SvGrid data={pageRows} columns={columns} features={features} rowCount={total}
-  onSortingChange={(s) => fetchPage({ sorting: s })} />
+<script lang="ts">
+  import SvGrid from '@svgrid/grid'
+  import {
+    createServerDataSource,
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+  })
+
+  const columns: ColumnDef<typeof features, Order>[] = [
+    { id: 'orderId',    field: 'orderId',    header: 'Order ID',   width: 120 },
+    { id: 'customer',   field: 'customer',   header: 'Customer',   width: 200 },
+    { id: 'total',      field: 'total',      header: 'Total',      width: 110, type: 'number' },
+    { id: 'status',     field: 'status',     header: 'Status',     width: 120 },
+    { id: 'createdAt',  field: 'createdAt',  header: 'Created',    width: 160, type: 'date' },
+  ]
+
+  const ds = createServerDataSource({
+    fetch: async ({ page, pageSize, sort, filters }) => {
+      const params = new URLSearchParams({
+        page:     String(page),
+        pageSize: String(pageSize),
+      })
+
+      if (sort.length) {
+        params.set('sortField', sort[0].id)
+        params.set('sortDir',   sort[0].desc ? 'desc' : 'asc')
+      }
+
+      for (const [field, filter] of Object.entries(filters?.columns ?? {})) {
+        if (filter?.value != null) {
+          params.set(`filter[${field}]`, String(filter.value))
+          if (filter.valueTo != null) params.set(`filter[${field}To]`, String(filter.valueTo))
+        }
+      }
+
+      const res  = await fetch(`/api/orders?${params.toString()}`)
+      const json = await res.json()
+      return { rows: json.data, total: json.total }
+    },
+  })
+</script>
+
+<SvGrid
+  data={ds}
+  {columns}
+  {features}
+  sortable
+  filterable
+  pageable
+  showFilterRow
+  pageSize={50}
+/>
 ```
 
-The grid records what the user clicked but does not reorder rows, you fetch and supply them. This is how [server-side data](server-side-data) works.
+`createServerDataSource` wraps the fetch lifecycle so SvGrid triggers a fresh call whenever the user changes sort, filters, or page. You get a consistent callback shape every time: `page`, `pageSize`, `sort` (an array with one or more sort objects), and `filters` (column-keyed filter state). Map those to your API and return `{ rows, total }`.
 
-## How to choose
+Notice there are no `onSortingChange` or `onFiltersChange` callbacks here. The data source handles the coordination. If you need to react to state changes on top of a server source, you can still add those callbacks - they compose cleanly.
 
-- In-memory data, self-contained grid? **Uncontrolled.**
-- Need outside UI to react to grid state? **Observable.**
-- Server-side data, or you must own the ordering? **External.**
+## Mixing modes across dimensions
 
-You can mix per dimension, uncontrolled sorting with external pagination, for instance. Start uncontrolled and graduate a dimension to external only when you need to.
+Nothing forces consistency across dimensions. A common pattern is uncontrolled sorting with external pagination - you want the grid to handle column sorting in-memory but you have too many records to load all at once:
 
-## Frequently asked questions
+```svelte
+<script lang="ts">
+  // Fetch only the current page; let the grid sort in-memory across that page.
+  // onPageChange fetches the next slice; onSortingChange re-fetches sorted from server.
+  let pageRows = $state<Order[]>([])
+  let total    = $state(0)
 
-### What is the difference between controlled and uncontrolled grid state?
+  async function fetchPage(params: { page: number; pageSize: number; sort?: any[] }) {
+    const q   = new URLSearchParams({ page: String(params.page), pageSize: String(params.pageSize) })
+    const res = await fetch(`/api/orders?${q}`)
+    const j   = await res.json()
+    pageRows  = j.data
+    total     = j.total
+  }
 
-Uncontrolled means the grid owns and manages its sort/filter/page state. Controlled (external) means you own that state, the grid records the user's intent but you transform and supply the rows, which is required for server-side data. An in-between "observable" mode lets the grid own state while notifying you of changes.
+  $effect(() => { fetchPage({ page: 1, pageSize: 50 }) })
+</script>
 
-### Which mode should I use for server-side data?
+<SvGrid
+  data={pageRows}
+  {columns}
+  {features}
+  rowCount={total}
+  sortable
+  pageable
+  onPageChange={({ page, pageSize }) => fetchPage({ page, pageSize })}
+/>
+```
 
-External (controlled) mode. The grid reports the sort, filter, and page state through callbacks, and you fetch and return the matching rows plus a total count, since the full dataset is not in the browser.
+This works, but I would reach for `createServerDataSource` instead in most cases - it handles loading states and error retries and keeps the fetch logic away from the component.
+
+## The decision tree
+
+If you are not sure which mode to use, work through these in order:
+
+- Does the full dataset live in memory? Use uncontrolled. Done.
+- Does something outside the grid need to react to sort/filter/page changes? Add observable callbacks. The grid still owns state, you just listen.
+- Is the dataset too large to load in full, or does it live on a server? Use `createServerDataSource` (external/controlled mode).
+
+One thing that trips people up: you cannot switch between controlled and uncontrolled for the same dimension at runtime. The decision is made at mount time based on whether you pass a server data source or raw array. Plan it up front and it stays clean. Decide later and you will be refactoring data-fetching logic out of component props - not fun.
+
+Start with uncontrolled. Promote to observable when you need outside reactions. Move to external only when the server forces you to. That graduation path matches how most features actually get built.

@@ -1,56 +1,152 @@
 ---
 title: 15 Years of UI Components - The Story Behind jQWidgets and Smart UI
-description: From jQWidgets in 2011 to Smart UI web components and now SvGrid for Svelte 5 - the throughline behind the team and what we have learned shipping components for over a decade.
+description: How a team spent 15 years shipping data grids - from jQuery widgets in 2011 to web components to a Svelte 5 native grid - and what actually changed each time.
 date: 2026-06-05
+updated: 2026-07-02
 category: Company
 tags: company, jqwidgets, smart ui, htmlelements, history
 author: Boyko Markov
 ---
 
-SvGrid did not appear out of nowhere. It is the latest product from a team that has been shipping UI components since 2011. This is the story of how we got here, and what a decade and a half of building grids taught us.
+The first customer email we ever got about jQWidgets was a complaint. The grid was locking the browser tab at 10,000 rows and the developer on the other end was not happy. That email is still in the inbox somewhere, and I think about it every time we make a performance decision.
 
-![A SvGrid grid loading from a REST API.](/blog-media/rest-loading.png)
-*A SvGrid grid loading from a REST API.*
+jQWidgets launched in 2011 on top of jQuery. The idea was straightforward: wrap the things developers actually needed - data grids, trees, charts, form controls - in a consistent API and style system, so teams building enterprise apps in jQuery did not have to stitch together five different libraries with five different event models. The pitch worked. Within a couple of years we had customers at Boeing, Samsung, NVIDIA, and Intel using the grid as the backbone of internal dashboards and data tools. None of them were hobby projects. They were inventory systems, trading interfaces, telemetry dashboards - real workloads where a layout bug at the wrong column width would get escalated to a VP.
 
-## 2011: jQWidgets and the jqxGrid
+## What jQuery forced us to learn
 
-We started in the jQuery era with jQWidgets, a suite of widgets anchored by jqxGrid, a data grid that had to be fast on the browsers of the time. That constraint shaped how we think to this day: a grid is a performance product first. Users do not forgive a table that stutters when they scroll, sort, or type in a filter.
+Building a grid on jQuery is genuinely hard. jQuery gives you DOM manipulation utilities, not a component model. Every feature - sorting, filtering, column resizing, virtualization - has to be coordinated by hand. You end up with an object that is half imperative API and half event bus, with state scattered across DOM attributes, instance variables, and closure captures. It works, and the jQWidgets grid proved it could work at scale, but the surface area for bugs is enormous.
 
-Over the years jQWidgets components found their way into enterprise software at companies you know, Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel among thousands of others. Shipping into environments like that teaches you to value stability, backward compatibility, and accessibility over chasing trends.
+The virtualization problem the first customer wrote about came from a simple mistake: we were rendering all rows to the DOM and hiding the out-of-viewport ones with `display: none`. That is not virtualization, it is just hiding. Real virtualization requires a fixed-height scroll container, a measurement pass to know each row's height, a viewport tracking loop, and a recycling pool that reuses DOM nodes as rows scroll in and out. We built all of that, over several releases, on top of jQuery's `$()` selectors and `.on()` event binding. It was not elegant but it shipped.
 
-## The web components era: Smart UI
+The jQWidgets column definition from that era looked like this:
 
-As the platform matured, we rebuilt our component library on web standards - custom elements - and launched it as Smart UI on [htmlelements.com](https://www.htmlelements.com). Web Components let one component run in React, Angular, Vue, or plain HTML, which matched how real engineering teams actually work: heterogeneous, long-lived, and rarely on a single framework.
+```js
+// jQWidgets grid column definition, circa 2013
+$('#grid').jqxGrid({
+  source: dataAdapter,
+  columns: [
+    { text: 'Symbol', datafield: 'symbol', width: 90 },
+    { text: 'Last Price', datafield: 'last', width: 100, cellsformat: 'f2' },
+    {
+      text: '% Change',
+      datafield: 'pctChange',
+      width: 100,
+      cellsrenderer: function(row, columnfield, value) {
+        var color = value >= 0 ? '#065f46' : '#991b1b'
+        var bg = value >= 0 ? '#d1fae5' : '#fee2e2'
+        var sign = value >= 0 ? '+' : ''
+        return '<span style="background:' + bg + ';color:' + color + ';padding:2px 8px;border-radius:9999px">'
+          + sign + parseFloat(value).toFixed(2) + '%</span>'
+      }
+    },
+    { text: 'Volume', datafield: 'volume', width: 110, cellsformat: 'n0' },
+  ]
+})
+```
 
-Smart UI keeps moving. The 26.0.0 release brought Enterprise Themes - Material 3, Fluent, Strata, and Tabula - plus data grid modularity improvements and AI-assisted API documentation. And the work continues into 2026 with a roadmap that leans hard into AI: an MCP server, an AI-assisted dashboard builder, smart data-grid summaries, and AI-powered paste.
+The `cellsrenderer` approach worked, but it had a structural problem: you were generating raw HTML strings that got injected via `innerHTML`. XSS if you were not careful with user-sourced values. No access to the component tree for tooltips or popovers. No lifecycle hooks. You could make it look right, but wiring in real interactivity meant reaching back into the DOM with more jQuery after the renderer ran.
 
-## Recognition
+## The web component rewrite
 
-In Visual Studio Magazine's 2025 Readers' Choice Awards, Smart UI was voted Gold Winner among software development service providers. Awards are not the point - shipping is - but it is good to know the people who use the tools every day rate them highly.
+By 2018, the frontend landscape had shifted enough that jQuery felt like a liability for new customers. React had won the SPA wars. Angular was on a stable footing. Web components were standardized. We made the call to rebuild from scratch as native HTML custom elements under the Smart UI / htmlelements.com brand.
 
-## 2026: SvGrid for Svelte 5
+The web component model solved the innerHTML problem cleanly. A custom element owns its shadow DOM, so cell content is actual DOM nodes with real event listeners, not injected strings. The grid element (`<smart-grid>`) could drop into any framework or plain HTML without adapter code. We picked up customers in Angular shops that had been blocked on the jQuery dependency.
 
-Which brings us to SvGrid. When Svelte 5 introduced runes, we saw a chance to build a data grid that exploits fine-grained reactivity natively rather than wrapping an engine designed for another model. So we wrote a new grid from scratch, with a headless core and a render component, MIT-licensed at its heart.
+But web components introduced a different kind of friction. The framework integration story was never great. React's synthetic event system does not play well with custom events dispatched from shadow DOM. Angular's change detection does not know about shadow DOM mutations by default. You end up shipping wrapper packages that re-expose the imperative API in framework idioms, and those wrappers lag behind the core by a release cycle. Multi-framework support sounds like a selling point until you are maintaining four wrappers.
 
-## What 15 years taught us
+## Starting over for Svelte 5
 
-A few principles carry through every product we have built:
+The decision to build SvGrid specifically for Svelte 5 came from watching what Svelte's rune system actually enables. Svelte 5's `$state` and `$derived` are not just syntactic sugar over a store - they are a fine-grained reactivity graph that the compiler turns into surgical DOM updates. A grid built natively against that system can track which cells need repaint at the rune level, rather than diffing the full row array on every tick.
 
-- **Performance is a feature, not an optimization.** Virtualization, stable references, and minimal repaints are designed in from the start.
-- **Accessibility is the default, not a setting.** WAI-ARIA roles and full keyboard support ship on by default because retrofitting them never works.
-- **Meet developers where they are.** That meant jQuery in 2011, web components later, native Svelte today, and AI assistants now.
-- **Honesty builds trust.** Our comparison pages tell you when a competitor is the better choice. Developers see through marketing; they respond to candor.
+The feature composition model that came out of this is probably the biggest architectural change from every previous generation:
 
-## Where we are headed
+```ts
+import {
+  tableFeatures,
+  rowSortingFeature,
+  columnFilteringFeature,
+  rowSelectionFeature,
+  rowPaginationFeature,
+  type ColumnDef,
+  type SvGridApi,
+} from '@svgrid/grid'
 
-The same team that has shipped grids for over a decade is now all-in on two things: native framework-first components, and AI-native tooling so assistants can use our libraries correctly. SvGrid is where those threads meet.
+// You declare which features the grid uses at the call site.
+// The returned token carries TypeScript overloads for every
+// feature you included, so api.setSort() is only available
+// if rowSortingFeature is in the list.
+const features = tableFeatures({
+  rowSortingFeature,
+  columnFilteringFeature,
+  rowSelectionFeature,
+  rowPaginationFeature,
+})
 
-## Frequently asked questions
+type Row = { id: string; symbol: string; last: number; pctChange: number }
 
-### How long has the team behind SvGrid been building UI components?
+const columns: ColumnDef<typeof features, Row>[] = [
+  { id: 'symbol', field: 'symbol', header: 'Symbol', width: 90 },
+  { id: 'last',   field: 'last',   header: 'Last',   width: 100, type: 'number' },
+  { id: 'pct',    field: 'pctChange', header: '% Change', width: 100 },
+]
+```
 
-Since 2011, first jQWidgets and jqxGrid, then the Smart UI web components on htmlelements.com, and now SvGrid for Svelte 5.
+Nothing in jQWidgets or Smart UI worked this way. Both earlier grids exposed everything through a single monolithic instance: you called `setOption('sortable', true)` and the sort module activated. That is fine for simplicity, but the bundle always included every feature whether you used it or not, and TypeScript inference across a dynamic options object is a nightmare to maintain. The `tableFeatures` composition approach means unused features are tree-shaken at build time, and the API surface narrows to exactly what you declared.
 
-### What is the relationship between SvGrid, jQWidgets, and Smart UI?
+## What the cell renderer story looks like now
 
-They are all products from the same team. jQWidgets is the original jQuery-era suite, Smart UI is the web-components library on htmlelements.com, and SvGrid is the new native Svelte 5 data grid.
+The `cellsrenderer` function from the jQuery era returned an HTML string. Smart UI improved on this with a slot-based approach, but slots have limits in highly dynamic grids - you cannot conditionally swap a slot renderer based on row data without fairly ugly workarounds.
+
+SvGrid cell rendering uses Svelte snippets directly:
+
+```svelte
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature, renderSnippet, type ColumnDef } from '@svgrid/grid'
+
+  const features = tableFeatures({ rowSortingFeature })
+
+  type Row = { id: string; symbol: string; pctChange: number }
+
+  const rows: Row[] = $state([
+    { id: '1', symbol: 'AAPL', pctChange: 1.24 },
+    { id: '2', symbol: 'MSFT', pctChange: -0.88 },
+    { id: '3', symbol: 'NVDA', pctChange: 3.17 },
+  ])
+
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { id: 'symbol', field: 'symbol', header: 'Symbol', width: 90 },
+    {
+      id: 'pct',
+      field: 'pctChange',
+      header: '% Change',
+      width: 120,
+      cell: renderSnippet(pctCell, (ctx) => ctx.row.original),
+    },
+  ]
+</script>
+
+{#snippet pctCell(row: Row)}
+  {@const up = row.pctChange >= 0}
+  <span
+    style:background={up ? '#d1fae5' : '#fee2e2'}
+    style:color={up ? '#065f46' : '#991b1b'}
+    style:padding="2px 8px"
+    style:border-radius="9999px"
+    style:font-weight="600"
+  >
+    {up ? '+' : ''}{row.pctChange.toFixed(2)}%
+  </span>
+{/snippet}
+
+<SvGrid {features} {rows} {columns} rowId="id" height={300} />
+```
+
+The snippet is actual compiled Svelte. It participates in the reactive graph, has access to Svelte stores, can use `{#if}` and `{#each}` blocks, and is typed end to end. The `renderSnippet` projector - the second argument - is a pure function that extracts what the snippet needs from `CellContext`. Keep it cheap: it runs on every paint cycle, and for large grids scrolling at 60 Hz that is a lot of calls.
+
+## The things that did not change
+
+Fifteen years of shipping a data grid teaches you that most of the hard problems are the same across frameworks. Row virtualization is still about maintaining a measurement cache and a DOM recycling pool. Column pinning still requires two synchronized scroll containers that share one horizontal scroll position. Filter state is still a map of column IDs to filter descriptors. The imperative API is still the escape hatch for programmatic control that declarative binding cannot cover cleanly.
+
+What changed is how much of that complexity we can hide, and how much we can push into framework primitives rather than reinventing them. Svelte 5's rune system lets SvGrid keep sort state, filter state, and selection state as runes inside the features layer. They integrate with the reactivity graph without requiring the host application to wire up any store subscriptions. That is the return on the architectural decision to go Svelte-native rather than building another multi-framework adapter layer.
+
+The complaint from 2011 was about performance. The answer in 2026 is that the virtualization internals are not that different in concept - fixed-height container, viewport tracking, DOM recycling - but the integration with the framework's own scheduler means the grid is not fighting the framework for control of the render loop. That is the practical payoff of fifteen years of iteration.

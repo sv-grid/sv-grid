@@ -257,7 +257,7 @@
 
     <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
       <a href="#/docs/getting-started" class="btn btn-primary">Get started</a>
-      <a href="#/demos" class="btn btn-ghost">
+      <a href="#/demos/browse" class="btn btn-ghost">
         Browse 150+ demos
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -505,7 +505,7 @@
     </p>
     <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
       <a href="#/docs/getting-started" class="btn btn-primary">Get started</a>
-      <a href="#/demos" class="btn btn-ghost">Browse the gallery</a>
+      <a href="#/demos/browse" class="btn btn-ghost">Browse the gallery</a>
     </div>
   </div>
 </section>

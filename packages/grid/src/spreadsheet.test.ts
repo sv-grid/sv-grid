@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { spreadsheetLayout } from './spreadsheet'
-import type { SpreadsheetActionOptions } from './spreadsheet'
+import { spreadsheetLayout, spansToMerges } from './spreadsheet'
+import type { SpreadsheetActionOptions, SpanColumn } from './spreadsheet'
 
 // jsdom does not implement the global `CSS` object, which `findCell` uses via
 // `CSS.escape`. Provide a minimal polyfill so the action's selector queries
@@ -441,5 +441,49 @@ describe('spreadsheetLayout - update + cleanup', () => {
     await flushFrame()
     expect(host.querySelectorAll('[data-svgrid-sheet]').length).toBe(0)
     action.destroy()
+  })
+})
+
+describe('spansToMerges - declarative colSpan/rowSpan -> MergeSpec[]', () => {
+  type Row = { region: string; q: string; amt: number }
+  const rows: Row[] = [
+    { region: 'AMER', q: 'Q1', amt: 1 },
+    { region: 'AMER', q: 'Q2', amt: 2 },
+    { region: 'AMER', q: 'Q3', amt: 3 },
+    { region: 'EMEA', q: 'Q1', amt: 4 },
+    { region: 'EMEA', q: 'Q2', amt: 5 },
+  ]
+  // Merge each run of equal `region` values downward.
+  function regionRowSpan(): SpanColumn<Row>['rowSpan'] {
+    return ({ data, rowIndex }) => {
+      if (rowIndex > 0 && rows[rowIndex - 1]!.region === data.region) return 1 // covered
+      let n = 1
+      while (rows[rowIndex + n]?.region === data.region) n += 1
+      return n
+    }
+  }
+
+  it('emits a rowspan merge at each run origin and skips covered rows', () => {
+    const columns: SpanColumn<Row>[] = [{ id: 'region', field: 'region', rowSpan: regionRowSpan() }]
+    const merges = spansToMerges(rows, columns)
+    // AMER spans rows 0..2 (rowspan 3), EMEA spans rows 3..4 (rowspan 2).
+    expect(merges).toEqual([
+      { rowIndex: 0, columnId: 'region', colspan: undefined, rowspan: 3 },
+      { rowIndex: 3, columnId: 'region', colspan: undefined, rowspan: 2 },
+    ])
+  })
+
+  it('supports colSpan and marks covered columns', () => {
+    const columns: SpanColumn<Row>[] = [
+      { id: 'a', field: 'region', colSpan: ({ rowIndex }) => (rowIndex === 0 ? 2 : 1) },
+      { id: 'b', field: 'q' },
+      { id: 'c', field: 'amt' },
+    ]
+    const merges = spansToMerges(rows.slice(0, 1), columns)
+    expect(merges).toEqual([{ rowIndex: 0, columnId: 'a', colspan: 2, rowspan: undefined }])
+  })
+
+  it('returns no merges when no column defines spans', () => {
+    expect(spansToMerges(rows, [{ id: 'region', field: 'region' }])).toEqual([])
   })
 })

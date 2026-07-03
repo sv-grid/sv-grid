@@ -1,117 +1,133 @@
-﻿# Missing features
+# Missing features
 
-This is the honest accounting of capabilities the help topics flagged as
-**not yet implemented** in the community build. Each entry has:
+An honest accounting of what is **not yet built**, audited against the shipped
+demo catalog. Most of what used to live here has shipped; the remaining gaps
+are small and clearly marked. Each entry has a rough effort estimate (S / M / L).
 
-- a short description of the gap,
-- the topic page(s) that link here, and
-- a rough effort estimate (S - small, M - medium, L - large).
-
-Use this list to decide which to PR yourself, which to file an issue
-about, and which to work around in the meantime.
+Shipped items are struck through with the demo or API that covers them, so you
+can see both the trajectory and the (short) list of real gaps.
 
 ## Columns
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| ~~`getRowId` prop on `<SvGrid>` wrapper~~ - **shipped** | [Row data](./rows/row-data.md) | ✓ |
-| ~~`cellClass(ctx)` / `rowClass(ctx)` callbacks~~ - **shipped** | [Styling rows](./rows/styling-rows.md), [Styling cells](./cells/styling-cells.md) | ✓ |
-| ~~`getColumnWidths()` / `setColumnWidth()` on `SvGridApi`~~ - **shipped** | [Column sizing](./columns/column-sizing.md) | ✓ |
-| ~~`setColumnPinning()` / `getColumnPinning()` on `SvGridApi`~~ - **shipped** | [Column pinning](./columns/column-pinning.md) | ✓ |
-| Header drag-to-reorder, built-in | [Column moving](./columns/column-moving.md) | M |
-| Per-column `enableSorting: false` / `enableFilter: false` flags | [Row sorting](./rows/row-sorting.md), [Filter API](./filtering/filter-api.md) | S |
-| Column spanning (`colSpan` on cell context) | [Column spanning](./columns/column-spanning.md) | L |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~`getRowId` prop~~ | **shipped** | ✓ |
+| ~~`cellClass(ctx)` / `rowClass(ctx)` callbacks~~ | **shipped** | ✓ |
+| ~~`getColumnWidths()` / `setColumnWidth()`~~ | **shipped** | ✓ |
+| ~~`setColumnPinning()` / `getColumnPinning()`~~ | **shipped** | ✓ |
+| ~~Header drag-to-reorder~~ | **shipped** - `enableColumnReorder`; demo `109-column-reorder-engine` | ✓ |
+| ~~Per-column disable sort / filter~~ | **shipped** - `sortable` / `filterable` on `ColumnDef` | ✓ |
+| ~~Column spanning~~ | **shipped** - cell merging via `MergeSpec` + `spreadsheetLayout` (demo `170`), **plus** declarative value-driven `colSpan` / `rowSpan` via `spansToMerges` | ✓ |
 
 ## Rows
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| Row pinning (top / bottom) | [Row pinning](./rows/row-pinning.md) | M |
-| Row spanning (merged cells across rows) | [Row spanning](./rows/row-spanning.md) | L |
-| Full-width / detail row API | [Full-width rows](./rows/full-width-rows.md) | M |
-| Built-in row dragging - managed + unmanaged + drop zones + grid-to-grid | [Row dragging](./rows/row-dragging.md) | L |
-| ~~`api.getDisplayedRows()` (post-pipeline)~~ - **shipped in v1.0** | [Accessing rows](./rows/accessing-rows.md) | ✓ |
-| Variable row height with `<SvGrid>` (only available via the headless virtualizer today) | [Row height](./rows/row-height.md) | M |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~Row pinning (top / bottom)~~ | **shipped** - `pinnedTopRows` / `pinnedBottomRows`; demos `107-pinned-rows`, `108-pinned-rows-engine` | ✓ |
+| ~~Row spanning (merged cells across rows)~~ | **shipped as cell merging** - `rowspan` in `MergeSpec`; demo `170-cell-merging` | ✓ |
+| ~~Full-width / detail row API~~ | **shipped** - `isDetailRow`; demo `106-detail-rows` | ✓ |
+| ~~Variable row height with `<SvGrid>`~~ | **shipped** - `rowHeight` accepts `(rowIndex) => px` | ✓ |
+| ~~`api.getDisplayedRows()`~~ | **shipped** | ✓ |
+| ~~Built-in row dragging~~ | **shipped** - `rowDragManaged` reorders in-grid and moves rows **grid-to-grid** via a shared `rowDragGroup`; `onRowDragEnd` on the receiver; demos `105-row-reorder` (custom) + `180-row-dragging` (managed) | ✓ |
 
 ## Cells
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| Built-in tooltip API on `ColumnDef` | [Tooltips](./cells/tooltips.md) | S |
-| Built-in cell flash / animated change highlight on `ColumnDef` (demos roll their own via `renderSnippet`, e.g. `11-stock-market`, `18-cascade-editing`) | [Highlighting changes](./cells/highlighting-changes.md) | S |
-| Formula language / formula editor (enterprise-grade parity) | [Expressions](./cells/expressions.md) | L |
-| Find-in-grid feature | (enterprise gap) | M |
-| Notes feature | (enterprise gap) | M |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~Built-in tooltip API on `ColumnDef`~~ | **shipped** - `tooltip`; demo `85-tooltips-and-notes` | ✓ |
+| ~~Formula language / formula editor~~ | **shipped** - in-grid engine (demo `83-spreadsheet-formulas`), HyperFormula adapter (demo `173-hyperformula`), xlsx formulas (`101`, `119`) | ✓ |
+| ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
+| ~~Notes~~ | **shipped** - `notes` prop + cell comments; demos `85-tooltips-and-notes`, `91-cell-comments` | ✓ |
+| ~~Built-in cell flash / animated change highlight~~ | **shipped** - `cellFlash` on `ColumnDef` | ✓ |
 
 ## Export / Print
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| ~~Excel / xlsx export~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
-| ~~PDF export~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
-| ~~CSV / TSV / HTML export~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
-| ~~Print (printable view + browser print dialog)~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~Excel / xlsx, PDF, CSV / TSV / HTML export, Print~~ | **shipped** in `@svgrid/enterprise` - demos `21`, `56`-`59`, `93`, `101`, `119`, `126`, `127` | ✓ |
 
 ## Filtering
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| Floating filters with per-operator parity (inline filter row exists; per-operator UI under the funnel) | [Floating filters](./filtering/floating-filters.md) | M |
-| ~~`between` operator exposed in the column menu~~ - **shipped** (Number + Date columns get a "Between" entry with two value inputs) | [Number filter](./filtering/number-filter.md), [Date filter](./filtering/date-filter.md) | ✓ |
-| Set filter - tree-list, async values, Excel-mode | [Set filter](./filtering/set-filter.md) | L |
-| `multi`-filter on a single column (AND / OR within column) | [Filter conditions](./filtering/filter-conditions.md) | M |
-| ~~`clearAllFilters()` on `SvGridApi`~~ - **shipped in v1.0** | [Filter API](./filtering/filter-api.md) | ✓ |
-| ~~`api.getFilters()` reader on `SvGridApi`~~ - **shipped in v1.0** | [Filter API](./filtering/filter-api.md) | ✓ |
-| Locale-aware text filtering (accent-insensitive, ICU-style collation) | [Text filter](./filtering/text-filter.md) | M |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~`between` operator in the column menu~~ | **shipped** - demo `64-filter-between-operator` | ✓ |
+| ~~Set filter (tree-list, async, Excel-mode)~~ | **shipped** - demo `111-set-filter-advanced` | ✓ |
+| ~~Locale-aware text filtering~~ | **shipped** - demo `110-locale-aware-filter` | ✓ |
+| ~~`clearAllFilters()` / `getFilters()`~~ | **shipped** | ✓ |
+| ~~Floating filters (per-operator)~~ | **shipped** - filter row honours every operator per column with typed inputs + inline `between`; demo `179` | ✓ |
+| ~~Multi-condition filter within one column (AND / OR)~~ | **shipped** - two conditions per column via the funnel or `api.setFilter`; demo `178` | ✓ |
 
 ## Editing
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| `cellEditor` slot for custom inline editors | [Edit components](./editing/edit-components.md) | M |
-| Built-in select & rich-select editors | [Provided editors](./editing/provided-editors.md) | M |
-| Built-in large-text (textarea) editor | [Provided editors](./editing/provided-editors.md) | S |
-| Per-column `valueParser` | [Parsing values](./editing/parsing-values.md) | S |
-| Per-column `validate()` returning `string | true` | [Validation](./editing/validation.md) | S |
-| Programmatic `api.startEditing(rowIndex, columnId)` / `stopEditing()` | [Start / stop editing](./editing/start-stop-editing.md) | S |
-| Full-row editing mode | [Full-row](./editing/full-row.md) | M |
-| Built-in undo / redo stack (now feasible since `onCellValueChange` ships) | [Undo / redo](./editing/undo-redo.md) | M |
-| Batch / staged editing mode (commit a set, not individual cells) | (enterprise gap) | M |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~`cellEditor` slot for custom inline editors~~ | **shipped** - demos `84-editor-types`, `66-custom-cell-editors` | ✓ |
+| ~~Built-in select & rich-select editors~~ | **shipped** - `editorType: 'list' / 'rich-select'`; demo `84-editor-types` | ✓ |
+| ~~Built-in large-text (textarea) editor~~ | **shipped** - demo `84-editor-types` | ✓ |
+| ~~Per-column `validate()`~~ | **shipped** - demos `24-validation`, `103-async-validation` | ✓ |
+| ~~Built-in undo / redo stack~~ | **shipped** - `api.undo()` / `redo()`; demo `86-undo-redo` | ✓ |
+| ~~Batch / staged editing mode~~ | **shipped** - demo `88-staged-editing` | ✓ |
+| ~~Per-column `valueParser`~~ | **shipped** - `valueParser` on `ColumnDef`; demo `175` | ✓ |
+| ~~Programmatic `api.startEditing()` / `stopEditing()`~~ | **shipped** - demo `176` | ✓ |
+| ~~Full-row editing mode~~ | **shipped** - `fullRowEditing`; demo `177` | ✓ |
+
+## The real remaining gaps (short list)
+
+The previous round shipped declarative col/row spanning, cell flash,
+`valueParser`, programmatic start/stop editing, full-row editing, multi-condition
+filters, per-operator floating filters, and managed grid-to-grid row dragging -
+all with demos and docs. What is left is a short list of AG-Grid-Enterprise
+parity items, mostly UX affordances on top of engines that already exist:
+
+Audited against the code and the 171-demo catalog (four-way inventory, June 2026).
+This list is deliberately short - most AG-Grid-Enterprise parity items already
+ship (row-group panel `89`, status bar `144`, tool panel `146`, pivot + designer,
+server-side row model `148`, export with images/styles `56`/`58`, charts,
+sparklines, collaboration). The genuine remaining gaps:
+
+| Gap | What exists today | Effort |
+| --- | ----------------- | ------ |
+| ~~**Multiple range selection** (Ctrl-drag additional cell ranges)~~ | **shipped** - Ctrl/Cmd+drag adds ranges; all highlight + copy together; `api.selectCells([...])` takes many; demo `118` | ✓ |
+| ~~**Cell data-type inference** (`cellDataType`)~~ | **shipped** - `cellDataType` on `ColumnDef` + grid-level `inferColumnTypes` | ✓ |
+| ~~**Merged-cell export to xlsx**~~ | **shipped** - `merges` option on `exportData` (single-sheet), lines up with `MergeSpec` | ✓ |
+| ~~**Filters tool panel tab**~~ | **shipped** - Columns \| Filters tabs in the tool panel (`146`), in sync with the column menu | ✓ |
+| ~~**Copy with headers**~~ | **shipped** - `copyHeadersToClipboard` + `processCellForClipboard` hook | ✓ |
+| ~~**Aligned grids**~~ | **shipped** - `alignedGridGroup` syncs horizontal scroll + column-resize widths; demo `182` | ✓ |
+| ~~**Collapsible column groups**~~ | **shipped** - `columnGroupShow: 'open' \| 'closed'` + `openByDefault`; demo `183` | ✓ |
+| ~~**Column menu tabs** (General / Filter / Columns)~~ | **shipped** - tabbed column menu; demo any filterable grid | ✓ |
+| ~~**External row-drag drop zones**~~ | **shipped** - `rowDropZone` action (drop rows onto any element); demo `184` | ✓ |
+| ~~**Nested master/detail grids**~~ | **shipped** - `isDetailRow` + `renderDetailRow` hosting a child grid; demo `181` | ✓ |
+
+### Still open (medium / large)
+
+| Gap | Note | Effort |
+| --- | ---- | ------ |
+| **Multi Filter** (set + text stacked on one column) | one operator-set per column today | M |
+| **Custom filter / floating-filter component** slot | first-class pluggable filter | M |
+| **Custom tool panels** | panel is fixed Columns + Filters | M |
+| **UI-string localisation** (`localeText`) | menu/panel labels are EN; data formatting is locale-aware | M |
+| **Row-grouping display modes** (single / multiple / groupRows) + group-level footers | grouping + group panel ship; display variants do not | M |
+| **In-grid pivot mode** (toggle on the main grid) | pivot ships as engine + designer, rendered as a separate grid | M-L |
+| **Integrated-chart depth** (range-chart context menu, chart toolbar, cross-filtering) | 17 chart types + wizard ship; the select-range-to-chart loop does not | L |
+| **Server-side pivot / viewport row model** | SSRM ships sort/filter/group/infinite | L |
 
 ## What's already there
 
-For balance - the things that **are** built in and stable:
-
-- Sorting (single + multi, click + shift-click) with `onSortingChange` callback
-- Per-column filtering (menu + filter row + global) with operators `contains` / `equals` / `startsWith` / `greaterThan` / `lessThan` / **`between`** (two-input range) / `isBlank`, and an `onFiltersChange` callback that emits the consolidated `{ global, columns: [{ id, operator, value, valueTo? }] }` payload
-- **External-data mode**: `externalSort` / `externalFilter` props let the consumer own row ordering and filtering for server-side / tree data; the grid records UI state but does not re-order rows (see demo `09-server-side`, `08-tree-and-master-detail`)
-- Pagination, programmatic page controls
-- Grouping (one or more columns) + grouped/aggregated footer summaries
-- Row expansion (`rowExpandingFeature`)
-- Row selection (single, multi, checkbox column) with `onRowSelectionChange` callback
-- Cell range selection + copy/paste as TSV
-- Inline editing with five built-in editor types and `onCellValueChange(event)` callback (used by demo `18-cascade-editing`)
-- Row + column virtualization, with overscan controls; column virtualizer detects per-column size changes (so resize / fit-to-width re-render correctly)
-- Column resize via the header handle, plus `api.setColumnWidth(id, px)` / `api.getColumnWidths()` for programmatic / persisted layouts
-- Fit columns to viewport (`fitColumns` prop) - residue-absorbing, with modest shrink-to-fit
-- Column pinning (left / right) via the column menu **and** via `api.setColumnPinning({left, right})` / `api.getColumnPinning()`
-- **Stable row identity**: `getRowId(row, index)` prop on `<SvGrid>` (and `SvGridOptions` for the headless core) - drives selection / expansion / edit state across re-orders and filters
-- **Conditional class hooks**: `cellClass` on `ColumnDef` and `rowClass` on `<SvGrid>` accept string / array / `Record<string, boolean>` or a callback - no more wrapping every cell in a render snippet just to tint it
-- Optional leading row-number column (`showRowNumbers`) and selection checkbox column
-- "Source" button in the gallery shell shows each demo's raw `.svelte` source for copy-paste
-- Imperative API for data + columns + filters + sort + grouping + visibility (`onApiReady`)
-- WAI-ARIA grid pattern with helpers in [`a11y.ts`](../../packages/grid/src/a11y.ts) (see demo `17-accessibility`)
-- Locale-aware number / currency / percent / date / datetime formatters with `Intl` caching (see demo `15-localization`)
-- Built-in CSS custom-property theming surface (`--sg-*`); per-instance theme via `style="--sg-bg: ..."` (see demo `10-custom-cells-and-themes`)
-- CSP-clean runtime: no `eval`, no `new Function`, no inline scripts (see demo `16-csp-compliant`)
-- SSR-friendly: the grid renders meaningful HTML before hydration (see demo `19-ssr`)
+The stable, built-in feature surface is large. Highlights: sorting (single +
+multi), per-column filtering (menu + row + global) with a `between` range
+operator and set/tree/async filters, pagination, grouping + aggregation, tree
+data, master/detail + full-width detail rows, row + column virtualization
+(100k+ and a 1M-row demo), cell-range selection + copy/paste + Excel-style fill
+handle, inline editing with 14 editor types plus a custom `cellEditor` slot,
+undo/redo, staged editing, find-in-grid, notes + cell comments, tooltips,
+conditional formatting, sparklines, cell merging, column pinning/reorder/resize,
+row pinning, a formula engine (+ HyperFormula adapter), server-side row model,
+Excel/PDF/CSV/HTML export + print (Enterprise), pivot + charts + AI (Enterprise),
+WAI-ARIA + keyboard nav, RTL, i18n, theming via `--sg-*` tokens, SSR, and a
+CSP-clean runtime.
 
 ## How to contribute
 
-1. Pick an entry from above.
-2. Open an issue describing the API you'd want - names, types, the
-   minimal change.
-3. If you can write the patch, do so. Keep tests with the change.
-
-PRs that close items here are the fastest way to move SvGrid towards
-real enterprise-quality parity in the community build.
+1. Pick a gap from **The real remaining gaps** above.
+2. Open an issue describing the API you'd want - names, types, the minimal change.
+3. If you can write the patch, do so, and keep tests with the change.

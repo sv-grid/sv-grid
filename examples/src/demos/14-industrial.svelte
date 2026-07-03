@@ -279,7 +279,7 @@
         },
         {
           id: 'setpoint', header: 'Setpoint', editorType: 'number', width: 130,
-          accessorFn: (row) => row.setpoint,
+          fieldFn: (row) => row.setpoint,
           cell: (ctx) => renderSnippet(SetpointCell, { sensor: ctx.row.original }),
         },
         {
@@ -288,7 +288,7 @@
         },
         { field: 'lastUpdate', header: 'Updated', editorType: 'text', width: 110 },
         {
-          id: 'trend', header: 'Trend (24)', accessorFn: () => '', width: 140,
+          id: 'trend', header: 'Trend (24)', fieldFn: () => '', width: 140,
           cell: (ctx) => renderSnippet(SparklineCell, { sensor: ctx.row.original }),
         },
       ] satisfies ColumnDef<typeof features, Sensor>[]}

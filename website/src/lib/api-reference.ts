@@ -69,16 +69,34 @@ const features = tableFeatures({ rowSortingFeature })
   onApiReady={(api) => grid = api}
 />`,
   props: [
-    // ---- Required props ----
     {
-      name: 'data',
-      type: 'ReadonlyArray<TData>',
-      required: true,
+      name: 'alignedGridGroup',
+      type: 'string',
       description:
-        'The rows to render. Treat as immutable - replace the reference (e.g. data = [...data, newRow]) to trigger a re-render. Mutating an element in place will not invalidate the grid.',
-      example: `let rows = $state<Order[]>(initial)
-function addOrder(o: Order) { rows = [...rows, o] }   // ok - new array
-function ratesUp() { rows.forEach(r => r.rate *= 1.1) } // BAD - mutates in place`,
+        'Align this grid with others that share the same non-empty alignedGridGroup string: horizontal scroll and column-resize widths are kept in lockstep across every grid in the group. Use for a totals/header grid above a body grid, or side-by-side comparison grids that must line up. The grids should declare the same columns (matched by id) for widths to map.',
+      example: `<SvGrid {data} {columns} {features} alignedGridGroup="report" />`,
+    },
+    {
+      name: 'columnMenuTabs',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Render the header column menu as a tabbed popover - General, Filter, and Columns tabs (the AG-Grid layout). Defaults to false, which keeps the flat menu (actions list + "Choose columns" submenu).',
+      example: `<SvGrid {data} {columns} {features} columnMenuTabs />`,
+    },
+    {
+      name: 'columnOrder',
+      type: 'ReadonlyArray<string>',
+      description:
+        'Initial column order, by id (falls back to field). When the user reorders columns, this is the starting state. After mount, the grid owns the order internally and emits onColumnOrderChange on every change - persist that to localStorage to restore.',
+      example: `<SvGrid {data} {columns} {features} columnOrder={['name', 'total', 'id']} />`,
+    },
+    {
+      name: 'columnOverscan',
+      type: 'number',
+      default: '3',
+      description: 'Extra columns rendered to the left and right of the viewport.',
+      example: `<SvGrid {data} {columns} {features} columnOverscan={6} />`,
     },
     {
       name: 'columns',
@@ -86,165 +104,58 @@ function ratesUp() { rows.forEach(r => r.rate *= 1.1) } // BAD - mutates in plac
       required: true,
       description:
         'The column definitions. See ColumnDef for the full shape. Columns are positional; reorder the array to reorder the visible columns.',
-      example: `const columns: ColumnDef<typeof features, Order>[] = [
-  { field: 'id',    header: 'Order ID', width: 110 },
-  { field: 'total', header: 'Total',    width: 140,
-    format: { type: 'currency', currency: 'USD' } },
-]`,
+      example: `<script lang="ts">
+  import {
+    SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature, type ColumnDef,
+  } from '@svgrid/grid'
+
+  type Order = { id: number; customer: string; total: number; status: string; placedAt: string }
+
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+
+  let rows = $state<Order[]>([
+    { id: 1, customer: 'Acme Corp', total: 1240, status: 'paid', placedAt: '2026-01-14' },
+    { id: 2, customer: 'Globex',    total:  890, status: 'open', placedAt: '2026-02-03' },
+  ])
+
+  // Columns are positional - reorder the array to reorder the grid.
+  const columns: ColumnDef<typeof features, Order>[] = [
+    { field: 'id',       header: 'Order ID', width: 100 },
+    { field: 'customer', header: 'Customer', width: 180, editorType: 'text' },
+    { field: 'total',    header: 'Total',    width: 120, align: 'right',
+      editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+    { field: 'status',   header: 'Status',   width: 110 },
+    { field: 'placedAt', header: 'Placed',   width: 120,
+      format: { type: 'date', pattern: 'y-m-d' } },
+  ]
+</script>
+
+<SvGrid data={rows} columns={columns} features={features} sortable filterable />`,
     },
     {
-      name: 'features',
-      type: 'TFeatures',
-      required: true,
-      description:
-        'The result of tableFeatures({ ... }). Picks which row models and behaviors are active. Pass tableFeatures({}) for a pure read-only grid.',
-      example: `const features = tableFeatures({
-  rowSortingFeature,
-  columnFilteringFeature,
-  rowSelectionFeature,
-})`,
-    },
-    // ---- Display state ----
-    {
-      name: 'loading',
-      type: 'boolean',
-      default: 'false',
-      description:
-        'Replace the row body with a loading state while data is being fetched. The header still renders so the user sees the eventual columns.',
-      example: `<SvGrid data={rows} {columns} {features} loading={isFetching} />`,
-    },
-    {
-      name: 'error',
-      type: 'string | null',
-      default: 'null',
-      description: 'Replace the row body with an error message. Takes precedence over loading.',
-      example: `<SvGrid {data} {columns} {features} error={err?.message ?? null} />`,
-    },
-    {
-      name: 'emptyMessage',
-      type: 'string',
-      default: '"No rows"',
-      description: 'Body content shown when data is empty.',
-      example: `<SvGrid {data} {columns} {features} emptyMessage="No orders match the current filters" />`,
-    },
-    // ---- Filter UI ----
-    {
-      name: 'filterMode',
-      type: '"menu" | "row" | "global" | "none"',
-      default: '"menu"',
-      description:
-        'High-level picker for which single filter surface appears. "menu" shows the column-header funnel menu; "row" shows an inline filter row under the header; "global" shows a single search box above the grid; "none" hides all filter UI but still tracks state. Overridden per-surface by showGlobalFilter / showColumnFilters / showFilterRow.',
-      example: `<SvGrid {data} {columns} {features} filterMode="row" />`,
-    },
-    {
-      name: 'showGlobalFilter',
-      type: 'boolean',
-      default: 'filterMode === "global"',
-      description:
-        'Force the global search input above the grid on/off, independent of filterMode. Searches across all columns.',
-      example: `<SvGrid {data} {columns} {features} showGlobalFilter />`,
-    },
-    {
-      name: 'showColumnFilters',
-      type: 'boolean',
-      default: 'filterMode === "menu"',
-      description: 'Force the per-column menu filter section on/off, independent of filterMode.',
-      example: `<SvGrid {data} {columns} {features} showColumnFilters />`,
-    },
-    {
-      name: 'showFilterRow',
-      type: 'boolean',
-      default: 'filterMode === "row"',
-      description: 'Force the compact inline filter row (one input per column under the header) on/off.',
-      example: `<SvGrid {data} {columns} {features} showFilterRow />`,
-    },
-    {
-      name: 'showFilterMenu',
+      name: 'columnVirtualization',
       type: 'boolean',
       default: 'true',
       description:
-        'Show the funnel icon on column headers that opens the Excel-style filter menu (operator picker + value checklist).',
-      example: `<SvGrid {data} {columns} {features} showFilterMenu={false} />`,
-    },
-    // ---- Grouping / selection / pagination UI ----
-    {
-      name: 'showGroupingControls',
-      type: 'boolean',
-      default: 'false',
-      description: 'Render the "Group by" UI strip above the grid. Requires columnGroupingFeature.',
-      example: `<SvGrid {data} {columns} {features} showGroupingControls />`,
+        'Enable column virtualization for ultra-wide tables (50+ visible columns). Disable it when you need column pinning, since sticky positioning cannot co-exist with recycled column DOM nodes.',
+      example: `<SvGrid {data} {columns} {features} columnVirtualization={false} />`,
     },
     {
-      name: 'selectionMode',
-      type: '"row" | "cell" | "both" | "none"',
-      default: '"both"',
-      description:
-        '"row" shows the selection checkbox column only; "cell" enables rectangle/range cell selection only; "both" enables both; "none" disables both. Overridden per-surface by showRowSelection / enableCellSelection.',
-      example: `<SvGrid {data} {columns} {features} selectionMode="cell" />`,
-    },
-    {
-      name: 'showRowSelection',
-      type: 'boolean',
-      default: 'selectionMode includes "row"',
-      description: 'Force the leading checkbox column on/off. Requires rowSelectionFeature.',
-      example: `<SvGrid {data} {columns} {features} showRowSelection
-  onRowSelectionChange={(_, rows) => selected = rows}
-/>`,
-    },
-    {
-      name: 'showRowNumbers',
-      type: 'boolean',
-      default: 'false',
-      description:
-        'Render a leading row-number column (1-based) before any selection column. Useful as a permanent anchor when scrolling wide grids.',
-      example: `<SvGrid {data} {columns} {features} showRowNumbers />`,
-    },
-    {
-      name: 'rowNumberWidth',
+      name: 'columnWidth',
       type: 'number',
-      default: '56',
+      default: '140',
+      description: 'Default column width (px) when `width` is not set on a ColumnDef.',
+      example: `<SvGrid {data} {columns} {features} columnWidth={120} />`,
+    },
+    {
+      name: 'conditionalFormats',
+      type: 'ReadonlyArray<ConditionalFormat<TData>>',
       description:
-        'Width (px) of the row-number column. The default fits up to "99,999"; bump it when the dataset crosses six digits so the largest number stays fully visible.',
-      example: `<SvGrid {data} {columns} {features} showRowNumbers rowNumberWidth={72} />`,
-    },
-    {
-      name: 'showPagination',
-      type: 'boolean',
-      default: 'false',
-      description: 'Render the paginator footer. Requires rowPaginationFeature.',
-      example: `<SvGrid {data} {columns} {features} showPagination />`,
-    },
-    {
-      name: 'pageSize',
-      type: 'number',
-      default: '10',
-      description: 'Initial page size when pagination is enabled.',
-      example: `<SvGrid {data} {columns} {features} showPagination pageSize={25} />`,
-    },
-    // ---- Virtualization ----
-    {
-      name: 'virtualization',
-      type: 'boolean',
-      default: 'true',
-      description:
-        'Enable row virtualization. Disable only for small (<500 row) static tables where you need every row in the DOM for testing or printing.',
-      example: `<SvGrid {data} {columns} {features} virtualization={false} />`,
-    },
-    {
-      name: 'rowHeight',
-      type: 'number',
-      default: '36',
-      description:
-        'Fixed row height in pixels. Virtualization math requires a stable value; for variable heights, a custom layout is needed.',
-      example: `<SvGrid {data} {columns} {features} rowHeight={42} />`,
-    },
-    {
-      name: 'overscan',
-      type: 'number',
-      default: '8',
-      description:
-        'Extra rows rendered above and below the viewport. Lower for memory-constrained mobile; raise for fast-scroll-then-stop UX.',
-      example: `<SvGrid {data} {columns} {features} overscan={20} />`,
+        'Excel-style conditional formatting. A list of value-driven rules that color cells: colorScale (gradient across the column range), dataBar (in-cell proportional bar), iconSet (arrows / traffic / triangles by threshold), and rule (apply a style when a predicate matches). Scope a format to specific columns with columns: [...], or omit it to apply to every column. Later entries win on conflict.',
+      example: `<SvGrid {data} {columns} {features} conditionalFormats={[
+  { type: 'colorScale', columns: ['score'] },
+  { type: 'dataBar', columns: ['total'] },
+]} />`,
     },
     {
       name: 'containerHeight',
@@ -261,44 +172,75 @@ function ratesUp() { rows.forEach(r => r.rate *= 1.1) } // BAD - mutates in plac
 </div>`,
     },
     {
-      name: 'columnVirtualization',
-      type: 'boolean',
-      default: 'true',
+      name: 'contextMenu',
+      type: 'boolean | ReadonlyArray<ContextMenuItem<TData>>',
       description:
-        'Enable column virtualization for ultra-wide tables (50+ visible columns). Disable it when you need column pinning, since sticky positioning cannot co-exist with recycled column DOM nodes.',
-      example: `<SvGrid {data} {columns} {features} columnVirtualization={false} />`,
+        'Right-click context menu. true shows the default item set (copy, cut, paste, clear, insert row above/below, remove row, remove column). Pass an array to customize: strings are built-in keys, "separator" is a divider, and objects are custom items. Omitted/false disables the menu (the native browser menu shows instead).',
+      example: `<SvGrid {data} {columns} {features} contextMenu />`,
     },
     {
-      name: 'columnOverscan',
-      type: 'number',
-      default: '3',
-      description: 'Extra columns rendered to the left and right of the viewport.',
-      example: `<SvGrid {data} {columns} {features} columnOverscan={6} />`,
+      name: 'copyHeadersToClipboard',
+      type: 'boolean',
+      description:
+        'Prepend a header row (the column labels) to copied cell ranges, so pasting into Excel / Sheets includes the headers. Applies per copied range.',
+      example: `<SvGrid {data} {columns} {features} enableCellSelection copyHeadersToClipboard />`,
+    },
+    // ---- Required props ----
+    {
+      name: 'data',
+      type: 'ReadonlyArray<TData>',
+      required: true,
+      description:
+        'The rows to render. Treat as immutable - replace the reference (e.g. data = [...data, newRow]) to trigger a re-render. Mutating an element in place will not invalidate the grid.',
+      example: `<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from '@svgrid/grid'
+
+  type Order = { id: number; customer: string; total: number }
+
+  const features = tableFeatures({ rowSortingFeature })
+
+  // \`data\` is a Svelte $state array. REPLACE the reference to update it -
+  // never mutate a row in place, or the grid won't see the change.
+  let rows = $state<Order[]>([
+    { id: 1, customer: 'Acme Corp', total: 1240 },
+    { id: 2, customer: 'Globex',    total:  890 },
+  ])
+  function addOrder() {
+    rows = [...rows, { id: rows.length + 1, customer: 'New Co', total: 500 }]
+  }
+
+  const columns: ColumnDef<typeof features, Order>[] = [
+    { field: 'id',       header: 'ID',       width: 80 },
+    { field: 'customer', header: 'Customer', width: 180 },
+    { field: 'total',    header: 'Total',    width: 120, align: 'right',
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<button onclick={addOrder}>Add order</button>
+<SvGrid data={rows} columns={columns} features={features} sortable />`,
     },
     {
-      name: 'columnWidth',
-      type: 'number',
-      default: '140',
-      description: 'Default column width (px) when `width` is not set on a ColumnDef.',
-      example: `<SvGrid {data} {columns} {features} columnWidth={120} />`,
-    },
-    {
-      name: 'fitColumns',
+      name: 'editable',
       type: 'boolean',
       default: 'false',
       description:
-        'Scale the visible columns proportionally so their total width fills the viewport (no empty space on the right). Explicit user resizes still win once they happen.',
-      example: `<SvGrid {data} {columns} {features} fitColumns />`,
+        'Convenience shortcut that switches on inline cell editing (alias of enableInlineEditing). Off by default, so set it true to opt in. The shortcut wins over the fine-grained props only when explicitly set.',
+      example: `<SvGrid {data} {columns} {features} editable />`,
     },
     {
-      name: 'initialColumnPinning',
-      type: '{ left?: ReadonlyArray<string>; right?: ReadonlyArray<string> }',
+      name: 'editableComments',
+      type: 'boolean',
       description:
-        'Columns pinned to the left/right edge on mount (each entry a column id). Seeded once; user-driven pinning via the column menu still overrides it. Requires columnVirtualization={false} to remain visible.',
-      example: `<SvGrid {data} {columns} {features}
-  columnVirtualization={false}
-  initialColumnPinning={{ left: ['id'], right: ['actions'] }}
-/>`,
+        'Allow editing per-cell notes/comments through the UI: the context menu gains an "Edit comment" item that opens a popover editor. Edits are applied to an internal overlay for immediate feedback and emitted via onNoteChange so you can persist them back into notes.',
+      example: `<SvGrid {data} {columns} {features} editableComments onNoteChange={saveNote} />`,
+    },
+    {
+      name: 'emptyMessage',
+      type: 'string',
+      default: '"No rows"',
+      description: 'Body content shown when data is empty.',
+      example: `<SvGrid {data} {columns} {features} emptyMessage="No orders match the current filters" />`,
     },
     // ---- Editing / cell selection / summaries ----
     {
@@ -308,6 +250,14 @@ function ratesUp() { rows.forEach(r => r.rate *= 1.1) } // BAD - mutates in plac
       description:
         'Enable cell-range selection. Click-and-drag selects a rectangle; Shift+arrows extend it; Ctrl/Cmd+C copies the range as TSV.',
       example: `<SvGrid {data} {columns} {features} enableCellSelection />`,
+    },
+    {
+      name: 'enableColumnReorder',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Enables drag-to-reorder on the grid column headers. When true, every header gets draggable=true and a drop indicator paints between headers during a drag. On drop the grid mutates its internal column order and fires onColumnOrderChange with the new order.',
+      example: `<SvGrid {data} {columns} {features} enableColumnReorder onColumnOrderChange={save} />`,
     },
     {
       name: 'enableInlineEditing',
@@ -328,29 +278,21 @@ function ratesUp() { rows.forEach(r => r.rate *= 1.1) } // BAD - mutates in plac
       example: `<SvGrid {data} {columns} {features} enableRowSummaries />`,
     },
     {
-      name: 'notes',
-      type: 'Record<string, Record<string, string>>',
-      description:
-        'Per-cell notes - longer free-form comments shown as a corner indicator plus a tooltip on hover. Keyed by row id then column id; missing entries mean "no note". The grid renders them; you own storage.',
-      example: `<SvGrid {data} {columns} {features}
-  notes={{ 'order-7': { status: 'Flagged by finance for manual review' } }}
-/>`,
-    },
-    // ---- Identity / styling ----
-    {
-      name: 'getRowId',
-      type: '(row: TData, index: number) => string',
-      description:
-        'Resolve a stable id per row. Drives selection, expansion, edit, and active-cell state. When omitted, the array index is used - fine for read-only views but wrong if data is reordered or filtered outside the grid. Use a database PK or UUID.',
-      example: `<SvGrid {data} {columns} {features} getRowId={(row) => row.id} />`,
+      name: 'error',
+      type: 'string | null',
+      default: 'null',
+      description: 'Replace the row body with an error message. Takes precedence over loading.',
+      example: `<SvGrid {data} {columns} {features} error={err?.message ?? null} />`,
     },
     {
-      name: 'rowClass',
-      type: '(ctx: { row: TData; rowIndex: number }) => string | string[] | Record<string, boolean> | null',
+      name: 'externalFilter',
+      type: 'boolean',
+      default: 'false',
       description:
-        'Conditional class(es) added to every body <tr>. Return a string, an array, or an object mapping class names to booleans. Useful for "highlight overdue rows" or "tint cancelled orders".',
+        'When true, the grid records filter state (menu UI works, indicators light up) but does NOT filter rows itself. Pair with onFiltersChange for server-side queries.',
       example: `<SvGrid {data} {columns} {features}
-  rowClass={({ row }) => ({ 'row-overdue': row.status === 'overdue' })}
+  externalFilter
+  onFiltersChange={({ global, columns }) => fetchOrders({ q: global, columns })}
 />`,
     },
     // ---- External-mode flags (server-side data) ----
@@ -366,15 +308,383 @@ function ratesUp() { rows.forEach(r => r.rate *= 1.1) } // BAD - mutates in plac
 />`,
     },
     {
-      name: 'externalFilter',
+      name: 'features',
+      type: 'TFeatures',
+      required: true,
+      description:
+        'The result of tableFeatures({ ... }). Picks which row models and behaviors are active. Pass tableFeatures({}) for a pure read-only grid.',
+      example: `<script lang="ts">
+  import {
+    SvGrid,
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowSelectionFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  type Row = { id: number; name: string; team: string }
+
+  // Register only the row models / behaviors you need. tableFeatures({}) is a
+  // pure read-only table. The \`sortable\` / \`filterable\` shortcuts on <SvGrid>
+  // inject the matching feature if you'd rather not list it here.
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowSelectionFeature,
+  })
+
+  let rows = $state<Row[]>([
+    { id: 1, name: 'Ada',   team: 'Platform' },
+    { id: 2, name: 'Grace', team: 'Data' },
+  ])
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { field: 'name', header: 'Name', width: 160 },
+    { field: 'team', header: 'Team', width: 160 },
+  ]
+</script>
+
+<SvGrid data={rows} columns={columns} features={features} showRowSelection />`,
+    },
+    {
+      name: 'filterable',
       type: 'boolean',
       default: 'false',
       description:
-        'When true, the grid records filter state (menu UI works, indicators light up) but does NOT filter rows itself. Pair with onFiltersChange for server-side queries.',
+        'Convenience shortcut that switches on column filtering (injects columnFilteringFeature). Off by default, so set it true to opt in. The shortcut wins over the fine-grained props only when explicitly set.',
+      example: `<SvGrid {data} {columns} {features} filterable />`,
+    },
+    {
+      name: 'filterLocale',
+      type: 'string | ReadonlyArray<string>',
+      default: "browser's locale",
+      description:
+        'BCP-47 locale tag (or array of fallbacks) used for accent- and case-insensitive text filtering / sorting / search. Powered by Intl.Collator with sensitivity: "base", so "cafe", "Cafe" and "CAFE" all match "cafe".',
+      example: `<SvGrid {data} {columns} {features} filterLocale="de-DE" />`,
+    },
+    // ---- Filter UI ----
+    {
+      name: 'filterMode',
+      type: '"menu" | "row" | "global" | "none"',
+      default: '"menu"',
+      description:
+        'High-level picker for which single filter surface appears. "menu" shows the column-header funnel menu; "row" shows an inline filter row under the header; "global" shows a single search box above the grid; "none" hides all filter UI but still tracks state. Overridden per-surface by showGlobalFilter / showColumnFilters / showFilterRow.',
+      example: `<SvGrid {data} {columns} {features} filterMode="row" />`,
+    },
+    {
+      name: 'fitColumns',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Scale the visible columns proportionally so their total width fills the viewport (no empty space on the right). Explicit user resizes still win once they happen.',
+      example: `<SvGrid {data} {columns} {features} fitColumns />`,
+    },
+    {
+      name: 'fullRowEditing',
+      type: 'boolean',
+      description:
+        'Full-row editing. When true, starting an edit puts the whole row into edit mode - every editable cell shows an inline editor at once - and a single Enter (or focus leaving the row) commits all of them; Esc cancels the whole row. Requires enableInlineEditing. Covers text / number / date / datetime / checkbox / list-select editor types.',
+      example: `<SvGrid {data} {columns} {features} enableInlineEditing fullRowEditing />`,
+    },
+    // ---- Identity / styling ----
+    {
+      name: 'getRowId',
+      type: '(row: TData, index: number) => string',
+      description:
+        'Resolve a stable id per row. Drives selection, expansion, edit, and active-cell state. When omitted, the array index is used - fine for read-only views but wrong if data is reordered or filtered outside the grid. Use a database PK or UUID.',
+      example: `<SvGrid {data} {columns} {features} getRowId={(row) => row.id} />`,
+    },
+    {
+      name: 'groupable',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Convenience shortcut that switches on the row-grouping controls (alias of showGroupingControls, also injects columnGroupingFeature). Off by default, so set it true to opt in. The shortcut wins over the fine-grained props only when explicitly set.',
+      example: `<SvGrid {data} {columns} {features} groupable />`,
+    },
+    {
+      name: 'headerHeight',
+      type: 'number',
+      description:
+        'Height (px) of a single column-header level row. With multi-level (grouped) headers the total header height is levels * headerHeight, since each level renders as its own row. When omitted, header rows size to their content. Does not affect the filter row.',
+      example: `<SvGrid {data} {columns} {features} headerHeight={44} />`,
+    },
+    {
+      name: 'inferColumnTypes',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Infer each column data type (number / boolean / date / ISO date-string / text) from the first data row, for columns that declare neither an explicit editorType nor a cellDataType. Sets the matching editor, alignment, date format, and filter operators automatically. Explicit column config always wins.',
+      example: `<SvGrid {data} {columns} {features} inferColumnTypes />`,
+    },
+    {
+      name: 'initialColumnPinning',
+      type: '{ left?: ReadonlyArray<string>; right?: ReadonlyArray<string> }',
+      description:
+        'Columns pinned to the left/right edge on mount (each entry a column id). Seeded once; user-driven pinning via the column menu still overrides it. Requires columnVirtualization={false} to remain visible.',
       example: `<SvGrid {data} {columns} {features}
-  externalFilter
-  onFiltersChange={({ global, columns }) => fetchOrders({ q: global, columns })}
+  columnVirtualization={false}
+  initialColumnPinning={{ left: ['id'], right: ['actions'] }}
 />`,
+    },
+    {
+      name: 'isDetailRow',
+      type: '(row: TData, rowIndex: number) => boolean',
+      description:
+        'Marks a row as an expandable "detail row". When this returns true the grid renders that row as a SINGLE full-width cell (colspan across every column) using renderDetailRow, instead of the normal per-column cells. Insert the detail rows into data yourself and toggle them with your own expanded state. Pair with virtualization={false} so the variable-height detail is not clipped.',
+      example: `<SvGrid {data} {columns} {features} virtualization={false}
+  isDetailRow={(row) => row.kind === 'detail'}
+  {renderDetailRow}
+/>`,
+    },
+    // ---- Display state ----
+    {
+      name: 'loading',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Replace the row body with a loading state while data is being fetched. The header still renders so the user sees the eventual columns.',
+      example: `<SvGrid data={rows} {columns} {features} loading={isFetching} />`,
+    },
+    {
+      name: 'loadingOverlay',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Render loading as a non-blocking overlay instead of replacing the whole grid: the current rows stay visible (dimmed, with a top progress bar) during a refetch, and the first load shows shimmer skeleton rows. Ideal for server-paged grids so paging/sorting does not flash.',
+      example: `<SvGrid {data} {columns} {features} loading={isFetching} loadingOverlay />`,
+    },
+    {
+      name: 'loadingSkeletonRows',
+      type: 'number',
+      default: '8',
+      description: 'Skeleton placeholder rows to show on first load.',
+      example: `<SvGrid {data} {columns} {features} loadingOverlay loadingSkeletonRows={12} />`,
+    },
+    {
+      name: 'notes',
+      type: 'Record<string, Record<string, string>>',
+      description:
+        'Per-cell notes - longer free-form comments shown as a corner indicator plus a tooltip on hover. Keyed by row id then column id; missing entries mean "no note". The grid renders them; you own storage.',
+      example: `<SvGrid {data} {columns} {features}
+  notes={{ 'order-7': { status: 'Flagged by finance for manual review' } }}
+/>`,
+    },
+    {
+      name: 'overscan',
+      type: 'number',
+      default: '8',
+      description:
+        'Extra rows rendered above and below the viewport. Lower for memory-constrained mobile; raise for fast-scroll-then-stop UX.',
+      example: `<SvGrid {data} {columns} {features} overscan={20} />`,
+    },
+    {
+      name: 'pageable',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Convenience shortcut that switches on the pagination footer (alias of showPagination). Off by default, so set it true to opt in. The shortcut wins over the fine-grained props only when explicitly set.',
+      example: `<SvGrid {data} {columns} {features} pageable />`,
+    },
+    {
+      name: 'pageSize',
+      type: 'number',
+      default: '10',
+      description: 'Initial page size when pagination is enabled.',
+      example: `<SvGrid {data} {columns} {features} showPagination pageSize={25} />`,
+    },
+    {
+      name: 'pinnedBottomRows',
+      type: 'ReadonlyArray<TData>',
+      description:
+        'Rows to pin to the BOTTOM of the grid - rendered below the regular rows and sticky-positioned (sticks to the bottom of the viewport while the user scrolls). Typical use: a "page totals" or "grand total" row computed from getDisplayedRows().',
+      example: `<SvGrid {data} {columns} {features} pinnedBottomRows={[grandTotalRow]} />`,
+    },
+    {
+      name: 'pinnedTopRows',
+      type: 'ReadonlyArray<TData>',
+      description:
+        'Rows to pin to the TOP of the grid - rendered above the regular rows and sticky-positioned so they stay visible while the user scrolls. Typical use: a "totals" or "headline" row that should always be in view. Rows are read-only and share the column schema with the main grid.',
+      example: `<SvGrid {data} {columns} {features} pinnedTopRows={[totalsRow]} />`,
+    },
+    {
+      name: 'processCellForClipboard',
+      type: '(params: { value: unknown; column: unknown; row: TData; rowIndex: number; columnId: string }) => unknown',
+      description:
+        'Transform each cell value on its way to the clipboard - e.g. strip currency symbols, expand codes to labels, or redact. Receives the display value plus the row/column context; return the string (or value) to copy.',
+      example: `<SvGrid {data} {columns} {features} processCellForClipboard={({ value }) => String(value).replace(/[$,]/g, '')} />`,
+    },
+    {
+      name: 'renderDetailRow',
+      type: 'Snippet<[{ row: TData; rowIndex: number }]>',
+      description:
+        'Snippet rendered inside the full-width detail cell for rows where isDetailRow is true. Receives the row data and its index.',
+      example: `{#snippet renderDetailRow({ row })}
+  <div class="detail-panel">{row.description}</div>
+{/snippet}
+<SvGrid {data} {columns} {features} {isDetailRow} {renderDetailRow} />`,
+    },
+    {
+      name: 'rowClass',
+      type: '(ctx: { row: TData; rowIndex: number }) => string | string[] | Record<string, boolean> | null',
+      description:
+        'Conditional class(es) added to every body <tr>. Return a string, an array, or an object mapping class names to booleans. Useful for "highlight overdue rows" or "tint cancelled orders".',
+      example: `<SvGrid {data} {columns} {features}
+  rowClass={({ row }) => ({ 'row-overdue': row.status === 'overdue' })}
+/>`,
+    },
+    {
+      name: 'rowDragGroup',
+      type: 'string',
+      description:
+        'Connection group for cross-grid row dragging. Grids that share the same non-empty rowDragGroup string (and have rowDragManaged on) can exchange rows: dragging a row out of one and dropping it into another removes it from the source and inserts it into the target. Omit to keep dragging confined to reordering within a single grid.',
+      example: `<SvGrid {data} {columns} {features} rowDragManaged rowDragGroup="tasks" />`,
+    },
+    {
+      name: 'rowDragManaged',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Enables managed row dragging. When true, every row becomes a drag source (grab cursor + a grip in the row-number cell) and a drop indicator paints between rows during a drag. On drop the grid mutates its own internal data - reordering within the grid, or moving the row across grids that share the same rowDragGroup.',
+      example: `<SvGrid {data} {columns} {features} rowDragManaged onRowDragEnd={save} />`,
+    },
+    {
+      name: 'rowHeight',
+      type: 'number',
+      default: '36',
+      description:
+        'Fixed row height in pixels. Virtualization math requires a stable value; for variable heights, a custom layout is needed.',
+      example: `<SvGrid {data} {columns} {features} rowHeight={42} />`,
+    },
+    {
+      name: 'rowNumberWidth',
+      type: 'number',
+      default: '56',
+      description:
+        'Width (px) of the row-number column. The default fits up to "99,999"; bump it when the dataset crosses six digits so the largest number stays fully visible.',
+      example: `<SvGrid {data} {columns} {features} showRowNumbers rowNumberWidth={72} />`,
+    },
+    {
+      name: 'selectionMode',
+      type: '"row" | "cell" | "both" | "none"',
+      default: '"both"',
+      description:
+        '"row" shows the selection checkbox column only; "cell" enables rectangle/range cell selection only; "both" enables both; "none" disables both. Overridden per-surface by showRowSelection / enableCellSelection.',
+      example: `<SvGrid {data} {columns} {features} selectionMode="cell" />`,
+    },
+    {
+      name: 'showColumnFilters',
+      type: 'boolean',
+      default: 'filterMode === "menu"',
+      description: 'Force the per-column menu filter section on/off, independent of filterMode.',
+      example: `<SvGrid {data} {columns} {features} showColumnFilters />`,
+    },
+    {
+      name: 'showFilterMenu',
+      type: 'boolean',
+      default: 'true',
+      description:
+        'Show the funnel icon on column headers that opens the Excel-style filter menu (operator picker + value checklist).',
+      example: `<SvGrid {data} {columns} {features} showFilterMenu={false} />`,
+    },
+    {
+      name: 'showFilterRow',
+      type: 'boolean',
+      default: 'filterMode === "row"',
+      description: 'Force the compact inline filter row (one input per column under the header) on/off.',
+      example: `<SvGrid {data} {columns} {features} showFilterRow />`,
+    },
+    {
+      name: 'showGlobalFilter',
+      type: 'boolean',
+      default: 'filterMode === "global"',
+      description:
+        'Force the global search input above the grid on/off, independent of filterMode. Searches across all columns.',
+      example: `<SvGrid {data} {columns} {features} showGlobalFilter />`,
+    },
+    // ---- Grouping / selection / pagination UI ----
+    {
+      name: 'showGroupingControls',
+      type: 'boolean',
+      default: 'false',
+      description: 'Render the "Group by" UI strip above the grid. Requires columnGroupingFeature.',
+      example: `<SvGrid {data} {columns} {features} showGroupingControls />`,
+    },
+    {
+      name: 'showPagination',
+      type: 'boolean',
+      default: 'false',
+      description: 'Render the paginator footer. Requires rowPaginationFeature.',
+      example: `<SvGrid {data} {columns} {features} showPagination />`,
+    },
+    {
+      name: 'showRowNumbers',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Render a leading row-number column (1-based) before any selection column. Useful as a permanent anchor when scrolling wide grids.',
+      example: `<SvGrid {data} {columns} {features} showRowNumbers />`,
+    },
+    {
+      name: 'showRowSelection',
+      type: 'boolean',
+      default: 'selectionMode includes "row"',
+      description: 'Force the leading checkbox column on/off. Requires rowSelectionFeature.',
+      example: `<SvGrid {data} {columns} {features} showRowSelection
+  onRowSelectionChange={(_, rows) => selected = rows}
+/>`,
+    },
+    {
+      name: 'sortable',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Convenience shortcut that switches on column sorting (injects rowSortingFeature). Every capability is off by default, so set it true to opt in. The shortcut wins over the fine-grained props only when explicitly set.',
+      example: `<SvGrid {data} {columns} {features} sortable />`,
+    },
+    {
+      name: 'statusBar',
+      type: 'boolean | { aggregates?: ReadonlyArray<"count" | "numericCount" | "sum" | "avg" | "min" | "max"> }',
+      description:
+        'Excel-style status bar under the grid showing live aggregates of the selected cell range (count, numeric count, sum, average, min, max). true shows the default set; pass { aggregates: [...] } to choose which. Requires enableCellSelection.',
+      example: `<SvGrid {data} {columns} {features} enableCellSelection statusBar={{ aggregates: ['sum', 'avg'] }} />`,
+    },
+    {
+      name: 'toolPanel',
+      type: 'boolean',
+      description:
+        'Show the docked tool panel - the enterprise sidebar with Columns and Filters tabs. A "Columns & Filters" button appears in a toolbar above the grid; the panel docks on the right edge.',
+      example: `<SvGrid {data} {columns} {features} toolPanel />`,
+    },
+    {
+      name: 'toolPanelDefaultOpen',
+      type: 'boolean',
+      description: 'Open the tool panel on first render (instead of collapsed).',
+      example: `<SvGrid {data} {columns} {features} toolPanel toolPanelDefaultOpen />`,
+    },
+    {
+      name: 'toolPanelDefaultTab',
+      type: '"columns" | "filters"',
+      default: '"columns"',
+      description: 'Which tab the tool panel starts on.',
+      example: `<SvGrid {data} {columns} {features} toolPanel toolPanelDefaultTab="filters" />`,
+    },
+    // ---- Virtualization ----
+    {
+      name: 'virtualization',
+      type: 'boolean',
+      default: 'true',
+      description:
+        'Enable row virtualization. Disable only for small (<500 row) static tables where you need every row in the DOM for testing or printing.',
+      example: `<SvGrid {data} {columns} {features} virtualization={false} />`,
+    },
+    {
+      name: 'zebraRows',
+      type: 'boolean',
+      default: 'false',
+      description:
+        'Paint alternating data rows with the --sg-row-alt-bg color (zebra striping). Only data rows stripe - pinned, group, detail, and summary rows keep their single background.',
+      example: `<SvGrid {data} {columns} {features} zebraRows />`,
     },
   ],
   notes: [
@@ -453,6 +763,15 @@ const eventsSection: ApiSection = {
   ],
   props: [
     {
+      name: 'onActiveCellChange',
+      type: '(cell: { rowIndex: number; colIndex: number; columnId: string }) => void',
+      description:
+        'Fires whenever the active cell changes - click, keyboard move, tab, page-up/down. Use for toolbars or ribbon UIs that need to stay in sync with the cursor.',
+      example: `<SvGrid {data} {columns} {features}
+  onActiveCellChange={(cell) => activeCellLabel = cell.columnId}
+/>`,
+    },
+    {
       name: 'onApiReady',
       type: '(api: SvGridApi<TFeatures, TData>) => void',
       description:
@@ -462,80 +781,6 @@ const eventsSection: ApiSection = {
 <SvGrid {data} {columns} {features} onApiReady={(a) => (api = a)} />
 
 <button onclick={() => api?.clearAllFilters()}>Reset</button>`,
-    },
-    {
-      name: 'onRowSelectionChange',
-      type: '(selection: Record<string, boolean>, rows: TData[]) => void',
-      description:
-        'Fires whenever the checked-row set changes. First arg is the selection record `{ [rowId]: true }`; second is the array of selected row objects.',
-      example: `<SvGrid {data} {columns} {features}
-  showRowSelection
-  onRowSelectionChange={(map, rows) => {
-    selectedIds = Object.keys(map)
-    totalSelected = rows.length
-  }}
-/>`,
-    },
-    {
-      name: 'onCellSelectionChange',
-      type: '(ranges: Array<[number, number, number, number]>) => void',
-      description:
-        'Fires whenever the cell-selection rectangle changes (mouse, keyboard, or api.selectCells). Each range is `[rowStart, colStart, rowEnd, colEnd]` in grid coordinates. Empty array when the user clears the selection.',
-      example: `<SvGrid {data} {columns} {features}
-  enableCellSelection
-  onCellSelectionChange={(ranges) => {
-    // ranges = [[0, 1, 4, 3]]  -> rows 0..4, cols 1..3
-    activeRange = ranges[0] ?? null
-  }}
-/>`,
-    },
-    {
-      name: 'onSortingChange',
-      type: '(sorting: Array<{ id: string; desc: boolean }>) => void',
-      description:
-        'Fires whenever the sort clauses change. Receives the new array of `{ id, desc }` entries (multi-column order preserved). Pair with externalSort for server-side ordering.',
-      example: `<SvGrid {data} {columns} {features}
-  onSortingChange={(sort) => {
-    // sort = [{ id: 'placedAt', desc: true }, ...]
-    console.log('Sort changed:', sort)
-  }}
-/>`,
-    },
-    {
-      name: 'onFiltersChange',
-      type: '(filters: { global: string; columns: Array<{ id; operator; value; valueTo?; selectedValues? }> }) => void',
-      description:
-        'Fires when any filter surface changes - global search, per-column operator filters, or facet (Excel-style value checklist). `valueTo` is only set for the `between` operator; `selectedValues` carries facet checkbox state. Pair with externalFilter for server-side filtering.',
-      example: `<SvGrid {data} {columns} {features}
-  onFiltersChange={(f) => {
-    query = f.global
-    perColumn = f.columns
-    // each column entry carries operator+value (menu filter),
-    // valueTo (between), and/or selectedValues (facet checkboxes).
-  }}
-/>`,
-    },
-    {
-      name: 'onCellValueChange',
-      type: '(event: { rowIndex; columnId; oldValue; newValue; row }) => void',
-      description:
-        'Fires when an inline edit is committed (Enter / Tab / blur). The grid has already written the parsed value back into the row before this fires - use it for audit logs, derived-column recompute, or server sync.',
-      example: `<SvGrid bind:data {columns} {features}
-  enableInlineEditing
-  onCellValueChange={({ rowIndex, columnId, oldValue, newValue, row }) => {
-    auditLog.push({ rowIndex, columnId, oldValue, newValue })
-    syncToServer(row)
-  }}
-/>`,
-    },
-    {
-      name: 'onActiveCellChange',
-      type: '(cell: { rowIndex: number; colIndex: number; columnId: string }) => void',
-      description:
-        'Fires whenever the active cell changes - click, keyboard move, tab, page-up/down. Use for toolbars or ribbon UIs that need to stay in sync with the cursor.',
-      example: `<SvGrid {data} {columns} {features}
-  onActiveCellChange={(cell) => activeCellLabel = cell.columnId}
-/>`,
     },
     {
       name: 'onCellClick / onRowClick',
@@ -557,6 +802,95 @@ const eventsSection: ApiSection = {
 />`,
     },
     {
+      name: 'onCellSelectionChange',
+      type: '(ranges: Array<[number, number, number, number]>) => void',
+      description:
+        'Fires whenever the cell-selection rectangle changes (mouse, keyboard, or api.selectCells). Each range is `[rowStart, colStart, rowEnd, colEnd]` in grid coordinates. Empty array when the user clears the selection.',
+      example: `<SvGrid {data} {columns} {features}
+  enableCellSelection
+  onCellSelectionChange={(ranges) => {
+    // ranges = [[0, 1, 4, 3]]  -> rows 0..4, cols 1..3
+    activeRange = ranges[0] ?? null
+  }}
+/>`,
+    },
+    {
+      name: 'onCellValueChange',
+      type: '(event: { rowIndex; columnId; oldValue; newValue; row }) => void',
+      description:
+        'Fires when an inline edit is committed (Enter / Tab / blur). The grid has already written the parsed value back into the row before this fires - use it for audit logs, derived-column recompute, or server sync.',
+      example: `<SvGrid bind:data {columns} {features}
+  enableInlineEditing
+  onCellValueChange={({ rowIndex, columnId, oldValue, newValue, row }) => {
+    auditLog.push({ rowIndex, columnId, oldValue, newValue })
+    syncToServer(row)
+  }}
+/>`,
+    },
+    {
+      name: 'onColumnOrderChange',
+      type: '(order: ReadonlyArray<string>) => void',
+      description:
+        'Fires when the user reorders columns by dragging, or after api.setColumnOrder(). Receives the new visual order as column ids - persist it for "save view".',
+      example: `<SvGrid {data} {columns} {features}
+  onColumnOrderChange={(order) => savedLayout.columnOrder = [...order]}
+/>`,
+    },
+    {
+      name: 'onFiltersChange',
+      type: '(filters: { global: string; columns: Array<{ id; operator; value; valueTo?; selectedValues? }> }) => void',
+      description:
+        'Fires when any filter surface changes - global search, per-column operator filters, or facet (Excel-style value checklist). `valueTo` is only set for the `between` operator; `selectedValues` carries facet checkbox state. Pair with externalFilter for server-side filtering.',
+      example: `<SvGrid {data} {columns} {features}
+  onFiltersChange={(f) => {
+    query = f.global
+    perColumn = f.columns
+    // each column entry carries operator+value (menu filter),
+    // valueTo (between), and/or selectedValues (facet checkboxes).
+  }}
+/>`,
+    },
+    {
+      name: 'onNoteChange',
+      type: '(event: { rowId: string; columnId: string; note: string }) => void',
+      description:
+        'Fires when a per-cell comment is saved or removed (removed = empty `note`). Requires editableComments; use it to persist edits back into the `notes` prop.',
+      example: `<SvGrid {data} {columns} {features}
+  editableComments
+  {notes}
+  onNoteChange={({ rowId, columnId, note }) => {
+    notes = { ...notes, [rowId]: { ...notes[rowId], [columnId]: note } }
+    persistNote(rowId, columnId, note)
+  }}
+/>`,
+    },
+    {
+      name: 'onRowDragEnd',
+      type: '(event: { row: TData; toIndex: number; sameGrid: boolean; fromGridId: number; toGridId: number }) => void',
+      description:
+        'Fires on the target grid after a managed row drag settles, carrying the moved row, its landing index, whether it stayed in the same grid, and the source / target grid ids. The grid has already applied the change to its internal data before this fires - use it to mirror the move into your own state.',
+      example: `<SvGrid bind:data {columns} {features}
+  rowDragManaged
+  onRowDragEnd={({ row, toIndex, sameGrid, fromGridId, toGridId }) => {
+    if (sameGrid) persistOrder()
+    else syncMove(row, fromGridId, toGridId, toIndex)
+  }}
+/>`,
+    },
+    {
+      name: 'onRowSelectionChange',
+      type: '(selection: Record<string, boolean>, rows: TData[]) => void',
+      description:
+        'Fires whenever the checked-row set changes. First arg is the selection record `{ [rowId]: true }`; second is the array of selected row objects.',
+      example: `<SvGrid {data} {columns} {features}
+  showRowSelection
+  onRowSelectionChange={(map, rows) => {
+    selectedIds = Object.keys(map)
+    totalSelected = rows.length
+  }}
+/>`,
+    },
+    {
       name: 'onScrollBottomReached',
       type: '(e: { scrollTop: number; scrollHeight: number; clientHeight: number }) => void',
       description:
@@ -571,12 +905,15 @@ const eventsSection: ApiSection = {
 />`,
     },
     {
-      name: 'onColumnOrderChange',
-      type: '(order: ReadonlyArray<string>) => void',
+      name: 'onSortingChange',
+      type: '(sorting: Array<{ id: string; desc: boolean }>) => void',
       description:
-        'Fires when the user reorders columns by dragging, or after api.setColumnOrder(). Receives the new visual order as column ids - persist it for "save view".',
+        'Fires whenever the sort clauses change. Receives the new array of `{ id, desc }` entries (multi-column order preserved). Pair with externalSort for server-side ordering.',
       example: `<SvGrid {data} {columns} {features}
-  onColumnOrderChange={(order) => savedLayout.columnOrder = [...order]}
+  onSortingChange={(sort) => {
+    // sort = [{ id: 'placedAt', desc: true }, ...]
+    console.log('Sort changed:', sort)
+  }}
 />`,
     },
   ],
@@ -612,6 +949,12 @@ const flexRenderSection: ApiSection = {
 {/each}`,
   props: [
     {
+      name: 'cell',
+      type: 'Cell<TData>',
+      description: 'Shorthand: pass a cell and FlexRender reads columnDef.cell + cell.getContext() itself. Use instead of content + context.',
+      example: `<FlexRender cell={cell} />`,
+    },
+    {
       name: 'content',
       type: 'ColumnDefTemplate<HeaderContext | CellContext> | undefined',
       description:
@@ -625,10 +968,10 @@ const flexRenderSection: ApiSection = {
       example: `const ctx = cell.getContext() // { row, column, table, getValue }`,
     },
     {
-      name: 'cell',
-      type: 'Cell<TData>',
-      description: 'Shorthand: pass a cell and FlexRender reads columnDef.cell + cell.getContext() itself. Use instead of content + context.',
-      example: `<FlexRender cell={cell} />`,
+      name: 'footer',
+      type: 'Header<TData>',
+      description: 'Shorthand for a footer cell: renders columnDef.footer with the header context.',
+      example: `<FlexRender footer={footerHeader} />`,
     },
     {
       name: 'header',
@@ -637,12 +980,6 @@ const flexRenderSection: ApiSection = {
       example: `{#each headerGroup.headers as header (header.id)}
   <FlexRender header={header} />
 {/each}`,
-    },
-    {
-      name: 'footer',
-      type: 'Header<TData>',
-      description: 'Shorthand for a footer cell: renders columnDef.footer with the header context.',
-      example: `<FlexRender footer={footerHeader} />`,
     },
   ],
   notes: [
@@ -664,6 +1001,19 @@ const renderHelpersSection: ApiSection = {
   ],
   props: [
     {
+      name: 'renderComponent(component, props)',
+      type: '<P>(component: Component<P>, props: P) => RenderComponentConfig<P>',
+      description: 'Tag a Svelte component as a typed cell or header renderer.',
+      example: `import StatusBadge from './StatusBadge.svelte'
+
+const columns = [
+  {
+    field: 'status', header: 'Status',
+    cell: (ctx) => renderComponent(StatusBadge, { value: ctx.getValue() }),
+  },
+]`,
+    },
+    {
       name: 'renderSnippet(snippet, params)',
       type: '<P>(snippet: Snippet<[P]>, params: P) => RenderSnippetConfig<P>',
       description: 'Tag a Svelte snippet (the {#snippet ...} kind) as a typed cell or header renderer. The second argument is the single params object passed to the snippet.',
@@ -675,19 +1025,6 @@ const columns: ColumnDef<typeof features, Order>[] = [
   {
     field: 'status', header: 'Status',
     cell: (ctx) => renderSnippet(StatusPill, { row: ctx.row.original }),
-  },
-]`,
-    },
-    {
-      name: 'renderComponent(component, props)',
-      type: '<P>(component: Component<P>, props: P) => RenderComponentConfig<P>',
-      description: 'Tag a Svelte component as a typed cell or header renderer.',
-      example: `import StatusBadge from './StatusBadge.svelte'
-
-const columns = [
-  {
-    field: 'status', header: 'Status',
-    cell: (ctx) => renderComponent(StatusBadge, { value: ctx.getValue() }),
   },
 ]`,
     },
@@ -718,27 +1055,6 @@ const spec = rowsToChartSpec(orders, {
 <SvGridChart {spec} dataLabels formatValue={(v) => \`$\${v}\`} />`,
   props: [
     {
-      name: 'spec',
-      type: 'ChartSpec',
-      required: true,
-      description: 'The chart definition: type, categories, and series. Build it with rowsToChartSpec() or by hand.',
-      example: `const spec = rowsToChartSpec(rows, { type: 'line', category: 'month', value: 'revenue', series: 'product' })`,
-    },
-    {
-      name: 'legend',
-      type: 'boolean',
-      default: 'true',
-      description: 'Show the clickable legend. Click a chip to toggle a series; double-click to isolate it.',
-      example: `<SvGridChart {spec} legend={false} />`,
-    },
-    {
-      name: 'interactive',
-      type: 'boolean',
-      default: 'true',
-      description: 'Enable tooltips, the crosshair, and legend toggling. Set false for a static, print-friendly chart.',
-      example: `<SvGridChart {spec} interactive={false} />`,
-    },
-    {
       name: 'dataLabels',
       type: 'boolean',
       default: 'false',
@@ -752,10 +1068,52 @@ const spec = rowsToChartSpec(orders, {
       example: `<SvGridChart {spec} formatValue={(v) => v >= 1000 ? \`$\${(v/1000).toFixed(1)}k\` : \`$\${v}\`} />`,
     },
     {
+      name: 'interactive',
+      type: 'boolean',
+      default: 'true',
+      description: 'Enable tooltips, the crosshair, and legend toggling. Set false for a static, print-friendly chart.',
+      example: `<SvGridChart {spec} interactive={false} />`,
+    },
+    {
+      name: 'legend',
+      type: 'boolean',
+      default: 'true',
+      description: 'Show the clickable legend. Click a chip to toggle a series; double-click to isolate it.',
+      example: `<SvGridChart {spec} legend={false} />`,
+    },
+    {
       name: 'onSelect',
       type: '(selection: ChartSelection) => void',
       description: 'Fired when a category, point, or slice is clicked - use it to drill back into the grid (e.g. set a filter).',
       example: `<SvGridChart {spec} onSelect={(s) => api.setFilter('region', { operator: 'equals', value: s.category })} />`,
+    },
+    {
+      name: 'spec',
+      type: 'ChartSpec',
+      required: true,
+      description: 'The chart definition: type, categories, and series. Build it with rowsToChartSpec() or by hand.',
+      example: `<script lang="ts">
+  import { SvGridChart, rowsToChartSpec } from '@svgrid/grid'
+
+  type Sale = { month: string; product: string; revenue: number }
+
+  const rows: Sale[] = [
+    { month: 'Jan', product: 'Widgets',  revenue: 4200 },
+    { month: 'Jan', product: 'Gadgets', revenue: 2600 },
+    { month: 'Feb', product: 'Widgets',  revenue: 5100 },
+    { month: 'Feb', product: 'Gadgets', revenue: 3050 },
+  ]
+
+  // Aggregate rows into a ChartSpec (or build the spec object by hand).
+  const spec = rowsToChartSpec(rows, {
+    type: 'line',
+    category: 'month',
+    value: 'revenue',
+    series: 'product',
+  })
+</script>
+
+<SvGridChart spec={spec} />`,
     },
   ],
   notes: [
@@ -779,7 +1137,7 @@ const columnDefSection: ApiSection = {
   signature: `type ColumnDef<TFeatures, TData, TValue = unknown> = {
   id?: string
   field?: keyof TData & string
-  accessorFn?: (row: TData) => unknown
+  fieldFn?: (row: TData) => unknown
   header?: string | ((ctx: HeaderContext) => unknown)
   footer?: string | ((ctx: HeaderContext) => unknown)
   cell?: string | ((ctx: CellContext) => unknown)
@@ -806,51 +1164,84 @@ const columnDefSection: ApiSection = {
 }`,
   props: [
     {
-      name: 'id',
-      type: 'string',
-      description:
-        'Explicit column id. Defaults to `field` when set. Required when two columns share a field (e.g. a derived column with a custom `cell`) or when there is no `field`.',
-      example: `{ id: 'fullName', header: 'Name', accessorFn: (r) => \`\${r.first} \${r.last}\` }`,
-    },
-    {
-      name: 'field',
-      type: 'keyof TData & string',
-      description:
-        'The property on the row used for sort, filter, default rendering, and inline editing. Either `field`, `accessorFn`, or an explicit `id + cell` is required.',
-      example: `{ field: 'customer', header: 'Customer' }`,
-    },
-    {
-      name: 'accessorFn',
+      name: 'fieldFn',
       type: '(row: TData) => unknown',
       description:
         'Compute the cell value from the whole row instead of reading a single field. Use for derived / combined values. Provide an `id` since there is no `field` to default from.',
       example: `{ id: 'margin', header: 'Margin',
-  accessorFn: (r) => (r.price - r.cost) / r.price,
+  fieldFn: (r) => (r.price - r.cost) / r.price,
   format: { type: 'percent', valueIsPercentPoints: false } }`,
     },
     {
-      name: 'header',
-      type: 'string | ((ctx: HeaderContext) => unknown)',
-      description: 'Header label. Pass a string for the common case, or a template / renderer for a custom header.',
-      example: `{ field: 'total', header: 'Total (USD)' }
-// Custom header:
-{ field: 'total', header: (ctx) => renderSnippet(TotalHeader, { ctx }) }`,
+      name: 'aggregate',
+      type: "'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' | 'extent' | 'first' | ((values: number[], rows: TData[]) => unknown)",
+      description:
+        "Aggregate this column's values into the group row when grouping is active. Pass a built-in aggregator name or a custom function; the result is formatted with this column's `format` and shown in the group header.",
+      example: `{ field: 'revenue', header: 'Revenue', aggregate: 'sum', format: { type: 'currency' } }`,
     },
     {
-      name: 'footer',
-      type: 'string | ((ctx: HeaderContext) => unknown)',
-      description: 'Footer template, rendered in the footer row when present.',
-      example: `{ field: 'total', header: 'Total', footer: 'Grand total' }`,
+      name: 'align',
+      type: "'left' | 'center' | 'right'",
+      description:
+        'Horizontal alignment for header and body cells. When omitted, inferred from editorType: number / date / datetime -> right, checkbox -> center, everything else -> left.',
+      example: `{ field: 'total', header: 'Total', align: 'right' }`,
     },
     {
       name: 'cell',
       type: 'string | ((ctx: CellContext) => unknown)',
       description:
-        'Custom cell renderer. Use renderSnippet or renderComponent for typed output. Without it, SvGrid uses `field` / `accessorFn` plus `format`.',
+        'Custom cell renderer. Use renderSnippet or renderComponent for typed output. Without it, SvGrid uses `field` / `fieldFn` plus `format`.',
       example: `{
   field: 'status', header: 'Status',
   cell: (ctx) => renderSnippet(StatusPill, { value: ctx.getValue() as string }),
 }`,
+    },
+    {
+      name: 'cellClass',
+      type: 'string | string[] | ((ctx: CellContext) => string | string[] | Record<string, boolean>)',
+      description:
+        'Per-cell conditional CSS. A string / array adds class(es) to every cell in the column; a function runs per cell for status tinting, conditional bold, negative-number coloring, etc. The class augments the rendered cell - format / cell renderer still apply.',
+      example: `{ field: 'pnl', header: 'P&L',
+  cellClass: (ctx) => (ctx.getValue() as number) < 0 ? 'text-red-500' : 'text-green-500' }`,
+    },
+    {
+      name: 'cellDataType',
+      type: "'text' | 'number' | 'boolean' | 'date' | 'dateString'",
+      description:
+        "High-level data type that resolves the right `editorType`, alignment, date `format`, and filter operators at once. Anything you set explicitly still wins; `cellDataType` only fills the gaps. Use `dateString` for ISO date strings like '2026-06-27'.",
+      example: `{ field: 'joined', header: 'Joined', cellDataType: 'dateString' }`,
+    },
+    {
+      name: 'cellEditor',
+      type: '(ctx: EditorContext) => unknown',
+      description:
+        'Fully custom in-cell editor (snippet or component). Receives the cell context plus `commit(value)` and `cancel()`. When both cellEditor and editorType are set, cellEditor wins and editorType is treated as a parse hint.',
+      example: `{ field: 'color', header: 'Color',
+  cellEditor: (ctx) => renderSnippet(ColorWheel, {
+    value: ctx.getValue(), commit: ctx.commit, cancel: ctx.cancel,
+  }) }`,
+    },
+    {
+      name: 'cellFlash',
+      type: 'boolean | { className?: string }',
+      description:
+        "Briefly flash / highlight this column's cell when its value changes, useful for streaming feeds, edits, or server pushes. `true` uses the default flash; pass `{ className }` to apply your own animation class instead.",
+      example: `{ field: 'price', header: 'Price', cellFlash: true }`,
+    },
+    {
+      name: 'colSpan',
+      type: '(params: CellSpanParams<TData>) => number',
+      description:
+        'Declarative cell spanning (merged cells): return how many columns this cell spans to the right, where 1 means no span. Value-driven and AG-Grid-style; feed `spansToMerges(rows, columns)` into `spreadsheetLayout` to apply.',
+      example: `{ field: 'region', header: 'Region',
+  colSpan: (p) => (p.row.original.region === 'Total' ? 3 : 1) }`,
+    },
+    {
+      name: 'columnGroupShow',
+      type: "'open' | 'closed'",
+      description:
+        "For a column inside a collapsible column group: `'open'` shows the column only while the group is expanded, `'closed'` only while collapsed. Omit to always show it; setting it on any direct child gives the parent group a collapse toggle.",
+      example: `{ field: 'phone', header: 'Phone', columnGroupShow: 'open' }`,
     },
     {
       name: 'columns',
@@ -861,6 +1252,42 @@ const columnDefSection: ApiSection = {
   { field: 'first', header: 'First' },
   { field: 'last',  header: 'Last' },
 ] }`,
+    },
+    {
+      name: 'editable',
+      type: 'boolean | ((ctx: CellContext) => boolean)',
+      default: 'true',
+      description:
+        'Gate editing per column or per cell. `false` makes the column read-only (double-click, type-to-edit, fill-drag, Delete, and paste all skip it). A function is evaluated per cell so you can lock individual rows by role / status. The grid-wide enableInlineEditing still wins when false.',
+      example: `{ field: 'total', header: 'Total', editable: false }
+// per-cell:
+{ field: 'price', header: 'Price',
+  editable: (ctx) => ctx.row.original.status !== 'locked' }`,
+    },
+    {
+      name: 'editorMultiple',
+      type: 'boolean',
+      default: 'false',
+      description: 'When true, list / chips allow multiple selections; the cell value becomes an array.',
+      example: `{ field: 'tags', header: 'Tags', editorType: 'chips', editorMultiple: true }`,
+    },
+    {
+      name: 'editorOptions',
+      type: 'ReadonlyArray<string | number | { value; label?; color? }> | ((row) => ...)',
+      description:
+        'Options for editorType list / chips / select / rich-select. Either bare values (value === label) or `{ value, label, color }` objects. Pass a function `(row) => options` for cascading options that depend on other fields in the same row.',
+      example: `{ field: 'status', header: 'Status', editorType: 'list',
+  editorOptions: ['pending', 'shipped', 'delivered', 'cancelled'] }
+// cascading:
+{ field: 'city', header: 'City', editorType: 'rich-select',
+  editorOptions: (row) => CITIES_BY_COUNTRY[row.country] ?? [] }`,
+    },
+    {
+      name: 'editorSeparator',
+      type: 'string',
+      default: '", "',
+      description: 'Separator used when joining array values for the read-only cell display.',
+      example: `{ field: 'tags', header: 'Tags', editorMultiple: true, editorSeparator: ' · ' }`,
     },
     {
       name: 'editorType',
@@ -875,67 +1302,11 @@ const columnDefSection: ApiSection = {
 { field: 'rating',  header: 'Rating',  editorType: 'rating' }`,
     },
     {
-      name: 'cellEditor',
-      type: '(ctx: EditorContext) => unknown',
+      name: 'field',
+      type: 'keyof TData & string',
       description:
-        'Fully custom in-cell editor (snippet or component). Receives the cell context plus `commit(value)` and `cancel()`. When both cellEditor and editorType are set, cellEditor wins and editorType is treated as a parse hint.',
-      example: `{ field: 'color', header: 'Color',
-  cellEditor: (ctx) => renderSnippet(ColorWheel, {
-    value: ctx.getValue(), commit: ctx.commit, cancel: ctx.cancel,
-  }) }`,
-    },
-    {
-      name: 'editorOptions',
-      type: 'ReadonlyArray<string | number | { value; label?; color? }> | ((row) => ...)',
-      description:
-        'Options for editorType list / chips / select / rich-select. Either bare values (value === label) or `{ value, label, color }` objects. Pass a function `(row) => options` for cascading options that depend on other fields in the same row.',
-      example: `{ field: 'status', header: 'Status', editorType: 'list',
-  editorOptions: ['pending', 'shipped', 'delivered', 'cancelled'] }
-// cascading:
-{ field: 'city', header: 'City', editorType: 'rich-select',
-  editorOptions: (row) => CITIES_BY_COUNTRY[row.country] ?? [] }`,
-    },
-    {
-      name: 'editorMultiple',
-      type: 'boolean',
-      default: 'false',
-      description: 'When true, list / chips allow multiple selections; the cell value becomes an array.',
-      example: `{ field: 'tags', header: 'Tags', editorType: 'chips', editorMultiple: true }`,
-    },
-    {
-      name: 'editorSeparator',
-      type: 'string',
-      default: '", "',
-      description: 'Separator used when joining array values for the read-only cell display.',
-      example: `{ field: 'tags', header: 'Tags', editorMultiple: true, editorSeparator: ' · ' }`,
-    },
-    {
-      name: 'tooltip',
-      type: 'string | ((ctx: CellContext) => string | null | undefined)',
-      description:
-        'Per-column tooltip. A string shows on every cell; a function runs per cell so the tooltip can reflect the value. Return an empty string / null to skip.',
-      example: `{ field: 'sku', header: 'SKU',
-  tooltip: (ctx) => \`Internal id: \${ctx.row.original.internalId}\` }`,
-    },
-    {
-      name: 'editable',
-      type: 'boolean | ((ctx: CellContext) => boolean)',
-      default: 'true',
-      description:
-        'Gate editing per column or per cell. `false` makes the column read-only (double-click, type-to-edit, fill-drag, Delete, and paste all skip it). A function is evaluated per cell so you can lock individual rows by role / status. The grid-wide enableInlineEditing still wins when false.',
-      example: `{ field: 'total', header: 'Total', editable: false }
-// per-cell:
-{ field: 'price', header: 'Price',
-  editable: (ctx) => ctx.row.original.status !== 'locked' }`,
-    },
-    {
-      name: 'sortable',
-      type: 'boolean',
-      default: 'true',
-      description:
-        'When false the column never shows a sort indicator, header clicks are no-ops, and api.setSort is ignored for it. Needs rowSortingFeature to be registered.',
-      example: `{ id: 'actions', header: '', sortable: false, filterable: false, width: 60,
-  cell: (ctx) => renderComponent(RowActions, { row: ctx.row.original }) }`,
+        'The property on the row used for sort, filter, default rendering, and inline editing. Either `field`, `fieldFn`, or an explicit `id + cell` is required.',
+      example: `{ field: 'customer', header: 'Customer' }`,
     },
     {
       name: 'filterable',
@@ -944,6 +1315,12 @@ const columnDefSection: ApiSection = {
       description:
         'When false the column never shows a filter funnel / menu and api.setFilter is ignored for it. Needs columnFilteringFeature.',
       example: `{ id: 'actions', header: '', filterable: false }`,
+    },
+    {
+      name: 'footer',
+      type: 'string | ((ctx: HeaderContext) => unknown)',
+      description: 'Footer template, rendered in the footer row when present.',
+      example: `{ field: 'total', header: 'Total', footer: 'Grand total' }`,
     },
     {
       name: 'format',
@@ -963,30 +1340,87 @@ const columnDefSection: ApiSection = {
   formatter: ({ value }) => humanizeBytes(value as number) }`,
     },
     {
+      name: 'header',
+      type: 'string | ((ctx: HeaderContext) => unknown)',
+      description: 'Header label. Pass a string for the common case, or a template / renderer for a custom header.',
+      example: `{ field: 'total', header: 'Total (USD)' }
+// Custom header:
+{ field: 'total', header: (ctx) => renderSnippet(TotalHeader, { ctx }) }`,
+    },
+    {
+      name: 'id',
+      type: 'string',
+      description:
+        'Explicit column id. Defaults to `field` when set. Required when two columns share a field (e.g. a derived column with a custom `cell`) or when there is no `field`.',
+      example: `{ id: 'fullName', header: 'Name', fieldFn: (r) => \`\${r.first} \${r.last}\` }`,
+    },
+    {
+      name: 'openByDefault',
+      type: 'boolean',
+      description:
+        "For a group column (one with `columns: [...]`): start the group expanded. Defaults to `false` (collapsed, matching AG Grid), so only the always-on and `columnGroupShow: 'closed'` children show until the user expands it.",
+      example: `{ header: 'Contact', openByDefault: true, columns: [
+  { field: 'email', header: 'Email' },
+  { field: 'phone', header: 'Phone', columnGroupShow: 'open' },
+] }`,
+    },
+    {
+      name: 'rowSpan',
+      type: '(params: CellSpanParams<TData>) => number',
+      description:
+        'Declarative cell spanning (merged cells): return how many rows this cell spans downward, where 1 means no span. See `colSpan` for how to apply the merges.',
+      example: `{ field: 'category', header: 'Category',
+  rowSpan: (p) => p.row.original.categorySpan ?? 1 }`,
+    },
+    {
+      name: 'sortable',
+      type: 'boolean',
+      default: 'true',
+      description:
+        'When false the column never shows a sort indicator, header clicks are no-ops, and api.setSort is ignored for it. Needs rowSortingFeature to be registered.',
+      example: `{ id: 'actions', header: '', sortable: false, filterable: false, width: 60,
+  cell: (ctx) => renderComponent(RowActions, { row: ctx.row.original }) }`,
+    },
+    {
+      name: 'sparkline',
+      type: 'SparklineConfig',
+      description:
+        "Render the cell as an in-cell sparkline chart from an array of numbers (or a comma/space separated string). Options include `type` ('line' | 'bar' | 'winloss'), color, negativeColor, width, height, and fixed min/max. Mutually exclusive with a custom `cell` renderer, which wins if both are set.",
+      example: `{ field: 'trend', header: 'Trend', sparkline: { type: 'bar', color: '#16a34a' } }`,
+    },
+    {
+      name: 'tooltip',
+      type: 'string | ((ctx: CellContext) => string | null | undefined)',
+      description:
+        'Per-column tooltip. A string shows on every cell; a function runs per cell so the tooltip can reflect the value. Return an empty string / null to skip.',
+      example: `{ field: 'sku', header: 'SKU',
+  tooltip: (ctx) => \`Internal id: \${ctx.row.original.internalId}\` }`,
+    },
+    {
+      name: 'valueParser',
+      type: '(params: ValueParserParams<TData>) => unknown',
+      description:
+        'Transform the committed edit value before it is written to the row. Runs after the built-in per-`editorType` coercion, so `newValue` is already type-parsed; return the final value to store (e.g. round a number, uppercase a code, look up an id).',
+      example: `{ field: 'code', header: 'Code',
+  valueParser: (p) => String(p.newValue).toUpperCase() }`,
+    },
+    {
+      name: 'visible',
+      type: 'boolean',
+      description:
+        "Initial visibility. Set `false` to start the column hidden while still listing it in the Choose Columns / tool panel so the user can re-enable it. Applied once at mount; after that `api.setColumnVisible` and user toggles win. On a group column, `false` hides the whole group's leaf columns.",
+      example: `{ field: 'internalId', header: 'Internal ID', visible: false }`,
+    },
+    {
       name: 'width',
       type: 'number',
       description: 'Initial column width in pixels. Falls back to the grid-level `columnWidth` (140).',
       example: `{ field: 'id', header: 'ID', width: 90 }`,
     },
-    {
-      name: 'align',
-      type: "'left' | 'center' | 'right'",
-      description:
-        'Horizontal alignment for header and body cells. When omitted, inferred from editorType: number / date / datetime -> right, checkbox -> center, everything else -> left.',
-      example: `{ field: 'total', header: 'Total', align: 'right' }`,
-    },
-    {
-      name: 'cellClass',
-      type: 'string | string[] | ((ctx: CellContext) => string | string[] | Record<string, boolean>)',
-      description:
-        'Per-cell conditional CSS. A string / array adds class(es) to every cell in the column; a function runs per cell for status tinting, conditional bold, negative-number coloring, etc. The class augments the rendered cell - format / cell renderer still apply.',
-      example: `{ field: 'pnl', header: 'P&L',
-  cellClass: (ctx) => (ctx.getValue() as number) < 0 ? 'text-red-500' : 'text-green-500' }`,
-    },
   ],
   notes: [
     'There is no `minWidth` / `maxWidth` / `resizable` / `meta` / `aggregation` field on ColumnDef. Columns are resizable by default via the header drag handle; row summaries auto-sum numeric columns (see enableRowSummaries).',
-    'Provide an explicit `id` whenever a column has no `field` (accessorFn / pure-render columns) or when two columns would otherwise collide on the same field.',
+    'Provide an explicit `id` whenever a column has no `field` (fieldFn / pure-render columns) or when two columns would otherwise collide on the same field.',
   ],
   example: {
     title: 'A column set covering most patterns',
@@ -1034,18 +1468,26 @@ const cellFormatSection: ApiSection = {
       pattern?: string; options?: Intl.DateTimeFormatOptions }`,
   props: [
     {
-      name: 'type: "number"',
-      type: '{ type: "number"; locales?; options? }',
-      description: 'Format as a localized number. `options` are Intl.NumberFormatOptions (minimumFractionDigits, etc.).',
-      example: `{ field: 'rate', header: 'Rate',
-  format: { type: 'number', options: { maximumFractionDigits: 2 } } }`,
-    },
-    {
       name: 'type: "currency"',
       type: '{ type: "currency"; currency?; locales?; options? }',
       description: '`currency` is an ISO 4217 code (default "USD"). Use `locales` for grouping / symbol placement.',
       example: `{ field: 'total', header: 'Total',
   format: { type: 'currency', currency: 'EUR', locales: 'de-DE' } }`,
+    },
+    {
+      name: 'type: "date" / "datetime"',
+      type: '{ type: "date" | "datetime"; pattern?; locales?; options? }',
+      description:
+        'Format an ISO string, timestamp, or Date. `pattern` is a shortcut merged with `options`: "d" short numeric date, "D" long date, "y-m-d" yyyy/mm/dd-style, "short"/"medium"/"long" use dateStyle/timeStyle presets.',
+      example: `{ field: 'placedAt',  header: 'Placed',  format: { type: 'date', pattern: 'y-m-d' } }
+{ field: 'createdAt', header: 'Created', format: { type: 'datetime', pattern: 'medium' } }`,
+    },
+    {
+      name: 'type: "number"',
+      type: '{ type: "number"; locales?; options? }',
+      description: 'Format as a localized number. `options` are Intl.NumberFormatOptions (minimumFractionDigits, etc.).',
+      example: `{ field: 'rate', header: 'Rate',
+  format: { type: 'number', options: { maximumFractionDigits: 2 } } }`,
     },
     {
       name: 'type: "percent"',
@@ -1055,14 +1497,6 @@ const cellFormatSection: ApiSection = {
       example: `{ field: 'margin', header: 'Margin',
   format: { type: 'percent', options: { maximumFractionDigits: 1 } } }
 // 0.158 renders as "15.8%"`,
-    },
-    {
-      name: 'type: "date" / "datetime"',
-      type: '{ type: "date" | "datetime"; pattern?; locales?; options? }',
-      description:
-        'Format an ISO string, timestamp, or Date. `pattern` is a shortcut merged with `options`: "d" short numeric date, "D" long date, "y-m-d" yyyy/mm/dd-style, "short"/"medium"/"long" use dateStyle/timeStyle presets.',
-      example: `{ field: 'placedAt',  header: 'Placed',  format: { type: 'date', pattern: 'y-m-d' } }
-{ field: 'createdAt', header: 'Created', format: { type: 'datetime', pattern: 'medium' } }`,
     },
   ],
   notes: [
@@ -1088,6 +1522,13 @@ const filterOperatorSection: ApiSection = {
   | 'isBlank'`,
   props: [
     {
+      name: 'between',
+      type: '"between"',
+      description:
+        'Inclusive numeric range. Requires both `value` (lower bound) and `valueTo` (upper bound). Surfaced in onFiltersChange / getFilters as a `valueTo` field.',
+      example: `api.setFilter('total', { operator: 'between', value: '100', valueTo: '500' })`,
+    },
+    {
       name: 'contains',
       type: '"contains"',
       description: 'Substring match (case-insensitive) against the cell value cast to string.',
@@ -1100,16 +1541,16 @@ const filterOperatorSection: ApiSection = {
       example: `api.setFilter('status', { operator: 'equals', value: 'shipped' })`,
     },
     {
-      name: 'startsWith',
-      type: '"startsWith"',
-      description: 'Prefix match against the cell value cast to string.',
-      example: `api.setFilter('id', { operator: 'startsWith', value: 'ORD-' })`,
-    },
-    {
       name: 'greaterThan',
       type: '"greaterThan"',
       description: 'Numeric > comparison. Cell + value are coerced to numbers.',
       example: `api.setFilter('total', { operator: 'greaterThan', value: '500' })`,
+    },
+    {
+      name: 'isBlank',
+      type: '"isBlank"',
+      description: 'Match rows where the cell is null, undefined, or empty string. `value` is ignored.',
+      example: `api.setFilter('email', { operator: 'isBlank' })`,
     },
     {
       name: 'lessThan',
@@ -1118,17 +1559,10 @@ const filterOperatorSection: ApiSection = {
       example: `api.setFilter('total', { operator: 'lessThan', value: '500' })`,
     },
     {
-      name: 'between',
-      type: '"between"',
-      description:
-        'Inclusive numeric range. Requires both `value` (lower bound) and `valueTo` (upper bound). Surfaced in onFiltersChange / getFilters as a `valueTo` field.',
-      example: `api.setFilter('total', { operator: 'between', value: '100', valueTo: '500' })`,
-    },
-    {
-      name: 'isBlank',
-      type: '"isBlank"',
-      description: 'Match rows where the cell is null, undefined, or empty string. `value` is ignored.',
-      example: `api.setFilter('email', { operator: 'isBlank' })`,
+      name: 'startsWith',
+      type: '"startsWith"',
+      description: 'Prefix match against the cell value cast to string.',
+      example: `api.setFilter('id', { operator: 'startsWith', value: 'ORD-' })`,
     },
   ],
 }
@@ -1145,15 +1579,6 @@ const coreTypesSection: ApiSection = {
   ],
   props: [
     {
-      name: 'Row<TData>',
-      type: '{ id; index; original: TData; depth; subRows?; leafCount?; getIsExpanded(); toggleExpanded(); getIsSelected(); toggleSelected(); getAllCells(); getCellValueByColumnId(id) }',
-      description:
-        'One row in a row model. `original` is your raw data object; `subRows` is populated for grouped / tree rows; `leafCount` counts data rows under a group.',
-      example: `{#each grid.getRowModel().rows as row (row.id)}
-  <div class:selected={row.getIsSelected()}>{row.original.name}</div>
-{/each}`,
-    },
-    {
       name: 'Cell<TData>',
       type: '{ id; row: Row; column: Column; getValue(); getContext() }',
       description: 'One cell. `getValue()` reads the resolved value; `getContext()` builds the CellContext a renderer needs.',
@@ -1162,18 +1587,18 @@ const coreTypesSection: ApiSection = {
 {/each}`,
     },
     {
+      name: 'CellContext<TData, TValue>',
+      type: '{ row: Row; column: Column; table: SvGrid; getValue(): TValue }',
+      description: 'Passed to a `cell` renderer and to `editable` / `cellClass` / `tooltip` functions.',
+      example: `cell: (ctx) => ctx.getValue() > 0 ? '+' + ctx.getValue() : ctx.getValue()`,
+    },
+    {
       name: 'Column<TData>',
       type: '{ id; columnDef; depth; getCanSort(); getCanFilter(); getIsSorted(); getToggleSortingHandler() }',
       description: 'Column metadata + behavior helpers, used to render headers and wire sort handlers.',
       example: `<button onclick={column.getToggleSortingHandler()}>
   {column.columnDef.header} {column.getIsSorted() || ''}
 </button>`,
-    },
-    {
-      name: 'CellContext<TData, TValue>',
-      type: '{ row: Row; column: Column; table: SvGrid; getValue(): TValue }',
-      description: 'Passed to a `cell` renderer and to `editable` / `cellClass` / `tooltip` functions.',
-      example: `cell: (ctx) => ctx.getValue() > 0 ? '+' + ctx.getValue() : ctx.getValue()`,
     },
     {
       name: 'EditorContext<TData>',
@@ -1188,6 +1613,15 @@ const coreTypesSection: ApiSection = {
       type: '{ column: Column; table: SvGrid }',
       description: 'Passed to a function `header` / `footer` renderer.',
       example: `header: (ctx) => renderSnippet(SortableHeader, { ctx })`,
+    },
+    {
+      name: 'Row<TData>',
+      type: '{ id; index; original: TData; depth; subRows?; leafCount?; getIsExpanded(); toggleExpanded(); getIsSelected(); toggleSelected(); getAllCells(); getCellValueByColumnId(id) }',
+      description:
+        'One row in a row model. `original` is your raw data object; `subRows` is populated for grouped / tree rows; `leafCount` counts data rows under a group.',
+      example: `{#each grid.getRowModel().rows as row (row.id)}
+  <div class:selected={row.getIsSelected()}>{row.original.name}</div>
+{/each}`,
     },
   ],
   notes: [
@@ -1300,62 +1734,6 @@ const imperativeApiSection: ApiSection = {
   getDisplayedRows(): ReadonlyArray<TData>
 }`,
   props: [
-    // ---- Cells ----
-    {
-      name: 'getCellValue(rowIndex, columnId)',
-      type: '(rowIndex: number, columnId: string) => unknown',
-      description: 'Read a cell value from the underlying data array. `rowIndex` indexes into getData(), not the visible row list.',
-      example: `const total = api.getCellValue(0, 'total') as number`,
-    },
-    {
-      name: 'setCellValue(rowIndex, columnId, value)',
-      type: '(rowIndex, columnId, value) => void',
-      description: "Write a cell value through the column's field. Emits onCellValueChange to subscribers.",
-      example: `api.setCellValue(0, 'status', 'shipped')`,
-    },
-    // ---- Cell selection ----
-    {
-      name: 'selectCells(ranges)',
-      type: '(ranges: ReadonlyArray<[number, number, number, number]>) => void',
-      description:
-        'Select one or more rectangular cell ranges, each [rowStart, colStart, rowEnd, colEnd] in 0-indexed grid coords. The active cell jumps to the start corner. Pass [] to clear. The engine honours the first range only today.',
-      example: `api.selectCells([[0, 1, 4, 3]])   // rows 0..4, cols 1..3
-api.selectCells([])               // clear`,
-    },
-    {
-      name: 'getSelected()',
-      type: '() => Array<[number, number, number, number]>',
-      description: 'Read the current cell-selection rectangles in the same shape selectCells accepts. Empty array when no range is active.',
-      example: `const [range] = api.getSelected()
-// range = [0, 1, 4, 3]`,
-    },
-    // ---- Rows ----
-    {
-      name: 'addRow(row, position?)',
-      type: "(row: TData, position?: 'top' | 'bottom' | number) => void",
-      description: 'Insert one row. `position` defaults to "bottom". Pass a number to insert at that index.',
-      example: `api.addRow({ id: 99, customer: 'New Co', total: 100 }, 'top')
-api.addRow(newRow, 3)  // insert at index 3`,
-    },
-    {
-      name: 'addRows(rows, position?)',
-      type: "(rows: ReadonlyArray<TData>, position?: 'top' | 'bottom' | number) => void",
-      description: 'Insert many rows in one shot. Preferred over calling addRow in a loop.',
-      example: `api.addRows(parsedRows, 'bottom')`,
-    },
-    {
-      name: 'removeRow(rowIndex)',
-      type: '(rowIndex: number) => void',
-      description: 'Remove a row by its data-array index.',
-      example: `api.removeRow(0)`,
-    },
-    {
-      name: 'removeRows(rowIndices)',
-      type: '(rowIndices: ReadonlyArray<number>) => void',
-      description: 'Remove many rows in one shot.',
-      example: `const selected = Object.keys(selection).map(Number)
-api.removeRows(selected)`,
-    },
     // ---- Columns ----
     {
       name: 'addColumn(column, position?)',
@@ -1372,154 +1750,45 @@ api.removeRows(selected)`,
   { field: 'updatedAt', header: 'Updated' },
 ], 'right')`,
     },
+    // ---- Rows ----
     {
-      name: 'removeColumn(columnId)',
+      name: 'addRow(row, position?)',
+      type: "(row: TData, position?: 'top' | 'bottom' | number) => void",
+      description: 'Insert one row. `position` defaults to "bottom". Pass a number to insert at that index.',
+      example: `api.addRow({ id: 99, customer: 'New Co', total: 100 }, 'top')
+api.addRow(newRow, 3)  // insert at index 3`,
+    },
+    {
+      name: 'addRows(rows, position?)',
+      type: "(rows: ReadonlyArray<TData>, position?: 'top' | 'bottom' | number) => void",
+      description: 'Insert many rows in one shot. Preferred over calling addRow in a loop.',
+      example: `api.addRows(parsedRows, 'bottom')`,
+    },
+    {
+      name: 'applyTransaction(tx)',
+      type: '(tx: SvGridTransaction<TData>) => SvGridTransactionResult',
+      description:
+        'Apply a batch of add / update / remove mutations in a single data update (one re-render, not one per row) - the high-frequency / streaming path. `update` and `remove`-by-id match rows via getRowId; `remove` also accepts row object references. Returns the counts actually applied.',
+      example: `const result = api.applyTransaction({
+  add: [{ id: 99, customer: 'New Co', total: 100 }],
+  update: [{ id: 12, status: 'shipped' }],
+  remove: ['7', existingRow],
+})
+// result = { added: 1, updated: 1, removed: 2 }`,
+    },
+    {
+      name: 'autosizeAllColumns()',
+      type: '() => void',
+      description:
+        'Run autosizeColumn on every column, snapping each to the width of its widest visible cell.',
+      example: `api.autosizeAllColumns()`,
+    },
+    {
+      name: 'autosizeColumn(columnId)',
       type: '(columnId: string) => void',
-      description: 'Remove a column by id (or `field` when no id was provided).',
-      example: `api.removeColumn('notes')`,
-    },
-    {
-      name: 'setColumnVisible(columnId, visible)',
-      type: '(columnId: string, visible: boolean) => void',
-      description: 'Show or hide a column without removing it. State persists until reset.',
-      example: `api.setColumnVisible('email', false)`,
-    },
-    {
-      name: 'isColumnVisible(columnId)',
-      type: '(columnId: string) => boolean',
-      description: 'Query whether a column is currently visible.',
-      example: `const showing = api.isColumnVisible('email')`,
-    },
-    {
-      name: 'getColumns()',
-      type: '() => Array<{ id: string; field?: string; header: string; visible: boolean }>',
       description:
-        'Snapshot of every column in visual order with its header label and visibility. Read once - use it to build a column-picker UI or to export. Hidden columns are included.',
-      example: `const cols = api.getColumns().filter((c) => c.visible)`,
-    },
-    // ---- Column layout ----
-    {
-      name: 'setColumnWidth(columnId, width)',
-      type: '(columnId: string, width: number) => void',
-      description: 'Set a column width in pixels - identical to dragging its resize handle. Clamped to the minimum column width.',
-      example: `api.setColumnWidth('customer', 240)`,
-    },
-    {
-      name: 'getColumnWidths()',
-      type: '() => Record<string, number>',
-      description:
-        'Snapshot of every column\'s current width (px), keyed by id. Columns never resized and without an explicit `width` report the grid-wide default. Useful for "save view" + URL persistence.',
-      example: `localStorage.setItem('grid-widths', JSON.stringify(api.getColumnWidths()))`,
-    },
-    {
-      name: 'setColumnPinning(pinning)',
-      type: '(pinning: { left?: ReadonlyArray<string>; right?: ReadonlyArray<string> }) => void',
-      description: 'Replace the column-pinning state. Order in each array becomes the visible order along that edge. Requires columnVirtualization={false}.',
-      example: `api.setColumnPinning({ left: ['id'], right: ['actions'] })`,
-    },
-    {
-      name: 'getColumnPinning()',
-      type: '() => { left: string[]; right: string[] }',
-      description: 'Snapshot of the current column-pinning state.',
-      example: `const { left, right } = api.getColumnPinning()`,
-    },
-    // ---- Sort ----
-    {
-      name: 'setSort(columnId, direction)',
-      type: "(columnId: string, direction: 'asc' | 'desc' | null) => void",
-      description: "Sort by one column. Replaces any existing sort. Pass null to remove this column's clause.",
-      example: `api.setSort('placedAt', 'desc')
-api.setSort('placedAt', null)   // remove this sort clause`,
-    },
-    {
-      name: 'clearSort()',
-      type: '() => void',
-      description: 'Remove every sort clause.',
-      example: `api.clearSort()`,
-    },
-    // ---- Group ----
-    {
-      name: 'setGroupBy(columnIds)',
-      type: '(columnIds: ReadonlyArray<string>) => void',
-      description: 'Group rows by the given columns, in order. Pass [] to ungroup. Requires columnGroupingFeature.',
-      example: `api.setGroupBy(['region', 'status'])
-api.setGroupBy([])   // ungroup`,
-    },
-    // ---- Filter ----
-    {
-      name: 'setFilter(columnId, filter)',
-      type: "(columnId, filter: { operator; value?; valueTo? } | null) => void",
-      description: 'Set the operator filter for a column. Pass null to clear. Use valueTo for the `between` operator.',
-      example: `api.setFilter('customer', { operator: 'contains', value: 'Acme' })
-api.setFilter('total', { operator: 'between', value: '100', valueTo: '500' })
-api.setFilter('status', null)   // clear`,
-    },
-    {
-      name: 'setFacetFilter(columnId, values)',
-      type: '(columnId: string, values: ReadonlyArray<string> | null) => void',
-      description:
-        'Set the facet (Excel-style value checklist) filter for a column. Pass null / [] to clear. Restores snapshots captured from onFiltersChange.selectedValues.',
-      example: `api.setFacetFilter('status', ['shipped', 'delivered'])
-api.setFacetFilter('status', null)`,
-    },
-    {
-      name: 'clearFilter(columnId)',
-      type: '(columnId: string) => void',
-      description: 'Clear all filter surfaces (menu, row, facet) on one column.',
-      example: `api.clearFilter('status')`,
-    },
-    {
-      name: 'clearAllFilters()',
-      type: '() => void',
-      description: 'Wipe every filter surface in one call: column-menu filters, filter-row inputs, facet value lists, and the global search box.',
-      example: `<button onclick={() => api?.clearAllFilters()}>Reset filters</button>`,
-    },
-    {
-      name: 'getFilters()',
-      type: '() => Record<string, { operator: SvGridFilterOperator; value: string; valueTo? }>',
-      description:
-        'Read the active column-menu filters as a snapshot, keyed by column id. `valueTo` is present only for `between`. Does NOT include facet selections or the global filter - use onFiltersChange for those.',
-      example: `const f = api.getFilters()
-// { total: { operator: 'between', value: '100', valueTo: '500' } }`,
-    },
-    // ---- Row expansion ----
-    {
-      name: 'setRowExpanded(id, expanded)',
-      type: '(id: string, expanded: boolean) => void',
-      description:
-        "Expand / collapse a row. `id` is the engine's row id - for grouped rows that's the synthetic group key (e.g. \"department:Engineering\").",
-      example: `api.setRowExpanded('department:Engineering', true)`,
-    },
-    {
-      name: 'expandAllGroups()',
-      type: '() => void',
-      description: 'Expand every group node in the current grouped row model.',
-      example: `api.expandAllGroups()`,
-    },
-    {
-      name: 'collapseAllGroups()',
-      type: '() => void',
-      description: 'Collapse every expansion - resets expanded state to {}.',
-      example: `api.collapseAllGroups()`,
-    },
-    // ---- Undo / redo ----
-    {
-      name: 'undo()',
-      type: '() => boolean',
-      description: 'Undo the most recent inline edit. Returns false when the undo history is empty.',
-      example: `<button onclick={() => api?.undo()} disabled={!api?.canUndo()}>Undo</button>`,
-    },
-    {
-      name: 'redo()',
-      type: '() => boolean',
-      description: 'Redo the most recently undone edit. Returns false when the redo stack is empty.',
-      example: `<button onclick={() => api?.redo()} disabled={!api?.canRedo()}>Redo</button>`,
-    },
-    {
-      name: 'canUndo()',
-      type: '() => boolean',
-      description: 'True when there is at least one step on the undo stack.',
-      example: `disabled={!api?.canUndo()}`,
+        'Snap one column\'s width to its widest visible cell (header text plus any rendered body cell). Equivalent to double-clicking the column\'s resize handle.',
+      example: `api.autosizeColumn('customer')`,
     },
     {
       name: 'canRedo()',
@@ -1528,30 +1797,87 @@ api.setFacetFilter('status', null)`,
       example: `disabled={!api?.canRedo()}`,
     },
     {
+      name: 'canUndo()',
+      type: '() => boolean',
+      description: 'True when there is at least one step on the undo stack.',
+      example: `disabled={!api?.canUndo()}`,
+    },
+    {
+      name: 'clearAllFilters()',
+      type: '() => void',
+      description: 'Wipe every filter surface in one call: column-menu filters, filter-row inputs, facet value lists, and the global search box.',
+      example: `<button onclick={() => api?.clearAllFilters()}>Reset filters</button>`,
+    },
+    {
+      name: 'clearFilter(columnId)',
+      type: '(columnId: string) => void',
+      description: 'Clear all filter surfaces (menu, row, facet) on one column.',
+      example: `api.clearFilter('status')`,
+    },
+    {
       name: 'clearHistory()',
       type: '() => void',
       description: 'Wipe both undo and redo stacks - e.g. after a server save commits the edit buffer.',
       example: `await save(); api.clearHistory()`,
     },
-    // ---- Find ----
     {
-      name: 'openFind() / closeFind()',
+      name: 'clearRowSelection()',
       type: '() => void',
-      description: 'Open / close the built-in find overlay. Ctrl+F also opens it; closeFind clears the query.',
-      example: `<button onclick={() => api?.openFind()}>Find (Ctrl+F)</button>`,
+      description: 'Wipe every checked row. Emits onRowSelectionChange({}, []) to subscribers.',
+      example: `<button onclick={() => api?.clearRowSelection()}>Deselect all</button>`,
     },
     {
-      name: 'setFindQuery(q)',
-      type: '(q: string) => void',
-      description: 'Update the find query programmatically - useful for an app-wide command palette.',
-      example: `api.setFindQuery('overdue')`,
+      name: 'clearSort()',
+      type: '() => void',
+      description: 'Remove every sort clause.',
+      example: `api.clearSort()`,
     },
     {
-      name: 'getFindHits()',
-      type: '() => Array<{ rowIndex: number; colIndex: number; columnId: string }>',
-      description: 'Snapshot of the current find hits.',
-      example: `const hits = api.getFindHits()
-status = \`\${hits.length} matches\``,
+      name: 'collapseAllGroups()',
+      type: '() => void',
+      description: 'Collapse every expansion - resets expanded state to {}.',
+      example: `api.collapseAllGroups()`,
+    },
+    {
+      name: 'expandAllGroups()',
+      type: '() => void',
+      description: 'Expand every group node in the current grouped row model.',
+      example: `api.expandAllGroups()`,
+    },
+    {
+      name: 'getActiveCell() / setActiveCell(rowIndex, colIndex)',
+      type: '() => { rowIndex; colIndex; columnId } | null / (rowIndex, colIndex) => void',
+      description:
+        'Read or move the active (focused) cell. Coordinates are clamped to the grid bounds; getActiveCell returns null when nothing is focused.',
+      example: `api.setActiveCell(0, 2)
+const cell = api.getActiveCell()   // { rowIndex: 0, colIndex: 2, columnId: 'total' }`,
+    },
+    // ---- Cells ----
+    {
+      name: 'getCellValue(rowIndex, columnId)',
+      type: '(rowIndex: number, columnId: string) => unknown',
+      description: 'Read a cell value from the underlying data array. `rowIndex` indexes into getData(), not the visible row list.',
+      example: `const total = api.getCellValue(0, 'total') as number`,
+    },
+    {
+      name: 'getColumnPinning()',
+      type: '() => { left: string[]; right: string[] }',
+      description: 'Snapshot of the current column-pinning state.',
+      example: `const { left, right } = api.getColumnPinning()`,
+    },
+    {
+      name: 'getColumns()',
+      type: '() => Array<{ id: string; field?: string; header: string; visible: boolean }>',
+      description:
+        'Snapshot of every column in visual order with its header label and visibility. Read once - use it to build a column-picker UI or to export. Hidden columns are included.',
+      example: `const cols = api.getColumns().filter((c) => c.visible)`,
+    },
+    {
+      name: 'getColumnWidths()',
+      type: '() => Record<string, number>',
+      description:
+        'Snapshot of every column\'s current width (px), keyed by id. Columns never resized and without an explicit `width` report the grid-wide default. Useful for "save view" + URL persistence.',
+      example: `localStorage.setItem('grid-widths', JSON.stringify(api.getColumnWidths()))`,
     },
     // ---- Snapshots ----
     {
@@ -1570,10 +1896,35 @@ status = \`\${hits.length} matches\``,
 }`,
     },
     {
-      name: 'clearRowSelection()',
-      type: '() => void',
-      description: 'Wipe every checked row. Emits onRowSelectionChange({}, []) to subscribers.',
-      example: `<button onclick={() => api?.clearRowSelection()}>Deselect all</button>`,
+      name: 'getFilters()',
+      type: '() => Record<string, { operator: SvGridFilterOperator; value: string; valueTo? }>',
+      description:
+        'Read the active column-menu filters as a snapshot, keyed by column id. `valueTo` is present only for `between`. Does NOT include facet selections or the global filter - use onFiltersChange for those.',
+      example: `const f = api.getFilters()
+// { total: { operator: 'between', value: '100', valueTo: '500' } }`,
+    },
+    {
+      name: 'getFindHits()',
+      type: '() => Array<{ rowIndex: number; colIndex: number; columnId: string }>',
+      description: 'Snapshot of the current find hits.',
+      example: `const hits = api.getFindHits()
+status = \`\${hits.length} matches\``,
+    },
+    // ---- Pagination ----
+    {
+      name: 'getPageInfo()',
+      type: '() => { pageIndex; pageSize; pageCount; total }',
+      description:
+        'Current pagination snapshot. total is the post-filter row count; pageCount is derived from it and pageSize (always >= 1).',
+      example: `const { pageIndex, pageCount } = api.getPageInfo()
+label = \`Page \${pageIndex + 1} of \${pageCount}\``,
+    },
+    {
+      name: 'getSelected()',
+      type: '() => Array<[number, number, number, number]>',
+      description: 'Read the current cell-selection rectangles in the same shape selectCells accepts. Empty array when no range is active.',
+      example: `const [range] = api.getSelected()
+// range = [0, 1, 4, 3]`,
     },
     // ---- Row selection (read + write) ----
     {
@@ -1584,6 +1935,84 @@ status = \`\${hits.length} matches\``,
       example: `const rows = api.getSelectedRows()
 const ids  = api.getSelectedRowIds()`,
     },
+    // ---- View state ----
+    {
+      name: 'getState() / setState(state)',
+      type: '() => SvGridViewState / (state: Partial<SvGridViewState>) => void',
+      description:
+        'Serialize the whole view (sort, grouping, pagination, column widths / pinning / order / visibility, and every filter surface) and restore it. setState only applies the keys present, so you can restore just columns, just filters, etc. The backbone of "save view" / URL persistence / named views.',
+      example: `// persist
+localStorage.setItem('view', JSON.stringify(api.getState()))
+// restore
+api.setState(JSON.parse(localStorage.getItem('view') ?? '{}'))`,
+    },
+    {
+      name: 'isColumnVisible(columnId)',
+      type: '(columnId: string) => boolean',
+      description: 'Query whether a column is currently visible.',
+      example: `const showing = api.isColumnVisible('email')`,
+    },
+    // ---- Find ----
+    {
+      name: 'openFind() / closeFind()',
+      type: '() => void',
+      description: 'Open / close the built-in find overlay. Ctrl+F also opens it; closeFind clears the query.',
+      example: `<button onclick={() => api?.openFind()}>Find (Ctrl+F)</button>`,
+    },
+    {
+      name: 'redo()',
+      type: '() => boolean',
+      description: 'Redo the most recently undone edit. Returns false when the redo stack is empty.',
+      example: `<button onclick={() => api?.redo()} disabled={!api?.canRedo()}>Redo</button>`,
+    },
+    {
+      name: 'refresh()',
+      type: '() => void',
+      description: 'Force a recompute of the row pipeline and a re-render. Rarely needed - reactive data/columns updates are automatic.',
+      example: `api.refresh()`,
+    },
+    {
+      name: 'removeColumn(columnId)',
+      type: '(columnId: string) => void',
+      description: 'Remove a column by id (or `field` when no id was provided).',
+      example: `api.removeColumn('notes')`,
+    },
+    {
+      name: 'removeRow(rowIndex)',
+      type: '(rowIndex: number) => void',
+      description: 'Remove a row by its data-array index.',
+      example: `api.removeRow(0)`,
+    },
+    {
+      name: 'removeRows(rowIndices)',
+      type: '(rowIndices: ReadonlyArray<number>) => void',
+      description: 'Remove many rows in one shot.',
+      example: `const selected = Object.keys(selection).map(Number)
+api.removeRows(selected)`,
+    },
+    // ---- Navigation ----
+    {
+      name: 'scrollToRow(rowIndex)',
+      type: '(rowIndex: number) => void',
+      description: 'Scroll the body so the given row is at the top of the viewport. Works with virtualization on; index is clamped.',
+      example: `api.scrollToRow(jumpTarget)   // e.g. "go to row 5000"`,
+    },
+    {
+      name: 'selectAllRows() / toggleRowSelected(id)',
+      type: '() => void / (id: string) => void',
+      description: 'Select every selectable row, or flip one row by id.',
+      example: `api.selectAllRows()
+api.toggleRowSelected('order-3')`,
+    },
+    // ---- Cell selection ----
+    {
+      name: 'selectCells(ranges)',
+      type: '(ranges: ReadonlyArray<[number, number, number, number]>) => void',
+      description:
+        'Select one or more rectangular cell ranges, each [rowStart, colStart, rowEnd, colEnd] in 0-indexed grid coords. The active cell jumps to the start corner. Pass [] to clear. The engine honours the first range only today.',
+      example: `api.selectCells([[0, 1, 4, 3]])   // rows 0..4, cols 1..3
+api.selectCells([])               // clear`,
+    },
     {
       name: 'selectRows(ids, additive?)',
       type: '(ids: ReadonlyArray<string>, additive?: boolean) => void',
@@ -1593,20 +2022,69 @@ const ids  = api.getSelectedRowIds()`,
 api.selectRows(['order-9'], true)   // add to existing`,
     },
     {
-      name: 'selectAllRows() / toggleRowSelected(id)',
-      type: '() => void / (id: string) => void',
-      description: 'Select every selectable row, or flip one row by id.',
-      example: `api.selectAllRows()
-api.toggleRowSelected('order-3')`,
+      name: 'setCellValue(rowIndex, columnId, value)',
+      type: '(rowIndex, columnId, value) => void',
+      description: "Write a cell value through the column's field. Emits onCellValueChange to subscribers.",
+      example: `api.setCellValue(0, 'status', 'shipped')`,
     },
-    // ---- Pagination ----
+    // ---- Column order ----
     {
-      name: 'getPageInfo()',
-      type: '() => { pageIndex; pageSize; pageCount; total }',
+      name: 'setColumnOrder(order) / getColumnOrder()',
+      type: '(order: ReadonlyArray<string>) => void / () => string[]',
       description:
-        'Current pagination snapshot. total is the post-filter row count; pageCount is derived from it and pageSize (always >= 1).',
-      example: `const { pageIndex, pageCount } = api.getPageInfo()
-label = \`Page \${pageIndex + 1} of \${pageCount}\``,
+        'Read or replace the visual column order (array of column ids). Unknown ids are skipped; columns not listed keep their relative position after the listed ones. Pin groups still apply on top. Fires onColumnOrderChange.',
+      example: `api.setColumnOrder(['status', 'customer', 'total'])
+const order = api.getColumnOrder()`,
+    },
+    {
+      name: 'setColumnPinning(pinning)',
+      type: '(pinning: { left?: ReadonlyArray<string>; right?: ReadonlyArray<string> }) => void',
+      description: 'Replace the column-pinning state. Order in each array becomes the visible order along that edge. Requires columnVirtualization={false}.',
+      example: `api.setColumnPinning({ left: ['id'], right: ['actions'] })`,
+    },
+    {
+      name: 'setColumnVisible(columnId, visible)',
+      type: '(columnId: string, visible: boolean) => void',
+      description: 'Show or hide a column without removing it. State persists until reset.',
+      example: `api.setColumnVisible('email', false)`,
+    },
+    // ---- Column layout ----
+    {
+      name: 'setColumnWidth(columnId, width)',
+      type: '(columnId: string, width: number) => void',
+      description: 'Set a column width in pixels - identical to dragging its resize handle. Clamped to the minimum column width.',
+      example: `api.setColumnWidth('customer', 240)`,
+    },
+    {
+      name: 'setFacetFilter(columnId, values)',
+      type: '(columnId: string, values: ReadonlyArray<string> | null) => void',
+      description:
+        'Set the facet (Excel-style value checklist) filter for a column. Pass null / [] to clear. Restores snapshots captured from onFiltersChange.selectedValues.',
+      example: `api.setFacetFilter('status', ['shipped', 'delivered'])
+api.setFacetFilter('status', null)`,
+    },
+    // ---- Filter ----
+    {
+      name: 'setFilter(columnId, filter)',
+      type: "(columnId, filter: { operator; value?; valueTo? } | null) => void",
+      description: 'Set the operator filter for a column. Pass null to clear. Use valueTo for the `between` operator.',
+      example: `api.setFilter('customer', { operator: 'contains', value: 'Acme' })
+api.setFilter('total', { operator: 'between', value: '100', valueTo: '500' })
+api.setFilter('status', null)   // clear`,
+    },
+    {
+      name: 'setFindQuery(q)',
+      type: '(q: string) => void',
+      description: 'Update the find query programmatically - useful for an app-wide command palette.',
+      example: `api.setFindQuery('overdue')`,
+    },
+    // ---- Group ----
+    {
+      name: 'setGroupBy(columnIds)',
+      type: '(columnIds: ReadonlyArray<string>) => void',
+      description: 'Group rows by the given columns, in order. Pass [] to ungroup. Requires columnGroupingFeature.',
+      example: `api.setGroupBy(['region', 'status'])
+api.setGroupBy([])   // ungroup`,
     },
     {
       name: 'setPage / nextPage / prevPage / firstPage / lastPage',
@@ -1622,46 +2100,45 @@ api.lastPage()`,
       description: 'Change the page size, keeping the first visible row in view.',
       example: `api.setPageSize(50)`,
     },
-    // ---- Navigation ----
+    // ---- Row expansion ----
     {
-      name: 'scrollToRow(rowIndex)',
-      type: '(rowIndex: number) => void',
-      description: 'Scroll the body so the given row is at the top of the viewport. Works with virtualization on; index is clamped.',
-      example: `api.scrollToRow(jumpTarget)   // e.g. "go to row 5000"`,
-    },
-    {
-      name: 'getActiveCell() / setActiveCell(rowIndex, colIndex)',
-      type: '() => { rowIndex; colIndex; columnId } | null / (rowIndex, colIndex) => void',
+      name: 'setRowExpanded(id, expanded)',
+      type: '(id: string, expanded: boolean) => void',
       description:
-        'Read or move the active (focused) cell. Coordinates are clamped to the grid bounds; getActiveCell returns null when nothing is focused.',
-      example: `api.setActiveCell(0, 2)
-const cell = api.getActiveCell()   // { rowIndex: 0, colIndex: 2, columnId: 'total' }`,
+        "Expand / collapse a row. `id` is the engine's row id - for grouped rows that's the synthetic group key (e.g. \"department:Engineering\").",
+      example: `api.setRowExpanded('department:Engineering', true)`,
     },
-    // ---- Column order ----
+    // ---- Sort ----
     {
-      name: 'setColumnOrder(order) / getColumnOrder()',
-      type: '(order: ReadonlyArray<string>) => void / () => string[]',
+      name: 'setSort(columnId, direction)',
+      type: "(columnId: string, direction: 'asc' | 'desc' | null) => void",
+      description: "Sort by one column. Replaces any existing sort. Pass null to remove this column's clause.",
+      example: `api.setSort('placedAt', 'desc')
+api.setSort('placedAt', null)   // remove this sort clause`,
+    },
+    {
+      name: 'startEditing(rowIndex, columnId)',
+      type: '(rowIndex: number, columnId: string) => boolean',
       description:
-        'Read or replace the visual column order (array of column ids). Unknown ids are skipped; columns not listed keep their relative position after the listed ones. Pin groups still apply on top. Fires onColumnOrderChange.',
-      example: `api.setColumnOrder(['status', 'customer', 'total'])
-const order = api.getColumnOrder()`,
+        'Programmatically begin editing a cell, as a double-click would. Returns true if editing started (the cell exists, is editable, and editing is enabled).',
+      example: `if (api.startEditing(0, 'status')) {
+  // editor is now open on row 0, column "status"
+}`,
     },
-    // ---- View state ----
     {
-      name: 'getState() / setState(state)',
-      type: '() => SvGridViewState / (state: Partial<SvGridViewState>) => void',
+      name: 'stopEditing(cancel?)',
+      type: '(cancel?: boolean) => boolean',
       description:
-        'Serialize the whole view (sort, grouping, pagination, column widths / pinning / order / visibility, and every filter surface) and restore it. setState only applies the keys present, so you can restore just columns, just filters, etc. The backbone of "save view" / URL persistence / named views.',
-      example: `// persist
-localStorage.setItem('view', JSON.stringify(api.getState()))
-// restore
-api.setState(JSON.parse(localStorage.getItem('view') ?? '{}'))`,
+        'Commit (default) or, with cancel: true, discard the active edit. Returns true if there was an edit in progress.',
+      example: `api.stopEditing()       // commit the active edit
+api.stopEditing(true)   // cancel and revert`,
     },
+    // ---- Undo / redo ----
     {
-      name: 'refresh()',
-      type: '() => void',
-      description: 'Force a recompute of the row pipeline and a re-render. Rarely needed - reactive data/columns updates are automatic.',
-      example: `api.refresh()`,
+      name: 'undo()',
+      type: '() => boolean',
+      description: 'Undo the most recent inline edit. Returns false when the undo history is empty.',
+      example: `<button onclick={() => api?.undo()} disabled={!api?.canUndo()}>Undo</button>`,
     },
   ],
   notes: [
@@ -1734,12 +2211,6 @@ const features = tableFeatures({
 })`,
   props: [
     {
-      name: 'rowSortingFeature',
-      type: 'Feature',
-      description: 'Sortable columns. Click a header to cycle asc -> desc -> none; Shift-click for multi-column sort.',
-      example: `const features = tableFeatures({ rowSortingFeature })`,
-    },
-    {
       name: 'columnFilteringFeature',
       type: 'Feature',
       description: 'Per-column filters (text, number, date, set). Drives the filter menu and filter row.',
@@ -1778,6 +2249,12 @@ const features = tableFeatures({
 <SvGrid {data} {columns} {features} showRowSelection
   onRowSelectionChange={(_, rows) => selected = rows}
 />`,
+    },
+    {
+      name: 'rowSortingFeature',
+      type: 'Feature',
+      description: 'Sortable columns. Click a header to cycle asc -> desc -> none; Shift-click for multi-column sort.',
+      example: `const features = tableFeatures({ rowSortingFeature })`,
     },
   ],
 }
@@ -1895,6 +2372,12 @@ const grid = createSvGrid({
       example: `_rowModels: { coreRowsFn: createCoreRowModel() }`,
     },
     {
+      name: 'createExpandedRowModel()',
+      type: '() => RowModelFactory',
+      description: 'Applies row expansion. Used for both tree mode and master/detail. Requires rowExpandingFeature.',
+      example: `_rowModels: { expandedRowsFn: createExpandedRowModel() }`,
+    },
+    {
       name: 'createFilteredRowModel()',
       type: '() => RowModelFactory',
       description: 'Applies column filters and the global filter. Reads filter state from the grid state.',
@@ -1904,28 +2387,22 @@ const grid = createSvGrid({
 }`,
     },
     {
-      name: 'createSortedRowModel()',
-      type: '() => RowModelFactory',
-      description: 'Applies sort. Multi-column sort respects the order of the sorting state entries.',
-      example: `_rowModels: { sortedRowsFn: createSortedRowModel() }`,
-    },
-    {
       name: 'createGroupedRowModel()',
       type: '() => RowModelFactory',
       description: 'Applies row grouping. Inserts synthetic group rows in front of each bucket. Requires columnGroupingFeature.',
       example: `_rowModels: { groupedRowsFn: createGroupedRowModel() }`,
     },
     {
-      name: 'createExpandedRowModel()',
-      type: '() => RowModelFactory',
-      description: 'Applies row expansion. Used for both tree mode and master/detail. Requires rowExpandingFeature.',
-      example: `_rowModels: { expandedRowsFn: createExpandedRowModel() }`,
-    },
-    {
       name: 'createPaginatedRowModel()',
       type: '() => RowModelFactory',
       description: 'Applies pagination. Slices the final rowset by pageIndex and pageSize. Requires rowPaginationFeature.',
       example: `_rowModels: { paginatedRowsFn: createPaginatedRowModel() }`,
+    },
+    {
+      name: 'createSortedRowModel()',
+      type: '() => RowModelFactory',
+      description: 'Applies sort. Multi-column sort respects the order of the sorting state entries.',
+      example: `_rowModels: { sortedRowsFn: createSortedRowModel() }`,
     },
   ],
 }
@@ -1958,13 +2435,14 @@ const columnVirtualizer = createColumnVirtualizer({
 })`,
   props: [
     {
-      name: 'createVirtualizer',
-      type: '(options: VirtualizerOptions) => Virtualizer',
-      description: 'Framework-agnostic virtualizer. Use inside non-Svelte custom layers.',
-      example: `const v = createVirtualizer({
-  count: rows.length,
-  estimateSize: () => 36,
+      name: 'createColumnVirtualizer',
+      type: '(options) => Virtualizer',
+      description: 'Column-axis virtualizer. Pass horizontal: true to opt into x-axis math.',
+      example: `const v = createColumnVirtualizer({
+  count: () => leafCols.length,
+  estimateSize: (i) => leafCols[i].getSize(),
   getScrollElement: () => scrollEl,
+  horizontal: true,
 })`,
     },
     {
@@ -1978,14 +2456,13 @@ const columnVirtualizer = createColumnVirtualizer({
 })`,
     },
     {
-      name: 'createColumnVirtualizer',
-      type: '(options) => Virtualizer',
-      description: 'Column-axis virtualizer. Pass horizontal: true to opt into x-axis math.',
-      example: `const v = createColumnVirtualizer({
-  count: () => leafCols.length,
-  estimateSize: (i) => leafCols[i].getSize(),
+      name: 'createVirtualizer',
+      type: '(options: VirtualizerOptions) => Virtualizer',
+      description: 'Framework-agnostic virtualizer. Use inside non-Svelte custom layers.',
+      example: `const v = createVirtualizer({
+  count: rows.length,
+  estimateSize: () => 36,
   getScrollElement: () => scrollEl,
-  horizontal: true,
 })`,
     },
   ],
@@ -2013,10 +2490,17 @@ const a11ySection: ApiSection = {
 } from '@svgrid/grid'`,
   props: [
     {
-      name: 'getGridRootA11yProps',
-      type: '(input: { rowCount; columnCount }) => Record<string, string>',
-      description: 'role="grid" + aria-rowcount + aria-colcount.',
-      example: `<div {...getGridRootA11yProps({ rowCount: rows.length, columnCount: columns.length })}>`,
+      name: 'getGridCellA11yProps',
+      type: '(input: GridCellA11yInput) => Record<string, string>',
+      description: 'role="gridcell" + aria-rowindex + aria-colindex + id matching getGridCellDomId.',
+      example: `<div {...getGridCellA11yProps({ rowIndex: r, columnIndex: c, columnId: 'name' })}>...</div>`,
+    },
+    {
+      name: 'getGridCellDomId',
+      type: '(input) => string',
+      description: 'Deterministic DOM id for a cell. Use for focus management and tests.',
+      example: `const id = getGridCellDomId('svgrid', 3, 'name')
+document.getElementById(id)?.focus()`,
     },
     {
       name: 'getGridHeaderA11yProps',
@@ -2025,23 +2509,16 @@ const a11ySection: ApiSection = {
       example: `<div {...getGridHeaderA11yProps({ columnIndex: i, sortDirection: 'asc' })}>{label}</div>`,
     },
     {
-      name: 'getGridCellA11yProps',
-      type: '(input: GridCellA11yInput) => Record<string, string>',
-      description: 'role="gridcell" + aria-rowindex + aria-colindex + id matching getGridCellDomId.',
-      example: `<div {...getGridCellA11yProps({ rowIndex: r, columnIndex: c, columnId: 'name' })}>...</div>`,
+      name: 'getGridRootA11yProps',
+      type: '(input: { rowCount; columnCount }) => Record<string, string>',
+      description: 'role="grid" + aria-rowcount + aria-colcount.',
+      example: `<div {...getGridRootA11yProps({ rowCount: rows.length, columnCount: columns.length })}>`,
     },
     {
       name: 'getGridRowA11yProps',
       type: '(input) => Record<string, string>',
       description: 'role="row" + aria-rowindex + aria-selected.',
       example: `<div {...getGridRowA11yProps({ rowIndex: r, selected: isSelected })}>...</div>`,
-    },
-    {
-      name: 'getGridCellDomId',
-      type: '(input) => string',
-      description: 'Deterministic DOM id for a cell. Use for focus management and tests.',
-      example: `const id = getGridCellDomId('svgrid', 3, 'name')
-document.getElementById(id)?.focus()`,
     },
   ],
   notes: ['Input types GridCellA11yInput, GridColumnA11yInput, and GridSortDirection are exported for annotation.'],
@@ -2056,6 +2533,12 @@ const utilsSection: ApiSection = {
   blurb: 'Smaller helpers exposed for advanced customization.',
   props: [
     {
+      name: 'applyExcelFilter',
+      type: '(value, filter: ExcelFilter) => boolean',
+      description: 'Run a single Excel-style filter clause against a value. Useful when you build your own filter UI.',
+      example: `const ok = applyExcelFilter(row.status, { operator: 'equals', value: 'shipped' })`,
+    },
+    {
       name: 'filterFns',
       type: '{ includesString; equals }',
       description: 'The built-in filter predicates the engine uses. Reference them when configuring a custom filtered row model.',
@@ -2063,45 +2546,11 @@ const utilsSection: ApiSection = {
 const ok = filterFns.includesString(row.customer, 'acme')`,
     },
     {
-      name: 'sortFns',
-      type: '{ auto; number; date }',
-      description: 'The built-in comparator set (locale-aware string, numeric, date). Used by the sorted row model.',
-      example: `import { sortFns } from '@svgrid/grid'
-rows.sort((a, b) => sortFns.number(a.total, b.total))`,
-    },
-    {
-      name: 'parseEditorValue',
-      type: '(raw: string, editorType: CellEditorType) => unknown',
-      description:
-        'Parse a raw input string into the typed value an inline editor expects. Returns NaN / Invalid Date when unparseable - validate before commit.',
-      example: `const parsed = parseEditorValue('1,234.56', 'number')   // 1234.56
-const date   = parseEditorValue('2024-03-15', 'date')   // Date`,
-    },
-    {
-      name: 'normalizeEditorOptions',
-      type: '(options) => CellEditorOption[]',
-      description: 'Normalize the loose editorOptions shape (bare strings/numbers or objects) into uniform { value, label, color } objects.',
-      example: `const opts = normalizeEditorOptions(['NA', { value: 'eu', label: 'EMEA' }])`,
-    },
-    {
-      name: 'applyExcelFilter',
-      type: '(value, filter: ExcelFilter) => boolean',
-      description: 'Run a single Excel-style filter clause against a value. Useful when you build your own filter UI.',
-      example: `const ok = applyExcelFilter(row.status, { operator: 'equals', value: 'shipped' })`,
-    },
-    {
       name: 'formatNumericWithConfig',
       type: '(value: number, config: CellFormatConfig) => string',
       description: 'Format a number per a CellFormatConfig. Handles currency, percent, and locale options.',
       example: `formatNumericWithConfig(1234.5, { type: 'currency', currency: 'USD' })
 // "$1,234.50"`,
-    },
-    {
-      name: 'resolveDatePattern',
-      type: '(pattern: string) => Intl.DateTimeFormatOptions',
-      description: 'Resolve a pattern shorthand (e.g. "y-m-d") into an Intl options object.',
-      example: `const opts = resolveDatePattern('y-m-d')
-new Intl.DateTimeFormat('en-US', opts).format(new Date())`,
     },
     {
       name: 'getKeyboardIntent',
@@ -2116,6 +2565,34 @@ if (intent === 'move-down') focusNext()`,
       description: 'Given an intent and the current active cell, compute the next active cell. Pure function.',
       example: `const next = getNextActiveCell('move-down', { rowIndex, colIndex, rowCount, colCount })`,
     },
+    {
+      name: 'normalizeEditorOptions',
+      type: '(options) => CellEditorOption[]',
+      description: 'Normalize the loose editorOptions shape (bare strings/numbers or objects) into uniform { value, label, color } objects.',
+      example: `const opts = normalizeEditorOptions(['NA', { value: 'eu', label: 'EMEA' }])`,
+    },
+    {
+      name: 'parseEditorValue',
+      type: '(raw: string, editorType: CellEditorType) => unknown',
+      description:
+        'Parse a raw input string into the typed value an inline editor expects. Returns NaN / Invalid Date when unparseable - validate before commit.',
+      example: `const parsed = parseEditorValue('1,234.56', 'number')   // 1234.56
+const date   = parseEditorValue('2024-03-15', 'date')   // Date`,
+    },
+    {
+      name: 'resolveDatePattern',
+      type: '(pattern: string) => Intl.DateTimeFormatOptions',
+      description: 'Resolve a pattern shorthand (e.g. "y-m-d") into an Intl options object.',
+      example: `const opts = resolveDatePattern('y-m-d')
+new Intl.DateTimeFormat('en-US', opts).format(new Date())`,
+    },
+    {
+      name: 'sortFns',
+      type: '{ auto; number; date }',
+      description: 'The built-in comparator set (locale-aware string, numeric, date). Used by the sorted row model.',
+      example: `import { sortFns } from '@svgrid/grid'
+rows.sort((a, b) => sortFns.number(a.total, b.total))`,
+    },
   ],
 }
 
@@ -2127,7 +2604,7 @@ if (intent === 'move-down') focusNext()`,
 // You opt in by wrapping the community api with installEnterprise(api).
 
 const proOverviewSection: ApiSection = {
-  id: 'pro-overview',
+  id: 'enterprise-overview',
   category: 'Enterprise',
   title: 'installEnterprise / EnterpriseGridApi',
   blurb: 'Augment the community api with export, print, import, pivot, and AI.',
@@ -2154,11 +2631,10 @@ const summary = await api.ai.summarize({ target: 'view' })
 const { rows, columns } = api.pivot.build(pivotConfig)`,
   props: [
     {
-      name: 'installEnterprise(api)',
-      type: '(api: SvGridApi<TF, TData>) => EnterpriseGridApi<TF, TData>',
-      description:
-        'Wrap a community api to add the Enterprise methods. Returns the same (mutated) object. Call it once inside onApiReady.',
-      example: `onApiReady={(base) => (api = installEnterprise(base))}`,
+      name: 'api.ai',
+      type: 'EnterpriseAIApi<TData>',
+      description: 'Namespace of AI helpers: filter, smartFill, summarize, classify. All route through a consumer-registered AIProvider. See the AI section.',
+      example: `const plan = await api.ai.filter('cancelled orders over $1k last quarter')`,
     },
     {
       name: 'api.exportData(opts)',
@@ -2167,28 +2643,29 @@ const { rows, columns } = api.pivot.build(pivotConfig)`,
       example: `await api.exportData({ format: 'xlsx', filename: 'orders' })`,
     },
     {
-      name: 'api.print(opts?)',
-      type: '(opts?: PrintOptions<TData>) => Promise<void>',
-      description: 'Open a print-ready view of the current visible rows in a new window. See the Print section.',
-      example: `await api.print({ title: 'Q3 Orders', orientation: 'landscape' })`,
-    },
-    {
       name: 'api.importData(opts)',
       type: '(opts: ImportOptions<TData>) => Promise<ImportResult<TData>>',
       description: 'Read an Excel / CSV / TSV / JSON file (or inline text) into typed rows, with per-cell validation. See the Import section.',
       example: `const result = await api.importData({ file, format: 'auto' })`,
     },
     {
-      name: 'api.ai',
-      type: 'EnterpriseAIApi<TData>',
-      description: 'Namespace of AI helpers: filter, smartFill, summarize, classify. All route through a consumer-registered AIProvider. See the AI section.',
-      example: `const plan = await api.ai.filter('cancelled orders over $1k last quarter')`,
-    },
-    {
       name: 'api.pivot',
       type: 'EnterprisePivotApi<TFeatures, TData>',
       description: 'Pure pivot-model builder. build(config) returns { rows, columns } you feed to a second <SvGrid>. See the Pivot section.',
       example: `const { rows, columns } = api.pivot.build({ rows: ['region'], cols: ['status'], values: [...] })`,
+    },
+    {
+      name: 'api.print(opts?)',
+      type: '(opts?: PrintOptions<TData>) => Promise<void>',
+      description: 'Open a print-ready view of the current visible rows in a new window. See the Print section.',
+      example: `await api.print({ title: 'Q3 Orders', orientation: 'landscape' })`,
+    },
+    {
+      name: 'installEnterprise(api)',
+      type: '(api: SvGridApi<TF, TData>) => EnterpriseGridApi<TF, TData>',
+      description:
+        'Wrap a community api to add the Enterprise methods. Returns the same (mutated) object. Call it once inside onApiReady.',
+      example: `onApiReady={(base) => (api = installEnterprise(base))}`,
     },
   ],
   notes: [
@@ -2198,7 +2675,7 @@ const { rows, columns } = api.pivot.build(pivotConfig)`,
 }
 
 const licenseSection: ApiSection = {
-  id: 'pro-license',
+  id: 'enterprise-license',
   category: 'Enterprise',
   title: 'Licensing',
   blurb: 'Set and query the Enterprise license key. Evaluation works unlicensed.',
@@ -2214,16 +2691,10 @@ const licenseSection: ApiSection = {
 setLicenseKey('SVG-XXXX-XXXX-XXXX-XXXX')`,
   props: [
     {
-      name: 'setLicenseKey(key)',
-      type: '(key: string) => void',
-      description: 'Register the license key for the session. Call once at startup, before any Enterprise method runs.',
-      example: `setLicenseKey(import.meta.env.VITE_SVGRID_LICENSE)`,
-    },
-    {
-      name: 'getLicenseKey()',
-      type: '() => string | null',
-      description: 'Return the currently registered key, or null.',
-      example: `if (!getLicenseKey()) console.warn('running unlicensed')`,
+      name: 'assertEnterpriseLicensed()',
+      type: '() => void',
+      description: 'Throws when the key is revoked / malformed; no-op when valid or merely unset (evaluation mode). Called internally by every Enterprise method.',
+      example: `assertEnterpriseLicensed()   // guard a custom Enterprise-only code path`,
     },
     {
       name: 'clearLicenseKey()',
@@ -2232,10 +2703,17 @@ setLicenseKey('SVG-XXXX-XXXX-XXXX-XXXX')`,
       example: `clearLicenseKey()`,
     },
     {
-      name: 'isLicenseKeySet()',
-      type: '() => boolean',
-      description: 'True when any key has been registered (does not validate it).',
-      example: `const showBuyCta = !isLicenseKeySet()`,
+      name: 'dismissUnlicensedNudge()',
+      type: '() => void',
+      description: 'Suppress the one-time unlicensed console nudge / watermark for the rest of the session (e.g. in internal tooling).',
+      example: `import { dismissUnlicensedNudge } from '@svgrid/enterprise'
+dismissUnlicensedNudge()`,
+    },
+    {
+      name: 'getLicenseKey()',
+      type: '() => string | null',
+      description: 'Return the currently registered key, or null.',
+      example: `if (!getLicenseKey()) console.warn('running unlicensed')`,
     },
     {
       name: 'hasValidLicense()',
@@ -2244,27 +2722,26 @@ setLicenseKey('SVG-XXXX-XXXX-XXXX-XXXX')`,
       example: `featureFlags.proBadge = hasValidLicense()`,
     },
     {
-      name: 'assertEnterpriseLicensed()',
-      type: '() => void',
-      description: 'Throws when the key is revoked / malformed; no-op when valid or merely unset (evaluation mode). Called internally by every Enterprise method.',
-      example: `assertEnterpriseLicensed()   // guard a custom Enterprise-only code path`,
+      name: 'isLicenseKeySet()',
+      type: '() => boolean',
+      description: 'True when any key has been registered (does not validate it).',
+      example: `const showBuyCta = !isLicenseKeySet()`,
     },
     {
-      name: 'dismissUnlicensedNudge()',
-      type: '() => void',
-      description: 'Suppress the one-time unlicensed console nudge / watermark for the rest of the session (e.g. in internal tooling).',
-      example: `import { dismissUnlicensedNudge } from '@svgrid/enterprise'
-dismissUnlicensedNudge()`,
+      name: 'setLicenseKey(key)',
+      type: '(key: string) => void',
+      description: 'Register the license key for the session. Call once at startup, before any Enterprise method runs.',
+      example: `setLicenseKey(import.meta.env.VITE_SVGRID_LICENSE)`,
     },
   ],
 }
 
 const exportSection: ApiSection = {
-  id: 'pro-export',
+  id: 'enterprise-export',
   category: 'Enterprise',
   title: 'Export',
   blurb: 'Export rows to Excel, PDF, CSV, TSV, or HTML - styled, multi-sheet, with headers/footers.',
-  demo: 'pro-export',
+  demo: 'enterprise-export',
   intro: [
     'exportGrid(api, opts) (or api.exportData(opts) after installEnterprise) writes the current displayed rows to a file and triggers the browser download. By default it exports the filtered/sorted view; pass rows explicitly to export the full dataset instead.',
     'xlsx and pdf honour the styles, header, and footer options; csv/tsv ignore styling; html bakes styles into inline attributes. Multi-sheet output is xlsx-only.',
@@ -2286,20 +2763,6 @@ await exportGrid(api, {
 })`,
   props: [
     {
-      name: 'format',
-      type: "'xlsx' | 'pdf' | 'csv' | 'tsv' | 'html'",
-      required: true,
-      description: 'Output format. xlsx/pdf support styles + header/footer; csv/tsv are plain; html is a styled standalone table.',
-      example: `await api.exportData({ format: 'csv' })`,
-    },
-    {
-      name: 'filename',
-      type: 'string',
-      default: '"grid"',
-      description: 'Base filename; the extension is appended automatically.',
-      example: `await api.exportData({ format: 'pdf', filename: 'q3-orders' })`,
-    },
-    {
       name: 'columns',
       type: 'ReadonlyArray<{ field: string; header?: string }>',
       description: 'Columns (and order) to include. When omitted, the grid\'s visible columns are used, falling back to every key of the first row.',
@@ -2309,20 +2772,41 @@ await exportGrid(api, {
 ]`,
     },
     {
-      name: 'rows',
-      type: 'ReadonlyArray<TData>',
-      description: 'Rows to export. Defaults to the api\'s displayed (filtered + sorted) rows. Pass api.getData() to export everything.',
-      example: `await api.exportData({ format: 'xlsx', rows: api.getData() })`,
+      name: 'filename',
+      type: 'string',
+      default: '"grid"',
+      description: 'Base filename; the extension is appended automatically.',
+      example: `await api.exportData({ format: 'pdf', filename: 'q3-orders' })`,
     },
     {
-      name: 'styles',
-      type: 'ExportStyles',
-      description: 'Document styling: headerRow, rows, rowAlternate (zebra), and per-cell overrides keyed by Excel reference ("A1", "C3"). Each is an ExportCellStyle (color, backgroundColor, fontWeight, border, textAlign, ...).',
-      example: `styles: {
-  headerRow: { fontWeight: 'bold', backgroundColor: '#1f2937', color: '#fff' },
-  rowAlternate: { backgroundColor: '#f3f4f6' },
-  cells: { D2: { color: '#dc2626', fontWeight: 'bold' } },
-}`,
+      name: 'format',
+      type: "'xlsx' | 'pdf' | 'csv' | 'tsv' | 'html'",
+      required: true,
+      description: 'Output format. xlsx/pdf support styles + header/footer; csv/tsv are plain; html is a styled standalone table.',
+      example: `<script lang="ts">
+  import { SvGrid, tableFeatures, type ColumnDef, type SvGridApi } from '@svgrid/grid'
+  import { installEnterprise } from '@svgrid/enterprise'
+
+  type Row = { id: number; customer: string; total: number }
+  const features = tableFeatures({})
+
+  let rows = $state<Row[]>([{ id: 1, customer: 'Acme Corp', total: 1240 }])
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { field: 'customer', header: 'Customer', width: 180 },
+    { field: 'total',    header: 'Total',    width: 120 },
+  ]
+
+  // installEnterprise(api) adds exportData / importData / print onto the api.
+  let api = $state<SvGridApi<typeof features, Row> | null>(null)
+
+  async function exportXlsx() {
+    await api?.exportData({ format: 'xlsx', fileName: 'orders.xlsx' })
+  }
+</script>
+
+<button onclick={exportXlsx}>Export to Excel</button>
+<SvGrid data={rows} columns={columns} features={features}
+  onApiReady={(next) => (api = installEnterprise(next))} />`,
     },
     {
       name: 'header / footer',
@@ -2332,11 +2816,25 @@ await exportGrid(api, {
 footer: [{ left: 'Confidential', right: 'Page {page}' }],`,
     },
     {
+      name: 'imageFields / imageSize',
+      type: 'ReadonlyArray<string> / { width; height }',
+      description: 'Fields whose URL / data-URL values are embedded as images in xlsx. imageSize sets the embedded pixel size (default 32x32).',
+      example: `await api.exportData({
+  format: 'xlsx', imageFields: ['avatar'], imageSize: { width: 48, height: 48 },
+})`,
+    },
+    {
       name: 'pageOrientation',
       type: "'portrait' | 'landscape'",
       default: '"portrait"',
       description: 'PDF only. Page orientation.',
       example: `await api.exportData({ format: 'pdf', pageOrientation: 'landscape' })`,
+    },
+    {
+      name: 'rows',
+      type: 'ReadonlyArray<TData>',
+      description: 'Rows to export. Defaults to the api\'s displayed (filtered + sorted) rows. Pass api.getData() to export everything.',
+      example: `await api.exportData({ format: 'xlsx', rows: api.getData() })`,
     },
     {
       name: 'sheets',
@@ -2351,12 +2849,14 @@ footer: [{ left: 'Confidential', right: 'Page {page}' }],`,
 })`,
     },
     {
-      name: 'imageFields / imageSize',
-      type: 'ReadonlyArray<string> / { width; height }',
-      description: 'Fields whose URL / data-URL values are embedded as images in xlsx. imageSize sets the embedded pixel size (default 32x32).',
-      example: `await api.exportData({
-  format: 'xlsx', imageFields: ['avatar'], imageSize: { width: 48, height: 48 },
-})`,
+      name: 'styles',
+      type: 'ExportStyles',
+      description: 'Document styling: headerRow, rows, rowAlternate (zebra), and per-cell overrides keyed by Excel reference ("A1", "C3"). Each is an ExportCellStyle (color, backgroundColor, fontWeight, border, textAlign, ...).',
+      example: `styles: {
+  headerRow: { fontWeight: 'bold', backgroundColor: '#1f2937', color: '#fff' },
+  rowAlternate: { backgroundColor: '#f3f4f6' },
+  cells: { D2: { color: '#dc2626', fontWeight: 'bold' } },
+}`,
     },
   ],
   notes: [
@@ -2366,7 +2866,7 @@ footer: [{ left: 'Confidential', right: 'Page {page}' }],`,
 }
 
 const printSection: ApiSection = {
-  id: 'pro-print',
+  id: 'enterprise-print',
   category: 'Enterprise',
   title: 'Print',
   blurb: 'Open a clean, print-ready view of the current rows in a new window.',
@@ -2382,23 +2882,10 @@ await printGrid(api, {
 })`,
   props: [
     {
-      name: 'title',
-      type: 'string',
-      default: '"Grid"',
-      description: 'Heading placed above the printed table.',
-      example: `await api.print({ title: 'Daily manifest' })`,
-    },
-    {
       name: 'columns',
       type: 'ReadonlyArray<{ field: string; header?: string }>',
       description: 'Columns to print. Defaults to every key of the first row.',
       example: `await api.print({ columns: [{ field: 'sku', header: 'SKU' }] })`,
-    },
-    {
-      name: 'rows',
-      type: 'ReadonlyArray<TData>',
-      description: 'Rows to print. Defaults to the api\'s displayed rows.',
-      example: `await api.print({ rows: selectedRows })`,
     },
     {
       name: 'orientation',
@@ -2407,11 +2894,24 @@ await printGrid(api, {
       description: 'Print orientation hint, honoured by the browser via @page { size }.',
       example: `await api.print({ orientation: 'landscape' })`,
     },
+    {
+      name: 'rows',
+      type: 'ReadonlyArray<TData>',
+      description: 'Rows to print. Defaults to the api\'s displayed rows.',
+      example: `await api.print({ rows: selectedRows })`,
+    },
+    {
+      name: 'title',
+      type: 'string',
+      default: '"Grid"',
+      description: 'Heading placed above the printed table.',
+      example: `await api.print({ title: 'Daily manifest' })`,
+    },
   ],
 }
 
 const importSection: ApiSection = {
-  id: 'pro-import',
+  id: 'enterprise-import',
   category: 'Enterprise',
   title: 'Import',
   blurb: 'Read Excel / CSV / TSV / JSON into typed, validated rows.',
@@ -2434,21 +2934,6 @@ const result = await api.importData({
 if (result.errors.length === 0) api.addRows(result.rows, 'bottom')`,
   props: [
     {
-      name: 'file',
-      type: 'File | Blob | string',
-      required: true,
-      description: 'The source. A File/Blob (xlsx or text) or an inline CSV/TSV/JSON string.',
-      example: `const file = input.files[0]
-await api.importData({ file, format: 'auto' })`,
-    },
-    {
-      name: 'format',
-      type: "'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'",
-      default: '"auto"',
-      description: 'Source format. "auto" sniffs from file.name extension (Files) or the first characters of inline text.',
-      example: `await api.importData({ file: csvText, format: 'csv' })`,
-    },
-    {
       name: 'columnMap',
       type: 'Record<string, string>',
       description: 'Map source header -> target field. Missing entries fall back to the lowercased/trimmed source header; map a header to drop it.',
@@ -2461,17 +2946,49 @@ await api.importData({ file, format: 'auto' })`,
       example: `columnTypes: { total: 'number', shipped: 'boolean', placedAt: 'date' }`,
     },
     {
-      name: 'validator',
-      type: '(row: TData, rowIndex: number) => Array<{ field; message }>',
-      description: 'Per-row business validation. Returned errors land in result.errors alongside type-coercion errors.',
-      example: `validator: (row) =>
-  row.qty > 0 ? [] : [{ field: 'qty', message: 'must be positive' }]`,
-    },
-    {
       name: 'commit / commitAt',
       type: "boolean / 'top' | 'bottom' | number",
       description: 'When commit is true, parsed rows are appended via api.addRows automatically (no preview). commitAt sets the insert position (default "bottom").',
       example: `await api.importData({ file, format: 'auto', commit: true, commitAt: 'top' })`,
+    },
+    {
+      name: 'file',
+      type: 'File | Blob | string',
+      required: true,
+      description: 'The source. A File/Blob (xlsx or text) or an inline CSV/TSV/JSON string.',
+      example: `<script lang="ts">
+  import { SvGrid, tableFeatures, type ColumnDef, type SvGridApi } from '@svgrid/grid'
+  import { installEnterprise } from '@svgrid/enterprise'
+
+  type Row = { id: number; customer: string; total: number }
+  const features = tableFeatures({})
+
+  let rows = $state<Row[]>([])
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { field: 'customer', header: 'Customer', width: 180 },
+    { field: 'total',    header: 'Total',    width: 120, editorType: 'number' },
+  ]
+  let api = $state<SvGridApi<typeof features, Row> | null>(null)
+
+  async function onFile(e: Event) {
+    const file = (e.currentTarget as HTMLInputElement).files?.[0]
+    if (!file) return
+    // \`file\` can be a File/Blob (xlsx or text) or an inline CSV/TSV/JSON string.
+    // format 'auto' sniffs xlsx vs csv/tsv/json.
+    await api?.importData({ file, format: 'auto' })
+  }
+</script>
+
+<input type="file" accept=".xlsx,.csv,.tsv,.json" onchange={onFile} />
+<SvGrid data={rows} columns={columns} features={features}
+  onApiReady={(next) => (api = installEnterprise(next))} />`,
+    },
+    {
+      name: 'format',
+      type: "'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'",
+      default: '"auto"',
+      description: 'Source format. "auto" sniffs from file.name extension (Files) or the first characters of inline text.',
+      example: `await api.importData({ file: csvText, format: 'csv' })`,
     },
     {
       name: 'ImportResult<TData>',
@@ -2479,6 +2996,13 @@ await api.importData({ file, format: 'auto' })`,
       description: 'The returned preview: source headers, parsed rows, all validation errors, count of blank rows skipped, total source rows seen, and the resolved format.',
       example: `const { rows, errors, total } = await api.importData({ file })
 status = \`\${rows.length}/\${total} parsed, \${errors.length} errors\``,
+    },
+    {
+      name: 'validator',
+      type: '(row: TData, rowIndex: number) => Array<{ field; message }>',
+      description: 'Per-row business validation. Returned errors land in result.errors alongside type-coercion errors.',
+      example: `validator: (row) =>
+  row.qty > 0 ? [] : [{ field: 'qty', message: 'must be positive' }]`,
     },
   ],
   notes: [
@@ -2488,11 +3012,11 @@ status = \`\${rows.length}/\${total} parsed, \${errors.length} errors\``,
 }
 
 const pivotSection: ApiSection = {
-  id: 'pro-pivot',
+  id: 'enterprise-pivot',
   category: 'Enterprise',
   title: 'Pivot tables',
   blurb: 'Build a pivot row/column model from grid data - pure, no DOM.',
-  demo: 'pro-pivot',
+  demo: 'enterprise-pivot',
   intro: [
     'createPivotModel(data, config) (or api.pivot.build(config)) reduces a flat dataset into a cross-tab of row groups x column groups x measures. It is pure: it returns { rows, columns } that you hand to a second <SvGrid /> instance, leaving the source grid untouched.',
     'Configure the row axis, column axis, and one or more value measures. Each measure uses a built-in aggregator (sum, avg, min, max, count, countDistinct, first, last) or a custom reducer.',
@@ -2514,29 +3038,29 @@ const { rows, columns } = createPivotModel(orders, {
 <SvGrid data={rows} columns={columns} features={tableFeatures({})} />`,
   props: [
     {
-      name: 'rows',
-      type: 'ReadonlyArray<keyof TData & string>',
-      required: true,
-      description: 'Row-axis grouping fields, outer-most first. Each becomes one level of row grouping (with subtotals when enabled).',
-      example: `rows: ['region', 'customer']`,
-    },
-    {
       name: 'cols',
       type: 'ReadonlyArray<keyof TData & string>',
       required: true,
       description: 'Column-axis grouping fields, outer-most first. Each distinct value becomes a column (or column group).',
-      example: `cols: ['status']`,
+      example: `import { createPivotModel } from '@svgrid/enterprise'
+
+type Sale = { region: string; status: string; total: number }
+const facts: Sale[] = [
+  { region: 'AMER', status: 'paid', total: 1200 },
+  { region: 'EMEA', status: 'open', total:  800 },
+]
+
+const model = createPivotModel(facts, {
+  rows: ['region'],
+  cols: ['status'],   // <- column-axis grouping: each distinct value becomes a column (this prop)
+  values: [{ field: 'total', agg: 'sum', format: { type: 'currency', currency: 'USD' } }],
+})`,
     },
     {
-      name: 'values',
-      type: 'ReadonlyArray<PivotValueConfig<TData>>',
-      required: true,
-      description: 'Measures aggregated under each column leaf. Each is { field, agg, label?, format? } where agg is a PivotAggregatorId or a custom (values) => unknown reducer.',
-      example: `values: [
-  { field: 'total', agg: 'sum', format: { type: 'currency', currency: 'USD' } },
-  { field: 'margin', agg: 'avg', label: 'Avg margin',
-    format: { type: 'percent' } },
-]`,
+      name: 'filterCollapsedPivotRows(rows, collapsed)',
+      type: '(rows: PivotRow[], collapsed: Set<string>) => PivotRow[]',
+      description: 'Helper to hide the descendants of collapsed pivot group rows, for an expand/collapse UX. Keyed by __pivotId.',
+      example: `const visible = filterCollapsedPivotRows(pivot.rows, collapsedIds)`,
     },
     {
       name: 'grandTotalRow / grandTotalCol',
@@ -2546,11 +3070,32 @@ const { rows, columns } = createPivotModel(orders, {
       example: `createPivotModel(data, { rows, cols, values, grandTotalCol: false })`,
     },
     {
-      name: 'rowSubtotals',
-      type: 'boolean',
-      default: 'true',
-      description: 'Insert subtotal rows between row groups.',
-      example: `createPivotModel(data, { rows, cols, values, rowSubtotals: false })`,
+      name: 'pivotAggregators',
+      type: 'Record<PivotAggregatorId, PivotAggregator>',
+      description: 'The built-in aggregator table: sum, avg, min, max, count, countDistinct, first, last. Reference one directly for a custom pipeline.',
+      example: `import { pivotAggregators } from '@svgrid/enterprise'
+const total = pivotAggregators.sum(values)`,
+    },
+    {
+      name: 'rows',
+      type: 'ReadonlyArray<keyof TData & string>',
+      required: true,
+      description: 'Row-axis grouping fields, outer-most first. Each becomes one level of row grouping (with subtotals when enabled).',
+      example: `import { createPivotModel } from '@svgrid/enterprise'
+
+type Sale = { region: string; customer: string; quarter: string; total: number }
+const facts: Sale[] = [
+  { region: 'AMER', customer: 'Acme',   quarter: 'Q1', total: 1200 },
+  { region: 'EMEA', customer: 'Globex', quarter: 'Q1', total:  800 },
+  { region: 'AMER', customer: 'Acme',   quarter: 'Q2', total: 1500 },
+]
+
+const model = createPivotModel(facts, {
+  rows: ['region', 'customer'],   // <- nested row grouping (this prop)
+  cols: ['quarter'],
+  values: [{ field: 'total', agg: 'sum', format: { type: 'currency', currency: 'USD' } }],
+})
+// Feed model.rows + model.columns into a second, read-only <SvGrid>.`,
     },
     {
       name: 'rowSort / colSort',
@@ -2559,17 +3104,33 @@ const { rows, columns } = createPivotModel(orders, {
       example: `colSort: (a, b) => STATUS_ORDER.indexOf(a) - STATUS_ORDER.indexOf(b)`,
     },
     {
-      name: 'pivotAggregators',
-      type: 'Record<PivotAggregatorId, PivotAggregator>',
-      description: 'The built-in aggregator table: sum, avg, min, max, count, countDistinct, first, last. Reference one directly for a custom pipeline.',
-      example: `import { pivotAggregators } from '@svgrid/enterprise'
-const total = pivotAggregators.sum(values)`,
+      name: 'rowSubtotals',
+      type: 'boolean',
+      default: 'true',
+      description: 'Insert subtotal rows between row groups.',
+      example: `createPivotModel(data, { rows, cols, values, rowSubtotals: false })`,
     },
     {
-      name: 'filterCollapsedPivotRows(rows, collapsed)',
-      type: '(rows: PivotRow[], collapsed: Set<string>) => PivotRow[]',
-      description: 'Helper to hide the descendants of collapsed pivot group rows, for an expand/collapse UX. Keyed by __pivotId.',
-      example: `const visible = filterCollapsedPivotRows(pivot.rows, collapsedIds)`,
+      name: 'values',
+      type: 'ReadonlyArray<PivotValueConfig<TData>>',
+      required: true,
+      description: 'Measures aggregated under each column leaf. Each is { field, agg, label?, format? } where agg is a PivotAggregatorId or a custom (values) => unknown reducer.',
+      example: `import { createPivotModel } from '@svgrid/enterprise'
+
+type Sale = { region: string; quarter: string; total: number; margin: number }
+const facts: Sale[] = [
+  { region: 'AMER', quarter: 'Q1', total: 1200, margin: 0.32 },
+  { region: 'EMEA', quarter: 'Q1', total:  800, margin: 0.28 },
+]
+
+const model = createPivotModel(facts, {
+  rows: ['region'],
+  cols: ['quarter'],
+  values: [   // <- measures aggregated under each column leaf (this prop)
+    { field: 'total',  agg: 'sum', format: { type: 'currency', currency: 'USD' } },
+    { field: 'margin', agg: 'avg', label: 'Avg margin', format: { type: 'percent' } },
+  ],
+})`,
     },
   ],
   notes: [
@@ -2579,7 +3140,7 @@ const total = pivotAggregators.sum(values)`,
 }
 
 const aiSection: ApiSection = {
-  id: 'pro-ai',
+  id: 'enterprise-ai',
   category: 'Enterprise',
   title: 'AI helpers',
   blurb: 'Natural-language filtering, smart fill, summarize, and classify - provider-agnostic.',
@@ -2603,18 +3164,15 @@ setAIProvider(async (req: AIRequest): Promise<string> => {
 const plan = await api.ai.filter('cancelled orders over $1k in Q3', { apply: true })`,
   props: [
     {
-      name: 'setAIProvider(fn) / getAIProvider() / hasAIProvider()',
-      type: '(fn: AIProvider) => void / () => AIProvider | null / () => boolean',
-      description: 'Register / read / test the single provider function `(req: AIRequest) => Promise<string>`. AIRequest carries { prompt, responseFormat, signal, task, maxOutputTokens }; return the model\'s raw text.',
-      example: `setAIProvider(myProvider)
-if (!hasAIProvider()) disableAiButtons()`,
-    },
-    {
-      name: 'mockAIProvider',
-      type: 'AIProvider',
-      description: 'A deterministic offline provider for tests / demos - returns canned, schema-valid responses without a network call.',
-      example: `import { mockAIProvider, setAIProvider } from '@svgrid/enterprise'
-setAIProvider(mockAIProvider)`,
+      name: 'api.ai.classify(opts)',
+      type: '(opts: AIClassifyOptions) => Promise<AIClassifyResult>',
+      description: 'Classify a free-text column into one of a fixed set of classes, writing into outputField. Returns predictions [{ rowIndex, value, confidence }].',
+      example: `const res = await api.ai.classify({
+  inputField: 'feedback',
+  outputField: 'sentiment',
+  classes: ['positive', 'neutral', 'negative'],
+  classDescriptions: { negative: 'complaints, churn risk, anger' },
+})`,
     },
     {
       name: 'api.ai.filter(query, opts?)',
@@ -2647,15 +3205,18 @@ showPreview(rationale)`,
 })`,
     },
     {
-      name: 'api.ai.classify(opts)',
-      type: '(opts: AIClassifyOptions) => Promise<AIClassifyResult>',
-      description: 'Classify a free-text column into one of a fixed set of classes, writing into outputField. Returns predictions [{ rowIndex, value, confidence }].',
-      example: `const res = await api.ai.classify({
-  inputField: 'feedback',
-  outputField: 'sentiment',
-  classes: ['positive', 'neutral', 'negative'],
-  classDescriptions: { negative: 'complaints, churn risk, anger' },
-})`,
+      name: 'mockAIProvider',
+      type: 'AIProvider',
+      description: 'A deterministic offline provider for tests / demos - returns canned, schema-valid responses without a network call.',
+      example: `import { mockAIProvider, setAIProvider } from '@svgrid/enterprise'
+setAIProvider(mockAIProvider)`,
+    },
+    {
+      name: 'setAIProvider(fn) / getAIProvider() / hasAIProvider()',
+      type: '(fn: AIProvider) => void / () => AIProvider | null / () => boolean',
+      description: 'Register / read / test the single provider function `(req: AIRequest) => Promise<string>`. AIRequest carries { prompt, responseFormat, signal, task, maxOutputTokens }; return the model\'s raw text.',
+      example: `setAIProvider(myProvider)
+if (!hasAIProvider()) disableAiButtons()`,
     },
   ],
   notes: [
@@ -2666,11 +3227,11 @@ showPreview(rationale)`,
 }
 
 const stagedEditingSection: ApiSection = {
-  id: 'pro-staged-editing',
+  id: 'enterprise-staged-editing',
   category: 'Enterprise',
   title: 'Staged editing',
   blurb: 'Buffer inline edits, show a dirty-state, then commit or revert as a batch.',
-  demo: 'pro-staged-editing',
+  demo: 'enterprise-staged-editing',
   intro: [
     'createStagedEditing() is a small, dependency-free buffer for "review before save" workflows. Feed it the grid\'s onCellValueChange events; it tracks each change with its original and staged values so you can show a dirty indicator, list pending edits, then commit them to a server in one transaction or roll them all back.',
   ],
@@ -2693,18 +3254,6 @@ async function save() {
 }`,
   props: [
     {
-      name: 'record(event)',
-      type: '(e: StagedEditingEvent) => void',
-      description: 'Feed a grid onCellValueChange event into the buffer. Re-editing the same cell keeps the original value stable.',
-      example: `onCellValueChange={(e) => staging.record(e)}`,
-    },
-    {
-      name: 'isDirty() / size()',
-      type: '() => boolean / () => number',
-      description: 'isDirty is true when at least one cell is staged; size is the count of distinct (row, column) pairs.',
-      example: `<span>{staging.isDirty() ? \`\${staging.size()} unsaved\` : 'All saved'}</span>`,
-    },
-    {
       name: 'changes()',
       type: '() => StagedChange<TData>[]',
       description: 'Snapshot of every pending change, ordered by first edit. Each StagedChange has { rowId, rowIndex, columnId, original, staged, recordedAt, originalRow? }.',
@@ -2724,18 +3273,30 @@ async function save() {
       example: `await staging.commit((changes) => api.persist(changes))`,
     },
     {
-      name: 'revert(applyRevert)',
-      type: '(applyRevert: (rowIndex, columnId, originalValue) => void) => void',
-      description: 'Roll back every staged cell. Wire applyRevert to api.setCellValue to push the originals back into the grid.',
-      example: `staging.revert((rowIndex, columnId, original) =>
-  api.setCellValue(rowIndex, columnId, original))`,
-    },
-    {
       name: 'drop(rowId, columnId) / clear()',
       type: '(rowId, columnId) => void / () => void',
       description: 'drop discards one staged cell without applying it; clear wipes the whole buffer without applying anything.',
       example: `staging.drop('order-7', 'total')
 staging.clear()`,
+    },
+    {
+      name: 'isDirty() / size()',
+      type: '() => boolean / () => number',
+      description: 'isDirty is true when at least one cell is staged; size is the count of distinct (row, column) pairs.',
+      example: `<span>{staging.isDirty() ? \`\${staging.size()} unsaved\` : 'All saved'}</span>`,
+    },
+    {
+      name: 'record(event)',
+      type: '(e: StagedEditingEvent) => void',
+      description: 'Feed a grid onCellValueChange event into the buffer. Re-editing the same cell keeps the original value stable.',
+      example: `onCellValueChange={(e) => staging.record(e)}`,
+    },
+    {
+      name: 'revert(applyRevert)',
+      type: '(applyRevert: (rowIndex, columnId, originalValue) => void) => void',
+      description: 'Roll back every staged cell. Wire applyRevert to api.setCellValue to push the originals back into the grid.',
+      example: `staging.revert((rowIndex, columnId, original) =>
+  api.setCellValue(rowIndex, columnId, original))`,
     },
   ],
   notes: [
@@ -2768,10 +3329,16 @@ npx @svgrid/mcp
 }`,
   props: [
     {
-      name: 'list_examples',
+      name: 'get_api_reference',
       type: 'tool',
-      description: 'List every demo id, title, and blurb.',
-      example: `// model calls list_examples -> [{ id: '11-stock-market', title, blurb }, ...]`,
+      description: 'Return the curated public-API surface, grouped by category - the same data behind this page.',
+      example: `get_api_reference() -> { categories: [...] }`,
+    },
+    {
+      name: 'get_doc',
+      type: 'tool({ slug })',
+      description: 'Return the markdown for one doc page by slug.',
+      example: `get_doc({ slug: 'help/columns/column-definitions' })`,
     },
     {
       name: 'get_example_source',
@@ -2786,22 +3353,16 @@ npx @svgrid/mcp
       example: `list_docs() -> [{ slug: 'getting-started', title }, ...]`,
     },
     {
-      name: 'get_doc',
-      type: 'tool({ slug })',
-      description: 'Return the markdown for one doc page by slug.',
-      example: `get_doc({ slug: 'help/columns/column-definitions' })`,
+      name: 'list_examples',
+      type: 'tool',
+      description: 'List every demo id, title, and blurb.',
+      example: `// model calls list_examples -> [{ id: '11-stock-market', title, blurb }, ...]`,
     },
     {
       name: 'search_docs',
       type: 'tool({ query, limit? })',
       description: 'Case-insensitive substring search across all docs. limit defaults to 10.',
       example: `search_docs({ query: 'row virtualization', limit: 5 })`,
-    },
-    {
-      name: 'get_api_reference',
-      type: 'tool',
-      description: 'Return the curated public-API surface, grouped by category - the same data behind this page.',
-      example: `get_api_reference() -> { categories: [...] }`,
     },
   ],
   notes: [
@@ -2830,22 +3391,15 @@ const spec = rowsToChartSpec(orders, {
 <SvGridChart {spec} />`,
   props: [
     {
-      name: 'rowsToChartSpec(rows, opts)',
-      type: '(rows, opts) => ChartSpec',
-      description: 'Aggregate rows into a ChartSpec. opts: { type, category, value (one field or many), series?, reduce?: "sum"|"avg"|"count", stacked?, stacked100?, sort?, topN?, otherLabel?, width?, height?, palette? }.',
-      example: `rowsToChartSpec(sales, { type: 'line', category: 'month', value: 'revenue', series: 'product' })`,
-    },
-    {
       name: 'buildChart(spec)',
       type: '(spec: ChartSpec) => ChartGeometry',
       description: 'Compute laid-out geometry (bars, line paths, slices, axis ticks) from a spec. <SvGridChart /> calls this internally; call it directly for a custom renderer or snapshot tests.',
       example: `const geo = buildChart(spec) // { bars, lines, slices, xTicks, yTicks, ... }`,
     },
     {
-      name: 'niceScale(min, max, tickCount?)',
-      type: '(min, max, tickCount = 4) => NiceScale',
-      description: 'Round a [min, max] domain out to nice tick boundaries. Returns { min, max, step, ticks }.',
-      example: `niceScale(0, 9300) // -> { min: 0, max: 10000, step: 2500, ticks: [0,2500,...] }`,
+      name: 'ChartSpec',
+      type: 'type',
+      description: 'The chart model: { type, categories, series, width?, height?, palette?, stacked?, stacked100?, orientation?, innerRadius?, referenceLines?, xType?, yAxisTitle?, ... }.',
     },
     {
       name: 'DEFAULT_PALETTE',
@@ -2854,9 +3408,16 @@ const spec = rowsToChartSpec(orders, {
       example: `import { DEFAULT_PALETTE } from '@svgrid/grid'`,
     },
     {
-      name: 'ChartSpec',
-      type: 'type',
-      description: 'The chart model: { type, categories, series, width?, height?, palette?, stacked?, stacked100?, orientation?, innerRadius?, referenceLines?, xType?, yAxisTitle?, ... }.',
+      name: 'niceScale(min, max, tickCount?)',
+      type: '(min, max, tickCount = 4) => NiceScale',
+      description: 'Round a [min, max] domain out to nice tick boundaries. Returns { min, max, step, ticks }.',
+      example: `niceScale(0, 9300) // -> { min: 0, max: 10000, step: 2500, ticks: [0,2500,...] }`,
+    },
+    {
+      name: 'rowsToChartSpec(rows, opts)',
+      type: '(rows, opts) => ChartSpec',
+      description: 'Aggregate rows into a ChartSpec. opts: { type, category, value (one field or many), series?, reduce?: "sum"|"avg"|"count", stacked?, stacked100?, sort?, topN?, otherLabel?, width?, height?, palette? }.',
+      example: `rowsToChartSpec(sales, { type: 'line', category: 'month', value: 'revenue', series: 'product' })`,
     },
   ],
   notes: ['Render a ChartSpec with the <SvGridChart /> component. See its section for the visual, interactive props.'],
@@ -2878,16 +3439,9 @@ let chartEl: HTMLElement   // bind:this on the chart wrapper
 <button onclick={() => downloadChartPng(chartEl, 'revenue.png')}>Download PNG</button>`,
   props: [
     {
-      name: 'chartToSvgString(source, options?)',
-      type: '(source: SVGSVGElement | HTMLElement, options?) => string',
-      description: 'Serialize the chart to a standalone, self-styled SVG string (CSS-variable colors inlined, hit layers stripped).',
-      example: `const svg = chartToSvgString(chartEl, { background: '#fff' })`,
-    },
-    {
-      name: 'downloadChartSvg(source, filename?, options?)',
-      type: '(source, filename = "chart.svg", options?) => void',
-      description: 'Serialize and trigger a browser download of the .svg file.',
-      example: `downloadChartSvg(chartEl, 'q3-revenue.svg')`,
+      name: 'ChartExportOptions',
+      type: '{ background?: string; scale?: number }',
+      description: 'background overrides the fill (defaults to --sg-bg); scale is the PNG pixel multiplier.',
     },
     {
       name: 'chartToPngBlob(source, options?)',
@@ -2896,15 +3450,22 @@ let chartEl: HTMLElement   // bind:this on the chart wrapper
       example: `const blob = await chartToPngBlob(chartEl, { scale: 3 })`,
     },
     {
+      name: 'chartToSvgString(source, options?)',
+      type: '(source: SVGSVGElement | HTMLElement, options?) => string',
+      description: 'Serialize the chart to a standalone, self-styled SVG string (CSS-variable colors inlined, hit layers stripped).',
+      example: `const svg = chartToSvgString(chartEl, { background: '#fff' })`,
+    },
+    {
       name: 'downloadChartPng(source, filename?, options?)',
       type: '(source, filename = "chart.png", options?) => Promise<void>',
       description: 'Rasterize and trigger a browser download of the .png file.',
       example: `await downloadChartPng(chartEl, 'revenue.png', { background: '#0a1124' })`,
     },
     {
-      name: 'ChartExportOptions',
-      type: '{ background?: string; scale?: number }',
-      description: 'background overrides the fill (defaults to --sg-bg); scale is the PNG pixel multiplier.',
+      name: 'downloadChartSvg(source, filename?, options?)',
+      type: '(source, filename = "chart.svg", options?) => void',
+      description: 'Serialize and trigger a browser download of the .svg file.',
+      example: `downloadChartSvg(chartEl, 'q3-revenue.svg')`,
     },
   ],
 }
@@ -2923,12 +3484,6 @@ const sparklineSection: ApiSection = {
   cell: (ctx) => renderSnippet(Spark, { values: toSparklineValues(ctx.getValue()) }) }`,
   props: [
     {
-      name: 'toSparklineValues(value)',
-      type: '(value: unknown) => number[]',
-      description: 'Coerce an array, or a comma/space-separated string, into a finite number array. Drops non-numeric entries.',
-      example: `toSparklineValues('3, 5, 2, 8') // -> [3, 5, 2, 8]`,
-    },
-    {
       name: 'buildSparkline(values, cfg?)',
       type: '(values: number[], cfg?: SparklineConfig) => SparklineGeometry | null',
       description: 'Lay out the sparkline. Returns { linePath, areaPath, bars, lastPoint, width, height, ... } to render as SVG, or null for empty input.',
@@ -2938,6 +3493,12 @@ const sparklineSection: ApiSection = {
       name: 'SparklineConfig',
       type: 'type',
       description: '{ type?: "line"|"area"|"bar"|"winloss"; color?; negativeColor?; width?; height?; min?; max?; lineWidth?; lastPoint? }.',
+    },
+    {
+      name: 'toSparklineValues(value)',
+      type: '(value: unknown) => number[]',
+      description: 'Coerce an array, or a comma/space-separated string, into a finite number array. Drops non-numeric entries.',
+      example: `toSparklineValues('3, 5, 2, 8') // -> [3, 5, 2, 8]`,
     },
   ],
   notes: ['buildSparkline returns geometry only - you draw the <svg> (a <path d={geo.linePath} /> plus an end dot, or {#each geo.bars}). See the interactive example above.'],
@@ -2965,14 +3526,10 @@ const controller = createServerDataSource(
 )`,
   props: [
     {
-      name: 'source.getRows(request)',
-      type: '(request: ServerRequest) => Promise<ServerResult<TData>>',
-      description: 'Your fetcher. ServerRequest carries { startRow, endRow, pageIndex, pageSize, sortModel, filterModel }; return { rows, rowCount }.',
-    },
-    {
-      name: 'options',
-      type: '{ pageSize?: number; onChange: (state: ServerState<TData>) => void }',
-      description: 'onChange fires whenever rows / total / loading / page change - wire it to your component state.',
+      name: 'controller.refresh / getState / dispose',
+      type: '() => void | ServerState<TData>',
+      description: 'refresh() re-fetches the current page (e.g. after a mutation); getState() reads the latest snapshot; dispose() ignores in-flight responses on unmount.',
+      example: `onDestroy(() => controller.dispose())`,
     },
     {
       name: 'controller.setSort / setFilter / setPage / setPageSize',
@@ -2981,10 +3538,14 @@ const controller = createServerDataSource(
       example: `controller.setSort([{ id: 'total', desc: true }])`,
     },
     {
-      name: 'controller.refresh / getState / dispose',
-      type: '() => void | ServerState<TData>',
-      description: 'refresh() re-fetches the current page (e.g. after a mutation); getState() reads the latest snapshot; dispose() ignores in-flight responses on unmount.',
-      example: `onDestroy(() => controller.dispose())`,
+      name: 'options',
+      type: '{ pageSize?: number; onChange: (state: ServerState<TData>) => void }',
+      description: 'onChange fires whenever rows / total / loading / page change - wire it to your component state.',
+    },
+    {
+      name: 'source.getRows(request)',
+      type: '(request: ServerRequest) => Promise<ServerResult<TData>>',
+      description: 'Your fetcher. ServerRequest carries { startRow, endRow, pageIndex, pageSize, sortModel, filterModel }; return { rows, rowCount }.',
     },
   ],
 }
@@ -3009,16 +3570,16 @@ views.load('EMEA at risk')   // re-apply it`,
       description: 'host is anything with getState()/setState() (SvGridApi qualifies). Defaults to in-memory storage.',
     },
     {
-      name: 'NamedViews',
-      type: 'API',
-      description: 'list() · save(name) · load(name) · remove(name) · rename(from, to) · has(name). save() overwrites a duplicate name; load()/remove()/rename() return false for unknown names.',
-      example: `views.list().map((v) => v.name)`,
-    },
-    {
       name: 'memoryViews(initial?) / localStorageViews(key)',
       type: '() => ViewStorage',
       description: 'Built-in ViewStorage implementations. localStorageViews is SSR-safe (no-ops without localStorage). Implement { read(), write(views) } for a server-backed store.',
       example: `localStorageViews('grid:orders:views')`,
+    },
+    {
+      name: 'NamedViews',
+      type: 'API',
+      description: 'list() · save(name) · load(name) · remove(name) · rename(from, to) · has(name). save() overwrites a duplicate name; load()/remove()/rename() return false for unknown names.',
+      example: `views.list().map((v) => v.name)`,
     },
   ],
 }
@@ -3041,9 +3602,9 @@ const collab = createCollaboration({
 })`,
   props: [
     {
-      name: 'createCollaboration(options)',
-      type: '(options: CollaborationOptions) => Collaboration',
-      description: 'options: { user, transport, onPeersChange?, onRemoteEdit?, peerTimeoutMs? (default 15000) }.',
+      name: 'broadcastChannelTransport(name)',
+      type: '(name: string) => CollabTransport',
+      description: 'Built-in transport over BroadcastChannel - live across tabs of the same browser, no backend. No-ops where BroadcastChannel is unavailable.',
     },
     {
       name: 'Collaboration',
@@ -3052,14 +3613,14 @@ const collab = createCollaboration({
       example: `collab.sendEdit(row.id, 'status', 'shipped')`,
     },
     {
-      name: 'broadcastChannelTransport(name)',
-      type: '(name: string) => CollabTransport',
-      description: 'Built-in transport over BroadcastChannel - live across tabs of the same browser, no backend. No-ops where BroadcastChannel is unavailable.',
-    },
-    {
       name: 'CollabTransport',
       type: '{ post(msg); subscribe(handler): () => void }',
       description: 'Implement this over any channel (WebSocket, WebRTC, Supabase Realtime, ...) to collaborate across machines.',
+    },
+    {
+      name: 'createCollaboration(options)',
+      type: '(options: CollaborationOptions) => Collaboration',
+      description: 'options: { user, transport, onPeersChange?, onRemoteEdit?, peerTimeoutMs? (default 15000) }.',
     },
   ],
 }
@@ -3082,12 +3643,6 @@ const fmt = resolveCellFormat(value, row, 'score', [
 ], stat)`,
   props: [
     {
-      name: 'resolveCellFormat(value, row, columnId, formats, stat)',
-      type: '(...) => ResolvedCellFormat',
-      description: 'Apply the matching ConditionalFormat specs to one cell. Returns { background?, color?, fontWeight?, dataBar?, icon?, iconOnly? } to spread onto the cell.',
-      example: `const { background, color } = resolveCellFormat(v, row, 'total', formats, stat)`,
-    },
-    {
       name: 'computeColumnStat(values)',
       type: '(values: Iterable<unknown>) => { min, max } | null',
       description: 'Compute a column\'s numeric min/max once, then pass it to resolveCellFormat for color scales and data bars.',
@@ -3103,6 +3658,12 @@ const fmt = resolveCellFormat(value, row, 'score', [
       type: '(a, b, t) => string · (bg) => string | null',
       description: 'lerpColor interpolates two hex colors (t in 0..1); contrastText returns black or white for legible text on bg.',
       example: `lerpColor('#fee2e2', '#16a34a', 0.5)`,
+    },
+    {
+      name: 'resolveCellFormat(value, row, columnId, formats, stat)',
+      type: '(...) => ResolvedCellFormat',
+      description: 'Apply the matching ConditionalFormat specs to one cell. Returns { background?, color?, fontWeight?, dataBar?, icon?, iconOnly? } to spread onto the cell.',
+      example: `const { background, color } = resolveCellFormat(v, row, 'total', formats, stat)`,
     },
   ],
 }
@@ -3123,15 +3684,15 @@ const excelFilterSection: ApiSection = {
       example: `applyExcelFilter(row.city, { id: 'city', operator: 'contains', value: 'cafe' }, { locale: 'fr' })`,
     },
     {
+      name: 'ExcelFilterOperator',
+      type: 'type',
+      description: '"contains" | "equals" | "startsWith" | "greaterThan" | "lessThan" | "between" | "isBlank".',
+    },
+    {
       name: 'normalizeForFilter(s, locale?)',
       type: '(s: string, locale?: string | string[]) => string',
       description: 'Diacritic-stripping, locale-aware lowercasing used for accent-insensitive matching.',
       example: `normalizeForFilter('Tōkyō') // -> 'tokyo'`,
-    },
-    {
-      name: 'ExcelFilterOperator',
-      type: 'type',
-      description: '"contains" | "equals" | "startsWith" | "greaterThan" | "lessThan" | "between" | "isBlank".',
     },
   ],
 }
@@ -3146,10 +3707,9 @@ const editorHelpersSection: ApiSection = {
   ],
   props: [
     {
-      name: 'parseEditorValue(type, value, opts?)',
-      type: '(type: CellEditorType, value: unknown, opts?: { multiple?: boolean }) => unknown',
-      description: 'Coerce a raw editor value: number -> number|null, checkbox -> boolean, list/chips -> array when opts.multiple, etc.',
-      example: `parseEditorValue('number', '42') // -> 42`,
+      name: 'CellEditorType',
+      type: 'type',
+      description: '"text" | "number" | "date" | "datetime" | "time" | "password" | "checkbox" | "list" | "chips" | "select" | "rich-select" | "textarea" | "color" | "rating".',
     },
     {
       name: 'normalizeEditorOptions(options)',
@@ -3158,9 +3718,10 @@ const editorHelpersSection: ApiSection = {
       example: `normalizeEditorOptions(['low', 'high']) // -> [{ value: 'low', label: 'low' }, ...]`,
     },
     {
-      name: 'CellEditorType',
-      type: 'type',
-      description: '"text" | "number" | "date" | "datetime" | "time" | "password" | "checkbox" | "list" | "chips" | "select" | "rich-select" | "textarea" | "color" | "rating".',
+      name: 'parseEditorValue(type, value, opts?)',
+      type: '(type: CellEditorType, value: unknown, opts?: { multiple?: boolean }) => unknown',
+      description: 'Coerce a raw editor value: number -> number|null, checkbox -> boolean, list/chips -> array when opts.multiple, etc.',
+      example: `parseEditorValue('number', '42') // -> 42`,
     },
   ],
 }
@@ -3268,4 +3829,85 @@ export function memberHeading(category: string): string {
     default:
       return 'Properties'
   }
+}
+
+/**
+ * Sub-grouping for the two large sections so their long member lists read as
+ * labeled clusters instead of one flat alphabetical run. The Api page renders a
+ * subheader per group (members alpha-sorted within each); any member not listed
+ * here falls into a trailing "Other" group. Match is by the member's base name
+ * (the method name before its "(", and the first of a "a() / b()" pair), so the
+ * imperative-api entries below use bare method names.
+ */
+export const MEMBER_GROUPS: Record<string, { label: string; members: string[] }[]> = {
+  'svgrid-component': [
+    { label: 'Data', members: ['data', 'columns', 'features', 'getRowId', 'inferColumnTypes', 'loading', 'error', 'emptyMessage'] },
+    { label: 'Capability shortcuts', members: ['sortable', 'filterable', 'editable', 'groupable', 'pageable'] },
+    { label: 'Columns', members: ['columnMenuTabs', 'columnOrder', 'columnWidth', 'enableColumnReorder', 'fitColumns', 'initialColumnPinning', 'toolPanel', 'toolPanelDefaultOpen', 'toolPanelDefaultTab'] },
+    { label: 'Rows & cells', members: ['rowHeight', 'headerHeight', 'rowNumberWidth', 'showRowNumbers', 'pinnedTopRows', 'pinnedBottomRows', 'isDetailRow', 'renderDetailRow', 'rowClass', 'conditionalFormats', 'contextMenu', 'notes', 'rowDragManaged', 'rowDragGroup'] },
+    { label: 'Selection & clipboard', members: ['selectionMode', 'showRowSelection', 'enableCellSelection', 'copyHeadersToClipboard', 'processCellForClipboard'] },
+    { label: 'Editing', members: ['enableInlineEditing', 'fullRowEditing', 'editableComments'] },
+    { label: 'Filtering & search', members: ['filterMode', 'showGlobalFilter', 'showColumnFilters', 'showFilterMenu', 'showFilterRow', 'filterLocale', 'externalFilter'] },
+    { label: 'Sorting, grouping & summaries', members: ['showGroupingControls', 'externalSort', 'enableRowSummaries'] },
+    { label: 'Pagination', members: ['showPagination', 'pageSize'] },
+    { label: 'Styling & layout', members: ['zebraRows', 'containerHeight', 'alignedGridGroup', 'statusBar', 'loadingOverlay', 'loadingSkeletonRows'] },
+    { label: 'Virtualization', members: ['virtualization', 'overscan', 'columnVirtualization', 'columnOverscan'] },
+  ],
+  'imperative-api': [
+    { label: 'Cell values & editing', members: ['getCellValue', 'setCellValue', 'startEditing', 'stopEditing'] },
+    { label: 'Rows', members: ['addRow', 'addRows', 'removeRow', 'removeRows', 'applyTransaction'] },
+    { label: 'Selection', members: ['selectCells', 'getSelected', 'selectRows', 'selectAllRows', 'getSelectedRows', 'clearRowSelection'] },
+    { label: 'Sorting & grouping', members: ['setSort', 'clearSort', 'setGroupBy', 'setRowExpanded', 'expandAllGroups', 'collapseAllGroups'] },
+    { label: 'Filtering & find', members: ['setFilter', 'setFacetFilter', 'clearFilter', 'clearAllFilters', 'getFilters', 'openFind', 'setFindQuery', 'getFindHits'] },
+    { label: 'Columns', members: ['addColumn', 'addColumns', 'removeColumn', 'setColumnVisible', 'isColumnVisible', 'getColumns', 'setColumnWidth', 'getColumnWidths', 'autosizeColumn', 'autosizeAllColumns', 'setColumnPinning', 'getColumnPinning', 'setColumnOrder'] },
+    { label: 'History', members: ['undo', 'redo', 'canUndo', 'canRedo', 'clearHistory'] },
+    { label: 'Pagination', members: ['getPageInfo', 'setPage', 'setPageSize'] },
+    { label: 'Navigation & scroll', members: ['scrollToRow', 'getActiveCell'] },
+    { label: 'Data & state', members: ['getData', 'getDisplayedRows', 'getState', 'refresh'] },
+  ],
+  events: [
+    { label: 'Selection', members: ['onRowSelectionChange', 'onCellSelectionChange', 'onActiveCellChange'] },
+    { label: 'Editing', members: ['onCellValueChange', 'onNoteChange'] },
+    { label: 'Sorting & filtering', members: ['onSortingChange', 'onFiltersChange'] },
+    { label: 'Interaction', members: ['onCellClick', 'onCellDoubleClick'] },
+    { label: 'Columns & rows', members: ['onColumnOrderChange', 'onRowDragEnd'] },
+    { label: 'Lifecycle', members: ['onApiReady', 'onScrollBottomReached'] },
+  ],
+}
+
+/**
+ * Per-group "related links": the docs guide and the gallery demo most relevant
+ * to a group of members. The Api page shows these as small Docs / Demo links on
+ * each member row, connecting the dry reference to prose help + a runnable demo.
+ * Keyed by `${sectionId}::${groupLabel}`. `docs` is a docs route slug
+ * (-> /docs/<slug>); `demo` is a gallery demo id (-> /demos/<id>).
+ */
+export const GROUP_LINKS: Record<string, { docs?: string; demo?: string }> = {
+  'svgrid-component::Data': { docs: 'help/rows/row-data', demo: '01-quick-start' },
+  'svgrid-component::Capability shortcuts': { demo: '135-shortcut-config' },
+  'svgrid-component::Columns': { docs: 'help/columns/column-definitions', demo: '54-columns-hierarchy' },
+  'svgrid-component::Rows & cells': { docs: 'help/rows/row-data', demo: '107-pinned-rows' },
+  'svgrid-component::Selection & clipboard': { demo: '04-selection-copy-paste' },
+  'svgrid-component::Editing': { docs: 'help/editing/overview', demo: '05-inline-editing' },
+  'svgrid-component::Filtering & search': { docs: 'help/filtering/overview', demo: '03-excel-filters' },
+  'svgrid-component::Sorting, grouping & summaries': { docs: 'help/grouping-aggregation', demo: '07-grouping-aggregation' },
+  'svgrid-component::Pagination': { docs: 'help/rows/row-pagination', demo: '02-sort-filter-paginate' },
+  'svgrid-component::Styling & layout': { docs: 'help/tokens', demo: '37-theming-studio' },
+  'svgrid-component::Virtualization': { demo: '06-large-dataset' },
+
+  'imperative-api::Cell values & editing': { docs: 'help/editing/overview', demo: '05-inline-editing' },
+  'imperative-api::Rows': { docs: 'help/rows/transactions', demo: '145-transaction-api' },
+  'imperative-api::Selection': { demo: '90-selection-api' },
+  'imperative-api::Sorting & grouping': { docs: 'help/grouping-aggregation', demo: '07-grouping-aggregation' },
+  'imperative-api::Filtering & find': { docs: 'help/filtering/filter-api', demo: '87-find-in-grid' },
+  'imperative-api::Columns': { docs: 'help/columns/column-state', demo: '63-column-layout-api' },
+  'imperative-api::History': { docs: 'help/editing/undo-redo', demo: '86-undo-redo' },
+  'imperative-api::Pagination': { docs: 'help/rows/row-pagination', demo: '113-cursor-pagination' },
+  'imperative-api::Data & state': { docs: 'help/state-maintenance', demo: '55-state-maintenance' },
+
+  'events::Selection': { demo: '90-selection-api' },
+  'events::Editing': { docs: 'help/editing/saving-values', demo: '24-validation' },
+  'events::Sorting & filtering': { docs: 'help/filtering/filter-api' },
+  'events::Interaction': { demo: '67-context-menu' },
+  'events::Columns & rows': { docs: 'help/rows/row-dragging', demo: '105-row-reorder' },
 }

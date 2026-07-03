@@ -90,33 +90,48 @@
   100% { background-position: -200% 0; }
 }
 
-.sv-grid-tool-panel-toggle {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 21;
+/* Grid toolbar strip above the shell - hosts the tool-panel trigger (and is a
+   natural home for future grid-level actions). */
+.sv-grid-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px;
+}
+.sv-grid-toolbar-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
+  gap: 6px;
+  padding: 6px 12px;
   border: 1px solid var(--sg-border, #e2e8f0);
   border-radius: var(--sg-radius, 6px);
   background: var(--sg-bg, #fff);
-  color: var(--sg-muted, #64748b);
+  color: var(--sg-fg, #0f172a);
+  font-size: 12.5px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
-.sv-grid-tool-panel-toggle:hover,
-.sv-grid-tool-panel-toggle.is-open {
-  color: var(--sg-accent, #2563eb);
+.sv-grid-toolbar-btn:hover {
   border-color: var(--sg-accent, #2563eb);
+  color: var(--sg-accent, #2563eb);
+}
+.sv-grid-toolbar-btn.is-active {
+  background: var(--sg-accent, #2563eb);
+  border-color: var(--sg-accent, #2563eb);
+  color: #fff;
 }
 .sv-grid-tool-panel {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  z-index: 20;
+  /* Above the grid's sticky header (z-index 30) and custom scrollbars (z ~900)
+     so the docked panel fully overlays the grid instead of the header/right
+     columns bleeding through its top-right. Ties the menu layer (901) but the
+     menus render later in the DOM, so a column menu opened over the panel still
+     wins. */
+  z-index: 901;
   width: 250px;
   display: flex;
   flex-direction: column;
@@ -204,6 +219,83 @@
 .sv-grid-tool-panel-btn:disabled {
   opacity: 0.35;
   cursor: default;
+}
+/* Tool-panel tab bar (Columns | Filters) */
+.sv-grid-tool-panel-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 6px 0;
+  border-bottom: 1px solid var(--sg-border, #e2e8f0);
+}
+.sv-grid-tool-panel-tab {
+  flex: 1;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--sg-muted, #64748b);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sv-grid-tool-panel-tab:hover {
+  color: var(--sg-fg, #0f172a);
+}
+.sv-grid-tool-panel-tab.is-active {
+  color: var(--sg-accent, #2563eb);
+  border-bottom-color: var(--sg-accent, #2563eb);
+}
+/* Filters tab: one control block per filterable column */
+.sv-grid-tool-panel-filters {
+  padding: 6px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sv-grid-tp-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: 6px;
+}
+.sv-grid-tp-filter.is-filtered {
+  border-color: var(--sg-accent, #2563eb);
+}
+.sv-grid-tp-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sv-grid-tp-filter-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sg-fg, #0f172a);
+}
+.sv-grid-tp-filter-clear {
+  border: 0;
+  background: transparent;
+  color: var(--sg-muted, #64748b);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.sv-grid-tp-filter-clear:hover {
+  color: var(--sg-accent, #2563eb);
+}
+.sv-grid-tp-filter-op,
+.sv-grid-tp-filter-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  font-size: 12px;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: 5px;
+  background: var(--sg-bg, #fff);
+  color: var(--sg-fg, #0f172a);
 }
 /* Root wrapper fill mode: only takes effect when consumer passes
  * containerHeight='100%'. The shell becomes a flex item that expands
@@ -459,6 +551,48 @@
 .sv-grid-column.is-drag-target-after::after   { right: -2px; }
 @keyframes sg-drop-pulse { from { opacity: 0.55; } to { opacity: 1; } }
 
+/* Managed row dragging ----------------------------------------------------- */
+/* The whole row is the drag source; the row-number cell shows a grip so the
+ * affordance is discoverable. Pair `rowDragManaged` with `showRowNumbers` for
+ * the grip; without row numbers the grab cursor still hints it. */
+.sv-grid-row-draggable { cursor: grab; }
+.sv-grid-row-draggable:active { cursor: grabbing; }
+.sv-grid-row-draggable .sv-grid-row-number-cell {
+  position: relative;
+  padding-left: 14px;
+}
+.sv-grid-row-draggable .sv-grid-row-number-cell::before {
+  content: "\2807"; /* braille grip glyph */
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--sg-muted, #94a3b8);
+  opacity: 0.4;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+.sv-grid-row-draggable:hover .sv-grid-row-number-cell::before { opacity: 1; }
+
+/* Default highlight for an external drop zone (use:rowDropZone) while a
+   matching row is dragged over it. Consumers can override the class. */
+.sv-grid-row-dropzone-over {
+  outline: 2px dashed var(--sg-accent, #6366f1);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent);
+}
+
+/* Drop indicator: a glowing line on the row's top (before) or bottom (after)
+ * edge. Painted on the cells so it spans the full row across table layouts. */
+.sv-grid-row-drop-before > td {
+  box-shadow: inset 0 2px 0 0 var(--sg-accent, #6366f1);
+}
+.sv-grid-row-drop-after > td {
+  box-shadow: inset 0 -2px 0 0 var(--sg-accent, #6366f1);
+}
+
 /* Pinned rows (top / bottom). Each cell sticks individually so the
  * row tracks scroll on every browser. Top rows stick below the sticky
  * thead via --sg-thead-h; bottom rows stick to the bottom of the
@@ -513,6 +647,34 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* Collapse toggle on a collapsible column group header. */
+.sv-grid-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+.sv-grid-group-toggle:hover {
+  background: color-mix(in srgb, var(--sg-accent, #2563eb) 12%, transparent);
+  color: var(--sg-accent, #2563eb);
+}
+.sv-grid-group-caret {
+  flex-shrink: 0;
+  transition: transform 140ms ease;
+}
+/* Collapsed: point the caret right (like a closed disclosure). */
+.sv-grid-group-toggle.is-collapsed .sv-grid-group-caret {
+  transform: rotate(-90deg);
 }
 
 .sv-grid-foot {
@@ -685,6 +847,23 @@
     background-color 120ms ease;
 }
 
+/* Full-row editor: inline editors shown for every editable cell of a row
+   in full-row edit. Fill the cell so the row reads as a form line. */
+.sv-grid-fr-editor {
+  width: 100%;
+  box-sizing: border-box;
+}
+select.sv-grid-fr-editor {
+  height: 100%;
+  min-height: 26px;
+}
+.sv-grid-fr-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--sg-accent, #3b82f6);
+  cursor: pointer;
+}
+
 /* Color editor - native HTML color input filling the cell so the
    swatch is clickable across the whole cell area, not just the tiny
    OS default size. */
@@ -757,6 +936,19 @@
 .sv-grid-checkbox-readonly {
   cursor: default;
   pointer-events: none;
+}
+
+/* Built-in cell flash (ColumnDef `cellFlash`). Theme-tinted fade; consumers
+   can pass their own class (e.g. up/down colouring) via `cellFlash.className`. */
+@keyframes sv-grid-cell-flash-kf {
+  0%   { background-color: var(--sg-cell-flash, color-mix(in oklab, var(--sg-accent, #3b82f6) 42%, transparent)); }
+  100% { background-color: transparent; }
+}
+.sv-grid-cell-flash {
+  animation: sv-grid-cell-flash-kf 0.7s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sv-grid-cell-flash { animation: none; }
 }
 
 .sv-grid-cell-active,
@@ -1325,6 +1517,32 @@
 .sv-grid-column-menu {
   width: 260px;
 }
+/* Column-menu tab bar (General / Filter / Columns). */
+.sv-grid-menu-tabs {
+  display: flex;
+  gap: 2px;
+  margin: -2px -2px 4px;
+  padding: 2px 2px 0;
+  border-bottom: 1px solid var(--sg-border, #e2e8f0);
+}
+.sv-grid-menu-tab {
+  flex: 1;
+  padding: 6px 6px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--sg-muted, #64748b);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sv-grid-menu-tab:hover {
+  color: var(--sg-fg, #0f172a);
+}
+.sv-grid-menu-tab.is-active {
+  color: var(--sg-accent, #2563eb);
+  border-bottom-color: var(--sg-accent, #2563eb);
+}
 
 .sv-grid-operator-menu {
   width: 184px;
@@ -1485,6 +1703,53 @@
   border: 1px solid var(--sg-input-border, #cbd5e1);
   border-radius: 5px;
   font: inherit;
+}
+
+/* Multi-condition filter: AND/OR join toggle + add-condition button. */
+.sv-grid-menu-add-cond {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--sg-accent, #3b82f6);
+  background: transparent;
+  border: 1px dashed var(--sg-border, #cbd5e1);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.sv-grid-menu-add-cond:hover {
+  background: color-mix(in oklab, var(--sg-accent, #3b82f6) 8%, transparent);
+  border-style: solid;
+}
+.sv-grid-menu-join {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 2px 0;
+}
+.sv-grid-menu-join button {
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sg-muted, #64748b);
+  background: transparent;
+  border: 1px solid var(--sg-border, #cbd5e1);
+  cursor: pointer;
+}
+.sv-grid-menu-join button:first-child { border-radius: 5px 0 0 5px; }
+.sv-grid-menu-join button:nth-child(2) { border-radius: 0; border-left: 0; }
+.sv-grid-menu-join button.is-on {
+  background: var(--sg-accent, #3b82f6);
+  color: #fff;
+  border-color: var(--sg-accent, #3b82f6);
+}
+.sv-grid-menu-join-x {
+  margin-left: auto;
+  border-radius: 5px !important;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 7px !important;
 }
 
 .sv-grid-facet-list {

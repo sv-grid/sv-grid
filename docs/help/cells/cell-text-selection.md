@@ -45,6 +45,23 @@ To copy *just the displayed text* of a single cell without entering range
 selection, switch to a `selectionMode="row"` and use the row checkbox
 column + `Ctrl/Cmd+C` to copy entire rows.
 
+Multiple ranges (Ctrl/Cmd+drag to add rectangles) all copy together, stacked as
+separate TSV blocks.
+
+### Copy with headers / transform on copy
+
+```svelte
+<SvGrid
+  {data} {columns}
+  copyHeadersToClipboard          <!-- prepend the column labels to each copied range -->
+  processCellForClipboard={({ value, columnId }) =>
+    columnId === 'salary' ? String(value).replace(/[$,]/g, '') : value}
+/>
+```
+
+`processCellForClipboard` runs per cell on its way to the clipboard - strip
+currency symbols, expand codes to labels, redact, etc.
+
 ## Gotchas
 
 - A grid in `selectionMode='cell'` swallows mouse selection inside cells -

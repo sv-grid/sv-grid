@@ -6,7 +6,7 @@ issue.
 
 ## A
 
-**Accessor.** A function on a `ColumnDef` (`accessorFn`) that computes
+**Accessor.** A function on a `ColumnDef` (`fieldFn`) that computes
 a cell value from the row instead of reading a property by `field`.
 Used heavily by pivot tables and computed columns.
 
@@ -31,7 +31,7 @@ cell value (sum, avg, count, min, max, custom). Used by
 state.
 
 **Column definition (`ColumnDef`).** The plain object that describes
-one column: how to read its value (`field` / `accessorFn`), how to
+one column: how to read its value (`field` / `fieldFn`), how to
 render it (`cell`, `header`), and which features apply (`editable`,
 `format`, `editorType`). See [Column definitions](./columns/column-definitions.md).
 
@@ -74,7 +74,7 @@ via `tableFeatures({...})`. Examples: `rowSortingFeature`,
 is normal.
 
 **Field.** The row property a column reads + writes by default. A
-shortcut for `accessorFn: (row) => row[field]`. When you can use
+shortcut for `fieldFn: (row) => row[field]`. When you can use
 `field`, prefer it - the engine has a fast path for property-keyed
 columns.
 

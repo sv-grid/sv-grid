@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-06-30 from 198 pages.
+Generated 2026-07-03 from 207 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -1548,7 +1548,7 @@ const columns: ColumnDef<{}, Person>[] = [
   {
     id: 'fullName',
     header: 'Full name',
-    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+    fieldFn: (row) => `${row.firstName} ${row.lastName}`,
   },
 
   // Numeric with locale-aware formatting
@@ -1586,8 +1586,8 @@ const columns: ColumnDef<{}, Person>[] = [
 | Property | Purpose |
 | --- | --- |
 | `field` | Reads `row[key]`. |
-| `accessorFn` | Computes the value from the row. |
-| `id` | Stable column id (required if you use `accessorFn`). |
+| `fieldFn` | Computes the value from the row. |
+| `id` | Stable column id (required if you use `fieldFn`). |
 | `header` | String or render snippet for the header. |
 | `footer` | String or render snippet for the footer row. |
 | `cell` | Render snippet/component for the body cell. |
@@ -2524,7 +2524,7 @@ const columns: ColumnDef<{}, Person>[] = [
   {
     id: 'fullName',
     header: 'Full name',
-    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+    fieldFn: (row) => `${row.firstName} ${row.lastName}`,
   },
 
   // Numeric, with locale-aware formatting
@@ -2562,8 +2562,8 @@ const columns: ColumnDef<{}, Person>[] = [
 | Property      | Purpose                                                                                                  |
 | ------------- | -------------------------------------------------------------------------------------------------------- |
 | `field`       | Reads `row[key]`.                                                                                        |
-| `accessorFn`  | Computes the value from the row. Required when there's no underlying field.                              |
-| `id`          | Stable column id. Required when you use `accessorFn` (no field to derive from).                          |
+| `fieldFn`  | Computes the value from the row. Required when there's no underlying field.                              |
+| `id`          | Stable column id. Required when you use `fieldFn` (no field to derive from).                          |
 | `header`      | String or render snippet for the header.                                                                 |
 | `footer`      | String or render snippet for the footer row.                                                             |
 | `cell`        | Render snippet / component for the body cell. See [Cell components](../help/cells/cell-components.md).   |
@@ -2603,7 +2603,7 @@ For anything beyond a stringified value, render with `renderSnippet`:
     {
       id: 'person',
       header: 'Person',
-      accessorFn: (r) => `${r.firstName} ${r.lastName}`,
+      fieldFn: (r) => `${r.firstName} ${r.lastName}`,
       cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
     },
     { field: 'age', header: 'Age' },
@@ -4275,202 +4275,6 @@ calls; the AI helpers send exactly the prompt you construct to the adapter you
 configure, so you control what leaves the browser.
 
 <!-- =================================================================
-     /help/api-reference  (community)
-     ================================================================== -->
-
-# API reference
-
-A flat index of every Stable export. Each entry links to the topic
-page that covers it in depth. For the formal TypeScript shapes,
-inspect the `.d.ts` files in `node_modules/@svgrid/grid/dist` -
-they're the source of truth and ship with full JSDoc.
-
-> The "Tier" column reflects the badges from
-> [API stability](./api-stability.md). Anything not listed here is
-> Internal and may move under your feet.
-
-## @svgrid/grid
-
-### Components
-
-| Export                | Tier         | What it is                                                                                     |
-| --------------------- | ------------ | ---------------------------------------------------------------------------------------------- |
-| `SvGrid`              | Stable       | The render component. See [Getting Started §1](../getting-started.md#1-your-first-grid-in-60-seconds). |
-| `FlexRender`          | Stable       | Helper for rendering `cell` / `header` / `footer` templates inside custom UIs.                  |
-
-### Engine
-
-| Export                | Tier         | What it is                                                                                    |
-| --------------------- | ------------ | --------------------------------------------------------------------------------------------- |
-| `createSvGrid`        | Stable       | Build a headless grid instance; the `<SvGrid>` component is a thin wrapper around this.       |
-| `tableFeatures`       | Stable       | Bundle features (sorting, filtering, ...) into a single typed object for use in column generics. |
-| `createGridState`     | Stable       | Controlled-state helper that returns a `[get, set]` pair compatible with Svelte's `$state`.   |
-
-### Features (row models)
-
-| Export                       | Tier   | Enables                                          |
-| ---------------------------- | ------ | ------------------------------------------------ |
-| `rowSortingFeature`          | Stable | Column-header click to sort, programmatic sort.  |
-| `columnFilteringFeature`     | Stable | Per-column filters (operator + value + menu).    |
-| `rowSelectionFeature`        | Stable | Single + multi row selection with checkboxes.    |
-| `columnGroupingFeature`      | Stable | Multi-level column header groups.                |
-| `rowExpandingFeature`        | Stable | Expand / collapse rows (master-detail, trees).   |
-
-### Imperative API (`SvGridApi`)
-
-Reached via `<SvGrid onApiReady={(api) => /* ... */}>`. Every method
-is Stable.
-
-| Method                              | Purpose                                                            |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| `getCellValue(rowIndex, columnId)`  | Read a cell value.                                                 |
-| `setCellValue(rowIndex, columnId, v)` | Write a cell value, runs through the same write pipeline as inline edit. |
-| `addRow(row, position?)`            | Insert one row at top / bottom / numeric index.                    |
-| `addRows(rows, position?)`          | Bulk insert.                                                       |
-| `removeRow(rowIndex)`               | Remove one row by data-array index.                                |
-| `removeRows(rowIndices)`            | Bulk remove.                                                       |
-| `addColumn(column, position?)`      | Insert one column at left / right / numeric index.                 |
-| `addColumns(columns, position?)`    | Bulk insert.                                                       |
-| `removeColumn(columnId)`            | Remove one column by id (or field).                                |
-| `setColumnVisible(columnId, visible)` / `isColumnVisible(columnId)` | Column visibility.                              |
-| `setSort(columnId, dir)` / `clearSort()` | Programmatic sort.                                            |
-| `setGroupBy(columnIds)`             | Set the group-by columns.                                          |
-| `setFilter(columnId, filter)` / `clearFilter(columnId)` / `clearAllFilters()` | Programmatic filtering.        |
-| `getFilters()`                      | Snapshot the active column-menu filters.                           |
-| `getDisplayedRows()`                | Snapshot the currently displayed rows (after filter/sort/page).    |
-| `getData()`                         | Snapshot the raw `data` prop.                                      |
-| `clearRowSelection()`               | Untick every selected row.                                         |
-
-### Column definition (`ColumnDef`)
-
-| Property            | Tier   | Notes                                                                |
-| ------------------- | ------ | -------------------------------------------------------------------- |
-| `id`                | Stable | Use when no `field` (e.g. computed columns).                         |
-| `field`             | Stable | Row property the cell reads + writes by default.                     |
-| `accessorFn`        | Stable | Replace the `field`-based read with a function. Used heavily by pivot. |
-| `header`            | Stable | String or a render template.                                         |
-| `footer`            | Stable | Same shape as header.                                                |
-| `cell`              | Stable | Custom cell render template.                                         |
-| `columns`           | Stable | Nested children → multi-row header groups.                           |
-| `editorType`        | Stable | `'text'` / `'number'` / `'date'` / `'datetime'` / `'checkbox'` / `'list'` / `'chips'`. |
-| `editorOptions`     | Stable | Option list for `list` + `chips` editors. Static array or `(row) => array`. |
-| `editorMultiple`    | Stable | Allow multi-select on `list` / `chips`.                              |
-| `editorSeparator`   | Stable | Join character for multi-value display.                              |
-| `editable`          | Stable | `boolean | (ctx) => boolean` - per-column or per-cell gate.          |
-| `format`            | Stable | Built-in formatter (`number` / `currency` / `percent` / `date`).     |
-| `formatter`         | Stable | Free-form formatter callback.                                        |
-| `width`             | Stable | Pixel width (default falls back to grid's `columnWidth`).            |
-
-### Types
-
-| Export                | Tier   | Purpose                                                              |
-| --------------------- | ------ | -------------------------------------------------------------------- |
-| `ColumnDef`           | Stable | Column definition shape (see table above).                           |
-| `CellContext`         | Stable | The `ctx` object passed to `cell` / `editable` / `formatter`.        |
-| `HeaderContext`       | Stable | The `ctx` object passed to `header` / `footer`.                      |
-| `Row` / `Cell` / `Column` / `Header` / `HeaderGroup` | Stable | Engine objects you can read inside templates. |
-| `SvGridApi`           | Stable | The imperative API shape (every method above is on this interface).  |
-| `RowData`             | Stable | Alias for `Record<string, unknown>`; the row shape constraint.       |
-| `TableFeatures`       | Stable | The shape of the bag `tableFeatures()` returns.                      |
-
-### Static utilities
-
-Re-exports from `'@svgrid/grid/static-functions'` for use outside
-a Svelte 5 component:
-
-| Export                       | Tier   | What it is                                              |
-| ---------------------------- | ------ | ------------------------------------------------------- |
-| `sortRows(rows, sorting)`    | Stable | Pure sort helper. Same comparator the grid uses.        |
-| `filterRows(rows, filters)`  | Stable | Pure filter helper.                                     |
-| `groupRows(rows, groupBy, aggregators)` | Stable | Pure group-and-aggregate helper.            |
-| `getDisplayedRows(rows, state)` | Stable | One-shot pipeline (filter → sort → group → page).    |
-
-## @svgrid/enterprise
-
-### Installation
-
-| Export       | Tier   | What it is                                                                                 |
-| ------------ | ------ | ------------------------------------------------------------------------------------------ |
-| `installEnterprise(api)` | Stable | Augments a `SvGridApi` with `exportData`, `print`, `importData`, and `ai.*`.          |
-| `EnterpriseGridApi`      | Stable | The post-install API shape.                                                          |
-
-### License
-
-| Export              | Tier   | Purpose                                                       |
-| ------------------- | ------ | ------------------------------------------------------------- |
-| `setLicenseKey(s)`  | Stable | Register a key at startup.                                    |
-| `clearLicenseKey()` | Stable | Tear down the key on logout, etc.                             |
-| `getLicenseKey()`   | Stable | Inspect the current key (returns `null` when unset).          |
-| `isLicenseKeySet()` | Stable | Boolean for "any key registered".                             |
-| `hasValidLicense()` | Stable | Boolean for "key passes prefix + revocation check".           |
-| `assertEnterpriseLicensed()` | Stable | Throws on a malformed / revoked key, soft-warns when unset. |
-| `dismissUnlicensedNudge()` | Stable | Suppress the console one-time nudge.                   |
-
-### Export + print
-
-| Export                   | Tier   | Purpose                                                              |
-| ------------------------ | ------ | -------------------------------------------------------------------- |
-| `exportGrid(api, opts)`  | Stable | Same as `api.exportData(opts)` for use without `installEnterprise`.         |
-| `printGrid(api, opts?)`  | Stable | Same as `api.print(opts)`.                                           |
-| `ExportFormat`           | Stable | `'xlsx' | 'pdf' | 'csv' | 'tsv' | 'html'`.                          |
-| `ExportOptions` / `ExportColumn` | Stable | Option shape (see [Data export and printing](./export.md)).  |
-| `PrintOptions`           | Stable | Option shape.                                                        |
-
-### Import
-
-| Export                | Tier                          | Purpose                                                  |
-| --------------------- | ----------------------------- | -------------------------------------------------------- |
-| `importData(api, opts)` | Stable, accepting feedback | Same as `api.importData(opts)`.                          |
-| `ImportFormat`        | Stable, accepting feedback    | `'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'`.              |
-| `ImportOptions<T>`    | Stable, accepting feedback    | File + format + column map + validator + commit options. |
-| `ImportResult<T>`     | Stable, accepting feedback    | `{ headers, rows, errors, skipped, total, format }`.     |
-| `ImportColumnMap`     | Stable, accepting feedback    | `Record<sourceHeader, targetField | null>`.              |
-| `ImportRowError`      | Stable, accepting feedback    | `{ rowIndex, field, message }`.                          |
-| `ImportValidator<T>`  | Stable, accepting feedback    | `(row, i) => Array<{ field, message }>`.                 |
-
-### AI assistant
-
-| Export                | Tier                       | Purpose                                                                   |
-| --------------------- | -------------------------- | ------------------------------------------------------------------------- |
-| `setAIProvider(fn)`   | Stable, accepting feedback | Register the BYO model adapter.                                           |
-| `getAIProvider()` / `hasAIProvider()` | Stable, accepting feedback | Inspect registration.                                          |
-| `mockAIProvider`      | Experimental               | Deterministic canned shapes per task; for demos + tests only.             |
-| `AIProvider`          | Stable, accepting feedback | `(req: AIRequest) => Promise<string>`.                                    |
-| `AIRequest`           | Stable, accepting feedback | `{ prompt, responseFormat, signal, task, maxOutputTokens }`.              |
-| `AITask`              | Stable, accepting feedback | `'filter' | 'smart-fill' | 'summarize' | 'classify'`.                    |
-| `aiFilter`            | Stable, accepting feedback | NL query → filter/sort plan (with optional `apply`).                      |
-| `AIFilterOptions` / `AIFilterResult` / `AIFilterClause` / `AISortClause` | Stable, accepting feedback | Shapes.                  |
-| `aiSmartFill`         | Stable, accepting feedback | Examples → predicted values for empty cells.                              |
-| `AISmartFillOptions` / `AISmartFillResult` / `AISmartFillExample` | Stable, accepting feedback | Shapes.                |
-| `aiSummarize`         | Stable, accepting feedback | Row / selection / group / all → text + bullets + highlighted fields.      |
-| `AISummarizeOptions` / `AISummarizeTarget` / `AISummary` | Stable, accepting feedback | Shapes.                            |
-| `aiClassify`          | Stable, accepting feedback | Free-text cells → bucketed labels.                                        |
-| `AIClassifyOptions` / `AIClassifyResult` | Stable, accepting feedback | Shapes.                                       |
-
-## Subpath exports
-
-Both packages support fine-grained imports so you only pay for what
-you use:
-
-```ts
-import { setAIProvider } from '@svgrid/enterprise/ai'
-import { importData } from '@svgrid/enterprise/import'
-import { exportGrid } from '@svgrid/enterprise/export'
-import { printGrid } from '@svgrid/enterprise/print'
-```
-
-The `package.json` `exports` map lists the supported paths.
-
-## See also
-
-- [API stability](./api-stability.md) - what the tiers mean + semver
-  policy.
-- [Error reference](./errors.md) - every typed error this surface
-  throws.
-- [Testing and quality](./testing-and-quality.md) - the unit-test
-  coverage backing each entry above.
-
-<!-- =================================================================
      /help/api-stability  (community)
      ================================================================== -->
 
@@ -5210,7 +5014,7 @@ type CellContext<TData> = {
 }
 ```
 
-- `getValue()` - the accessed value (post-`field` / `accessorFn`).
+- `getValue()` - the accessed value (post-`field` / `fieldFn`).
 - `row.original` - the raw `TData` object.
 - `row.getAllCells()` - every cell in the row, for sibling reads.
 - `column.columnDef` - the original `ColumnDef`.
@@ -5276,6 +5080,43 @@ Even if you do not enable inline editing, set `editorType` so sort and
 filter behave correctly for the column's data type. A `number` column
 without `editorType` sorts as lexical strings.
 
+## `cellDataType` shorthand
+
+`cellDataType` is a higher-level alias that resolves to the right `editorType`,
+alignment, date `format`, and filter operators in one word - so you don't hand-set
+each:
+
+```ts
+const columns = [
+  { field: 'name',   cellDataType: 'text' },
+  { field: 'age',    cellDataType: 'number' },     // number editor, right-aligned, numeric filters
+  { field: 'active', cellDataType: 'boolean' },    // checkbox editor, centered
+  { field: 'joined', cellDataType: 'date' },       // Date values, `{ type: 'date' }` format
+  { field: 'due',    cellDataType: 'dateString' }, // ISO date STRINGS ('2026-06-27')
+]
+```
+
+| `cellDataType` | resolves to `editorType` | + format |
+| --- | --- | --- |
+| `text` | `text` | - |
+| `number` | `number` | - |
+| `boolean` | `checkbox` | - |
+| `date` | `date` | `{ type: 'date' }` |
+| `dateString` | `date` | - |
+
+Anything you set explicitly (`editorType`, `align`, `format`) always wins -
+`cellDataType` only fills the gaps.
+
+## Inferring types from the data
+
+Set `inferColumnTypes` on the grid and any column that declares **neither**
+`editorType` **nor** `cellDataType` has its type inferred from the first data
+row (number / boolean / `Date` / ISO date-string / text):
+
+```svelte
+<SvGrid {data} {columns} inferColumnTypes />
+```
+
 ## Built-in types
 
 | `editorType` | accepted value space |
@@ -5292,7 +5133,7 @@ There is no plug-in "register a new cell data type" API. To use a custom
 type:
 
 - Render with a custom `cell` (see [Cell components](./cell-components.md))
-- Sort with a custom value through `accessorFn` that normalises to a
+- Sort with a custom value through `fieldFn` that normalises to a
   comparable primitive
 - Filter with a custom operator UI in your own header component
 
@@ -5366,6 +5207,23 @@ newline).
 To copy *just the displayed text* of a single cell without entering range
 selection, switch to a `selectionMode="row"` and use the row checkbox
 column + `Ctrl/Cmd+C` to copy entire rows.
+
+Multiple ranges (Ctrl/Cmd+drag to add rectangles) all copy together, stacked as
+separate TSV blocks.
+
+### Copy with headers / transform on copy
+
+```svelte
+<SvGrid
+  {data} {columns}
+  copyHeadersToClipboard          <!-- prepend the column labels to each copied range -->
+  processCellForClipboard={({ value, columnId }) =>
+    columnId === 'salary' ? String(value).replace(/[$,]/g, '') : value}
+/>
+```
+
+`processCellForClipboard` runs per cell on its way to the clipboard - strip
+currency symbols, expand codes to labels, redact, etc.
 
 ## Gotchas
 
@@ -5476,7 +5334,7 @@ demo.
 # Expressions
 
 SvGrid does not ship a formula / expression language for cells. Computed
-values are JavaScript - either via `accessorFn` or inside a `cell`
+values are JavaScript - either via `fieldFn` or inside a `cell`
 callback.
 <div data-docs-demo="83-spreadsheet-formulas" data-height="540"></div>
 
@@ -5486,12 +5344,12 @@ callback.
 {
   id: 'totalCost',
   header: 'Total',
-  accessorFn: (row) => row.unitPrice * row.quantity,
+  fieldFn: (row) => row.unitPrice * row.quantity,
   format: { type: 'currency', currency: 'USD' },
 }
 ```
 
-`accessorFn` runs every time the row's value is needed (display, sort,
+`fieldFn` runs every time the row's value is needed (display, sort,
 filter, copy). The result is treated as a plain value of the resulting
 type, so `format` / `formatter` / `editorType` all apply.
 
@@ -5522,7 +5380,7 @@ The grid's row pipeline runs **per row** - it does not give you a hook for
 A spreadsheet-style formula language (cells like `=A1+B2`) is **not** in the
 SvGrid community build. There is no formula parser or formula editor. If you
 need spreadsheet-style cells, that's a separate library - wire its output
-into a column's `accessorFn`.
+into a column's `fieldFn`.
 
 ## See also
 
@@ -5546,13 +5404,13 @@ You get cell values in three ways depending on context.
 { field: 'firstName', header: 'First' }
 ```
 
-Use `accessorFn` for anything computed:
+Use `fieldFn` for anything computed:
 
 ```ts
 {
   id: 'fullName',
   header: 'Full name',
-  accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+  fieldFn: (row) => `${row.firstName} ${row.lastName}`,
 }
 ```
 
@@ -5612,9 +5470,28 @@ function valueByRowId(api: SvGridApi<{}, Person>, rowId: string, col: string) {
 
 # Highlighting changes
 
-There is no built-in "flash on change" highlight. You build it with a
-diff against a frozen snapshot of the data.
+## Built-in cell flash (`cellFlash`)
+
+Set `cellFlash` on a column and the grid flashes that cell whenever its value
+changes - edits, streaming feeds, server pushes. It is keyed by row identity,
+so scrolling a virtualized grid (which recycles `<td>` nodes) never triggers a
+false flash; only a same-row value change does. It respects
+`prefers-reduced-motion`.
+
+```ts
+{ field: 'price',  cellFlash: true }                              // default tint
+{ field: 'change', cellFlash: { className: 'flash-up-down' } }    // your own animation
+```
+
+The default flash fades a theme-tinted background (`--sg-cell-flash`, or the
+accent). For directional colouring (green up / red down) pass your own class
+and toggle it from a `cellClass` callback, or animate `flash-up-down` in CSS.
 <div data-docs-demo="11-stock-market" data-height="540"></div>
+
+## Rolling your own
+
+If you need more than a flash (persistent dirty markers, diff badges), you can
+still build it by hand with a diff against a frozen snapshot of the data.
 
 ## Dirty cells while editing
 
@@ -5966,7 +5843,7 @@ Its return value is what gets displayed and copied to the clipboard.
 
 When a column has both, the resolution order is:
 
-1. `field` / `accessorFn` produces the value
+1. `field` / `fieldFn` produces the value
 2. If `cell` is set, it renders - `format` / `formatter` are ignored
 3. Otherwise `formatter` runs if set
 4. Otherwise `format` runs if set
@@ -6592,6 +6469,50 @@ work afterward (~1-2 ms). Mutating the tree state at interactive rates
   - the reference implementation.
 
 <!-- =================================================================
+     /help/columns/aligned-grids  (community)
+     ================================================================== -->
+
+# Aligned grids
+
+Aligned grids are two or more independent `<SvGrid>` instances kept in lockstep:
+**horizontal scroll** and **column-resize widths** propagate between them. Use it
+for a budget-vs-actuals comparison, or a totals grid pinned under a body grid,
+where the columns must stay lined up.
+
+Give every grid in the set the same non-empty `alignedGridGroup`:
+
+```svelte
+<SvGrid data={budget}  columns={budgetCols}  alignedGridGroup="finance" />
+<SvGrid data={actuals} columns={actualCols} alignedGridGroup="finance" />
+```
+
+<div data-docs-demo="182-aligned-grids" data-height="520"></div>
+
+## What syncs
+
+- **Horizontal scroll** - scrolling one grid scrolls the others to the same
+  `scrollLeft`.
+- **Column widths** - resizing a column mirrors to the matching column (by `id`)
+  in every other grid in the group.
+
+Vertical scroll and selection stay independent (each grid owns its own rows).
+
+## Notes
+
+- Declare the **same columns** (matched by `id`, falling back to `field`) in each
+  grid so widths map one-to-one. Give each grid its **own** column-array
+  instance.
+- Only user resizes are mirrored; default and `fitColumns` widths already match
+  when the columns and container widths match.
+- Any number of grids can share a group; add/remove one and the rest keep
+  working. Groups are independent - use different strings for unrelated sets.
+
+## See also
+
+- [Column sizing](./column-sizing.md)
+- [Multi-grid sync](../../../examples/src/demos/70-multi-grid-sync.svelte) - sharing *data* (not layout) via `$state`
+
+<!-- =================================================================
      /help/columns/column-definitions  (community)
      ================================================================== -->
 
@@ -6622,23 +6543,23 @@ const columns: ColumnDef<{}, Person>[] = [
 
 | Property | Type | Purpose |
 | --- | --- | --- |
-| `id` | `string` | Stable column id. Required when you use `accessorFn` and no `field`. |
+| `id` | `string` | Stable column id. Required when you use `fieldFn` and no `field`. |
 | `field` | `keyof TData & string` | Reads `row[key]`. |
-| `accessorFn` | `(row) => unknown` | Computes the value. |
+| `fieldFn` | `(row) => unknown` | Computes the value. |
 | `header` | `string` \| `(ctx) => unknown` | String, or a function returning a `renderSnippet` / `renderComponent`. |
 | `cell` | `(ctx) => unknown` | Same shape as `header`, for body cells. |
 | `footer` | `string` \| `(ctx) => unknown` | Footer cell. |
 | `editorType` | `'text' \| 'number' \| 'date' \| 'datetime' \| 'checkbox'` | Inline editor type. |
 | `format` | `CellFormatConfig` | Built-in `number`, `currency`, `percent`, `date`, `datetime` formatters. |
-| `formatter` | `(ctx) => string` | Custom formatter - runs after `field` / `accessorFn`. |
+| `formatter` | `(ctx) => string` | Custom formatter - runs after `field` / `fieldFn`. |
 | `columns` | `ColumnDef[]` | Children - turns this column into a column **group**. |
 | `width` | `number` | Initial width in pixels (overrides the grid's `columnWidth`). |
 
 See [`packages/grid/src/core.ts`](../../../packages/grid/src/core.ts).
 
-## Accessor vs. accessorFn
+## Accessor vs. fieldFn
 
-`field` is the common case. Use `accessorFn` when the value is
+`field` is the common case. Use `fieldFn` when the value is
 computed or comes from a nested object:
 
 ```ts
@@ -6647,12 +6568,12 @@ const columns: ColumnDef<{}, Person>[] = [
   {
     id: 'fullName',
     header: 'Full name',
-    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+    fieldFn: (row) => `${row.firstName} ${row.lastName}`,
   },
 ]
 ```
 
-Whenever you use `accessorFn` you must supply an `id` - there is no string key
+Whenever you use `fieldFn` you must supply an `id` - there is no string key
 to derive one from.
 
 ## Format vs. formatter vs. cell
@@ -6777,6 +6698,35 @@ Groups can nest arbitrarily. The grid emits one header row per depth level:
 },
 ```
 
+## Collapsible groups (`columnGroupShow`)
+
+Give a group a collapse toggle by tagging its child columns:
+
+- `columnGroupShow: 'open'` - the child shows **only while the group is expanded**,
+- `columnGroupShow: 'closed'` - shows **only while collapsed**,
+- omitted - always shown.
+
+Setting it on any direct child adds a caret to the group header. Use
+`openByDefault` on the group to start expanded (default is collapsed, matching
+AG Grid).
+
+```ts
+{
+  id: 'q1', header: 'Q1', openByDefault: true,
+  columns: [
+    { field: 'q1Total', header: 'Total' },                    // always visible
+    { field: 'jan', header: 'Jan', columnGroupShow: 'open' },  // only when expanded
+    { field: 'feb', header: 'Feb', columnGroupShow: 'open' },
+    { field: 'mar', header: 'Mar', columnGroupShow: 'open' },
+  ],
+}
+```
+
+Collapsing/expanding hides or shows the tagged leaves and the group header's
+`colSpan` recomputes so the multi-level header stays aligned.
+
+<div data-docs-demo="183-collapsible-column-groups" data-height="480"></div>
+
 ## Group with a custom header
 
 The same `header: (ctx) => renderSnippet(...)` pattern from
@@ -6897,6 +6847,48 @@ table[role='grid'] th[aria-sort] [data-sort-indicator] {
 ## See also
 
 - [Custom header components](./custom-header-components.md)
+- [Column groups](./column-groups.md)
+
+<!-- =================================================================
+     /help/columns/column-menu  (community)
+     ================================================================== -->
+
+# Column menu
+
+Every column header carries a menu button (⋮). By default it's a flat list of
+actions plus a "Choose columns" submenu. Opt into the AG-Grid **tabbed** layout
+with `columnMenuTabs`:
+
+```svelte
+<SvGrid {data} {columns} {features} columnMenuTabs />
+```
+
+The tabbed menu has three tabs:
+
+- **General** - sort ascending / descending / clear, pin left / right / unpin,
+  autosize this / all columns, group / ungroup by the column, reset columns.
+- **Filter** - the column's filter UI (operator + value, a second AND/OR
+  condition, and the value checklist). Shown only when filtering is enabled for
+  the column. This is the same UI the header's funnel icon opens, so the two
+  stay in sync.
+- **Columns** - a quick visibility checklist for every column, without leaving
+  the menu.
+
+The menu opens on the **General** tab. The **Filter** tab is omitted for columns
+that aren't filterable (`filterable: false` or no `field`).
+
+```svelte
+<!-- The menu appears automatically; filtering enables the Filter tab. -->
+<SvGrid {data} {columns} features={tableFeatures({ rowSortingFeature, columnFilteringFeature })} />
+```
+
+For a docked, always-visible version of the Columns and Filters lists, see the
+[tool panel](./tool-panel.md).
+
+## See also
+
+- [Filter conditions](../filtering/filter-conditions.md)
+- [Tool panel](./tool-panel.md)
 - [Column groups](./column-groups.md)
 
 <!-- =================================================================
@@ -7278,46 +7270,83 @@ for a 100-column virtualized grid.
      /help/columns/column-spanning  (community)
      ================================================================== -->
 
-# Column spanning
+# Column & row spanning (merged cells)
 
-"Column spanning" lets a single body cell span across **multiple columns** -
-useful for full-width subtotals, group banner rows, or notes embedded inside
-a wide grid.
+Spanning lets a single body cell cover **multiple columns** and/or **rows** -
+merged report headers, grouped labels, financial statements. SvGrid does this
+with a real `colspan` / `rowspan` merge engine; there are two ways to drive it.
 
-## Status
+## 1. Explicit merges (spreadsheet-style)
 
-This is **not yet built in** to the community grid. There is no `colSpan`
-field on `ColumnDef` or `CellContext`.
-
-There are two close-enough workarounds:
-
-## 1. Full-width "row banner" via grouping
-
-If your span semantics are "render an aggregate above each group", the
-[grouping](../rows/row-data.md#grouping) pipeline gives you a group row
-that fills the row width via the group label column. See
-[examples/src/demos/07-grouping-aggregation.svelte](../../../examples/src/demos/07-grouping-aggregation.svelte).
-
-## 2. Custom cell with `position: absolute`
-
-If you need an irregular full-width content cell inside an otherwise normal
-row, render a regular cell whose content spills across columns:
+Declare exact merges as `MergeSpec[]` and apply them with the
+`spreadsheetLayout` action. The origin cell `(rowIndex, columnId)` spans
+`colspan` columns right and `rowspan` rows down; covered cells are hidden.
 
 ```svelte
-{#snippet Banner(p: { row: Row })}
-  <span class="absolute left-0 right-0 px-2 bg-yellow-100">
-    {p.row.note}
-  </span>
-{/snippet}
+<script lang="ts">
+  import { spreadsheetLayout, type MergeSpec } from '@svgrid/grid'
+
+  const merges: MergeSpec[] = [
+    { rowIndex: 0, columnId: 'A', colspan: 6 },       // title bar
+    { rowIndex: 14, columnId: 'A', colspan: 3 },      // "Total" label
+  ]
+</script>
+
+<div use:spreadsheetLayout={{ merges, columnOrder: columns.map((c) => c.id) }}>
+  <SvGrid {data} {columns} />
+</div>
 ```
 
-You'll need a CSS contortion to disable borders on the covered cells. This
-is fragile - only use it for one-off rows like "no results" placeholders.
+See [demos/170-cell-merging.svelte](../../../examples/src/demos/170-cell-merging.svelte).
+
+## 2. Declarative `colSpan` / `rowSpan` (value-driven)
+
+For data-driven spanning - "merge each run of equal values", "this cell spans 2
+columns when X" - put `colSpan` / `rowSpan` callbacks on the column and turn
+them into merges with `spansToMerges`. This runs on the **same** merge engine
+as option 1 (no separate code path).
+
+```svelte
+<script lang="ts">
+  import { spreadsheetLayout, spansToMerges, type ColumnDef } from '@svgrid/grid'
+
+  const columns: ColumnDef<F, Row>[] = [
+    { id: 'region', field: 'region',
+      // merge each vertical run of equal regions
+      rowSpan: ({ data, rowIndex }) => {
+        if (rowIndex > 0 && rows[rowIndex - 1].region === data.region) return 1 // covered
+        let n = 1
+        while (rows[rowIndex + n]?.region === data.region) n += 1
+        return n
+      } },
+    { id: 'country', field: 'country' },
+    { id: 'amount', field: 'amount' },
+  ]
+
+  // Recompute after sort / filter - indexes are display-row indexes.
+  const merges = $derived(spansToMerges(rows, columns))
+</script>
+
+<div use:spreadsheetLayout={{ merges, columnOrder: columns.map((c) => c.id) }}>
+  <SvGrid {data} {columns} />
+</div>
+```
+
+`colSpan` / `rowSpan` receive `CellSpanParams` (`{ data, rowIndex, columnId,
+value }`) and return the span count (1 = no span). `spansToMerges` handles
+covered-cell bookkeeping so overlapping spans never double-emit.
+
+## Virtualization note
+
+`rowSpan` uses real `rowspan`, which needs the covered rows mounted in the
+render window. For very large spanning grids, keep spans modest or disable row
+virtualization (`virtualization={false}`) on that grid so the origin cell stays
+mounted while its covered rows are on screen.
 
 ## See also
 
-- [Row spanning](../rows/row-spanning.md) - the row-side analogue, also not built in.
-- [Missing features](../missing-features.md)
+- [Cell merging demo](../../../examples/src/demos/170-cell-merging.svelte)
+- [Row spanning](../rows/row-spanning.md)
 
 <!-- =================================================================
      /help/columns/column-state  (community)
@@ -7524,22 +7553,48 @@ without fighting the sort handler:
      /help/columns/tool-panel  (community)
      ================================================================== -->
 
-# Columns tool panel
+# Tool panel (Columns + Filters)
 
 The tool panel is the docked sidebar - standard in enterprise grids - for
-managing columns without hunting through a right-click menu. Turn it on with
-the `toolPanel` prop:
+managing columns and filters without hunting through a right-click menu. Turn it
+on with the `toolPanel` prop:
 
 ```svelte
 <SvGrid {data} {columns} {features} toolPanel />
 ```
 
-A columns button appears at the grid's top-right. Clicking it opens a panel
-docked on the right edge with, for every column:
+A **Columns & Filters** button appears in a toolbar above the grid. Clicking it
+opens a panel docked on the right edge with two tabs. Pass `toolPanelDefaultOpen`
+to have it open on first render, and `toolPanelDefaultTab="filters"` to start on
+the Filters tab:
+
+```svelte
+<SvGrid {data} {columns} {features} toolPanel toolPanelDefaultOpen />
+```
+
+## Columns tab
+
+For every column:
 
 - a **visibility** checkbox (show / hide the column),
 - **↑ / ↓** to reorder the column,
 - **⊞** to group / ungroup by that column (when grouping is enabled).
+
+## Filters tab
+
+For every filterable column, an inline filter control:
+
+- an **operator** select (the same operators the column menu offers - text
+  columns get `contains` / `equals` / …, number and date columns get
+  `greaterThan` / `between` / …; drive these with
+  [`cellDataType`](../cells/cell-data-types.md)),
+- a **value** input matched to the column type, plus a second **To** input for
+  `between`,
+- a **✕** to clear that column's filter.
+
+The Filters tab writes the **same** filter state as the column menu and the
+filter row, so all three surfaces stay in sync - filter from whichever is handy.
+It works whenever `columnFilteringFeature` is enabled.
 
 ## Notes
 
@@ -8170,58 +8225,59 @@ swap the column between an editable and a read-only version by reassigning
 
 # Full-row editing
 
-"Full-row editing" means the user opens an entire row for edit (every
-editable cell becomes an editor simultaneously) and commits all changes
-at once.
-<div data-docs-demo="40-forms-master-detail" data-height="540"></div>
+Full-row editing opens an **entire row** for edit at once: every editable cell
+shows an inline editor, a single Enter (or clicking away) commits all of them in
+one update, and Esc cancels the whole row. It's a form-style entry experience
+with the density of a grid.
 
-## Status
+## Enable it
 
-This is **not** built in. SvGrid edits one cell at a time.
-
-## Workaround - overlay form
-
-Trigger an edit form from a row action and write changes back via
-`api.setCellValue` for each field:
+Set `fullRowEditing` (alongside `enableInlineEditing`) on `<SvGrid>`:
 
 ```svelte
-<script lang="ts">
-  let editing = $state<Person | null>(null)
-
-  function commit(updated: Person) {
-    if (!api || !editing) return
-    const idx = api.getData().findIndex((r) => r.id === editing!.id)
-    if (idx === -1) return
-    for (const key of Object.keys(updated) as Array<keyof Person>) {
-      api.setCellValue(idx, key, updated[key])
-    }
-    editing = null
-  }
-</script>
-
-{#if editing}
-  <dialog open>
-    <!-- a regular form bound to a copy of `editing` -->
-  </dialog>
-{/if}
-
-<SvGrid {data} {columns} features={features}
-  enableInlineEditing={false}
-  onApiReady={(next) => (api = next)} />
+<SvGrid {data} {columns} enableInlineEditing fullRowEditing />
 ```
 
-This is often *better UX* than full-row editing for keyboard-heavy users -
-the form can have proper field labels and a save button.
+- **Double-click a row** (or `F2` / Enter on a focused cell) to enter full-row edit.
+- **Enter** or **click away** commits every drafted cell in a single update
+  (one re-render; `onCellValueChange` fires once per changed cell; each change
+  is captured in the undo history).
+- **Esc** cancels the whole row - nothing is written.
 
-## Tracked at
+<div data-docs-demo="177-full-row-editing" data-height="520"></div>
 
-[Missing features](../missing-features.md) - full-row editing as a built-
-in mode.
+## Supported editors
+
+The full-row editor renders a lightweight inline control per editable column:
+
+| `editorType` | Control |
+| --- | --- |
+| `text` / `password` | text / password input |
+| `number` | number input |
+| `date` / `datetime` / `time` | native date / datetime-local / time input |
+| `checkbox` | checkbox |
+| `list` / `select` / `rich-select` | single-select dropdown from `editorOptions` |
+
+Per-column `valueParser` still runs on commit, so the same normalization you use
+for single-cell edits applies to full-row commits too.
+
+> Rich single-cell editors (chips multi-select, star rating, color, custom
+> `cellEditor` snippets) render in **cell** editing. In full-row mode those
+> columns fall back to a text input - use cell editing for a column that needs a
+> bespoke control.
+
+## Cell vs full-row editing
+
+Leave `fullRowEditing` off (the default) for classic **cell** editing: a
+double-click edits one cell, Tab moves to the next. Turn it on when your users
+think in records - onboarding forms, roster edits, CRUD tables - and want to
+fill or fix a whole row before saving.
 
 ## See also
 
-- [Provided editors](./provided-editors.md)
-- [Saving values](./saving-values.md)
+- [Start / stop editing](./start-stop-editing.md)
+- [Parsing values](./parsing-values.md)
+- [Validation](./validation.md)
 
 <!-- =================================================================
      /help/editing/overview  (community)
@@ -8342,25 +8398,51 @@ parseEditorValue('checkbox', true)           // true
 
 The full source is short and worth reading: [`cell-editors.ts`](../../../packages/grid/src/editors/cell-editors.ts).
 
+## Custom parsing with `valueParser`
+
+Add a per-column `valueParser` to refine the committed value **after** the
+built-in `parseEditorValue` coercion, before it is written to the row. Return
+the final value to store. It runs on every commit and flows through the undo
+history and `onCellValueChange`.
+
+```ts
+{ field: 'sku', editorType: 'text',
+  // "kb 101" -> "KB-101"
+  valueParser: ({ newValue }) =>
+    String(newValue).trim().toUpperCase().replace(/\s+/g, '-') },
+
+{ field: 'price', editorType: 'text', format: { type: 'currency', currency: 'USD' },
+  // accept "$1,299.90" / "1299.9" -> 1299.9
+  valueParser: ({ newValue, oldValue }) => {
+    const n = Number(String(newValue).replace(/[^0-9.\-]/g, ''))
+    return Number.isFinite(n) ? Math.round(n * 100) / 100 : oldValue
+  } },
+
+{ field: 'discount', editorType: 'number',
+  // clamp 0..100, integer
+  valueParser: ({ newValue }) => Math.max(0, Math.min(100, Math.round(Number(newValue) || 0))) },
+```
+
+The callback receives `ValueParserParams`:
+
+```ts
+type ValueParserParams<TData> = {
+  newValue: unknown   // value after built-in per-editorType coercion
+  oldValue: unknown   // the cell's previous value
+  rawInput: string    // the raw string the editor produced (pre-coercion)
+  data: TData         // the row object
+  columnId: string
+}
+```
+
+<div data-docs-demo="175-value-parser" data-height="520"></div>
+
 ## What "null" means
 
 `parseEditorValue` returns `null` to signal "could not parse". The grid
 treats `null` as an empty value and writes it into the cell. If you want
 **invalid input rejected** (the value reverts to its pre-edit state),
 intercept before the write - see [Validation](./validation.md).
-
-## Custom parsing
-
-There is no per-column `valueParser` field on `ColumnDef` today. If you
-need custom parsing (e.g. accept "$42,500" and turn it into `42500`), you
-have two paths:
-
-1. Post-process inside `cell` and store the raw display string.
-2. Diff `api.getData()` against your own snapshot after each commit and
-   normalise values you want canonicalised.
-
-A per-column `valueParser` is on the
-[gap list](../missing-features.md).
 
 ## See also
 
@@ -8805,12 +8887,44 @@ The cell must also be **editable** - its column must have an
 
 ## Programmatic start/stop
 
-There is no public `api.startEditing(rowIndex, columnId)` or `stopEditing()`
-on `SvGridApi` today. To force-edit a cell from outside, set the active
-cell (also not yet exposed on the public API) and dispatch a synthetic
-`F2` to the grid's root.
+Drive the editor from outside the grid with the `SvGridApi`:
 
-This is on the [gap list](../missing-features.md).
+```ts
+// begin editing a cell (as a double-click would); returns true if it started
+api.startEditing(rowIndex, columnId)
+
+api.stopEditing()      // commit the active edit (default)
+api.stopEditing(true)  // cancel / discard the active edit
+```
+
+`startEditing` returns `false` when the cell doesn't exist, isn't editable, or
+inline editing is disabled. `stopEditing` returns `true` if an edit was in
+progress. Combine with `selectCells` and `onActiveCellChange` to build
+form-style / guided-entry flows entirely on the API:
+
+> **`rowIndex` is the displayed index.** `startEditing`, `selectCells` and
+> `onActiveCellChange` all address rows by their position **as rendered** -
+> after a sort or filter that differs from your source data array. If you scan
+> your own data to decide what to edit next, walk `api.getDisplayedRows()` (it
+> returns the rows in display order) and use that index - indexing your unsorted
+> source array would open the wrong cell once the grid is sorted.
+
+```svelte
+<script lang="ts">
+  let api = $state<SvGridApi<F, Lead> | null>(null)
+  let active = $state<{ rowIndex: number; columnId: string } | null>(null)
+</script>
+
+<button onclick={() => active && api?.startEditing(active.rowIndex, active.columnId)}>Edit</button>
+<button onclick={() => api?.stopEditing()}>Save</button>
+<button onclick={() => api?.stopEditing(true)}>Cancel</button>
+
+<SvGrid {data} {columns} enableInlineEditing
+  onApiReady={(a) => (api = a)}
+  onActiveCellChange={(e) => (active = { rowIndex: e.rowIndex, columnId: e.columnId })} />
+```
+
+<div data-docs-demo="176-programmatic-editing" data-height="520"></div>
 
 ## See also
 
@@ -9031,14 +9145,14 @@ the trailing detail at the patch level if the diagnostic improves.
 - **Fix:** Use `bind:this={el}` on a real `<div>` and pass `el` as the
   target.
 
-### `Error: Column "<id>" has no field, accessorFn, or cell renderer`
+### `Error: Column "<id>" has no field, fieldFn, or cell renderer`
 
 - **Class:** `Error`
 - **When:** A `ColumnDef` was registered with neither a `field`, an
-  `accessorFn`, nor a `cell` template. The grid has no way to produce
+  `fieldFn`, nor a `cell` template. The grid has no way to produce
   a value for that column.
 - **Fix:** Add one of the three. For computed display-only columns,
-  `accessorFn: (row) => /* ... */` is usually right.
+  `fieldFn: (row) => /* ... */` is usually right.
 
 ### `Error: Duplicate column id "<id>"`
 
@@ -9354,6 +9468,28 @@ working.
 | `columns`         | `{ field: string; header?: string }[]`                | every key of row[0]  | Drives both column selection and header labels. |
 | `rows`            | `ReadonlyArray<TData>`                                | `api.getDisplayedRows()` | Override to export the full dataset instead of the visible view. |
 | `pageOrientation` | `'portrait' \| 'landscape'`                           | `"portrait"`         | PDF only. |
+| `merges`          | `{ row; col; rowSpan?; colSpan? }[]`                  | `[]`                 | Merged cells (xlsx / pdf). Zero-based **body** row/col (header excluded). Single-sheet only; mutually exclusive with `groupBy` / `hierarchical`. |
+
+#### Merged cells
+
+Pass `merges` to write real merged regions into the sheet. Row / column
+indices are zero-based over the exported **body** (the header row is not
+counted), and the shape lines up with the grid's own `MergeSpec`:
+
+```ts
+// Merge the first two data rows of column 0, and span a 3-column banner
+await api.exportData({
+  format: 'xlsx',
+  merges: [
+    { row: 0, col: 0, rowSpan: 2 },   // vertical merge (e.g. a repeated group key)
+    { row: 5, col: 0, colSpan: 3 },   // horizontal merge (a section banner)
+  ],
+})
+```
+
+To export the merges you already show in the grid, take your `MergeSpec[]`
+(`{ rowIndex, columnId, rowspan, colspan }`) and map `columnId` to its column
+index: `{ row: m.rowIndex, col: colIndex(m.columnId), rowSpan: m.rowspan, colSpan: m.colspan }`.
 
 Throws on missing peer (`jszip` / `pdfmake`), revoked / malformed
 license, or empty result set. With no license set, it runs but the
@@ -9762,17 +9898,35 @@ Through the wrapper, the menu uses a richer per-column representation
 (operator + value) - the wrapper converts between the two when state
 crosses the boundary.
 
-## AND vs. OR
+## Multiple conditions on one column (AND / OR)
 
-Multiple filter conditions for **different columns** AND together. Two
-filters on the **same column** are not natively supported - the second
-write overwrites the first.
+A single column can hold **two** conditions joined by `AND` or `OR` - a
+numeric band, an either/or text match, an outlier filter. In the UI, open a
+column's funnel menu and click **"+ Add condition"**, pick a second operator +
+value, and toggle **AND / OR**. From the API, pass the second condition to
+`setFilter`:
 
-To express OR within a column (`status = active OR pending`), use the
-[set filter](./set-filter.md) pattern.
+```ts
+// salary band: > 80,000 AND < 150,000
+api.setFilter('salary', {
+  operator: 'greaterThan', value: '80000',
+  operator2: 'lessThan',   value2: '150000',
+  join: 'AND',
+})
 
-To express OR across columns (`firstName = ada OR lastName = lovelace`),
-do it outside the grid by filtering the data array before passing it in.
+// age outliers: < 25 OR > 60
+api.setFilter('age', {
+  operator: 'lessThan',    value: '25',
+  operator2: 'greaterThan', value2: '60',
+  join: 'OR',
+})
+```
+
+<div data-docs-demo="178-multi-condition-filter" data-height="520"></div>
+
+Conditions on **different columns** always AND together. For a set / value
+checklist ("status in {active, pending}") use the [set filter](./set-filter.md);
+for OR **across** columns, use the [advanced filter builder](../../../examples/src/demos/98-advanced-filter-builder.svelte).
 
 ## Conditions via the imperative API
 
@@ -9827,20 +9981,11 @@ columnFilters = []
 
 # Floating filters
 
-"Floating filters" are the always-visible filter inputs that sit
-**between** the header row and the body - same idea as a filter row, but
-matched per-operator to the underlying column menu.
-<div data-docs-demo="03-excel-filters" data-height="540"></div>
-
-## Status
-
-SvGrid has a **filter row** (`filterMode="row"`) that gives you a single
-input per text column. It does not yet have full "floating filter" parity
-where the inline input mirrors the column menu's operator - e.g. a number
-column showing a `>` icon next to the filter input.
-
-The filter row uses `contains` for text columns and `equals` for number /
-date / checkbox columns.
+"Floating filters" are the always-visible filter inputs that sit **between** the
+header row and the body. In SvGrid the filter row is **per-operator and
+per-type**: each cell has a funnel to pick the operator, the value input matches
+the column's type, and `between` shows a second inline "To" input.
+<div data-docs-demo="179-floating-filters" data-height="520"></div>
 
 ## Enable the filter row
 
@@ -9848,8 +9993,27 @@ date / checkbox columns.
 <SvGrid {data} {columns} features={features} filterMode="row" />
 ```
 
-If you also want the column menu icon present, set both surfaces
-explicitly:
+## Per-operator, per-type
+
+- **Operator per cell** - click the funnel in a filter-row cell to switch the
+  operator (`contains`, `equals`, `greaterThan`, `between`, `isBlank`, …). The
+  chosen operator drives that column's filtering; it is the same value the column
+  menu uses, so the two surfaces stay in sync.
+- **Input matches the column** - a `number` column gets a number input, a `date`
+  column a date picker, text a text input. This is driven by the column's
+  `editorType`.
+- **`between` inline** - selecting Between shows a second **To** input right in
+  the row, so ranges work without opening the full menu.
+
+```ts
+const columns = [
+  { field: 'age', header: 'Age', editorType: 'number' },   // number input
+  { field: 'joinedAt', header: 'Joined', editorType: 'date' }, // date picker
+  { field: 'name', header: 'Name', editorType: 'text' },   // text input
+]
+```
+
+To show both the filter row and the column-menu funnel, set both surfaces:
 
 ```svelte
 <SvGrid
@@ -9859,33 +10023,10 @@ explicitly:
 />
 ```
 
-## Per-operator floating filter
-
-Today this needs a custom header. Render your own input inside the column
-header via `header: (ctx) => renderSnippet(...)` and write into
-controlled `columnFilters` state when the user types.
-
-```svelte
-{#snippet RangeHeader(p: { id: string })}
-  <div class="flex flex-col gap-1">
-    <span>{p.id}</span>
-    <input
-      placeholder="≥ min"
-      oninput={(e) => applyMin(p.id, +e.currentTarget.value)}
-      class="w-20 rounded border border-slate-300 px-1 py-0.5 text-xs"
-    />
-  </div>
-{/snippet}
-```
-
-## Tracked at
-
-[Missing features](../missing-features.md) - first-class floating filters
-with operator parity.
-
 ## See also
 
 - [Overview](./overview.md)
+- [Filter conditions](./filter-conditions.md) - two conditions per column
 - [Custom header components](../columns/custom-header-components.md)
 
 <!-- =================================================================
@@ -10331,7 +10472,7 @@ issue.
 
 ## A
 
-**Accessor.** A function on a `ColumnDef` (`accessorFn`) that computes
+**Accessor.** A function on a `ColumnDef` (`fieldFn`) that computes
 a cell value from the row instead of reading a property by `field`.
 Used heavily by pivot tables and computed columns.
 
@@ -10356,7 +10497,7 @@ cell value (sum, avg, count, min, max, custom). Used by
 state.
 
 **Column definition (`ColumnDef`).** The plain object that describes
-one column: how to read its value (`field` / `accessorFn`), how to
+one column: how to read its value (`field` / `fieldFn`), how to
 render it (`cell`, `header`), and which features apply (`editable`,
 `format`, `editorType`). See [Column definitions](./columns/column-definitions.md).
 
@@ -10399,7 +10540,7 @@ via `tableFeatures({...})`. Examples: `rowSortingFeature`,
 is normal.
 
 **Field.** The row property a column reads + writes by default. A
-shortcut for `accessorFn: (row) => row[field]`. When you can use
+shortcut for `fieldFn: (row) => row[field]`. When you can use
 `field`, prefer it - the engine has a fast path for property-keyed
 columns.
 
@@ -10850,6 +10991,841 @@ const columns = [
 
 See the live [Group aggregators](https://sv-grid.com/demos/142-group-aggregators)
 demo.
+
+<!-- =================================================================
+     /help/headless/build-a-table  (community)
+     ================================================================== -->
+
+# Build a table from scratch
+
+This is the whole point of headless: the engine computes the rows, **you** emit
+the markup. Here's a complete, sortable, filterable `<table>` in one Svelte
+component - no `<SvGrid>`, no grid CSS.
+
+<div data-docs-demo="186-headless-table" data-height="520"></div>
+
+## 1. Wire the engine
+
+When you bypass `<SvGrid>` you opt into the row models you want. `<SvGrid>` does
+this for you; here you do it explicitly.
+
+```svelte
+<script lang="ts">
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createSortedRowModel,
+    createFilteredRowModel,
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  type Repo = { name: string; lang: string; stars: number }
+
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+  const columns: ColumnDef<typeof features, Repo>[] = [
+    { field: 'name',  header: 'Name'  },
+    { field: 'lang',  header: 'Lang'  },
+    { field: 'stars', header: 'Stars' },
+  ]
+  const data: Repo[] = [
+    { name: 'svelte',  lang: 'TypeScript', stars: 79000 },
+    { name: 'kit',     lang: 'TypeScript', stars: 18000 },
+    { name: 'vite',    lang: 'TypeScript', stars: 67000 },
+    { name: 'esbuild', lang: 'Go',         stars: 38000 },
+  ]
+
+  // Controlled state - Svelte 5 $state lifts the engine into reactivity.
+  type Sort = { id: string; desc: boolean }
+  type Filter = { id: string; value: unknown }
+  let sorting = $state<Sort[]>([])
+  let columnFilters = $state<Filter[]>([])
+  let query = $state('')
+
+  $effect(() => {
+    columnFilters = query ? [{ id: 'name', value: query }] : []
+  })
+
+  // Rebuild when data / state changes. The engine is cheap to recreate.
+  const table = $derived.by(() =>
+    createSvGrid({
+      _features: features,
+      _rowModels: {
+        coreRowModel:     createCoreRowModel<Repo>(),
+        filteredRowModel: createFilteredRowModel<Repo>(),
+        sortedRowModel:   createSortedRowModel<Repo>(),
+      },
+      data,
+      columns,
+      state: { sorting, columnFilters },
+      onSortingChange: (u) =>
+        (sorting = typeof u === 'function' ? (u as (s: Sort[]) => Sort[])(sorting) : u),
+      onColumnFiltersChange: (u) =>
+        (columnFilters = typeof u === 'function' ? (u as (f: Filter[]) => Filter[])(columnFilters) : u),
+      enableSorting: true,
+      enableColumnFilters: true,
+    } as never),
+  )
+
+  const headerGroups = $derived(table.getHeaderGroups())
+  const rows = $derived(table.getRowModel().rows)
+
+  function toggleSort(id: string) {
+    const cur = sorting[0]
+    sorting =
+      cur?.id !== id ? [{ id, desc: false }]
+      : cur.desc     ? []
+      :                [{ id, desc: true }]
+  }
+  const indicator = (id: string) =>
+    sorting[0]?.id === id ? (sorting[0]!.desc ? ' ▼' : ' ▲') : ''
+</script>
+```
+
+## 2. Render it - any markup you like
+
+```svelte
+<input placeholder="Filter by name…" bind:value={query} />
+
+<table>
+  <thead>
+    {#each headerGroups as hg (hg.id)}
+      <tr>
+        {#each hg.headers as h (h.id)}
+          <th onclick={() => toggleSort(h.column.id)} style="cursor:pointer">
+            {h.column.columnDef.header}{indicator(h.column.id)}
+          </th>
+        {/each}
+      </tr>
+    {/each}
+  </thead>
+  <tbody>
+    {#each rows as r (r.id)}
+      <tr>
+        {#each columns as col (col.field)}
+          <td>{(r.original as Repo)[col.field as keyof Repo] ?? ''}</td>
+        {/each}
+      </tr>
+    {/each}
+  </tbody>
+</table>
+```
+
+That's a fully working sortable + filterable grid - the engine did the sorting
+and filtering, your 20 lines of template did the rendering. Style the `<table>`
+however you want; the engine has no opinion.
+
+## What just happened
+
+- **`_rowModels`** declared the pipeline: core → filtered → sorted. Skipping
+  grouping and pagination means that code never ships.
+- **`state` in, `onXxxChange` out**: clicking a header calls `toggleSort`, which
+  reassigns `sorting`; the `$derived` table re-reads it and `getRowModel()`
+  re-sorts.
+- **`getHeaderGroups()`** produced the header tree (a single level here; nested
+  `columns: [...]` would produce more rows).
+
+## See also
+
+- [Row models](./row-models.md) - add pagination, grouping, expansion
+- [Controlled state](./controlled-state.md) - lift state out of the component
+- [Styling a headless table](./styling.md) - make it look good, your way
+- [Headless virtualization](./virtualization.md) - do this for 100k rows
+- [Cell components](../cells/cell-components.md) - render snippet/component cells in your own table
+
+<!-- =================================================================
+     /help/headless/controlled-state  (community)
+     ================================================================== -->
+
+# Controlled state
+
+The engine never owns its state - **you do**. You pass `state` in and the engine
+calls your `onXxxChange` handlers with the next value. That one rule is what
+makes headless SvGrid click with Svelte 5 `$state`, and it's what lets state
+survive an unmount or be shared across two grids.
+
+## The in/out contract
+
+```ts
+let sorting = $state<{ id: string; desc: boolean }[]>([])
+
+const table = $derived.by(() => createSvGrid({
+  _features: features,
+  _rowModels: { coreRowModel: createCoreRowModel<Row>(), sortedRowModel: createSortedRowModel<Row>() },
+  data, columns,
+  state: { sorting },                         // ── in
+  onSortingChange: (u) =>                      // ── out
+    (sorting = typeof u === 'function' ? u(sorting) : u),
+  enableSorting: true,
+} as never))
+```
+
+The handler receives either the next value **or** an updater function - always
+handle both (`typeof u === 'function' ? u(prev) : u`). Because `sorting` is
+`$state` and `table` is `$derived`, changing it re-runs the pipeline.
+
+The same shape applies to every state channel: `onColumnFiltersChange`,
+`onPaginationChange`, `onGroupingChange`, `onExpandedChange`,
+`onRowSelectionChange`, `onColumnVisibilityChange`.
+
+## `createGridState` - lift state out of the component
+
+Sometimes you want a piece of state to live **outside** the grid: so it survives
+an unmount, persists to storage, or is shared by two grids. `createGridState`
+returns a `[get, set]` tuple - a reactive store you own (`createSvGridState` is
+an alias).
+
+```ts
+import { createGridState } from '@svgrid/grid'
+
+// [getter, setter] - the getter reads reactive $state, the setter takes a
+// value or an updater function.
+const [getSorting, setSorting] = createGridState<Sort[]>([])
+
+setSorting([{ id: 'stars', desc: true }])   // set a value
+setSorting((prev) => [...prev])             // or an updater
+console.log(getSorting())                    // read it
+```
+
+Wire it into a grid via the `state` / `onXxxChange` channel:
+
+```ts
+const table = $derived.by(() => createSvGrid({
+  get data() { return rows },
+  get columns() { return columns },
+  state: { sorting: getSorting() },
+  onSortingChange: (u) => setSorting(u as never),
+} as never))
+```
+
+### Share one store across two grids
+
+Pass the **same** `[get, set]` pair to two engines and they stay in lockstep -
+sort in one, the other re-sorts, because both read the same reactive store.
+
+<div data-docs-demo="189-headless-shared-state" data-height="460"></div>
+
+```ts
+const [getSorting, setSorting] = createGridState<Sort[]>([])
+
+const makeGrid = () => $derived.by(() => createSvGrid({
+  get data() { return rows }, get columns() { return columns },
+  state: { sorting: getSorting() },
+  onSortingChange: (u) => setSorting(u as never),
+} as never))
+
+const gridA = makeGrid()
+const gridB = makeGrid()   // shares getSorting/setSorting -> stays in sync
+```
+
+## `subscribeGrid` - react outside a component
+
+Inside a Svelte component, `$effect` is the natural way to react to grid
+changes. Outside one - a Svelte action, an analytics hook, an integration test -
+use `subscribeGrid` for a plain pub/sub interface (`subscribeSvGrid` is an
+alias).
+
+```ts
+import { subscribeGrid } from '@svgrid/grid'
+
+const unsub = subscribeGrid(table, (event) => {
+  if (event.type === 'sorting') analytics.track('grid_sort', event.value)
+  if (event.type === 'rowSelection') syncSelectionToUrl(event.value)
+})
+
+// later
+unsub()
+```
+
+## See also
+
+- [Row models](./row-models.md) - each channel feeds one pipeline step
+- [Build a table from scratch](./build-a-table.md)
+- [Named views](../state/named-views.md) - the `<SvGrid>` state save/restore equivalent
+
+<!-- =================================================================
+     /help/headless/overview  (community)
+     ================================================================== -->
+
+# Headless overview
+
+`<SvGrid>` is the **renderer**. `createSvGrid` is the **engine** that powers it.
+They're independent: you can use the engine on its own to build a custom UI,
+render a plain `<table>` for print or email, run the row pipeline in a Web
+Worker or on a server, or unit-test sort / filter / aggregation logic with no
+DOM at all.
+
+```
+your data ─▶ createSvGrid (engine) ─▶ row model ─▶ your markup
+                     ▲                                  │
+                controlled state  ◀──── change events ──┘
+```
+
+## What the engine gives you
+
+`createSvGrid(options)` returns a table object with:
+
+- `getRowModel(): { rows: Row<TData>[] }` - the final, post-pipeline rows
+  (filtered → sorted → grouped → expanded → paginated),
+- `getHeaderGroups(): HeaderGroup<TData>[]` - the multi-level column-header tree,
+- `getAllColumns(): Column<TData>[]` - every column with its metadata (id,
+  visible, pinned, width),
+- imperative setters (`setSorting`, `setColumnFilters`, `setRowSelection`, …)
+  that push into the engine's store.
+
+No DOM, no CSS, no virtualization - those live in the renderer. Here's the
+engine rendering a plain, hand-styled `<table>` (sort + filter are the engine's;
+the markup is the demo's):
+
+<div data-docs-demo="186-headless-table" data-height="500"></div>
+
+## When to reach for headless
+
+| You want to… | Use |
+| --- | --- |
+| A rich grid in a Svelte app | `<SvGrid>` (start here) |
+| Render as a plain `<table>` (print / email / RSC) | Headless |
+| Drive a server-side row model from Node | Headless |
+| Unit-test sort / filter / aggregator logic | Headless |
+| Build a custom virtualized renderer | Headless + the [virtualizer](./virtualization.md) exports |
+| Share one state object across two grids | Headless + [`createGridState`](./controlled-state.md) |
+
+For the common case, use [`<SvGrid>`](../../getting-started/2-first-grid.md) - it wires all
+of this for you. Reach for the engine when you need a different renderer or to
+run the pipeline where there is no DOM.
+
+## The three ideas
+
+1. **Row models are a pipeline.** You opt into the steps you need
+   (`coreRowModel`, `filteredRowModel`, `sortedRowModel`, …); unused steps are
+   tree-shaken. See [Row models](./row-models.md).
+2. **State is controlled.** You pass `state` in and get `onXxxChange` events
+   out - the engine never mutates your state. This is what makes it click with
+   Svelte 5 `$state`. See [Controlled state](./controlled-state.md).
+3. **Rendering is yours.** The engine hands you rows + header groups; you emit
+   the markup. See [Build a table from scratch](./build-a-table.md).
+
+## See also
+
+- [Build a `<table>` from scratch](./build-a-table.md) - a complete 30-line renderer
+- [Styling a headless table](./styling.md) - three looks from one engine
+- [Row models](./row-models.md) - the pipeline, step by step
+- [Server-side data](./server-side.md) - paging, sorting, filtering, load on demand
+- [Controlled state](./controlled-state.md) - `createGridState` / `subscribeGrid`
+- [Headless virtualization](./virtualization.md) - render 100k rows yourself
+- [Why headless?](../../why-headless.md) - the design rationale
+- [Architecture](../architecture.md) - the three-layer model
+
+<!-- =================================================================
+     /help/headless/row-models  (community)
+     ================================================================== -->
+
+# Row models
+
+The engine turns your raw `data` into the rows you render by running it through
+a **pipeline** of row models. You opt into the steps you need; everything else
+is tree-shaken out.
+
+```
+data
+ └─▶ coreRowModel        wrap each item as a Row
+      └─▶ filteredRowModel   drop rows that fail the column filters
+           └─▶ sortedRowModel     order by the sort state
+                └─▶ groupedRowModel    build group parent rows + aggregates
+                     └─▶ expandedRowModel   flatten only expanded groups
+                          └─▶ paginatedRowModel   slice to the current page
+```
+
+Each step is lazy and reads from the [controlled state](./controlled-state.md)
+(`sorting`, `columnFilters`, `grouping`, `expanded`, `pagination`).
+
+Flip the group-by control below and watch the pipeline change shape - the same
+engine goes from a flat list to `grouped -> expanded` with per-group `sum`
+aggregates, and the markup stays a plain hand-styled `<table>`:
+
+<div data-docs-demo="190-headless-row-models" data-height="440"></div>
+
+## Opt in per step
+
+Pass only the models you want into `_rowModels`. `createCoreRowModel` is always
+required (it's the entry point); the rest are optional.
+
+```ts
+import {
+  createSvGrid,
+  createCoreRowModel,
+  createFilteredRowModel,
+  createSortedRowModel,
+  createPaginatedRowModel,
+  createGroupedRowModel,
+  createExpandedRowModel,
+} from '@svgrid/grid'
+
+const table = createSvGrid({
+  _features: features,
+  _rowModels: {
+    coreRowModel:      createCoreRowModel<Row>(),
+    filteredRowModel:  createFilteredRowModel<Row>(),
+    sortedRowModel:    createSortedRowModel<Row>(),
+    paginatedRowModel: createPaginatedRowModel<Row>(),
+  },
+  data,
+  columns,
+  state,
+  // ...change handlers
+} as never)
+
+const rows = table.getRowModel().rows // filtered → sorted → paged
+```
+
+Skip `paginatedRowModel` and `getRowModel().rows` returns every matching row.
+Skip `filteredRowModel` and the `columnFilters` state is simply ignored.
+
+## Pagination
+
+Add `createPaginatedRowModel` and drive it with `pagination` state:
+
+```ts
+let pagination = $state({ pageIndex: 0, pageSize: 20 })
+
+const table = $derived.by(() => createSvGrid({
+  _rowModels: {
+    coreRowModel:      createCoreRowModel<Row>(),
+    paginatedRowModel: createPaginatedRowModel<Row>(),
+  },
+  data, columns,
+  state: { pagination },
+  onPaginationChange: (u) =>
+    (pagination = typeof u === 'function' ? u(pagination) : u),
+} as never))
+
+// getRowModel().rows is now just the current page
+function nextPage() { pagination = { ...pagination, pageIndex: pagination.pageIndex + 1 } }
+```
+
+## Grouping + aggregation
+
+`groupedRowModel` builds parent rows with aggregated values; `expandedRowModel`
+then emits only the expanded children. A grouped row's `getIsGrouped()` is true
+and its aggregates come from each column's `aggregate` setting.
+
+```ts
+let grouping = $state<string[]>(['lang'])
+let expanded = $state<Record<string, boolean>>({})
+
+const table = $derived.by(() => createSvGrid({
+  _rowModels: {
+    coreRowModel:     createCoreRowModel<Repo>(),
+    groupedRowModel:  createGroupedRowModel<Repo>(),
+    expandedRowModel: createExpandedRowModel<Repo>(),
+  },
+  data,
+  columns: [
+    { field: 'lang', header: 'Lang' },
+    { field: 'stars', header: 'Stars', aggregate: 'sum' }, // rolled up per group
+  ],
+  state: { grouping, expanded },
+  onExpandedChange: (u) => (expanded = typeof u === 'function' ? u(expanded) : u),
+} as never))
+
+const rows = $derived(table.getRowModel().rows)
+// each row: row.getIsGrouped(), row.getIsExpanded(), row.toggleExpanded()
+```
+
+## Server-side: skip the local pipeline
+
+When the server does the sorting / filtering / paging, feed the engine only the
+page it returned and leave those models out - the engine just wraps and renders
+what you give it:
+
+```ts
+const table = createSvGrid({
+  _rowModels: { coreRowModel: createCoreRowModel<Row>() }, // core only
+  data: serverPage.rows,   // already sorted/filtered/paged by the API
+  columns,
+  state,
+} as never)
+```
+
+Track the sort/filter state via the change handlers and re-fetch on change - see
+[Server-side data (load on demand)](./server-side.md) for a complete, runnable
+example with paging, sorting, filtering and a race-safe fetch.
+
+## See also
+
+- [Build a table from scratch](./build-a-table.md)
+- [Server-side data (load on demand)](./server-side.md)
+- [Controlled state](./controlled-state.md)
+- [Grouping & aggregation](../grouping-aggregation.md)
+
+<!-- =================================================================
+     /help/headless/server-side  (community)
+     ================================================================== -->
+
+# Server-side data (load on demand)
+
+When the rows live behind an API and there are too many to ship to the browser,
+the server does the work: **sorting**, **filtering**, and **paging** become query
+params, and it returns only the current page plus a total count. The headless
+engine wraps that page and nothing else - it never sees the rest of the dataset.
+
+Try it: search, click a header to sort, page through. Each change fires exactly
+one request (watch the counter climb):
+
+<div data-docs-demo="191-headless-server-side" data-height="520"></div>
+
+## The shape of it
+
+There is no local pipeline here - just `coreRowModel`. You own three things:
+
+1. **The query state** (`pageIndex`, `pageSize`, `sort`, `desc`, `q`) - the
+   inputs your API takes.
+2. **A fetch that re-runs when that state changes** - an `$effect` is enough.
+3. **The engine, wrapping only the page you got back.**
+
+```svelte
+<script lang="ts">
+  import { createSvGrid, createCoreRowModel, type ColumnDef } from '@svgrid/grid'
+
+  type Row = { id: number; name: string; dept: string; salary: number }
+
+  // 1. Query state - the inputs your endpoint takes.
+  const pageSize = 8
+  let pageIndex = $state(0)
+  let sort = $state<'name' | 'dept' | 'salary'>('name')
+  let desc = $state(false)
+  let q = $state('')
+
+  // Server response.
+  let pageRows = $state<Row[]>([])
+  let total = $state(0)
+  let loading = $state(false)
+  let reqSeq = 0
+
+  // 2. Re-fetch whenever any query input changes. The sequence guard drops
+  //    stale responses if a newer request resolves first (race-safe).
+  $effect(() => {
+    const query = { pageIndex, pageSize, sort, desc, q }
+    const mine = ++reqSeq
+    loading = true
+    fetch(`/api/employees?${new URLSearchParams(query as never)}`)
+      .then((r) => r.json())
+      .then((res: { rows: Row[]; total: number }) => {
+        if (mine !== reqSeq) return
+        pageRows = res.rows
+        total = res.total
+        loading = false
+      })
+  })
+
+  // 3. The engine wraps ONLY the returned page - no filtered/sorted/paginated
+  //    row model, because the server already did all of that.
+  const columns: ColumnDef<Record<string, never>, Row>[] = [
+    { field: 'name', header: 'Name' },
+    { field: 'dept', header: 'Department' },
+    { field: 'salary', header: 'Salary' },
+  ]
+  const table = $derived.by(() =>
+    createSvGrid({
+      _rowModels: { coreRowModel: createCoreRowModel<Row>() },
+      data: pageRows,
+      columns,
+    } as never),
+  )
+  const rows = $derived(table.getRowModel().rows)
+  const pageCount = $derived(Math.max(1, Math.ceil(total / pageSize)))
+</script>
+```
+
+Render `rows` however you like, and drive the query state from your controls:
+
+```svelte
+<input value={q} oninput={(e) => { q = e.currentTarget.value; pageIndex = 0 }} />
+
+<table>
+  <thead>
+    <tr>
+      {#each columns as col (col.field)}
+        <th onclick={() => {
+          if (sort === col.field) desc = !desc
+          else { sort = col.field; desc = false }
+          pageIndex = 0
+        }}>
+          {col.header}{sort === col.field ? (desc ? ' ▼' : ' ▲') : ''}
+        </th>
+      {/each}
+    </tr>
+  </thead>
+  <tbody>
+    {#each rows as r (r.id)}
+      {@const row = r.original as Row}
+      <tr><td>{row.name}</td><td>{row.dept}</td><td>{row.salary}</td></tr>
+    {/each}
+  </tbody>
+</table>
+
+<button onclick={() => (pageIndex -= 1)} disabled={pageIndex === 0 || loading}>Prev</button>
+Page {pageIndex + 1} of {pageCount}
+<button onclick={() => (pageIndex += 1)} disabled={pageIndex >= pageCount - 1 || loading}>Next</button>
+```
+
+## Why only `coreRowModel`?
+
+Because the pipeline already ran - on the server. Adding
+`filteredRowModel` / `sortedRowModel` / `paginatedRowModel` would make the engine
+try to filter, sort and slice the **page** you already fetched, which is wrong: it
+only has 8 of the 483 rows. Feed the engine the finished page and let it do the
+one job left - wrap each item as a `Row` so your markup and any cell logic work
+the same as everywhere else.
+
+## Three things worth getting right
+
+- **Reset the page on a new sort or filter.** A different sort or query produces a
+  different result set, so `pageIndex = 0` - otherwise you can land on an
+  out-of-range page.
+- **Guard against out-of-order responses.** Fast typing fires overlapping
+  requests; without the `reqSeq` check an early response can overwrite a later
+  one. Increment a sequence number per request and ignore any response that is
+  not the latest.
+- **Debounce the search** if each keystroke hits a real network. A short
+  `setTimeout` on `q` keeps you from firing a request per character.
+
+## See also
+
+- [Row models](./row-models.md) - the local pipeline, for when the client owns the data
+- [Controlled state](./controlled-state.md) - `state` in, `onXxxChange` out
+- [Build a table from scratch](./build-a-table.md) - the rendering half
+- [Server-side data (with `<SvGrid>`)](../server-side-data.md) - the same idea, wired for you
+
+<!-- =================================================================
+     /help/headless/styling  (community)
+     ================================================================== -->
+
+# Styling a headless table
+
+With the headless engine you render your own markup, so **you own every pixel of
+styling** - there is no grid stylesheet to fight. The same `createSvGrid` engine
+can drive a minimal underlined table, a fully bordered grid, or floating row
+cards. Flip the controls in the demo; the engine and rows are identical, only
+the CSS changes.
+
+<div data-docs-demo="188-headless-styled" data-height="540"></div>
+
+## The mindset
+
+The engine hands you `getHeaderGroups()` and `getRowModel().rows`; how you turn
+them into DOM - `<table>`, CSS grid, flexbox, divs - and how you style them is
+entirely yours. Nothing below is prescribed; it's just what the demo does.
+
+## Track the site theme with `--sg-*` tokens
+
+The grid's theming is a set of CSS custom properties (`--sg-bg`, `--sg-fg`,
+`--sg-border`, `--sg-header-bg`, `--sg-muted`, `--sg-accent`, …). Use the same
+tokens in your headless CSS and your table automatically follows the app's
+light / dark theme and any per-instance overrides - no extra work.
+
+```css
+.my-table { color: var(--sg-fg, #0f172a); font-size: 13px; }
+.my-table th {
+  background: var(--sg-header-bg, #f1f5f9);
+  border-bottom: 2px solid var(--sg-border, #e2e8f0);
+}
+.my-table td { border-bottom: 1px solid var(--sg-border, #eef2f7); }
+```
+
+Always keep a literal fallback (`var(--sg-fg, #0f172a)`) so the table is styled
+even outside a themed container. See [Tailwind & theming](../tailwind.md) for the
+full token list.
+
+## The usual affordances
+
+These are one CSS rule each - the engine doesn't need to know about them.
+
+```css
+/* Zebra striping */
+.my-table tbody tr:nth-child(even) td {
+  background: color-mix(in oklab, var(--sg-muted) 8%, transparent);
+}
+/* Hover */
+.my-table tbody tr:hover td {
+  background: color-mix(in oklab, var(--sg-accent, #6366f1) 8%, transparent);
+}
+/* Sticky header inside a scroll container */
+.my-table thead th { position: sticky; top: 0; z-index: 1; }
+/* Right-align numbers */
+.my-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+/* Density: swap a class */
+.dense th, .dense td { padding: 5px 10px; }
+```
+
+## Sort affordance
+
+Sorting is engine state, but the **indicator** is your markup - render it off the
+`sorting` state you already control:
+
+```svelte
+<th onclick={() => toggleSort(h.column.id)}>
+  {h.column.columnDef.header}
+  {#if sorting[0]?.id === h.column.id}
+    <span class="ind">{sorting[0].desc ? '▼' : '▲'}</span>
+  {/if}
+</th>
+```
+
+## Prefer Tailwind? Use classes instead of CSS
+
+Because it's your markup, utility classes work exactly as they would on any
+`<table>` - no wrapper, no `:global`:
+
+```svelte
+<table class="w-full text-sm">
+  <thead>
+    <tr class="border-b-2 border-slate-200">
+      {#each headers as h}
+        <th class="px-3 py-2 text-left font-semibold cursor-pointer hover:text-indigo-500">
+          {h.column.columnDef.header}
+        </th>
+      {/each}
+    </tr>
+  </thead>
+  <tbody>
+    {#each rows as r}
+      <tr class="border-b border-slate-100 even:bg-slate-50 hover:bg-indigo-50">
+        <!-- cells -->
+      </tr>
+    {/each}
+  </tbody>
+</table>
+```
+
+## See also
+
+- [Build a table from scratch](./build-a-table.md) - the render loop
+- [Headless virtualization](./virtualization.md) - style a virtualized list
+- [Tailwind & theming tokens](../tailwind.md) - the `--sg-*` reference
+
+<!-- =================================================================
+     /help/headless/virtualization  (community)
+     ================================================================== -->
+
+# Headless virtualization
+
+`<SvGrid>` virtualizes rows and columns for you. When you render your own
+markup, you virtualize yourself with the same engine SvGrid uses -
+`createSvelteVirtualizer` (reactive) or `createVirtualizer` (framework-agnostic).
+Only the rows in view get DOM nodes, so 100k rows stay smooth.
+
+<div data-docs-demo="187-headless-virtual" data-height="500"></div>
+
+## The idea
+
+A virtualizer answers two questions as the user scrolls: **which items are
+visible**, and **how far to offset them**. You give it the item `count`, an
+`estimateSize` (row height), and the `viewportHeight`; it gives you the virtual
+items to render plus the total size to reserve. You feed it the live scroll
+position with `setScrollOffset`, and read `version` so your derived values
+recompute.
+
+```svelte
+<script lang="ts">
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createSvelteVirtualizer,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  type Row = { id: number; name: string; score: number }
+  const data: Row[] = Array.from({ length: 100_000 }, (_, i) => ({
+    id: i, name: `Item ${i}`, score: (i * 37) % 1000,
+  }))
+  const columns: ColumnDef<Record<string, never>, Row>[] = [
+    { field: 'name', header: 'Name' },
+    { field: 'score', header: 'Score' },
+  ]
+
+  const table = createSvGrid({
+    _rowModels: { coreRowModel: createCoreRowModel<Row>() },
+    data, columns,
+  } as never)
+  const rows = table.getRowModel().rows
+
+  const ROW_H = 34
+  const VIEWPORT_H = 420
+  const virtualizer = createSvelteVirtualizer({
+    count: rows.length,       // a number (call setOptions({ count }) when it changes)
+    estimateSize: ROW_H,      // number, or (index) => px for variable heights
+    overscan: 8,
+    viewportHeight: VIEWPORT_H,
+  })
+
+  // Reading `version` makes these recompute whenever the virtualizer updates.
+  const items = $derived.by(() => { virtualizer.version; return virtualizer.getVirtualItems() })
+  const totalSize = $derived.by(() => { virtualizer.version; return virtualizer.getTotalSize() })
+
+  const onScroll = (e: Event) =>
+    virtualizer.setScrollOffset((e.currentTarget as HTMLElement).scrollTop)
+</script>
+```
+
+## Render only what's visible
+
+Reserve the full scroll height with a spacer, then absolutely-position each
+visible row at its `start` offset:
+
+```svelte
+<div style={`height: ${VIEWPORT_H}px; overflow: auto; position: relative;`} onscroll={onScroll}>
+  <!-- Spacer reserves the full height so the scrollbar is correct. -->
+  <div style={`height: ${totalSize}px; position: relative;`}>
+    {#each items as vi (vi.key)}
+      {@const row = rows[vi.index].original as Row}
+      <div style={`position: absolute; top: 0; left: 0; width: 100%;
+                   height: ${ROW_H}px; transform: translateY(${vi.start}px);`}>
+        {row.name} - {row.score}
+      </div>
+    {/each}
+  </div>
+</div>
+```
+
+`getVirtualItems()` returns only the ~20 rows in view (plus `overscan`), each
+with `index`, `start` (px offset), `size`, and `key`. As the user scrolls,
+`setScrollOffset` bumps `version` and the list re-computes; the other 99,980
+rows never touch the DOM.
+
+## Columns too
+
+For very wide grids, `createColumnVirtualizer` does the same across leaf columns
+(horizontal). Drive it with `setScrollOffset(scrollLeft)` on the container's
+horizontal scroll:
+
+```ts
+const colVirtualizer = createColumnVirtualizer({
+  count: leafColumns.length,
+  viewportWidth: containerWidth,
+  estimateSize: (i) => leafColumns[i].getSize(),
+  overscan: 3,
+})
+```
+
+## Which one to use
+
+| Export | Use when |
+| --- | --- |
+| `createSvelteVirtualizer` | Inside a Svelte component - exposes a reactive `version` to re-derive from. |
+| `createVirtualizer` | Framework-agnostic - a non-Svelte custom layer / worker (subscribe manually). |
+| `createColumnVirtualizer` | Horizontal (column) virtualization. |
+
+`VirtualItem`, `VirtualizerOptions`, and `VirtualizerState` are exported for
+type annotations.
+
+## See also
+
+- [Build a table from scratch](./build-a-table.md) - render non-virtualized first
+- [Row models](./row-models.md)
+- [Benchmarks](../benchmarks.md) - the 1M-row numbers
 
 <!-- =================================================================
      /help/i18n-rtl  (community)
@@ -11481,6 +12457,8 @@ and body and ranks matches by where they hit.
 - [Column moving](./columns/column-moving.md)
 - [Column pinning](./columns/column-pinning.md)
 - [Column spanning](./columns/column-spanning.md)
+- [Aligned grids](./columns/aligned-grids.md)
+- [Column menu](./columns/column-menu.md)
 - [Custom header components](./columns/custom-header-components.md)
 
 ### Rows
@@ -11495,6 +12473,7 @@ and body and ranks matches by where they hit.
 - [Accessing rows](./rows/accessing-rows.md)
 - [Row dragging](./rows/row-dragging.md)
 - [Full-width rows](./rows/full-width-rows.md)
+- [Master / detail (nested grids)](./rows/master-detail.md)
 - [Tree rows (expand / collapse)](./rows/tree-rows.md)
 
 ### Cells
@@ -12048,7 +13027,7 @@ const columns: ColumnDef<typeof features, Row>[] = [
 | `sortable: true` | (default) | Sorting is on when `rowSortingFeature` is registered. |
 | `filter: true` | (default) | Filtering is on when `columnFilteringFeature` is registered. |
 | `valueFormatter` | `format: { ... }` | Built-in types: `number`, `currency`, `percent`, `date`. For custom, use `cell`. |
-| `valueGetter` | `accessorFn` | Returns the value for sorting/filtering. |
+| `valueGetter` | `fieldFn` | Returns the value for sorting/filtering. |
 | `cellRenderer` + `cellRendererParams` | `cell: renderComponent(C, ctx => props)` | One call, type-checked. |
 | `cellEditor: 'agTextCellEditor'` | `editorType: 'text'` | Built-in: `text`, `number`, `checkbox`, `date`. |
 | `editable: true` | `enableInlineEditing` prop on `<SvGrid>` | Per-grid, not per-column. (Per-column control on the roadmap.) |
@@ -12238,7 +13217,7 @@ miss it - it's a power-user feature.
 
 ### 3. AG Grid `valueGetter` chains
 AG Grid's `valueGetter` can read other column values via the API. In
-SvGrid, `accessorFn` only receives the row; if you need cross-column
+SvGrid, `fieldFn` only receives the row; if you need cross-column
 computed values, do it in the cell renderer with `ctx.row.original` or
 compute the derived value upstream and store it in the row.
 
@@ -13696,7 +14675,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 | `createTable(data, plugins)`              | `createSvGrid({...})` or `<SvGrid>`        |
 | `table.createColumns((t) => [...])`       | `columns: ColumnDef[]`                     |
 | `t.column({ accessor: 'x', header })`     | `{ field: 'x', header }`                   |
-| `t.column({ accessor: (r) => ... })`      | `{ id, accessorFn: (r) => ... }`           |
+| `t.column({ accessor: (r) => ... })`      | `{ id, fieldFn: (r) => ... }`           |
 | `t.group({ header, columns })`            | `{ header, columns: [...] }` (column group) |
 | `addSortBy()`                             | `rowSortingFeature`                        |
 | `addColumnFilters()` / `addTableFilter()` | `columnFilteringFeature`                   |
@@ -14035,12 +15014,12 @@ explicit row-model pipelines. If you already think in
 + ]
 ```
 
-The `accessorFn` form is the same:
+The `fieldFn` form is the same:
 
 ```diff
 - columnHelper.accessor((row) => row.profile.name, { id: 'name', header: 'Name' })
 
-+ { id: 'name', accessorFn: (row) => row.profile.name, header: 'Name' }
++ { id: 'name', fieldFn: (row) => row.profile.name, header: 'Name' }
 ```
 
 ## Mounting
@@ -14418,121 +15397,137 @@ teams use the `<SvGrid>` component instead because it removes the boilerplate.
 
 # Missing features
 
-This is the honest accounting of capabilities the help topics flagged as
-**not yet implemented** in the community build. Each entry has:
+An honest accounting of what is **not yet built**, audited against the shipped
+demo catalog. Most of what used to live here has shipped; the remaining gaps
+are small and clearly marked. Each entry has a rough effort estimate (S / M / L).
 
-- a short description of the gap,
-- the topic page(s) that link here, and
-- a rough effort estimate (S - small, M - medium, L - large).
-
-Use this list to decide which to PR yourself, which to file an issue
-about, and which to work around in the meantime.
+Shipped items are struck through with the demo or API that covers them, so you
+can see both the trajectory and the (short) list of real gaps.
 
 ## Columns
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| ~~`getRowId` prop on `<SvGrid>` wrapper~~ - **shipped** | [Row data](./rows/row-data.md) | ✓ |
-| ~~`cellClass(ctx)` / `rowClass(ctx)` callbacks~~ - **shipped** | [Styling rows](./rows/styling-rows.md), [Styling cells](./cells/styling-cells.md) | ✓ |
-| ~~`getColumnWidths()` / `setColumnWidth()` on `SvGridApi`~~ - **shipped** | [Column sizing](./columns/column-sizing.md) | ✓ |
-| ~~`setColumnPinning()` / `getColumnPinning()` on `SvGridApi`~~ - **shipped** | [Column pinning](./columns/column-pinning.md) | ✓ |
-| Header drag-to-reorder, built-in | [Column moving](./columns/column-moving.md) | M |
-| Per-column `enableSorting: false` / `enableFilter: false` flags | [Row sorting](./rows/row-sorting.md), [Filter API](./filtering/filter-api.md) | S |
-| Column spanning (`colSpan` on cell context) | [Column spanning](./columns/column-spanning.md) | L |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~`getRowId` prop~~ | **shipped** | ✓ |
+| ~~`cellClass(ctx)` / `rowClass(ctx)` callbacks~~ | **shipped** | ✓ |
+| ~~`getColumnWidths()` / `setColumnWidth()`~~ | **shipped** | ✓ |
+| ~~`setColumnPinning()` / `getColumnPinning()`~~ | **shipped** | ✓ |
+| ~~Header drag-to-reorder~~ | **shipped** - `enableColumnReorder`; demo `109-column-reorder-engine` | ✓ |
+| ~~Per-column disable sort / filter~~ | **shipped** - `sortable` / `filterable` on `ColumnDef` | ✓ |
+| ~~Column spanning~~ | **shipped** - cell merging via `MergeSpec` + `spreadsheetLayout` (demo `170`), **plus** declarative value-driven `colSpan` / `rowSpan` via `spansToMerges` | ✓ |
 
 ## Rows
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| Row pinning (top / bottom) | [Row pinning](./rows/row-pinning.md) | M |
-| Row spanning (merged cells across rows) | [Row spanning](./rows/row-spanning.md) | L |
-| Full-width / detail row API | [Full-width rows](./rows/full-width-rows.md) | M |
-| Built-in row dragging - managed + unmanaged + drop zones + grid-to-grid | [Row dragging](./rows/row-dragging.md) | L |
-| ~~`api.getDisplayedRows()` (post-pipeline)~~ - **shipped in v1.0** | [Accessing rows](./rows/accessing-rows.md) | ✓ |
-| Variable row height with `<SvGrid>` (only available via the headless virtualizer today) | [Row height](./rows/row-height.md) | M |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~Row pinning (top / bottom)~~ | **shipped** - `pinnedTopRows` / `pinnedBottomRows`; demos `107-pinned-rows`, `108-pinned-rows-engine` | ✓ |
+| ~~Row spanning (merged cells across rows)~~ | **shipped as cell merging** - `rowspan` in `MergeSpec`; demo `170-cell-merging` | ✓ |
+| ~~Full-width / detail row API~~ | **shipped** - `isDetailRow`; demo `106-detail-rows` | ✓ |
+| ~~Variable row height with `<SvGrid>`~~ | **shipped** - `rowHeight` accepts `(rowIndex) => px` | ✓ |
+| ~~`api.getDisplayedRows()`~~ | **shipped** | ✓ |
+| ~~Built-in row dragging~~ | **shipped** - `rowDragManaged` reorders in-grid and moves rows **grid-to-grid** via a shared `rowDragGroup`; `onRowDragEnd` on the receiver; demos `105-row-reorder` (custom) + `180-row-dragging` (managed) | ✓ |
 
 ## Cells
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| Built-in tooltip API on `ColumnDef` | [Tooltips](./cells/tooltips.md) | S |
-| Built-in cell flash / animated change highlight on `ColumnDef` (demos roll their own via `renderSnippet`, e.g. `11-stock-market`, `18-cascade-editing`) | [Highlighting changes](./cells/highlighting-changes.md) | S |
-| Formula language / formula editor (enterprise-grade parity) | [Expressions](./cells/expressions.md) | L |
-| Find-in-grid feature | (enterprise gap) | M |
-| Notes feature | (enterprise gap) | M |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~Built-in tooltip API on `ColumnDef`~~ | **shipped** - `tooltip`; demo `85-tooltips-and-notes` | ✓ |
+| ~~Formula language / formula editor~~ | **shipped** - in-grid engine (demo `83-spreadsheet-formulas`), HyperFormula adapter (demo `173-hyperformula`), xlsx formulas (`101`, `119`) | ✓ |
+| ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
+| ~~Notes~~ | **shipped** - `notes` prop + cell comments; demos `85-tooltips-and-notes`, `91-cell-comments` | ✓ |
+| ~~Built-in cell flash / animated change highlight~~ | **shipped** - `cellFlash` on `ColumnDef` | ✓ |
 
 ## Export / Print
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| ~~Excel / xlsx export~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
-| ~~PDF export~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
-| ~~CSV / TSV / HTML export~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
-| ~~Print (printable view + browser print dialog)~~ - **shipped in `@svgrid/enterprise` v1.0** | [Export](./export.md) | ✓ |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~Excel / xlsx, PDF, CSV / TSV / HTML export, Print~~ | **shipped** in `@svgrid/enterprise` - demos `21`, `56`-`59`, `93`, `101`, `119`, `126`, `127` | ✓ |
 
 ## Filtering
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| Floating filters with per-operator parity (inline filter row exists; per-operator UI under the funnel) | [Floating filters](./filtering/floating-filters.md) | M |
-| ~~`between` operator exposed in the column menu~~ - **shipped** (Number + Date columns get a "Between" entry with two value inputs) | [Number filter](./filtering/number-filter.md), [Date filter](./filtering/date-filter.md) | ✓ |
-| Set filter - tree-list, async values, Excel-mode | [Set filter](./filtering/set-filter.md) | L |
-| `multi`-filter on a single column (AND / OR within column) | [Filter conditions](./filtering/filter-conditions.md) | M |
-| ~~`clearAllFilters()` on `SvGridApi`~~ - **shipped in v1.0** | [Filter API](./filtering/filter-api.md) | ✓ |
-| ~~`api.getFilters()` reader on `SvGridApi`~~ - **shipped in v1.0** | [Filter API](./filtering/filter-api.md) | ✓ |
-| Locale-aware text filtering (accent-insensitive, ICU-style collation) | [Text filter](./filtering/text-filter.md) | M |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~`between` operator in the column menu~~ | **shipped** - demo `64-filter-between-operator` | ✓ |
+| ~~Set filter (tree-list, async, Excel-mode)~~ | **shipped** - demo `111-set-filter-advanced` | ✓ |
+| ~~Locale-aware text filtering~~ | **shipped** - demo `110-locale-aware-filter` | ✓ |
+| ~~`clearAllFilters()` / `getFilters()`~~ | **shipped** | ✓ |
+| ~~Floating filters (per-operator)~~ | **shipped** - filter row honours every operator per column with typed inputs + inline `between`; demo `179` | ✓ |
+| ~~Multi-condition filter within one column (AND / OR)~~ | **shipped** - two conditions per column via the funnel or `api.setFilter`; demo `178` | ✓ |
 
 ## Editing
 
-| Gap | Where | Effort |
-| --- | ----- | ------ |
-| `cellEditor` slot for custom inline editors | [Edit components](./editing/edit-components.md) | M |
-| Built-in select & rich-select editors | [Provided editors](./editing/provided-editors.md) | M |
-| Built-in large-text (textarea) editor | [Provided editors](./editing/provided-editors.md) | S |
-| Per-column `valueParser` | [Parsing values](./editing/parsing-values.md) | S |
-| Per-column `validate()` returning `string | true` | [Validation](./editing/validation.md) | S |
-| Programmatic `api.startEditing(rowIndex, columnId)` / `stopEditing()` | [Start / stop editing](./editing/start-stop-editing.md) | S |
-| Full-row editing mode | [Full-row](./editing/full-row.md) | M |
-| Built-in undo / redo stack (now feasible since `onCellValueChange` ships) | [Undo / redo](./editing/undo-redo.md) | M |
-| Batch / staged editing mode (commit a set, not individual cells) | (enterprise gap) | M |
+| Gap | Status | Effort |
+| --- | ------ | ------ |
+| ~~`cellEditor` slot for custom inline editors~~ | **shipped** - demos `84-editor-types`, `66-custom-cell-editors` | ✓ |
+| ~~Built-in select & rich-select editors~~ | **shipped** - `editorType: 'list' / 'rich-select'`; demo `84-editor-types` | ✓ |
+| ~~Built-in large-text (textarea) editor~~ | **shipped** - demo `84-editor-types` | ✓ |
+| ~~Per-column `validate()`~~ | **shipped** - demos `24-validation`, `103-async-validation` | ✓ |
+| ~~Built-in undo / redo stack~~ | **shipped** - `api.undo()` / `redo()`; demo `86-undo-redo` | ✓ |
+| ~~Batch / staged editing mode~~ | **shipped** - demo `88-staged-editing` | ✓ |
+| ~~Per-column `valueParser`~~ | **shipped** - `valueParser` on `ColumnDef`; demo `175` | ✓ |
+| ~~Programmatic `api.startEditing()` / `stopEditing()`~~ | **shipped** - demo `176` | ✓ |
+| ~~Full-row editing mode~~ | **shipped** - `fullRowEditing`; demo `177` | ✓ |
+
+## The real remaining gaps (short list)
+
+The previous round shipped declarative col/row spanning, cell flash,
+`valueParser`, programmatic start/stop editing, full-row editing, multi-condition
+filters, per-operator floating filters, and managed grid-to-grid row dragging -
+all with demos and docs. What is left is a short list of AG-Grid-Enterprise
+parity items, mostly UX affordances on top of engines that already exist:
+
+Audited against the code and the 171-demo catalog (four-way inventory, June 2026).
+This list is deliberately short - most AG-Grid-Enterprise parity items already
+ship (row-group panel `89`, status bar `144`, tool panel `146`, pivot + designer,
+server-side row model `148`, export with images/styles `56`/`58`, charts,
+sparklines, collaboration). The genuine remaining gaps:
+
+| Gap | What exists today | Effort |
+| --- | ----------------- | ------ |
+| ~~**Multiple range selection** (Ctrl-drag additional cell ranges)~~ | **shipped** - Ctrl/Cmd+drag adds ranges; all highlight + copy together; `api.selectCells([...])` takes many; demo `118` | ✓ |
+| ~~**Cell data-type inference** (`cellDataType`)~~ | **shipped** - `cellDataType` on `ColumnDef` + grid-level `inferColumnTypes` | ✓ |
+| ~~**Merged-cell export to xlsx**~~ | **shipped** - `merges` option on `exportData` (single-sheet), lines up with `MergeSpec` | ✓ |
+| ~~**Filters tool panel tab**~~ | **shipped** - Columns \| Filters tabs in the tool panel (`146`), in sync with the column menu | ✓ |
+| ~~**Copy with headers**~~ | **shipped** - `copyHeadersToClipboard` + `processCellForClipboard` hook | ✓ |
+| ~~**Aligned grids**~~ | **shipped** - `alignedGridGroup` syncs horizontal scroll + column-resize widths; demo `182` | ✓ |
+| ~~**Collapsible column groups**~~ | **shipped** - `columnGroupShow: 'open' \| 'closed'` + `openByDefault`; demo `183` | ✓ |
+| ~~**Column menu tabs** (General / Filter / Columns)~~ | **shipped** - tabbed column menu; demo any filterable grid | ✓ |
+| ~~**External row-drag drop zones**~~ | **shipped** - `rowDropZone` action (drop rows onto any element); demo `184` | ✓ |
+| ~~**Nested master/detail grids**~~ | **shipped** - `isDetailRow` + `renderDetailRow` hosting a child grid; demo `181` | ✓ |
+
+### Still open (medium / large)
+
+| Gap | Note | Effort |
+| --- | ---- | ------ |
+| **Multi Filter** (set + text stacked on one column) | one operator-set per column today | M |
+| **Custom filter / floating-filter component** slot | first-class pluggable filter | M |
+| **Custom tool panels** | panel is fixed Columns + Filters | M |
+| **UI-string localisation** (`localeText`) | menu/panel labels are EN; data formatting is locale-aware | M |
+| **Row-grouping display modes** (single / multiple / groupRows) + group-level footers | grouping + group panel ship; display variants do not | M |
+| **In-grid pivot mode** (toggle on the main grid) | pivot ships as engine + designer, rendered as a separate grid | M-L |
+| **Integrated-chart depth** (range-chart context menu, chart toolbar, cross-filtering) | 17 chart types + wizard ship; the select-range-to-chart loop does not | L |
+| **Server-side pivot / viewport row model** | SSRM ships sort/filter/group/infinite | L |
 
 ## What's already there
 
-For balance - the things that **are** built in and stable:
-
-- Sorting (single + multi, click + shift-click) with `onSortingChange` callback
-- Per-column filtering (menu + filter row + global) with operators `contains` / `equals` / `startsWith` / `greaterThan` / `lessThan` / **`between`** (two-input range) / `isBlank`, and an `onFiltersChange` callback that emits the consolidated `{ global, columns: [{ id, operator, value, valueTo? }] }` payload
-- **External-data mode**: `externalSort` / `externalFilter` props let the consumer own row ordering and filtering for server-side / tree data; the grid records UI state but does not re-order rows (see demo `09-server-side`, `08-tree-and-master-detail`)
-- Pagination, programmatic page controls
-- Grouping (one or more columns) + grouped/aggregated footer summaries
-- Row expansion (`rowExpandingFeature`)
-- Row selection (single, multi, checkbox column) with `onRowSelectionChange` callback
-- Cell range selection + copy/paste as TSV
-- Inline editing with five built-in editor types and `onCellValueChange(event)` callback (used by demo `18-cascade-editing`)
-- Row + column virtualization, with overscan controls; column virtualizer detects per-column size changes (so resize / fit-to-width re-render correctly)
-- Column resize via the header handle, plus `api.setColumnWidth(id, px)` / `api.getColumnWidths()` for programmatic / persisted layouts
-- Fit columns to viewport (`fitColumns` prop) - residue-absorbing, with modest shrink-to-fit
-- Column pinning (left / right) via the column menu **and** via `api.setColumnPinning({left, right})` / `api.getColumnPinning()`
-- **Stable row identity**: `getRowId(row, index)` prop on `<SvGrid>` (and `SvGridOptions` for the headless core) - drives selection / expansion / edit state across re-orders and filters
-- **Conditional class hooks**: `cellClass` on `ColumnDef` and `rowClass` on `<SvGrid>` accept string / array / `Record<string, boolean>` or a callback - no more wrapping every cell in a render snippet just to tint it
-- Optional leading row-number column (`showRowNumbers`) and selection checkbox column
-- "Source" button in the gallery shell shows each demo's raw `.svelte` source for copy-paste
-- Imperative API for data + columns + filters + sort + grouping + visibility (`onApiReady`)
-- WAI-ARIA grid pattern with helpers in [`a11y.ts`](../../packages/grid/src/a11y.ts) (see demo `17-accessibility`)
-- Locale-aware number / currency / percent / date / datetime formatters with `Intl` caching (see demo `15-localization`)
-- Built-in CSS custom-property theming surface (`--sg-*`); per-instance theme via `style="--sg-bg: ..."` (see demo `10-custom-cells-and-themes`)
-- CSP-clean runtime: no `eval`, no `new Function`, no inline scripts (see demo `16-csp-compliant`)
-- SSR-friendly: the grid renders meaningful HTML before hydration (see demo `19-ssr`)
+The stable, built-in feature surface is large. Highlights: sorting (single +
+multi), per-column filtering (menu + row + global) with a `between` range
+operator and set/tree/async filters, pagination, grouping + aggregation, tree
+data, master/detail + full-width detail rows, row + column virtualization
+(100k+ and a 1M-row demo), cell-range selection + copy/paste + Excel-style fill
+handle, inline editing with 14 editor types plus a custom `cellEditor` slot,
+undo/redo, staged editing, find-in-grid, notes + cell comments, tooltips,
+conditional formatting, sparklines, cell merging, column pinning/reorder/resize,
+row pinning, a formula engine (+ HyperFormula adapter), server-side row model,
+Excel/PDF/CSV/HTML export + print (Enterprise), pivot + charts + AI (Enterprise),
+WAI-ARIA + keyboard nav, RTL, i18n, theming via `--sg-*` tokens, SSR, and a
+CSP-clean runtime.
 
 ## How to contribute
 
-1. Pick an entry from above.
-2. Open an issue describing the API you'd want - names, types, the
-   minimal change.
-3. If you can write the patch, do so. Keep tests with the change.
-
-PRs that close items here are the fastest way to move SvGrid towards
-real enterprise-quality parity in the community build.
+1. Pick a gap from **The real remaining gaps** above.
+2. Open an issue describing the API you'd want - names, types, the minimal change.
+3. If you can write the patch, do so, and keep tests with the change.
 
 <!-- =================================================================
      /help/mobile-card-view  (community)
@@ -16148,33 +17143,110 @@ instead of being cell-by-cell - useful for inline editors, banner ads,
 section dividers, and detail-row expansions.
 <div data-docs-demo="08-tree-and-master-detail" data-height="540"></div>
 
-## Status
+## Detail-row API (shipped)
 
-Built-in support - through `enableRowSummaries={true}` for a single
-sticky footer row - exists; arbitrary mid-table full-width rows are
-**not** built in.
+Full-width rows are built in via `isDetailRow` + `renderDetailRow`: mark a row as
+a detail row and it renders as a real full-width `colspan` cell hosting your
+snippet - a nested grid, a form, timelines, anything.
 
-For inline master/detail (where expanding a row reveals a child) see
-[demos/08-tree-and-master-detail.svelte](../../../examples/src/demos/08-tree-and-master-detail.svelte):
-the demo expands a row to mount a second `<SvGrid>` underneath, with the
-detail keyed to the parent.
+```svelte
+<SvGrid
+  {data} {columns}
+  isDetailRow={(row) => row.kind === 'detail'}
+  renderDetailRow={DetailPanel}
+/>
+```
 
-## Workaround - render a divider between groups
+See [Master / detail (nested grids)](./master-detail.md) for the full
+expand/collapse pattern, and demo `106-detail-rows` for a multi-panel detail.
 
-When you only need a visual band (no editing, no nested grid), render a
-plain DOM band above the grid for sticky banners, or use
-[grouping](./row-data.md) to get a "group label" row that visually spans
-the row width through the indented label column.
-
-## Tracked at
-
-[Missing features](../missing-features.md) - first-class full-width rows
-and detail-row API.
+A single sticky footer row is also available via `enableRowSummaries={true}`.
 
 ## See also
 
-- [Master / detail demo](../../../examples/src/demos/08-tree-and-master-detail.svelte)
+- [Master / detail (nested grids)](./master-detail.md)
 - [Grouping](./row-data.md)
+
+<!-- =================================================================
+     /help/rows/master-detail  (community)
+     ================================================================== -->
+
+# Master / detail (nested grids)
+
+Master/detail is the AG-Grid pattern where each **master** row expands to reveal
+a **detail** panel - most often a nested grid of the row's child records. SvGrid
+builds it from two props on `<SvGrid>`:
+
+- `isDetailRow(row, rowIndex)` - return `true` for the rows that should render as
+  a full-width detail row (a real `colspan` row spanning every column),
+- `renderDetailRow` - a snippet that renders that row's content. Put another
+  `<SvGrid>` inside it and you have a nested grid.
+
+<div data-docs-demo="181-master-detail-grid" data-height="560"></div>
+
+## Pattern
+
+Keep an `expanded` set, and splice a "detail" sentinel row into the data right
+after each expanded master row. `isDetailRow` recognises the sentinels;
+`renderDetailRow` renders the child grid.
+
+```svelte
+<script lang="ts">
+  type Row = Account | { kind: 'detail'; parentId: string; children: Call[] }
+
+  let expanded = $state(new Set<string>())
+  const toggle = (id: string) => {
+    const next = new Set(expanded)
+    next.has(id) ? next.delete(id) : next.add(id)
+    expanded = next
+  }
+
+  // Master rows + a detail sentinel after each expanded one.
+  const visible = $derived.by(() => {
+    const out: Row[] = []
+    for (const a of accounts) {
+      out.push(a)
+      if (expanded.has(a.id)) out.push({ kind: 'detail', parentId: a.id, children: a.callRecords })
+    }
+    return out
+  })
+</script>
+
+{#snippet DetailGrid(p: { row: Row })}
+  {#if p.row.kind === 'detail'}
+    <div style="height: 200px;">
+      <SvGrid data={p.row.children} columns={detailColumns} containerHeight="100%" />
+    </div>
+  {/if}
+{/snippet}
+
+<SvGrid
+  data={visible}
+  {columns}
+  isDetailRow={(row) => row.kind === 'detail'}
+  renderDetailRow={DetailGrid}
+/>
+```
+
+The first master column typically renders a chevron whose click calls
+`toggle(row.id)`.
+
+## Notes
+
+- The detail row is a genuine full-width `colspan` cell, so the nested grid gets
+  the full width regardless of the master's column layout.
+- Give the detail container a fixed height (e.g. `200px`) so the nested grid
+  scrolls internally instead of pushing the master layout around.
+- Set `virtualization={false}` on the master when detail rows have variable
+  height, so the fixed-row-height virtualizer doesn't fight them.
+- The detail content is arbitrary - a nested grid, a form, timelines, charts.
+  See [detail rows](../../../examples/src/demos/106-detail-rows.svelte) for a
+  multi-panel (non-grid) detail.
+
+## See also
+
+- [Full-width rows](./full-width-rows.md)
+- [Tree rows](./tree-rows.md) - for hierarchy within a single grid
 
 <!-- =================================================================
      /help/rows/row-data  (community)
@@ -16272,60 +17344,101 @@ For controlled skeleton-row UX in virtualized server-side grids, see
 
 # Row dragging
 
-Drag-to-reorder for rows is a common interaction (kanban-like reordering,
-moving items between two grids, dragging rows out to an external drop
-zone).
-<div data-docs-demo="23-bulk-actions" data-height="540"></div>
+Managed row dragging lets users **reorder rows** within a grid and **move rows
+between grids**. Turn on `rowDragManaged` and every row becomes a drag source
+(grab cursor + a grip in the row-number cell); a glowing line shows where the
+row will land, and the grid splices its own data on drop.
+<div data-docs-demo="180-row-dragging" data-height="560"></div>
 
-## Status
+## Reorder within one grid
 
-Row dragging is **not yet built in**. There is no managed-drag prop and no
-unmanaged-drag hook. There is no row drop zone support, and no
-grid-to-grid drag.
-
-## Workaround - HTML5 DnD on a leading "handle" column
-
-Add a leading column whose cell renders a draggable handle. Use a row id
-in the dataTransfer payload and reorder the data array on drop. A working
-sketch - drop into your column array:
-
-```ts
-import { renderSnippet } from '@svgrid/grid'
-
-{#snippet Handle(p: { id: string })}
-  <span
-    draggable="true"
-    ondragstart={(e) => e.dataTransfer?.setData('text/plain', p.id)}
-    aria-label="Drag row"
-  >⋮⋮</span>
-{/snippet}
-
-const columns = [
-  {
-    id: 'drag',
-    header: '',
-    width: 24,
-    cell: (ctx) => renderSnippet(Handle, { id: ctx.row.original.id }),
-  },
-  // ... rest of your columns
-]
+```svelte
+<SvGrid {data} {columns} showRowNumbers rowDragManaged />
 ```
 
-The receiving row needs `ondragover` / `ondrop` handlers - register them
-via a custom `cell` renderer on a column the user can drop onto, or via a
-row-level event listener on the grid container (only the leftmost cell of
-each row is enough to act as the drop target if the grid stretches to the
-viewport width).
+Drag a row by its grip and drop it above or below another row. The grid mutates
+its internal data so the new order sticks - no wiring required.
 
-## Tracked at
+## Move rows between grids
 
-[Missing features](../missing-features.md) - first-class row dragging,
-external drop zones, grid-to-grid moves.
+Give two (or more) grids the **same** `rowDragGroup`. A row dragged out of one
+and dropped into another is removed from the source and inserted into the
+target:
+
+```svelte
+<SvGrid data={backlog} {columns} showRowNumbers
+        rowDragManaged rowDragGroup="sprint-board" />
+
+<SvGrid data={sprint} {columns} showRowNumbers
+        rowDragManaged rowDragGroup="sprint-board" />
+```
+
+Grids with **different** groups (or no group) can only reorder within
+themselves. Drop below the last row - or into an empty grid - to append.
+
+## External drop zones
+
+Drop a dragged row onto any element outside the grid - a trash can, an
+"assign to" bucket, a second pane - with the `rowDropZone` action. It accepts
+managed drags from a grid with the matching `rowDragGroup`, removes the row from
+its source grid, and hands it to your `onDrop`:
+
+```svelte
+<script>
+  import { SvGrid, rowDropZone } from '@svgrid/grid'
+  let archived = $state([])
+</script>
+
+<SvGrid {data} {columns} rowDragManaged rowDragGroup="tasks" />
+
+<div use:rowDropZone={{ group: 'tasks', onDrop: (e) => (archived = [...archived, e.row]) }}>
+  Drop here to archive
+</div>
+```
+
+The element gets a `sv-grid-row-dropzone-over` class while a matching row hovers
+it (style it or override). Omit `group` to accept a managed drag from any grid.
+
+<div data-docs-demo="184-external-drop-zone" data-height="420"></div>
+
+## React to a move
+
+`onRowDragEnd` fires on the **receiving** grid after the drop settles. The grid
+has already applied the change to its own data; use the event to mirror the move
+into your own state (persistence, server sync):
+
+```svelte
+<SvGrid
+  {data} {columns}
+  rowDragManaged rowDragGroup="sprint-board"
+  onRowDragEnd={(e) => {
+    // e.row       - the moved row (your data object)
+    // e.toIndex   - landing index in this grid
+    // e.sameGrid  - true = reorder, false = arrived from another grid
+    // e.fromGridId / e.toGridId - stable numeric ids of source / target
+    console.log(e.sameGrid ? 'reordered' : 'received', e.row, '→', e.toIndex)
+  }}
+/>
+```
+
+## Notes
+
+- **Managed data.** On drop the grid updates its internal data directly, so
+  dragging works out of the box. If you later replace the `data` prop with a new
+  array (a "Reset" button), the grid re-syncs to it. Use `onRowDragEnd` to keep
+  your own array in step if you need it as the source of truth.
+- **Row matching.** Rows are moved by object identity, so `getRowId` is not
+  required - though setting it is still recommended for stable selection and
+  keyed rendering.
+- **Discoverability.** The grip is drawn in the row-number cell, so pair
+  `rowDragManaged` with `showRowNumbers`. Without row numbers the whole row is
+  still draggable (grab cursor).
 
 ## See also
 
-- [Custom cells](../cells/cell-components.md)
 - [Updating data](./row-data.md)
+- [Transactions](./transactions.md)
+- [Row sorting](./row-sorting.md) - drag order is manual; sorting overrides it
 
 <!-- =================================================================
      /help/rows/row-height  (community)
@@ -19866,7 +20979,7 @@ Add more by calling `emit('yourevent', detail)` from any SvGrid callback.
   (`sortable`, `row-height`) work as HTML attributes.
 - **Custom cell snippets** (`renderSnippet`) are a Svelte authoring feature.
   Across the custom-element boundary, prefer column `format` options and
-  `accessorFn` for display, or build the snippet logic inside the wrapper.
+  `fieldFn` for display, or build the snippet logic inside the wrapper.
 - **Bundle size.** The custom element ships the grid plus the Svelte runtime in
   one file. That's expected for a self-contained drop-in element; native Svelte
   consumers share the runtime and ship less.
@@ -24772,7 +25885,7 @@ _No JSDoc yet._
 export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = {
   id?: string
   field?: keyof TData & string
-  accessorFn?: (row: TData) => unknown
+  fieldFn?: (row: TData) => unknown
   header?: ColumnDefTemplate<HeaderContext<TData>>
   footer?: ColumnDefTemplate<HeaderContext<TData>>
   cell?: ColumnDefTemplate<CellContext<TData>>
@@ -25577,7 +26690,7 @@ type ColumnDef<TFeatures, TData> = {
   // Identity
   id?: string
   field?: keyof TData & string
-  accessorFn?: (row: TData) => unknown
+  fieldFn?: (row: TData) => unknown
 
   // Rendering
   header?: string | RenderFn
@@ -25587,8 +26700,9 @@ type ColumnDef<TFeatures, TData> = {
   formatter?: CellFormatter<TData>
 
   // Layout
-  width?: number
-  align?: 'left' | 'right' | 'center'
+  width?:   number
+  visible?: boolean
+  align?:   'left' | 'right' | 'center'
 
   // Editing
   editorType?: 'text' | 'number' | 'date' | 'datetime' | 'checkbox'
@@ -25600,7 +26714,7 @@ type ColumnDef<TFeatures, TData> = {
 
 ## Identity
 
-One of `field`, `accessorFn`, or `id` must be set. The grid derives the
+One of `field`, `fieldFn`, or `id` must be set. The grid derives the
 column id in that order:
 
 1. Explicit `id` wins if present.
@@ -25610,9 +26724,9 @@ column id in that order:
 
 | Field         | Type                              | Notes                                                                  |
 | ------------- | --------------------------------- | ---------------------------------------------------------------------- |
-| `id`          | `string`                          | Stable column id. Required when you use `accessorFn`.                  |
+| `id`          | `string`                          | Stable column id. Required when you use `fieldFn`.                  |
 | `field`       | `keyof TData & string`            | Reads `row[field]`. The clean default.                                 |
-| `accessorFn`  | `(row: TData) => unknown`         | Computed value. Pair with `id`.                                        |
+| `fieldFn`  | `(row: TData) => unknown`         | Computed value. Pair with `id`.                                        |
 
 ## Rendering
 
@@ -25663,8 +26777,9 @@ Example: `{ type: 'date', pattern: 'y-m-d' }` ⇒ `2026-06-05`.
 
 | Field   | Type                                 | Notes                                                                                 |
 | ------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
-| `width` | `number`                             | Initial width in pixels. Falls back to the wrapper's `columnWidth` prop (default 140). |
-| `align` | `'left' \| 'right' \| 'center'`      | Header + cell alignment. Inferred from `editorType` when omitted: number/date → right, checkbox → center, else left. |
+| `width`   | `number`                             | Initial width in pixels. Falls back to the wrapper's `columnWidth` prop (default 140). |
+| `visible` | `boolean`                            | Initial visibility. Set `false` to start the column hidden while still listing it in the Choose Columns / tool panel for the user to re-enable. Applied once at mount; after that `api.setColumnVisible` and user toggles win. On a group column, `false` hides the whole group's leaf columns. |
+| `align`   | `'left' \| 'right' \| 'center'`      | Header + cell alignment. Inferred from `editorType` when omitted: number/date → right, checkbox → center, else left. |
 
 ## Editing
 
@@ -25722,7 +26837,7 @@ import { renderSnippet } from '@svgrid/grid'
 {
   id: 'name',
   header: 'Name',
-  accessorFn: (r) => `${r.firstName} ${r.lastName}`,
+  fieldFn: (r) => `${r.firstName} ${r.lastName}`,
   cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
 }
 ```
@@ -26833,6 +27948,12 @@ for (const row of grid.getRowModel().rows) {
   for (const cell of row.getAllCells()) drawCell(cell)
 }
 ```
+
+Here is exactly that - the same headless brain, rendered as a plain
+hand-styled `<table>` instead of `<SvGrid>`. Sort and filter are the engine's;
+the markup is the demo's:
+
+<div data-docs-demo="186-headless-table" data-height="480"></div>
 
 **2. Features are opt-in modules.** Monolithic grid libraries ship everything
 in one bundle. With SvGrid you only register what you use:

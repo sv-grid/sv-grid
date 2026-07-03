@@ -32,6 +32,32 @@ export type CellContext<TData extends RowData> = {
   getValue: () => unknown
 }
 
+/** Params passed to a column's `colSpan(...)` / `rowSpan(...)` callbacks. */
+export type CellSpanParams<TData extends RowData = RowData> = {
+  /** The row's underlying data object. */
+  data: TData
+  /** Display-row index in the current (filtered/sorted) row set. */
+  rowIndex: number
+  /** The column's id. */
+  columnId: string
+  /** The cell's base value for this column. */
+  value: unknown
+}
+
+/** Params passed to a column's `valueParser(...)` on edit commit. */
+export type ValueParserParams<TData extends RowData = RowData> = {
+  /** The value after built-in per-`editorType` coercion. */
+  newValue: unknown
+  /** The cell's previous value. */
+  oldValue: unknown
+  /** The raw string the editor produced (pre-coercion). */
+  rawInput: string
+  /** The row's underlying data object. */
+  data: TData
+  /** The column's id. */
+  columnId: string
+}
+
 /**
  * Context passed to a custom `cellEditor` snippet/component. Three write
  * helpers cover the lifecycle:
@@ -148,11 +174,50 @@ export function applyGroupAggregate<TData extends RowData>(
 export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = {
   id?: string
   field?: keyof TData & string
-  accessorFn?: (row: TData) => unknown
+  fieldFn?: (row: TData) => unknown
   header?: ColumnDefTemplate<HeaderContext<TData>>
   footer?: ColumnDefTemplate<HeaderContext<TData>>
   cell?: ColumnDefTemplate<CellContext<TData>>
   columns?: Array<ColumnDef<TFeatures, TData>>
+  /**
+   * Declarative cell spanning (merged cells). Return how many COLUMNS this
+   * cell spans to the right (1 = no span). Value-driven, AG-Grid-style. Feed
+   * `spansToMerges(rows, columns)` into `spreadsheetLayout` to apply - it uses
+   * the same real `colspan`/`rowspan` merge engine (no separate code path).
+   */
+  colSpan?: (params: CellSpanParams<TData>) => number
+  /**
+   * Declarative cell spanning (merged cells). Return how many ROWS this cell
+   * spans downward (1 = no span). See `colSpan` for how to apply.
+   */
+  rowSpan?: (params: CellSpanParams<TData>) => number
+  /**
+   * High-level data type for the column. A convenience that resolves to the
+   * right `editorType`, alignment, date `format`, and filter operators without
+   * setting each by hand:
+   *   'text' → text editor, left-aligned
+   *   'number' → number editor, right-aligned, numeric filter operators
+   *   'boolean' → checkbox editor, centered
+   *   'date' → date editor (Date values), right-aligned, `{ type: 'date' }` format
+   *   'dateString' → date editor for ISO date STRINGS (e.g. '2026-06-27')
+   * Anything you set explicitly (`editorType`, `align`, `format`) still wins -
+   * `cellDataType` only fills the gaps. Grid-level `inferColumnTypes` infers
+   * this from the first data row for columns that declare neither.
+   */
+  cellDataType?: 'text' | 'number' | 'boolean' | 'date' | 'dateString'
+  /**
+   * For a column INSIDE a collapsible column group: `'open'` shows this column
+   * only while the group is expanded, `'closed'` only while collapsed. Omit to
+   * always show it. Setting it on any direct child gives the parent group a
+   * collapse toggle. Pair with `openByDefault` on the group.
+   */
+  columnGroupShow?: 'open' | 'closed'
+  /**
+   * For a GROUP column (one with `columns: [...]`): start the group expanded.
+   * Defaults to `false` (collapsed), matching AG Grid - so only the always-on
+   * and `columnGroupShow: 'closed'` children show until the user expands it.
+   */
+  openByDefault?: boolean
   editorType?:
     | 'text'
     | 'number'
@@ -201,6 +266,19 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * `false`.
    */
   editable?: boolean | ((context: CellContext<TData>) => boolean)
+  /**
+   * Transform the committed edit value before it is written to the row.
+   * Runs after the built-in per-`editorType` coercion, so `newValue` is
+   * already type-parsed; return the final value to store (e.g. round a
+   * number, uppercase a code, look up an id). AG-Grid-style `valueParser`.
+   */
+  valueParser?: (params: ValueParserParams<TData>) => unknown
+  /**
+   * Briefly flash / highlight this column's cell when its value changes
+   * (streaming feeds, edits, server pushes). `true` uses the default flash;
+   * pass `{ className }` to apply your own animation class instead.
+   */
+  cellFlash?: boolean | { className?: string }
   /**
    * When `false`, this column never shows a sort indicator and clicking
    * its header is a no-op - `api.setSort(thisColumn, ...)` is also
@@ -884,8 +962,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             const values = new Array<unknown>(columnCount)
             for (let i = 0; i < columnCount; i++) {
               const column = columns[i]!
-              if (column.columnDef.accessorFn) {
-                values[i] = column.columnDef.accessorFn(original)
+              if (column.columnDef.fieldFn) {
+                values[i] = column.columnDef.fieldFn(original)
               } else if (column.columnDef.field) {
                 values[i] = (original as any)[column.columnDef.field]
               } else {

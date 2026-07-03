@@ -50,6 +50,7 @@ function loadSourceFor(id: string): () => Promise<string> {
  */
 export type DemoCategory =
   | 'Getting Started'
+  | 'Headless'
   | 'Editing'
   | 'Filtering & Search'
   | 'Sorting & Grouping'
@@ -88,6 +89,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Mobile & Responsive',
   'Integrations',
   'Industry Templates',
+  'Headless',
   'Enterprise',
 ]
 
@@ -125,6 +127,14 @@ export const demos: Demo[] = [
   demo('78-million-rows',           '1 million rows',              'A literal 1,000,000-row dataset with sort, filter, group, scroll, and inline edit all on. Chunked generation with progress.', 'Getting Started'),
   demo('80-cell-types-showcase',    'Cell types showcase',         'Every editor in one grid: color picker, date picker, 5-star rating, mood feedback, list/chips, number formatting, status badge.', 'Getting Started'),
 
+  // ----- Headless
+  demo('186-headless-table',        'Headless -> your own table',  'No <SvGrid>: the createSvGrid engine sorts + filters, and this component renders a plain, hand-styled <table>. The engine does the logic; you own the markup.', 'Headless'),
+  demo('187-headless-virtual',      'Headless virtualization',     '50,000 rows, headless. createSvelteVirtualizer reports the visible slice; the markup is hand-written in a custom scroll container.', 'Headless'),
+  demo('188-headless-styled',       'Styling a headless table',    'You own every pixel. Same engine, three looks - flip preset (minimal / bordered / card), density, and zebra striping. --sg-* tokens keep it in sync with the site theme.', 'Headless'),
+  demo('189-headless-shared-state', 'Two grids, one shared state', 'createGridState returns a [get, set] tuple - a reactive store you own. Feed it to two createSvGrid engines and they stay in lockstep.', 'Headless'),
+  demo('190-headless-row-models',   'Row models are a pipeline',   'Flip the group-by control and watch the pipeline change shape: core -> grouped -> expanded. Group rows carry the aggregate: sum roll-up; the markup is a plain hand-styled <table>.', 'Headless'),
+  demo('191-headless-server-side',  'Headless server-side',        'Paging + sorting + filtering + load on demand. The "server" owns the data and returns one page at a time; each state change fires a single request. The engine wraps only the current page.', 'Headless'),
+
   // ----- Editing
   demo('05-inline-editing',         'Inline editing',              'Typed editors (text/number/checkbox/date) with dirty tracking + save.', 'Editing'),
   demo('84-editor-types',           'Editor types + custom slot',  'Built-in select / rich-select / textarea editors plus a custom `cellEditor` snippet (a range slider) for cases the built-ins do not cover.', 'Editing'),
@@ -138,6 +148,9 @@ export const demos: Demo[] = [
   demo('86-undo-redo',              'Undo / redo (Ctrl+Z)',        '`api.undo()` / `api.redo()` + Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z. 200-step bounded history; clearHistory after a successful save resets the baseline.', 'Editing'),
   demo('95-fill-handle',            'Excel-style fill handle',     'Walks through every fill pattern the engine detects: numeric series, date series, weekday sequence, reverse-fill, horizontal fill, copy-mode.', 'Editing'),
   demo('103-async-validation',      'Async / server validation',   'Debounced async validators per column: SKU uniqueness, GTIN-13 checksum, price vs category median. Inline ✓ / ! state + event log.', 'Editing'),
+  demo('175-value-parser',          'valueParser - transform on commit', 'Per-column `valueParser` refines the committed value after built-in coercion: uppercase a SKU, parse "$1,299.90" into a number, clamp a discount 0–100, round a weight. Log shows raw input → stored.', 'Editing'),
+  demo('176-programmatic-editing',  'Programmatic editing (start/stop)', 'Drive the editor from outside via api.startEditing(row, columnId) / stopEditing(cancel?). A toolbar edits the active cell, commits or cancels, and a guided-entry flow jumps to the next blank required field and opens it.', 'Editing'),
+  demo('177-full-row-editing',      'Full-row editing',            'The `fullRowEditing` prop puts the WHOLE row into edit at once - every editable cell (text, select, number, date, checkbox) shows an inline editor. Enter or click-away commits all cells in one update; Esc cancels the row.', 'Editing'),
 
   // ----- Filtering & Search
   demo('02-sort-filter-paginate',   'Sort, filter, paginate',      'Three most-asked-for features wired together against ~5k rows.', 'Filtering & Search'),
@@ -147,6 +160,10 @@ export const demos: Demo[] = [
   demo('87-find-in-grid',           'Find in grid (Ctrl+F)',       'Built-in find overlay with next / previous navigation. Scans every visible cell value; matches activate + scroll into view.', 'Filtering & Search'),
   demo('110-locale-aware-filter',   'Locale-aware text filter',    'Pass filterLocale and the grid normalises text (NFD + diacritic strip + locale-aware lowercase) so "cafe" matches "Café", "tokyo" matches "Tōkyō".', 'Filtering & Search'),
   demo('111-set-filter-advanced',   'Set filter (tree / async / Excel)','Three set-list filter patterns: the built-in Excel-style column menu, async-loaded values for huge enums, and a tree-list (Region → Country → City) with cascading checkboxes. All driven through api.setFacetFilter.', 'Filtering & Search'),
+  demo('178-multi-condition-filter','Multi-condition filter (AND / OR)','Two conditions on ONE column, joined by AND or OR: a salary band (> 80k AND < 150k), age outliers (< 25 OR > 60). Open the funnel and click "+ Add condition", or drive it via api.setFilter({ operator, value, operator2, value2, join }).', 'Filtering & Search'),
+  demo('179-floating-filters',      'Floating filters (per-operator)','The inline filter row honours every operator per column: pick the operator from the cell funnel, the value input switches to the column type (number / date / text), and Between shows a second "To" input inline - no full menu needed.', 'Filtering & Search'),
+  demo('180-row-dragging',          'Managed row dragging (grid-to-grid)','Reorder rows by dragging their grip, or move a row from one grid into another - both grids share a rowDragGroup, so the row leaves the source and lands in the target. The grid mutates its own data on drop and fires onRowDragEnd on the receiver.', 'Rows & Cells'),
+  demo('184-external-drop-zone',    'External drop zones (row drag)','Drag a row out of the grid onto any element - an Archive or Delete bucket - via the rowDropZone action. The row leaves the grid and the zone\'s onDrop handles it. In-grid reorder still works.', 'Rows & Cells'),
   demo('98-advanced-filter-builder','Advanced filter builder',     'Visual AND/OR query builder, Linear / Notion-style: typed rules, per-field operators, presets. "At-risk EMEA accounts" with three rules in one click.', 'Filtering & Search'),
   demo('99-top-n-filter',           'Top N / Bottom N filter',     'BI-style "show me top 10 by revenue" toolbar: pick a metric, pick N, top vs bottom. Live KPI strip shows revenue coverage of the slice.', 'Filtering & Search'),
 
@@ -160,7 +177,7 @@ export const demos: Demo[] = [
   demo('04-selection-copy-paste',   'Selection + copy/paste',      'Row + cell-range selection with TSV clipboard round-trip.', 'Selection & Clipboard'),
   demo('90-selection-api',          'Selection API + events',      'Drive cell selection with api.selectCells / api.getSelected; subscribe to changes via onCellSelectionChange. Live SUM/AVG/MIN/MAX panel + event log + copy-as-TSV.', 'Selection & Clipboard'),
   demo('144-status-bar',            'Status bar (range aggregates)','Excel-style bar under the grid with live aggregates of the selected cell range: Count, Sum, Avg, Min, Max. Enable with statusBar + enableCellSelection, then drag a rectangle across numeric cells. Choose the aggregate set via statusBar={ aggregates }.', 'Selection & Clipboard'),
-  demo('118-range-selection',       'Range selection (Excel-style)','Drag any rectangle of cells; toolbar issues common ranges; live SUM/AVG/MIN/MAX/COUNT status bar (Google Sheets style); copy as TSV.', 'Selection & Clipboard'),
+  demo('118-range-selection',       'Range selection (Excel-style)','Drag any rectangle of cells, or Ctrl/Cmd+drag to add MORE ranges - all stay highlighted and copy together. Toolbar issues common ranges; live SUM/AVG/MIN/MAX/COUNT status bar; copy as TSV.', 'Selection & Clipboard'),
   demo('23-bulk-actions',           'Bulk actions toolbar',        'Select rows → sticky action bar with Mark / Delete / Copy as TSV. The Gmail / Linear pattern.', 'Selection & Clipboard'),
   demo('67-context-menu',           'Right-click context menu',    'Custom row context menu (copy, duplicate, move up/down, delete) wired via a contextmenu listener + the wrapper\'s data-svgrid-row attribute.', 'Selection & Clipboard'),
 
@@ -168,10 +185,12 @@ export const demos: Demo[] = [
   demo('25-column-pinning',         'Column pinning + freezing',   'Wide 13-column grid. Pin Company left and Price right via the column menu; the middle scrolls under sticky edges.', 'Columns'),
   demo('54-columns-hierarchy',      'Columns hierarchy + manager', 'Side-panel tree of grouped columns: drag leaves to reorder, click a chevron to collapse a group into one summary column, toggle visibility per leaf or whole group.', 'Columns'),
   demo('63-column-layout-api',      'Column layout API',           'setColumnWidth + setColumnPinning + getColumnWidths + getColumnPinning. Save the snapshot to localStorage, restore on reload, drive widths and pins from buttons.', 'Columns'),
-  demo('146-tool-panel',            'Columns tool panel',          'The docked enterprise sidebar for managing columns without a right-click: toggle visibility, reorder up/down, and group by a column. Enable with the toolPanel prop; a button appears at the grid top-right and the panel docks on the right edge.', 'Columns'),
-  demo('104-column-reorder',        'Column reorder (drag)',       'Drag any column header left or right to reorder. Vertical drop indicator. Order persists across reloads via localStorage.', 'Columns'),
-  demo('109-column-reorder-engine', 'Column reorder (engine prop)','Set enableColumnReorder on <SvGrid>; api.setColumnOrder / getColumnOrder + onColumnOrderChange event.', 'Columns'),
+  demo('146-tool-panel',            'Tool panel (Columns + Filters)','The docked enterprise sidebar, two tabs. Columns: toggle visibility, reorder up/down, group by a column. Filters: an operator + value control per column (numeric operators come free via cellDataType), kept in sync with the column menu. Enable with the toolPanel prop.', 'Columns'),
+  demo('109-column-reorder-engine', 'Column reorder',              'Set enableColumnReorder on <SvGrid> and every header becomes draggable, with a drop indicator. api.setColumnOrder / getColumnOrder + onColumnOrderChange event; persist to restore across reloads.', 'Columns'),
   demo('172-autosize-columns',      'Autosize columns',            'api.autosizeColumn(id) and api.autosizeAllColumns() snap columns to the widest visible cell via canvas-based text measurement. The column header menu has an "Autosize" item that calls the same code. Manual drag-resize still works.', 'Columns'),
+  demo('182-aligned-grids',         'Aligned grids',               'Two independent grids sharing alignedGridGroup stay in lockstep: scroll one horizontally and the other follows; resize a column in either and the matching column resizes in both. Budget vs actuals comparison.', 'Columns'),
+  demo('183-collapsible-column-groups','Collapsible column groups','Each quarter is a column group with a header caret. The Total is always shown; month columns tagged columnGroupShow:"open" appear only when the group is expanded (AG-Grid pattern). openByDefault controls the initial state.', 'Columns'),
+  demo('185-column-menu-tabs',      'Tabbed column menu',          'Opt into the AG-Grid-style tabbed header menu with columnMenuTabs: General / Filter / Columns tabs on the ⋮ menu. OFF by default (flat actions + Choose columns submenu). Toggle the switch to compare.', 'Columns'),
 
   // ----- Rows & Cells
   demo('10-custom-cells-and-themes','Custom cells + themes',       'Avatars, sparklines, progress bars, density toggle, dark mode, full a11y.', 'Rows & Cells'),
@@ -200,6 +219,7 @@ export const demos: Demo[] = [
   demo('70-multi-grid-sync',        'Multi-grid sync',             'Two grids over one $state array - edits on the left propagate to the right instantly; each grid keeps its own filter + sort.', 'Master-Detail & Forms'),
   demo('97-side-drawer-edit',       'Side-drawer edit form',       'Linear / Notion pattern: click a row, a polished drawer slides in with the full record, dirty-state badge, live validation, Esc / Ctrl+Enter shortcuts.', 'Master-Detail & Forms'),
   demo('106-detail-rows',           'Detail rows (expandable)',    'Stripe / GitHub-style inline row expansion: click the chevron to reveal a 4-panel detail (line items, shipping, payments, support thread).', 'Master-Detail & Forms'),
+  demo('181-master-detail-grid',    'Master / detail (nested grid)','The classic AG-Grid master/detail: expand any account row to reveal a full nested SvGrid of its call records. Built on isDetailRow + renderDetailRow - a real full-width detail row hosting another grid.', 'Master-Detail & Forms'),
 
   // ----- Server-Side Data
   demo('09-server-side',            'Server-side data',            'Sort/filter/page round-tripped to a mock endpoint with debounce + cancel.', 'Server-Side Data'),

@@ -1,19 +1,45 @@
-# Columns tool panel
+# Tool panel (Columns + Filters)
 
 The tool panel is the docked sidebar - standard in enterprise grids - for
-managing columns without hunting through a right-click menu. Turn it on with
-the `toolPanel` prop:
+managing columns and filters without hunting through a right-click menu. Turn it
+on with the `toolPanel` prop:
 
 ```svelte
 <SvGrid {data} {columns} {features} toolPanel />
 ```
 
-A columns button appears at the grid's top-right. Clicking it opens a panel
-docked on the right edge with, for every column:
+A **Columns & Filters** button appears in a toolbar above the grid. Clicking it
+opens a panel docked on the right edge with two tabs. Pass `toolPanelDefaultOpen`
+to have it open on first render, and `toolPanelDefaultTab="filters"` to start on
+the Filters tab:
+
+```svelte
+<SvGrid {data} {columns} {features} toolPanel toolPanelDefaultOpen />
+```
+
+## Columns tab
+
+For every column:
 
 - a **visibility** checkbox (show / hide the column),
 - **↑ / ↓** to reorder the column,
 - **⊞** to group / ungroup by that column (when grouping is enabled).
+
+## Filters tab
+
+For every filterable column, an inline filter control:
+
+- an **operator** select (the same operators the column menu offers - text
+  columns get `contains` / `equals` / …, number and date columns get
+  `greaterThan` / `between` / …; drive these with
+  [`cellDataType`](../cells/cell-data-types.md)),
+- a **value** input matched to the column type, plus a second **To** input for
+  `between`,
+- a **✕** to clear that column's filter.
+
+The Filters tab writes the **same** filter state as the column menu and the
+filter row, so all three surfaces stay in sync - filter from whichever is handy.
+It works whenever `columnFilteringFeature` is enabled.
 
 ## Notes
 

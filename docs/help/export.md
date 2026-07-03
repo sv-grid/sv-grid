@@ -136,6 +136,28 @@ working.
 | `columns`         | `{ field: string; header?: string }[]`                | every key of row[0]  | Drives both column selection and header labels. |
 | `rows`            | `ReadonlyArray<TData>`                                | `api.getDisplayedRows()` | Override to export the full dataset instead of the visible view. |
 | `pageOrientation` | `'portrait' \| 'landscape'`                           | `"portrait"`         | PDF only. |
+| `merges`          | `{ row; col; rowSpan?; colSpan? }[]`                  | `[]`                 | Merged cells (xlsx / pdf). Zero-based **body** row/col (header excluded). Single-sheet only; mutually exclusive with `groupBy` / `hierarchical`. |
+
+#### Merged cells
+
+Pass `merges` to write real merged regions into the sheet. Row / column
+indices are zero-based over the exported **body** (the header row is not
+counted), and the shape lines up with the grid's own `MergeSpec`:
+
+```ts
+// Merge the first two data rows of column 0, and span a 3-column banner
+await api.exportData({
+  format: 'xlsx',
+  merges: [
+    { row: 0, col: 0, rowSpan: 2 },   // vertical merge (e.g. a repeated group key)
+    { row: 5, col: 0, colSpan: 3 },   // horizontal merge (a section banner)
+  ],
+})
+```
+
+To export the merges you already show in the grid, take your `MergeSpec[]`
+(`{ rowIndex, columnId, rowspan, colspan }`) and map `columnId` to its column
+index: `{ row: m.rowIndex, col: colIndex(m.columnId), rowSpan: m.rowspan, colSpan: m.colspan }`.
 
 Throws on missing peer (`jszip` / `pdfmake`), revoked / malformed
 license, or empty result set. With no license set, it runs but the

@@ -80,7 +80,7 @@ Its return value is what gets displayed and copied to the clipboard.
 
 When a column has both, the resolution order is:
 
-1. `field` / `accessorFn` produces the value
+1. `field` / `fieldFn` produces the value
 2. If `cell` is set, it renders - `format` / `formatter` are ignored
 3. Otherwise `formatter` runs if set
 4. Otherwise `format` runs if set

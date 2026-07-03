@@ -1,71 +1,238 @@
 ---
 title: Migrating from ag-grid-react to a Svelte Stack
-description: Moving a React app's ag-grid-react screens to Svelte 5 and SvGrid - translating column defs, hooks, cell renderers, and the server-side row model.
+description: A practical field guide for porting ag-grid-react screens to SvGrid - column defs, cell renderers, server-side data, and the React-to-Svelte reactivity shift.
 date: 2026-08-11
+updated: "2026-07-02"
 category: Comparisons
 tags: migration, ag-grid-react, react, comparison, svelte data grid
 author: Kamelia M
 ---
 
-When a team migrates from React to Svelte, the `ag-grid-react` screens tend to look like the scariest part of the job. They are less scary than they look: the grid concepts port to SvGrid cleanly, and most of the real change is React's hooks becoming Svelte runes. Here is the playbook.
+The React-to-Svelte migration conversation always stalls at the same point: "but we have a lot of AG Grid." That anxiety is usually disproportionate. Column definitions translate almost one-to-one, cell renderers become snippets, and the server-side row model maps to a single adapter function. The real migration work is the surrounding React patterns, not the grid.
 
 ![An admin template built with SvGrid.](/blog-media/admin-template.png)
 *An admin template built with SvGrid.*
 
-## Concept mapping
+## Column definitions: mostly a rename job
 
-| ag-grid-react | SvGrid |
-| --- | --- |
-| `<AgGridReact rowData columnDefs />` | `<SvGrid data columns />` |
+AG Grid's `columnDefs` array and SvGrid's `columns` array share the same shape. The fields you use constantly - `field`, `headerName`, `width`, `pinned`, `editable`, `valueFormatter` - have direct equivalents. The API names are slightly different, but nothing requires rethinking.
+
+| ag-grid-react | SvGrid (@svgrid/grid) |
+|---|---|
+| `rowData` | `data` |
 | `columnDefs` | `columns` |
-| `field` / `headerName` | `field` / `header` |
-| `valueFormatter` | `format` / `formatter` |
-| `cellRenderer` (React component) | `cell` via `renderSnippet` |
-| `valueGetter` | `accessorFn` |
+| `headerName` | `header` |
+| `field` | `field` |
+| `valueFormatter` | `format` or `formatter` |
+| `valueGetter` | `fieldFn` |
+| `cellRenderer` | `cell` (snippet or component) |
 | `onCellValueChanged` | `onCellValueChange` |
-| `useState` / `useMemo` | `$state` / `$derived` |
-| `useCallback` handlers | plain functions |
-| Server-Side Row Model | external mode |
-| Enterprise modules | @svgrid/enterprise |
+| `suppressMovable` | `movable: false` |
+| Server-Side Row Model | `createServerDataSource` |
+| AG Grid Enterprise | `@svgrid/enterprise` |
 
-## Components and renderers
+A typical AG Grid column definition like this:
 
-A React cell renderer component becomes a Svelte snippet:
+```ts
+// ag-grid-react column def
+const columnDefs = [
+  { field: 'name', headerName: 'Name', width: 180, pinned: 'left' },
+  {
+    field: 'price',
+    headerName: 'Price',
+    width: 100,
+    type: 'numericColumn',
+    editable: true,
+    valueFormatter: (p) => `$${p.value.toFixed(2)}`,
+  },
+  { field: 'status', headerName: 'Status', width: 120, cellRenderer: StatusRenderer },
+  { headerName: '', width: 80, cellRenderer: ActionsRenderer, pinned: 'right' },
+]
+```
+
+becomes this in SvGrid:
+
+```ts
+import type { ColumnDef } from '@svgrid/grid'
+
+const columns: ColumnDef<typeof features, Row>[] = [
+  { id: 'name', field: 'name', header: 'Name', width: 180, pinned: 'left' },
+  {
+    id: 'price',
+    field: 'price',
+    header: 'Price',
+    width: 100,
+    type: 'number',
+    editable: true,
+    format: (value) => `$${Number(value).toFixed(2)}`,
+  },
+  { id: 'status', field: 'status', header: 'Status', width: 120, cell: statusCell },
+  { id: 'actions', header: '', width: 80, cell: actionsCell, pinned: 'right' },
+]
+```
+
+The pattern is consistent. If you have a script that generates column defs programmatically, a few targeted string replacements will get you most of the way there.
+
+## Cell renderers to snippets
+
+This is the area where React and Svelte diverge most visibly - and where Svelte wins on brevity. A React cell renderer is a component with props threading and a `forwardRef` if you need the grid API. A Svelte 5 snippet is a few lines of markup declared inline or in the same file.
 
 ```tsx
-// ag-grid-react
-const StatusRenderer = (p) => <span className="badge">{p.value}</span>
-// columnDefs: [{ field: 'status', cellRenderer: StatusRenderer }]
+// ag-grid-react: a status badge renderer
+const StatusRenderer = ({ value }: { value: string }) => (
+  <span className={`badge badge--${value}`}>{value}</span>
+)
+
+// ag-grid-react: an actions renderer that calls the grid API
+const ActionsRenderer = ({ data, api }: ICellRendererParams) => (
+  <button onClick={() => api.applyTransaction({ remove: [data] })}>
+    Remove
+  </button>
+)
 ```
 
-```svelte
-<!-- SvGrid -->
-{#snippet StatusCell(p: { value: string })}<span class="badge">{p.value}</span>{/snippet}
-// columns: [{ field: 'status', header: 'Status', cell: (c) => renderSnippet(StatusCell, { value: c.getValue() }) }]
-```
-
-## Hooks to runes
-
-The biggest mental shift is reactivity. React re-renders components and you optimize with `useMemo`/`useCallback`; Svelte 5 runes are fine-grained, so a `$derived` recomputes only when its inputs change and there is no dependency array to manage. Most memoization simply disappears.
+In SvGrid, both become snippets, and the grid instance comes from `onApiReady` rather than being injected per-cell:
 
 ```svelte
 <script lang="ts">
-  let rows = $state<Row[]>([])
-  let query = $state('')
-  let visible = $derived(rows.filter(r => r.name.includes(query)))
+  import SvGrid from '@svgrid/grid'
+  import type { SvGridApi, ColumnDef } from '@svgrid/grid'
+  import { tableFeatures, rowSelectionFeature } from '@svgrid/grid'
+
+  let api = $state<SvGridApi | null>(null)
+  const features = tableFeatures({ rowSelectionFeature })
+
+  const data = $state<Row[]>([
+    { id: 1, name: 'Widget A', status: 'active' },
+    { id: 2, name: 'Widget B', status: 'inactive' },
+  ])
+
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { id: 'name', field: 'name', header: 'Name', width: 200 },
+    { id: 'status', field: 'status', header: 'Status', width: 120, cell: statusCell },
+    { id: 'actions', header: '', width: 80, cell: actionsCell },
+  ]
 </script>
+
+{#snippet statusCell({ value }: { value: string })}
+  <span class="badge badge--{value}">{value}</span>
+{/snippet}
+
+{#snippet actionsCell({ row }: { row: Row })}
+  <button onclick={() => api?.applyTransaction({ remove: [row] })}>
+    Remove
+  </button>
+{/snippet}
+
+<SvGrid {data} {columns} {features} onApiReady={(a) => { api = a }} />
 ```
 
-## Server-side
+No prop threading. No forwardRef. The snippet has access to everything in the component's scope.
 
-AG Grid's Server-Side Row Model maps to SvGrid external mode, callbacks plus a total `rowCount`. See [Server-Side Data](server-side-data) and the [SvelteKit + Supabase guide](svelte-data-grid-sveltekit-supabase).
+## Reactivity: the hook mental model doesn't port
 
-## Frequently asked questions
+This is the actual migration challenge. React's mental model is "re-render the component when state changes, and memoize the expensive parts." Svelte 5's mental model is "track which reactive values each expression reads, and re-run only that expression."
 
-### What is the hardest part of moving ag-grid-react to Svelte?
+In practice, you stop writing `useMemo` and `useCallback` entirely. A derived value is just a `$derived`. A side effect is a `$effect`. The dependency array is inferred automatically.
 
-Usually the surrounding React patterns, not the grid. Column definitions, cell renderers, events, and the server-side row model map directly to SvGrid; React hooks become Svelte runes, which removes most memoization.
+A common pattern in AG Grid React apps is filtering data in a `useMemo` before passing it to `rowData`:
 
-### Do I lose AG Grid Enterprise features moving to Svelte?
+```tsx
+// React pattern - explicit memoization and dependency arrays
+const [rows, setRows] = useState<Row[]>(rawRows)
+const [query, setQuery] = useState('')
 
-The standard feature set is in SvGrid's MIT core, and enterprise-style features (pivot, export, range selection) are in @svgrid/enterprise. Check the [comparison](/compare/ag-grid) for specifics before porting.
+const filteredRows = useMemo(
+  () => rows.filter((r) => r.name.toLowerCase().includes(query.toLowerCase())),
+  [rows, query]
+)
+
+// <AgGridReact rowData={filteredRows} ... />
+```
+
+In Svelte 5, the same logic without the overhead:
+
+```svelte
+<script lang="ts">
+  let rows = $state<Row[]>(rawRows)
+  let query = $state('')
+
+  // $derived re-runs automatically when rows or query change
+  let filteredRows = $derived(
+    rows.filter((r) => r.name.toLowerCase().includes(query.toLowerCase()))
+  )
+</script>
+
+<input bind:value={query} placeholder="Search..." />
+<SvGrid data={filteredRows} {columns} />
+```
+
+If you had `useEffect` hooks reacting to grid events (like selection changes), those become `$effect` blocks or event callbacks on the `SvGrid` component directly.
+
+## Server-side data
+
+AG Grid's Server-Side Row Model is one of its most distinctive features - and the one most teams worry about losing. SvGrid handles this with `createServerDataSource`, which takes a single `fetch` function and returns a data source you pass directly to `data`.
+
+```ts
+import SvGrid, { createServerDataSource } from '@svgrid/grid'
+
+const ds = createServerDataSource({
+  fetch: async ({ page, pageSize, sort, filters }) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      size: String(pageSize),
+    })
+
+    if (sort.length > 0) {
+      params.set('sortField', sort[0].id)
+      params.set('sortDir', sort[0].desc ? 'desc' : 'asc')
+    }
+
+    for (const f of filters) {
+      params.set(`filter_${f.id}`, JSON.stringify(f.value))
+    }
+
+    const res = await fetch(`/api/rows?${params}`)
+    const json = await res.json()
+    return { rows: json.data, total: json.total }
+  },
+})
+```
+
+Then use it like any other data source:
+
+```svelte
+<SvGrid data={ds} {columns} pageable sortable filterable />
+```
+
+Sorting, filtering, and pagination all trigger the `fetch` function automatically. You do not need to wire up event handlers or manually call `api.refreshServerSide()` the way you would in AG Grid.
+
+## What you actually lose
+
+Honest assessment: there are some things AG Grid does that SvGrid does not replicate exactly.
+
+AG Grid Enterprise's range selection (spreadsheet-style multi-cell drag select) and the Excel-like fill handle are not in SvGrid yet. If your app uses those heavily, that is a real gap.
+
+AG Grid's charting integration is a standalone module that we do not try to match. SvGrid has `SvGridChart` and `buildSparkline` for column-level data visualization, but not the full in-grid chart builder.
+
+The flip side: SvGrid's Svelte-native rendering means your custom cell content is real Svelte, with access to stores, runes, and component composition. AG Grid's React renderer runs React inside a non-React context, which creates an invisible performance ceiling and awkward lifecycle interactions. That tradeoff disappears entirely in SvGrid.
+
+## The migration order that works
+
+Start with the simplest screens first - read-only tables with basic sorting. Get comfortable with the column def translation and the snippet pattern. Then move to editable screens. Server-side data adapters should be last because they require the most careful testing of edge cases (empty results, error states, filter combinations).
+
+For conditional formatting - something many AG Grid users handle with `cellStyle` callbacks - SvGrid has a dedicated `conditionalFormat` field on the column definition that keeps the logic out of your renderers:
+
+```ts
+{
+  id: 'score',
+  field: 'score',
+  header: 'Score',
+  conditionalFormat: [
+    { condition: ({ value }) => Number(value) < 50, style: { color: 'red', fontWeight: 'bold' } },
+    { condition: ({ value }) => Number(value) >= 90, style: { color: 'green' } },
+  ],
+}
+```
+
+The grid concepts are the same. The implementation is Svelte-native. Most teams are surprised by how little of their actual grid logic needs to change.

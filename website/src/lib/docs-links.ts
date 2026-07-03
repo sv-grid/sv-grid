@@ -28,6 +28,10 @@ const REDIRECTS: Record<string, string> = {
   'server-side': '#/docs/help/filtering/filter-api',
   'theming': '#/docs/help/tailwind',
   'migration': '#/compare',
+  // The API reference is not a docs page - it lives on the dedicated /api page.
+  // Any doc that links to ./api-reference.md or the reference/ tree lands there.
+  'help/api-reference': '#/api',
+  'reference/index': '#/api',
 }
 
 // Non-.md repo files we want to route to GitHub (LICENSE, NOTICE, CHANGELOG).

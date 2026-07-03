@@ -270,7 +270,7 @@ Add more by calling `emit('yourevent', detail)` from any SvGrid callback.
   (`sortable`, `row-height`) work as HTML attributes.
 - **Custom cell snippets** (`renderSnippet`) are a Svelte authoring feature.
   Across the custom-element boundary, prefer column `format` options and
-  `accessorFn` for display, or build the snippet logic inside the wrapper.
+  `fieldFn` for display, or build the snippet logic inside the wrapper.
 - **Bundle size.** The custom element ships the grid plus the Svelte runtime in
   one file. That's expected for a self-contained drop-in element; native Svelte
   consumers share the runtime and ship less.

@@ -63,6 +63,12 @@ for (const row of grid.getRowModel().rows) {
 }
 ```
 
+Here is exactly that - the same headless brain, rendered as a plain
+hand-styled `<table>` instead of `<SvGrid>`. Sort and filter are the engine's;
+the markup is the demo's:
+
+<div data-docs-demo="186-headless-table" data-height="480"></div>
+
 **2. Features are opt-in modules.** Monolithic grid libraries ship everything
 in one bundle. With SvGrid you only register what you use:
 

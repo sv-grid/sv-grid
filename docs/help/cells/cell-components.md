@@ -56,7 +56,7 @@ type CellContext<TData> = {
 }
 ```
 
-- `getValue()` - the accessed value (post-`field` / `accessorFn`).
+- `getValue()` - the accessed value (post-`field` / `fieldFn`).
 - `row.original` - the raw `TData` object.
 - `row.getAllCells()` - every cell in the row, for sibling reads.
 - `column.columnDef` - the original `ColumnDef`.

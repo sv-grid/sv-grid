@@ -7,10 +7,12 @@
    *
    *   - Mouse: click + drag across cells to extend a range; Shift+click
    *     extends the existing anchor.
+   *   - Multi-range: hold Ctrl/Cmd and drag to add ANOTHER rectangle -
+   *     every range stays highlighted, and copy/getSelected span them all.
    *   - Keyboard: Shift+Arrow / Shift+Home / Shift+End / Shift+PgUp /
    *     Shift+PgDn grow the range from the anchor.
-   *   - API: `api.selectCells([[r1, c1, r2, c2]])` / `api.getSelected()`
-   *     drive the same range from outside.
+   *   - API: `api.selectCells([[r1, c1, r2, c2], ...])` / `api.getSelected()`
+   *     drive one or many ranges from outside.
    *   - Events: `onCellSelectionChange` fires for every change with the
    *     new rectangle coords.
    *
@@ -86,6 +88,14 @@
   function selectFy()        { api?.selectCells([[0, COL_INDEX.fy, rows.length - 1, COL_INDEX.fy]]) }
   function selectOneCell()   { api?.selectCells([[0, COL_INDEX.q3, 0, COL_INDEX.q3]]) }
   function selectMarketing() { api?.selectCells([[8, COL_INDEX.q4, 8, COL_INDEX.q4]]) } // Marketing row × Q4
+  // Two disjoint rectangles at once - the multi-range (Ctrl+drag) capability,
+  // driven from the API. This is what the demo shows on open.
+  function selectMultiple()  {
+    api?.selectCells([
+      [0, COL_INDEX.q1, 2, COL_INDEX.q2],   // top-left: first revenue rows, Q1-Q2
+      [6, COL_INDEX.q3, 9, COL_INDEX.q4],   // bottom-right: some expense rows, Q3-Q4
+    ])
+  }
   function clearSel()        { api?.selectCells([]) }
 
   // ---- Cell metadata for the labels -----------------------------------
@@ -199,6 +209,7 @@
     <button class="qb-btn" onclick={selectQ3}>Q3 column</button>
     <button class="qb-btn" onclick={selectFy}>FY column</button>
     <button class="qb-btn" onclick={selectMarketing}>Marketing × Q4 cell</button>
+    <button class="qb-btn" onclick={selectMultiple}>Two ranges (Ctrl+drag)</button>
     <button class="qb-btn" onclick={selectOneCell}>Single cell</button>
     <button class="qb-btn danger" onclick={clearSel}>Clear</button>
     <button class="qb-btn primary" disabled={!range} onclick={copyAsTsv}>
@@ -246,7 +257,7 @@
       rowHeight={32}
       containerHeight="100%"
       fitColumns={true}
-      onApiReady={(next) => (api = next)}
+      onApiReady={(next) => { api = next; selectMultiple() }}
       onCellSelectionChange={(ranges) => {
         range = ranges[0] ?? null
         const label = rangeLabel(range)

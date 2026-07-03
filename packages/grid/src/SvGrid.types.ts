@@ -150,7 +150,32 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   showFilterMenu?: boolean;
   showFilterRow?: boolean;
   enableCellSelection?: boolean;
+  /**
+   * Prepend a header row (the column labels) to copied cell ranges, so pasting
+   * into Excel / Sheets includes the headers. Applies per copied range.
+   */
+  copyHeadersToClipboard?: boolean;
+  /**
+   * Transform each cell value on its way to the clipboard - e.g. strip
+   * currency symbols, expand codes to labels, or redact. Receives the display
+   * value plus the row/column context; return the string (or value) to copy.
+   */
+  processCellForClipboard?: (params: {
+    value: unknown;
+    column: unknown;
+    row: TData;
+    rowIndex: number;
+    columnId: string;
+  }) => unknown;
   enableInlineEditing?: boolean;
+  /**
+   * Full-row editing. When `true`, starting an edit puts the WHOLE row into
+   * edit mode - every editable cell shows an inline editor at once - and a
+   * single Enter (or focus leaving the row) commits all of them; Esc cancels
+   * the whole row. Requires `enableInlineEditing`. The full-row editor covers
+   * text / number / date / datetime / checkbox / list-select editor types.
+   */
+  fullRowEditing?: boolean;
   enableRowSummaries?: boolean;
   /**
    * Excel-style status bar under the grid showing live aggregates of the
@@ -166,12 +191,21 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
         >;
       };
   /**
-   * Show a docked Columns tool panel - the enterprise sidebar for toggling
-   * column visibility, reordering, and grouping without a right-click. A
-   * toggle button appears at the grid's top-right; the panel itself docks
-   * on the right edge.
+   * Show the docked tool panel - the enterprise sidebar with Columns and
+   * Filters tabs. A "Columns & Filters" button appears in a toolbar above the
+   * grid; the panel docks on the right edge.
    */
   toolPanel?: boolean;
+  /**
+   * Render the header column menu (⋮) as a tabbed popover - **General**,
+   * **Filter**, and **Columns** tabs (the AG-Grid layout). Defaults to `false`,
+   * which keeps the flat menu (actions list + "Choose columns" submenu).
+   */
+  columnMenuTabs?: boolean;
+  /** Open the tool panel on first render (instead of collapsed). */
+  toolPanelDefaultOpen?: boolean;
+  /** Which tab the tool panel starts on. Defaults to `'columns'`. */
+  toolPanelDefaultTab?: "columns" | "filters";
   /**
    * Quick way to pick which selection surfaces are active. `'row'` shows the
    * selection checkbox column only, `'cell'` allows rectangle/range cell
@@ -419,6 +453,53 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   columnOrder?: ReadonlyArray<string>;
   /** Fires every time the column order changes (drag or `api.setColumnOrder`). */
   onColumnOrderChange?: (order: ReadonlyArray<string>) => void;
+  /**
+   * Infer each column's data type (number / boolean / date / ISO date-string /
+   * text) from the first data row, for columns that declare neither an
+   * explicit `editorType` nor a `cellDataType`. Sets the matching editor,
+   * alignment, date format, and filter operators automatically. Explicit
+   * column config always wins. Defaults to `false`.
+   */
+  inferColumnTypes?: boolean;
+  /**
+   * Enables managed row dragging. When `true`, every row becomes a drag
+   * source (grab cursor + a grip in the row-number cell) and a drop
+   * indicator paints between rows during a drag. On drop the grid mutates
+   * its own internal data - reordering within the grid, or moving the row
+   * across grids that share the same {@link rowDragGroup}. Defaults to
+   * `false`.
+   */
+  rowDragManaged?: boolean;
+  /**
+   * Connection group for cross-grid row dragging. Grids that share the same
+   * non-empty `rowDragGroup` string (and have `rowDragManaged` on) can
+   * exchange rows: dragging a row out of one and dropping it into another
+   * removes it from the source and inserts it into the target. Omit to keep
+   * dragging confined to reordering within a single grid.
+   */
+  rowDragGroup?: string;
+  /**
+   * Fires on the TARGET grid after a managed row drag settles, with the
+   * moved row, its landing index, whether it stayed in the same grid, and
+   * the source / target grid ids. Use it to mirror the move into your own
+   * state (persistence, server sync). The grid has already applied the
+   * change to its internal data by the time this fires.
+   */
+  onRowDragEnd?: (event: {
+    row: TData;
+    toIndex: number;
+    sameGrid: boolean;
+    fromGridId: number;
+    toGridId: number;
+  }) => void;
+  /**
+   * Align this grid with others that share the same non-empty
+   * `alignedGridGroup` string: horizontal scroll and column-resize widths are
+   * kept in lockstep across every grid in the group. Use for a totals/header
+   * grid above a body grid, or side-by-side comparison grids that must line up.
+   * The grids should declare the same columns (matched by id) for widths to map.
+   */
+  alignedGridGroup?: string;
   /**
    * BCP-47 locale tag (or array of fallbacks) used for accent- and
    * case-insensitive text filtering / sorting / search. Powered by

@@ -25,23 +25,23 @@ const columns: ColumnDef<{}, Person>[] = [
 
 | Property | Type | Purpose |
 | --- | --- | --- |
-| `id` | `string` | Stable column id. Required when you use `accessorFn` and no `field`. |
+| `id` | `string` | Stable column id. Required when you use `fieldFn` and no `field`. |
 | `field` | `keyof TData & string` | Reads `row[key]`. |
-| `accessorFn` | `(row) => unknown` | Computes the value. |
+| `fieldFn` | `(row) => unknown` | Computes the value. |
 | `header` | `string` \| `(ctx) => unknown` | String, or a function returning a `renderSnippet` / `renderComponent`. |
 | `cell` | `(ctx) => unknown` | Same shape as `header`, for body cells. |
 | `footer` | `string` \| `(ctx) => unknown` | Footer cell. |
 | `editorType` | `'text' \| 'number' \| 'date' \| 'datetime' \| 'checkbox'` | Inline editor type. |
 | `format` | `CellFormatConfig` | Built-in `number`, `currency`, `percent`, `date`, `datetime` formatters. |
-| `formatter` | `(ctx) => string` | Custom formatter - runs after `field` / `accessorFn`. |
+| `formatter` | `(ctx) => string` | Custom formatter - runs after `field` / `fieldFn`. |
 | `columns` | `ColumnDef[]` | Children - turns this column into a column **group**. |
 | `width` | `number` | Initial width in pixels (overrides the grid's `columnWidth`). |
 
 See [`packages/grid/src/core.ts`](../../../packages/grid/src/core.ts).
 
-## Accessor vs. accessorFn
+## Accessor vs. fieldFn
 
-`field` is the common case. Use `accessorFn` when the value is
+`field` is the common case. Use `fieldFn` when the value is
 computed or comes from a nested object:
 
 ```ts
@@ -50,12 +50,12 @@ const columns: ColumnDef<{}, Person>[] = [
   {
     id: 'fullName',
     header: 'Full name',
-    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+    fieldFn: (row) => `${row.firstName} ${row.lastName}`,
   },
 ]
 ```
 
-Whenever you use `accessorFn` you must supply an `id` - there is no string key
+Whenever you use `fieldFn` you must supply an `id` - there is no string key
 to derive one from.
 
 ## Format vs. formatter vs. cell

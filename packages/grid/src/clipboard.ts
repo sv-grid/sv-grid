@@ -415,32 +415,60 @@ export function createClipboard<
   }
 
   function copySelectionToClipboard() {
-    const anchor = ctx.selectionRange.anchor;
-    const focus = ctx.selectionRange.focus;
-    if (!anchor || !focus) return;
-    const minRow = Math.min(anchor.rowIndex, focus.rowIndex);
-    const maxRow = Math.max(anchor.rowIndex, focus.rowIndex);
-    const minCol = Math.min(anchor.colIndex, focus.colIndex);
-    const maxCol = Math.max(anchor.colIndex, focus.colIndex);
-    const lines: Array<string> = [];
-    for (let r = minRow; r <= maxRow; r += 1) {
-      const row = ctx.allRows[r];
-      if (!row || isGroupRow(row)) continue;
-      const cells: Array<string> = [];
-      for (let c = minCol; c <= maxCol; c += 1) {
-        const column = ctx.allColumns[c];
-        if (!column) {
-          cells.push("");
-          continue;
+    // Copy every selected rectangle. Each range becomes a TSV block; multiple
+    // ranges are stacked and separated by a blank line (Sheets-style).
+    const rects = ctx.getSelectionRects() as Array<{
+      minRow: number;
+      maxRow: number;
+      minCol: number;
+      maxCol: number;
+    }>;
+    if (!rects.length) return;
+    // Optional: prepend a header row (Excel "copy with headers") and/or run
+    // each value through a consumer hook before it hits the clipboard.
+    const withHeaders = ctx.props.copyHeadersToClipboard === true;
+    const processCell = ctx.props.processCellForClipboard as
+      | ((params: { value: unknown; column: unknown; row: unknown; rowIndex: number; columnId: string }) => unknown)
+      | undefined;
+    const blocks: Array<string> = [];
+    for (const rect of rects) {
+      const lines: Array<string> = [];
+      if (withHeaders) {
+        const header: Array<string> = [];
+        for (let c = rect.minCol; c <= rect.maxCol; c += 1) {
+          const column = ctx.allColumns[c];
+          header.push(column ? toolPanelHeaderLabel(column) : "");
         }
-        const base = getColumnBaseValue(row, column);
-        const display = ctx.getCellDisplayValue(row.id, column.id, base);
-        cells.push(String(display ?? ""));
+        lines.push(header.join("\t"));
       }
-      lines.push(cells.join("\t"));
+      for (let r = rect.minRow; r <= rect.maxRow; r += 1) {
+        const row = ctx.allRows[r];
+        if (!row || isGroupRow(row)) continue;
+        const cells: Array<string> = [];
+        for (let c = rect.minCol; c <= rect.maxCol; c += 1) {
+          const column = ctx.allColumns[c];
+          if (!column) {
+            cells.push("");
+            continue;
+          }
+          const base = getColumnBaseValue(row, column);
+          let value: unknown = ctx.getCellDisplayValue(row.id, column.id, base);
+          if (processCell) {
+            value = processCell({
+              value,
+              column,
+              row: row.original,
+              rowIndex: r,
+              columnId: column.id,
+            });
+          }
+          cells.push(String(value ?? ""));
+        }
+        lines.push(cells.join("\t"));
+      }
+      blocks.push(lines.join("\n"));
     }
-    const text = lines.join("\n");
-    writeClipboardText(text);
+    writeClipboardText(blocks.join("\n\n"));
   }
 
   /**

@@ -283,8 +283,44 @@ export function createSelection<
     // onBodyScroll which flushes via rAF, doing one batched update.
   }
 
-  function setSelection(rowIndex: number, colIndex: number) {
+  // Normalize a range to a rectangle, or null when incomplete.
+  function rangeRect(range: SelectionRange | null) {
+    const a = range?.anchor;
+    const f = range?.focus;
+    if (!a || !f) return null;
+    return {
+      minRow: Math.min(a.rowIndex, f.rowIndex),
+      maxRow: Math.max(a.rowIndex, f.rowIndex),
+      minCol: Math.min(a.colIndex, f.colIndex),
+      maxCol: Math.max(a.colIndex, f.colIndex),
+    };
+  }
+
+  // Every selected rectangle: the committed extra ranges plus the active one.
+  // Order matters for copy (added-order); the active range comes last.
+  function getSelectionRects() {
+    const rects = [] as Array<{ minRow: number; maxRow: number; minCol: number; maxCol: number }>;
+    for (const r of (ctx.selectionRanges as SelectionRange[]) ?? []) {
+      const rect = rangeRect(r);
+      if (rect) rects.push(rect);
+    }
+    const active = rangeRect(ctx.selectionRange);
+    if (active) rects.push(active);
+    return rects;
+  }
+
+  function setSelection(rowIndex: number, colIndex: number, additive = false) {
     if (!ctx.enableCellSelectionEffective) return;
+    if (additive) {
+      // Commit the current active range (if any) and start a fresh one, so the
+      // previous rectangle stays highlighted alongside the new Ctrl+drag.
+      const active = ctx.selectionRange as SelectionRange;
+      if (active.anchor && active.focus) {
+        ctx.selectionRanges = [...(ctx.selectionRanges as SelectionRange[]), active];
+      }
+    } else {
+      ctx.selectionRanges = [];
+    }
     const point = { rowIndex, colIndex };
     ctx.selectionRange = { anchor: point, focus: point };
   }
@@ -296,47 +332,43 @@ export function createSelection<
   }
 
   function isCellInSelectedRange(rowIndex: number, colIndex: number) {
-    const anchor = ctx.selectionRange.anchor;
-    const focus = ctx.selectionRange.focus;
-    if (!anchor || !focus) return false;
-    const minRow = Math.min(anchor.rowIndex, focus.rowIndex);
-    const maxRow = Math.max(anchor.rowIndex, focus.rowIndex);
-    const minCol = Math.min(anchor.colIndex, focus.colIndex);
-    const maxCol = Math.max(anchor.colIndex, focus.colIndex);
-    return (
-      rowIndex >= minRow &&
-      rowIndex <= maxRow &&
-      colIndex >= minCol &&
-      colIndex <= maxCol
-    );
+    for (const rect of getSelectionRects()) {
+      if (
+        rowIndex >= rect.minRow &&
+        rowIndex <= rect.maxRow &&
+        colIndex >= rect.minCol &&
+        colIndex <= rect.maxCol
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
-   * Returns which sides of the selection rectangle a cell sits on, for the
-   * Excel-style outline. Returns null when the cell is outside the range.
+   * Returns which sides of a selection rectangle a cell sits on, for the
+   * Excel-style outline. With multiple ranges, the edges of the FIRST range
+   * that contains the cell are returned (active range checked last so its
+   * outline wins on overlap). Returns null when the cell is in no range.
    */
   function getCellRangeEdges(rowIndex: number, colIndex: number) {
-    const anchor = ctx.selectionRange.anchor;
-    const focus = ctx.selectionRange.focus;
-    if (!anchor || !focus) return null;
-    const minRow = Math.min(anchor.rowIndex, focus.rowIndex);
-    const maxRow = Math.max(anchor.rowIndex, focus.rowIndex);
-    const minCol = Math.min(anchor.colIndex, focus.colIndex);
-    const maxCol = Math.max(anchor.colIndex, focus.colIndex);
-    if (
-      rowIndex < minRow ||
-      rowIndex > maxRow ||
-      colIndex < minCol ||
-      colIndex > maxCol
-    ) {
-      return null;
+    for (const rect of getSelectionRects()) {
+      if (
+        rowIndex < rect.minRow ||
+        rowIndex > rect.maxRow ||
+        colIndex < rect.minCol ||
+        colIndex > rect.maxCol
+      ) {
+        continue;
+      }
+      return {
+        top: rowIndex === rect.minRow,
+        bottom: rowIndex === rect.maxRow,
+        left: colIndex === rect.minCol,
+        right: colIndex === rect.maxCol,
+      };
     }
-    return {
-      top: rowIndex === minRow,
-      bottom: rowIndex === maxRow,
-      left: colIndex === minCol,
-      right: colIndex === maxCol,
-    };
+    return null;
   }
 
   /** Returns true when the given cell is inside the fill-drag preview
@@ -398,7 +430,8 @@ export function createSelection<
       setActiveCell(rowIndex, colIndex);
     } else {
       setActiveCell(rowIndex, colIndex);
-      setSelection(rowIndex, colIndex);
+      // Ctrl/Cmd starts an ADDITIONAL range, keeping prior ranges highlighted.
+      setSelection(rowIndex, colIndex, event.ctrlKey || event.metaKey);
       // Range drag-select is a mouse/pen affordance. On touch, starting a drag
       // here would rubber-band a selection AND fight the browser's native
       // scroll (we never preventDefault), so a finger-drag to scroll the grid
@@ -533,6 +566,7 @@ export function createSelection<
     extendSelection,
     isCellInSelectedRange,
     getCellRangeEdges,
+    getSelectionRects,
     isInFillPreview,
     findColumnById,
     onCellPointerDown,

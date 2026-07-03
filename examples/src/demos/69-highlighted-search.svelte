@@ -50,7 +50,7 @@
 
   function textColumn(field: keyof Person, header: string, width: number): ColumnDef<typeof features, Person> {
     return {
-      id: String(field), header, accessorFn: (r) => r[field], width,
+      id: String(field), header, fieldFn: (r) => r[field], width,
       cell: (ctx) => renderSnippet(HighlightCell, {
         text: String(ctx.getValue() ?? ''),
         q: query.trim(),

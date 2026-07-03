@@ -231,6 +231,7 @@ export function createMenus<
       x: clampMenuX(rect.right - 240, 240),
       y: rect.bottom + 4,
     };
+    ctx.columnMenuTab = "general";
     ctx.columnMenuFor = columnId;
   }
 

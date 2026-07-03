@@ -5,30 +5,26 @@ instead of being cell-by-cell - useful for inline editors, banner ads,
 section dividers, and detail-row expansions.
 <div data-docs-demo="08-tree-and-master-detail" data-height="540"></div>
 
-## Status
+## Detail-row API (shipped)
 
-Built-in support - through `enableRowSummaries={true}` for a single
-sticky footer row - exists; arbitrary mid-table full-width rows are
-**not** built in.
+Full-width rows are built in via `isDetailRow` + `renderDetailRow`: mark a row as
+a detail row and it renders as a real full-width `colspan` cell hosting your
+snippet - a nested grid, a form, timelines, anything.
 
-For inline master/detail (where expanding a row reveals a child) see
-[demos/08-tree-and-master-detail.svelte](../../../examples/src/demos/08-tree-and-master-detail.svelte):
-the demo expands a row to mount a second `<SvGrid>` underneath, with the
-detail keyed to the parent.
+```svelte
+<SvGrid
+  {data} {columns}
+  isDetailRow={(row) => row.kind === 'detail'}
+  renderDetailRow={DetailPanel}
+/>
+```
 
-## Workaround - render a divider between groups
+See [Master / detail (nested grids)](./master-detail.md) for the full
+expand/collapse pattern, and demo `106-detail-rows` for a multi-panel detail.
 
-When you only need a visual band (no editing, no nested grid), render a
-plain DOM band above the grid for sticky banners, or use
-[grouping](./row-data.md) to get a "group label" row that visually spans
-the row width through the indented label column.
-
-## Tracked at
-
-[Missing features](../missing-features.md) - first-class full-width rows
-and detail-row API.
+A single sticky footer row is also available via `enableRowSummaries={true}`.
 
 ## See also
 
-- [Master / detail demo](../../../examples/src/demos/08-tree-and-master-detail.svelte)
+- [Master / detail (nested grids)](./master-detail.md)
 - [Grouping](./row-data.md)

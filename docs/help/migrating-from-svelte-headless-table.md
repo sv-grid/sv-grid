@@ -17,7 +17,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 | `createTable(data, plugins)`              | `createSvGrid({...})` or `<SvGrid>`        |
 | `table.createColumns((t) => [...])`       | `columns: ColumnDef[]`                     |
 | `t.column({ accessor: 'x', header })`     | `{ field: 'x', header }`                   |
-| `t.column({ accessor: (r) => ... })`      | `{ id, accessorFn: (r) => ... }`           |
+| `t.column({ accessor: (r) => ... })`      | `{ id, fieldFn: (r) => ... }`           |
 | `t.group({ header, columns })`            | `{ header, columns: [...] }` (column group) |
 | `addSortBy()`                             | `rowSortingFeature`                        |
 | `addColumnFilters()` / `addTableFilter()` | `columnFilteringFeature`                   |

@@ -142,7 +142,7 @@ export function createSummaries<
    *      trap for every cell otherwise - 5M no-op trap calls on a
    *      100k x 50 grid. Skipping it when the map is empty is the single
    *      biggest win here.
-   *   2. The column's accessor (`accessorFn` / `field`) is resolved once
+   *   2. The column's accessor (`fieldFn` / `field`) is resolved once
    *      per column, not re-read off `columnDef` for every cell.
    */
   function computeSummaries(
@@ -154,7 +154,7 @@ export function createSummaries<
     const hasEdits = Object.keys(ctx.editedCellValues).length > 0;
     for (const column of columns) {
       const def = column.columnDef;
-      const accessorFn = def.accessorFn;
+      const fieldFn = def.fieldFn;
       const field = def.field;
       const columnId = column.id;
       let numericSum = 0;
@@ -162,8 +162,8 @@ export function createSummaries<
       for (let i = 0; i < rowCount; i += 1) {
         const row = rows[i]!;
         let value: unknown;
-        const base = accessorFn
-          ? accessorFn(row.original)
+        const base = fieldFn
+          ? fieldFn(row.original)
           : field
             ? (row.original as Record<string, unknown>)[field]
             : row.getCellValueByColumnId(columnId);

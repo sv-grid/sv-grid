@@ -211,7 +211,7 @@
     {
       id: 'name',
       header: 'Work item',
-      accessorFn: (row) => row.name,
+      fieldFn: (row) => row.name,
       cell: (ctx) => renderSnippet(NameCell, { node: ctx.row.original }),
       width: 380,
     },

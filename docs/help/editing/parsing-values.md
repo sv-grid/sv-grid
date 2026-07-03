@@ -21,25 +21,51 @@ parseEditorValue('checkbox', true)           // true
 
 The full source is short and worth reading: [`cell-editors.ts`](../../../packages/grid/src/editors/cell-editors.ts).
 
+## Custom parsing with `valueParser`
+
+Add a per-column `valueParser` to refine the committed value **after** the
+built-in `parseEditorValue` coercion, before it is written to the row. Return
+the final value to store. It runs on every commit and flows through the undo
+history and `onCellValueChange`.
+
+```ts
+{ field: 'sku', editorType: 'text',
+  // "kb 101" -> "KB-101"
+  valueParser: ({ newValue }) =>
+    String(newValue).trim().toUpperCase().replace(/\s+/g, '-') },
+
+{ field: 'price', editorType: 'text', format: { type: 'currency', currency: 'USD' },
+  // accept "$1,299.90" / "1299.9" -> 1299.9
+  valueParser: ({ newValue, oldValue }) => {
+    const n = Number(String(newValue).replace(/[^0-9.\-]/g, ''))
+    return Number.isFinite(n) ? Math.round(n * 100) / 100 : oldValue
+  } },
+
+{ field: 'discount', editorType: 'number',
+  // clamp 0..100, integer
+  valueParser: ({ newValue }) => Math.max(0, Math.min(100, Math.round(Number(newValue) || 0))) },
+```
+
+The callback receives `ValueParserParams`:
+
+```ts
+type ValueParserParams<TData> = {
+  newValue: unknown   // value after built-in per-editorType coercion
+  oldValue: unknown   // the cell's previous value
+  rawInput: string    // the raw string the editor produced (pre-coercion)
+  data: TData         // the row object
+  columnId: string
+}
+```
+
+<div data-docs-demo="175-value-parser" data-height="520"></div>
+
 ## What "null" means
 
 `parseEditorValue` returns `null` to signal "could not parse". The grid
 treats `null` as an empty value and writes it into the cell. If you want
 **invalid input rejected** (the value reverts to its pre-edit state),
 intercept before the write - see [Validation](./validation.md).
-
-## Custom parsing
-
-There is no per-column `valueParser` field on `ColumnDef` today. If you
-need custom parsing (e.g. accept "$42,500" and turn it into `42500`), you
-have two paths:
-
-1. Post-process inside `cell` and store the raw display string.
-2. Diff `api.getData()` against your own snapshot after each commit and
-   normalise values you want canonicalised.
-
-A per-column `valueParser` is on the
-[gap list](../missing-features.md).
 
 ## See also
 

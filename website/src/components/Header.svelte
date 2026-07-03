@@ -22,7 +22,7 @@
   })
 
   const links = [
-    { id: 'demos', label: 'Demos', href: '#/demos' },
+    { id: 'demos', label: 'Demos', href: '#/demos/browse' },
     { id: 'docs', label: 'Docs', href: '#/docs' },
     { id: 'api', label: 'API', href: '#/api' },
     { id: 'theme-builder', label: 'Theme Builder', href: '#/theme-builder' },

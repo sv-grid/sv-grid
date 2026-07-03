@@ -1,57 +1,196 @@
 ---
 title: Open-Source vs Commercial Svelte Data Grids
-description: The trade-offs between free open-source grids and paid commercial ones - features, support, licensing, and total cost - for a Svelte project.
+description: A practical breakdown of licensing trade-offs for Svelte data grids - what open-source actually costs you, what commercial actually buys you, and how to think about total cost of ownership before you commit.
 date: 2026-08-21
+updated: "2026-07-02"
 category: Comparisons
 tags: comparison, licensing, open source, commercial, svelte data grid
 author: Boyko Markov
 ---
 
-Choosing a data grid is partly a licensing decision. Free open-source options and paid commercial ones each have real trade-offs beyond the sticker price.
+Most teams pick a grid based on a GitHub star count or a quick feature table, then spend the next six months fighting the decision. The licensing model matters less than people think at first, and more than they realize once they're shipping.
 
-![The SvGrid AI assistant.](/blog-media/ai-assistant.png)
-*The SvGrid AI assistant.*
+Here's the honest version.
 
-## What open-source gives you
+## What "free" actually costs in practice
 
-- **No cost, no license keys**: adopt and ship freely (under a permissive license like MIT).
-- **Inspectable, forkable**: read the source, patch if needed.
-- **Community momentum**: issues, PRs, examples.
+MIT-licensed means no license fee. It does not mean no cost.
 
-The risks: support is best-effort, advanced features may be missing, and maintenance depends on the project's health.
+The typical open-source Svelte grid in 2025-2026 gives you rendering, sorting, and basic filtering. Beyond that, you're on your own. Virtualization that handles 100k rows? Maybe. Cell editing with undo/redo? Probably not. Server-side data with pagination, filtering, and sorting wired together? Build it yourself.
 
-## What commercial gives you
+A mid-complexity data grid feature - say, server-side sorting plus a custom filter row plus sticky headers - takes one to three days to build and wire correctly. Do that four times across a project and you've spent two weeks on grid plumbing that a paid library would have solved on day one. At $150/hr, that's $12,000 before you've shipped anything.
 
-- **Advanced features**: pivot, enterprise export, sometimes specialized integrations.
-- **Guaranteed support**: SLAs, a team to escalate to, prioritized fixes.
-- **A roadmap you can rely on**: someone is paid to maintain it.
+Open-source is cheapest when the feature set fits your need exactly. It stops being cheap the moment you start building on top of it.
 
-The risks: cost (often per-developer or per-app), license management, and lock-in to a vendor's pace and pricing.
+## What you're actually buying with commercial licensing
 
-## The total-cost view
+A commercial grid is not a pile of features. It's risk transfer.
 
-Sticker price is not total cost. Factor in:
+When something breaks in production on a Friday and you have a $1M demo on Monday, you want a support ticket going to a team who maintains that codebase for a living. You want a fix or a workaround, not a GitHub issue that might get picked up in two weeks.
 
-- **Build cost** of features a free grid lacks (virtualization, accessibility, export), often far more than a license.
-- **Support cost**: hours lost to an unanswered issue vs a paid SLA.
-- **Risk cost**: an abandoned dependency is expensive to replace.
+You're also buying roadmap continuity. An open-source grid maintained by one person is one job change away from becoming unmaintained. Commercial grids have business incentives to stay maintained. That's not a guarantee, but it's a meaningful signal.
 
-Sometimes free is cheapest; sometimes a license is, once you price your own time.
+The real risk with commercial, beyond price, is lock-in. When the license restricts deployment environments, or seats are counted per-developer, or you need a new contract for each client project, the overhead becomes its own cost.
 
-## The hybrid model
+## The feature gap in Svelte specifically
 
-A increasingly common - and pragmatic - answer is open-core: a free, permissive core that covers the common 90%, plus an optional paid pack for advanced needs. You ship free, and only pay if and when you need the extras.
+Svelte's ecosystem is younger than React's. The result is that even decent Svelte grids tend to be missing things you'd take for granted in an ag-Grid or TanStack Table setup.
 
-This is SvGrid's model: `@svgrid/grid` is MIT-licensed and free for commercial use (sorting, filtering, grouping, virtualization, editing, server-side data), and [@svgrid/enterprise](/pricing) adds export, import, print, pivot, and AI plus support, per developer. You are not forced to choose all-free-or-all-paid up front.
+Things that look standard but frequently aren't in free Svelte grids:
 
-## How to decide
+- Row virtualization that handles pinned columns correctly
+- Column grouping with nested headers
+- Cell-level selection (not just row selection)
+- Editable cells with type-aware inputs
+- Export to Excel with formatting
+- Pivot tables
 
-- Standard CRUD grids, cost-sensitive? **Open-source** (free core) is usually enough.
-- Need pivot/export/SLAs, or your time is the expensive resource? **Commercial** (or open-core Enterprise) pays for itself.
-- Want to start free and upgrade only if needed? **Open-core**, the lowest-risk path.
+Here's what a typical server-side + virtualized setup looks like in SvGrid's free tier, which covers most of these:
 
-## Frequently asked questions
+```svelte
+<script lang="ts">
+  import SvGrid from '@svgrid/grid'
+  import { createServerDataSource, type ColumnDef } from '@svgrid/grid'
 
-### Should I use a free or paid Svelte data grid?
+  const ds = createServerDataSource({
+    fetch: async ({ page, pageSize, sort, filters }) => {
+      const params = new URLSearchParams({
+        page: String(page),
+        size: String(pageSize),
+        sort: JSON.stringify(sort),
+        filters: JSON.stringify(filters),
+      })
+      const res = await fetch(`/api/inventory?${params}`)
+      const json = await res.json()
+      return { rows: json.data, total: json.total }
+    }
+  })
 
-Use a free open-source grid for standard grids when cost matters and the feature set is enough. Choose commercial (or an open-core paid tier) when you need advanced features like pivot and export, or guaranteed support, and price in the cost of building missing features yourself.
+  const columns: ColumnDef[] = [
+    { id: 'sku',      field: 'sku',      header: 'SKU',      width: 120, pinned: 'left' },
+    { id: 'product',  field: 'product',  header: 'Product',  width: 240 },
+    { id: 'stock',    field: 'stock',    header: 'Stock',    width: 100, type: 'number' },
+    { id: 'price',    field: 'price',    header: 'Price',    width: 100, type: 'number', editable: true },
+    { id: 'category', field: 'category', header: 'Category', width: 160 },
+  ]
+</script>
+
+<SvGrid
+  data={ds}
+  {columns}
+  sortable
+  filterable
+  pageable
+  virtualization={true}
+  showFilterRow={true}
+  enableCellSelection={true}
+/>
+```
+
+That runs entirely on the free `@svgrid/grid` package. The server handles sorting and filtering; the grid handles pagination, virtual scrolling, and the filter row UI.
+
+## Where the paid tier changes the picture
+
+The enterprise package (`@svgrid/enterprise`) adds the things you'd otherwise build yourself: pivot tables, Excel export with multi-sheet support, import, AI assistant, and priority support.
+
+Pivot is the clearest example of why commercial tiers exist. Building a pivot engine from scratch is weeks of work. Getting it right under virtualization, with nested row groups and column totals, is a distinct and hard problem. Paying for it is almost always cheaper than building it.
+
+```svelte
+<script lang="ts">
+  import SvGrid from '@svgrid/grid'
+  import { createPivotModel } from '@svgrid/enterprise'
+  import { type ColumnDef } from '@svgrid/grid'
+
+  // Raw sales data - pivot handles aggregation
+  const data = $state(salesRows)
+
+  const pivot = createPivotModel({
+    rows: ['region', 'salesRep'],
+    columns: ['quarter'],
+    values: [
+      { field: 'revenue', aggFunc: 'sum', header: 'Revenue' },
+      { field: 'units',   aggFunc: 'sum', header: 'Units' },
+    ],
+  })
+
+  const columns: ColumnDef[] = [
+    { id: 'region',   field: 'region',   header: 'Region' },
+    { id: 'salesRep', field: 'salesRep', header: 'Rep' },
+  ]
+
+  let api: any
+</script>
+
+<SvGrid
+  {data}
+  {columns}
+  pivotModel={pivot}
+  groupable
+  onApiReady={(a) => { api = a }}
+/>
+```
+
+That code would be a multi-week project to replicate from scratch. The license cost is a rounding error by comparison.
+
+## The open-core middle ground
+
+The cleanest answer to "open-source or commercial" is often neither, in the pure form.
+
+Open-core grids ship a real, capable free tier under a permissive license and charge for the tier above it. You evaluate and prototype for free. You pay only when you need the advanced features. You don't pay per developer for the core package.
+
+SvGrid is built this way. `@svgrid/grid` is MIT-licensed and covers a wide range of production use cases - row and column virtualization, grouping, server-side data, editing, undo/redo, named views, conditional formatting, cell selection, and more. Enterprise adds the commercial-grade extras.
+
+Here's a realistic view of how the imperative API works for managing grid state across both tiers:
+
+```ts
+import SvGrid from '@svgrid/grid'
+import { createNamedViews, localStorageViews } from '@svgrid/grid'
+
+// Named views: save/restore column layout, filters, sort state
+const views = createNamedViews(localStorageViews('my-grid'))
+
+// After onApiReady:
+function saveCurrentView(name: string) {
+  const state = api.getState()
+  views.save(name, state)
+}
+
+function restoreView(name: string) {
+  const state = views.load(name)
+  if (state) api.setState(state)
+}
+
+// Programmatic column management
+api.setColumnVisible('internalId', false)
+api.setColumnPinning({ left: ['name', 'sku'], right: ['actions'] })
+api.autosizeAllColumns()
+
+// Grouping and pagination together
+api.setGroupBy(['category', 'region'])
+api.setPageSize(50)
+api.setPage(0)
+
+// Selection
+api.selectAllRows()
+const selected = api.getSelectedRows()
+
+// Edit flow
+api.startEditing(rowIndex, 'price')
+// ... user edits ...
+api.stopEditing()
+api.undo() // revert if needed
+```
+
+All of that is free, MIT-licensed, ships in production today.
+
+## How to make the call
+
+Three questions that cut through the noise:
+
+**What features do you actually need at launch?** List them. Match them against the free tier. If virtualization, sorting, filtering, editing, and server-side data are enough, the free tier is the right call. If you need pivot or Excel export, price in the commercial tier from the start.
+
+**How expensive is your time relative to license cost?** A per-developer annual license for an enterprise grid is typically $300-700/year. If your hourly rate is $100+, one day of building a feature that the grid already has breaks even on a full year of license cost. Do the math honestly.
+
+**What's the abandonment risk?** An MIT grid with one maintainer and 200 stars carries real risk. A commercial grid with paying customers has financial incentive to keep the lights on. For a grid you'll depend on for three or more years, that durability matters.
+
+For most Svelte teams building internal apps or B2B products: start with a capable open-core free tier, evaluate whether you hit the ceiling, and upgrade if you do. Don't pay for features you won't use. Do pay for features that would cost more to build than to license.

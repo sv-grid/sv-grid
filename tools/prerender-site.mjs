@@ -318,6 +318,7 @@ async function parseBlog() {
       title: meta.title ?? entry.name.replace(/\.md$/, ''),
       description: meta.description ?? '',
       date: meta.date ?? '1970-01-01',
+      updated: meta.updated || undefined,
       category,
       group: blogGroupOf(category),
       tags: (meta.tags ?? '').split(',').map((t) => t.trim()).filter(Boolean),

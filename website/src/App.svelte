@@ -151,7 +151,7 @@
     {:else if route.section === 'docs'}
       <LazyRoute loader={ROUTES.docs} props={{ slug: route.rest }} />
     {:else if route.section === 'api'}
-      <LazyRoute loader={ROUTES.api} />
+      <LazyRoute loader={ROUTES.api} props={{ apiRoute: route.rest }} />
     {:else if route.section === 'pricing'}
       <LazyRoute loader={ROUTES.pricing} />
     {:else if route.section === 'mcp'}

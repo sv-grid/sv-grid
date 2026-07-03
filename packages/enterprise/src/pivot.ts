@@ -238,7 +238,7 @@ function buildColumnTree<TFeatures extends TableFeatures>(
   const headerCol: ColumnDef<TFeatures, PivotRow> = {
     id: '__pivotRowHeader',
     header: rowHeaderLabel,
-    accessorFn: (row) => row.__pivotLabel,
+    fieldFn: (row) => row.__pivotLabel,
     width: 240,
   }
 
@@ -252,7 +252,7 @@ function buildColumnTree<TFeatures extends TableFeatures>(
         return {
           id,
           header: label,
-          accessorFn: (row) => row[id],
+          fieldFn: (row) => row[id],
           format: value.format,
           width: 130,
         } as ColumnDef<TFeatures, PivotRow>
@@ -283,7 +283,7 @@ function buildColumnTree<TFeatures extends TableFeatures>(
     return {
       id,
       header: label,
-      accessorFn: (row) => row[id],
+      fieldFn: (row) => row[id],
       format: value.format,
       width: 140,
     } as ColumnDef<TFeatures, PivotRow>

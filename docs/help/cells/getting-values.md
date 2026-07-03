@@ -11,13 +11,13 @@ You get cell values in three ways depending on context.
 { field: 'firstName', header: 'First' }
 ```
 
-Use `accessorFn` for anything computed:
+Use `fieldFn` for anything computed:
 
 ```ts
 {
   id: 'fullName',
   header: 'Full name',
-  accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+  fieldFn: (row) => `${row.firstName} ${row.lastName}`,
 }
 ```
 

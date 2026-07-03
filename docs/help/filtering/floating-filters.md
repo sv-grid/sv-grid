@@ -1,19 +1,10 @@
 # Floating filters
 
-"Floating filters" are the always-visible filter inputs that sit
-**between** the header row and the body - same idea as a filter row, but
-matched per-operator to the underlying column menu.
-<div data-docs-demo="03-excel-filters" data-height="540"></div>
-
-## Status
-
-SvGrid has a **filter row** (`filterMode="row"`) that gives you a single
-input per text column. It does not yet have full "floating filter" parity
-where the inline input mirrors the column menu's operator - e.g. a number
-column showing a `>` icon next to the filter input.
-
-The filter row uses `contains` for text columns and `equals` for number /
-date / checkbox columns.
+"Floating filters" are the always-visible filter inputs that sit **between** the
+header row and the body. In SvGrid the filter row is **per-operator and
+per-type**: each cell has a funnel to pick the operator, the value input matches
+the column's type, and `between` shows a second inline "To" input.
+<div data-docs-demo="179-floating-filters" data-height="520"></div>
 
 ## Enable the filter row
 
@@ -21,8 +12,27 @@ date / checkbox columns.
 <SvGrid {data} {columns} features={features} filterMode="row" />
 ```
 
-If you also want the column menu icon present, set both surfaces
-explicitly:
+## Per-operator, per-type
+
+- **Operator per cell** - click the funnel in a filter-row cell to switch the
+  operator (`contains`, `equals`, `greaterThan`, `between`, `isBlank`, …). The
+  chosen operator drives that column's filtering; it is the same value the column
+  menu uses, so the two surfaces stay in sync.
+- **Input matches the column** - a `number` column gets a number input, a `date`
+  column a date picker, text a text input. This is driven by the column's
+  `editorType`.
+- **`between` inline** - selecting Between shows a second **To** input right in
+  the row, so ranges work without opening the full menu.
+
+```ts
+const columns = [
+  { field: 'age', header: 'Age', editorType: 'number' },   // number input
+  { field: 'joinedAt', header: 'Joined', editorType: 'date' }, // date picker
+  { field: 'name', header: 'Name', editorType: 'text' },   // text input
+]
+```
+
+To show both the filter row and the column-menu funnel, set both surfaces:
 
 ```svelte
 <SvGrid
@@ -32,31 +42,8 @@ explicitly:
 />
 ```
 
-## Per-operator floating filter
-
-Today this needs a custom header. Render your own input inside the column
-header via `header: (ctx) => renderSnippet(...)` and write into
-controlled `columnFilters` state when the user types.
-
-```svelte
-{#snippet RangeHeader(p: { id: string })}
-  <div class="flex flex-col gap-1">
-    <span>{p.id}</span>
-    <input
-      placeholder="≥ min"
-      oninput={(e) => applyMin(p.id, +e.currentTarget.value)}
-      class="w-20 rounded border border-slate-300 px-1 py-0.5 text-xs"
-    />
-  </div>
-{/snippet}
-```
-
-## Tracked at
-
-[Missing features](../missing-features.md) - first-class floating filters
-with operator parity.
-
 ## See also
 
 - [Overview](./overview.md)
+- [Filter conditions](./filter-conditions.md) - two conditions per column
 - [Custom header components](../columns/custom-header-components.md)

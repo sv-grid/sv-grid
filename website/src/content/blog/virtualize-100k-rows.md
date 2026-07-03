@@ -1,103 +1,220 @@
 ---
 title: Render 100,000 Rows Smoothly with Grid Virtualization
-description: How SvGrid virtualizes rows and columns so a Svelte data grid stays at 60fps even with 100k rows by 100 columns.
+description: A practical look at how SvGrid keeps a Svelte data grid at 60fps with 100k rows - what virtualization actually does, the one layout requirement that breaks it silently, and why $state.raw matters at scale.
 date: 2026-05-05
+updated: 2026-07-02
 category: Performance
 tags: virtualization, performance, large data, svelte data grid
 author: Victor Vidolov
 ---
 
-A naive table renders one DOM row per data row. At a few thousand rows the browser slows; at a hundred thousand it locks up. SvGrid solves this with built-in row and column virtualization, only the cells in the viewport exist in the DOM.
+Ten million DOM nodes will not fit in a viewport. This is the whole problem with naive table rendering at scale - you create a `<tr>` for every row whether the user can see it or not, and at 100,000 rows with 100 columns, Chrome is busy constructing and styling 10 million elements before it paints a single pixel. The scroll interaction that follows is a slideshow.
 
-![SvGrid virtualizing a large dataset](/blog-media/large-dataset.png)
-*A large dataset in SvGrid, only the visible rows exist in the DOM.*
+The fix is conceptually simple: only render what the user can actually see. SvGrid does this automatically for both rows and columns. What is less obvious is that virtualization has one hard requirement that breaks silently if you miss it, and Svelte 5 adds a wrinkle that costs you hundreds of milliseconds if you use the wrong state primitive. Both of those deserve more attention than the "add virtualization: true" bullet point they usually get in docs.
 
-## It is on when it needs to be
+## What the virtualizer actually renders
 
-Virtualization in SvGrid does not require special wiring. Give the grid a bounded height and a large `data` array, and it renders only the visible window plus a small overscan buffer.
+When you mount a `<SvGrid>` inside a bounded container, the grid measures the container height and computes the visible row window from the current `scrollTop` and the configured `rowHeight`. It renders that slice plus a small overscan buffer (typically 3-5 rows per side) to avoid blank flickers during fast scrolls.
+
+The key detail: the rendered rows are not destroyed and recreated on scroll. SvGrid maintains a fixed pool of DOM rows, repositions them with `transform: translateY(...)` relative to a spacer element that holds the full scroll height, and swaps the bound data. The scrollbar sees the correct total height - 100,000 rows worth - but the DOM never holds more than about 40 rows at a time.
+
+Column virtualization mirrors this. From `scrollLeft`, the grid determines which column indices intersect the viewport, renders only that horizontal slice, and always keeps pinned columns outside the virtual window.
+
+The upshot: initial paint time is proportional to visible rows, not total rows. On a mid-range laptop, 100,000 rows with 95 metric columns mounts in under 16 ms because it paints roughly 30 rows.
+
+## The bounded-height requirement
+
+Virtualization only engages when the grid container has a bounded height. If the container grows to fit its content - which is the default block behavior - the grid's viewport height is effectively infinite, and every row gets rendered.
+
+The failure mode is quiet. There is no warning. The symptom is a several-second first paint and `document.querySelectorAll('tr').length` equaling your row count.
+
+The most common way to break it accidentally is using a flex column layout without `min-height: 0` on the grid's parent:
 
 ```svelte
-<div style="height: 600px;">
-  <SvGrid data={hundredThousandRows} columns={columns} />
+<!-- This breaks virtualization - the inner div grows unbounded -->
+<div style="display: flex; flex-direction: column; height: 100vh;">
+  <header>My App</header>
+  <div style="flex: 1;">
+    <SvGrid {data} {columns} />
+  </div>
 </div>
-```
 
-The key detail is the **bounded height**. The grid needs to know its viewport to compute which rows are visible, so place it in a container with an explicit height or a flex layout that gives it one.
-
-## Why it stays fast
-
-- **Row virtualization** keeps the DOM node count proportional to the viewport, not the dataset. Scrolling recycles rows instead of creating them.
-- **Column virtualization** does the same horizontally, so a 100-column grid only paints the columns you can see.
-- **Stable references** mean Svelte 5's fine-grained reactivity skips work for rows that did not change.
-
-## Keep your data layer fast too
-
-Virtualization handles rendering, but your data still flows through the engine. A few habits keep the whole pipeline quick:
-
-- Keep `data` an array whose reference changes only when rows actually change.
-- Preserve object identity for rows that did not change between updates, so selection and edit state line up.
-- Sort and filter through the grid's features (or on the server) rather than rebuilding the array yourself on every keystroke.
-
-## Sizing in a flex layout
-
-A common gotcha is a grid with no height. Inside a flex column, give the grid `flex: 1` and `min-height: 0`:
-
-```svelte
-<div style="display:flex; flex-direction:column; height:100vh;">
-  <header>Toolbar</header>
-  <div style="flex:1; min-height:0;">
-    <SvGrid data={rows} columns={columns} />
+<!-- This works - min-height:0 prevents the flex child from overflowing -->
+<div style="display: flex; flex-direction: column; height: 100vh;">
+  <header>My App</header>
+  <div style="flex: 1; min-height: 0;">
+    <SvGrid {data} {columns} />
   </div>
 </div>
 ```
 
-Without `min-height: 0`, flex children refuse to shrink and the grid grows past the viewport, defeating virtualization.
+The `min-height: 0` rule overrides the flex default that allows items to grow past their container. Without it, `flex: 1` makes the child expand to fit content rather than constrain to the remaining space.
 
-## How virtualization actually works
+## Why $state.raw matters at 100k rows
 
-It helps to picture what the grid is doing on every scroll frame. Given the scroll position, the row height, and the viewport height, the grid computes the first and last visible row indices, adds a small overscan buffer above and below, and renders only that slice. As you scroll, the same pool of DOM rows is repositioned and refilled with new data rather than created and destroyed.
+Svelte 5's `$state()` wraps every object in a reactive proxy. For a 100,000-row array that is 100,000 proxies created synchronously on assignment. On a modern laptop this takes 300-500 ms before the grid gets the data. For reference, the grid itself paints in under 16 ms.
 
-The consequences are worth internalizing:
+Use `$state.raw` for the rows array and trigger reactivity by replacing the array reference rather than mutating elements. The grid receives the raw array, skips proxy traversal on every cell access, and reads values at native object speed.
 
-- **DOM size is constant.** Ten rows or ten million, the node count tracks the viewport, not the dataset.
-- **Scroll cost is bounded.** Each frame repositions a fixed number of rows.
-- **Memory stays flat.** You are not holding a hundred thousand `<tr>` elements in memory.
+```svelte
+<script lang="ts">
+  import {
+    SvGrid,
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    type ColumnDef,
+    type SvGridApi,
+  } from '@svgrid/grid'
 
-## Fixed vs variable row heights
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-Uniform row heights are the fast path: the grid can calculate any row's position with a single multiplication, so jumping to row 90,000 is instant. If your rows vary in height - wrapped text, expandable detail - the grid has to measure and track offsets, which is still fast but does more work. When you can, keep rows a consistent height and push variable content into a master-detail panel that only exists when expanded.
+  type Row = {
+    id: number
+    firstName: string
+    lastName: string
+    department: string
+    [metric: string]: number | string
+  }
 
-## The overscan trade-off
+  // $state.raw - no deep proxy, critical at 100k rows
+  let rows    = $state.raw<Row[]>([])
+  let columns = $state.raw<ColumnDef<typeof features, Row>[]>([])
+  let api     = $state<SvGridApi | undefined>(undefined)
 
-Overscan is the buffer of off-screen rows the grid keeps rendered just beyond the viewport. A larger buffer means fewer blank flashes during very fast scrolling, at the cost of more DOM nodes. The defaults are tuned for the common case; you rarely need to touch them, but it is useful to know the dial exists if you are chasing the last few milliseconds on a low-end device.
+  function generateRows(count: number, metricCols: number): Row[] {
+    const FIRST = ['Ada', 'Grace', 'Alan', 'Linus', 'Margaret', 'Barbara']
+    const LAST  = ['Lovelace', 'Hopper', 'Turing', 'Torvalds', 'Hamilton', 'Liskov']
+    const DEPTS = ['Engineering', 'Design', 'Product', 'Sales', 'Operations']
 
-## Measuring it yourself
+    return Array.from({ length: count }, (_, i) => {
+      const row: Row = {
+        id:         i,
+        firstName:  FIRST[i % FIRST.length]!,
+        lastName:   LAST[i % LAST.length]!,
+        department: DEPTS[i % DEPTS.length]!,
+      }
+      for (let m = 0; m < metricCols; m++) {
+        row[`metric_${m}`] = Math.round(Math.random() * 10_000) / 100
+      }
+      return row
+    })
+  }
 
-Do not take "it is fast" on faith, measure on the hardware your users actually have. A quick protocol:
+  function buildColumns(metricCols: number): ColumnDef<typeof features, Row>[] {
+    const base: ColumnDef<typeof features, Row>[] = [
+      { field: 'firstName',  header: 'First name',  width: 160 },
+      { field: 'lastName',   header: 'Last name',   width: 160 },
+      { field: 'department', header: 'Department',  width: 160 },
+    ]
+    for (let m = 0; m < metricCols; m++) {
+      base.push({
+        field:  `metric_${m}` as keyof Row,
+        header: `Metric ${m}`,
+        width:  140,
+        format: { type: 'number', options: { maximumFractionDigits: 2 } },
+      })
+    }
+    return base
+  }
 
-1. Open your browser's performance panel and record while scrolling the full height of the grid.
-2. Watch for long frames (over ~16ms) and layout thrash.
-3. Check the DOM node count in the Elements panel, it should stay roughly constant as you scroll.
+  // Build columns once - separate from row data to avoid unnecessary re-renders
+  columns = buildColumns(95)
 
-If the node count climbs as you scroll, virtualization is not engaging, and the cause is almost always a missing height on the container.
+  async function load(rowCount: number) {
+    // Replace the reference - this is the correct way to trigger reactivity with $state.raw
+    rows = generateRows(rowCount, 95)
+  }
 
-## Common pitfalls
+  // Initial load
+  $effect(() => { load(100_000) })
+</script>
 
-- **No bounded height.** The number-one cause of "virtualization is not working." Give the grid a height or a flex parent with `min-height: 0`.
-- **Rebuilding `data` every tick.** A brand-new array of brand-new objects on every update forces the engine to reconsider everything. Mutate in place or replace only what changed.
-- **Heavy per-cell work.** A custom cell that does expensive work runs for every visible cell on every relevant update. Keep cell snippets light; memoize anything costly upstream.
-- **Huge fixed columns with no column virtualization benefit.** Very wide columns reduce how many fit on screen, but the win still comes from not rendering the off-screen ones.
+<div style="height: 100vh; display: flex; flex-direction: column;">
+  <div class="toolbar" style="height: 40px; flex-shrink: 0;">
+    <button onclick={() => load(10_000)}>10k rows</button>
+    <button onclick={() => load(50_000)}>50k rows</button>
+    <button onclick={() => load(100_000)}>100k rows</button>
+  </div>
 
-## Pairing with server-side data
+  <!-- flex:1 + min-height:0 - the bounded-height pattern -->
+  <div style="flex: 1; min-height: 0;">
+    <SvGrid
+      {rows}
+      {columns}
+      {features}
+      rowHeight={32}
+      onApiReady={(a) => { api = a }}
+    />
+  </div>
+</div>
+```
 
-Virtualization bounds the DOM; it does not bound the network. If your source is millions of rows, do not ship them all to the browser just because the grid can render them. Combine virtualization with [server-side paging](server-side-data): the server bounds the data transferred, and virtualization bounds the DOM for whatever is loaded.
+There is one more subtle point in that code: `buildColumns` runs once, outside `$effect`, and is not tied to row data changes. Column identity drives header and cell memoization inside the grid. If you compute `columns` in the same reactive scope that also fires on row changes, you force a full header and cell re-render on every data update. Keep column definitions stable.
 
-## Frequently asked questions
+## Programmatic scroll and adding rows at runtime
 
-### Can a Svelte data grid handle 100,000 rows?
+Once you have 100k rows virtualized, two operations need a bit of care.
 
-Yes. SvGrid virtualizes rows and columns, so a 100k by 100 grid keeps a small, constant DOM and scrolls smoothly. Give the grid a bounded height so it can compute the visible window.
+Scrolling to a specific row uses `api.scrollToRow(index)`. The index is into the displayed row set after sorting and filtering, not the original data array. If you want to jump to a specific data record, find its displayed index first:
 
-### Why is my virtualized grid not scrolling?
+```ts
+// Jump to a known row by data id after sorting/filtering may have reordered things
+function scrollToId(targetId: number) {
+  const displayed = api!.getDisplayedRows()
+  const idx = displayed.findIndex((r) => r.id === targetId)
+  if (idx !== -1) api!.scrollToRow(idx)
+}
 
-Almost always a height problem. The grid needs an explicit height or a flex parent with `min-height: 0`. Without it the grid cannot determine its viewport.
+// Adding rows at runtime without replacing the whole array
+function appendRows(newRows: Row[]) {
+  // applyTransaction is efficient - it patches the internal model, not the full array
+  api!.applyTransaction({ add: newRows })
+}
+
+// Remove by matching a field value
+function removeByDept(dept: string) {
+  const toRemove = api!.getDisplayedRows().filter((r) => r.department === dept)
+  api!.applyTransaction({ remove: toRemove })
+}
+```
+
+`applyTransaction` is the right tool for incremental updates. Reassigning the full `rows` reference on every update triggers a full virtual list reconciliation, which is fine for batch loads but wasteful for live feeds where you are appending a few rows per second.
+
+## When client-side filtering hits its ceiling
+
+With 100,000 rows in memory, `columnFilteringFeature` handles filter evaluation in a tight JavaScript loop - no DOM involved, just array iteration. That is fast enough for interactive filtering at typing speed, as long as you let SvGrid own the filter state rather than recomputing a pre-filtered array on every keystroke and reassigning `rows`.
+
+The ceiling shows up with complex multi-column filters on computed fields, or when the dataset grows past memory budget. At that point the right answer is `createServerDataSource`, which offloads sort, filter, and pagination to the backend so the browser holds only one page of rows:
+
+```ts
+import { createServerDataSource } from '@svgrid/grid'
+
+const ds = createServerDataSource({
+  fetch: async ({ page, pageSize, sort, filters }) => {
+    const params = new URLSearchParams({
+      page:     String(page),
+      pageSize: String(pageSize),
+    })
+    if (sort.length) params.set('sort', JSON.stringify(sort))
+    if (filters.length) params.set('filters', JSON.stringify(filters))
+
+    const res  = await fetch(`/api/employees?${params}`)
+    const json = await res.json()
+    return { rows: json.data, total: json.total }
+  },
+})
+
+// Data source replaces the rows array entirely
+// <SvGrid data={ds} {columns} {features} pageable sortable filterable />
+```
+
+The trade-off: server-side mode adds network latency on sort and filter changes, and requires backend support for the query contract. For datasets that genuinely cannot live in the browser, the latency is acceptable. For datasets that can, client-side virtualization with `$state.raw` is faster and simpler.
+
+## Variable row heights
+
+SvGrid's default virtualizer assumes uniform row height for O(1) scroll-position-to-index mapping. If you render rows with content that changes their height - multiline text, expandable details panels, embedded charts - the scrollbar position estimate will drift.
+
+The practical solution is to set `rowHeight` to the tallest possible row. You lose some vertical density but keep accurate scroll behavior. True dynamic measurement (where each row reports its own height back to the virtualizer) is on the roadmap but involves significantly more scroll-calculation complexity.
+
+For most business grids with text and numbers, uniform row height is the right default. Set it explicitly with `rowHeight={32}` or `rowHeight={40}` rather than relying on the CSS default, because consistent row height also improves the browser's paint batching.

@@ -185,7 +185,7 @@ const columns: ColumnDef<{}, Person>[] = [
   {
     id: 'fullName',
     header: 'Full name',
-    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+    fieldFn: (row) => `${row.firstName} ${row.lastName}`,
   },
 
   // Numeric with locale-aware formatting
@@ -223,8 +223,8 @@ const columns: ColumnDef<{}, Person>[] = [
 | Property | Purpose |
 | --- | --- |
 | `field` | Reads `row[key]`. |
-| `accessorFn` | Computes the value from the row. |
-| `id` | Stable column id (required if you use `accessorFn`). |
+| `fieldFn` | Computes the value from the row. |
+| `id` | Stable column id (required if you use `fieldFn`). |
 | `header` | String or render snippet for the header. |
 | `footer` | String or render snippet for the footer row. |
 | `cell` | Render snippet/component for the body cell. |

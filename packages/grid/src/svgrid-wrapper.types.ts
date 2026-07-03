@@ -64,6 +64,16 @@ export type SvGridApi<
   getCellValue(rowIndex: number, columnId: string): unknown
   /** Write a cell value through the column's field. */
   setCellValue(rowIndex: number, columnId: string, value: unknown): void
+  /**
+   * Programmatically begin editing a cell (as a double-click would). Returns
+   * `true` if editing started (cell exists, editable, editing enabled).
+   */
+  startEditing(rowIndex: number, columnId: string): boolean
+  /**
+   * Commit (default) or, with `cancel: true`, discard the active edit.
+   * Returns `true` if there was an edit in progress.
+   */
+  stopEditing(cancel?: boolean): boolean
 
   // ----- Cell selection -----
   /**
@@ -130,6 +140,15 @@ export type SvGridApi<
           value?: string
           /** Upper bound for the `between` operator. Required when `operator === 'between'`. */
           valueTo?: string
+          /**
+           * Optional SECOND condition on the same column, joined by `join`
+           * (multi-condition filtering, e.g. "> 100 AND < 500").
+           */
+          operator2?: SvGridFilterOperator
+          value2?: string
+          valueTo2?: string
+          /** How to combine the two conditions. Defaults to `'AND'`. */
+          join?: 'AND' | 'OR'
         }
       | null,
   ): void

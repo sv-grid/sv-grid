@@ -54,12 +54,12 @@ explicit row-model pipelines. If you already think in
 + ]
 ```
 
-The `accessorFn` form is the same:
+The `fieldFn` form is the same:
 
 ```diff
 - columnHelper.accessor((row) => row.profile.name, { id: 'name', header: 'Name' })
 
-+ { id: 'name', accessorFn: (row) => row.profile.name, header: 'Name' }
++ { id: 'name', fieldFn: (row) => row.profile.name, header: 'Name' }
 ```
 
 ## Mounting

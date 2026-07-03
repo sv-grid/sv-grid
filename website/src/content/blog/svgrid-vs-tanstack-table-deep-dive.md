@@ -1,54 +1,192 @@
 ---
 title: SvGrid vs TanStack Table - A Deep Dive
-description: A detailed comparison of SvGrid and TanStack Table's Svelte adapter - architecture, reactivity, rendering, features, and when to choose each.
+description: A concrete architectural comparison of SvGrid and TanStack Table's Svelte adapter - how each handles reactivity, rendering, and feature composition, with code that shows exactly where they diverge.
 date: 2026-09-13
+updated: "2026-07-02"
 category: Comparisons
 tags: comparison, tanstack table, svelte data grid, headless
 author: Kamelia M
 ---
 
-SvGrid and TanStack Table are the two serious "headless" options for Svelte, and they are the most common head-to-head. They share DNA but make different bets.
+Both libraries call themselves "headless-first." That framing is accurate for both but obscures the part that actually matters when you are picking one for a Svelte 5 project: they are headless in completely different ways, with different reactivity models and different assumptions about how much rendering you want to own.
 
-![Group aggregators in SvGrid.](/blog-media/group-aggregators.png)
-*Group aggregators in SvGrid.*
+Here is the short version. TanStack Table is a framework-agnostic engine with a Svelte adapter bolted on. SvGrid's headless core (`createSvGrid`) was written for Svelte 5 runes from the start, and the render component (`<SvGrid>`) is a thin layer on top of that same core. If you want a prebuilt table that plugs in and works, pick SvGrid. If you want total markup control and are comfortable assembling your own scroll container and filter UI, either library can work, but the runes-native internals of SvGrid mean less impedance when you reach into the internals.
 
-## The shared ground
+The rest of this post goes through the concrete differences: reactivity, feature composition, rendering, and the practical "when to choose each" question.
 
-Both are headless-first: a row-model pipeline (filter, sort, group, paginate, expand) that you compose, with TypeScript throughout and permissive open-source licensing. If you have used one, the mental model of the other is familiar.
+## How reactivity actually differs
 
-## Where they diverge
+TanStack Table's Svelte adapter wraps the core engine in a writable store. When you call `table.setOptions(updater)`, the store updates, which triggers a re-render cycle. The table instance itself is re-created (or patched) on each store change. This is invisible most of the time, but it means change detection runs through Svelte's store subscription layer rather than Svelte 5's signal graph. In practice you call `setOptions` explicitly when you want the table to respond to something external - say, new server data arriving.
 
-**Reactivity.** TanStack Table is framework-agnostic; its Svelte adapter bridges the engine through stores and the `$store` contract. SvGrid is written natively on Svelte 5 runes, state is `$state`, derived rows are `$derived`, no adapter layer. In a Svelte app, native means less ceremony and fewer abstractions; across frameworks, agnostic means one mental model everywhere.
+SvGrid's internals are `$state` and `$derived` all the way down. The row model is a chain of derived computations:
 
-**Rendering.** TanStack Table is purely headless, you build all the markup. SvGrid ships *both* a headless core (`createSvGrid`) and a full render component (`<SvGrid>`) with virtualization, Excel-style filters, inline editing, and selection already built. With TanStack you assemble those yourself (or add libraries).
+```
+rawData ($state) -> sorted rows ($derived) -> filtered rows ($derived) -> paginated rows ($derived) -> virtualizer window ($derived)
+```
 
-**Batteries.** Virtualization, range selection, and a filter UI are out-of-the-box in SvGrid's component; in TanStack they are your job (often paired with TanStack Virtual and custom UI).
+When you mutate the upstream `$state`, Svelte's fine-grained tracking re-runs exactly the affected stages. There are no manual `invalidate` calls, no store subscriptions, and no re-creation of a table instance. The downside is that mutating an array in place does not trigger anything - `$state` tracks identity, not deep mutation. Reassign the array or use the imperative API:
 
-## A feature snapshot
+```ts
+// Does nothing - SvGrid does not see in-place mutation
+rows.push(newRow)
 
-| | SvGrid | TanStack Table (Svelte) |
-| --- | --- | --- |
-| Headless core | Yes (`createSvGrid`) | Yes |
-| Render component | Yes (`<SvGrid>`) | No (you build it) |
-| Reactivity | Native Svelte 5 runes | Svelte adapter over stores |
-| Virtualization | Built in | Bring your own |
-| Cross-framework | Svelte-focused | React/Vue/Svelte/Solid/... |
+// Triggers a re-render - new array reference
+rows = [...rows, newRow]
 
-See the full matrix at [SvGrid vs TanStack Table](/compare/tanstack-table).
+// Also correct - API handles the update
+api?.addRow(newRow)
+api?.applyTransaction({ add: [newRow] })
+```
 
-## When to choose which
+This is not a SvGrid quirk. It is standard Svelte 5 `$state` behavior. The reason it bites people is that TanStack Table's adapter is less strict about it because the store-based update cycle catches a broader class of mutations.
 
-- **Choose TanStack Table** if you want maximum rendering control, a framework-agnostic engine, or the same table mental model across React/Vue/Svelte.
-- **Choose SvGrid** if you are on Svelte 5 and want a native data flow plus a complete render component (with the headless core still there for custom layouts).
+## Feature composition and TypeScript inference
 
-Both are good. The decision is mostly "do I want to build the UI?" and "is cross-framework consistency worth the adapter?"
+Both libraries use a feature composition pattern. TanStack Table v8 introduced `_features` on the table options object. SvGrid uses `tableFeatures(...)` to declare exactly which capabilities you need. The practical difference is that SvGrid's type inference flows from the features object at compile time - the shape of column defs and the `SvGridApi` are both inferred from what you pass to `tableFeatures`.
 
-## Frequently asked questions
+```ts
+import {
+  tableFeatures,
+  rowSortingFeature,
+  columnFilteringFeature,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  type ColumnDef,
+  type SvGridApi,
+} from '@svgrid/grid'
 
-### What is the main difference between SvGrid and TanStack Table?
+// Features are declared once, outside the component
+const features = tableFeatures({
+  rowSortingFeature,
+  columnFilteringFeature,
+  rowPaginationFeature,
+  rowSelectionFeature,
+})
 
-TanStack Table is a framework-agnostic headless engine, you build all the markup, and in Svelte it works through a store-based adapter. SvGrid is native to Svelte 5 runes and ships both a headless core and a full render component, so the UI (virtualization, filters, editing) is built for you.
+type Row = {
+  id: string
+  name: string
+  revenue: number
+  region: string
+}
 
-### Should I use SvGrid or TanStack Table for a Svelte app?
+// ColumnDef is typed against `features` - TypeScript catches mismatches
+const columns: ColumnDef<typeof features, Row>[] = [
+  { id: 'id',      field: 'id',      header: 'ID',      width: 80  },
+  { id: 'name',    field: 'name',    header: 'Name',    width: 200 },
+  { id: 'revenue', field: 'revenue', header: 'Revenue', width: 120,
+    type: 'number', format: { type: 'currency', currency: 'USD' } },
+  { id: 'region',  field: 'region',  header: 'Region',  width: 140 },
+]
 
-Use SvGrid for a native Svelte 5 data flow and a ready-made, virtualized component. Use TanStack Table if you want total control over rendering or need the same engine across multiple frameworks.
+// SvGridApi is also typed against `features`
+// - api.setPage() exists because rowPaginationFeature is included
+// - api.getSelectedRows() exists because rowSelectionFeature is included
+// - Remove a feature and the corresponding API methods disappear from the type
+let api = $state<SvGridApi<typeof features, Row> | null>(null)
+```
+
+TanStack Table achieves similar type safety through generics on `createSvelteTable`, but the column def type is `ColumnDef<Row>` rather than parameterized on features. That means TypeScript cannot catch at compile time that you are calling a pagination method when pagination is not registered.
+
+One thing to watch: `tableFeatures(...)` must be created once and reused. Creating it inside a reactive context or an event handler produces a new object on every tick, which forces a full grid re-initialization. Put it at module scope or in a component-level `const` outside any reactive block.
+
+## The render layer
+
+This is the clearest practical difference between the two libraries.
+
+TanStack Table gives you the row model and nothing else. You write the `<table>` element, the `<thead>`, the `<tbody>`, the scroll container, and - critically - the virtualization layer. `@tanstack/svelte-virtual` exists for this purpose but it is a separate package you wire up yourself. For a simple table with 200 rows that is a reasonable 60-80 lines of markup. For 50,000 rows with pinned columns, horizontal scroll sync, and row grouping, the boilerplate compounds quickly.
+
+SvGrid ships a render component that handles all of that:
+
+```svelte
+<script lang="ts">
+  import SvGrid from '@svgrid/grid'
+  import {
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    type ColumnDef,
+    type SvGridApi,
+  } from '@svgrid/grid'
+
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+  })
+
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { id: 'id',      field: 'id',      header: 'ID',      width: 80  },
+    { id: 'name',    field: 'name',    header: 'Name',    width: 200, pinned: 'left' },
+    { id: 'revenue', field: 'revenue', header: 'Revenue', width: 120, type: 'number',
+      conditionalFormat: [
+        { condition: ({ value }) => value < 0,       style: { color: 'var(--red)' } },
+        { condition: ({ value }) => value >= 100_000, style: { color: 'var(--green)', fontWeight: 'bold' } },
+      ]
+    },
+    { id: 'region',  field: 'region',  header: 'Region',  width: 140 },
+  ]
+
+  type Row = { id: string; name: string; revenue: number; region: string }
+  let rows: Row[] = $state([])
+  let api = $state<SvGridApi<typeof features, Row> | null>(null)
+
+  $effect(() => {
+    fetch('/api/accounts')
+      .then(r => r.json())
+      .then(json => { rows = json })
+  })
+</script>
+
+<SvGrid
+  {features}
+  {columns}
+  data={rows}
+  height={640}
+  sortable
+  filterable
+  pageable
+  selectable
+  showFilterRow={true}
+  pageSize={50}
+  onApiReady={(a) => { api = a }}
+/>
+
+{#if api}
+  <div class="toolbar">
+    <button onclick={() => api?.exportCsv()}>Export CSV</button>
+    <button onclick={() => api?.clearAllFilters()}>Clear filters</button>
+    <span>{api.getPageInfo().total} rows</span>
+  </div>
+{/if}
+```
+
+The `height` prop is required for virtualization. Without it the grid renders all rows eagerly - 50,000 rows without virtualization will freeze a browser for several seconds. Set `height` explicitly or constrain the parent with CSS `height` + `overflow: hidden`.
+
+If you want full markup control but still want the runes-native row model, `createSvGrid` is the escape hatch. It returns the same row model state that `<SvGrid>` uses internally, and you can pair it with `createSvelteVirtualizer` from `@svgrid/grid` to build your own scroll container. Expect about 80-100 lines of boilerplate for a basic virtual scroll setup - that is the honest cost of going fully custom.
+
+## When TanStack Table is still the right call
+
+TanStack Table is the better choice in two specific situations.
+
+First, if your project is still on Svelte 4. SvGrid requires Svelte 5 runes (`$state`, `$derived`, `$effect`). There is no compatibility shim. TanStack Table's adapter works with Svelte 4 stores.
+
+Second, if your team has strong opinions about markup and you are willing to own the rendering layer completely. TanStack Table gives you a blank canvas. SvGrid's render component makes decisions for you - the DOM structure, the scroll container, the header layout. You can override a lot with CSS custom properties (`--sg-bg`, `--sg-accent`, `--sg-border`, etc.) and with custom cell snippets, but you cannot rearrange the fundamental structure of the table. If that flexibility matters more than build-vs-buy, TanStack Table wins.
+
+For everything else - especially teams that want sorting, filtering, pagination, row grouping, virtualization, and an imperative API without assembling those pieces manually - SvGrid covers the common ground with less code and better TypeScript inference in a Svelte 5 context.
+
+## Migrating from TanStack Table to SvGrid
+
+The mental model transfers more than you might expect. Column defs are structurally similar. The row model pipeline concept (sort -> filter -> paginate) is the same. The biggest adjustment is that you interact with the grid through `onApiReady` rather than holding a table reference from `createSvelteTable`, and you declare features via `tableFeatures(...)` rather than the `_features` option. If you have used TanStack Table v8, a half-day of orientation is realistic - not a full rewrite.
+
+The practical migration path:
+
+1. Replace `createSvelteTable` with `tableFeatures(...)` + `<SvGrid ... onApiReady={...} />`.
+2. Move column defs to `ColumnDef<typeof features, Row>[]`. Most fields (`id`, `header`, `accessorKey` maps to `field`, `cell`) transfer directly.
+3. Replace manual filter UI and sort header click handlers with `showFilterRow` and `sortable` props. If you had custom filter components, they can move to column `filterCell` snippets.
+4. Replace your virtual scroll container with `height={N}` on `<SvGrid>`. Delete `@tanstack/svelte-virtual` from your dependencies.
+
+One thing that does not transfer: if you built custom row height measurement logic to handle variable-height rows, SvGrid currently assumes a fixed row height set by the `rowHeight` prop. Variable-height virtual scroll is on the roadmap but not in the current release.

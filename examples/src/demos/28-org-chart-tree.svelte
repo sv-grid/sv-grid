@@ -164,7 +164,7 @@
     {
       id: 'name',
       header: 'Member',
-      accessorFn: (row) => row.name,
+      fieldFn: (row) => row.name,
       cell: (ctx) => renderSnippet(NameCell, { node: ctx.row.original }),
       width: 380,
     },

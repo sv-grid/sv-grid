@@ -42,6 +42,11 @@ export type DocPage = {
  * blurb shown on the group header tooltip) + `defaultOpen` (whether
  * the tree starts expanded).
  */
+// AG-Grid-style flat, feature-themed top-level groups (no "Help" mega-bucket).
+// `dir` is the primary directory a category owns; pages outside that directory
+// are routed in via CATEGORY_OVERRIDE (below). Synthetic dirs start with '@'
+// and never match a real slug - those categories are populated only by the
+// override map.
 const CATEGORY_ORDER: {
   dir: string
   label: string
@@ -49,31 +54,114 @@ const CATEGORY_ORDER: {
   summary?: string
   defaultOpen?: boolean
 }[] = [
-  { dir: '',                  label: 'Overview',     icon: '✦', defaultOpen: true,
-    summary: 'Getting started, why-headless, changelog.' },
-  { dir: 'help',              label: 'Help',         icon: '◆', defaultOpen: true,
-    summary: 'Topic pages organised by feature area.' },
-  { dir: 'help/columns',      label: '  Columns',    icon: '▭',
-    summary: 'Column definitions, sizing, pinning, headers.' },
-  { dir: 'help/rows',         label: '  Rows',       icon: '▤',
-    summary: 'Row data, sorting, pinning, tree rows.' },
-  { dir: 'help/cells',        label: '  Cells',      icon: '▢',
-    summary: 'Custom cells, formatting, tooltips, expressions.' },
-  { dir: 'help/filtering',    label: '  Filtering',  icon: '▼',
-    summary: 'Built-in filter operators + custom column filters.' },
-  { dir: 'help/editing',      label: '  Editing',    icon: '✎',
-    summary: 'Inline editing, validation, undo / redo.' },
-  { dir: 'recipes',           label: 'Recipes',      icon: '★',
-    summary: '28 copy-paste patterns; one demo per recipe.' },
-  { dir: 'compliance',        label: 'Compliance',   icon: '✓',
+  { dir: 'getting-started',   label: 'Getting Started', icon: '✦', defaultOpen: true,
+    summary: 'Install, first grid, data & columns, going to production.' },
+  { dir: '@concepts',         label: 'Concepts',     icon: '◇',
+    summary: 'Architecture, glossary, why headless.' },
+  { dir: 'help/headless',     label: 'Headless',     icon: '⚙',
+    summary: 'Use the engine without the renderer - build your own table.' },
+  { dir: '@styling',          label: 'Layout & Styling', icon: '❖',
+    summary: 'Theming with --sg-* tokens, Tailwind, Web Components.' },
+  { dir: 'help/columns',      label: 'Columns',      icon: '▭',
+    summary: 'Definitions, sizing, pinning, groups, spanning, headers.' },
+  { dir: 'help/rows',         label: 'Rows',         icon: '▤',
+    summary: 'Row data, sorting, pinning, dragging, master/detail, trees.' },
+  { dir: 'help/cells',        label: 'Cells',        icon: '▢',
+    summary: 'Custom cells, formatting, data types, tooltips, expressions.' },
+  { dir: 'help/filtering',    label: 'Filtering',    icon: '▼',
+    summary: 'Text / number / date / set filters, floating filters, API.' },
+  { dir: 'help/editing',      label: 'Editing',      icon: '✎',
+    summary: 'Inline & full-row editing, validation, undo / redo.' },
+  { dir: 'help/grouping',     label: 'Grouping & Pivoting', icon: '⊞',
+    summary: 'Row grouping, aggregation, pivot tables.' },
+  { dir: 'help/server',       label: 'Server-Side Data', icon: '☁',
+    summary: 'Server-side row model, infinite scroll, real-time, collaboration.' },
+  { dir: 'help/state',        label: 'State & Views', icon: '⚑',
+    summary: 'Save / restore grid state, named views.' },
+  { dir: '@io',               label: 'Import & Export', icon: '⇅',
+    summary: 'Excel / CSV / PDF export, print, import with mapping.' },
+  { dir: '@charts',           label: 'Charts',       icon: '◔',
+    summary: 'Integrated charts and sparklines.' },
+  { dir: '@a11y',             label: 'Accessibility & i18n', icon: '⚉',
+    summary: 'ARIA, keyboard nav, RTL, localisation, browser support.' },
+  { dir: '@ai',               label: 'AI & Integrations', icon: '✨',
+    summary: 'NL filter, smart paste, MCP server, agents, observability.' },
+  { dir: 'recipes',           label: 'Recipes & Guides', icon: '★',
+    summary: 'Copy-paste patterns; one live demo per recipe.' },
+  { dir: '@migrating',        label: 'Migrating',    icon: '⇄',
+    summary: 'Column / API translation guides from other grids.' },
+  { dir: '@production',       label: 'Production & Quality', icon: '✓',
+    summary: 'Security, benchmarks, testing, versioning, browser support.' },
+  { dir: 'enterprise',        label: 'Enterprise',   icon: '◈',
+    summary: 'License, evaluation, support, Enterprise feature pack.' },
+  { dir: 'compliance',        label: 'Compliance',   icon: '⚖',
     summary: 'SOC 2 / GDPR / HIPAA / audit-log integration.' },
-  { dir: 'enterprise',               label: 'Enterprise tier',     icon: '◈',
-    summary: 'License, evaluation, support, Enterprise features.' },
-  { dir: 'reference',         label: 'API reference',icon: '⟨⟩',
-    summary: '<SvGrid> / SvGridApi / ColumnDef / features tables.' },
-  { dir: 'reference/auto',    label: '  Auto-generated', icon: '⚙',
-    summary: 'JSDoc-extracted reference; regenerated per release.' },
+  // NB: the API reference is NOT a docs category - it lives on the dedicated
+  // /api page (website/src/routes/Api.svelte). A nav link points there.
 ]
+
+// Route flat `help/*.md` (and root) pages that don't live in a feature
+// subdirectory into the right AG-Grid-style group. Keyed by slug -> category
+// label. Anything not listed falls back to the longest dir-prefix match.
+const CATEGORY_OVERRIDE: Record<string, string> = {
+  // Getting Started (root pages)
+  'getting-started': 'Getting Started',
+  // Headless
+  'why-headless': 'Headless',
+  // Concepts
+  'help/architecture': 'Concepts',
+  'help/glossary': 'Concepts',
+  'help/comparison': 'Concepts',
+  // Layout & Styling
+  'help/tailwind': 'Layout & Styling',
+  'help/tokens': 'Layout & Styling',
+  'help/web-components': 'Layout & Styling',
+  // Columns / Cells extras
+  'help/columns-hierarchy': 'Columns',
+  'help/status-bar': 'Cells',
+  // Grouping & Pivoting
+  'help/grouping-aggregation': 'Grouping & Pivoting',
+  'help/pivot': 'Grouping & Pivoting',
+  // Server-Side Data
+  'help/server-side-data': 'Server-Side Data',
+  'help/real-time': 'Server-Side Data',
+  'help/collaboration': 'Server-Side Data',
+  // State & Views
+  'help/saved-views': 'State & Views',
+  'help/state-maintenance': 'State & Views',
+  // Import & Export
+  'help/export': 'Import & Export',
+  'help/import': 'Import & Export',
+  // Charts
+  'help/charts': 'Charts',
+  // Accessibility & i18n
+  'help/accessibility': 'Accessibility & i18n',
+  'help/i18n-rtl': 'Accessibility & i18n',
+  'help/browser-support': 'Accessibility & i18n',
+  // AI & Integrations
+  'help/ai': 'AI & Integrations',
+  'help/ai-smart-paste': 'AI & Integrations',
+  'help/agents': 'AI & Integrations',
+  'help/mcp-server': 'AI & Integrations',
+  'help/llm-grounding': 'AI & Integrations',
+  'help/observability': 'AI & Integrations',
+  // Recipes & Guides
+  'help/recipes': 'Recipes & Guides',
+  'help/conditional-form-schema': 'Recipes & Guides',
+  'help/spreadsheet-formulas': 'Recipes & Guides',
+  'help/mobile-card-view': 'Recipes & Guides',
+  // Production & Quality
+  'help/security': 'Production & Quality',
+  'help/benchmarks': 'Production & Quality',
+  'help/testing': 'Production & Quality',
+  'help/testing-and-quality': 'Production & Quality',
+  'help/api-stability': 'Production & Quality',
+  'help/versioning': 'Production & Quality',
+  'help/production': 'Production & Quality',
+  'help/missing-features': 'Production & Quality',
+  'help/errors': 'Production & Quality',
+}
+const CATEGORY_BY_LABEL = new Map(CATEGORY_ORDER.map((c) => [c.label, c]))
 
 // Pages we deliberately don't surface in the sidebar.
 const HIDDEN_SLUGS = new Set([
@@ -83,9 +171,12 @@ const HIDDEN_SLUGS = new Set([
   'compliance/index',
   'reference/index',
   'enterprise/README',            // landing already lives under Enterprise group
+  'help/api-reference',    // duplicate of the /api page - kept only as a redirect stub
 ])
-// Hide the entire _internal tree (planning notes, dev-only docs).
-const HIDDEN_PREFIXES = ['_internal/']
+// Hide the entire _internal tree (planning notes, dev-only docs) AND the
+// reference/ tree (API reference lives on the dedicated /api page), plus the
+// non-developer marketing / legal trees.
+const HIDDEN_PREFIXES = ['_internal/', 'reference/', 'legal/', 'brand/', 'schemas/']
 
 // Curated per-category order for the pages where order matters. Anything not
 // listed here sorts alphabetically.
@@ -111,9 +202,19 @@ const PAGE_ORDER: Record<string, string[]> = {
     'columns-hierarchy', 'state-maintenance', 'saved-views', 'i18n-rtl',
     // Enterprise readiness
     'security', 'browser-support', 'accessibility', 'benchmarks',
-    'testing', 'api-stability', 'api-reference', 'errors',
+    'testing', 'api-stability', 'errors',
     // Project-level
     'testing-and-quality', 'missing-features',
+  ],
+  'help/headless': [
+    'why-headless',
+    'overview',
+    'build-a-table',
+    'styling',
+    'row-models',
+    'server-side',
+    'controlled-state',
+    'virtualization',
   ],
   'help/columns': [
     'column-definitions',
@@ -277,25 +378,34 @@ function slugFor(path: string): string {
 }
 
 function categoryFor(slug: string): { dir: string; label: string } {
-  // Match the longest CATEGORY_ORDER prefix.
-  let best = CATEGORY_ORDER[0]!
+  // 1. Explicit per-slug override wins.
+  const ov = CATEGORY_OVERRIDE[slug]
+  if (ov) return CATEGORY_BY_LABEL.get(ov)!
+  // 2. Every "migrating-from-*" guide lands in Migrating.
+  if (slug.startsWith('help/migrating-from-')) return CATEGORY_BY_LABEL.get('Migrating')!
+  // 3. Otherwise the longest real dir-prefix match (synthetic '@' dirs skipped).
+  let best: (typeof CATEGORY_ORDER)[number] | null = null
   for (const c of CATEGORY_ORDER) {
-    if (c.dir === '' && !slug.includes('/')) {
-      best = c
-      continue
-    }
-    if (c.dir && slug.startsWith(c.dir + '/') && c.dir.length > best.dir.length) {
+    if (!c.dir || c.dir.startsWith('@')) continue
+    if (slug.startsWith(c.dir + '/') && (!best || c.dir.length > best.dir.length)) {
       best = c
     }
   }
-  return best
+  return best ?? CATEGORY_BY_LABEL.get('Recipes & Guides') ?? CATEGORY_ORDER[0]!
 }
 
 function orderFor(slug: string, dir: string): number {
-  const baseName = dir === '' ? slug : slug.slice(dir.length + 1)
+  // Real-dir categories slice the dir off; override / synthetic categories use
+  // the slug's last path segment so they still sort sensibly (alphabetical).
+  const baseName =
+    dir && !dir.startsWith('@') && slug.startsWith(dir + '/')
+      ? slug.slice(dir.length + 1)
+      : slug.includes('/')
+        ? slug.slice(slug.lastIndexOf('/') + 1)
+        : slug
   const ordered = PAGE_ORDER[dir] ?? []
   const idx = ordered.indexOf(baseName)
-  return idx >= 0 ? idx : 100 + baseName.charCodeAt(0)
+  return idx >= 0 ? idx : 100 + (baseName.charCodeAt(0) || 0)
 }
 
 const allPages: DocPage[] = Object.entries(FILES)

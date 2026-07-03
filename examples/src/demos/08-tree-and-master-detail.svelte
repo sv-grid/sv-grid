@@ -203,7 +203,7 @@
     {
       id: 'name',
       header: 'Name',
-      accessorFn: (row) => row.name,
+      fieldFn: (row) => row.name,
       cell: (ctx) => renderSnippet(TreeName, { node: ctx.row.original }),
       width: 320,
     },

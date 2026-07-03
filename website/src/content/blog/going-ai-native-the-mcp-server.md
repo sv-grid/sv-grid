@@ -1,32 +1,34 @@
 ---
 title: 'Going AI-Native: The SvGrid MCP Server'
-description: Making SvGrid the grid AI assistants get right, with a Model Context Protocol server and an llms.txt feed.
+description: Most AI assistants invent data grid APIs. We built an MCP server so they look up the real one instead.
 date: 2026-07-31
+updated: "2026-07-02"
 category: Engineering
 tags: ai, mcp, claude, cursor, engineering, story
 author: Kamelia M
 ---
 
-By every traditional measure, SvGrid was ready: fast, accessible, full-featured, themeable, server-capable. But "ready" today means something it did not used to. A huge share of the grid code being written now is written with an AI assistant in the loop. So one of the last things we built was for them.
+Ask any AI assistant to scaffold a Svelte data grid and watch what happens. The code looks plausible - column definitions, event handlers, props with sensible names. Then you try to run it. Half the props do not exist. The sort callback signature is wrong. The filtering API is borrowed from a different library. You spend the next twenty minutes debugging code that was never real.
 
-![A server row model paging data in SvGrid.](/blog-media/server-row-model.png)
-*A server row model paging data in SvGrid.*
+This is not an edge case. It is the baseline experience with any library that is not deeply baked into an assistant's training data. The assistant interpolates from pattern-matches across dozens of grids, produces something that reads as correct, and moves on.
 
-## The problem: assistants hallucinate APIs
+We decided that was not acceptable for SvGrid. The AI integration came last in the build sequence, but it was never optional.
 
-If you have asked an AI assistant to scaffold a data grid, you have seen it confidently invent a prop that does not exist. The model is working from training data that is stale, averaged across libraries, and full of other grids' APIs. The code looks right and does not compile.
+## Why AI assistants get grids wrong
 
-We did not want SvGrid to be one more library an assistant guesses at. We wanted it to be the one it gets right.
+The problem has a specific cause. An assistant working from training data is averaging over whatever it saw at crawl time. If you are a mature library with years of Stack Overflow answers, the average is probably close to the real API. If you are newer, or if you have changed your API significantly, the average is noise.
 
-## The MCP server
+Data grids make this worse because they have large, interconnected APIs. Prop names, feature flag objects, imperative methods, column definition shapes - they vary substantially between libraries, and an assistant reasoning from partial information will confidently combine pieces from different ones. The result compiles visually and fails at runtime.
 
-So we built `@svgrid/mcp`, a Model Context Protocol server that exposes SvGrid's actual knowledge as tools an assistant can call:
+The only way to fix this is to give the assistant a reliable lookup path.
 
-- the example sources, so it copies working patterns,
-- the documentation, so it explains features accurately,
-- the API reference, so it uses props and types that exist.
+## What `@svgrid/mcp` does
 
-Connected, an assistant stops guessing and starts looking up the current answer for the version you actually have installed.
+We built `@svgrid/mcp` as a Model Context Protocol server. MCP is a standard that lets editors like Cursor and Claude Code expose tools an assistant can call during generation. Instead of reasoning from training data alone, the assistant can call a tool, get the real current documentation or example source, and use that as the basis for its output.
+
+For SvGrid specifically the server exposes three things: the live documentation (so feature explanations are accurate), the working example sources (so generated code copies patterns that actually run), and the typed API reference (so prop names and method signatures match what the package exports).
+
+Wiring it in takes one config block:
 
 ```json
 {
@@ -36,30 +38,77 @@ Connected, an assistant stops guessing and starts looking up the current answer 
 }
 ```
 
-## llms.txt for everyone else
+After that, when you ask your assistant to add server-side pagination to an existing grid, it retrieves the `createServerDataSource` signature and the relevant example before it writes a single line. What it produces is grounded.
 
-Not every tool speaks MCP, so we also published an `llms.txt`, the emerging convention for pointing AI crawlers at a machine-readable summary of a site. Retrieval-based assistants can ingest it and answer SvGrid questions accurately. It is why a prompt for "Svelte data grid" can resolve to working SvGrid code instead of a plausible-looking guess.
+## What grounded output actually looks like
 
-## Why this counts as a feature
+The difference shows up immediately when you work with features that have non-obvious shapes. Server-side data is a good test case. An assistant working from training data will typically invent a callback prop or produce an `onPageChange` handler pattern borrowed from a UI library. With the MCP server it retrieves the real pattern:
 
-It would be easy to file AI support under marketing. We think it is product. The difference between a helpful assistant and a frustrating one is whether its output compiles, and that depends entirely on whether it is grounded in the real API. Building that grounding is engineering work, and it changes the actual experience of adopting the grid, you spend your time reviewing real code, not debugging invented APIs.
+```typescript
+import { createServerDataSource } from '@svgrid/grid'
+import type { SvGridOptions, ColumnDef, TableFeatures } from '@svgrid/grid'
 
-The how-to is [Build Svelte Grids Faster with AI and the SvGrid MCP Server](build-grids-faster-with-ai-and-mcp). This post is about why we built it before we launched rather than after.
+const ds = createServerDataSource({
+  fetch: async ({ page, pageSize, sort, filters }) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      size: String(pageSize),
+    })
 
-## A heritage of meeting developers where they are
+    if (sort.length) {
+      params.set('sort', sort[0].id)
+      params.set('dir', sort[0].desc ? 'desc' : 'asc')
+    }
 
-This is the same instinct that has driven the team since 2011. We shipped for jQuery because that is where developers were, then web components, then native Svelte. AI assistants are simply where a lot of development happens now, so that is where the grid had to show up. The technology changes; the principle does not.
+    for (const f of filters) {
+      params.set(`filter[${f.id}]`, String(f.value))
+    }
 
-## From build to product
+    const res = await fetch(`/api/data?${params}`)
+    const json = await res.json()
+    return { rows: json.data, total: json.total }
+  },
+})
+```
 
-That was the last major piece. With the grid fast, accessible, complete, themeable, server-ready, and grounded for AI, the work shifted from building to sharing, the documentation, the demos, and the launch. From here the blog turns to the feature guides, the comparisons, and the [announcement that SvGrid is here](introducing-svgrid). The build is the story; this is where it becomes a product.
+That comes back correctly typed and ready to pass as `data` to `<SvGrid>`. No invented props, no mismatched callback signatures.
 
-## Frequently asked questions
+The same holds for the imperative API. An assistant guessing at method names will often get the shape wrong - calling `api.sort()` instead of `api.setSort()`, or passing the wrong argument order. With the reference available, it calls what exists:
 
-### What is the SvGrid MCP server?
+```typescript
+import SvGrid from '@svgrid/grid'
+import type { SvGridApi } from '@svgrid/grid'
 
-`@svgrid/mcp` is a Model Context Protocol server that exposes SvGrid's real examples, documentation, and API reference as tools an AI assistant can call, so generated grid code uses props and types that actually exist.
+let api: SvGridApi | undefined
 
-### Why is AI support a core part of SvGrid?
+function applyWorkingFilter() {
+  if (!api) return
+  api.setFilter('status', { operator: 'equals', value: 'active' })
+  api.setFilter('revenue', { operator: 'between', value: '10000', valueTo: '50000' })
+  api.setSort('revenue', 'desc')
+  api.setPage(1) // reset to first page after filter change
+}
 
-Because most grid code today is written with AI assistants, and the value of an assistant depends on whether its output compiles. Grounding assistants in the real API is part of the adoption experience, so it is a core capability, not an afterthought.
+function exportCurrentView() {
+  if (!api) return
+  const rows = api.getDisplayedRows()
+  // rows reflects current sort + filter + pagination
+  downloadCsv(rows)
+}
+```
+
+## The `llms.txt` feed
+
+Not every assistant speaks MCP. Retrieval-augmented tools, web-enabled models, and AI search engines all have their own mechanisms for indexing documentation. For those we published an `llms.txt` feed at the site root.
+
+`llms.txt` is a simple convention, roughly the `robots.txt` equivalent for AI crawlers. It points to a structured, machine-readable summary of the site that a retrieval system can index cleanly rather than parsing HTML. Assistants that find SvGrid through search get documentation-grounded answers instead of best guesses.
+
+The combination covers the two main paths: interactive coding assistants via MCP, and retrieval-based tools via the text feed.
+
+## The principle behind the decision
+
+We did not build this as a marketing exercise. AI assistants change the actual experience of adopting a library. When generated code works on the first try, you spend your time on the actual problem. When it invents an API, you spend it debugging fiction.
+
+The team has shipped tools that meet developers where they are since 2011 - jQuery, then Angular and React bindings, then web components, then native Svelte 5. AI-assisted development is where a large share of grid code is being written right now. Showing up there was not a stretch, it was the same move, one more time.
+
+The technical how-to for connecting the MCP server to your editor is in [Build Svelte Grids Faster with AI and the SvGrid MCP Server](build-grids-faster-with-ai-and-mcp). That post covers editor-specific config, the tool set the server exposes, and what to do when an assistant still goes off-script.

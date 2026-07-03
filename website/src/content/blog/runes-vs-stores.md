@@ -1,51 +1,230 @@
 ---
 title: Runes vs Stores in Svelte 5 - When to Use Which
-description: Svelte 5 runes do not kill stores. Here is when to reach for $state and when a store is still the better tool, with shared-state examples.
+description: Svelte 5 runes and stores are not competitors - they solve different problems. Here is a concrete breakdown of when $state wins, when writable still earns its place, and how to mix both without subtle bugs.
 date: 2026-09-02
+updated: "2026-07-02"
 category: Engineering
 tags: svelte 5, runes, stores, state management, engineering
 author: Kamelia M
 ---
+The migration guide says "prefer runes," and that is generally good advice. But I have watched teams overrotate - ripping out every `writable` store the moment they upgrade to Svelte 5, then spending a week chasing reactivity bugs that only appear when a component unmounts at the wrong time.
 
-The first question almost everyone asks after Svelte 5 lands: are stores dead now? Short answer, no. Runes and stores overlap, but each still has a job the other does awkwardly.
+`$state` and `writable` are not the same primitive. They have different scoping rules, different compiler requirements, and different lifecycle contracts. Knowing which one fits a given situation takes maybe five minutes to learn and saves hours of debugging.
 
-![A SvGrid grid loading from a REST API.](/blog-media/rest-loading.png)
-*A SvGrid grid loading from a REST API.*
+## The actual difference between the two
 
-## What changed
+A `writable` store is a runtime object. It carries its own subscriber list. Any code - component, SvelteKit hook, Vite plugin, plain Node script - can call `.subscribe()` on it, get notified on change, and call the unsubscribe function when done. The mechanism is entirely runtime; the Svelte compiler plays no role.
 
-Before runes, stores (`writable`, `readable`, `derived`) were the main way to hold reactive state, especially outside components. Runes (`$state`, `$derived`) now cover most component state more ergonomically, no `$` prefix gymnastics, no `.subscribe`, deep reactivity by default.
+`$state` is a compiler primitive. The Svelte compiler transforms `$state(...)` calls and every property access on a reactive object into fine-grained dependency tracking. This only works inside files the compiler processes: `.svelte` components and `.svelte.ts` / `.svelte.js` modules. Drop the same `$state` call into a plain `.ts` file and the build fails with a parse error.
 
-## Reach for runes when...
+That distinction drives every practical decision.
 
-- **Component state**: local UI state, form values, a grid's sort/filter selection.
-- **Shared reactive state in modules**: `$state` works in `.svelte.ts` files, so you can export reactive objects:
+## Shared state across sibling components
+
+The most common reason people reach for stores is sharing state between two sibling components that cannot use props - a data grid and its toolbar, for example. In Svelte 4 this was a legitimate store use case. In Svelte 5, a `.svelte.ts` module with `$state` works better for most UI-layer state.
+
+Here is a shared state module for a SvGrid-backed deal pipeline screen:
 
 ```ts
-// grid-state.svelte.ts
-export const gridState = $state({ sorting: [], filters: [] })
+// deal-state.svelte.ts
+import type { SvGridApi } from '@svgrid/grid'
+
+// Reactive shared state - any component importing this participates
+// in the same reactive graph automatically.
+export const filters = $state({
+  stage: '' as string,
+  region: '' as string,
+  minValue: 0,
+})
+
+export const sort = $state({
+  key: 'dealValue' as string,
+  dir: 'desc' as 'asc' | 'desc',
+})
+
+// The API handle is intentionally NOT $state.
+// Components call methods on it; they do not need to react to
+// the handle itself changing. Making it $state adds unnecessary
+// render cycles after onApiReady fires.
+export let gridApi: SvGridApi | null = null
 ```
 
-Any component importing `gridState` reacts to its changes. This replaces many former store use cases.
+The toolbar imports `filters` and `sort` directly. Mutations it makes are immediately visible inside the grid component with no subscription boilerplate.
 
-## Stores are still useful when...
+```svelte
+<!-- DealToolbar.svelte -->
+<script lang="ts">
+  import { filters, sort, gridApi } from './deal-state.svelte.ts'
 
-- **Interop**: libraries and APIs that expose stores (or expect the store contract), including parts of SvelteKit (`page`, `navigating`).
-- **Plain `.ts` files without the rune compiler**: runes need `.svelte.ts`/`.svelte.js`; a plain `.ts` module cannot use `$state`. A store works anywhere.
-- **Stream-like patterns**: custom stores wrapping events, RxJS, or websockets where the subscribe/unsubscribe contract fits naturally.
+  function applyStageFilter(stage: string) {
+    filters.stage = stage
+    gridApi?.setFilter('stage', { operator: 'equals', value: stage })
+  }
 
-The two interoperate: you can read a store's value in a rune context with the `$store` syntax, and wrap a store in derived state.
+  function applyRegionFilter(region: string) {
+    filters.region = region
+    gridApi?.setFilter('region', { operator: 'equals', value: region })
+  }
 
-## A practical default
+  function clearAll() {
+    filters.stage = ''
+    filters.region = ''
+    filters.minValue = 0
+    gridApi?.clearAllFilters()
+  }
 
-For new SvGrid-backed apps: use `$state`/`$derived` for component and shared grid state (in `.svelte.ts` modules), and use stores when integrating with store-based libraries or when you need state in a plain `.ts` file. Do not rewrite working stores just to "use runes"; do prefer runes for new state.
+  function flipSort() {
+    sort.dir = sort.dir === 'desc' ? 'asc' : 'desc'
+    gridApi?.setSort([{ id: sort.key, desc: sort.dir === 'desc' }])
+  }
+</script>
 
-## Frequently asked questions
+<div class="toolbar">
+  <button onclick={() => applyStageFilter('Qualified')}>Qualified</button>
+  <button onclick={() => applyStageFilter('Closed Won')}>Closed Won</button>
+  <select onchange={(e) => applyRegionFilter(e.currentTarget.value)}>
+    <option value="">All regions</option>
+    <option value="Americas">Americas</option>
+    <option value="EMEA">EMEA</option>
+    <option value="APAC">APAC</option>
+  </select>
+  <button onclick={flipSort}>
+    Sort: {sort.key} ({sort.dir})
+  </button>
+  <button onclick={clearAll}>Clear</button>
+</div>
+```
 
-### Are Svelte stores obsolete in Svelte 5?
+And the grid component wires the API handle on mount:
 
-No. Runes (`$state`, `$derived`) cover most component and shared state more ergonomically, but stores remain useful for interop with store-based libraries (including parts of SvelteKit), for state in plain `.ts` files, and for stream-like subscribe/unsubscribe patterns.
+```svelte
+<!-- DealGrid.svelte -->
+<script lang="ts">
+  import SvGrid, {
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowSelectionFeature,
+    type ColumnDef,
+    type SvGridApi,
+  } from '@svgrid/grid'
+  import { sort, gridApi as apiSlot } from './deal-state.svelte.ts'
 
-### How do I share reactive state across components in Svelte 5?
+  type Deal = {
+    id: number
+    customer: string
+    stage: string
+    dealValue: number
+    owner: string
+    region: string
+  }
 
-Put `$state` in a `.svelte.ts` module and export it; importing components react to its changes. This replaces many cases where you previously reached for a writable store.
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowSelectionFeature,
+  })
+
+  const columns: ColumnDef<typeof features, Deal>[] = [
+    { id: 'customer',  field: 'customer',  header: 'Customer',    width: 200 },
+    { id: 'stage',     field: 'stage',     header: 'Stage',       width: 130 },
+    {
+      id: 'dealValue',
+      field: 'dealValue',
+      header: 'Deal Value',
+      width: 130,
+      type: 'number',
+    },
+    { id: 'owner',     field: 'owner',     header: 'Owner',       width: 150 },
+    { id: 'region',    field: 'region',    header: 'Region',      width: 110 },
+  ]
+
+  const rows: Deal[] = Array.from({ length: 200 }, (_, i) => ({
+    id: i + 1,
+    customer:  `Customer ${i + 1}`,
+    stage:     ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won'][i % 5],
+    dealValue: Math.round(5000 + (i * 137) % 95000),
+    owner:     ['B. Markov', 'A. Lindberg', 'D. Watanabe', 'R. Greene'][i % 4],
+    region:    ['Americas', 'EMEA', 'APAC'][i % 3],
+  }))
+
+  function onApiReady(api: SvGridApi) {
+    // Assign to the module-level slot without making it reactive.
+    apiSlot = api
+    // Apply initial sort from shared state.
+    api.setSort([{ id: sort.key, desc: sort.dir === 'desc' }])
+  }
+</script>
+
+<SvGrid
+  {features}
+  {columns}
+  data={rows}
+  {onApiReady}
+  filterable
+  sortable
+  style="height: 500px;"
+/>
+```
+
+No context API. No prop drilling. No `.subscribe` / `.unsubscribe` pairs. That is the rune advantage for UI state that lives entirely inside the component layer.
+
+## When a writable store is still the right call
+
+Three situations push you back toward stores:
+
+**State that must live in a plain `.ts` file.** SvelteKit server hooks (`hooks.server.ts`), Vite plugins, shared utility modules - none of these go through the Svelte compiler. The `$state` syntax is simply unavailable. A `writable` works fine because it is runtime-only.
+
+**Consuming third-party store-based APIs.** SvelteKit's own `page`, `navigating`, and `updated` stores are writable/readable instances. Any library that ships the store contract expects `.subscribe`. You can read these stores inside a `$derived` in a `.svelte.ts` file, but you cannot pretend they are rune-based objects.
+
+**Side effects that outlive the component tree.** Consider syncing filter state to a URL search param. The sync needs to persist across navigations - it cannot live in a component `$effect` because the component will unmount. A store subscription attached at the layout level, or inside a `+layout.svelte` `onMount`, stays alive for the full session. A `$derived` inside a page component does not.
+
+Here is a concrete interop example that mixes both:
+
+```ts
+// url-sync.svelte.ts - runs inside +layout.svelte onMount
+import { page } from '$app/stores'
+import { goto } from '$app/navigation'
+import { filters } from './deal-state.svelte.ts'
+
+// Read a SvelteKit store inside a $derived - this works because
+// .svelte.ts files are compiled by Svelte.
+export const activeStageFromUrl = $derived.by(() => {
+  // Svelte 5 can read stores in derived context via get()
+  return new URLSearchParams(window.location.search).get('stage') ?? ''
+})
+
+// Persist filter changes to the URL without a component lifecycle.
+export function syncFiltersToUrl() {
+  return $effect.root(() => {
+    $effect(() => {
+      const params = new URLSearchParams(window.location.search)
+      if (filters.stage) {
+        params.set('stage', filters.stage)
+      } else {
+        params.delete('stage')
+      }
+      if (filters.region) {
+        params.set('region', filters.region)
+      } else {
+        params.delete('region')
+      }
+      goto(`?${params.toString()}`, { replaceState: true, noScroll: true })
+    })
+  })
+}
+```
+
+The `$effect.root` call is key here. It creates an effect scope that is not tied to any component's lifecycle. You call the returned cleanup function in `+layout.svelte`'s `onDestroy` instead, giving you explicit control over when the sync stops.
+
+## Two mistakes worth naming explicitly
+
+**Reactive destructuring.** `const { stage } = filters` does not work. The moment you destructure a `$state` object, `stage` becomes a plain string snapshot - a copy taken at that instant, not a reactive reference. Access properties directly through the object: `filters.stage`. This is the number-one source of "my template is not updating" bugs after a store-to-runes migration.
+
+**Mixing file extensions carelessly.** Rename `deal-state.svelte.ts` to `deal-state.ts` and the build fails with "unexpected token `$`". The `.svelte.ts` extension is not cosmetic. It tells the Svelte compiler to process the file. There is no runtime fallback; it is a compile-time requirement.
+
+## The practical rule of thumb
+
+New state that is shared between Svelte components and nothing else: use `$state` in a `.svelte.ts` module. State that needs to work in non-component contexts, interoperate with store-based libraries, or survive across full navigation lifecycles: use a `writable` store. When both are in play in the same feature - which is common in real SvelteKit apps - they compose cleanly. You can read stores inside `$derived`, and you can call `get(someStore)` inside `$effect` without subscribing manually.
+
+The wrong move is treating the choice as ideological. Stores are not legacy. Runes are not always simpler. Pick the one that fits the boundary you are working at.

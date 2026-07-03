@@ -83,7 +83,7 @@
       {
         id: 'person',
         header: 'Person',
-        accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+        fieldFn: (row) => `${row.firstName} ${row.lastName}`,
         cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
       },
       { field: 'department', header: 'Department' },

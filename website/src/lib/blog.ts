@@ -13,6 +13,10 @@ export type BlogPost = {
   description: string
   /** ISO date string, e.g. "2026-06-09". */
   date: string
+  /** ISO date string when the post was last regenerated / substantially
+   *  rewritten. Rendered as an "Updated ..." line beneath the byline.
+   *  Absent for posts that have only ever had one revision. */
+  updated?: string
   /** Fine-grained category from frontmatter (e.g. "Sorting"). */
   category: string
   /** Top-level group used for the index filter (e.g. "Tutorials"). */
@@ -117,6 +121,7 @@ export const blogPosts: BlogPost[] = Object.entries(files)
       title: meta.title ?? slugFromPath(path),
       description: meta.description ?? '',
       date: meta.date ?? '1970-01-01',
+      updated: meta.updated || undefined,
       category,
       group: groupOf(category),
       tags: (meta.tags ?? '')

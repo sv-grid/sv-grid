@@ -193,6 +193,8 @@ export function createScrollSync<
     if (!container) return;
     if (ctx.columnMenuFor || ctx.operatorMenuFor) ctx.closeMenus();
     scheduleScrollSync(container.scrollTop, container.scrollLeft);
+    // Mirror horizontal scroll to any aligned grids in the same group.
+    if (ctx.props.alignedGridGroup != null) ctx.broadcastAlignedScroll(container.scrollLeft);
 
     if (ctx.props.onScrollBottomReached) {
       const { scrollTop, scrollHeight, clientHeight } = container;

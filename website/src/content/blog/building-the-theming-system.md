@@ -1,20 +1,27 @@
 ---
 title: 'Inside SvGrid: A Theming System on CSS Variables'
-description: Why SvGrid is themed entirely with --sg-* CSS custom properties, how dark mode falls out for free, and the choice to avoid a JavaScript theme config.
+description: How SvGrid uses --sg-* CSS custom properties to make theming a CSS problem, not a JavaScript one - and why that keeps dark mode, design system adoption, and per-grid overrides simple.
 date: 2026-07-10
+updated: "2026-07-02"
 category: Engineering
 tags: theming, dark mode, css, engineering, story
 author: Victor Vidolov
 ---
 
-Moving from behavior to appearance. A data grid that only looks right in its own demo is useless, so SvGrid had to fit into other people's products without a fight. The question was how to make it themeable without inventing a configuration language nobody wants to learn.
+Every data grid eventually faces the same moment: someone drops it into their product and the colors are wrong. The header is the wrong shade. The border doesn't match. The font-size is off. How you respond to that moment reveals a lot about your architectural assumptions.
+
+SvGrid's answer is that theming is a CSS problem and should stay one.
 
 ![SvGrid themed to match a design system.](/blog-media/theme-integrations.png)
 *SvGrid themed to match a design system.*
 
-## The decision: no theme object
+## Why not a JavaScript theme config
 
-Plenty of components ship a JavaScript theme config, a big object of tokens you import, override, and pass in. We deliberately did not. Every visual surface in SvGrid reads from a CSS custom property prefixed `--sg-*`, so you restyle it with plain CSS:
+There's a popular pattern in component libraries where you pass a theme object - some nested configuration of colors and spacing - into the component or a provider. It seems ergonomic until you're six months in and the object has grown to 200 keys, someone needs to override a hover state in a specific column, and you're reading docs trying to find a property called `headerHoveredBorderColor`.
+
+We didn't do that.
+
+Every visual surface in SvGrid reads from a CSS custom property with the `--sg-` prefix. To restyle the grid, you write CSS:
 
 ```css
 .my-grid {
@@ -22,40 +29,131 @@ Plenty of components ship a JavaScript theme config, a big object of tokens you 
   --sg-fg: #1f2933;
   --sg-border: #e4e7eb;
   --sg-header-bg: #f5f7fa;
+  --sg-header-fg: #2d3748;
   --sg-row-alt-bg: #fafbfc;
+  --sg-accent: #3b82f6;
+  --sg-radius: 4px;
+  --sg-cell-px: 12px;
+  --sg-thead-h: 40px;
 }
 ```
 
-The reasoning was simple: developers already know CSS. A cascading variable is something you can scope, override per-grid, and point at your existing design tokens without importing anything or rebuilding. No theme builder, no JS object, no rebuild step.
+That's the entire API surface for appearance. No imports, no rebuild, no layer of abstraction between you and the browser's own cascading rules.
 
-## Dark mode for free
+The reasoning was straightforward: developers already know CSS. A custom property cascades, can be scoped to a selector, overridden in a media query, and pointed at any existing token. You don't need to learn our theming language to do any of that. You already know how to do it.
 
-Once every color is a token, dark mode stops being a feature and becomes a consequence. Define two sets of tokens keyed off an attribute and flip the attribute:
+## Dark mode as a consequence, not a feature
+
+The useful side effect of putting every color behind a token is that dark mode becomes trivial. You define two sets of values, keyed off a class or attribute, and flip the switch:
 
 ```css
-:root[data-theme='light'] { --sg-bg: #fff;    --sg-fg: #111; }
-:root[data-theme='dark']  { --sg-bg: #181d27; --sg-fg: #e2e8f0; }
+:root[data-theme='light'] {
+  --sg-bg: #ffffff;
+  --sg-fg: #111827;
+  --sg-border: #e5e7eb;
+  --sg-header-bg: #f9fafb;
+  --sg-row-alt-bg: #f3f4f6;
+  --sg-accent: #3b82f6;
+}
+
+:root[data-theme='dark'] {
+  --sg-bg: #0f172a;
+  --sg-fg: #e2e8f0;
+  --sg-border: #1e293b;
+  --sg-header-bg: #1e293b;
+  --sg-row-alt-bg: #0d1526;
+  --sg-accent: #60a5fa;
+}
 ```
 
-The grid follows instantly, with no re-render and no flash, because it never hard-codes a color. We got light/dark essentially for free out of a decision we made for a different reason, the best kind of architecture payoff.
+The grid doesn't re-render. There's no flash. No state update triggers a component tree reconciliation. The browser just sees the custom properties change and repaints. The performance profile is as close to zero as you can get.
 
-## Inheriting a design system
+We didn't set out to make dark mode easy - we set out to avoid a JavaScript theme config. Dark mode support fell out of that as a consequence. That's usually a sign a decision was architecturally sound.
 
-The real test was whether SvGrid could disappear into an existing product. Because the tokens are just CSS variables, you can point them at your design system:
+## Adopting a design system
+
+The real test is whether SvGrid can disappear into someone else's product and match their brand without friction. Because the tokens are just CSS variables, the mapping is one line per token:
 
 ```css
+/* pointing SvGrid tokens at an existing design system */
 .my-grid {
-  --sg-accent: var(--brand-500);
-  --sg-border: var(--gray-200);
+  --sg-bg: var(--color-surface);
+  --sg-fg: var(--color-text-primary);
+  --sg-border: var(--color-border-subtle);
+  --sg-header-bg: var(--color-surface-raised);
+  --sg-accent: var(--color-brand-500);
+  --sg-radius: var(--radius-sm);
+  --sg-cell-px: var(--spacing-3);
 }
 ```
 
-Now the grid inherits your brand color and spacing scale, and a future rebrand updates it for free. That is the difference between a grid that looks like our product and one that looks like yours.
+If you have a design token system, you point SvGrid at it. If your brand color changes in the token system, the grid updates for free without touching grid-specific code. That's the difference between a grid that looks like ours and one that looks like yours.
 
-## What we deliberately left out
+## Scoping overrides to a single grid
 
-We resisted adding a runtime theming API. The platform already has one - it is called CSS - and competing with it would have meant a worse, smaller version of the cascade. The practical guide is [Theming a Svelte Data Grid with CSS Variables and Dark Mode](theming-and-dark-mode); the philosophy is just "use the platform."
+One thing a JavaScript theme config handles poorly is the case where you have two grids on the same page with different visual treatments. With CSS variables, that's just a selector:
 
-## What it set up
+```svelte
+<script>
+  import SvGrid from '@svgrid/grid'
+  import type { ColumnDef } from '@svgrid/grid'
 
-With theming on plain CSS variables, SvGrid could slot into real products and match real brands. That left one big area: data that does not fit in the browser. Read next: [server-side data and the headless core](server-side-data-and-the-headless-core).
+  const cols: ColumnDef<any, any>[] = [
+    { id: 'name', field: 'name', header: 'Name', width: 200 },
+    { id: 'value', field: 'value', header: 'Value', width: 120, type: 'number' },
+  ]
+</script>
+
+<div class="compact-grid">
+  <SvGrid data={summaryRows} columns={cols} rowHeight={24} />
+</div>
+
+<div class="detail-grid">
+  <SvGrid data={detailRows} columns={cols} rowHeight={36} />
+</div>
+
+<style>
+  .compact-grid {
+    --sg-cell-px: 8px;
+    --sg-thead-h: 28px;
+    --sg-border: #d1d5db;
+    font-size: 12px;
+  }
+
+  .detail-grid {
+    --sg-cell-px: 16px;
+    --sg-thead-h: 44px;
+    --sg-header-bg: #f0fdf4;
+    --sg-accent: #16a34a;
+  }
+</style>
+```
+
+Two grids, two visual treatments, zero JavaScript configuration. The cascade handles the scoping.
+
+## What a runtime theming API would have cost
+
+There's a counter-argument that a JavaScript API is better for dynamic themes - where values change at runtime based on user input or application state. But CSS variables already update at runtime, and because they're read directly by the browser's rendering engine, an assignment to `document.documentElement.style.setProperty('--sg-accent', newColor)` takes effect in the next paint with no intermediary.
+
+If you need to theme the grid from JavaScript, the path is still CSS:
+
+```typescript
+// theme switching from TS - no SvGrid API needed
+function setTheme(accent: string, isDark: boolean) {
+  const root = document.documentElement
+  root.setAttribute('data-theme', isDark ? 'dark' : 'light')
+  root.style.setProperty('--sg-accent', accent)
+}
+```
+
+Adding a parallel JavaScript theming API would have meant maintaining two separate surfaces, with documented behavior, for doing the same thing. The platform already has a theming API and it's called CSS. We chose not to compete with it.
+
+## The token surface
+
+The full set of `--sg-*` tokens covers backgrounds, foregrounds, borders, accent colors, geometry (padding, row heights, border radius), and header appearance. Adding your own overrides is a one-time addition to a stylesheet.
+
+For teams integrating a Tailwind-based design system, the tokens map cleanly to Tailwind's CSS variable output when configured with `hsl` values. For teams on a different token system, the mapping is the same exercise either way - find our token, point it at yours.
+
+The theming documentation at [Theming and Dark Mode](theming-and-dark-mode) covers the full token reference and a few patterns for structured theme switching. The underlying point is that there's nothing SvGrid-specific to learn about how CSS variables cascade - so any CSS knowledge you already have applies directly.
+
+Where this leaves the grid is in a good position: it can match your product's appearance without asking you to give up your existing design system or learn a new configuration format. That was the goal.
