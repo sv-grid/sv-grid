@@ -430,14 +430,25 @@ export function createSvGridController<
     };
   });
   /** Vertical overflow from the virtualizer's authoritative total size,
-   *  NOT from `scrollMetrics.scrollHeight`. Reading DOM dimensions
+   *  NOT from `scrollMetrics.scrollHeight` alone. Reading DOM dimensions
    *  during a Svelte derived runs BEFORE the browser paints - the table
    *  hasn't laid out the new rows yet, so `scrollHeight` is briefly 0
    *  even after data loads. That made the overflow flag return false,
-   *  hid the scrollbar, and broke dragging. */
+   *  hid the scrollbar, and broke dragging.
+   *
+   *  However, virtualizer.getTotalSize() uses rowHeight * numRows which
+   *  underestimates when variable-height rows are present (e.g. master-detail
+   *  expanded rows). We therefore take the MAX of the two sources:
+   *  - virtualizer.getTotalSize(): correct at initial load (before first paint)
+   *  - scrollMetrics.scrollHeight: correct after detail rows expand (DOM is live,
+   *    ResizeObserver on gridRootEl already bumps scrollVersion at that point) */
   const hasVerticalOverflow = $derived.by(() => {
     virtualizer.version;
-    return virtualizer.getTotalSize() > viewportHeight + 1;
+    const virtualizerSize = virtualizer.getTotalSize();
+    // scrollMetrics.scrollHeight is 0 before initial paint; once the table
+    // is in the DOM it reflects the true content height including expanded rows.
+    const domSize = scrollMetrics.scrollHeight;
+    return Math.max(virtualizerSize, domSize) > viewportHeight + 1;
   });
 
   // Effective filter-UI flags. Each show* prop wins when explicitly set;
