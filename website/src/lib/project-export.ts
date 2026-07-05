@@ -258,7 +258,8 @@ function triggerDownload(blob: Blob, filename: string) {
 
 const SVELTE_VER = '5.55.9'
 const TS_VER = '5.6.3'
-const DEFAULT_GRID_CDN = 'https://unpkg.com/@svgrid/grid@1.2.0/dist/cdn/svgrid.svelte-external.js'
+// Unversioned = latest published; unpkg serves the file directly by path.
+const DEFAULT_GRID_CDN = 'https://unpkg.com/@svgrid/grid/dist/cdn/svgrid.svelte-external.js'
 
 const THEME_VARS = `      :root {
         --sg-bg:#fff; --sg-fg:#0f172a; --sg-muted:#64748b; --sg-border:#e2e8f0;
@@ -327,7 +328,7 @@ const LOADER = [
   "  async function toJs(name, src) {",
   "    if (name.endsWith('.svelte')) {",
   "      const pp = await compiler.preprocess(src, { script: (o) => ({ code: ts.transpileModule(o.content, tsOpts).outputText }) }, { filename: name });",
-  "      return compiler.compile(pp.code, { generate: 'client', dev: false, filename: name }).js.code;",
+  "      return compiler.compile(pp.code, { generate: 'client', dev: false, css: 'injected', filename: name }).js.code;",
   "    }",
   "    return ts.transpileModule(src, tsOpts).outputText;",
   "  }",
@@ -407,14 +408,21 @@ export async function buildStandaloneHtml(source: string, title: string, theme?:
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SvGrid - ${safe}</title>
+    <!-- Many demos lay out with Tailwind utility classes (flex-1, min-h-0, gaps,
+         colors). The Play CDN generates them at runtime so the demo looks right. -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script type="importmap">
 ${JSON.stringify(importMap, null, 2)}
     </script>
     <style>
 ${THEME_VARS}
-      html, body { height: 100%; margin: 0; background: var(--sg-bg); color: var(--sg-fg);
+      html, body, #app { height: 100%; }
+      body { margin: 0; background: var(--sg-bg); color: var(--sg-fg);
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-      #app { min-height: 100vh; }
+      /* Give the mounted demo a real height so containerHeight:100% / flex-1
+         resolve (otherwise the grid computes a 0-height viewport = no rows). */
+      #app { display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; }
+      #app > * { flex: 1; min-height: 0; }
       #status { padding: 24px; font-size: 14px; color: var(--sg-muted); }
     </style>
   </head>

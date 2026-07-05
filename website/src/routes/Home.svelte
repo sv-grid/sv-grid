@@ -315,6 +315,10 @@
         <span class="h-2.5 w-2.5 rounded-full" style="background:#febc2e"></span>
         <span class="h-2.5 w-2.5 rounded-full" style="background:#28c840"></span>
         <code class="ml-2 text-xs" style="color: #94a3b8;">App.svelte</code>
+        <a href="#/playground/01-quick-start" class="ml-auto inline-flex items-center gap-1 text-xs font-medium" style="color: var(--site-accent-2);" title="Edit this demo live in the playground">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" /></svg>
+          Edit
+        </a>
       </div>
       <pre class="overflow-x-auto p-4 text-xs leading-relaxed" style="color: #e2e8f0;"><code>{quickStartCode}</code></pre>
     </div>
@@ -355,7 +359,13 @@
         25 symbols, 500 ms tick. Cells flash green / red on each up- and down-tick. Sorting and cell selection still work while live - try clicking a column header.
       </p>
     </div>
-    <a href="#/demos/11-stock-market" class="text-sm font-medium" style="color: var(--site-accent-2);">Open in gallery →</a>
+    <div class="flex items-center gap-4">
+      <a href="#/playground/11-stock-market" class="inline-flex items-center gap-1 text-sm font-medium" style="color: var(--site-accent-2);" title="Edit this demo live in the playground">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" /></svg>
+        Edit
+      </a>
+      <a href="#/demos/11-stock-market" class="text-sm font-medium" style="color: var(--site-accent-2);">Open in gallery →</a>
+    </div>
   </div>
 
   <div
