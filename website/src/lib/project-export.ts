@@ -269,14 +269,37 @@ const THEME_VARS = `      :root {
         --sg-scrollbar-thumb-active:#64748b; --sg-scrollbar-arrow:#64748b;
         color-scheme:light;
       }
+      :root {
+        --sg-pill-active:#dcfce7; --sg-pill-active-fg:#166534;
+        --sg-pill-pending:#fef9c3; --sg-pill-pending-fg:#854d0e;
+        --sg-pill-inactive:#fee2e2; --sg-pill-inactive-fg:#991b1b;
+      }
       html[data-theme='dark'] {
         --sg-bg:#181d27; --sg-fg:#e2e8f0; --sg-muted:#94a3b8; --sg-border:#374151;
         --sg-header-bg:#1e2433; --sg-header-fg:#e2e8f0; --sg-row-alt-bg:#1b2230;
         --sg-row-hover-bg:#232b3c; --sg-selection-bg:#1d3a73; --sg-accent:#3b82f6;
         --sg-scrollbar-bg:#1a2130; --sg-scrollbar-thumb:#475569; --sg-scrollbar-thumb-hover:#64748b;
         --sg-scrollbar-thumb-active:#94a3b8; --sg-scrollbar-arrow:#64748b;
+        --sg-pill-active:#064e3b; --sg-pill-active-fg:#6ee7b7;
+        --sg-pill-pending:#713f12; --sg-pill-pending-fg:#fde68a;
+        --sg-pill-inactive:#7f1d1d; --sg-pill-inactive-fg:#fecaca;
         color-scheme:dark;
       }`
+
+// Global demo helpers the examples are authored against (normally supplied by
+// the host app's stylesheet). The global @keyframes also back demos whose own
+// keyframes get scoped away by the Svelte compiler (the animation is applied via
+// a :global(...) rule, so its name stays unscoped and needs a global keyframe).
+const HOST_HELPERS = `      @keyframes sv-pulse-up { 0% { background: rgba(34,197,94,0.55); } 100% { background: transparent; } }
+      @keyframes sv-pulse-down { 0% { background: rgba(239,68,68,0.55); } 100% { background: transparent; } }
+      .pill { display:inline-flex; align-items:center; padding:.125rem .5rem; border-radius:9999px; font-size:.75rem; font-weight:600; }
+      .pill-active { background: var(--sg-pill-active); color: var(--sg-pill-active-fg); }
+      .pill-pending { background: var(--sg-pill-pending); color: var(--sg-pill-pending-fg); }
+      .pill-inactive { background: var(--sg-pill-inactive); color: var(--sg-pill-inactive-fg); }
+      .sparkbar { display:inline-flex; align-items:flex-end; gap:1px; height:18px; }
+      .sparkbar span { width:3px; background: var(--sg-accent); border-radius:1px; opacity:.85; }
+      .density-compact { --sg-row-height:28px; }
+      .density-comfortable { --sg-row-height:48px; }`
 
 // Raw source of the shared helpers, reused from RAW_SHARED (declared above).
 function sharedByName(): Record<string, () => Promise<string>> {
@@ -416,6 +439,7 @@ ${JSON.stringify(importMap, null, 2)}
     </script>
     <style>
 ${THEME_VARS}
+${HOST_HELPERS}
       html, body, #app { height: 100%; }
       body { margin: 0; background: var(--sg-bg); color: var(--sg-fg);
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
