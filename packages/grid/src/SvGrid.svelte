@@ -196,7 +196,6 @@
   function flashClassFor(
     cfg: boolean | { className?: string } | undefined,
   ): string {
-    console.log("flash cell");
     if (cfg && typeof cfg === "object" && cfg.className) return cfg.className;
     return "sv-grid-cell-flash";
   }
@@ -929,6 +928,7 @@
     {:else}
       <!-- Free-form chips: typed tags. Enter / comma commits a chip,
            Backspace on empty input removes the last chip, blur saves. -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <div
         class="sv-grid-cell-editor sv-grid-cell-editor-chips"
         role="group"
@@ -1885,10 +1885,12 @@
                            cells on release. Rendered inside the bottom-
                            right cell of the selection range (or active
                            cell if there's no range). -->
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
                             <div
                               class="sv-grid-fill-handle"
                               role="button"
                               aria-label="Fill handle"
+                              tabindex={-1}
                               onpointerdown={(event) =>
                                 startFillDrag(event, rowIndex, colIndex)}
                             ></div>

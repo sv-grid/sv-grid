@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { buildStandaloneHtml } from '../lib/project-export'
+
   type Props = {
     title: string
     source: string
@@ -7,6 +9,7 @@
   let { title, source, onClose }: Props = $props()
 
   let copied = $state(false)
+  let copiedHtml = $state(false)
   let copyTimer: ReturnType<typeof setTimeout> | null = null
 
   async function copy() {
@@ -17,6 +20,26 @@
       copyTimer = setTimeout(() => (copied = false), 1500)
     } catch {
       // ignore
+    }
+  }
+
+  // Copy a self-contained, single-file Svelte page. It embeds this exact
+  // .svelte source and compiles it in the browser (Svelte + TS from a CDN),
+  // then mounts it - paste into a file, save as .html, open, and it runs.
+  let building = $state(false)
+  async function copyRunnable() {
+    if (building) return
+    building = true
+    try {
+      const html = await buildStandaloneHtml(source, title)
+      await navigator.clipboard.writeText(html)
+      copiedHtml = true
+      if (copyTimer) clearTimeout(copyTimer)
+      copyTimer = setTimeout(() => (copiedHtml = false), 1800)
+    } catch {
+      // ignore
+    } finally {
+      building = false
     }
   }
 
@@ -55,10 +78,33 @@
       <div class="min-w-0">
         <h2 id="source-modal-title" class="truncate text-sm font-semibold">{title}</h2>
         <p class="truncate text-xs" style="color: var(--site-muted);">
-          Source - copy into your project as-is.
+          Copy the source, or a runnable one-file HTML you can paste and open.
         </p>
       </div>
       <div class="flex items-center gap-2">
+        <button
+          type="button"
+          onclick={copyRunnable}
+          disabled={building}
+          title="Copy a single-file Svelte page - it embeds this source, compiles it in the browser, and runs. Paste into a file, save as .html, open."
+          class="inline-flex items-center gap-1.5 rounded border px-3 py-1 text-sm disabled:opacity-60"
+          style="border-color: var(--site-border); color: var(--site-fg); background: var(--site-bg);"
+        >
+          {#if copiedHtml}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            Copied HTML
+          {:else}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            {building ? 'Building…' : 'Copy runnable HTML'}
+          {/if}
+        </button>
         <button
           type="button"
           onclick={copy}

@@ -38,6 +38,7 @@
   const quickLinks: QuickLink[] = (
     [
       { slug: 'getting-started', label: 'Getting started', desc: 'Install, then render your first grid.' },
+      { route: 'playground', label: 'Playground', desc: 'Edit any demo live in your browser, no setup.' },
       { route: 'api', label: 'API reference', desc: 'Every prop, method, and type.' },
       { slug: 'help/recipes', label: 'Recipes / cookbook', desc: '20+ copy-paste patterns.' },
       { slug: 'help/architecture', label: 'Architecture', desc: 'Data, engine, renderer - the model.' },

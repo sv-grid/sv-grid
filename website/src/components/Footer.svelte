@@ -27,6 +27,7 @@
       <h2 class="font-semibold mb-3">Product</h2>
       <ul class="space-y-2" style="color: var(--site-muted);">
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/demos">Demos</a></li>
+        <li><a class="hover:text-[color:var(--site-accent)]" href="#/playground">Playground</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/docs">Docs</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/api">API</a></li>
         <li><a class="hover:text-[color:var(--site-accent)]" href="#/compare">Compare</a></li>

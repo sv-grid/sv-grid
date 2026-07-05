@@ -334,14 +334,18 @@
             style={opt?.color ? colorfulChipStyleInline(opt.color) : ''}
           >
             {opt ? opt.label : String(v)}
-            <button
-              type="button"
+            <!-- A <button> can't be nested inside the trigger <button>; this is a
+                 pointer-only affordance (tabindex -1), so a role="button" span is
+                 valid HTML and preserves identical behaviour. -->
+            <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+            <span
               class="sv-grid-chip-remove"
+              role="button"
               aria-label="Remove {opt ? opt.label : String(v)}"
               tabindex={-1}
               onmousedown={(event) => event.preventDefault()}
               onclick={(event) => removeChip(v, event)}
-            >×</button>
+            >×</span>
           </span>
         {/each}
       </span>

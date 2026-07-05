@@ -6,10 +6,10 @@
    * locked to dark, no theme toggle.
    */
   import { tick, untrack } from 'svelte'
-  import { demoGroups, findDemo } from '../lib/demos'
+  import { demos, demoGroups, findDemo, type DemoCategory } from '../lib/demos'
   import SourceModal from '../components/SourceModal.svelte'
-  import DemoPicker from '../components/DemoPicker.svelte'
   import { openInStackBlitz } from '../lib/stackblitz'
+  import { downloadProject } from '../lib/project-export'
   import { router } from '../lib/router.svelte'
 
   type Props = { demoId: string }
@@ -35,6 +35,19 @@
     sourceText = null
     showSource = true
     sourceText = await current.loadSource()
+  }
+
+  let downloading = $state(false)
+  async function downloadProjectZip() {
+    downloading = true
+    try {
+      const src = await current.loadSource()
+      await downloadProject(src, current.id, current.title)
+    } catch (e) {
+      console.error('project download failed', e)
+    } finally {
+      downloading = false
+    }
   }
 
   // ---- Theme preset chooser (shadcn / Excel / Fluent / Material) ----------
@@ -115,51 +128,61 @@
     try { localStorage.setItem('sg-preset', preset) } catch { /* ignore */ }
   })
 
-  // ---- Demo browser (modal picker) --------------------------------------
-  // Discovery lives in a full visual picker (thumbnails + search + category
-  // filter). The sidebar is only for fast in-context switching once you're in
-  // a demo. A "Browse all demos" button (and the `/` shortcut) open the picker.
-  let pickerOpen = $state(false)
-  let browseBtnEl = $state<HTMLButtonElement | null>(null)
-  function openPicker() {
-    pickerOpen = true
+  // ---- Nav mode switcher (list tree vs card grid) -----------------------
+  type NavMode = 'list' | 'grid'
+  function readNavMode(): NavMode {
+    try { return localStorage.getItem('sg-nav-mode') === 'grid' ? 'grid' : 'list' } catch { return 'list' }
   }
-  function closePicker() {
-    pickerOpen = false
-    queueMicrotask(() => browseBtnEl?.focus())
-  }
-
-  // Auto-open the picker only the FIRST time you land on the demos index in a
-  // session (the front-door first impression), plus always on the explicit
-  // /demos/browse URL. Refresh / back / repeat visits don't nag.
+  let navMode = $state<NavMode>(readNavMode())
   $effect(() => {
-    if (demoId === 'browse') {
-      pickerOpen = true
-      return
-    }
-    if (demoId === '') {
-      try {
-        if (!sessionStorage.getItem('sg-demos-browsed')) {
-          sessionStorage.setItem('sg-demos-browsed', '1')
-          pickerOpen = true
-        }
-      } catch {
-        pickerOpen = true
-      }
-    }
+    try { localStorage.setItem('sg-nav-mode', navMode) } catch { /* ignore */ }
   })
 
+  // ---- Grid-mode search / category filter --------------------------------
+  let gridQuery = $state('')
+  let gridCategory = $state<DemoCategory | null>(null)
+  let gridSearchEl = $state<HTMLInputElement | null>(null)
+
   $effect(() => {
-    const onGlobalKey = (e: KeyboardEvent) => {
-      if (e.key !== '/') return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
-      e.preventDefault()
-      openPicker()
-    }
-    window.addEventListener('keydown', onGlobalKey)
-    return () => window.removeEventListener('keydown', onGlobalKey)
+    if (navMode === 'grid') tick().then(() => gridSearchEl?.focus())
   })
+
+  function handleGlobalKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && navMode === 'grid') navMode = 'list'
+  }
+
+  function gridTokens(q: string): string[] {
+    return q.toLowerCase().split(/\s+/).filter(Boolean)
+  }
+  const gridToks = $derived(gridTokens(gridQuery))
+  function scoreDemo(d: { title: string; blurb: string; category: string; id: string }, toks: string[]): number {
+    if (!toks.length) return 1
+    const title = d.title.toLowerCase(); const blurb = d.blurb.toLowerCase()
+    const cat = d.category.toLowerCase(); const id = d.id.toLowerCase()
+    let total = 0
+    for (const tok of toks) {
+      let s = 0
+      if (title.startsWith(tok)) s += 60
+      else if (title.includes(tok)) s += 30
+      if (id.includes(tok)) s += 18
+      if (cat.includes(tok)) s += 12
+      if (blurb.includes(tok)) s += 8
+      if (s === 0) return -1
+      total += s
+    }
+    return total
+  }
+  const gridDemos = $derived.by(() => {
+    const scoped = gridCategory ? demos.filter((d) => d.category === gridCategory) : demos
+    if (!gridToks.length) return scoped
+    return scoped
+      .map((d) => ({ d, s: scoreDemo(d, gridToks) }))
+      .filter((r) => r.s > 0)
+      .sort((a, b) => b.s - a.s)
+      .map((r) => r.d)
+  })
+
+  const THUMB_BASE = `/thumbs/`
 
   // ---- Collapsible sidebar groups ---------------------------------------
   function loadOpenGroups(): Record<string, boolean> {
@@ -236,7 +259,8 @@
   })
 </script>
 
-<div class="demo-page flex h-full min-h-0">
+<svelte:window onkeydown={handleGlobalKeydown} />
+<div class="demo-page flex h-full min-h-0" style="position: relative">
   {#if mobileNav}
     <button
       type="button"
@@ -247,14 +271,41 @@
   {/if}
   <aside
     bind:this={asideEl}
-    class="demo-aside w-72 shrink-0 border-r p-4 overflow-y-auto"
+    class="demo-aside shrink-0 border-r p-4 overflow-y-auto"
     class:is-open={mobileNav}
     style="border-color: var(--sg-border)"
   >
-    <div class="mb-4 flex items-center justify-between">
-      <div>
+    <div class="mb-4 flex items-center justify-between gap-2">
+      <div class="min-w-0">
         <h1 class="text-lg font-semibold">SvGrid</h1>
         <p class="text-xs" style="color: var(--sg-muted)">Examples gallery</p>
+      </div>
+      <div class="demo-nav-toggle" role="group" aria-label="Navigation view">
+        <button
+          type="button"
+          class="demo-nav-btn"
+          class:is-active={navMode === 'list'}
+          aria-pressed={navMode === 'list'}
+          title="List view"
+          onclick={() => (navMode = 'list')}
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="demo-nav-btn"
+          class:is-active={navMode === 'grid'}
+          aria-pressed={navMode === 'grid'}
+          title="Card grid view"
+          onclick={() => (navMode = 'grid')}
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/>
+            <rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>
+          </svg>
+        </button>
       </div>
       <button
         type="button"
@@ -282,23 +333,6 @@
         {/each}
       </select>
     </label>
-
-    <button
-      type="button"
-      bind:this={browseBtnEl}
-      class="demo-browse-btn mb-4"
-      onclick={openPicker}
-      title="Browse all demos with thumbnails and search"
-    >
-      <svg class="demo-browse-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
-        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
-        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
-        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
-      </svg>
-      <span class="demo-browse-label">Browse all demos</span>
-      <kbd class="demo-browse-kbd" aria-hidden="true">/</kbd>
-    </button>
 
     <nav aria-label="Examples">
       {#each demoGroups as group (group.category)}
@@ -366,6 +400,80 @@
     </a>
   </aside>
 
+  {#if navMode === 'grid'}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="browse-backdrop" onclick={() => (navMode = 'list')} aria-hidden="true"></div>
+    <div class="browse-panel" role="dialog" aria-label="Browse demos">
+      <div class="demo-grid-search-wrap mb-3">
+        <svg class="demo-grid-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+        </svg>
+        <input
+          bind:this={gridSearchEl}
+          bind:value={gridQuery}
+          type="search"
+          class="demo-grid-search"
+          placeholder="Search demos…"
+          aria-label="Search demos"
+        />
+        {#if gridQuery}
+          <button type="button" class="demo-grid-search-clear" onclick={() => (gridQuery = '')} aria-label="Clear search">×</button>
+        {/if}
+      </div>
+
+      <div class="demo-grid-cats mb-3">
+        <button
+          type="button"
+          class="demo-grid-cat"
+          class:is-active={gridCategory === null}
+          onclick={() => (gridCategory = null)}
+        >All</button>
+        {#each demoGroups as g (g.category)}
+          <button
+            type="button"
+            class="demo-grid-cat"
+            class:is-active={gridCategory === g.category}
+            onclick={() => (gridCategory = gridCategory === g.category ? null : g.category)}
+          >{g.category}</button>
+        {/each}
+      </div>
+
+      <div class="demo-cards" role="list">
+        {#each gridDemos as demo (demo.id)}
+          {@const active = demo.id === current.id}
+          <button
+            type="button"
+            role="listitem"
+            class="demo-card"
+            class:is-active={active}
+            onclick={() => { go(demo.id); navMode = 'list' }}
+            title={demo.blurb}
+          >
+            <div class="demo-card-thumb">
+              <img
+                src={`${THUMB_BASE}${demo.id}.webp`}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                onerror={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+              />
+              {#if demo.pro}<span class="demo-card-pro">Enterprise</span>{/if}
+            </div>
+            <div class="demo-card-meta">
+              <span class="demo-card-cat">{demo.category}</span>
+              <span class="demo-card-title">{demo.title}</span>
+              <span class="demo-card-blurb">{demo.blurb}</span>
+            </div>
+          </button>
+        {/each}
+        {#if gridDemos.length === 0}
+          <p class="demo-grid-empty">No demos match <em>"{gridQuery}"</em></p>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
   <main class="flex flex-col flex-1 overflow-x-hidden p-3 sm:p-6 min-h-0">
     <header class="mb-5 flex shrink-0 items-start justify-between gap-3">
       <div class="flex min-w-0 items-start gap-2">
@@ -385,6 +493,33 @@
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onclick={() => router.navigate(`playground/${current.id}`)}
+          class="inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-sm"
+          style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
+          title="Open this demo in the live playground - edit a config and preview instantly"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+          </svg>
+          <span class="hidden sm:inline">Edit</span>
+        </button>
+        <button
+          type="button"
+          onclick={downloadProjectZip}
+          disabled={downloading}
+          class="inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-sm disabled:opacity-60"
+          style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
+          title="Download a runnable npm project (npm install && npm run dev)"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" />
+          </svg>
+          <span class="hidden sm:inline">{downloading ? 'Zipping…' : 'Project'}</span>
+        </button>
         <button
           type="button"
           onclick={() => openInStackBlitz(current)}
@@ -440,22 +575,185 @@
   />
 {/if}
 
-{#if pickerOpen}
-  <DemoPicker
-    currentId={current.id}
-    onSelect={(id) => { pickerOpen = false; go(id) }}
-    onClose={closePicker}
-  />
-{/if}
-
 <style>
   /* Navigation-tree scrollbar. Uses the same `--sg-scrollbar-*` tokens the grid
      styles its own scrollbar with - each theme preset (and light/dark) sets
      them on `.demo-page`, so the sidebar scrollbar matches the chosen theme's
      surface + neutral tones exactly, instead of an accent-colored thumb. */
   .demo-aside {
+    width: 288px;
+    transition: width 180ms ease;
     scrollbar-width: thin;
     scrollbar-color: var(--sg-scrollbar-thumb, #b1bccd) var(--sg-scrollbar-bg, transparent);
+  }
+  /* ---- Browse panel (appears to right of sidebar in grid/card mode) ------- */
+  .browse-backdrop {
+    position: absolute;
+    left: 288px; top: 0; right: 0; bottom: 0;
+    z-index: 49;
+    background: rgba(0, 0, 0, 0.25);
+  }
+  .browse-panel {
+    position: absolute;
+    left: 288px; top: 0; bottom: 0; right: 0;
+    z-index: 50;
+    overflow-y: auto;
+    padding: 16px 14px;
+    background: var(--sg-bg, #fff);
+    border-left: 1px solid var(--sg-border, #e2e8f0);
+    scrollbar-width: thin;
+    scrollbar-color: var(--sg-scrollbar-thumb, #b1bccd) var(--sg-scrollbar-bg, transparent);
+  }
+
+  /* ---- Nav mode toggle (list / grid) -------------------------------------- */
+  .demo-nav-toggle {
+    display: inline-flex;
+    border: 1px solid var(--sg-border, #334155);
+    border-radius: 7px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--sg-bg);
+  }
+  .demo-nav-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 28px;
+    background: transparent;
+    border: 0;
+    color: var(--sg-muted);
+    cursor: pointer;
+    transition: background 120ms, color 120ms;
+  }
+  .demo-nav-btn:hover { color: var(--sg-fg); }
+  .demo-nav-btn.is-active {
+    background: var(--sg-accent, #3b82f6);
+    color: var(--sg-on-accent, #fff);
+  }
+  .demo-nav-btn + .demo-nav-btn { border-left: 1px solid var(--sg-border, #334155); }
+
+  /* ---- Grid view: search -------------------------------------------------- */
+  .demo-grid-search-wrap {
+    position: relative;
+    display: flex; align-items: center;
+  }
+  .demo-grid-search-icon {
+    position: absolute; left: 9px;
+    color: var(--sg-muted, #64748b);
+    pointer-events: none;
+  }
+  .demo-grid-search {
+    width: 100%;
+    padding: 7px 28px 7px 30px;
+    background: var(--sg-input-bg, var(--sg-bg));
+    color: var(--sg-fg);
+    border: 1px solid var(--sg-input-border, var(--sg-border));
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .demo-grid-search:focus { outline: none; border-color: var(--sg-accent, #3b82f6); }
+  .demo-grid-search-clear {
+    position: absolute; right: 8px;
+    background: transparent; border: 0;
+    color: var(--sg-muted, #64748b);
+    cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px;
+  }
+
+  /* ---- Grid view: category chips ------------------------------------------ */
+  .demo-grid-cats {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+  .demo-grid-cat {
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--sg-border, #334155);
+    background: transparent;
+    color: var(--sg-muted, #94a3b8);
+    font-size: 11px; cursor: pointer;
+    transition: background 120ms, color 120ms, border-color 120ms;
+    white-space: nowrap;
+  }
+  .demo-grid-cat:hover { color: var(--sg-fg); border-color: var(--sg-accent, #3b82f6); }
+  .demo-grid-cat.is-active {
+    background: var(--sg-accent, #3b82f6);
+    border-color: var(--sg-accent, #3b82f6);
+    color: #fff;
+  }
+
+  /* ---- Grid view: cards --------------------------------------------------- */
+  .demo-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    align-content: start;
+    padding: 4px 2px;
+  }
+  .demo-card {
+    display: flex; flex-direction: column;
+    background: var(--sg-header-bg, rgba(255,255,255,0.04));
+    border: 1px solid var(--sg-border, #334155);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 120ms, box-shadow 120ms, transform 120ms;
+  }
+  .demo-card:hover {
+    border-color: var(--sg-accent, #3b82f6);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  }
+  .demo-card.is-active {
+    border-color: var(--sg-accent, #3b82f6);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--sg-accent, #3b82f6) 30%, transparent);
+  }
+  .demo-card-thumb {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 */
+    background: color-mix(in oklab, var(--sg-accent, #3b82f6) 8%, var(--sg-bg, #0b1220));
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .demo-card-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: top left;
+    display: block;
+  }
+  .demo-card-pro {
+    position: absolute; top: 6px; right: 6px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+    padding: 2px 6px; border-radius: 3px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+  }
+  .demo-card-meta {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 10px 12px 12px;
+    flex: 1;
+  }
+  .demo-card-cat {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--sg-accent, #3b82f6);
+  }
+  .demo-card-title {
+    font-size: 13px; font-weight: 600; line-height: 1.3;
+    color: var(--sg-fg, #e2e8f0);
+  }
+  .demo-card-blurb {
+    font-size: 11.5px; line-height: 1.5;
+    color: var(--sg-muted, #64748b);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .demo-grid-empty {
+    grid-column: 1 / -1;
+    padding: 16px 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--sg-muted, #64748b);
   }
   .demo-aside::-webkit-scrollbar { width: 12px; height: 12px; }
   .demo-aside::-webkit-scrollbar-track {
@@ -513,41 +811,6 @@
       background: rgba(0, 0, 0, 0.45);
       border: 0;
     }
-  }
-
-  /* "Browse all demos" opens the visual picker. The sidebar tree below is for
-     fast in-context switching; discovery/search lives in the picker. */
-  .demo-browse-btn {
-    display: flex; align-items: center; gap: 8px;
-    width: 100%; cursor: pointer;
-    border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1));
-    background: var(--sg-input-bg, var(--sg-bg, #0b1220));
-    color: var(--sg-fg, #e2e8f0);
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 13px;
-    transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
-  }
-  .demo-browse-btn:hover {
-    border-color: var(--sg-accent, #3b82f6);
-    background: color-mix(in oklab, var(--sg-accent, #3b82f6) 8%, var(--sg-input-bg, var(--sg-bg, #0b1220)));
-  }
-  .demo-browse-btn:focus-visible {
-    outline: none;
-    border-color: var(--sg-accent, #3b82f6);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--sg-accent, #3b82f6) 22%, transparent);
-  }
-  .demo-browse-icon { color: var(--sg-accent, #3b82f6); flex-shrink: 0; }
-  .demo-browse-label { flex: 1; text-align: left; font-weight: 600; }
-  .demo-browse-kbd {
-    flex-shrink: 0;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 11px;
-    padding: 1px 6px;
-    border: 1px solid var(--sg-border, #374151);
-    border-radius: 4px;
-    color: var(--sg-muted, #94a3b8);
-    background: var(--sg-header-bg, transparent);
   }
 
   /* Collapsible category groups (DevExpress / Kendo style sidebar) */
