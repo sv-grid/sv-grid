@@ -336,6 +336,21 @@
   background: var(--sg-bg, #fff);
   color: var(--sg-fg, #0f172a);
   user-select: none;
+  /* Grid lines ship with the grid so it looks complete out of the box - no
+     host stylesheet required. Only right + bottom per cell (border-spacing is
+     0), so adjacent cells share a single 1px line rather than doubling. */
+  border-right: 1px solid var(--sg-border, #e2e8f0);
+  border-bottom: 1px solid var(--sg-border, #e2e8f0);
+}
+/* The last cell / column in each row drops its right border so the grid's
+   right edge stays clean (the shell provides the outer frame). */
+.sv-grid-table tr > :last-child.sv-grid-column,
+.sv-grid-table tr > :last-child.sv-grid-cell {
+  border-right: 0;
+}
+/* Row hover tint. */
+.sv-grid-table tbody tr:hover > .sv-grid-cell {
+  background: var(--sg-row-hover-bg, #eef2ff);
 }
 /* Only the active cell + the cell hosting the fill handle become a
    positioning context (so the absolutely-positioned handle anchors
@@ -384,14 +399,14 @@
    always points toward the scrollable middle. */
 .sv-grid-cell[data-pinned="left"],
 .sv-grid-column[data-pinned="left"] {
-  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 92%, var(--sg-accent, #2563eb) 8%));
   box-shadow:
     inset -1px 0 0 var(--sg-pinned-divider, var(--sg-border, #cbd5e1)),
     8px 0 12px -6px rgba(15, 23, 42, 0.22);
 }
 .sv-grid-cell[data-pinned="right"],
 .sv-grid-column[data-pinned="right"] {
-  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 92%, var(--sg-accent, #2563eb) 8%));
   box-shadow:
     inset 1px 0 0 var(--sg-pinned-divider, var(--sg-border, #cbd5e1)),
     -8px 0 12px -6px rgba(15, 23, 42, 0.22);
@@ -400,7 +415,7 @@
    so the frozen header itself reads as part of the grid chrome. */
 .sv-grid-head .sv-grid-column[data-pinned="left"],
 .sv-grid-head .sv-grid-column[data-pinned="right"] {
-  background: var(--sg-pinned-header-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 60%, var(--sg-accent, #2563eb) 14%));
+  background: var(--sg-pinned-header-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 86%, var(--sg-accent, #2563eb) 14%));
   font-weight: 600;
 }
 /* Zebra striping, opt-in via the `zebraRows` prop (which adds
@@ -414,7 +429,7 @@
 /* Zebra rows: keep the pinned tint visible (don't let the row-alt
    background bleed through) by re-painting the pinned cells. */
 .sv-grid-row-alt > .sv-grid-cell[data-pinned] {
-  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 92%, var(--sg-accent, #2563eb) 8%));
 }
 /* When the row is selected, keep the pinned tint but layer the
    selection color over it so the row still reads as selected. */
@@ -424,7 +439,7 @@
       color-mix(in srgb, var(--sg-selection-bg, #dbeafe) 65%, transparent),
       color-mix(in srgb, var(--sg-selection-bg, #dbeafe) 65%, transparent)
     ),
-    var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+    var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 92%, var(--sg-accent, #2563eb) 8%));
 }
 /* Hovered row keeps the pinned tint distinguishable from the hover. */
 .sv-grid-row:hover > .sv-grid-cell[data-pinned] {
@@ -433,7 +448,7 @@
       color-mix(in srgb, var(--sg-row-hover-bg, #eef2ff) 55%, transparent),
       color-mix(in srgb, var(--sg-row-hover-bg, #eef2ff) 55%, transparent)
     ),
-    var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 8%));
+    var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 92%, var(--sg-accent, #2563eb) 8%));
 }
 
 .sv-grid-column {
@@ -462,6 +477,14 @@
 .sv-grid-column[data-align="right"] .sv-grid-header-sort {
   justify-content: flex-end;
 }
+/* The custom vertical scrollbar overlays the right 16px of the viewport
+   (absolute, z-index 40). Nudge the last column's right-aligned content in by
+   that width when the scrollbar is visible, so numbers/values aren't hidden
+   underneath it. Left/center content already clears the right edge. */
+.sv-grid-has-vscroll .sv-grid-table tr > :last-child.sv-grid-cell[data-align="right"],
+.sv-grid-has-vscroll .sv-grid-table tr > :last-child.sv-grid-column[data-align="right"] {
+  padding-right: calc(var(--sg-cell-px, 7px) + 16px);
+}
 .sv-grid-column[data-align="center"] .sv-grid-header-sort {
   justify-content: center;
 }
@@ -478,9 +501,26 @@
   transition: background-color 100ms ease;
 }
 
-.sv-grid-resize-handle:hover,
-.sv-grid-resize-handle.is-resizing {
-  background: color-mix(in srgb, var(--sg-accent, #0b63f3) 30%, transparent);
+/* An accent center pill (rather than tinting the whole strip): faint on column
+   hover, bright when the handle itself is hovered or while dragging. */
+.sv-grid-resize-handle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto 2px;
+  width: 2px;
+  background: var(--sg-fg, #0f172a);
+  opacity: 0;
+  border-radius: 1px;
+  transition: background-color 100ms ease, opacity 100ms ease;
+}
+.sv-grid-column:hover .sv-grid-resize-handle::after {
+  opacity: 0.3;
+}
+.sv-grid-column:hover .sv-grid-resize-handle:hover::after,
+.sv-grid-resize-handle.is-resizing::after {
+  background: var(--sg-accent, #2563eb);
+  opacity: 1;
 }
 
 /* Row resize handle (counterpart of the column resize handle). Lives
@@ -907,8 +947,9 @@ select.sv-grid-fr-editor {
 
 .sv-grid-checkbox[aria-checked="true"],
 .sv-grid-checkbox[aria-checked="mixed"] {
-  border-color: var(--sg-accent, #0b63f3);
-  background: var(--sg-selection-bg, #eaf2ff);
+  border-color: var(--sg-accent, #2563eb);
+  background: var(--sg-accent, #2563eb);
+  color: var(--sg-on-accent, #fff);
 }
 
 .sv-grid-checkbox[aria-checked="true"]::after {
@@ -1108,16 +1149,49 @@ select.sv-grid-fr-editor {
   padding: 0 8px;
 }
 
-/* Filter-related inputs share the same focused-cell outline treatment. */
+/* Base look for the filter inputs (header filter row, per-column filter, the
+   global search box, and the menu's search / condition inputs). The inline cell
+   editor is styled separately - it's borderless and fills its cell. Shipping
+   this with the grid means filters look like real inputs with no host
+   stylesheet. */
+.sv-grid-column-filter,
+.sv-grid-filter-value,
+.sv-grid-global-filter input,
+.sv-grid-menu-search,
+.sv-grid-menu-condition-value {
+  background: var(--sg-input-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  border: 1px solid var(--sg-input-border, #cbd5e1);
+  border-radius: 5px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  font: inherit;
+}
+.sv-grid-column-filter {
+  height: 28px;
+  width: 100%;
+  font-size: 0.8125rem;
+}
+.sv-grid-column-filter::placeholder,
+.sv-grid-filter-value::placeholder,
+.sv-grid-menu-search::placeholder,
+.sv-grid-global-filter input::placeholder,
+.sv-grid-cell-editor::placeholder {
+  color: var(--sg-muted, #64748b);
+  opacity: 0.7;
+}
+
+/* Calm, theme-aware focus (a soft box-shadow rather than a hard outline). */
 .sv-grid-global-filter input:focus,
 .sv-grid-filter-value:focus,
 .sv-grid-column-filter:focus,
 .sv-grid-menu-search:focus,
 .sv-grid-menu-condition-value:focus,
-.sv-grid-menu-operator:focus {
-  outline: 2px solid var(--sg-accent, #0b63f3);
-  outline-offset: -2px;
-  border-color: var(--sg-accent, #0b63f3);
+.sv-grid-menu-operator:focus,
+.sv-grid-cell-editor:focus {
+  outline: none;
+  border-color: var(--sg-accent, #2563eb);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-accent, #2563eb) 30%, transparent);
 }
 
 .sv-grid-cell-editor-number,
@@ -2010,3 +2084,207 @@ select.sv-grid-fr-editor {
   color: var(--sg-fg, #0f172a);
 }
 .sv-grid-find-step:disabled { opacity: 0.30; cursor: default; }
+
+/* ---- Pagination footer (GridFooter.svelte) ------------------------------
+   Ships with the grid so the pager is styled out of the box - previously this
+   lived only in the examples' host stylesheet, leaving bare consumers with an
+   unstyled pager. Uses --sg-* tokens with fallbacks like the rest of the theme. */
+.sv-grid-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+  padding: 12px 16px;
+  margin-top: 0;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-top: 0;
+  border-radius: 0 0 var(--sg-radius, 6px) var(--sg-radius, 6px);
+  background: var(--sg-header-bg, #f1f5f9);
+  color: var(--sg-fg, #0f172a);
+  font-size: 13px;
+}
+.sv-grid-pagination-pagesize {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sg-muted, #64748b);
+}
+.sv-grid-pagination-pagesize select {
+  height: 28px;
+  padding: 0 22px 0 8px;
+  border: 1px solid var(--sg-input-border, #cbd5e1);
+  border-radius: 5px;
+  background: var(--sg-input-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 12px) 12px, calc(100% - 8px) 12px;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+.sv-grid-pagination-pagesize select:focus {
+  outline: none;
+  border-color: var(--sg-accent, #2563eb);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-accent, #2563eb) 30%, transparent);
+}
+.sv-grid-pagination-range {
+  color: var(--sg-fg, #0f172a);
+}
+.sv-grid-pagination-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sv-grid-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--sg-fg, #0f172a);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 100ms ease, color 100ms ease;
+}
+.sv-grid-pagination-btn:hover:not(:disabled) {
+  background: var(--sg-input-bg, #fff);
+  color: var(--sg-accent, #2563eb);
+}
+.sv-grid-pagination-btn:disabled {
+  color: var(--sg-muted, #64748b);
+  opacity: 0.4;
+  cursor: default;
+}
+.sv-grid-pagination-label {
+  margin: 0 8px;
+  color: var(--sg-fg, #0f172a);
+}
+
+/* ---- Menu / filter chrome completeness -----------------------------------
+   These styles previously lived only in the examples' host stylesheet. Shipping
+   them here means the column menu, filter/choose-columns popovers, facet
+   checklist, operator select, filter buttons, and the scrollbar corner are
+   fully themed out of the box for any consumer - all via --sg-* tokens. */
+
+/* Hide the scrollbar corner when its scrollbar is absent. */
+.sv-grid-no-scroll .sv-grid-scrollbar-corner,
+.sv-grid-no-scroll .sv-grid-scrollbar {
+  display: none;
+}
+/* Scrollbar corner divider uses the theme border token. */
+.sv-grid-scrollbar-corner,
+.sv-grid-scrollbar-corner-br {
+  border-bottom-color: var(--sg-border, #e2e8f0);
+}
+
+/* Filter operator <select> (the dropdown that replaced the radio group). */
+.sv-grid-menu-operator-select {
+  width: 100%;
+  height: 28px;
+  padding: 0 22px 0 8px;
+  margin-bottom: 6px;
+  border: 1px solid var(--sg-input-border, #cbd5e1);
+  border-radius: 5px;
+  background: var(--sg-input-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 12px) 12px, calc(100% - 8px) 12px;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+.sv-grid-menu-operator-select:focus {
+  outline: none;
+  border-color: var(--sg-accent, #2563eb);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-accent, #2563eb) 40%, transparent);
+}
+/* Operator toggle button (active) uses the on-accent token. */
+.sv-grid-menu-operator-btn.is-active {
+  color: var(--sg-on-accent, #fff);
+}
+
+/* Filter-only + choose-columns popover widths. */
+.sv-grid-filter-menu {
+  width: 260px;
+}
+.sv-grid-choose-columns-menu {
+  width: 240px;
+}
+.sv-grid-choose-columns-menu .sv-grid-facet-list {
+  max-height: 280px;
+}
+
+/* Native checkboxes in the facet list pick up the theme accent. */
+.sv-grid-facet input[type="checkbox"] {
+  accent-color: var(--sg-accent, #2563eb);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* Submenu right-chevron on the "Choose columns" item. */
+.sv-grid-menu-item-chevron {
+  margin-left: auto;
+  transform: rotate(-90deg);
+  opacity: 0.55;
+}
+.sv-grid-menu-item.is-open .sv-grid-menu-item-chevron {
+  opacity: 1;
+}
+
+/* Magnifier prefix on the menu's search input. */
+.sv-grid-menu-search {
+  padding-left: 28px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='M20 20l-4.5-4.5'/%3E%3C/svg%3E");
+  background-position: 8px center;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+}
+
+/* Filter menu vertical rhythm. */
+.sv-grid-menu-filter > * + * {
+  margin-top: 6px;
+}
+
+/* Column-header filter (funnel) button tints accent when a filter is active. */
+.sv-grid-col-filter-btn.is-active {
+  color: var(--sg-accent, #2563eb);
+}
+
+/* Row-number gutter: neutralize the right border so it fuses with the header. */
+.sv-grid-row-number-column,
+.sv-grid-row-number-cell {
+  border-right-color: var(--sg-header-bg, #f1f5f9);
+}
+
+/* Group row label colour. */
+.sv-grid-group-row > .sv-grid-cell {
+  color: var(--sg-header-fg, #0f172a);
+}
+
+/* Filter-row operator button: soften when idle, accent border on hover/open. */
+.sv-grid-filter-operator-btn {
+  opacity: 0.85;
+}
+.sv-grid-filter-operator-btn:hover {
+  opacity: 1;
+  border-color: var(--sg-accent, #2563eb);
+}
+.sv-grid-filter-operator-btn.is-open {
+  opacity: 1;
+}

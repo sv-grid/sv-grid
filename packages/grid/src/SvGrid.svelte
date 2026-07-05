@@ -1189,6 +1189,7 @@
     >
       <div
         class="sv-grid-container sv-grid-container-custom-scrollbars"
+        class:sv-grid-has-vscroll={hasMeasured && hasVerticalOverflow}
         bind:this={ctrl.scrollContainer}
         onscroll={onBodyScroll}
         style={`overflow: auto; position: relative; height: calc(100% - ${hasMeasured && hasHorizontalOverflow ? 16 : 0}px);`}

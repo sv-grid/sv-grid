@@ -265,6 +265,7 @@ const THEME_VARS = `      :root {
         --sg-bg:#fff; --sg-fg:#0f172a; --sg-muted:#64748b; --sg-border:#e2e8f0;
         --sg-header-bg:#f1f5f9; --sg-header-fg:#0f172a; --sg-row-alt-bg:#f8fafc;
         --sg-row-hover-bg:#eef2ff; --sg-selection-bg:#dbeafe; --sg-accent:#2563eb;
+        --sg-input-bg:#ffffff; --sg-input-border:#cbd5e1;
         --sg-scrollbar-bg:#eef2f8; --sg-scrollbar-thumb:#b1bccd; --sg-scrollbar-thumb-hover:#8693a7;
         --sg-scrollbar-thumb-active:#64748b; --sg-scrollbar-arrow:#64748b;
         color-scheme:light;
@@ -280,6 +281,7 @@ const THEME_VARS = `      :root {
         --sg-row-hover-bg:#232b3c; --sg-selection-bg:#1d3a73; --sg-accent:#3b82f6;
         --sg-scrollbar-bg:#1a2130; --sg-scrollbar-thumb:#475569; --sg-scrollbar-thumb-hover:#64748b;
         --sg-scrollbar-thumb-active:#94a3b8; --sg-scrollbar-arrow:#64748b;
+        --sg-input-bg:#1a2130; --sg-input-border:#2c3548;
         --sg-pill-active:#064e3b; --sg-pill-active-fg:#6ee7b7;
         --sg-pill-pending:#713f12; --sg-pill-pending-fg:#fde68a;
         --sg-pill-inactive:#7f1d1d; --sg-pill-inactive-fg:#fecaca;
