@@ -50,7 +50,7 @@ export function getGridCellA11yProps(input: GridCellA11yInput = {}) {
     ...(id ? { id } : {}),
     ...(colIndex !== undefined ? { 'aria-colindex': colIndex } : {}),
     ...(rowIndex !== undefined ? { 'aria-rowindex': rowIndex } : {}),
-    ...(selected ? { 'aria-selected': true } : {}),
+    'aria-selected': selected,
   } as const
 }
 

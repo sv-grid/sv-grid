@@ -191,7 +191,7 @@ export function createScrollSync<
   function onBodyScroll(event: Event) {
     const container = event.currentTarget as HTMLDivElement | null;
     if (!container) return;
-    if (ctx.columnMenuFor || ctx.operatorMenuFor) ctx.closeMenus();
+    if (ctx.columnMenuFor || ctx.operatorMenuFor || ctx.contextMenuFor) ctx.closeMenus();
     scheduleScrollSync(container.scrollTop, container.scrollLeft);
     // Mirror horizontal scroll to any aligned grids in the same group.
     if (ctx.props.alignedGridGroup != null) ctx.broadcastAlignedScroll(container.scrollLeft);

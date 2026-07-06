@@ -373,6 +373,7 @@ export function createMenus<
       ...prev,
       pageIndex: Math.max((prev?.pageIndex ?? 0) + delta, 0),
     }));
+    ctx.scrollContainer?.scrollTo({ top: 0 });
   }
 
   function goToPage(pageIndex: number) {
@@ -380,6 +381,7 @@ export function createMenus<
       ...prev,
       pageIndex: Math.max(0, pageIndex),
     }));
+    ctx.scrollContainer?.scrollTo({ top: 0 });
   }
 
   function setPageSize(pageSize: number) {
@@ -447,9 +449,15 @@ export function createMenus<
     const rowModel = ctx.allRows[rowIndex];
     const row = rowModel?.original ?? null;
     const rowId = rowModel?.id ?? String(rowIndex);
+    // Reserve ~280px for the menu body. If the click is in the bottom third,
+    // flip the menu above the cursor so it stays fully in the viewport.
+    const menuHeight = 280;
+    const y = event.clientY + menuHeight > window.innerHeight
+      ? Math.max(8, event.clientY - menuHeight)
+      : event.clientY;
     ctx.contextMenuPos = {
       x: clampMenuX(event.clientX, 220),
-      y: Math.max(8, Math.min(event.clientY, window.innerHeight - 16)),
+      y,
     };
     ctx.contextMenuFor = { rowIndex, colIndex, columnId, rowId, row };
   }

@@ -1057,6 +1057,17 @@ export function createSvGridController<
     const start = pageIndex * pageSize;
     return rows.slice(start, start + pageSize);
   });
+
+  // When a filter reduces the dataset, the stored pageIndex can point beyond
+  // the last valid page. Reset to page 0 so the grid never shows a blank body.
+  $effect(() => {
+    if (!paginationEnabled) return;
+    const { pageIndex, pageSize } = paginationState;
+    const pageCount = Math.ceil(allRowsBeforePagination.length / pageSize);
+    if (pageCount > 0 && pageIndex >= pageCount) {
+      grid.setPagination({ pageIndex: 0, pageSize });
+    }
+  });
   const rowSelectionState = $derived.by(() => {
     gridStateVersion;
     return grid.getState().rowSelection ?? {};
