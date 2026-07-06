@@ -260,6 +260,12 @@ const SVELTE_VER = '5.55.9'
 const TS_VER = '5.6.3'
 // Unversioned = latest published; unpkg serves the file directly by path.
 const DEFAULT_GRID_CDN = 'https://unpkg.com/@svgrid/grid/dist/cdn/svgrid.svelte-external.js'
+// Enterprise pack: a svelte-external CDN bundle (keeps svelte + @svgrid/grid
+// external so it shares the page's runtime + the same grid instance). Used only
+// by demos that import @svgrid/enterprise; unlicensed use shows the pack's
+// built-in watermark + console nudge.
+const DEFAULT_ENTERPRISE_CDN =
+  'https://unpkg.com/@svgrid/enterprise/dist/cdn/svgrid-enterprise.svelte-external.js'
 
 const THEME_VARS = `      :root {
         --sg-bg:#fff; --sg-fg:#0f172a; --sg-muted:#64748b; --sg-border:#e2e8f0;
@@ -390,6 +396,20 @@ const LOADER = [
 ].join('\n')
 
 /**
+ * Strip a demo's built-in DEV/EVAL license key so an EXPORTED copy runs
+ * UNLICENSED. svgrid.com's own demos call `setLicenseKey('SVENTERPRISE-DEV-...')`
+ * to suppress the trial watermark on the vendor's site - but a user who copies
+ * the demo out should see the real trial UX: the corner "www.svgrid.com"
+ * watermark + the one-time console license nudge. Removing the key restores it.
+ */
+export function stripDevLicenseKey(source: string): string {
+  return source.replace(
+    /setLicenseKey\(\s*['"]SVENTERPRISE-(?:DEV|EVAL)[^'"]*['"]\s*\)\s*;?/g,
+    '/* dev license removed for export - runs in unlicensed trial mode (watermark) */',
+  )
+}
+
+/**
  * Build a self-contained, runnable Svelte HTML page (in-browser compile).
  * Async because it gathers any `../shared` modules the component imports.
  * `gridCdnUrl` is overridable for testing (defaults to the published bundle).
@@ -402,7 +422,7 @@ export async function buildStandaloneHtml(source: string, title: string, theme?:
       ? 'dark'
       : 'light'
   const safe = title.replace(/[<>&]/g, '')
-  const app = source.replace(/^﻿/, '').replace(/(['"])\.\.\/shared\//g, '$1./shared/')
+  const app = stripDevLicenseKey(source.replace(/^﻿/, '')).replace(/(['"])\.\.\/shared\//g, '$1./shared/')
   const shared = await gatherShared(app)
   const sources: Record<string, string> = { 'App.svelte': app, ...shared }
 
@@ -411,6 +431,10 @@ export async function buildStandaloneHtml(source: string, title: string, theme?:
   const gridCdn =
     (typeof window !== 'undefined' && (window as unknown as { __SVGRID_CDN__?: string }).__SVGRID_CDN__) ||
     DEFAULT_GRID_CDN
+  const enterpriseCdn =
+    (typeof window !== 'undefined' &&
+      (window as unknown as { __SVGRID_ENTERPRISE_CDN__?: string }).__SVGRID_ENTERPRISE_CDN__) ||
+    DEFAULT_ENTERPRISE_CDN
 
   const importMap = {
     imports: {
@@ -423,7 +447,11 @@ export async function buildStandaloneHtml(source: string, title: string, theme?:
       'svelte/store': `https://esm.sh/svelte@${SVELTE_VER}/store`,
       'svelte/motion': `https://esm.sh/svelte@${SVELTE_VER}/motion`,
       '@svgrid/grid': gridCdn,
+      // Enterprise demos import this; unlicensed = watermark + console nudge.
+      '@svgrid/enterprise': enterpriseCdn,
       jszip: 'https://esm.sh/jszip@3.10.1',
+      // Optional peer of the enterprise pack (PDF export).
+      pdfmake: 'https://esm.sh/pdfmake@0.2.10',
     },
   }
 
@@ -472,7 +500,9 @@ ${LOADER}
  * Returns the zip filename (for a toast / confirmation).
  */
 export async function downloadProject(source: string, id: string, title: string): Promise<string> {
-  const clean = source.replace(/^﻿/, '')
+  // Strip the demo's dev license key so the downloaded project runs unlicensed
+  // (trial watermark) until the user adds their own key - see stripDevLicenseKey.
+  const clean = stripDevLicenseKey(source.replace(/^﻿/, ''))
   const deps = detectDeps(clean)
   const hasEnterprise = '@svgrid/enterprise' in deps
   const needsShared = /['"]\.\.\/shared\//.test(clean)

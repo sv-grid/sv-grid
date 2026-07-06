@@ -21,6 +21,36 @@
     return () => window.removeEventListener('hashchange', close)
   })
 
+  const GH_REPO = 'sv-grid/sv-grid'
+  let stars = $state<number | null>(null)
+
+  function formatStars(n: number): string {
+    if (n < 1000) return String(n)
+    const k = n / 1000
+    return (k >= 10 ? Math.round(k) : Math.round(k * 10) / 10) + 'k'
+  }
+
+  $effect(() => {
+    const KEY = 'sg-gh-stars'
+    const TTL = 6 * 60 * 60 * 1000
+    try {
+      const raw = localStorage.getItem(KEY)
+      if (raw) {
+        const { n, t } = JSON.parse(raw)
+        if (typeof n === 'number' && Date.now() - t < TTL) { stars = n; return }
+      }
+    } catch { /* ignore */ }
+    fetch(`https://api.github.com/repos/${GH_REPO}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d.stargazers_count === 'number') {
+          stars = d.stargazers_count
+          try { localStorage.setItem(KEY, JSON.stringify({ n: stars, t: Date.now() })) } catch { /* ignore */ }
+        }
+      })
+      .catch(() => {})
+  })
+
   const links = [
     { id: 'demos', label: 'Demos', href: '#/demos/browse' },
     { id: 'docs', label: 'Docs', href: '#/docs' },
@@ -141,6 +171,9 @@
           />
         </svg>
         <span class="hidden sm:inline">GitHub</span>
+        {#if stars !== null}
+          <span class="gh-header-stars">{formatStars(stars)}</span>
+        {/if}
       </a>
     </div>
   </div>
@@ -166,3 +199,16 @@
     </nav>
   {/if}
 </header>
+
+<style>
+  .gh-header-stars {
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--sg-muted);
+    background: color-mix(in srgb, var(--sg-border) 60%, transparent);
+    border-radius: 10px;
+    padding: 1px 6px;
+    line-height: 1.6;
+  }
+</style>

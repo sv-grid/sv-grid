@@ -1,0 +1,28 @@
+name = "svgrid-vote"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# Public, non-secret config. Set the SECRETS separately (never commit them):
+#   wrangler secret put GITHUB_CLIENT_SECRET
+#   wrangler secret put SESSION_SECRET        # any long random string
+# See README.md for the full setup.
+[vars]
+GITHUB_CLIENT_ID = "REPLACE_WITH_OAUTH_APP_CLIENT_ID"
+REPO = "sv-grid/sv-grid"
+# Origins allowed to call the API with credentials (comma-separated). Include
+# your local dev origin while developing.
+ALLOWED_ORIGIN = "https://svgrid.com,http://localhost:5173"
+# The public URL this worker is served from (used to build the OAuth callback).
+# Deploy it on a svgrid.com SUBDOMAIN (e.g. vote.svgrid.com) so the session
+# cookie is first-party to the site - see README.
+SELF_ORIGIN = "https://vote.svgrid.com"
+# Parent domain for the session cookie so it is sent from svgrid.com pages to
+# this subdomain as first-party (avoids Safari/Chrome third-party blocking).
+# Leave empty if the worker is NOT on a svgrid.com subdomain (then it falls back
+# to SameSite=None cross-site cookies).
+COOKIE_DOMAIN = "svgrid.com"
+
+# Route the worker at your subdomain (requires the zone to be on Cloudflare).
+# [[routes]]
+# pattern = "vote.svgrid.com/*"
+# zone_name = "svgrid.com"

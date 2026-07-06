@@ -47,7 +47,10 @@
     peRatio: number
     eps: number
     divYield: number     // %
+    history: number[]    // rolling last-N prices for the intraday sparkline
   }
+
+  const HISTORY_LEN = 32
 
   const features = tableFeatures({ rowSortingFeature })
 
@@ -115,7 +118,21 @@
       peRatio: s.pe,
       eps: s.eps,
       divYield: s.yld,
+      history: seedHistory(s.price),
     }))
+  }
+
+  // Pre-seed the trail with a small random walk that lands on the open price, so
+  // every sparkline renders a believable intraday shape from the first frame.
+  function seedHistory(price: number): number[] {
+    const out: number[] = []
+    let v = price * (0.986 + Math.random() * 0.012)
+    for (let i = 0; i < HISTORY_LEN; i += 1) {
+      v += (Math.random() - 0.5) * price * 0.004
+      out.push(round(v, 2))
+    }
+    out[out.length - 1] = price
+    return out
   }
 
   function round(n: number, places: number): number {
@@ -137,14 +154,21 @@
     const nextPulses: Record<string, 'up' | 'down'> = {}
     const nextRows = rows.map((row) => {
       // ~70% of symbols move per tick - keeps the list lively without flooding.
-      if (Math.random() < 0.3) return row
-      const drift = (Math.random() - 0.5) * row.last * 0.004 // up to ±0.2%
-      const newLast = Math.max(round(row.last + drift, 2), 0.01)
-      if (newLast === row.last) return row
-      const direction: 'up' | 'down' = newLast > row.last ? 'up' : 'down'
+      const moved = Math.random() >= 0.3
+      let newLast = row.last
+      let direction: 'up' | 'down' | null = null
+      if (moved) {
+        const drift = (Math.random() - 0.5) * row.last * 0.004 // up to ±0.2%
+        newLast = Math.max(round(row.last + drift, 2), 0.01)
+        if (newLast !== row.last) direction = newLast > row.last ? 'up' : 'down'
+      }
       const change = round(newLast - row.open, 2)
       const pctChange = round((change / row.open) * 100, 2)
-      const spread = Math.max(round(row.last * 0.0005, 2), 0.01)
+      const spread = Math.max(round(newLast * 0.0005, 2), 0.01)
+      // Advance the trail every frame so all sparklines scroll continuously.
+      const history = row.history.length >= HISTORY_LEN
+        ? [...row.history.slice(1), newLast]
+        : [...row.history, newLast]
       const next: Stock = {
         ...row,
         last: newLast,
@@ -152,16 +176,51 @@
         pctChange,
         bid: round(newLast - spread, 2),
         ask: round(newLast + spread, 2),
-        volume: row.volume + Math.floor(100 + Math.random() * 5_000),
+        volume: moved ? row.volume + Math.floor(100 + Math.random() * 5_000) : row.volume,
         high: Math.max(row.high, newLast),
         low: Math.min(row.low, newLast),
+        history,
       }
-      for (const col of PULSED_COLS) nextPulses[`${row.symbol}:${col}`] = direction
+      if (direction) for (const col of PULSED_COLS) nextPulses[`${row.symbol}:${col}`] = direction
       return next
     })
     rows = nextRows
     pulses = nextPulses
     ticks += 1
+  }
+
+  // ---- Live market summary (recomputed each tick) --------------------------
+  const kpis = $derived.by(() => {
+    let advancers = 0
+    let decliners = 0
+    let volume = 0
+    let top: Stock | null = null
+    let bottom: Stock | null = null
+    for (const r of rows) {
+      if (r.change > 0) advancers += 1
+      else if (r.change < 0) decliners += 1
+      volume += r.volume
+      if (!top || r.pctChange > top.pctChange) top = r
+      if (!bottom || r.pctChange < bottom.pctChange) bottom = r
+    }
+    // Equal-weight "index": average % change across the book.
+    const breadth = rows.length ? rows.reduce((a, r) => a + r.pctChange, 0) / rows.length : 0
+    return { advancers, decliners, volume, top, bottom, breadth, count: rows.length }
+  })
+
+  function fmtVolume(n: number): string {
+    return n >= 1e9 ? `${(n / 1e9).toFixed(2)}B` : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n.toLocaleString()
+  }
+
+  // Sector -> chip tone class.
+  const SECTOR_TONE: Record<string, string> = {
+    Technology: 'sec-tech',
+    Financials: 'sec-fin',
+    Consumer: 'sec-cons',
+    Healthcare: 'sec-health',
+    Energy: 'sec-energy',
+    Automotive: 'sec-auto',
+    Communication: 'sec-comm',
   }
 
   $effect(() => {
@@ -222,30 +281,81 @@
   </span>
 {/snippet}
 
+{#snippet SectorChip(props: { row: Stock })}
+  <span class={`sv-sector ${SECTOR_TONE[props.row.sector] ?? 'sec-cons'}`}>{props.row.sector}</span>
+{/snippet}
+
+{#snippet DayRangeCell(props: { row: Stock })}
+  {@const lo = props.row.low}
+  {@const hi = props.row.high}
+  {@const pos = hi > lo ? ((props.row.last - lo) / (hi - lo)) * 100 : 50}
+  <span class="sv-range">
+    <span class="sv-range-end">{lo.toFixed(2)}</span>
+    <span class="sv-range-track"><span class="sv-range-dot" style={`left:${pos}%`}></span></span>
+    <span class="sv-range-end">{hi.toFixed(2)}</span>
+  </span>
+{/snippet}
+
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="flex flex-wrap items-center gap-3 text-sm shrink-0">
-    <button
-      type="button"
-      onclick={() => (paused = !paused)}
-      class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
-    >
+  <!-- Live market summary -->
+  <div class="sv-kpis">
+    <div class="sv-kpi">
+      <div class="sv-kpi-label">Market breadth</div>
+      <div class={`sv-kpi-value ${kpis.breadth >= 0 ? 'sv-change-up' : 'sv-change-down'}`}>
+        {kpis.breadth >= 0 ? '+' : ''}{kpis.breadth.toFixed(2)}%
+      </div>
+      <div class="sv-kpi-foot">equal-weight avg</div>
+    </div>
+    <div class="sv-kpi">
+      <div class="sv-kpi-label">Advancers / Decliners</div>
+      <div class="sv-kpi-value">
+        <span class="sv-change-up">▲ {kpis.advancers}</span>
+        <span class="sv-kpi-sep">/</span>
+        <span class="sv-change-down">▼ {kpis.decliners}</span>
+      </div>
+      <div class="sv-kpi-foot">{kpis.count} symbols</div>
+    </div>
+    <div class="sv-kpi">
+      <div class="sv-kpi-label">Volume</div>
+      <div class="sv-kpi-value tabular-nums">{fmtVolume(kpis.volume)}</div>
+      <div class="sv-kpi-foot">shares traded</div>
+    </div>
+    <div class="sv-kpi">
+      <div class="sv-kpi-label">Top mover</div>
+      <div class="sv-kpi-value">
+        {#if kpis.top}<span class="sv-kpi-sym">{kpis.top.symbol}</span>
+          <span class={kpis.top.pctChange >= 0 ? 'sv-change-up' : 'sv-change-down'}>
+            {kpis.top.pctChange >= 0 ? '+' : ''}{kpis.top.pctChange.toFixed(2)}%
+          </span>{/if}
+      </div>
+      <div class="sv-kpi-foot">
+        {#if kpis.bottom}worst {kpis.bottom.symbol} {kpis.bottom.pctChange.toFixed(2)}%{/if}
+      </div>
+    </div>
+    <div class="sv-kpi sv-kpi-stream">
+      <div class="sv-kpi-label">Feed</div>
+      <div class={`sv-kpi-value ${paused ? '' : 'sv-live'}`}>
+        <span class="sv-live-dot" class:on={!paused}></span>{paused ? 'PAUSED' : 'LIVE'}
+      </div>
+      <div class="sv-kpi-foot tabular-nums">{ticks.toLocaleString()} ticks</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="sv-toolbar">
+    <button type="button" class="sv-btn" onclick={() => (paused = !paused)}>
       {paused ? '▶ Resume' : '⏸ Pause'}
     </button>
-    <label class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-      Tick interval:
-      <select
-        bind:value={tickIntervalMs}
-        class="rounded border border-slate-300 dark:border-slate-600 px-2 py-1"
-      >
+    <label class="sv-field">
+      Tick interval
+      <select class="sv-select" bind:value={tickIntervalMs}>
         <option value={100}>100 ms (firehose)</option>
         <option value={250}>250 ms (live)</option>
         <option value={500}>500 ms (smooth)</option>
         <option value={1000}>1 s (calm)</option>
       </select>
     </label>
-    <span class="ml-auto text-slate-500 dark:text-slate-400 tabular-nums">
-      {ticks.toLocaleString()} ticks · {rows.length} symbols
-    </span>
+    <span class="sv-toolbar-hint">Symbol is pinned - scroll right for fundamentals. Drag across cells to select a range.</span>
   </div>
 
   <div class="flex-1 min-h-0">
@@ -256,8 +366,11 @@
           field: 'symbol', header: 'Symbol', width: 130,
           cell: (ctx) => renderSnippet(SymbolCell, { row: ctx.row.original }),
         },
-        { field: 'name',   header: 'Name',   width: 220 },
-        { field: 'sector', header: 'Sector', width: 130 },
+        { field: 'name',   header: 'Name',   width: 210 },
+        {
+          field: 'sector', header: 'Sector', width: 140,
+          cell: (ctx) => renderSnippet(SectorChip, { row: ctx.row.original }),
+        },
         {
           field: 'last', header: 'Last', editorType: 'number', width: 110,
           format: { type: 'currency', currency: 'USD' },
@@ -274,6 +387,14 @@
         {
           field: 'pctChange', header: 'Chg %', editorType: 'number', width: 95,
           cell: (ctx) => renderSnippet(PctChangeCell, { row: ctx.row.original }),
+        },
+        {
+          field: 'history', header: 'Intraday', width: 130, align: 'center',
+          sparkline: { type: 'area' },
+        },
+        {
+          id: 'dayRange', header: 'Day range', field: 'low', width: 190,
+          cell: (ctx) => renderSnippet(DayRangeCell, { row: ctx.row.original }),
         },
         {
           field: 'bid', header: 'Bid', editorType: 'number', width: 90,
@@ -355,8 +476,9 @@
       enableInlineEditing={false}
       enableCellSelection={true}
       enableRowSummaries={false}
-      rowHeight={32}
+      rowHeight={34}
       containerHeight="100%"
+      initialColumnPinning={{ left: ['symbol'] }}
     />
   </div>
 </section>
@@ -426,6 +548,70 @@
   }
   :global(:where([data-theme='dark']) .sv-change-down) {
     color: #f87171;
+  }
+  /* ---- KPI strip ---- */
+  .sv-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .sv-kpi {
+    padding: 9px 13px;
+    border: 1px solid var(--sg-border, #e2e8f0);
+    border-radius: 10px;
+    background: var(--sg-header-bg, color-mix(in oklab, var(--sg-fg, #0b1220) 3%, var(--sg-bg, #fff)));
+  }
+  .sv-kpi-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--sg-muted, #64748b); }
+  .sv-kpi-value { margin-top: 3px; display: flex; align-items: center; gap: 6px; font-size: 17px; font-weight: 700; color: var(--sg-fg); font-variant-numeric: tabular-nums; }
+  .sv-kpi-foot { margin-top: 2px; font-size: 10.5px; color: var(--sg-muted, #64748b); }
+  .sv-kpi-sep { color: var(--sg-muted); font-weight: 400; }
+  .sv-kpi-sym { font-weight: 700; }
+  .sv-live { color: #16a34a; }
+  .sv-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sg-muted, #94a3b8); }
+  .sv-live-dot.on { background: #16a34a; box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.6); animation: sv-live-pulse 1.4s ease-out infinite; }
+
+  /* ---- Toolbar ---- */
+  .sv-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; flex-shrink: 0; font-size: 13px; }
+  .sv-btn {
+    height: 30px; padding: 0 12px; border-radius: 8px; cursor: pointer; font-weight: 600;
+    border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-bg, #fff); color: var(--sg-fg);
+    transition: border-color 120ms, background 120ms;
+  }
+  .sv-btn:hover { border-color: var(--sg-accent, #3b82f6); }
+  .sv-field { display: inline-flex; align-items: center; gap: 7px; color: var(--sg-muted); }
+  .sv-select { height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--sg-input-border, var(--sg-border)); background: var(--sg-input-bg, var(--sg-bg)); color: var(--sg-fg); font-size: 12.5px; }
+  .sv-toolbar-hint { margin-left: auto; font-size: 12px; color: var(--sg-muted); }
+  @media (max-width: 720px) { .sv-toolbar-hint { display: none; } }
+
+  /* ---- Sector chip (rendered inside a grid cell) ---- */
+  :global(.sv-sector) {
+    display: inline-flex; align-items: center;
+    padding: 2px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    background: color-mix(in oklab, var(--sv-h) 15%, transparent);
+    color: var(--sv-h);
+    border: 1px solid color-mix(in oklab, var(--sv-h) 30%, transparent);
+  }
+  :global(.sec-tech)   { --sv-h: #6366f1; }
+  :global(.sec-fin)    { --sv-h: #059669; }
+  :global(.sec-cons)   { --sv-h: #d97706; }
+  :global(.sec-health) { --sv-h: #e11d48; }
+  :global(.sec-energy) { --sv-h: #0891b2; }
+  :global(.sec-auto)   { --sv-h: #7c3aed; }
+  :global(.sec-comm)   { --sv-h: #0284c7; }
+
+  /* ---- Day-range bar (rendered inside a grid cell) ---- */
+  :global(.sv-range) { display: inline-flex; align-items: center; gap: 7px; width: 100%; }
+  :global(.sv-range-end) { font-size: 10px; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; min-width: 40px; }
+  :global(.sv-range span.sv-range-end:first-of-type) { text-align: right; }
+  :global(.sv-range-track) { position: relative; flex: 1; height: 4px; border-radius: 999px; background: color-mix(in oklab, var(--sg-muted, #94a3b8) 24%, transparent); }
+  :global(.sv-range-dot) { position: absolute; top: 50%; width: 8px; height: 8px; border-radius: 50%; background: var(--sg-accent, #6366f1); transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--sg-bg, #fff); }
+
+  @keyframes sv-live-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55); }
+    70%  { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
   }
   @keyframes sv-pulse-up {
     0%   { background: rgba(34, 197, 94, 0.55); }

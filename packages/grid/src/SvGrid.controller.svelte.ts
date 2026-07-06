@@ -217,6 +217,35 @@ function getMaxDomScrollHeight(): number {
 }
 
 /**
+ * Observe an element's size, but run the callback on the next animation frame
+ * and coalesce bursts into a single call. This is what keeps the benign but
+ * noisy "ResizeObserver loop completed with undelivered notifications" warning
+ * out of the console: the browser emits it when an observer callback
+ * synchronously mutates layout in a way that would require another notification
+ * within the same delivery cycle - which our callbacks do (they bump reactive
+ * versions / remeasure, driving a re-layout of the observed element). Deferring
+ * the work to the next frame lets the current delivery finish cleanly, so the
+ * loop never spans a single cycle. This is especially visible when swapping the
+ * whole grid (e.g. switching demos), which remounts everything at once.
+ * Returns a disconnect function suitable for an $effect cleanup.
+ */
+function observeSizeRaf(el: Element, cb: () => void): () => void {
+  let frame = 0;
+  const observer = new ResizeObserver(() => {
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      cb();
+    });
+  });
+  observer.observe(el);
+  return () => {
+    if (frame) cancelAnimationFrame(frame);
+    observer.disconnect();
+  };
+}
+
+/**
  * SvGrid controller. The component's entire reactive core - every $state,
  * $derived, $effect and handler - lives here so SvGrid.svelte can stay a thin
  * view. Instantiated once during the component's init (so $effect attaches to
@@ -1472,11 +1501,9 @@ export function createSvGridController<
   $effect(() => {
     if (!theadEl) return;
     headerHeight = theadEl.offsetHeight;
-    const observer = new ResizeObserver(() => {
+    return observeSizeRaf(theadEl, () => {
       headerHeight = theadEl?.offsetHeight ?? 0;
     });
-    observer.observe(theadEl);
-    return () => observer.disconnect();
   });
 
   // Bump scrollVersion when the table's layout size changes so scrollbar
@@ -1484,11 +1511,9 @@ export function createSvGridController<
   // after column resize / show-hide / add-remove.
   $effect(() => {
     if (!gridRootEl) return;
-    const observer = new ResizeObserver(() => {
+    return observeSizeRaf(gridRootEl, () => {
       scrollVersion += 1;
     });
-    observer.observe(gridRootEl);
-    return () => observer.disconnect();
   });
 
   $effect(() => {
@@ -1607,12 +1632,10 @@ export function createSvGridController<
 
   $effect(() => {
     if (!scrollContainer) return;
-    const observer = new ResizeObserver(() => {
+    return observeSizeRaf(scrollContainer, () => {
       viewportVersion += 1;
       if (!hasMeasured) hasMeasured = true;
     });
-    observer.observe(scrollContainer);
-    return () => observer.disconnect();
   });
 
   $effect(() => {

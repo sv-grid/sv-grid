@@ -346,6 +346,29 @@ a:focus-visible,
   filter: blur(10px);
 }
 
+
+.review-platform-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 24px;
+  border-radius: 14px;
+  border: 1px solid var(--site-border);
+  background: var(--site-bg-elev);
+  color: var(--sg-fg);
+  text-decoration: none;
+  transition: border-color 140ms, box-shadow 140ms, transform 140ms;
+}
+.review-platform-card:hover {
+  border-color: var(--site-accent);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.14);
+  transform: translateY(-2px);
+}
+.review-platform-logo { display: flex; align-items: center; gap: 10px; }
+.review-platform-name { font-size: 17px; font-weight: 700; color: var(--sg-fg); }
+.review-platform-blurb { font-size: 13px; color: var(--site-muted); line-height: 1.5; }
+.review-platform-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--site-accent-2); }
+
 .dot-grid {
   background-image: radial-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px);
   background-size: 22px 22px;

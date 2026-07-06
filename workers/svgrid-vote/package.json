@@ -1,0 +1,14 @@
+{
+  "name": "svgrid-vote",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cloudflare Worker: GitHub OAuth + reaction proxy for in-place community-demo voting.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

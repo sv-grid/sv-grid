@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/enterprise",
-  "version": "1.1.0",
+  "version": "1.2.1",
   "description": "Pro feature pack for sv-grid: data export (Excel, PDF, CSV, TSV, HTML), import (xlsx, CSV, TSV, JSON), pivot table + designer, AI assistant (BYO model), and printing. Requires a paid license key.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "jQWidgets <sales@jqwidgets.com>",
@@ -37,16 +37,26 @@
       "svelte": "./src/pivot.ts",
       "import": "./src/pivot.ts"
     },
+    "./cdn/svelte-external": {
+      "import": "./dist/cdn/svgrid-enterprise.svelte-external.js",
+      "default": "./dist/cdn/svgrid-enterprise.svelte-external.js"
+    },
     "./package.json": "./package.json"
   },
+  "unpkg": "./dist/cdn/svgrid-enterprise.svelte-external.js",
+  "jsdelivr": "./dist/cdn/svgrid-enterprise.svelte-external.js",
   "files": [
     "src",
+    "dist",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "test": "vitest run",
-    "test:types": "tsc -p tsconfig.json --noEmit"
+    "test:types": "tsc -p tsconfig.json --noEmit",
+    "build": "node ./scripts/build-cdn.mjs",
+    "build:cdn": "node ./scripts/build-cdn.mjs",
+    "prepublishOnly": "node ./scripts/build-cdn.mjs"
   },
   "peerDependencies": {
     "svelte": "^5.0.0",
@@ -63,10 +73,12 @@
     }
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "jszip": "^3.10.1",
     "pdfmake": "^0.2.10",
     "svelte": "^5.55.5",
     "@svgrid/grid": "workspace:*",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vite": "^8.0.10"
   }
 }

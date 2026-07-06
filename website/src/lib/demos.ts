@@ -38,6 +38,53 @@ function loadSourceFor(id: string): () => Promise<string> {
   return SOURCE_FILES[pathFor(id)] ?? (async () => `// source not found for ${id}`)
 }
 
+// ---- Community demos ------------------------------------------------------
+// Contributed demos live in a dedicated subfolder and flow through the SAME
+// pipeline as first-party ones (switcher, gallery, playground, source panel).
+// They are submitted as PRs - each file carries a small leading HTML-comment
+// header the registry parses for attribution + the GitHub Discussion that backs
+// its upvotes. The component loaders stay lazy (own chunk); only the small
+// header text is read eagerly so the registry can build synchronously.
+const COMMUNITY_LOADERS = import.meta.glob('../../../examples/src/demos/community/*.svelte') as Record<
+  string,
+  () => Promise<{ default: Component<any> }>
+>
+const COMMUNITY_SOURCES = import.meta.glob('../../../examples/src/demos/community/*.svelte', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+export type CommunityMeta = {
+  title?: string
+  author?: string
+  /** GitHub handle (no leading @), used for the "by @handle" credit + link. */
+  github?: string
+  /** Feature tags shown as chips (e.g. "editing", "charts"). */
+  tags?: string[]
+  /** GitHub Discussion number backing this demo's upvotes (👍 reactions). */
+  discussion?: number
+}
+
+/** Parse the leading `<!-- key: value -->` header a community demo file carries. */
+export function parseCommunityMeta(src: string): CommunityMeta {
+  const meta: CommunityMeta = {}
+  const block = src.match(/<!--([\s\S]*?)-->/)
+  if (!block) return meta
+  for (const line of block[1]!.split('\n')) {
+    const kv = line.match(/^\s*([a-zA-Z]+)\s*:\s*(.+?)\s*$/)
+    if (!kv) continue
+    const key = kv[1]!.toLowerCase()
+    const val = kv[2]!.trim()
+    if (key === 'title') meta.title = val
+    else if (key === 'author') meta.author = val
+    else if (key === 'github') meta.github = val.replace(/^@/, '')
+    else if (key === 'tags') meta.tags = val.split(',').map((t) => t.trim()).filter(Boolean)
+    else if (key === 'discussion') { const n = parseInt(val, 10); if (Number.isFinite(n)) meta.discussion = n }
+  }
+  return meta
+}
+
 /**
  * Sidebar groups, modelled on DevExpress / Kendo UI / Syncfusion demo
  * sites: every feature gets its own focused lane so the user can drill
@@ -69,6 +116,7 @@ export type DemoCategory =
   | 'Integrations'
   | 'Industry Templates'
   | 'Enterprise'
+  | 'Community'
 
 export const CATEGORY_ORDER: DemoCategory[] = [
   'Getting Started',
@@ -91,6 +139,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Industry Templates',
   'Headless',
   'Enterprise',
+  'Community',
 ]
 
 export type Demo = {
@@ -101,6 +150,17 @@ export type Demo = {
   /** True when this demo depends on @svgrid/enterprise. Sidebar renders a small
    *  badge dot so users can scan the Enterprise features at a glance. */
   pro?: boolean
+  /** True for community-contributed demos (submitted via PR). Rendered with a
+   *  "Community" badge + author credit + a GitHub upvote link. */
+  community?: boolean
+  /** Community demo author display name. */
+  author?: string
+  /** Community demo author GitHub handle (no leading @). */
+  authorGithub?: string
+  /** GitHub Discussion number backing a community demo's upvotes. */
+  discussion?: number
+  /** Feature tags for a community demo (chips). */
+  tags?: string[]
   /** Lazily import the demo's Svelte component (resolves a per-demo chunk). */
   load: () => Promise<{ default: Component<any> }>
   /** Lazily import the demo's raw source text for the "view source" panel. */
@@ -117,7 +177,7 @@ function demo(
   return { id, title, blurb, category, pro: opts?.pro, load: loadFor(id), loadSource: loadSourceFor(id) }
 }
 
-export const demos: Demo[] = [
+const baseDemos: Demo[] = [
   // ----- Getting Started
   demo('00-trading-desk',           'Trading desk - live',         '10,000 securities ticking on a 500 ms feed. Pinned Symbol + P&L, sparklines, sector chips, KPI strip. The hero.', 'Getting Started'),
   demo('01-quick-start',            'Quick start',                 'A realistic 25-row × 9-column grid with sort, filter, selection, inline editing, and column resize all enabled.', 'Getting Started'),
@@ -346,14 +406,49 @@ export const demos: Demo[] = [
 
 ]
 
+/** Community-contributed demos, built from the `community/*.svelte` glob. */
+export const communityDemos: Demo[] = Object.entries(COMMUNITY_SOURCES)
+  .map(([path, raw]): Demo => {
+    const slug = path.replace(/^.*\/community\//, '').replace(/\.svelte$/, '')
+    const meta = parseCommunityMeta(raw)
+    const clean = raw.replace(/^﻿/, '')
+    const credit = meta.author ? `By ${meta.author}. ` : ''
+    const tagLine = meta.tags?.length ? `Tags: ${meta.tags.join(', ')}.` : 'A community-contributed demo.'
+    return {
+      id: `community-${slug}`,
+      title: meta.title || slug,
+      blurb: `${credit}${tagLine}`,
+      category: 'Community',
+      community: true,
+      author: meta.author,
+      authorGithub: meta.github,
+      discussion: meta.discussion,
+      tags: meta.tags,
+      load: COMMUNITY_LOADERS[path]!,
+      loadSource: async () => clean,
+    }
+  })
+  .sort((a, b) => a.title.localeCompare(b.title))
+
+/**
+ * Gallery-facing demos: FIRST-PARTY ONLY. Community demos are deliberately kept
+ * out of the main gallery - they are discoverable + runnable only in the
+ * playground (its demo switcher), per product decision. Use `allDemos` when you
+ * need every demo (id lookups, the playground switcher).
+ */
+export const demos: Demo[] = baseDemos
+
+/** Every demo, first-party + community. For lookups + the playground switcher. */
+export const allDemos: Demo[] = [...baseDemos, ...communityDemos]
+
 export type DemoGroup = { category: DemoCategory; demos: Demo[] }
 
-/** Demos pre-grouped + ordered for the sidebar render. */
+/** First-party demos pre-grouped + ordered for the gallery sidebar. */
 export const demoGroups: DemoGroup[] = CATEGORY_ORDER.map((category) => ({
   category,
   demos: demos.filter((d) => d.category === category),
 })).filter((g) => g.demos.length > 0)
 
 export function findDemo(id: string | null | undefined): Demo {
-  return demos.find((d) => d.id === id) ?? demos[0]!
+  return allDemos.find((d) => d.id === id) ?? demos[0]!
 }

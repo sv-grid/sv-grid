@@ -1,5 +1,18 @@
 # @svgrid/grid changelog
 
+## 1.2.3
+
+### Fixed
+
+- **No more "ResizeObserver loop completed with undelivered notifications"
+  console noise.** The grid's internal `ResizeObserver`s (header height, root
+  size, viewport size, and the custom scrollbar) mutated layout state
+  synchronously inside the observe callback, which the browser reports with that
+  benign-but-noisy warning - most visibly when a whole grid is swapped at once
+  (e.g. switching demos in the playground). The callbacks now coalesce onto the
+  next animation frame, so each delivery cycle finishes cleanly and the warning
+  is gone. Behaviour is unchanged; the remeasure just happens one frame later.
+
 ## 1.2.2
 
 ### Fixed

@@ -505,6 +505,39 @@
   </div>
 </section>
 
+<!-- ---------- REVIEWS ----------------------------------------------------- -->
+<section class="mx-auto max-w-7xl px-6 pb-20">
+  <div class="text-center mb-10">
+    <p class="text-xs font-semibold uppercase tracking-[0.18em]" style="color: var(--site-accent-2);">Reviews</p>
+    <h2 class="mt-2 text-2xl md:text-3xl font-bold tracking-tight" style="color: var(--sg-fg)">Reviewed on G2.</h2>
+    <p class="mt-2 text-sm md:text-base" style="color: var(--site-muted);">
+      Read what developers say - or be among the first to leave a review.
+    </p>
+  </div>
+
+  <div class="max-w-sm mx-auto">
+    <a
+      href="https://www.g2.com/products/svgrid/reviews"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="review-platform-card"
+    >
+      <div class="review-platform-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" aria-label="G2" role="img">
+          <circle cx="16" cy="16" r="16" fill="#FF492C"/>
+          <text x="16" y="22" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="800" fill="#fff">G2</text>
+        </svg>
+        <span class="review-platform-name">G2</span>
+      </div>
+      <p class="review-platform-blurb">Read and write reviews for SvGrid on G2 - the leading peer review site for software.</p>
+      <span class="review-platform-cta">
+        See on G2
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </span>
+    </a>
+  </div>
+</section>
+
 <!-- ---------- CTA STRIP ---------------------------------------------------- -->
 <section class="mx-auto max-w-7xl px-6 pb-24">
   <div class="rounded-2xl border p-8 md:p-12 text-center"

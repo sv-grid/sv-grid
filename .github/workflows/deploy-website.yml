@@ -70,6 +70,10 @@ jobs:
           # Build-time GitHub Discussions fetch (website prebuild). Falls back to
           # an empty dataset if absent, so the build never fails on this.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Enable in-place community-demo voting: point the playground at the
+          # deployed voting worker (see workers/svgrid-vote/README.md). When
+          # unset, the Upvote control simply links out to the GitHub discussion.
+          # VITE_VOTE_API: https://vote.svgrid.com
 
       - name: Add .nojekyll
         run: touch website/dist/.nojekyll

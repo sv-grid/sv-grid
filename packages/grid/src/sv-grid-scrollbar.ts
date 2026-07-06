@@ -160,6 +160,7 @@ class SvGridScrollbarElement extends ScrollbarBase {
   private valueStart = 0
   private holdTimer: ReturnType<typeof setTimeout> | null = null
   private resizeObserver: ResizeObserver | null = null
+  private resizeFrame = 0
 
   connectedCallback() {
     if (this.shadowRoot) return
@@ -187,7 +188,17 @@ class SvGridScrollbarElement extends ScrollbarBase {
       btn.addEventListener('pointercancel', this.stopHold)
     }
 
-    this.resizeObserver = new ResizeObserver(() => this.render())
+    // Coalesce resize notifications into a single next-frame render so the
+    // observer callback never re-lays-out the observed element within the same
+    // delivery cycle (which is what triggers the benign but noisy
+    // "ResizeObserver loop completed with undelivered notifications" warning).
+    this.resizeObserver = new ResizeObserver(() => {
+      if (this.resizeFrame) return
+      this.resizeFrame = requestAnimationFrame(() => {
+        this.resizeFrame = 0
+        this.render()
+      })
+    })
     this.resizeObserver.observe(this)
 
     this.render()
@@ -195,6 +206,8 @@ class SvGridScrollbarElement extends ScrollbarBase {
 
   disconnectedCallback() {
     this.stopHold()
+    if (this.resizeFrame) cancelAnimationFrame(this.resizeFrame)
+    this.resizeFrame = 0
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
     document.removeEventListener('pointermove', this.onPointerMove)

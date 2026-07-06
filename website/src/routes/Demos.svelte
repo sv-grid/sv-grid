@@ -184,6 +184,18 @@
 
   const THUMB_BASE = `/thumbs/`
 
+  // ---- List-mode search -------------------------------------------------
+  let listQuery = $state('')
+  const listToks = $derived(gridTokens(listQuery))
+  const listDemos = $derived.by(() => {
+    if (!listToks.length) return []
+    return demos
+      .map((d) => ({ d, s: scoreDemo(d, listToks) }))
+      .filter((r) => r.s > 0)
+      .sort((a, b) => b.s - a.s)
+      .map((r) => r.d)
+  })
+
   // ---- Collapsible sidebar groups ---------------------------------------
   function loadOpenGroups(): Record<string, boolean> {
     try {
@@ -334,7 +346,48 @@
       </select>
     </label>
 
+    <div class="list-search-wrap mb-3">
+      <svg class="list-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+      </svg>
+      <input
+        bind:value={listQuery}
+        type="search"
+        class="list-search"
+        placeholder="Filter demos…"
+        aria-label="Filter demos"
+      />
+      {#if listQuery}
+        <button type="button" class="list-search-clear" onclick={() => (listQuery = '')} aria-label="Clear filter">×</button>
+      {/if}
+    </div>
+
     <nav aria-label="Examples">
+      {#if listQuery}
+        {#if listDemos.length === 0}
+          <p class="list-search-empty">No matches for <em>"{listQuery}"</em></p>
+        {:else}
+          <ul class="space-y-0.5 pb-2">
+            {#each listDemos as demo (demo.id)}
+              {@const active = demo.id === current.id}
+              <li>
+                <button
+                  type="button"
+                  data-demo-id={demo.id}
+                  onclick={() => go(demo.id)}
+                  class="demo-leaf w-full text-left rounded pl-3 pr-3 py-1.5 text-sm transition-colors"
+                  style:background={active ? 'var(--sg-row-hover-bg)' : 'transparent'}
+                  style:color="var(--sg-fg)"
+                  style:font-weight={active ? '600' : '400'}
+                >
+                  <span class="demo-leaf-title">{demo.title}</span>
+                  {#if demo.pro}<span class="demo-pro-dot" title="Enterprise feature" aria-label="Enterprise"></span>{/if}
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      {:else}
       {#each demoGroups as group (group.category)}
           {@const isOpen = openGroups[group.category] ?? false}
           <div class="mb-1">
@@ -377,6 +430,7 @@
             {/if}
           </div>
         {/each}
+      {/if}
     </nav>
     <p class="mt-8 text-xs" style="color: var(--sg-muted)">
       Each demo is a single .svelte file under <code>examples/src/demos/</code>. Read the source
@@ -768,6 +822,38 @@
   }
   .demo-aside::-webkit-scrollbar-thumb:hover { background: var(--sg-scrollbar-thumb-hover, #8693a7); }
   .demo-aside::-webkit-scrollbar-thumb:active { background: var(--sg-scrollbar-thumb-active, #64748b); }
+
+  /* ---- List-mode search --------------------------------------------------- */
+  .list-search-wrap {
+    position: relative;
+    display: flex; align-items: center;
+  }
+  .list-search-icon {
+    position: absolute; left: 8px;
+    color: var(--sg-muted);
+    pointer-events: none;
+  }
+  .list-search {
+    width: 100%;
+    padding: 5px 24px 5px 26px;
+    background: var(--sg-input-bg, var(--sg-bg));
+    color: var(--sg-fg);
+    border: 1px solid var(--sg-input-border, var(--sg-border));
+    border-radius: 7px;
+    font-size: 12px;
+  }
+  .list-search:focus { outline: none; border-color: var(--sg-accent, #3b82f6); }
+  .list-search-clear {
+    position: absolute; right: 6px;
+    background: transparent; border: 0;
+    color: var(--sg-muted); cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 0 2px;
+  }
+  .list-search-empty {
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--sg-muted);
+  }
 
   /* ---- Mobile sidebar drawer ------------------------------------------
      On >=768px the sidebar is a normal in-flow column. Below that it
