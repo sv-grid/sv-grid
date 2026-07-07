@@ -1396,14 +1396,45 @@ export function createSvGridController<
     return columnVirtualizer.getTotalSize();
   });
   const renderedColumnItems = $derived.by(() => {
-    if (columnVirtualizationEnabled) return virtualColumns;
-    let start = 0;
-    return allColumns.map((column, index) => {
-      const size = getColumnWidth(column.id);
-      const item = { index, key: index, size, start, end: start + size };
-      start += size;
-      return item;
-    });
+    if (!columnVirtualizationEnabled) {
+      let start = 0;
+      return allColumns.map((column, index) => {
+        const size = getColumnWidth(column.id);
+        const item = { index, key: index, size, start, end: start + size };
+        start += size;
+        return item;
+      });
+    }
+    // Pinned columns are position:sticky, so they only stay pinned while their
+    // cell is in the DOM. Plain column virtualization drops them once they leave
+    // the scroll window, and the pinned column vanishes. Because allColumns is
+    // ordered [pinnedLeft, unpinned, pinnedRight], we keep the rendered window
+    // CONTIGUOUS from the pinned-left prefix (index 0) through the pinned-right
+    // suffix (last index) whenever those exist. The pinned cells are then always
+    // rendered - the existing single-spacer layout positions everything, so no
+    // markup changes are needed. (Cost: with a pinned side, the columns between
+    // that edge and the window are also rendered; negligible for typical grids,
+    // and correctness beats shaving a few off-screen cells.)
+    const window = virtualColumns;
+    const hasLeft = columnPinning.left.length > 0;
+    const hasRight = columnPinning.right.length > 0;
+    if ((!hasLeft && !hasRight) || window.length === 0) return window;
+
+    const firstIdx = window[0]!.index;
+    const lastIdx = window[window.length - 1]!.index;
+    const startIndex = hasLeft ? 0 : firstIdx;
+    const endIndex = hasRight ? allColumns.length - 1 : lastIdx;
+    if (startIndex === firstIdx && endIndex === lastIdx) return window;
+
+    const items: Array<{ index: number; key: number; size: number; start: number; end: number }> = [];
+    let offset = 0;
+    for (let i = 0; i < startIndex; i += 1) offset += getColumnWidth(allColumns[i]!.id);
+    for (let i = startIndex; i <= endIndex; i += 1) {
+      const size = getColumnWidth(allColumns[i]!.id);
+      items.push({ index: i, key: i, size, start: offset, end: offset + size });
+      offset += size;
+    }
+    return items;
   });
   const renderedColumns = $derived.by(() =>
     renderedColumnItems

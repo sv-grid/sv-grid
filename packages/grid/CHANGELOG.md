@@ -4,6 +4,14 @@
 
 ### Fixed
 
+- **Pinned columns no longer disappear when column virtualization is on.** A
+  pinned column is `position: sticky`, so it only stays pinned while its cell is
+  in the DOM - but column virtualization dropped it once it scrolled out of the
+  window, so scrolling far enough sideways made the frozen column vanish (the
+  workaround was `columnVirtualization={false}`). The rendered column window now
+  stays contiguous through the pinned-left prefix and pinned-right suffix, so
+  pinned cells are always rendered and pinning + column virtualization work
+  together. No API change.
 - **No more "ResizeObserver loop completed with undelivered notifications"
   console noise.** The grid's internal `ResizeObserver`s (header height, root
   size, viewport size, and the custom scrollbar) mutated layout state

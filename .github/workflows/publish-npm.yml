@@ -23,7 +23,11 @@ on:
         type: boolean
         default: false
   schedule:
+    # TEST: twice a day (06:37 + 18:37 UTC) to verify the cron actually fires.
+    # See the TEST-MODE notes on the Detect + Publish steps below. To return to
+    # normal, drop the 18:37 line and the two `--force` / `--tag test` bits.
     - cron: '37 6 * * *'
+    - cron: '37 18 * * *'
 
 # Push the version-bump commit + release tag back to main.
 permissions:
@@ -60,7 +64,11 @@ jobs:
 
       - name: Detect changes and bump version
         id: release
-        run: node tools/release-grid.mjs
+        # TEST MODE: scheduled runs (and manual force) always bump + publish, so
+        # the twice-daily cron produces a visible publish even with no changes.
+        # Remove `--force` here (plus the 18:37 cron + `--tag test` below) to
+        # return to "publish only when packages/grid changed".
+        run: node tools/release-grid.mjs ${{ (github.event_name == 'schedule' || inputs.force == true) && '--force' || '' }}
 
       # First run lays down the baseline tag at the current version without
       # publishing (the package is already on npm at this version).
@@ -90,7 +98,10 @@ jobs:
 
       - name: Publish to npm
         if: steps.release.outputs.changed == 'true' || inputs.force == true
-        run: npm publish --provenance --access public
+        # TEST MODE: scheduled runs publish under the `test` dist-tag so npm's
+        # `latest` (what `npm i @svgrid/grid` installs) is NOT moved by these
+        # test bumps. Manual dispatch still publishes to `latest`.
+        run: npm publish --provenance --access public ${{ github.event_name == 'schedule' && '--tag test' || '' }}
         working-directory: packages/grid
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -42,6 +42,10 @@ const TAG_PREFIX = 'grid-v'
 const WATCH = ['packages/grid/src', 'packages/grid/package.json']
 
 const CHECK_ONLY = process.argv.includes('--check')
+// --force: bump + publish regardless of whether anything changed. Used by the
+// workflow's TEST schedule so a run always produces a publish. Not for normal
+// releases (it would churn empty versions).
+const FORCE = process.argv.includes('--force')
 
 function git(args) {
   return execFileSync('git', args, { cwd: ROOT, encoding: 'utf-8' }).trim()
@@ -98,23 +102,25 @@ function main() {
 
   const last = highestReleaseTag()
 
-  // First run: no release tag exists. The package is already on npm at its
-  // current version, so establish a baseline (the workflow tags HEAD) and skip.
-  if (!last) {
-    console.error(`No ${TAG_PREFIX}* tag found - establishing baseline at v${fmtVer(current)} (no publish).`)
-    emit(false, fmtVer(current))
-    return
-  }
+  if (!FORCE) {
+    // First run: no release tag exists. The package is already on npm at its
+    // current version, so establish a baseline (the workflow tags HEAD) and skip.
+    if (!last) {
+      console.error(`No ${TAG_PREFIX}* tag found - establishing baseline at v${fmtVer(current)} (no publish).`)
+      emit(false, fmtVer(current))
+      return
+    }
 
-  if (!changedSince(last.tag)) {
-    console.error(`No changes in ${WATCH.join(', ')} since ${last.tag} - skipping publish.`)
-    emit(false, fmtVer(current))
-    return
+    if (!changedSince(last.tag)) {
+      console.error(`No changes in ${WATCH.join(', ')} since ${last.tag} - skipping publish.`)
+      emit(false, fmtVer(current))
+      return
+    }
   }
 
   // Bump from whichever is higher: the last released tag or the working version
   // (guards against a manual bump that already moved package.json forward).
-  const base = cmpVer(current, last.ver) > 0 ? current : last.ver
+  const base = last && cmpVer(current, last.ver) <= 0 ? last.ver : current
   const next = bumpPatch(base)
   const nextStr = fmtVer(next)
 
@@ -122,7 +128,8 @@ function main() {
     pkg.version = nextStr
     writeFileSync(PKG_JSON, JSON.stringify(pkg, null, 2) + '\n')
   }
-  console.error(`Changes since ${last.tag}: bumping ${fmtVer(current)} -> ${nextStr}${CHECK_ONLY ? ' (check only, not written)' : ''}.`)
+  const reason = FORCE ? 'Forced' : `Changes since ${last.tag}`
+  console.error(`${reason}: bumping ${fmtVer(current)} -> ${nextStr}${CHECK_ONLY ? ' (check only, not written)' : ''}.`)
   emit(true, nextStr)
 }
 

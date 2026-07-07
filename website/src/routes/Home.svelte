@@ -219,7 +219,7 @@
   <div class="hero-glow"></div>
   <div class="dot-grid absolute inset-0 opacity-50" aria-hidden="true"></div>
 
-  <div class="relative mx-auto max-w-7xl px-6 pt-20 pb-12 text-center">
+  <div class="relative mx-auto max-w-7xl px-5 sm:px-6 pt-12 sm:pt-20 pb-10 sm:pb-12 text-center">
     <div
       class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium"
       style="border-color: var(--site-border); background: var(--site-bg-elev); color: var(--site-muted);"
@@ -324,11 +324,11 @@
     </div>
 
     <div
-      class="overflow-hidden rounded-xl border shadow-xl"
-      style="border-color: var(--site-border); background: var(--site-bg-elev); min-height: 440px;"
+      class="min-h-[380px] sm:min-h-[440px] overflow-hidden rounded-xl border shadow-xl"
+      style="border-color: var(--site-border); background: var(--site-bg-elev);"
       use:onceVisible={() => (showQuick = true)}
     >
-      <div class="flex h-full flex-col p-4">
+      <div class="flex h-full flex-col p-2 sm:p-4">
         {#if showQuick}<QuickStart />{:else}<div class="flex flex-1 items-center justify-center text-sm" style="color: var(--site-muted);">Loading live grid…</div>{/if}
       </div>
     </div>
@@ -351,7 +351,10 @@
 </section>
 
 <!-- ---------- LIVE DEMO ---------------------------------------------------- -->
-<section class="relative mx-auto max-w-7xl px-6 pb-20">
+<!-- Dense trading terminal (15 cols + KPI strip): great on tablet/desktop, but
+     unreadable on a phone - hidden below sm, where the simpler QuickStart grid
+     above already carries the "live grid" story. -->
+<section class="relative mx-auto max-w-7xl px-6 pb-20 hidden sm:block">
   <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
     <div>
       <h2 class="text-2xl md:text-3xl font-bold tracking-tight" style="color: var(--sg-fg)">Live: a stock market feed</h2>
@@ -369,11 +372,11 @@
   </div>
 
   <div
-    class="overflow-hidden rounded-xl border shadow-2xl"
-    style="border-color: var(--site-border); background: var(--site-bg-elev); height: 560px;"
+    class="h-[440px] sm:h-[560px] overflow-hidden rounded-xl border shadow-2xl"
+    style="border-color: var(--site-border); background: var(--site-bg-elev);"
     use:onceVisible={() => (showStock = true)}
   >
-    <div class="flex h-full flex-col p-4">
+    <div class="flex h-full flex-col p-2 sm:p-4">
       {#if showStock}<StockMarket />{:else}<div class="flex flex-1 items-center justify-center text-sm" style="color: var(--site-muted);">Loading live demo…</div>{/if}
     </div>
   </div>
