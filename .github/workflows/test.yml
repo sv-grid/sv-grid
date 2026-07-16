@@ -21,6 +21,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # website is a PRIVATE submodule; init it so it's a valid pnpm workspace
+      # member (else `pnpm install --frozen-lockfile` fails on the missing
+      # importer). Only the submodule fetch uses WEBSITE_TOKEN (read access to
+      # sv-grid/website); the main checkout stays on the default token. Fork PRs
+      # lack the secret and will fail here - accepted, per the private submodule.
+      - name: Check out the private website submodule
+        env:
+          WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${WEBSITE_TOKEN}@github.com/".insteadOf https://github.com/
+          git submodule update --init website
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.2

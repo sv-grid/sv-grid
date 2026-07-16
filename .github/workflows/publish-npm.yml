@@ -52,6 +52,15 @@ jobs:
           fetch-depth: 0 # need full history + tags for change detection
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # website is a PRIVATE submodule; init it so `pnpm install --frozen-lockfile`
+      # finds the workspace member. Only the submodule fetch uses WEBSITE_TOKEN.
+      - name: Check out the private website submodule
+        env:
+          WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${WEBSITE_TOKEN}@github.com/".insteadOf https://github.com/
+          git submodule update --init website
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.2
