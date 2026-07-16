@@ -1,0 +1,125 @@
+/**
+ * createDropdownList - the HEADLESS core behind <SvDropDownList>: a single-select
+ * dropdown state machine (trigger open/close, roving active index over enabled
+ * options, full keyboard) exposed as **prop-getters** you spread onto YOUR OWN
+ * markup. No styles, no DOM, no portal/measurement - those stay in the styled
+ * component.
+ *
+ * ```svelte
+ * <script lang="ts">
+ *   import { createDropdownList } from '@svgrid/grid'
+ *   let value = $state<string | null>(null)
+ *   const dd = createDropdownList({ options: () => options, value: () => value, onChange: (v) => (value = v) })
+ * </script>
+ * <button {...dd.triggerProps()}>{dd.selected?.label ?? 'Select'}</button>
+ * {#if dd.open}
+ *   <ul {...dd.listboxProps()}>
+ *     {#each options as opt, i (opt.value)}<li {...dd.optionProps(i)}>{opt.label}</li>{/each}
+ *   </ul>
+ * {/if}
+ * ```
+ */
+import type { ListOption } from './list-option'
+
+export type DropdownValue = string | number | null
+
+/** Reactive inputs are passed as getters so the core tracks live prop changes. */
+export type DropdownListConfig = {
+  options: () => ReadonlyArray<ListOption>
+  value: () => DropdownValue
+  onChange?: (value: string | number) => void
+  disabled?: () => boolean
+  ariaLabel?: () => string | undefined
+  /** DOM focus hook provided by the renderer; the core never touches the DOM. */
+  focusTrigger?: () => void
+}
+
+export function createDropdownList(config: DropdownListConfig) {
+  const opts = () => config.options()
+  const disabled = () => config.disabled?.() ?? false
+
+  let open = $state(false)
+  let active = $state(-1)
+
+  const selected = $derived(opts().find((o) => o.value === config.value()) ?? null)
+  const enabledIdx = $derived(opts().map((o, i) => (o.disabled ? -1 : i)).filter((i) => i >= 0))
+
+  function openPanel() {
+    if (disabled() || open) return
+    open = true
+    active = Math.max(0, opts().findIndex((o) => o.value === config.value()))
+  }
+  function close() { open = false }
+  function toggle() { if (open) { close() } else { openPanel() } }
+  function pick(i: number) {
+    const o = opts()[i]
+    if (!o || o.disabled) return
+    config.onChange?.(o.value); close(); config.focusTrigger?.()
+  }
+  function setActive(i: number) { const o = opts()[i]; if (o && !o.disabled) active = i }
+  function move(d: number) {
+    const pos = enabledIdx.indexOf(active)
+    active = enabledIdx[(pos + d + enabledIdx.length) % enabledIdx.length] ?? active
+  }
+  function onKeydown(e: KeyboardEvent) {
+    if (disabled()) return
+    if (!open && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openPanel(); return }
+    if (!open) return
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(active) }
+    else if (e.key === 'Escape') { e.preventDefault(); close(); config.focusTrigger?.() }
+    else if (e.key === 'Home') { active = enabledIdx[0] ?? 0 }
+    else if (e.key === 'End') { active = enabledIdx.at(-1) ?? 0 }
+  }
+
+  return {
+    /** Panel open state. */
+    get open() { return open },
+    /** Highlighted option index into `options`. */
+    get activeIndex() { return active },
+    /** The option matching the controlled value, if any. */
+    get selected() { return selected },
+    /** Controlled value. */
+    get value() { return config.value() },
+    isActive: (i: number) => i === active,
+    isSelected: (o: ListOption) => o.value === config.value(),
+    setActive,
+    openPanel,
+    close,
+    toggle,
+    pick,
+    move,
+    onKeydown,
+    /** Spread onto the trigger <button>. */
+    triggerProps: () => ({
+      type: 'button' as const,
+      'aria-haspopup': 'listbox' as const,
+      'aria-expanded': open,
+      'aria-label': config.ariaLabel?.(),
+      disabled: disabled(),
+      onclick: toggle,
+      onkeydown: onKeydown,
+    }),
+    /** Spread onto the listbox container. */
+    listboxProps: () => ({
+      role: 'listbox' as const,
+      tabindex: -1,
+    }),
+    /** Spread onto the option at `index` (index into `options`). */
+    optionProps: (index: number) => {
+      const o = opts()[index]
+      return {
+        role: 'option' as const,
+        tabindex: -1,
+        'aria-selected': o ? o.value === config.value() : false,
+        'aria-disabled': o?.disabled,
+        'data-idx': index,
+        onclick: () => pick(index),
+        onpointermove: () => { if (o && !o.disabled) active = index },
+      }
+    },
+  }
+}
+
+export type DropdownList = ReturnType<typeof createDropdownList>

@@ -31,7 +31,6 @@ export default defineConfig({
       // Studio subpath (Svelte-free core) - must precede the bare alias below.
       '@svgrid/enterprise/studio': path.resolve(repoRoot, 'packages/enterprise/src/studio/index.ts'),
       // Private: visual designer components (only used by git-ignored demos).
-      '@svgrid/enterprise/designer': path.resolve(repoRoot, 'packages/enterprise/src/studio-designer.ts'),
       '@svgrid/enterprise': path.resolve(repoRoot, 'packages/enterprise/src/index.ts'),
     },
   },

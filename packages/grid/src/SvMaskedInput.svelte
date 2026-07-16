@@ -3,8 +3,12 @@
    * SvMaskedInput - a pattern-masked text input (#=digit, A=letter, *=alnum;
    * other chars are literals). Parity: Smart `smart-masked-text-box`. Emits both
    * the masked display value and the raw (unmasked) value.
+   *
+   * The styled renderer over the headless `createMaskedInput` core; the mask
+   * formatting + state live in the core, spread here via prop-getters.
    */
-  import { applyMask, unmask, isMaskComplete } from './datetime/mask'
+  import { unmask } from './datetime/mask'
+  import { createMaskedInput } from './createMaskedInput.svelte'
 
   type Props = {
     value?: string
@@ -31,38 +35,19 @@
     ariaLabel,
   }: Props = $props()
 
-  let text = $state('')
-  let lastRaw = ''
-  $effect(() => {
-    const raw = mask ? unmask(value, mask) : value
-    if (raw !== lastRaw) {
-      lastRaw = raw
-      text = mask ? applyMask(raw, mask).formatted : value
-    }
+  const mi = createMaskedInput({
+    value: () => value,
+    onChange: (m, r, c) => onChange?.(m, r, c),
+    mask: () => mask,
+    placeholder: () => placeholder,
+    disabled: () => disabled,
+    readonly: () => readonly,
+    ariaLabel: () => ariaLabel,
   })
-
-  function onInput(e: Event) {
-    const el = e.currentTarget as HTMLInputElement
-    const raw = mask ? unmask(el.value, mask) : el.value
-    const masked = mask ? applyMask(raw, mask).formatted : el.value
-    lastRaw = raw
-    text = masked
-    el.value = masked
-    onChange?.(masked, raw, mask ? isMaskComplete(masked, mask) : true)
-  }
 </script>
 
-<input
-  class="sv-masked sv-masked--{size}"
-  type="text"
-  bind:value={text}
-  placeholder={placeholder ?? mask}
-  {disabled}
-  {readonly}
-  aria-label={ariaLabel}
-  oninput={onInput}
-/>
-{#if name}<input type="hidden" {name} value={mask ? unmask(text, mask) : text} />{/if}
+<input class="sv-masked sv-masked--{size}" {...mi.inputProps()} />
+{#if name}<input type="hidden" {name} value={mask ? unmask(mi.masked, mask) : mi.masked} />{/if}
 
 <style>
   .sv-masked {

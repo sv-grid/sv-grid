@@ -3,8 +3,13 @@
    * SvColorInput - a color swatch that opens a portalled popover with a hex
    * field, a native picker, and a preset palette. Parity: Smart `smart-color-input`.
    * Emits a hex string. Popover escapes the grid scroll container via popover.ts.
+   *
+   * The styled renderer over the headless `createColorInput` core: hex
+   * normalization, palette, draft field and open/close state come from the core;
+   * the portal + anchored measurement stay here (render concerns).
    */
   import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
+  import { createColorInput } from './createColorInput.svelte'
 
   type Props = {
     value?: string
@@ -19,71 +24,46 @@
     autoOpen?: boolean
   }
 
-  const DEFAULT_PALETTE = [
-    '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6',
-    '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
-    '#f43f5e', '#64748b', '#0f172a', '#ffffff',
-  ]
-
   let {
     value = '#3b82f6',
     onChange,
     disabled = false,
     readonly = false,
-    palette = DEFAULT_PALETTE,
+    palette,
     name,
     size = 'md',
     ariaLabel,
     autoOpen = false,
   }: Props = $props()
 
-  const isInteractive = $derived(!disabled && !readonly)
-  let open = $state(false)
-  let hexDraft = $state('')
+  const col = createColorInput({
+    value: () => value,
+    onChange: (hex) => onChange?.(hex),
+    disabled: () => disabled,
+    readonly: () => readonly,
+    palette: () => palette as string[],
+    ariaLabel: () => ariaLabel,
+  })
+
   let triggerEl = $state<HTMLButtonElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
   let panelRect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
-
-  const normalized = $derived(normalizeHex(value) ?? '#000000')
-
-  function normalizeHex(h: string): string | null {
-    let s = h.trim()
-    if (!s.startsWith('#')) s = '#' + s
-    if (/^#[0-9a-fA-F]{3}$/.test(s)) s = '#' + s.slice(1).split('').map((c) => c + c).join('')
-    return /^#[0-9a-fA-F]{6}$/.test(s) ? s.toLowerCase() : null
-  }
 
   function updatePos() {
     if (!triggerEl) return
     panelRect = anchoredRect(triggerEl.getBoundingClientRect(), { estimatedHeight: 210, minWidth: 200 })
   }
-  function openPanel() {
-    if (!isInteractive || open) return
-    hexDraft = normalized
-    open = true
-    updatePos()
-  }
-  function toggle() { open ? (open = false) : openPanel() }
-
-  function pick(hex: string) {
-    const n = normalizeHex(hex)
-    if (n) onChange?.(n)
-  }
-  function commitHex() {
-    const n = normalizeHex(hexDraft)
-    if (n) onChange?.(n)
-    else hexDraft = normalized
-  }
 
   $effect(() => {
-    if (!open) return
+    if (!col.popover.open) return
+    updatePos()
     const reposition = () => updatePos()
     window.addEventListener('scroll', reposition, true)
     window.addEventListener('resize', reposition)
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node | null
       if (t && (triggerEl?.contains(t) || panelEl?.contains(t))) return
-      open = false
+      col.popover.close()
     }
     document.addEventListener('pointerdown', onDown, true)
     return () => {
@@ -95,27 +75,22 @@
 
   function focusOpen(node: HTMLButtonElement) {
     if (!autoOpen) return
-    node.focus(); openPanel()
+    node.focus(); col.popover.show()
   }
 </script>
 
 <button
-  type="button"
   bind:this={triggerEl}
   class="sv-color sv-color--{size}"
   class:is-disabled={disabled}
-  aria-haspopup="dialog"
-  aria-expanded={open}
-  aria-label={ariaLabel ?? `Color ${normalized}`}
-  disabled={!isInteractive}
-  onclick={toggle}
+  {...col.swatchProps()}
   use:focusOpen
 >
-  <span class="sv-color__swatch" style:background={normalized}></span>
-  <span class="sv-color__hex">{normalized}</span>
+  <span class="sv-color__swatch" style:background={col.normalized}></span>
+  <span class="sv-color__hex">{col.normalized}</span>
 </button>
 
-{#if open}
+{#if col.popover.open}
   <div
     class="sv-color__panel"
     bind:this={panelEl}
@@ -127,32 +102,30 @@
     aria-label="Choose color"
   >
     <div class="sv-color__top">
-      <input class="sv-color__native" type="color" value={normalized} oninput={(e) => pick((e.currentTarget as HTMLInputElement).value)} aria-label="Color picker" />
+      <input class="sv-color__native" type="color" value={col.normalized} oninput={(e) => col.pick((e.currentTarget as HTMLInputElement).value)} aria-label="Color picker" />
       <input
         class="sv-color__field"
         type="text"
-        bind:value={hexDraft}
+        bind:value={col.hexDraft}
         spellcheck="false"
         aria-label="Hex value"
-        onblur={commitHex}
-        onkeydown={(e) => { if (e.key === 'Enter') commitHex() }}
+        onblur={col.commitHex}
+        onkeydown={(e) => { if (e.key === 'Enter') col.commitHex() }}
       />
     </div>
     <div class="sv-color__palette">
-      {#each palette as c (c)}
+      {#each col.palette as c (c)}
         <button
-          type="button"
           class="sv-color__chip"
-          class:is-active={normalizeHex(c) === normalized}
+          class:is-active={col.isActive(c)}
           style:background={c}
-          aria-label={c}
-          onclick={() => { pick(c); open = false }}
+          {...col.chipProps(c)}
         ></button>
       {/each}
     </div>
   </div>
 {/if}
-{#if name}<input type="hidden" {name} value={normalized} />{/if}
+{#if name}<input type="hidden" {name} value={col.normalized} />{/if}
 
 <style>
   .sv-color {

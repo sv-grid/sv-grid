@@ -75,6 +75,16 @@ export { default as SvTimePicker, type TimeValue } from './SvTimePicker.svelte'
 export { default as SvDateTimePicker, type DateTimeValue } from './SvDateTimePicker.svelte'
 // UI kit - shared editor contract (common props + a11y wiring for every editor)
 export { editorAria, editorErrorId, type SvEditorProps, type EditorSize, type EditorAriaState } from './editor-contract'
+// UI kit - headless cores (state + prop-getters you render yourself, like createSvGrid)
+export {
+  createListbox,
+  toSelectedArray,
+  type Listbox,
+  type ListboxConfig,
+  type ListboxValue,
+  type ListboxRootProps,
+  type OptionProps,
+} from './createListbox.svelte'
 // UI kit - Group B (buttons & toggles)
 export { default as SvButton } from './SvButton.svelte'
 export { default as SvRepeatButton } from './SvRepeatButton.svelte'

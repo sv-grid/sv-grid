@@ -91,6 +91,8 @@ export {
   type FormFieldDescriptor,
   type StandardSchemaV1,
   type StandardSchemaResult,
+  type ValidationOp,
+  type ValidationRuleSpec,
 } from './schema'
 
 export {
@@ -195,10 +197,9 @@ export {
   type SchemaIssueLevel,
 } from './schema-designer'
 // NOTE: The visual designer components (SvSchemaDesigner, SvStudioDesigner) are
-// the commercial "SvGrid Studio" seller and are NOT part of the public package.
-// They live outside git (see .gitignore) and are re-exported from the private
-// `@svgrid/enterprise/designer` barrel (studio-designer.ts) for private apps
-// (the website + designer-app). The Studio *codegen* below stays public because
+// the commercial "SvGrid Studio" seller. They live entirely in the PRIVATE
+// website repo (website/src/lib/designer), NOT in this public package - they
+// import the public API below. The Studio *codegen* below stays public because
 // the MCP server depends on it.
 // The Studio project model + codegen (also on the pure `@svgrid/enterprise/studio`
 // subpath) - re-exported so the designer and its model come from one import.

@@ -3,9 +3,13 @@
    * SvDropDownList - a single-select dropdown (trigger button + portalled list,
    * no typing). Parity: Smart `smart-drop-down-list`. Controlled via `value` +
    * `onChange`. Popover escapes scroll clipping via popover.ts.
+   *
+   * One styled renderer over the headless `createDropdownList` core (state +
+   * keyboard + ARIA); only portal/measure/scroll render concerns live here.
    */
   import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
   import type { ListOption } from './list-option'
+  import { createDropdownList } from './createDropdownList.svelte'
 
   type Props = {
     options: ReadonlyArray<ListOption>
@@ -21,93 +25,66 @@
 
   let { options, value = null, onChange, placeholder = 'Select…', disabled = false, name, size = 'md', ariaLabel, autoOpen = false }: Props = $props()
 
-  let open = $state(false)
-  let active = $state(-1)
   let triggerEl = $state<HTMLButtonElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
   let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
 
-  const selected = $derived(options.find((o) => o.value === value) ?? null)
-  const enabledIdx = $derived(options.map((o, i) => (o.disabled ? -1 : i)).filter((i) => i >= 0))
+  const ddl = createDropdownList({
+    options: () => options,
+    value: () => value,
+    onChange: (v) => onChange?.(v),
+    disabled: () => disabled,
+    ariaLabel: () => ariaLabel,
+    focusTrigger: () => triggerEl?.focus(),
+  })
+
+  const selected = $derived(ddl.selected)
 
   function updatePos() {
     if (!triggerEl) return
     rect = anchoredRect(triggerEl.getBoundingClientRect(), { estimatedHeight: Math.min(options.length, 8) * 34 + 8 })
   }
-  function openPanel() {
-    if (disabled || open) return
-    open = true
-    active = Math.max(0, options.findIndex((o) => o.value === value))
-    updatePos()
-  }
-  function close() { open = false }
-  function toggle() { open ? close() : openPanel() }
-  function pick(i: number) {
-    const o = options[i]
-    if (!o || o.disabled) return
-    onChange?.(o.value); close(); triggerEl?.focus()
-  }
-  function move(d: number) {
-    const pos = enabledIdx.indexOf(active)
-    active = enabledIdx[(pos + d + enabledIdx.length) % enabledIdx.length] ?? active
-    queueMicrotask(() => panelEl?.querySelector<HTMLElement>(`[data-idx="${active}"]`)?.scrollIntoView({ block: 'nearest' }))
-  }
-  function onKeydown(e: KeyboardEvent) {
-    if (disabled) return
-    if (!open && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openPanel(); return }
-    if (!open) return
-    if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
-    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(active) }
-    else if (e.key === 'Escape') { e.preventDefault(); close(); triggerEl?.focus() }
-    else if (e.key === 'Home') { active = enabledIdx[0] ?? 0 }
-    else if (e.key === 'End') { active = enabledIdx.at(-1) ?? 0 }
-  }
 
   $effect(() => {
-    if (!open) return
+    if (!ddl.open) return
+    updatePos()
     const rp = () => updatePos()
     window.addEventListener('scroll', rp, true); window.addEventListener('resize', rp)
-    const od = (e: PointerEvent) => { const t = e.target as Node | null; if (t && (triggerEl?.contains(t) || panelEl?.contains(t))) return; close() }
+    const od = (e: PointerEvent) => { const t = e.target as Node | null; if (t && (triggerEl?.contains(t) || panelEl?.contains(t))) return; ddl.close() }
     document.addEventListener('pointerdown', od, true)
     return () => { window.removeEventListener('scroll', rp, true); window.removeEventListener('resize', rp); document.removeEventListener('pointerdown', od, true) }
   })
-  function focusOpen(node: HTMLButtonElement) { if (autoOpen) { node.focus(); openPanel() } }
+  // Keep the active option scrolled into view (render concern).
+  $effect(() => {
+    if (!ddl.open) return
+    const i = ddl.activeIndex
+    queueMicrotask(() => panelEl?.querySelector<HTMLElement>(`[data-idx="${i}"]`)?.scrollIntoView({ block: 'nearest' }))
+  })
+  function focusOpen(node: HTMLButtonElement) { if (autoOpen) { node.focus(); ddl.openPanel() } }
 </script>
 
 <button
   bind:this={triggerEl}
-  type="button"
   class="sv-ddl sv-ddl--{size}"
-  class:is-open={open}
+  class:is-open={ddl.open}
   class:is-disabled={disabled}
-  aria-haspopup="listbox"
-  aria-expanded={open}
-  aria-label={ariaLabel}
-  {disabled}
-  onclick={toggle}
-  onkeydown={onKeydown}
+  {...ddl.triggerProps()}
   use:focusOpen
 >
   <span class="sv-ddl__value" class:is-placeholder={!selected}>{selected?.label ?? placeholder}</span>
   <svg class="sv-ddl__chev" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
 </button>
 
-{#if open}
-  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} role="listbox" tabindex="-1">
+{#if ddl.open}
+  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} {...ddl.listboxProps()}>
     {#each options as opt, i (opt.value)}
       <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
       <div
         class="sv-ddl__opt"
-        class:is-active={i === active}
-        class:is-selected={opt.value === value}
+        class:is-active={ddl.isActive(i)}
+        class:is-selected={ddl.isSelected(opt)}
         class:is-disabled={opt.disabled}
-        role="option"
-        tabindex="-1"
-        aria-selected={opt.value === value}
-        data-idx={i}
-        onclick={() => pick(i)}
-        onpointermove={() => { if (!opt.disabled) active = i }}
+        {...ddl.optionProps(i)}
       >{opt.label}</div>
     {/each}
   </div>

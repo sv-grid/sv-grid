@@ -2,7 +2,12 @@
   /**
    * SvPasswordInput - a password field with a reveal toggle and an optional
    * strength meter. Parity: Smart `smart-password-input`. Emits the string value.
+   *
+   * The styled renderer over the headless `createPasswordInput` core: the reveal
+   * toggle + strength heuristic come from the core, spread here via prop-getters.
    */
+  import { createPasswordInput } from './createPasswordInput.svelte'
+
   type Props = {
     value?: string
     onChange?: (value: string) => void
@@ -33,38 +38,23 @@
     autocomplete = 'current-password',
   }: Props = $props()
 
-  let revealed = $state(false)
-
-  // Simple strength heuristic: length + character-class variety (0-4).
-  const strength = $derived.by(() => {
-    const v = value
-    if (!v) return 0
-    let score = 0
-    if (v.length >= 8) score++
-    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score++
-    if (/\d/.test(v)) score++
-    if (/[^a-zA-Z0-9]/.test(v)) score++
-    return score
+  const pw = createPasswordInput({
+    value: () => value,
+    onChange: (v) => onChange?.(v),
+    placeholder: () => placeholder,
+    disabled: () => disabled,
+    readonly: () => readonly,
+    ariaLabel: () => ariaLabel,
+    autocomplete: () => autocomplete,
   })
-  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong']
 </script>
 
 <div class="sv-pw sv-pw--{size}" class:is-disabled={disabled}>
   <div class="sv-pw__field">
-    <input
-      class="sv-pw__input"
-      type={revealed ? 'text' : 'password'}
-      value={value}
-      {placeholder}
-      {disabled}
-      {readonly}
-      autocomplete={autocomplete as AutoFill}
-      aria-label={ariaLabel}
-      oninput={(e) => onChange?.((e.currentTarget as HTMLInputElement).value)}
-    />
+    <input class="sv-pw__input" {...pw.inputProps()} />
     {#if revealable}
-      <button type="button" class="sv-pw__eye" aria-label={revealed ? 'Hide password' : 'Show password'} aria-pressed={revealed} onclick={() => (revealed = !revealed)} disabled={disabled} tabindex="-1">
-        {#if revealed}
+      <button class="sv-pw__eye" {...pw.toggleProps()}>
+        {#if pw.revealed}
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><path d="M1 1l22 22" /></svg>
         {:else}
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
@@ -75,10 +65,10 @@
   {#if showStrength}
     <div class="sv-pw__meter" aria-hidden="true">
       {#each Array(4) as _, i (i)}
-        <span class="sv-pw__bar is-lvl{strength}" class:on={i < strength}></span>
+        <span class="sv-pw__bar is-lvl{pw.strength}" class:on={i < pw.strength}></span>
       {/each}
     </div>
-    <span class="sv-pw__strength is-lvl{strength}">{strengthLabel[strength]}</span>
+    <span class="sv-pw__strength is-lvl{pw.strength}">{pw.strengthLabel}</span>
   {/if}
   {#if name}<input type="hidden" {name} value={value} />{/if}
 </div>

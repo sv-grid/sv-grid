@@ -3,9 +3,13 @@
    * SvComboBox - an editable combobox: type to filter a portalled list, pick an
    * option (value must come from the list). Parity: Smart `smart-combo-box`.
    * Controlled via `value` + `onChange`. On blur, unmatched text reverts.
+   *
+   * This is one styled renderer over the headless `createCombobox` core (state +
+   * keyboard + ARIA); only portal/measure/scroll render concerns live here.
    */
   import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
-  import { filterOptions, type ListOption } from './list-option'
+  import { type ListOption } from './list-option'
+  import { createCombobox } from './createCombobox.svelte'
 
   type Props = {
     options: ReadonlyArray<ListOption>
@@ -21,90 +25,64 @@
 
   let { options, value = null, onChange, placeholder = 'Select…', disabled = false, name, size = 'md', ariaLabel, autoOpen = false }: Props = $props()
 
-  let open = $state(false)
-  let query = $state('')
-  let active = $state(0)
-  let editing = $state(false)
   let inputEl = $state<HTMLInputElement | null>(null)
   let fieldEl = $state<HTMLDivElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
   let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
 
-  const selected = $derived(options.find((o) => o.value === value) ?? null)
-  const filtered = $derived(editing ? filterOptions(options, query) : [...options])
-  const shownText = $derived(editing ? query : selected?.label ?? '')
+  const combo = createCombobox({
+    options: () => options,
+    value: () => value,
+    onChange: (v) => onChange?.(v),
+    disabled: () => disabled,
+    ariaLabel: () => ariaLabel,
+    focusInput: () => inputEl?.focus(),
+    blurInput: () => inputEl?.blur(),
+  })
 
   function updatePos() {
     if (!fieldEl) return
-    rect = anchoredRect(fieldEl.getBoundingClientRect(), { estimatedHeight: Math.min(filtered.length, 8) * 34 + 8 })
+    rect = anchoredRect(fieldEl.getBoundingClientRect(), { estimatedHeight: Math.min(combo.filtered.length, 8) * 34 + 8 })
   }
-  function openPanel() { if (disabled || open) return; open = true; active = 0; updatePos() }
-  function close(revert = true) {
-    open = false; editing = false
-    if (revert) query = selected?.label ?? ''
-  }
-  function pick(o: ListOption | undefined) {
-    if (!o || o.disabled) return
-    onChange?.(o.value); query = o.label; editing = false; open = false; inputEl?.blur()
-  }
-  function onInput(e: Event) {
-    query = (e.currentTarget as HTMLInputElement).value
-    editing = true; active = 0
-    if (!open) openPanel(); else updatePos()
-  }
-  function onKeydown(e: KeyboardEvent) {
-    if (disabled) return
-    if (!open && (e.key === 'ArrowDown')) { e.preventDefault(); editing = true; openPanel(); return }
-    if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, filtered.length - 1) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0) }
-    else if (e.key === 'Enter') { e.preventDefault(); pick(filtered[active]) }
-    else if (e.key === 'Escape') { e.preventDefault(); close() }
-    queueMicrotask(() => panelEl?.querySelector<HTMLElement>(`[data-idx="${active}"]`)?.scrollIntoView({ block: 'nearest' }))
-  }
-  function onFocus() { editing = true; query = selected?.label ?? ''; openPanel() }
-  function onBlur() { /* outside-click effect handles close+revert */ }
 
+  // Position + reposition + outside-click close are render concerns (need the DOM).
   $effect(() => {
-    if (!open) return
+    if (!combo.open) return
+    updatePos()
     const rp = () => updatePos()
     window.addEventListener('scroll', rp, true); window.addEventListener('resize', rp)
-    const od = (e: PointerEvent) => { const t = e.target as Node | null; if (t && (fieldEl?.contains(t) || panelEl?.contains(t))) return; close() }
+    const od = (e: PointerEvent) => { const t = e.target as Node | null; if (t && (fieldEl?.contains(t) || panelEl?.contains(t))) return; combo.close() }
     document.addEventListener('pointerdown', od, true)
     return () => { window.removeEventListener('scroll', rp, true); window.removeEventListener('resize', rp); document.removeEventListener('pointerdown', od, true) }
   })
-  $effect(() => { if (!editing) query = selected?.label ?? '' })
+  // Keep the active option scrolled into view (render concern).
+  $effect(() => {
+    if (!combo.open) return
+    const i = combo.activeIndex
+    queueMicrotask(() => panelEl?.querySelector<HTMLElement>(`[data-idx="${i}"]`)?.scrollIntoView({ block: 'nearest' }))
+  })
   function focusOpen(node: HTMLInputElement) { if (autoOpen) { node.focus() } }
 </script>
 
-<div bind:this={fieldEl} class="sv-combo sv-combo--{size}" class:is-open={open} class:is-disabled={disabled}>
+<div bind:this={fieldEl} class="sv-combo sv-combo--{size}" class:is-open={combo.open} class:is-disabled={disabled}>
   <input
     bind:this={inputEl}
     class="sv-combo__input"
     type="text"
-    role="combobox"
-    aria-expanded={open}
-    aria-controls="combo-list"
-    aria-autocomplete="list"
-    value={shownText}
     {placeholder}
-    {disabled}
-    aria-label={ariaLabel}
-    oninput={onInput}
-    onfocus={onFocus}
-    onblur={onBlur}
-    onkeydown={onKeydown}
+    {...combo.inputProps()}
     use:focusOpen
   />
-  <button type="button" class="sv-combo__chev" tabindex="-1" aria-label="Toggle" onclick={() => (open ? close() : (inputEl?.focus(), openPanel()))} {disabled}>
+  <button class="sv-combo__chev" {...combo.triggerProps()}>
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
   </button>
 </div>
 
-{#if open}
-  <div bind:this={panelEl} id="combo-list" class="sv-ddl__panel" use:portalToBody style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} role="listbox">
-    {#each filtered as opt, i (opt.value)}
+{#if combo.open}
+  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} {...combo.listboxProps()}>
+    {#each combo.filtered as opt, i (opt.value)}
       <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-      <div class="sv-ddl__opt" class:is-active={i === active} class:is-selected={opt.value === value} class:is-disabled={opt.disabled} role="option" tabindex="-1" aria-selected={opt.value === value} data-idx={i} onclick={() => pick(opt)} onpointermove={() => { if (!opt.disabled) active = i }}>{opt.label}</div>
+      <div class="sv-ddl__opt" class:is-active={combo.isActive(i)} class:is-selected={combo.isSelected(opt)} class:is-disabled={opt.disabled} {...combo.optionProps(i)}>{opt.label}</div>
     {:else}
       <div class="sv-ddl__empty">No matches</div>
     {/each}

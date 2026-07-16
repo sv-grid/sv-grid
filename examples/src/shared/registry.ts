@@ -9,6 +9,7 @@ import RangeFeedback256 from '../demos/256-range-feedback.svelte'
 import TabsTreeForm257 from '../demos/257-tabs-tree-form.svelte'
 import CalendarRange258 from '../demos/258-calendar-range.svelte'
 import DateTimePickerForms259 from '../demos/259-datetimepicker-forms.svelte'
+import HeadlessEditors260 from '../demos/260-headless-editors.svelte'
 import TradingDesk from '../demos/00-trading-desk.svelte'
 import QuickStart from '../demos/01-quick-start.svelte'
 import SortFilterPaginate from '../demos/02-sort-filter-paginate.svelte'
@@ -268,9 +269,10 @@ export type DemoCategory =
   | 'Date & Time'
   | 'Buttons & Toggles'
   | 'Inputs'
-  | 'Selection'
+  | 'Headless Editors'
   | 'Range & Feedback'
   | 'Layout'
+  | 'Headless Editors'
 
 /**
  * Categories that belong to the paid @svgrid/enterprise product. The sidebar
@@ -299,6 +301,7 @@ export const EDITOR_CATEGORIES = new Set<DemoCategory>([
   'Selection',
   'Range & Feedback',
   'Layout',
+  'Headless Editors',
 ])
 
 export function isEditorCategory(category: DemoCategory): boolean {
@@ -336,6 +339,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Selection',
   'Range & Feedback',
   'Layout',
+  'Headless Editors',
 ]
 
 export type Demo = {
@@ -373,6 +377,7 @@ export const demos: Demo[] = [
   demo('253-buttons-toggles',       'Buttons & toggles',           'The UI kit press/toggle primitives: SvButton (variants/sizes/loading), SvRepeatButton (hold-to-repeat), SvToggleButton, SvSwitchButton, SvCheckBox (+ indeterminate), SvRadioGroup (arrow-key nav) and SvRating (half stars). Theme-driven, standalone or as grid cell controls.', 'Buttons & Toggles', ButtonsToggles253),
   demo('254-text-inputs',           'Text inputs',                 'Typed text controls: SvNumberInput (min/max/step, grouping, precision, spinners), SvPasswordInput (reveal + strength), SvMaskedInput (pattern mask), SvPhoneInput (country dial code + national mask) and SvColorInput (swatch + palette popover). Each a SvGrid cell editor, standalone too.', 'Inputs', TextInputs254),
   demo('255-selection',             'Selection controls',          'List and overlay pickers: SvListBox (inline multi-select), SvDropDownList, SvComboBox (type to filter), SvAutoComplete (free text + suggestions), SvTagsInput (chips) and SvCountryInput (searchable, flags). Every popover portals out of the scroll container. Grid cell editors, standalone too.', 'Selection', Selection255),
+  demo('260-headless-editors',      'Headless editors',            'Headless-first, like the grid: createListbox is the state machine behind SvListBox (roving focus, single/multi selection, keyboard, ARIA) exposed as prop-getters you spread onto YOUR own markup. One core drives both the styled SvListBox and a custom chip-cloud render, bound to one value.', 'Headless Editors', HeadlessEditors260),
   demo('256-range-feedback',        'Range & feedback',            'SvSlider (single or dual-thumb range, ticks, keyboard, vertical) and SvGauge (radial arc with threshold bands, needle, half sweep). Theme-driven value controls, standalone or in-grid.', 'Range & Feedback', RangeFeedback256),
   demo('257-tabs-tree-form',        'Tabs, tree & form',           'Composite controls: SvTabs (line + pill, roving keyboard), SvTree (expand/collapse, single-select + cascading tri-state checkboxes) and a schema-driven SvForm that wires the whole kit (inputs, select, switch, date, textarea) with required + custom validation.', 'Layout', TabsTreeForm257),
 

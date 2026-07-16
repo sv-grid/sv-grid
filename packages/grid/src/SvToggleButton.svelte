@@ -4,6 +4,7 @@
    * Parity: Smart `smart-toggle-button`. Controlled via `pressed` + `onChange`.
    */
   import type { Snippet } from 'svelte'
+  import { createToggle } from './createToggle.svelte'
 
   type Props = {
     pressed?: boolean
@@ -16,20 +17,19 @@
 
   let { pressed = false, onChange, disabled = false, size = 'md', ariaLabel, children }: Props = $props()
 
-  function toggle() {
-    if (disabled) return
-    onChange?.(!pressed)
-  }
+  // The styled toggle is just a renderer over the headless core.
+  const t = createToggle({
+    pressed: () => pressed,
+    onChange: (v) => onChange?.(v),
+    disabled: () => disabled,
+    ariaLabel: () => ariaLabel,
+  })
 </script>
 
 <button
-  type="button"
   class="sv-toggle sv-toggle--{size}"
   class:is-pressed={pressed}
-  aria-pressed={pressed}
-  aria-label={ariaLabel}
-  {disabled}
-  onclick={toggle}
+  {...t.buttonProps()}
 >
   {#if children}{@render children()}{/if}
 </button>

@@ -3,7 +3,12 @@
    * SvTagsInput - editable token/chips input. Type + Enter/comma to add,
    * Backspace to remove the last, click × to remove a chip. Parity: Smart
    * `smart-tags` / `smart-input` token mode. Emits string[].
+   *
+   * One styled renderer over the headless `createTagsInput` core (draft +
+   * add/remove + keyboard).
    */
+  import { createTagsInput } from './createTagsInput.svelte'
+
   type Props = {
     value?: string[]
     onChange?: (tags: string[]) => void
@@ -18,45 +23,29 @@
 
   let { value = [], onChange, placeholder = 'Add tag…', disabled = false, unique = true, max = Infinity, name, ariaLabel }: Props = $props()
 
-  let draft = $state('')
-
-  function add(raw: string) {
-    const tag = raw.trim()
-    if (!tag || disabled) return
-    if (value.length >= max) return
-    if (unique && value.includes(tag)) { draft = ''; return }
-    onChange?.([...value, tag])
-    draft = ''
-  }
-  function removeAt(i: number) {
-    if (disabled) return
-    onChange?.(value.filter((_, idx) => idx !== i))
-  }
-  function onKeydown(e: KeyboardEvent) {
-    if (disabled) return
-    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(draft) }
-    else if (e.key === 'Backspace' && draft === '' && value.length) { removeAt(value.length - 1) }
-  }
+  const ti = createTagsInput({
+    value: () => value,
+    onChange: (t) => onChange?.(t),
+    disabled: () => disabled,
+    unique: () => unique,
+    max: () => max,
+    ariaLabel: () => ariaLabel,
+  })
 </script>
 
-<div class="sv-tags" class:is-disabled={disabled} role="group" aria-label={ariaLabel}>
+<div class="sv-tags" class:is-disabled={disabled} {...ti.rootProps()}>
   {#each value as tag, i (tag + i)}
-    <span class="sv-tags__chip">
+    <span class="sv-tags__chip" {...ti.tagProps(i)}>
       <span class="sv-tags__label">{tag}</span>
       {#if !disabled}
-        <button type="button" class="sv-tags__x" aria-label={`Remove ${tag}`} onclick={() => removeAt(i)}>&times;</button>
+        <button class="sv-tags__x" {...ti.removeProps(i)}>&times;</button>
       {/if}
     </span>
   {/each}
   <input
     class="sv-tags__input"
-    type="text"
-    bind:value={draft}
     placeholder={value.length ? '' : placeholder}
-    {disabled}
-    aria-label={ariaLabel ?? 'Add tag'}
-    onkeydown={onKeydown}
-    onblur={() => add(draft)}
+    {...ti.inputProps()}
   />
   {#if name}<input type="hidden" {name} value={value.join(',')} />{/if}
 </div>

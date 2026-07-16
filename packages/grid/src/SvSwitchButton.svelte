@@ -4,6 +4,8 @@
    * `smart-switch-button`. Controlled via `checked` + `onChange`; keyboard
    * togglable; optional inline on/off labels.
    */
+  import { createSwitch } from './createSwitch.svelte'
+
   type Props = {
     checked?: boolean
     onChange?: (checked: boolean) => void
@@ -27,28 +29,19 @@
     offLabel,
   }: Props = $props()
 
-  function toggle() {
-    if (disabled) return
-    onChange?.(!checked)
-  }
-  function onKeydown(e: KeyboardEvent) {
-    if (disabled) return
-    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle() }
-    else if (e.key === 'ArrowRight') { if (!checked) onChange?.(true) }
-    else if (e.key === 'ArrowLeft') { if (checked) onChange?.(false) }
-  }
+  // The styled switch is just a renderer over the headless core.
+  const sw = createSwitch({
+    checked: () => checked,
+    onChange: (v) => onChange?.(v),
+    disabled: () => disabled,
+    ariaLabel: () => ariaLabel,
+  })
 </script>
 
 <button
-  type="button"
-  role="switch"
   class="sv-switch sv-switch--{size}"
   class:is-on={checked}
-  aria-checked={checked}
-  aria-label={ariaLabel}
-  {disabled}
-  onclick={toggle}
-  onkeydown={onKeydown}
+  {...sw.switchProps()}
 >
   <span class="sv-switch__track">
     {#if onLabel || offLabel}

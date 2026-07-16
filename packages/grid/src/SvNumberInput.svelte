@@ -3,9 +3,14 @@
    * SvNumberInput - a numeric input with min/max/step, spinner buttons, optional
    * thousands grouping + precision, prefix/suffix. Parity: Smart `smart-number-input`.
    * Emits number | null. The SvGrid number cell editor, standalone too.
+   *
+   * This is the styled renderer over the headless `createNumberInput` core - the
+   * same split as the grid (`createSvGrid` / `<SvGrid>`): parse/format/clamp,
+   * spinner + keyboard and ARIA all come from the core via prop-getters.
    */
   import SvRepeatButton from './SvRepeatButton.svelte'
-  import { editorAria, editorErrorId, type SvEditorProps } from './editor-contract'
+  import { editorErrorId, type SvEditorProps } from './editor-contract'
+  import { createNumberInput } from './createNumberInput.svelte'
 
   type Props = SvEditorProps & {
     value?: number | null
@@ -45,104 +50,36 @@
     id,
   }: Props = $props()
 
-  const isInteractive = $derived(!disabled && !readonly)
-  let text = $state('')
-  let focused = $state(false)
-  let lastKey = ''
-
-  const fmt = $derived(
-    new Intl.NumberFormat(undefined, {
-      useGrouping: grouping,
-      minimumFractionDigits: precision ?? 0,
-      maximumFractionDigits: precision ?? 20,
-    }),
-  )
-
-  function display(v: number | null): string {
-    if (v == null) return ''
-    return `${prefix}${fmt.format(v)}${suffix}`
-  }
-
-  $effect(() => {
-    const key = value == null ? 'null' : String(value)
-    if (key !== lastKey) {
-      lastKey = key
-      if (!focused) text = display(value)
-    }
+  const num = createNumberInput({
+    value: () => value,
+    onChange: (v) => onChange?.(v),
+    min: () => min,
+    max: () => max,
+    step: () => step,
+    precision: () => precision,
+    grouping: () => grouping,
+    prefix: () => prefix,
+    suffix: () => suffix,
+    placeholder: () => placeholder,
+    disabled: () => disabled,
+    readonly: () => readonly,
+    id: () => id,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    ariaLabel: () => ariaLabel,
   })
-
-  function clamp(n: number): number {
-    let r = Math.min(max, Math.max(min, n))
-    if (precision != null) r = Math.round(r * 10 ** precision) / 10 ** precision
-    return r
-  }
-
-  function parse(s: string): number | null {
-    const cleaned = s.replace(prefix, '').replace(suffix, '').replace(/[,\s]/g, '').trim()
-    if (cleaned === '' || cleaned === '-') return null
-    const n = Number(cleaned)
-    return isNaN(n) ? null : n
-  }
-
-  function commit() {
-    const parsed = parse(text)
-    const next = parsed == null ? null : clamp(parsed)
-    lastKey = next == null ? 'null' : String(next)
-    onChange?.(next)
-    text = display(next)
-  }
-
-  function bump(dir: 1 | -1) {
-    if (!isInteractive) return
-    const base = parse(text) ?? 0
-    const next = clamp(base + dir * step)
-    lastKey = String(next)
-    onChange?.(next)
-    text = focused ? String(next) : display(next)
-  }
-
-  function onFocus() {
-    focused = true
-    // Show the bare number for easy editing.
-    text = value == null ? '' : String(value)
-  }
-  function onBlur() {
-    focused = false
-    commit()
-  }
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'ArrowUp') { e.preventDefault(); bump(1) }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); bump(-1) }
-    else if (e.key === 'Enter') { commit() }
-  }
 </script>
 
 <div class="sv-field">
   <div class="sv-num sv-num--{size}" class:is-disabled={disabled} class:is-invalid={invalid}>
-    <input
-      {id}
-      class="sv-num__input"
-      type="text"
-      inputmode="decimal"
-      bind:value={text}
-      {placeholder}
-      {disabled}
-      {readonly}
-      role="spinbutton"
-      aria-valuenow={value ?? undefined}
-      aria-valuemin={min === -Infinity ? undefined : min}
-      aria-valuemax={max === Infinity ? undefined : max}
-      {...editorAria({ id, invalid, required, error, ariaLabel })}
-      onfocus={onFocus}
-      onblur={onBlur}
-      onkeydown={onKeydown}
-    />
+    <input class="sv-num__input" {...num.inputProps()} />
     {#if spinButtons}
       <div class="sv-num__spin">
-        <SvRepeatButton size="sm" variant="ghost" ariaLabel="Increment" onclick={() => bump(1)}>
+        <SvRepeatButton size="sm" variant="ghost" ariaLabel="Increment" onclick={num.increment}>
           <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6" /></svg>
         </SvRepeatButton>
-        <SvRepeatButton size="sm" variant="ghost" ariaLabel="Decrement" onclick={() => bump(-1)}>
+        <SvRepeatButton size="sm" variant="ghost" ariaLabel="Decrement" onclick={num.decrement}>
           <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6" /></svg>
         </SvRepeatButton>
       </div>

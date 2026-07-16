@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  export type RadioOption = { value: string | number; label: string; disabled?: boolean }
+  export type { RadioOption } from './createRadioGroup.svelte'
 </script>
 
 <script lang="ts">
@@ -8,6 +8,8 @@
    * roving tabindex + arrow-key navigation. Parity: Smart `smart-radio-button`
    * (as a managed group). Controlled via `value` + `onChange`.
    */
+  import { createRadioGroup, type RadioOption } from './createRadioGroup.svelte'
+
   type Props = {
     options: ReadonlyArray<RadioOption>
     value?: string | number | null
@@ -30,50 +32,25 @@
     ariaLabel,
   }: Props = $props()
 
-  const enabledIdx = $derived(options.map((o, i) => (o.disabled ? -1 : i)).filter((i) => i >= 0))
-  const selectedIdx = $derived(options.findIndex((o) => o.value === value))
-  // The roving-tabindex target: the selected option, else the first enabled.
-  const focusIdx = $derived(selectedIdx >= 0 ? selectedIdx : enabledIdx[0] ?? -1)
-
-  function pick(i: number) {
-    const o = options[i]
-    if (!o || o.disabled || disabled) return
-    onChange?.(o.value)
-  }
-
-  function onKeydown(e: KeyboardEvent, i: number) {
-    if (disabled) return
-    const pos = enabledIdx.indexOf(i)
-    if (pos < 0) return
-    let nextPos = pos
-    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') nextPos = (pos + 1) % enabledIdx.length
-    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') nextPos = (pos - 1 + enabledIdx.length) % enabledIdx.length
-    else if (e.key === ' ') { e.preventDefault(); pick(i); return }
-    else return
-    e.preventDefault()
-    const target = enabledIdx[nextPos]!
-    pick(target)
-    ;(e.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLElement>('.sv-radio')[target]?.focus()
-  }
+  // The styled radio group is just a renderer over the headless core.
+  const rg = createRadioGroup({
+    options: () => options,
+    value: () => value,
+    onChange: (v) => onChange?.(v),
+    disabled: () => disabled,
+    ariaLabel: () => ariaLabel,
+  })
 </script>
 
 <div
   class="sv-radiogroup sv-radiogroup--{orientation} sv-radiogroup--{size}"
-  role="radiogroup"
-  aria-label={ariaLabel}
-  aria-disabled={disabled}
+  {...rg.groupProps()}
 >
-  {#each options as opt, i (opt.value)}
+  {#each options as opt (opt.value)}
     <button
-      type="button"
-      role="radio"
       class="sv-radio"
       class:is-checked={opt.value === value}
-      aria-checked={opt.value === value}
-      disabled={disabled || opt.disabled}
-      tabindex={i === focusIdx ? 0 : -1}
-      onclick={() => pick(i)}
-      onkeydown={(e) => onKeydown(e, i)}
+      {...rg.radioProps(opt)}
     >
       <span class="sv-radio__dot"></span>
       <span class="sv-radio__label">{opt.label}</span>

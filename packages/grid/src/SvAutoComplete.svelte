@@ -3,9 +3,13 @@
    * SvAutoComplete - a free-text input with a live-filtered suggestion list.
    * Unlike SvComboBox, it accepts ANY value (the text), suggestions are just
    * shortcuts. Parity: Smart `smart-input` (autocomplete). Emits the text string.
+   *
+   * One styled renderer over the headless `createAutocomplete` core; only
+   * portal/measure render concerns live here.
    */
   import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
-  import { filterOptions, type ListOption } from './list-option'
+  import { type ListOption } from './list-option'
+  import { createAutocomplete } from './createAutocomplete.svelte'
 
   type Props = {
     value?: string
@@ -22,38 +26,31 @@
 
   let { value = '', onChange, suggestions = [], minChars = 1, placeholder, disabled = false, name, size = 'md', ariaLabel }: Props = $props()
 
-  const asOptions = $derived<ListOption[]>(
-    suggestions.map((s) => (typeof s === 'string' ? { value: s, label: s } : s)),
-  )
-
-  let open = $state(false)
-  let active = $state(0)
   let fieldEl = $state<HTMLInputElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
   let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
 
-  const filtered = $derived(value.length >= minChars ? filterOptions(asOptions, value).slice(0, 10) : [])
+  const ac = createAutocomplete({
+    value: () => value,
+    onChange: (v) => onChange?.(v),
+    suggestions: () => suggestions,
+    minChars: () => minChars,
+    disabled: () => disabled,
+    ariaLabel: () => ariaLabel,
+    focusInput: () => fieldEl?.focus(),
+  })
 
   function updatePos() {
     if (!fieldEl) return
-    rect = anchoredRect(fieldEl.getBoundingClientRect(), { estimatedHeight: Math.min(filtered.length, 8) * 34 + 8 })
-  }
-  function maybeOpen() { open = filtered.length > 0; if (open) { active = 0; updatePos() } }
-  function pick(o: ListOption | undefined) { if (!o) return; onChange?.(String(o.value)); open = false; fieldEl?.focus() }
-  function onInput(e: Event) { onChange?.((e.currentTarget as HTMLInputElement).value); queueMicrotask(maybeOpen) }
-  function onKeydown(e: KeyboardEvent) {
-    if (!open) { if (e.key === 'ArrowDown') { queueMicrotask(maybeOpen) } return }
-    if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, filtered.length - 1) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0) }
-    else if (e.key === 'Enter') { e.preventDefault(); pick(filtered[active]) }
-    else if (e.key === 'Escape') { open = false }
+    rect = anchoredRect(fieldEl.getBoundingClientRect(), { estimatedHeight: Math.min(ac.filtered.length, 8) * 34 + 8 })
   }
 
   $effect(() => {
-    if (!open) return
+    if (!ac.open) return
+    updatePos()
     const rp = () => updatePos()
     window.addEventListener('scroll', rp, true); window.addEventListener('resize', rp)
-    const od = (e: PointerEvent) => { const t = e.target as Node | null; if (t && (fieldEl?.contains(t) || panelEl?.contains(t))) return; open = false }
+    const od = (e: PointerEvent) => { const t = e.target as Node | null; if (t && (fieldEl?.contains(t) || panelEl?.contains(t))) return; ac.close() }
     document.addEventListener('pointerdown', od, true)
     return () => { window.removeEventListener('scroll', rp, true); window.removeEventListener('resize', rp); document.removeEventListener('pointerdown', od, true) }
   })
@@ -63,23 +60,15 @@
   bind:this={fieldEl}
   class="sv-ac sv-ac--{size}"
   type="text"
-  role="combobox"
-  aria-expanded={open}
-  aria-autocomplete="list"
-  value={value}
   {placeholder}
-  {disabled}
-  aria-label={ariaLabel}
-  oninput={onInput}
-  onfocus={maybeOpen}
-  onkeydown={onKeydown}
+  {...ac.inputProps()}
 />
 
-{#if open}
-  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} role="listbox">
-    {#each filtered as opt, i (opt.value)}
+{#if ac.open}
+  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} {...ac.listboxProps()}>
+    {#each ac.filtered as opt, i (opt.value)}
       <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-      <div class="sv-ddl__opt" class:is-active={i === active} role="option" tabindex="-1" aria-selected={i === active} data-idx={i} onclick={() => pick(opt)} onpointermove={() => (active = i)}>{opt.label}</div>
+      <div class="sv-ddl__opt" class:is-active={ac.isActive(i)} {...ac.optionProps(i)}>{opt.label}</div>
     {/each}
   </div>
 {/if}

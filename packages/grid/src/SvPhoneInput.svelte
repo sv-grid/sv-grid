@@ -3,9 +3,12 @@
    * SvPhoneInput - a country dial-code selector + national number field. Parity:
    * Smart `smart-phone-input` (simplified). Emits an E.164-ish string
    * (`+<dial><digits>`). The country list is `countries.ts` (extend for full set).
+   *
+   * The styled renderer over the headless `createPhoneInput` core; country/number
+   * state + parsing live in the core, spread here via prop-getters.
    */
-  import { COUNTRIES, COUNTRY_BY_CODE, flagEmoji } from './countries'
-  import { applyMask } from './datetime/mask'
+  import { COUNTRIES, flagEmoji } from './countries'
+  import { createPhoneInput } from './createPhoneInput.svelte'
 
   type Props = {
     value?: string
@@ -32,75 +35,30 @@
     ariaLabel,
   }: Props = $props()
 
-  let iso = $state('US')
-  let national = $state('')
-  let seeded = false
-  let lastVal = ''
-
-  // US/Canada get a friendly national mask; others are plain grouped digits.
-  const mask = $derived(COUNTRY_BY_CODE.get(iso)?.dial === '+1' ? '(###) ###-####' : '')
-
-  $effect(() => {
-    const v = value
-    if (!seeded) {
-      seeded = true
-      iso = country
-      // Best-effort parse: strip to the matching dial code.
-      const match = [...COUNTRIES].sort((a, b) => b.dial.length - a.dial.length).find((c) => v.startsWith(c.dial))
-      if (match) { iso = match.code; national = v.slice(match.dial.length) }
-      else if (v) national = v.replace(/^\+/, '')
-      lastVal = v
-      return
-    }
-    if (v !== lastVal) {
-      lastVal = v
-      const match = [...COUNTRIES].sort((a, b) => b.dial.length - a.dial.length).find((c) => v.startsWith(c.dial))
-      if (match) { iso = match.code; national = v.slice(match.dial.length) }
-    }
+  const ph = createPhoneInput({
+    value: () => value,
+    onChange: (v, parts) => onChange?.(v, parts),
+    country: () => country,
+    disabled: () => disabled,
+    readonly: () => readonly,
+    placeholder: () => placeholder,
+    ariaLabel: () => ariaLabel,
   })
-
-  const dial = $derived(COUNTRY_BY_CODE.get(iso)?.dial ?? '+1')
-  const displayNational = $derived(mask ? applyMask(national, mask).formatted : national)
-
-  function emit() {
-    onChange?.(`${dial}${national}`, { country: iso, dial, national })
-  }
-  function onNumberInput(e: Event) {
-    const raw = (e.currentTarget as HTMLInputElement).value.replace(/\D/g, '')
-    national = raw
-    lastVal = `${dial}${raw}`
-    emit()
-  }
-  function onCountryChange(e: Event) {
-    iso = (e.currentTarget as HTMLSelectElement).value
-    lastVal = `${dial}${national}`
-    emit()
-  }
 </script>
 
 <div class="sv-phone sv-phone--{size}" class:is-disabled={disabled}>
   <div class="sv-phone__country">
-    <span class="sv-phone__flag" aria-hidden="true">{flagEmoji(iso)}</span>
-    <span class="sv-phone__dial">{dial}</span>
-    <select class="sv-phone__select" value={iso} {disabled} onchange={onCountryChange} aria-label="Country">
+    <span class="sv-phone__flag" aria-hidden="true">{ph.flag}</span>
+    <span class="sv-phone__dial">{ph.dial}</span>
+    <select class="sv-phone__select" {...ph.selectProps()}>
       {#each COUNTRIES as c (c.code)}
         <option value={c.code}>{flagEmoji(c.code)} {c.name} ({c.dial})</option>
       {/each}
     </select>
     <svg class="sv-phone__chev" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
   </div>
-  <input
-    class="sv-phone__number"
-    type="tel"
-    inputmode="tel"
-    value={displayNational}
-    {placeholder}
-    {disabled}
-    {readonly}
-    aria-label={ariaLabel ?? 'Phone number'}
-    oninput={onNumberInput}
-  />
-  {#if name}<input type="hidden" {name} value={`${dial}${national}`} />{/if}
+  <input class="sv-phone__number" {...ph.inputProps()} />
+  {#if name}<input type="hidden" {name} value={ph.value} />{/if}
 </div>
 
 <style>

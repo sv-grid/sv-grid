@@ -5,6 +5,7 @@
    * via `value` (scalar or array) + `onChange`.
    */
   import type { ListOption } from './list-option'
+  import { createListbox } from './createListbox.svelte'
 
   type Props = {
     options: ReadonlyArray<ListOption>
@@ -22,87 +23,47 @@
 
   let { options, value = null, onChange, multiple = false, disabled = false, rows = 7, ariaLabel, name }: Props = $props()
 
-  const selected = $derived<Array<string | number>>(
-    multiple ? (Array.isArray(value) ? value : value == null ? [] : [value]) : value == null ? [] : [value as string | number],
-  )
-  const enabledIdx = $derived(options.map((o, i) => (o.disabled ? -1 : i)).filter((i) => i >= 0))
-  let active = $state(0)
-  $effect(() => {
-    // Keep the active index on an enabled option.
-    if (!options[active] || options[active]!.disabled) active = enabledIdx[0] ?? 0
+  // The styled listbox is just a renderer over the headless core.
+  const lb = createListbox({
+    options: () => options,
+    value: () => value,
+    onChange: (v) => onChange?.(v),
+    multiple: () => multiple,
+    disabled: () => disabled,
+    ariaLabel: () => ariaLabel,
   })
-
-  function isSel(o: ListOption) { return selected.includes(o.value) }
-
-  function pick(i: number) {
-    const o = options[i]
-    if (!o || o.disabled || disabled) return
-    active = i
-    if (multiple) {
-      const set = new Set(selected)
-      set.has(o.value) ? set.delete(o.value) : set.add(o.value)
-      onChange?.([...set])
-    } else {
-      onChange?.(o.value)
-    }
-  }
-
-  function move(delta: number) {
-    const pos = enabledIdx.indexOf(active)
-    const next = enabledIdx[(pos + delta + enabledIdx.length) % enabledIdx.length]
-    if (next != null) { active = next; scrollActive() }
-  }
+  const isSel = (o: ListOption) => lb.isSelected(o.value)
 
   let listEl: HTMLUListElement | null = null
-  function scrollActive() {
-    queueMicrotask(() => listEl?.querySelector<HTMLElement>(`[data-idx="${active}"]`)?.scrollIntoView({ block: 'nearest' }))
-  }
-
-  function onKeydown(e: KeyboardEvent) {
-    if (disabled) return
-    switch (e.key) {
-      case 'ArrowDown': e.preventDefault(); move(1); break
-      case 'ArrowUp': e.preventDefault(); move(-1); break
-      case 'Home': e.preventDefault(); active = enabledIdx[0] ?? 0; scrollActive(); break
-      case 'End': e.preventDefault(); active = enabledIdx.at(-1) ?? 0; scrollActive(); break
-      case ' ':
-      case 'Enter': e.preventDefault(); pick(active); break
-    }
-  }
+  // Scroll-into-view is a render concern, so it lives here (not in the core).
+  $effect(() => {
+    const i = lb.activeIndex
+    queueMicrotask(() => listEl?.querySelector<HTMLElement>(`[data-idx="${i}"]`)?.scrollIntoView({ block: 'nearest' }))
+  })
 </script>
 
 <div style="display: contents">
 <ul
   bind:this={listEl}
   class="sv-listbox"
-  role="listbox"
-  aria-multiselectable={multiple}
-  aria-label={ariaLabel}
-  aria-disabled={disabled}
-  tabindex={disabled ? -1 : 0}
   style:--sv-rows={rows}
-  onkeydown={onKeydown}
+  {...lb.rootProps()}
 >
   {#each options as opt, i (opt.value)}
     <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
     <li
       class="sv-listbox__opt"
       class:is-selected={isSel(opt)}
-      class:is-active={i === active}
+      class:is-active={lb.isActive(i)}
       class:is-disabled={opt.disabled}
-      role="option"
-      aria-selected={isSel(opt)}
-      aria-disabled={opt.disabled}
-      data-idx={i}
-      onclick={() => pick(i)}
-      onpointermove={() => { if (!opt.disabled) active = i }}
+      {...lb.optionProps(i)}
     >
       {#if multiple}<span class="sv-listbox__check" aria-hidden="true">{isSel(opt) ? '✓' : ''}</span>{/if}
       <span class="sv-listbox__label">{opt.label}</span>
     </li>
   {/each}
 </ul>
-{#if name}{#each selected as v (v)}<input type="hidden" {name} value={v} />{/each}{/if}
+{#if name}{#each lb.selectedValues as v (v)}<input type="hidden" {name} value={v} />{/each}{/if}
 </div>
 
 <style>

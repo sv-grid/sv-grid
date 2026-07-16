@@ -4,6 +4,7 @@
    * label. Parity: Smart `smart-check-box`. Controlled via `checked` + `onChange`.
    */
   import type { Snippet } from 'svelte'
+  import { createCheckbox } from './createCheckbox.svelte'
 
   type Props = {
     checked?: boolean
@@ -29,23 +30,23 @@
     children,
   }: Props = $props()
 
-  function toggle() {
-    if (disabled) return
-    onChange?.(indeterminate ? true : !checked)
-  }
+  // The styled checkbox is just a renderer over the headless core. The label
+  // fallback depends on `children` (a render concern), so it is computed here.
+  const cb = createCheckbox({
+    checked: () => checked,
+    indeterminate: () => indeterminate,
+    onChange: (v) => onChange?.(v),
+    disabled: () => disabled,
+    ariaLabel: () => ariaLabel ?? (children ? undefined : 'checkbox'),
+  })
 </script>
 
 <label class="sv-check sv-check--{size}" class:is-disabled={disabled}>
   <button
-    type="button"
-    role="checkbox"
     class="sv-check__box"
     class:is-checked={checked && !indeterminate}
     class:is-indeterminate={indeterminate}
-    aria-checked={indeterminate ? 'mixed' : checked}
-    aria-label={ariaLabel ?? (children ? undefined : 'checkbox')}
-    {disabled}
-    onclick={toggle}
+    {...cb.boxProps()}
   >
     {#if indeterminate}
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" /></svg>

@@ -62,14 +62,6 @@ jobs:
           git clone --depth 1 --branch main \
             "https://x-access-token:${WEBSITE_TOKEN}@github.com/sv-grid/website.git" website
 
-      # The private Studio designer components (SvStudioDesigner / SvSchemaDesigner
-      # + the /designer barrel) are git-ignored in this public repo, so they're
-      # absent from the checkout. They ship in the private website repo under
-      # website/private-designer/; restore them into packages/enterprise/src so
-      # the website's Studio route can import @svgrid/enterprise/designer.
-      - name: Restore the private Studio designer
-        run: cp website/private-designer/* packages/enterprise/src/
-
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.2
