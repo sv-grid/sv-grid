@@ -1,20 +1,23 @@
 <script lang="ts" module>
-  export type DateTimeValue = Date | string | number | null
+  export type { DateTimeValue } from './createDateTimePicker.svelte'
 </script>
 
 <script lang="ts">
   /**
    * SvDateTimePicker - a text input (formatted via the date-format token engine)
    * plus a dropdown that composes SvCalendar + SvTimePicker behind DATE / TIME
-   * tabs. Parity target: Smart `smart-date-time-picker`. Works standalone and as
-   * the SvGrid `datetime` cell editor. The dropdown portals to <body> (via
-   * popover.ts) so it is never clipped by the grid's scroll container.
+   * tabs. Parity target: Smart `smart-date-time-picker`. It is a styled renderer
+   * over the headless `createDateTimePicker` core (value math, parse/format,
+   * clamp, dropdown open/tab state, sub-picker wiring); the component keeps the
+   * render-only concerns - the portalled popover positioning (via popover.ts), DOM
+   * refs, and outside-click / reposition listeners - so the dropdown is never
+   * clipped by the grid's scroll container.
    */
   import SvCalendar from './SvCalendar.svelte'
   import SvTimePicker from './SvTimePicker.svelte'
   import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
-  import { formatDate, parseDate } from './datetime/date-format'
-  import { toDate, clampDate, withTime, startOfDay, type DateLike } from './datetime/date-core'
+  import { createDateTimePicker, type DateTimeValue, type DropDownDisplayMode } from './createDateTimePicker.svelte'
+  import type { DateLike } from './datetime/date-core'
 
   type Props = {
     value?: DateTimeValue
@@ -39,7 +42,7 @@
     hourFormat?: '12-hour' | '24-hour'
     minuteInterval?: number
     /** Which tabs the dropdown shows. */
-    dropDownDisplayMode?: 'both' | 'calendar' | 'time'
+    dropDownDisplayMode?: DropDownDisplayMode
     /** Up/down spinner buttons that bump the value by `stepMinutes`. */
     spinButtons?: boolean
     stepMinutes?: number
@@ -74,66 +77,27 @@
     animate = false,
   }: Props = $props()
 
-  const isInteractive = $derived(!disabled && !readonly)
-  const minD = $derived(toDate(min ?? null))
-  const maxD = $derived(toDate(max ?? null))
-
-  let current = $state<Date | null>(null)
-  let text = $state('')
-  let lastKey = '￿'
-  $effect(() => {
-    const d = toDate(value as DateLike)
-    const key = d ? String(d.getTime()) : 'null'
-    if (key !== lastKey) {
-      lastKey = key
-      current = d
-      text = d ? formatDate(d, formatString, locale) : ''
-    }
+  // The headless core owns value math, parse/format, clamping, the dropdown
+  // open/tab state and the sub-picker wiring. Reactive inputs are getters;
+  // callbacks are closures.
+  const dtp = createDateTimePicker({
+    value: () => value,
+    onChange: (d) => onChange?.(d),
+    onCommit: (d) => onCommit?.(d),
+    onCancel: () => onCancel?.(),
+    formatString: () => formatString,
+    min: () => min,
+    max: () => max,
+    nullable: () => nullable,
+    locale: () => locale,
+    dropDownDisplayMode: () => dropDownDisplayMode,
+    spinButtons: () => spinButtons,
+    stepMinutes: () => stepMinutes,
+    disabled: () => disabled,
+    readonly: () => readonly,
   })
 
-  // --- Commit helpers ---
-  function commit(next: Date | null) {
-    const clamped = next ? clampDate(next, minD, maxD) : null
-    current = clamped
-    lastKey = clamped ? String(clamped.getTime()) : 'null'
-    text = clamped ? formatDate(clamped, formatString, locale) : ''
-    onChange?.(clamped)
-  }
-
-  function commitFromText() {
-    const raw = text.trim()
-    if (!raw) {
-      if (nullable) commit(null)
-      else text = current ? formatDate(current, formatString, locale) : ''
-      return
-    }
-    const parsed = parseDate(raw, formatString, locale, 2029, current ?? new Date())
-    if (parsed) commit(parsed)
-    else text = current ? formatDate(current, formatString, locale) : '' // revert on bad input
-  }
-
-  function bump(deltaMin: number) {
-    const base = current ?? new Date()
-    commit(new Date(base.getTime() + deltaMin * 60000))
-  }
-
-  // --- Sub-picker wiring ---
-  function onCalendarChange(dates: Date[]) {
-    const day = dates[0]
-    if (!day) return
-    commit(withTime(day, current ?? startOfDay(day)))
-    // Date-only picker: a single pick finalizes the value.
-    if (dropDownDisplayMode === 'calendar') { open = false; onCommit?.(current) }
-    else if (dropDownDisplayMode === 'both') tab = 'time'
-  }
-  function onTimeChange(t: Date) {
-    const base = current ?? new Date()
-    commit(withTime(base, t))
-  }
-
-  // --- Dropdown (portalled) ---
-  let open = $state(false)
-  let tab = $state<'date' | 'time'>('date')
+  // --- Portalled dropdown positioning (DOM-bound; stays in the component) -----
   let triggerEl = $state<HTMLDivElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
   let panelRect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
@@ -142,17 +106,11 @@
     if (!triggerEl) return
     panelRect = anchoredRect(triggerEl.getBoundingClientRect(), { estimatedHeight: 360, minWidth: 300 })
   }
-  function openPanel() {
-    if (!isInteractive || open) return
-    tab = dropDownDisplayMode === 'time' ? 'time' : 'date'
-    open = true
-    updatePos()
-  }
-  function closePanel() { open = false }
-  function toggle() { (open ? closePanel : openPanel)() }
 
+  // Reposition on open + while open (scroll/resize), and dismiss on outside click.
   $effect(() => {
-    if (!open) return
+    if (!dtp.open) return
+    updatePos()
     const reposition = () => updatePos()
     window.addEventListener('scroll', reposition, true)
     window.addEventListener('resize', reposition)
@@ -160,7 +118,7 @@
       const t = e.target as Node | null
       if (!t) return
       if (triggerEl?.contains(t) || panelEl?.contains(t)) return
-      closePanel()
+      dtp.closePanel()
     }
     document.addEventListener('pointerdown', onDown, true)
     return () => {
@@ -170,59 +128,44 @@
     }
   })
 
-  function onInputKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter') { e.preventDefault(); commitFromText(); closePanel(); onCommit?.(current) }
-    else if (e.key === 'Escape') { closePanel(); onCancel?.() }
-    else if (e.key === 'ArrowDown' && (e.altKey || !text)) { e.preventDefault(); openPanel() }
-    else if (spinButtons && e.key === 'ArrowUp') { e.preventDefault(); bump(stepMinutes) }
-    else if (spinButtons && e.key === 'ArrowDown') { e.preventDefault(); bump(-stepMinutes) }
-  }
-
   function focusOpen(node: HTMLInputElement) {
     if (!autoOpen) return
     node.focus()
-    openPanel()
+    dtp.openPanel()
   }
 
   function onRootFocusOut(e: FocusEvent) {
     const next = e.relatedTarget as Node | null
     // Ignore focus moving within the field or into the portalled panel.
     if (next && (triggerEl?.contains(next) || panelEl?.contains(next))) return
-    onCommit?.(current)
+    onCommit?.(dtp.current)
   }
-
-  const showDateTab = $derived(dropDownDisplayMode !== 'time')
-  const showTimeTab = $derived(dropDownDisplayMode !== 'calendar')
 </script>
 
 <div class="sv-dtp" class:sv-dtp--disabled={disabled} onfocusout={onRootFocusOut}>
   <div class="sv-dtp__field" bind:this={triggerEl}>
     {#if spinButtons}
       <div class="sv-dtp__spin">
-        <button type="button" tabindex="-1" aria-label="Increment" onclick={() => bump(stepMinutes)} disabled={!isInteractive}>▲</button>
-        <button type="button" tabindex="-1" aria-label="Decrement" onclick={() => bump(-stepMinutes)} disabled={!isInteractive}>▼</button>
+        <button {...dtp.spinProps(1)}>▲</button>
+        <button {...dtp.spinProps(-1)}>▼</button>
       </div>
     {/if}
     <input
       class="sv-dtp__input"
-      type="text"
-      bind:value={text}
+      bind:value={dtp.text}
       {placeholder}
-      {disabled}
-      {readonly}
-      onblur={commitFromText}
-      onkeydown={onInputKeydown}
+      {...dtp.inputProps()}
       use:focusOpen
     />
-    {#if nullable && current && isInteractive}
-      <button type="button" class="sv-dtp__clear" aria-label="Clear" onclick={() => commit(null)}>&times;</button>
+    {#if nullable && dtp.current && dtp.isInteractive}
+      <button class="sv-dtp__clear" {...dtp.clearProps()}>&times;</button>
     {/if}
-    <button type="button" class="sv-dtp__toggle" aria-label="Open picker" aria-haspopup="dialog" aria-expanded={open} onclick={toggle} disabled={!isInteractive} tabindex="-1">
+    <button class="sv-dtp__toggle" {...dtp.toggleProps()}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
     </button>
   </div>
 
-  {#if open}
+  {#if dtp.open}
     <div
       class="sv-dtp__panel"
       bind:this={panelEl}
@@ -233,16 +176,16 @@
       role="dialog"
       aria-label="Choose date and time"
     >
-      {#if showDateTab && showTimeTab}
+      {#if dtp.showDateTab && dtp.showTimeTab}
         <div class="sv-dtp__tabs" role="tablist">
-          <button type="button" role="tab" aria-selected={tab === 'date'} class:is-active={tab === 'date'} onclick={() => (tab = 'date')}>DATE</button>
-          <button type="button" role="tab" aria-selected={tab === 'time'} class:is-active={tab === 'time'} onclick={() => (tab = 'time')}>TIME</button>
+          <button class:is-active={dtp.tab === 'date'} {...dtp.tabProps('date')}>DATE</button>
+          <button class:is-active={dtp.tab === 'time'} {...dtp.tabProps('time')}>TIME</button>
         </div>
       {/if}
       <div class="sv-dtp__body">
-        {#if tab === 'date' && showDateTab}
+        {#if dtp.tab === 'date' && dtp.showDateTab}
           <SvCalendar
-            value={current}
+            value={dtp.current}
             selectionMode="one"
             min={min}
             max={max}
@@ -250,22 +193,22 @@
             {weekNumbers}
             {locale}
             {animate}
-            onChange={onCalendarChange}
+            onChange={dtp.onCalendarChange}
           />
-        {:else if showTimeTab}
+        {:else if dtp.showTimeTab}
           <SvTimePicker
-            value={current}
+            value={dtp.current}
             format={hourFormat}
             {minuteInterval}
             footer
-            onChange={onTimeChange}
+            onChange={dtp.onTimeChange}
           />
         {/if}
       </div>
     </div>
   {/if}
 
-  {#if name}<input type="hidden" {name} value={current ? current.toISOString() : ''} />{/if}
+  {#if name}<input type="hidden" {name} value={dtp.current ? dtp.current.toISOString() : ''} />{/if}
 </div>
 
 <style>

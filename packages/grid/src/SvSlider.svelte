@@ -3,7 +3,12 @@
    * SvSlider - a single or range slider (WAI-ARIA slider) with steps, ticks,
    * keyboard + pointer drag. Parity: Smart `smart-slider`. Single emits number;
    * range emits [number, number].
+   *
+   * The behavior lives in the headless `createSlider` core; this component is
+   * just one styled renderer over it (it only owns pointer/DOM measurement).
    */
+  import { createSlider } from './createSlider.svelte'
+
   type Props = {
     value?: number | [number, number]
     onChange?: (value: any) => void
@@ -38,15 +43,22 @@
     formatValue,
   }: Props = $props()
 
-  const isVert = $derived(orientation === 'vertical')
-  const lo = $derived(range ? (value as [number, number])[0] : min)
-  const hi = $derived(range ? (value as [number, number])[1] : (value as number))
-
-  function clampStep(v: number): number {
-    const stepped = Math.round((v - min) / step) * step + min
-    return Math.min(max, Math.max(min, Number(stepped.toFixed(10))))
-  }
-  const pct = (v: number) => ((v - min) / (max - min)) * 100
+  // Behavior (value<->position math, stepping, keyboard, drag state, ARIA) lives
+  // in the headless `createSlider` core; the component keeps the DOM measuring.
+  const slider = createSlider({
+    value: () => value,
+    onChange: (v) => onChange?.(v),
+    min: () => min,
+    max: () => max,
+    step: () => step,
+    range: () => range,
+    orientation: () => orientation,
+    disabled: () => disabled,
+    ariaLabel: () => ariaLabel,
+  })
+  const lo = $derived(slider.lo)
+  const hi = $derived(slider.hi)
+  const pct = (v: number) => slider.percentOf(v)
 
   const tickValues = $derived.by<number[]>(() => {
     if (!ticks) return []
@@ -54,58 +66,18 @@
     return Array.from({ length: ticks }, (_, i) => min + ((max - min) / (ticks - 1)) * i)
   })
 
+  // The rect is measured here (a DOM concern) and passed INTO the core.
   let trackEl: HTMLDivElement | null = null
-  let dragging = $state<null | 'lo' | 'hi' | 'single'>(null)
-
-  function valueFromPointer(e: PointerEvent): number {
-    const rect = trackEl!.getBoundingClientRect()
-    const frac = isVert
-      ? 1 - (e.clientY - rect.top) / rect.height
-      : (e.clientX - rect.left) / rect.width
-    return clampStep(min + Math.min(1, Math.max(0, frac)) * (max - min))
-  }
-
-  function emitSingle(v: number) { onChange?.(v) }
-  function emitRange(nlo: number, nhi: number) { onChange?.([Math.min(nlo, nhi), Math.max(nlo, nhi)]) }
-
   function onTrackDown(e: PointerEvent) {
     if (disabled) return
-    const v = valueFromPointer(e)
-    if (range) {
-      const which = Math.abs(v - lo) <= Math.abs(v - hi) ? 'lo' : 'hi'
-      dragging = which
-      which === 'lo' ? emitRange(v, hi) : emitRange(lo, v)
-    } else {
-      dragging = 'single'
-      emitSingle(v)
-    }
+    slider.pointerDown({ x: e.clientX, y: e.clientY }, trackEl!.getBoundingClientRect())
     trackEl?.setPointerCapture(e.pointerId)
   }
   function onMove(e: PointerEvent) {
-    if (!dragging) return
-    const v = valueFromPointer(e)
-    if (dragging === 'single') emitSingle(v)
-    else if (dragging === 'lo') emitRange(v, hi)
-    else emitRange(lo, v)
+    if (!slider.dragging) return
+    slider.setFromPointer({ x: e.clientX, y: e.clientY }, trackEl!.getBoundingClientRect())
   }
-  function onUp(e: PointerEvent) { if (dragging) { dragging = null; trackEl?.releasePointerCapture(e.pointerId) } }
-
-  function onThumbKey(e: KeyboardEvent, which: 'lo' | 'hi' | 'single') {
-    if (disabled) return
-    const cur = which === 'lo' ? lo : hi
-    let next = cur
-    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = clampStep(cur + step)
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = clampStep(cur - step)
-    else if (e.key === 'Home') next = min
-    else if (e.key === 'End') next = max
-    else if (e.key === 'PageUp') next = clampStep(cur + step * 10)
-    else if (e.key === 'PageDown') next = clampStep(cur - step * 10)
-    else return
-    e.preventDefault()
-    if (which === 'single') emitSingle(next)
-    else if (which === 'lo') emitRange(next, hi)
-    else emitRange(lo, next)
-  }
+  function onUp(e: PointerEvent) { if (slider.dragging) { slider.endDrag(); trackEl?.releasePointerCapture(e.pointerId) } }
 
   const fmt = (v: number) => (formatValue ? formatValue(v) : String(v))
 </script>
@@ -119,6 +91,7 @@
   <div
     bind:this={trackEl}
     class="sv-slider__track"
+    {...slider.trackProps()}
     onpointerdown={onTrackDown}
     onpointermove={onMove}
     onpointerup={onUp}
@@ -134,14 +107,14 @@
     {/each}
 
     {#if range}
-      <div class="sv-slider__thumb" style:--p={`${pct(lo)}%`} role="slider" tabindex={disabled ? -1 : 0} aria-valuemin={min} aria-valuemax={hi} aria-valuenow={lo} aria-label="Minimum" onkeydown={(e) => onThumbKey(e, 'lo')}>
+      <div class="sv-slider__thumb" style:--p={`${pct(lo)}%`} {...slider.thumbProps(0)}>
         {#if showValue}<span class="sv-slider__bubble">{fmt(lo)}</span>{/if}
       </div>
-      <div class="sv-slider__thumb" style:--p={`${pct(hi)}%`} role="slider" tabindex={disabled ? -1 : 0} aria-valuemin={lo} aria-valuemax={max} aria-valuenow={hi} aria-label="Maximum" onkeydown={(e) => onThumbKey(e, 'hi')}>
+      <div class="sv-slider__thumb" style:--p={`${pct(hi)}%`} {...slider.thumbProps(1)}>
         {#if showValue}<span class="sv-slider__bubble">{fmt(hi)}</span>{/if}
       </div>
     {:else}
-      <div class="sv-slider__thumb" style:--p={`${pct(hi)}%`} role="slider" tabindex={disabled ? -1 : 0} aria-valuemin={min} aria-valuemax={max} aria-valuenow={hi} aria-label={ariaLabel ?? 'Value'} onkeydown={(e) => onThumbKey(e, 'single')}>
+      <div class="sv-slider__thumb" style:--p={`${pct(hi)}%`} {...slider.thumbProps(0)}>
         {#if showValue}<span class="sv-slider__bubble">{fmt(hi)}</span>{/if}
       </div>
     {/if}

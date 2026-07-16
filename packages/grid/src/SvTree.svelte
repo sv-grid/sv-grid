@@ -81,14 +81,14 @@
         class:is-leaf={!item.hasChildren}
         tabindex="-1"
         aria-hidden={!item.hasChildren}
-        onclick={(e) => { e.stopPropagation(); toggleExpand(item.node) }}
+        onclick={(e) => { e.stopPropagation(); tree.toggleExpand(item.node) }}
       >
         {#if item.hasChildren}
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
         {/if}
       </button>
       {#if checkable}
-        <button type="button" class="sv-tree__check is-{cs}" tabindex="-1" aria-hidden="true" onclick={(e) => { e.stopPropagation(); toggleCheck(item.node) }}>
+        <button type="button" class="sv-tree__check is-{cs}" tabindex="-1" aria-hidden="true" onclick={(e) => { e.stopPropagation(); tree.toggleCheck(item.node) }}>
           {#if cs === 'checked'}<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
           {:else if cs === 'indeterminate'}<svg viewBox="0 0 16 16"><path d="M4 8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" /></svg>{/if}
         </button>

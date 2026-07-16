@@ -3,7 +3,12 @@
    * SvGauge - a radial arc gauge (SVG) that renders a value within [min, max]
    * with optional colored threshold bands, a needle, and a center label. Parity:
    * Smart `smart-gauge` (radial). Display control; theme-driven.
+   *
+   * The arc/needle geometry + `role="meter"` ARIA live in the headless
+   * `createGauge` core; this component is just one styled renderer over it.
    */
+  import { createGauge } from './createGauge.svelte'
+
   type Band = { from: number; to: number; color: string }
 
   type Props = {
@@ -40,32 +45,25 @@
     ariaLabel,
   }: Props = $props()
 
-  const clamped = $derived(Math.min(max, Math.max(min, value)))
-  const startAngle = $derived(90 + (360 - sweep) / 2) // symmetric around the bottom
-  const cx = $derived(size / 2)
-  const cy = $derived(size / 2)
-  const r = $derived(size / 2 - thickness / 2 - 2)
-
-  function frac(v: number) { return (v - min) / (max - min) }
-  function angleOf(v: number) { return startAngle + frac(v) * sweep }
-  function polar(angleDeg: number, radius: number) {
-    const a = (angleDeg * Math.PI) / 180
-    return { x: cx + radius * Math.cos(a), y: cy + radius * Math.sin(a) }
-  }
-  function arcPath(v0: number, v1: number, radius: number): string {
-    const a0 = angleOf(v0)
-    const a1 = angleOf(v1)
-    const p0 = polar(a0, radius)
-    const p1 = polar(a1, radius)
-    const large = a1 - a0 > 180 ? 1 : 0
-    return `M ${p0.x} ${p0.y} A ${radius} ${radius} 0 ${large} 1 ${p1.x} ${p1.y}`
-  }
-
-  const needleEnd = $derived(polar(angleOf(clamped), r - thickness / 2))
+  const gauge = createGauge({
+    value: () => value,
+    min: () => min,
+    max: () => max,
+    sweep: () => sweep,
+    size: () => size,
+    thickness: () => thickness,
+    ariaLabel: () => ariaLabel,
+  })
+  const clamped = $derived(gauge.clamped)
+  const cx = $derived(gauge.cx)
+  const cy = $derived(gauge.cy)
+  const r = $derived(gauge.r)
+  const arcPath = (v0: number, v1: number, radius: number) => gauge.arcPath(v0, v1, radius)
+  const needleEnd = $derived(gauge.needleEnd)
   const display = $derived(label ?? `${formatValue ? formatValue(clamped) : Math.round(clamped)}${unit}`)
 </script>
 
-<div class="sv-gauge" role="meter" aria-valuenow={clamped} aria-valuemin={min} aria-valuemax={max} aria-label={ariaLabel ?? 'Gauge'}>
+<div class="sv-gauge" {...gauge.rootProps()}>
   <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} class="sv-gauge__svg">
     <!-- track -->
     <path d={arcPath(min, max, r)} class="sv-gauge__track" fill="none" stroke-width={thickness} stroke-linecap="round" />
