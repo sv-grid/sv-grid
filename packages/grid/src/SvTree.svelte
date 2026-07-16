@@ -1,10 +1,5 @@
 <script lang="ts" module>
-  export type TreeNode = {
-    id: string
-    label: string
-    children?: TreeNode[]
-    disabled?: boolean
-  }
+  export type { TreeNode } from './createTree.svelte'
 </script>
 
 <script lang="ts">
@@ -12,8 +7,12 @@
    * SvTree - a WAI-ARIA tree view. Expand/collapse, single-select highlight, and
    * optional cascading tri-state checkboxes. Parity: Smart `smart-tree`. Keyboard:
    * up/down move, left collapse/parent, right expand/child, Enter/Space select.
-   * The visible tree is flattened so roving-focus keyboard nav stays simple.
+   *
+   * The behavior (flattening, cascade math, keyboard, ARIA) lives in the headless
+   * `createTree` core; this component is just one styled renderer over it.
    */
+  import { createTree, type TreeNode } from './createTree.svelte'
+
   type Props = {
     nodes: ReadonlyArray<TreeNode>
     /** Selected node id (single-select highlight). */
@@ -41,117 +40,39 @@
     ariaLabel,
   }: Props = $props()
 
-  // Internal expanded set, seeded from the prop once (then self-managed unless
-  // the prop identity changes).
-  let expanded = $state<Set<string>>(new Set())
-  let seededExp = false
-  $effect(() => {
-    if (!seededExp) { seededExp = true; if (expandedIds) expanded = new Set(expandedIds) }
+  const tree = createTree({
+    nodes: () => nodes,
+    selected: () => selected,
+    onSelect: (id) => onSelect?.(id),
+    expandedIds: () => expandedIds,
+    onToggle: (id, exp) => onToggle?.(id, exp),
+    checkable: () => checkable,
+    checked: () => checked,
+    onCheck: (ids) => onCheck?.(ids),
+    ariaLabel: () => ariaLabel,
   })
 
-  type Flat = { node: TreeNode; depth: number; hasChildren: boolean; open: boolean; parentId: string | null }
-
-  const flat = $derived.by<Flat[]>(() => {
-    const out: Flat[] = []
-    const walk = (list: ReadonlyArray<TreeNode>, depth: number, parentId: string | null) => {
-      for (const node of list) {
-        const hasChildren = !!node.children?.length
-        const open = expanded.has(node.id)
-        out.push({ node, depth, hasChildren, open, parentId })
-        if (hasChildren && open) walk(node.children!, depth + 1, node.id)
-      }
-    }
-    walk(nodes, 0, null)
-    return out
-  })
-
-  let active = $state(0)
-  $effect(() => { if (active >= flat.length) active = Math.max(0, flat.length - 1) })
-
-  const checkedSet = $derived(new Set(checked))
-
-  function descendantIds(node: TreeNode): string[] {
-    const ids: string[] = []
-    const walk = (n: TreeNode) => { for (const c of n.children ?? []) { ids.push(c.id); walk(c) } }
-    walk(node)
-    return ids
-  }
-  function checkState(node: TreeNode): 'checked' | 'indeterminate' | 'unchecked' {
-    if (!node.children?.length) return checkedSet.has(node.id) ? 'checked' : 'unchecked'
-    const desc = descendantIds(node)
-    const on = desc.filter((id) => checkedSet.has(id)).length
-    if (on === 0 && !checkedSet.has(node.id)) return 'unchecked'
-    if (on === desc.length) return 'checked'
-    return 'indeterminate'
-  }
-
-  function toggleExpand(node: TreeNode) {
-    if (!node.children?.length) return
-    const next = new Set(expanded)
-    const willOpen = !next.has(node.id)
-    willOpen ? next.add(node.id) : next.delete(node.id)
-    expanded = next
-    onToggle?.(node.id, willOpen)
-  }
-  function select(node: TreeNode) {
-    if (node.disabled) return
-    onSelect?.(node.id)
-  }
-  function toggleCheck(node: TreeNode) {
-    if (node.disabled) return
-    const next = new Set(checkedSet)
-    const ids = [node.id, ...descendantIds(node)]
-    const currentlyOn = checkState(node) === 'checked'
-    for (const id of ids) currentlyOn ? next.delete(id) : next.add(id)
-    onCheck?.([...next])
-  }
-
-  function onKeydown(e: KeyboardEvent) {
-    const item = flat[active]
-    if (!item) return
-    switch (e.key) {
-      case 'ArrowDown': e.preventDefault(); active = Math.min(active + 1, flat.length - 1); focusActive(); break
-      case 'ArrowUp': e.preventDefault(); active = Math.max(active - 1, 0); focusActive(); break
-      case 'ArrowRight':
-        e.preventDefault()
-        if (item.hasChildren && !item.open) toggleExpand(item.node)
-        else if (item.hasChildren && item.open) { active = Math.min(active + 1, flat.length - 1); focusActive() }
-        break
-      case 'ArrowLeft':
-        e.preventDefault()
-        if (item.hasChildren && item.open) toggleExpand(item.node)
-        else if (item.parentId) { const pi = flat.findIndex((f) => f.node.id === item.parentId); if (pi >= 0) { active = pi; focusActive() } }
-        break
-      case 'Enter': e.preventDefault(); select(item.node); break
-      case ' ': e.preventDefault(); checkable ? toggleCheck(item.node) : select(item.node); break
-      case 'Home': e.preventDefault(); active = 0; focusActive(); break
-      case 'End': e.preventDefault(); active = flat.length - 1; focusActive(); break
-    }
-  }
-
+  // DOM focus movement is a render concern: follow the core's roving focus row.
   let treeEl: HTMLDivElement | null = null
-  function focusActive() {
-    queueMicrotask(() => treeEl?.querySelector<HTMLElement>(`[data-row="${active}"]`)?.focus())
-  }
+  let lastFocusTick = 0
+  $effect(() => {
+    if (tree.focusTick !== lastFocusTick) {
+      lastFocusTick = tree.focusTick
+      const i = tree.activeIndex
+      queueMicrotask(() => treeEl?.querySelector<HTMLElement>(`[data-row="${i}"]`)?.focus())
+    }
+  })
 </script>
 
-<div bind:this={treeEl} class="sv-tree" role="tree" aria-label={ariaLabel} aria-multiselectable={checkable}>
-  {#each flat as item, i (item.node.id)}
-    {@const cs = checkable ? checkState(item.node) : 'unchecked'}
+<div bind:this={treeEl} class="sv-tree" {...tree.treeProps()}>
+  {#each tree.rows as item (item.node.id)}
+    {@const cs = checkable ? tree.checkStateOf(item.node) : 'unchecked'}
     <div
       class="sv-tree__row"
       class:is-selected={item.node.id === selected}
       class:is-disabled={item.node.disabled}
-      role="treeitem"
-      aria-level={item.depth + 1}
-      aria-selected={item.node.id === selected}
-      aria-expanded={item.hasChildren ? item.open : undefined}
-      aria-checked={checkable ? cs === 'checked' ? 'true' : cs === 'indeterminate' ? 'mixed' : 'false' : undefined}
-      data-row={i}
-      tabindex={i === active ? 0 : -1}
       style:padding-left={`${item.depth * 18 + 6}px`}
-      onclick={() => { active = i; select(item.node) }}
-      onkeydown={onKeydown}
+      {...tree.itemProps(item)}
     >
       <button
         type="button"
