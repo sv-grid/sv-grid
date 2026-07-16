@@ -680,6 +680,12 @@ export const demoGroups: DemoGroup[] = CATEGORY_ORDER.map((category) => ({
   demos: demos.filter((d) => d.category === category),
 })).filter((g) => g.demos.length > 0)
 
+/** The gallery's default landing demo: the first demo of the first category in
+ *  CATEGORY_ORDER (Getting Started), so the gallery opens on the flagship SvGrid
+ *  product rather than whichever demo sits first in the source array (the editor
+ *  demos are declared first). */
+export const landingDemo: Demo = demoGroups[0]?.demos[0] ?? demos[0]!
+
 export function findDemo(id: string | null): Demo {
-  return demos.find((d) => d.id === id) ?? demos[0]!
+  return demos.find((d) => d.id === id) ?? landingDemo
 }

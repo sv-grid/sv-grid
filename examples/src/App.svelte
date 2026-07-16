@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-  import { demos, demoGroups, findDemo, isEnterpriseCategory, isEditorCategory } from './shared/registry'
+  import { demos, demoGroups, findDemo, landingDemo, isEnterpriseCategory, isEditorCategory } from './shared/registry'
   import SourceModal from './shared/SourceModal.svelte'
   import './index.css'
 
@@ -82,12 +82,12 @@
     return (PRESETS.some((p) => p.id === stored) ? stored : 'default') as Preset
   }
 
-  let route = $state(readHash() || demos[0]!.id)
+  let route = $state(readHash() || landingDemo.id)
   let theme = $state<Theme>(readTheme())
   let preset = $state<Preset>(readPreset())
 
   $effect(() => {
-    const onHash = () => (route = readHash() || demos[0]!.id)
+    const onHash = () => (route = readHash() || landingDemo.id)
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   })
