@@ -1,15 +1,23 @@
 import type { RowData, TableFeatures, SvGridApi } from '@svgrid/grid'
-import { exportGrid, type ExportOptions } from './export'
+import {
+  exportGrid,
+  copyExportToClipboard,
+  type ExportOptions,
+  type ExportResult,
+  type ClipboardExportOptions,
+} from './export'
 import { printGrid, type PrintOptions } from './print'
 import { importData, type ImportOptions, type ImportResult } from './import'
 import { isLicenseKeySet } from './license'
 import { emitUnlicensedNudge } from './watermark'
 import {
-  aiFilter, aiSmartFill, aiSummarize, aiClassify,
+  aiFilter, aiSmartFill, aiSummarize, aiClassify, aiExport, aiFindAnomalies,
   type AIFilterOptions, type AIFilterResult,
   type AISmartFillOptions, type AISmartFillResult,
   type AISummarizeOptions, type AISummary,
   type AIClassifyOptions, type AIClassifyResult,
+  type AIExportOptions, type AIExportPlan,
+  type AIAnomalyOptions, type AIAnomalyResult,
 } from './ai'
 import {
   createPivotModel,
@@ -26,6 +34,10 @@ export type EnterpriseAIApi<TData extends RowData> = {
   summarize(opts: AISummarizeOptions): Promise<AISummary>
   /** Classify free-text cells into one of a known set of labels. */
   classify(opts: AIClassifyOptions): Promise<AIClassifyResult>
+  /** Natural-language export: "export EU orders from Q2 as a grouped PDF". */
+  export(query: string, opts?: AIExportOptions): Promise<AIExportPlan>
+  /** Scan a slice for anomalies / outliers, returning a structured list. */
+  findAnomalies(opts?: AIAnomalyOptions): Promise<AIAnomalyResult>
   // TData is referenced so the type stays bound to the row shape even
   // though the helpers all read through `api.getData()`. Lets callers
   // get correct inference downstream without explicit generics.
@@ -58,8 +70,13 @@ export type EnterpriseGridApi<
   TFeatures extends TableFeatures,
   TData extends RowData,
 > = SvGridApi<TFeatures, TData> & {
-  /** Export the current visible rows to the chosen format. */
-  exportData(opts: ExportOptions<TData>): Promise<void>
+  /** Export the current visible rows to the chosen format. Returns the built
+   *  file ({@link ExportResult}) for the dependency-free paths (undefined for
+   *  the vendored-writer xlsx paths, which download directly). */
+  exportData(opts: ExportOptions<TData>): Promise<ExportResult | undefined>
+  /** Copy the grid (view / selection / all) to the clipboard in a native text
+   *  format (default `tsv`, pastes into Excel / Sheets as columns). */
+  copyExport(opts?: ClipboardExportOptions<TData>): Promise<void>
   /** Open a printable view of the current visible rows in a new window. */
   print(opts?: PrintOptions<TData>): Promise<void>
   /** Read an Excel / CSV / TSV / JSON file (or inline text) into typed
@@ -90,6 +107,7 @@ export function installEnterprise<
 >(api: SvGridApi<TFeatures, TData>): EnterpriseGridApi<TFeatures, TData> {
   const pro = api as EnterpriseGridApi<TFeatures, TData>
   pro.exportData = (opts) => exportGrid(pro, opts)
+  pro.copyExport = (opts) => copyExportToClipboard(pro, opts)
   pro.print = (opts) => printGrid(pro, opts)
   pro.importData = (opts) => importData(pro, opts)
   pro.ai = {
@@ -97,6 +115,8 @@ export function installEnterprise<
     smartFill: (opts) => aiSmartFill(pro, opts),
     summarize: (opts) => aiSummarize(pro, opts),
     classify: (opts) => aiClassify(pro, opts),
+    export: (query, opts) => aiExport(pro, query, opts),
+    findAnomalies: (opts) => aiFindAnomalies(pro, opts),
   }
   pro.pivot = {
     build: (config) =>

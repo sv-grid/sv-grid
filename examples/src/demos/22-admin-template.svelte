@@ -261,7 +261,7 @@
     ordersApi = installEnterprise(next)
   }
 
-  async function runExport(label: string, fn: () => Promise<void>) {
+  async function runExport(label: string, fn: () => Promise<unknown>) {
     if (!ordersApi) return
     exportBusy = label
     exportErr = null

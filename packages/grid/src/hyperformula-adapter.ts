@@ -32,6 +32,10 @@ export type HyperFormulaInstance = {
     contents: unknown,
   ): Array<{ address: { sheet: number; row: number; col: number }; newValue: unknown }>
   getCellValue(cell: { sheet: number; row: number; col: number }): unknown
+  /** Bulk-load an entire sheet in one call (one recalc instead of one per
+   *  cell). Optional so minimal / mock instances still satisfy the type;
+   *  the adapter falls back to per-cell `setCellContents` when it's absent. */
+  setSheetContent?(sheetId: number, values: unknown[][]): unknown
   destroy(): void
   rebuildAndRecalculate(): void
 }
@@ -80,12 +84,20 @@ export function createHyperFormulaSheet<T extends Record<string, unknown>>(
   fields.forEach((f, i) => colByField.set(f as string, i))
 
   // 1. Seed HF with every cell. HF expects raw strings for formulas
-  //    (`'=A1+B1'`) and primitives for everything else.
-  for (let r = 0; r < rows.length; r += 1) {
-    const row = rows[r]!
-    for (let c = 0; c < fields.length; c += 1) {
-      const field = fields[c]! as string
-      hf.setCellContents({ sheet: sheetId, row: r, col: c }, row[field as keyof T])
+  //    (`'=A1+B1'`) and primitives for everything else. Prefer a single bulk
+  //    `setSheetContent` write - it recalculates ONCE instead of once per
+  //    setCellContents, ~3x faster to mount a large sheet (e.g. 200x26). Fall
+  //    back to per-cell for instances that don't expose it.
+  if (typeof hf.setSheetContent === 'function') {
+    const grid = rows.map((row) => fields.map((f) => row[f as keyof T]))
+    hf.setSheetContent(sheetId, grid)
+  } else {
+    for (let r = 0; r < rows.length; r += 1) {
+      const row = rows[r]!
+      for (let c = 0; c < fields.length; c += 1) {
+        const field = fields[c]! as string
+        hf.setCellContents({ sheet: sheetId, row: r, col: c }, row[field as keyof T])
+      }
     }
   }
 

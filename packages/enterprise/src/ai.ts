@@ -27,6 +27,7 @@
 
 import type { RowData, SvGridApi, TableFeatures } from '@svgrid/grid'
 import { assertEnterpriseLicensed } from './license'
+import { exportGrid, type ExportFormat } from './export'
 
 // ---------------------------------------------------------------------------
 // Provider contract
@@ -59,7 +60,7 @@ export type AIRequest = {
   maxOutputTokens?: number
 }
 
-export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify'
+export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify' | 'export' | 'anomaly'
 
 let provider: AIProvider | null = null
 
@@ -537,7 +538,276 @@ export async function aiClassify<
 }
 
 // ---------------------------------------------------------------------------
-// 5. Mock provider for examples + tests
+// 5. Natural-language export
+// ---------------------------------------------------------------------------
+
+const EXPORT_FORMATS: ExportFormat[] = ['xlsx', 'xls', 'pdf', 'csv', 'tsv', 'html', 'json', 'xml', 'md']
+
+export type AIExportPlan = {
+  format: ExportFormat
+  filters: AIFilterClause[]
+  sort: AISortClause[]
+  groupBy: string[]
+  /** Plain-English explanation of how the model read the request. */
+  rationale: string
+}
+
+export type AIExportOptions = {
+  /**
+   * Also apply the filter / sort / grouping to the grid (mutating the view) so
+   * it mirrors the export. Default FALSE - the export is self-contained (it
+   * computes its own rows), so the grid is left untouched unless you opt in.
+   */
+  apply?: boolean
+  /** Actually download the file. Default true; set false to preview the plan. */
+  run?: boolean
+  /** Base filename (no extension). Default 'export'. */
+  filename?: string
+  signal?: AbortSignal
+}
+
+/**
+ * Turn a natural-language request ("export EU orders from Q2 as a grouped PDF")
+ * into an export: the model returns a `{ format, filters, sort, groupBy }` plan
+ * against the grid's columns; we apply the filter/sort to the grid and hand the
+ * result to `exportGrid`. Returns the plan so the UI can show what it did (or
+ * preview it first with `run: false`).
+ */
+export async function aiExport<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: SvGridApi<TFeatures, TData>,
+  query: string,
+  opts: AIExportOptions = {},
+): Promise<AIExportPlan> {
+  assertEnterpriseLicensed('AI assistant')
+  const schema = buildColumnSchema(api)
+  const prompt =
+    `You are an export assistant for a data grid. Translate the user's request ` +
+    `into a strict-JSON export plan.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Output JSON schema:\n` +
+    `{ "format": "xlsx"|"xls"|"pdf"|"csv"|"tsv"|"html"|"json"|"xml"|"md", ` +
+    `"filters": [{"field":"<column>","operator":"contains"|"equals"|"startsWith"|"greaterThan"|"lessThan"|"isBlank","value":"<string>"}], ` +
+    `"sort": [{"field":"<column>","desc":true|false}], ` +
+    `"groupBy": ["<column>"], ` +
+    `"rationale": "<one sentence>" }\n\n` +
+    `Rules: use the format the user names (default "xlsx"); only use column ` +
+    `names from the list above; "grouped" / "group by X" -> groupBy. ` +
+    `Return JSON only, no prose.\n\n` +
+    `User request: ${query}`
+
+  const plan = await callJSON<AIExportPlan>({
+    prompt,
+    task: 'export',
+    signal: opts.signal,
+    maxOutputTokens: 500,
+  })
+
+  // Defensive validation - drop invented fields, clamp the format.
+  const valid = new Set(schema.map((c) => c.field))
+  plan.format = EXPORT_FORMATS.includes(plan.format) ? plan.format : 'xlsx'
+  plan.filters = (plan.filters ?? []).filter((f) => valid.has(f.field))
+  plan.sort = (plan.sort ?? []).filter((s) => valid.has(s.field))
+  plan.groupBy = (plan.groupBy ?? []).filter((g) => valid.has(g))
+  plan.rationale = plan.rationale ?? ''
+
+  // Optionally mirror the plan onto the grid (opt-in). Off by default so the
+  // export never disturbs the user's current view.
+  if (opts.apply === true) {
+    api.clearAllFilters()
+    api.clearSort()
+    for (const f of plan.filters) {
+      api.setFilter(f.field, { operator: f.operator, value: f.value ?? '' })
+    }
+    const last = plan.sort[plan.sort.length - 1]
+    if (last) api.setSort(last.field, last.desc ? 'desc' : 'asc')
+    if (plan.groupBy.length > 0) {
+      try {
+        api.setGroupBy(plan.groupBy)
+      } catch {
+        // grouping feature not enabled - the export still groups on its own
+      }
+    }
+  }
+
+  if (opts.run !== false) {
+    // Compute the export rows from the plan directly (filter + sort + make
+    // contiguous by group) rather than reading the grid's reactive displayed
+    // rows - so the download always has exactly the intended data.
+    const exportRows = applyPlanToRows(api.getData(), plan)
+    await exportGrid(api, {
+      format: plan.format,
+      filename: opts.filename ?? 'export',
+      rows: exportRows,
+      ...(plan.groupBy.length > 0 ? { groupBy: plan.groupBy } : {}),
+    })
+  }
+  return plan
+}
+
+/** Evaluate one AI filter clause against a raw row value. */
+function matchesClause(row: Record<string, unknown>, clause: AIFilterClause): boolean {
+  const v = row[clause.field]
+  const val = clause.value ?? ''
+  switch (clause.operator) {
+    case 'contains':
+      return String(v ?? '').toLowerCase().includes(val.toLowerCase())
+    case 'equals':
+      return String(v ?? '').toLowerCase() === val.toLowerCase()
+    case 'startsWith':
+      return String(v ?? '').toLowerCase().startsWith(val.toLowerCase())
+    case 'greaterThan':
+      return Number(v) > Number(val)
+    case 'lessThan':
+      return Number(v) < Number(val)
+    case 'isBlank':
+      return v == null || v === ''
+    default:
+      return true
+  }
+}
+
+/** Filter + sort + (stable) group the raw rows per an export plan. */
+function applyPlanToRows<TData extends RowData>(
+  data: ReadonlyArray<TData>,
+  plan: AIExportPlan,
+): TData[] {
+  let rows: TData[] = data.slice()
+  if (plan.filters.length > 0) {
+    rows = rows.filter((r) =>
+      plan.filters.every((f) => matchesClause(r as Record<string, unknown>, f)),
+    )
+  }
+  const last = plan.sort[plan.sort.length - 1]
+  if (last) {
+    rows = [...rows].sort((a, b) => {
+      const av = (a as Record<string, unknown>)[last.field]
+      const bv = (b as Record<string, unknown>)[last.field]
+      const na = Number(av)
+      const nb = Number(bv)
+      let cmp: number
+      if (Number.isFinite(na) && Number.isFinite(nb)) cmp = na - nb
+      else cmp = String(av ?? '').localeCompare(String(bv ?? ''))
+      return last.desc ? -cmp : cmp
+    })
+  }
+  // Contiguous grouping (first-seen order) so PDF group rows + Excel outline
+  // line up.
+  if (plan.groupBy.length > 0) {
+    const buckets = new Map<string, TData[]>()
+    for (const r of rows) {
+      const key = plan.groupBy
+        .map((k) => String((r as Record<string, unknown>)[k] ?? ''))
+        .join('')
+      const bucket = buckets.get(key)
+      if (bucket) bucket.push(r)
+      else buckets.set(key, [r])
+    }
+    rows = [...buckets.values()].flat()
+  }
+  return rows
+}
+
+// ---------------------------------------------------------------------------
+// 6. Find anomalies
+// ---------------------------------------------------------------------------
+
+export type AIAnomaly = {
+  /** Index into the SCANNED rows (target order), when the model pins one row. */
+  rowIndex?: number
+  field?: string
+  value?: unknown
+  reason: string
+  severity: 'low' | 'medium' | 'high'
+}
+
+export type AIAnomalyResult = {
+  anomalies: AIAnomaly[]
+  summary: string
+}
+
+export type AIAnomalyOptions = {
+  /** Which rows to scan. Defaults to the whole dataset. */
+  target?: AISummarizeTarget
+  /** Optional focus, e.g. "look at pricing and margins". */
+  question?: string
+  signal?: AbortSignal
+}
+
+function sliceForTarget<TFeatures extends TableFeatures, TData extends RowData>(
+  api: SvGridApi<TFeatures, TData>,
+  target: AISummarizeTarget,
+): TData[] {
+  const all = api.getData()
+  if (target.kind === 'row') {
+    const r = all[target.rowIndex]
+    return r ? [r] : []
+  }
+  if (target.kind === 'selection') {
+    return target.rowIndices.map((i) => all[i]).filter((r): r is TData => r != null)
+  }
+  if (target.kind === 'group') {
+    return all.filter((r) => (r as Record<string, unknown>)[target.field] === target.value)
+  }
+  return all.slice()
+}
+
+/**
+ * Scan a slice of the grid (all / selection / group) for anomalies - outliers,
+ * suspicious values, inconsistencies - and return a structured list plus a
+ * one-line summary. Pairs naturally with an export: "find the odd ones, then
+ * export just those".
+ */
+export async function aiFindAnomalies<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: SvGridApi<TFeatures, TData>,
+  opts: AIAnomalyOptions = {},
+): Promise<AIAnomalyResult> {
+  assertEnterpriseLicensed('AI assistant')
+  const rows = sliceForTarget(api, opts.target ?? { kind: 'all' })
+  if (rows.length === 0) return { anomalies: [], summary: 'No rows in scope.' }
+
+  const MAX_SAMPLE = 40
+  const sample =
+    rows.length <= MAX_SAMPLE
+      ? rows
+      : Array.from(
+          { length: MAX_SAMPLE },
+          (_, i) => rows[Math.floor((i / MAX_SAMPLE) * rows.length)]!,
+        )
+
+  const schema = buildColumnSchema(api, 30)
+  const prompt =
+    `You are a data-quality analyst. Scan the rows below for anomalies: ` +
+    `numeric outliers, impossible / inconsistent values, unexpected blanks, ` +
+    `and values that break the pattern of the column.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Rows (index is 0-based into this list):\n` +
+    `${sample.map((r, i) => `${i}: ${JSON.stringify(r)}`).join('\n')}\n\n` +
+    (opts.question ? `Focus: ${opts.question}\n\n` : '') +
+    `Return strict JSON only:\n` +
+    `{ "anomalies": [{"rowIndex": <number|null>, "field": "<column|null>", ` +
+    `"reason": "<why it's odd>", "severity": "low"|"medium"|"high"}], ` +
+    `"summary": "<one sentence>" }`
+
+  const result = await callJSON<AIAnomalyResult>({
+    prompt,
+    task: 'anomaly',
+    signal: opts.signal,
+    maxOutputTokens: 800,
+  })
+  return {
+    anomalies: result.anomalies ?? [],
+    summary: result.summary ?? '',
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7. Mock provider for examples + tests
 // ---------------------------------------------------------------------------
 
 /**
@@ -562,7 +832,122 @@ export const mockAIProvider: AIProvider = async (req) => {
   if (req.task === 'classify') {
     return JSON.stringify(buildMockClassify(req.prompt))
   }
+  if (req.task === 'export') {
+    return JSON.stringify(buildMockExport(req.prompt))
+  }
+  if (req.task === 'anomaly') {
+    return JSON.stringify(buildMockAnomaly(req.prompt))
+  }
   return '{}'
+}
+
+function extractUserRequest(prompt: string): string {
+  const m = prompt.match(/User request:\s*([\s\S]+)$/)
+  return (m?.[1] ?? '').trim().toLowerCase()
+}
+
+function buildMockExport(prompt: string): AIExportPlan {
+  const q = extractUserRequest(prompt)
+  const fields = extractFields(prompt)
+  // Reuse the filter mock (it reads "User query:"; feed it a compatible line).
+  const filterPlan = buildMockFilter(prompt + `\nUser query: ${q}\n`, q)
+
+  // Format keyword routing.
+  const format: ExportFormat =
+    /\bpdf\b/.test(q) ? 'pdf'
+    : /\bxls\b(?!x)/.test(q) || /97-2003|legacy excel/.test(q) ? 'xls'
+    : /\b(xlsx|excel|spreadsheet|workbook)\b/.test(q) ? 'xlsx'
+    : /\b(markdown|md)\b/.test(q) ? 'md'
+    : /\bjson\b/.test(q) ? 'json'
+    : /\bxml\b/.test(q) ? 'xml'
+    : /\btsv\b/.test(q) ? 'tsv'
+    : /\bhtml\b/.test(q) ? 'html'
+    : /\bcsv\b/.test(q) ? 'csv'
+    : 'xlsx'
+
+  // Grouping: "group by X" / "grouped by X", else "grouped" -> a categorical field.
+  const groupBy: string[] = []
+  const byMatch = q.match(/group(?:ed)?\s+by\s+([a-z0-9_ ,]+)/)
+  if (byMatch) {
+    for (const token of byMatch[1]!.split(/[, ]+/).filter(Boolean)) {
+      // Exact field match, or a substring match only for tokens long enough to
+      // be meaningful (so "a"/"as" don't match "amount").
+      const f = fields.find(
+        (ff) => ff.toLowerCase() === token || (token.length >= 4 && ff.toLowerCase().includes(token)),
+      )
+      if (f && !groupBy.includes(f)) groupBy.push(f)
+    }
+  } else if (/\bgroup(ed)?\b/.test(q)) {
+    const cat = fields.find((f) => /region|country|category|status|stage|type|group|dept|team/i.test(f))
+    if (cat) groupBy.push(cat)
+  }
+
+  return {
+    format,
+    filters: filterPlan.filters,
+    sort: filterPlan.sort,
+    groupBy,
+    rationale: `Export as ${format}${groupBy.length ? `, grouped by ${groupBy.join(' / ')}` : ''}${filterPlan.filters.length ? `; ${filterPlan.rationale}` : ''}`,
+  }
+}
+
+function buildMockAnomaly(prompt: string): AIAnomalyResult {
+  // Parse the sampled rows, flag the numeric outliers per numeric field.
+  const rowsBlock = prompt.match(/Rows \(index is 0-based into this list\):\n([\s\S]*?)\n\n/)?.[1] ?? ''
+  const parsed = rowsBlock
+    .split('\n')
+    .map((line) => {
+      const m = line.match(/^(\d+):\s*(\{[\s\S]*\})$/)
+      if (!m) return null
+      const row = safeParse(m[2]!) as Record<string, unknown> | null
+      return row ? { idx: parseInt(m[1]!, 10), row } : null
+    })
+    .filter((r): r is { idx: number; row: Record<string, unknown> } => !!r)
+
+  if (parsed.length === 0) {
+    return { anomalies: [], summary: 'No rows to scan (mock).' }
+  }
+
+  // Genuinely numeric fields only: every value is null or a real number (so
+  // booleans like `inStock` and id-ish strings are excluded). Also skip
+  // identifier / row-index columns - a max "id" isn't an anomaly.
+  const isIdLike = (f: string) => /(^id$|_id$|index|idx|^#|guid|uuid|serial|rownum)/i.test(f)
+  const numericFields = Object.keys(parsed[0]!.row).filter(
+    (f) =>
+      !isIdLike(f) &&
+      parsed.some((p) => typeof p.row[f] === 'number') &&
+      parsed.every((p) => p.row[f] == null || typeof p.row[f] === 'number'),
+  )
+
+  const anomalies: AIAnomaly[] = []
+  for (const f of numericFields.slice(0, 2)) {
+    let maxIdx = -1
+    let maxVal = -Infinity
+    for (const p of parsed) {
+      const n = Number(p.row[f])
+      if (Number.isFinite(n) && n > maxVal) {
+        maxVal = n
+        maxIdx = p.idx
+      }
+    }
+    if (maxIdx >= 0) {
+      anomalies.push({
+        rowIndex: maxIdx,
+        field: f,
+        value: maxVal,
+        reason: `${f} = ${maxVal} is the highest in the sample and may be an outlier`,
+        severity: 'medium',
+      })
+    }
+  }
+
+  return {
+    anomalies,
+    summary:
+      anomalies.length > 0
+        ? `Flagged ${anomalies.length} potential outlier${anomalies.length === 1 ? '' : 's'} (mock heuristic - wire a real model for genuine analysis).`
+        : 'No obvious anomalies in the sample (mock).',
+  }
 }
 
 function extractUserQuery(prompt: string): string {
@@ -579,6 +964,19 @@ function extractFields(prompt: string): string[] {
     .filter((s): s is string => !!s)
 }
 
+/** Parse the "- name (type): ..." schema block into {name, type} pairs. */
+function extractFieldTypes(prompt: string): Array<{ name: string; type: string }> {
+  const m = prompt.match(/Columns:\n([\s\S]*?)\n\n/)
+  if (!m) return []
+  return (m[1] ?? '')
+    .split('\n')
+    .map((l) => {
+      const mm = l.match(/^- (\w+)\s*\((\w+)\)/)
+      return mm ? { name: mm[1]!, type: mm[2]! } : null
+    })
+    .filter((x): x is { name: string; type: string } => !!x)
+}
+
 function buildMockFilter(prompt: string, q: string): AIFilterResult {
   const fields = extractFields(prompt)
   const filters: AIFilterClause[] = []
@@ -589,7 +987,15 @@ function buildMockFilter(prompt: string, q: string): AIFilterResult {
   // to convince the demo viewer the pipeline works.
   const numberWord = q.match(/(?:over|above|>|greater than)\s+\$?([\d.,]+)([kmb])?/)
   const lessWord   = q.match(/(?:under|below|<|less than)\s+\$?([\d.,]+)([kmb])?/)
-  const numberFields = fields.filter((f) => /(arr|amount|price|stock|value|qty|sold|cost|revenue|probability|fillpct)/i.test(f))
+  // Pick a NUMBER-typed field (never a boolean like `inStock`), money-named
+  // ones first so "$300" targets price/amount rather than a count/index.
+  const numberTyped = extractFieldTypes(prompt).filter((f) => f.type === 'number').map((f) => f.name)
+  const moneyRe = /(price|amount|cost|revenue|total|value|salary|arr|fee|spend|budget|sales)/i
+  const numberPool = numberTyped.length > 0 ? numberTyped : fields
+  const numberFields = [
+    ...numberPool.filter((f) => moneyRe.test(f)),
+    ...numberPool.filter((f) => !moneyRe.test(f)),
+  ]
 
   if (numberWord && numberFields[0]) {
     const raw = parseFloat(numberWord[1]!.replace(/,/g, ''))

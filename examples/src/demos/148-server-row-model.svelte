@@ -78,7 +78,7 @@
   ]
 
   let s = $state<ServerState<Row>>({
-    rows: [], total: 0, loading: false, error: null,
+    rows: [], total: 0, loading: false, saving: false, error: null,
     pageIndex: 0, pageSize: 50, pageCount: 1, sortModel: [], filterModel: {},
   })
   const ctl = createServerDataSource(source, { pageSize: 50, onChange: (next) => (s = next) })

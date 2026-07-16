@@ -221,9 +221,12 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   editorType?:
     | 'text'
     | 'number'
-    | 'date'
-    | 'datetime'
-    | 'time'         // native <input type="time"> - HH:MM or HH:MM:SS
+    | 'date'         // rich SvCalendar popover (opt out with 'date-native')
+    | 'datetime'     // rich SvDateTimePicker (opt out with 'datetime-native')
+    | 'time'         // rich SvTimePicker dial (opt out with 'time-native')
+    | 'date-native'      // plain <input type="date">
+    | 'datetime-native'  // plain <input type="datetime-local">
+    | 'time-native'      // plain <input type="time"> - HH:MM or HH:MM:SS
     | 'password'     // native <input type="password"> with masked rendering
     | 'checkbox'
     | 'list'
@@ -251,6 +254,27 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * string skips the tooltip.
    */
   tooltip?: string | ((ctx: CellContext<TData>) => string | null | undefined)
+  /**
+   * Declarative per-cell validation (Handsontable-style). Runs for EVERY
+   * rendered cell - including values already present in `data` on load, not
+   * just on edit - so bad data is flagged immediately. Invalid cells get the
+   * `sv-grid-cell-invalid` class (red highlight) and the returned message as
+   * their tooltip.
+   *
+   * Return value:
+   *   - `null` / `undefined` / `true` → valid (no highlight)
+   *   - `false`                       → invalid, no message
+   *   - a non-empty `string`          → invalid, string is the tooltip
+   *
+   * The value keeps rendering as-is (the grid does NOT roll it back); pair
+   * with `onCellValueChange` if you also want to reject the commit.
+   */
+  validate?: (params: {
+    value: unknown
+    row: TData
+    rowIndex: number
+    column: Column<TData>
+  }) => string | boolean | null | undefined
   /**
    * Gate editing per column or per cell.
    *

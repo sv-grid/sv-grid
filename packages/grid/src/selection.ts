@@ -396,6 +396,30 @@ export function createSelection<
     return !inSource;
   }
 
+  /**
+   * Which edges of the fill-drag rectangle a cell sits on, so the render can
+   * paint a single dashed marquee around the WHOLE target range (source +
+   * extension) - the Excel fill-handle look - instead of a thick per-cell
+   * border. Returns null when the cell isn't on the rectangle's boundary.
+   */
+  function fillMarqueeEdges(rowIndex: number, colIndex: number) {
+    const d = ctx.fillDrag;
+    if (!d) return null;
+    const minR = Math.min(d.sourceMinRow, d.targetRow);
+    const maxR = Math.max(d.sourceMaxRow, d.targetRow);
+    const minC = Math.min(d.sourceMinCol, d.targetCol);
+    const maxC = Math.max(d.sourceMaxCol, d.targetCol);
+    if (rowIndex < minR || rowIndex > maxR || colIndex < minC || colIndex > maxC) {
+      return null;
+    }
+    const top = rowIndex === minR;
+    const bottom = rowIndex === maxR;
+    const left = colIndex === minC;
+    const right = colIndex === maxC;
+    if (!top && !bottom && !left && !right) return null;
+    return { top, bottom, left, right };
+  }
+
   /** Look up a column by id without depending on `buildApi`'s private
    *  closure (those helpers don't exist at this scope). */
   function findColumnById(columnId: string) {
@@ -411,15 +435,11 @@ export function createSelection<
     const row = ctx.allRows[rowIndex];
     const column = ctx.allColumns[colIndex];
     if (!row || !column || isGroupRow(row)) return;
-    const cellValue = ctx.getCellDisplayValue(
-      row.id,
-      column.id,
-      getColumnBaseValue(row, column),
-    );
-    const isCheckboxColumn =
-      column.columnDef.editorType === "checkbox" ||
-      typeof cellValue === "boolean";
-    if (isCheckboxColumn) return; // let onCellClick toggle the checkbox
+    // NOTE: we no longer bail for checkbox columns. Bailing here meant a
+    // range drag could never START on a checkbox cell. A plain click still
+    // toggles the checkbox via onCellClick (a same-cell click), while a
+    // cross-cell drag fires its `click` on a common ancestor - not the cell -
+    // so it selects a range without toggling.
 
     const active = ctx.grid.getState().activeCell;
     ctx.activeAtPointerDown = active
@@ -566,6 +586,7 @@ export function createSelection<
     extendSelection,
     isCellInSelectedRange,
     getCellRangeEdges,
+    fillMarqueeEdges,
     getSelectionRects,
     isInFillPreview,
     findColumnById,

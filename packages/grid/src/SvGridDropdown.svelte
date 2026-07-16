@@ -19,6 +19,7 @@
    *   Tab                - commit and let focus escape.
    */
   import type { CellEditorOption } from './editors/cell-editors'
+  import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
 
   type Props = {
     options: ReadonlyArray<CellEditorOption>
@@ -30,6 +31,10 @@
     /** Add a typeahead input at the top of the popover that filters the
      *  option list as the user types. Used by the rich-select editor. */
     searchable?: boolean
+    /** Focus the trigger and open the panel on mount. True for in-cell editing
+     *  (you clicked into the cell to edit); set false for form fields, which
+     *  should stay closed and unfocused until the user acts. Default true. */
+    autoOpen?: boolean
     /** Called with the new full value (scalar for single, array for multi). */
     onChange?: (next: unknown) => void
     /** Called when the user finalizes the selection (single pick, Enter, blur with selection). */
@@ -45,6 +50,7 @@
     placeholder = 'Select…',
     renderChipsInTrigger = false,
     searchable = false,
+    autoOpen = true,
     onChange,
     onCommit,
     onCancel,
@@ -69,7 +75,7 @@
   /** Viewport-anchored panel position. We `position: fixed` the panel so it
    *  escapes the grid's overflow:hidden scroll container - otherwise the
    *  bottom of the list gets clipped by the pager or the grid's footer. */
-  let panelRect = $state<{ top: number; left: number; width: number; openUpward: boolean }>({
+  let panelRect = $state<AnchoredRect>({
     top: 0,
     left: 0,
     width: 0,
@@ -134,20 +140,15 @@
    *  flips upward when there isn't enough room below the trigger. */
   function updatePanelPosition() {
     if (!triggerEl) return
-    const r = triggerEl.getBoundingClientRect()
     // Use the smaller of (option count, 10) for the upward-flip math so
     // a 3-option list doesn't think it needs 320px of headroom.
     const visibleCount = Math.min(options.length, 10)
     const estimatedHeight = visibleCount * 32 + (multiple ? 40 : 0) + 8
-    const spaceBelow = window.innerHeight - r.bottom
-    const spaceAbove = r.top
-    const openUpward = spaceBelow < estimatedHeight && spaceAbove > spaceBelow
-    panelRect = {
-      top: openUpward ? r.top - estimatedHeight - 2 : r.bottom + 2,
-      left: r.left,
-      width: r.width,
-      openUpward,
-    }
+    panelRect = anchoredRect(triggerEl.getBoundingClientRect(), {
+      estimatedHeight,
+      // Preserve the original behavior: anchor to the trigger, no clamping.
+      clampHorizontal: false,
+    })
   }
 
   // Keep the panel anchored as the page scrolls or resizes - without this,
@@ -249,26 +250,11 @@
   }
 
   function focusTrigger(node: HTMLButtonElement) {
+    // Form fields (autoOpen=false) stay closed + unfocused until the user acts;
+    // in-cell editing auto-focuses + opens to match clicking into a cell.
+    if (!autoOpen) return
     node.focus()
-    // Auto-open so the user can immediately pick - matches the
-    // expectation set by clicking into an editing cell.
     openPanel()
-  }
-
-  /** Svelte action: detach the element on mount and append it to
-   *  document.body, then put it back / remove on destroy. This is how
-   *  we "portal" the panel out of the grid's overflow:hidden scroll
-   *  container so it can never be clipped, no matter how deeply nested
-   *  the editing cell is. */
-  function portalToBody(node: HTMLElement) {
-    document.body.appendChild(node)
-    return {
-      destroy() {
-        if (node.parentNode === document.body) {
-          document.body.removeChild(node)
-        }
-      },
-    }
   }
 
   /** Close the panel when the user clicks outside both trigger AND
@@ -388,7 +374,7 @@
       style:left={`${panelRect.left}px`}
       style:width={`${panelRect.width}px`}
       style:max-height={panelMax !== null ? `${panelMax}px` : null}
-      style:z-index="9999"
+      style:z-index="2147483647"
       onpointerdown={(event) => event.stopPropagation()}
       onmousedown={(event) => event.stopPropagation()}
       onclick={(event) => event.stopPropagation()}

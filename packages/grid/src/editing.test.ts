@@ -834,4 +834,26 @@ describe('clipboard fallbacks (non-paste branches only)', () => {
     expect(ctx.internalData[0]).toMatchObject({ a: 'X', b: 'Y' })
     expect(ctx.internalData[1]).toMatchObject({ a: 'Z', b: 'W' })
   })
+
+  it('onGridPaste bails while a cell is being edited (native editor paste wins)', () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: undefined, // fallback path (Firefox / insecure) - would otherwise hijack
+      configurable: true,
+    })
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'a', field: 'a', editorType: 'text', editable: true }],
+      data: [{ a: 'orig' }],
+    })
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } }
+    ctx.editingCell = { rowId: '0', columnId: 'a', editorType: 'text', value: 'orig' }
+    const ev = {
+      clipboardData: { getData: () => 'PASTED' },
+      preventDefault: vi.fn(),
+    } as unknown as ClipboardEvent
+    ed.onGridPaste(ev)
+    // The grid must NOT preventDefault (so the editor's native paste proceeds)
+    // and must NOT write to the data cell.
+    expect(ev.preventDefault).not.toHaveBeenCalled()
+    expect(ctx.internalData[0]).toMatchObject({ a: 'orig' })
+  })
 })

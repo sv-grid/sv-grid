@@ -1,0 +1,4 @@
+{ "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": { "target": "esnext", "module": "esnext", "moduleResolution": "bundler", "allowJs": true, "checkJs": false, "isolatedModules": true, "skipLibCheck": true, "noEmit": true, "types": [],
+    "paths": { "@svgrid/grid": ["../packages/grid/dist/index.d.ts"], "@svgrid/grid/*": ["../packages/grid/dist/*"], "@svgrid/enterprise": ["../packages/enterprise/src/index.ts"], "@svgrid/enterprise/*": ["../packages/enterprise/src/*"], "$lib/*": [".studio-check/src/lib/*"] } },
+  "include": [".studio-check/src/**/*.svelte", ".studio-check/src/**/*.ts", ".studio-check/app.d.ts"] }

@@ -37,6 +37,12 @@
       "svelte": "./src/pivot.ts",
       "import": "./src/pivot.ts"
     },
+    "./studio": {
+      "types": "./src/studio/index.ts",
+      "node": "./dist/node/studio.js",
+      "svelte": "./src/studio/index.ts",
+      "import": "./src/studio/index.ts"
+    },
     "./cdn/svelte-external": {
       "import": "./dist/cdn/svgrid-enterprise.svelte-external.js",
       "default": "./dist/cdn/svgrid-enterprise.svelte-external.js"
@@ -54,9 +60,11 @@
   "scripts": {
     "test": "vitest run",
     "test:types": "tsc -p tsconfig.json --noEmit",
-    "build": "node ./scripts/build-cdn.mjs",
+    "build": "node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs",
     "build:cdn": "node ./scripts/build-cdn.mjs",
-    "prepublishOnly": "node ./scripts/build-cdn.mjs"
+    "build:node": "node ./scripts/build-node.mjs",
+    "build:designer": "vite build --config designer-app/vite.config.ts",
+    "prepublishOnly": "node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs"
   },
   "peerDependencies": {
     "svelte": "^5.0.0",

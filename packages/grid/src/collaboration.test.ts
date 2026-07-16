@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  broadcastChannelTransport,
   createCollaboration,
   type CollabMessage,
   type CollabTransport,
@@ -35,6 +36,35 @@ describe('createCollaboration', () => {
     expect(b.peers().map((p) => p.id)).toEqual(['a'])
     a.dispose()
     b.dispose()
+  })
+
+  it('closes the transport channel on dispose (#82)', () => {
+    // The controller now forwards dispose to the transport...
+    const disposeSpy = vi.fn()
+    const collab = createCollaboration({
+      user: userA,
+      transport: { post: vi.fn(), subscribe: () => () => {}, dispose: disposeSpy },
+    })
+    collab.dispose()
+    expect(disposeSpy).toHaveBeenCalledTimes(1)
+
+    // ...and broadcastChannelTransport.dispose() closes the BroadcastChannel.
+    const close = vi.fn()
+    class FakeBroadcastChannel {
+      postMessage = vi.fn()
+      addEventListener = vi.fn()
+      removeEventListener = vi.fn()
+      close = close
+      constructor(public name: string) {}
+    }
+    const Orig = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel
+    ;(globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = FakeBroadcastChannel
+    try {
+      broadcastChannelTransport('room').dispose?.()
+      expect(close).toHaveBeenCalledTimes(1)
+    } finally {
+      ;(globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = Orig
+    }
   })
 
   it('setCell propagates a remote cursor', () => {

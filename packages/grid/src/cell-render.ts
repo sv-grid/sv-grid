@@ -202,6 +202,48 @@ export function createCellRender<
   }
 
   /**
+   * Resolve per-cell validity via the column's declarative `validate` hook.
+   * Runs for every rendered cell so pre-existing bad data is flagged on load.
+   * Returns `{ invalid, message }` - `invalid` drives the red highlight class,
+   * `message` (when present) becomes the cell's tooltip.
+   */
+  function computeCellValidity(
+    row: Row<TData>,
+    column: Column<TData>,
+  ): { invalid: boolean; message: string | null } {
+    const rule = column.columnDef.validate as
+      | ((params: {
+          value: unknown
+          row: TData
+          rowIndex: number
+          column: Column<TData>
+        }) => string | boolean | null | undefined)
+      | undefined
+    if (typeof rule !== "function") return { invalid: false, message: null }
+    // Read the edit-aware value: inline edits land in `editedCellValues`
+    // (keyed rowId:colId) and are NOT written into the row's memoized value
+    // cache, so `getCellValueByColumnId` would return the stale pre-edit value
+    // and validation would never re-run after an edit. Consult the overlay
+    // first - same rule the display path (getCellDisplayValue) and summaries
+    // use - so a cell re-validates live as the user types.
+    const edited = ctx.editedCellValues ?? {}
+    const key = getCellKey(row.id, column.id)
+    const value =
+      key in edited ? edited[key] : row.getCellValueByColumnId(column.id)
+    const out = rule({
+      value,
+      row: row.original as TData,
+      rowIndex: row.index,
+      column,
+    })
+    // Valid: null / undefined / true. Invalid: false or a message string.
+    if (out == null || out === true) return { invalid: false, message: null }
+    if (out === false) return { invalid: true, message: null }
+    const msg = String(out)
+    return { invalid: true, message: msg.trim() ? msg : null }
+  }
+
+  /**
    * Resolve a per-cell note (a longer comment / annotation). Notes
    * come from the grid's `notes` prop - a `{ [rowId]: { [columnId]: string } }`
    * map - so the consumer keeps note storage. Returning non-empty
@@ -416,6 +458,7 @@ export function createCellRender<
     computeRowClass,
     computeCellClass,
     computeCellTooltip,
+    computeCellValidity,
     computeCellNote,
     getColumnEditorOptions,
     formatListCellValue,

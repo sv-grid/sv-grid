@@ -48,6 +48,18 @@ import {
   resolveDatePattern,
 } from "./cell-formatting";
 import {
+  projectGridRows,
+  serializeDelimited,
+  serializeJson,
+  serializeMarkdown,
+  downloadTextFile,
+  copyTextToClipboard,
+  type GridExportColumn,
+  type GridExportScope,
+  type GridExportOptions,
+  type GridClipboardOptions,
+} from "./export-format";
+import {
   RenderSnippetConfig,
   RenderComponentConfig,
 } from "./render-component";
@@ -128,6 +140,42 @@ export function createGridApi<
   function buildApi(): SvGridApi<TFeatures, TData> {
     const findColumn = (columnId: string) =>
       ctx.grid.getAllColumns().find((column: any) => column.id === columnId);
+
+    // --- Free data export (CSV / TSV / JSON + clipboard) helpers ----------
+    // Snapshot the VISIBLE columns (field + label + format + align) so the
+    // exporter reproduces on-screen values. Mirrors getColumns()'s visible set.
+    const exportColumns = (): GridExportColumn[] =>
+      ctx.allColumns
+        .map((c: any) => ({
+          field: (c.columnDef as { field?: string }).field as string,
+          header:
+            typeof c.columnDef.header === "string" ? c.columnDef.header : c.id,
+          format: c.columnDef.format,
+          align: getColumnAlign(c),
+        }))
+        .filter((c: GridExportColumn) => !!c.field);
+    // Rows for the requested scope: current view / checked / full dataset.
+    const exportScopeRows = (scope: GridExportScope): TData[] => {
+      if (scope === "all") return ctx.internalData as TData[];
+      const out: TData[] = [];
+      for (const row of ctx.allRows) {
+        if (isGroupRow(row)) continue;
+        if (scope === "selected" && !ctx.rowSelectionState[row.id]) continue;
+        out.push(row.original as TData);
+      }
+      return out;
+    };
+    const projectForExport = (
+      scope: GridExportScope,
+      columns: ReadonlyArray<string> | undefined,
+      rawValues: boolean | undefined,
+    ) =>
+      projectGridRows(
+        exportScopeRows(scope) as ReadonlyArray<Record<string, unknown>>,
+        exportColumns(),
+        { columns, rawValues },
+      );
+
     return {
       getCellValue(rowIndex, columnId) {
         const row = ctx.internalData[rowIndex];
@@ -409,6 +457,12 @@ export function createGridApi<
               ? c.columnDef.header
               : c.id,
           visible,
+          // Surface the format + alignment so exporters can reproduce the
+          // on-screen display value (currency symbol, date pattern, etc.)
+          // instead of dumping raw values. `getColumnAlign` applies the same
+          // editorType-based default the body uses.
+          format: c.columnDef.format,
+          align: getColumnAlign(c),
         });
         // Visible columns first, in their current visual order...
         const out = ctx.allColumns.map((c: any) => describe(c, true));
@@ -420,6 +474,67 @@ export function createGridApi<
           if (!visibleIds.has(c.id)) out.push(describe(c, false));
         }
         return out;
+      },
+      // ---- Free data export (CSV / TSV / JSON + clipboard) -----------------
+      async exportCsv(options: GridExportOptions = {}) {
+        const { records, fields } = projectForExport(
+          options.rows ?? "displayed",
+          options.columns,
+          options.rawValues,
+        );
+        const text = await serializeDelimited(records, fields, {
+          csv: { delimiter: ",", bom: options.bom ?? true },
+          signal: options.signal,
+          onProgress: options.onProgress,
+        });
+        if (options.download !== false)
+          downloadTextFile(text, `${options.filename ?? "grid"}.csv`, "text/csv;charset=utf-8");
+        return text;
+      },
+      async exportTsv(options: GridExportOptions = {}) {
+        const { records, fields } = projectForExport(
+          options.rows ?? "displayed",
+          options.columns,
+          options.rawValues,
+        );
+        const text = await serializeDelimited(records, fields, {
+          csv: { delimiter: "\t", bom: options.bom ?? true },
+          signal: options.signal,
+          onProgress: options.onProgress,
+        });
+        if (options.download !== false)
+          downloadTextFile(text, `${options.filename ?? "grid"}.tsv`, "text/tab-separated-values;charset=utf-8");
+        return text;
+      },
+      async exportJson(options: GridExportOptions = {}) {
+        const { records, fields } = projectForExport(
+          options.rows ?? "displayed",
+          options.columns,
+          options.rawValues,
+        );
+        const text = await serializeJson(records, fields, {
+          signal: options.signal,
+          onProgress: options.onProgress,
+        });
+        if (options.download !== false)
+          downloadTextFile(text, `${options.filename ?? "grid"}.json`, "application/json");
+        return text;
+      },
+      async copyToClipboard(options: GridClipboardOptions = {}) {
+        const { records, fields, align } = projectForExport(
+          options.rows ?? "displayed",
+          options.columns,
+          options.rawValues,
+        );
+        const format = options.format ?? "tsv";
+        const text =
+          format === "markdown"
+            ? await serializeMarkdown(records, fields, { align })
+            : await serializeDelimited(records, fields, {
+                csv: { delimiter: format === "csv" ? "," : "\t", bom: false },
+              });
+        await copyTextToClipboard(text);
+        return text;
       },
       clearRowSelection() {
         // Wipe the internal selection map AND emit the change so any

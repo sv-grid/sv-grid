@@ -48,7 +48,7 @@ apply time.
 ## Capture
 
 ```ts
-import { captureGridState } from './state-snapshot'
+import { captureGridState } from '$lib/state-snapshot'
 
 function snapshotNow(label?: string): GridStateSnapshot {
   return captureGridState(api, {
@@ -73,7 +73,7 @@ meaningful change happens.
 ## Apply
 
 ```ts
-import { applyGridState } from './state-snapshot'
+import { applyGridState } from '$lib/state-snapshot'
 
 function applySnapshot(snap: GridStateSnapshot) {
   applyGridState(api, snap, {
@@ -164,7 +164,7 @@ For "reload the page and come back to where you were", debounce a
 localStorage write on every state change:
 
 ```ts
-import { autoSaveSnapshot, loadAutoSavedSnapshot } from './state-snapshot'
+import { autoSaveSnapshot, loadAutoSavedSnapshot } from '$lib/state-snapshot'
 
 const STORAGE_KEY = 'myapp:grid:state:v1'
 let autoSaveOn = $state(false)
@@ -190,7 +190,7 @@ doesn't hit storage 60×/s.
 A snapshot is plain JSON - serialise to share, restore from paste:
 
 ```ts
-import { snapshotToJson, snapshotFromJson } from './state-snapshot'
+import { snapshotToJson, snapshotFromJson } from '$lib/state-snapshot'
 
 function copyState() {
   const text = snapshotToJson(snapshotNow('export'))

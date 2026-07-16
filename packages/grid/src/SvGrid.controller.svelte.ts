@@ -409,6 +409,10 @@ export function createSvGridController<
   });
   let columnVirtualizerVersion = $state(0);
   let gridStateVersion = $state(0);
+  // Bumps only when a row-model-affecting slice changes (see the store
+  // subscription below) - the row-model derivation depends on THIS, not the
+  // catch-all gridStateVersion, so navigation doesn't rebuild 1M rows.
+  let dataStateVersion = $state(0);
   const selectionColumnWidth = 44;
   const rowNumberColumnWidth = $derived(props.rowNumberWidth ?? 56);
   const showRowNumbersEffective = $derived(props.showRowNumbers ?? false);
@@ -582,6 +586,10 @@ export function createSvGridController<
   // the wrapper records filter state but does not actually filter rows.
   // svelte-ignore state_referenced_locally
   const externalFilterEnabled = props.externalFilter === true;
+  // Server-side pagination: the footer reads rowCount/pageIndex from props and
+  // emits onPaginationChange instead of slicing locally. Controlled by the
+  // consumer. Reactive (unlike sort/filter) so pageIndex/rowCount can change.
+  const externalPaginationEnabled = $derived(props.externalPagination === true);
   const passthroughSortedRowModel = ({ rows }: { rows: Array<Row<TData>> }) =>
     rows;
 
@@ -629,9 +637,38 @@ export function createSvGridController<
     },
   });
 
+  // `gridStateVersion` bumps on EVERY store change (incl. moving the active
+  // cell). `dataStateVersion` bumps ONLY when a slice that actually changes the
+  // row model changes (sort / filter / pagination / grouping / expansion /
+  // selection) - so the O(rows) row-model derivation does NOT re-run on plain
+  // keyboard navigation. Without this, arrow-keying a 1,000,000-row grid re-ran
+  // the entire core->filter->sort->group pipeline on every keystroke.
+  let prevDataSlices:
+    | { sorting: unknown; columnFilters: unknown; pagination: unknown; grouping: unknown; expanded: unknown; rowSelection: unknown }
+    | null = null;
   $effect(() => {
     const unsubscribe = grid.store.subscribe(() => {
       gridStateVersion += 1;
+      const s = grid.getState();
+      if (
+        !prevDataSlices ||
+        prevDataSlices.sorting !== s.sorting ||
+        prevDataSlices.columnFilters !== s.columnFilters ||
+        prevDataSlices.pagination !== s.pagination ||
+        prevDataSlices.grouping !== s.grouping ||
+        prevDataSlices.expanded !== s.expanded ||
+        prevDataSlices.rowSelection !== s.rowSelection
+      ) {
+        dataStateVersion += 1;
+        prevDataSlices = {
+          sorting: s.sorting,
+          columnFilters: s.columnFilters,
+          pagination: s.pagination,
+          grouping: s.grouping,
+          expanded: s.expanded,
+          rowSelection: s.rowSelection,
+        };
+      }
     });
     return unsubscribe;
   });
@@ -977,7 +1014,11 @@ export function createSvGridController<
    * filters reduce the dataset.
    */
   const allRowsBeforePagination = $derived.by(() => {
-    gridStateVersion;
+    // Depend on dataStateVersion (row-model-affecting store changes) NOT
+    // gridStateVersion - so moving the active cell / selection does not force
+    // this O(rows) pipeline to re-run. Filter-input state (globalFilter etc.)
+    // and internalData are read below and tracked as their own dependencies.
+    dataStateVersion;
     // Touch internalData + internalColumns so the row model re-derives when
     // the consumer replaces the data array (e.g. via a "Reset" button).
     void internalData;
@@ -1081,7 +1122,8 @@ export function createSvGridController<
    */
   const allRows = $derived.by(() => {
     const rows = allRowsBeforePagination;
-    if (!paginationEnabled) return rows;
+    // External pagination: `data` already IS the current page - never slice.
+    if (!paginationEnabled || externalPaginationEnabled) return rows;
     const { pageIndex, pageSize } = paginationState;
     const start = pageIndex * pageSize;
     return rows.slice(start, start + pageSize);
@@ -1089,14 +1131,27 @@ export function createSvGridController<
 
   // When a filter reduces the dataset, the stored pageIndex can point beyond
   // the last valid page. Reset to page 0 so the grid never shows a blank body.
+  // Skipped for external pagination, where the consumer owns pageIndex.
   $effect(() => {
-    if (!paginationEnabled) return;
+    if (!paginationEnabled || externalPaginationEnabled) return;
     const { pageIndex, pageSize } = paginationState;
     const pageCount = Math.ceil(allRowsBeforePagination.length / pageSize);
     if (pageCount > 0 && pageIndex >= pageCount) {
       grid.setPagination({ pageIndex: 0, pageSize });
     }
   });
+
+  // Footer-facing pagination values. In external mode they come from the
+  // consumer-controlled props; otherwise from the local row model + state.
+  const paginationTotalRows = $derived(
+    externalPaginationEnabled ? (props.rowCount ?? 0) : allRowsBeforePagination.length,
+  );
+  const paginationPageIndex = $derived(
+    externalPaginationEnabled ? (props.pageIndex ?? 0) : paginationState.pageIndex,
+  );
+  const paginationPageSize = $derived(
+    externalPaginationEnabled ? (props.pageSize ?? 10) : paginationState.pageSize,
+  );
   const rowSelectionState = $derived.by(() => {
     gridStateVersion;
     return grid.getState().rowSelection ?? {};
@@ -1501,9 +1556,14 @@ export function createSvGridController<
 
   let summaryByColumn = $state<Record<string, string>>({});
   $effect(() => {
-    // Re-aggregate whenever the visible data, columns, edits, or any
-    // state that reorders/filters rows changes.
-    gridStateVersion;
+    // Re-aggregate whenever the data / columns / edits change. We depend on
+    // `allRows` / `allColumns` / `editedCellValues` DIRECTLY - not the
+    // catch-all `gridStateVersion` - because that version bumps on EVERY store
+    // change, including moving the active cell or selection. `allRows` stays
+    // referentially stable across those (sort/filter/paginate produce a new
+    // rows array; navigation does not), so this now skips the
+    // O(rows x cols) aggregation on plain keyboard navigation - which was
+    // making arrow-key movement crawl on huge grids (e.g. 1,000,000 rows).
     void editedCellValues;
     const rows = allRows;
     const columns = allColumns;
@@ -2209,6 +2269,10 @@ export function createSvGridController<
     get sortDirectionByColumn() { return sortDirectionByColumn; },
     get groupingColumns() { return groupingColumns; },
     get paginationState() { return paginationState; },
+    get externalPaginationEnabled() { return externalPaginationEnabled; },
+    get paginationTotalRows() { return paginationTotalRows; },
+    get paginationPageIndex() { return paginationPageIndex; },
+    get paginationPageSize() { return paginationPageSize; },
     get getRowColumnValue() { return getRowColumnValue; },
     get allRowsBeforePagination() { return allRowsBeforePagination; },
     get allRows() { return allRows; },
@@ -2274,6 +2338,7 @@ export function createSvGridController<
     get computeRowClass() { return computeRowClass; },
     get computeCellClass() { return computeCellClass; },
     get computeCellTooltip() { return computeCellTooltip; },
+    get computeCellValidity() { return computeCellValidity; },
     get computeCellNote() { return computeCellNote; },
     get getCellDisplayValue() { return getCellDisplayValue; },
     get getColumnAlign() { return getColumnAlign; },
@@ -2309,6 +2374,7 @@ export function createSvGridController<
     get getSelectionRects() { return getSelectionRects; },
     get fillHandleCell() { return fillHandleCell; },
     get isInFillPreview() { return isInFillPreview; },
+    get fillMarqueeEdges() { return fillMarqueeEdges; },
     get findColumnById() { return findColumnById; },
     get readCellRaw() { return readCellRaw; },
     get writeCellRaw() { return writeCellRaw; },
@@ -2402,9 +2468,9 @@ export function createSvGridController<
   const { onGridKeyDown, onWindowKeydown, onHeaderSortClick } = createKeyboard<TFeatures, TData>(ctx);
   const { computeSummaries, hasRenderedColumn } = createSummaries<TFeatures, TData>(ctx);
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
-  const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellNote, getColumnEditorOptions, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
+  const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
-  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
+  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, startColumnResize, onColumnResizeMove, endColumnResize, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd } = createRowDrag<TFeatures, TData>(ctx);
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);

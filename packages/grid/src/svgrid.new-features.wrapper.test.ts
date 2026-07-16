@@ -75,8 +75,34 @@ describe('SvGrid wrapper - cellClass + rowClass', () => {
 
   it('computes the cell-level class per column and threads it onto the <td>', () => {
     expect(source).toMatch(/function computeCellClass/)
-    expect(source).toMatch(/userCellClass = computeCellClass\(row, rendered\.column\)/)
+    expect(source).toMatch(/userCellClass = computeCellClass\(\s*row,\s*rendered\.column,?\s*\)/)
     expect(source).toMatch(/class=\{`sv-grid-cell \$\{userCellClass\}`\}/)
+  })
+})
+
+describe('SvGrid wrapper - declarative cell validation (validate hook)', () => {
+  it('reads the column validate hook with the documented return union', () => {
+    expect(source).toMatch(/column\.columnDef\.validate/)
+    expect(source).toMatch(/=>\s*string\s*\|\s*boolean\s*\|\s*null\s*\|\s*undefined/)
+  })
+
+  it('computes per-cell validity in the render layer (runs for every rendered cell)', () => {
+    expect(source).toMatch(/function computeCellValidity/)
+    expect(source).toMatch(/columnDef\.validate/)
+    // Valid when null / undefined / true; invalid on false or a message.
+    expect(source).toMatch(/if \(out == null \|\| out === true\)/)
+  })
+
+  it('threads the invalid class + message tooltip onto both <td> render paths', () => {
+    const hits = source.match(/class:sv-grid-cell-invalid=\{cellValidity\.invalid\}/g) ?? []
+    expect(hits.length).toBeGreaterThanOrEqual(2)
+    // Message wins over the plain column tooltip when the cell is invalid.
+    expect(source).toMatch(/cellValidity\.invalid && cellValidity\.message/)
+  })
+
+  it('forwards computeCellValidity through the controller so the wrapper can read it', () => {
+    expect(source).toMatch(/get computeCellValidity\(\)\s*\{\s*return computeCellValidity;/)
+    expect(source).toMatch(/computeCellValidity\s*=\s*\$derived\(ctrl\.computeCellValidity\)/)
   })
 })
 

@@ -137,12 +137,17 @@ export function buildSparkline(
   const n = values.length
   const stepX = n > 1 ? innerW / (n - 1) : 0
   const pts = values.map((v, i) => ({
-    x: pad + i * stepX,
+    // A single point has no span to walk, so centre it rather than pinning it
+    // to the left edge.
+    x: n === 1 ? pad + innerW / 2 : pad + i * stepX,
     y: pad + innerH - ((v - min) / span) * innerH,
   }))
-  const linePath = pts
-    .map((p, i) => `${i === 0 ? 'M' : 'L'}${round(p.x)},${round(p.y)}`)
-    .join(' ')
+  const linePath =
+    n === 1
+      ? // One point produces only a moveto, which draws nothing. Emit a tiny
+        // horizontal segment so a single value still renders a visible mark.
+        `M${round(pts[0]!.x - 1)},${round(pts[0]!.y)} L${round(pts[0]!.x + 1)},${round(pts[0]!.y)}`
+      : pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${round(p.x)},${round(p.y)}`).join(' ')
   const first = pts[0]!
   const last = pts[pts.length - 1]!
   const baseY = pad + innerH

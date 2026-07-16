@@ -668,6 +668,24 @@ describe('clearSelectedCells', () => {
     expect(ctx.grid.store.setState).toHaveBeenCalled()
   })
 
+  it('fires onCellValueChange per cleared cell (so formula engines recompute)', () => {
+    const onCellValueChange = vi.fn()
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }],
+      data: [{ a: 'hello' }],
+    })
+    ctx.props.onCellValueChange = onCellValueChange
+    ctx.selectionRange = {
+      anchor: { rowIndex: 0, colIndex: 0 },
+      focus: { rowIndex: 0, colIndex: 0 },
+    }
+    const cb = createClipboard(ctx)
+    cb.clearSelectedCells()
+    expect(onCellValueChange).toHaveBeenCalledWith(
+      expect.objectContaining({ rowIndex: 0, columnId: 'a', oldValue: 'hello', newValue: '' }),
+    )
+  })
+
   it('clears a number cell via parseEditorValue coercion', () => {
     const ctx = makeCtx({
       columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],

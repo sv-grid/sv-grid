@@ -69,19 +69,47 @@ export function toDateTimeLocalInputValue(value: unknown) {
   return parsed.toISOString().slice(0, 16);
 }
 
+/** Strip the `-native` opt-out suffix so the native-input helpers treat
+ *  `date-native` exactly like `date` (the rich pickers own the bare types). */
+function baseEditor(editorType: CellEditorType): string {
+  return String(editorType).replace(/-native$/, "");
+}
+
+/** 'HH:MM[:SS]' string (or Date) to a Date carrying that time (today's date). */
+export function timeStringToDate(value: unknown): Date | null {
+  if (value instanceof Date) return value;
+  if (typeof value === "string") {
+    const m = value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      const d = new Date();
+      d.setHours(Math.min(23, +m[1]!), Math.min(59, +m[2]!), m[3] ? +m[3] : 0, 0);
+      return d;
+    }
+  }
+  return null;
+}
+
+/** A Date to an 'HH:MM' string (the `time` editor's stored form). */
+export function dateToTimeString(d: Date | null): string | null {
+  if (!d) return null;
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 export function getEditableInputValue(editorType: CellEditorType, value: unknown) {
-  if (editorType === "date") return toDateInputValue(value);
-  if (editorType === "datetime") return toDateTimeLocalInputValue(value);
+  const base = baseEditor(editorType);
+  if (base === "date") return toDateInputValue(value);
+  if (base === "datetime") return toDateTimeLocalInputValue(value);
   return String(value ?? "");
 }
 
 export function getEditorInputType(editorType: CellEditorType) {
-  if (editorType === "number") return "number";
-  if (editorType === "date") return "date";
-  if (editorType === "datetime") return "datetime-local";
-  if (editorType === "time") return "time";
-  if (editorType === "password") return "password";
-  if (editorType === "color") return "color";
+  const base = baseEditor(editorType);
+  if (base === "number") return "number";
+  if (base === "date") return "date";
+  if (base === "datetime") return "datetime-local";
+  if (base === "time") return "time";
+  if (base === "password") return "password";
+  if (base === "color") return "color";
   return "text";
 }
 
@@ -130,13 +158,14 @@ export function colorfulChipStyle(color: string | undefined): string {
 }
 
 export function getEditorClass(editorType: CellEditorType) {
-  if (editorType === "number")
+  const base = baseEditor(editorType);
+  if (base === "number")
     return "sv-grid-cell-editor sv-grid-cell-editor-number";
-  if (editorType === "date")
+  if (base === "date")
     return "sv-grid-cell-editor sv-grid-cell-editor-date";
-  if (editorType === "datetime")
+  if (base === "datetime")
     return "sv-grid-cell-editor sv-grid-cell-editor-datetime";
-  if (editorType === "color")
+  if (base === "color")
     return "sv-grid-cell-editor sv-grid-cell-editor-color";
   return "sv-grid-cell-editor";
 }

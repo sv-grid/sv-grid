@@ -62,7 +62,9 @@ export type SmartDataExporterInstance = {
   spreadsheets?: ReadonlyArray<{
     label: string
     dataSource: ReadonlyArray<Record<string, unknown>>
-    columns: ReadonlyArray<{ dataField: string; label: string }>
+    /** `format` is an optional Smart/Excel number-format token consumed by
+     *  the xlsx writer's `getXLSXFormat` to keep a column's cells typed. */
+    columns: ReadonlyArray<{ dataField: string; label: string; format?: string; width?: number }>
     dataFields: ReadonlyArray<string>
     style?: unknown
   }>

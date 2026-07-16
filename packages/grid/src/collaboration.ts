@@ -32,6 +32,8 @@ export type CollabMessage =
 export type CollabTransport = {
   post(msg: CollabMessage): void
   subscribe(handler: (msg: CollabMessage) => void): () => void
+  /** Release any underlying resource (e.g. a BroadcastChannel). Optional. */
+  dispose?(): void
 }
 
 export type Collaboration = {
@@ -74,6 +76,9 @@ export function broadcastChannelTransport(name: string): CollabTransport {
       const listener = (e: MessageEvent) => handler(e.data as CollabMessage)
       channel.addEventListener('message', listener)
       return () => channel.removeEventListener('message', listener)
+    },
+    dispose() {
+      channel?.close()
     },
   }
 }
@@ -156,6 +161,7 @@ export function createCollaboration(options: CollaborationOptions): Collaboratio
       transport.post({ kind: 'bye', userId: user.id })
       unsubscribe()
       if (pruneTimer) clearInterval(pruneTimer)
+      transport.dispose?.() // release the channel (BroadcastChannel etc.)
     },
   }
 }

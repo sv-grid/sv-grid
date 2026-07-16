@@ -29,6 +29,9 @@ importers:
 
   examples:
     dependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.5.4
+        version: 0.5.4
       ag-grid-community:
         specifier: ^35.3.1
         version: 35.3.1
@@ -87,6 +90,12 @@ importers:
       vite:
         specifier: ^8.0.10
         version: 8.0.14(@types/node@22.19.19)(jiti@2.7.0)
+
+  packages/create-studio:
+    dependencies:
+      '@svgrid/enterprise':
+        specifier: workspace:*
+        version: link:../enterprise
 
   packages/create-sv-grid: {}
 
@@ -161,9 +170,25 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.4
         version: 1.29.0(zod@3.25.76)
+      '@svgrid/enterprise':
+        specifier: workspace:*
+        version: link:../enterprise
       zod:
         specifier: ^3.23.8
         version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.19.19
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  packages/studio:
+    dependencies:
+      '@svgrid/enterprise':
+        specifier: workspace:*
+        version: link:../enterprise
     devDependencies:
       '@types/node':
         specifier: ^22.10.7
@@ -198,6 +223,9 @@ importers:
       autoprefixer:
         specifier: ^10.5.0
         version: 10.5.0(postcss@8.5.15)
+      hyperformula:
+        specifier: ^3.3.0
+        version: 3.3.0
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
@@ -307,6 +335,9 @@ packages:
   '@csstools/css-tokenizer@4.0.0':
     resolution: {integrity: sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA==}
     engines: {node: '>=20.19.0'}
+
+  '@electric-sql/pglite@0.5.4':
+    resolution: {integrity: sha512-yYZUyyXrHU7tPlCjwZQJ6hIG9DscdCCn7Uk0mYKwC1FeHX286AbcmFveMiRBEak8e9iPupjsoVImN3yJZVed2g==}
 
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
@@ -2264,6 +2295,8 @@ snapshots:
       css-tree: 3.2.1
 
   '@csstools/css-tokenizer@4.0.0': {}
+
+  '@electric-sql/pglite@0.5.4': {}
 
   '@emnapi/core@1.10.0':
     dependencies:

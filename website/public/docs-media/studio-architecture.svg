@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 470" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" role="img" aria-label="One EntitySchema drives the grid, edit form, dashboard, generated SvelteKit app, and every data source">
+  <rect x="0" y="0" width="860" height="470" rx="16" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="32" y="42" font-size="19" font-weight="700" fill="#0f172a">One EntitySchema, many surfaces</text>
+  <text x="32" y="64" font-size="13" fill="#64748b">Describe the entity once. The grid, form, dashboard, generated code, and data layer all derive from it.</text>
+
+  <!-- Center: EntitySchema -->
+  <rect x="352" y="196" width="156" height="78" rx="12" fill="#eff4ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="430" y="228" font-size="15" font-weight="700" fill="#1d4ed8" text-anchor="middle">EntitySchema</text>
+  <text x="430" y="248" font-size="11.5" fill="#3b5bdb" text-anchor="middle">fields, types,</text>
+  <text x="430" y="263" font-size="11.5" fill="#3b5bdb" text-anchor="middle">validation, relations</text>
+
+  <!-- connectors -->
+  <g stroke="#cbd5e1" stroke-width="1.6" fill="none">
+    <path d="M352 214 C 250 214, 210 150, 168 138"/>
+    <path d="M352 235 C 250 235, 205 235, 168 235"/>
+    <path d="M352 256 C 250 256, 210 320, 168 332"/>
+    <path d="M508 214 C 610 214, 650 150, 692 138"/>
+    <path d="M508 235 C 610 235, 655 235, 692 235"/>
+    <path d="M508 256 C 610 256, 650 320, 692 332"/>
+  </g>
+
+  <!-- Left outputs -->
+  <g>
+    <rect x="40" y="112" width="128" height="52" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="104" y="140" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">Data grid</text>
+    <text x="104" y="156" font-size="10.5" fill="#64748b" text-anchor="middle">schemaToColumns</text>
+
+    <rect x="40" y="209" width="128" height="52" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="104" y="237" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">Edit form</text>
+    <text x="104" y="253" font-size="10.5" fill="#64748b" text-anchor="middle">SvGridEditPanel</text>
+
+    <rect x="40" y="306" width="128" height="52" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="104" y="334" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">Dashboard</text>
+    <text x="104" y="350" font-size="10.5" fill="#64748b" text-anchor="middle">SvSchemaDashboard</text>
+  </g>
+
+  <!-- Right outputs -->
+  <g>
+    <rect x="692" y="112" width="128" height="52" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="756" y="140" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">SvelteKit app</text>
+    <text x="756" y="156" font-size="10.5" fill="#64748b" text-anchor="middle">scaffold() codegen</text>
+
+    <rect x="692" y="209" width="128" height="52" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="756" y="231" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">Data source</text>
+    <text x="756" y="247" font-size="10.5" fill="#64748b" text-anchor="middle">in-memory / SQL /</text>
+    <text x="756" y="259" font-size="10.5" fill="#64748b" text-anchor="middle">Supabase / REST</text>
+
+    <rect x="692" y="306" width="128" height="52" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="756" y="334" font-size="13" font-weight="600" fill="#0f172a" text-anchor="middle">Master / detail</text>
+    <text x="756" y="350" font-size="10.5" fill="#64748b" text-anchor="middle">nested grids</text>
+  </g>
+
+  <!-- Three ways to build (bottom band) -->
+  <rect x="40" y="392" width="780" height="52" rx="10" fill="#0f172a"/>
+  <text x="60" y="414" font-size="12" font-weight="700" fill="#e2e8f0">Three ways to author the schema</text>
+  <text x="60" y="431" font-size="11" fill="#94a3b8">Visual designer  ·  Studio CLI (deterministic)  ·  AI generator over MCP  —  all emit identical code</text>
+</svg>

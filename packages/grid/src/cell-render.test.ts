@@ -81,6 +81,44 @@ describe('createCellRender / cellConditionalFormat', () => {
   })
 })
 
+describe('createCellRender / computeCellValidity', () => {
+  const validateSalary = ({ value }: { value: unknown }) =>
+    Number(value) >= 1000 ? true : 'Salary must be at least $1,000'
+
+  it('returns valid when no validate hook is configured', () => {
+    const cr = createCellRender(makeCtx({ editedCellValues: {} }))
+    const out = cr.computeCellValidity(makeRow('r', { salary: 5 }), makeColumn('salary'))
+    expect(out).toEqual({ invalid: false, message: null })
+  })
+
+  it('flags bad base data on load (message becomes the tooltip)', () => {
+    const cr = createCellRender(makeCtx({ editedCellValues: {} }))
+    const col = makeColumn('salary', { validate: validateSalary })
+    const out = cr.computeCellValidity(makeRow('r3', { salary: -5000 }), col)
+    expect(out).toEqual({ invalid: true, message: 'Salary must be at least $1,000' })
+  })
+
+  it('re-validates against the edit overlay, not the stale cached base value', () => {
+    // The row still reports the old (bad) value via getCellValueByColumnId -
+    // inline edits are not written into the row's memoized value cache. The
+    // edited value lives in editedCellValues keyed rowId:colId; validity must
+    // read THAT so a cell clears/lights up live as the user types.
+    const col = makeColumn('salary', { validate: validateSalary })
+
+    const fixed = createCellRender(makeCtx({ editedCellValues: { 'r3:salary': 85000 } }))
+    expect(fixed.computeCellValidity(makeRow('r3', { salary: -5000 }), col)).toEqual({
+      invalid: false,
+      message: null,
+    })
+
+    const broken = createCellRender(makeCtx({ editedCellValues: { 'r1:salary': 5 } }))
+    expect(broken.computeCellValidity(makeRow('r1', { salary: 85000 }), col)).toEqual({
+      invalid: true,
+      message: 'Salary must be at least $1,000',
+    })
+  })
+})
+
 describe('createCellRender / computeRowClass', () => {
   it('returns empty string when no rowClass configured', () => {
     const cr = createCellRender(makeCtx())

@@ -342,7 +342,7 @@ export function createEditing<
     }
   }
 
-  function updateEditingCellValue(value: string) {
+  function updateEditingCellValue(value: unknown) {
     ctx.editingCell = ctx.editingCell ? { ...ctx.editingCell, value } : ctx.editingCell;
   }
 
@@ -442,6 +442,12 @@ export function createEditing<
    * (no preventDefault) whenever the async API is unavailable.
    */
   function onGridPaste(event: ClipboardEvent) {
+    // A cell is being edited: the focused editor input handles its own paste
+    // natively. Never hijack it for a range paste - doing so (on Firefox /
+    // insecure contexts, where the async Clipboard API is unavailable) would
+    // preventDefault the editor's paste and write to the data cell instead,
+    // so the edit "wouldn't update".
+    if (ctx.editingCell) return;
     // When the async API is available the keydown handler already pasted via
     // pasteFromClipboard(); ignore the (suppressed) native event so we don't
     // paste twice.

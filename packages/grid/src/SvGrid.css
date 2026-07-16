@@ -348,9 +348,13 @@
 .sv-grid-table tr > :last-child.sv-grid-cell {
   border-right: 0;
 }
-/* Row hover tint. */
-.sv-grid-table tbody tr:hover > .sv-grid-cell {
-  background: var(--sg-row-hover-bg, #eef2ff);
+/* Row hover tint - opt-in via `enableRowHover` (off by default; the class is
+   present unless the grid opts in). Uses `background-color` (not the shorthand)
+   so it never resets the fill-marquee `background-image`, and skips selected
+   cells so the selection stays visible under a hovered row. */
+.sv-grid-table:not(.sv-grid-no-row-hover)
+  tbody tr:hover > .sv-grid-cell:not([data-selected-range="true"]) {
+  background-color: var(--sg-row-hover-bg, #eef2ff);
 }
 /* Only the active cell + the cell hosting the fill handle become a
    positioning context (so the absolutely-positioned handle anchors
@@ -441,8 +445,10 @@
     ),
     var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 92%, var(--sg-accent, #2563eb) 8%));
 }
-/* Hovered row keeps the pinned tint distinguishable from the hover. */
-.sv-grid-row:hover > .sv-grid-cell[data-pinned] {
+/* Hovered row keeps the pinned tint distinguishable from the hover. Selected
+   cells are excluded so the selection stays visible under hover. */
+.sv-grid-table:not(.sv-grid-no-row-hover)
+  .sv-grid-row:hover > .sv-grid-cell[data-pinned]:not([data-selected-range="true"]) {
   background:
     linear-gradient(
       color-mix(in srgb, var(--sg-row-hover-bg, #eef2ff) 55%, transparent),
@@ -1062,18 +1068,52 @@ select.sv-grid-fr-editor {
   transform-origin: bottom right;
 }
 
-/* Fill-preview overlay paints an accent border on the cells the user is
-   about to fill. Source cells (still in the selection range) keep their
-   normal range styling. The border + tint derive from the theme accent
-   (`--sg-accent`) so they match each theme instead of a fixed blue;
-   `--sg-fill-preview-border` / `--sg-fill-preview-bg` let a theme override
-   them directly. */
-.sv-grid-cell[data-fill-preview="true"] {
-  box-shadow: inset 0 0 0 2px
-    var(--sg-fill-preview-border,
-      color-mix(in srgb, var(--sg-accent, #0b63f3) 50%, transparent));
-  background: var(--sg-fill-preview-bg,
-    color-mix(in srgb, var(--sg-accent, #0b63f3) 8%, transparent));
+/* Excel-style fill-handle drag marquee: ONE thin dashed rectangle around the
+   whole target range (source + fill-into area), not a thick per-cell border or
+   fill tint. Drawn as four background-image layers on the boundary cells - no
+   `border`, so it paints on the compositor with zero reflow while dragging.
+   `--sg-fill-marquee` overrides the colour (defaults to a theme-aware grey). */
+/* Step 1 (LOW specificity): default every edge layer to `none`, then light up
+   the edges this cell sits on. These are custom properties, which the
+   `background:` shorthands on selected / zebra cells do NOT reset - so they can
+   safely live at low specificity and just compete with each other by source
+   order (gradient rules come after the defaults, so they win). */
+.sv-grid-cell[data-fill-top="true"],
+.sv-grid-cell[data-fill-bottom="true"],
+.sv-grid-cell[data-fill-left="true"],
+.sv-grid-cell[data-fill-right="true"] {
+  --sv-fill-top: none;
+  --sv-fill-bottom: none;
+  --sv-fill-left: none;
+  --sv-fill-right: none;
+  /* Match the selection colour (the grid accent) by default. */
+  --sv-fill-color: var(--sg-fill-marquee, var(--sg-accent, #2563eb));
+}
+.sv-grid-cell[data-fill-top="true"] {
+  --sv-fill-top: repeating-linear-gradient(to right, var(--sv-fill-color) 0 3px, transparent 3px 6px);
+}
+.sv-grid-cell[data-fill-bottom="true"] {
+  --sv-fill-bottom: repeating-linear-gradient(to right, var(--sv-fill-color) 0 3px, transparent 3px 6px);
+}
+.sv-grid-cell[data-fill-left="true"] {
+  --sv-fill-left: repeating-linear-gradient(to bottom, var(--sv-fill-color) 0 3px, transparent 3px 6px);
+}
+.sv-grid-cell[data-fill-right="true"] {
+  --sv-fill-right: repeating-linear-gradient(to bottom, var(--sv-fill-color) 0 3px, transparent 3px 6px);
+}
+/* Step 2 (HIGH specificity, `.sv-grid-table` prefix): compose the resolved edge
+   layers into `background-image` so it beats the `background:` shorthands on
+   selected / zebra / hover cells (which would otherwise reset background-image).
+   The cell keeps its background-COLOR; this only adds the dashed lines on top. */
+.sv-grid-table .sv-grid-cell[data-fill-top="true"],
+.sv-grid-table .sv-grid-cell[data-fill-bottom="true"],
+.sv-grid-table .sv-grid-cell[data-fill-left="true"],
+.sv-grid-table .sv-grid-cell[data-fill-right="true"] {
+  background-image: var(--sv-fill-top), var(--sv-fill-bottom),
+    var(--sv-fill-left), var(--sv-fill-right);
+  background-repeat: no-repeat;
+  background-size: 100% 2px, 100% 2px, 2px 100%, 2px 100%;
+  background-position: top left, bottom left, top left, top right;
 }
 
 .sv-grid-cell-editing {
@@ -1337,6 +1377,17 @@ select.sv-grid-fr-editor {
 }
 .sv-grid-cell-cf {
   position: relative;
+}
+/* Declarative cell validation (column `validate` hook). Invalid cells get a
+ * soft red wash and a red inset ring - Handsontable's `htInvalid` look. The
+ * value keeps rendering as-is; the message (if any) shows as the tooltip. */
+.sv-grid-cell-invalid {
+  background-color: var(--sg-invalid-bg, rgba(239, 68, 68, 0.14)) !important;
+  box-shadow: inset 0 0 0 1px var(--sg-invalid-border, rgba(239, 68, 68, 0.45));
+  color: var(--sg-invalid-fg, #b91c1c);
+}
+.sv-grid-cell-invalid.sv-grid-cell-active {
+  box-shadow: inset 0 0 0 2px var(--sg-invalid-border, rgba(239, 68, 68, 0.7));
 }
 .sv-grid-status-bar {
   display: flex;
@@ -2103,32 +2154,34 @@ select.sv-grid-fr-editor {
   color: var(--sg-fg, #0f172a);
   font-size: 13px;
 }
+/* Top-positioned pager: rounded + bordered on the top edge instead. */
+.sv-grid-pagination-top {
+  border-top: 1px solid var(--sg-border, #e2e8f0);
+  border-bottom: 0;
+  border-radius: var(--sg-radius, 6px) var(--sg-radius, 6px) 0 0;
+}
 .sv-grid-pagination-pagesize {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   color: var(--sg-muted, #64748b);
 }
-.sv-grid-pagination-pagesize select {
+.sv-grid-pagination-pagesize-dd {
+  position: relative;
   height: 28px;
-  padding: 0 22px 0 8px;
+  min-width: 62px;
   border: 1px solid var(--sg-input-border, #cbd5e1);
   border-radius: 5px;
   background: var(--sg-input-bg, #fff);
-  color: var(--sg-fg, #0f172a);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: calc(100% - 12px) 12px, calc(100% - 8px) 12px;
-  background-size: 4px 4px, 4px 4px;
-  background-repeat: no-repeat;
 }
-.sv-grid-pagination-pagesize select:focus {
-  outline: none;
+.sv-grid-pagination-pagesize-dd .sv-grid-dropdown,
+.sv-grid-pagination-pagesize-dd .sv-grid-dropdown-trigger {
+  background: transparent;
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--sg-fg, #0f172a);
+}
+.sv-grid-pagination-pagesize-dd:focus-within {
   border-color: var(--sg-accent, #2563eb);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-accent, #2563eb) 30%, transparent);
 }

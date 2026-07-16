@@ -19,7 +19,7 @@ const DEP_VERSIONS: Record<string, string> = {
   '@svgrid/enterprise': '^1.1.0',
   jszip: '^3.10.1',
   'chart.js': '^4.4.7',
-  hyperformula: '^2.7.1',
+  hyperformula: '^3.3.0',
   'ag-grid-community': '^33.0.0',
 }
 
@@ -450,6 +450,7 @@ export async function buildStandaloneHtml(source: string, title: string, theme?:
       // Enterprise demos import this; unlicensed = watermark + console nudge.
       '@svgrid/enterprise': enterpriseCdn,
       jszip: 'https://esm.sh/jszip@3.10.1',
+      hyperformula: 'https://esm.sh/hyperformula@3.3.0',
       // Optional peer of the enterprise pack (PDF export).
       pdfmake: 'https://esm.sh/pdfmake@0.2.10',
     },

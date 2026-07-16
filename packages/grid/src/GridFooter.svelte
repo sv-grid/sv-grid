@@ -47,7 +47,23 @@
     } from "./SvGrid.controller.svelte";
   import type { SvGridController } from "./SvGrid.controller.svelte";
 
-  let { ctrl }: { ctrl: SvGridController<TFeatures, TData> } = $props();
+  let {
+    ctrl,
+    pager = true,
+    showStatus = true,
+    top = false,
+    pageSizeOptions,
+  }: {
+    ctrl: SvGridController<TFeatures, TData>;
+    /** Render the pagination controls in this instance. */
+    pager?: boolean;
+    /** Render the status bar in this instance. */
+    showStatus?: boolean;
+    /** This is a top-positioned footer (styling only). */
+    top?: boolean;
+    /** Page-size choices for the selector. Defaults to `[10, 25, 50, 100]`. */
+    pageSizeOptions?: number[];
+  } = $props();
 
   // View facade: re-bind the controller's reactive members so the markup
   // (moved verbatim from SvGrid.svelte) stays identical.
@@ -63,7 +79,7 @@
   const setPageSize = $derived(ctrl.setPageSize);
 </script>
 
-    {#if statusBarEnabled && statusBarStats}
+    {#if showStatus && statusBarEnabled && statusBarStats}
       {@const s = statusBarStats}
       <div class="sv-grid-status-bar" role="status" aria-live="polite">
         {#each statusBarAggregates as agg (agg)}
@@ -96,31 +112,29 @@
       </div>
     {/if}
 
-    {#if paginationEnabled}
-      {@const totalRows = allRowsBeforePagination.length}
-      {@const pageSize = paginationState.pageSize}
+    {#if pager && paginationEnabled}
+      {@const totalRows = ctrl.paginationTotalRows}
+      {@const pageSize = ctrl.paginationPageSize}
       {@const pageCount = Math.max(1, Math.ceil(totalRows / pageSize))}
-      {@const currentPage = Math.min(paginationState.pageIndex + 1, pageCount)}
+      {@const currentPage = Math.min(ctrl.paginationPageIndex + 1, pageCount)}
       {@const rangeStart =
         totalRows === 0 ? 0 : (currentPage - 1) * pageSize + 1}
       {@const rangeEnd = Math.min(totalRows, currentPage * pageSize)}
       {@const onFirst = currentPage <= 1}
       {@const onLast = currentPage >= pageCount}
-      <div class="sv-grid-pagination" role="navigation" aria-label="Pagination">
-        <label class="sv-grid-pagination-pagesize">
+      {@const sizes = pageSizeOptions && pageSizeOptions.length ? pageSizeOptions : [10, 25, 50, 100]}
+      <div class="sv-grid-pagination" class:sv-grid-pagination-top={top} role="navigation" aria-label="Pagination">
+        <div class="sv-grid-pagination-pagesize">
           <span>Page Size:</span>
-          <select
-            onchange={(event) =>
-              setPageSize(
-                parseInt((event.currentTarget as HTMLSelectElement).value, 10),
-              )}
-          >
-            <option value="10" selected={pageSize === 10}>10</option>
-            <option value="25" selected={pageSize === 25}>25</option>
-            <option value="50" selected={pageSize === 50}>50</option>
-            <option value="100" selected={pageSize === 100}>100</option>
-          </select>
-        </label>
+          <div class="sv-grid-pagination-pagesize-dd">
+            <SvGridDropdown
+              options={sizes.map((n) => ({ value: n, label: String(n) }))}
+              value={pageSize}
+              autoOpen={false}
+              onChange={(v) => setPageSize(Number(v))}
+            />
+          </div>
+        </div>
         <span class="sv-grid-pagination-range">
           <strong>{rangeStart.toLocaleString()}</strong> to
           <strong>{rangeEnd.toLocaleString()}</strong> of

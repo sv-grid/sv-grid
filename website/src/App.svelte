@@ -28,6 +28,7 @@
     themeBuilder: () => import('./routes/ThemeBuilder.svelte'),
     community: () => import('./routes/Community.svelte'),
     playground: () => import('./routes/Playground.svelte'),
+    studio: () => import('./routes/Studio.svelte'),
   }
 
   import { applyRouteSeo, applyDocSeo, applyDemoSeo, applyCompareSeo, applyBlogSeo } from './lib/seo'
@@ -100,7 +101,7 @@
   // demos and the browser adds a third scrollbar on top of the
   // panel-local ones. Api stays page-scrolling because its sidebar uses
   // `position: sticky` against page scroll.
-  const APP_SHELL = new Set(['docs', 'demos', 'playground'])
+  const APP_SHELL = new Set(['docs', 'demos', 'playground', 'studio'])
   const isAppShell = $derived(APP_SHELL.has(route.section))
 
   // SEO: rewrite head metadata on every route change. Doc pages get their
@@ -183,6 +184,8 @@
       <LazyRoute loader={ROUTES.themeBuilder} />
     {:else if route.section === 'playground'}
       <LazyRoute loader={ROUTES.playground} props={{ demoId: route.rest }} />
+    {:else if route.section === 'studio'}
+      <LazyRoute loader={ROUTES.studio} props={{ template: route.rest }} />
     {:else}
       <section class="mx-auto max-w-3xl px-6 py-24 text-center">
         <h1 class="text-3xl font-bold">Page not found</h1>

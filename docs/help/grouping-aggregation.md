@@ -29,10 +29,10 @@ per column:
     { field: 'department', header: 'Department' },
     { field: 'name',       header: 'Name' },
     { field: 'salary',     header: 'Salary',
-      aggregator: 'sum',
+      aggregate: 'sum',
       format: { type: 'currency', currency: 'USD' } },
     { field: 'performance', header: 'Performance',
-      aggregator: 'avg' },
+      aggregate: 'avg' },
   ]
 
   const rows: Employee[] = [
@@ -88,7 +88,7 @@ Pass a function instead of a string for any group-aware computation:
 {
   field: 'orders',
   header: 'Top customer',
-  aggregator: (rows) => {
+  aggregate: (rows) => {
     const top = rows.reduce<Employee | null>(
       (acc, r) => !acc || r.orders > acc.orders ? r : acc,
       null,
@@ -132,7 +132,7 @@ A useful custom aggregator for strings:
 ```ts
 {
   field: 'tags',
-  aggregator: (rows) => {
+  aggregate: (rows) => {
     const set = new Set<string>()
     for (const r of rows) for (const t of r.tags) set.add(t)
     return Array.from(set).join(', ')

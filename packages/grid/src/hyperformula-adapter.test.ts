@@ -13,7 +13,7 @@ import {
  * engine so we can assert the adapter wires reads/writes correctly without
  * needing the real ~1MB hyperformula package.
  */
-function makeFakeEngine() {
+function makeFakeEngine(opts: { bulk?: boolean } = {}) {
   const raw = new Map<string, unknown>()
   const key = (s: number, r: number, c: number) => `${s}:${r}:${c}`
 
@@ -61,6 +61,18 @@ function makeFakeEngine() {
     ),
     destroy: vi.fn(() => {}),
     rebuildAndRecalculate: vi.fn(() => {}),
+    // Bulk seed path (only when opted in) - fills the same `raw` map so
+    // getCellValue/evalCell work identically to the per-cell path.
+    ...(opts.bulk
+      ? {
+          setSheetContent: vi.fn((sheetId: number, values: unknown[][]) => {
+            values.forEach((rowVals, r) =>
+              rowVals.forEach((v, c) => raw.set(key(sheetId, r, c), v)),
+            )
+            return []
+          }),
+        }
+      : {}),
     // test-only introspection
     _raw: raw,
   }
@@ -97,6 +109,28 @@ describe('createHyperFormulaSheet', () => {
       { sheet: 0, row: 1, col: 1 },
       20,
     )
+  })
+
+  it('seeds via a single bulk setSheetContent when the engine exposes it', () => {
+    const bulkHf = makeFakeEngine({ bulk: true }) as ReturnType<typeof makeFakeEngine> & {
+      setSheetContent: ReturnType<typeof vi.fn>
+    }
+    const rows = [
+      { a: 1, b: '=A1+10' },
+      { a: 10, b: '=A2+10' },
+    ]
+    const sheet = createHyperFormulaSheet({ hyperformula: bulkHf, rows, fields: ['a', 'b'] })
+
+    // Bulk path: ONE setSheetContent, no per-cell setCellContents for the seed.
+    expect(bulkHf.setSheetContent).toHaveBeenCalledTimes(1)
+    expect(bulkHf.setSheetContent).toHaveBeenCalledWith(0, [
+      [1, '=A1+10'],
+      [10, '=A2+10'],
+    ])
+    expect(bulkHf.setCellContents).not.toHaveBeenCalled()
+    // Still computes correctly.
+    expect(sheet.computed[0]!.b).toBe(11)
+    expect(sheet.computed[1]!.b).toBe(20)
   })
 
   it('computed snapshot pulls evaluated values out of the engine', () => {

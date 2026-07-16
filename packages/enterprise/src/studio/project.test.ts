@@ -1,0 +1,343 @@
+import { describe, expect, it } from 'vitest'
+import type { EntitySchema } from '../schema'
+import {
+  addBlock,
+  duplicateBlock,
+  blockColumns,
+  addBlockAt,
+  addEntity,
+  addScreen,
+  addScreenFromTemplate,
+  parseProject,
+  screenFromTemplate,
+  serializeProject,
+  setTheme,
+  blockPalette,
+  createProject,
+  defaultBlockConfig,
+  defaultScreenFor,
+  gridColumns,
+  moveBlock,
+  removeBlock,
+  removeEntity,
+  reorderBlock,
+  sanitizeProject,
+  setEntityDataSource,
+  entityDataSource,
+  defaultEntitySource,
+  setShell,
+  updateBlock,
+  updateEntity,
+  updateScreen,
+  validateProject,
+  type MasterDetailConfig,
+  type StudioProject,
+} from './project'
+
+const customers: EntitySchema = {
+  name: 'customers', label: 'Customer', idField: 'id',
+  fields: [
+    { field: 'id', type: 'text', primaryKey: true, hidden: { form: true } },
+    { field: 'name', type: 'text' },
+    { field: 'secret', type: 'text', hidden: { grid: true } },
+    { field: 'tier', type: 'enum', options: [{ value: 'free', label: 'Free' }, { value: 'pro', label: 'Pro' }] },
+    { field: 'mrr', type: 'number' },
+  ],
+}
+const orders: EntitySchema = {
+  name: 'orders', label: 'Order', idField: 'id',
+  fields: [{ field: 'id', type: 'text', primaryKey: true }, { field: 'total', type: 'number' }],
+}
+
+describe('createProject / defaultScreenFor', () => {
+  it('makes one default screen per entity, each with a grid (editing = form)', () => {
+    const p = createProject([customers, orders])
+    expect(p.screens.map((s) => s.entity)).toEqual(['customers', 'orders'])
+    const screen = p.screens[0]!
+    expect(screen.blocks.map((b) => b.config.kind)).toEqual(['grid']) // editing is a grid property now
+    expect((screen.blocks[0]!.config as import('./project').GridConfig).editing).toBe('form')
+    expect(p.dataSource).toBe('memory')
+  })
+
+  it('grid columns include non-grid-hidden fields, shown', () => {
+    const cols = gridColumns(customers)
+    expect(cols.map((c) => c.field)).toEqual(['id', 'name', 'tier', 'mrr']) // secret (hidden.grid) excluded
+    expect(cols.find((c) => c.field === 'id')!.show).toBe(false) // raw id column hidden by default
+    expect(cols.filter((c) => c.field !== 'id').every((c) => c.show)).toBe(true)
+  })
+
+  it('a chart block defaults to a low-cardinality dimension + numeric measure', () => {
+    const cfg = defaultBlockConfig('chart', customers)
+    expect(cfg).toMatchObject({ kind: 'chart', dimension: 'tier', measure: 'mrr', reduce: 'sum', type: 'bar' })
+  })
+})
+
+describe('block ops', () => {
+  const base = createProject([customers])
+  const sid = base.screens[0]!.id
+
+  it('adds, removes, moves, reorders, and updates blocks immutably', () => {
+    const added = addBlock(base, sid, 'chart')
+    expect(added).not.toBe(base)
+    expect(added.screens[0]!.blocks.map((b) => b.config.kind)).toEqual(['grid', 'chart'])
+
+    const chartId = added.screens[0]!.blocks[1]!.id
+    const removed = removeBlock(added, sid, chartId)
+    expect(removed.screens[0]!.blocks).toHaveLength(1)
+
+    const moved = moveBlock(added, sid, chartId, -1)
+    expect(moved.screens[0]!.blocks.map((b) => b.config.kind)).toEqual(['chart', 'grid'])
+
+    const reordered = reorderBlock(added, sid, chartId, 0)
+    expect(reordered.screens[0]!.blocks[0]!.id).toBe(chartId)
+
+    const gridId = base.screens[0]!.blocks[0]!.id
+    const patched = updateBlock(base, sid, gridId, { span: 2, config: { pageSize: 25 } as Partial<import('./project').GridConfig> })
+    const grid = patched.screens[0]!.blocks[0]!
+    expect(grid.span).toBe(2)
+    expect((grid.config as import('./project').GridConfig).pageSize).toBe(25)
+  })
+
+  it('duplicateBlock clones config with a fresh id, right after the original', () => {
+    const base = createProject([customers])
+    const sid = base.screens[0]!.id
+    const gridId = base.screens[0]!.blocks[0]!.id
+    const dup = duplicateBlock(base, sid, gridId)
+    const blocks = dup.screens[0]!.blocks
+    expect(blocks).toHaveLength(2)
+    expect(blocks[1]!.id).not.toBe(gridId)                 // fresh id
+    expect(blocks[1]!.config.kind).toBe('grid')            // same kind
+    expect(blocks[1]!.config).not.toBe(blocks[0]!.config)  // deep-cloned config
+  })
+
+  it('blockColumns maps legacy span to 12-col and honors colSpan', () => {
+    expect(blockColumns({ span: 1 })).toBe(4)
+    expect(blockColumns({ span: 3 })).toBe(12)
+    expect(blockColumns({ span: 1, colSpan: 5 })).toBe(5) // colSpan overrides
+    expect(blockColumns({ span: 2, colSpan: 99 })).toBe(12) // clamped
+  })
+
+  it('addBlockAt inserts at the given index (palette drop)', () => {
+    const p = addBlockAt(base, sid, 'chart', 0) // before the grid
+    expect(p.screens[0]!.blocks.map((b) => b.config.kind)).toEqual(['chart', 'grid'])
+    const end = addBlockAt(base, sid, 'kpi', 99) // clamps to end
+    expect(end.screens[0]!.blocks.at(-1)!.config.kind).toBe('kpi')
+  })
+
+  it('gives every added block a unique id', () => {
+    let p = createProject([customers])
+    p = addBlock(p, sid, 'chart')
+    p = addBlock(p, sid, 'chart')
+    const ids = p.screens[0]!.blocks.map((b) => b.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+})
+
+describe('entity + screen ops', () => {
+  it('adds/removes an entity with its screen', () => {
+    let p = createProject([customers])
+    p = addEntity(p, orders)
+    expect(p.entities).toHaveLength(2)
+    expect(p.screens.some((s) => s.entity === 'orders')).toBe(true)
+    p = removeEntity(p, 'orders')
+    expect(p.entities).toHaveLength(1)
+    expect(p.screens.some((s) => s.entity === 'orders')).toBe(false)
+  })
+
+  it('updateEntity retargets screens when the entity is renamed', () => {
+    const p = createProject([customers])
+    const renamed = updateEntity(p, 'customers', { ...customers, name: 'clients' })
+    expect(renamed.entities[0]!.name).toBe('clients')
+    expect(renamed.screens[0]!.entity).toBe('clients')
+  })
+
+  it('updateEntity retargets a master-detail childEntity when the child is renamed', () => {
+    let p = createProject([customers, orders])
+    const sid = p.screens.find((s) => s.entity === 'customers')!.id
+    p = addBlock(p, sid, 'master-detail')
+    const mdId = p.screens.find((s) => s.id === sid)!.blocks.at(-1)!.id
+    p = updateBlock(p, sid, mdId, { config: { childEntity: 'orders', foreignKey: 'id' } as Partial<MasterDetailConfig> })
+    const renamed = updateEntity(p, 'orders', { ...orders, name: 'sales' })
+    const md = renamed.screens.find((s) => s.id === sid)!.blocks.find((b) => b.id === mdId)!
+    expect((md.config as MasterDetailConfig).childEntity).toBe('sales')
+  })
+
+  it('a second screen for an entity gets a unique id', () => {
+    const p = addScreen(createProject([customers]), 'customers')
+    const ids = p.screens.map((s) => s.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('updateScreen patches title/route', () => {
+    const p = createProject([customers])
+    const up = updateScreen(p, p.screens[0]!.id, { title: 'People', route: 'people' })
+    expect(up.screens[0]).toMatchObject({ title: 'People', route: 'people' })
+  })
+})
+
+describe('validateProject', () => {
+  it('addScreen dedupes the route so two screens for one entity do not collide', () => {
+    const p = addScreen(createProject([customers]), 'customers')
+    expect(new Set(p.screens.map((s) => s.route)).size).toBe(2) // customers, customers-1
+    expect(validateProject(p).some((i) => /Duplicate route/.test(i.message))).toBe(false)
+  })
+
+  it('flags a genuine duplicate route and a missing-entity screen', () => {
+    const p = createProject([customers])
+    const twoSameRoute = { ...p, screens: [p.screens[0]!, { ...p.screens[0]!, id: 'dup' }] }
+    const dup = validateProject(twoSameRoute).find((i) => /Duplicate route/.test(i.message))
+    expect(dup?.level).toBe('error')
+
+    const broken = { ...p, screens: [{ ...p.screens[0]!, entity: 'ghosts' }] }
+    expect(validateProject(broken).some((i) => /missing entity/.test(i.message))).toBe(true)
+  })
+
+  it('the palette lists every block kind', () => {
+    expect(blockPalette.map((p) => p.kind)).toContain('grid')
+    expect(blockPalette.map((p) => p.kind)).toContain('dashboard')
+  })
+
+  it('warns when a master-detail points at a missing child entity', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'master-detail')
+    const mdId = p.screens[0]!.blocks.at(-1)!.id
+    p = updateBlock(p, sid, mdId, { config: { childEntity: 'ghosts', foreignKey: 'id' } as Partial<MasterDetailConfig> })
+    expect(validateProject(p).some((i) => /missing child entity "ghosts"/.test(i.message))).toBe(true)
+  })
+})
+
+describe('sanitizeProject (loaded-config hardening)', () => {
+  it('is idempotent on a clean project', () => {
+    const p = createProject([customers, orders])
+    expect(sanitizeProject(p)).toEqual(p)
+  })
+
+  it('dedupes duplicate field names, screen ids, routes, and block ids', () => {
+    const bad: StudioProject = {
+      title: 'x', dataSource: 'memory',
+      entities: [{ name: 'a', idField: 'id', fields: [{ field: 'id', type: 'text' }, { field: 'id', type: 'text' }] }],
+      screens: [
+        { id: 's', entity: 'a', title: 'S1', route: 'r', blocks: [
+          { id: 'b', span: 1, config: { kind: 'form', presentation: 'modal' } },
+          { id: 'b', span: 1, config: { kind: 'form', presentation: 'modal' } },
+        ] },
+        { id: 's', entity: 'a', title: 'S2', route: 'r', blocks: [] },
+      ],
+    }
+    const clean = sanitizeProject(bad)
+    expect(new Set(clean.entities[0]!.fields.map((f) => f.field)).size).toBe(2)
+    expect(new Set(clean.screens.map((s) => s.id)).size).toBe(2)
+    expect(new Set(clean.screens.map((s) => s.route)).size).toBe(2)
+    expect(new Set(clean.screens[0]!.blocks.map((b) => b.id)).size).toBe(2)
+  })
+
+  it('drops a duplicate-named entity (the first survives, keeping the name)', () => {
+    const clean = sanitizeProject({ ...createProject([customers]), entities: [customers, { ...customers, label: 'Dup' }] })
+    expect(clean.entities).toHaveLength(1)
+    expect(clean.entities[0]!.label).toBe('Customer')
+  })
+
+  it('parseProject sanitizes a dup-id config so keyed lists cannot collide', () => {
+    const raw = JSON.stringify({
+      entities: [customers],
+      screens: [
+        { id: 'x', entity: 'customers', title: 'A', route: 'c', blocks: [] },
+        { id: 'x', entity: 'customers', title: 'B', route: 'c', blocks: [] },
+      ],
+    })
+    const p = parseProject(raw)
+    expect(new Set(p.screens.map((s) => s.id)).size).toBe(2)
+    expect(new Set(p.screens.map((s) => s.route)).size).toBe(2)
+  })
+})
+
+describe('per-entity data sources', () => {
+  it('defaults to in-memory and resolves an explicit binding', () => {
+    const p0 = createProject([customers])
+    expect(entityDataSource(p0, 'customers')).toEqual({ kind: 'memory' })
+    const p1 = setEntityDataSource(p0, 'customers', { kind: 'rest', baseUrl: 'https://api', path: 'customers', method: 'GET', params: [] })
+    expect(entityDataSource(p1, 'customers').kind).toBe('rest')
+    expect(p1.dataSources).toMatchObject({ customers: { kind: 'rest' } })
+  })
+
+  it('defaultEntitySource seeds a skeleton per kind', () => {
+    expect(defaultEntitySource('rest', 'customers')).toMatchObject({ kind: 'rest', path: 'customers', method: 'GET', params: [] })
+    expect(defaultEntitySource('sql', 'orders')).toEqual({ kind: 'sql', table: 'orders' })
+    expect(defaultEntitySource('supabase', 'orders')).toEqual({ kind: 'supabase', table: 'orders' })
+    expect(defaultEntitySource('memory', 'x')).toEqual({ kind: 'memory' })
+  })
+
+  it('round-trips dataSources through serialize / parse', () => {
+    const p = setEntityDataSource(createProject([customers, orders]), 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' })
+    expect(parseProject(serializeProject(p)).dataSources).toEqual(p.dataSources)
+  })
+
+  it('sanitize prunes bindings for removed entities', () => {
+    let p = setEntityDataSource(createProject([customers, orders]), 'orders', { kind: 'supabase', table: 'orders' })
+    p = removeEntity(p, 'orders')
+    expect(sanitizeProject(p).dataSources).toBeUndefined()
+  })
+})
+
+describe('pages (nav) + shell', () => {
+  it('updateScreen sets nav show / label / order', () => {
+    const p = createProject([customers])
+    const up = updateScreen(p, p.screens[0]!.id, { nav: { show: false, label: 'People', order: 3 } })
+    expect(up.screens[0]!.nav).toEqual({ show: false, label: 'People', order: 3 })
+  })
+
+  it('the empty template makes a blank screen', () => {
+    expect(screenFromTemplate(customers, 'empty').blocks).toEqual([])
+  })
+
+  it('setShell merges shell config into the theme', () => {
+    const p = setShell(setShell(createProject([customers]), { style: 'top-nav' }), { brand: 'Acme' })
+    expect(p.theme?.shell).toEqual({ style: 'top-nav', brand: 'Acme' })
+  })
+
+  it('round-trips nav + shell', () => {
+    let p = updateScreen(createProject([customers]), 'customers', { nav: { order: 2 } })
+    p = setShell(p, { style: 'top-nav', footer: '' })
+    const back = parseProject(serializeProject(p))
+    expect(back.screens[0]!.nav).toEqual({ order: 2 })
+    expect(back.theme?.shell).toEqual({ style: 'top-nav', footer: '' })
+  })
+})
+
+describe('screen templates', () => {
+  it('crud -> grid; dashboard -> kpis + chart + grid; master-detail -> grid + md (editing is a grid property)', () => {
+    expect(screenFromTemplate(customers, 'crud').blocks.map((b) => b.config.kind)).toEqual(['grid'])
+    const dash = screenFromTemplate(customers, 'dashboard').blocks.map((b) => b.config.kind)
+    expect(dash).toContain('kpi')
+    expect(dash).toContain('chart')
+    expect(dash).toContain('grid')
+    const md = screenFromTemplate(customers, 'master-detail', { child: orders }).blocks
+    expect(md.map((b) => b.config.kind)).toEqual(['grid', 'master-detail'])
+    const mdBlock = md.find((b) => b.config.kind === 'master-detail')!
+    expect(mdBlock.config).toMatchObject({ childEntity: 'orders' })
+  })
+
+  it('addScreenFromTemplate appends a screen with a unique id', () => {
+    const p = addScreenFromTemplate(createProject([customers]), 'customers', 'dashboard')
+    expect(p.screens).toHaveLength(2)
+    expect(new Set(p.screens.map((s) => s.id)).size).toBe(2)
+    expect(p.screens[1]!.blocks.some((b) => b.config.kind === 'chart')).toBe(true)
+  })
+})
+
+describe('serialize / parse (studio.config round-trip)', () => {
+  it('round-trips a project', () => {
+    const p = setTheme(addBlock(createProject([customers, orders]), 'customers', 'chart'), { accent: '#e11d48' })
+    const back = parseProject(serializeProject(p))
+    expect(back).toEqual(p)
+  })
+
+  it('defaults missing fields and rejects invalid input', () => {
+    const min = parseProject(JSON.stringify({ entities: [customers], screens: [] }))
+    expect(min.title).toBe('My Studio App')
+    expect(min.dataSource).toBe('memory')
+    expect(() => parseProject('not json')).toThrow(/not valid JSON/)
+    expect(() => parseProject(JSON.stringify({ screens: [] }))).toThrow(/entities/)
+  })
+})

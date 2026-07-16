@@ -45,7 +45,10 @@ const SV_GRID_VERSION = '^1.0.0'
 // quick-start does not drag in pdfmake. Versions mirror examples/package.json.
 const OPTIONAL_DEPS: Record<string, string> = {
   '@svgrid/enterprise': SV_GRID_VERSION,
+  '@electric-sql/pglite': '^0.5.4',
+  'ag-grid-community': '^35.3.1',
   'chart.js': '^4.5.1',
+  hyperformula: '^3.3.0',
   jszip: '^3.10.1',
   pdfmake: '^0.2.10',
   'smart-webcomponents': '^26.0.0',

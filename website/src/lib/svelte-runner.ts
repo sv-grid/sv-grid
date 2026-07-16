@@ -28,8 +28,12 @@ import * as M_enterprise from '@svgrid/enterprise'
 import * as M_jszip from 'jszip'
 
 // Shared helper modules some demos import via `../shared/...`. Eager so they
-// resolve synchronously inside the evaluated module.
-const SHARED = import.meta.glob('../../../examples/src/shared/**/*.{ts,js}', { eager: true }) as Record<
+// resolve synchronously inside the evaluated module. `.svelte` is included so
+// shared COMPONENTS (e.g. SvGridStudio.svelte, imported by every Data-app
+// Studio demo) resolve too - Vite compiles them against the same Svelte
+// runtime singleton the runner maps, so they interop with the demo it
+// compiles in the browser.
+const SHARED = import.meta.glob('../../../examples/src/shared/**/*.{ts,js,svelte}', { eager: true }) as Record<
   string,
   Record<string, unknown>
 >
@@ -53,6 +57,28 @@ const BASE_MODULES: Record<string, unknown> = {
   jszip: M_jszip,
 }
 
+// Heavy optional deps a demo may import (the spreadsheet demos use HyperFormula
+// for real A1 formulas). We DON'T put these in BASE_MODULES - that would pull
+// them into the base playground chunk for every visitor. Instead each is a
+// dynamic import, so Vite code-splits it into its own chunk that is fetched
+// ONLY when a demo that imports it is compiled. This is what lets HyperFormula
+// demos run in-browser instead of being flagged `noPlayground`.
+const LAZY_MODULE_LOADERS: Record<string, () => Promise<Record<string, unknown>>> = {
+  hyperformula: () => import('hyperformula') as Promise<Record<string, unknown>>,
+}
+
+/** Fetch any lazy module the source imports, keyed by its bare specifier, so
+ *  `makeRequire` can resolve it synchronously during evaluation. */
+async function loadLazyModules(source: string): Promise<Record<string, unknown>> {
+  const extra: Record<string, unknown> = {}
+  for (const spec of Object.keys(LAZY_MODULE_LOADERS)) {
+    const m = spec.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const re = new RegExp(`from\\s*['"]${m}(?:/[^'"]*)?['"]|import\\s*['"]${m}(?:/[^'"]*)?['"]`)
+    if (re.test(source)) extra[spec] = await LAZY_MODULE_LOADERS[spec]!()
+  }
+  return extra
+}
+
 // Normalise a relative import against the importing file's directory.
 function resolveRelative(fromDir: string, spec: string): Record<string, unknown> {
   const parts = (fromDir + '/' + spec).split('/')
@@ -63,17 +89,18 @@ function resolveRelative(fromDir: string, spec: string): Record<string, unknown>
     else out.push(p)
   }
   const base = out.join('/')
-  const candidates = [base, base + '.ts', base + '.js', base + '/index.ts', base + '/index.js']
+  const candidates = [base, base + '.ts', base + '.js', base + '.svelte', base + '/index.ts', base + '/index.js']
   for (const c of candidates) {
     if (SHARED_BY_PATH[c]) return SHARED_BY_PATH[c]!
   }
   throw new Error(`Cannot resolve import "${spec}" (only @svgrid/*, svelte/*, and ../shared/* are available in the playground)`)
 }
 
-function makeRequire(demoPath: string) {
+function makeRequire(demoPath: string, extraModules: Record<string, unknown> = {}) {
   const dir = demoPath.replace(/\/[^/]*$/, '') // strip filename
   return (spec: string): Record<string, unknown> => {
     if (spec in BASE_MODULES) return BASE_MODULES[spec] as Record<string, unknown>
+    if (spec in extraModules) return extraModules[spec] as Record<string, unknown>
     if (spec.startsWith('.')) return resolveRelative(dir, spec)
     throw new Error(`"${spec}" isn't available in the in-browser playground. Use "Edit in StackBlitz" on the demo for the full project.`)
   }
@@ -185,9 +212,12 @@ export async function compileComponent(source: string, demoPath: string): Promis
     name: 'PlaygroundDemo',
   })
 
-  // 3. Evaluate the emitted module against the app's runtimes.
+  // 3. Evaluate the emitted module against the app's runtimes. Heavy optional
+  //    deps (HyperFormula) are fetched on demand first so `__require` can hand
+  //    them back synchronously during evaluation.
+  const extraModules = await loadLazyModules(source)
   const body = toFactoryBody(compiled.js.code)
-  const __require = makeRequire(demoPath)
+  const __require = makeRequire(demoPath, extraModules)
   const exportsObj: { default?: unknown } = {}
   // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
   const factory = new Function('__require', '__exports', body)

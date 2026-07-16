@@ -1,0 +1,86 @@
+/*
+ * Modern chrome for the Data-app Studio demos. Global class layer (imported via
+ * SvGridStudio) so every Studio screen shares one contemporary look - refined
+ * buttons, cards, chips, and controls that follow the grid's --sg-* theme
+ * tokens (so light / dark just work).
+ */
+.st {
+  --st-surface: var(--sg-bg, #ffffff);
+  --st-raised: var(--sg-header-bg, #f8fafc);
+  --st-fg: var(--sg-fg, #0f172a);
+  --st-muted: var(--sg-muted, #64748b);
+  --st-border: var(--sg-border, #e6e8ec);
+  --st-accent: var(--sg-accent, #4f46e5);
+  --st-input-bg: var(--sg-input-bg, var(--sg-bg, #fff));
+  --st-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --st-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 28px -14px rgba(15, 23, 42, 0.22);
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--st-fg);
+  font: inherit;
+  padding: 2px;
+}
+
+.st__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.st__titles { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.st__eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--st-accent); }
+.st__title { margin: 0; font-size: 21px; font-weight: 720; letter-spacing: -0.015em; line-height: 1.15; }
+.st__sub { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--st-muted); max-width: 74ch; }
+.st__sub code { background: var(--st-raised); padding: 1px 6px; border-radius: 5px; font-size: 0.92em; }
+.st__actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.st__toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ---- Buttons ---- */
+.st-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 8px 14px; font: inherit; font-size: 13.5px; font-weight: 560; line-height: 1;
+  border: 1px solid var(--st-border); border-radius: 10px;
+  background: var(--st-surface); color: var(--st-fg);
+  cursor: pointer; box-shadow: var(--st-shadow-sm);
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.06s ease, filter 0.15s ease;
+}
+.st-btn:hover { background: color-mix(in srgb, var(--st-fg) 5%, var(--st-surface)); border-color: color-mix(in srgb, var(--st-fg) 16%, var(--st-border)); }
+.st-btn:active { transform: translateY(0.5px); }
+.st-btn:disabled { opacity: 0.5; cursor: default; box-shadow: none; transform: none; }
+.st-btn--primary {
+  border-color: transparent; color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--st-accent) 88%, #fff) 0%, var(--st-accent) 100%);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), 0 8px 18px -9px color-mix(in srgb, var(--st-accent) 65%, transparent);
+}
+.st-btn--primary:hover { filter: brightness(1.06); background: var(--st-accent); }
+.st-btn--ghost { background: transparent; border-color: transparent; color: var(--st-muted); box-shadow: none; }
+.st-btn--ghost:hover { background: color-mix(in srgb, var(--st-fg) 7%, transparent); color: var(--st-fg); border-color: transparent; }
+.st-btn--icon { padding: 8px 10px; }
+
+/* ---- Segmented tabs ---- */
+.st-tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; border: 1px solid var(--st-border); background: color-mix(in srgb, var(--st-fg) 4%, transparent); }
+.st-tab { padding: 6px 15px; border: 0; border-radius: 9px; background: none; font: inherit; font-size: 13px; font-weight: 560; color: var(--st-muted); cursor: pointer; transition: background 0.15s, color 0.15s; }
+.st-tab:hover { color: var(--st-fg); }
+.st-tab--active { background: var(--st-surface); color: var(--st-fg); box-shadow: var(--st-shadow-sm); }
+
+/* ---- Card / panel ---- */
+.st-card { background: var(--st-surface); border: 1px solid var(--st-border); border-radius: 16px; box-shadow: var(--st-shadow); padding: 16px; }
+.st-card--flush { padding: 0; overflow: hidden; }
+
+/* ---- Chip / badge ---- */
+.st-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; font-size: 12.5px; font-weight: 600;
+  border-radius: 999px; cursor: pointer;
+  color: var(--st-accent); background: color-mix(in srgb, var(--st-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--st-accent) 30%, transparent);
+}
+.st-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--st-border); color: var(--st-muted); background: var(--st-surface); }
+.st-badge--live { color: #16a34a; border-color: color-mix(in srgb, #16a34a 40%, transparent); }
+.st-hint { font-size: 12.5px; color: var(--st-muted); }
+
+/* ---- Inputs / selects / labeled fields ---- */
+.st-input, .st-select {
+  padding: 8px 11px; font: inherit; font-size: 13.5px;
+  border: 1px solid var(--st-border); border-radius: 10px;
+  background: var(--st-input-bg); color: var(--st-fg);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.st-input:focus, .st-select:focus { outline: none; border-color: var(--st-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-accent) 20%, transparent); }
+.st-field { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--st-muted); }

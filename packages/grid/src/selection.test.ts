@@ -310,22 +310,26 @@ describe('createSelection - onCellPointerDown', () => {
     expect(ctx.grid.setActiveCell).not.toHaveBeenCalled()
   })
 
-  it('ignores checkbox columns (by editorType)', () => {
+  it('starts a drag on checkbox columns too (by editorType)', () => {
+    // A range drag must be able to START on a checkbox cell; the plain-click
+    // toggle still runs via onCellClick (same-cell click).
     const ctx = baseCtx({
       allColumns: [makeColumn('c0', { editorType: 'checkbox' })],
     })
     const sel = createSelection(ctx)
     sel.onCellPointerDown(0, 0, { button: 0, shiftKey: false } as any)
-    expect(ctx.grid.setActiveCell).not.toHaveBeenCalled()
+    expect(ctx.grid.setActiveCell).toHaveBeenCalled()
+    expect(ctx.isDraggingSelection).toBe(true)
   })
 
-  it('ignores boolean-valued cells', () => {
+  it('starts a drag on boolean-valued cells too', () => {
     const ctx = baseCtx({
       getCellDisplayValue: vi.fn(() => true),
     })
     const sel = createSelection(ctx)
     sel.onCellPointerDown(0, 0, { button: 0, shiftKey: false } as any)
-    expect(ctx.grid.setActiveCell).not.toHaveBeenCalled()
+    expect(ctx.grid.setActiveCell).toHaveBeenCalled()
+    expect(ctx.isDraggingSelection).toBe(true)
   })
 
   it('plain click sets active + selection and starts a drag', () => {
@@ -718,5 +722,33 @@ describe('createSelection - scrollActiveCellIntoView', () => {
     sel.scrollActiveCellIntoView(0, 2)
     // cellEnd (420) - clientWidth (100) = 320
     expect(container.scrollLeft).toBe(320)
+  })
+})
+
+describe('createSelection - fillMarqueeEdges (Excel fill marquee)', () => {
+  // Union rectangle spans rows 1..4, cols 0..2 (source cols 0..1 extended to col 2,
+  // source rows 1..2 extended to row 4).
+  const fillDrag = {
+    sourceMinRow: 1, sourceMaxRow: 2, sourceMinCol: 0, sourceMaxCol: 1,
+    targetRow: 4, targetCol: 2,
+  }
+
+  it('returns null when there is no fill drag', () => {
+    const sel = createSelection(makeCtx())
+    expect(sel.fillMarqueeEdges(1, 0)).toBeNull()
+  })
+
+  it('flags the outer edges of the whole target rectangle', () => {
+    const sel = createSelection(makeCtx({ fillDrag }))
+    expect(sel.fillMarqueeEdges(1, 0)).toEqual({ top: true, bottom: false, left: true, right: false })
+    expect(sel.fillMarqueeEdges(4, 2)).toEqual({ top: false, bottom: true, left: false, right: true })
+    expect(sel.fillMarqueeEdges(1, 1)).toEqual({ top: true, bottom: false, left: false, right: false })
+  })
+
+  it('returns null for interior cells and cells outside the rectangle', () => {
+    const sel = createSelection(makeCtx({ fillDrag }))
+    expect(sel.fillMarqueeEdges(2, 1)).toBeNull() // interior
+    expect(sel.fillMarqueeEdges(0, 0)).toBeNull() // above
+    expect(sel.fillMarqueeEdges(5, 2)).toBeNull() // below
   })
 })

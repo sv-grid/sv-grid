@@ -440,7 +440,9 @@
     <nav aria-label="Docs" class="docs-tree">
       {#each docGroups as group (group.dir || group.category)}
         {@const active = group.pages.some((p) => p.slug === current.slug)}
-        {@const open = openGroups[group.dir] ?? (group.defaultOpen || active)}
+        {@const inSubtree =
+          !!group.dir && !group.dir.startsWith('@') && !!current.slug && current.slug.startsWith(group.dir + '/')}
+        {@const open = openGroups[group.dir] ?? (group.defaultOpen || active || inSubtree)}
         <div class="docs-tree-group" style:padding-left={`${group.depth * 12}px`}>
           <button
             type="button"

@@ -42,6 +42,11 @@
       "svelte": "./dist/static-functions.js",
       "import": "./dist/static-functions.js"
     },
+    "./format": {
+      "types": "./dist/export-format.d.ts",
+      "svelte": "./dist/export-format.js",
+      "import": "./dist/export-format.js"
+    },
     "./flex-render": {
       "types": "./dist/flex-render.d.ts",
       "svelte": "./dist/flex-render.js",

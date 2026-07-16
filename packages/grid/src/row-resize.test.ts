@@ -131,6 +131,31 @@ describe('rowResize - strip injection', () => {
     action.destroy()
   })
 
+  it('also injects a strip into the built-in row-number gutter (showRowNumbers)', () => {
+    // The native gutter cell is `.sv-grid-cell.sv-grid-row-number-cell`, NOT
+    // `.sv-row-gutter`; the action must recognise it so `showRowNumbers` grids
+    // are row-resizable without a custom gutter column.
+    const host = document.createElement('div')
+    const table = document.createElement('table')
+    const tbody = document.createElement('tbody')
+    const tr = document.createElement('tr')
+    tr.className = 'sv-grid-row'
+    const gutter = document.createElement('td')
+    gutter.className = 'sv-grid-cell sv-grid-row-number-cell'
+    const marker = document.createElement('span')
+    marker.setAttribute('data-svgrid-row', '0')
+    gutter.appendChild(marker)
+    tr.appendChild(gutter)
+    tbody.appendChild(tr)
+    table.appendChild(tbody)
+    host.appendChild(table)
+    document.body.appendChild(host)
+    track(host)
+    const action = rowResize(host, { onResize: vi.fn() })
+    expect(tr.querySelector(`.${STRIP_CLASS}`)).not.toBeNull()
+    action.destroy()
+  })
+
   it('does not override an already-positioned gutter cell', () => {
     const { host, rows } = buildGrid([{}])
     track(host)

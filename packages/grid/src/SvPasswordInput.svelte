@@ -1,0 +1,110 @@
+<script lang="ts">
+  /**
+   * SvPasswordInput - a password field with a reveal toggle and an optional
+   * strength meter. Parity: Smart `smart-password-input`. Emits the string value.
+   */
+  type Props = {
+    value?: string
+    onChange?: (value: string) => void
+    placeholder?: string
+    disabled?: boolean
+    readonly?: boolean
+    /** Show the show/hide eye toggle. */
+    revealable?: boolean
+    /** Show a 4-level strength meter. */
+    showStrength?: boolean
+    name?: string
+    size?: 'sm' | 'md' | 'lg'
+    ariaLabel?: string
+    autocomplete?: string
+  }
+
+  let {
+    value = '',
+    onChange,
+    placeholder,
+    disabled = false,
+    readonly = false,
+    revealable = true,
+    showStrength = false,
+    name,
+    size = 'md',
+    ariaLabel,
+    autocomplete = 'current-password',
+  }: Props = $props()
+
+  let revealed = $state(false)
+
+  // Simple strength heuristic: length + character-class variety (0-4).
+  const strength = $derived.by(() => {
+    const v = value
+    if (!v) return 0
+    let score = 0
+    if (v.length >= 8) score++
+    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score++
+    if (/\d/.test(v)) score++
+    if (/[^a-zA-Z0-9]/.test(v)) score++
+    return score
+  })
+  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong']
+</script>
+
+<div class="sv-pw sv-pw--{size}" class:is-disabled={disabled}>
+  <div class="sv-pw__field">
+    <input
+      class="sv-pw__input"
+      type={revealed ? 'text' : 'password'}
+      value={value}
+      {placeholder}
+      {disabled}
+      {readonly}
+      autocomplete={autocomplete as AutoFill}
+      aria-label={ariaLabel}
+      oninput={(e) => onChange?.((e.currentTarget as HTMLInputElement).value)}
+    />
+    {#if revealable}
+      <button type="button" class="sv-pw__eye" aria-label={revealed ? 'Hide password' : 'Show password'} aria-pressed={revealed} onclick={() => (revealed = !revealed)} disabled={disabled} tabindex="-1">
+        {#if revealed}
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><path d="M1 1l22 22" /></svg>
+        {:else}
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+        {/if}
+      </button>
+    {/if}
+  </div>
+  {#if showStrength}
+    <div class="sv-pw__meter" aria-hidden="true">
+      {#each Array(4) as _, i (i)}
+        <span class="sv-pw__bar is-lvl{strength}" class:on={i < strength}></span>
+      {/each}
+    </div>
+    <span class="sv-pw__strength is-lvl{strength}">{strengthLabel[strength]}</span>
+  {/if}
+  {#if name}<input type="hidden" {name} value={value} />{/if}
+</div>
+
+<style>
+  .sv-pw { --_accent: var(--sg-accent, #2563eb); display: inline-flex; flex-direction: column; gap: 5px; width: 220px; }
+  .sv-pw.is-disabled { opacity: 0.6; }
+  .sv-pw__field {
+    display: flex; align-items: center;
+    background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a);
+    border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1)); border-radius: var(--sg-radius, 8px);
+  }
+  .sv-pw__field:focus-within { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
+  .sv-pw__input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: inherit; font: inherit; padding: 0 10px; }
+  .sv-pw--sm .sv-pw__field { height: 28px; font-size: 12px; }
+  .sv-pw--md .sv-pw__field { height: 34px; font-size: 13px; }
+  .sv-pw--lg .sv-pw__field { height: 40px; font-size: 15px; }
+  .sv-pw__eye { display: grid; place-items: center; width: 32px; align-self: stretch; background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; }
+  .sv-pw__eye:hover { color: var(--_accent); }
+  .sv-pw__meter { display: flex; gap: 4px; }
+  .sv-pw__bar { flex: 1; height: 4px; border-radius: 2px; background: var(--sg-border, #e2e8f0); transition: background 0.15s; }
+  .sv-pw__bar.on.is-lvl1 { background: #dc2626; }
+  .sv-pw__bar.on.is-lvl2 { background: #f59e0b; }
+  .sv-pw__bar.on.is-lvl3 { background: #eab308; }
+  .sv-pw__bar.on.is-lvl4 { background: #16a34a; }
+  .sv-pw__strength { font-size: 11px; font-weight: 600; color: var(--sg-muted, #64748b); }
+  .sv-pw__strength.is-lvl1 { color: #dc2626; }
+  .sv-pw__strength.is-lvl4 { color: #16a34a; }
+</style>

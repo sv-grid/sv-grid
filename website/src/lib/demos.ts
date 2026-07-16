@@ -92,8 +92,10 @@ export function parseCommunityMeta(src: string): CommunityMeta {
  * past 60 unrelated demos. Mirrors examples/src/shared/registry.ts so the
  * standalone gallery and the website nav stay in lockstep.
  *
- * Every Enterprise demo lives under the single 'Enterprise' lane and carries an
- * explicit `pro: true` flag the sidebar draws as a small badge dot.
+ * Enterprise (@svgrid/enterprise) demos live under their own product lanes -
+ * 'Data Export & Import', 'Pivot Grid', 'Studio', 'AI' - each badged
+ * "Enterprise" in the sidebar. Every such demo also carries an explicit
+ * `pro: true` flag drawn as a small dot.
  */
 export type DemoCategory =
   | 'Getting Started'
@@ -115,8 +117,49 @@ export type DemoCategory =
   | 'Mobile & Responsive'
   | 'Integrations'
   | 'Industry Templates'
-  | 'Enterprise'
+  // Enterprise product lanes (@svgrid/enterprise), split out of the old single
+  // 'Enterprise' lane so each shows as its own Enterprise-badged category.
+  | 'Data Export & Import'
+  | 'Pivot Grid'
+  | 'Studio'
+  | 'AI'
   | 'Community'
+  // SvGrid Editors product lanes (@svgrid/grid UI components). A separate
+  // product in the switcher so they don't bloat the main grid gallery.
+  | 'Date & Time'
+  | 'Buttons & Toggles'
+  | 'Inputs'
+  | 'Selection'
+  | 'Range & Feedback'
+  | 'Layout'
+
+/** Categories belonging to the paid @svgrid/enterprise product; the sidebar
+ *  badges these group headers "Enterprise". */
+export const ENTERPRISE_CATEGORIES = new Set<DemoCategory>([
+  'Data Export & Import',
+  'Pivot Grid',
+  'Studio',
+  'AI',
+])
+
+export function isEnterpriseCategory(category: DemoCategory): boolean {
+  return ENTERPRISE_CATEGORIES.has(category)
+}
+
+/** Categories belonging to the "SvGrid Editors" product - the standalone UI
+ *  components in @svgrid/grid that double as grid cell editors. */
+export const EDITOR_CATEGORIES = new Set<DemoCategory>([
+  'Date & Time',
+  'Buttons & Toggles',
+  'Inputs',
+  'Selection',
+  'Range & Feedback',
+  'Layout',
+])
+
+export function isEditorCategory(category: DemoCategory): boolean {
+  return EDITOR_CATEGORIES.has(category)
+}
 
 export const CATEGORY_ORDER: DemoCategory[] = [
   'Getting Started',
@@ -138,8 +181,18 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Integrations',
   'Industry Templates',
   'Headless',
-  'Enterprise',
+  'Data Export & Import',
+  'Pivot Grid',
+  'Studio',
+  'AI',
   'Community',
+  // SvGrid Editors product
+  'Date & Time',
+  'Buttons & Toggles',
+  'Inputs',
+  'Selection',
+  'Range & Feedback',
+  'Layout',
 ]
 
 export type Demo = {
@@ -161,6 +214,11 @@ export type Demo = {
   discussion?: number
   /** Feature tags for a community demo (chips). */
   tags?: string[]
+  /** True when the demo imports an npm module the in-browser playground runner
+   *  can't resolve (chart.js, ag-grid, hyperformula, PGlite WASM, ...). The
+   *  "Open in playground" button is hidden and the playground picker skips it;
+   *  "Edit in StackBlitz" still works (it npm-installs the dependency). */
+  noPlayground?: boolean
   /** Lazily import the demo's Svelte component (resolves a per-demo chunk). */
   load: () => Promise<{ default: Component<any> }>
   /** Lazily import the demo's raw source text for the "view source" panel. */
@@ -172,12 +230,34 @@ function demo(
   title: string,
   blurb: string,
   category: DemoCategory,
-  opts?: { pro?: boolean },
+  opts?: { pro?: boolean; noPlayground?: boolean },
 ): Demo {
-  return { id, title, blurb, category, pro: opts?.pro, load: loadFor(id), loadSource: loadSourceFor(id) }
+  return {
+    id,
+    title,
+    blurb,
+    category,
+    pro: opts?.pro,
+    noPlayground: opts?.noPlayground,
+    load: loadFor(id),
+    loadSource: loadSourceFor(id),
+  }
 }
 
 const baseDemos: Demo[] = [
+  // ===== SvGrid Editors product (UI components in @svgrid/grid that double as
+  // grid cell editors). Scoped to their own switcher entry, not the grid gallery.
+  demo('250-calendar',              'Calendar',                    'SvCalendar: a themeable month/year/decade calendar with single / range / week / multi selection, min-max, restricted + important dates and week numbers. The same component SvGrid mounts to edit a date cell - and usable standalone in any SvGrid app.', 'Date & Time'),
+  demo('251-timepicker',            'Time picker',                 'SvTimePicker: an analog clock-dial picker with 12/24-hour, minute snapping and hour to minute auto-switch. Drag the hand or click a number. The SvGrid time cell editor, usable standalone in any SvGrid app.', 'Date & Time'),
+  demo('252-datetimepicker',        'Date-time picker',            'SvDateTimePicker: a formatted input plus a portalled dropdown with DATE / TIME tabs (calendar + clock). Type a masked value or pick it; invalid input reverts. min/max, nullable, 12/24-hour, spin buttons. The SvGrid datetime cell editor, standalone in any SvGrid app.', 'Date & Time'),
+  demo('258-calendar-range',        'Calendar - range + presets', 'SvCalendar as a date-range picker: selectionMode="range" with a one-click presets rail (Today, Last 7 days, This month, Year to date...), animated month navigation and mouse-wheel scrolling. Presets resolve relative to today. Same component, no extra dependency.', 'Date & Time'),
+  demo('259-datetimepicker-forms',  'Date-time picker - form fields','SvDateTimePicker in five real shapes on one form: date-only, time-only, date+time, 12-hour with spin buttons, and a min/max-constrained field. Masked inputs (type or pick), portalled dropdowns, animated calendars. The SvGrid datetime cell editor, standalone.', 'Date & Time'),
+  demo('253-buttons-toggles',       'Buttons & toggles',           'The UI kit press/toggle primitives: SvButton (variants/sizes/loading), SvRepeatButton (hold-to-repeat), SvToggleButton, SvSwitchButton, SvCheckBox (+ indeterminate), SvRadioGroup (arrow-key nav) and SvRating (half stars). Theme-driven, standalone or as grid cell controls.', 'Buttons & Toggles'),
+  demo('254-text-inputs',           'Text inputs',                 'Typed text controls: SvNumberInput (min/max/step, grouping, precision, spinners), SvPasswordInput (reveal + strength), SvMaskedInput (pattern mask), SvPhoneInput (country dial code + national mask) and SvColorInput (swatch + palette popover). Each a SvGrid cell editor, standalone too.', 'Inputs'),
+  demo('255-selection',             'Selection controls',          'List and overlay pickers: SvListBox (inline multi-select), SvDropDownList, SvComboBox (type to filter), SvAutoComplete (free text + suggestions), SvTagsInput (chips) and SvCountryInput (searchable, flags). Every popover portals out of the scroll container. Grid cell editors, standalone too.', 'Selection'),
+  demo('256-range-feedback',        'Range & feedback',            'SvSlider (single or dual-thumb range, ticks, keyboard, vertical) and SvGauge (radial arc with threshold bands, needle, half sweep). Theme-driven value controls, standalone or in-grid.', 'Range & Feedback'),
+  demo('257-tabs-tree-form',        'Tabs, tree & form',           'Composite controls: SvTabs (line + pill, roving keyboard), SvTree (expand/collapse, single-select + cascading tri-state checkboxes) and a schema-driven SvForm that wires the whole kit (inputs, select, switch, date, textarea) with required + custom validation.', 'Layout'),
+
   // ----- Getting Started
   demo('00-trading-desk',           'Trading desk - live',         '10,000 securities ticking on a 500 ms feed. Pinned Symbol + P&L, sparklines, sector chips, KPI strip. The hero.', 'Getting Started'),
   demo('01-quick-start',            'Quick start',                 'A realistic 25-row × 9-column grid with sort, filter, selection, inline editing, and column resize all enabled.', 'Getting Started'),
@@ -202,6 +282,7 @@ const baseDemos: Demo[] = [
   demo('66-custom-cell-editors',    'Custom cell editors',         'Three hand-rolled editors: native colour picker bound to a tag swatch, 5-star rating, emoji feedback mood. All write back through api.setCellValue.', 'Editing'),
   demo('68-dependent-dropdowns',    'Dependent dropdowns',         'Cascade editors: Country → State → City. Each level computes its options from the row\'s upstream value; changing Country resets State + City.', 'Editing'),
   demo('24-validation',             'Validation while editing',    'Per-column rules: invalid commits get rolled back via setCellValue + logged to a recent-rejections panel.', 'Editing'),
+  demo('206-cell-validation',       'Cell validation (validate hook)','Declarative per-column `validate()` hook, Handsontable-style. Invalid cells - including bad data already in the source on load - highlight red with the reason as a tooltip, and re-check live as you edit.', 'Editing'),
   demo('71-submit-validation',      'Submit-time validation',      'Bulk-leads import: edit freely, click Submit, the row-level validator highlights invalid cells and lists every error in an aria-live panel.', 'Editing'),
   demo('82-conditional-form-schema','Conditional form schema',     'Declarative when rules drive per-cell visibility and editability. EIN only on nonprofits, SSN only on individuals, rejection reason only when status is rejected.', 'Editing'),
   demo('18-cascade-editing',        'Cascade editing',             'Spreadsheet invoice: editing qty / price / discount cascades into line totals.', 'Editing'),
@@ -301,14 +382,20 @@ const baseDemos: Demo[] = [
   demo('34-realtime-orders',        'Real-time / streaming',       'WebSocket-style live order stream with delta merge, out-of-order safety, pause / backlog, disconnect-reconnect, throughput slider.', 'Real-time & Streaming'),
   demo('149-realtime-collaboration','Real-time collaboration',     'Presence (who is here + where their cursor is) and live edits (a change in one client lands in every other) over a pluggable transport. createCollaboration + broadcastChannelTransport sync cursors and edits across tabs with zero backend; swap the transport for a WebSocket to go cross-machine. Also the substrate for multiple AI agents editing one grid.', 'Real-time & Streaming'),
   demo('145-transaction-api',       'Transaction API (batched)',   'api.applyTransaction({ add, update, remove }) applies a batch of row mutations in ONE data update - the high-frequency streaming path. update and remove-by-id match on getRowId; remove also accepts row refs. Live order book ticking via batched transactions.', 'Real-time & Streaming'),
-  demo('73-chartjs-sync',           'Real-time + Chart.js sync',   'Mock WebSocket pushes price ticks every 350 ms. A Chart.js bar chart auto-syncs with the grid - filter the Symbol column, the chart trims to match.', 'Real-time & Streaming'),
+  demo('73-chartjs-sync',           'Real-time + Chart.js sync',   'Mock WebSocket pushes price ticks every 350 ms. A Chart.js bar chart auto-syncs with the grid - filter the Symbol column, the chart trims to match.', 'Real-time & Streaming', { noPlayground: true }),
 
   // ----- Spreadsheet
   demo('27-spreadsheet-ribbon',     'Spreadsheet + Ribbon bar',    'Excel-style Ribbon UI driving the grid via SvGridApi: cell formatting (bold, color, number format), insert/delete row, sort, live SUM/AVG/COUNT.', 'Spreadsheet'),
   demo('83-spreadsheet-formulas',   'Spreadsheet + formulas',      'Real formula engine inside the grid: cell refs (A1), ranges (A1:A10), SUM / AVG / IF / COUNTIF / ROUND, arithmetic, string concat, cycle detection.', 'Spreadsheet'),
   demo('169-cell-borders',          'Per-cell custom borders (KPI)','Editable KPI scorecard. spreadsheetLayout paints HOT-style per-edge custom borders via an absolute-positioned overlay (no border-collapse conflicts). Edit any quarter or target - the borders re-derive: green double = beat target, blue solid = hit, amber dotted = near miss, red dashed = bad miss; row champion gets a colored full frame.', 'Spreadsheet'),
   demo('170-cell-merging',          'Cell merging (spreadsheet shell)','A real invoice rendered on an Excel-style shell: A / B / C / D / E column letters across the top, row numbers down the left. Brand band, bill-from / bill-to address blocks, meta block, line items, totals, notes, signatures - all assembled from MergeSpec + CellBorderSpec. Editable Qty / Rate / addresses / notes; totals recompute live.', 'Spreadsheet'),
-  demo('173-hyperformula',          'HyperFormula integration',    'Full HyperFormula engine wired into the grid as a peer-optional dep. Editable spreadsheet with A1-style cell refs, dozens of formulas across math (SUM / SUMIF), lookup (VLOOKUP / INDEX-MATCH), text (CONCAT / UPPER), date (TODAY / DATEDIF), logical (IF nests), financial (PMT / IRR / NPV), statistical (AVERAGE / MAX / RANK).', 'Spreadsheet'),
+  demo('173-hyperformula',          'HyperFormula integration',    'Full HyperFormula engine wired into the grid as a peer-optional dep. Editable spreadsheet with A1-style cell refs, dozens of formulas across math (SUM / SUMIF), lookup (VLOOKUP / INDEX-MATCH), text (CONCAT / UPPER), date (TODAY / DATEDIF), logical (IF nests), financial (PMT / IRR / NPV), statistical (AVERAGE / MAX / RANK).', 'Spreadsheet', { noPlayground: true }),
+  demo('207-blank-sheet',           'Blank sheet - just type',     'An empty Excel-style sheet on a plain <SvGrid>: column-letter headers (A..Z), a built-in 1..N row gutter, a name box + formula bar with a browsable function picker, gridlines, range selection and a fill handle. A real HyperFormula engine underneath: type a literal or a formula like =SUM(B2:D2) / =IF(...) and every dependent cell recalculates live. Drag a row or column border to resize; right-click for Cut / Copy / Paste / Clear.', 'Spreadsheet'),
+  demo('208-freeze-panes',          'Freeze panes',                'The Excel Freeze Panes corner on a plain <SvGrid>: the Account and Owner columns stay pinned while you scroll across a full year of months, and the sticky column-letter + row-number headers stay put as you scroll down. HyperFormula keeps each row total (column O) and the bottom Total row live as you edit any month. Pinning those two columns is one prop: initialColumnPinning.', 'Spreadsheet'),
+  demo('209-data-validation',       'Data validation (dropdowns)', 'Excel Data Validation on a plain <SvGrid>: Status / Priority / Owner / Sprint columns are list-constrained (double-click for a dropdown), and Estimate must be a whole number 0-40. Four cells arrive invalid and light up red with the reason as a tooltip; fix one and it clears live. Dropdowns are editorType:list + editorOptions; the flag is the declarative validate() hook.', 'Spreadsheet'),
+  demo('210-format-cells',          'Format Cells',                'The Excel Home -> Number experience: select a range and apply a display format - Currency, Percent, Thousands, Number, Date, or General - and only the rendering changes; the stored value and every formula are untouched. HyperFormula keeps Gross profit, Margin and the Total column live, so a computed % formats exactly like a typed number.', 'Spreadsheet'),
+  demo('211-financial-model',       'Financial model (amortization)','A real analyst model on the sheet: three blue INPUT cells (Principal, APR, Term) drive a full 360-month amortization schedule built entirely from formulas - PMT for the fixed payment, then per-period interest / principal / running balance that each reference the row above. Change an input and all 360 rows plus the summary recompute instantly. Blue = you type, black = computed.', 'Spreadsheet'),
+  demo('212-dashboard-sheet',       'Dashboard sheet',             'A spreadsheet that reads like an Excel dashboard: each channel row carries an inline SVG trend sparkline and an eight-week heatmap shaded by volume. Total and Avg are live =SUM / =AVERAGE formulas - edit any weekly cell and the sparkline reshapes, the heatmap re-shades, and the totals update at once. Sparklines are a per-column custom cell; the heatmap is value-driven cellClass.', 'Spreadsheet'),
 
   // ----- Charts (zero-dependency SvGridChart, driven by the grid's rows)
   demo('147-integrated-charts',     'Integrated charts (no deps)', 'Chart the grid data with no external charting library. SvGridChart renders a ChartSpec; rowsToChartSpec aggregates the grid current (filtered/sorted) rows into one. Bar, line, area, pie - plus 100% stacked, top-N + Other, an average reference line, and double-click-to-isolate a series. Filter the grid and the chart re-aggregates live.', 'Charts'),
@@ -346,7 +433,7 @@ const baseDemos: Demo[] = [
   demo('16-csp-compliant',          'CSP-compliant grid',          'No eval, no inline scripts. Documented CSP header + live runtime self-check.', 'Integrations'),
   demo('19-ssr',                    'Server-side rendering',       'SvelteKit-style SSR with a sandboxed pre-hydration snapshot.', 'Integrations'),
   demo('77-smart-chart',            'Smart.Chart integration',     'Mounts a <smart-chart> web component (htmlelements.com) and pipes the grid\'s displayed rows into its dataSource. Re-aggregates on every filter / sort.', 'Integrations'),
-  demo('139-migration-from-ag-grid','AG Grid ↔ sv-grid side-by-side','Two real grids over the same dataset: AG Grid Community v35 on the left, sv-grid on the right. Same global filter drives both. Source code panels for either side.', 'Integrations'),
+  demo('139-migration-from-ag-grid','AG Grid ↔ sv-grid side-by-side','Two real grids over the same dataset: AG Grid Community v35 on the left, sv-grid on the right. Same global filter drives both. Source code panels for either side.', 'Integrations', { noPlayground: true }),
 
   // ----- Industry Templates
   demo('12-hr-team',                'HR team directory',           'Employee directory with avatars, status badges, group by team / location / status.', 'Industry Templates'),
@@ -365,13 +452,28 @@ const baseDemos: Demo[] = [
   demo('49-admin-dashboard',        'Admin dashboard',             'CRUD-heavy users board: inline role / status / MFA edit, bulk activate / deactivate / delete, invite dialog, permissions matrix, live audit log.', 'Industry Templates'),
   demo('50-seller-panel',           'Seller panel - e-commerce',   'Marketplace dashboard: catalog with SVG thumbnails, inventory bars vs reorder threshold, live orders pipeline, pricing rules - four tabs over one product list.', 'Industry Templates'),
   demo('76-kanban-board',           'Kanban board',                'Four-lane Kanban (Backlog / In progress / Review / Done). Each lane is a separate SvGrid bound to the same $state array - HTML5 drag-and-drop rewrites status.', 'Industry Templates'),
+  demo('205-project-management',    'Project management board',    'Nested, collapsible column groups (Task / Details / Timeline / Progress), status + priority + assignee dropdowns, date cells, a custom progress-bar renderer, drag-to-reorder rows, and client pagination - all from stock props.', 'Industry Templates'),
 
   // ----- Enterprise (commercial features in @svgrid/enterprise)
-  demo('53-excel-import',             'Excel / CSV import',             'File picker + column mapping + per-row validation preview before commit. Reads xlsx / csv / tsv / json with format auto-detect.', 'Enterprise', { pro: true }),
-  demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Enterprise', { pro: true }),
-  demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'Enterprise', { pro: true }),
-  demo('75-ai-smart-paste',           'AI Smart Paste',                 'Paste CSV / TSV / free-form text - the assistant parses it into typed rows with a preview panel. Swap mockAssistant for your LLM endpoint and ship.', 'Enterprise', { pro: true }),
-  demo('92-nl-filter-bar',            'NL filter bar (AI)',             'Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFilter / setSort / topN calls. Demo ships a rule-based fallback so you can evaluate without a key; production wiring needs an AI Platform key.', 'Enterprise', { pro: true }),
+  demo('53-excel-import',             'Excel / CSV import',             'File picker + column mapping + per-row validation preview before commit. Reads xlsx / csv / tsv / json with format auto-detect.', 'Data Export & Import', { pro: true }),
+  demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Editing', { pro: true }),
+  demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'AI', { pro: true }),
+  demo('75-ai-smart-paste',           'AI Smart Paste',                 'Paste CSV / TSV / free-form text - the assistant parses it into typed rows with a preview panel. Swap mockAssistant for your LLM endpoint and ship.', 'AI', { pro: true }),
+  demo('92-nl-filter-bar',            'NL filter bar (AI)',             'Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFilter / setSort / topN calls. Demo ships a rule-based fallback so you can evaluate without a key; production wiring needs an AI Platform key.', 'AI', { pro: true }),
+
+  // ----- Enterprise: Data-app Studio cluster
+  demo('192-data-app-studio', 'Data-app Studio', 'The grid-centric data-app stack end to end: a working CRUD screen (SvGrid list + SvGridEditPanel create/edit, server-style sort + paging via createServerDataSource, optimistic delete) plus SvSchemaDesigner to author the EntitySchema, preview grid + form live, and Generate runnable SvelteKit code. One schema drives columns, the form, and the codegen.', 'Studio', { pro: true }),
+  demo('193-studio-live-sql', 'Data-app Studio · live SQL', 'The Studio stack backed by a REAL Postgres running in the browser via PGlite (WASM), no server. createSqlDataSource turns the grid\'s sort / filter / page requests into parameterized SQL run through PGlite; the executed query is shown live under the toolbar. Full CRUD with optimistic updates against actual Postgres.', 'Studio', { pro: true, noPlayground: true }),
+  demo('194-studio-supabase', 'Data-app Studio · Supabase', 'The Studio stack over hosted Postgres on Supabase, straight from the browser via supabase-js (PostgREST) and your project\'s public anon key. createSupabaseDataSource maps the grid\'s sort / filter / page / CRUD onto the query builder, introspectSupabaseTable adapts to any table AND detects foreign keys (a FK column auto-becomes a searchable lookup in the form), and createSupabaseRealtime makes it LIVE - change a row in the Supabase dashboard and it flashes in the grid (toggle the Live pill). Paste your URL + anon key, run the one-time setup SQL, done. RLS keeps the anon key safe.', 'Studio', { pro: true }),
+  demo('195-studio-relations', 'Data-app Studio · relations', 'Foreign-key lookup fields end to end. Contacts belong to a Company: the contact form renders a searchable Company picker (SvLookupInput + createRelationLookup) that queries the Companies source and stores the id, while the grid shows the resolved company NAME. The lookup runs over the same ServerDataSource contract, so related options can come from Supabase / REST / SQL / in-memory (here both entities are in-memory).', 'Studio', { pro: true }),
+  demo('196-studio-auth', 'Data-app Studio · secured', 'A secured screen: SvAuthGate requires a signed-in user (Supabase Auth via createSupabaseAuth) before showing the Studio grid, with a login / sign-up form and a signed-in bar. Uses a mock auth client so any email + password works here; swap for your supabase-js client and Row-Level Security scopes each user to their own rows (auth = who, RLS = what).', 'Studio', { pro: true }),
+  demo('197-studio-chart', 'Data-app Studio · chart', 'A live chart panel beside the grid, driven by the same data source: rowsToChartSpec aggregates the rows (group by tier / active, reduce MRR by sum / avg / count) and SvGridChart renders bar / pie / line - no external chart library. The chart doubles as a filter control: click a bar or slice to filter the grid to that category. Create / edit / delete and the chart updates.', 'Studio', { pro: true }),
+  demo('198-studio-form-fields', 'Data-app Studio · rich fields', 'Rich edit-form fields: an image UPLOAD field (SvFileInput - preview + file picker, stores a data URL with no backend, or a URL via an uploads handler) shown as an avatar in the grid, and a CASCADING dropdown (City computed from the chosen Country via dependentOptions, cleared when the country changes). Both are schema-driven on SvGridEditPanel.', 'Studio', { pro: true }),
+  demo('199-studio-computed-hooks', 'Data-app Studio · computed & hooks', 'Business logic on the schema. `total` is a COMPUTED field (qty * price) - read-only in grid + form, recomputed live as you type, never stored or submitted. withEntityRules materializes it onto every row and runs the schema hooks: beforeCreate stamps createdAt, and a cross-field validate rejects a non-positive quantity.', 'Studio', { pro: true }),
+  demo('200-studio-dashboard', 'Data-app Studio · dashboard', 'A schema-driven dashboard above the grid. SvSchemaDashboard renders a declarative spec of KPI tiles (count / sum / avg) + charts (SvSchemaChart) over the same EntitySchema - a data view, not a page builder. Click a chart category to drill the grid; create / edit / delete and the KPIs and charts update.', 'Studio', { pro: true }),
+  // The visual designer is a TOOL, not a demo card - it lives full-screen at
+  // /studio (launched from the Studio section + Pricing), so it is intentionally
+  // NOT registered here. The entries below are runnable example apps (proof).
 
   // ----- New enterprise features
   demo('96-high-contrast-theme',      'High-contrast theme',            'WCAG 2.2 AAA-grade preset for accessibility procurement. Token block opts a subtree into the high-contrast skin while the rest of the page stays standard. Light + dark.', 'Themes & Styling'),
@@ -381,28 +483,32 @@ const baseDemos: Demo[] = [
   demo('91-cell-comments',            'Cell comments + @-mentions',     'Right-click any cell to start a thread. Type @ inside the editor to mention a teammate (fuzzy picker, chip insertion). Comment indicator triangle, resolve-thread action, mention count.', 'Rows & Cells'),
 
   // ----- Enterprise: Pivot cluster
-  demo('52-pivot-table',              'Pivot + Designer',               'Drag-and-drop Pivot Designer with Filters / Rows / Columns / Values zones, multi-level column headers, subtotal + grand-total rows, row-header sort menu.', 'Enterprise', { pro: true }),
-  demo('60-pivot-expandable',         'Pivot - Sales pipeline',         'Polished pivot view: KPI strip, region/sales-person rows, quarter columns, two measures, expand-all/collapse-all toolbar, heatmap tinting.', 'Enterprise', { pro: true }),
-  demo('121-pivot-conditional-cells', 'Pivot - Conditional cells',      'Function-valued cell and header templates on top of createPivotModel: traffic-light revenue pills, target chips, units data-bars, measure icons in headers, region color dots in row labels.', 'Enterprise', { pro: true }),
-  demo('122-pivot-drill-through',     'Pivot - Drill-through',          'Click any pivot value cell - leaf, subtotal, or grand total - and the right rail opens with the source facts behind the aggregate. Total + count + average always match the cell.', 'Enterprise', { pro: true }),
-  demo('123-pivot-totals',            'Pivot - Totals + Subtotals',     'Live toggles for grandTotalRow / grandTotalCol / rowSubtotals on createPivotModel. Subtotals get a Σ badge, the grand-total row is tinted accent, the grand-total column is an amber stripe.', 'Enterprise', { pro: true }),
-  demo('124-pivot-olap',              'Pivot - OLAP cube (BI shell)',   'Full BI dashboard around an OLAP cube: page header, 5 KPI tiles with QoQ sparklines, left slicer rail (region multi-select, year picker, country search, view-mode, density, heatmap toggle), cube in Tabular form (one column per row dim), right insights rail (top YoY movers, top contributors).', 'Enterprise', { pro: true }),
-  demo('125-pivot-charts',            'Pivot + linked charts',          'Pivot cube wired to a horizontal bar chart + multi-year line chart. Click any cube row to drill the charts one level deeper (region → country → product); scope KPI strip tracks selection; charts are zero-dep inline SVG.', 'Enterprise', { pro: true }),
-  demo('166-pivot-analysis-workspace','Pivot - Analysis workspace',     'Excel-style pivot analysis: left-rail field picker (search + checkboxes) feeding four wells (Rows / Columns / Data / Filters), live re-pivot on every layout change, click-to-cycle aggregator chips, data-bar Total Spend cells + amber Avg Rating strips, subtotal + grand-total row tints.', 'Enterprise', { pro: true }),
-  demo('168-pivot-designer',          'Pivot designer component',       'SvPivotDesigner: self-contained, enterprise-ready pivot authoring with a left-rail field picker (search + grouped), four drop wells (Filters / Columns / Rows / Values), drag-and-drop between wells, per-chip aggregator + filter menus, presets toolbar, and an inline pivot grid driven by createPivotModel. Single bindable `layout` prop so the page can persist or restore it.', 'Enterprise', { pro: true }),
+  demo('52-pivot-table',              'Pivot + Designer',               'Drag-and-drop Pivot Designer with Filters / Rows / Columns / Values zones, multi-level column headers, subtotal + grand-total rows, row-header sort menu.', 'Pivot Grid', { pro: true }),
+  demo('60-pivot-expandable',         'Pivot - Sales pipeline',         'Polished pivot view: KPI strip, region/sales-person rows, quarter columns, two measures, expand-all/collapse-all toolbar, heatmap tinting.', 'Pivot Grid', { pro: true }),
+  demo('121-pivot-conditional-cells', 'Pivot - Conditional cells',      'Function-valued cell and header templates on top of createPivotModel: traffic-light revenue pills, target chips, units data-bars, measure icons in headers, region color dots in row labels.', 'Pivot Grid', { pro: true }),
+  demo('122-pivot-drill-through',     'Pivot - Drill-through',          'Click any pivot value cell - leaf, subtotal, or grand total - and the right rail opens with the source facts behind the aggregate. Total + count + average always match the cell.', 'Pivot Grid', { pro: true }),
+  demo('123-pivot-totals',            'Pivot - Totals + Subtotals',     'Live toggles for grandTotalRow / grandTotalCol / rowSubtotals on createPivotModel. Subtotals get a Σ badge, the grand-total row is tinted accent, the grand-total column is an amber stripe.', 'Pivot Grid', { pro: true }),
+  demo('124-pivot-olap',              'Pivot - OLAP cube (BI shell)',   'Full BI dashboard around an OLAP cube: page header, 5 KPI tiles with QoQ sparklines, left slicer rail (region multi-select, year picker, country search, view-mode, density, heatmap toggle), cube in Tabular form (one column per row dim), right insights rail (top YoY movers, top contributors).', 'Pivot Grid', { pro: true }),
+  demo('125-pivot-charts',            'Pivot + linked charts',          'Pivot cube wired to a horizontal bar chart + multi-year line chart. Click any cube row to drill the charts one level deeper (region → country → product); scope KPI strip tracks selection; charts are zero-dep inline SVG.', 'Pivot Grid', { pro: true }),
+  demo('166-pivot-analysis-workspace','Pivot - Analysis workspace',     'Excel-style pivot analysis: left-rail field picker (search + checkboxes) feeding four wells (Rows / Columns / Data / Filters), live re-pivot on every layout change, click-to-cycle aggregator chips, data-bar Total Spend cells + amber Avg Rating strips, subtotal + grand-total row tints.', 'Pivot Grid', { pro: true }),
+  demo('168-pivot-designer',          'Pivot designer component',       'SvPivotDesigner: self-contained, enterprise-ready pivot authoring with a left-rail field picker (search + grouped), four drop wells (Filters / Columns / Rows / Values), drag-and-drop between wells, per-chip aggregator + filter menus, presets toolbar, and an inline pivot grid driven by createPivotModel. Single bindable `layout` prop so the page can persist or restore it.', 'Pivot Grid', { pro: true }),
   demo('167-project-tracker',         'Project tracker (PM workspace)', 'Linear-style project workspace: KPI strip (Projects / In progress / Ready / Blocked / Budget), bulk-action toolbar (Mark ready, Block, Move to launch, Delete) that enables on selection, phase-grouped rows with per-phase aggregate cards, NEW pill + SVG progress ring on the name column, avatar owner, colour-block Status / Priority / Risk cells, Department chip, multi-skills chips, inline filter row.', 'Industry Templates'),
 
   // ----- Enterprise: Export cluster (kept together at the very bottom)
-  demo('21-export-and-print',         'Export + Print',                 'Enterprise feature pack: download to Excel, PDF, CSV, TSV, HTML, or open a printable view in a new window.', 'Enterprise', { pro: true }),
-  demo('56-export-theme-matched',     'Export - Theme-matched',         'One xlsx, light or dark - styles read from the same --sg-* tokens the grid renders with.', 'Enterprise', { pro: true }),
-  demo('57-export-header-footer-logo','Export - Header + Footer + Logo','Branded xlsx: PNG logo + title + subtitle in the page header, generated date + page numbers in the footer.', 'Enterprise', { pro: true }),
-  demo('58-export-with-images',       'Export - Cell images',           'Product grid with thumbnail column. On xlsx export each thumbnail is embedded as a real picture cell.', 'Enterprise', { pro: true }),
-  demo('59-export-multi-sheet',       'Export - Multiple sheets',       'One xlsx with 5 tabs - All orders + per-region splits - independent of the current grid filter.', 'Enterprise', { pro: true }),
-  demo('119-workbook-multi-sheet',    'Workbook - multi-sheet + formulas','A real spreadsheet: A/B/C columns + many rows you can grow on demand, cross-sheet formulas (=SUM, =VLOOKUP, nested IF) recalculating live, cell + conditional formatting, validation dropdowns, an inline chart, a calendar/scheduler sheet, open .xlsx/.csv, and export every sheet to one multi-tab .xlsx.', 'Enterprise', { pro: true }),
-  demo('93-password-protected-export','Password-protected export',      'PBKDF2 (100k iters) + AES-GCM 256 client-side. Strength meter, encrypt + download, in-page decrypt tool to verify the round-trip. Enterprise pack maps to ECMA-376 Agile encryption.', 'Enterprise', { pro: true }),
-  demo('101-formulas-in-xlsx',        'Formulas preserved in xlsx',     'Builds a real OOXML workbook in the browser via JSZip; computed columns export as <f>...</f> formula cells. Open in Excel and the math recomputes when you edit a number.', 'Enterprise', { pro: true }),
-  demo('126-export-grouped-grid',     'Export grouped grid to Excel',   'A flat sales grid (Region → Country) exported via api.exportData({ format: "xlsx", groupBy }) which uses Smart\'s NATIVE Excel row outline grouping. Opens in Excel with +/- buttons in the row header gutter for every group level.', 'Enterprise', { pro: true }),
-  demo('127-export-pivot-grid',       'Export pivot grid to Excel',     'createPivotModel leaves projected into an xlsx via api.exportData with groupBy: ["region"] - each region becomes an Excel outline group. Engine column ids ("pv__Q1__m0") translate to readable headers ("Q1 · Revenue").', 'Enterprise', { pro: true }),
+  demo('21-export-and-print',         'Export + Print',                 'Enterprise feature pack: download to Excel, PDF, CSV, TSV, HTML, or open a printable view in a new window.', 'Data Export & Import', { pro: true }),
+  demo('56-export-theme-matched',     'Export - Theme-matched',         'One xlsx, light or dark - styles read from the same --sg-* tokens the grid renders with.', 'Data Export & Import', { pro: true }),
+  demo('57-export-header-footer-logo','Export - Header + Footer + Logo','Branded xlsx: PNG logo + title + subtitle in the page header, generated date + page numbers in the footer.', 'Data Export & Import', { pro: true }),
+  demo('58-export-with-images',       'Export - Cell images',           'Product grid with thumbnail column. On xlsx export each thumbnail is embedded as a real picture cell.', 'Data Export & Import', { pro: true }),
+  demo('59-export-multi-sheet',       'Export - Multiple sheets',       'One xlsx with 5 tabs - All orders + per-region splits - independent of the current grid filter.', 'Data Export & Import', { pro: true }),
+  demo('119-workbook-multi-sheet',    'Workbook - multi-sheet + formulas','A real spreadsheet: A/B/C columns + many rows you can grow on demand, cross-sheet formulas (=SUM, =VLOOKUP, nested IF) recalculating live, cell + conditional formatting, validation dropdowns, an inline chart, a calendar/scheduler sheet, open .xlsx/.csv, and export every sheet to one multi-tab .xlsx.', 'Data Export & Import', { pro: true }),
+  demo('93-password-protected-export','Password-protected export',      'PBKDF2 (100k iters) + AES-GCM 256 client-side. Strength meter, encrypt + download, in-page decrypt tool to verify the round-trip. Enterprise pack maps to ECMA-376 Agile encryption.', 'Data Export & Import', { pro: true }),
+  demo('101-formulas-in-xlsx',        'Formulas preserved in xlsx',     'Builds a real OOXML workbook in the browser via JSZip; computed columns export as <f>...</f> formula cells. Open in Excel and the math recomputes when you edit a number.', 'Data Export & Import', { pro: true }),
+  demo('126-export-grouped-grid',     'Export grouped grid to Excel',   'A flat sales grid (Region → Country) exported via api.exportData({ format: "xlsx", groupBy }) which uses Smart\'s NATIVE Excel row outline grouping. Opens in Excel with +/- buttons in the row header gutter for every group level.', 'Data Export & Import', { pro: true }),
+  demo('127-export-pivot-grid',       'Export pivot grid to Excel',     'createPivotModel leaves projected into an xlsx via api.exportData with groupBy: ["region"] - each region becomes an Excel outline group. Engine column ids ("pv__Q1__m0") translate to readable headers ("Q1 · Revenue").', 'Data Export & Import', { pro: true }),
+  demo('201-export-formatting-and-xls','Export - Formatting, scope + XLS','Faithful export: currency / date / percent render as shown (toggle raw values), pick a row scope (view / selected / all), legacy .xls (Excel 2003 XML, no jszip), an exportValue hook, and the drop-in SvExportMenu.', 'Data Export & Import', { pro: true }),
+  demo('202-export-pdf-grouped-and-print','Export - Grouped PDF + Print','Group the grid and export: the PDF + xlsx carry bold group headers and per-cluster subtotal rows (auto-carried from grouping state). Polished Print is the zero-dependency "Save as PDF" route with a repeated header and title.', 'Data Export & Import', { pro: true }),
+  demo('203-ai-export-and-anomalies','AI export + anomaly scan','Natural-language export: describe an export in English and the AI provider turns it into a filter + group + format plan, applies it, and downloads. Plus a one-click anomaly scan. Runs on the bundled mock model.', 'Data Export & Import', { pro: true }),
+  demo('204-import-dialog','Import - dialog + auto-mapping','The round-trip partner of export: SvImportDialog drops in a drag-drop / paste importer that auto-maps a file\'s headers to your columns, coerces each value with the column\'s own format, previews the typed rows with bad cells flagged, then appends the clean ones. Reads .xlsx, CSV, TSV, JSON.', 'Data Export & Import', { pro: true }),
 
 ]
 

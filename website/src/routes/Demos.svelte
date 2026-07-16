@@ -6,7 +6,9 @@
    * locked to dark, no theme toggle.
    */
   import { tick, untrack } from 'svelte'
-  import { demos, demoGroups, findDemo, type DemoCategory } from '../lib/demos'
+  import { demos, demoGroups, findDemo, isEnterpriseCategory, isEditorCategory, type DemoCategory } from '../lib/demos'
+  import { sampleApps } from '@svgrid/enterprise'
+  import StudioLanding from '../components/StudioLanding.svelte'
   import SourceModal from '../components/SourceModal.svelte'
   import { openInStackBlitz } from '../lib/stackblitz'
   import { downloadProject } from '../lib/project-export'
@@ -15,7 +17,9 @@
   type Props = { demoId: string }
   let { demoId }: Props = $props()
 
-  const current = $derived(findDemo(demoId))
+  // `demos/studio` is the SvGrid Studio *home* (the designer + sample gallery);
+  // its `current` borrows the data-app-studio demo so category-based logic works.
+  const current = $derived(findDemo(demoId === 'studio' ? '192-data-app-studio' : demoId))
 
   // Mobile: the sidebar is a slide-in drawer (it would otherwise eat ~288px
   // of a phone screen and crush the demo). Opening a demo closes it.
@@ -25,6 +29,43 @@
     router.navigate(`demos/${id}`)
     mobileNav = false
   }
+
+  // ---- Product switcher: SvGrid / SvGrid Studio / SvGrid Editors --------
+  // Studio (data-app builder) and Editors (standalone UI components that double
+  // as grid cell editors) are distinct products; the header switches products
+  // and scopes the gallery to one. `product` follows the open demo.
+  type Product = 'grid' | 'studio' | 'editors'
+  const STUDIO_CATEGORY: DemoCategory = 'Studio'
+  const STUDIO_LANDING = 'studio' // the SvGrid Studio home route (demos/studio)
+  const EDITORS_LANDING = '250-calendar'
+  const isStudioHome = $derived(demoId === STUDIO_LANDING)
+  const productOf = (cat: DemoCategory): Product =>
+    cat === STUDIO_CATEGORY ? 'studio' : isEditorCategory(cat) ? 'editors' : 'grid'
+  const product = $derived<Product>(productOf(current.category))
+  const inProduct = (cat: DemoCategory) => productOf(cat) === product
+  const visibleGroups = $derived(demoGroups.filter((g) => inProduct(g.category)))
+  const scopedDemos = $derived(demos.filter((d) => inProduct(d.category)))
+  const gridLanding = demoGroups.find((g) => productOf(g.category) === 'grid')?.demos[0]?.id ?? demos[0]!.id
+  const studioCount = demos.filter((d) => productOf(d.category) === 'studio').length
+  const editorsCount = demos.filter((d) => productOf(d.category) === 'editors').length
+  const gridCount = demos.length - studioCount - editorsCount
+
+  let productMenu = $state(false)
+  function selectProduct(p: Product) {
+    productMenu = false
+    if (p === product) return
+    go(p === 'studio' ? STUDIO_LANDING : p === 'editors' ? EDITORS_LANDING : gridLanding)
+  }
+  const productName = (p: Product) => (p === 'studio' ? 'SvGrid Studio' : p === 'editors' ? 'SvGrid Editors' : 'SvGrid')
+  const productSub = (p: Product) => (p === 'studio' ? 'Data-app builder' : p === 'editors' ? 'UI components & editors' : 'Examples gallery')
+  $effect(() => {
+    if (!productMenu) return
+    const onDown = (e: MouseEvent) => { if (!(e.target as HTMLElement)?.closest('.product-switch')) productMenu = false }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') productMenu = false }
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => { window.removeEventListener('mousedown', onDown); window.removeEventListener('keydown', onKey) }
+  })
 
   // Source is loaded on demand (the registry only holds a lazy loader), so the
   // raw text ships only when the user actually opens the source panel.
@@ -172,8 +213,10 @@
     }
     return total
   }
+  // Reset a category filter that belongs to the other product after a switch.
+  $effect(() => { if (gridCategory && !inProduct(gridCategory)) gridCategory = null })
   const gridDemos = $derived.by(() => {
-    const scoped = gridCategory ? demos.filter((d) => d.category === gridCategory) : demos
+    const scoped = gridCategory ? scopedDemos.filter((d) => d.category === gridCategory) : scopedDemos
     if (!gridToks.length) return scoped
     return scoped
       .map((d) => ({ d, s: scoreDemo(d, gridToks) }))
@@ -189,7 +232,7 @@
   const listToks = $derived(gridTokens(listQuery))
   const listDemos = $derived.by(() => {
     if (!listToks.length) return []
-    return demos
+    return scopedDemos
       .map((d) => ({ d, s: scoreDemo(d, listToks) }))
       .filter((r) => r.s > 0)
       .sort((a, b) => b.s - a.s)
@@ -288,11 +331,44 @@
     style="border-color: var(--sg-border)"
   >
     <div class="mb-4 flex items-center justify-between gap-2">
-      <div class="min-w-0">
-        <h1 class="text-lg font-semibold">SvGrid</h1>
-        <p class="text-xs" style="color: var(--sg-muted)">Examples gallery</p>
+      <div class="product-switch relative min-w-0">
+        <button
+          type="button"
+          onclick={() => (productMenu = !productMenu)}
+          aria-haspopup="menu"
+          aria-expanded={productMenu}
+          class="flex items-center gap-1.5 rounded-lg -mx-1.5 px-1.5 py-1 transition-colors"
+          style="--hover: color-mix(in srgb, var(--sg-fg) 7%, transparent)"
+          onmouseenter={(e) => (e.currentTarget.style.background = 'var(--hover)')}
+          onmouseleave={(e) => (e.currentTarget.style.background = 'transparent')}
+        >
+          <h1 class="text-lg font-semibold leading-none">{productName(product)}</h1>
+          <svg class="product-chev {productMenu ? 'is-open' : ''}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
+        <p class="text-xs mt-0.5" style="color: var(--sg-muted)">{productSub(product)}</p>
+        {#if productMenu}
+          <div role="menu" class="product-menu absolute left-0 top-full mt-1 z-30 w-60 rounded-xl p-1.5" style="background: var(--sg-bg); border: 1px solid var(--sg-border); box-shadow: 0 18px 44px -18px rgba(0,0,0,0.55)">
+            {#each [{ id: 'grid' as const, name: 'SvGrid', sub: 'Grid examples', n: gridCount }, { id: 'studio' as const, name: 'SvGrid Studio', sub: 'Data-app builder', n: studioCount }, { id: 'editors' as const, name: 'SvGrid Editors', sub: 'UI components & editors', n: editorsCount }] as opt (opt.id)}
+              <button
+                type="button"
+                role="menuitem"
+                onclick={() => selectProduct(opt.id)}
+                class="product-opt w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left"
+                class:is-active={product === opt.id}
+              >
+                <span class="flex-1 min-w-0">
+                  <span class="block text-sm font-semibold" style="color: var(--sg-fg)">{opt.name}</span>
+                  <span class="block text-[11px]" style="color: var(--sg-muted)">{opt.sub} · {opt.n}</span>
+                </span>
+                {#if product === opt.id}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--sg-accent, #f97316)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                {/if}
+              </button>
+            {/each}
+          </div>
+        {/if}
       </div>
-      <div class="demo-nav-toggle" role="group" aria-label="Navigation view">
+      <div class="demo-nav-toggle" role="group" aria-label="Navigation view" class:hidden={product === 'studio'}>
         <button
           type="button"
           class="demo-nav-btn"
@@ -387,8 +463,32 @@
             {/each}
           </ul>
         {/if}
+      {:else if product === 'studio'}
+        <!-- Studio product: the visual designer + its sample apps (the feature
+             demos - SQL / Supabase / relations - are documented in the Studio docs). -->
+        <ul class="space-y-0.5 pb-2">
+          <li>
+            <button type="button" onclick={() => router.navigate('studio')} class="demo-leaf demo-leaf--tool w-full text-left rounded px-3 py-1.5 text-sm font-semibold transition-colors flex items-center gap-1.5" style:color="var(--site-accent, #f97316)" title="Open the full-screen visual designer">
+              <span class="demo-leaf-title">Visual designer</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7" /><path d="M8 7h9v9" /></svg>
+            </button>
+          </li>
+        </ul>
+        <div class="demo-group-head w-full flex items-center gap-2 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider" style="color: var(--sg-muted);">
+          <span class="flex-1 text-left">Sample apps</span>
+          <span class="demo-group-count">{sampleApps.length}</span>
+        </div>
+        <ul class="space-y-0.5 pb-2">
+          {#each sampleApps as app (app.id)}
+            <li>
+              <button type="button" onclick={() => router.navigate(`studio/${app.id}`)} class="demo-leaf w-full text-left rounded pl-6 pr-3 py-1.5 text-sm transition-colors flex items-center gap-2" style:color="var(--sg-fg)">
+                <span aria-hidden="true">{app.emoji}</span><span class="demo-leaf-title">{app.name}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
       {:else}
-      {#each demoGroups as group (group.category)}
+      {#each visibleGroups as group (group.category)}
           {@const isOpen = openGroups[group.category] ?? false}
           <div class="mb-1">
             <button
@@ -402,7 +502,7 @@
                 <polyline points="9 6 15 12 9 18" />
               </svg>
               <span class="flex-1 text-left">{group.category}</span>
-              {#if group.category === 'Enterprise'}
+              {#if isEnterpriseCategory(group.category)}
                 <span class="demo-group-pro-badge">Enterprise</span>
               {/if}
               <span class="demo-group-count">{group.demos.length}</span>
@@ -454,7 +554,7 @@
     </a>
   </aside>
 
-  {#if navMode === 'grid'}
+  {#if navMode === 'grid' && product !== 'studio'}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="browse-backdrop" onclick={() => (navMode = 'list')} aria-hidden="true"></div>
@@ -483,7 +583,7 @@
           class:is-active={gridCategory === null}
           onclick={() => (gridCategory = null)}
         >All</button>
-        {#each demoGroups as g (g.category)}
+        {#each visibleGroups as g (g.category)}
           <button
             type="button"
             class="demo-grid-cat"
@@ -528,7 +628,13 @@
     </div>
   {/if}
 
-  <main class="flex flex-col flex-1 overflow-x-hidden p-3 sm:p-6 min-h-0">
+  <main class="flex flex-col flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 min-h-0">
+    {#if isStudioHome}
+      <button type="button" class="demo-menu-btn md:hidden mb-3" aria-label="Open menu" onclick={() => (mobileNav = true)}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+      </button>
+      <StudioLanding />
+    {:else}
     <header class="mb-5 flex shrink-0 items-start justify-between gap-3">
       <div class="flex min-w-0 items-start gap-2">
         <button
@@ -547,20 +653,22 @@
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onclick={() => router.navigate(`playground/${current.id}`)}
-          class="inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-sm"
-          style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
-          title="Open this demo in the live playground - edit a config and preview instantly"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
-          </svg>
-          <span class="hidden sm:inline">Edit</span>
-        </button>
+        {#if !current.noPlayground}
+          <button
+            type="button"
+            onclick={() => router.navigate(`playground/${current.id}`)}
+            class="inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-sm"
+            style="border-color: var(--sg-border); color: var(--sg-fg); background: transparent;"
+            title="Open this demo in the live playground - edit a config and preview instantly"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+            </svg>
+            <span class="hidden sm:inline">Edit</span>
+          </button>
+        {/if}
         <button
           type="button"
           onclick={downloadProjectZip}
@@ -602,6 +710,17 @@
         </button>
       </div>
     </header>
+    {#if current.category === 'Studio'}
+      <div class="studio-launch-banner">
+        <span>
+          These are example apps built with <strong>SvGrid Studio</strong> - the
+          visual designer that generates a runnable SvelteKit project you own.
+        </span>
+        <button type="button" onclick={() => router.navigate('studio')}>
+          Launch SvGrid Studio →
+        </button>
+      </div>
+    {/if}
     <div class="flex flex-col flex-1 min-h-0">
       {#key current.id}
         {#await current.load()}
@@ -618,6 +737,7 @@
         {/await}
       {/key}
     </div>
+    {/if}
   </main>
 </div>
 
@@ -630,6 +750,34 @@
 {/if}
 
 <style>
+  /* Callout above Studio example demos, linking to the full-screen designer. */
+  .studio-launch-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 9px 14px;
+    border-radius: 9px;
+    border: 1px solid color-mix(in srgb, var(--site-accent, #f97316) 35%, transparent);
+    background: color-mix(in srgb, var(--site-accent, #f97316) 8%, transparent);
+    font-size: 13px;
+    color: var(--sg-fg, #0f172a);
+  }
+  .studio-launch-banner button {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 7px;
+    border: 0;
+    background: var(--site-accent, #f97316);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .studio-launch-banner button:hover { filter: brightness(1.05); }
+
   /* Navigation-tree scrollbar. Uses the same `--sg-scrollbar-*` tokens the grid
      styles its own scrollbar with - each theme preset (and light/dark) sets
      them on `.demo-page`, so the sidebar scrollbar matches the chosen theme's
@@ -904,6 +1052,15 @@
   .demo-group-head:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.08)); }
   .demo-group-chev { flex-shrink: 0; transition: transform 140ms ease; }
   .demo-group-chev.is-open { transform: rotate(90deg); }
+  .product-chev { flex-shrink: 0; color: var(--sg-muted); transition: transform 140ms ease; }
+  .product-chev.is-open { transform: rotate(180deg); }
+  .product-opt { transition: background 120ms ease; }
+  .product-opt:hover { background: color-mix(in srgb, var(--sg-fg) 6%, transparent); }
+  .product-opt.is-active { background: color-mix(in srgb, var(--sg-fg) 4%, transparent); }
+  /* Pinned "Visual designer" tool entry (top of the Studio list / cards) */
+  .demo-leaf--tool:hover { background: color-mix(in srgb, var(--site-accent, #f97316) 13%, transparent); }
+  .demo-card--tool { border-color: color-mix(in srgb, var(--site-accent, #f97316) 45%, var(--sg-border)) !important; }
+  .demo-card-thumb--tool { display: grid; place-items: center; color: var(--site-accent, #f97316); background: color-mix(in srgb, var(--site-accent, #f97316) 12%, transparent); }
   .demo-group-count {
     flex-shrink: 0;
     font-size: 10px;

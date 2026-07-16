@@ -24,6 +24,8 @@
   } from "./render-component";
   import { buildSparkline, toSparklineValues } from "./sparkline";
   import SvGridDropdown from "./SvGridDropdown.svelte";
+  import SvDateTimePicker from "./SvDateTimePicker.svelte";
+  import { timeStringToDate, dateToTimeString } from "./SvGrid.helpers";
   import type {
     Props,
     SelectionPoint,
@@ -246,6 +248,7 @@
   const computeRowClass = $derived(ctrl.computeRowClass);
   const computeCellClass = $derived(ctrl.computeCellClass);
   const computeCellTooltip = $derived(ctrl.computeCellTooltip);
+  const computeCellValidity = $derived(ctrl.computeCellValidity);
   const computeCellNote = $derived(ctrl.computeCellNote);
   const getCellDisplayValue = $derived(ctrl.getCellDisplayValue);
   const getColumnAlign = $derived(ctrl.getColumnAlign);
@@ -266,6 +269,7 @@
   const getCellRangeEdges = $derived(ctrl.getCellRangeEdges);
   const fillHandleCell = $derived(ctrl.fillHandleCell);
   const isInFillPreview = $derived(ctrl.isInFillPreview);
+  const fillMarqueeEdges = $derived(ctrl.fillMarqueeEdges);
   const startFillDrag = $derived(ctrl.startFillDrag);
   const onCellPointerDown = $derived(ctrl.onCellPointerDown);
   const onCellPointerEnter = $derived(ctrl.onCellPointerEnter);
@@ -306,7 +310,12 @@
   onpointermove={onWindowPointerMove}
 />
 
-{#if props.loading && !props.loadingOverlay}
+{#if props.loading && !props.loadingOverlay && !hasMeasured}
+  <!-- Full-screen loading state only on the *initial* load, before the grid
+       has ever rendered. Once measured, a `loading` flip (from a server-mode
+       sort / filter / page refetch) keeps the table mounted so header inputs
+       and focus survive - the empty-row message + optional `loadingOverlay`
+       cover the in-place refresh. -->
   <div class="sv-grid-state sv-grid-state-loading" role="status">
     Loading grid data...
   </div>
@@ -798,6 +807,49 @@
           </div>
         {/if}
       </div>
+    {:else if ctrl.editingCell?.editorType === "date"}
+      <!-- Rich date editor: SvCalendar popover over a formatted input. Opts
+           out to the native <input type="date"> via editorType 'date-native'. -->
+      <SvDateTimePicker
+        value={ctrl.editingCell?.value as string | number | Date | null}
+        formatString="yyyy-MM-dd"
+        dropDownDisplayMode="calendar"
+        autoOpen
+        onChange={(d) => updateEditingCellValue(d)}
+        onCommit={() => saveEditingCell()}
+        onCancel={() => {
+          ctrl.editingCell = null;
+          ctrl.gridRootEl?.focus({ preventScroll: true });
+        }}
+      />
+    {:else if ctrl.editingCell?.editorType === "datetime"}
+      <SvDateTimePicker
+        value={ctrl.editingCell?.value as string | number | Date | null}
+        formatString="yyyy-MM-dd HH:mm"
+        dropDownDisplayMode="both"
+        autoOpen
+        onChange={(d) => updateEditingCellValue(d)}
+        onCommit={() => saveEditingCell()}
+        onCancel={() => {
+          ctrl.editingCell = null;
+          ctrl.gridRootEl?.focus({ preventScroll: true });
+        }}
+      />
+    {:else if ctrl.editingCell?.editorType === "time"}
+      <!-- Rich time editor: SvTimePicker dial. Stores the 'HH:MM' string the
+           `time` parser expects; opts out via editorType 'time-native'. -->
+      <SvDateTimePicker
+        value={timeStringToDate(ctrl.editingCell?.value)}
+        formatString="HH:mm"
+        dropDownDisplayMode="time"
+        autoOpen
+        onChange={(d) => updateEditingCellValue(dateToTimeString(d))}
+        onCommit={() => saveEditingCell()}
+        onCancel={() => {
+          ctrl.editingCell = null;
+          ctrl.gridRootEl?.focus({ preventScroll: true });
+        }}
+      />
     {:else if ctrl.editingCell?.editorType === "color"}
       <!-- Native <input type="color"> opens its picker in a separate OS
            overlay; once the picker closes, focus stays on the input so
@@ -1179,6 +1231,10 @@
       </div>
     {/if}
 
+    {#if hasMeasured && (props.paginationPosition === "top" || props.paginationPosition === "both")}
+      <GridFooter {ctrl} showStatus={false} top pager pageSizeOptions={props.pageSizeOptions} />
+    {/if}
+
     <div
       class="sv-grid-shell"
       style={`height: ${
@@ -1197,6 +1253,7 @@
         <table
           bind:this={ctrl.gridRootEl}
           class="sv-grid-table"
+          class:sv-grid-no-row-hover={props.enableRowHover !== true}
           {...getGridRootA11yProps({
             activeDescendantId,
             rowCount: allRows.length,
@@ -1795,6 +1852,7 @@
                           rowIndex,
                           colIndex,
                         )}
+                        {@const fillEdges = fillMarqueeEdges(rowIndex, colIndex)}
                         {@const hasFillHandle =
                           fillHandleCell &&
                           fillHandleCell.rowIndex === rowIndex &&
@@ -1804,6 +1862,10 @@
                           rendered.column,
                         )}
                         {@const cellTooltip = computeCellTooltip(
+                          row,
+                          rendered.column,
+                        )}
+                        {@const cellValidity = computeCellValidity(
                           row,
                           rendered.column,
                         )}
@@ -1818,7 +1880,9 @@
                             rowIndex && activeCell.colIndex === colIndex}
                           class:sv-grid-cell-has-fill-handle={hasFillHandle}
                           class:sv-grid-cell-cf={hasConditionalFormats}
+                          class:sv-grid-cell-invalid={cellValidity.invalid}
                           class:sv-grid-cell-has-note={cellNote != null}
+                          title={cellValidity.message ?? undefined}
                           data-svgrid-row={rowIndex}
                           data-svgrid-col={colIndex}
                           data-col-id={rendered.column.id}
@@ -1839,6 +1903,10 @@
                           data-fill-preview={isInFillPreview(rowIndex, colIndex)
                             ? "true"
                             : undefined}
+                          data-fill-top={fillEdges?.top ? "true" : undefined}
+                          data-fill-bottom={fillEdges?.bottom ? "true" : undefined}
+                          data-fill-left={fillEdges?.left ? "true" : undefined}
+                          data-fill-right={fillEdges?.right ? "true" : undefined}
                           style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
                           onpointerdown={(event) =>
                             onCellPointerDown(rowIndex, colIndex, event)}
@@ -2040,6 +2108,10 @@
                         row,
                         rendered.column,
                       )}
+                      {@const cellValidity = computeCellValidity(
+                        row,
+                        rendered.column,
+                      )}
                       {@const cellNote = computeCellNote(row, rendered.column)}
                       <td
                         class={`sv-grid-cell ${userCellClass}`}
@@ -2047,6 +2119,7 @@
                         class:sv-grid-cell-active={activeCell.rowIndex ===
                           rowIndex && activeCell.colIndex === colIndex}
                         class:sv-grid-cell-cf={hasConditionalFormats}
+                        class:sv-grid-cell-invalid={cellValidity.invalid}
                         class:sv-grid-cell-has-note={cellNote != null}
                         data-svgrid-row={rowIndex}
                         data-svgrid-col={colIndex}
@@ -2070,11 +2143,17 @@
                           // Column tooltip fires on whole-cell hover.
                           // Per-cell notes are gated on the corner hot-
                           // zone below (Excel-style: hover the small
-                          // triangle to read the note).
-                          if (cellTooltip)
+                          // triangle to read the note). A validation
+                          // message (when the cell is invalid) wins over
+                          // the plain column tooltip.
+                          const tip =
+                            cellValidity.invalid && cellValidity.message
+                              ? cellValidity.message
+                              : cellTooltip;
+                          if (tip)
                             showTooltipFor(
                               event.currentTarget as HTMLElement,
-                              cellTooltip,
+                              tip,
                             );
                         }}
                         onpointerleave={hideTooltip}
@@ -2284,7 +2363,7 @@
       {/if}
     </div>
 
-    <GridFooter {ctrl} />
+    <GridFooter {ctrl} pager={(props.paginationPosition ?? "bottom") !== "top"} pageSizeOptions={props.pageSizeOptions} />
 
     {#if ctrl.findOpen}
       <!-- Find-in-grid overlay. Anchored to the TOP of the grid root so

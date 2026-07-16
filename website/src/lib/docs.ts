@@ -94,6 +94,10 @@ const CATEGORY_ORDER: {
     summary: 'Security, benchmarks, testing, versioning, browser support.' },
   { dir: 'enterprise',        label: 'Enterprise',   icon: '◈',
     summary: 'License, evaluation, support, Enterprise feature pack.' },
+  // Nested under Enterprise (2 leading spaces => tree depth 1). Owns
+  // `enterprise/studio/*`; the overview page is routed in via CATEGORY_OVERRIDE.
+  { dir: 'enterprise/studio', label: '  SvGrid Studio', icon: '◧',
+    summary: 'Data-app generator: bind to data, build CRUD screens, scaffold code.' },
   { dir: 'compliance',        label: 'Compliance',   icon: '⚖',
     summary: 'SOC 2 / GDPR / HIPAA / audit-log integration.' },
   // NB: the API reference is NOT a docs category - it lives on the dedicated
@@ -160,6 +164,9 @@ const CATEGORY_OVERRIDE: Record<string, string> = {
   'help/production': 'Production & Quality',
   'help/missing-features': 'Production & Quality',
   'help/errors': 'Production & Quality',
+  // The Studio overview page lands in the nested "SvGrid Studio" group. The
+  // value must match the (space-indented) CATEGORY_ORDER label exactly.
+  'enterprise/studio': '  SvGrid Studio',
 }
 const CATEGORY_BY_LABEL = new Map(CATEGORY_ORDER.map((c) => [c.label, c]))
 
@@ -182,6 +189,23 @@ const HIDDEN_PREFIXES = ['_internal/', 'reference/', 'legal/', 'brand/', 'schema
 // listed here sorts alphabetically.
 const PAGE_ORDER: Record<string, string[]> = {
   '': ['getting-started', 'why-headless'],
+  'enterprise/studio': [
+    'studio', // the overview (slug enterprise/studio)
+    // Start here
+    'getting-started',
+    // Data binding
+    'data-binding', 'databases', 'postgres-grid', 'supabase', 'supabase-grid', 'realtime', 'drizzle', 'prisma', 'rest-api', 'rest-grid', 'odata-graphql', 'in-memory',
+    // Build
+    'launch', 'samples', 'designer', 'app-designer', 'cli', 'ai-generation',
+    // Reference
+    'schema', 'api', 'server-grid', 'edit-forms', 'business-logic', 'relations', 'master-detail', 'navigation', 'dashboards', 'auth', 'access-control', 'audit-log', 'i18n', 'code-generation',
+    // Tutorials
+    'tutorial-crm',
+    // Deploy, quality & style
+    'deployment', 'testing', 'accessibility', 'theming',
+    // Help
+    'troubleshooting',
+  ],
   'getting-started': [
     'starters',
     '1-install',

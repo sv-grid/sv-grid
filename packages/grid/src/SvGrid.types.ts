@@ -105,6 +105,32 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   showPagination?: boolean;
   /** Initial page size when pagination is enabled. Defaults to 10. */
   pageSize?: number;
+  /** Page-size choices shown in the footer's selector. Defaults to `[10, 25, 50, 100]`. */
+  pageSizeOptions?: number[];
+  /**
+   * Where the pagination footer sits: `'bottom'` (default), `'top'`, or `'both'`.
+   * The status bar (when enabled) always stays at the bottom.
+   */
+  paginationPosition?: 'top' | 'bottom' | 'both';
+  /**
+   * Server-side pagination. When `true`, the grid renders its native
+   * pagination footer from the `rowCount` / `pageIndex` you provide (rather
+   * than counting the local rows), does NOT slice `data` (the rows you pass are
+   * treated as the current page), and emits `onPaginationChange` when the user
+   * pages or changes page size. Pair with `externalSort` / `externalFilter`
+   * and a server data source. Requires `showPagination` / `pageable` to show
+   * the footer. Controlled: you own `pageIndex` + `pageSize` + `rowCount`.
+   */
+  externalPagination?: boolean;
+  /** Total rows on the server, for the footer's range + page count. Used with `externalPagination`. */
+  rowCount?: number;
+  /** Current 0-based page index. Used with `externalPagination` (controlled). */
+  pageIndex?: number;
+  /**
+   * Fires when the user changes page or page size while `externalPagination`
+   * is on. Fetch that page and update `data` / `rowCount` / `pageIndex`.
+   */
+  onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void;
   virtualization?: boolean;
   /** Row height in pixels. Pass a function `(rowIndex) => px` for
    *  per-row variable heights (e.g. an interactive row-resize feature).
@@ -150,6 +176,13 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   showFilterMenu?: boolean;
   showFilterRow?: boolean;
   enableCellSelection?: boolean;
+  /**
+   * Highlight the row under the pointer. Default **false** - the hover tint can
+   * compete with the cell selection / fill marquee. Set `true` to opt in; when
+   * on, the hover no longer paints over selected cells so the selection stays
+   * visible.
+   */
+  enableRowHover?: boolean;
   /**
    * Prepend a header row (the column labels) to copied cell ranges, so pasting
    * into Excel / Sheets includes the headers. Applies per copied range.

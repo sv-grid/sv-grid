@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-  import { demos, demoGroups, findDemo } from './shared/registry'
+  import { demos, demoGroups, findDemo, isEnterpriseCategory, isEditorCategory } from './shared/registry'
   import SourceModal from './shared/SourceModal.svelte'
   import './index.css'
 
@@ -125,11 +125,61 @@
     window.location.hash = `/${id}`
   }
 
+  // ---- Product switcher: SvGrid / SvGrid Studio / SvGrid Editors --------
+  // Studio (data-app builder) and Editors (standalone UI components that double
+  // as grid cell editors) are distinct products, so the header switches between
+  // them and the gallery scopes to one at a time. `product` follows the open
+  // demo, so deep-linking scopes correctly.
+  type Product = 'grid' | 'studio' | 'editors'
+  const STUDIO_CATEGORY = 'Studio'
+  // Land on the Studio overview (not the visual designer, which auto-fullscreens
+  // and would hide the sidebar the switcher lives in).
+  const STUDIO_LANDING = '192-data-app-studio'
+  const EDITORS_LANDING = '250-calendar'
+  const productOf = (cat: string): Product =>
+    cat === STUDIO_CATEGORY ? 'studio' : isEditorCategory(cat as never) ? 'editors' : 'grid'
+  const product = $derived<Product>(productOf(current.category))
+  const inProduct = (cat: string) => productOf(cat) === product
+  const visibleGroups = $derived(demoGroups.filter((g) => inProduct(g.category)))
+  const scopedDemos = $derived(demos.filter((d) => inProduct(d.category)))
+  const gridLanding = demoGroups.find((g) => productOf(g.category) === 'grid')?.demos[0]?.id ?? demos[0]!.id
+  const studioCount = demos.filter((d) => productOf(d.category) === 'studio').length
+  const editorsCount = demos.filter((d) => productOf(d.category) === 'editors').length
+  const gridCount = demos.length - studioCount - editorsCount
+
+  let productMenu = $state(false)
+  function selectProduct(p: Product) {
+    productMenu = false
+    if (p === product) return
+    go(p === 'studio' ? STUDIO_LANDING : p === 'editors' ? EDITORS_LANDING : gridLanding)
+  }
+  const productName = (p: Product) => (p === 'studio' ? 'SvGrid Studio' : p === 'editors' ? 'SvGrid Editors' : 'SvGrid')
+  const productSub = (p: Product) => (p === 'studio' ? 'Data-app builder' : p === 'editors' ? 'UI components & editors' : 'Examples gallery')
+  // Close the product menu on an outside click / Escape.
+  $effect(() => {
+    if (!productMenu) return
+    const onDown = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement)?.closest('.product-switch')) productMenu = false
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') productMenu = false }
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => { window.removeEventListener('mousedown', onDown); window.removeEventListener('keydown', onKey) }
+  })
+
   function toggleTheme() {
     theme = theme === 'dark' ? 'light' : 'dark'
   }
 
   let showSource = $state(false)
+  // Full-screen mode: hide the sidebar + demo header so a demo owns the whole
+  // viewport. Auto-on for the visual designer (it's a tool, not a boxed demo);
+  // any demo can toggle it. Re-derives on demo change, so leaving the designer
+  // restores the normal chrome.
+  let fullscreen = $state(false)
+  $effect(() => {
+    fullscreen = current.id === '201-studio-designer'
+  })
 
   // ---- Smart demo search -------------------------------------------------
   // Matches across title, blurb, category, and id. Scores each demo so a
@@ -169,7 +219,7 @@
   const searchResults = $derived.by(() => {
     const toks = tokens(query)
     if (toks.length === 0) return null
-    return demos
+    return scopedDemos
       .map((d) => ({ demo: d, score: scoreDemo(d, toks) }))
       .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score)
@@ -279,11 +329,41 @@
 </script>
 
 <div class="demo-page flex h-screen">
+  {#if !fullscreen}
   <aside class="w-72 shrink-0 border-r border-slate-200 dark:border-slate-700 p-4 overflow-y-auto">
     <div class="mb-6 flex items-center justify-between">
-      <div>
-        <h1 class="text-lg font-semibold">SvGrid</h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Examples gallery</p>
+      <div class="product-switch relative">
+        <button
+          type="button"
+          onclick={() => (productMenu = !productMenu)}
+          aria-haspopup="menu"
+          aria-expanded={productMenu}
+          class="flex items-center gap-1.5 rounded-lg -mx-1.5 px-1.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <h1 class="text-lg font-semibold leading-none">{productName(product)}</h1>
+          <svg class="product-chev {productMenu ? 'is-open' : ''}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{productSub(product)}</p>
+        {#if productMenu}
+          <div role="menu" class="product-menu absolute left-0 top-full mt-1 z-30 w-60 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl p-1.5">
+            {#each [{ id: 'grid', name: 'SvGrid', sub: 'Grid examples', n: gridCount }, { id: 'studio', name: 'SvGrid Studio', sub: 'Data-app builder', n: studioCount }, { id: 'editors', name: 'SvGrid Editors', sub: 'UI components & editors', n: editorsCount }] as opt (opt.id)}
+              <button
+                type="button"
+                role="menuitem"
+                onclick={() => selectProduct(opt.id as Product)}
+                class="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors {product === opt.id ? 'bg-slate-50 dark:bg-slate-800/60' : ''}"
+              >
+                <span class="flex-1 min-w-0">
+                  <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">{opt.name}</span>
+                  <span class="block text-[11px] text-slate-500 dark:text-slate-400">{opt.sub} · {opt.n}</span>
+                </span>
+                {#if product === opt.id}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                {/if}
+              </button>
+            {/each}
+          </div>
+        {/if}
       </div>
       <button
         type="button"
@@ -382,7 +462,7 @@
                 >
                   <span class="demo-row-title">
                     {@html highlight(demo.title, toks)}
-                    {#if demo.pro}<span class="demo-pro-dot" title="Pro feature" aria-label="Pro"></span>{/if}
+                    {#if demo.pro}<span class="demo-pro-dot" title="Enterprise feature" aria-label="Enterprise"></span>{/if}
                   </span>
                   <span class="demo-row-cat">{demo.category}</span>
                 </button>
@@ -391,9 +471,8 @@
           </ul>
         {/if}
       {:else}
-        {#each demoGroups as group (group.category)}
+        {#each visibleGroups as group (group.category)}
           {@const isOpen = openGroups[group.category] ?? false}
-          {@const proCount = group.demos.filter((d) => d.pro).length}
           <div class="mb-1">
             <button
               type="button"
@@ -405,8 +484,8 @@
                 <polyline points="9 6 15 12 9 18" />
               </svg>
               <span class="flex-1 text-left">{group.category}</span>
-              {#if group.category === 'Pro' && proCount > 0}
-                <span class="demo-group-pro-badge">Pro</span>
+              {#if isEnterpriseCategory(group.category)}
+                <span class="demo-group-pro-badge">Enterprise</span>
               {/if}
               <span class="demo-group-count">{group.demos.length}</span>
             </button>
@@ -421,7 +500,7 @@
                       class="demo-leaf w-full text-left rounded pl-6 pr-3 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 {active ? 'bg-slate-100 dark:bg-slate-800 font-semibold' : ''}"
                     >
                       <span class="demo-leaf-title">{demo.title}</span>
-                      {#if demo.pro}<span class="demo-pro-dot" title="Pro feature" aria-label="Pro"></span>{/if}
+                      {#if demo.pro}<span class="demo-pro-dot" title="Enterprise feature" aria-label="Enterprise"></span>{/if}
                     </button>
                   </li>
                 {/each}
@@ -451,26 +530,55 @@
       {/if}
     </a>
   </aside>
+  {/if}
 
-  <main class="flex flex-col flex-1 overflow-x-hidden p-6 min-h-0">
+  <main class="flex flex-col flex-1 overflow-x-hidden min-h-0" class:p-6={!fullscreen}>
+    {#if !fullscreen}
     <header class="mb-5 flex shrink-0 items-start justify-between gap-4">
       <div class="min-w-0">
         <h2 class="text-2xl font-semibold">{current.title}</h2>
         <p class="text-slate-600 dark:text-slate-300">{current.blurb}</p>
       </div>
-      <button
-        type="button"
-        onclick={() => (showSource = true)}
-        class="inline-flex shrink-0 items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="16 18 22 12 16 6" />
-          <polyline points="8 6 2 12 8 18" />
-        </svg>
-        Source
-      </button>
+      <div class="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onclick={() => (fullscreen = true)}
+          class="inline-flex items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
+          title="Full screen (hide sidebar)"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" />
+          </svg>
+          Full screen
+        </button>
+        <button
+          type="button"
+          onclick={() => (showSource = true)}
+          class="inline-flex items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="16 18 22 12 16 6" />
+            <polyline points="8 6 2 12 8 18" />
+          </svg>
+          Source
+        </button>
+      </div>
     </header>
-    <div class="flex flex-col flex-1 min-h-0">
+    {/if}
+    <div class="flex flex-col flex-1 min-h-0 relative">
+      {#if fullscreen}
+        <button
+          type="button"
+          onclick={() => (fullscreen = false)}
+          class="absolute right-3 top-3 z-50 inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white/90 px-2.5 py-1.5 text-sm shadow-sm backdrop-blur hover:bg-white dark:border-slate-600 dark:bg-slate-900/90 dark:hover:bg-slate-900"
+          title="Exit full screen"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M3 15v4a2 2 0 0 0 2 2h4" />
+          </svg>
+          Exit
+        </button>
+      {/if}
       {#key current.id}
         <Current />
       {/key}
@@ -559,6 +667,8 @@
     transition: transform 140ms ease;
   }
   .demo-group-chev.is-open { transform: rotate(90deg); }
+  .product-chev { flex-shrink: 0; color: rgb(100 116 139); transition: transform 140ms ease; }
+  .product-chev.is-open { transform: rotate(180deg); }
   .demo-group-count {
     flex-shrink: 0;
     font-size: 10px;

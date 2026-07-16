@@ -273,6 +273,8 @@
       a: 'No. Keys are perpetual: an issued key keeps working for every version of @svgrid/enterprise released during your paid term, forever. The automatic yearly renewal is what unlocks new versions and keeps support active. If you cancel or let it lapse, your installed version keeps working - you just stop getting new releases and support.' },
     { q: 'Is the license tied to a specific developer or a seat?',
       a: 'It is a seat license. The seat moves with the role: if a developer leaves and is replaced, the same seat transfers to the replacement. No re-purchase required.' },
+    { q: 'Can I buy through a reseller or with a purchase order?',
+      a: 'Yes. SvGrid Enterprise is available through ComponentSource, our authorized reseller, at componentsource.com/product/svgrid. This is the easy route when your procurement team needs a purchase order, consolidated vendor invoicing, or local currency / tax handling - you receive the same license and feature set as buying direct. You can also email sales@jqwidgets.com for a PO or quote directly.' },
     { q: 'Do you offer implementation or consulting help?',
       a: 'Yes - through Resolute Software, our official services and consulting partner, who provide consulting and custom development: integrating SvGrid into your app, building data-heavy Svelte applications end to end, or team augmentation. See resolutesoftware.com, or email sales@jqwidgets.com and we will connect you.' },
   ]
@@ -563,6 +565,31 @@
     </div>
   </section>
 
+  <!-- SvGrid Studio: the Enterprise-tier visual app builder. A capability of
+       the grid (not a separate product), linked to its full-screen designer. -->
+  <section class="mt-16 rounded-2xl border p-6 md:p-8"
+    style="border-color: var(--sg-border); background: color-mix(in srgb, var(--site-accent, #f97316) 6%, var(--sg-bg));">
+    <div class="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
+      <div class="max-w-2xl">
+        <p class="text-sm font-semibold uppercase tracking-[0.08em]" style="color: var(--site-accent, #f97316);">
+          Included in Enterprise
+        </p>
+        <h2 class="mt-1 text-xl font-bold" style="color: var(--sg-fg);">SvGrid Studio</h2>
+        <p class="mt-2 text-sm" style="color: var(--sg-muted);">
+          The grid's visual data-app builder. Compose schema-driven screens
+          (grid, forms, charts, dashboards) around your data, then
+          <strong>generate a runnable SvelteKit project you own</strong> - not a
+          locked-in low-code runtime. Ships with the Enterprise license.
+        </p>
+      </div>
+      <a href="#/studio"
+        class="inline-flex shrink-0 items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white"
+        style="background: var(--site-accent, #f97316);">
+        Launch SvGrid Studio →
+      </a>
+    </div>
+  </section>
+
   {#snippet cell(v: boolean | string)}
     {#if v === true}
       <span class="cmp-yes" aria-label="Included">
@@ -674,6 +701,33 @@
       <a class="btn btn-ghost shrink-0"
         href="https://www.resolutesoftware.com" target="_blank" rel="noopener noreferrer">
         Visit Resolute Software →
+      </a>
+    </div>
+  </section>
+
+  <!-- Authorized reseller (ComponentSource) --------------------- -->
+  <section class="mt-12 rounded-2xl border p-6 md:p-8"
+    style="border-color: var(--sg-border); background: var(--sg-header-bg);">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="flex-1 min-w-[280px]">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em]" style="color: var(--site-accent-2);">
+          Authorized reseller
+        </p>
+        <h2 class="mt-1 text-xl font-bold" style="color: var(--sg-fg);">
+          Prefer to buy through ComponentSource?
+        </h2>
+        <p class="mt-2 text-sm max-w-2xl" style="color: var(--site-muted);">
+          <strong>SvGrid</strong> Enterprise licenses are available through
+          <a class="underline" style="color: var(--site-accent-2);"
+            href="https://www.componentsource.com/product/svgrid" target="_blank" rel="noopener noreferrer">
+            ComponentSource</a>, our authorized reseller. A good fit when your procurement team
+          needs a purchase order, consolidated vendor invoicing, or a local currency / tax
+          arrangement. You get the same license and features - just a different purchasing channel.
+        </p>
+      </div>
+      <a class="btn btn-ghost shrink-0"
+        href="https://www.componentsource.com/product/svgrid" target="_blank" rel="noopener noreferrer">
+        Buy via ComponentSource →
       </a>
     </div>
   </section>

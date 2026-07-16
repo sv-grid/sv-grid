@@ -4,10 +4,10 @@
  * reads per-row heights from a reactive store.
  *
  * The action is OFF until a consumer attaches it AND a row-header
- * gutter cell exists in each row. A row-header cell is any TD with
- * the `sv-row-gutter` class (typically the one rendering the row
- * number 1, 2, 3, ...). Demos opt in by setting
- * `cellClass: 'sv-row-gutter'` on the gutter column.
+ * gutter cell exists in each row. A row-header cell is either the
+ * grid's built-in row-number gutter (enable `showRowNumbers`) or any
+ * TD tagged with the `sv-row-gutter` class (set
+ * `cellClass: 'sv-row-gutter'` on a custom gutter column).
  *
  *   <script>
  *     let heights = $state<Record<number, number>>({})
@@ -116,8 +116,11 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
     for (const tr of rows) {
       if (tr.classList.contains('sv-grid-header-row')) continue
       if (tr.classList.contains('sv-grid-row-spacer')) continue
+      // A row-header gutter cell: either a user column tagged
+      // `sv-row-gutter`, or the grid's built-in row-number gutter
+      // (`showRowNumbers`), whose cell is `.sv-grid-row-number-cell`.
       const gutter = tr.querySelector<HTMLTableCellElement>(
-        '.sv-grid-cell.sv-row-gutter',
+        '.sv-grid-cell.sv-row-gutter, .sv-grid-cell.sv-grid-row-number-cell',
       )
       if (!gutter) continue
       if (gutter.querySelector(`:scope > .${STRIP_CLASS}`)) continue

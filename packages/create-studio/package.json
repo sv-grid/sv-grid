@@ -1,0 +1,39 @@
+{
+  "name": "@svgrid/create-studio",
+  "version": "0.1.0",
+  "description": "Scaffold a runnable SvGrid Studio data app in one command: npm create @svgrid/studio@latest",
+  "type": "module",
+  "license": "MIT",
+  "author": "jQWidgets Ltd",
+  "homepage": "https://www.svgrid.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sv-grid/sv-grid.git",
+    "directory": "packages/create-studio"
+  },
+  "keywords": [
+    "svelte",
+    "sveltekit",
+    "data-grid",
+    "datagrid",
+    "data-app",
+    "crud",
+    "svgrid",
+    "studio",
+    "create",
+    "scaffold",
+    "starter",
+    "template"
+  ],
+  "bin": "index.mjs",
+  "files": [
+    "index.mjs",
+    "templates"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@svgrid/enterprise": "workspace:*"
+  }
+}

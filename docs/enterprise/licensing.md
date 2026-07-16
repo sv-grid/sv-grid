@@ -84,11 +84,55 @@ revoked in any production-domain validation pipeline.
 | `pro.importData(...)`       | Works.                                                     |
 | `pro.ai.*`                  | Works.                                                     |
 | `createPivotModel(...)`     | Works.                                                     |
+| Studio: designer / panels   | Works.                                                     |
+| Studio: `createSqlDataSource` | Works.                                                   |
+| Studio: MCP generator       | Works; output carries a one-line notice.                   |
 | Unlicensed watermark        | Visible on every grid instance.                            |
 | Console nudge               | Logged once per page load.                                  |
 
 Nothing is "trial mode" - the soft-gate is meant for evaluation. Once
 you're sold, drop in a key.
+
+## Studio (data-app generator)
+
+The Studio - the schema designer, edit panel, master-detail, SQL data
+source, and the AI generator - is part of the **same** Enterprise
+license. One key covers everything; there's no separate Studio tier or
+per-feature entitlement. It's **soft-gate only**: every Studio surface
+runs unlicensed, it just nudges.
+
+It has two places you set the key, because it runs in two places:
+
+**1. In your app (the browser)** - the same `setLicenseKey()` you
+already call. The designer, edit panel, master-detail, and data sources
+all read it. Nothing new to do.
+
+```ts
+import { setLicenseKey } from '@svgrid/enterprise'
+setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
+```
+
+**2. In the AI generator (the MCP server)** - the generator runs in a
+Node process (Claude Code / Desktop), so it reads the key from the
+`SVGRID_LICENSE_KEY` environment variable in your MCP config. Set it
+once:
+
+```jsonc
+{
+  "mcpServers": {
+    "svgrid": {
+      "command": "npx",
+      "args": ["@svgrid/mcp"],
+      "env": { "SVGRID_LICENSE_KEY": "SVENTERPRISE-..." }
+    }
+  }
+}
+```
+
+Without it, the generator still produces code - it just prepends a
+one-line commercial notice, and the generated app carries the usual
+watermark until you call `setLicenseKey()` in it. Same honor-system,
+same key format, no network calls.
 
 ## License renewal
 

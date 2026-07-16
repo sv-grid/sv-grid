@@ -8,6 +8,12 @@
  * It's headless and framework-agnostic on purpose: wire `setSort` /
  * `setFilter` / `setPage` to the grid's controlled callbacks, and render the
  * grid from the `{ rows, total, loading }` it hands you. See the demo.
+ *
+ * The write side (`createRow` / `updateRow` / `deleteRow`) is optional: a
+ * source that only implements `getRows` stays a pure read model, and the
+ * matching controller methods throw a clear error if called. Mutations are
+ * non-optimistic for now - the grid reflects a change only after the
+ * follow-up re-fetch of the current page lands.
  */
 export type ServerSortModel = Array<{ id: string; desc: boolean }>
 
@@ -44,12 +50,23 @@ export type ServerResult<TData> = {
 
 export type ServerDataSource<TData> = {
   getRows(request: ServerRequest): Promise<ServerResult<TData>>
+  /**
+   * Optional write side. Implement whichever your backend supports; the
+   * controller exposes matching `createRow` / `updateRow` / `deleteRow`
+   * methods that call through and then `refresh()` the current page.
+   * Calling a controller method whose source counterpart is missing throws.
+   */
+  createRow?(input: Partial<TData>): Promise<TData>
+  updateRow?(id: string, patch: Partial<TData>): Promise<TData>
+  deleteRow?(id: string): Promise<void>
 }
 
 export type ServerState<TData> = {
   rows: ReadonlyArray<TData>
   total: number
   loading: boolean
+  /** True while a create / update / delete mutation is in flight. */
+  saving: boolean
   error: unknown
   pageIndex: number
   pageSize: number
@@ -65,6 +82,23 @@ export type ServerController<TData> = {
   setFilter(filterModel: ServerFilterModel): void
   setPage(pageIndex: number): void
   setPageSize(pageSize: number): void
+  /**
+   * Create a row through the source, then refresh the current page. Resolves
+   * with the created row. Rejects if the source has no `createRow` (or if the
+   * create itself fails - the read state is left untouched on failure).
+   */
+  createRow(input: Partial<TData>): Promise<TData>
+  /**
+   * Update a row by id through the source. Non-optimistic: refreshes the page.
+   * Optimistic (see `optimistic` + `getRowId` options): patches the local row
+   * immediately, then reconciles with the server result, rolling back on error.
+   */
+  updateRow(id: string, patch: Partial<TData>): Promise<TData>
+  /**
+   * Delete a row by id through the source. Non-optimistic: refreshes the page.
+   * Optimistic: removes the local row immediately, restoring it on error.
+   */
+  deleteRow(id: string): Promise<void>
   getState(): ServerState<TData>
   /** Stop accepting in-flight responses (call on unmount). */
   dispose(): void
@@ -74,6 +108,15 @@ export type ServerControllerOptions<TData> = {
   pageSize?: number
   /** Called whenever any of `rows` / `total` / `loading` / page changes. */
   onChange: (state: ServerState<TData>) => void
+  /**
+   * Apply `updateRow` / `deleteRow` to the local rows immediately (before the
+   * server confirms) and roll back on error - so edits feel instant and no
+   * refetch is needed. Requires `getRowId` to locate rows; ignored without it.
+   * A subsequent `refresh()` reconciles ordering/filtering. Default false.
+   */
+  optimistic?: boolean
+  /** Resolve a row's stable id, so optimistic update/delete can find it in `rows`. */
+  getRowId?: (row: TData) => string
 }
 
 export function createServerDataSource<TData>(
@@ -84,6 +127,7 @@ export function createServerDataSource<TData>(
     rows: [],
     total: 0,
     loading: false,
+    saving: false,
     error: null,
     pageIndex: 0,
     pageSize: options.pageSize ?? 50,
@@ -132,8 +176,105 @@ export function createServerDataSource<TData>(
     }
   }
 
+  // Shared mutation lifecycle: flip `saving`, run the write, refresh the
+  // current page on success, and always clear `saving`. A missing source
+  // method (or a disposed controller) rejects before anything is emitted.
+  function mutate<T>(name: string, thunk: (() => Promise<T>) | null): Promise<T> {
+    if (disposed) {
+      return Promise.reject(new Error('createServerDataSource: controller is disposed'))
+    }
+    if (!thunk) {
+      return Promise.reject(
+        new Error(`createServerDataSource: the datasource does not implement ${name}()`),
+      )
+    }
+    state.saving = true
+    emit()
+    return (async () => {
+      try {
+        const result = await thunk()
+        await fetchPage()
+        return result
+      } finally {
+        state.saving = false
+        emit()
+      }
+    })()
+  }
+
+  const optimistic = !!options.optimistic && !!options.getRowId
+  const getRowId = options.getRowId
+
+  // Optimistic update: patch the local row, reconcile with the server result,
+  // roll back on error. Falls back to the plain refresh path when the row
+  // isn't on the current page (nothing local to update).
+  async function optimisticUpdate(
+    id: string,
+    patch: Partial<TData>,
+    fn: (id: string, patch: Partial<TData>) => Promise<TData>,
+  ): Promise<TData> {
+    if (disposed) throw new Error('createServerDataSource: controller is disposed')
+    const prevRows = state.rows
+    const idx = prevRows.findIndex((r) => getRowId!(r) === id)
+    if (idx < 0) return mutate('updateRow', () => fn(id, patch))
+
+    state.rows = [...prevRows.slice(0, idx), { ...prevRows[idx]!, ...patch }, ...prevRows.slice(idx + 1)]
+    state.saving = true
+    emit()
+    try {
+      const result = await fn(id, patch)
+      state.rows = state.rows.map((r) => (getRowId!(r) === id ? result : r))
+      return result
+    } catch (err) {
+      state.rows = prevRows
+      throw err
+    } finally {
+      state.saving = false
+      emit()
+    }
+  }
+
+  // Optimistic delete: drop the local row + decrement total, restore on error.
+  async function optimisticDelete(
+    id: string,
+    fn: (id: string) => Promise<void>,
+  ): Promise<void> {
+    if (disposed) throw new Error('createServerDataSource: controller is disposed')
+    const prevRows = state.rows
+    const prevTotal = state.total
+    const next = prevRows.filter((r) => getRowId!(r) !== id)
+    if (next.length === prevRows.length) return mutate('deleteRow', () => fn(id))
+
+    state.rows = next
+    state.total = Math.max(0, prevTotal - (prevRows.length - next.length))
+    state.saving = true
+    emit()
+    try {
+      await fn(id)
+    } catch (err) {
+      state.rows = prevRows
+      state.total = prevTotal
+      throw err
+    } finally {
+      state.saving = false
+      emit()
+    }
+  }
+
   return {
     refresh: fetchPage,
+    createRow: (input) =>
+      mutate('createRow', source.createRow ? () => source.createRow!(input) : null),
+    updateRow: (id, patch) => {
+      if (!source.updateRow) return mutate('updateRow', null)
+      const fn = source.updateRow
+      return optimistic ? optimisticUpdate(id, patch, fn) : mutate('updateRow', () => fn(id, patch))
+    },
+    deleteRow: (id) => {
+      if (!source.deleteRow) return mutate('deleteRow', null)
+      const fn = source.deleteRow
+      return optimistic ? optimisticDelete(id, fn) : mutate('deleteRow', () => fn(id))
+    },
     setSort(sortModel) {
       state.sortModel = sortModel
       state.pageIndex = 0
@@ -158,6 +299,13 @@ export function createServerDataSource<TData>(
     getState: () => ({ ...state }),
     dispose() {
       disposed = true
+      // An in-flight fetch's resolution short-circuits on `disposed`, so it
+      // never clears `loading`. Clear it here (and emit) so a disposed
+      // controller doesn't report a permanent loading state.
+      if (state.loading) {
+        state.loading = false
+        emit()
+      }
     },
   }
 }

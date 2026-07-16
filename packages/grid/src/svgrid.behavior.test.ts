@@ -351,6 +351,33 @@ describe('SvGrid - capability shortcuts', () => {
     }
   })
 
+  it('paginationPosition mounts + gates the bottom pager', async () => {
+    // The top pager is gated on measurement (jsdom does not measure), so it's not
+    // asserted here; the visible top pager is covered by the browser/e2e check.
+    // This guards the mount path (a top footer rendered pre-measure used to crash).
+    for (const paginationPosition of ['top', 'both', 'bottom'] as const) {
+      const g = await mountGrid({ showPagination: true, paginationPosition })
+      try {
+        await tick()
+        expect(g.api).toBeTruthy()
+        const bottoms = [...g.target.querySelectorAll('.sv-grid-pagination')].filter((el) => !el.classList.contains('sv-grid-pagination-top'))
+        expect(bottoms.length).toBe(paginationPosition === 'top' ? 0 : 1) // no bottom pager when position is 'top'
+      } finally {
+        g.destroy()
+      }
+    }
+  })
+
+  it('pageSizeOptions is accepted by the pager', async () => {
+    const g = await mountGrid({ showPagination: true, pageSizeOptions: [5, 15, 45] })
+    try {
+      await tick()
+      expect(g.target.querySelector('.sv-grid-pagination')).toBeTruthy()
+    } finally {
+      g.destroy()
+    }
+  })
+
   it('editable={false} blocks inline editing entry points', async () => {
     const { api, target, destroy } = await mountGrid({ editable: false })
     try {

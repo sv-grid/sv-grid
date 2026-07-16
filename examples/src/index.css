@@ -157,3 +157,67 @@ a:focus-visible,
 
 .density-compact { --sg-row-height: 28px; }
 .density-comfortable { --sg-row-height: 48px; }
+
+/* ============================================================
+   Spreadsheet demo chrome (demos 207-212)
+   Shared Excel look so each spreadsheet demo stays a plain <SvGrid>
+   without repeating this block. Everything is scoped under .sheet-demo
+   so it never touches other demos. Mirrored in website/src/index.css.
+   ============================================================ */
+.sheet-demo {
+  --sheet-font: 'Segoe UI', Calibri, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  color: var(--sg-fg, #0f172a);
+  font-family: var(--sheet-font);
+}
+.sheet-demo .bs-head { flex-shrink: 0; }
+.sheet-demo .bs-title { margin: 0 0 2px; font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+.sheet-demo .bs-sub { margin: 0; font-size: 12.5px; color: var(--sg-muted, #64748b); max-width: 82ch; }
+.sheet-demo .bs-sub code { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11.5px; background: var(--sg-header-bg, #f1f5f9); padding: 1px 5px; border-radius: 4px; }
+
+/* Formula bar + function autocomplete (207, 211) */
+.sheet-demo .fx { position: relative; display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 1px solid var(--sg-border, #e2e8f0); border-radius: 6px; background: var(--sg-header-bg, #f8fafc); flex-shrink: 0; }
+.sheet-demo .fx-addr { min-width: 54px; padding: 3px 8px; border: 1px solid var(--sg-border, #cbd5e1); border-radius: 4px; background: var(--sg-bg, #fff); font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; }
+.sheet-demo .fx-glyph { color: var(--sg-muted, #64748b); font-family: Georgia, serif; font-style: italic; font-size: 14px; }
+.sheet-demo .fx-input, .sheet-demo .fx-display { flex: 1; min-width: 0; border: 1px solid var(--sg-border, #cbd5e1); border-radius: 4px; background: var(--sg-bg, #fff); padding: 4px 8px; font-family: var(--sheet-font); font-size: 13px; color: var(--sg-fg, #0f172a); text-align: left; min-height: 26px; cursor: text; }
+.sheet-demo .fx-input:focus { outline: 2px solid var(--sg-accent, #16a34a); outline-offset: -1px; }
+.sheet-demo .fx-display.empty::before { content: 'Click to edit the active cell'; color: var(--sg-muted, #94a3b8); font-style: italic; }
+.sheet-demo .fx-suggest { position: absolute; top: calc(100% + 3px); left: 70px; right: 8px; z-index: 40; margin: 0; padding: 4px; list-style: none; max-height: 240px; overflow-y: auto; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #cbd5e1); border-radius: 6px; box-shadow: 0 8px 24px rgba(15,23,42,0.16); }
+.sheet-demo .fx-item { display: grid; grid-template-columns: 92px 1fr; grid-template-areas: 'name sig' 'name desc'; align-items: center; gap: 0 10px; width: 100%; padding: 5px 8px; border: 0; border-radius: 4px; background: transparent; text-align: left; cursor: pointer; }
+.sheet-demo .fx-item.active { background: color-mix(in srgb, var(--sg-accent, #16a34a) 14%, transparent); }
+.sheet-demo .fx-name { grid-area: name; font-weight: 700; font-size: 13px; color: var(--sg-accent, #2563eb); }
+.sheet-demo .fx-sig { grid-area: sig; font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--sg-fg, #334155); }
+.sheet-demo .fx-desc { grid-area: desc; font-size: 11px; color: var(--sg-muted, #64748b); }
+.sheet-demo .fx-pick { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; border: 1px solid var(--sg-border, #cbd5e1); border-radius: 4px; background: var(--sg-bg, #fff); color: var(--sg-muted, #475569); font-family: Georgia, serif; font-style: italic; font-size: 13px; line-height: 1; cursor: pointer; }
+.sheet-demo .fx-pick:hover, .sheet-demo .fx-pick.open { background: var(--sg-row-hover-bg, #eef2f8); border-color: var(--sg-accent, #94a3b8); }
+.sheet-demo .fx-caret { font-family: system-ui, sans-serif; font-style: normal; font-size: 9px; color: var(--sg-muted, #64748b); }
+.sheet-demo .fx-picker { left: 62px; }
+
+/* The grid, dressed as an Excel sheet */
+.sheet-demo .sheet { flex: 1; min-height: 0; border: 1px solid var(--sg-border, #cbd5e1); border-radius: 8px; overflow: hidden; background: var(--sg-bg, #fff); }
+.sheet-demo .sheet .sv-grid-cell { font-family: var(--sheet-font); font-size: 13px; font-variant-numeric: tabular-nums; border-right: 1px solid var(--sg-border, #e5e7eb); border-bottom: 1px solid var(--sg-border, #e5e7eb); }
+.sheet-demo .sheet .sv-grid-cell-editor { font-family: var(--sheet-font); font-size: 13px; font-variant-numeric: tabular-nums; }
+.sheet-demo .sheet .sv-grid-column { justify-content: center; text-align: center; font-family: var(--sheet-font); font-weight: 600; color: var(--sg-muted, #475569); background: var(--sg-header-bg, #f1f5f9); }
+.sheet-demo .sheet .sv-grid-column:hover { background: var(--sg-row-hover-bg, #e2e8f0); }
+/* Hide only the menu/filter chrome - NOT .sv-grid-header-sort, which is the
+   button that WRAPS the column-letter label (hiding it hides A/B/C). Sorting is
+   off so no sort icon renders; make the label read as plain, static text. */
+.sheet-demo .sheet .sv-grid-col-menu-btn, .sheet-demo .sheet .sv-grid-col-filter-btn { display: none !important; }
+.sheet-demo .sheet .sv-grid-header-sort { cursor: default; }
+/* Flat sheet (no zebra) on REGULAR cells only. Sticky cells - the row-number
+   gutter and any pinned columns - MUST stay opaque so content scrolling under
+   them can't show through, so exclude them and let the grid's own gutter /
+   pinned backgrounds win. background-COLOR (not the shorthand) so the fill-drag
+   marquee (a background-IMAGE) still paints. */
+.sheet-demo .sheet .sv-grid-table tbody .sv-grid-cell:not([data-pinned]):not(.sv-grid-row-number-cell):not([data-selected-range='true']) { background-color: transparent; }
+.sheet-demo .sheet .sv-grid-cell.sv-grid-row-number-cell { background-color: var(--sg-header-bg, #f1f5f9) !important; }
+.sheet-demo .sheet .sv-grid-cell.sheet-head { background: var(--sg-header-bg, #eef2f7) !important; font-weight: 700; color: var(--sg-fg, #0f172a); }
+/* First column (A) holds row labels: bold + left-aligned so they stand out,
+   but a normal (non-filled) data cell - no header-gray background. */
+.sheet-demo .sheet .sv-grid-cell[data-col-id='A'] { font-weight: 600; text-align: left; }
+.sheet-demo .cellv { font-variant-numeric: tabular-nums; padding-right: 8px; }
+.sheet-demo .sheet .sv-grid-cell:has(.cellv.is-formula)::after { content: ''; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--sg-accent, #22c55e); pointer-events: none; }

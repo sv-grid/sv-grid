@@ -51,10 +51,9 @@ jobs:
       - name: Build MCP server (smoke check)
         run: pnpm --filter @svgrid/mcp build
 
-      - name: Build website (smoke check)
-        run: pnpm --filter svgrid-website build
-        env:
-          SVGRID_SITE_BASE: /sv-grid/
+      # NOTE: the website is now a PRIVATE submodule, absent on public/fork
+      # checkouts, so its build smoke-check moved to the website repo's own CI
+      # (and to deploy-website.yml, which has the WEBSITE_TOKEN).
 
       # Extract the coverage summary from the vitest text reporter output
       # so we can persist it as an artifact + comment on PRs. The HTML

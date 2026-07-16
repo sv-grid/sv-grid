@@ -227,9 +227,12 @@
       .sort((a, b) => (communityStars[b.id] ?? 0) - (communityStars[a.id] ?? 0) || a.title.localeCompare(b.title)),
   )
   // First-party groups, filtered by the search box (community shown separately).
+  // Demos flagged `noPlayground` (they import an npm module the in-browser
+  // runner can't resolve - chart.js, ag-grid, hyperformula, PGlite) are hidden
+  // from the picker; they're still available via "Edit in StackBlitz".
   const galleryGroups = $derived(
     demoGroups
-      .map((g) => ({ category: g.category, demos: g.demos.filter(demoMatches) }))
+      .map((g) => ({ category: g.category, demos: g.demos.filter((d) => !d.noPlayground && demoMatches(d)) }))
       .filter((g) => g.demos.length > 0),
   )
   function pickDemo(id: string) {

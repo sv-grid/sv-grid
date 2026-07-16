@@ -99,7 +99,12 @@ async function main() {
       tier:        /\bEnterprise\b/.test(title) ? 'enterprise' : 'community',
       words:       src.split(/\s+/).filter(Boolean).length,
       lastUpdated: s.mtime.toISOString().slice(0, 10),
-      demoIds:     [...src.matchAll(/data-docs-demo="([^"]+)"/g)].map((m) => m[1]),
+      // Demo associations come from two link styles: the `data-docs-demo`
+      // embeds (help/ pages) and inline `#/demos/<id>` links (studio/ pages).
+      demoIds:     [...new Set([
+        ...[...src.matchAll(/data-docs-demo="([^"]+)"/g)].map((m) => m[1]),
+        ...[...src.matchAll(/#\/demos\/(\d+-[a-z0-9-]+)/g)].map((m) => m[1]),
+      ])],
     })
   }
   docs.sort((a, b) => a.path.localeCompare(b.path))

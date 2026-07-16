@@ -1,4 +1,5 @@
-﻿import type { ColumnDef, RowData, SvGridOptions, TableFeatures } from './core'
+﻿import type { CellFormatConfig, ColumnDef, RowData, SvGridOptions, TableFeatures } from './core'
+import type { GridExportOptions, GridClipboardOptions } from './export-format'
 
 export type SvGridFilterOperator =
   | 'contains'
@@ -197,7 +198,33 @@ export type SvGridApi<
     field?: string
     header: string
     visible: boolean
+    /** The column's `format` config, when set. Lets an exporter reproduce
+     *  the on-screen display value (currency, date pattern, etc.). */
+    format?: CellFormatConfig
+    /** Effective horizontal alignment ('left' | 'center' | 'right'). */
+    align?: 'left' | 'center' | 'right'
   }>
+
+  // ----- Free data export (CSV / TSV / JSON + clipboard) -----
+  /**
+   * Export the grid to a **CSV** file. Free in the community grid; the
+   * richer Excel / PDF / styled formats live in @svgrid/enterprise. Values
+   * are formatted as shown on screen (pass `rawValues: true` for raw). Rows
+   * default to the current view (`rows: 'selected' | 'all'` to change).
+   * Resolves with the serialized text; pass `download: false` to skip the
+   * browser download and just get the string.
+   */
+  exportCsv(options?: GridExportOptions): Promise<string>
+  /** Export the grid to a **TSV** file (tab-separated). See `exportCsv`. */
+  exportTsv(options?: GridExportOptions): Promise<string>
+  /** Export the grid to a **JSON** file (array of `{ field: value }`). */
+  exportJson(options?: GridExportOptions): Promise<string>
+  /**
+   * Copy the grid to the system clipboard. `format: 'tsv'` (default) pastes
+   * straight into Excel / Sheets; `'csv'` / `'markdown'` also supported.
+   * Resolves with the copied text.
+   */
+  copyToClipboard(options?: GridClipboardOptions): Promise<string>
 
   /** Clear every checked row. Emits `onRowSelectionChange({}, [])`. */
   clearRowSelection(): void

@@ -34,6 +34,15 @@ describe('buildSparkline', () => {
     expect(g.areaPath.endsWith('Z')).toBe(true)
   })
 
+  it('renders a visible mark for a single data point (#84)', () => {
+    // A lone point used to produce just "M x,y" (a moveto), which draws
+    // nothing. The fix centres it and emits a short segment.
+    const g = buildSparkline([5], { type: 'line', width: 100, height: 20 })!
+    expect(g.linePath).not.toBe('')
+    expect(g.linePath).toMatch(/M[\d.]+,[\d.]+ L[\d.]+,[\d.]+/)
+    expect(g.lastPoint).not.toBeNull()
+  })
+
   it('emits one bar per value and flags negatives', () => {
     const g = buildSparkline([-2, 4, -1], { type: 'bar' })!
     expect(g.bars).toHaveLength(3)

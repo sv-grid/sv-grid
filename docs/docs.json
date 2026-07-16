@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-07-03T14:23:55.666Z",
+  "generatedAt": "2026-07-16T09:57:15.279Z",
   "counts": {
-    "pages": 207,
-    "enterprise": 9,
-    "withDemo": 82
+    "pages": 254,
+    "enterprise": 8,
+    "withDemo": 136
   },
   "sections": [
     {
@@ -44,6 +44,46 @@
         "enterprise/evaluation.md",
         "enterprise/licensing.md",
         "enterprise/README.md",
+        "enterprise/studio.md",
+        "enterprise/studio/access-control.md",
+        "enterprise/studio/accessibility.md",
+        "enterprise/studio/ai-generation.md",
+        "enterprise/studio/api.md",
+        "enterprise/studio/app-designer.md",
+        "enterprise/studio/audit-log.md",
+        "enterprise/studio/auth.md",
+        "enterprise/studio/business-logic.md",
+        "enterprise/studio/cli.md",
+        "enterprise/studio/code-generation.md",
+        "enterprise/studio/dashboards.md",
+        "enterprise/studio/data-binding.md",
+        "enterprise/studio/databases.md",
+        "enterprise/studio/deployment.md",
+        "enterprise/studio/designer.md",
+        "enterprise/studio/drizzle.md",
+        "enterprise/studio/edit-forms.md",
+        "enterprise/studio/getting-started.md",
+        "enterprise/studio/i18n.md",
+        "enterprise/studio/in-memory.md",
+        "enterprise/studio/launch.md",
+        "enterprise/studio/master-detail.md",
+        "enterprise/studio/navigation.md",
+        "enterprise/studio/odata-graphql.md",
+        "enterprise/studio/postgres-grid.md",
+        "enterprise/studio/prisma.md",
+        "enterprise/studio/realtime.md",
+        "enterprise/studio/relations.md",
+        "enterprise/studio/rest-api.md",
+        "enterprise/studio/rest-grid.md",
+        "enterprise/studio/samples.md",
+        "enterprise/studio/schema.md",
+        "enterprise/studio/server-grid.md",
+        "enterprise/studio/supabase-grid.md",
+        "enterprise/studio/supabase.md",
+        "enterprise/studio/testing.md",
+        "enterprise/studio/theming.md",
+        "enterprise/studio/troubleshooting.md",
+        "enterprise/studio/tutorial-crm.md",
         "enterprise/support.md"
       ]
     },
@@ -247,6 +287,19 @@
       ]
     },
     {
+      "id": "help/ui-components",
+      "title": "help/ui-components",
+      "pages": [
+        "help/ui-components/buttons.md",
+        "help/ui-components/date-time.md",
+        "help/ui-components/index.md",
+        "help/ui-components/inputs.md",
+        "help/ui-components/layout.md",
+        "help/ui-components/range.md",
+        "help/ui-components/selection.md"
+      ]
+    },
+    {
       "id": "legal",
       "title": "legal",
       "pages": [
@@ -367,7 +420,10 @@
       "tier": "community",
       "words": 661,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "35-permissions-audit",
+        "49-admin-dashboard"
+      ]
     },
     {
       "path": "compliance/gdpr.md",
@@ -389,7 +445,9 @@
       "tier": "community",
       "words": 647,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "41-healthcare-emr"
+      ]
     },
     {
       "path": "compliance/index.md",
@@ -431,8 +489,8 @@
       "summary": "The @svgrid/enterprise package is **soft-gated**: every feature runs without a key, with a small unlicensed-build watermark in the bottom-right corner of the grid + a one-time console nudge. Set a key once at app startup and both disappear.",
       "section": "enterprise",
       "tier": "enterprise",
-      "words": 641,
-      "lastUpdated": "2026-06-16",
+      "words": 862,
+      "lastUpdated": "2026-07-13",
       "demoIds": []
     },
     {
@@ -444,6 +502,481 @@
       "tier": "enterprise",
       "words": 772,
       "lastUpdated": "2026-06-22",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio.md",
+      "url": "/enterprise/studio",
+      "title": "SvGrid Studio",
+      "summary": "Studio is the grid-centric data-app layer in @svgrid/enterprise: turn a database or schema into a **production-ready CRUD screen** - grid, edit form, and SvelteKit API route - in seconds. One EntitySchema drives the grid columns, the edit form, validation, and the generated code.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 1432,
+      "lastUpdated": "2026-07-15",
+      "demoIds": [
+        "192-data-app-studio",
+        "193-studio-live-sql",
+        "194-studio-supabase",
+        "197-studio-chart"
+      ]
+    },
+    {
+      "path": "enterprise/studio/access-control.md",
+      "url": "/enterprise/studio/access-control",
+      "title": "Access control (RBAC)",
+      "summary": "Studio has **authentication** (who you are, via SvAuthGate + Supabase) and, separately, **authorization** - what a signed-in user may do. Role-based access control (RBAC) gates **screens** and **write actions** (create / update / delete) per role, and it is enforced in **two** places: the generated UI *and* the generated API route. Server enforcement is the point - a tampered client can hide the buttons all it likes; the route still rejects the write.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 732,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/accessibility.md",
+      "url": "/enterprise/studio/accessibility",
+      "title": "Accessibility",
+      "summary": "A Studio screen is accessible out of the box, because it is built from the grid and the edit form - both designed to the WAI-ARIA patterns. This page is what you get for free, what you own, and how to verify it.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 545,
+      "lastUpdated": "2026-07-15",
+      "demoIds": [
+        "17-accessibility"
+      ]
+    },
+    {
+      "path": "enterprise/studio/ai-generation.md",
+      "url": "/enterprise/studio/ai-generation",
+      "title": "AI generation",
+      "summary": "The @svgrid/mcp server exposes Studio to AI coding agents (Claude Code, Cursor, Codex, ...) through the Model Context Protocol. Ask your agent to build a screen for a table and it introspects, scaffolds, and verifies - producing the same code the CLI and designer do.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 735,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/api.md",
+      "url": "/enterprise/studio/api",
+      "title": "Studio API reference",
+      "summary": "Every Studio export in one place, grouped by what it does. Each links to the guide with the full detail. All are imported from **@svgrid/enterprise** unless noted; createServerDataSource is from @svgrid/grid.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 623,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/app-designer.md",
+      "url": "/enterprise/studio/app-designer",
+      "title": "Visual app designer",
+      "summary": "SvStudioDesigner is the grid-centric visual **data-app** designer - compose a multi-entity app by arranging data-bound blocks on a canvas, then generate a runnable SvelteKit project. It's the app-level companion to the single-entity schema designer: where that authors one EntitySchema, this composes **screens** across **many entities**.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 2280,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/audit-log.md",
+      "url": "/enterprise/studio/audit-log",
+      "title": "Audit trail",
+      "summary": "An audit trail records **who changed what, and when** - a baseline requirement for any regulated or multi-user app. Studio records writes **server-side**, at the API route, so the trail can't be skipped by a tampered client, and ships an **Audit log** viewer screen.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 480,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/auth.md",
+      "url": "/enterprise/studio/auth",
+      "title": "Auth & secured screens",
+      "summary": "Put a Studio screen behind a login and scope its data per user. The pattern is **Supabase Auth for *who*, Row-Level Security for *what*** - auth establishes the signed-in user; RLS policies decide which rows that user can read and write.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 481,
+      "lastUpdated": "2026-07-15",
+      "demoIds": [
+        "196-studio-auth"
+      ]
+    },
+    {
+      "path": "enterprise/studio/business-logic.md",
+      "url": "/enterprise/studio/business-logic",
+      "title": "Computed fields & hooks",
+      "summary": "Two ways to put business logic on an EntitySchema: **computed fields** (values derived from the row) and **hooks** (logic that runs when rows are created, updated, or deleted). Both live on the schema, so they apply everywhere the schema does - grid, edit form, and generated code.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 1191,
+      "lastUpdated": "2026-07-16",
+      "demoIds": [
+        "199-studio-computed-hooks"
+      ]
+    },
+    {
+      "path": "enterprise/studio/cli.md",
+      "url": "/enterprise/studio/cli",
+      "title": "The Studio CLI",
+      "summary": "@svgrid/studio is the command-line generator. One command reads a schema or a live database and writes a working CRUD screen into your SvelteKit app.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 613,
+      "lastUpdated": "2026-07-14",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/code-generation.md",
+      "url": "/enterprise/studio/code-generation",
+      "title": "Code generation",
+      "summary": "Studio generates plain SvelteKit code you own - there is no runtime and no lock-in. The same scaffold() core powers the CLI, the AI generator, and the visual designer, so all three emit identical files.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 615,
+      "lastUpdated": "2026-07-15",
+      "demoIds": [
+        "192-data-app-studio"
+      ]
+    },
+    {
+      "path": "enterprise/studio/dashboards.md",
+      "url": "/enterprise/studio/dashboards",
+      "title": "Dashboards",
+      "summary": "SvSchemaDashboard renders a **schema-driven dashboard** - KPI tiles + charts - over an entity. It's a declarative data *view*, not a drag-drop page builder: you describe the widgets as plain data and the component lays them out, reusing SvSchemaChart for the charts.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 688,
+      "lastUpdated": "2026-07-16",
+      "demoIds": [
+        "200-studio-dashboard"
+      ]
+    },
+    {
+      "path": "enterprise/studio/data-binding.md",
+      "url": "/enterprise/studio/data-binding",
+      "title": "Data binding",
+      "summary": "Every Studio screen binds to data through one small, uniform contract: **ServerDataSource**. Read a page of rows, and (optionally) create, update, and delete. Because sorting, filtering, pagination, and the edit form all speak to this one interface, the grid works the same whether your data comes from PostgreSQL, a REST API, or an in-memory array.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 559,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/databases.md",
+      "url": "/enterprise/studio/databases",
+      "title": "Databases",
+      "summary": "Studio connects directly to your relational database, reads a table's columns from the catalog, and scaffolds a connected CRUD screen. Supported: **PostgreSQL, Supabase, MySQL / MariaDB, SQL Server, SQLite**.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 1181,
+      "lastUpdated": "2026-07-15",
+      "demoIds": [
+        "194-studio-supabase",
+        "193-studio-live-sql"
+      ]
+    },
+    {
+      "path": "enterprise/studio/deployment.md",
+      "url": "/enterprise/studio/deployment",
+      "title": "Deploying a Studio app",
+      "summary": "A Studio-generated app is a normal SvelteKit app - the screens are +page.svelte files and the data endpoints are +server.ts routes. It deploys anywhere SvelteKit runs. This page is the production checklist.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 698,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/designer.md",
+      "url": "/enterprise/studio/designer",
+      "title": "Visual designer",
+      "summary": "SvSchemaDesigner is the human-in-the-loop surface over the Studio engine. Author an EntitySchema visually, see the grid and edit form update live, and click **Generate code** to emit the same SvelteKit files the CLI and AI paths produce.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 495,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/drizzle.md",
+      "url": "/enterprise/studio/drizzle",
+      "title": "Drizzle schema",
+      "summary": "If you use Drizzle ORM, Studio can scaffold a screen straight from your schema.ts - no live database connection needed at generation time. Your schema file is the single source of truth.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 614,
+      "lastUpdated": "2026-07-13",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/edit-forms.md",
+      "url": "/enterprise/studio/edit-forms",
+      "title": "Edit forms & validation",
+      "summary": "SvGridEditPanel is the create / edit form for a row. It renders itself from an EntitySchema, validates input, and hands you a ready payload to save. It presents as a right-hand **drawer**, a centered **modal**, or **inline**, and follows the grid's light / dark theme.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 747,
+      "lastUpdated": "2026-07-13",
+      "demoIds": [
+        "198-studio-form-fields"
+      ]
+    },
+    {
+      "path": "enterprise/studio/getting-started.md",
+      "url": "/enterprise/studio/getting-started",
+      "title": "Getting started",
+      "summary": "This is the gentlest path into SvGrid Studio. By the end you will have a real, working **Customers** screen - a grid you can sort, filter, and page, with a create / edit form and delete - running on your machine. No prior experience with SvGrid is assumed.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 1229,
+      "lastUpdated": "2026-07-15",
+      "demoIds": [
+        "192-data-app-studio",
+        "193-studio-live-sql",
+        "194-studio-supabase"
+      ]
+    },
+    {
+      "path": "enterprise/studio/i18n.md",
+      "url": "/enterprise/studio/i18n",
+      "title": "Localization (i18n)",
+      "summary": "Ship a Studio app in more than one language. When localization is on, the generator emits a **message catalog** + a **locale switcher**, and routes the app's user-facing strings - nav labels, screen titles, the New button, and **grid column headers** - through a reactive t() translator.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 503,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/in-memory.md",
+      "url": "/enterprise/studio/in-memory",
+      "title": "In-memory",
+      "summary": "The in-memory source runs a full CRUD data screen against a plain array - no database, no API. It applies the grid's filter, global search, sort, and paging in memory, and supports create / update / delete. Ideal for prototyping a schema, tests, demos, static reference data, or seeding a screen before the backend exists.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 595,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/launch.md",
+      "url": "/enterprise/studio/launch",
+      "title": "Launch the designer",
+      "summary": "One command opens the visual app designer in your browser, backed by a tiny local server that **auto-saves** your design to disk and **generates the app** into a folder - no host app to build, no copy-paste JSON.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 813,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/master-detail.md",
+      "url": "/enterprise/studio/master-detail",
+      "title": "Master-detail",
+      "summary": "SvGridMasterDetail expands a master row into a nested grid of related records - orders and their line items, customers and their invoices, and so on. It is a feature of the grid's data stack (built on the grid's own isDetailRow / renderDetailRow), not a separate widget. Click a master row to expand or collapse its detail region.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 908,
+      "lastUpdated": "2026-07-15",
+      "demoIds": [
+        "181-master-detail-grid"
+      ]
+    },
+    {
+      "path": "enterprise/studio/navigation.md",
+      "url": "/enterprise/studio/navigation",
+      "title": "Navigation & row actions",
+      "summary": "Blocks show data; **navigation** turns a set of screens into an app. Studio wires two kinds of flow, both grid-native: **drill-through** (click a row or a chart category to open another screen, filtered to what you clicked) and **row action buttons** (per-row Edit / Delete / Open).",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 449,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/odata-graphql.md",
+      "url": "/enterprise/studio/odata-graphql",
+      "title": "OData & GraphQL",
+      "summary": "Studio binds to OData and GraphQL the same way it binds to any API: implement the ServerDataSource contract and translate the grid's request (paging + sortModel + filterModel) into the query the service expects. The grid, edit form, sorting, filtering, and pagination then work unchanged.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 459,
+      "lastUpdated": "2026-07-13",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/postgres-grid.md",
+      "url": "/enterprise/studio/postgres-grid",
+      "title": "Tutorial: a Postgres CRUD grid",
+      "summary": "The **one page** that wires a data grid to a **PostgreSQL** database with full **create / read / update / delete** - sorting, filtering, search, and paging included. SQL runs on the server (a driver and credentials can't live in the browser), so this has a server route plus the page. Copy the four files and run.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 1046,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/prisma.md",
+      "url": "/enterprise/studio/prisma",
+      "title": "Prisma schema",
+      "summary": "If you use Prisma, Studio can scaffold screens straight from your schema.prisma - no live database connection needed at generation time. Your Prisma schema is the single source of truth, and the --from flag auto-detects it (by the .prisma extension or a model block).",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 482,
+      "lastUpdated": "2026-07-13",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/realtime.md",
+      "url": "/enterprise/studio/realtime",
+      "title": "Real-time (Supabase)",
+      "summary": "Make a Studio screen **live**: when a row is inserted, updated, or deleted in the database - by another user, another tab, or a background job - the grid reflects it instantly, with no polling. This uses Supabase Realtime (Postgres change streams) and the createSupabaseRealtime helper.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 651,
+      "lastUpdated": "2026-07-13",
+      "demoIds": [
+        "194-studio-supabase"
+      ]
+    },
+    {
+      "path": "enterprise/studio/relations.md",
+      "url": "/enterprise/studio/relations",
+      "title": "Relations & master-detail",
+      "summary": "Real apps have related entities - a company has many deals, an order has many line items. Studio models relations in the EntitySchema and turns them into **master-detail** screens (a row that expands into a nested grid) and **relation pickers** in the edit form.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 874,
+      "lastUpdated": "2026-07-13",
+      "demoIds": [
+        "194-studio-supabase",
+        "195-studio-relations"
+      ]
+    },
+    {
+      "path": "enterprise/studio/rest-api.md",
+      "url": "/enterprise/studio/rest-api",
+      "title": "REST & custom APIs",
+      "summary": "Not every backend is a database Studio can introspect. When you have an existing REST API - or any bespoke data layer - back the screen with a ServerDataSource. Use the built-in **createRestDataSource** for a conventional JSON API, or implement the four methods by hand for full control. Either way the grid, edit form, sorting, filtering, and pagination keep working unchanged.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 857,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/rest-grid.md",
+      "url": "/enterprise/studio/rest-grid",
+      "title": "Tutorial: a REST CRUD grid",
+      "summary": "The **one page** that wires a data grid to an existing **REST / JSON API** with full **create / read / update / delete** - sorting, filtering, search, and paging included. Copy the three files and run.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 934,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/samples.md",
+      "url": "/enterprise/studio/samples",
+      "title": "Sample apps + bind your data",
+      "summary": "The fastest way to a working app: open a **ready-made sample**, see it running with realistic data, then point it at **your own database**. No block-by-block build, no placeholder rows.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 707,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/schema.md",
+      "url": "/enterprise/studio/schema",
+      "title": "The EntitySchema",
+      "summary": "EntitySchema is the single model at the heart of Studio. It describes an entity - its fields, types, validation, keys, and relations - and everything else derives from it: the grid columns, the edit form, validation, and the generated code.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 927,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/server-grid.md",
+      "url": "/enterprise/studio/server-grid",
+      "title": "Sorting, filtering & paging",
+      "summary": "In a Studio screen the data lives on the server, so the grid does not sort, filter, or paginate locally - it renders its **native UI** and emits the user's intent, and your data source fetches the matching page. This is \"server mode\", and it is wired for you in generated screens. This page shows how it works so you can customize it.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 444,
+      "lastUpdated": "2026-07-13",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/supabase-grid.md",
+      "url": "/enterprise/studio/supabase-grid",
+      "title": "Tutorial: a Supabase CRUD grid",
+      "summary": "This is the **one page** that does it all: create a data grid, connect it to a **Supabase** database, and get full **create / read / update / delete** - sorting, filtering, search, and paging included. Everything is here; copy the four files and run.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 1316,
+      "lastUpdated": "2026-07-15",
+      "demoIds": [
+        "194-studio-supabase"
+      ]
+    },
+    {
+      "path": "enterprise/studio/supabase.md",
+      "url": "/enterprise/studio/supabase",
+      "title": "Supabase",
+      "summary": "Supabase gives you a hosted PostgreSQL database with a generous free tier and a browser-safe client. This guide takes you from an empty Supabase project to a live CRUD screen, step by step. No backend to run.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 1203,
+      "lastUpdated": "2026-07-15",
+      "demoIds": [
+        "194-studio-supabase"
+      ]
+    },
+    {
+      "path": "enterprise/studio/testing.md",
+      "url": "/enterprise/studio/testing",
+      "title": "Testing a Studio app",
+      "summary": "A Studio screen is plain SvelteKit code, so you test it with the tools you already use. Three layers, cheapest first: the **data source** (no DOM), the **screen** (a component test), and the **flow** (end to end).",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 620,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/theming.md",
+      "url": "/enterprise/studio/theming",
+      "title": "Themes & styling",
+      "summary": "Every Studio surface - the grid, the edit panel (drawer / modal / inline), the schema designer, and the generated screens - is styled with the grid's --sg-* CSS custom properties. Set the tokens once and everything follows, including light / dark. No per-component styling required.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 449,
+      "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/troubleshooting.md",
+      "url": "/enterprise/studio/troubleshooting",
+      "title": "Troubleshooting & FAQ",
+      "summary": "Common issues and answers when building with SvGrid Studio.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 674,
+      "lastUpdated": "2026-07-13",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/tutorial-crm.md",
+      "url": "/enterprise/studio/tutorial-crm",
+      "title": "Tutorial: build a CRM",
+      "summary": "This walkthrough builds a small CRM - **Companies**, **Contacts**, and **Deals** - with SvGrid Studio: scaffolded CRUD screens, a related-record picker, a master-detail view, validation, theming, and a real database. Follow it end to end in about fifteen minutes.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 738,
+      "lastUpdated": "2026-07-15",
       "demoIds": []
     },
     {
@@ -586,7 +1119,10 @@
       "tier": "community",
       "words": 1248,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "75-ai-smart-paste",
+        "52-pivot-table"
+      ]
     },
     {
       "path": "help/ai-smart-paste.md",
@@ -608,8 +1144,8 @@
       "summary": "Bring a language model into your grid with four helpers that stay strictly model-agnostic: **natural-language filter**, **smart fill**, **summarise**, and **classify**. Ships in the paid **@svgrid/enterprise** add-on; the Community build does not include these features.",
       "section": "help",
       "tier": "enterprise",
-      "words": 1390,
-      "lastUpdated": "2026-06-16",
+      "words": 1689,
+      "lastUpdated": "2026-07-13",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -646,7 +1182,8 @@
       "words": 1252,
       "lastUpdated": "2026-06-28",
       "demoIds": [
-        "06-large-dataset"
+        "06-large-dataset",
+        "33-server-infinite"
       ]
     },
     {
@@ -658,7 +1195,9 @@
       "tier": "community",
       "words": 839,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "19-ssr"
+      ]
     },
     {
       "path": "help/cells/cell-components.md",
@@ -1162,12 +1701,12 @@
     {
       "path": "help/export.md",
       "url": "/help/export",
-      "title": "Data export and printing - Enterprise",
-      "summary": "Export the grid to **Excel (xlsx)**, **PDF**, **CSV**, **TSV**, **HTML**, or open a printable view in a new window. Ships in the paid **@svgrid/enterprise** add-on; the Community build does not include these features.",
+      "title": "Data export and printing",
+      "summary": "**CSV / TSV / JSON export and copy-to-clipboard are free** in the community **@svgrid/grid** - the commodity \"data out\" every grid needs. The richer formats - **Excel (xlsx)**, **legacy Excel (xls)**, **PDF**, styled **HTML**, **XML**, **Markdown**, multi-sheet workbooks, password protection, conditional-format export, and the drop-in export menu - ship in the paid **@svgrid/enterprise** add-on, which reuses the exact same serializers so the two tiers feel like one product.",
       "section": "help",
-      "tier": "enterprise",
-      "words": 1299,
-      "lastUpdated": "2026-07-02",
+      "tier": "community",
+      "words": 3865,
+      "lastUpdated": "2026-07-13",
       "demoIds": [
         "21-export-and-print"
       ]
@@ -1287,7 +1826,8 @@
       "words": 758,
       "lastUpdated": "2026-06-09",
       "demoIds": [
-        "111-set-filter-advanced"
+        "111-set-filter-advanced",
+        "102-tree-checkbox-cascade"
       ]
     },
     {
@@ -1323,7 +1863,7 @@
       "section": "help",
       "tier": "community",
       "words": 1090,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-15",
       "demoIds": [
         "07-grouping-aggregation"
       ]
@@ -1450,10 +1990,11 @@
       "summary": "The sister to data export and printing. Read an Excel file, CSV/TSV blob, or JSON array in the browser and produce a typed preview of every parsed row - including per-cell validation errors - before any data lands in the grid. Ships in the paid **@svgrid/enterprise** add-on.",
       "section": "help",
       "tier": "enterprise",
-      "words": 1406,
-      "lastUpdated": "2026-06-16",
+      "words": 2664,
+      "lastUpdated": "2026-07-13",
       "demoIds": [
-        "53-excel-import"
+        "53-excel-import",
+        "204-import-dialog"
       ]
     },
     {
@@ -1500,7 +2041,10 @@
       "tier": "community",
       "words": 2129,
       "lastUpdated": "2026-07-02",
-      "demoIds": []
+      "demoIds": [
+        "08-tree-and-master-detail",
+        "09-server-side"
+      ]
     },
     {
       "path": "help/migrating-from-devextreme.md",
@@ -1544,7 +2088,9 @@
       "tier": "community",
       "words": 967,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "27-spreadsheet-ribbon"
+      ]
     },
     {
       "path": "help/migrating-from-jqxgrid.md",
@@ -1577,7 +2123,9 @@
       "tier": "community",
       "words": 871,
       "lastUpdated": "2026-06-22",
-      "demoIds": []
+      "demoIds": [
+        "74-theme-integrations"
+      ]
     },
     {
       "path": "help/migrating-from-primevue-datatable.md",
@@ -2036,7 +2584,7 @@
       "section": "help",
       "tier": "community",
       "words": 1063,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-07-15",
       "demoIds": [
         "55-state-maintenance"
       ]
@@ -2096,7 +2644,10 @@
       "tier": "community",
       "words": 1219,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "02-sort-filter-paginate",
+        "01-quick-start"
+      ]
     },
     {
       "path": "help/tokens.md",
@@ -2108,8 +2659,86 @@
       "words": 869,
       "lastUpdated": "2026-06-12",
       "demoIds": [
-        "74-theme-integrations"
+        "74-theme-integrations",
+        "10-custom-cells-and-themes"
       ]
+    },
+    {
+      "path": "help/ui-components/buttons.md",
+      "url": "/help/ui-components/buttons",
+      "title": "Buttons & toggles",
+      "summary": "Press and toggle primitives. All take a size (sm | md | lg) and theme from --sg-*.",
+      "section": "help/ui-components",
+      "tier": "community",
+      "words": 245,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "help/ui-components/date-time.md",
+      "url": "/help/ui-components/date-time",
+      "title": "Date & time",
+      "summary": "Three date/time controls built on a shared, framework-free date engine (date-core, date-format, date-selection, date-restrict). They are the rich-by-default editors for date, datetime and time grid columns, and work standalone. Parity reference: the Smart UI calendar / date-time / time pickers.",
+      "section": "help/ui-components",
+      "tier": "community",
+      "words": 326,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "help/ui-components/index.md",
+      "url": "/help/ui-components/index",
+      "title": "UI components (SvGrid Editors)",
+      "summary": "SvGrid ships a suite of Svelte 5 UI components in the free @svgrid/grid package. Every one is **two things at once**:",
+      "section": "help/ui-components",
+      "tier": "community",
+      "words": 398,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "help/ui-components/inputs.md",
+      "url": "/help/ui-components/inputs",
+      "title": "Inputs",
+      "summary": "Typed text controls. Each emits a clean value and themes from --sg-*.",
+      "section": "help/ui-components",
+      "tier": "community",
+      "words": 233,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "help/ui-components/layout.md",
+      "url": "/help/ui-components/layout",
+      "title": "Layout & composite",
+      "summary": "A WAI-ARIA tabs widget with roving tabindex and arrow-key navigation. The active panel is rendered through the panel snippet (receives the active id).",
+      "section": "help/ui-components",
+      "tier": "community",
+      "words": 312,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "help/ui-components/range.md",
+      "url": "/help/ui-components/range",
+      "title": "Range & feedback",
+      "summary": "A single or dual-thumb range slider (ARIA slider) with steps, tick marks, keyboard and pointer drag; horizontal or vertical.",
+      "section": "help/ui-components",
+      "tier": "community",
+      "words": 173,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "help/ui-components/selection.md",
+      "url": "/help/ui-components/selection",
+      "title": "Selection",
+      "summary": "List and overlay pickers. The overlay controls portal their panel to <body> (carrying theme tokens) so they never clip, and share a common option shape:",
+      "section": "help/ui-components",
+      "tier": "community",
+      "words": 268,
+      "lastUpdated": "2026-07-16",
+      "demoIds": []
     },
     {
       "path": "help/versioning.md",
@@ -2153,7 +2782,10 @@
       "tier": "community",
       "words": 228,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "55-state-maintenance",
+        "24-validation"
+      ]
     },
     {
       "path": "recipes/barcode-cells.md",
@@ -2177,7 +2809,9 @@
       "tier": "community",
       "words": 1050,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "134-stress-matrix"
+      ]
     },
     {
       "path": "recipes/between-date-filter.md",
@@ -2188,7 +2822,9 @@
       "tier": "community",
       "words": 96,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "64-filter-between-operator"
+      ]
     },
     {
       "path": "recipes/build-a-feature-plugin.md",
@@ -2221,7 +2857,9 @@
       "tier": "community",
       "words": 550,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "84-editor-types"
+      ]
     },
     {
       "path": "recipes/chartjs-sync.md",
@@ -2232,7 +2870,9 @@
       "tier": "community",
       "words": 97,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "73-chartjs-sync"
+      ]
     },
     {
       "path": "recipes/conditional-row-coloring.md",
@@ -2243,7 +2883,9 @@
       "tier": "community",
       "words": 92,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "62-conditional-styling"
+      ]
     },
     {
       "path": "recipes/cursor-based-infinite-scroll.md",
@@ -2254,7 +2896,9 @@
       "tier": "community",
       "words": 286,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "33-server-infinite"
+      ]
     },
     {
       "path": "recipes/custom-filter-functions.md",
@@ -2276,7 +2920,9 @@
       "tier": "community",
       "words": 268,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "68-dependent-dropdowns"
+      ]
     },
     {
       "path": "recipes/drag-drop-columns.md",
@@ -2287,7 +2933,9 @@
       "tier": "community",
       "words": 102,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "54-columns-hierarchy"
+      ]
     },
     {
       "path": "recipes/external-search.md",
@@ -2298,7 +2946,9 @@
       "tier": "community",
       "words": 105,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "69-highlighted-search"
+      ]
     },
     {
       "path": "recipes/form-library-bridge.md",
@@ -2309,7 +2959,9 @@
       "tier": "community",
       "words": 756,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "97-side-drawer-edit"
+      ]
     },
     {
       "path": "recipes/grid-state-inspector.md",
@@ -2320,7 +2972,9 @@
       "tier": "community",
       "words": 776,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "135-devtools-panel"
+      ]
     },
     {
       "path": "recipes/heatmap-cells.md",
@@ -2331,7 +2985,9 @@
       "tier": "community",
       "words": 92,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "60-pivot-expandable"
+      ]
     },
     {
       "path": "recipes/index.md",
@@ -2353,7 +3009,9 @@
       "tier": "community",
       "words": 110,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "76-kanban-board"
+      ]
     },
     {
       "path": "recipes/lazy-load-expand.md",
@@ -2364,7 +3022,9 @@
       "tier": "community",
       "words": 100,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "31-lazy-tree-load"
+      ]
     },
     {
       "path": "recipes/loading-data.md",
@@ -2375,7 +3035,9 @@
       "tier": "community",
       "words": 310,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "72-graphql-adapter"
+      ]
     },
     {
       "path": "recipes/million-rows.md",
@@ -2386,7 +3048,9 @@
       "tier": "community",
       "words": 98,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "78-million-rows"
+      ]
     },
     {
       "path": "recipes/mobile-card-pivot.md",
@@ -2397,7 +3061,9 @@
       "tier": "community",
       "words": 103,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "81-mobile-card-view"
+      ]
     },
     {
       "path": "recipes/multi-sheet-export.md",
@@ -2408,7 +3074,9 @@
       "tier": "community",
       "words": 99,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "59-export-multi-sheet"
+      ]
     },
     {
       "path": "recipes/nl-filter.md",
@@ -2419,7 +3087,9 @@
       "tier": "community",
       "words": 99,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "51-ai-assistant"
+      ]
     },
     {
       "path": "recipes/persist-column-layout-to-url.md",
@@ -2441,7 +3111,9 @@
       "tier": "community",
       "words": 98,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "25-column-pinning"
+      ]
     },
     {
       "path": "recipes/profiling-with-fps-hud.md",
@@ -2452,7 +3124,9 @@
       "tier": "community",
       "words": 710,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "132-profiler-dashboard"
+      ]
     },
     {
       "path": "recipes/role-based-editing.md",
@@ -2463,7 +3137,9 @@
       "tier": "community",
       "words": 97,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "41-healthcare-emr"
+      ]
     },
     {
       "path": "recipes/saved-filter-sets.md",
@@ -2474,7 +3150,9 @@
       "tier": "community",
       "words": 92,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "64-filter-between-operator"
+      ]
     },
     {
       "path": "recipes/saved-views.md",
@@ -2485,7 +3163,9 @@
       "tier": "community",
       "words": 249,
       "lastUpdated": "2026-06-16",
-      "demoIds": []
+      "demoIds": [
+        "63-column-layout-api"
+      ]
     },
     {
       "path": "recipes/server-side-filter-with-tanstack-query.md",
@@ -2507,7 +3187,9 @@
       "tier": "community",
       "words": 107,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "75-ai-smart-paste"
+      ]
     },
     {
       "path": "recipes/sparkline-cells.md",
@@ -2518,7 +3200,9 @@
       "tier": "community",
       "words": 92,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "11-stock-market"
+      ]
     },
     {
       "path": "recipes/submit-time-validation.md",
@@ -2529,7 +3213,10 @@
       "tier": "community",
       "words": 249,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "71-submit-validation",
+        "24-validation"
+      ]
     },
     {
       "path": "recipes/testing-your-grid.md",
@@ -2551,7 +3238,9 @@
       "tier": "community",
       "words": 97,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "56-export-theme-matched"
+      ]
     },
     {
       "path": "recipes/theme-presets.md",
@@ -2562,7 +3251,9 @@
       "tier": "community",
       "words": 103,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "74-theme-integrations"
+      ]
     },
     {
       "path": "recipes/two-grid-master-detail.md",
@@ -2584,7 +3275,9 @@
       "tier": "community",
       "words": 104,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "55-state-maintenance"
+      ]
     },
     {
       "path": "recipes/use-svgrid-from-react.md",
@@ -2606,7 +3299,9 @@
       "tier": "community",
       "words": 100,
       "lastUpdated": "2026-06-12",
-      "demoIds": []
+      "demoIds": [
+        "34-realtime-orders"
+      ]
     },
     {
       "path": "reference/auto/index.md",

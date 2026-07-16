@@ -1,0 +1,36 @@
+{
+  "name": "@svgrid/studio",
+  "version": "0.1.0",
+  "description": "SvGrid Studio CLI: scaffold a full CRUD screen (grid + edit panel + SvelteKit API route) from a Drizzle schema in one command.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "jQWidgets <sales@jqwidgets.com>",
+  "homepage": "https://svgrid.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sv-grid/sv-grid.git",
+    "directory": "packages/studio"
+  },
+  "type": "module",
+  "bin": {
+    "svgrid-studio": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test:types": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@svgrid/enterprise": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "typescript": "6.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

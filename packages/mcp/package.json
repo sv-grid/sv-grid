@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
+    "@svgrid/enterprise": "workspace:*",
     "zod": "^3.23.8"
   },
   "devDependencies": {

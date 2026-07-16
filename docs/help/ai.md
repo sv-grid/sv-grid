@@ -22,6 +22,8 @@ api.ai.filter(query, opts?)        // NL query -> filter + sort plan
 api.ai.smartFill(opts)             // examples -> proposed column values
 api.ai.summarize(opts)             // row / selection / group / all -> text + bullets
 api.ai.classify(opts)              // free-text cells -> bucketed labels
+api.ai.export(query, opts?)        // NL query -> filter + group + format, then export
+api.ai.findAnomalies(opts?)        // scan a slice for outliers / bad values
 ```
 
 Every call routes through one `AIProvider` you register at app boot.
@@ -191,6 +193,43 @@ const r = await api.ai.classify({
 
 The helper filters out any predictions whose value is not in `classes`,
 so downstream code can trust the output is a clean enum.
+
+## 5. Natural-language export
+
+Describe an export in plain English; the model returns a
+`{ format, filters, sort, groupBy }` plan, which is applied to the grid and
+handed to `exportData`:
+
+```ts
+const plan = await api.ai.export('export EU orders from Q2 as a grouped PDF by country')
+// -> { format: 'pdf', filters: [...], groupBy: ['country'], rationale: '...' }
+```
+
+| Option     | Type      | Default    | Notes |
+| ---------- | --------- | ---------- | ----- |
+| `apply`    | `boolean` | `false`    | Also apply the filter/sort/grouping to the grid view. Off by default so the export never disturbs the grid. |
+| `run`      | `boolean` | `true`     | Download the file. Set `false` to preview the plan first. |
+| `filename` | `string`  | `'export'` | Base name (no extension). |
+
+The export is **self-contained**: it computes its own rows from the plan
+(filter + sort + group applied to the full dataset), so the download is correct
+regardless of the grid's current view, and the grid is left untouched unless
+you pass `apply: true`. It reuses the same hallucination guard as `filter`
+(unknown column names are dropped) and clamps `format` to a supported value
+(default `xlsx`). Preview before committing with `{ run: false }`, show the
+`rationale`, then re-run.
+
+## 6. Find anomalies
+
+Scan a slice (all / selection / group) for outliers and inconsistent values:
+
+```ts
+const { anomalies, summary } = await api.ai.findAnomalies({ target: { kind: 'all' } })
+// anomalies: [{ rowIndex?, field?, value?, reason, severity: 'low'|'medium'|'high' }]
+```
+
+`rowIndex` is relative to the scanned slice. Pairs naturally with export -
+find the odd rows, then export just those.
 
 ## Subscribing the grid to predictions
 

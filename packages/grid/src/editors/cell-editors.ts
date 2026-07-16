@@ -4,6 +4,10 @@
   | 'date'
   | 'datetime'
   | 'time'
+  // Opt-out of the rich date/time pickers: render the plain native inputs.
+  | 'date-native'
+  | 'datetime-native'
+  | 'time-native'
   | 'password'
   | 'checkbox'
   | 'list'
@@ -50,10 +54,12 @@ export function normalizeEditorOptions(
 }
 
 export function parseEditorValue(
-  type: CellEditorType,
+  rawType: CellEditorType,
   value: unknown,
   opts?: ParseEditorValueOptions,
 ) {
+  // `date-native` etc. parse identically to their rich counterparts.
+  const type = rawType.replace(/-native$/, '') as CellEditorType
   if (type === 'number') {
     const parsed = Number(value)
     return Number.isFinite(parsed) ? parsed : null

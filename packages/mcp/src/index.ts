@@ -19,6 +19,32 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 import { apiReference, docs, examples } from './data.js'
+import {
+  checkLicenseKey,
+  introspectDrizzle,
+  introspectJson,
+  scaffold,
+  summarizeVerify,
+  verifyScaffold,
+  type EntitySchema,
+} from '@svgrid/enterprise/studio'
+
+/**
+ * Soft commercial gate. Uses the SAME classifier as the browser
+ * (checkLicenseKey), reading the key from the SVGRID_LICENSE_KEY env var. Never
+ * blocks - unlicensed generation still runs, it just prepends a nudge (and the
+ * generated app itself watermarks until a key is set).
+ */
+function studioNote(): string {
+  return checkLicenseKey(process.env.SVGRID_LICENSE_KEY ?? null).valid
+    ? ''
+    : '// SvGrid Studio is a commercial feature. Set SVGRID_LICENSE_KEY (in your MCP\n' +
+        '// server config env) for licensed use. https://svgrid.com/pricing\n\n'
+}
+
+function errText(message: string) {
+  return { isError: true, content: [{ type: 'text', text: message }] }
+}
 
 const server = new Server(
   {
@@ -84,6 +110,46 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         description:
           'Return the curated SvGrid public-API surface, grouped by category (components, headless, row models, features, virtualization, accessibility, utilities).',
         inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'introspect_source',
+        description:
+          'SvGrid Studio (commercial): infer an EntitySchema from a data source. Pass a Drizzle schema file (kind:"drizzle", source: the file text) or sample rows (kind:"json", rows, name). Returns a DRAFT EntitySchema to review/refine before scaffolding code.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            kind: { type: 'string', enum: ['drizzle', 'json'], description: 'Source kind.' },
+            source: {
+              type: 'string',
+              description:
+                'For kind:"drizzle": the text of a schema file containing a pgTable / sqliteTable / mysqlTable definition.',
+            },
+            rows: {
+              type: 'array',
+              description: 'For kind:"json": a non-empty array of sample row objects.',
+              items: { type: 'object' },
+            },
+            name: { type: 'string', description: 'Entity/table name (required for kind:"json").' },
+          },
+          required: ['kind'],
+        },
+      },
+      {
+        name: 'scaffold_entity',
+        description:
+          'SvGrid Studio (commercial): generate runnable SvelteKit files from an EntitySchema - the $lib schema module, a +server.ts API route (createKitHandlers), and a +page.svelte with SvGrid + SvGridEditPanel. Returns files as { path, contents, description }. AFTER writing the files, run the project\'s own svelte-check / tsc to verify they compile, and fix any errors. Generated bodies are wrapped in svgrid:managed markers so regeneration preserves edits outside them.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            schema: {
+              type: 'object',
+              description: 'The EntitySchema (from introspect_source, optionally edited).',
+            },
+            route: { type: 'string', description: 'Route segment. Defaults to schema.name.' },
+            apiRoute: { type: 'string', description: 'API route. Defaults to /api/{route}.' },
+          },
+          required: ['schema'],
+        },
       },
     ],
   }
@@ -158,6 +224,50 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
     case 'get_api_reference': {
       return { content: [{ type: 'text', text: JSON.stringify(apiReference, null, 2) }] }
+    }
+
+    case 'introspect_source': {
+      const a = (args ?? {}) as {
+        kind?: string
+        source?: string
+        rows?: unknown[]
+        name?: string
+      }
+      try {
+        let schema: EntitySchema
+        if (a.kind === 'drizzle') {
+          if (!a.source) return errText('source is required for kind:"drizzle"')
+          schema = introspectDrizzle(a.source)
+        } else if (a.kind === 'json') {
+          if (!Array.isArray(a.rows) || a.rows.length === 0) {
+            return errText('rows (a non-empty array) is required for kind:"json"')
+          }
+          schema = introspectJson(a.name ?? 'entity', a.rows as Array<Record<string, unknown>>)
+        } else {
+          return errText('kind must be "drizzle" or "json"')
+        }
+        return { content: [{ type: 'text', text: studioNote() + JSON.stringify(schema, null, 2) }] }
+      } catch (err) {
+        return errText(err instanceof Error ? err.message : String(err))
+      }
+    }
+
+    case 'scaffold_entity': {
+      const a = (args ?? {}) as { schema?: EntitySchema; route?: string; apiRoute?: string }
+      if (!a.schema || !Array.isArray(a.schema.fields) || a.schema.fields.length === 0) {
+        return errText('schema (an EntitySchema with a non-empty fields array) is required')
+      }
+      try {
+        const { files } = scaffold(a.schema, { route: a.route, apiRoute: a.apiRoute })
+        // Verify loop: compile the generated .svelte before handing files back.
+        const verify = await verifyScaffold(files)
+        const header = `// ${summarizeVerify(verify)}\n// After writing these files, run the project's svelte-check / tsc and fix any errors.\n\n`
+        return {
+          content: [{ type: 'text', text: studioNote() + header + JSON.stringify({ files, verify }, null, 2) }],
+        }
+      } catch (err) {
+        return errText(err instanceof Error ? err.message : String(err))
+      }
     }
 
     default:

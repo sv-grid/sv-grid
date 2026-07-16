@@ -11,6 +11,11 @@ on:
       - '.github/workflows/deploy-website.yml'
       - 'pnpm-workspace.yaml'
       - 'package.json'
+  # Instant deploy: the PRIVATE website repo (sv-grid/website) fires this via a
+  # repository_dispatch on every push to its main (see its notify-monorepo
+  # workflow), since website content changes no longer land in this repo.
+  repository_dispatch:
+    types: [website-updated]
   workflow_dispatch:
   # Daily rebuild so scheduled blog posts go live on their date. The build gates
   # out future-dated posts (see tools/schedule-blog.mjs + lib/blog.ts), so each
@@ -43,6 +48,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      # The website source lives in a PRIVATE repo (git submodule at website/).
+      # Clone its latest main into website/ so the daily blog + content changes
+      # deploy without having to bump the submodule pointer each time. Needs a
+      # PAT with read access to sv-grid/website, stored as the WEBSITE_TOKEN
+      # repo secret (the default GITHUB_TOKEN cannot read another repo).
+      - name: Check out the private website
+        env:
+          WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
+        run: |
+          rm -rf website
+          git clone --depth 1 --branch main \
+            "https://x-access-token:${WEBSITE_TOKEN}@github.com/sv-grid/website.git" website
 
       - uses: pnpm/action-setup@v4
         with:

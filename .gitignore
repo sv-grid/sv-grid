@@ -1,3 +1,18 @@
+# Private / commercial - kept out of the public repo (still built locally).
+# The marketing website lives in a PRIVATE repo, mounted here as a git submodule
+# (see .gitmodules). It is NOT ignored - the parent tracks a submodule pointer.
+
+# SvGrid Studio - the commercial visual designer (the "seller"). The codegen
+# stays public (@svgrid/enterprise/studio, used by the MCP server); only the
+# visual designer UI + its demos are private. Re-exported locally via the
+# git-ignored @svgrid/enterprise/designer barrel.
+packages/enterprise/src/SvStudioDesigner.svelte
+packages/enterprise/src/SvSchemaDesigner.svelte
+packages/enterprise/src/studio-designer.ts
+packages/enterprise/designer-app/
+examples/src/demos/192-data-app-studio.svelte
+examples/src/demos/201-studio-designer.svelte
+
 # Dependencies
 node_modules/
 .pnpm-store/

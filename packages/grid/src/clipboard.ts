@@ -488,6 +488,13 @@ export function createClipboard<
 
     const next = ctx.internalData.slice() as Array<TData>;
     let mutated = false;
+    const changes: Array<{
+      rowIndex: number
+      columnId: string
+      oldValue: unknown
+      newValue: unknown
+      row: TData
+    }> = [];
     for (let r = startRow; r <= endRow; r += 1) {
       const row = ctx.allRows[r];
       if (!row || isGroupRow(row)) continue;
@@ -511,8 +518,18 @@ export function createClipboard<
         // else. parseEditorValue handles the per-type coercion.
         const editorType = (column.columnDef.editorType ??
           "text") as CellEditorType;
-        updated[column.columnDef.field] = parseEditorValue(editorType, "");
+        const field = column.columnDef.field;
+        const oldValue = updated[field];
+        const cleared = parseEditorValue(editorType, "");
+        updated[field] = cleared;
         rowChanged = true;
+        changes.push({
+          rowIndex: dataIndex,
+          columnId: column.id,
+          oldValue,
+          newValue: cleared,
+          row: updated as TData,
+        });
       }
       if (rowChanged) {
         next[dataIndex] = updated as TData;
@@ -522,6 +539,12 @@ export function createClipboard<
     if (mutated) {
       ctx.internalData = next;
       ctx.grid.store.setState((prev: any) => ({ ...prev }));
+      // Fire onCellValueChange per cleared cell - same as paste's writeCellRaw -
+      // so consumers (formula engines, autosave) recompute. Clear IS a value
+      // change; without this, a HyperFormula-backed grid wouldn't re-evaluate.
+      if (ctx.props.onCellValueChange) {
+        for (const ch of changes) ctx.props.onCellValueChange(ch);
+      }
     }
     return mutated;
   }

@@ -1,0 +1,4 @@
+[submodule "website"]
+	path = website
+	url = https://github.com/sv-grid/website.git
+	branch = main

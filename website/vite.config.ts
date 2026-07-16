@@ -81,9 +81,16 @@ export default defineConfig({
       // Point at the package's source so edits HMR live in dev. Production
       // build still uses the dist/ published artifacts via the package's
       // `exports` map (vite build resolves through node resolution).
+      // The Svelte-free `/format` subpath (used by @svgrid/enterprise's export
+      // code). Must precede the bare alias below so it wins for this specifier.
+      '@svgrid/grid/format': path.resolve(repoRoot, 'packages/grid/src/export-format.ts'),
       '@svgrid/grid': path.resolve(repoRoot, 'packages/grid/src/index.ts'),
       // Pro is a workspace dep but pnpm doesn't symlink it into the website's
       // node_modules, so point it at source too (mirrors the community alias).
+      // Studio subpath (Svelte-free core) - must precede the bare alias below.
+      '@svgrid/enterprise/studio': path.resolve(repoRoot, 'packages/enterprise/src/studio/index.ts'),
+      // Private: the visual designer components (not in the public package).
+      '@svgrid/enterprise/designer': path.resolve(repoRoot, 'packages/enterprise/src/studio-designer.ts'),
       '@svgrid/enterprise': path.resolve(repoRoot, 'packages/enterprise/src/index.ts'),
       // The Pro xlsx import + export paths dynamically import `jszip`.
       // The website's package.json declares it but pnpm hoists to a

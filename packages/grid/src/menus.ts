@@ -368,23 +368,42 @@ export function createMenus<
     }
   }
 
+  // External pagination is controlled: emit the requested page/size and let
+  // the consumer fetch + update props. Never mutate local pagination state.
+  function emitExternalPagination(pageIndex: number, pageSize: number): boolean {
+    if (ctx.props.externalPagination !== true) return false;
+    ctx.props.onPaginationChange?.({ pageIndex: Math.max(0, pageIndex), pageSize });
+    ctx.scrollContainer?.scrollTo?.({ top: 0 });
+    return true;
+  }
+
   function changePage(delta: number) {
+    if (
+      emitExternalPagination(
+        (ctx.props.pageIndex ?? 0) + delta,
+        ctx.props.pageSize ?? 10,
+      )
+    )
+      return;
     ctx.grid.setPagination((prev: any) => ({
       ...prev,
       pageIndex: Math.max((prev?.pageIndex ?? 0) + delta, 0),
     }));
-    ctx.scrollContainer?.scrollTo({ top: 0 });
+    ctx.scrollContainer?.scrollTo?.({ top: 0 });
   }
 
   function goToPage(pageIndex: number) {
+    if (emitExternalPagination(pageIndex, ctx.props.pageSize ?? 10)) return;
     ctx.grid.setPagination((prev: any) => ({
       ...prev,
       pageIndex: Math.max(0, pageIndex),
     }));
-    ctx.scrollContainer?.scrollTo({ top: 0 });
+    ctx.scrollContainer?.scrollTo?.({ top: 0 });
   }
 
   function setPageSize(pageSize: number) {
+    // External mode: changing page size resets to the first page.
+    if (emitExternalPagination(0, pageSize)) return;
     ctx.grid.setPagination((prev: any) => {
       const oldSize = prev?.pageSize ?? 10;
       const oldIndex = prev?.pageIndex ?? 0;

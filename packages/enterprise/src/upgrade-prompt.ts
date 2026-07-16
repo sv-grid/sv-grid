@@ -32,6 +32,7 @@ export type EnterpriseFeatureLabel =
   | 'Print'
   | 'AI assistant'
   | 'Pivot'
+  | 'Studio'
 
 /**
  * Show the contextual upgrade prompt for `feature`. No-ops if one has already

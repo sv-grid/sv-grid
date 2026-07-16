@@ -82,7 +82,7 @@
     api = installEnterprise(next)
   }
 
-  async function run(label: string, fn: () => Promise<void>) {
+  async function run(label: string, fn: () => Promise<unknown>) {
     if (!api) return
     busy = label
     errorMsg = null
