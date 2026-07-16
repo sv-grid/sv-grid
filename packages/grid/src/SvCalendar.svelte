@@ -1,54 +1,32 @@
 <script lang="ts" module>
-  export type CalendarValue = Date | number | string | ReadonlyArray<Date | number | string> | null
-
-  /** A one-click shortcut shown in the presets rail. `value` is a single date
-   *  (or an [start, end] range for range mode); pass a function for "today"-
-   *  relative shortcuts that resolve at click time. */
-  export type CalendarPreset = {
-    label: string
-    value:
-      | Date | number | string
-      | readonly [Date | number | string, Date | number | string]
-      | (() => Date | number | string | readonly [Date | number | string, Date | number | string])
-  }
-
-  /** How the calendar animates a navigation / drill. */
-  export type CalendarAnimation = 'slide' | 'fade' | 'none'
+  // Public types now live with the headless core and are re-exported here so the
+  // component's module entry point (and @svgrid/grid) keeps the same surface.
+  export type { CalendarValue, CalendarPreset, CalendarAnimation, DisplayMode } from './createCalendar.svelte'
 </script>
 
 <script lang="ts">
   /**
-   * SvCalendar - a themeable, accessible month/year/decade calendar built on the
-   * framework-free date engine in ./datetime. It works standalone AND is the
-   * date cell editor for SvGrid (rich-by-default). All visuals come from the
-   * grid's `--sg-*` theme tokens, so every preset theme styles it for free.
+   * SvCalendar - a themeable, accessible month/year/decade calendar. It is a thin
+   * styled renderer over the headless `createCalendar` core (the same split as
+   * `createSvGrid` / <SvGrid>): the core owns the reactive state + interaction +
+   * ARIA (built on the framework-free ./datetime engine), while this component
+   * keeps the render-only concerns - the WAAPI view-change animation, mouse-wheel
+   * navigation, and DOM refs. All visuals come from the grid's `--sg-*` tokens.
    *
    * Parity target: Smart `smart-calendar` (selectionModes, min/max, restricted /
    * important dates, week numbers, firstDayOfWeek, drill navigation, keyboard).
    */
-  import {
-    addDays,
-    addMonths,
-    addYears,
-    monthMatrix,
-    weekdayOrder,
-    startOfDay,
-    isSameDay,
-    isSameMonth,
-    toDate,
-    decadeRange,
-    type DateLike,
-  } from './datetime/date-core'
-  import {
-    selectDate,
-    isSelected,
-    rangeDays,
-    emptySelection,
-    type SelectionMode,
-    type SelectionState,
-  } from './datetime/date-selection'
-  import { isDisabledDay, isImportant, type RestrictOptions } from './datetime/date-restrict'
   import { untrack } from 'svelte'
+  import {
+    createCalendar,
+    type CalendarValue,
+    type CalendarPreset,
+    type CalendarAnimation,
+    type DisplayMode,
+  } from './createCalendar.svelte'
+  import type { SelectionMode } from './datetime/date-selection'
+  import type { RestrictOptions } from './datetime/date-restrict'
+  import type { DateLike } from './datetime/date-core'
 
   type NameFormat = 'narrow' | 'short' | 'long'
 
@@ -96,8 +74,6 @@
     presets?: ReadonlyArray<CalendarPreset>
   }
 
-  type DisplayMode = 'month' | 'year' | 'decade'
-
   let {
     value = null,
     onChange,
@@ -127,14 +103,37 @@
     presets,
   }: Props = $props()
 
+  // The headless core owns all reactive state, selection, navigation, keyboard
+  // and ARIA. Reactive inputs are passed as getters; callbacks as closures.
+  const cal = createCalendar({
+    value: () => value,
+    onChange: (d) => onChange?.(d),
+    onNavigate: (v, m) => onNavigate?.(v, m),
+    selectionMode: () => selectionMode,
+    min: () => min,
+    max: () => max,
+    restrictedDates: () => restrictedDates,
+    importantDates: () => importantDates,
+    firstDayOfWeek: () => firstDayOfWeek,
+    weeks: () => weeks,
+    months: () => months,
+    displayMode: () => displayMode,
+    disabled: () => disabled,
+    readonly: () => readonly,
+    locale: () => locale,
+    dayNameFormat: () => dayNameFormat,
+    monthNameFormat: () => monthNameFormat,
+    dateTooltip: () => dateTooltip,
+  })
+
   // --- View-change animation (framework-native Web Animations API) -----------
-  // We animate a wrapper element instead of re-keying the grid, so day cells stay
-  // mounted (keyboard focus + interactivity are preserved). `navDir` records why
-  // the view changed; an effect replays a short keyframe on the new content.
+  // A render concern kept out of the core: we animate a wrapper element instead
+  // of re-keying the grid, so day cells stay mounted (keyboard focus +
+  // interactivity are preserved). The core exposes `navToken` (bumps on each
+  // navigation) + `navDir` (why it changed); an effect replays a short keyframe
+  // on the new content.
   const animKind = $derived<CalendarAnimation>(animate === true ? 'slide' : animate || 'none')
   let animEl = $state<HTMLElement | undefined>()
-  let animToken = $state(0)
-  let navDir: 'next' | 'prev' | 'drillDown' | 'drillUp' | 'fade' = 'fade'
   let animPrimed = false // skip the very first (mount) run
   // Note: `animate` is an explicit opt-in, so we honor it even under the OS
   // "reduce motion" setting. Pass animate="none" (or gate it yourself on
@@ -146,6 +145,7 @@
     // pronounced to read as a transition. Slide the new content a clear distance +
     // fade; drills zoom. A mid-keyframe holds the offset briefly for legibility.
     const D = 34
+    const navDir = cal.navDir
     const from =
       !slide ? { opacity: 0, transform: 'scale(0.98)' }
       : navDir === 'next' ? { transform: `translateX(${D}px)`, opacity: 0 }
@@ -159,260 +159,21 @@
     })
   }
   $effect(() => {
-    animToken // re-run after each navigation's DOM update
+    cal.navToken // re-run after each navigation's DOM update
     if (!animPrimed) { animPrimed = true; return }
     untrack(playAnim)
   })
-
-  const restrict = $derived<RestrictOptions>({ min, max, restrictedDates })
-
-  /** Normalize the incoming value to an ordered day list. */
-  function normalizeValue(v: CalendarValue): Date[] {
-    if (v == null) return []
-    const list = Array.isArray(v) ? v : [v]
-    const out: Date[] = []
-    for (const item of list) {
-      const d = toDate(item as DateLike)
-      if (d) out.push(startOfDay(d))
-    }
-    return out
-  }
-
-  // Internal selection state. Seeded from `value`; range mode also tracks a
-  // pending rangeStart between the two clicks, which `value` alone cannot hold.
-  let sel = $state<SelectionState>(emptySelection())
-  // The month currently shown (first panel) + the drill level.
-  let view = $state<Date>(startOfDay(new Date()))
-  let mode = $state<DisplayMode>('month')
-  // Roving focus + range hover preview.
-  let focusDate = $state<Date>(startOfDay(new Date()))
-  let hoverDate = $state<Date | null>(null)
-
-  let lastSyncedKey = '￿' // sentinel so the first sync always fires (incl. null value)
-  let seeded = false
-  $effect(() => {
-    const dates = normalizeValue(value)
-    const key = dates.map((d) => d.getTime()).join(',')
-    if (key !== lastSyncedKey) {
-      lastSyncedKey = key
-      sel = { dates, anchor: dates[dates.length - 1] ?? null, rangeStart: null }
-      // Seed the visible page + roving focus once, from the initial value.
-      if (!seeded) {
-        seeded = true
-        const first = dates[0] ?? startOfDay(new Date())
-        view = startOfDay(first)
-        focusDate = startOfDay(first)
-        mode = displayMode
-      }
-    }
-  })
-
-  const isInteractive = $derived(!disabled && !readonly)
-
-  // --- Intl-driven labels (cached by the browser) ---
-  const weekdayFmt = $derived(new Intl.DateTimeFormat(locale, { weekday: dayNameFormat }))
-  const monthTitleFmt = $derived(new Intl.DateTimeFormat(locale, { month: monthNameFormat, year: 'numeric' }))
-  const monthShortFmt = $derived(new Intl.DateTimeFormat(locale, { month: 'short' }))
-  const fullDateFmt = $derived(new Intl.DateTimeFormat(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }))
-
-  const weekdayHeaders = $derived(
-    weekdayOrder(firstDayOfWeek).map((wd) => {
-      // 2021-08-01 is a Sunday; offset to the requested weekday.
-      const d = new Date(2021, 7, 1 + wd)
-      return { label: weekdayFmt.format(d), weekday: wd }
-    }),
-  )
-
-  /** The month grids to render (1..months panels). */
-  const panels = $derived(
-    Array.from({ length: Math.max(1, months) }, (_, i) => {
-      const panelMonth = addMonths(view, i)
-      return { month: panelMonth, matrix: monthMatrix(panelMonth, firstDayOfWeek, weeks) }
-    }),
-  )
-
-  // Range preview: while a range is pending (or being hovered), show the band.
-  const previewRange = $derived.by(() => {
-    if (selectionMode !== 'range') return null
-    const start = sel.rangeStart
-    if (!start || !hoverDate) return null
-    return rangeDays(start, hoverDate)
-  })
-
-  function inPreview(d: Date): boolean {
-    return !!previewRange && previewRange.some((p) => isSameDay(p, d))
-  }
-
-  function dayState(d: Date, panelMonth: Date) {
-    const disabledDay = isDisabledDay(d, restrict)
-    return {
-      disabled: disabledDay,
-      selected: isSelected(sel.dates, d),
-      important: isImportant(d, importantDates),
-      today: isSameDay(d, new Date()),
-      outside: !isSameMonth(d, panelMonth),
-      focused: isSameDay(d, focusDate),
-      preview: inPreview(d),
-    }
-  }
-
-  // --- Actions ---
-  function commit(next: SelectionState) {
-    sel = next
-    lastSyncedKey = next.dates.map((x) => x.getTime()).join(',')
-    onChange?.(next.dates.map((x) => new Date(x.getTime())))
-  }
-
-  function pickDay(d: Date, e?: { ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean }) {
-    if (!isInteractive || isDisabledDay(d, restrict)) return
-    focusDate = startOfDay(d)
-    commit(
-      selectDate(sel, d, selectionMode, { ctrl: e?.ctrlKey || e?.metaKey, shift: e?.shiftKey }, firstDayOfWeek),
-    )
-  }
-
-  function setView(next: Date, nextMode: DisplayMode = mode) {
-    view = startOfDay(next)
-    mode = nextMode
-    animToken++ // fire the view-change animation on the updated DOM
-    onNavigate?.(view, mode)
-  }
-
-  function drillUp() {
-    navDir = 'drillUp'
-    if (mode === 'month') setView(view, 'year')
-    else if (mode === 'year') setView(view, 'decade')
-  }
-
-  function step(dir: -1 | 1) {
-    navDir = dir === 1 ? 'next' : 'prev'
-    if (mode === 'month') setView(addMonths(view, dir))
-    else if (mode === 'year') setView(addYears(view, dir))
-    else setView(addYears(view, dir * 10))
-  }
-
-  function pickMonth(monthIndex: number) {
-    navDir = 'drillDown'
-    setView(new Date(view.getFullYear(), monthIndex, 1), 'month')
-    focusDate = new Date(view.getFullYear(), monthIndex, Math.min(focusDate.getDate(), 28))
-  }
-
-  function pickYear(year: number) {
-    navDir = 'drillDown'
-    setView(new Date(year, view.getMonth(), 1), 'year')
-  }
-
-  function goToday() {
-    navDir = 'fade'
-    const t = new Date()
-    setView(t, 'month')
-    focusDate = startOfDay(t)
-    if (isInteractive) pickDay(t)
-  }
 
   // Mouse-wheel navigation (opt-in). Non-passive so we can prevent page scroll.
   function wheelNav(node: HTMLElement) {
     const onWheel = (e: WheelEvent) => {
       if (!wheelNavigation || disabled) return
       e.preventDefault()
-      step(e.deltaY > 0 || e.deltaX > 0 ? 1 : -1)
+      cal.step(e.deltaY > 0 || e.deltaX > 0 ? 1 : -1)
     }
     node.addEventListener('wheel', onWheel, { passive: false })
     return { destroy: () => node.removeEventListener('wheel', onWheel) }
   }
-
-  // --- Presets (Today / Last 7 days / ...) -----------------------------------
-  function applyPreset(p: CalendarPreset) {
-    if (!isInteractive) return
-    const resolved = typeof p.value === 'function' ? p.value() : p.value
-    const isRange = Array.isArray(resolved)
-    const pair = (isRange ? resolved : [resolved, resolved]) as ReadonlyArray<DateLike>
-    const start = toDate(pair[0] as DateLike)
-    const end = toDate(pair[1] as DateLike)
-    if (!start) return
-    focusDate = startOfDay(start)
-    navDir = 'fade'
-    view = startOfMonthSafe(start)
-    animToken++
-    if (isRange && end) {
-      commit({ dates: rangeDays(start, end), anchor: startOfDay(end), rangeStart: null })
-    } else {
-      commit({ dates: [startOfDay(start)], anchor: startOfDay(start), rangeStart: null })
-    }
-  }
-  const startOfMonthSafe = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1)
-
-  function clearSelection() {
-    if (!isInteractive) return
-    commit(emptySelection())
-  }
-
-  // --- Keyboard (month grid) ---
-  function onGridKeydown(e: KeyboardEvent) {
-    if (mode !== 'month') return onNonMonthKeydown(e)
-    let next: Date | null = null
-    switch (e.key) {
-      case 'ArrowLeft': next = addDays(focusDate, -1); break
-      case 'ArrowRight': next = addDays(focusDate, 1); break
-      case 'ArrowUp': next = addDays(focusDate, -7); break
-      case 'ArrowDown': next = addDays(focusDate, 7); break
-      case 'Home': next = addDays(focusDate, -((focusDate.getDay() - firstDayOfWeek + 7) % 7)); break
-      case 'End': next = addDays(focusDate, 6 - ((focusDate.getDay() - firstDayOfWeek + 7) % 7)); break
-      case 'PageUp': next = e.shiftKey ? addYears(focusDate, -1) : addMonths(focusDate, -1); break
-      case 'PageDown': next = e.shiftKey ? addYears(focusDate, 1) : addMonths(focusDate, 1); break
-      case 'Enter':
-      case ' ':
-        e.preventDefault()
-        pickDay(focusDate, e)
-        return
-      default:
-        return
-    }
-    if (next) {
-      e.preventDefault()
-      focusDate = startOfDay(next)
-      if (!isSameMonth(focusDate, view)) setView(focusDate, 'month')
-    }
-  }
-
-  function onNonMonthKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      if (mode === 'year') pickMonth(focusDate.getMonth())
-      else pickYear(focusDate.getFullYear())
-    }
-  }
-
-  const title = $derived(
-    mode === 'month'
-      ? monthTitleFmt.format(view)
-      : mode === 'year'
-        ? String(view.getFullYear())
-        : (() => {
-            const { start, end } = decadeRange(view.getFullYear())
-            return `${start} - ${end}`
-          })(),
-  )
-
-  // Year-mode cells (12 months) and decade-mode cells (10 years + 2 padding).
-  const yearCells = $derived(
-    Array.from({ length: 12 }, (_, m) => ({
-      index: m,
-      label: monthShortFmt.format(new Date(view.getFullYear(), m, 1)),
-      current: m === new Date().getMonth() && view.getFullYear() === new Date().getFullYear(),
-    })),
-  )
-  const decadeCells = $derived.by(() => {
-    const { start } = decadeRange(view.getFullYear())
-    return Array.from({ length: 12 }, (_, i) => {
-      const year = start - 1 + i
-      return { year, outside: i === 0 || i === 11, current: year === new Date().getFullYear() }
-    })
-  })
-
-  const canClear = $derived(
-    selectionMode === 'zeroOrOne' || selectionMode === 'zeroOrMany' || selectionMode === 'none',
-  )
 </script>
 
 <div
@@ -427,38 +188,32 @@
   {#if presets && presets.length}
     <div class="sv-cal__presets" role="group" aria-label="Shortcuts">
       {#each presets as p, i (i)}
-        <button type="button" class="sv-cal__preset" onclick={() => applyPreset(p)} disabled={!isInteractive}>{p.label}</button>
+        <button class="sv-cal__preset" {...cal.presetProps(p)}>{p.label}</button>
       {/each}
     </div>
   {/if}
 
   <div class="sv-cal__main" use:wheelNav>
   <div class="sv-cal__header">
-    <button type="button" class="sv-cal__nav" onclick={() => step(-1)} disabled={disabled} aria-label="Previous">
+    <button class="sv-cal__nav" {...cal.navProps(-1)}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
     </button>
-    <button
-      type="button"
-      class="sv-cal__title"
-      onclick={drillUp}
-      disabled={disabled || mode === 'decade'}
-      aria-live="polite"
-    >{title}</button>
-    <button type="button" class="sv-cal__nav" onclick={() => step(1)} disabled={disabled} aria-label="Next">
+    <button class="sv-cal__title" {...cal.titleProps()}>{cal.title}</button>
+    <button class="sv-cal__nav" {...cal.navProps(1)}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
     </button>
   </div>
 
   <div class="sv-cal__view" bind:this={animEl}>
-  {#if mode === 'month'}
-    <div class="sv-cal__panels" onkeydown={onGridKeydown} role="grid" aria-label={title} tabindex="-1">
-      {#each panels as panel (panel.month.getTime())}
+  {#if cal.mode === 'month'}
+    <div class="sv-cal__panels" {...cal.gridProps()}>
+      {#each cal.panels as panel (panel.month.getTime())}
         <div class="sv-cal__panel">
-          {#if months > 1}<div class="sv-cal__panel-title">{monthTitleFmt.format(panel.month)}</div>{/if}
+          {#if months > 1}<div class="sv-cal__panel-title">{panel.title}</div>{/if}
           {#if !hideDayNames}
             <div class="sv-cal__weekdays" role="row">
               {#if weekNumbers}<span class="sv-cal__wk-head" aria-hidden="true">#</span>{/if}
-              {#each weekdayHeaders as wh (wh.weekday)}
+              {#each cal.weekdayHeaders as wh (wh.weekday)}
                 <span class="sv-cal__weekday" role="columnheader">{wh.label}</span>
               {/each}
             </div>
@@ -467,13 +222,11 @@
             <div class="sv-cal__week" role="row">
               {#if weekNumbers}<span class="sv-cal__wk" aria-hidden="true">{week[0]?.week}</span>{/if}
               {#each week as cell (cell.date.getTime())}
-                {@const st = dayState(cell.date, panel.month)}
+                {@const st = cal.dayState(cell.date, panel.month)}
                 {#if st.outside && hideOtherMonthDays}
                   <span class="sv-cal__day sv-cal__day--empty" role="gridcell" aria-hidden="true"></span>
                 {:else}
                   <button
-                    type="button"
-                    role="gridcell"
                     class="sv-cal__day"
                     class:is-selected={st.selected}
                     class:is-today={st.today}
@@ -481,16 +234,7 @@
                     class:is-important={st.important}
                     class:is-preview={st.preview}
                     class:is-focused={st.focused}
-                    aria-selected={st.selected}
-                    aria-disabled={st.disabled}
-                    aria-current={st.today ? 'date' : undefined}
-                    aria-label={fullDateFmt.format(cell.date)}
-                    title={dateTooltip?.(cell.date) ?? undefined}
-                    tabindex={st.focused ? 0 : -1}
-                    disabled={st.disabled || disabled}
-                    onclick={(e) => pickDay(cell.date, e)}
-                    onpointerenter={() => (hoverDate = cell.date)}
-                    onpointerleave={() => (hoverDate = null)}
+                    {...cal.dayProps(cell, panel.month)}
                   >{cell.date.getDate()}</button>
                 {/if}
               {/each}
@@ -499,30 +243,26 @@
         </div>
       {/each}
     </div>
-  {:else if mode === 'year'}
-    <div class="sv-cal__grid-mode" onkeydown={onNonMonthKeydown} role="grid" aria-label={title} tabindex="-1">
-      {#each yearCells as yc (yc.index)}
+  {:else if cal.mode === 'year'}
+    <div class="sv-cal__grid-mode" {...cal.gridProps()}>
+      {#each cal.yearCells as yc (yc.index)}
         <button
-          type="button"
           class="sv-cal__cell"
           class:is-today={yc.current}
-          class:is-selected={sel.dates.some((d) => d.getMonth() === yc.index && d.getFullYear() === view.getFullYear())}
-          onclick={() => pickMonth(yc.index)}
-          disabled={disabled}
+          class:is-selected={yc.selected}
+          {...cal.monthCellProps(yc.index)}
         >{yc.label}</button>
       {/each}
     </div>
   {:else}
-    <div class="sv-cal__grid-mode" onkeydown={onNonMonthKeydown} role="grid" aria-label={title} tabindex="-1">
-      {#each decadeCells as dc (dc.year)}
+    <div class="sv-cal__grid-mode" {...cal.gridProps()}>
+      {#each cal.decadeCells as dc (dc.year)}
         <button
-          type="button"
           class="sv-cal__cell"
           class:is-outside={dc.outside}
           class:is-today={dc.current}
-          class:is-selected={sel.dates.some((d) => d.getFullYear() === dc.year)}
-          onclick={() => pickYear(dc.year)}
-          disabled={disabled}
+          class:is-selected={dc.selected}
+          {...cal.yearCellProps(dc.year)}
         >{dc.year}</button>
       {/each}
     </div>
@@ -531,15 +271,15 @@
 
   {#if footer}
     <div class="sv-cal__footer">
-      <button type="button" class="sv-cal__foot-btn" onclick={goToday} disabled={disabled}>Today</button>
-      {#if canClear}
-        <button type="button" class="sv-cal__foot-btn" onclick={clearSelection} disabled={disabled}>Clear</button>
+      <button type="button" class="sv-cal__foot-btn" onclick={cal.goToday} disabled={disabled}>Today</button>
+      {#if cal.canClear}
+        <button type="button" class="sv-cal__foot-btn" onclick={cal.clearSelection} disabled={disabled}>Clear</button>
       {/if}
     </div>
   {/if}
   </div>
 
-  {#if name}<input type="hidden" {name} value={sel.dates.map((d) => d.toISOString()).join(',')} />{/if}
+  {#if name}<input type="hidden" {name} value={cal.selectedDates.map((d) => d.toISOString()).join(',')} />{/if}
 </div>
 
 <style>

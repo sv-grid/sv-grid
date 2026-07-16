@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  export type TabItem = { id: string; label: string; disabled?: boolean }
+  export type { TabItem } from './createTabs.svelte'
 </script>
 
 <script lang="ts">
@@ -7,8 +7,12 @@
    * SvTabs - a WAI-ARIA tabs widget with roving tabindex + arrow-key navigation.
    * Parity: Smart `smart-tabs`. Controlled via `value` + `onChange`; the active
    * panel is rendered through the `panel` snippet (receives the active id).
+   *
+   * The behavior (roving focus, activation, ARIA) lives in the headless
+   * `createTabs` core; this component is just one styled renderer over it.
    */
   import type { Snippet } from 'svelte'
+  import { createTabs, type TabItem } from './createTabs.svelte'
 
   type Props = {
     tabs: ReadonlyArray<TabItem>
@@ -34,58 +38,41 @@
     ariaLabel,
   }: Props = $props()
 
-  const active = $derived(value ?? tabs.find((t) => !t.disabled)?.id ?? tabs[0]?.id ?? '')
-  const enabled = $derived(tabs.filter((t) => !t.disabled))
-  let tablistEl: HTMLDivElement | null = null
+  const tabsCtl = createTabs({
+    tabs: () => tabs,
+    value: () => value,
+    onChange: (id) => { value = id; onChange?.(id) },
+    orientation: () => orientation,
+    activation: () => activation,
+    ariaLabel: () => ariaLabel,
+  })
+  const active = $derived(tabsCtl.activeId)
 
-  function select(id: string) {
-    const t = tabs.find((x) => x.id === id)
-    if (!t || t.disabled) return
-    value = id
-    onChange?.(id)
-  }
-  function focusTab(id: string) {
-    queueMicrotask(() => tablistEl?.querySelector<HTMLElement>(`[data-tab="${id}"]`)?.focus())
-  }
-  function onKeydown(e: KeyboardEvent) {
-    const idx = enabled.findIndex((t) => t.id === active)
-    let next: string | null = null
-    const fwd = orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown'
-    const back = orientation === 'horizontal' ? 'ArrowLeft' : 'ArrowUp'
-    if (e.key === fwd) next = enabled[(idx + 1) % enabled.length]?.id ?? null
-    else if (e.key === back) next = enabled[(idx - 1 + enabled.length) % enabled.length]?.id ?? null
-    else if (e.key === 'Home') next = enabled[0]?.id ?? null
-    else if (e.key === 'End') next = enabled.at(-1)?.id ?? null
-    else if ((e.key === 'Enter' || e.key === ' ') && activation === 'manual') { e.preventDefault(); select(active); return }
-    else return
-    if (next) {
-      e.preventDefault()
-      focusTab(next)
-      if (activation === 'automatic') select(next)
+  // DOM focus movement is a render concern: follow the core's roving focus target.
+  let tablistEl: HTMLDivElement | null = null
+  let lastFocusTick = 0
+  $effect(() => {
+    if (tabsCtl.focusTick !== lastFocusTick) {
+      lastFocusTick = tabsCtl.focusTick
+      const fid = tabsCtl.focusId
+      queueMicrotask(() => tablistEl?.querySelector<HTMLElement>(`[data-tab="${fid}"]`)?.focus())
     }
-  }
+  })
 </script>
 
 <div class="sv-tabs sv-tabs--{orientation} sv-tabs--{variant}">
-  <div bind:this={tablistEl} class="sv-tabs__list" role="tablist" aria-orientation={orientation} aria-label={ariaLabel}>
+  <div bind:this={tablistEl} class="sv-tabs__list" {...tabsCtl.tablistProps()}>
     {#each tabs as tab (tab.id)}
       <button
         type="button"
         class="sv-tabs__tab"
         class:is-active={tab.id === active}
-        role="tab"
-        data-tab={tab.id}
-        aria-selected={tab.id === active}
-        aria-controls={`panel-${tab.id}`}
-        tabindex={tab.id === active ? 0 : -1}
-        disabled={tab.disabled}
-        onclick={() => select(tab.id)}
-        onkeydown={onKeydown}
+        {...tabsCtl.tabProps(tab.id)}
       >{tab.label}</button>
     {/each}
   </div>
   {#if panel}
-    <div class="sv-tabs__panel" role="tabpanel" id={`panel-${active}`} tabindex="0">
+    <div class="sv-tabs__panel" {...tabsCtl.panelProps(active)}>
       {@render panel(active)}
     </div>
   {/if}
