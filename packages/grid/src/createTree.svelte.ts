@@ -196,12 +196,14 @@ export function createTree(config: TreeConfig) {
     /** Spread onto the treeitem element for a flattened `row`. */
     itemProps: (row: TreeRow) => {
       const cs = checkable() ? checkStateOf(row.node) : 'unchecked'
+      const ariaChecked: 'true' | 'mixed' | 'false' | undefined =
+        checkable() ? (cs === 'checked' ? 'true' : cs === 'indeterminate' ? 'mixed' : 'false') : undefined
       return {
         role: 'treeitem' as const,
         'aria-level': row.depth + 1,
         'aria-selected': row.node.id === selected(),
         'aria-expanded': row.hasChildren ? row.open : undefined,
-        'aria-checked': checkable() ? (cs === 'checked' ? 'true' : cs === 'indeterminate' ? 'mixed' : 'false') : undefined,
+        'aria-checked': ariaChecked,
         'data-row': row.index,
         tabindex: row.index === active ? 0 : -1,
         onclick: () => { setActive(row.index); select(row.node) },

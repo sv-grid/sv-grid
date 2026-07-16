@@ -10,6 +10,28 @@ import TabsTreeForm257 from '../demos/257-tabs-tree-form.svelte'
 import CalendarRange258 from '../demos/258-calendar-range.svelte'
 import DateTimePickerForms259 from '../demos/259-datetimepicker-forms.svelte'
 import HeadlessEditors260 from '../demos/260-headless-editors.svelte'
+import HlCombobox from '../demos/261-headless-combobox.svelte'
+import HlDropdownList from '../demos/262-headless-dropdownlist.svelte'
+import HlAutocomplete from '../demos/263-headless-autocomplete.svelte'
+import HlTagsInput from '../demos/264-headless-tagsinput.svelte'
+import HlCountryInput from '../demos/265-headless-countryinput.svelte'
+import HlNumberInput from '../demos/266-headless-numberinput.svelte'
+import HlMaskedInput from '../demos/267-headless-maskedinput.svelte'
+import HlPhoneInput from '../demos/268-headless-phoneinput.svelte'
+import HlColorInput from '../demos/269-headless-colorinput.svelte'
+import HlPasswordInput from '../demos/270-headless-passwordinput.svelte'
+import HlToggleButton from '../demos/271-headless-togglebutton.svelte'
+import HlSwitchButton from '../demos/272-headless-switchbutton.svelte'
+import HlCheckbox from '../demos/273-headless-checkbox.svelte'
+import HlRadioGroup from '../demos/274-headless-radiogroup.svelte'
+import HlRating from '../demos/275-headless-rating.svelte'
+import HlCalendar from '../demos/276-headless-calendar.svelte'
+import HlTimePicker from '../demos/277-headless-timepicker.svelte'
+import HlDateTimePicker from '../demos/278-headless-datetimepicker.svelte'
+import HlTabs from '../demos/279-headless-tabs.svelte'
+import HlTree from '../demos/280-headless-tree.svelte'
+import HlSlider from '../demos/281-headless-slider.svelte'
+import HlGauge from '../demos/282-headless-gauge.svelte'
 import TradingDesk from '../demos/00-trading-desk.svelte'
 import QuickStart from '../demos/01-quick-start.svelte'
 import SortFilterPaginate from '../demos/02-sort-filter-paginate.svelte'
@@ -269,7 +291,7 @@ export type DemoCategory =
   | 'Date & Time'
   | 'Buttons & Toggles'
   | 'Inputs'
-  | 'Headless Editors'
+  | 'Selection'
   | 'Range & Feedback'
   | 'Layout'
   | 'Headless Editors'
@@ -378,6 +400,28 @@ export const demos: Demo[] = [
   demo('254-text-inputs',           'Text inputs',                 'Typed text controls: SvNumberInput (min/max/step, grouping, precision, spinners), SvPasswordInput (reveal + strength), SvMaskedInput (pattern mask), SvPhoneInput (country dial code + national mask) and SvColorInput (swatch + palette popover). Each a SvGrid cell editor, standalone too.', 'Inputs', TextInputs254),
   demo('255-selection',             'Selection controls',          'List and overlay pickers: SvListBox (inline multi-select), SvDropDownList, SvComboBox (type to filter), SvAutoComplete (free text + suggestions), SvTagsInput (chips) and SvCountryInput (searchable, flags). Every popover portals out of the scroll container. Grid cell editors, standalone too.', 'Selection', Selection255),
   demo('260-headless-editors',      'Headless editors',            'Headless-first, like the grid: createListbox is the state machine behind SvListBox (roving focus, single/multi selection, keyboard, ARIA) exposed as prop-getters you spread onto YOUR own markup. One core drives both the styled SvListBox and a custom chip-cloud render, bound to one value.', 'Headless Editors', HeadlessEditors260),
+  demo('261-headless-combobox',          'Combobox - headless',           'createCombobox drives the styled SvComboBox and a custom filter-input render, both bound to one value with a readout.', 'Headless Editors', HlCombobox),
+  demo('262-headless-dropdownlist',      'Dropdown list - headless',      'createDropdownList drives SvDropDownList and a custom trigger+menu render, sharing one value.', 'Headless Editors', HlDropdownList),
+  demo('263-headless-autocomplete',      'Autocomplete - headless',       'createAutocomplete drives SvAutoComplete and a custom suggestion-list render over one text value.', 'Headless Editors', HlAutocomplete),
+  demo('264-headless-tagsinput',         'Tags input - headless',         'createTagsInput drives SvTagsInput and a custom chip-cloud render, both editing one string array.', 'Headless Editors', HlTagsInput),
+  demo('265-headless-countryinput',      'Country input - headless',      'createCountryInput drives SvCountryInput and a custom searchable picker, sharing one ISO code.', 'Headless Editors', HlCountryInput),
+  demo('266-headless-numberinput',       'Number input - headless',       'createNumberInput drives SvNumberInput and a custom stepper; parse, clamp, spinner and keyboard all from the core.', 'Headless Editors', HlNumberInput),
+  demo('267-headless-maskedinput',       'Masked input - headless',       'One createMaskedInput drives the styled field and a custom boxed field with a complete/partial badge.', 'Headless Editors', HlMaskedInput),
+  demo('268-headless-phoneinput',        'Phone input - headless',        'createPhoneInput drives SvPhoneInput and a custom country picker + national field; dial-code / E.164 parsing from the core.', 'Headless Editors', HlPhoneInput),
+  demo('269-headless-colorinput',        'Color input - headless',        'createColorInput drives the portalled SvColorInput and a custom inline swatch + palette panel.', 'Headless Editors', HlColorInput),
+  demo('270-headless-passwordinput',     'Password input - headless',     'createPasswordInput drives SvPasswordInput and a custom reveal field + strength meter.', 'Headless Editors', HlPasswordInput),
+  demo('271-headless-togglebutton',      'Toggle button - headless',      'Styled SvToggleButton plus a custom on/off pill, one bound pressed value with a readout.', 'Headless Editors', HlToggleButton),
+  demo('272-headless-switchbutton',      'Switch button - headless',      'Styled SvSwitchButton plus a custom sliding knob, one bound checked value with a readout.', 'Headless Editors', HlSwitchButton),
+  demo('273-headless-checkbox',          'Checkbox - headless',           'Styled SvCheckBox plus a custom card checkbox, one bound checked value with a readout.', 'Headless Editors', HlCheckbox),
+  demo('274-headless-radiogroup',        'Radio group - headless',        'Styled SvRadioGroup plus a custom segmented control (with a disabled option), one bound value.', 'Headless Editors', HlRadioGroup),
+  demo('275-headless-rating',            'Rating - headless',             'Styled SvRating (half stars) plus a custom segmented meter, one bound numeric value with live preview.', 'Headless Editors', HlRating),
+  demo('276-headless-calendar',          'Calendar - headless',           'Styled SvCalendar and a compact custom day-grid built from panels / dayState / dayProps, sharing one value.', 'Headless Editors', HlCalendar),
+  demo('277-headless-timepicker',        'Time picker - headless',        'Styled analog SvTimePicker and a custom digital readout, sharing one value.', 'Headless Editors', HlTimePicker),
+  demo('278-headless-datetimepicker',    'Date-time picker - headless',   'Styled SvDateTimePicker (portalled dropdown) and a custom masked field, sharing one value.', 'Headless Editors', HlDateTimePicker),
+  demo('279-headless-tabs',              'Tabs - headless',               'createTabs drives styled SvTabs plus a custom segmented control, one active id with a readout.', 'Headless Editors', HlTabs),
+  demo('280-headless-tree',              'Tree - headless',               'createTree drives styled SvTree plus a custom compact file explorer, one selected id with a readout.', 'Headless Editors', HlTree),
+  demo('281-headless-slider',            'Slider - headless',             'createSlider drives styled SvSlider plus a custom draggable bar (rect measured in the component), one number.', 'Headless Editors', HlSlider),
+  demo('282-headless-gauge',             'Gauge - headless',              'createGauge drives styled SvGauge plus a custom SVG meter sharing the same arc / needle geometry.', 'Headless Editors', HlGauge),
   demo('256-range-feedback',        'Range & feedback',            'SvSlider (single or dual-thumb range, ticks, keyboard, vertical) and SvGauge (radial arc with threshold bands, needle, half sweep). Theme-driven value controls, standalone or in-grid.', 'Range & Feedback', RangeFeedback256),
   demo('257-tabs-tree-form',        'Tabs, tree & form',           'Composite controls: SvTabs (line + pill, roving keyboard), SvTree (expand/collapse, single-select + cascading tri-state checkboxes) and a schema-driven SvForm that wires the whole kit (inputs, select, switch, date, textarea) with required + custom validation.', 'Layout', TabsTreeForm257),
 

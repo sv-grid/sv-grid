@@ -85,6 +85,33 @@ export {
   type ListboxRootProps,
   type OptionProps,
 } from './createListbox.svelte'
+// Selection family cores
+export { createCombobox, type Combobox, type ComboboxConfig, type ComboboxValue } from './createCombobox.svelte'
+export { createDropdownList, type DropdownList, type DropdownListConfig, type DropdownValue } from './createDropdownList.svelte'
+export { createAutocomplete, type Autocomplete, type AutocompleteConfig } from './createAutocomplete.svelte'
+export { createTagsInput, type TagsInput, type TagsInputConfig } from './createTagsInput.svelte'
+export { createCountryInput, type CountryInput, type CountryInputConfig } from './createCountryInput.svelte'
+// Text-input family cores
+export { createNumberInput, type NumberInputConfig, type NumberInputCore } from './createNumberInput.svelte'
+export { createMaskedInput, type MaskedInputConfig, type MaskedInputCore } from './createMaskedInput.svelte'
+export { createPhoneInput, type PhoneInputConfig, type PhoneInputCore } from './createPhoneInput.svelte'
+export { createColorInput, normalizeHex, type ColorInputConfig, type ColorInputCore } from './createColorInput.svelte'
+export { createPasswordInput, passwordStrength, STRENGTH_LABELS, type PasswordInputConfig, type PasswordInputCore } from './createPasswordInput.svelte'
+// Buttons & toggles family cores
+export { createToggle, type Toggle, type ToggleConfig, type ToggleButtonProps } from './createToggle.svelte'
+export { createSwitch, type Switch, type SwitchConfig, type SwitchProps } from './createSwitch.svelte'
+export { createCheckbox, type Checkbox, type CheckboxConfig, type CheckboxBoxProps } from './createCheckbox.svelte'
+export { createRadioGroup, type RadioGroup, type RadioGroupConfig, type RadioProps, type RadioGroupProps } from './createRadioGroup.svelte'
+export { createRating, type Rating, type RatingConfig, type RatingFill, type RatingRootProps, type RatingStarProps } from './createRating.svelte'
+// Date & time family cores
+export { createCalendar, normalizeCalendarValue, type Calendar, type CalendarConfig, type CalendarDayState, type CalendarNavDir, type CalendarNameFormat, type DisplayMode } from './createCalendar.svelte'
+export { createTimePicker, parseTimeValue, type TimePicker, type TimePickerConfig, type TimeSelection, type TimeFormat, type DialTick } from './createTimePicker.svelte'
+export { createDateTimePicker, type DateTimePicker, type DateTimePickerConfig, type DropDownDisplayMode, type DateTimeTab } from './createDateTimePicker.svelte'
+// Layout & range family cores
+export { createTabs, type Tabs, type TabsConfig, type TabsOrientation, type TabsActivation } from './createTabs.svelte'
+export { createTree, treeDescendantIds, treeCheckState, type Tree, type TreeConfig, type TreeRow, type CheckState } from './createTree.svelte'
+export { createSlider, type Slider, type SliderConfig, type SliderValue, type SliderOrientation, type SliderThumb, type SliderPoint } from './createSlider.svelte'
+export { createGauge, type Gauge, type GaugeConfig, type GaugePoint } from './createGauge.svelte'
 // UI kit - Group B (buttons & toggles)
 export { default as SvButton } from './SvButton.svelte'
 export { default as SvRepeatButton } from './SvRepeatButton.svelte'
