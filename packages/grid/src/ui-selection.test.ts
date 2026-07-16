@@ -39,6 +39,19 @@ describe('SvListBox', () => {
       expect(got).toEqual(['a', 'b'])
     } finally { b.destroy() }
   })
+
+  it('posts its value(s) via hidden inputs when `name` is set (multi -> repeated name)', () => {
+    const m = mnt(SvListBox, { options: OPTS, value: ['a', 'c'], multiple: true, name: 'tags' })
+    try {
+      const hidden = Array.from(m.target.querySelectorAll<HTMLInputElement>('input[type="hidden"][name="tags"]'))
+      expect(hidden.map((h) => h.value)).toEqual(['a', 'c'])
+    } finally { m.destroy() }
+    const s = mnt(SvListBox, { options: OPTS, value: 'b', name: 'choice' })
+    try {
+      const hidden = Array.from(s.target.querySelectorAll<HTMLInputElement>('input[type="hidden"][name="choice"]'))
+      expect(hidden.map((h) => h.value)).toEqual(['b'])
+    } finally { s.destroy() }
+  })
 })
 
 describe('SvDropDownList', () => {

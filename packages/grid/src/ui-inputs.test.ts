@@ -14,6 +14,32 @@ function mnt(Comp: any, props: Record<string, unknown>) {
   return { target, destroy: () => { unmount(app); target.remove() } }
 }
 
+describe('SvNumberInput validation a11y (editor contract)', () => {
+  it('wires aria-invalid + aria-required + aria-describedby -> error text', () => {
+    const { target, destroy } = mnt(SvNumberInput, { value: 5, id: 'qty', invalid: true, required: true, error: 'Too big' })
+    try {
+      const input = target.querySelector<HTMLInputElement>('.sv-num__input')!
+      expect(input.getAttribute('aria-invalid')).toBe('true')
+      expect(input.getAttribute('aria-required')).toBe('true')
+      expect(input.getAttribute('aria-describedby')).toBe('qty__error')
+      const err = target.querySelector('#qty__error')!
+      expect(err.getAttribute('role')).toBe('alert')
+      expect(err.textContent).toBe('Too big')
+      expect(target.querySelector('.sv-num.is-invalid')).toBeTruthy()
+    } finally { destroy() }
+  })
+
+  it('adds no validation attributes when the props are unset', () => {
+    const { target, destroy } = mnt(SvNumberInput, { value: 1 })
+    try {
+      const input = target.querySelector<HTMLInputElement>('.sv-num__input')!
+      expect(input.getAttribute('aria-invalid')).toBeNull()
+      expect(input.getAttribute('aria-describedby')).toBeNull()
+      expect(target.querySelector('.sv-num.is-invalid')).toBeNull()
+    } finally { destroy() }
+  })
+})
+
 describe('SvNumberInput', () => {
   it('clamps to max on commit', () => {
     let got: number | null | undefined

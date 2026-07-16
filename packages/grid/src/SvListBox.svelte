@@ -15,9 +15,12 @@
     /** Visible height in rows before scrolling. */
     rows?: number
     ariaLabel?: string
+    /** Form field name; emits a hidden input per selected value so the listbox
+     *  posts in a native <form> (multiple selection -> repeated name). */
+    name?: string
   }
 
-  let { options, value = null, onChange, multiple = false, disabled = false, rows = 7, ariaLabel }: Props = $props()
+  let { options, value = null, onChange, multiple = false, disabled = false, rows = 7, ariaLabel, name }: Props = $props()
 
   const selected = $derived<Array<string | number>>(
     multiple ? (Array.isArray(value) ? value : value == null ? [] : [value]) : value == null ? [] : [value as string | number],
@@ -68,6 +71,7 @@
   }
 </script>
 
+<div style="display: contents">
 <ul
   bind:this={listEl}
   class="sv-listbox"
@@ -98,6 +102,8 @@
     </li>
   {/each}
 </ul>
+{#if name}{#each selected as v (v)}<input type="hidden" {name} value={v} />{/each}{/if}
+</div>
 
 <style>
   .sv-listbox {

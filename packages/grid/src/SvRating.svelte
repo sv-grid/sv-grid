@@ -10,6 +10,9 @@
     max?: number
     /** Allow half-star precision. */
     allowHalf?: boolean
+    /** Read-only: shown but not editable (the kit-standard name). */
+    readonly?: boolean
+    /** @deprecated use `readonly` - kept for back-compat. */
     readOnly?: boolean
     disabled?: boolean
     size?: 'sm' | 'md' | 'lg'
@@ -22,6 +25,7 @@
     onChange,
     max = 5,
     allowHalf = false,
+    readonly = false,
     readOnly = false,
     disabled = false,
     size = 'md',
@@ -29,8 +33,9 @@
     ariaLabel,
   }: Props = $props()
 
+  const ro = $derived(readonly || readOnly)
   let hover = $state<number | null>(null)
-  const isInteractive = $derived(!readOnly && !disabled)
+  const isInteractive = $derived(!ro && !disabled)
   const shown = $derived(hover ?? value)
 
   function valueAt(e: MouseEvent, index: number): number {
@@ -58,7 +63,7 @@
 
 <div
   class="sv-rating sv-rating--{size}"
-  class:is-readonly={readOnly}
+  class:is-readonly={ro}
   class:is-disabled={disabled}
   role="slider"
   tabindex={isInteractive ? 0 : -1}
@@ -66,7 +71,7 @@
   aria-valuenow={value}
   aria-valuemin="0"
   aria-valuemax={max}
-  aria-readonly={readOnly}
+  aria-readonly={ro}
   onkeydown={onKeydown}
   onpointerleave={() => (hover = null)}
 >

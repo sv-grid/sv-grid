@@ -73,6 +73,8 @@ export { default as SvGridDropdown } from './SvGridDropdown.svelte'
 export { default as SvCalendar, type CalendarValue, type CalendarPreset, type CalendarAnimation } from './SvCalendar.svelte'
 export { default as SvTimePicker, type TimeValue } from './SvTimePicker.svelte'
 export { default as SvDateTimePicker, type DateTimeValue } from './SvDateTimePicker.svelte'
+// UI kit - shared editor contract (common props + a11y wiring for every editor)
+export { editorAria, editorErrorId, type SvEditorProps, type EditorSize, type EditorAriaState } from './editor-contract'
 // UI kit - Group B (buttons & toggles)
 export { default as SvButton } from './SvButton.svelte'
 export { default as SvRepeatButton } from './SvRepeatButton.svelte'
