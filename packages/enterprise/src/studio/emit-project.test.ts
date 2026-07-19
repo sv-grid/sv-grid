@@ -255,6 +255,23 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(page).toContain('<dl class="st-record">')                        // read-only field list
   })
 
+  it('record panel honors its presentation (inline / modal / drawer)', () => {
+    const pageFor = (presentation: 'inline' | 'modal' | 'drawer') => {
+      let p = createProject([customers])
+      const sid = p.screens[0]!.id
+      p = addBlock(p, sid, 'record')
+      const rid = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'record')!.id
+      p = updateBlock(p, sid, rid, { config: { editable: true, presentation } as Partial<import('./project').RecordConfig> })
+      return emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    }
+    expect(pageFor('inline')).toContain('<SvGridEditPanel schema={customersSchema} row={selectedRecord} presentation="inline"')
+    expect(pageFor('modal')).toContain('presentation="modal"')
+    expect(pageFor('drawer')).toContain('presentation="drawer"')
+    // Modal/drawer only mount while a row is selected (float over the page).
+    expect(pageFor('modal')).toContain('Select a row to open its edit dialog')
+    expect(pageFor('drawer')).toContain('Select a row to open its editor drawer')
+  })
+
   it('RBAC: emits access.ts, gates the UI, guards the server route + nav, and compiles', () => {
     let p = createProject([customers, orders])
     p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' }) // gets a +server.ts

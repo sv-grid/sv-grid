@@ -11,7 +11,7 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { Block, EntityDataSource, FilterPanelConfig, GridConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
+import type { Block, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
 import { blockColumns, entityDataSource, flattenBlocks, serializeProject } from './project.js'
 import { resolveThemeTokens, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -118,13 +118,34 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       <SvSchemaDashboard schema={${schemaVar}} rows={allRows} />
     </div>`
     case 'kpi': {
-      // Format the value: thousands separators, "$" for money measures ("... ($)").
+      const measurePart = cfg.measure ? `measure: '${cfg.measure}', ` : ''
+      const valueNum = `reduceValue(allRows, { ${measurePart}reduce: '${cfg.reduce}' })`
+      // Value formatting: explicit format wins, else auto ("$" for money measures).
       const money = cfg.measure ? /\$/.test(entity.fields.find((f) => f.field === cfg.measure)?.label ?? '') : false
-      const expr = `${money ? "'$' + " : ''}reduceValue(allRows, { ${cfg.measure ? `measure: '${cfg.measure}', ` : ''}reduce: '${cfg.reduce}' }).toLocaleString(undefined, { maximumFractionDigits: 1 })`
-      return `    <div ${span} class="kpi">
-      <span class="kpi__label">${tLabel(cfg.label, block.id)}</span>
-      <strong class="kpi__value">{${expr}}</strong>
-    </div>`
+      const fmt = cfg.format ?? 'auto'
+      const valueExpr = fmt === 'auto'
+        ? `${money ? "'$' + " : ''}(${valueNum}).toLocaleString(undefined, { maximumFractionDigits: 1 })`
+        : `formatKpiValue(${valueNum}, '${fmt}')`
+      const rows: string[] = [
+        `      <div class="kpi__head"><span class="kpi__label">${tLabel(cfg.label, block.id)}</span></div>`,
+        `      <strong class="kpi__value">{${valueExpr}}</strong>`,
+      ]
+      // Target: a "% of target" chip (green at/over target).
+      if (cfg.target != null && cfg.target !== 0) {
+        rows.push(`      <span class="kpi__delta" class:is-up={${valueNum} >= ${cfg.target}}>{Math.round(${valueNum} / ${cfg.target} * 100)}% of target</span>`)
+      }
+      // Trend: an inline sparkline over `trendField`, with a first-to-last delta chip.
+      if (cfg.trendField) {
+        const tReduce = cfg.trendReduce ?? cfg.reduce
+        const seriesExpr = `kpiSeries(allRows, { trendField: '${cfg.trendField}', ${measurePart}reduce: '${tReduce}' })`
+        rows.push(`      {#if ${seriesExpr}.length > 1}
+        {@const _s = ${seriesExpr}}
+        {@const _d = seriesDelta(_s)}
+        {#if _d != null && ${cfg.target == null}}<span class="kpi__delta" class:is-up={_d >= 0} class:is-down={_d < 0}>{_d >= 0 ? '▲' : '▼'} {Math.abs(_d).toFixed(0)}%</span>{/if}
+        <svg class="kpi__spark" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"><polyline points={sparklinePoints(_s)} fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" /></svg>
+      {/if}`)
+      }
+      return `    <div ${span} class="kpi">\n${rows.join('\n')}\n    </div>`
     }
     case 'gauge': {
       const gexpr = `reduceValue(allRows, { ${cfg.measure ? `measure: '${cfg.measure}', ` : ''}reduce: '${cfg.reduce}' })`
@@ -346,10 +367,18 @@ function recordPanelMarkup(entity: EntitySchema, schemaVar: string, block: Block
   const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
   let inner: string
   if (cfg.editable) {
-    inner = `      {#if selectedRecord}
+    const pres = cfg.presentation ?? 'inline'
+    // Modal / drawer float over the page (shown only while a row is selected);
+    // inline lives in the block, with a prompt when nothing is selected.
+    inner = pres === 'inline'
+      ? `      {#if selectedRecord}
         <SvGridEditPanel schema={${schemaVar}} row={selectedRecord} presentation="inline" onSubmit={saveRecord} onCancel={() => (selectedRecord = null)} />
       {:else}
         <p class="st-hint">Select a row to see its details.</p>
+      {/if}`
+      : `      <p class="st-hint">Select a row to open its ${pres === 'drawer' ? 'editor drawer' : 'edit dialog'}.</p>
+      {#if selectedRecord}
+        <SvGridEditPanel schema={${schemaVar}} row={selectedRecord} presentation="${pres}" onSubmit={saveRecord} onCancel={() => (selectedRecord = null)} />
       {/if}`
   } else {
     const pk = entity.idField ?? entity.fields.find((f) => f.primaryKey)?.field
@@ -429,6 +458,9 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   if (has(allBlocks, 'chart')) entImports.push('SvSchemaChart')
   if (has(allBlocks, 'dashboard')) entImports.push('SvSchemaDashboard')
   if (has(allBlocks, 'kpi') || has(allBlocks, 'gauge')) entImports.push('reduceValue')
+  const kpiCfgs = allBlocks.filter((b) => b.config.kind === 'kpi').map((b) => b.config as KpiConfig)
+  if (kpiCfgs.some((c) => c.format && c.format !== 'auto')) entImports.push('formatKpiValue')
+  if (kpiCfgs.some((c) => c.trendField)) entImports.push('kpiSeries', 'sparklinePoints', 'seriesDelta')
   if (hasMD) entImports.push('SvGridMasterDetail')
   if (hasPivot) entImports.push('SvPivotDesigner')
   // Dedupe: record + form both want SvGridEditPanel.
@@ -577,9 +609,14 @@ ${body}
 </div>${modal}${actionSnippets.length ? '\n\n' + actionSnippets.join('\n\n') : ''}
 ${has(blocks, 'kpi') || has(blocks, 'gauge') || has(blocks, 'tree') ? `
 <style>
-  .kpi { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
-  .kpi__label { font-size: 13px; color: var(--sg-muted, #64748b); }
-  .kpi__value { font-size: 26px; font-weight: 700; }
+  .kpi { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); overflow: hidden; }
+  .kpi__head { display: flex; align-items: center; justify-content: space-between; }
+  .kpi__label { font-size: 12.5px; font-weight: 600; color: var(--sg-muted, #64748b); text-transform: uppercase; letter-spacing: 0.03em; }
+  .kpi__value { font-size: 28px; font-weight: 750; line-height: 1.1; color: var(--sg-fg, #0f172a); }
+  .kpi__delta { align-self: flex-start; display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: color-mix(in srgb, var(--sg-muted, #64748b) 14%, transparent); color: var(--sg-muted, #64748b); }
+  .kpi__delta.is-up { background: color-mix(in srgb, #16a34a 15%, transparent); color: #16a34a; }
+  .kpi__delta.is-down { background: color-mix(in srgb, #dc2626 15%, transparent); color: #dc2626; }
+  .kpi__spark { width: 100%; height: 30px; margin-top: 2px; color: var(--sg-accent, #4f46e5); opacity: 0.85; }
   .gaugecard { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
   .gaugecard .kpi__label { align-self: flex-start; }
   .treecard { padding: 12px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }

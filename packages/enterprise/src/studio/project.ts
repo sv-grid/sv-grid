@@ -121,7 +121,23 @@ export type RowAction = {
 export type FormConfig = { kind: 'form'; presentation: Presentation }
 /** A chart, optionally drilling into `drillScreen` (filtered by the clicked category). */
 export type ChartConfig = { kind: 'chart'; dimension: string; measure?: string; reduce: Reduce; type: ChartType; drillScreen?: string }
-export type KpiConfig = { kind: 'kpi'; label: string; measure?: string; reduce: Reduce }
+/** Number format for a KPI value. `auto` keeps the legacy behavior ($ when the
+ *  measure's label carries `$`, else grouped number). */
+export type KpiFormat = 'auto' | 'number' | 'currency' | 'percent' | 'compact'
+export type KpiConfig = {
+  kind: 'kpi'
+  label: string
+  measure?: string
+  reduce: Reduce
+  /** Value formatting. Defaults to `auto`. */
+  format?: KpiFormat
+  /** Field to bucket the measure by for an inline sparkline (e.g. a date or stage). */
+  trendField?: string
+  /** Aggregate per sparkline bucket. Defaults to `reduce`. */
+  trendReduce?: Reduce
+  /** Target value: shows a "% of target" delta chip. */
+  target?: number
+}
 /** A radial gauge (SvGauge) of one aggregated measure within [min, max]. Like a
  *  KPI but rendered as an arc - good for utilization, progress, scores. */
 export type GaugeConfig = { kind: 'gauge'; label: string; measure?: string; reduce: Reduce; min: number; max: number; unit?: string }
@@ -145,7 +161,7 @@ export type PivotConfig = { kind: 'pivot'; rows: string[]; cols: string[]; measu
 export type FilterPanelConfig = { kind: 'filter'; fields: string[]; title?: string }
 /** A record detail panel: shows the row selected in the screen's grid via
  *  SvGridEditPanel. `fields` optionally narrows which fields show (empty = all). */
-export type RecordConfig = { kind: 'record'; fields?: string[]; editable: boolean }
+export type RecordConfig = { kind: 'record'; fields?: string[]; editable: boolean; presentation?: Presentation }
 export type BlockConfig =
   | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | DashboardConfig | MasterDetailConfig | LookupConfig
   | PivotConfig | FilterPanelConfig | RecordConfig
