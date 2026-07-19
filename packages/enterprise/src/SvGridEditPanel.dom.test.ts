@@ -74,4 +74,52 @@ describe('SvGridEditPanel (DOM)', () => {
     expect(el.querySelector('.sv-switch')!.classList.contains('is-on')).toBe(false)
     expect(el.querySelector('button[type="submit"]')?.textContent?.trim()).toBe('Create')
   })
+
+  it('routes each editorType to its rich editor from the suite', () => {
+    const rich: EntitySchema = {
+      name: 'assets',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'brand', type: 'text', input: { editorType: 'color' } },
+        { field: 'secret', type: 'text', input: { editorType: 'password' } },
+        { field: 'labels', type: 'text', input: { editorType: 'chips' } },
+        { field: 'due', type: 'date' },
+        { field: 'phone', type: 'text', input: { editorType: 'phone' } },
+        { field: 'score', type: 'number', input: { editorType: 'slider' }, min: 0, max: 10 },
+      ],
+    }
+    const el = render({
+      schema: rich,
+      row: { id: '1', brand: '#ff0000', secret: 'pw', labels: 'a,b', due: '2024-01-02', phone: '+14155550100', score: 7 },
+      presentation: 'inline',
+      onSubmit: vi.fn(),
+      onCancel: vi.fn(),
+    })
+    expect(el.querySelector('.sv-color')).toBeTruthy()  // color -> SvColorInput
+    expect(el.querySelector('.sv-pw')).toBeTruthy()     // password -> SvPasswordInput
+    expect(el.querySelector('.sv-tags')).toBeTruthy()   // chips -> SvTagsInput
+    expect(el.querySelector('.sv-dtp')).toBeTruthy()    // date -> SvDateTimePicker
+    expect(el.querySelector('.sv-phone')).toBeTruthy()  // phone -> SvPhoneInput
+    expect(el.querySelector('.sv-slider')).toBeTruthy() // slider -> SvSlider
+  })
+
+  it('submits the row values (edit mode, readonly id omitted)', async () => {
+    const onSubmit = vi.fn()
+    const el = render({
+      schema,
+      row: { id: '1', name: 'Ada', mrr: 1200, active: true, tier: 'pro' },
+      presentation: 'inline',
+      onSubmit,
+      onCancel: vi.fn(),
+    })
+    el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click()
+    // Submit validates asynchronously before calling onSubmit.
+    await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const payload = onSubmit.mock.calls[0]![0] as { mode: string; id: string | null; values: Record<string, unknown> }
+    expect(payload.mode).toBe('edit')
+    expect(payload.id).toBe('1')
+    expect(payload.values).toMatchObject({ name: 'Ada', mrr: 1200, active: true, tier: 'pro' })
+    expect(payload.values).not.toHaveProperty('id') // readonly PK is never submitted
+  })
 })
