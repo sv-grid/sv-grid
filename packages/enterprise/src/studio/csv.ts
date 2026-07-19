@@ -10,8 +10,32 @@
  */
 import type { EntityField, EntityFieldType, EntitySchema } from '../schema.js'
 
-/** Parse CSV text into a matrix of string cells. Handles quotes, `""`, embedded newlines, CRLF. */
-export function parseCsv(text: string): string[][] {
+/**
+ * Sniff the field delimiter from the first (unquoted) line: whichever of
+ * `,` `;` `\t` `|` occurs most. Handles Excel/European exports (`;`) and TSV.
+ */
+export function detectDelimiter(text: string): ',' | ';' | '\t' | '|' {
+  const s = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text
+  const firstLine = s.slice(0, (s.indexOf('\n') + 1 || s.length + 1) - 1)
+  const candidates: Array<',' | ';' | '\t' | '|'> = [',', ';', '\t', '|']
+  let best: ',' | ';' | '\t' | '|' = ','
+  let bestCount = -1
+  for (const d of candidates) {
+    // Count only outside quotes so a comma inside "a,b" doesn't sway the guess.
+    let count = 0, inQ = false
+    for (const ch of firstLine) {
+      if (ch === '"') inQ = !inQ
+      else if (ch === d && !inQ) count++
+    }
+    if (count > bestCount) { bestCount = count; best = d }
+  }
+  return best
+}
+
+/** Parse CSV/TSV text into a matrix of string cells. Handles quotes, `""`, embedded
+ *  newlines, CRLF, and auto-detects the delimiter (comma / semicolon / tab / pipe). */
+export function parseCsv(text: string, delimiter?: string): string[][] {
+  const delim = delimiter ?? detectDelimiter(text)
   const rows: string[][] = []
   let row: string[] = []
   let field = ''
@@ -27,7 +51,7 @@ export function parseCsv(text: string): string[][] {
       } else field += c
     } else if (c === '"') {
       inQuotes = true
-    } else if (c === ',') {
+    } else if (c === delim) {
       row.push(field); field = ''
     } else if (c === '\n') {
       row.push(field); field = ''; rows.push(row); row = []

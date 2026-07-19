@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addTabBlock, createProject, parseProject, setDeployTarget, setEntityDataSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig } from './project'
+import { addBlock, addTabBlock, createProject, parseProject, setDeployTarget, setEntityDataSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
 import { emitStudioProject, emitStudioAppBundle, studioDeployInfo } from './emit-project'
 
 const customers: EntitySchema = {
@@ -374,6 +374,9 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(data).toContain("import { PGlite } from '@electric-sql/pglite'")
     expect(data).toContain("new PGlite('idb://svgrid-studio')")
     expect(data).toContain('CREATE TABLE IF NOT EXISTS "customers"')
+    // Schema-additions migrate on reload (CREATE TABLE IF NOT EXISTS is a no-op once the table exists).
+    expect(data).toContain('ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "mrr" double precision')
+    expect(data).not.toMatch(/ADD COLUMN IF NOT EXISTS "id"/) // never re-add the primary key
     expect(data).toContain('"mrr" double precision')            // typed column
     expect(data).toContain('createSqlDataSource<Customers>')     // real SQL source
     expect(data).toContain('await pgReady')                      // gated on bootstrap
@@ -537,6 +540,23 @@ describe('emitStudioProject (per-block screens)', () => {
     for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
     }
+  })
+
+  it('i18n: KPI / Gauge / Tab labels route through t() (not raw literals)', () => {
+    let p: StudioProject = { ...createProject([customers]), i18n: { enabled: true, locales: ['en', 'es'], defaultLocale: 'en' } }
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'kpi')
+    p = addBlock(p, sid, 'gauge')
+    p = addBlock(p, sid, 'tabs')
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/\{\$t\('block\.kpi-[^']+', /)   // KPI label localized
+    expect(page).toMatch(/\{\$t\('block\.gauge-[^']+', /) // Gauge label localized
+    expect(page).toMatch(/label: \$t\('tab\.tabs-[^']+'/) // Tab labels localized in the tabs array
+    // Without i18n the same labels stay raw literals (no $t wrapper).
+    let plain = createProject([customers])
+    plain = addBlock(plain, plain.screens[0]!.id, 'kpi')
+    const plainPage = emitStudioProject(plain).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(plainPage).not.toContain("$t('block.")
   })
 
   it('throws on a screen pointing at a missing entity', () => {

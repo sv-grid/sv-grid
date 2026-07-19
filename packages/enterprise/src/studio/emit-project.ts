@@ -55,7 +55,9 @@ function gridColumnsExpr(schemaVar: string, block: Block): string {
 
 /** Markup for one block inside the screen grid. `ctx.hasRecord` tells a grid to
  *  publish its clicked row into `selectedRecord` for a sibling record panel. */
-function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string> } = { hasRecord: false }): string {
+function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean } = { hasRecord: false }): string {
+  // A block's display label: localized via $t('block.<id>', 'literal') when i18n is on.
+  const tLabel = (label: string, key: string) => (ctx.i18n ? `{$t('block.${key}', ${JSON.stringify(label)})}` : label)
   const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
   const cfg = block.config
   switch (cfg.kind) {
@@ -120,7 +122,7 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       const money = cfg.measure ? /\$/.test(entity.fields.find((f) => f.field === cfg.measure)?.label ?? '') : false
       const expr = `${money ? "'$' + " : ''}reduceValue(allRows, { ${cfg.measure ? `measure: '${cfg.measure}', ` : ''}reduce: '${cfg.reduce}' }).toLocaleString(undefined, { maximumFractionDigits: 1 })`
       return `    <div ${span} class="kpi">
-      <span class="kpi__label">${cfg.label}</span>
+      <span class="kpi__label">${tLabel(cfg.label, block.id)}</span>
       <strong class="kpi__value">{${expr}}</strong>
     </div>`
     }
@@ -128,7 +130,7 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       const gexpr = `reduceValue(allRows, { ${cfg.measure ? `measure: '${cfg.measure}', ` : ''}reduce: '${cfg.reduce}' })`
       const unit = cfg.unit ? ` unit=${JSON.stringify(cfg.unit)}` : ''
       return `    <div ${span} class="gaugecard">
-      <span class="kpi__label">${cfg.label}</span>
+      <span class="kpi__label">${tLabel(cfg.label, block.id)}</span>
       <SvGauge value={${gexpr}} min={${cfg.min}} max={${cfg.max}}${unit} size={172} />
     </div>`
     }
@@ -143,7 +145,11 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
     }
     case 'tabs': {
       const tabsVar = tabsStateVar(block.id)
-      const items = cfg.tabs.map((t, i) => ({ id: tabId(block.id, i), label: t.label }))
+      // Localize tab labels via $t('tab.<id>', 'literal') when i18n is on (build the
+      // array as an expression so the labels can be function calls).
+      const items = ctx.i18n
+        ? `[${cfg.tabs.map((t, i) => `{ id: ${JSON.stringify(tabId(block.id, i))}, label: $t('tab.${tabId(block.id, i)}', ${JSON.stringify(t.label)}) }`).join(', ')}]`
+        : JSON.stringify(cfg.tabs.map((t, i) => ({ id: tabId(block.id, i), label: t.label })))
       const panels = cfg.tabs
         .map((t, i) => {
           const children = t.blocks.map((cb) => blockMarkup(entity, schemaVar, typeName, cb, resolve, ctx)).filter(Boolean).join('\n')
@@ -155,7 +161,7 @@ ${children || '            <p style="color: var(--sg-muted, #94a3b8); font-size:
         })
         .join('\n')
       return `    <div ${span}>
-      <SvTabs tabs={${JSON.stringify(items)}} value={${tabsVar}} onChange={(id) => (${tabsVar} = id)}>
+      <SvTabs tabs={${items}} value={${tabsVar}} onChange={(id) => (${tabsVar} = id)}>
         {#snippet panel(id)}
 ${panels}
         {/snippet}
@@ -544,7 +550,7 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   const toolbar = wantsForm
     ? `<div class="st__toolbar">\n  ${gatesUi ? `{#if can($currentRole, 'create')}${newBtn}{/if}` : newBtn}\n</div>\n\n`
     : ''
-  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById })).filter(Boolean).join('\n')
+  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled })).filter(Boolean).join('\n')
   const modal = wantsForm
     ? `\n\n{#if editing !== undefined}\n  <SvGridEditPanel schema={${n.schemaVar}} row={editing}${relationFields.length ? ' {lookups}' : ''} presentation="${formPres}" persistKey="${screen.route}" onSubmit={save} onCancel={() => (editing = undefined)} />\n{/if}`
     : ''

@@ -388,7 +388,7 @@
             <!-- Boolean fields render as the suite's switch (nicer than a raw checkbox). -->
             <SvSwitchButton id={`sv-ef-${f.field}`} ariaLabel={f.label} checked={!!values[f.field]} disabled={f.readonly} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'number'}
-            <SvNumberInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toNumberValue(values[f.field])} min={f.min} max={f.max} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = fromNumberValue(v))} />
+            <SvNumberInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toNumberValue(values[f.field])} min={f.min} max={f.max} step={f.step} precision={f.precision} prefix={f.prefix} suffix={f.suffix} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = fromNumberValue(v))} />
           {:else if f.editorType === 'color'}
             <SvColorInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] || '#3b82f6'} disabled={f.readonly} invalid={!!errors[f.field]} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'password'}

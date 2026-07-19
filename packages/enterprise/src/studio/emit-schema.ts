@@ -338,6 +338,12 @@ function pgliteBootstrap(tables: Array<{ schema: EntitySchema; table: string; se
     const pk = schema.idField ?? schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
     const cols = schema.fields.map((f) => `"${f.field}" ${PG_COL_TYPE[f.type] ?? 'text'}${f.primaryKey || f.field === pk ? ' primary key' : ''}`).join(', ')
     ddls.push(`CREATE TABLE IF NOT EXISTS "${table}" (${cols});`)
+    // Migrate schema additions: fields added after the DB was first created still
+    // appear (CREATE TABLE IF NOT EXISTS is a no-op once the table exists).
+    for (const f of schema.fields) {
+      if (f.primaryKey || f.field === pk) continue
+      ddls.push(`ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "${f.field}" ${PG_COL_TYPE[f.type] ?? 'text'};`)
+    }
     // Prefer rows imported/curated on the source (e.g. a CSV import), else the generator.
     const rows = curated ?? seed.get(schema.name) ?? []
     seeds.push(`  await _pgSeed(${JSON.stringify(table)}, ${JSON.stringify(rows)}, ${JSON.stringify(schema.fields.map((f) => f.field))})`)

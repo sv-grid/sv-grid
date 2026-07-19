@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseCsv, csvToEntity } from './csv.js'
+import { parseCsv, detectDelimiter, csvToEntity } from './csv.js'
 
 describe('parseCsv', () => {
   it('parses a simple grid', () => {
@@ -16,6 +16,22 @@ describe('parseCsv', () => {
       ['name', 'note'],
       ['Doe, John', 'said "hi"'],
       ['Ada', 'line1\nline2'],
+    ])
+  })
+
+  it('auto-detects the delimiter (semicolon / tab / pipe), ignoring quoted separators', () => {
+    expect(detectDelimiter('a;b;c\n1;2;3')).toBe(';')
+    expect(detectDelimiter('a\tb\tc\n1\t2\t3')).toBe('\t')
+    expect(detectDelimiter('a|b|c')).toBe('|')
+    expect(detectDelimiter('a,b,c')).toBe(',')
+    // A comma inside a quoted header field must not sway a semicolon file.
+    expect(detectDelimiter('"a,x";b;c\n1;2;3')).toBe(';')
+  })
+
+  it('parses a semicolon-delimited (European/Excel) file', () => {
+    expect(parseCsv('name;amount\n"Doe; John";1.200')).toEqual([
+      ['name', 'amount'],
+      ['Doe; John', '1.200'],
     ])
   })
 

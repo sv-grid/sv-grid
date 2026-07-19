@@ -168,6 +168,13 @@ export type EntityField<TData extends RowData = RowData> = {
     help?: string
     /** Mask pattern for the `mask` editor (e.g. `'(999) 000-0000'`). */
     mask?: string
+    /** Number/slider step increment (SvNumberInput / SvSlider). */
+    step?: number
+    /** Number decimal places (SvNumberInput). */
+    precision?: number
+    /** Number affix, e.g. `'$'` prefix or `'%'` suffix (SvNumberInput). */
+    prefix?: string
+    suffix?: string
   }
 }
 
@@ -236,6 +243,11 @@ export type FormFieldDescriptor = {
   readonly: boolean
   /** Mask pattern for the `mask` editor. */
   mask?: string
+  /** Number editor options (step / decimals / affixes). */
+  step?: number
+  precision?: number
+  prefix?: string
+  suffix?: string
   min?: number
   max?: number
   minLength?: number
@@ -391,6 +403,10 @@ export function schemaToFormFields<TData extends RowData>(
         required: !!f.required && !isId,
         readonly: !!f.readonly || isId || !!f.computed,
         mask: f.input?.mask,
+        step: f.input?.step,
+        precision: f.input?.precision,
+        prefix: f.input?.prefix,
+        suffix: f.input?.suffix,
         min: f.min,
         max: f.max,
         minLength: f.minLength,

@@ -5,7 +5,7 @@
  * visual designer), since nothing here touches Svelte or the DOM.
  */
 export { inferType, introspectJson, introspectDrizzle, introspectDrizzleAll } from './introspect.js'
-export { parseCsv, csvToEntity, type CsvEntity } from './csv.js'
+export { parseCsv, detectDelimiter, csvToEntity, type CsvEntity } from './csv.js'
 export { introspectPrisma, introspectPrismaAll } from './introspect-prisma.js'
 export {
   introspectDatabase,
