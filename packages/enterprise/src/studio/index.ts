@@ -5,15 +5,28 @@
  * visual designer), since nothing here touches Svelte or the DOM.
  */
 export { inferType, introspectJson, introspectDrizzle, introspectDrizzleAll } from './introspect.js'
+export { parseCsv, csvToEntity, type CsvEntity } from './csv.js'
 export { introspectPrisma, introspectPrismaAll } from './introspect-prisma.js'
 export {
   introspectDatabase,
   listDatabaseTables,
+  countTableRows,
+  probeConnection,
   mapSqlType,
   type SqlDialectName,
   type DbExecute,
   type IntrospectDbOptions,
+  type TableRowCount,
 } from './introspect-db.js'
+export {
+  buildConnectionString,
+  parseConnectionString,
+  redactConnectionString,
+  isFileDialect,
+  DRIVER_PACKAGE,
+  DEFAULT_PORT,
+  type SqlConnectionParts,
+} from './db-connect-string.js'
 export {
   scaffold,
   mergeManaged,
@@ -24,7 +37,7 @@ export {
 } from './scaffold.js'
 export { scaffoldApp, type ScaffoldAppOptions } from './scaffold-app.js'
 export { emitStudioApp, emitEntityModules, entityScreenPage, prepareEntities } from './emit-schema.js'
-export { emitStudioProject, emitStudioAppBundle } from './emit-project.js'
+export { emitStudioProject, emitStudioAppBundle, studioDeployInfo } from './emit-project.js'
 export { sampleApps, getSampleApp, type SampleApp } from './samples/index.js'
 export { generateValue, generateRows } from './sample-data.js'
 export { studioThemes, defaultStudioTheme, getStudioTheme, resolveThemeTokens, isDarkTheme, themeStyleString, type StudioTheme } from './themes.js'
@@ -49,7 +62,15 @@ export {
   removeScreen,
   updateScreen,
   setDataSource,
+  setDeployTarget,
   defaultEntitySource,
+  flattenBlocks,
+  TAB_CHILD_KINDS,
+  addTab,
+  removeTab,
+  renameTab,
+  addTabBlock,
+  removeTabBlock,
   setEntityDataSource,
   entityDataSource,
   setTheme,
@@ -70,6 +91,7 @@ export {
   type RoleAccess,
   type AccessControl,
   type I18nConfig,
+  type DeployTarget,
   type StudioProject,
   type Screen,
   type ScreenNav,
@@ -90,6 +112,10 @@ export {
   type FormConfig,
   type ChartConfig,
   type KpiConfig,
+  type GaugeConfig,
+  type TreeConfig,
+  type TabsConfig,
+  type StudioTab,
   type DashboardConfig,
   type MasterDetailConfig,
   type LookupConfig,
@@ -103,6 +129,7 @@ export {
   type RestSource,
   type SqlSource,
   type SupabaseSource,
+  type PgliteSource,
   type RestMethod,
   type ParamLocation,
   type ParamType,

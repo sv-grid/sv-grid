@@ -12,12 +12,16 @@
  */
 import type { GeneratedFile } from './scaffold.js'
 import type { Block, EntityDataSource, FilterPanelConfig, GridConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
-import { blockColumns, entityDataSource } from './project.js'
+import { blockColumns, entityDataSource, flattenBlocks, serializeProject } from './project.js'
 import { resolveThemeTokens, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
 import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, type NavItem } from './emit-schema.js'
 
 const has = (blocks: Block[], kind: Block['config']['kind']) => blocks.some((b) => b.config.kind === kind)
+
+/** Per-Tabs-block active-tab state var + a stable tab id. */
+const tabsStateVar = (blockId: string) => `activeTab_${blockId.replace(/[^a-zA-Z0-9_$]/g, '_')}`
+const tabId = (blockId: string, i: number) => `${blockId}-${i}`
 
 /** A state var holding a master-detail block's child rows (loaded in full). */
 const mdChildVar = (childName: string) => `md_${childName.replace(/[^a-zA-Z0-9]/g, '_')}_rows`
@@ -118,6 +122,44 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       return `    <div ${span} class="kpi">
       <span class="kpi__label">${cfg.label}</span>
       <strong class="kpi__value">{${expr}}</strong>
+    </div>`
+    }
+    case 'gauge': {
+      const gexpr = `reduceValue(allRows, { ${cfg.measure ? `measure: '${cfg.measure}', ` : ''}reduce: '${cfg.reduce}' })`
+      const unit = cfg.unit ? ` unit=${JSON.stringify(cfg.unit)}` : ''
+      return `    <div ${span} class="gaugecard">
+      <span class="kpi__label">${cfg.label}</span>
+      <SvGauge value={${gexpr}} min={${cfg.min}} max={${cfg.max}}${unit} size={172} />
+    </div>`
+    }
+    case 'tree': {
+      if (!cfg.labelField || !cfg.parentField) {
+        return `    <div ${span}><!-- tree: set a label field + a self-referential parent field in the inspector --></div>`
+      }
+      const idExpr = `${schemaVar}.idField ?? 'id'`
+      return `    <div ${span} class="treecard">
+      <SvTree nodes={toTreeNodes(allRows as Record<string, unknown>[], ${idExpr}, ${JSON.stringify(cfg.labelField)}, ${JSON.stringify(cfg.parentField)})} />
+    </div>`
+    }
+    case 'tabs': {
+      const tabsVar = tabsStateVar(block.id)
+      const items = cfg.tabs.map((t, i) => ({ id: tabId(block.id, i), label: t.label }))
+      const panels = cfg.tabs
+        .map((t, i) => {
+          const children = t.blocks.map((cb) => blockMarkup(entity, schemaVar, typeName, cb, resolve, ctx)).filter(Boolean).join('\n')
+          return `          {#if id === '${tabId(block.id, i)}'}
+            <div class="st-screen">
+${children || '            <p style="color: var(--sg-muted, #94a3b8); font-size: 13px; padding: 10px;">This tab is empty.</p>'}
+            </div>
+          {/if}`
+        })
+        .join('\n')
+      return `    <div ${span}>
+      <SvTabs tabs={${JSON.stringify(items)}} value={${tabsVar}} onChange={(id) => (${tabsVar} = id)}>
+        {#snippet panel(id)}
+${panels}
+        {/snippet}
+      </SvTabs>
     </div>`
     }
     case 'master-detail': {
@@ -329,6 +371,10 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   const n = namesFor(schema)
   const label = schema.label ?? n.label
   const blocks = screen.blocks
+  // Display blocks (chart/kpi/gauge/pivot/tree/dashboard) can be nested inside Tabs;
+  // flatten so their imports + data loading are detected. Controller-bound kinds
+  // (grid/form/filter/record) only live at the top level.
+  const allBlocks = flattenBlocks(blocks)
   const hasGrid = has(blocks, 'grid')
   const hasForm = has(blocks, 'form') // legacy standalone form block
   // Editing is a Grid property: a grid with editing 'form' opens the edit panel.
@@ -341,14 +387,14 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   // An unpaginated grid loads everything (one big page); else its configured size.
   const gridPageSize = gridConfigs[0] ? (gridConfigs[0].paginated !== false ? gridConfigs[0].pageSize : 1000) : 10
   const formPres = formGrid?.formPresentation ?? 'modal'
-  const hasPivot = has(blocks, 'pivot')
+  const hasPivot = has(allBlocks, 'pivot')
   const hasFilter = has(blocks, 'filter')
   const hasRecord = has(blocks, 'record')
   const recordEditable = blocks.some((b) => b.config.kind === 'record' && b.config.editable)
   // Filter panels drive the grid's controller; record panels read the grid's
   // selection - both need the controller even if the grid isn't editable.
   const needsController = hasGrid || wantsForm || hasFilter || hasRecord
-  const hasAgg = has(blocks, 'chart') || has(blocks, 'dashboard') || has(blocks, 'kpi')
+  const hasAgg = has(allBlocks, 'chart') || has(allBlocks, 'dashboard') || has(allBlocks, 'kpi') || has(allBlocks, 'gauge') || has(allBlocks, 'tree')
   const relationFields = schema.fields.filter((f) => f.type === 'relation' && f.relation)
 
   // Distinct, resolvable child entities referenced by master-detail blocks.
@@ -365,13 +411,18 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   const needsAllRows = hasAgg || hasMD || hasPivot
 
   // --- imports ---
-  const gridImports = needsController ? `import { SvGrid, createServerDataSource, ${hasRowActions ? 'renderSnippet, ' : ''}type ServerState } from '@svgrid/grid'\n  ` : ''
+  const gridSpecs: string[] = []
+  if (needsController) gridSpecs.push('SvGrid', 'createServerDataSource', ...(hasRowActions ? ['renderSnippet'] : []), 'type ServerState')
+  if (has(allBlocks, 'gauge')) gridSpecs.push('SvGauge')
+  if (has(allBlocks, 'tree')) gridSpecs.push('SvTree')
+  if (has(blocks, 'tabs')) gridSpecs.push('SvTabs')
+  const gridImports = gridSpecs.length ? `import { ${gridSpecs.join(', ')} } from '@svgrid/grid'\n  ` : ''
   const entImports: string[] = []
   if (hasGrid) entImports.push('schemaToColumns')
   if (wantsForm || (hasRecord && recordEditable)) entImports.push('SvGridEditPanel')
-  if (has(blocks, 'chart')) entImports.push('SvSchemaChart')
-  if (has(blocks, 'dashboard')) entImports.push('SvSchemaDashboard')
-  if (has(blocks, 'kpi')) entImports.push('reduceValue')
+  if (has(allBlocks, 'chart')) entImports.push('SvSchemaChart')
+  if (has(allBlocks, 'dashboard')) entImports.push('SvSchemaDashboard')
+  if (has(allBlocks, 'kpi') || has(allBlocks, 'gauge')) entImports.push('reduceValue')
   if (hasMD) entImports.push('SvGridMasterDetail')
   if (hasPivot) entImports.push('SvPivotDesigner')
   // Dedupe: record + form both want SvGridEditPanel.
@@ -466,6 +517,26 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
     if (b.config.kind !== 'filter') continue
     parts.push(filterPanelState(schema, b, b.config))
   }
+  // Tabs container(s): one active-tab state var per block (first tab active).
+  for (const b of blocks) {
+    if (b.config.kind !== 'tabs') continue
+    parts.push(`let ${tabsStateVar(b.id)} = $state('${tabId(b.id, 0)}')`)
+  }
+  // Tree block: fold the flat rows into SvTree nodes by a self-referential parent.
+  if (has(allBlocks, 'tree')) {
+    parts.push(`type TreeNode = { id: string; label: string; children: TreeNode[] }
+  function toTreeNodes(rows: Record<string, unknown>[], idField: string, labelField: string, parentField: string): TreeNode[] {
+    const byId = new Map<string, TreeNode>(rows.map((r) => [String(r[idField]), { id: String(r[idField]), label: String(r[labelField] ?? r[idField]), children: [] }]))
+    const roots: TreeNode[] = []
+    for (const r of rows) {
+      const node = byId.get(String(r[idField]))!
+      const pid = r[parentField] != null && r[parentField] !== '' ? String(r[parentField]) : null
+      if (pid && pid !== node.id && byId.has(pid)) byId.get(pid)!.children.push(node)
+      else roots.push(node)
+    }
+    return roots
+  }`)
+  }
 
   // --- markup ---
   const newLabel = i18nEnabled ? `{$t('new.${schema.name}', ${JSON.stringify('+ New ' + label)})}` : `+ New ${label}`
@@ -495,14 +566,17 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
 
 <h1 class="st__title">${title}</h1>
 
-${toolbar}<div class="screen" style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: start;">
+${toolbar}<div class="st-screen">
 ${body}
 </div>${modal}${actionSnippets.length ? '\n\n' + actionSnippets.join('\n\n') : ''}
-${has(blocks, 'kpi') ? `
+${has(blocks, 'kpi') || has(blocks, 'gauge') || has(blocks, 'tree') ? `
 <style>
   .kpi { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
   .kpi__label { font-size: 13px; color: var(--sg-muted, #64748b); }
   .kpi__value { font-size: 26px; font-weight: 700; }
+  .gaugecard { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
+  .gaugecard .kpi__label { align-self: flex-start; }
+  .treecard { padding: 12px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
 </style>
 ` : ''}`,
   }
@@ -790,7 +864,6 @@ const appSlug = (title: string): string =>
 
 /** The static SvelteKit + Vite scaffolding around the generated screens. */
 const SCAFFOLD_STATIC: ReadonlyArray<GeneratedFile> = [
-  { path: 'svelte.config.js', description: 'SvelteKit config (adapter-auto).', contents: `import adapter from '@sveltejs/adapter-auto'\nimport { vitePreprocess } from '@sveltejs/vite-plugin-svelte'\n\n/** @type {import('@sveltejs/kit').Config} */\nconst config = {\n  preprocess: vitePreprocess(),\n  kit: { adapter: adapter() },\n}\n\nexport default config\n` },
   { path: 'vite.config.ts', description: 'Vite config.', contents: `import { sveltekit } from '@sveltejs/vite-plugin-svelte'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({ plugins: [sveltekit()] })\n` },
   { path: 'tsconfig.json', description: 'TypeScript config.', contents: `{\n  "extends": "./.svelte-kit/tsconfig.json",\n  "compilerOptions": {\n    "allowJs": true,\n    "checkJs": true,\n    "esModuleInterop": true,\n    "forceConsistentCasingInFileNames": true,\n    "resolveJsonModule": true,\n    "skipLibCheck": true,\n    "sourceMap": true,\n    "strict": true,\n    "moduleResolution": "bundler"\n  }\n}\n` },
   { path: 'src/app.html', description: 'HTML shell.', contents: `<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    %sveltekit.head%\n  </head>\n  <body data-sveltekit-preload-data="hover">\n    <div style="display: contents">%sveltekit.body%</div>\n  </body>\n</html>\n` },
@@ -828,12 +901,113 @@ body { font-family: var(--sg-font, ui-sans-serif, system-ui, -apple-system, "Seg
 .st-record__row { display: grid; grid-template-columns: 40% 1fr; gap: 10px; align-items: baseline; border-bottom: 1px solid var(--sg-border, #f1f5f9); padding-bottom: 6px; }
 .st-record__row dt { margin: 0; font-size: 12px; font-weight: 600; color: var(--sg-muted, #64748b); }
 .st-record__row dd { margin: 0; font-size: 13.5px; color: var(--sg-fg, inherit); overflow-wrap: anywhere; }
+.st-screen { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: start; }
+/* Mobile: blocks stack full-width (a span-N block clamps to the single column). */
+@media (max-width: 720px) { .st-screen { grid-template-columns: 1fr; gap: 12px; } }
+@media (max-width: 640px) { .st__title { font-size: 19px; } }
 .st-rowactions { display: inline-flex; gap: 6px; }
 .st-rowaction { padding: 3px 9px; font: inherit; font-size: 12px; font-weight: 550; line-height: 1.4; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 7px; background: var(--sg-bg, #fff); color: var(--sg-fg, inherit); cursor: pointer; }
 .st-rowaction:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 5%, var(--sg-bg, #fff)); }
 .st-rowaction--danger { color: #dc2626; border-color: color-mix(in srgb, #dc2626 40%, var(--sg-border, #e6e8ec)); }
 .st-rowaction--danger:hover { background: color-mix(in srgb, #dc2626 8%, var(--sg-bg, #fff)); }
 `
+
+/**
+ * Deploy target -> the SvelteKit adapter + provider config the bundle ships, plus
+ * the one-liner and dashboard link the designer's Deploy panel shows. `auto`
+ * (the default) uses adapter-auto, which detects Vercel / Netlify / Cloudflare at
+ * build time; picking a specific target pins the adapter and adds its config so a
+ * `git push` (or the CLI one-liner) deploys with no further setup.
+ */
+type DeployPlan = {
+  adapterModule: string
+  adapterDep: [name: string, version: string]
+  files: GeneratedFile[]
+  /** Copy-paste command that deploys the app. */
+  cli: string
+  /** Provider "new project" dashboard link (for the import-from-Git path). */
+  dashboard?: string
+  label: string
+}
+
+function deployPlan(project: StudioProject): DeployPlan {
+  const slug = appSlug(project.title)
+  const target = project.deploy ?? 'auto'
+  switch (target) {
+    case 'vercel':
+      return {
+        adapterModule: '@sveltejs/adapter-vercel',
+        adapterDep: ['@sveltejs/adapter-vercel', '^5.5.0'],
+        files: [],
+        cli: 'npx vercel --prod',
+        dashboard: 'https://vercel.com/new',
+        label: 'Vercel',
+      }
+    case 'netlify':
+      return {
+        adapterModule: '@sveltejs/adapter-netlify',
+        adapterDep: ['@sveltejs/adapter-netlify', '^5.0.0'],
+        files: [{ path: 'netlify.toml', description: 'Netlify build config.', contents: `[build]\n  command = "npm run build"\n` }],
+        cli: 'npx netlify deploy --build --prod',
+        dashboard: 'https://app.netlify.com/start',
+        label: 'Netlify',
+      }
+    case 'cloudflare':
+      return {
+        adapterModule: '@sveltejs/adapter-cloudflare',
+        adapterDep: ['@sveltejs/adapter-cloudflare', '^7.0.0'],
+        files: [{ path: 'wrangler.toml', description: 'Cloudflare Pages config.', contents: `name = "${slug}"\npages_build_output_dir = ".svelte-kit/cloudflare"\ncompatibility_date = "2024-11-01"\n` }],
+        cli: 'npm run build && npx wrangler pages deploy .svelte-kit/cloudflare',
+        dashboard: 'https://dash.cloudflare.com/?to=/:account/pages/new',
+        label: 'Cloudflare Pages',
+      }
+    case 'node':
+      return {
+        adapterModule: '@sveltejs/adapter-node',
+        adapterDep: ['@sveltejs/adapter-node', '^5.2.0'],
+        files: [],
+        cli: 'npm run build && node build',
+        label: 'Node server',
+      }
+    default:
+      return {
+        adapterModule: '@sveltejs/adapter-auto',
+        adapterDep: ['@sveltejs/adapter-auto', '^6.0.0'],
+        files: [],
+        cli: 'npx vercel --prod',
+        dashboard: 'https://vercel.com/new',
+        label: 'Auto (Vercel / Netlify / Cloudflare)',
+      }
+  }
+}
+
+/** The deploy facts the designer's Deploy panel shows (label, CLI one-liner, dashboard link). */
+export function studioDeployInfo(project: StudioProject): { label: string; cli: string; dashboard?: string; adapter: string } {
+  const p = deployPlan(project)
+  return { label: p.label, cli: p.cli, dashboard: p.dashboard, adapter: p.adapterModule }
+}
+
+/** A `.env.example` listing the env vars the generated code reads, when any. */
+function envExample(allSource: string): string | null {
+  const lines: string[] = []
+  if (allSource.includes('env.DATABASE_URL')) {
+    lines.push('# Your database connection string (Neon / Supabase / Postgres / MySQL / SQLite path).')
+    lines.push('DATABASE_URL=')
+  }
+  if (allSource.includes('env.DATABASE_AUTH_TOKEN')) {
+    lines.push('# Turso / libSQL database auth token.')
+    lines.push('DATABASE_AUTH_TOKEN=')
+  }
+  if (lines.length === 0) return null
+  lines.push('')
+  lines.push('# Optional: your SvGrid license key removes the unlicensed watermark.')
+  lines.push('# VITE_SVPRO_KEY=')
+  return lines.join('\n') + '\n'
+}
+
+function svelteConfig(plan: DeployPlan): string {
+  return `import adapter from '${plan.adapterModule}'\nimport { vitePreprocess } from '@sveltejs/vite-plugin-svelte'\n\n/** @type {import('@sveltejs/kit').Config} */\nconst config = {\n  preprocess: vitePreprocess(),\n  kit: { adapter: adapter() },\n}\n\nexport default config\n`
+}
 
 function packageJson(project: StudioProject, allSource: string): string {
   const dependencies: Record<string, string> = { '@svgrid/grid': 'latest', '@svgrid/enterprise': 'latest' }
@@ -842,6 +1016,8 @@ function packageJson(project: StudioProject, allSource: string): string {
   if (allSource.includes("from 'mysql2/promise'")) dependencies['mysql2'] = '^3.9.0'
   if (allSource.includes("import mssql from 'mssql'")) dependencies['mssql'] = '^10.0.0'
   if (allSource.includes("import Database from 'better-sqlite3'")) dependencies['better-sqlite3'] = '^11.0.0'
+  if (allSource.includes("from '@libsql/client'")) dependencies['@libsql/client'] = '^0.14.0'
+  if (allSource.includes("from '@electric-sql/pglite'")) dependencies['@electric-sql/pglite'] = '^0.5.0'
   const pkg = {
     name: appSlug(project.title),
     version: '0.0.1',
@@ -850,7 +1026,7 @@ function packageJson(project: StudioProject, allSource: string): string {
     scripts: { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json' },
     dependencies,
     devDependencies: {
-      '@sveltejs/adapter-auto': '^6.0.0',
+      [deployPlan(project).adapterDep[0]]: deployPlan(project).adapterDep[1],
       '@sveltejs/kit': '^2.15.0',
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       svelte: '^5.55.5',
@@ -871,11 +1047,21 @@ function packageJson(project: StudioProject, allSource: string): string {
 export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
   const generated = emitStudioProject(project)
   const allSource = generated.map((f) => f.contents).join('\n')
-  const readme = `# ${project.title}\n\nGenerated with SvGrid Studio.\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\nSQL / Supabase entities read their connection from \`.env\` (\`DATABASE_URL\`) or\n\`src/lib/connections.ts\`. Everything else runs on seeded in-memory data.\n`
+  const plan = deployPlan(project)
+  const deploySteps = plan.dashboard
+    ? `1. Push this folder to a Git repo (GitHub / GitLab / Bitbucket).\n2. Import it at <${plan.dashboard}> - build settings are detected automatically.\n\nOr deploy straight from your machine with the CLI:\n\n\`\`\`bash\n${plan.cli}\n\`\`\``
+    : `Build and run the server:\n\n\`\`\`bash\n${plan.cli}\n\`\`\``
+  const readme = `# ${project.title}\n\nGenerated with SvGrid Studio.\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\nSQL / Supabase entities read their connection from \`.env\` (\`DATABASE_URL\`) or\n\`src/lib/connections.ts\`. Everything else runs on seeded in-memory data.\n\n## Deploy (${plan.label})\n\nThis app is configured for **${plan.label}** (SvelteKit \`${plan.adapterModule}\`).\n\n${deploySteps}\n\nTo target a different host, pick another **Deploy target** in the designer and\nre-generate, or swap the adapter in \`svelte.config.js\`. Entities on **Local\ndatabase** (PGlite) or **In-memory** need no server env; SQL / Supabase entities\nneed their connection set in the host's environment variables.\n\n## Round-tripping back into the designer\n\nThis app ships its own design model in \`studio.config.json\`. To keep editing\nvisually, open the SvGrid Studio designer and **Load** that file - your entities,\nscreens, blocks, theme, RBAC, i18n, etc. come back exactly as generated, and you\ncan re-generate from there.\n\nThe designer regenerates the files under \`src/routes\` and \`src/lib\` from the\nmodel, so **keep your own custom code in new files/modules and import it**, rather\nthan editing the generated screens in place - that way a re-generate never\nclobbers your work. (The CLI workflow, \`npx @svgrid/studio add\`, is the\nalternative: it wraps generated code in \`svgrid:managed\` markers and preserves\nanything you write outside them.)\n`
   const scaffold: GeneratedFile[] = [
     { path: 'package.json', description: 'Dependencies + scripts (npm install, npm run dev).', contents: packageJson(project, allSource) },
+    { path: 'svelte.config.js', description: `SvelteKit config (${plan.adapterModule}).`, contents: svelteConfig(plan) },
+    ...plan.files,
     ...SCAFFOLD_STATIC,
+    ...(envExample(allSource) ? [{ path: '.env.example', description: 'Environment variables the app reads (copy to .env and fill in).', contents: envExample(allSource)! }] : []),
     { path: 'src/app.css', description: 'App theme + page styles.', contents: APP_CSS },
+    // The design model, shipped with the app so it can be re-imported (Load) into
+    // the designer for further visual editing - the export/import round-trip.
+    { path: 'studio.config.json', description: 'The Studio project model - Load it back into the designer to keep editing visually.', contents: serializeProject(project) + '\n' },
     { path: 'README.md', description: 'How to run the app.', contents: readme },
   ]
   return [...scaffold, ...generated]

@@ -243,6 +243,7 @@ function sqlDialectExpr(dialect?: SqlDialectKind): string | null {
     case 'supabase': return "{ placeholders: '$', ilike: true }"
     case 'mysql': return `{ quote: '${BACKTICK}', placeholders: '?' }`
     case 'mssql': return "{ placeholders: '@' }"
+    case 'turso': return "{ placeholders: '?' }" // libSQL / SQLite positional args
     default: return null // sqlite / undefined -> adapter defaults
   }
 }
@@ -271,14 +272,20 @@ type DataModuleNeeds = {
   supabaseKey?: string
   /** SQL-bound entities get a connected `+server.ts` API route each. */
   sqlRoutes: Array<{ schema: EntitySchema; table: string; dialect?: SqlDialectKind }>
+  /** Embedded-Postgres (PGlite) entities: one shared client + a table each. */
+  pglite?: boolean
+  pgliteTables?: Array<{ schema: EntitySchema; table: string; seed?: Record<string, unknown>[] }>
 }
 
 /** Per-dialect server driver wiring for a connected `+server.ts` (reads `$env DATABASE_URL`). */
-const SQL_DRIVERS: Record<'postgres' | 'mysql' | 'mssql' | 'sqlite', { dep: string; imports: string; setup: string; exec: string }> = {
+const SQL_DRIVERS: Record<'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso', { dep: string; imports: string; setup: string; exec: string }> = {
   postgres: { dep: 'pg', imports: `import pg from 'pg'`, setup: `const pool = new pg.Pool({ connectionString: env.DATABASE_URL })`, exec: `const result = await pool.query(text, params)\n    return result.rows` },
   mysql: { dep: 'mysql2', imports: `import mysql from 'mysql2/promise'`, setup: `const pool = mysql.createPool(env.DATABASE_URL ?? '')`, exec: `const [rows] = await pool.query(text, params)\n    return rows as Record<string, unknown>[]` },
   mssql: { dep: 'mssql', imports: `import mssql from 'mssql'`, setup: `const poolPromise = mssql.connect(env.DATABASE_URL ?? '')`, exec: `const pool = await poolPromise\n    const request = pool.request()\n    params.forEach((p, i) => request.input('p' + (i + 1), p))\n    const result = await request.query(text)\n    return result.recordset as Record<string, unknown>[]` },
   sqlite: { dep: 'better-sqlite3', imports: `import Database from 'better-sqlite3'`, setup: `const db = new Database(env.DATABASE_URL ?? 'data.db')`, exec: `return db.prepare(text).all(...params) as Record<string, unknown>[]` },
+  // Turso / libSQL: hosted SQLite over HTTP. DATABASE_URL is the libsql:// URL,
+  // DATABASE_AUTH_TOKEN the database token. Runs on serverless + edge.
+  turso: { dep: '@libsql/client', imports: `import { createClient } from '@libsql/client'`, setup: `const client = createClient({ url: env.DATABASE_URL ?? '', authToken: env.DATABASE_AUTH_TOKEN })`, exec: `const rs = await client.execute({ sql: text, args: params })\n    return rs.rows as unknown as Record<string, unknown>[]` },
 }
 
 /** A fully-connected SvelteKit API route for a SQL-bound entity. When RBAC is on,
@@ -287,7 +294,7 @@ const SQL_DRIVERS: Record<'postgres' | 'mysql' | 'mssql' | 'sqlite', { dep: stri
  *  successful write is recorded. */
 function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean } = {}): GeneratedFile {
   const n = namesFor(schema)
-  const key = (dialect === 'supabase' ? 'postgres' : (dialect ?? 'postgres')) as 'postgres' | 'mysql' | 'mssql' | 'sqlite'
+  const key = (dialect === 'supabase' ? 'postgres' : (dialect ?? 'postgres')) as 'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso'
   const driver = SQL_DRIVERS[key]
   const dialectLiteral = sqlDialectExpr(dialect)
   const accessImport = feat.access ? `\nimport { authorizeAction, getServerRole } from '$lib/access'` : ''
@@ -319,6 +326,44 @@ const source = createSqlDataSource<${n.type}>({
 ${handlers}
 `,
   }
+}
+
+/** Map an EntityField type to a Postgres column type for PGlite DDL. */
+const PG_COL_TYPE: Record<string, string> = { number: 'double precision', boolean: 'boolean', date: 'date', datetime: 'timestamptz', json: 'jsonb' }
+/** The shared PGlite client + table DDL + one-time seed, injected into data.ts. */
+function pgliteBootstrap(tables: Array<{ schema: EntitySchema; table: string; seed?: Record<string, unknown>[] }>, seed: Map<string, Array<Record<string, unknown>>>): string {
+  const ddls: string[] = []
+  const seeds: string[] = []
+  for (const { schema, table, seed: curated } of tables) {
+    const pk = schema.idField ?? schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
+    const cols = schema.fields.map((f) => `"${f.field}" ${PG_COL_TYPE[f.type] ?? 'text'}${f.primaryKey || f.field === pk ? ' primary key' : ''}`).join(', ')
+    ddls.push(`CREATE TABLE IF NOT EXISTS "${table}" (${cols});`)
+    // Prefer rows imported/curated on the source (e.g. a CSV import), else the generator.
+    const rows = curated ?? seed.get(schema.name) ?? []
+    seeds.push(`  await _pgSeed(${JSON.stringify(table)}, ${JSON.stringify(rows)}, ${JSON.stringify(schema.fields.map((f) => f.field))})`)
+  }
+  return `// Embedded Postgres (PGlite), persisted in the browser (IndexedDB) - a real,
+// persistent database with ZERO backend setup. To go to production, bind these
+// entities to a hosted SQL source (same schema) instead.
+const pg = new PGlite('idb://svgrid-studio')
+const pgReady = (async () => {
+  await pg.exec(\`
+    ${ddls.join('\n    ')}
+  \`)
+${seeds.join('\n')}
+})()
+async function _pgSeed(table: string, rows: Record<string, unknown>[], cols: string[]): Promise<void> {
+  if (!rows.length) return
+  const existing = await pg.query(\`select count(*)::int as n from "\${table}"\`)
+  if (((existing.rows[0] as { n?: number } | undefined)?.n ?? 0) > 0) return // already seeded
+  for (const row of rows) {
+    await pg.query(
+      \`insert into "\${table}" (\${cols.map((c) => '"' + c + '"').join(', ')}) values (\${cols.map((_, i) => '$' + (i + 1)).join(', ')})\`,
+      cols.map((c) => { const v = row[c]; return v != null && typeof v === 'object' ? JSON.stringify(v) : (v ?? null) }),
+    )
+  }
+}
+`
 }
 
 function dataModule(
@@ -356,6 +401,15 @@ function dataModule(
           needs.supabase = true
           if (src.url && src.key && !needs.supabaseUrl) { needs.supabaseUrl = src.url; needs.supabaseKey = src.key }
           return `const ${store} = createSupabaseDataSource<${T}>({ client: supabaseClient, table: ${sq(src.table)}, schema: ${sv} })`
+        case 'pglite': {
+          // Embedded Postgres (PGlite) in the browser - real SQL, persisted to
+          // IndexedDB, zero backend setup. Shares one `pg` client + `pgReady`.
+          entImports.add('createSqlDataSource')
+          needs.pglite = true
+          needs.pgliteTables ??= []
+          needs.pgliteTables.push({ schema: e.schema, table: src.table, seed: src.seed })
+          return `const ${store} = createSqlDataSource<${T}>({ schema: ${sv}, table: ${sq(src.table)}, dialect: { placeholders: '$', ilike: true }, execute: async (text, params) => { await pgReady; return (await pg.query(text, params)).rows as Record<string, unknown>[] } })`
+        }
         default: {
           entImports.add('createInMemoryDataSource')
           // Prefer curated seed on the source (a sample app), else the realistic generator.
@@ -390,19 +444,21 @@ function dataModule(
     .join('\n')
 
   const connImportLine = needs.supabase ? `\nimport { supabaseClient } from './connections'` : ''
+  const pgliteImportLine = needs.pglite ? `\nimport { PGlite } from '@electric-sql/pglite'` : ''
+  const pgliteBoot = needs.pglite ? pgliteBootstrap(needs.pgliteTables!, seed) + '\n' : ''
 
   const file: GeneratedFile = {
     path: 'src/lib/data.ts',
-    description: 'Data sources per entity (in-memory / REST / SQL / Supabase) + a searchable lookup per relation.',
+    description: 'Data sources per entity (in-memory / REST / SQL / Supabase / PGlite) + a searchable lookup per relation.',
     contents: `/**
  * Data sources. Each entity binds to its own backend - in-memory (seeded), a
- * REST endpoint, a SQL table, or Supabase. In-memory entities run with no setup;
- * SQL / Supabase entities read their connection from \`./connections\`.
+ * REST endpoint, a SQL table, Supabase, or embedded Postgres (PGlite). In-memory
+ * + PGlite run with no setup; SQL / Supabase read their connection from \`./connections\`.
  */
 import { ${[...entImports].join(', ')} } from '@svgrid/enterprise'
-import { ${schemaImports}, ${typeImports} } from './schemas'${connImportLine}
+import { ${schemaImports}, ${typeImports} } from './schemas'${connImportLine}${pgliteImportLine}
 
-${stores}
+${pgliteBoot}${stores}
 ${lookups.length ? `\n// Searchable pickers for relation (foreign-key) fields.\n${lookups.join('\n')}\n` : ''}
 // Grids show the related label (not the raw id) via withRelationLabels.
 ${sourceLines}
@@ -495,31 +551,75 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
     ? `{#if !item.id || canScreen($currentRole, item.id)}${anchor}{/if}`
     : anchor
   const localeSwitcher = opts.i18n
-    ? `\n    <select class="sv-app__locale" aria-label="Language" onchange={(e) => currentLocale.set(e.currentTarget.value as typeof $currentLocale)}>
-      {#each locales as loc (loc)}<option value={loc} selected={loc === $currentLocale}>{loc}</option>{/each}
-    </select>`
+    ? `\n      <select class="sv-app__locale" aria-label="Language" onchange={(e) => currentLocale.set(e.currentTarget.value as typeof $currentLocale)}>
+        {#each locales as loc (loc)}<option value={loc} selected={loc === $currentLocale}>{loc}</option>{/each}
+      </select>`
     : ''
-  const linksMarkup = `<nav class="sv-app__links">
+  // Clicking any nav link closes the mobile drawer.
+  const linksMarkup = `<nav class="sv-app__links" onclick={() => (navOpen = false)}>
       {#each nav as item (item.href)}
         ${linkGate}
       {/each}
     </nav>${localeSwitcher}`
-  const footMarkup = footer ? `\n    <span class="sv-app__foot">{footer}</span>` : ''
+  const footMarkup = footer ? `\n      <span class="sv-app__foot">{footer}</span>` : ''
   const footConst = footer ? `\n  const footer = ${JSON.stringify(footer)}` : ''
+  // Sidebar-only: a collapsible sidebar that docks on wide screens and becomes an
+  // off-canvas drawer when collapsed or on tablet/phone (<= 1024px). The collapse
+  // choice persists; tablet/phone start collapsed.
+  const sideState = style === 'top-nav' ? '' : `
+  let collapsed = $state(false)
+  let narrow = $state(false)
+  const drawer = $derived(collapsed || narrow)
+  function toggleNav() { collapsed = !collapsed; try { localStorage.setItem('svapp:nav', collapsed ? 'c' : 'e') } catch (_) { /* storage blocked */ } }
+  $effect(() => {
+    // Tablet / phone (<= 1024px) collapse to a drawer by default.
+    const mq = window.matchMedia('(max-width: 1024px)')
+    const sync = () => (narrow = mq.matches)
+    sync()
+    try { const s = localStorage.getItem('svapp:nav'); if (s) collapsed = s === 'c' } catch (_) { /* storage blocked */ }
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  })`
+
+  // Brand: a company logo image (data URL / URL) when set, else the app name.
+  const logoConst = shell.logo ? `\n  const logo = ${JSON.stringify(shell.logo)}` : ''
+  const brandInner = shell.logo
+    ? `<img class="sv-app__logo" src={logo} alt={brand} />`
+    : `<span class="sv-app__brandtext">{brand}</span>`
+  const brandLink = `<a class="sv-app__brand" href="/">${brandInner}</a>`
+  // Collapsed bar (tablet / phone, or a collapsed desktop sidebar): a hamburger +
+  // brand. The nav slides in as an off-canvas drawer. On desktop the "dock" button
+  // pins the sidebar back open.
+  const mobileBar = `<header class="sv-app__mobilebar">
+    <button type="button" class="sv-app__burger" aria-label="Toggle navigation" aria-expanded={navOpen} onclick={() => (navOpen = !navOpen)}>
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    ${brandLink}
+    {#if !narrow}<button type="button" class="sv-app__dock" aria-label="Dock sidebar" title="Dock sidebar" onclick={toggleNav}>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>{/if}
+  </header>
+  {#if navOpen}<button type="button" class="sv-app__backdrop" aria-label="Close navigation" onclick={() => (navOpen = false)}></button>{/if}`
 
   const body = style === 'top-nav'
     ? `<div class="sv-app sv-app--top">
   <header class="sv-app__bar">
-    <a class="sv-app__brand" href="/">{brand}</a>
+    ${brandLink}
     ${linksMarkup}
   </header>
   <main class="sv-app__main">
     {@render children()}
   </main>${footer ? `\n  <footer class="sv-app__footbar">{footer}</footer>` : ''}
 </div>`
-    : `<div class="sv-app sv-app--side${right ? ' sv-app--right' : ''}">
+    : `<div class="sv-app sv-app--side${right ? ' sv-app--right' : ''}" class:is-drawer={drawer} class:is-navopen={navOpen}>
+  ${mobileBar}
   <aside class="sv-app__side">
-    <a class="sv-app__brand" href="/">{brand}</a>
+    <div class="sv-app__sidehead">
+      ${brandLink}
+      <button type="button" class="sv-app__collapse" aria-label="Collapse sidebar" title="Collapse sidebar" onclick={toggleNav}>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+    </div>
     ${linksMarkup}${footMarkup}
   </aside>
   <main class="sv-app__main">
@@ -531,13 +631,39 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
     ? `  .sv-app--top { display: flex; flex-direction: column; min-height: 100vh; }
   .sv-app__bar { display: flex; align-items: center; gap: 20px; padding: 12px 22px; border-bottom: 1px solid color-mix(in srgb, var(--sg-fg, #0f172a) 16%, var(--sg-border, #e6e8ec)); background: var(--sg-header-bg, #f8fafc); }
   .sv-app__links { display: flex; flex-direction: row; gap: 4px; flex-wrap: wrap; }
-  .sv-app__footbar { padding: 12px 22px; border-top: 1px solid var(--sg-border, #e6e8ec); color: var(--sg-muted, #94a3b8); font-size: 13px; }`
+  .sv-app__footbar { padding: 12px 22px; border-top: 1px solid var(--sg-border, #e6e8ec); color: var(--sg-muted, #94a3b8); font-size: 13px; }
+  /* Mobile: the bar stacks and its links scroll horizontally. */
+  @media (max-width: 640px) {
+    .sv-app__bar { flex-direction: column; align-items: stretch; gap: 10px; padding: 10px 14px; }
+    .sv-app__links { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+    .sv-app__link { white-space: nowrap; }
+  }`
     : `  .sv-app--side { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
   .sv-app--side.sv-app--right { grid-template-columns: minmax(0, 1fr) 240px; }
   .sv-app--right .sv-app__side { order: 2; border-right: 0; border-left: 1px solid color-mix(in srgb, var(--sg-fg, #0f172a) 16%, var(--sg-border, #e6e8ec)); }
   .sv-app__side { display: flex; flex-direction: column; gap: 4px; padding: 20px 14px; border-right: 1px solid color-mix(in srgb, var(--sg-fg, #0f172a) 16%, var(--sg-border, #e6e8ec)); background: var(--sg-header-bg, #f8fafc); }
+  .sv-app__sidehead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .sv-app__collapse, .sv-app__dock { display: inline-flex; padding: 5px; border: 0; border-radius: 8px; background: transparent; color: var(--sg-muted, #64748b); cursor: pointer; }
+  .sv-app__collapse:hover, .sv-app__dock:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 8%, transparent); color: var(--sg-fg, #0f172a); }
+  .sv-app__mobilebar { display: none; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid color-mix(in srgb, var(--sg-fg, #0f172a) 16%, var(--sg-border, #e6e8ec)); background: var(--sg-header-bg, #f8fafc); }
+  .sv-app__mobilebar .sv-app__dock { margin-left: auto; }
+  .sv-app__burger { display: inline-flex; padding: 6px; border: 0; border-radius: 8px; background: transparent; color: var(--sg-fg, #0f172a); cursor: pointer; }
+  .sv-app__backdrop { position: fixed; inset: 0; z-index: 55; border: 0; background: rgba(15, 23, 42, 0.4); cursor: pointer; }
   .sv-app__links { display: flex; flex-direction: column; gap: 2px; }
-  .sv-app__foot { margin-top: auto; padding-top: 14px; color: var(--sg-muted, #94a3b8); font-size: 12px; }`
+  .sv-app__foot { margin-top: auto; padding-top: 14px; color: var(--sg-muted, #94a3b8); font-size: 12px; }
+  /* Drawer mode: tablet / phone (<= 1024px) or a user-collapsed desktop sidebar.
+     Driven by the .is-drawer class (JS matchMedia + the collapse toggle), so the
+     sidebar docks on wide screens and slides in as an off-canvas drawer otherwise. */
+  .sv-app--side.is-drawer, .sv-app--side.is-drawer.sv-app--right { display: block; }
+  .sv-app--side.is-drawer .sv-app__mobilebar { display: flex; }
+  .sv-app--side.is-drawer .sv-app__side {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: 264px; max-width: 82vw;
+    transform: translateX(-100%); transition: transform 0.24s ease; box-shadow: 0 0 40px rgba(15, 23, 42, 0.28);
+  }
+  .sv-app--side.is-drawer.sv-app--right .sv-app__side { left: auto; right: 0; transform: translateX(100%); border-left: 0; }
+  .sv-app--side.is-drawer.is-navopen .sv-app__side { transform: translateX(0); }
+  .sv-app--side.is-drawer .sv-app__sidehead .sv-app__brand { display: none; } /* brand already in the top bar */
+  .sv-app--side.is-drawer .sv-app__collapse { display: none; } /* dock lives in the top bar when drawered */`
 
   return {
     path: 'src/routes/+layout.svelte',
@@ -548,7 +674,10 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
 
   let { children } = $props()
   const nav = ${JSON.stringify(links)}
-  const brand = ${JSON.stringify(brand)}${footConst}
+  const brand = ${JSON.stringify(brand)}${footConst}${logoConst}
+  let navOpen = $state(false)
+  // Close the mobile drawer whenever the route changes.
+  $effect(() => { void $page.url.pathname; navOpen = false })${sideState}
 </script>
 ${themeHead}
 
@@ -556,12 +685,19 @@ ${body}
 
 <style>
 ${styles}
-  .sv-app__brand { font-weight: 700; font-size: 15px; color: var(--sg-fg, #0f172a); text-decoration: none; padding: 4px 8px; }
+  .sv-app__brand { display: inline-flex; align-items: center; font-weight: 700; font-size: 15px; color: var(--sg-fg, #0f172a); text-decoration: none; padding: 4px 8px; }
+  .sv-app__logo { max-height: 34px; max-width: 160px; width: auto; object-fit: contain; display: block; }
   .sv-app__link { padding: 7px 10px; border-radius: 8px; color: var(--sg-fg, #334155); text-decoration: none; font-size: 14px; }
   .sv-app__link:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent); }
   .sv-app__link.is-active { background: color-mix(in srgb, var(--sg-accent, #4f46e5) 14%, transparent); color: var(--sg-accent, #4f46e5); font-weight: 600; }
   .sv-app__main { padding: 24px 28px; min-width: 0; }
   .sv-app__locale { margin-top: 10px; padding: 5px 8px; font: inherit; font-size: 12.5px; color: var(--sg-fg, #0f172a); background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 8px; }
+  /* Mobile bar + drawer chrome (hidden on desktop; media queries above switch it on) */
+  .sv-app__mobilebar { display: none; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--sg-border, #e6e8ec); background: var(--sg-header-bg, #f8fafc); position: sticky; top: 0; z-index: 50; }
+  .sv-app__burger { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 9px; background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); cursor: pointer; }
+  .sv-app__backdrop { position: fixed; inset: 0; z-index: 55; border: 0; padding: 0; background: rgba(15, 23, 42, 0.42); cursor: pointer; }
+  @media (max-width: 860px) { .sv-app__main { padding: 18px 16px; } }
+  @media (max-width: 640px) { .sv-app__main { padding: 14px 12px; } }
 </style>
 `,
   }

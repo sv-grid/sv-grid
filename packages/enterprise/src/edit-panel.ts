@@ -62,6 +62,46 @@ function emptyFor(field: FormFieldDescriptor): unknown {
   return field.type === 'boolean' ? false : ''
 }
 
+// --- Editor value coercion --------------------------------------------------
+// Pure conversions between the form's stored value and the shape each rich
+// editor's `value` / `onChange` expects. Kept here (not inline in the .svelte)
+// so the tricky bits - local date formatting, number <-> '' , tag arrays - are
+// unit-testable without a DOM.
+
+const _p2 = (n: number) => String(n).padStart(2, '0')
+
+/** A `Date` -> a **local** `yyyy-MM-dd` string (matches the native date input; no UTC shift). */
+export function toDateString(d: Date | null | undefined): string {
+  return d ? `${d.getFullYear()}-${_p2(d.getMonth() + 1)}-${_p2(d.getDate())}` : ''
+}
+
+/** A `Date` -> a **local** `yyyy-MM-ddTHH:mm` string (matches `datetime-local`; no UTC shift). */
+export function toDateTimeString(d: Date | null | undefined): string {
+  return d ? `${toDateString(d)}T${_p2(d.getHours())}:${_p2(d.getMinutes())}` : ''
+}
+
+/** Stored value -> `SvNumberInput.value` (number | null); non-numbers become null. */
+export function toNumberValue(raw: unknown): number | null {
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : null
+}
+
+/** `SvNumberInput.onChange` payload -> stored value; null becomes '' (the empty convention). */
+export function fromNumberValue(v: number | null): number | '' {
+  return v == null ? '' : v
+}
+
+/** Stored value -> `SvSlider.value`; falls back to `min` when unset. */
+export function toSliderValue(raw: unknown, min: number): number {
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : min
+}
+
+/** Stored value -> `SvTagsInput.value` (string[]); splits a comma string, else wraps. */
+export function toTags(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.map((t) => String(t))
+  if (raw == null || raw === '') return []
+  return String(raw).split(',').map((s) => s.trim()).filter(Boolean)
+}
+
 function isEmpty(value: unknown): boolean {
   return value == null || value === ''
 }

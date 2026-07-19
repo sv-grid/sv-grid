@@ -163,6 +163,38 @@ npx @svgrid/studio add todos --db sqlite --url ./data.db
 `--url` is the database file path. The generated route opens it with
 `better-sqlite3` (synchronous, no pool).
 
+## Turso (libSQL)
+
+[Turso](https://turso.tech) is hosted SQLite (libSQL) over HTTP - it runs on
+serverless and edge where a socket driver can't. The generated route uses the
+`@libsql/client` and reads two env vars:
+
+```bash
+DATABASE_URL="libsql://<db>-<org>.turso.io"
+DATABASE_AUTH_TOKEN="<your-db-token>"
+```
+
+```ts
+import { createClient } from '@libsql/client'
+const client = createClient({ url: env.DATABASE_URL ?? '', authToken: env.DATABASE_AUTH_TOKEN })
+// createSqlDataSource execute:
+execute: async (text, params) => (await client.execute({ sql: text, args: params })).rows,
+```
+
+## One-click hosted database (from the designer)
+
+Don't have a database yet? The designer's **Get a database** button provisions one
+without leaving the flow: pick **Neon** (serverless Postgres), **Supabase**
+(Postgres + auth), or **Turso** (edge SQLite). It opens the provider's one-click
+"create a free database" page and **binds every entity to the right dialect**, so
+**Generate app** emits a connected `/api` route per entity. Paste the connection
+string into `.env` - the bundle ships a **`.env.example`** listing exactly which
+vars each dialect needs (`DATABASE_URL`, plus `DATABASE_AUTH_TOKEN` for Turso).
+
+Prefer zero setup? Bind to the **[Local database](./local-database.md)** (PGlite) -
+a real, persistent Postgres in the browser with no account and no connection
+string, and switch to a hosted one later without touching the schema.
+
 ---
 
 ## Postgres in the browser (PGlite)
@@ -220,7 +252,8 @@ This lists the base tables and generates a screen (and route) for each.
 
 | Symptom | Cause and fix |
 | --- | --- |
-| **`Cannot find module 'pg'`** (or `mysql2` / `mssql` / `better-sqlite3`) | No driver is bundled - install the one for your dialect (see the table above). |
+| **`Cannot find module 'pg'`** (or `mysql2` / `mssql` / `better-sqlite3` / `@libsql/client`) | No driver is bundled - install the one for your dialect (see the table above). |
+| **Turso: `The authenticated user is not authorized`** | `DATABASE_AUTH_TOKEN` is missing or expired - mint a fresh DB token and set both it and the `libsql://` `DATABASE_URL` in the server env. |
 | **Grid empty, server logs a connection error** | `DATABASE_URL` is not set in the **server** environment (not client code, not `PUBLIC_`). Set it in your host's env. |
 | **Numbers arrive as strings** | Postgres `numeric` comes back as text over some drivers. Use `integer` / `bigint` for numeric columns, or cast in a view. |
 | **Works locally, times out on Vercel / Netlify** | Serverless functions exhaust direct connections. Use a **pooler** URL (Supabase port `6543`, PgBouncer) and keep the pool small - see [Deployment](./deployment.md#connection-pooling). |

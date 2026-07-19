@@ -27,17 +27,49 @@ const managed = (body: string) => `${MANAGED_START}\n${MANAGED_NOTE}\n${body}\n$
 function layoutFile(nav: NavItem[], appTitle: string): GeneratedFile {
   return {
     path: 'src/routes/+layout.svelte',
-    description: 'App shell: a nav sidebar linking every entity screen, with the routed page in the main area.',
+    description: 'App shell: a collapsible nav sidebar linking every entity screen (an off-canvas drawer on tablet/phone), with the routed page in the main area.',
     contents: `<script lang="ts">
 ${managed(`  let { children } = $props()
   const appTitle = ${JSON.stringify(appTitle)}
-  const nav = ${JSON.stringify(nav)}`)}
+  const nav = ${JSON.stringify(nav)}
+
+  // The sidebar collapses to an off-canvas drawer either on user request or on
+  // tablet / phone (<= 1024px), where it also starts collapsed. The desktop
+  // collapse choice persists across visits.
+  let navOpen = $state(false)
+  let collapsed = $state(false)
+  let narrow = $state(false)
+  const drawer = $derived(collapsed || narrow)
+  function toggleNav() { collapsed = !collapsed; try { localStorage.setItem('svapp:nav', collapsed ? 'c' : 'e') } catch (_) { /* storage blocked */ } }
+  $effect(() => {
+    const mq = window.matchMedia('(max-width: 1024px)')
+    const sync = () => (narrow = mq.matches)
+    sync()
+    try { const s = localStorage.getItem('svapp:nav'); if (s) collapsed = s === 'c' } catch (_) { /* storage blocked */ }
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  })`)}
 </script>
 
-<div class="app-shell">
-  <aside class="app-shell__nav">
+<div class="app-shell" class:is-drawer={drawer} class:is-navopen={navOpen}>
+  <header class="app-shell__mobilebar">
+    <button type="button" class="app-shell__burger" aria-label="Toggle navigation" aria-expanded={navOpen} onclick={() => (navOpen = !navOpen)}>
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
     <a class="app-shell__brand" href="/">{appTitle}</a>
-    <nav>
+    {#if !narrow}<button type="button" class="app-shell__dock" aria-label="Dock sidebar" title="Dock sidebar" onclick={toggleNav}>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>{/if}
+  </header>
+  {#if navOpen}<button type="button" class="app-shell__backdrop" aria-label="Close navigation" onclick={() => (navOpen = false)}></button>{/if}
+  <aside class="app-shell__nav">
+    <div class="app-shell__navhead">
+      <a class="app-shell__brand" href="/">{appTitle}</a>
+      <button type="button" class="app-shell__collapse" aria-label="Collapse sidebar" title="Collapse sidebar" onclick={toggleNav}>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+    </div>
+    <nav onclick={() => (navOpen = false)}>
       {#each nav as item (item.href)}
         <a class="app-shell__link" href={item.href}>{item.label}</a>
       {/each}
@@ -51,10 +83,30 @@ ${managed(`  let { children } = $props()
 <style>
   .app-shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
   .app-shell__nav { display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; border-right: 1px solid #e5e7eb; background: #f8fafc; }
+  .app-shell__navhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .app-shell__brand { font-weight: 700; font-size: 16px; padding: 6px 10px 12px; color: inherit; text-decoration: none; }
+  .app-shell__navhead .app-shell__brand { padding-bottom: 6px; }
+  .app-shell__collapse, .app-shell__dock, .app-shell__burger { display: inline-flex; align-items: center; justify-content: center; padding: 6px; border: 0; border-radius: 8px; background: transparent; color: #64748b; cursor: pointer; }
+  .app-shell__collapse:hover, .app-shell__dock:hover, .app-shell__burger:hover { background: #e2e8f0; color: #0f172a; }
   .app-shell__link { padding: 8px 10px; border-radius: 6px; color: #334155; text-decoration: none; }
   .app-shell__link:hover { background: #e2e8f0; }
+  .app-shell nav { display: flex; flex-direction: column; gap: 4px; }
   .app-shell__main { padding: 20px 24px; min-width: 0; }
+  .app-shell__mobilebar { display: none; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #e5e7eb; background: #f8fafc; position: sticky; top: 0; z-index: 50; }
+  .app-shell__mobilebar .app-shell__dock { margin-left: auto; }
+  .app-shell__backdrop { display: none; position: fixed; inset: 0; z-index: 55; border: 0; padding: 0; background: rgba(15, 23, 42, 0.42); cursor: pointer; }
+  /* Drawer mode: tablet / phone (<= 1024px) or a user-collapsed desktop sidebar.
+     The sidebar becomes a fixed off-canvas panel that slides in when opened. */
+  .app-shell.is-drawer { display: block; }
+  .app-shell.is-drawer .app-shell__mobilebar { display: flex; }
+  .app-shell.is-drawer .app-shell__backdrop { display: block; }
+  .app-shell.is-drawer .app-shell__nav {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: 264px; max-width: 82vw;
+    transform: translateX(-100%); transition: transform 0.24s ease; box-shadow: 0 0 40px rgba(15, 23, 42, 0.28);
+  }
+  .app-shell.is-drawer.is-navopen .app-shell__nav { transform: translateX(0); }
+  .app-shell.is-drawer .app-shell__navhead .app-shell__brand { display: none; } /* brand already in the top bar */
+  .app-shell.is-drawer .app-shell__collapse { display: none; } /* dock lives in the top bar when drawered */
 </style>
 `,
   }

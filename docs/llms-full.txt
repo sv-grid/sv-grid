@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-07-16 from 254 pages.
+Generated 2026-07-18 from 257 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -2062,11 +2062,12 @@ screen / block counts, current selection, data source).
   sets the **default source kind** for new entities, the **app layout**, and adds
   screens from a **template** (CRUD, dashboard, master-detail, empty).
 - **Top bar** - rename the app, set an **accent color** (themes the whole app),
-  add a **New entity** from scratch, **Connect DB** (the launcher's live-database
-  wizard - see [Launch the designer](./launch.md)), **Import schema** (paste a
-  Drizzle / Prisma schema to add its entities), **Save / Load** the design as
-  `studio.config.json`, and **Generate app**. With no entities yet, the canvas
-  shows an **onboarding** screen offering the same three ways to start.
+  add a **New entity** from scratch, **Import CSV** (drop in a spreadsheet - see
+  below), **Connect DB** (the launcher's live-database wizard - see
+  [Launch the designer](./launch.md)), **Import schema** (paste a Drizzle / Prisma
+  schema to add its entities), **Save / Load** the design as `studio.config.json`,
+  and **Generate app**. With no entities yet, the canvas shows an **onboarding**
+  screen offering the same ways to start.
 - **✨ Copilot** (when the host wires it) - describe a change in plain English
   ("add an orders screen with a revenue chart", "make mrr required") and the AI
   edits your project. It's a host hook: `<SvStudioDesigner onCopilot={...} />`
@@ -2116,6 +2117,9 @@ views, not generic widgets:
 | **Pivot** | A full pivot table (`SvPivotDesigner`) the end user can re-pivot live. | Row + column dimensions (checkboxes), a measure, and its aggregate. |
 | **Dashboard** | A schema-driven KPI + chart board (`SvSchemaDashboard`). | - |
 | **KPI** | A single reduced metric tile. | Label, measure, reduce. |
+| **Gauge** | A radial gauge (`SvGauge`) of one reduced measure within a range - utilization, progress, scores. | Label, measure, reduce, min / max, unit. |
+| **Tree** | A hierarchical tree (`SvTree`) built from the entity's own rows via a self-referential parent. | A label field + a parent field (a row's link to its parent row). |
+| **Tabs** | A tabbed container (`SvTabs`) that **groups display blocks** into tabs - e.g. an Overview tab of KPIs + a Details tab with a chart. | Add / rename / remove tabs; per tab, add child blocks (charts, KPIs, gauges, pivots, trees). |
 | **Master / detail** | A row that expands into a nested grid of related records. | Child entity + foreign key. |
 | **Filter panel** | A faceted sidebar that **filters the screen's grid** - enum / boolean facets pick a value, text facets search. | Title + which fields become facets. |
 | **Record panel** | Shows the row **selected in the grid** - a read-only field list, or an inline edit form. | Editable on / off, and (read-only) which fields to show. |
@@ -2154,6 +2158,10 @@ data source per app. In the inspector (no block selected), the **Data source**
 section binds the screen's entity to:
 
 - **In-memory** - seeded sample rows, runs with no backend (the default).
+- **Local database (no setup)** - a real, persistent Postgres ([PGlite](https://pglite.dev))
+  running in the browser and saved to IndexedDB, so rows survive reloads with zero
+  backend. Same SQL as production - swap to a hosted **SQL** source later without
+  touching the schema. See [Local database](./local-database.md).
 - **REST API** - a spacious request builder (Open request builder): **method**,
   **base URL**, **path** (path params auto-derive from `{tokens}`), and **Query /
   Path / Header** tabs. **Send** runs it live and shows a **response table** plus
@@ -2179,15 +2187,35 @@ a generated `src/lib/connections.ts` - the one manual step is wiring a real
 `SqlExecutor` / Supabase client there (you can't ship DB credentials to the
 browser). See [Databases](./databases.md) and [REST API](./rest-api.md).
 
+## Import a CSV / spreadsheet
+
+The fastest way to start from **your own data**: **Import CSV** in the top bar
+takes a `.csv` file and turns it into a running screen. The designer parses the
+file (quoted fields, embedded newlines, and CRLF included), **infers a type per
+column** from its values (number, boolean, date, or text - thousands separators
+and `yes/no/true/false` are understood), ensures a **primary key** (it reuses an
+`id` column or synthesizes one), and adds an entity with a full CRUD screen,
+**seeded with the real rows**. Unsafe headers (`First Name`, `E-mail`) become safe
+field keys and the note tells you what was renamed.
+
+Imported rows ship **in-memory** by default (no dependencies), so the app runs
+immediately. Switch that entity's **Data source** to **Local database** to make
+the same imported rows **persist** across reloads - the seed carries over. This is
+all client-side: `csvToEntity(name, text)` is a pure function exported from
+`@svgrid/enterprise`, so the same import works in the CLI and your own tools.
+
 ## Pages and layout
 
 - **Pages** - each screen is a route. In the inspector's **Page** section, toggle
   **Show in navigation**, set a **nav label** and **nav order**, or start a page
   from the **Empty** template. Hidden pages stay routable but drop out of the nav.
 - **App layout** - the rail's **App layout** section themes the generated shell:
-  **Sidebar** or **Top navigation**, a **brand** name, a **footer**, and (for the
-  sidebar) the **nav position** (left / right). This drives the generated
-  `src/routes/+layout.svelte`.
+  **Sidebar** or **Top navigation**, a **brand** name, a **company logo**
+  (uploaded - stored inline and shown in the nav in place of the brand text), a
+  **footer**, and (for the sidebar) the **nav position** (left / right). This
+  drives the generated `src/routes/+layout.svelte`. The generated shell is
+  **responsive**: on phones the sidebar collapses to a hamburger drawer, the
+  top-nav links scroll, and each screen's block grid stacks to one column.
 
 ## Save, regenerate, round-trip
 
@@ -2207,6 +2235,15 @@ const json = serializeProject(project)      // save the design
 const project2 = parseProject(json)         // reopen it
 const files = emitStudioProject(project2)   // -> the app's source files
 ```
+
+**The exported app carries its own design.** The downloaded zip includes a
+`studio.config.json` at its root. To keep editing the app visually after you've
+worked on it locally, open the designer and **Load** that file - entities,
+screens, blocks, theme, RBAC, i18n, and now the logo all come back exactly as
+generated. Because the designer regenerates the files under `src/`, keep any
+hand-written code in **new** files/modules you import, so a re-generate never
+overwrites it (or use the CLI's `svgrid:managed` markers - see
+[Code generation](./code-generation.md)).
 
 ## Generate the app
 
@@ -3119,6 +3156,7 @@ Wire it to the grid's native server-mode UI and you are done:
 
 | Option | Guide |
 | --- | --- |
+| A real, persistent database with **zero setup** (embedded Postgres) | [Local database](./local-database.md) |
 | SQL databases (Postgres, Supabase, MySQL, SQL Server, SQLite) | [Databases](./databases.md) |
 | A Drizzle `schema.ts` file | [Drizzle schema](./drizzle.md) |
 | An existing REST API, or any custom backend | [REST & custom APIs](./rest-api.md) |
@@ -3303,6 +3341,38 @@ npx @svgrid/studio add todos --db sqlite --url ./data.db
 `--url` is the database file path. The generated route opens it with
 `better-sqlite3` (synchronous, no pool).
 
+## Turso (libSQL)
+
+[Turso](https://turso.tech) is hosted SQLite (libSQL) over HTTP - it runs on
+serverless and edge where a socket driver can't. The generated route uses the
+`@libsql/client` and reads two env vars:
+
+```bash
+DATABASE_URL="libsql://<db>-<org>.turso.io"
+DATABASE_AUTH_TOKEN="<your-db-token>"
+```
+
+```ts
+import { createClient } from '@libsql/client'
+const client = createClient({ url: env.DATABASE_URL ?? '', authToken: env.DATABASE_AUTH_TOKEN })
+// createSqlDataSource execute:
+execute: async (text, params) => (await client.execute({ sql: text, args: params })).rows,
+```
+
+## One-click hosted database (from the designer)
+
+Don't have a database yet? The designer's **Get a database** button provisions one
+without leaving the flow: pick **Neon** (serverless Postgres), **Supabase**
+(Postgres + auth), or **Turso** (edge SQLite). It opens the provider's one-click
+"create a free database" page and **binds every entity to the right dialect**, so
+**Generate app** emits a connected `/api` route per entity. Paste the connection
+string into `.env` - the bundle ships a **`.env.example`** listing exactly which
+vars each dialect needs (`DATABASE_URL`, plus `DATABASE_AUTH_TOKEN` for Turso).
+
+Prefer zero setup? Bind to the **[Local database](./local-database.md)** (PGlite) -
+a real, persistent Postgres in the browser with no account and no connection
+string, and switch to a hosted one later without touching the schema.
+
 ---
 
 ## Postgres in the browser (PGlite)
@@ -3360,7 +3430,8 @@ This lists the base tables and generates a screen (and route) for each.
 
 | Symptom | Cause and fix |
 | --- | --- |
-| **`Cannot find module 'pg'`** (or `mysql2` / `mssql` / `better-sqlite3`) | No driver is bundled - install the one for your dialect (see the table above). |
+| **`Cannot find module 'pg'`** (or `mysql2` / `mssql` / `better-sqlite3` / `@libsql/client`) | No driver is bundled - install the one for your dialect (see the table above). |
+| **Turso: `The authenticated user is not authorized`** | `DATABASE_AUTH_TOKEN` is missing or expired - mint a fresh DB token and set both it and the `libsql://` `DATABASE_URL` in the server env. |
 | **Grid empty, server logs a connection error** | `DATABASE_URL` is not set in the **server** environment (not client code, not `PUBLIC_`). Set it in your host's env. |
 | **Numbers arrive as strings** | Postgres `numeric` comes back as text over some drivers. Use `integer` / `bigint` for numeric columns, or cast in a view. |
 | **Works locally, times out on Vercel / Netlify** | Serverless functions exhaust direct connections. Use a **pooler** URL (Supabase port `6543`, PgBouncer) and keep the pool small - see [Deployment](./deployment.md#connection-pooling). |
@@ -3416,12 +3487,34 @@ Fly / a container), not in the repo:
 DATABASE_URL="postgres://user:pass@host:5432/app"
 ```
 
+## One-click deploy (from the designer)
+
+The visual designer has a **Deploy** button (and a **Deploy target** picker in the
+panel). Choose **Vercel**, **Netlify**, **Cloudflare Pages**, **Node**, or
+**Auto-detect**, and **Generate app** bundles the matching SvelteKit adapter and
+provider config for you - the download deploys with no hand-editing:
+
+| Target | Adapter emitted | Extra config | One-liner |
+| --- | --- | --- | --- |
+| Auto-detect (default) | `@sveltejs/adapter-auto` | none | `npx vercel --prod` |
+| Vercel | `@sveltejs/adapter-vercel` | none | `npx vercel --prod` |
+| Netlify | `@sveltejs/adapter-netlify` | `netlify.toml` | `npx netlify deploy --build --prod` |
+| Cloudflare Pages | `@sveltejs/adapter-cloudflare` | `wrangler.toml` | `npm run build && npx wrangler pages deploy .svelte-kit/cloudflare` |
+| Node server | `@sveltejs/adapter-node` | none | `npm run build && node build` |
+
+The Deploy panel shows the copy-paste CLI command and a link to the provider's
+**import-from-Git** page; the generated `README.md` carries the same steps. Apps
+whose entities all use **Local database** (PGlite) or **In-memory** need no server
+environment at all - push and deploy. SQL / Supabase entities still need their
+connection set in the host's environment variables (below).
+
 ## Adapters
 
 The API routes are standard SvelteKit endpoints, so any adapter works -
 `adapter-node`, `adapter-vercel`, `adapter-netlify`, `adapter-cloudflare`
 (with a Workers-compatible database driver), etc. No Studio-specific
-configuration is required.
+configuration is required. (The designer's **Deploy target** wires the adapter
+below for you; pick a target and re-generate to switch.)
 
 | Host | Adapter | Notes |
 | --- | --- | --- |
@@ -3822,9 +3915,30 @@ validator only when you need custom logic.
 
 ## Controls
 
-The form control follows the field type: text / number / date / datetime / time
-inputs, a checkbox for booleans, a themed **dropdown** (`SvGridDropdown`) for
-enums, and a textarea for JSON. Override per field with `input.editorType`.
+The form renders each field with a control from the **editor suite**, not a bare
+native input: numbers use `SvNumberInput` (spinners, min/max/step), booleans a
+`SvSwitchButton`, colors `SvColorInput`, passwords `SvPasswordInput` (strength
+meter), ratings a `SvSlider`, dates and date-times a `SvDateTimePicker` (masked
+input + calendar dropdown), enums a themed **dropdown** (`SvGridDropdown`), and
+JSON a textarea. The default follows the field type; override per field with
+`input.editorType`.
+
+Beyond the grid's cell editors, the form also offers a few **form-only** controls
+via `input.editorType`: `phone` (`SvPhoneInput`), `country` (`SvCountryInput`),
+`mask` (`SvMaskedInput`, with an `input.mask` pattern like `'(999) 000-0000'`),
+and `slider`. In the [visual designer](./app-designer.md) each field has a
+**Control** picker (scoped to what fits its type) plus a **Wide** toggle
+(`input.span = 2`), so you pick the editor without touching code.
+
+```ts
+{ field: 'mrr',     type: 'number', input: { editorType: 'slider' } }
+{ field: 'brand',   type: 'text',   input: { editorType: 'color' } }
+{ field: 'phone',   type: 'text',   input: { editorType: 'phone' } }
+{ field: 'ssn',     type: 'text',   input: { editorType: 'mask', mask: '999-99-9999' } }
+```
+
+Form-only editors degrade to a safe in-cell editor when the same field shows in a
+grid (`slider` → number, `phone`/`country`/`mask` → text), so columns stay valid.
 
 **File / image upload.** Give a field an `upload` config and it renders
 `SvFileInput` (a picker with an image preview). With no handler it stores an
@@ -4454,6 +4568,108 @@ the one file - design visually, regenerate from CI, or hand it to a teammate.
 - [Visual app designer](./app-designer.md) - the canvas, blocks, and grid property editor
 - [The Studio CLI](./cli.md) - `add` a screen from a schema or a live database
 - [Getting started](./getting-started.md) - the full first-app walkthrough
+
+<!-- =================================================================
+     /enterprise/studio/local-database  (community)
+     ================================================================== -->
+
+# Local database (no setup)
+
+The local database source gives a generated app a **real, persistent Postgres**
+that runs entirely in the browser - no connection string, no keys, no server to
+provision. It is powered by [PGlite](https://pglite.dev), a full WASM build of
+Postgres that stores its data in IndexedDB, so rows survive reloads and the app
+works offline.
+
+Pick it in the designer's **Data source** menu (or per entity, **Bind ... to →
+Local database**) when you want a running, saving app on the first `npm run dev`
+without standing up a database. It is the zero-friction default for demos,
+prototypes, internal tools, and workshops - and because it speaks real SQL
+through [`createSqlDataSource`](./databases.md), moving to hosted Postgres later
+is a one-line source swap with the **same schema**.
+
+## What Studio generates
+
+Choosing **Local database** emits a single shared PGlite client in `src/lib/data.ts`,
+creates a table per entity from its schema, seeds it once with your sample rows,
+and binds every screen through `createSqlDataSource`:
+
+```ts
+// src/lib/data.ts (generated)
+import { PGlite } from '@electric-sql/pglite'
+import { createSqlDataSource } from '@svgrid/enterprise'
+import { customersSchema, type CustomersRow } from './customers.schema'
+
+// One embedded Postgres for the whole app, persisted in IndexedDB.
+const pg = new PGlite('idb://svgrid-studio')
+
+const pgReady = (async () => {
+  await pg.exec(`CREATE TABLE IF NOT EXISTS "customers" (
+    "id" text primary key,
+    "name" text,
+    "email" text,
+    "mrr" double precision,
+    "active" boolean
+  )`)
+  await _pgSeed('customers', customersSeed, ['id', 'name', 'email', 'mrr', 'active'])
+})()
+
+export const customers = createSqlDataSource<CustomersRow>({
+  schema: customersSchema,
+  table: 'customers',
+  dialect: { placeholders: '$', ilike: true },
+  execute: async (text, params) => {
+    await pgReady
+    return (await pg.query(text, params)).rows as Record<string, unknown>[]
+  },
+})
+```
+
+Because PGlite runs client-side, **no `+server.ts` API route is generated** - the
+grid talks to Postgres directly in the browser. Field types map to Postgres
+columns automatically (`number → double precision`, `boolean → boolean`,
+`date → date`, `datetime → timestamptz`, `json → jsonb`, everything else `text`;
+the id field becomes the `primary key`).
+
+## Persistence and reset
+
+Data lives in the browser's IndexedDB under `svgrid-studio`, so it persists
+across reloads and tabs on the same origin. Seeding runs **once** - the app only
+inserts sample rows when a table is empty, so your edits are never overwritten on
+the next load. To start clean, clear the site's IndexedDB (DevTools → Application
+→ Storage) or bump the store name (`new PGlite('idb://svgrid-studio-v2')`).
+
+## Going to production
+
+The local database is real SQL, so promotion is a swap of the `execute` function -
+point it at hosted Postgres (Neon, Supabase, or your own) and keep the schema,
+grid, form, and every screen unchanged:
+
+```ts
+// Same createSqlDataSource, hosted execute:
+execute: async (text, params) => {
+  const res = await sql.query(text, params)   // pg / postgres / Neon serverless
+  return res.rows
+}
+```
+
+See [Databases](./databases.md) for the hosted path (server route,
+`createKitHandlers`, RBAC / validation / audit), and [Supabase](./supabase.md) for
+managed Postgres with auth.
+
+## When to use which
+
+| You want | Source |
+| --- | --- |
+| A running, saving app with **zero setup**, persisted in the browser | **Local database** (this page) |
+| Prototype a schema with data that **resets** on restart | [In-memory](./in-memory.md) |
+| Managed Postgres with auth and realtime | [Supabase](./supabase.md) |
+| Your own Postgres / MySQL / SQL Server / SQLite | [Databases](./databases.md) |
+| An existing REST API or custom backend | [REST & custom APIs](./rest-api.md) |
+
+## See also
+
+- [Data binding](./data-binding.md) · [Databases](./databases.md) · [In-memory](./in-memory.md)
 
 <!-- =================================================================
      /enterprise/studio/master-detail  (community)
@@ -27312,6 +27528,175 @@ h hh mm ss fff tt`), `dropDownDisplayMode` (`both` | `calendar` | `time`),
 Typed text is parsed on blur/Enter and reverts if it doesn't fit the mask; the
 value is clamped to `min` / `max`. Emits `onChange`, plus `onCommit` / `onCancel`
 for grid editing.
+
+<!-- =================================================================
+     /help/ui-components/headless-editors  (community)
+     ================================================================== -->
+
+# Headless editors
+
+Every editor is **headless-first**, exactly like the grid (`createSvGrid` /
+`<SvGrid>`). Each `Sv*` component is a thin styled renderer over a framework-free
+runes core named `create<Editor>`. Import the core to render your own markup with
+the kit's state machine, keyboard handling and ARIA - and none of its styles.
+
+## The pattern
+
+A core is a factory that takes **reactive getters** for its inputs and returns
+reactive state, actions, and **prop-getters** you spread onto your own elements.
+
+```svelte
+<script lang="ts">
+  import { createListbox } from '@svgrid/grid'
+
+  let value = $state<string | null>(null)
+  const options = [
+    { value: 'a', label: 'Apple' },
+    { value: 'b', label: 'Banana' },
+  ]
+
+  // Reactive inputs are getters; callbacks are closures.
+  const lb = createListbox({
+    options: () => options,
+    value: () => value,
+    onChange: (v) => (value = v),
+  })
+</script>
+
+<!-- Your markup, the kit's behavior (roving focus, keyboard, aria-*) -->
+<ul {...lb.rootProps()}>
+  {#each options as opt, i (opt.value)}
+    <li {...lb.optionProps(i)} class:mine-selected={lb.isSelected(opt.value)}>
+      {opt.label}
+    </li>
+  {/each}
+</ul>
+```
+
+`rootProps()` / `optionProps(i)` return attribute + event bundles (including
+`role`, `aria-*`, `tabindex`, and the `onkeydown`/`onclick` handlers). Spread
+them and you get the full WAI-ARIA listbox behavior on your own DOM.
+
+## What lives where
+
+- **The core** owns state, selection/parse/format math, keyboard, and ARIA. It
+  never touches the DOM.
+- **The styled component** owns rendering concerns only: the `--sg-*` styling,
+  portalling/positioning for popovers, scroll-into-view, and DOM measurement.
+
+So `createNumberInput` clamps/formats/steps and exposes `inputProps()`, while
+`<SvNumberInput>` adds the box, spinner buttons and theme; `createCombobox`
+runs the filter + open/active state, while `<SvComboBox>` adds the portalled
+panel. You can always drop to the core when you need a bespoke look.
+
+## Available cores
+
+Selection: `createListbox`, `createCombobox`, `createDropdownList`,
+`createAutocomplete`, `createTagsInput`, `createCountryInput`, `createButtonGroup`.
+Inputs: `createNumberInput`, `createMaskedInput`, `createPhoneInput`,
+`createColorInput`, `createPasswordInput`.
+Buttons/toggles: `createToggle`, `createSwitch`, `createCheckbox`,
+`createRadioGroup`, `createRating`.
+Date/time: `createCalendar`, `createTimePicker`, `createDateTimePicker`.
+Layout/range: `createTabs`, `createTree`, `createSlider`, `createGauge`,
+`createAccordion`, `createSplitter`, `createFileUpload`.
+
+Pure helpers are exported too - `filterOptions`, `groupOptions`,
+`nextTypeaheadIndex`, `virtualRange`/`scrollToIndex` (windowing),
+`moveTreeNode`/`sortTreeNodes`, `rules`/`runRules` (validation),
+`phoneDigitsValid` - so you can build entirely custom controls on the same
+foundation.
+
+## Shared editor contract
+
+The styled editors also share a small props contract (`SvEditorProps`):
+`disabled`, `readonly`, `required`, `invalid`, `error`, `label`, `hint`, `size`,
+`dir`, `name`, `id`, `ariaLabel`. The `editorAria(...)` helper turns that state
+into the right `aria-invalid` / `aria-required` / `aria-describedby` attributes,
+and `<SvField>` renders the label + hint + error chrome - both exported if you
+want them on your own markup.
+
+<!-- =================================================================
+     /help/ui-components/i18n-rtl  (community)
+     ================================================================== -->
+
+# Internationalization & RTL
+
+Every editor in the kit shares one localization + direction contract, so you
+wire it the same way everywhere.
+
+## Direction (`dir`)
+
+Pass `dir="rtl"` (or `"ltr"`, or `"auto"` to inherit the document) to any editor.
+It mirrors the layout **and the behavior**: the switch thumb slides the other
+way, calendar nav arrows flip, tabs/tree/slider/splitter reverse their
+Left/Right arrow keys, and dropdown adornments move to the correct edge.
+
+```svelte
+<SvNumberInput value={qty} dir="rtl" onChange={(v) => (qty = v)} />
+<SvCalendar value={date} dir="rtl" onChange={(d) => (date = d)} />
+<SvSlider value={vol} dir="rtl" onChange={(v) => (vol = v)} />
+```
+
+A page-level `dir` attribute is respected by `dir="auto"` (the default), so most
+apps set `dir` once on `<html>` and never touch it per-component.
+
+## Messages
+
+Every user-facing string (empty-state text, "Now"/"Today", AM/PM, reveal-toggle
+labels, "No matches", clear/search labels, etc.) is overridable via a `messages`
+prop. Only the keys you set are replaced; the rest keep their English defaults.
+
+```svelte
+<SvComboBox options={options} value={value}
+  messages={{ noResults: 'Aucun resultat', loading: 'Chargement...' }} />
+
+<SvPasswordInput value={pw}
+  messages={{ show: 'Afficher', hide: 'Masquer',
+              weak: 'Faible', fair: 'Moyen', good: 'Bon', strong: 'Fort' }} />
+
+<SvCalendar value={date}
+  messages={{ today: 'Aujourd\'hui', clear: 'Effacer',
+              prev: 'Precedent', next: 'Suivant' }} />
+```
+
+### Merging your own defaults
+
+`resolveMessages(defaults, overrides)` is the helper the components use
+internally - handy if you build your own control on a headless core:
+
+```ts
+import { resolveMessages } from '@svgrid/grid'
+
+const DEFAULTS = { clear: 'Clear', noResults: 'No results' }
+const M = resolveMessages(DEFAULTS, props.messages) // partial override, empty/undefined ignored
+```
+
+## Locale-aware formatting
+
+Date and number editors format through the platform `Intl` APIs, so month and
+weekday names, number grouping and separators follow the `locale` you pass:
+
+```svelte
+<SvCalendar locale="fr-FR" value={date} onChange={(d) => (date = d)} />
+<SvDateTimePicker locale="de-DE" formatString="dd.MM.yyyy HH:mm" value={when} />
+```
+
+## Putting it together
+
+```svelte
+<!-- An Arabic-locale, right-to-left field with localized chrome -->
+<SvDateRangeInput
+  dir="rtl"
+  locale="ar"
+  label="الفترة"
+  messages={{ to: 'إلى', clear: 'مسح', open: 'فتح التقويم' }}
+  value={range}
+  onChange={(r) => (range = r)}
+/>
+```
+
+The same three levers - `dir`, `messages`, `locale` - localize the entire kit.
 
 <!-- =================================================================
      /help/ui-components/index  (community)

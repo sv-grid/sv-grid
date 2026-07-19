@@ -89,6 +89,7 @@ export {
   type EntityFieldType,
   type EntityHooks,
   type FormFieldDescriptor,
+  type StudioEditorType,
   type StandardSchemaV1,
   type StandardSchemaResult,
   type ValidationOp,

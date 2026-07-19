@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-07-16T09:57:15.279Z",
+  "generatedAt": "2026-07-18T18:34:53.722Z",
   "counts": {
-    "pages": 254,
+    "pages": 257,
     "enterprise": 8,
     "withDemo": 136
   },
@@ -66,6 +66,7 @@
         "enterprise/studio/i18n.md",
         "enterprise/studio/in-memory.md",
         "enterprise/studio/launch.md",
+        "enterprise/studio/local-database.md",
         "enterprise/studio/master-detail.md",
         "enterprise/studio/navigation.md",
         "enterprise/studio/odata-graphql.md",
@@ -292,6 +293,8 @@
       "pages": [
         "help/ui-components/buttons.md",
         "help/ui-components/date-time.md",
+        "help/ui-components/headless-editors.md",
+        "help/ui-components/i18n-rtl.md",
         "help/ui-components/index.md",
         "help/ui-components/inputs.md",
         "help/ui-components/layout.md",
@@ -573,8 +576,8 @@
       "summary": "SvStudioDesigner is the grid-centric visual **data-app** designer - compose a multi-entity app by arranging data-bound blocks on a canvas, then generate a runnable SvelteKit project. It's the app-level companion to the single-entity schema designer: where that authors one EntitySchema, this composes **screens** across **many entities**.",
       "section": "enterprise",
       "tier": "community",
-      "words": 2280,
-      "lastUpdated": "2026-07-16",
+      "words": 2735,
+      "lastUpdated": "2026-07-18",
       "demoIds": []
     },
     {
@@ -658,8 +661,8 @@
       "summary": "Every Studio screen binds to data through one small, uniform contract: **ServerDataSource**. Read a page of rows, and (optionally) create, update, and delete. Because sorting, filtering, pagination, and the edit form all speak to this one interface, the grid works the same whether your data comes from PostgreSQL, a REST API, or an in-memory array.",
       "section": "enterprise",
       "tier": "community",
-      "words": 559,
-      "lastUpdated": "2026-07-15",
+      "words": 573,
+      "lastUpdated": "2026-07-17",
       "demoIds": []
     },
     {
@@ -669,8 +672,8 @@
       "summary": "Studio connects directly to your relational database, reads a table's columns from the catalog, and scaffolds a connected CRUD screen. Supported: **PostgreSQL, Supabase, MySQL / MariaDB, SQL Server, SQLite**.",
       "section": "enterprise",
       "tier": "community",
-      "words": 1181,
-      "lastUpdated": "2026-07-15",
+      "words": 1410,
+      "lastUpdated": "2026-07-17",
       "demoIds": [
         "194-studio-supabase",
         "193-studio-live-sql"
@@ -683,8 +686,8 @@
       "summary": "A Studio-generated app is a normal SvelteKit app - the screens are +page.svelte files and the data endpoints are +server.ts routes. It deploys anywhere SvelteKit runs. This page is the production checklist.",
       "section": "enterprise",
       "tier": "community",
-      "words": 698,
-      "lastUpdated": "2026-07-15",
+      "words": 911,
+      "lastUpdated": "2026-07-17",
       "demoIds": []
     },
     {
@@ -716,8 +719,8 @@
       "summary": "SvGridEditPanel is the create / edit form for a row. It renders itself from an EntitySchema, validates input, and hands you a ready payload to save. It presents as a right-hand **drawer**, a centered **modal**, or **inline**, and follows the grid's light / dark theme.",
       "section": "enterprise",
       "tier": "community",
-      "words": 747,
-      "lastUpdated": "2026-07-13",
+      "words": 909,
+      "lastUpdated": "2026-07-18",
       "demoIds": [
         "198-studio-form-fields"
       ]
@@ -768,6 +771,17 @@
       "tier": "community",
       "words": 813,
       "lastUpdated": "2026-07-15",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/local-database.md",
+      "url": "/enterprise/studio/local-database",
+      "title": "Local database (no setup)",
+      "summary": "The local database source gives a generated app a **real, persistent Postgres** that runs entirely in the browser - no connection string, no keys, no server to provision. It is powered by PGlite, a full WASM build of Postgres that stores its data in IndexedDB, so rows survive reloads and the app works offline.",
+      "section": "enterprise",
+      "tier": "community",
+      "words": 582,
+      "lastUpdated": "2026-07-17",
       "demoIds": []
     },
     {
@@ -2683,6 +2697,28 @@
       "tier": "community",
       "words": 326,
       "lastUpdated": "2026-07-16",
+      "demoIds": []
+    },
+    {
+      "path": "help/ui-components/headless-editors.md",
+      "url": "/help/ui-components/headless-editors",
+      "title": "Headless editors",
+      "summary": "Every editor is **headless-first**, exactly like the grid (createSvGrid / <SvGrid>). Each Sv* component is a thin styled renderer over a framework-free runes core named create<Editor>. Import the core to render your own markup with the kit's state machine, keyboard handling and ARIA - and none of its styles.",
+      "section": "help/ui-components",
+      "tier": "community",
+      "words": 399,
+      "lastUpdated": "2026-07-17",
+      "demoIds": []
+    },
+    {
+      "path": "help/ui-components/i18n-rtl.md",
+      "url": "/help/ui-components/i18n-rtl",
+      "title": "Internationalization & RTL",
+      "summary": "Every editor in the kit shares one localization + direction contract, so you wire it the same way everywhere.",
+      "section": "help/ui-components",
+      "tier": "community",
+      "words": 347,
+      "lastUpdated": "2026-07-17",
       "demoIds": []
     },
     {

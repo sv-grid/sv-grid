@@ -14,7 +14,7 @@ import type { EntityField, EntityFieldType, EntitySchema } from '../schema.js'
 import type { ChartType } from '@svgrid/grid'
 
 export type Reduce = 'sum' | 'avg' | 'count' | 'min' | 'max'
-export type DataSourceKind = 'memory' | 'sql' | 'supabase' | 'rest'
+export type DataSourceKind = 'memory' | 'sql' | 'supabase' | 'rest' | 'pglite'
 export type Presentation = 'modal' | 'drawer' | 'inline'
 
 // --- per-entity data-source binding ----------------------------------------
@@ -28,7 +28,7 @@ export type ParamLocation = 'path' | 'query' | 'header'
 export type ParamType = 'string' | 'number' | 'boolean'
 /** One request parameter in the REST builder (path `{id}`, query, or header). */
 export type RequestParam = { name: string; location: ParamLocation; type: ParamType; value?: string }
-export type SqlDialectKind = 'postgres' | 'mysql' | 'sqlite' | 'mssql' | 'supabase'
+export type SqlDialectKind = 'postgres' | 'mysql' | 'sqlite' | 'mssql' | 'supabase' | 'turso'
 
 /** In-memory (seeded) source. `seed` carries curated rows (e.g. a sample app);
  *  when absent the codegen + preview synthesize realistic rows. */
@@ -49,11 +49,15 @@ export type RestSource = {
 }
 export type SqlSource = { kind: 'sql'; table: string; dialect?: SqlDialectKind }
 export type SupabaseSource = { kind: 'supabase'; table: string; url?: string; key?: string }
+/** Embedded Postgres (PGlite) - a real, persistent database with ZERO backend
+ *  setup. Runs in the browser, persisting to IndexedDB. Swap for a `sql` source
+ *  pointed at hosted Postgres to go to production (same schema + SQL). */
+export type PgliteSource = { kind: 'pglite'; table: string; seed?: Record<string, unknown>[] }
 /** Where one entity's rows come from. */
-export type EntityDataSource = MemorySource | RestSource | SqlSource | SupabaseSource
+export type EntityDataSource = MemorySource | RestSource | SqlSource | SupabaseSource | PgliteSource
 
 /** The kinds of data-bound block a screen can hold. */
-export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record'
+export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record'
 
 export type GridAlign = 'left' | 'center' | 'right'
 export type GridColumnConfig = { field: string; show: boolean; header?: string; width?: number; align?: GridAlign; pin?: 'left' | 'right' }
@@ -118,6 +122,18 @@ export type FormConfig = { kind: 'form'; presentation: Presentation }
 /** A chart, optionally drilling into `drillScreen` (filtered by the clicked category). */
 export type ChartConfig = { kind: 'chart'; dimension: string; measure?: string; reduce: Reduce; type: ChartType; drillScreen?: string }
 export type KpiConfig = { kind: 'kpi'; label: string; measure?: string; reduce: Reduce }
+/** A radial gauge (SvGauge) of one aggregated measure within [min, max]. Like a
+ *  KPI but rendered as an arc - good for utilization, progress, scores. */
+export type GaugeConfig = { kind: 'gauge'; label: string; measure?: string; reduce: Reduce; min: number; max: number; unit?: string }
+/** A hierarchical tree (SvTree) built from the entity's own rows: `labelField` is
+ *  the node text, `parentField` is a self-referential FK (a row whose parent is
+ *  empty / unknown is a root). Good for categories, folders, org charts. */
+export type TreeConfig = { kind: 'tree'; labelField: string; parentField: string }
+/** One tab of a Tabs container: a label + its own ordered child blocks. */
+export type StudioTab = { label: string; blocks: Block[] }
+/** A tabbed container (SvTabs) grouping display blocks into tabs. Children are the
+ *  controller-free, `allRows`-driven blocks (see `TAB_CHILD_KINDS`). */
+export type TabsConfig = { kind: 'tabs'; tabs: StudioTab[] }
 export type DashboardConfig = { kind: 'dashboard' }
 export type MasterDetailConfig = { kind: 'master-detail'; childEntity: string; foreignKey: string }
 export type LookupConfig = { kind: 'lookup'; field: string }
@@ -131,8 +147,23 @@ export type FilterPanelConfig = { kind: 'filter'; fields: string[]; title?: stri
  *  SvGridEditPanel. `fields` optionally narrows which fields show (empty = all). */
 export type RecordConfig = { kind: 'record'; fields?: string[]; editable: boolean }
 export type BlockConfig =
-  | GridConfig | FormConfig | ChartConfig | KpiConfig | DashboardConfig | MasterDetailConfig | LookupConfig
+  | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | DashboardConfig | MasterDetailConfig | LookupConfig
   | PivotConfig | FilterPanelConfig | RecordConfig
+
+/** Block kinds allowed inside a Tabs container: the controller-free, `allRows`-driven
+ *  display blocks (no grid / form / master-detail, which need the screen controller). */
+export const TAB_CHILD_KINDS: ReadonlyArray<BlockKind> = ['chart', 'kpi', 'gauge', 'dashboard', 'pivot', 'tree']
+
+/** All blocks on a screen, flattened to include the children nested in Tabs
+ *  containers - used to detect kinds for imports / data loading. */
+export function flattenBlocks(blocks: ReadonlyArray<Block>): Block[] {
+  const out: Block[] = []
+  for (const b of blocks) {
+    out.push(b)
+    if (b.config.kind === 'tabs') for (const t of b.config.tabs) out.push(...flattenBlocks(t.blocks))
+  }
+  return out
+}
 
 export type Block = {
   id: string
@@ -155,7 +186,7 @@ export type Screen = { id: string; entity: string; title: string; route: string;
 
 /** The generated app's shell (master layout): sidebar vs top-nav, brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav'
-export type ShellConfig = { style?: ShellStyle; brand?: string; footer?: string; navPosition?: 'left' | 'right' }
+export type ShellConfig = { style?: ShellStyle; brand?: string; footer?: string; navPosition?: 'left' | 'right'; logo?: string }
 export type ProjectTheme = { accent?: string; preset?: string; mode?: 'light' | 'dark'; shell?: ShellConfig }
 
 /** A mutating CRUD action, gated by RBAC (reads are implied by screen access). */
@@ -200,7 +231,13 @@ export type StudioProject = {
   /** Localization: when enabled, emit a message catalog + locale switcher and route
    *  nav / titles / column headers through `t()`. */
   i18n?: I18nConfig
+  /** Deploy target: picks the SvelteKit adapter + provider config the bundle emits.
+   *  Defaults to `auto` (@sveltejs/adapter-auto, which detects Vercel/Netlify/Cloudflare). */
+  deploy?: DeployTarget
 }
+
+/** Where the generated app deploys. Drives the emitted SvelteKit adapter + config. */
+export type DeployTarget = 'auto' | 'vercel' | 'netlify' | 'cloudflare' | 'node'
 
 /** Localization config: the locales the app ships and which is the default. */
 export type I18nConfig = { enabled: boolean; locales: string[]; defaultLocale?: string }
@@ -219,6 +256,9 @@ export const blockPalette: ReadonlyArray<PaletteItem> = [
   { kind: 'pivot', label: 'Pivot', needs: 'measure' },
   { kind: 'dashboard', label: 'Dashboard' },
   { kind: 'kpi', label: 'KPI tile', needs: 'measure' },
+  { kind: 'gauge', label: 'Gauge', needs: 'measure' },
+  { kind: 'tree', label: 'Tree' },
+  { kind: 'tabs', label: 'Tabs' },
   { kind: 'master-detail', label: 'Master / detail', needs: 'child' },
   { kind: 'filter', label: 'Filter panel' },
   { kind: 'record', label: 'Record panel' },
@@ -283,6 +323,19 @@ export function defaultBlockConfig(kind: BlockKind, entity: EntitySchema): Block
       const measure = pickMeasure(entity)
       return { kind, label: measure ? `Total ${measure}` : `Total ${entity.label ?? entity.name}`, measure, reduce: measure ? 'sum' : 'count' }
     }
+    case 'gauge': {
+      const measure = pickMeasure(entity)
+      return { kind, label: measure ? `Avg ${measure}` : `${entity.label ?? entity.name} count`, measure, reduce: measure ? 'avg' : 'count', min: 0, max: 100 }
+    }
+    case 'tree': {
+      const label = entity.fields.find((f) => !f.primaryKey && f.type === 'text')?.field ?? entity.fields.find((f) => !f.primaryKey)?.field ?? entity.fields[0]?.field ?? ''
+      // A self-referential FK (relation back to this entity) is the natural parent link; else guess by name.
+      const parent = entity.fields.find((f) => f.type === 'relation' && f.relation?.entity === entity.name)?.field
+        ?? entity.fields.find((f) => /parent/i.test(f.field))?.field ?? ''
+      return { kind, labelField: label, parentField: parent }
+    }
+    case 'tabs':
+      return { kind, tabs: [{ label: 'Overview', blocks: [] }, { label: 'Details', blocks: [] }] }
     case 'dashboard':
       return { kind }
     case 'master-detail':
@@ -313,11 +366,39 @@ export function pickFacetFields(entity: EntitySchema): string[] {
 const facetRank = (t: EntityFieldType): number => (t === 'enum' ? 0 : t === 'boolean' ? 1 : 2)
 
 const DEFAULT_SPAN: Record<BlockKind, 1 | 2 | 3> = {
-  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1,
+  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1,
 }
 
 function makeBlock(kind: BlockKind, entity: EntitySchema, taken: ReadonlySet<string>): Block {
   return { id: uid(`${kind}-`, taken), span: DEFAULT_SPAN[kind], config: defaultBlockConfig(kind, entity) }
+}
+
+// --- Tabs container ops (pure; the designer builds a new config + updateBlock) ---
+
+/** Append a tab to a Tabs container. */
+export function addTab(cfg: TabsConfig, label?: string): TabsConfig {
+  return { ...cfg, tabs: [...cfg.tabs, { label: label ?? `Tab ${cfg.tabs.length + 1}`, blocks: [] }] }
+}
+/** Remove a tab by index (keeps at least one). */
+export function removeTab(cfg: TabsConfig, index: number): TabsConfig {
+  if (cfg.tabs.length <= 1) return cfg
+  return { ...cfg, tabs: cfg.tabs.filter((_, i) => i !== index) }
+}
+/** Rename a tab by index. */
+export function renameTab(cfg: TabsConfig, index: number, label: string): TabsConfig {
+  return { ...cfg, tabs: cfg.tabs.map((t, i) => (i === index ? { ...t, label } : t)) }
+}
+/** Add a child block (default config for `kind`) to a tab. Only `TAB_CHILD_KINDS` are allowed. */
+export function addTabBlock(cfg: TabsConfig, index: number, kind: BlockKind, entity: EntitySchema): TabsConfig {
+  if (!TAB_CHILD_KINDS.includes(kind)) return cfg
+  const taken = new Set<string>()
+  cfg.tabs.forEach((t) => flattenBlocks(t.blocks).forEach((b) => taken.add(b.id)))
+  const block: Block = { id: uid(`${kind}-`, taken), span: DEFAULT_SPAN[kind], config: defaultBlockConfig(kind, entity) }
+  return { ...cfg, tabs: cfg.tabs.map((t, i) => (i === index ? { ...t, blocks: [...t.blocks, block] } : t)) }
+}
+/** Remove a child block from a tab by id. */
+export function removeTabBlock(cfg: TabsConfig, index: number, blockId: string): TabsConfig {
+  return { ...cfg, tabs: cfg.tabs.map((t, i) => (i === index ? { ...t, blocks: t.blocks.filter((b) => b.id !== blockId) } : t)) }
 }
 
 /** A default screen for an entity: a grid (editing via a popup form by default). */
@@ -364,8 +445,25 @@ export function addBlockAt(project: StudioProject, screenId: string, kind: Block
   })
 }
 
+/** Apply `fn` to the block with `id` anywhere in the tree (top level or nested in a Tabs container). */
+function mapBlockTree(blocks: Block[], id: string, fn: (b: Block) => Block): Block[] {
+  return blocks.map((b) => {
+    if (b.id === id) return fn(b)
+    if (b.config.kind === 'tabs') {
+      return { ...b, config: { ...b.config, tabs: b.config.tabs.map((t) => ({ ...t, blocks: mapBlockTree(t.blocks, id, fn) })) } }
+    }
+    return b
+  })
+}
+/** Remove the block with `id` anywhere in the tree (top level or nested in a Tabs container). */
+function removeBlockTree(blocks: Block[], id: string): Block[] {
+  return blocks
+    .filter((b) => b.id !== id)
+    .map((b) => (b.config.kind === 'tabs' ? { ...b, config: { ...b.config, tabs: b.config.tabs.map((t) => ({ ...t, blocks: removeBlockTree(t.blocks, id) })) } } : b))
+}
+
 export function removeBlock(project: StudioProject, screenId: string, blockId: string): StudioProject {
-  return mapScreen(project, screenId, (s) => ({ ...s, blocks: s.blocks.filter((b) => b.id !== blockId) }))
+  return mapScreen(project, screenId, (s) => ({ ...s, blocks: removeBlockTree(s.blocks, blockId) }))
 }
 
 /** Clone a block (config + width/height) with a fresh id, inserted right after it. */
@@ -374,7 +472,9 @@ export function duplicateBlock(project: StudioProject, screenId: string, blockId
     const idx = s.blocks.findIndex((b) => b.id === blockId)
     if (idx < 0) return s
     const src = s.blocks[idx]!
-    const clone: Block = { ...src, id: uid(`${src.config.kind}-`, new Set(s.blocks.map((b) => b.id))), config: structuredClone(src.config) }
+    // JSON clone (not structuredClone): the config is always JSON-safe, and this
+    // also unwraps any Svelte reactive $state proxy, which structuredClone rejects.
+    const clone: Block = { ...src, id: uid(`${src.config.kind}-`, new Set(s.blocks.map((b) => b.id))), config: JSON.parse(JSON.stringify(src.config)) as BlockConfig }
     return { ...s, blocks: [...s.blocks.slice(0, idx + 1), clone, ...s.blocks.slice(idx + 1)] }
   })
 }
@@ -412,11 +512,13 @@ export function updateBlock(
 ): StudioProject {
   return mapScreen(project, screenId, (s) => ({
     ...s,
-    blocks: s.blocks.map((b) =>
-      b.id === blockId
-        ? { ...b, span: patch.span ?? b.span, colSpan: patch.colSpan ?? b.colSpan, height: patch.height ?? b.height, config: patch.config ? ({ ...b.config, ...patch.config } as BlockConfig) : b.config }
-        : b,
-    ),
+    blocks: mapBlockTree(s.blocks, blockId, (b) => ({
+      ...b,
+      span: patch.span ?? b.span,
+      colSpan: patch.colSpan ?? b.colSpan,
+      height: patch.height ?? b.height,
+      config: patch.config ? ({ ...b.config, ...patch.config } as BlockConfig) : b.config,
+    })),
   }))
 }
 
@@ -478,12 +580,19 @@ export function setDataSource(project: StudioProject, dataSource: DataSourceKind
   return { ...project, dataSource }
 }
 
+/** Set the deploy target (SvelteKit adapter + provider config the bundle emits). */
+export function setDeployTarget(project: StudioProject, deploy: DeployTarget): StudioProject {
+  if (deploy === 'auto') { const { deploy: _drop, ...rest } = project; return rest }
+  return { ...project, deploy }
+}
+
 /** A skeleton binding for a kind, seeded with the entity's name as its table/path. */
 export function defaultEntitySource(kind: DataSourceKind, entityName: string): EntityDataSource {
   switch (kind) {
     case 'rest': return { kind: 'rest', baseUrl: '', path: entityName, method: 'GET', params: [] }
     case 'sql': return { kind: 'sql', table: entityName }
     case 'supabase': return { kind: 'supabase', table: entityName }
+    case 'pglite': return { kind: 'pglite', table: entityName }
     default: return { kind: 'memory' }
   }
 }
@@ -657,6 +766,7 @@ export function parseProject(json: string): StudioProject {
     ...(p.access && typeof p.access === 'object' ? { access: p.access as AccessControl } : {}),
     ...(typeof p.audit === 'boolean' ? { audit: p.audit } : {}),
     ...(p.i18n && typeof p.i18n === 'object' ? { i18n: p.i18n as I18nConfig } : {}),
+    ...(typeof p.deploy === 'string' && p.deploy !== 'auto' ? { deploy: p.deploy as DeployTarget } : {}),
   })
 }
 
