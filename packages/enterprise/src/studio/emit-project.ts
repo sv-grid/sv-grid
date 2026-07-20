@@ -210,6 +210,22 @@ ${panels}
       return filterPanelMarkup(entity, block, cfg)
     case 'record':
       return recordPanelMarkup(entity, schemaVar, block, cfg)
+    case 'board': {
+      const h = block.height ?? 480
+      const badge = cfg.badgeField ? ` badgeField=${JSON.stringify(cfg.badgeField)}` : ''
+      const sub = cfg.subtitleField ? ` subtitleField=${JSON.stringify(cfg.subtitleField)}` : ''
+      // Dragging a card updates its groupBy value in the local row state (optimistic).
+      return `    <div style="grid-column: span ${blockColumns(block)}; min-width: 0">
+      <SvBoard schema={${schemaVar}} rows={allRows} groupBy=${JSON.stringify(cfg.groupBy)} titleField=${JSON.stringify(cfg.titleField)}${badge}${sub} height={${h}} onMove={(id, value) => { allRows = allRows.map((r) => String((r as Record<string, unknown>)[idField]) === String(id) ? ({ ...r, ['${cfg.groupBy}']: value }) : r) }} />
+    </div>`
+    }
+    case 'calendar': {
+      const h = block.height ?? 560
+      const color = cfg.colorField ? ` colorField=${JSON.stringify(cfg.colorField)}` : ''
+      return `    <div style="grid-column: span ${blockColumns(block)}; min-width: 0">
+      <SvSchedule schema={${schemaVar}} rows={allRows} dateField=${JSON.stringify(cfg.dateField)} titleField=${JSON.stringify(cfg.titleField)}${color} height={${h}} />
+    </div>`
+    }
     case 'lookup':
       return `    <div ${span}><!-- lookup (${cfg.field}): shown in the edit form --></div>`
     case 'form':
@@ -443,7 +459,7 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   const childList = [...mdChildren.values()]
   const hasMD = childList.length > 0
   // The pivot reads the whole table (like charts / dashboards).
-  const needsAllRows = hasAgg || hasMD || hasPivot
+  const needsAllRows = hasAgg || hasMD || hasPivot || has(allBlocks, 'board') || has(allBlocks, 'calendar')
 
   // --- imports ---
   const gridSpecs: string[] = []
@@ -457,6 +473,8 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   if (wantsForm || (hasRecord && recordEditable)) entImports.push('SvGridEditPanel')
   if (has(allBlocks, 'chart')) entImports.push('SvSchemaChart')
   if (has(allBlocks, 'dashboard')) entImports.push('SvSchemaDashboard')
+  if (has(allBlocks, 'board')) entImports.push('SvBoard')
+  if (has(allBlocks, 'calendar')) entImports.push('SvSchedule')
   if (has(allBlocks, 'kpi') || has(allBlocks, 'gauge')) entImports.push('reduceValue')
   const kpiCfgs = allBlocks.filter((b) => b.config.kind === 'kpi').map((b) => b.config as KpiConfig)
   if (kpiCfgs.some((c) => c.format && c.format !== 'auto')) entImports.push('formatKpiValue')
@@ -1101,7 +1119,7 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     ...plan.files,
     ...SCAFFOLD_STATIC,
     ...(envExample(allSource) ? [{ path: '.env.example', description: 'Environment variables the app reads (copy to .env and fill in).', contents: envExample(allSource)! }] : []),
-    { path: 'src/app.css', description: 'App theme + page styles.', contents: APP_CSS },
+    { path: 'src/app.css', description: 'App theme + page styles.', contents: APP_CSS + (project.theme?.customCss ? `\n\n/* --- Custom CSS (from the designer) --- */\n${project.theme.customCss}\n` : '') },
     // The design model, shipped with the app so it can be re-imported (Load) into
     // the designer for further visual editing - the export/import round-trip.
     { path: 'studio.config.json', description: 'The Studio project model - Load it back into the designer to keep editing visually.', contents: serializeProject(project) + '\n' },

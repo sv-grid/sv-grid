@@ -57,7 +57,7 @@ export type PgliteSource = { kind: 'pglite'; table: string; seed?: Record<string
 export type EntityDataSource = MemorySource | RestSource | SqlSource | SupabaseSource | PgliteSource
 
 /** The kinds of data-bound block a screen can hold. */
-export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board'
+export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar'
 
 export type GridAlign = 'left' | 'center' | 'right'
 export type GridColumnConfig = { field: string; show: boolean; header?: string; width?: number; align?: GridAlign; pin?: 'left' | 'right' }
@@ -166,9 +166,13 @@ export type RecordConfig = { kind: 'record'; fields?: string[]; editable: boolea
  *  rows become draggable cards titled by `titleField`. Dragging a card changes its
  *  `groupBy` value. Optional `badgeField` (a chip) + `subtitleField` (secondary line). */
 export type BoardConfig = { kind: 'board'; groupBy: string; titleField: string; badgeField?: string; subtitleField?: string }
+/** A month event-calendar (SvSchedule): each row with a `dateField` value is an
+ *  event on that day, labelled by `titleField` and (optionally) tinted by an enum
+ *  `colorField`. Good for appointments / events / bookings / shifts. */
+export type CalendarConfig = { kind: 'calendar'; dateField: string; titleField: string; colorField?: string }
 export type BlockConfig =
   | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | DashboardConfig | MasterDetailConfig | LookupConfig
-  | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig
+  | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig
 
 /** Block kinds allowed inside a Tabs container: the controller-free, `allRows`-driven
  *  display blocks (no grid / form / master-detail, which need the screen controller). */
@@ -207,7 +211,7 @@ export type Screen = { id: string; entity: string; title: string; route: string;
 /** The generated app's shell (master layout): sidebar vs top-nav, brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav'
 export type ShellConfig = { style?: ShellStyle; brand?: string; footer?: string; navPosition?: 'left' | 'right'; logo?: string }
-export type ProjectTheme = { accent?: string; preset?: string; mode?: 'light' | 'dark'; shell?: ShellConfig }
+export type ProjectTheme = { accent?: string; preset?: string; mode?: 'light' | 'dark'; shell?: ShellConfig; customCss?: string }
 
 /** A mutating CRUD action, gated by RBAC (reads are implied by screen access). */
 export type CrudAction = 'create' | 'update' | 'delete'
@@ -281,6 +285,7 @@ export const blockPalette: ReadonlyArray<PaletteItem> = [
   { kind: 'tabs', label: 'Tabs' },
   { kind: 'master-detail', label: 'Master / detail', needs: 'child' },
   { kind: 'board', label: 'Board' },
+  { kind: 'calendar', label: 'Calendar' },
   { kind: 'filter', label: 'Filter panel' },
   { kind: 'record', label: 'Record panel' },
   { kind: 'lookup', label: 'Lookup' },
@@ -378,6 +383,12 @@ export function defaultBlockConfig(kind: BlockKind, entity: EntitySchema): Block
       const badge = pickMeasure(entity)
       return { kind, groupBy: enumField, titleField: titleF, ...(badge ? { badgeField: badge } : {}) }
     }
+    case 'calendar': {
+      const dateF = entity.fields.find((f) => (f.type === 'datetime' || f.type === 'date' || f.type === 'dateString') && !f.primaryKey)?.field ?? ''
+      const titleF = entity.fields.find((f) => f.type === 'text' && !f.primaryKey)?.field ?? entity.fields.find((f) => !f.primaryKey)?.field ?? ''
+      const colorF = entity.fields.find((f) => f.type === 'enum' && !f.primaryKey)?.field
+      return { kind, dateField: dateF, titleField: titleF, ...(colorF ? { colorField: colorF } : {}) }
+    }
   }
 }
 
@@ -393,7 +404,7 @@ export function pickFacetFields(entity: EntitySchema): string[] {
 const facetRank = (t: EntityFieldType): number => (t === 'enum' ? 0 : t === 'boolean' ? 1 : 2)
 
 const DEFAULT_SPAN: Record<BlockKind, 1 | 2 | 3> = {
-  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3,
+  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3, calendar: 3,
 }
 
 function makeBlock(kind: BlockKind, entity: EntitySchema, taken: ReadonlySet<string>): Block {

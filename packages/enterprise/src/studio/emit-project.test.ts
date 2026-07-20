@@ -886,4 +886,13 @@ describe('pages (nav) + shell codegen', () => {
     expect(layout).toContain('--sg-accent: #123456')
     expect(layout).not.toContain('--sg-accent: #0969da')
   })
+
+  it('custom CSS is appended to the generated app.css', () => {
+    const p = setTheme(createProject([customers]), { customCss: '.st__title { letter-spacing: -0.03em; }' })
+    const appcss = emitStudioAppBundle(p).find((f) => f.path === 'src/app.css')!.contents
+    expect(appcss).toContain('Custom CSS (from the designer)')
+    expect(appcss).toContain('.st__title { letter-spacing: -0.03em; }')
+    // No custom block when unset.
+    expect(emitStudioAppBundle(createProject([customers])).find((f) => f.path === 'src/app.css')!.contents).not.toContain('Custom CSS (from the designer)')
+  })
 })
