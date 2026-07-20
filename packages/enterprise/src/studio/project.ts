@@ -57,7 +57,7 @@ export type PgliteSource = { kind: 'pglite'; table: string; seed?: Record<string
 export type EntityDataSource = MemorySource | RestSource | SqlSource | SupabaseSource | PgliteSource
 
 /** The kinds of data-bound block a screen can hold. */
-export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record'
+export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board'
 
 export type GridAlign = 'left' | 'center' | 'right'
 export type GridColumnConfig = { field: string; show: boolean; header?: string; width?: number; align?: GridAlign; pin?: 'left' | 'right' }
@@ -162,9 +162,13 @@ export type FilterPanelConfig = { kind: 'filter'; fields: string[]; title?: stri
 /** A record detail panel: shows the row selected in the screen's grid via
  *  SvGridEditPanel. `fields` optionally narrows which fields show (empty = all). */
 export type RecordConfig = { kind: 'record'; fields?: string[]; editable: boolean; presentation?: Presentation }
+/** A Kanban board (SvBoard): columns are an `enum` field's options (`groupBy`),
+ *  rows become draggable cards titled by `titleField`. Dragging a card changes its
+ *  `groupBy` value. Optional `badgeField` (a chip) + `subtitleField` (secondary line). */
+export type BoardConfig = { kind: 'board'; groupBy: string; titleField: string; badgeField?: string; subtitleField?: string }
 export type BlockConfig =
   | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | DashboardConfig | MasterDetailConfig | LookupConfig
-  | PivotConfig | FilterPanelConfig | RecordConfig
+  | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig
 
 /** Block kinds allowed inside a Tabs container: the controller-free, `allRows`-driven
  *  display blocks (no grid / form / master-detail, which need the screen controller). */
@@ -259,7 +263,7 @@ export type DeployTarget = 'auto' | 'vercel' | 'netlify' | 'cloudflare' | 'node'
 export type I18nConfig = { enabled: boolean; locales: string[]; defaultLocale?: string }
 
 export type ProjectIssueLevel = 'error' | 'warning'
-export type ProjectIssue = { level: ProjectIssueLevel; message: string; screen?: string }
+export type ProjectIssue = { level: ProjectIssueLevel; message: string; screen?: string; block?: string }
 
 /** One palette entry: a draggable block kind + what it needs to be useful. */
 export type PaletteItem = { kind: BlockKind; label: string; needs?: 'measure' | 'child' }
@@ -276,6 +280,7 @@ export const blockPalette: ReadonlyArray<PaletteItem> = [
   { kind: 'tree', label: 'Tree' },
   { kind: 'tabs', label: 'Tabs' },
   { kind: 'master-detail', label: 'Master / detail', needs: 'child' },
+  { kind: 'board', label: 'Board' },
   { kind: 'filter', label: 'Filter panel' },
   { kind: 'record', label: 'Record panel' },
   { kind: 'lookup', label: 'Lookup' },
@@ -367,6 +372,12 @@ export function defaultBlockConfig(kind: BlockKind, entity: EntitySchema): Block
       return { kind, fields: pickFacetFields(entity) }
     case 'record':
       return { kind, editable: false }
+    case 'board': {
+      const enumField = entity.fields.find((f) => f.type === 'enum' && !f.primaryKey)?.field ?? ''
+      const titleF = entity.fields.find((f) => f.type === 'text' && !f.primaryKey)?.field ?? entity.fields.find((f) => !f.primaryKey)?.field ?? ''
+      const badge = pickMeasure(entity)
+      return { kind, groupBy: enumField, titleField: titleF, ...(badge ? { badgeField: badge } : {}) }
+    }
   }
 }
 
@@ -382,7 +393,7 @@ export function pickFacetFields(entity: EntitySchema): string[] {
 const facetRank = (t: EntityFieldType): number => (t === 'enum' ? 0 : t === 'boolean' ? 1 : 2)
 
 const DEFAULT_SPAN: Record<BlockKind, 1 | 2 | 3> = {
-  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1,
+  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3,
 }
 
 function makeBlock(kind: BlockKind, entity: EntitySchema, taken: ReadonlySet<string>): Block {
@@ -800,13 +811,24 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
     if (routes.has(s.route)) issues.push({ level: 'error', message: `Duplicate route "/${s.route}".`, screen: s.id })
     routes.add(s.route)
     if (s.blocks.length === 0) issues.push({ level: 'warning', message: `Screen "${s.title}" has no blocks.`, screen: s.id })
-    for (const b of s.blocks) {
-      if (b.config.kind === 'master-detail') {
-        if (!b.config.childEntity || !b.config.foreignKey) {
-          issues.push({ level: 'warning', message: `Master/detail on "${s.title}" needs a child entity + foreign key.`, screen: s.id })
-        } else if (!entityOf(project, b.config.childEntity)) {
-          issues.push({ level: 'warning', message: `Master/detail on "${s.title}" points at a missing child entity "${b.config.childEntity}".`, screen: s.id })
-        }
+    for (const b of flattenBlocks(s.blocks)) {
+      const at = (message: string, level: ProjectIssueLevel = 'warning'): ProjectIssue => ({ level, message, screen: s.id, block: b.id })
+      const c = b.config
+      if (c.kind === 'master-detail') {
+        if (!c.childEntity || !c.foreignKey) issues.push(at('Master/detail needs a child entity + foreign key.'))
+        else if (!entityOf(project, c.childEntity)) issues.push(at(`Master/detail points at a missing child entity "${c.childEntity}".`))
+      } else if (c.kind === 'tree') {
+        if (!c.labelField || !c.parentField) issues.push(at('Tree needs a label field and a self-referential parent field.'))
+      } else if (c.kind === 'lookup') {
+        if (!c.field) issues.push(at('Lookup needs a relation field.'))
+      } else if (c.kind === 'filter') {
+        if (!c.fields.length) issues.push(at('Filter panel has no facets - pick fields to filter on.'))
+      } else if (c.kind === 'chart') {
+        if (!c.dimension) issues.push(at('Chart has no group-by dimension.'))
+      } else if (c.kind === 'pivot') {
+        if (!c.rows.length && !c.cols.length) issues.push(at('Pivot has no row or column dimensions.'))
+      } else if (c.kind === 'tabs') {
+        if (c.tabs.every((t) => t.blocks.length === 0)) issues.push(at('Tabs container has no blocks in any tab.'))
       }
     }
   }

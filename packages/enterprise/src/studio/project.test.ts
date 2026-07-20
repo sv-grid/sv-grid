@@ -275,6 +275,28 @@ describe('validateProject', () => {
     p = updateBlock(p, sid, mdId, { config: { childEntity: 'ghosts', foreignKey: 'id' } as Partial<MasterDetailConfig> })
     expect(validateProject(p).some((i) => /missing child entity "ghosts"/.test(i.message))).toBe(true)
   })
+
+  it('attributes a block issue to its screen + block id (for inline badges + jump)', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'master-detail') // unconfigured -> warns
+    const mdId = p.screens.find((s) => s.id === sid)!.blocks.at(-1)!.id
+    const issue = validateProject(p).find((i) => i.block === mdId)
+    expect(issue).toBeDefined()
+    expect(issue!.screen).toBe(sid)
+    expect(issue!.message).toMatch(/child entity/)
+  })
+
+  it('flags an empty filter panel and a tree without its fields', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    // A tree with no label/parent field warns.
+    p = addBlock(p, sid, 'tree')
+    const treeId = p.screens.find((s) => s.id === sid)!.blocks.at(-1)!.id
+    p = updateBlock(p, sid, treeId, { config: { labelField: '', parentField: '' } as Partial<import('./project').TreeConfig> })
+    const treeIssue = validateProject(p).find((i) => i.block === treeId)
+    expect(treeIssue?.message).toMatch(/label field/)
+  })
 })
 
 describe('sanitizeProject (loaded-config hardening)', () => {
