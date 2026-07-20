@@ -5,6 +5,7 @@
  * visual designer), since nothing here touches Svelte or the DOM.
  */
 export { inferType, introspectJson, introspectDrizzle, introspectDrizzleAll } from './introspect.js'
+export { refineField, refineFields } from '../sources/field-inference.js'
 export { parseCsv, detectDelimiter, csvToEntity, type CsvEntity } from './csv.js'
 export { introspectPrisma, introspectPrismaAll } from './introspect-prisma.js'
 export {
@@ -61,6 +62,9 @@ export {
   addScreen,
   removeScreen,
   updateScreen,
+  duplicateScreen,
+  reorderScreen,
+  insertBlock,
   setDataSource,
   setDeployTarget,
   defaultEntitySource,
@@ -112,6 +116,7 @@ export {
   type FormConfig,
   type ChartConfig,
   type KpiConfig,
+  type KpiFormat,
   type GaugeConfig,
   type TreeConfig,
   type TabsConfig,
@@ -122,6 +127,7 @@ export {
   type PivotConfig,
   type FilterPanelConfig,
   type RecordConfig,
+  type BoardConfig,
   type Reduce,
   type DataSourceKind,
   type EntityDataSource,

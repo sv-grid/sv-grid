@@ -155,6 +155,10 @@ export {
   withEntityRules,
   withRelationLabels,
   reduceValue,
+  kpiSeries,
+  sparklinePoints,
+  seriesDelta,
+  formatKpiValue,
   dashboardFromSchema,
   type AggregateReduce,
   type AggregateRequest,
@@ -183,6 +187,7 @@ export { default as SvFileInput } from './SvFileInput.svelte'
 export { default as SvAuthGate } from './SvAuthGate.svelte'
 export { default as SvSchemaChart } from './SvSchemaChart.svelte'
 export { default as SvSchemaDashboard } from './SvSchemaDashboard.svelte'
+export { default as SvBoard } from './SvBoard.svelte'
 
 export {
   FIELD_TYPES,
@@ -222,6 +227,9 @@ export {
   addScreen,
   removeScreen,
   updateScreen,
+  duplicateScreen,
+  reorderScreen,
+  insertBlock,
   addEntity,
   removeEntity,
   updateEntity,
@@ -262,6 +270,7 @@ export {
   type GridColumnConfig,
   type ChartConfig,
   type KpiConfig,
+  type KpiFormat,
   type DashboardConfig,
   type MasterDetailConfig,
   type LookupConfig,
@@ -284,6 +293,19 @@ export {
   type PaletteItem,
   type ProjectIssue,
   type GeneratedFile,
+} from './studio'
+export {
+  buildConnectionString,
+  parseConnectionString,
+  redactConnectionString,
+  isFileDialect,
+  DRIVER_PACKAGE,
+  DEFAULT_PORT,
+  countTableRows,
+  probeConnection,
+  type SqlConnectionParts,
+  type TableRowCount,
+  type SqlDialectName,
 } from './studio'
 
 export {

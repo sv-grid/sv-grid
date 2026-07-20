@@ -603,6 +603,54 @@ export function updateScreen(project: StudioProject, screenId: string, patch: Pa
   return mapScreen(project, screenId, (s) => ({ ...s, ...patch }))
 }
 
+/** Deep-clone `block` with fresh ids (recursing into Tabs children). */
+function freshBlockIds(blocks: ReadonlyArray<Block>, taken: Set<string>): Block[] {
+  return blocks.map((b) => {
+    const config = JSON.parse(JSON.stringify(b.config)) as BlockConfig
+    const id = uid(`${config.kind}-`, taken)
+    taken.add(id)
+    if (config.kind === 'tabs') config.tabs = config.tabs.map((t) => ({ ...t, blocks: freshBlockIds(t.blocks, taken) }))
+    return { ...b, id, config }
+  })
+}
+
+/** Insert a block (deep-cloned, fresh id) into a screen - the paste target. Appends by default. */
+export function insertBlock(project: StudioProject, screenId: string, block: Block, index?: number): StudioProject {
+  return mapScreen(project, screenId, (s) => {
+    const taken = new Set(flattenBlocks(s.blocks).map((b) => b.id))
+    const [clone] = freshBlockIds([block], taken)
+    const blocks = [...s.blocks]
+    blocks.splice(index ?? blocks.length, 0, clone!)
+    return { ...s, blocks }
+  })
+}
+
+/** Duplicate a whole screen (fresh id / route / title + fresh block ids), inserted after it. */
+export function duplicateScreen(project: StudioProject, screenId: string): StudioProject {
+  const idx = project.screens.findIndex((s) => s.id === screenId)
+  if (idx < 0) return project
+  const src = project.screens[idx]!
+  const ids = new Set(project.screens.map((s) => s.id))
+  const routes = new Set(project.screens.map((s) => s.route))
+  const id = uid(`${src.entity}-`, ids)
+  const route = uid(`${src.route}-`, routes)
+  // Seed the taken-ids set with the source's block ids so the clone's ids don't collide.
+  const clone: Screen = { ...src, id, route, title: `${src.title} copy`, blocks: freshBlockIds(src.blocks, new Set(flattenBlocks(src.blocks).map((b) => b.id))) }
+  const screens = [...project.screens]
+  screens.splice(idx + 1, 0, clone)
+  return { ...project, screens }
+}
+
+/** Move a screen to an explicit index (drag-reorder the tab strip). Clamps to range. */
+export function reorderScreen(project: StudioProject, screenId: string, toIndex: number): StudioProject {
+  const from = project.screens.findIndex((s) => s.id === screenId)
+  if (from < 0) return project
+  const screens = [...project.screens]
+  const [moved] = screens.splice(from, 1)
+  screens.splice(Math.max(0, Math.min(toIndex, screens.length)), 0, moved!)
+  return { ...project, screens }
+}
+
 export function setDataSource(project: StudioProject, dataSource: DataSourceKind): StudioProject {
   return { ...project, dataSource }
 }

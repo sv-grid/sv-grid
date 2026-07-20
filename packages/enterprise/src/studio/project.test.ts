@@ -29,6 +29,9 @@ import {
   updateBlock,
   updateEntity,
   updateScreen,
+  duplicateScreen,
+  reorderScreen,
+  insertBlock,
   validateProject,
   addTab,
   removeTab,
@@ -296,6 +299,41 @@ describe('validateProject', () => {
     p = updateBlock(p, sid, treeId, { config: { labelField: '', parentField: '' } as Partial<import('./project').TreeConfig> })
     const treeIssue = validateProject(p).find((i) => i.block === treeId)
     expect(treeIssue?.message).toMatch(/label field/)
+  })
+})
+
+describe('block/screen efficiency ops', () => {
+  it('insertBlock pastes a block into a screen with a fresh id', () => {
+    let p = createProject([customers, orders])
+    const src = p.screens.find((s) => s.entity === 'customers')!.blocks[0]! // the default grid
+    const target = p.screens.find((s) => s.entity === 'orders')!.id
+    const before = p.screens.find((s) => s.id === target)!.blocks.length
+    p = insertBlock(p, target, src)
+    const blocks = p.screens.find((s) => s.id === target)!.blocks
+    expect(blocks).toHaveLength(before + 1)
+    expect(blocks.at(-1)!.id).not.toBe(src.id)          // fresh id, no collision
+    expect(blocks.at(-1)!.config.kind).toBe(src.config.kind)
+  })
+
+  it('duplicateScreen clones a screen (fresh id/route/title + fresh block ids), inserted after', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = duplicateScreen(p, sid)
+    expect(p.screens).toHaveLength(2)
+    const [a, b] = p.screens
+    expect(b!.id).not.toBe(a!.id)
+    expect(b!.route).not.toBe(a!.route)
+    expect(b!.title).toMatch(/copy/)
+    // Block ids in the clone are unique vs the source.
+    const aIds = new Set(a!.blocks.map((x) => x.id))
+    expect(b!.blocks.every((x) => !aIds.has(x.id))).toBe(true)
+  })
+
+  it('reorderScreen moves a screen to a new index', () => {
+    let p = createProject([customers, orders])
+    const [first, second] = p.screens
+    p = reorderScreen(p, first!.id, 1)
+    expect(p.screens.map((s) => s.id)).toEqual([second!.id, first!.id])
   })
 })
 
