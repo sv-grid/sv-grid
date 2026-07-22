@@ -466,7 +466,7 @@
 
   <!-- Grid (right) -->
   <div class="ai-grid-wrap flex-1 min-w-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={accounts}
       columns={[
         { field: 'company',  header: 'Company',   width: 200 },

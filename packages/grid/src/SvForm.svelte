@@ -1,4 +1,6 @@
 <script lang="ts" module>
+  import type { Validator } from './validators'
+
   export type FormFieldType =
     | 'text' | 'email' | 'tel' | 'textarea' | 'number' | 'password'
     | 'select' | 'checkbox' | 'switch' | 'date' | 'color' | 'rating'
@@ -10,6 +12,8 @@
     required?: boolean
     placeholder?: string
     options?: Array<{ value: string | number; label: string }>
+    /** Declarative validation rules (see `rules` - email/pattern/min/compare...). */
+    rules?: ReadonlyArray<Validator>
     /** Return an error message, or null/undefined when valid. */
     validate?: (value: any, values: Record<string, any>) => string | null | undefined
     /** Span full width in the grid. */
@@ -32,6 +36,7 @@
   import SvColorInput from './SvColorInput.svelte'
   import SvRating from './SvRating.svelte'
   import SvButton from './SvButton.svelte'
+  import { runRules } from './validators'
 
   type Props = {
     fields: ReadonlyArray<FormField>
@@ -64,7 +69,8 @@
     const v = values[name]
     let err: string | null | undefined = null
     if (field.required && (v == null || v === '' || (Array.isArray(v) && !v.length))) err = `${field.label} is required`
-    else if (field.validate) err = field.validate(v, values)
+    if (!err && field.rules) err = runRules(v, field.rules, values)
+    if (!err && field.validate) err = field.validate(v, values)
     const next = { ...errors }
     if (err) next[name] = err
     else delete next[name]

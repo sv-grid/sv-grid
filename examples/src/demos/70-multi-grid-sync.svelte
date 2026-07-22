@@ -66,7 +66,7 @@
         Operations view <span class="text-slate-500 dark:text-slate-400 font-normal">- editable</span>
       </div>
       <div class="flex-1 min-h-0">
-        <SvGrid
+        <SvGrid responsive={true}
           data={rows}
           columns={columns}
           features={features}
@@ -89,7 +89,7 @@
         Analytics view <span class="text-slate-500 dark:text-slate-400 font-normal">- read-only mirror</span>
       </div>
       <div class="flex-1 min-h-0">
-        <SvGrid
+        <SvGrid responsive={true}
           data={rows}
           columns={columns}
           features={features}

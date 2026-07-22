@@ -35,6 +35,8 @@ export type SliderConfig = {
   orientation?: () => SliderOrientation
   disabled?: () => boolean
   ariaLabel?: () => string | undefined
+  /** Right-to-left: mirrors horizontal pointer + Left/Right key direction. */
+  rtl?: () => boolean
 }
 
 export function createSlider(config: SliderConfig) {
@@ -44,6 +46,7 @@ export function createSlider(config: SliderConfig) {
   const range = () => config.range?.() ?? false
   const isVert = () => (config.orientation?.() ?? 'horizontal') === 'vertical'
   const disabled = () => config.disabled?.() ?? false
+  const rtl = () => config.rtl?.() ?? false
 
   const lo = $derived(range() ? (config.value() as [number, number])[0] : min())
   const hi = $derived(range() ? (config.value() as [number, number])[1] : (config.value() as number))
@@ -59,9 +62,10 @@ export function createSlider(config: SliderConfig) {
 
   /** Turn a pointer position (client coords) + measured track rect into a value. */
   function valueFromPointer(pos: SliderPoint, rect: DOMRect): number {
+    const horiz = (pos.x - rect.left) / rect.width
     const frac = isVert()
       ? 1 - (pos.y - rect.top) / rect.height
-      : (pos.x - rect.left) / rect.width
+      : rtl() ? 1 - horiz : horiz
     return clampStep(min() + Math.min(1, Math.max(0, frac)) * (max() - min()))
   }
 
@@ -104,9 +108,16 @@ export function createSlider(config: SliderConfig) {
   function onThumbKey(e: KeyboardEvent, which: SliderThumb) {
     if (disabled()) return
     const cur = which === 'lo' ? lo : hi
+    // Under horizontal RTL, Left increases and Right decreases (Up/Down keep
+    // their natural up=more direction regardless of text direction).
+    const rtlH = rtl() && !isVert()
+    const inc = clampStep(cur + stepSize())
+    const dec = clampStep(cur - stepSize())
     let next = cur
-    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = clampStep(cur + stepSize())
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = clampStep(cur - stepSize())
+    if (e.key === 'ArrowUp') next = inc
+    else if (e.key === 'ArrowDown') next = dec
+    else if (e.key === 'ArrowRight') next = rtlH ? dec : inc
+    else if (e.key === 'ArrowLeft') next = rtlH ? inc : dec
     else if (e.key === 'Home') next = min()
     else if (e.key === 'End') next = max()
     else if (e.key === 'PageUp') next = clampStep(cur + stepSize() * 10)

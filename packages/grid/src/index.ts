@@ -69,12 +69,60 @@ export { createGrid, createSvGrid, type SvelteGrid } from './createGrid.svelte'
 export { createGridState, createSvGridState } from './createGridState.svelte'
 export { subscribeGrid, subscribeSvGrid } from './subscribe'
 export { default as SvGrid } from './SvGrid.svelte'
+export { default as SvGridBoard } from './SvGridBoard.svelte'
+export type { BoardConfig, BoardLane, BoardCardMoveEvent, BoardCardCommitEvent, BoardLayout, BoardSubtask, BoardComment, BoardMenuContext, BoardLaneMenuContext, BoardDrawerConfig } from './SvGrid.types'
 export { default as SvGridDropdown } from './SvGridDropdown.svelte'
 export { default as SvCalendar, type CalendarValue, type CalendarPreset, type CalendarAnimation } from './SvCalendar.svelte'
+export { matchesRecurrence, expandRecurrence, type RecurrenceRule, type RecurrenceFreq } from './recurrence'
 export { default as SvTimePicker, type TimeValue } from './SvTimePicker.svelte'
 export { default as SvDateTimePicker, type DateTimeValue } from './SvDateTimePicker.svelte'
+export { default as SvDateRangeInput, type DateRangeValue } from './SvDateRangeInput.svelte'
+export { default as SvButtonGroup, type ButtonGroupItem, type ButtonGroupMode, type ButtonGroupValue } from './SvButtonGroup.svelte'
 // UI kit - shared editor contract (common props + a11y wiring for every editor)
-export { editorAria, editorErrorId, type SvEditorProps, type EditorSize, type EditorAriaState } from './editor-contract'
+export {
+  editorAria,
+  editorErrorId,
+  editorHintId,
+  nextEditorId,
+  resolveMessages,
+  type SvEditorProps,
+  type EditorSize,
+  type EditorDir,
+  type EditorAriaState,
+} from './editor-contract'
+// UI kit - editor interaction surface (commit/cancel/close for grid-cell use)
+export { type EditorInteraction } from './editor-contract'
+// UI kit - shared a11y primitives (focus trap, scroll lock, dismissable layers, live region)
+export {
+  FOCUSABLE_SELECTOR,
+  getFocusable,
+  createFocusTrap,
+  type FocusTrap,
+  type FocusTrapOptions,
+} from './a11y/focus-trap'
+export { lockScroll, scrollLockDepth } from './a11y/scroll-lock'
+export {
+  createDismissableLayer,
+  dismissableDepth,
+  type DismissableLayer,
+  type DismissableOptions,
+} from './a11y/dismissable'
+export { announce, type AnnounceOptions } from './a11y/live-region'
+// UI kit - custom cell-editor registry (register any component as a grid editor)
+export {
+  registerCellEditor,
+  getCellEditor,
+  hasCellEditor,
+  unregisterCellEditor,
+  registeredCellEditorTypes,
+  defaultEditorProps,
+  resolveEditorProps,
+  type CellEditorContext,
+  type CellEditorRegistration,
+} from './editor-registry'
+export { registerBuiltinEditors } from './builtin-editors'
+// UI kit - shared field chrome (label + hint + error + direction wrapper)
+export { default as SvField } from './SvField.svelte'
 // UI kit - headless cores (state + prop-getters you render yourself, like createSvGrid)
 export {
   createListbox,
@@ -94,7 +142,7 @@ export { createCountryInput, type CountryInput, type CountryInputConfig } from '
 // Text-input family cores
 export { createNumberInput, type NumberInputConfig, type NumberInputCore } from './createNumberInput.svelte'
 export { createMaskedInput, type MaskedInputConfig, type MaskedInputCore } from './createMaskedInput.svelte'
-export { createPhoneInput, type PhoneInputConfig, type PhoneInputCore } from './createPhoneInput.svelte'
+export { createPhoneInput, type PhoneInputConfig, type PhoneInputCore, type PhoneParts } from './createPhoneInput.svelte'
 export { createColorInput, normalizeHex, type ColorInputConfig, type ColorInputCore } from './createColorInput.svelte'
 export { createPasswordInput, passwordStrength, STRENGTH_LABELS, type PasswordInputConfig, type PasswordInputCore } from './createPasswordInput.svelte'
 // Buttons & toggles family cores
@@ -109,9 +157,10 @@ export { createTimePicker, parseTimeValue, type TimePicker, type TimePickerConfi
 export { createDateTimePicker, type DateTimePicker, type DateTimePickerConfig, type DropDownDisplayMode, type DateTimeTab } from './createDateTimePicker.svelte'
 // Layout & range family cores
 export { createTabs, type Tabs, type TabsConfig, type TabsOrientation, type TabsActivation } from './createTabs.svelte'
-export { createTree, treeDescendantIds, treeCheckState, type Tree, type TreeConfig, type TreeRow, type CheckState } from './createTree.svelte'
+export { createTree, treeDescendantIds, treeCheckState, moveTreeNode, sortTreeNodes, treeContains, type Tree, type TreeConfig, type TreeRow, type CheckState, type TreeDropPosition } from './createTree.svelte'
 export { createSlider, type Slider, type SliderConfig, type SliderValue, type SliderOrientation, type SliderThumb, type SliderPoint } from './createSlider.svelte'
 export { createGauge, type Gauge, type GaugeConfig, type GaugePoint } from './createGauge.svelte'
+export { createButtonGroup, toGroupArray, type ButtonGroup, type ButtonGroupConfig } from './createButtonGroup.svelte'
 // UI kit - Group B (buttons & toggles)
 export { default as SvButton } from './SvButton.svelte'
 export { default as SvRepeatButton } from './SvRepeatButton.svelte'
@@ -121,28 +170,106 @@ export { default as SvCheckBox } from './SvCheckBox.svelte'
 export { default as SvRadioGroup, type RadioOption } from './SvRadioGroup.svelte'
 export { default as SvRating } from './SvRating.svelte'
 // UI kit - Group C (text inputs)
+export { default as SvTextInput } from './SvTextInput.svelte'
+export { default as SvTextArea } from './SvTextArea.svelte'
+export { default as SvOtpInput } from './SvOtpInput.svelte'
+export { sanitizeOtp, otpCells, isOtpComplete } from './otp'
+export { default as SvDurationInput } from './SvDurationInput.svelte'
+export { parseDuration, formatDuration } from './duration'
 export { default as SvNumberInput } from './SvNumberInput.svelte'
 export { default as SvPasswordInput } from './SvPasswordInput.svelte'
 export { default as SvMaskedInput } from './SvMaskedInput.svelte'
 export { default as SvPhoneInput } from './SvPhoneInput.svelte'
 export { default as SvColorInput } from './SvColorInput.svelte'
 export { applyMask, unmask, isMaskComplete } from './datetime/mask'
-export { COUNTRIES, COUNTRY_BY_CODE, flagEmoji, type Country } from './countries'
+export { COUNTRIES, COUNTRY_BY_CODE, flagEmoji, phoneDigitsValid, PHONE_NATIONAL_LENGTHS, type Country } from './countries'
 // UI kit - Group D (selection overlays)
 export { default as SvListBox } from './SvListBox.svelte'
 export { default as SvDropDownList } from './SvDropDownList.svelte'
 export { default as SvComboBox } from './SvComboBox.svelte'
 export { default as SvAutoComplete } from './SvAutoComplete.svelte'
 export { default as SvTagsInput } from './SvTagsInput.svelte'
+export { default as SvMultiSelect, type MultiSelectOption } from './SvMultiSelect.svelte'
+export { debounce, type Debounced } from './debounce'
+export { default as SvTreeSelect, type TreeSelectNode } from './SvTreeSelect.svelte'
+export { flattenVisible, findNodePath, branchValues, type FlatRow } from './tree-select'
+export { default as SvGridSelect, type GridSelectColumn } from './SvGridSelect.svelte'
+export { filterGridRows } from './grid-select'
 export { default as SvCountryInput } from './SvCountryInput.svelte'
-export { filterOptions, type ListOption } from './list-option'
+export {
+  filterOptions,
+  groupOptions,
+  hasGroups,
+  nextTypeaheadIndex,
+  createTypeaheadBuffer,
+  isTypeaheadKey,
+  type ListOption,
+  type IndexedOption,
+  type OptionGroup,
+} from './list-option'
+export { virtualRange, scrollToIndex, type VirtualRange, type VirtualParams } from './virtual'
 // UI kit - Group E (range & feedback)
 export { default as SvSlider } from './SvSlider.svelte'
 export { default as SvGauge } from './SvGauge.svelte'
 // UI kit - Group F (composite / layout)
 export { default as SvTabs, type TabItem } from './SvTabs.svelte'
 export { default as SvTree, type TreeNode as SvTreeNode } from './SvTree.svelte'
+export { default as SvAccordion, type AccordionItem, type AccordionExpandMode } from './SvAccordion.svelte'
+export { createAccordion, type Accordion, type AccordionConfig } from './createAccordion.svelte'
+export { default as SvSplitter, type SplitterOrientation } from './SvSplitter.svelte'
+export { createSplitter, type Splitter, type SplitterConfig, type SplitterPoint } from './createSplitter.svelte'
+export { default as SvFileUpload, type FileRejection, type FileRejectReason } from './SvFileUpload.svelte'
+export { createFileUpload, fileMatchesAccept, type FileUpload, type FileUploadConfig } from './createFileUpload.svelte'
+// UI kit - overlays (popover / tooltip / modal), sharing the popover.ts positioning + animation
+export { default as SvPopover } from './SvPopover.svelte'
+export { default as SvTooltip } from './SvTooltip.svelte'
+export { default as SvModal } from './SvModal.svelte'
+export { default as SvDrawer } from './SvDrawer.svelte'
+export type DrawerSide = 'right' | 'left' | 'top' | 'bottom'
+export { default as SvToaster } from './SvToaster.svelte'
+export { default as SvBadge } from './SvBadge.svelte'
+export { default as SvSkeleton } from './SvSkeleton.svelte'
+export { default as SvCard } from './SvCard.svelte'
+export { default as SvAlert } from './SvAlert.svelte'
+export { default as SvEmptyState } from './SvEmptyState.svelte'
+export { default as SvDivider } from './SvDivider.svelte'
+export { default as SvChip } from './SvChip.svelte'
+export { default as SvStat } from './SvStat.svelte'
+export { default as SvTimeline, type TimelineItem } from './SvTimeline.svelte'
+export { default as SvSparkline } from './SvSparkline.svelte'
+export { default as SvScrollArea } from './SvScrollArea.svelte'
+export { default as SvAvatarGroup } from './SvAvatarGroup.svelte'
+export { default as SvCommand, type CommandItem } from './SvCommand.svelte'
+export { fuzzyScore, fuzzyMatch } from './fuzzy'
+export { default as SvRichText, type RichTextTool } from './SvRichText.svelte'
+export { default as SvCarousel } from './SvCarousel.svelte'
+export { default as SvTour, type TourStep } from './SvTour.svelte'
+export { default as SvPagination } from './SvPagination.svelte'
+export { paginationRange, type PaginationItem, type PaginationRangeOptions } from './paginate'
+export { default as SvBreadcrumb, type BreadcrumbItem } from './SvBreadcrumb.svelte'
+export { default as SvStepper, type StepItem } from './SvStepper.svelte'
+export { default as SvAvatar } from './SvAvatar.svelte'
+export { avatarInitials, avatarColorHue } from './avatar'
+export { default as SvContextMenu } from './SvContextMenu.svelte'
+export {
+  toast,
+  dismissToast,
+  clearToasts,
+  pauseToast,
+  resumeToast,
+  toastStore,
+  type Toast,
+  type ToastVariant,
+  type ToastOptions,
+  type ToastFn,
+} from './toast-store.svelte'
+export { default as SvMenu, type MenuItem } from './SvMenu.svelte'
+export { default as SvNavPane, type NavItem, type NavSection, type NavModule } from './SvNavPane.svelte'
+export { default as SvProgress } from './SvProgress.svelte'
+export { default as SvCircularProgress } from './SvCircularProgress.svelte'
+export { popIn } from './popover'
 export { default as SvForm, type FormField, type FormFieldType } from './SvForm.svelte'
+export { rules, runRules, isEmptyValue, type Validator, type RuleOptions, type CompareOp } from './validators'
 export { anchoredRect, portalToBody, PANEL_THEME_VARS, type AnchoredRect } from './popover'
 export {
   toDate, startOfDay, addDays, addMonths, addYears, clampDate, isSameDay,
@@ -258,7 +385,25 @@ export {
   type ServerState,
   type ServerSortModel,
   type ServerFilterModel,
+  type ServerAggregation,
+  type ServerGroupRow,
+  type ServerLeafRow,
+  type ServerMoreRow,
+  type ServerFooterRow,
+  type ServerSkeletonRow,
+  type ServerDisplayRow,
 } from './server-data-source'
+export {
+  createServerGroupModel,
+  serverGroupRows,
+  serverGroupNav,
+  type ServerGroupController,
+  type ServerGroupControllerOptions,
+  type ServerGroupState,
+  type ServerGroupGridRow,
+} from './server-group-model'
+export { default as SvGroupCell } from './SvGroupCell.svelte'
+export { default as SvRowGroupPanel } from './SvRowGroupPanel.svelte'
 export {
   createNamedViews,
   memoryViews,

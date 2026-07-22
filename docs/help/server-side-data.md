@@ -11,6 +11,8 @@ client and onto your API. Three flavours, ranked by complexity:
    slots you haven't loaded yet; you fetch chunks as the user scrolls
    through them, with debounce + cancellation.
 
+![The SvGrid emits a request with sort, filter, and page state to your ServerDataSource, which queries the backend and returns rows and a total back to the grid.](/docs-media/grid-server-row-model.svg)
+
 > Live demos: **#33 Server-side infinite scroll** is the production
 > reference for option 3. It's embedded below so you can scroll, sort,
 > filter, and watch the network panel light up.

@@ -399,7 +399,7 @@
   <!-- Body: grid + detail -->
   <div class="crm-body flex flex-1 min-h-0 gap-3">
     <div class="crm-master flex-1 min-w-0">
-      <SvGrid
+      <SvGrid responsive={true}
         data={filteredDeals}
         columns={[
           { field: 'company', header: 'Account', width: 240, editable: false,

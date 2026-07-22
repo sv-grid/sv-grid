@@ -121,6 +121,9 @@ export {
 export {
   createSupabaseDataSource,
   createRestDataSource,
+  offsetLimitAdapter,
+  dummyJsonAdapter,
+  jsonServerAdapter,
   introspectSupabaseTable,
   createSupabaseRealtime,
   createRelationLookup,
@@ -134,6 +137,8 @@ export {
   type SupabaseDataSourceConfig,
   type SupabaseClientLike,
   type RestDataSourceConfig,
+  type RestAdapter,
+  type OffsetLimitOptions,
   type IntrospectSupabaseOptions,
   type IntrospectedColumn,
   type ColumnReference,
@@ -188,6 +193,8 @@ export { default as SvAuthGate } from './SvAuthGate.svelte'
 export { default as SvSchemaChart } from './SvSchemaChart.svelte'
 export { default as SvSchemaDashboard } from './SvSchemaDashboard.svelte'
 export { default as SvBoard } from './SvBoard.svelte'
+export { default as SvSchedule } from './SvSchedule.svelte'
+export { default as SvRecordDetail } from './SvRecordDetail.svelte'
 
 export {
   FIELD_TYPES,
@@ -217,7 +224,13 @@ export {
   emitStudioApp,
   sampleApps,
   getSampleApp,
+  liveDataSamples,
+  getLiveDataSample,
   type SampleApp,
+  sanitizeStudioProject,
+  buildStudioBugReport,
+  type BugReport,
+  type BugReportInput,
   addBlock,
   addBlockAt,
   removeBlock,

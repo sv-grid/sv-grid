@@ -4,6 +4,8 @@ Conditional formatting colors a cell by its value. SvGrid ships it as a
 declarative engine prop, `conditionalFormats`, so you describe the rules once
 and the grid paints every cell - no per-cell `cell` snippet required.
 
+<div data-docs-demo="141-conditional-formatting" data-height="480"></div>
+
 It goes beyond the `cellClass(ctx)` callback (which only toggles static CSS
 classes): color scales and data bars need a value computed against the
 column's min/max range, which the engine does for you.

@@ -5,6 +5,8 @@ from your `schema.prisma` - no live database connection needed at generation
 time. Your Prisma schema is the single source of truth, and the `--from` flag
 auto-detects it (by the `.prisma` extension or a `model` block).
 
+![At generation time the --from flag auto-detects your schema.prisma file - the single source of truth - and Studio scaffolds a CRUD screen from it, with no live database connection needed.](/docs-media/studio-prisma.svg)
+
 ## Scaffold from a schema file
 
 ```bash

@@ -16,9 +16,12 @@
  * any popover panel actually consumes.
  */
 export const PANEL_THEME_VARS = [
-  '--sg-accent', '--sg-bg', '--sg-fg', '--sg-border', '--sg-muted',
-  '--sg-header-bg', '--sg-row-hover-bg', '--sg-selection-bg',
-  '--sg-input-bg', '--sg-input-border', '--sg-selection-fg',
+  '--sg-accent', '--sg-on-accent', '--sg-bg', '--sg-fg', '--sg-muted', '--sg-border',
+  '--sg-header-bg', '--sg-header-fg', '--sg-row-hover-bg', '--sg-row-alt-bg',
+  '--sg-selection-bg', '--sg-selection-fg', '--sg-input-bg', '--sg-input-border',
+  '--sg-danger', '--sg-focus-ring', '--sg-radius', '--sg-font',
+  '--sg-invalid-bg', '--sg-invalid-border', '--sg-invalid-fg',
+  '--sg-rating-on', '--sg-rating-empty', '--sg-rating-hover',
 ] as const
 
 /**
@@ -38,6 +41,31 @@ export function portalToBody(node: HTMLElement, vars: ReadonlyArray<string> = PA
       if (node.parentNode === document.body) document.body.removeChild(node)
     },
   }
+}
+
+/**
+ * Svelte action: play a short enter animation when a portalled panel mounts
+ * (dropdowns, popovers, dialogs). Slides from the trigger side + fades/scales in.
+ * A no-op under `prefers-reduced-motion` and in environments without the Web
+ * Animations API (jsdom), so tests and reduced-motion users are unaffected.
+ *
+ * `use:popIn={{ up: rect.openUpward }}` - pass `up` for panels that flipped above
+ * their trigger so the slide direction matches.
+ */
+export function popIn(node: HTMLElement, param: { up?: boolean; duration?: number; scale?: number } = {}) {
+  if (typeof node.animate !== 'function') return
+  const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (reduce) return
+  const dy = param.up ? 6 : -6
+  const s = param.scale ?? 0.97
+  node.animate(
+    [
+      { opacity: 0, transform: `translateY(${dy}px) scale(${s})` },
+      { opacity: 1, transform: 'translateY(0) scale(1)' },
+    ],
+    { duration: param.duration ?? 140, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+  )
+  return {}
 }
 
 export type AnchoredRect = { top: number; left: number; width: number; openUpward: boolean }

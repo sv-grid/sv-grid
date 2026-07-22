@@ -8,6 +8,7 @@
  */
 import type { RowData } from '@svgrid/grid'
 import type { EntityField, EntityFieldType, EntitySchema } from '../schema.js'
+import { refineField } from './field-inference.js'
 
 /** A discovered foreign key: this column references `table`.`column`. */
 export type ColumnReference = {
@@ -75,7 +76,8 @@ export function buildEntitySchema<TData extends RowData = RowData>(
     if (type === 'enum' && c.enumValues?.length) {
       f.options = c.enumValues.map((v) => ({ value: v, label: v }))
     }
-    return f
+    // Infer a rich editor from the column name/type (phone / email / rating / ...).
+    return refineField(f)
   })
 
   return { name: table, label: table, idField, fields }

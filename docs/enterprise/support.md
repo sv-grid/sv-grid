@@ -21,7 +21,7 @@ feature broken; "sev-3" = bug; "sev-4" = question.
 | ----------------------------------------- | ------------------------------------------------------ |
 | sv-grid bugs                              | Bugs in your application code                          |
 | Type-error questions in sv-grid surface   | Generic TypeScript / Svelte questions                  |
-| Migration help (from AG Grid / etc.)      | Full app port (we can recommend partners)              |
+| Migration help (from another grid)        | Full app port (we can recommend partners)              |
 | Performance triage on supported browsers  | Performance on EOL browsers                            |
 | Feature-request triage                    | We promise to evaluate; we don't promise to build      |
 | Production-down incident triage           | Re-architecture of your data layer                     |

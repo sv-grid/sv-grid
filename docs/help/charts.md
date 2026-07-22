@@ -13,6 +13,8 @@ SvGrid can chart its own data with no external charting library. Two pieces:
 Feed it `api.getDisplayedRows()` and the chart reflects the grid's current,
 filtered, sorted data - the "chart from the grid" enterprise feature.
 
+![The grid's filtered and sorted rows flow through rowsToChartSpec into SvGridChart, which re-renders whenever the grid's filters or sorting change.](/docs-media/grid-charts.svg)
+
 ```svelte
 <script lang="ts">
   import { SvGrid, SvGridChart, rowsToChartSpec, type SvGridApi } from '@svgrid/grid'

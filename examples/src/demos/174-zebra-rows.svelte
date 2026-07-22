@@ -2,7 +2,7 @@
   /**
    * 174. Zebra rows
    * ----------------
-   * Set the `zebraRows` prop on <SvGrid> and every other DATA row gets
+   * Set the `zebraRows` prop on <SvGrid responsive={true}> and every other DATA row gets
    * the `--sg-row-alt-bg` background. Only data rows stripe - pinned,
    * group, detail, and summary rows keep their single background, so a
    * pinned total row reads as one solid band even when zebra is on.
@@ -62,7 +62,7 @@
   </header>
 
   <div class="zr-wrap">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

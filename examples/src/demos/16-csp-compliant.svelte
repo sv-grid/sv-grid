@@ -200,7 +200,7 @@
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

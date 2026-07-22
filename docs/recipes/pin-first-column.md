@@ -2,6 +2,9 @@
 
 > Live in [demo 25-column-pinning](https://svgrid.com/#/demos/25-column-pinning).
 
+<div data-docs-demo="25-column-pinning" data-height="480"></div>
+
+
 ## When
 
 Wide grids where the row-label column must stay visible while the data scrolls horizontally.

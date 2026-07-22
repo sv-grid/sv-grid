@@ -281,7 +281,7 @@
     <div class="flex flex-col min-h-0">
       <div class="mb-1 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 shrink-0">Production lines</div>
       <div class="flex-1 min-h-0">
-        <SvGrid
+        <SvGrid responsive={true}
           data={lines}
           columns={[
             { field: 'id',     header: 'Line', editorType: 'text', width: 90 },
@@ -319,7 +319,7 @@
     <div class="flex flex-col min-h-0">
       <div class="mb-1 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 shrink-0">Active alarms</div>
       <div class="flex-1 min-h-0">
-        <SvGrid
+        <SvGrid responsive={true}
           data={alarms}
           columns={[
             { field: 'at', header: 'Time', editorType: 'text', width: 90 },

@@ -730,6 +730,13 @@
   background: var(--sg-header-bg, #f5f7fb);
 }
 
+/* Responsive (narrow) mode: smooth momentum touch panning, and let touch
+   gestures pan the grid freely (the wheel-trap contain stays for pointer). */
+.sv-grid-container.sv-grid-narrow {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
+}
+
 .sv-grid-container {
   scrollbar-width: auto;
   -ms-overflow-style: auto;
@@ -2340,4 +2347,30 @@ select.sv-grid-fr-editor {
 }
 .sv-grid-filter-operator-btn.is-open {
   opacity: 1;
+}
+
+/* Kanban board mode search box (board.searchable) */
+.sv-grid-board-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 5px 9px;
+  border: 1px solid var(--sg-border, #e4e7ec);
+  border-radius: var(--sg-radius, 8px);
+  background: var(--sg-bg, #fff);
+  color: color-mix(in srgb, var(--sg-fg, #101828) 55%, transparent);
+  max-width: 280px;
+}
+.sv-grid-board-search:focus-within {
+  border-color: var(--sg-accent, #3b82f6);
+}
+.sv-grid-board-search input {
+  flex: 1 1 auto;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--sg-fg, #101828);
 }

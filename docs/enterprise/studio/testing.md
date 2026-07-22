@@ -4,6 +4,8 @@ A Studio screen is plain SvelteKit code, so you test it with the tools you alrea
 use. Three layers, cheapest first: the **data source** (no DOM), the **screen**
 (a component test), and the **flow** (end to end).
 
+![Three test layers, cheapest first: the data source with no DOM at the base, the screen as a component test, and the flow end to end at the top.](/docs-media/studio-testing.svg)
+
 ## 1. The data source (fastest)
 
 Every backend is a plain object implementing [`ServerDataSource`](./data-binding.md),

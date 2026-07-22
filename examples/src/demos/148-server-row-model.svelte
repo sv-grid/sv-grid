@@ -69,6 +69,17 @@
     },
   }
 
+  // Server-side set-filter values: the checklist shows EVERY distinct value from
+  // the 100k-row server, not just the 50 on the current page. Fetched on demand
+  // when a column's filter menu opens (and cached by the grid).
+  async function distinctValues(columnId: string): Promise<string[]> {
+    await new Promise((r) => setTimeout(r, 150)) // simulated server query
+    if (columnId !== 'team' && columnId !== 'country') return []
+    const set = new Set<string>()
+    for (const r of DB) set.add(String((r as Record<string, unknown>)[columnId]))
+    return [...set].sort()
+  }
+
   const columns: ColumnDef<typeof features, Row>[] = [
     { field: 'id', header: 'ID', width: 90, align: 'right' },
     { field: 'name', header: 'Name', width: 200 },
@@ -102,13 +113,14 @@
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={s.rows}
       columns={columns}
       features={features}
       sortable
       filterable
       filterMode="menu"
+      serverFilterValues={distinctValues}
       externalSort
       externalFilter
       loading={s.loading}

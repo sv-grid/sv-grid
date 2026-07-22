@@ -5,6 +5,8 @@
 SvGrid reads two arrays: `data` (your rows) and `columns` (the
 column-definition list). Everything else is opt-in.
 
+![The data array of rows and the columns array of definitions both feed the SvGrid element, with a ColumnDef anatomy callout mapping field to cell value, header to column label, and cell or renderSnippet to a custom render.](/docs-media/gs-data-columns.svg)
+
 ## Row data
 
 The `data` prop is any `ReadonlyArray<TRow>`. A Svelte 5 `$state`

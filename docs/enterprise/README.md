@@ -4,6 +4,8 @@
 the same `<SvGrid>` you already have and adds four feature areas: data
 export, data import, an AI assistant, and pivot tables.
 
+![The @svgrid/enterprise pack bolts data export, data import, an AI assistant, and pivot tables onto the same SvGrid you already have.](/docs-media/enterprise-pack.svg)
+
 ```bash
 pnpm add @svgrid/enterprise
 ```

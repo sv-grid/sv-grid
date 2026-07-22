@@ -2,6 +2,9 @@
 
 > Live in [demo 56-export-theme-matched](https://svgrid.com/#/demos/56-export-theme-matched).
 
+<div data-docs-demo="56-export-theme-matched" data-height="480"></div>
+
+
 ## When
 
 Excel file colours follow the same --sg-* tokens the grid renders with.

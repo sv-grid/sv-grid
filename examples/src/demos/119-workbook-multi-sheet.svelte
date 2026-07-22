@@ -837,7 +837,7 @@
     {:else}
       <div class="wb-grid-row">
         <div class="wb-grid-host">
-          <SvGrid
+          <SvGrid responsive={true}
             data={gridRows}
             columns={columns}
             features={features}

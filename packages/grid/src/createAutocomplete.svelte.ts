@@ -20,6 +20,7 @@
  * ```
  */
 import { filterOptions, type ListOption } from './list-option'
+import { editorAria, type EditorAriaState } from './editor-contract'
 
 /** Reactive inputs are passed as getters so the core tracks live prop changes. */
 export type AutocompleteConfig = {
@@ -32,10 +33,25 @@ export type AutocompleteConfig = {
   ariaLabel?: () => string | undefined
   /** DOM focus hook provided by the renderer; the core never touches the DOM. */
   focusInput?: () => void
+  // Editor contract (ARIA + validation) - folded into inputProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
 }
 
 export function createAutocomplete(config: AutocompleteConfig) {
   const minChars = () => config.minChars?.() ?? 1
+
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
 
   let open = $state(false)
   let active = $state(0)
@@ -75,10 +91,11 @@ export function createAutocomplete(config: AutocompleteConfig) {
     onKeydown,
     /** Spread onto the text <input>. */
     inputProps: () => ({
+      id: config.id?.(),
       role: 'combobox' as const,
       'aria-expanded': open,
       'aria-autocomplete': 'list' as const,
-      'aria-label': config.ariaLabel?.(),
+      ...editorAria(ariaState()),
       value: config.value(),
       disabled: config.disabled?.() ?? false,
       oninput: onInput,

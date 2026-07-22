@@ -2,6 +2,9 @@
 
 > Live in [demo 75-ai-smart-paste](https://svgrid.com/#/demos/75-ai-smart-paste).
 
+<div data-docs-demo="75-ai-smart-paste" data-height="480"></div>
+
+
 ## When
 
 Paste anything; the assistant infers columns and previews typed rows for accept/update/skip.

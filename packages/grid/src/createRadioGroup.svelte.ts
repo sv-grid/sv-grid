@@ -21,6 +21,8 @@
  */
 export type RadioOption = { value: string | number; label: string; disabled?: boolean }
 
+import { editorAria, type EditorAriaState } from './editor-contract'
+
 /** Reactive inputs are passed as getters so the core tracks live prop changes. */
 export type RadioGroupConfig = {
   options: () => ReadonlyArray<RadioOption>
@@ -28,6 +30,12 @@ export type RadioGroupConfig = {
   onChange?: (value: string | number) => void
   disabled?: () => boolean
   ariaLabel?: () => string | undefined
+  // Editor contract (ARIA + validation) - folded into groupProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
 }
 
 export type RadioProps = {
@@ -43,7 +51,11 @@ export type RadioProps = {
 
 export type RadioGroupProps = {
   role: 'radiogroup'
+  id: string | undefined
   'aria-label': string | undefined
+  'aria-invalid': 'true' | undefined
+  'aria-required': 'true' | undefined
+  'aria-describedby': string | undefined
   'aria-disabled': boolean
   onkeydown: (e: KeyboardEvent) => void
 }
@@ -102,6 +114,15 @@ export function createRadioGroup(config: RadioGroupConfig): RadioGroup {
     container.querySelectorAll<HTMLElement>('[role="radio"]')[target]?.focus()
   }
 
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
+
   return {
     get value() { return config.value() },
     get disabled() { return disabled() },
@@ -110,8 +131,9 @@ export function createRadioGroup(config: RadioGroupConfig): RadioGroup {
     onKeydown,
     groupProps: () => ({
       role: 'radiogroup',
-      'aria-label': config.ariaLabel?.(),
+      id: config.id?.(),
       'aria-disabled': disabled(),
+      ...editorAria(ariaState()),
       onkeydown: onKeydown,
     }),
     radioProps: (option: RadioOption) => {

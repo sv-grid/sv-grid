@@ -61,6 +61,51 @@ export function reduceValue<T extends RowData>(
 }
 
 /**
+ * Group rows by `trendField` (sorted, so ISO dates / ordered categories line up)
+ * and reduce `measure` per bucket - the series behind a KPI card's sparkline.
+ */
+export function kpiSeries<T extends RowData>(
+  rows: ReadonlyArray<T>,
+  opts: { trendField: string; measure?: string; reduce: AggregateReduce },
+): number[] {
+  const groups = new Map<string, T[]>()
+  for (const r of rows) {
+    const k = String(r[opts.trendField] ?? '')
+    if (k === '') continue
+    ;(groups.get(k) ?? groups.set(k, []).get(k)!).push(r)
+  }
+  return [...groups.keys()].sort().map((k) => reduceValue(groups.get(k)!, { measure: opts.measure, reduce: opts.reduce }))
+}
+
+/** SVG polyline points for a sparkline in a `w` x `h` box (y grows downward). */
+export function sparklinePoints(values: number[], w = 120, h = 30, pad = 2): string {
+  if (values.length === 0) return ''
+  const min = Math.min(...values)
+  const range = Math.max(...values) - min || 1
+  const dx = values.length > 1 ? (w - pad * 2) / (values.length - 1) : 0
+  return values
+    .map((v, i) => `${(pad + i * dx).toFixed(1)},${(pad + (h - pad * 2) * (1 - (v - min) / range)).toFixed(1)}`)
+    .join(' ')
+}
+
+/** Percent change from the first non-zero point to the last (null when < 2 points). */
+export function seriesDelta(values: number[]): number | null {
+  if (values.length < 2) return null
+  const first = values.find((v) => v !== 0)
+  const last = values[values.length - 1]!
+  if (first == null || first === 0) return null
+  return ((last - first) / Math.abs(first)) * 100
+}
+
+/** Format a KPI number: currency (`$`), percent (`%`), compact (`1.2k`), or grouped. */
+export function formatKpiValue(value: number, format?: 'number' | 'currency' | 'percent' | 'compact'): string {
+  if (format === 'currency') return '$' + value.toLocaleString(undefined, { maximumFractionDigits: 0 })
+  if (format === 'percent') return value.toLocaleString(undefined, { maximumFractionDigits: 1 }) + '%'
+  if (format === 'compact') return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value)
+  return value.toLocaleString(undefined, { maximumFractionDigits: 1 })
+}
+
+/**
  * Propose a default dashboard from a schema: a total-count KPI, a sum/avg KPI on
  * the first numeric measure (when there is one), and a bar chart on the default
  * dimension / measure. Built from `chartFieldsFromSchema`.

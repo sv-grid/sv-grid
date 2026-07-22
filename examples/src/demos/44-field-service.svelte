@@ -415,7 +415,7 @@
   <!-- Body: grid + tech capacity sidebar -->
   <div class="fs-body">
     <div class="fs-grid-wrap">
-      <SvGrid
+      <SvGrid responsive={true}
         data={jobs}
         columns={[
           { field: 'id', header: 'Work order', width: 130, editable: false,

@@ -213,7 +213,7 @@
   <div class="layout flex-1 min-h-0">
     <!-- Grid -->
     <div class="grid-card min-h-0">
-      <SvGrid
+      <SvGrid responsive={true}
         data={rows}
         columns={columns}
         features={features}

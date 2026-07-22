@@ -187,7 +187,7 @@
         <p>The endpoint succeeded but returned an empty list.</p>
       </div>
     {:else}
-      <SvGrid
+      <SvGrid responsive={true}
         data={state.rows}
         columns={columns}
         features={features}

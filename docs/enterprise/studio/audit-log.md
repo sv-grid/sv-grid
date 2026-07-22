@@ -5,6 +5,8 @@ for any regulated or multi-user app. Studio records writes **server-side**, at
 the API route, so the trail can't be skipped by a tampered client, and ships an
 **Audit log** viewer screen.
 
+![Writes are recorded server-side at the generated API route, capturing who, what, and when into an append-only audit log surfaced by an Audit log viewer screen.](/docs-media/studio-audit.svg)
+
 ## Turn it on
 
 In the [visual designer](./app-designer.md), open the inspector with no block

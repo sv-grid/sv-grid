@@ -245,6 +245,14 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(page).toContain("operator: 'contains'") // text facet
   })
 
+  it('renders an error banner (with retry) + a friendly grid empty message', () => {
+    const page = emitStudioProject(createProject([customers])).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain('{#if view.error}')                 // no longer a silent empty grid
+    expect(page).toContain('class="st-error"')
+    expect(page).toContain('controller.refresh()')             // retry
+    expect(page).toContain('emptyMessage="No customer yet."')  // friendly empty state
+  })
+
   it('emits a record panel wired to the grid selection', () => {
     let p = createProject([customers])
     const sid = p.screens[0]!.id
@@ -824,6 +832,23 @@ describe('emitStudioAppBundle (full runnable app)', () => {
     expect(pkg.dependencies['@svgrid/enterprise']).toBeTruthy()
     expect(pkg.devDependencies['@sveltejs/kit']).toBeTruthy()
     expect(pkg.devDependencies['vite']).toBeTruthy()
+  })
+
+  it('ships a per-entity smoke test + vitest wiring', () => {
+    const bundle = emitStudioAppBundle(createProject([customers, orders], { title: 'My Sales App' }))
+    const pkg = JSON.parse(bundle.find((f) => f.path === 'package.json')!.contents)
+    expect(pkg.scripts.test).toBe('vitest run')
+    expect(pkg.devDependencies['vitest']).toBeTruthy()
+    expect(bundle.find((f) => f.path === 'vitest.config.ts')).toBeTruthy()
+    const test = bundle.find((f) => f.path === 'src/lib/schemas.test.ts')!.contents
+    // one describe block per entity, asserting render + data-source round-trip
+    expect(test).toContain('describe("Customer"')
+    expect(test).toContain('describe("Order"')
+    expect(test).toContain('schemaToColumns(customersSchema)')
+    expect(test).toContain('schemaToFormFields(customersSchema)')
+    expect(test).toContain('createInMemoryDataSource<Customers>([], customersSchema)')
+    expect(test).toContain('round-trips create -> read -> delete')
+    expect(test).toContain("from './schemas'")
   })
 
   it('adds the driver dep when an entity binds to Supabase / SQL', () => {

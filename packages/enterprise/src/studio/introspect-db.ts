@@ -10,6 +10,7 @@
  * it's testable and adds no dependencies.
  */
 import type { EntityField, EntityFieldType, EntitySchema } from '../schema.js'
+import { refineField } from '../sources/field-inference.js'
 
 export type SqlDialectName = 'postgres' | 'supabase' | 'mysql' | 'mssql' | 'sqlite'
 export type DbExecute = (sql: string, params: unknown[]) => Promise<Array<Record<string, unknown>>>
@@ -252,7 +253,9 @@ export async function introspectDatabase(options: IntrospectDbOptions): Promise<
     fks = []
   }
 
-  return { name: options.table, fields: applyForeignKeys(fields, fks) }
+  // Infer rich editors (phone / email / rating / mask / ...) from column names,
+  // after FK columns became relations so those are left untouched.
+  return { name: options.table, fields: applyForeignKeys(fields, fks).map(refineField) }
 }
 
 /** List the base tables in the connected database. */

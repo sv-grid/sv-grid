@@ -4,17 +4,15 @@
    * label. Parity: Smart `smart-check-box`. Controlled via `checked` + `onChange`.
    */
   import type { Snippet } from 'svelte'
+  import SvField from './SvField.svelte'
+  import { nextEditorId, type SvEditorProps } from './editor-contract'
   import { createCheckbox } from './createCheckbox.svelte'
 
-  type Props = {
+  type Props = SvEditorProps & {
     checked?: boolean
     indeterminate?: boolean
     onChange?: (checked: boolean) => void
-    disabled?: boolean
-    size?: 'sm' | 'md' | 'lg'
-    name?: string
     value?: string
-    ariaLabel?: string
     children?: Snippet
   }
 
@@ -27,8 +25,17 @@
     name,
     value,
     ariaLabel,
+    invalid = false,
+    required = false,
+    error,
+    hint,
+    dir,
+    id,
     children,
   }: Props = $props()
+
+  const autoId = nextEditorId('sv-check')
+  const uid = $derived(id ?? autoId)
 
   // The styled checkbox is just a renderer over the headless core. The label
   // fallback depends on `children` (a render concern), so it is computed here.
@@ -38,25 +45,32 @@
     onChange: (v) => onChange?.(v),
     disabled: () => disabled,
     ariaLabel: () => ariaLabel ?? (children ? undefined : 'checkbox'),
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
   })
 </script>
 
-<label class="sv-check sv-check--{size}" class:is-disabled={disabled}>
-  <button
-    class="sv-check__box"
-    class:is-checked={checked && !indeterminate}
-    class:is-indeterminate={indeterminate}
-    {...cb.boxProps()}
-  >
-    {#if indeterminate}
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" /></svg>
-    {:else if checked}
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-    {/if}
-  </button>
-  {#if children}<span class="sv-check__label">{@render children()}</span>{/if}
-  {#if name}<input type="hidden" {name} value={checked ? (value ?? 'true') : ''} />{/if}
-</label>
+<SvField id={uid} {hint} {error} {required} {dir}>
+  <label class="sv-check sv-check--{size}" class:is-disabled={disabled} class:is-invalid={invalid}>
+    <button
+      class="sv-check__box"
+      class:is-checked={checked && !indeterminate}
+      class:is-indeterminate={indeterminate}
+      {...cb.boxProps()}
+    >
+      {#if indeterminate}
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" /></svg>
+      {:else if checked}
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      {/if}
+    </button>
+    {#if children}<span class="sv-check__label">{@render children()}</span>{/if}
+    {#if name}<input type="hidden" {name} value={checked ? (value ?? 'true') : ''} />{/if}
+  </label>
+</SvField>
 
 <style>
   .sv-check {
@@ -78,5 +92,6 @@
   .sv-check__box.is-checked, .sv-check__box.is-indeterminate {
     background: var(--_accent); border-color: var(--_accent);
   }
+  .sv-check.is-invalid .sv-check__box { border-color: var(--sg-danger, #dc2626); }
   .sv-check__box:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--_accent)); outline-offset: 2px; }
 </style>

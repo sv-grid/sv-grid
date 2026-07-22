@@ -4,6 +4,8 @@ Goal: the user selects N rows, opens a toolbar, picks a field + value,
 and **every** selected row updates in one click. Standard back-office
 workflow for status changes, reassignments, tag application.
 
+<div data-docs-demo="23-bulk-actions" data-height="480"></div>
+
 ## Implementation
 
 The recipe is three pieces:

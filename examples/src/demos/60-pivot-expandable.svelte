@@ -576,7 +576,7 @@
       }}
       role="presentation"
     >
-      <SvGrid
+      <SvGrid responsive={true}
         data={visibleRows}
         columns={columns}
         features={features}

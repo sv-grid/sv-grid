@@ -2,7 +2,7 @@
   /**
    * 207. Blank sheet - just start typing
    * -------------------------------------
-   * An empty Excel-looking sheet built on a plain <SvGrid>: column-letter
+   * An empty Excel-looking sheet built on a plain <SvGrid responsive={true}>: column-letter
    * headers (A..J), the grid's own row-number gutter (showRowNumbers), inline
    * cell editing, cell-range selection + fill handle, and drag-resizable rows
    * (rowResize) and columns (native header handle). Above it, a name box +
@@ -259,7 +259,7 @@
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sheet" use:rowResize={{ onResize: onRowResize, min: 20, max: 320 }}>
-    <SvGrid
+    <SvGrid responsive={true}
       data={raw}
       columns={columns}
       features={features}

@@ -57,7 +57,7 @@ export type PgliteSource = { kind: 'pglite'; table: string; seed?: Record<string
 export type EntityDataSource = MemorySource | RestSource | SqlSource | SupabaseSource | PgliteSource
 
 /** The kinds of data-bound block a screen can hold. */
-export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar'
+export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar' | 'detail'
 
 export type GridAlign = 'left' | 'center' | 'right'
 export type GridColumnConfig = { field: string; show: boolean; header?: string; width?: number; align?: GridAlign; pin?: 'left' | 'right' }
@@ -151,7 +151,7 @@ export type StudioTab = { label: string; blocks: Block[] }
  *  controller-free, `allRows`-driven blocks (see `TAB_CHILD_KINDS`). */
 export type TabsConfig = { kind: 'tabs'; tabs: StudioTab[] }
 export type DashboardConfig = { kind: 'dashboard' }
-export type MasterDetailConfig = { kind: 'master-detail'; childEntity: string; foreignKey: string }
+export type MasterDetailConfig = { kind: 'master-detail'; childEntity: string; foreignKey: string; linkScreen?: string }
 export type LookupConfig = { kind: 'lookup'; field: string }
 /** A pivot table (SvPivotDesigner): row/column dimensions + one aggregated measure.
  *  `aggregate` reuses the Reduce set (all valid pivot aggregators). */
@@ -165,14 +165,22 @@ export type RecordConfig = { kind: 'record'; fields?: string[]; editable: boolea
 /** A Kanban board (SvBoard): columns are an `enum` field's options (`groupBy`),
  *  rows become draggable cards titled by `titleField`. Dragging a card changes its
  *  `groupBy` value. Optional `badgeField` (a chip) + `subtitleField` (secondary line). */
-export type BoardConfig = { kind: 'board'; groupBy: string; titleField: string; badgeField?: string; subtitleField?: string }
+export type BoardConfig = { kind: 'board'; groupBy: string; titleField: string; badgeField?: string; subtitleField?: string; openScreen?: string }
 /** A month event-calendar (SvSchedule): each row with a `dateField` value is an
  *  event on that day, labelled by `titleField` and (optionally) tinted by an enum
  *  `colorField`. Good for appointments / events / bookings / shifts. */
-export type CalendarConfig = { kind: 'calendar'; dateField: string; titleField: string; colorField?: string }
+export type CalendarConfig = { kind: 'calendar'; dateField: string; titleField: string; colorField?: string; openScreen?: string }
+/** A related child collection shown as a tab on a record detail page. */
+export type DetailRelated = { entity: string; foreignKey: string; label?: string; titleField?: string; subtitleField?: string; dateField?: string; statusField?: string; parentField?: string }
+/** A full record "detail page" (SvRecordDetail): a header (title + subtitle +
+ *  colored `statusField` pill + `metricFields` tiles), a tabbed Overview of
+ *  `sections` (field groups), and one tab per `related` child collection (a
+ *  timeline of the children pointing back at the record). The universal signature
+ *  view for relation-heavy entities where a board / calendar does not fit. */
+export type DetailConfig = { kind: 'detail'; titleField: string; subtitleField?: string; statusField?: string; metricFields?: string[]; sections?: { label: string; fields: string[] }[]; related?: DetailRelated[] }
 export type BlockConfig =
   | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | DashboardConfig | MasterDetailConfig | LookupConfig
-  | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig
+  | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig | DetailConfig
 
 /** Block kinds allowed inside a Tabs container: the controller-free, `allRows`-driven
  *  display blocks (no grid / form / master-detail, which need the screen controller). */
@@ -210,7 +218,7 @@ export type Screen = { id: string; entity: string; title: string; route: string;
 
 /** The generated app's shell (master layout): sidebar vs top-nav, brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav'
-export type ShellConfig = { style?: ShellStyle; brand?: string; footer?: string; navPosition?: 'left' | 'right'; logo?: string }
+export type ShellConfig = { style?: ShellStyle; brand?: string; footer?: string; navPosition?: 'left' | 'right'; logo?: string; toolbar?: boolean }
 export type ProjectTheme = { accent?: string; preset?: string; mode?: 'light' | 'dark'; shell?: ShellConfig; customCss?: string }
 
 /** A mutating CRUD action, gated by RBAC (reads are implied by screen access). */
@@ -286,6 +294,7 @@ export const blockPalette: ReadonlyArray<PaletteItem> = [
   { kind: 'master-detail', label: 'Master / detail', needs: 'child' },
   { kind: 'board', label: 'Board' },
   { kind: 'calendar', label: 'Calendar' },
+  { kind: 'detail', label: 'Detail page' },
   { kind: 'filter', label: 'Filter panel' },
   { kind: 'record', label: 'Record panel' },
   { kind: 'lookup', label: 'Lookup' },
@@ -389,6 +398,14 @@ export function defaultBlockConfig(kind: BlockKind, entity: EntitySchema): Block
       const colorF = entity.fields.find((f) => f.type === 'enum' && !f.primaryKey)?.field
       return { kind, dateField: dateF, titleField: titleF, ...(colorF ? { colorField: colorF } : {}) }
     }
+    case 'detail': {
+      const nonKey = entity.fields.filter((f) => !f.primaryKey)
+      const titleF = nonKey.find((f) => f.type === 'text')?.field ?? nonKey[0]?.field ?? entity.fields[0]?.field ?? ''
+      const statusF = nonKey.find((f) => f.type === 'enum')?.field
+      const subF = nonKey.find((f) => (f.type === 'text' || f.type === 'relation') && f.field !== titleF)?.field
+      const metrics = nonKey.filter((f) => f.type === 'number').slice(0, 3).map((f) => f.field)
+      return { kind, titleField: titleF, ...(subF ? { subtitleField: subF } : {}), ...(statusF ? { statusField: statusF } : {}), ...(metrics.length ? { metricFields: metrics } : {}) }
+    }
   }
 }
 
@@ -404,7 +421,7 @@ export function pickFacetFields(entity: EntitySchema): string[] {
 const facetRank = (t: EntityFieldType): number => (t === 'enum' ? 0 : t === 'boolean' ? 1 : 2)
 
 const DEFAULT_SPAN: Record<BlockKind, 1 | 2 | 3> = {
-  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3, calendar: 3,
+  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3, calendar: 3, detail: 3,
 }
 
 function makeBlock(kind: BlockKind, entity: EntitySchema, taken: ReadonlySet<string>): Block {

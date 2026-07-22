@@ -4,6 +4,8 @@ Inline editing is a single prop on `<SvGrid>`. Try it - double-click
 any cell, type to replace, hit `Enter` to commit. Tab moves to the
 next editable cell:
 
+![An edit starts, opens the editor component, parses and validates the value, then either saves the commit or cancels and discards.](/docs-media/grid-editing-lifecycle.svg)
+
 <div data-docs-demo="05-inline-editing" data-height="440"></div>
 
 

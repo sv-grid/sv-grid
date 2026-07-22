@@ -402,7 +402,7 @@
   <!-- Body: grid + detail panel -->
   <div class="ad-body flex flex-1 min-h-0 gap-3">
     <div class="ad-master flex-1 min-w-0">
-      <SvGrid
+      <SvGrid responsive={true}
         data={filteredUsers}
         columns={[
           { field: 'id', header: '', width: 40, editable: false,

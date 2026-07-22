@@ -59,7 +59,7 @@
     class:hc-host-contrast={mode === 'contrast'}
     aria-label={mode === 'contrast' ? 'Grid in high-contrast mode' : 'Grid in standard mode'}
   >
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

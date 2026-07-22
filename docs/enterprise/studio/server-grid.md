@@ -6,6 +6,8 @@ intent, and your data source fetches the matching page. This is "server mode",
 and it is wired for you in generated screens. This page shows how it works so you
 can customize it.
 
+![In server mode the grid renders its native controls but forwards the user's sort, filter, and page intent to your ServerDataSource, which returns the matching page.](/docs-media/studio-server-grid.svg)
+
 ## The three server-mode switches
 
 | Prop | UI it renders | Event it emits |

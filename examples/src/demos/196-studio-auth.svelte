@@ -96,7 +96,7 @@
       <span class="st-hint">You are signed in - in a real app, RLS would scope these rows to you.</span>
     </div>
 
-    <SvGrid
+    <SvGrid responsive={true}
       data={view.rows}
       {columns}
       loading={view.loading}

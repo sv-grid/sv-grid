@@ -6,6 +6,8 @@ boolean) or a formula starting with `=`. When the formula resolves
 against the sheet, the cell shows the computed value; when you click
 the cell, the formula bar shows the source.
 
+![A real formula engine inside cells resolves a cell holding =SUM(A1:A3) into a computed value, with cell refs, ranges, functions, and cycle detection.](/docs-media/grid-formulas.svg)
+
 Useful for budgets, scorecards, cascading totals, conditional reports,
 lightweight planning - anything that needs in-cell calc without
 bundling a full spreadsheet engine like HyperFormula.

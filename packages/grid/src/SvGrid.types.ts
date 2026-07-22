@@ -9,6 +9,51 @@ import type {
   TableFeatures,
 } from "./index";
 import type { ConditionalFormat } from "./conditional-formatting";
+import type { MenuItem } from "./SvMenuList.svelte";
+
+/**
+ * The built-in card detail drawer. Set `board.drawer` (`true` for all fields,
+ * or this object to customize) and opening a card shows a drawer with an
+ * `SvForm` of its fields, rendered with the UI-kit editors.
+ */
+export type BoardDrawerConfig<TData extends RowData = RowData> = {
+  /** Fields to show, in order. Omit for every column that has a `field`. */
+  fields?: ReadonlyArray<keyof TData & string>;
+  /** Drawer title - a string or derived from the row. Defaults to the title field. */
+  title?: string | ((row: TData) => string);
+  /** Which edge the drawer opens from. Defaults to `'right'`. */
+  side?: "right" | "left" | "top" | "bottom";
+  /** Drawer size (any CSS length). Defaults to `'380px'`. */
+  size?: string;
+  /** Save button label. Defaults to `'Save'`. */
+  submitLabel?: string;
+  /** Form columns inside the drawer. Defaults to `1`. */
+  columns?: number;
+};
+
+/** Board-native helpers passed to `board.cardMenu` for building context items. */
+export type BoardMenuContext<TData extends RowData = RowData> = {
+  /** The board's lanes (id + title). */
+  lanes: BoardLane[];
+  /** Move this card to a lane (board-native; fires onCardMove). */
+  moveTo: (laneId: string) => void;
+  /** Open this card's editor (inline, or your `onCardEdit`). */
+  edit: () => void;
+};
+
+/** Board-native helpers passed to `board.laneMenu` for building lane context items. */
+export type BoardLaneMenuContext<TData extends RowData = RowData> = {
+  /** The lane's id. */
+  laneId: string;
+  /** The lane's current cards (this swimlane's, if any). */
+  cards: TData[];
+  /** Whether the lane is collapsed. */
+  collapsed: boolean;
+  /** Collapse / expand the lane (needs `collapsibleLanes`). */
+  toggleCollapse: () => void;
+  /** Add a card to the lane (fires `onCardAdd`). */
+  addCard: (title?: string) => void;
+};
 
 /** The cell a context menu was opened on. Passed to every item's callbacks. */
 export type ContextMenuTarget<TData extends RowData = RowData> = {
@@ -38,9 +83,304 @@ export type ContextMenuItem<TData extends RowData = RowData> =
       action: (target: ContextMenuTarget<TData>) => void;
     };
 
+/** A single Kanban lane (board column). {@link BoardConfig}. */
+export type BoardLane = {
+  /** Lane id - equals the `groupBy` field value of the cards it holds. */
+  id: string;
+  /** Header title. Defaults to the id (or `(empty)` for a blank value). */
+  title?: string;
+  /** Accent color (any CSS color) for the lane header bar + card ring. */
+  color?: string;
+  /**
+   * Soft max number of cards. When exceeded the lane header is flagged
+   * over-limit. Enforcement/styling is an enterprise concern; the count is
+   * always shown.
+   */
+  wipLimit?: number;
+};
+
+/** A checklist item inside a card. See {@link BoardConfig.subtasks}. */
+export type BoardSubtask = {
+  id: string | number;
+  title: string;
+  done: boolean;
+};
+
+/** A comment on a card. See {@link BoardConfig.commentsField}. */
+export type BoardComment = {
+  id: string | number;
+  text: string;
+  author?: string;
+  /** Timestamp label (any string). */
+  at?: string;
+};
+
+/**
+ * The serializable board layout - the per-card position/edit overlay plus
+ * collapsed lanes. Persisted by `board.persistKey` and passed to
+ * `board.onLayoutChange`.
+ */
+export type BoardLayout = {
+  /** rowId -> lane id. */
+  laneOf?: Record<string, string>;
+  /** rowId -> sort order within its lane. */
+  orderOf?: Record<string, number>;
+  /** rowId -> swimlane id. */
+  swimOf?: Record<string, string>;
+  /** rowId -> edited field values. */
+  edits?: Record<string, Record<string, unknown>>;
+  /** lane id -> collapsed. */
+  collapsed?: Record<string, boolean>;
+  /** swimlane id -> collapsed. */
+  collapsedSwim?: Record<string, boolean>;
+  /** Explicit lane order (ids), when lanes have been drag-reordered. */
+  laneOrder?: string[];
+  /** rowId -> subtaskId -> done override. */
+  subDone?: Record<string, Record<string, boolean>>;
+  /** rowId -> subtasks added on the card. */
+  subAdded?: Record<string, BoardSubtask[]>;
+};
+
+/** Emitted when a card's built-in editor is saved. */
+export type BoardCardCommitEvent<TData extends RowData = RowData> = {
+  /** The edited row. */
+  row: TData;
+  /** Only the fields that changed, `{ field: newValue }`. */
+  changes: Record<string, unknown>;
+  /** The full set of edited field values. */
+  values: Record<string, unknown>;
+};
+
+/** Emitted when a card is dragged to a new lane and/or position. */
+export type BoardCardMoveEvent<TData extends RowData = RowData> = {
+  /** The dragged row. */
+  row: TData;
+  /** Lane the card came from. */
+  fromLane: string;
+  /** Lane the card was dropped on. */
+  toLane: string;
+  /** Insertion index within the destination lane. */
+  toIndex: number;
+  /** Swimlane the card came from (only when `swimlaneBy` is set). */
+  fromSwimlane?: string;
+  /** Swimlane the card was dropped on (only when `swimlaneBy` is set). */
+  toSwimlane?: string;
+};
+
+/**
+ * Turns the grid into a Kanban board. Set `board` and the grid renders its
+ * rows as cards in horizontal lanes (bucketed by the `groupBy` field) instead
+ * of a table. Dragging a card between lanes fires {@link BoardConfig.onCardMove}
+ * where you reassign the `groupBy` field on your own data.
+ */
+export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
+  /** Field whose value buckets each row into a lane. */
+  groupBy: keyof TData & string;
+  /**
+   * Explicit, ordered lanes. Omit to derive lanes from the distinct
+   * `groupBy` values found in the data (first-seen order).
+   */
+  lanes?: ReadonlyArray<BoardLane>;
+  /** Custom card body. Receives the row. Omit for the built-in default card. */
+  card?: Snippet<[TData]>;
+  /**
+   * Fired when a card is dragged to a new lane/position. Update your data
+   * here (reassign the `groupBy` field, and optionally reorder). Without it
+   * the board is display-only.
+   */
+  onCardMove?: (event: BoardCardMoveEvent<TData>) => void;
+  /**
+   * Add-card affordance. A `+` in the lane header (or, with `composer`, a
+   * type-a-title box at the bottom of the lane) fires this with the lane id
+   * and - from the composer - the typed title.
+   */
+  onCardAdd?: (laneId: string, title?: string) => void;
+  /**
+   * Show a quick-add composer at the bottom of each lane (a "+ Add a card"
+   * button that opens an inline title input; Enter calls `onCardAdd(lane,
+   * title)`). Without it, `onCardAdd` shows a plain `+` in the header.
+   */
+  composer?: boolean;
+  /**
+   * Field holding a card's checklist of sub-tasks (`BoardSubtask[]`). The card
+   * shows a progress chip + bar and expands to an inline checklist with a
+   * quick-add. Toggles/adds run through an overlay (never mutating your data)
+   * and fire the callbacks below.
+   */
+  subtasks?: keyof TData & string;
+  /** Fired when a sub-task checkbox is toggled. */
+  onSubtaskToggle?: (row: TData, subtaskId: string | number, done: boolean) => void;
+  /** Fired when a sub-task is added from the card. */
+  onSubtaskAdd?: (row: TData, title: string) => void;
+  /**
+   * Field holding label/tag strings (or `{ text, color }`) shown as chips on
+   * the default card's badge row.
+   */
+  labelsField?: keyof TData & string;
+  /** Field holding a due date (Date | ISO string); shown as a badge, red when overdue. */
+  dueField?: keyof TData & string;
+  /**
+   * Field holding one or more assignee names (string | string[]); shown as
+   * avatar(s) on the default card's badge row.
+   */
+  assigneesField?: keyof TData & string;
+  /**
+   * Enable the built-in card editor: double-click a card (or press F2 while
+   * it is focused) to edit its fields inline. Fields are rendered from the
+   * columns that declare an `editorType` (or all fields if none do). Ignored
+   * when `onCardEdit` is set.
+   */
+  editable?: boolean;
+  /**
+   * Open your own editor instead of the built-in one. Called on double-click /
+   * F2 with the row; you might open a drawer or route to a detail screen.
+   */
+  onCardEdit?: (row: TData) => void;
+  /**
+   * Built-in **detail drawer**: opening a card (double-click / F2) shows an
+   * `SvDrawer` with an `SvForm` of its fields (kit editors). `true` = all
+   * fields; pass a {@link BoardDrawerConfig} to pick a subset / customize.
+   * Ignored when `onCardEdit` is set.
+   */
+  drawer?: boolean | BoardDrawerConfig<TData>;
+  /** Fired when the built-in editor is saved. Persist / mirror the changes. */
+  onCardCommit?: (event: BoardCardCommitEvent<TData>) => void;
+  /** Field used as the card title. Defaults to the first column's field. */
+  titleField?: keyof TData & string;
+  /**
+   * Column fields shown as label:value meta lines on the default card
+   * (max 4). Defaults to the first few non-title, non-groupBy columns.
+   */
+  cardFields?: ReadonlyArray<keyof TData & string>;
+  /**
+   * Second grouping axis: split the board into horizontal **swimlanes** by
+   * this field. Each swimlane band shows the full lane set with only its own
+   * cards. Dragging a card into another band reassigns this field too.
+   */
+  swimlaneBy?: keyof TData & string;
+  /** Let users collapse a swimlane band via its header chevron. */
+  collapsibleSwimlanes?: boolean;
+  /**
+   * Field holding a card's comments - `BoardComment[]` (or plain strings, or a
+   * number for a count only). Renders a comment-count badge that expands to a
+   * thread; provide the callbacks below to let users write / delete comments.
+   */
+  commentsField?: keyof TData & string;
+  /** Fired when a comment is added on the card; append it to your data. */
+  onCommentAdd?: (row: TData, text: string) => void;
+  /** Fired when a comment's delete button is pressed; remove it from your data. */
+  onCommentDelete?: (row: TData, commentId: string | number) => void;
+  /**
+   * Field holding a card's attachments - an array or a number. Renders an
+   * attachment-count badge on the default card.
+   */
+  attachmentsField?: keyof TData & string;
+  /**
+   * Field holding a cover colour (any CSS colour string) shown as a strip
+   * across the top of the default card.
+   */
+  coverField?: keyof TData & string;
+  /**
+   * Enforce `wipLimit`: reject a drop / keyboard move that would push a lane
+   * past its limit (the card snaps back). Off by default (the limit is a
+   * soft, visual flag only).
+   */
+  enforceWip?: boolean;
+  /** Let users collapse a lane to a slim strip by clicking its header. */
+  collapsibleLanes?: boolean;
+  /** Let users drag lane headers to reorder lanes (persisted with `persistKey`). */
+  reorderableLanes?: boolean;
+  /** Fired after a lane drag-reorder, with the new ordered lane ids. */
+  onLaneReorder?: (orderedIds: string[]) => void;
+  /**
+   * Enable inline lane rename: double-click a lane title to edit it. Fires
+   * with the lane id and new title - update your own lane config / data.
+   */
+  onLaneRename?: (laneId: string, title: string) => void;
+  /**
+   * Per-swimlane summary shown in the band header (e.g. a points/$ total or a
+   * WIP count). Receives the swimlane's cards and its id; return a short string.
+   */
+  swimlaneSummary?: (rows: TData[], swimId: string) => string;
+  /**
+   * Right-click (or long-press) a card to open a context menu. Return the
+   * menu items for that card; `ctx` gives board-native `moveTo(laneId)` and
+   * `edit()` helpers plus the lane list. Return empty/undefined for no menu.
+   */
+  cardMenu?: (row: TData, ctx: BoardMenuContext<TData>) => ReadonlyArray<MenuItem> | undefined;
+  /** Right-click a lane header for a lane context menu (rename / clear / add / collapse). */
+  laneMenu?: (laneId: string, ctx: BoardLaneMenuContext<TData>) => ReadonlyArray<MenuItem> | undefined;
+  /**
+   * Truthy field marks a card as **blocked** (waiting on a dependency): a red
+   * corner + a "Blocked" badge on the card. If the value is a non-empty string
+   * it is used as the blocked **reason** (shown in the badge tooltip). A blocked
+   * card is **locked from moving** (drag + keyboard) until it is unblocked - set
+   * {@link BoardConfig.flagBlocksMoves} `false` for a purely visual flag.
+   */
+  flagField?: keyof TData & string;
+  /** Whether a blocked (`flagField`) card is locked from moving. Defaults to `true`. */
+  flagBlocksMoves?: boolean;
+  /**
+   * Field holding a created/started date (Date | ISO string); shown as a
+   * relative **age** badge (e.g. `3d`).
+   */
+  ageField?: keyof TData & string;
+  /**
+   * Fields to expose as a **facet filter bar** above the board - a chip per
+   * distinct value; selecting chips filters the visible cards.
+   */
+  facets?: ReadonlyArray<keyof TData & string>;
+  /**
+   * Enable card **multi-select**: click to select, Ctrl/Cmd-click to toggle,
+   * and dragging a selected card moves the whole selection. Fires
+   * `onSelectionChange`.
+   */
+  selectable?: boolean;
+  /** Fired when the selection changes, with the selected rows. */
+  onSelectionChange?: (rows: TData[]) => void;
+  /**
+   * Field holding a card's **child rows** (`TData[]`) - the card gets a
+   * children count and expands to show them as nested mini-cards (epic ->
+   * stories). Each child renders its title and, if present, its `groupBy` value.
+   */
+  childrenField?: keyof TData & string;
+  /**
+   * Optional per-lane summary shown in the lane header (e.g. a story-point or
+   * dollar total). Receives the lane's cards (the current swimlane's, when
+   * `swimlaneBy` is set) and the lane id; return a short string.
+   */
+  laneSummary?: (rows: TData[], laneId: string) => string;
+  /** Show the built-in card search box (default `true`). */
+  searchable?: boolean;
+  /** Placeholder for the search box. Defaults to `"Search cards..."`. */
+  searchPlaceholder?: string;
+  /**
+   * Virtualize each lane so only the cards in view are in the DOM - for boards
+   * with thousands of cards per lane. Assumes roughly uniform card height; set
+   * `cardHeight` to match your cards.
+   */
+  virtualized?: boolean;
+  /** Estimated card height in px used by `virtualized` windowing (default 76). */
+  cardHeight?: number;
+  /**
+   * Persist the board layout (card positions, edits, collapsed lanes) to
+   * `localStorage` under this key, restored on load. Requires `getRowId` for
+   * stable identity across reloads.
+   */
+  persistKey?: string;
+  /** Called whenever the board layout changes, with the serializable state. */
+  onLayoutChange?: (layout: BoardLayout) => void;
+};
+
 export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
   data: ReadonlyArray<TData>;
   columns: Array<ColumnDef<TFeatures, TData>>;
+  /**
+   * Kanban board mode. When set, the grid renders its rows as cards in
+   * horizontal lanes (bucketed by `board.groupBy`) instead of a table. See
+   * {@link BoardConfig}.
+   */
+  board?: BoardConfig<TFeatures, TData>;
   /**
    * Right-click context menu. `true` shows the default item set (copy, cut,
    * paste, clear, insert row above/below, remove row, remove column). Pass an
@@ -173,6 +513,15 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * win once they happen.
    */
   fitColumns?: boolean;
+  /**
+   * Make the grid usable on narrow screens. When the grid's own width drops
+   * below the breakpoint (default `640`px), pinned columns are un-pinned so the
+   * whole grid pans, `fitColumns` scaling is suspended (columns keep their
+   * natural widths and scroll), touch panning is smoothed, and columns whose
+   * `hideBelow` exceeds the width are hidden. `true` uses the default
+   * breakpoint; pass `{ breakpoint }` to change it. Off by default.
+   */
+  responsive?: boolean | { breakpoint?: number };
   showFilterMenu?: boolean;
   showFilterRow?: boolean;
   enableCellSelection?: boolean;
@@ -453,6 +802,31 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * `isDetailRow` is true. Receives the row's data and its index.
    */
   renderDetailRow?: Snippet<[{ row: TData; rowIndex: number }]>;
+  /**
+   * Server-side group / tree keyboard + accessibility, built into the grid. When
+   * set, the grid uses the treegrid role and marks matching rows with
+   * `aria-level` / `aria-expanded`, and ArrowRight / ArrowLeft expand / collapse
+   * the focused group row (no app-level key handling). Pair with `serverGroupRows`
+   * + `SvGroupCell` for the visual expander. Every accessor receives the row data.
+   */
+  serverGroup?: {
+    /** Whether a row is an expandable group / branch. */
+    isGroup: (row: TData) => boolean;
+    /** Tree depth of the row (0 = top level), for `aria-level`. */
+    level: (row: TData) => number;
+    /** Whether an expandable row is currently expanded. */
+    expanded?: (row: TData) => boolean;
+    /** Expand / collapse a group row. Called on ArrowRight / ArrowLeft. */
+    onToggle: (row: TData) => void;
+  };
+  /**
+   * Server-side set-filter values. When set, a column's filter checklist is
+   * populated by fetching the distinct values from the server (once per column,
+   * cached) instead of deriving them from the loaded page - so the checklist
+   * shows every value, not just those on screen. Return the distinct string
+   * values for the column id.
+   */
+  serverFilterValues?: (columnId: string) => Promise<string[]>;
   /**
    * Rows to pin to the TOP of the grid - rendered above the regular
    * rows and sticky-positioned so they stay visible while the user

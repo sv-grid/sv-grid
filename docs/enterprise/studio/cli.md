@@ -3,6 +3,8 @@
 `@svgrid/studio` is the command-line generator. One command reads a schema or a
 live database and writes a working CRUD screen into your SvelteKit app.
 
+![The Studio CLI reads a schema file or a live database, runs one generate command, and writes a working CRUD screen: a schema module, a +server.ts route, and a +page.svelte into your SvelteKit app.](/docs-media/studio-cli.svg)
+
 > **New here?** Start with [Getting started](./getting-started.md) for the full
 > step-by-step path (create an app, install, first screen). This page is the CLI
 > reference.

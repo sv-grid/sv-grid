@@ -4,6 +4,8 @@ The grid is locale-agnostic by design: every text label is yours to
 translate, every formatted value goes through `Intl`, and right-to-left
 layout flips via standard CSS logical properties.
 
+![A locale and message catalog drive the grid's strings and Intl formatting; an RTL locale mirrors columns, alignment, and the scrollbar.](/docs-media/grid-i18n-rtl.svg)
+
 Try the live RTL + i18n demo - switch between six locales (en, de,
 fr-CA, ja, ar, he); the headers, dates, currencies, and the grid's
 own scrollbar position all flip:

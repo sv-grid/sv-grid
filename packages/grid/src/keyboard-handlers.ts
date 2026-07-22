@@ -245,6 +245,26 @@ export function createKeyboard<
     }
     event.preventDefault();
 
+    // Server-side group / tree navigation, built into the grid: ArrowRight
+    // expands a collapsed group row, ArrowLeft collapses an expanded one,
+    // instead of moving the active cell (treegrid-style). Leaves fall through
+    // to normal navigation.
+    const serverGroup = ctx.props.serverGroup;
+    if (serverGroup && (intent === "moveRight" || intent === "moveLeft")) {
+      const data = ctx.allRows[current.rowIndex]?.original;
+      if (data !== undefined && serverGroup.isGroup(data)) {
+        const expanded = serverGroup.expanded?.(data) ?? false;
+        if (intent === "moveRight" && !expanded) {
+          serverGroup.onToggle(data);
+          return;
+        }
+        if (intent === "moveLeft" && expanded) {
+          serverGroup.onToggle(data);
+          return;
+        }
+      }
+    }
+
     if (intent === "clearCells") {
       // Excel `Delete` - clear contents of every cell in the selection
       // (or the active cell if no range). Formatting is left alone, only

@@ -2,14 +2,18 @@
  * The shared "editor contract" for the SvGrid UI kit.
  *
  * Every value-bearing editor (inputs, selects, pickers) accepts this common set
- * of props so forms, validation and accessibility behave IDENTICALLY across the
- * kit - the same spirit as the grid's headless core, applied to the editors.
- * Components spread their own `value` / options / behavior on top of this base.
+ * of props so forms, validation, accessibility, direction (RTL) and localization
+ * behave IDENTICALLY across the kit - the same spirit as the grid's headless
+ * core, applied to the editors. Components spread their own `value` / options /
+ * behavior on top of this base.
  *
  * Framework-free (no Svelte, no DOM) so it can be unit-tested and reused.
  */
 
 export type EditorSize = 'sm' | 'md' | 'lg'
+
+/** Text direction. `'auto'` defers to the surrounding document/CSS. */
+export type EditorDir = 'ltr' | 'rtl' | 'auto'
 
 /** Props shared by every value-bearing editor in the kit. */
 export type SvEditorProps = {
@@ -23,26 +27,72 @@ export type SvEditorProps = {
   invalid?: boolean
   /** Error message; when set it is announced via `aria-describedby` and shown. */
   error?: string
+  /** Visible field label, rendered above the control and wired via `for`/`id`. */
+  label?: string
+  /** Helper text shown under the control and announced via `aria-describedby`. */
+  hint?: string
   /** Control size / density. */
   size?: EditorSize
+  /**
+   * Text direction. `'rtl'` mirrors layout for Arabic/Hebrew/etc.; `'auto'` (the
+   * default) inherits from the surrounding document so a page-level `dir` wins.
+   */
+  dir?: EditorDir
   /** Form field name; the editor emits a hidden input carrying its value. */
   name?: string
-  /** Root/control element id (the error-text id derives from it). */
+  /** Root/control element id (the label/hint/error ids derive from it). */
   id?: string
-  /** Accessible name when there is no visible `<label>`. */
+  /** Accessible name when there is no visible `label`. */
   ariaLabel?: string
+}
+
+/**
+ * The interaction surface an editor exposes when embedded as a grid cell editor.
+ * Standalone usage ignores these; the grid supplies them so every editor shares
+ * one commit / cancel / move contract (Enter commits, Escape cancels, Tab moves)
+ * instead of each cell-editor re-implementing key handling. Consumed in Phase 2
+ * (the editor registry).
+ */
+export type EditorInteraction<V = unknown> = {
+  /** Commit the current value and stop editing (Enter, option pick, blur-commit). */
+  onCommit?: (value: V) => void
+  /** Abandon the edit and restore the previous value (Escape). */
+  onCancel?: () => void
+  /** Commit, then move to the adjacent cell (Tab = 1, Shift+Tab = -1). */
+  onCommitAndMove?: (value: V, direction: 1 | -1) => void
+  /** Ask the surrounding popover/panel to close without committing. */
+  onRequestClose?: () => void
+  /** True while mounted inside a grid cell (lets an editor tune autofocus etc.). */
+  inCell?: boolean
 }
 
 /** Stable DOM id for an editor's error text, for `aria-describedby` wiring. */
 export const editorErrorId = (id?: string): string | undefined => (id ? `${id}__error` : undefined)
 
+/** Stable DOM id for an editor's hint text, for `aria-describedby` wiring. */
+export const editorHintId = (id?: string): string | undefined => (id ? `${id}__hint` : undefined)
+
+let _autoId = 0
+/**
+ * Generate a stable-per-instance element id. Call ONCE per component instance
+ * (e.g. `const uid = provided ?? nextEditorId()`) so label/hint/error wiring
+ * always has an anchor even when the consumer passes no `id`.
+ */
+export const nextEditorId = (prefix = 'sv-ed'): string => `${prefix}-${_autoId++}`
+
 /** A subset of {@link SvEditorProps} that drives ARIA on the focusable control. */
-export type EditorAriaState = Pick<SvEditorProps, 'id' | 'invalid' | 'required' | 'error' | 'ariaLabel'>
+export type EditorAriaState = Pick<
+  SvEditorProps,
+  'id' | 'invalid' | 'required' | 'error' | 'hint' | 'ariaLabel'
+>
 
 /**
  * ARIA attributes for the focusable control of an editor, derived from its state.
  * Spread onto the input/button/combobox:
- * `<input {...editorAria({ id, invalid, required, error, ariaLabel })} />`
+ * `<input {...editorAria({ id, invalid, required, error, hint, ariaLabel })} />`
+ *
+ * `aria-describedby` points at the error text (when invalid) and/or the hint
+ * text - both ids derive from `id`, so pass a stable `id` (see {@link nextEditorId}).
  * Undefined values are omitted by Svelte, so unset props add no attributes.
  */
 export function editorAria(state: EditorAriaState): {
@@ -51,10 +101,39 @@ export function editorAria(state: EditorAriaState): {
   'aria-describedby': string | undefined
   'aria-label': string | undefined
 } {
+  const described = [
+    state.error ? editorErrorId(state.id) : undefined,
+    state.hint ? editorHintId(state.id) : undefined,
+  ].filter(Boolean)
   return {
     'aria-invalid': state.invalid ? 'true' : undefined,
     'aria-required': state.required ? 'true' : undefined,
-    'aria-describedby': state.error ? editorErrorId(state.id) : undefined,
+    'aria-describedby': described.length ? described.join(' ') : undefined,
     'aria-label': state.ariaLabel,
   }
+}
+
+/**
+ * Merge a component's default message strings with a consumer's `messages`
+ * override, so every editor can be fully localized from the outside.
+ *
+ * ```ts
+ * const M = { clear: 'Clear', noResults: 'No results' }
+ * const messages = resolveMessages(M, props.messages) // Partial override
+ * ```
+ *
+ * Undefined/empty overrides fall back to the default, so a partial `messages`
+ * object only replaces the keys it sets.
+ */
+export function resolveMessages<T extends Record<string, string>>(
+  defaults: T,
+  overrides?: Partial<T> | null,
+): T {
+  if (!overrides) return defaults
+  const out = { ...defaults }
+  for (const k in overrides) {
+    const v = overrides[k]
+    if (v != null && v !== '') out[k] = v as T[Extract<keyof T, string>]
+  }
+  return out
 }

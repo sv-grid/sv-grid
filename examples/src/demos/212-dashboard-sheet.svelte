@@ -2,7 +2,7 @@
   /**
    * 212. Dashboard sheet (sparklines + heatmap)
    * --------------------------------------------
-   * A plain <SvGrid> that reads like an Excel dashboard. Each channel row shows
+   * A plain <SvGrid responsive={true}> that reads like an Excel dashboard. Each channel row shows
    * an inline SVG trend sparkline (a per-column custom cell) and an eight-week
    * heatmap shaded by volume (value-driven cellClass). Total and Avg are live
    * =SUM / =AVERAGE formulas (HyperFormula) - edit any weekly cell and the
@@ -164,7 +164,7 @@
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sheet" use:rowResize={{ onResize: onRowResize, min: 20, max: 320 }}>
-    <SvGrid
+    <SvGrid responsive={true}
       data={raw}
       columns={columns}
       features={features}

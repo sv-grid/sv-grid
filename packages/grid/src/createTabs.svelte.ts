@@ -23,7 +23,9 @@
  * a render concern, so the component watches `focusTick`/`focusId` and calls
  * `.focus()` itself; the core only decides *which* tab should take focus.
  */
-export type TabItem = { id: string; label: string; disabled?: boolean }
+import type { EditorDir } from './editor-contract'
+
+export type TabItem = { id: string; label: string; disabled?: boolean; closable?: boolean }
 
 export type TabsOrientation = 'horizontal' | 'vertical'
 export type TabsActivation = 'automatic' | 'manual'
@@ -33,8 +35,12 @@ export type TabsConfig = {
   tabs: () => ReadonlyArray<TabItem>
   value: () => string | undefined
   onChange?: (id: string) => void
+  /** Fired when a closable tab is closed (Delete key, or the renderer's x). */
+  onClose?: (id: string) => void
   orientation?: () => TabsOrientation
   activation?: () => TabsActivation
+  /** Text direction; under `'rtl'` horizontal Left/Right arrows flip. */
+  dir?: () => EditorDir | undefined
   ariaLabel?: () => string | undefined
 }
 
@@ -64,18 +70,28 @@ export function createTabs(config: TabsConfig) {
     config.onChange?.(tid)
   }
 
+  function close(tid: string) {
+    const t = tabs().find((x) => x.id === tid)
+    if (t?.closable) config.onClose?.(tid)
+  }
+
   function onKeydown(e: KeyboardEvent) {
     const list = enabled
     if (!list.length) return
     const idx = list.findIndex((t) => t.id === active)
-    const fwd = orientation() === 'horizontal' ? 'ArrowRight' : 'ArrowDown'
-    const back = orientation() === 'horizontal' ? 'ArrowLeft' : 'ArrowUp'
+    const horiz = orientation() === 'horizontal'
+    // Under horizontal RTL the Left/Right arrows swap so focus follows the
+    // visual order (Right moves to the previous tab).
+    const rtlH = horiz && config.dir?.() === 'rtl'
+    const fwd = horiz ? (rtlH ? 'ArrowLeft' : 'ArrowRight') : 'ArrowDown'
+    const back = horiz ? (rtlH ? 'ArrowRight' : 'ArrowLeft') : 'ArrowUp'
     let next: string | null = null
     if (e.key === fwd) next = list[(idx + 1) % list.length]?.id ?? null
     else if (e.key === back) next = list[(idx - 1 + list.length) % list.length]?.id ?? null
     else if (e.key === 'Home') next = list[0]?.id ?? null
     else if (e.key === 'End') next = list.at(-1)?.id ?? null
     else if ((e.key === 'Enter' || e.key === ' ') && activation() === 'manual') { e.preventDefault(); select(active); return }
+    else if (e.key === 'Delete') { e.preventDefault(); close(active); return }
     else return
     if (next) {
       e.preventDefault()
@@ -93,6 +109,7 @@ export function createTabs(config: TabsConfig) {
     get focusTick() { return focusTick },
     isActive: (tid: string) => tid === active,
     select,
+    close,
     onKeydown,
     /** Spread onto the tablist container element. */
     tablistProps: () => ({

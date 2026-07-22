@@ -5,6 +5,8 @@ without a key, with a small unlicensed-build watermark in the
 bottom-right corner of the grid + a one-time console nudge. Set a
 key once at app startup and both disappear.
 
+![The soft-gate model: without a key the grid runs fully with a small watermark and a one-time console nudge; calling setLicenseKey once clears both, and every feature runs either way.](/docs-media/enterprise-licensing.svg)
+
 ## Setting the key
 
 ```ts

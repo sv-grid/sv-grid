@@ -568,7 +568,7 @@
   <!-- Main: grid + event log -->
   <div class="rt-body">
     <div class="rt-grid-wrap">
-      <SvGrid
+      <SvGrid responsive={true}
         data={orderList}
         columns={[
           {

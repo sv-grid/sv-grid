@@ -137,7 +137,7 @@
     <span class="st-hint">Double-click a row to edit · the Company field searches the Companies source</span>
   {/snippet}
 
-  <SvGrid
+  <SvGrid responsive={true}
     data={view.rows}
     {columns}
     loading={view.loading}

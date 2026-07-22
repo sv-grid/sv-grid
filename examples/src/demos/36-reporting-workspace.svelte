@@ -526,7 +526,7 @@
     </div>
 
     <div class="flex-1 min-h-0">
-      <SvGrid
+      <SvGrid responsive={true}
         data={deals}
         columns={[
           { field: 'customer', header: 'Customer', width: 200, editable: false },

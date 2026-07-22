@@ -206,6 +206,12 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   cellDataType?: 'text' | 'number' | 'boolean' | 'date' | 'dateString'
   /**
+   * Hide this column when the grid's `responsive` mode is on and the grid is
+   * narrower than this many pixels - drop low-priority columns on small
+   * screens. No effect unless the grid has `responsive` set.
+   */
+  hideBelow?: number
+  /**
    * For a column INSIDE a collapsible column group: `'open'` shows this column
    * only while the group is expanded, `'closed'` only while collapsed. Omit to
    * always show it. Setting it on any direct child gives the parent group a
@@ -237,6 +243,10 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
     | 'textarea'     // multi-line editor; Tab or Ctrl+Enter commits, plain Enter inserts a newline
     | 'color'        // native <input type="color"> swatch
     | 'rating'       // 5-star rating control
+    // Any other string names a CUSTOM editor registered via `registerCellEditor`
+    // (or `registerBuiltinEditors`). `(string & {})` keeps the literals above
+    // autocompleting while allowing arbitrary custom type names.
+    | (string & {})
   /**
    * Custom in-cell editor. Receives the cell context PLUS a `commit(value)`
    * and `cancel()` helper. Use when none of the built-in `editorType`s fit;

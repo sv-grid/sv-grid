@@ -1,6 +1,6 @@
 # Master / detail (nested grids)
 
-Master/detail is the AG-Grid pattern where each **master** row expands to reveal
+Master/detail is the pattern where each **master** row expands to reveal
 a **detail** panel - most often a nested grid of the row's child records. SvGrid
 builds it from two props on `<SvGrid>`:
 
@@ -8,6 +8,8 @@ builds it from two props on `<SvGrid>`:
   a full-width detail row (a real `colspan` row spanning every column),
 - `renderDetailRow` - a snippet that renders that row's content. Put another
   `<SvGrid>` inside it and you have a nested grid.
+
+![An expanded master row reveals a full-width detail region beneath it, where isDetailRow marks the sentinel row and renderDetailRow draws its nested content.](/docs-media/grid-master-detail.svg)
 
 <div data-docs-demo="181-master-detail-grid" data-height="560"></div>
 

@@ -143,8 +143,9 @@ export function createColumns<
   }
 
   function isColumnPinned(columnId: string): "left" | "right" | null {
-    if (ctx.columnPinning.left.includes(columnId)) return "left";
-    if (ctx.columnPinning.right.includes(columnId)) return "right";
+    const pinning = ctx.effectivePinning ?? ctx.columnPinning;
+    if (pinning.left.includes(columnId)) return "left";
+    if (pinning.right.includes(columnId)) return "right";
     return null;
   }
 

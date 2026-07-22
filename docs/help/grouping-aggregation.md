@@ -4,6 +4,8 @@ Roll rows up by one or more columns and compute aggregates (sum, avg,
 count, min, max, custom) at each group level. Powered by
 `columnGroupingFeature` plus per-column `aggregator` config.
 
+![Flat rows are grouped by one or more fields, aggregated with sum, average or count, then optionally pivoted across rows and columns.](/docs-media/grid-grouping-pivot.svg)
+
 Try it: drag a column into the group-by lane, then change aggregators
 per column:
 

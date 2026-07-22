@@ -6,6 +6,8 @@ Use the built-in **`createRestDataSource`** for a conventional JSON API, or
 implement the four methods by hand for full control. Either way the grid, edit
 form, sorting, filtering, and pagination keep working unchanged.
 
+![A Studio screen binds to an existing REST or JSON API through a ServerDataSource - either the built-in createRestDataSource or the four methods by hand - and the grid, edit form, sorting, filtering, and pagination keep working unchanged.](/docs-media/studio-rest.svg)
+
 ## Turnkey: `createRestDataSource`
 
 Point it at a collection URL and you're done:
@@ -43,6 +45,44 @@ createRestDataSource<Customer>({
   parse: (body) => ({ rows: body.results, rowCount: body.count }),
 })
 ```
+
+## Adapters for common APIs
+
+A `buildQuery` + `parse` pair is a **wire-format adapter**. A few ready-made ones
+cover the shapes public and third-party APIs usually speak - spread one into the
+config instead of hand-writing both:
+
+```ts
+import {
+  createRestDataSource,
+  dummyJsonAdapter,   // skip/limit + sortBy/order, rows under `products`, count in `total`
+  jsonServerAdapter,  // _start/_limit + _sort/_order, bare array + X-Total-Count
+  offsetLimitAdapter, // the configurable base the others build on
+} from '@svgrid/enterprise'
+
+// DummyJSON (or any {skip,limit}+{sortBy,order} API returning { products, total })
+createRestDataSource<Product>({ url: 'https://dummyjson.com/products', ...dummyJsonAdapter() })
+
+// json-server / JSONPlaceholder
+createRestDataSource<Post>({ url: 'https://jsonplaceholder.typicode.com/posts', ...jsonServerAdapter() })
+
+// Anything offset/limit-shaped: name the params + response keys
+createRestDataSource<Item>({
+  url: 'https://api.example.com/items',
+  ...offsetLimitAdapter({
+    offsetParam: 'from', limitParam: 'size', searchParam: 'q',
+    sortByParam: 'sortBy', orderParam: 'order',
+    rowsKey: 'data', totalKey: 'count',
+  }),
+})
+```
+
+See the live example: [Live REST (public API)](https://svgrid.com/#/demos/337-live-rest-dummyjson)
+fetches real rows from dummyjson.com through `dummyJsonAdapter`.
+
+> **Browser demos:** a client-side app can only reach **CORS-enabled** APIs, and
+> must never carry a secret key. For private backends, put the fetch behind a
+> SvelteKit `+server.ts` route and point `createRestDataSource` at that.
 
 ## Full control: implement `ServerDataSource` by hand
 

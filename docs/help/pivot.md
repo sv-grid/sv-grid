@@ -4,6 +4,8 @@ A built-in pivot model that turns a flat data set into a row-axis tree,
 a nested column-axis header, and one aggregated cell per
 `(row-path × col-path × measure)` triple. Ships in **`@svgrid/enterprise`**.
 
+![Flat rows folded into a pivot with row dimensions down the left, column dimensions across the top, and aggregated measures in the matrix cells.](/docs-media/grid-pivot.svg)
+
 The output is plain SvGrid data + columns, so the rendering pipeline is
 the same one you already understand - the grid never knows it is
 displaying a pivot.

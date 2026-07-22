@@ -266,7 +266,7 @@
 
   <!-- Grouped rows ------------------------------------------------ -->
   <div class="group-grid">
-    <SvGrid
+    <SvGrid responsive={true}
       data={serverRows}
       columns={groupColumns}
       features={features}
@@ -296,7 +296,7 @@
         <button class="close" onclick={() => expandGroup(expandedGroup!)} aria-label="Close drill-in">✕</button>
       </div>
       <div class="drill-grid">
-        <SvGrid
+        <SvGrid responsive={true}
           data={detailRows}
           columns={detailColumns}
           features={features}

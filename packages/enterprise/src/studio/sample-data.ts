@@ -33,6 +33,12 @@ const SENTENCES = [
 const COLORS = ['Black', 'White', 'Silver', 'Blue', 'Red', 'Green', 'Graphite', 'Gold']
 const DOMAINS = ['example.com', 'acme.io', 'globex.co', 'mail.dev', 'company.org', 'work.app']
 const CURRENCY_POOL = [1200, 340, 980, 4500, 220, 1750, 60, 8900, 430, 2600, 150, 3200, 720, 5400, 90, 1980]
+// Tag pools for `chips` (SvTagsInput) fields, chosen by field name.
+const SKILLS = ['TypeScript', 'React', 'Svelte', 'Python', 'Go', 'SQL', 'AWS', 'Figma', 'Rust', 'GraphQL', 'Docker', 'Kubernetes', 'Node.js', 'Leadership', 'Product', 'UX']
+const AMENITIES = ['Parking', 'Pool', 'Gym', 'Balcony', 'Garden', 'A/C', 'Heating', 'Elevator', 'Pet-friendly', 'Furnished', 'Laundry', 'Dishwasher', 'Fireplace', 'Garage']
+const DIET_TAGS = ['Vegan', 'Vegetarian', 'Gluten-free', 'Dairy-free', 'Nut-free', 'Halal', 'Kosher', 'Spicy', 'Organic', 'Keto']
+const TOPIC_TAGS = ['Keynote', 'Workshop', 'Networking', 'Panel', 'Q&A', 'Hands-on', 'Beginner', 'Advanced', 'Remote', 'Live']
+const HEX_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6']
 
 // --- helpers ----------------------------------------------------------------
 
@@ -59,6 +65,31 @@ const BASE_YEAR = 2026
 const BASE_MONTH = 6 // July (0-based)
 const BASE_DAY = 14
 
+/** 2-4 distinct tags from the pool that best matches the field name. */
+function tagArray(name: string, i: number, off: number): string[] {
+  const pool = /skill|tech|stack|expert/.test(name) ? SKILLS
+    : /amenit|feature|facilit/.test(name) ? AMENITIES
+    : /diet|cuisine|allerg|food/.test(name) ? DIET_TAGS
+    : /topic|track|tag|interest|categor|label/.test(name) ? TOPIC_TAGS
+    : WORDS
+  const n = 2 + ((off + i) % 3) // 2-4 tags
+  const out = new Set<string>()
+  for (let k = 0; k < n; k++) out.add(pick(pool, off + i * 3 + k))
+  return [...out]
+}
+
+/** A masked code (VIN, plate, ISBN, SSN, ...) chosen by field name. */
+function maskedCode(name: string, n: number): string {
+  const d = (len: number, seed: number) => String(seed % Math.pow(10, len)).padStart(len, '0')
+  if (/vin/.test(name)) return `1HGCM${d(6, n * 7)}${String.fromCharCode(65 + (n % 26))}`
+  if (/plate|registration/.test(name)) return `${String.fromCharCode(65 + n % 26)}${String.fromCharCode(65 + (n + 3) % 26)}${String.fromCharCode(65 + (n + 7) % 26)}-${d(4, n * 13 + 1000)}`
+  if (/isbn/.test(name)) return `978-0-${d(5, n * 271 + 10000)}-${d(3, n * 7 + 100)}-${(n % 10)}`
+  if (/ssn/.test(name)) return `${d(3, n + 100)}-${d(2, n + 10)}-${d(4, n * 3 + 1000)}`
+  if (/ein|tax/.test(name)) return `${d(2, n + 10)}-${d(7, n * 137 + 1000000)}`
+  if (/zip|postal/.test(name)) return d(5, n * 37 + 10000)
+  return d(4, n + 1000)
+}
+
 function isoDate(offsetDays: number, withTime: boolean): string {
   // Build a date by simple arithmetic off the fixed base (avoids `Date.now()`).
   const dayOfYear = (BASE_MONTH * 30 + BASE_DAY) + offsetDays
@@ -83,6 +114,28 @@ export function generateValue(field: EntityField, i: number): unknown {
 
   // A field with explicit options (enum / select) always cycles its options.
   if (field.options && field.options.length) return field.options[i % field.options.length]!.value
+
+  // The chosen editor refines the shape ahead of the base type (a `slider` field
+  // is a number 0-100, a `chips` field is a tag array, a `mask` field a code).
+  switch (field.input?.editorType) {
+    case 'chips':
+      return tagArray(name, i, off)
+    case 'mask':
+      return maskedCode(name, j)
+    case 'rating':
+      return 1 + (j % 5)
+    case 'slider': {
+      const lo = field.min ?? 0
+      const hi = field.max ?? 100
+      return lo + ((j * 7) % Math.max(1, hi - lo + 1))
+    }
+    case 'color':
+      return pick(HEX_COLORS, j)
+    case 'country':
+      return pick(COUNTRIES, j)
+    case 'phone':
+      return `+1 (${200 + (j % 700)}) ${String(100 + (j % 900)).padStart(3, '0')}-${String(1000 + (j % 9000)).padStart(4, '0')}`
+  }
 
   switch (field.type) {
     case 'relation':

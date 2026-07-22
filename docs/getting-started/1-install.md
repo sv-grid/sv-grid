@@ -6,6 +6,8 @@ SvGrid is a single npm package. There is no peer dependency on a CSS
 framework - bring your own, or use the default theme that ships with
 the render component.
 
+![Two install paths side by side: scaffold a ready-wired project with npm create @svgrid@latest, or add the @svgrid/grid package manually and import SvGrid into your markup.](/docs-media/gs-install.svg)
+
 ## Fastest start: scaffold a project
 
 Starting fresh? Skip the manual wiring and scaffold a project with the

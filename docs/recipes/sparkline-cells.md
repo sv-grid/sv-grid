@@ -2,6 +2,9 @@
 
 > Live in [demo 11-stock-market](https://svgrid.com/#/demos/11-stock-market).
 
+<div data-docs-demo="11-stock-market" data-height="480"></div>
+
+
 ## When
 
 In-cell mini-charts of a value series, rendered via inline SVG.

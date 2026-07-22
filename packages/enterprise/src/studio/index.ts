@@ -40,6 +40,15 @@ export { scaffoldApp, type ScaffoldAppOptions } from './scaffold-app.js'
 export { emitStudioApp, emitEntityModules, entityScreenPage, prepareEntities } from './emit-schema.js'
 export { emitStudioProject, emitStudioAppBundle, studioDeployInfo } from './emit-project.js'
 export { sampleApps, getSampleApp, type SampleApp } from './samples/index.js'
+export { liveDataSamples, getLiveDataSample } from './samples/live-data.js'
+export {
+  sanitizeStudioProject,
+  buildStudioBugReport,
+  type SanitizeResult,
+  type BugReport,
+  type BugReportInput,
+  type StudioEnv,
+} from './bug-report.js'
 export { generateValue, generateRows } from './sample-data.js'
 export { studioThemes, defaultStudioTheme, getStudioTheme, resolveThemeTokens, isDarkTheme, themeStyleString, type StudioTheme } from './themes.js'
 export {
@@ -128,6 +137,9 @@ export {
   type FilterPanelConfig,
   type RecordConfig,
   type BoardConfig,
+  type CalendarConfig,
+  type DetailConfig,
+  type DetailRelated,
   type Reduce,
   type DataSourceKind,
   type EntityDataSource,

@@ -2,6 +2,9 @@
 
 > Live in [demo 74-theme-integrations](https://svgrid.com/#/demos/74-theme-integrations).
 
+<div data-docs-demo="74-theme-integrations" data-height="480"></div>
+
+
 ## When
 
 Map your design system's tokens to --sg-* and the grid re-skins.

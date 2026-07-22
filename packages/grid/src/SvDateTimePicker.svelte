@@ -15,11 +15,20 @@
    */
   import SvCalendar from './SvCalendar.svelte'
   import SvTimePicker from './SvTimePicker.svelte'
-  import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
+  import SvField from './SvField.svelte'
+  import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
+  import { createDismissableLayer } from './a11y/dismissable'
+  import { nextEditorId, resolveMessages, type SvEditorProps } from './editor-contract'
   import { createDateTimePicker, type DateTimeValue, type DropDownDisplayMode } from './createDateTimePicker.svelte'
   import type { DateLike } from './datetime/date-core'
 
-  type Props = {
+  /** User-facing strings (localizable via `messages`). */
+  type DateTimeMessages = { dialog: string; date: string; time: string; clear: string; open: string }
+  const DEFAULT_MESSAGES: DateTimeMessages = {
+    dialog: 'Choose date and time', date: 'DATE', time: 'TIME', clear: 'Clear', open: 'Open picker',
+  }
+
+  type Props = SvEditorProps & {
     value?: DateTimeValue
     onChange?: (value: Date | null) => void
     /** Fired when the value is finalized (Enter, blur, or a single-date pick).
@@ -33,9 +42,6 @@
     max?: DateLike | null
     nullable?: boolean
     placeholder?: string
-    disabled?: boolean
-    readonly?: boolean
-    name?: string
     locale?: string
     firstDayOfWeek?: number
     weekNumbers?: boolean
@@ -50,6 +56,8 @@
     autoOpen?: boolean
     /** Animate the calendar's month/drill navigation (honors reduced-motion). */
     animate?: boolean | 'slide' | 'fade'
+    /** Override the built-in strings (tabs, dialog, clear/open aria-labels). */
+    messages?: Partial<DateTimeMessages>
   }
 
   let {
@@ -75,7 +83,21 @@
     stepMinutes = 1,
     autoOpen = false,
     animate = false,
+    ariaLabel,
+    invalid = false,
+    required = false,
+    error,
+    label,
+    hint,
+    dir,
+    id,
+    messages,
   }: Props = $props()
+
+  const autoId = nextEditorId('sv-dtp')
+  const uid = $derived(id ?? autoId)
+  const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
+  const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
 
   // The headless core owns value math, parse/format, clamping, the dropdown
   // open/tab state and the sub-picker wiring. Reactive inputs are getters;
@@ -95,6 +117,14 @@
     stepMinutes: () => stepMinutes,
     disabled: () => disabled,
     readonly: () => readonly,
+    toggleLabel: () => M.open,
+    clearLabel: () => M.clear,
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
+    ariaLabel: () => ariaLabel,
   })
 
   // --- Portalled dropdown positioning (DOM-bound; stays in the component) -----
@@ -114,17 +144,16 @@
     const reposition = () => updatePos()
     window.addEventListener('scroll', reposition, true)
     window.addEventListener('resize', reposition)
-    const onDown = (e: PointerEvent) => {
-      const t = e.target as Node | null
-      if (!t) return
-      if (triggerEl?.contains(t) || panelEl?.contains(t)) return
-      dtp.closePanel()
-    }
-    document.addEventListener('pointerdown', onDown, true)
+    const layer = createDismissableLayer({
+      element: () => [triggerEl, panelEl],
+      onDismiss: () => dtp.closePanel(),
+      closeOnEscape: false,
+    })
+    layer.activate()
     return () => {
       window.removeEventListener('scroll', reposition, true)
       window.removeEventListener('resize', reposition)
-      document.removeEventListener('pointerdown', onDown, true)
+      layer.release()
     }
   })
 
@@ -142,8 +171,9 @@
   }
 </script>
 
-<div class="sv-dtp" class:sv-dtp--disabled={disabled} onfocusout={onRootFocusOut}>
-  <div class="sv-dtp__field" bind:this={triggerEl}>
+<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<div class="sv-dtp" class:sv-dtp--disabled={disabled} dir={resolvedDir} onfocusout={onRootFocusOut}>
+  <div class="sv-dtp__field" class:is-invalid={invalid} bind:this={triggerEl}>
     {#if spinButtons}
       <div class="sv-dtp__spin">
         <button {...dtp.spinProps(1)}>▲</button>
@@ -170,16 +200,18 @@
       class="sv-dtp__panel"
       bind:this={panelEl}
       use:portalToBody
+      use:popIn={{ up: panelRect.openUpward }}
       style:position="fixed"
       style:top={`${panelRect.top}px`}
       style:left={`${panelRect.left}px`}
       role="dialog"
-      aria-label="Choose date and time"
+      aria-label={M.dialog}
+      dir={resolvedDir}
     >
       {#if dtp.showDateTab && dtp.showTimeTab}
         <div class="sv-dtp__tabs" role="tablist">
-          <button class:is-active={dtp.tab === 'date'} {...dtp.tabProps('date')}>DATE</button>
-          <button class:is-active={dtp.tab === 'time'} {...dtp.tabProps('time')}>TIME</button>
+          <button class:is-active={dtp.tab === 'date'} {...dtp.tabProps('date')}>{M.date}</button>
+          <button class:is-active={dtp.tab === 'time'} {...dtp.tabProps('time')}>{M.time}</button>
         </div>
       {/if}
       <div class="sv-dtp__body">
@@ -193,6 +225,7 @@
             {weekNumbers}
             {locale}
             {animate}
+            dir={resolvedDir}
             onChange={dtp.onCalendarChange}
           />
         {:else if dtp.showTimeTab}
@@ -201,6 +234,7 @@
             format={hourFormat}
             {minuteInterval}
             footer
+            dir={resolvedDir}
             onChange={dtp.onTimeChange}
           />
         {/if}
@@ -210,6 +244,7 @@
 
   {#if name}<input type="hidden" {name} value={dtp.current ? dtp.current.toISOString() : ''} />{/if}
 </div>
+</SvField>
 
 <style>
   .sv-dtp {
@@ -225,14 +260,16 @@
   .sv-dtp__field {
     display: flex; align-items: center; gap: 2px;
     background: var(--_bg); border: 1px solid var(--_border); border-radius: var(--_radius);
-    padding: 0 4px 0 0; height: 34px;
+    padding-block: 0; padding-inline: 0 4px; height: 34px;
   }
   .sv-dtp__field:focus-within { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
+  .sv-dtp__field.is-invalid { border-color: var(--sg-danger, #dc2626); }
+  .sv-dtp__field.is-invalid:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
   .sv-dtp__input {
     flex: 1; min-width: 0; border: 0; background: none; outline: none; color: inherit;
     font: inherit; font-size: 13px; padding: 0 8px; height: 100%;
   }
-  .sv-dtp__spin { display: flex; flex-direction: column; border-right: 1px solid var(--_border); }
+  .sv-dtp__spin { display: flex; flex-direction: column; border-inline-end: 1px solid var(--_border); }
   .sv-dtp__spin button {
     flex: 1; width: 20px; border: 0; background: none; color: var(--_muted); cursor: pointer;
     font-size: 7px; line-height: 1; padding: 0;

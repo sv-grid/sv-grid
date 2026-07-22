@@ -5,6 +5,8 @@ entity - its fields, types, validation, keys, and relations - and everything
 else derives from it: the grid columns, the edit form, validation, and the
 generated code.
 
+![One EntitySchema - fields, types, validation, keys, and relations - derives the grid columns, the edit form, validation, and the generated SvelteKit code.](/docs-media/studio-entityschema.svg)
+
 ```ts
 import type { EntitySchema } from '@svgrid/enterprise'
 

@@ -21,6 +21,7 @@
  * ```
  */
 import { COUNTRIES, COUNTRY_BY_CODE, type Country } from './countries'
+import { editorAria, type EditorAriaState } from './editor-contract'
 
 /** Reactive inputs are passed as getters so the core tracks live prop changes. */
 export type CountryInputConfig = {
@@ -28,12 +29,29 @@ export type CountryInputConfig = {
   onChange?: (code: string) => void
   disabled?: () => boolean
   ariaLabel?: () => string | undefined
+  /** Accessible label for the in-panel search field (localizable). */
+  searchLabel?: () => string | undefined
   /** DOM focus hook provided by the renderer; the core never touches the DOM. */
   focusTrigger?: () => void
+  // Editor contract (ARIA + validation) - folded into triggerProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
 }
 
 export function createCountryInput(config: CountryInputConfig) {
   const disabled = () => config.disabled?.() ?? false
+
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
 
   let open = $state(false)
   let query = $state('')
@@ -89,10 +107,11 @@ export function createCountryInput(config: CountryInputConfig) {
     onKeydown,
     /** Spread onto the trigger <button>. */
     triggerProps: () => ({
+      id: config.id?.(),
       type: 'button' as const,
       'aria-haspopup': 'listbox' as const,
       'aria-expanded': open,
-      'aria-label': config.ariaLabel?.(),
+      ...editorAria(ariaState()),
       disabled: disabled(),
       onclick: toggle,
     }),
@@ -100,7 +119,7 @@ export function createCountryInput(config: CountryInputConfig) {
     searchProps: () => ({
       type: 'text' as const,
       value: query,
-      'aria-label': 'Search countries',
+      'aria-label': config.searchLabel?.() ?? 'Search countries',
       oninput: onSearchInput,
       onkeydown: onKeydown,
     }),

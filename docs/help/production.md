@@ -3,6 +3,9 @@
 The checklist that turns "it works on my laptop" into "it ships". One
 page per concern; each concern is one paragraph + the code that
 matters.
+
+![Six production concerns turn a working grid into a shippable one: server-side data, virtualization, accessibility, SSR and hydration, CSP, and TypeScript.](/docs-media/grid-production.svg)
+
 <div data-docs-demo="22-admin-template" data-height="540"></div>
 
 ## 1. Pin your versions

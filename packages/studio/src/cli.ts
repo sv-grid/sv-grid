@@ -13,8 +13,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import {
+  buildStudioBugReport,
   introspectDatabase,
   listDatabaseTables,
+  parseProject,
   resolveSchemas,
   runStudioAdd,
   runStudioAddApp,
@@ -22,6 +24,7 @@ import {
   type EntitySchema,
   type SqlDialectName,
   type StudioIO,
+  type StudioProject,
 } from '@svgrid/enterprise/studio'
 import { connect } from './db-connect.js'
 import { startDesignerServer } from './designer-server.js'
@@ -216,7 +219,48 @@ async function main(): Promise<void> {
   process.stdout.write(`\nRun \`npm run dev\` and open /${opts.route ?? result.schema.name}\n`)
 }
 
-main().catch((err: unknown) => {
+/** Best-effort: read the CLI's own version from its package.json. */
+async function cliVersion(): Promise<string> {
+  try {
+    const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')) as { version?: string }
+    return pkg.version ?? 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
+/**
+ * On an uncaught crash, write a SANITIZED bug report (studio.config.json from
+ * cwd is attached with credentials + seed data stripped) and print a prefilled
+ * GitHub issue link. Reporting must never mask the original error.
+ */
+async function writeCrashReport(err: unknown): Promise<void> {
+  let project: StudioProject | undefined
+  try {
+    project = parseProject(await readFile('studio.config.json', 'utf8'))
+  } catch {
+    /* no config in cwd - a plain crash report */
+  }
+  const report = buildStudioBugReport({
+    project,
+    error: err instanceof Error ? err : { message: String(err) },
+    action: `svgrid-studio ${process.argv.slice(2).join(' ')}`.trim(),
+    env: { studioVersion: await cliVersion(), node: process.version, os: process.platform },
+  })
+  await writeFile('svgrid-studio-report.md', report.markdown, 'utf8')
+  const removed = report.redactions.length ? ` (${report.redactions.length} secret/data item(s) removed)` : ''
+  process.stderr.write(
+    `\nThat looks like a bug. A sanitized report was written to svgrid-studio-report.md${removed}.\n` +
+      `Report it (opens a prefilled GitHub issue):\n${report.issueUrl}\n`,
+  )
+}
+
+main().catch(async (err: unknown) => {
   process.stderr.write(`svgrid-studio: ${err instanceof Error ? err.message : String(err)}\n`)
+  try {
+    await writeCrashReport(err)
+  } catch {
+    /* never let reporting swallow the real failure */
+  }
   process.exit(1)
 })

@@ -11,7 +11,12 @@
    * and ARIA; this component keeps the DOM-bound pointer capture + hit-testing.
    * All visuals come from `--sg-*` tokens so every theme applies for free.
    */
+  import { resolveMessages, type EditorDir } from './editor-contract'
   import { createTimePicker, type TimeValue, type TimeFormat, type TimeSelection } from './createTimePicker.svelte'
+
+  /** User-facing strings (localizable via `messages`). */
+  type TimeMessages = { label: string; am: string; pm: string; now: string }
+  const DEFAULT_MESSAGES: TimeMessages = { label: 'Time picker', am: 'AM', pm: 'PM', now: 'Now' }
 
   type Props = {
     /** Date, "HH:MM[:SS]" string, or epoch ms. */
@@ -29,6 +34,10 @@
     name?: string
     /** Which dial opens first. */
     selection?: TimeSelection
+    /** Text direction (rtl mirrors layout; auto/undefined inherits). */
+    dir?: EditorDir
+    /** Override the built-in strings (group label + AM/PM/Now). */
+    messages?: Partial<TimeMessages>
   }
 
   let {
@@ -42,7 +51,12 @@
     readonly = false,
     name,
     selection = 'hour',
+    dir,
+    messages,
   }: Props = $props()
+
+  const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
+  const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
 
   // The headless core owns all state, geometry, keyboard + ARIA. Reactive inputs
   // are getters; callbacks are closures.
@@ -93,7 +107,7 @@
   }
 </script>
 
-<div class="sv-tp" class:sv-tp--disabled={disabled} role="group" aria-label="Time picker">
+<div class="sv-tp" class:sv-tp--disabled={disabled} role="group" aria-label={M.label} dir={resolvedDir}>
   <div class="sv-tp__head">
     <button class="sv-tp__seg" class:is-active={tp.selection === 'hour'} {...tp.segProps('hour')}>
       {String(tp.displayHour).padStart(2, '0')}
@@ -104,8 +118,8 @@
     </button>
     {#if tp.is12}
       <div class="sv-tp__ampm">
-        <button class:is-active={!tp.isPm} {...tp.ampmProps(false)}>AM</button>
-        <button class:is-active={tp.isPm} {...tp.ampmProps(true)}>PM</button>
+        <button class:is-active={!tp.isPm} {...tp.ampmProps(false)}>{M.am}</button>
+        <button class:is-active={tp.isPm} {...tp.ampmProps(true)}>{M.pm}</button>
       </div>
     {/if}
   </div>
@@ -139,7 +153,7 @@
 
   {#if footer}
     <div class="sv-tp__footer">
-      <button class="sv-tp__now" {...tp.nowProps()}>Now</button>
+      <button class="sv-tp__now" {...tp.nowProps()}>{M.now}</button>
     </div>
   {/if}
 
@@ -171,7 +185,7 @@
   }
   .sv-tp__seg.is-active { color: var(--_accent); background: color-mix(in srgb, var(--_accent) 12%, transparent); }
   .sv-tp__colon { font-size: 28px; font-weight: 700; color: var(--_muted); }
-  .sv-tp__ampm { display: flex; flex-direction: column; margin-left: 8px; gap: 2px; }
+  .sv-tp__ampm { display: flex; flex-direction: column; margin-inline-start: 8px; gap: 2px; }
   .sv-tp__ampm button {
     font-size: 11px; font-weight: 700; padding: 3px 8px;
     background: none; border: 1px solid var(--_border); border-radius: 6px; color: var(--_muted); cursor: pointer;

@@ -230,7 +230,7 @@
       Drag a cell range or tick row checkboxes to chart just the selection · otherwise the chart uses all visible rows · filter / sort re-aggregates live.
     </p>
     <div class="flex-1 min-h-0">
-      <SvGrid
+      <SvGrid responsive={true}
         data={rows}
         columns={columns}
         features={features}

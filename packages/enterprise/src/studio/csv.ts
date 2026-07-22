@@ -9,6 +9,7 @@
  * table from a file the user drops in - no backend, no parsing library.
  */
 import type { EntityField, EntityFieldType, EntitySchema } from '../schema.js'
+import { refineFields } from '../sources/field-inference.js'
 
 /**
  * Sniff the field delimiter from the first (unquoted) line: whichever of
@@ -159,6 +160,6 @@ export function csvToEntity(name: string, text: string): CsvEntity {
 
   // Let introspectJson refine any 'json'/edge types from the actual coerced values,
   // but keep our column types + pk decisions (they saw every row, not just the first).
-  const schema: EntitySchema = { name, fields }
+  const schema: EntitySchema = refineFields({ name, fields })
   return { schema, rows, renamed }
 }

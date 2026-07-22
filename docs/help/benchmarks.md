@@ -182,7 +182,7 @@ Client-side, 100k+ rows scroll smoothly thanks to virtualization. For millions
 of rows, page or chunk from the server (see Server-side data). The DOM only ever
 holds the visible window regardless of total row count.
 
-### Is SvGrid faster than AG Grid or TanStack Table?
+### How fast is SvGrid, and how big is it?
 
 It ships a much smaller bundle (~60 KB gzipped for the full render component,
 or ~9.4 KB for the headless core) and virtualizes by default. Raw scroll

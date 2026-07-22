@@ -368,7 +368,7 @@ export function schemaToColumns<TData extends RowData>(
         header: f.label ?? titleCase(f.field),
         editable: !f.readonly && !f.computed,
         ...(cellDataType ? { cellDataType } : {}),
-        ...(gridEditorType(f.input?.editorType) ?? editorType ? { editorType: gridEditorType(f.input?.editorType) ?? editorType } : {}),
+        ...(gridEditorType(f.input?.editorType) ?? editorType ? { editorType: (gridEditorType(f.input?.editorType) ?? editorType) as ColumnDef<TableFeatures, TData>['editorType'] } : {}),
         ...(f.options ? { editorOptions: f.options } : {}),
         ...(isMoney ? { format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } } : {}),
         // A computed field derives its cell value via the grid's value accessor,

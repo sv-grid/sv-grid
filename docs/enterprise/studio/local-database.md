@@ -6,6 +6,8 @@ provision. It is powered by [PGlite](https://pglite.dev), a full WASM build of
 Postgres that stores its data in IndexedDB, so rows survive reloads and the app
 works offline.
 
+![Inside the browser, the grid talks to createSqlDataSource, which runs a full WASM build of Postgres that stores data in IndexedDB, so rows survive reloads and the app works offline - no connection string, no server.](/docs-media/studio-pglite.svg)
+
 Pick it in the designer's **Data source** menu (or per entity, **Bind ... to →
 Local database**) when you want a running, saving app on the first `npm run dev`
 without standing up a database. It is the zero-friction default for demos,

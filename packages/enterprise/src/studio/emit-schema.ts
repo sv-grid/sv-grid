@@ -68,20 +68,39 @@ const storeVar = (schema: EntitySchema) => `${camel(schema.name)}Store`
 
 type RelationInfo = { fkField: string; displayField: string; related: EntitySchema }
 
-/** Relation fields of a schema whose target is present in the set. */
-function relationInfos(schema: EntitySchema, byName: Map<string, EntitySchema>): RelationInfo[] {
+/**
+ * Map each relation FK field (whose target resolves) to the denormalized display
+ * field name that `withRelationLabels` fills onto every row - e.g. `companyId` ->
+ * `company`, else `<fk>Label`. Used by the grid (via `relationInfos`) and by any
+ * view that renders a relation as text (board/calendar titles) so it shows the
+ * related label instead of the raw FK id. Order-dependent collision handling must
+ * match `relationInfos` exactly, so both go through here.
+ */
+export function relationDisplayFields(schema: EntitySchema, resolve: (name: string) => EntitySchema | undefined): Map<string, string> {
   const existing = new Set(schema.fields.map((f) => f.field))
-  const infos: RelationInfo[] = []
+  const out = new Map<string, string>()
   for (const f of schema.fields) {
     if (f.type !== 'relation' || !f.relation) continue
-    const related = byName.get(f.relation.entity)
-    if (!related) continue
+    if (!resolve(f.relation.entity)) continue
     // Show the label under a friendly name: `authorId` -> `author`, else `<fk>Label`.
     let display = /(_id|Id)$/.test(f.field) ? f.field.replace(/(_id|Id)$/, '') : `${f.field}Label`
     if (!display || existing.has(display)) display = `${f.field}Label`
     while (existing.has(display)) display += '_'
     existing.add(display)
-    infos.push({ fkField: f.field, displayField: display, related })
+    out.set(f.field, display)
+  }
+  return out
+}
+
+/** Relation fields of a schema whose target is present in the set. */
+function relationInfos(schema: EntitySchema, byName: Map<string, EntitySchema>): RelationInfo[] {
+  const display = relationDisplayFields(schema, (name) => byName.get(name))
+  const infos: RelationInfo[] = []
+  for (const f of schema.fields) {
+    if (f.type !== 'relation' || !f.relation) continue
+    const related = byName.get(f.relation.entity)
+    if (!related) continue
+    infos.push({ fkField: f.field, displayField: display.get(f.field)!, related })
   }
   return infos
 }
@@ -607,15 +626,72 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   </header>
   {#if navOpen}<button type="button" class="sv-app__backdrop" aria-label="Close navigation" onclick={() => (navOpen = false)}></button>{/if}`
 
+  // App-chrome toolbar (docked at the top of the content area for both layouts):
+  // a functional quick-search over the app's screens + an account cluster. Reads as
+  // a real product header. Opt out with `shell.toolbar === false`.
+  const toolbarOn = shell.toolbar !== false && nav.length > 0
+  const initials = ((brand.match(/\b[A-Za-z0-9]/g) ?? []).slice(0, 2).join('') || 'A').toUpperCase()
+  const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'app'
+  const resultLabel = opts.i18n ? `{r.id ? $t('nav.' + r.id, r.label) : r.label}` : '{r.label}'
+  const toolbarMarkup = toolbarOn
+    ? `<div class="sv-app__toolbar">
+      <div class="sv-app__search">
+        <svg class="sv-app__search-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input class="sv-app__search-in" type="search" placeholder="Search {brand}…" bind:value={q} bind:this={searchEl} aria-label="Search screens" />
+        <kbd class="sv-app__kbd" aria-hidden="true">⌘K</kbd>
+        {#if results.length}
+          <div class="sv-app__results">
+            {#each results as r (r.href)}
+              <a class="sv-app__result" href={r.href} onclick={() => (q = '')}>${resultLabel}</a>
+            {/each}
+          </div>
+        {/if}
+      </div>
+      <div class="sv-app__tools">
+        <div class="sv-app__pop">
+          <button type="button" class="sv-app__tool" aria-label="Notifications" aria-expanded={bellOpen} onclick={() => { bellOpen = !bellOpen; menuOpen = false }}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+            <span class="sv-app__dot"></span>
+          </button>
+          {#if bellOpen}
+            <div class="sv-app__menu sv-app__menu--notif" role="menu">
+              <div class="sv-app__menu-head">Notifications</div>
+              {#each notifications as n (n.title)}
+                <div class="sv-app__notif" role="menuitem"><span class="sv-app__notif-dot" style:background={n.color}></span><div class="sv-app__notif-body"><strong>{n.title}</strong><span>{n.time}</span></div></div>
+              {/each}
+              <button type="button" class="sv-app__menu-foot" onclick={() => (bellOpen = false)}>Mark all as read</button>
+            </div>
+          {/if}
+        </div>
+        <div class="sv-app__pop">
+          <button type="button" class="sv-app__avatar" title={brand} aria-label="Account" aria-expanded={menuOpen} onclick={() => { menuOpen = !menuOpen; bellOpen = false }}>{initials}</button>
+          {#if menuOpen}
+            <div class="sv-app__menu sv-app__menu--acct" role="menu">
+              <div class="sv-app__acct-head"><span class="sv-app__avatar sv-app__avatar--lg" aria-hidden="true">{initials}</span><div class="sv-app__acct-id"><strong>{brand}</strong><span>{acctEmail}</span></div></div>
+              <a class="sv-app__menu-item" href="/" role="menuitem" onclick={() => (menuOpen = false)}>Dashboard</a>
+              <button type="button" class="sv-app__menu-item" role="menuitem" onclick={() => (menuOpen = false)}>Profile</button>
+              <button type="button" class="sv-app__menu-item" role="menuitem" onclick={() => (menuOpen = false)}>Settings</button>
+              <button type="button" class="sv-app__menu-item sv-app__menu-item--danger" role="menuitem" onclick={() => (menuOpen = false)}>Sign out</button>
+            </div>
+          {/if}
+        </div>
+      </div>
+      {#if bellOpen || menuOpen}<button type="button" class="sv-app__scrim" tabindex="-1" aria-label="Close menus" onclick={() => { bellOpen = false; menuOpen = false }}></button>{/if}
+    </div>\n    `
+    : ''
+  const mainMarkup = `<main class="sv-app__main">
+    ${toolbarMarkup}<div class="sv-app__content">
+      {@render children()}
+    </div>
+  </main>`
+
   const body = style === 'top-nav'
     ? `<div class="sv-app sv-app--top">
   <header class="sv-app__bar">
     ${brandLink}
     ${linksMarkup}
   </header>
-  <main class="sv-app__main">
-    {@render children()}
-  </main>${footer ? `\n  <footer class="sv-app__footbar">{footer}</footer>` : ''}
+  ${mainMarkup}${footer ? `\n  <footer class="sv-app__footbar">{footer}</footer>` : ''}
 </div>`
     : `<div class="sv-app sv-app--side${right ? ' sv-app--right' : ''}" class:is-drawer={drawer} class:is-navopen={navOpen}>
   ${mobileBar}
@@ -628,9 +704,7 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
     </div>
     ${linksMarkup}${footMarkup}
   </aside>
-  <main class="sv-app__main">
-    {@render children()}
-  </main>
+  ${mainMarkup}
 </div>`
 
   const styles = style === 'top-nav'
@@ -683,7 +757,31 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   const brand = ${JSON.stringify(brand)}${footConst}${logoConst}
   let navOpen = $state(false)
   // Close the mobile drawer whenever the route changes.
-  $effect(() => { void $page.url.pathname; navOpen = false })${sideState}
+  $effect(() => { void $page.url.pathname; navOpen = false })${sideState}${toolbarOn ? `
+  // App-chrome quick-search: filter the screens by label as you type.
+  const initials = ${JSON.stringify(initials)}
+  const acctEmail = ${JSON.stringify(`admin@${brandSlug}.com`)}
+  let q = $state('')
+  const results = $derived(q.trim() ? nav.filter((n) => n.label.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6) : [])
+  let bellOpen = $state(false)
+  let menuOpen = $state(false)
+  let searchEl: HTMLInputElement | null = $state(null)
+  const notifications = [
+    { title: 'Welcome to ' + brand, time: 'just now', color: 'var(--sg-accent, #6366f1)' },
+    { title: 'Your workspace is ready', time: '2m ago', color: '#10b981' },
+    { title: 'Sample data loaded', time: '5m ago', color: '#f59e0b' },
+  ]
+  // Cmd/Ctrl+K focuses search; Escape closes the menus.
+  $effect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); searchEl?.focus() }
+      else if (e.key === 'Escape') { bellOpen = false; menuOpen = false }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+  // Close both menus on route change.
+  $effect(() => { void $page.url.pathname; bellOpen = false; menuOpen = false })` : ''}
 </script>
 ${themeHead}
 
@@ -696,42 +794,84 @@ ${styles}
   .sv-app__link { padding: 7px 10px; border-radius: 8px; color: var(--sg-fg, #334155); text-decoration: none; font-size: 14px; }
   .sv-app__link:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent); }
   .sv-app__link.is-active { background: color-mix(in srgb, var(--sg-accent, #4f46e5) 14%, transparent); color: var(--sg-accent, #4f46e5); font-weight: 600; }
-  .sv-app__main { padding: 24px 28px; min-width: 0; }
+  .sv-app__main { display: flex; flex-direction: column; min-width: 0; }
+  .sv-app__content { padding: 24px 28px; min-width: 0; }
+  /* App-chrome toolbar: a sticky product header with quick-search + account cluster. */
+  .sv-app__toolbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 16px; padding: 10px 28px; background: color-mix(in srgb, var(--sg-header-bg, #f8fafc) 86%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid color-mix(in srgb, var(--sg-fg, #0f172a) 10%, var(--sg-border, #e6e8ec)); }
+  .sv-app__search { position: relative; flex: 1; max-width: 440px; display: flex; align-items: center; }
+  .sv-app__search-ic { position: absolute; left: 11px; color: var(--sg-muted, #94a3b8); pointer-events: none; }
+  .sv-app__search-in { width: 100%; font: inherit; font-size: 13.5px; padding: 7px 46px 7px 34px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 9px; background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); }
+  .sv-app__search-in::-webkit-search-cancel-button { -webkit-appearance: none; }
+  .sv-app__search-in:focus { outline: none; border-color: var(--sg-accent, #6366f1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sg-accent, #6366f1) 18%, transparent); }
+  .sv-app__results { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20; display: flex; flex-direction: column; padding: 5px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 10px; box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.25); }
+  .sv-app__result { padding: 7px 10px; border-radius: 7px; font-size: 13.5px; color: var(--sg-fg, #334155); text-decoration: none; }
+  .sv-app__result:hover { background: color-mix(in srgb, var(--sg-accent, #6366f1) 12%, transparent); color: var(--sg-accent, #6366f1); }
+  .sv-app__tools { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .sv-app__tool { position: relative; display: inline-flex; padding: 7px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 9px; background: var(--sg-bg, #fff); color: var(--sg-muted, #64748b); cursor: pointer; }
+  .sv-app__tool:hover { color: var(--sg-fg, #0f172a); border-color: color-mix(in srgb, var(--sg-fg, #0f172a) 20%, var(--sg-border, #e6e8ec)); }
+  .sv-app__dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--sg-accent, #6366f1); box-shadow: 0 0 0 2px var(--sg-bg, #fff); }
+  .sv-app__avatar { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: none; border-radius: 50%; font: inherit; font-size: 12px; font-weight: 700; color: #fff; background: var(--sg-accent, #6366f1); letter-spacing: 0.02em; cursor: pointer; }
+  .sv-app__kbd { position: absolute; right: 8px; font-size: 10.5px; font-weight: 600; color: var(--sg-muted, #94a3b8); background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 5px; padding: 1px 5px; pointer-events: none; }
+  .sv-app__pop { position: relative; }
+  .sv-app__scrim { position: fixed; inset: 0; z-index: 44; border: 0; padding: 0; background: transparent; cursor: default; }
+  .sv-app__menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 46; min-width: 232px; padding: 6px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 11px; box-shadow: 0 16px 40px -10px rgba(15, 23, 42, 0.3); }
+  .sv-app__menu-head { padding: 6px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sg-muted, #94a3b8); }
+  .sv-app__notif { display: flex; gap: 9px; padding: 8px 10px; border-radius: 8px; }
+  .sv-app__notif:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 5%, transparent); }
+  .sv-app__notif-dot { flex: none; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; }
+  .sv-app__notif-body { display: flex; flex-direction: column; min-width: 0; }
+  .sv-app__notif-body strong { font-size: 13px; font-weight: 600; color: var(--sg-fg, #0f172a); }
+  .sv-app__notif-body span { font-size: 11.5px; color: var(--sg-muted, #94a3b8); }
+  .sv-app__menu-foot { width: 100%; margin-top: 4px; padding: 8px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--sg-accent, #6366f1); background: none; border: none; border-top: 1px solid var(--sg-border, #eef0f3); cursor: pointer; }
+  .sv-app__acct-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px 10px; border-bottom: 1px solid var(--sg-border, #eef0f3); margin-bottom: 4px; }
+  .sv-app__avatar--lg { width: 38px; height: 38px; font-size: 14px; }
+  .sv-app__acct-id { display: flex; flex-direction: column; min-width: 0; }
+  .sv-app__acct-id strong { font-size: 13.5px; color: var(--sg-fg, #0f172a); }
+  .sv-app__acct-id span { font-size: 12px; color: var(--sg-muted, #94a3b8); overflow: hidden; text-overflow: ellipsis; }
+  .sv-app__menu-item { display: block; width: 100%; text-align: left; padding: 8px 10px; font: inherit; font-size: 13px; color: var(--sg-fg, #334155); background: none; border: none; border-radius: 8px; text-decoration: none; cursor: pointer; }
+  .sv-app__menu-item:hover { background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent); color: var(--sg-accent, #6366f1); }
+  .sv-app__menu-item--danger:hover { background: color-mix(in srgb, #ef4444 12%, transparent); color: #ef4444; }
   .sv-app__locale { margin-top: 10px; padding: 5px 8px; font: inherit; font-size: 12.5px; color: var(--sg-fg, #0f172a); background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 8px; }
   /* Mobile bar + drawer chrome (hidden on desktop; media queries above switch it on) */
   .sv-app__mobilebar { display: none; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--sg-border, #e6e8ec); background: var(--sg-header-bg, #f8fafc); position: sticky; top: 0; z-index: 50; }
   .sv-app__burger { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 9px; background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); cursor: pointer; }
   .sv-app__backdrop { position: fixed; inset: 0; z-index: 55; border: 0; padding: 0; background: rgba(15, 23, 42, 0.42); cursor: pointer; }
-  @media (max-width: 860px) { .sv-app__main { padding: 18px 16px; } }
-  @media (max-width: 640px) { .sv-app__main { padding: 14px 12px; } }
+  @media (max-width: 860px) { .sv-app__content { padding: 18px 16px; } .sv-app__toolbar { padding: 9px 16px; } }
+  @media (max-width: 640px) { .sv-app__content { padding: 14px 12px; } .sv-app__toolbar { padding: 8px 12px; gap: 10px; } .sv-app__tool { display: none; } }
 </style>
 `,
   }
 }
 
 export function homeFile(nav: NavItem[]): GeneratedFile {
+  // Land on the app's primary screen (the first dashboard) instead of a generic
+  // welcome, so opening the app drops you straight into the real product. A themed
+  // splash + link covers the pre-hydration moment and the no-JS case.
+  const first = nav[0]?.href ?? '/'
+  if (nav.length === 0) {
+    return { path: 'src/routes/+page.svelte', description: 'Home page.', contents: `<h1 class="st__title">Your data app</h1>\n<p class="st__sub">Add a screen to get started.</p>\n` }
+  }
   return {
     path: 'src/routes/+page.svelte',
-    description: 'Home page: a card per entity.',
+    description: 'Home: redirects to the primary dashboard.',
     contents: `<script lang="ts">
-  const entities = ${JSON.stringify(nav)}
+  import { onMount } from 'svelte'
+  import { goto } from '$app/navigation'
+  const home = ${JSON.stringify(first)}
+  onMount(() => { goto(home, { replaceState: true }) })
 </script>
 
-<h1 class="st__title">Welcome to your data app</h1>
-<p class="st__sub">
-  Generated from your schema with SvGrid Studio. Each screen is driven by one
-  <code>EntitySchema</code>. It runs on empty in-memory data - add rows, or point
-  an entity at a real database in <code>src/lib/data.ts</code>.
-</p>
-
-<div class="home">
-  {#each entities as e (e.href)}
-    <a class="home__card" href={e.href}>
-      <strong>{e.label}</strong>
-      <span>Browse and edit {e.label} records.</span>
-    </a>
-  {/each}
+<div class="st-home">
+  <div class="st-home__spinner" aria-hidden="true"></div>
+  <p>Opening your workspace… <a href={home}>Continue</a></p>
 </div>
+
+<style>
+  .st-home { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 52vh; color: var(--sg-muted, #64748b); font-size: 14px; }
+  .st-home__spinner { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--sg-border, #e6e8ec); border-top-color: var(--sg-accent, #6366f1); animation: st-home-spin 0.7s linear infinite; }
+  .st-home a { color: var(--sg-accent, #6366f1); font-weight: 600; }
+  @keyframes st-home-spin { to { transform: rotate(360deg); } }
+</style>
 `,
   }
 }

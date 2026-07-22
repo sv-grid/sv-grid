@@ -16,6 +16,7 @@
  * The styled <SvMaskedInput> is just one renderer over this core.
  */
 import { applyMask, unmask, isMaskComplete } from './datetime/mask'
+import { editorAria, type EditorAriaState } from './editor-contract'
 
 /** Reactive inputs are passed as getters so the core tracks live prop changes. */
 export type MaskedInputConfig = {
@@ -26,6 +27,12 @@ export type MaskedInputConfig = {
   placeholder?: () => string | undefined
   disabled?: () => boolean
   readonly?: () => boolean
+  // Editor contract (ARIA + validation) - folded into inputProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
   ariaLabel?: () => string | undefined
 }
 
@@ -58,6 +65,15 @@ export function createMaskedInput(config: MaskedInputConfig) {
     config.onChange?.(masked, raw, m ? isMaskComplete(masked, m) : true)
   }
 
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
+
   return {
     /** The current masked display text. */
     get masked() { return text },
@@ -67,12 +83,13 @@ export function createMaskedInput(config: MaskedInputConfig) {
     get complete() { return mask() ? isMaskComplete(text, mask()) : true },
     /** Spread onto the text input element. */
     inputProps: () => ({
+      id: config.id?.(),
       value: text,
       type: 'text' as const,
       placeholder: config.placeholder?.() ?? mask(),
       disabled: disabled(),
       readonly: readonly(),
-      'aria-label': config.ariaLabel?.(),
+      ...editorAria(ariaState()),
       oninput: onInput,
     }),
   }

@@ -2,6 +2,8 @@
 
 A "set filter" (a.k.a. value filter, list filter) shows a checklist of all distinct values in a column and lets the user pick which to include. It's what you reach for to filter `status` to "active OR pending", or `department` to a few specific teams.
 
+![An Excel-style set filter: a per-column checklist of distinct values with a Select all row, search, and a facet count, applying an IN filter to the grid.](/docs-media/grid-set-filter.svg)
+
 <div data-docs-demo="111-set-filter-advanced" data-height="640"></div>
 
 Three patterns are supported, all wired through the imperative `api.setFacetFilter(columnId, values | null)`:

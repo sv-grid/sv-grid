@@ -17,6 +17,7 @@
  */
 import { formatDate, parseDate } from './datetime/date-format'
 import { toDate, clampDate, withTime, startOfDay, type DateLike } from './datetime/date-core'
+import { editorAria, type EditorAriaState } from './editor-contract'
 
 export type DateTimeValue = Date | string | number | null
 export type DropDownDisplayMode = 'both' | 'calendar' | 'time'
@@ -40,6 +41,17 @@ export type DateTimePickerConfig = {
   stepMinutes?: () => number
   disabled?: () => boolean
   readonly?: () => boolean
+  /** Accessible label for the open-picker toggle (localizable). */
+  toggleLabel?: () => string | undefined
+  /** Accessible label for the clear button (localizable). */
+  clearLabel?: () => string | undefined
+  // Editor contract (ARIA + validation) - folded into inputProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
+  ariaLabel?: () => string | undefined
 }
 
 const defaultLocale = () => (typeof navigator !== 'undefined' ? navigator.language : 'en-US')
@@ -164,9 +176,18 @@ export function createDateTimePicker(config: DateTimePickerConfig) {
      *  alongside `bind:value={dtp.text}`. */
     inputProps() {
       return {
+        id: config.id?.(),
         type: 'text' as const,
         disabled: isDisabled(),
         readonly: isReadonly(),
+        ...editorAria({
+          id: config.id?.(),
+          invalid: config.invalid?.(),
+          required: config.required?.(),
+          error: config.error?.(),
+          hint: config.hint?.(),
+          ariaLabel: config.ariaLabel?.(),
+        } satisfies EditorAriaState),
         onblur: commitFromText,
         onkeydown: onInputKeydown,
       }
@@ -175,7 +196,7 @@ export function createDateTimePicker(config: DateTimePickerConfig) {
     toggleProps() {
       return {
         type: 'button' as const,
-        'aria-label': 'Open picker',
+        'aria-label': config.toggleLabel?.() ?? 'Open picker',
         'aria-haspopup': 'dialog' as const,
         'aria-expanded': open,
         disabled: !isInteractive,
@@ -187,7 +208,7 @@ export function createDateTimePicker(config: DateTimePickerConfig) {
     clearProps() {
       return {
         type: 'button' as const,
-        'aria-label': 'Clear',
+        'aria-label': config.clearLabel?.() ?? 'Clear',
         onclick: () => commit(null),
       }
     },

@@ -5,6 +5,9 @@ dependency, every runtime call, and every network egress has to be
 justified before procurement signs. This page is the answer to "what
 does this package do, what does it depend on, and what would I tell
 our InfoSec team?".
+
+![The SvGrid library renders and holds state inside the browser and opens no connection of its own - no fetch, no telemetry; only your app code crosses the boundary to the network to fetch rows and persist changes.](/docs-media/grid-security.svg)
+
 <div data-docs-demo="16-csp-compliant" data-height="540"></div>
 
 ## TL;DR

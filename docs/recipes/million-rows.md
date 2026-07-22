@@ -2,6 +2,9 @@
 
 > Live in [demo 78-million-rows](https://svgrid.com/#/demos/78-million-rows).
 
+<div data-docs-demo="78-million-rows" data-height="480"></div>
+
+
 ## When
 
 Row + column virtualization configured for very wide / very tall data.

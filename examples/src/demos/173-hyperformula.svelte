@@ -491,7 +491,7 @@
     use:spreadsheetLayout={{ merges, columnOrder }}
     use:rowResize={{ onResize: onRowResize, min: 22, max: 240, disabled: !resizeEnabled }}
   >
-    <SvGrid
+    <SvGrid responsive={true}
       data={raw}
       columns={columns}
       features={features}

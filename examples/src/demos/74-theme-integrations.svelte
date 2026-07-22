@@ -241,7 +241,7 @@ ${dark}
   <div class="theme-layout">
     <!-- The theme tokens live on this wrapper. -->
     <div data-theme-preset={theme.id} style={inlineStyle} class="themed-host theme-grid-wrap">
-      <SvGrid
+      <SvGrid responsive={true}
         data={rows}
         columns={columns}
         features={features}

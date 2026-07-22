@@ -5,6 +5,8 @@ TSV, JSON, vCard, Markdown table, an email signature block, or a
 single line of prose - and the parser maps it into typed rows your
 grid can insert or merge.
 
+![Any shape of pasted data is mapped by a parser into typed rows the grid can insert or merge.](/docs-media/grid-smart-paste.svg)
+
 This is the demo your sales / customer-success / RevOps users want.
 Their day already has them pasting from Salesforce, Slack, Excel,
 business cards, and signature blocks; the parser absorbs the chaos

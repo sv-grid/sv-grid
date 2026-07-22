@@ -6,6 +6,8 @@ behaviour living in *your* derived-state code. This is on purpose: a
 tree is just "a flat list with a depth field and a collapsible
 subtree", and the headless engine doesn't need to know which.
 
+![Flat rows with a parentId and an expanded map deriving the visible rows, rendered as an indented tree with expand chevrons.](/docs-media/grid-tree-rows.svg)
+
 Try the org-chart pattern - click any chevron to expand a branch,
 or focus a name cell and press Right / Left / Enter:
 

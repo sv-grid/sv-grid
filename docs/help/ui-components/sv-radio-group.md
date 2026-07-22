@@ -1,0 +1,128 @@
+# SvRadioGroup
+
+An accessible single-select radio group following the WAI-ARIA radiogroup
+pattern, with roving tabindex and arrow-key navigation.
+
+`SvRadioGroup` renders a set of options where exactly one is chosen - a plan
+picker, a shipping method, a survey answer. Pass an `options` array and it wires
+up the roving focus, arrow keys, and selection for you. It is controlled: drive
+`value` from your state and update it in `onChange`. It carries the shared editor
+contract (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
+
+<div data-docs-demo="310-radio-group" data-height="420"></div>
+
+## Basic usage
+
+```svelte
+<script lang="ts">
+  import { SvRadioGroup, type RadioOption } from '@svgrid/grid'
+
+  const plans: RadioOption[] = [
+    { value: 'free', label: 'Free' },
+    { value: 'pro', label: 'Pro' },
+    { value: 'team', label: 'Team' },
+  ]
+  let plan = $state<string | number | null>('pro')
+</script>
+
+<SvRadioGroup
+  label="Plan"
+  options={plans}
+  value={plan}
+  onChange={(v) => (plan = v)}
+/>
+```
+
+## Props
+
+| Prop          | Type                                    | Default    | Description                                                       |
+| ------------- | --------------------------------------- | ---------- | ---------------------------------------------------------------- |
+| `options`     | `ReadonlyArray<RadioOption>`            | -          | The choices. Each is `{ value, label, disabled? }`.             |
+| `value`       | `string \| number \| null`              | `null`     | Selected value (controlled).                                    |
+| `onChange`    | `(value: string \| number) => void`     | -          | Fires with the newly selected value.                            |
+| `orientation` | `vertical` \| `horizontal`              | `vertical` | Stack the radios or lay them in a row.                          |
+| `size`        | `sm` \| `md` \| `lg`                    | `md`       | Label size.                                                    |
+| `disabled`    | `boolean`                               | `false`    | Disables the whole group.                                      |
+| `name`        | `string`                                | -          | Emits a hidden input carrying the selected value.              |
+| `label`       | `string`                                | -          | Visible field label; also names the group for assistive tech.  |
+| `hint`        | `string`                                | -          | Helper text under the group.                                   |
+| `error`       | `string`                                | -          | Error message announced via `aria-describedby`.                |
+| `required`    | `boolean`                               | `false`    | Adds `aria-required`.                                          |
+| `invalid`     | `boolean`                               | `false`    | Marks the group invalid (danger dots).                        |
+| `dir`         | `ltr` \| `rtl` \| `auto`                | `auto`     | Text direction.                                                |
+| `ariaLabel`   | `string`                                | -          | Accessible name when there is no visible `label`.             |
+| `id`          | `string`                                | auto       | Root id; label/hint/error ids derive from it.                  |
+
+Helper type: `RadioOption = { value: string | number; label: string; disabled?: boolean }`.
+
+## Patterns
+
+### Horizontal layout
+
+Set `orientation="horizontal"` for a compact row, such as a size or quantity
+picker:
+
+```svelte
+<SvRadioGroup orientation="horizontal" options={sizes} value={size}
+  onChange={(v) => (size = v)} />
+```
+
+### Disabled options
+
+Mark an option `disabled` and keyboard navigation skips it while it stays
+visible:
+
+```svelte
+<script lang="ts">
+  const shipping = [
+    { value: 'standard', label: 'Standard' },
+    { value: 'overnight', label: 'Overnight (unavailable)', disabled: true },
+  ]
+</script>
+```
+
+### Required with validation
+
+Mark the group `required` and set `invalid` + `error` until a choice is made:
+
+```svelte
+<SvRadioGroup required label="Plan" options={plans} value={plan}
+  invalid={plan === null} error={plan === null ? 'Pick a plan' : undefined}
+  onChange={(v) => (plan = v)} />
+```
+
+### Driving a computed value
+
+The selected `value` is just state, so a `$derived` can react to it - a plan
+picker that updates the price beneath it as you choose:
+
+```svelte
+<script lang="ts">
+  import { SvRadioGroup, type RadioOption } from '@svgrid/grid'
+  const plans: RadioOption[] = [
+    { value: 'free', label: 'Free' },
+    { value: 'pro', label: 'Pro' },
+    { value: 'team', label: 'Team' },
+  ]
+  const price = { free: 0, pro: 12, team: 40 }
+  let plan = $state<string | number | null>('pro')
+</script>
+
+<SvRadioGroup label="Plan" options={plans} value={plan} onChange={(v) => (plan = v)} />
+<p>{plan ? `$${price[plan as keyof typeof price]}/mo` : 'Select a plan'}</p>
+```
+
+## Accessibility
+
+- The container is a `radiogroup`; each option is a `role="radio"` with
+  `aria-checked`, named by a visible `label` or `ariaLabel`.
+- Roving tabindex: only the selected radio (or the first enabled one) is
+  tabbable. Arrow keys move and select in one step, wrapping around and skipping
+  disabled options; `Space` selects the focused radio.
+- Under `dir="rtl"` the horizontal arrow direction follows reading order.
+
+## See also
+
+- [SvButtonGroup](sv-button-group.md) - the same select-one choice as a segmented bar.
+- [SvCheckBox](sv-check-box.md) - for choosing several options instead of one.
+- [Buttons & toggles overview](buttons.md) - the whole family at a glance.

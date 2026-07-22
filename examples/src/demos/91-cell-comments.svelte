@@ -280,7 +280,7 @@
   </div>
 
   <div class="cc-grid-host flex-1 min-h-0" oncontextmenu={openContext} role="presentation">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

@@ -8,20 +8,24 @@
    * normalization, palette, draft field and open/close state come from the core;
    * the portal + anchored measurement stay here (render concerns).
    */
-  import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
+  import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
+  import { createDismissableLayer } from './a11y/dismissable'
+  import SvField from './SvField.svelte'
+  import { nextEditorId, resolveMessages, type SvEditorProps } from './editor-contract'
   import { createColorInput } from './createColorInput.svelte'
 
-  type Props = {
+  /** User-facing strings for the color popover (localizable via `messages`). */
+  type ColorMessages = { dialog: string; picker: string; hex: string }
+  const DEFAULT_MESSAGES: ColorMessages = { dialog: 'Choose color', picker: 'Color picker', hex: 'Hex value' }
+
+  type Props = SvEditorProps & {
     value?: string
     onChange?: (hex: string) => void
-    disabled?: boolean
-    readonly?: boolean
     /** Preset swatches. */
     palette?: string[]
-    name?: string
-    size?: 'sm' | 'md' | 'lg'
-    ariaLabel?: string
     autoOpen?: boolean
+    /** Override the built-in popover strings. */
+    messages?: Partial<ColorMessages>
   }
 
   let {
@@ -33,8 +37,20 @@
     name,
     size = 'md',
     ariaLabel,
+    invalid = false,
+    required = false,
+    error,
+    label,
+    hint,
+    dir,
+    id,
     autoOpen = false,
+    messages,
   }: Props = $props()
+
+  const autoId = nextEditorId('sv-color')
+  const uid = $derived(id ?? autoId)
+  const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
 
   const col = createColorInput({
     value: () => value,
@@ -42,6 +58,11 @@
     disabled: () => disabled,
     readonly: () => readonly,
     palette: () => palette as string[],
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
     ariaLabel: () => ariaLabel,
   })
 
@@ -60,16 +81,16 @@
     const reposition = () => updatePos()
     window.addEventListener('scroll', reposition, true)
     window.addEventListener('resize', reposition)
-    const onDown = (e: PointerEvent) => {
-      const t = e.target as Node | null
-      if (t && (triggerEl?.contains(t) || panelEl?.contains(t))) return
-      col.popover.close()
-    }
-    document.addEventListener('pointerdown', onDown, true)
+    const layer = createDismissableLayer({
+      element: () => [triggerEl, panelEl],
+      onDismiss: () => col.popover.close(),
+      closeOnEscape: false,
+    })
+    layer.activate()
     return () => {
       window.removeEventListener('scroll', reposition, true)
       window.removeEventListener('resize', reposition)
-      document.removeEventListener('pointerdown', onDown, true)
+      layer.release()
     }
   })
 
@@ -79,36 +100,40 @@
   }
 </script>
 
-<button
-  bind:this={triggerEl}
-  class="sv-color sv-color--{size}"
-  class:is-disabled={disabled}
-  {...col.swatchProps()}
-  use:focusOpen
->
-  <span class="sv-color__swatch" style:background={col.normalized}></span>
-  <span class="sv-color__hex">{col.normalized}</span>
-</button>
+<SvField id={uid} {label} {hint} {error} {required} {dir}>
+  <button
+    bind:this={triggerEl}
+    class="sv-color sv-color--{size}"
+    class:is-disabled={disabled}
+    class:is-invalid={invalid}
+    {...col.swatchProps()}
+    use:focusOpen
+  >
+    <span class="sv-color__swatch" style:background={col.normalized}></span>
+    <span class="sv-color__hex">{col.normalized}</span>
+  </button>
+</SvField>
 
 {#if col.popover.open}
   <div
     class="sv-color__panel"
     bind:this={panelEl}
     use:portalToBody
+    use:popIn={{ up: panelRect.openUpward }}
     style:position="fixed"
     style:top={`${panelRect.top}px`}
     style:left={`${panelRect.left}px`}
     role="dialog"
-    aria-label="Choose color"
+    aria-label={M.dialog}
   >
     <div class="sv-color__top">
-      <input class="sv-color__native" type="color" value={col.normalized} oninput={(e) => col.pick((e.currentTarget as HTMLInputElement).value)} aria-label="Color picker" />
+      <input class="sv-color__native" type="color" value={col.normalized} oninput={(e) => col.pick((e.currentTarget as HTMLInputElement).value)} aria-label={M.picker} />
       <input
         class="sv-color__field"
         type="text"
         bind:value={col.hexDraft}
         spellcheck="false"
-        aria-label="Hex value"
+        aria-label={M.hex}
         onblur={col.commitHex}
         onkeydown={(e) => { if (e.key === 'Enter') col.commitHex() }}
       />
@@ -139,6 +164,8 @@
   .sv-color--md { height: 34px; font-size: 13px; }
   .sv-color--lg { height: 40px; font-size: 15px; }
   .sv-color.is-disabled { opacity: 0.6; cursor: not-allowed; }
+  .sv-color.is-invalid { border-color: var(--sg-danger, #dc2626); }
+  .sv-color.is-invalid:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
   .sv-color:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--_accent)); outline-offset: 2px; }
   .sv-color__swatch { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15); flex: none; }
   .sv-color__hex { font-variant-numeric: tabular-nums; text-transform: lowercase; }

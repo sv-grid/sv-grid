@@ -2,7 +2,7 @@
   /**
    * 209. Data validation (dropdowns + rules)
    * -----------------------------------------
-   * Excel "Data Validation" on a plain <SvGrid>. Some letter columns are
+   * Excel "Data Validation" on a plain <SvGrid responsive={true}>. Some letter columns are
    * list-constrained via editorType:'list' + editorOptions (double-click for a
    * dropdown); Estimate enforces a numeric rule. The red flag is the grid's own
    * declarative per-column validate() hook - it fires for bad data already in
@@ -116,7 +116,7 @@
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sheet" use:rowResize={{ onResize: onRowResize, min: 20, max: 320 }}>
-    <SvGrid
+    <SvGrid responsive={true}
       data={raw}
       columns={columns}
       features={features}

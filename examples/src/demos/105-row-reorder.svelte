@@ -218,7 +218,7 @@
     ondrop={onHostDrop}
     role="presentation"
   >
-    <SvGrid
+    <SvGrid responsive={true}
       data={tasks}
       columns={columns}
       features={features}

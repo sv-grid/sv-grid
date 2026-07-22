@@ -2,7 +2,7 @@
   /**
    * 210. Format Cells
    * ------------------
-   * The Excel Home -> Number experience on a plain <SvGrid>. Select a range of
+   * The Excel Home -> Number experience on a plain <SvGrid responsive={true}>. Select a range of
    * cells and apply a display format (Currency, Percent, Thousands, Number,
    * Date, General) - only the rendering changes; the stored value and every
    * formula are untouched. HyperFormula keeps Gross profit, Margin and the Total
@@ -152,7 +152,7 @@
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sheet" use:rowResize={{ onResize: onRowResize, min: 20, max: 320 }}>
-    <SvGrid
+    <SvGrid responsive={true}
       data={raw}
       columns={columns}
       features={features}

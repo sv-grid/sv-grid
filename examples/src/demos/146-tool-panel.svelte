@@ -9,7 +9,7 @@
    * it on with `toolPanel` - a button appears at the grid's top-right and the
    * panel docks on the right edge.
    *
-   *   <SvGrid toolPanel ... />
+   *   <SvGrid responsive={true} toolPanel ... />
    */
   import {
     SvGrid,
@@ -61,7 +61,7 @@
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

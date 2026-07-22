@@ -6,6 +6,8 @@ render a plain `<table>` for print or email, run the row pipeline in a Web
 Worker or on a server, or unit-test sort / filter / aggregation logic with no
 DOM at all.
 
+![The createSvGrid engine holds state and prop-getters, while the <SvGrid> renderer is one opinionated table built on that same engine.](/docs-media/grid-headless.svg)
+
 ```
 your data ─▶ createSvGrid (engine) ─▶ row model ─▶ your markup
                      ▲                                  │

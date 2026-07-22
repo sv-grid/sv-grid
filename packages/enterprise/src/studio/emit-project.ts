@@ -15,7 +15,7 @@ import type { Block, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig,
 import { blockColumns, entityDataSource, flattenBlocks, serializeProject } from './project.js'
 import { resolveThemeTokens, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
-import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, type NavItem } from './emit-schema.js'
+import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, relationDisplayFields, type NavItem } from './emit-schema.js'
 
 const has = (blocks: Block[], kind: Block['config']['kind']) => blocks.some((b) => b.config.kind === kind)
 
@@ -55,7 +55,7 @@ function gridColumnsExpr(schemaVar: string, block: Block): string {
 
 /** Markup for one block inside the screen grid. `ctx.hasRecord` tells a grid to
  *  publish its clicked row into `selectedRecord` for a sibling record panel. */
-function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean } = { hasRecord: false }): string {
+function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean; rawEntity?: EntitySchema; rawResolve?: (name: string) => EntitySchema | undefined } = { hasRecord: false }): string {
   // A block's display label: localized via $t('block.<id>', 'literal') when i18n is on.
   const tLabel = (label: string, key: string) => (ctx.i18n ? `{$t('block.${key}', ${JSON.stringify(label)})}` : label)
   const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
@@ -63,7 +63,8 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
   switch (cfg.kind) {
     case 'grid': {
       const colVar = `columns_${block.id.replace(/-/g, '_')}`
-      const lines = [`data={view.rows}`, `columns={${colVar}}`, `loading={view.loading}`, `loadingOverlay`, `fitColumns`]
+      const emptyMsg = `No ${(entity.label ?? entity.name).toLowerCase()} yet.`
+      const lines = [`data={view.rows}`, `columns={${colVar}}`, `loading={view.loading}`, `loadingOverlay`, `emptyMessage=${JSON.stringify(emptyMsg)}`, `fitColumns`]
       lines.push(`enableRowSummaries={${cfg.rowSummaries ? 'true' : 'false'}}`)
       if (cfg.striped) lines.push(`zebraRows`)
       if (cfg.cellSelection) lines.push(`enableCellSelection`)
@@ -196,8 +197,12 @@ ${panels}
       }
       const cn = namesFor(child)
       const childRows = mdChildVar(child.name)
+      // Optionally, a parent row drills into a detail screen (linkScreen) instead
+      // of expanding inline - the detail page shows the same children as a timeline.
+      const mdRoute = cfg.linkScreen ? ctx.routeById?.get(cfg.linkScreen) : undefined
+      const onParent = mdRoute ? ` onParentClick={(id) => goto('/${mdRoute}?id=' + encodeURIComponent(id))}` : ''
       return `    <div ${span}>
-      <SvGridMasterDetail schema={${schemaVar}} data={allRows} detailSchema={${cn.schemaVar}} getChildren={(p) => ${childRows}.filter((c) => String((c as Record<string, unknown>)['${cfg.foreignKey}']) === String((p as Record<string, unknown>)[${schemaVar}.idField ?? 'id']))}${block.height ? ` containerHeight={${block.height}}` : ''} />
+      <SvGridMasterDetail schema={${schemaVar}} data={allRows} detailSchema={${cn.schemaVar}} getChildren={(p) => ${childRows}.filter((c) => String((c as Record<string, unknown>)['${cfg.foreignKey}']) === String((p as Record<string, unknown>)[${schemaVar}.idField ?? 'id']))}${onParent}${block.height ? ` containerHeight={${block.height}}` : ''} />
     </div>`
     }
     case 'pivot': {
@@ -212,18 +217,75 @@ ${panels}
       return recordPanelMarkup(entity, schemaVar, block, cfg)
     case 'board': {
       const h = block.height ?? 480
+      // A relation title/subtitle renders as the raw FK id unless pointed at the
+      // denormalized display field that withRelationLabels fills in (e.g. company).
+      // Compute against the RAW entity (ctx.rawEntity): the prepared `entity` already
+      // has the display columns appended, which would false-collide the naming and
+      // diverge from what withRelationLabels actually put on the rows.
+      const disp = relationDisplayFields(ctx.rawEntity ?? entity, resolve)
+      const asText = (field: string) => disp.get(field) ?? field
       const badge = cfg.badgeField ? ` badgeField=${JSON.stringify(cfg.badgeField)}` : ''
-      const sub = cfg.subtitleField ? ` subtitleField=${JSON.stringify(cfg.subtitleField)}` : ''
+      const sub = cfg.subtitleField ? ` subtitleField=${JSON.stringify(asText(cfg.subtitleField))}` : ''
+      // A card click drills into a detail screen (openScreen), filtered by ?id.
+      const openRoute = cfg.openScreen ? ctx.routeById?.get(cfg.openScreen) : undefined
+      const onOpen = openRoute ? ` onOpen={(id) => goto('/${openRoute}?id=' + encodeURIComponent(id))}` : ''
       // Dragging a card updates its groupBy value in the local row state (optimistic).
       return `    <div style="grid-column: span ${blockColumns(block)}; min-width: 0">
-      <SvBoard schema={${schemaVar}} rows={allRows} groupBy=${JSON.stringify(cfg.groupBy)} titleField=${JSON.stringify(cfg.titleField)}${badge}${sub} height={${h}} onMove={(id, value) => { allRows = allRows.map((r) => String((r as Record<string, unknown>)[idField]) === String(id) ? ({ ...r, ['${cfg.groupBy}']: value }) : r) }} />
+      <SvBoard schema={${schemaVar}} rows={allRows} loading={!allRowsReady} groupBy=${JSON.stringify(cfg.groupBy)} titleField=${JSON.stringify(asText(cfg.titleField))}${badge}${sub}${onOpen} height={${h}} onMove={(id, value) => { allRows = allRows.map((r) => String((r as Record<string, unknown>)[idField]) === String(id) ? ({ ...r, ['${cfg.groupBy}']: value }) : r) }} />
     </div>`
     }
     case 'calendar': {
       const h = block.height ?? 560
+      // Compute against the RAW entity (ctx.rawEntity): the prepared `entity` already
+      // has the display columns appended, which would false-collide the naming and
+      // diverge from what withRelationLabels actually put on the rows.
+      const disp = relationDisplayFields(ctx.rawEntity ?? entity, resolve)
+      const asText = (field: string) => disp.get(field) ?? field
       const color = cfg.colorField ? ` colorField=${JSON.stringify(cfg.colorField)}` : ''
+      // An event click drills into a detail screen (openScreen), filtered by ?id.
+      const calRoute = cfg.openScreen ? ctx.routeById?.get(cfg.openScreen) : undefined
+      const onSelect = calRoute ? ` onSelect={(id) => goto('/${calRoute}?id=' + encodeURIComponent(id))}` : ''
       return `    <div style="grid-column: span ${blockColumns(block)}; min-width: 0">
-      <SvSchedule schema={${schemaVar}} rows={allRows} dateField=${JSON.stringify(cfg.dateField)} titleField=${JSON.stringify(cfg.titleField)}${color} height={${h}} />
+      <SvSchedule schema={${schemaVar}} rows={allRows} loading={!allRowsReady} dateField=${JSON.stringify(cfg.dateField)} titleField=${JSON.stringify(asText(cfg.titleField))}${color}${onSelect} height={${h}} />
+    </div>`
+    }
+    case 'detail': {
+      const h = block.height
+      // Parent relation fields (title/subtitle/section) -> their display columns.
+      const disp = relationDisplayFields(ctx.rawEntity ?? entity, resolve)
+      const asText = (field: string) => disp.get(field) ?? field
+      const props: string[] = [`schema={${schemaVar}}`, `rows={allRows}`, `loading={!allRowsReady}`, `titleField=${JSON.stringify(asText(cfg.titleField))}`]
+      if (cfg.subtitleField) props.push(`subtitleField=${JSON.stringify(asText(cfg.subtitleField))}`)
+      if (cfg.statusField) props.push(`statusField=${JSON.stringify(cfg.statusField)}`)
+      if (cfg.metricFields?.length) props.push(`metricFields={${JSON.stringify(cfg.metricFields)}}`)
+      if (cfg.sections?.length) {
+        const secs = cfg.sections.map((s) => `{ label: ${JSON.stringify(s.label)}, fields: ${JSON.stringify(s.fields.map(asText))} }`).join(', ')
+        props.push(`sections={[${secs}]}`)
+      }
+      // Related child collections load into `md_<name>_rows` and filter by the FK.
+      const rels = (cfg.related ?? []).map((rel) => {
+        const child = rel.entity ? resolve(rel.entity) : undefined
+        if (!child || !rel.foreignKey) return null
+        const cn = namesFor(child)
+        const rawChild = ctx.rawResolve?.(rel.entity) ?? child
+        const cdisp = relationDisplayFields(rawChild, resolve)
+        const cAs = (f: string) => cdisp.get(f) ?? f
+        const label = rel.label ?? child.label ?? child.name
+        const titleF = cAs(rel.titleField ?? child.fields.find((f) => f.type === 'text' && !f.primaryKey)?.field ?? child.fields[0]?.field ?? 'id')
+        const parts = [`label: ${JSON.stringify(label)}`, `schema: ${cn.schemaVar}`, `rows: ${mdChildVar(child.name)}`, `foreignKey: ${JSON.stringify(rel.foreignKey)}`, `titleField: ${JSON.stringify(titleF)}`]
+        if (rel.parentField) parts.push(`parentField: ${JSON.stringify(rel.parentField)}`)
+        if (rel.subtitleField) parts.push(`subtitleField: ${JSON.stringify(cAs(rel.subtitleField))}`)
+        if (rel.dateField) parts.push(`dateField: ${JSON.stringify(rel.dateField)}`)
+        if (rel.statusField) parts.push(`statusField: ${JSON.stringify(rel.statusField)}`)
+        return `{ ${parts.join(', ')} }`
+      }).filter(Boolean)
+      if (rels.length) props.push(`related={[${rels.join(', ')}]}`)
+      // Open the record named by the URL `?id=` (set by a grid / board / calendar
+      // drill-through); stays switchable via the header dropdown.
+      props.push(`selectedId={$page.url.searchParams.get('id') ?? undefined}`)
+      if (h) props.push(`height={${h}}`)
+      return `    <div style="grid-column: span ${blockColumns(block)}; min-width: 0">
+      <SvRecordDetail ${props.join(' ')} />
     </div>`
     }
     case 'lookup':
@@ -418,7 +480,7 @@ ${inner}
 /** A self-contained screen page composing the screen's blocks. When `accessEnabled`
  *  the page gates create / update affordances by the current role (server still
  *  enforces via the route's `authorize`). */
-function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string) => EntitySchema | undefined, accessEnabled = false, i18nEnabled = false, routeById: Map<string, string> = new Map(), drillEnabled = false): GeneratedFile {
+function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Screen, resolve: (name: string) => EntitySchema | undefined, rawResolve: (name: string) => EntitySchema | undefined, accessEnabled = false, i18nEnabled = false, routeById: Map<string, string> = new Map(), drillEnabled = false): GeneratedFile {
   const n = namesFor(schema)
   const label = schema.label ?? n.label
   const blocks = screen.blocks
@@ -448,18 +510,27 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   const hasAgg = has(allBlocks, 'chart') || has(allBlocks, 'dashboard') || has(allBlocks, 'kpi') || has(allBlocks, 'gauge') || has(allBlocks, 'tree')
   const relationFields = schema.fields.filter((f) => f.type === 'relation' && f.relation)
 
-  // Distinct, resolvable child entities referenced by master-detail blocks.
+  // Distinct, resolvable child entities referenced by master-detail blocks, and by
+  // a detail page's related child collections (both load the child table into a
+  // `md_<name>_rows` state var + filter it by the foreign key at render time).
   const mdChildren = new Map<string, EntitySchema>()
   for (const b of blocks) {
     if (b.config.kind === 'master-detail' && b.config.childEntity && b.config.foreignKey) {
       const c = resolve(b.config.childEntity)
       if (c) mdChildren.set(c.name, c)
     }
+    if (b.config.kind === 'detail') {
+      for (const rel of b.config.related ?? []) {
+        if (!rel.entity || !rel.foreignKey) continue
+        const c = resolve(rel.entity)
+        if (c) mdChildren.set(c.name, c)
+      }
+    }
   }
   const childList = [...mdChildren.values()]
   const hasMD = childList.length > 0
   // The pivot reads the whole table (like charts / dashboards).
-  const needsAllRows = hasAgg || hasMD || hasPivot || has(allBlocks, 'board') || has(allBlocks, 'calendar')
+  const needsAllRows = hasAgg || hasMD || hasPivot || has(allBlocks, 'board') || has(allBlocks, 'calendar') || has(allBlocks, 'detail')
 
   // --- imports ---
   const gridSpecs: string[] = []
@@ -475,6 +546,7 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   if (has(allBlocks, 'dashboard')) entImports.push('SvSchemaDashboard')
   if (has(allBlocks, 'board')) entImports.push('SvBoard')
   if (has(allBlocks, 'calendar')) entImports.push('SvSchedule')
+  if (has(allBlocks, 'detail')) entImports.push('SvRecordDetail')
   if (has(allBlocks, 'kpi') || has(allBlocks, 'gauge')) entImports.push('reduceValue')
   const kpiCfgs = allBlocks.filter((b) => b.config.kind === 'kpi').map((b) => b.config as KpiConfig)
   if (kpiCfgs.some((c) => c.format && c.format !== 'auto')) entImports.push('formatKpiValue')
@@ -498,7 +570,9 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   const usesGoto = blocks.some((b) =>
     (b.config.kind === 'grid' && b.config.rowLink && routeById.has(b.config.rowLink.screen)) ||
     (b.config.kind === 'grid' && b.config.rowActions?.some((a) => a.kind === 'navigate' && a.screen && routeById.has(a.screen))) ||
-    (b.config.kind === 'chart' && b.config.drillScreen && routeById.has(b.config.drillScreen)))
+    (b.config.kind === 'chart' && b.config.drillScreen && routeById.has(b.config.drillScreen)) ||
+    ((b.config.kind === 'board' || b.config.kind === 'calendar') && b.config.openScreen != null && routeById.has(b.config.openScreen)) ||
+    (b.config.kind === 'master-detail' && b.config.linkScreen != null && routeById.has(b.config.linkScreen)))
   const applyUrlFilters = drillEnabled && needsController
   const filterableFieldNames = schema.fields.filter((f) => !f.primaryKey).map((f) => f.field)
   // RBAC gates the UI only where there's a create/update affordance to gate.
@@ -538,7 +612,8 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   }
   if (needsAllRows) {
     parts.push(`let allRows = $state<${n.type}[]>([])
-  async function loadAll() { allRows = [...(await ${n.sourceVar}.getRows({ startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} })).rows] }
+  let allRowsReady = $state(false)
+  async function loadAll() { allRows = [...(await ${n.sourceVar}.getRows({ startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} })).rows]; allRowsReady = true }
   loadAll()`)
   }
   for (const c of childList) {
@@ -600,15 +675,24 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   const toolbar = wantsForm
     ? `<div class="st__toolbar">\n  ${gatesUi ? `{#if can($currentRole, 'create')}${newBtn}{/if}` : newBtn}\n</div>\n\n`
     : ''
-  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled })).filter(Boolean).join('\n')
+  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve })).filter(Boolean).join('\n')
   const modal = wantsForm
     ? `\n\n{#if editing !== undefined}\n  <SvGridEditPanel schema={${n.schemaVar}} row={editing}${relationFields.length ? ' {lookups}' : ''} presentation="${formPres}" persistKey="${screen.route}" onSubmit={save} onCancel={() => (editing = undefined)} />\n{/if}`
     : ''
   const accessImport = gatesUi ? `import { currentRole, can } from '$lib/access'\n  ` : ''
   const i18nImport = i18nEnabled ? `import { t, localizeCols } from '$lib/i18n'\n  ` : ''
   const gotoImport = usesGoto ? `import { goto } from '$app/navigation'\n  ` : ''
-  const pageImport = applyUrlFilters ? `import { page } from '$app/stores'\n  ` : ''
+  const pageImport = applyUrlFilters || has(allBlocks, 'detail') ? `import { page } from '$app/stores'\n  ` : ''
   const title = i18nEnabled ? `{$t('screen.${screen.id}', ${JSON.stringify(screen.title)})}` : screen.title
+  // Surface a failed data load (silent empty grid otherwise) with a retry.
+  const errorBanner = needsController
+    ? `\n{#if view.error}
+  <div class="st-error" role="alert">
+    <span>Couldn't load data. {view.error instanceof Error ? view.error.message : String(view.error)}</span>
+    <button type="button" class="st-btn" onclick={() => controller.refresh()}>Retry</button>
+  </div>
+{/if}\n`
+    : ''
 
   return {
     path: `src/routes/${screen.route}/+page.svelte`,
@@ -621,7 +705,7 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
 </script>
 
 <h1 class="st__title">${title}</h1>
-
+${errorBanner}
 ${toolbar}<div class="st-screen">
 ${body}
 </div>${modal}${actionSnippets.length ? '\n\n' + actionSnippets.join('\n\n') : ''}
@@ -656,6 +740,10 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   const i18nEnabled = project.i18n?.enabled === true && (project.i18n?.locales.length ?? 0) > 0
   const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled })
   const byName = new Map(prepared.map((s) => [s.name, s]))
+  // Raw (unprepared) entities keep their original field set - needed to derive
+  // relation display-field names that match withRelationLabels (the prepared
+  // schemas already carry the appended display columns, which would false-collide).
+  const rawByName = new Map(project.entities.map((e) => [e.name, e]))
   const resolve = (name: string) => byName.get(name)
 
   // Drill-through wiring: map screen id -> route, and detect whether any block
@@ -671,7 +759,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     if (!schema) throw new Error(`emitStudioProject: screen "${screen.title}" references missing entity "${screen.entity}"`)
     if (seenRoute.has(screen.route)) throw new Error(`emitStudioProject: duplicate route "/${screen.route}"`)
     seenRoute.add(screen.route)
-    pages.push(screenPage(schema, screen, resolve, accessEnabled, i18nEnabled, routeById, drillEnabled))
+    pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled))
   }
 
   // Nav: only screens flagged into the menu, ordered, with an optional custom label.
@@ -943,6 +1031,7 @@ body { font-family: var(--sg-font, ui-sans-serif, system-ui, -apple-system, "Seg
 .st__sub code { background: var(--sg-header-bg, #f1f5f9); padding: 1px 6px; border-radius: 5px; font-size: 0.9em; }
 .st__toolbar { display: flex; align-items: center; gap: 10px; }
 .st-hint { font-size: 12.5px; color: var(--sg-muted, #94a3b8); }
+.st-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 11px 14px; border: 1px solid color-mix(in srgb, var(--sg-danger, #dc2626) 40%, var(--sg-border, #e6e8ec)); border-radius: 10px; background: color-mix(in srgb, var(--sg-danger, #dc2626) 8%, var(--sg-bg, #fff)); color: var(--sg-danger, #b3261e); font-size: 13.5px; }
 .st-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font: inherit; font-size: 13.5px; font-weight: 560; line-height: 1; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 10px; background: var(--sg-bg, #fff); color: var(--sg-fg, inherit); cursor: pointer; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); }
 .st-btn:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 5%, var(--sg-bg, #fff)); }
 .st-btn:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
@@ -1084,7 +1173,7 @@ function packageJson(project: StudioProject, allSource: string): string {
     version: '0.0.1',
     private: true,
     type: 'module',
-    scripts: { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json' },
+    scripts: { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json', test: 'vitest run' },
     dependencies,
     devDependencies: {
       [deployPlan(project).adapterDep[0]]: deployPlan(project).adapterDep[1],
@@ -1094,10 +1183,63 @@ function packageJson(project: StudioProject, allSource: string): string {
       'svelte-check': '^4.4.6',
       typescript: '^5.7.0',
       vite: '^8.0.10',
+      vitest: '^4.1.5',
     },
   }
   return JSON.stringify(pkg, null, 2) + '\n'
 }
+
+/**
+ * A per-entity smoke test shipped with the generated app. It proves the two
+ * things a screen depends on still hold: every schema yields grid columns +
+ * form fields (so the page renders), and the schema round-trips through the
+ * data-source layer (create -> read -> delete). It builds a fresh in-memory
+ * source from the schema, so it runs offline regardless of the real backend
+ * (SQL / Supabase / PGlite) - a fast regression guard on schema edits.
+ */
+function smokeTestFile(project: StudioProject): string {
+  const imports = project.entities.map((e) => {
+    const n = namesFor(e)
+    return `${n.schemaVar}, type ${n.type}`
+  })
+  const blocks = project.entities.map((e) => {
+    const n = namesFor(e)
+    return `describe(${JSON.stringify(n.label)}, () => {
+  it('exposes grid columns and form fields', () => {
+    expect(schemaToColumns(${n.schemaVar}).length).toBeGreaterThan(0)
+    expect(schemaToFormFields(${n.schemaVar}).length).toBeGreaterThan(0)
+  })
+
+  it('round-trips create -> read -> delete through an in-memory source', async () => {
+    const idField = ${n.schemaVar}.idField ?? ${n.schemaVar}.fields.find((f) => f.primaryKey)?.field ?? 'id'
+    const source = createInMemoryDataSource<${n.type}>([], ${n.schemaVar})
+    await source.createRow({ [idField]: 'smoke-1' } as unknown as Partial<${n.type}>)
+    expect((await source.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rowCount).toBe(1)
+    await source.deleteRow('smoke-1')
+    expect((await source.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rowCount).toBe(0)
+  })
+})`
+  })
+  return `// Smoke tests generated by SvGrid Studio. Run with \`npm test\`.
+// They prove every entity's schema still renders (grid columns + form fields)
+// and round-trips through the data-source layer, so a schema edit that would
+// break a screen fails here first. Regenerating the app refreshes this file.
+import { describe, it, expect } from 'vitest'
+import { schemaToColumns, schemaToFormFields, createInMemoryDataSource } from '@svgrid/enterprise'
+import { ${imports.join(', ')} } from './schemas'
+
+${blocks.join('\n\n')}
+`
+}
+
+const VITEST_CONFIG = `import { defineConfig } from 'vitest/config'
+
+// Node-only test runner for the generated smoke tests (no Svelte/DOM needed).
+// Kept separate from vite.config so the SvelteKit plugin doesn't load here.
+export default defineConfig({
+  test: { environment: 'node', include: ['src/**/*.test.ts'] },
+})
+`
 
 /**
  * Emit the COMPLETE runnable SvelteKit + Vite app: the generated screens/data
@@ -1116,6 +1258,8 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
   const scaffold: GeneratedFile[] = [
     { path: 'package.json', description: 'Dependencies + scripts (npm install, npm run dev).', contents: packageJson(project, allSource) },
     { path: 'svelte.config.js', description: `SvelteKit config (${plan.adapterModule}).`, contents: svelteConfig(plan) },
+    { path: 'vitest.config.ts', description: 'Test runner config for the generated smoke tests (npm test).', contents: VITEST_CONFIG },
+    { path: 'src/lib/schemas.test.ts', description: 'Smoke tests: every entity renders + round-trips through its data source.', contents: smokeTestFile(project) },
     ...plan.files,
     ...SCAFFOLD_STATIC,
     ...(envExample(allSource) ? [{ path: '.env.example', description: 'Environment variables the app reads (copy to .env and fill in).', contents: envExample(allSource)! }] : []),

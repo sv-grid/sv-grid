@@ -8,6 +8,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { mount, unmount, flushSync } from 'svelte'
 import SvGridEditPanel from './SvGridEditPanel.svelte'
 import type { EntitySchema } from './schema'
+import { getSampleApp } from './studio/samples/index'
 
 type Customer = { id: string; name: string; mrr: number; active: boolean; tier: string }
 
@@ -102,6 +103,26 @@ describe('SvGridEditPanel (DOM)', () => {
     expect(el.querySelector('.sv-dtp')).toBeTruthy()    // date -> SvDateTimePicker
     expect(el.querySelector('.sv-phone')).toBeTruthy()  // phone -> SvPhoneInput
     expect(el.querySelector('.sv-slider')).toBeTruthy() // slider -> SvSlider
+  })
+
+  it('renders the enriched CRM sample forms with real editors (samples <-> edit panel)', () => {
+    const proj = getSampleApp('crm')!.build()
+    const entity = (name: string) => proj.entities.find((e) => e.name === name)!
+    const firstRow = (name: string) => (proj.dataSources?.[name] as { seed?: Record<string, unknown>[] }).seed![0]!
+
+    // Contacts: phone -> SvPhoneInput, segments (chips) -> SvTagsInput.
+    const contacts = render({ schema: entity('contacts'), row: firstRow('contacts'), presentation: 'inline', onSubmit: vi.fn(), onCancel: vi.fn() })
+    expect(contacts.querySelector('.sv-phone')).toBeTruthy()
+    expect(contacts.querySelector('.sv-tags')).toBeTruthy()
+
+    // Deals: probability -> SvSlider (rendered for slider editorType).
+    const deals = render({ schema: entity('deals'), row: firstRow('deals'), presentation: 'inline', onSubmit: vi.fn(), onCancel: vi.fn() })
+    expect(deals.querySelector('.sv-slider')).toBeTruthy()
+
+    // Companies: country -> SvCountryInput, health (rating) -> SvSlider.
+    const companies = render({ schema: entity('companies'), row: firstRow('companies'), presentation: 'inline', onSubmit: vi.fn(), onCancel: vi.fn() })
+    expect(companies.querySelector('.sv-country')).toBeTruthy()
+    expect(companies.querySelector('.sv-slider')).toBeTruthy()
   })
 
   it('submits the row values (edit mode, readonly id omitted)', async () => {

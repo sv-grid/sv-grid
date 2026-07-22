@@ -4,6 +4,8 @@ A Studio-generated app is a normal SvelteKit app - the screens are `+page.svelte
 files and the data endpoints are `+server.ts` routes. It deploys anywhere
 SvelteKit runs. This page is the production checklist.
 
+![A Studio-generated app is a normal SvelteKit app of +page.svelte screens and +server.ts data routes that deploys anywhere SvelteKit runs: node, serverless, or static plus API.](/docs-media/studio-deploy.svg)
+
 ## Checklist
 
 - [ ] **License key set** - call `setLicenseKey(...)` at startup to remove the

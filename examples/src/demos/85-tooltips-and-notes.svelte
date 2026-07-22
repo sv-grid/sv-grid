@@ -9,7 +9,7 @@
    *     column shows the same explanation.
    *
    *   - Per-cell `notes` (a `{ [rowId]: { [columnId]: string } }` prop
-   *     on `<SvGrid>`) paints a corner indicator + makes the note
+   *     on `<SvGrid responsive={true}>`) paints a corner indicator + makes the note
    *     text the hover tooltip. You own storage; the grid renders
    *     the indicator.
    *
@@ -48,7 +48,7 @@
   ])
 
   // Notes are keyed by rowId + columnId. The shape matches what
-  // `<SvGrid notes={...}>` expects so we pass it through directly.
+  // `<SvGrid responsive={true} notes={...}>` expects so we pass it through directly.
   let notes = $state<Record<string, Record<string, string>>>({
     'O-1003': { margin: 'Margin compression after Q1 supplier price hike. Pending renegotiation.' },
     'O-1006': { quantity: 'Customer reduced order from 30 to 8 - investigating reason.' },
@@ -139,7 +139,7 @@
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

@@ -93,7 +93,7 @@
 
   <div class="chart-demo__split">
     <div class="chart-demo__grid">
-      <SvGrid
+      <SvGrid responsive={true}
         data={view.rows}
         {columns}
         loading={view.loading}

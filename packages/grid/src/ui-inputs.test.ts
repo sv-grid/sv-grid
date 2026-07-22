@@ -93,7 +93,7 @@ describe('SvMaskedInput', () => {
       onChange: (m: string, r: string) => { masked = m; raw = r },
     })
     try {
-      const input = target.querySelector<HTMLInputElement>('.sv-masked')!
+      const input = target.querySelector<HTMLInputElement>('.sv-masked__input')!
       input.value = '1234567890'
       input.dispatchEvent(new Event('input', { bubbles: true }))
       flushSync()

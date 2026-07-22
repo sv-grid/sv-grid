@@ -1,4 +1,6 @@
-﻿export type CellEditorType =
+﻿import { hasCellEditor } from '../editor-registry'
+
+export type CellEditorType =
   | 'text'
   | 'number'
   | 'date'
@@ -18,6 +20,10 @@
   | 'textarea'
   | 'color'
   | 'rating'
+  // Any other string names a CUSTOM editor registered via `registerCellEditor`.
+  // `(string & {})` keeps the literals above autocompleting while allowing
+  // arbitrary custom type names.
+  | (string & {})
 
 /** Normalized option used by list/chips editors. The optional `color`
  *  paints the chip - both in the in-cell readonly chips render and in
@@ -118,6 +124,9 @@ export function parseEditorValue(
   if (type === 'textarea') {
     return String(value ?? '')
   }
+  // Custom registered editors own their value shape (like list/chips), so pass
+  // whatever the editor committed through unchanged instead of stringifying it.
+  if (hasCellEditor(type)) return value
   if (type === 'list' || type === 'chips') {
     // The editor manages the value shape: a scalar for single-select, an
     // array for multi-select. Trust what the editor handed us, just coerce

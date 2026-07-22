@@ -36,6 +36,36 @@ Emits `onChange(dates)` and `onNavigate(viewDate, displayMode)`.
 Keyboard: arrows move by day, PageUp/Down by month (Shift = year), Home/End to
 week ends, Enter/Space selects, the title button drills up the view.
 
+### Rich cells + recurrence (event calendars)
+
+Two props turn the picker into a FullCalendar-style scheduler:
+
+- **`day`** - a snippet rendered inside each day cell, receiving `(date, state)`.
+  Providing it switches the month grid to a taller, top-aligned layout with room
+  for event chips / badges.
+- **`recurrence`** - a repeat rule (or array). Matching days get `state.recurring`
+  and a "repeats" indicator. Rules: `{ freq: 'daily'|'weekly'|'monthly'|'yearly',
+  interval?, weekdays?, day?, month?, from?, until? }`.
+
+```svelte
+<script>
+  import { SvCalendar, matchesRecurrence } from '@svgrid/grid'
+  const standup = { freq: 'weekly', weekdays: [1, 2, 3, 4, 5] } // every weekday
+</script>
+
+<SvCalendar recurrence={standup} bind:value={selected} onChange={(d) => (selected = d[0])}>
+  {#snippet day(date, state)}
+    {#each eventsOn(date) as e}
+      <span class="chip">{e.time} {e.title}</span>
+    {/each}
+  {/snippet}
+</SvCalendar>
+```
+
+The pure helpers `matchesRecurrence(date, rules)` and `expandRecurrence(rules,
+start, end)` are exported for generating recurring events / agendas without a
+calendar. See the **Event calendar** demo.
+
 ## SvTimePicker
 
 An analog clock-dial picker (12- or 24-hour).
@@ -74,3 +104,13 @@ h hh mm ss fff tt`), `dropDownDisplayMode` (`both` | `calendar` | `time`),
 Typed text is parsed on blur/Enter and reverts if it doesn't fit the mask; the
 value is clamped to `min` / `max`. Emits `onChange`, plus `onCommit` / `onCancel`
 for grid editing.
+
+## Component guides
+
+Each component has its own full tutorial with props, keyboard behaviour and
+recipes:
+
+- [SvCalendar](./sv-calendar.md) - a month/year/decade calendar with every selection mode.
+- [SvTimePicker](./sv-time-picker.md) - an analog clock-dial time picker.
+- [SvDateTimePicker](./sv-date-time-picker.md) - a text field with date and time dropdown tabs.
+- [SvDateRangeInput](./sv-date-range-input.md) - a start-to-end date range picker.

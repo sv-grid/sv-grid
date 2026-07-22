@@ -6,6 +6,8 @@ not one per row. It's the path to use for high-frequency / streaming feeds
 (WebSocket deltas, tick data) where calling `addRow` / `setCellValue` per row
 would thrash.
 
+<div data-docs-demo="145-transaction-api" data-height="480"></div>
+
 ```ts
 const result = api.applyTransaction({
   add:    [newOrder],                          // appended

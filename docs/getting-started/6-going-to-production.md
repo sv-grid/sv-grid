@@ -200,6 +200,6 @@ inference picks up which capabilities your grid has.
 - [Enterprise features](../enterprise/README.md) - export, import, AI, pivot.
 - [Help index](../help/index.md) - the topic-page catalogue.
 - [Recipes](../help/recipes.md) - 20+ copy-paste patterns.
-- [Comparison vs AG Grid + TanStack](../help/comparison.md) - what
+- [How SvGrid compares](../help/comparison.md) - what
   evaluators read.
 - [Missing features](../help/missing-features.md) - the honest gap list.

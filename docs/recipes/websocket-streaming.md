@@ -2,6 +2,9 @@
 
 > Live in [demo 34-realtime-orders](https://svgrid.com/#/demos/34-realtime-orders).
 
+<div data-docs-demo="34-realtime-orders" data-height="480"></div>
+
+
 ## When
 
 Live tick stream with pause / resume / disconnect-and-replay and per-tick delta merge.

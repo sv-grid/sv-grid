@@ -16,19 +16,28 @@
    * Parity target: Smart `smart-calendar` (selectionModes, min/max, restricted /
    * important dates, week numbers, firstDayOfWeek, drill navigation, keyboard).
    */
-  import { untrack } from 'svelte'
+  import { untrack, type Snippet } from 'svelte'
+  import { resolveMessages, type EditorDir } from './editor-contract'
   import {
     createCalendar,
     type CalendarValue,
     type CalendarPreset,
     type CalendarAnimation,
+    type CalendarDayState,
     type DisplayMode,
   } from './createCalendar.svelte'
   import type { SelectionMode } from './datetime/date-selection'
   import type { RestrictOptions } from './datetime/date-restrict'
   import type { DateLike } from './datetime/date-core'
+  import type { RecurrenceRule } from './recurrence'
 
   type NameFormat = 'narrow' | 'short' | 'long'
+
+  /** User-facing strings (localizable via `messages`). */
+  type CalendarMessages = { label: string; shortcuts: string; today: string; clear: string; prev: string; next: string }
+  const DEFAULT_MESSAGES: CalendarMessages = {
+    label: 'Calendar', shortcuts: 'Shortcuts', today: 'Today', clear: 'Clear', prev: 'Previous', next: 'Next',
+  }
 
   type Props = {
     /** Selected value(s). Single Date for one/zeroOrOne, array for multi modes. */
@@ -72,6 +81,16 @@
     dateTooltip?: (date: Date) => string | null | undefined
     /** One-click shortcuts (e.g. Today, Last 7 days) shown in a side rail. */
     presets?: ReadonlyArray<CalendarPreset>
+    /** Text direction (rtl mirrors layout + flips the nav arrows; auto inherits). */
+    dir?: EditorDir
+    /** Override the built-in strings (group/shortcut labels, footer buttons). */
+    messages?: Partial<CalendarMessages>
+    /** Repeat pattern(s): matching days get an indicator + `recurring` day-state. */
+    recurrence?: RecurrenceRule | ReadonlyArray<RecurrenceRule> | null
+    /** Render rich content inside each day cell (events, dots, badges). Receives
+     *  the date + its day-state. Switches the month grid to a taller,
+     *  top-aligned layout so there's room for the content. */
+    day?: Snippet<[Date, CalendarDayState]>
   }
 
   let {
@@ -101,7 +120,17 @@
     wheelNavigation = false,
     dateTooltip,
     presets,
+    dir,
+    messages,
+    recurrence = null,
+    day,
   }: Props = $props()
+
+  const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
+  const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
+  // With several month panels side by side, leading/trailing days of adjacent
+  // months overlap visually, so hide them by default when months > 1.
+  const hideOther = $derived(hideOtherMonthDays || months > 1)
 
   // The headless core owns all reactive state, selection, navigation, keyboard
   // and ARIA. Reactive inputs are passed as getters; callbacks as closures.
@@ -124,6 +153,7 @@
     dayNameFormat: () => dayNameFormat,
     monthNameFormat: () => monthNameFormat,
     dateTooltip: () => dateTooltip,
+    recurrence: () => recurrence,
   })
 
   // --- View-change animation (framework-native Web Animations API) -----------
@@ -181,12 +211,14 @@
   class:sv-cal--disabled={disabled}
   class:sv-cal--with-presets={presets && presets.length}
   class:sv-cal--band={selectionMode === 'range' || selectionMode === 'week'}
+  class:sv-cal--rich={!!day}
   role="group"
-  aria-label="Calendar"
+  aria-label={M.label}
   aria-disabled={disabled}
+  dir={resolvedDir}
 >
   {#if presets && presets.length}
-    <div class="sv-cal__presets" role="group" aria-label="Shortcuts">
+    <div class="sv-cal__presets" role="group" aria-label={M.shortcuts}>
       {#each presets as p, i (i)}
         <button class="sv-cal__preset" {...cal.presetProps(p)}>{p.label}</button>
       {/each}
@@ -223,7 +255,7 @@
               {#if weekNumbers}<span class="sv-cal__wk" aria-hidden="true">{week[0]?.week}</span>{/if}
               {#each week as cell (cell.date.getTime())}
                 {@const st = cal.dayState(cell.date, panel.month)}
-                {#if st.outside && hideOtherMonthDays}
+                {#if st.outside && hideOther}
                   <span class="sv-cal__day sv-cal__day--empty" role="gridcell" aria-hidden="true"></span>
                 {:else}
                   <button
@@ -234,8 +266,9 @@
                     class:is-important={st.important}
                     class:is-preview={st.preview}
                     class:is-focused={st.focused}
+                    class:is-recurring={st.recurring}
                     {...cal.dayProps(cell, panel.month)}
-                  >{cell.date.getDate()}</button>
+                  ><span class="sv-cal__daynum">{cell.date.getDate()}</span>{#if day}<span class="sv-cal__daybody">{@render day(cell.date, st)}</span>{/if}</button>
                 {/if}
               {/each}
             </div>
@@ -271,9 +304,9 @@
 
   {#if footer}
     <div class="sv-cal__footer">
-      <button type="button" class="sv-cal__foot-btn" onclick={cal.goToday} disabled={disabled}>Today</button>
+      <button type="button" class="sv-cal__foot-btn" onclick={cal.goToday} disabled={disabled}>{M.today}</button>
       {#if cal.canClear}
-        <button type="button" class="sv-cal__foot-btn" onclick={cal.clearSelection} disabled={disabled}>Clear</button>
+        <button type="button" class="sv-cal__foot-btn" onclick={cal.clearSelection} disabled={disabled}>{M.clear}</button>
       {/if}
     </div>
   {/if}
@@ -310,13 +343,15 @@
   /* Quick-shortcut rail (Today / Last 7 days / ...) shown when `presets` is set. */
   .sv-cal__presets {
     display: flex; flex-direction: column; gap: 2px;
-    padding-right: 10px; border-right: 1px solid var(--_border);
+    padding-inline-end: 10px; border-inline-end: 1px solid var(--_border);
     min-width: 118px; align-self: stretch;
   }
   .sv-cal__preset {
-    text-align: left; padding: 6px 10px; font: inherit; font-size: 12px; font-weight: 550;
+    text-align: start; padding: 6px 10px; font: inherit; font-size: 12px; font-weight: 550;
     background: none; border: 0; border-radius: var(--_radius); color: inherit; cursor: pointer; white-space: nowrap;
   }
+  /* Under RTL the prev/next chevron glyphs must point the other way. */
+  .sv-cal[dir='rtl'] .sv-cal__nav svg { transform: scaleX(-1); }
   .sv-cal__preset:hover:not(:disabled) { background: var(--_hover); color: var(--_accent); }
   .sv-cal__preset:disabled { opacity: 0.5; cursor: default; }
 
@@ -369,6 +404,34 @@
     content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
     width: 4px; height: 4px; border-radius: 50%; background: var(--sg-danger, #dc2626);
   }
+  /* Repeat-pattern indicator: a small ring in the top-inline-end corner
+     (distinct from the is-important bottom dot). */
+  .sv-cal__day.is-recurring::before {
+    content: ''; position: absolute; top: 4px; inset-inline-end: 4px;
+    width: 5px; height: 5px; border-radius: 50%; pointer-events: none;
+    border: 1.5px solid color-mix(in srgb, var(--_accent) 75%, transparent);
+  }
+  .sv-cal:not(.sv-cal--rich) .sv-cal__day.is-selected.is-recurring::before { border-color: var(--sg-on-accent, #fff); }
+
+  /* --- Rich month grid: enabled by a `day` snippet. Cells fill the column width
+     and become taller / top-aligned so the snippet content (events, badges) has
+     room - turning the picker into an event-calendar surface. --- */
+  .sv-cal--rich .sv-cal__weekdays, .sv-cal--rich .sv-cal__week { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .sv-cal--rich .sv-cal__weekdays:has(.sv-cal__wk-head), .sv-cal--rich .sv-cal__week:has(.sv-cal__wk) { grid-template-columns: 26px repeat(7, minmax(0, 1fr)); }
+  .sv-cal--rich .sv-cal__weekday { justify-items: start; padding-inline-start: 6px; }
+  .sv-cal--rich .sv-cal__day {
+    width: auto; height: auto; min-height: 90px; display: flex; flex-direction: column;
+    align-items: stretch; gap: 3px; padding: 4px 5px 6px; text-align: start; border-radius: 8px;
+  }
+  .sv-cal--rich .sv-cal__day.is-today { box-shadow: none; }
+  .sv-cal--rich .sv-cal__day.is-selected { background: color-mix(in srgb, var(--_accent) 9%, transparent); color: inherit; }
+  .sv-cal--rich .sv-cal__daynum {
+    align-self: flex-start; flex: none; width: 24px; height: 24px; display: grid; place-items: center;
+    border-radius: 50%; font-size: 12.5px; font-weight: 600;
+  }
+  .sv-cal--rich .sv-cal__day.is-today .sv-cal__daynum { background: var(--_accent); color: var(--sg-on-accent, #fff); }
+  .sv-cal--rich .sv-cal__daybody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+  .sv-cal--rich .sv-cal__day.is-important::after { display: none; }
   .sv-cal__day.is-preview { background: color-mix(in srgb, var(--_accent) 16%, transparent); border-radius: 0; }
   .sv-cal__day.is-selected {
     background: var(--_accent); color: var(--sg-on-accent, #fff); font-weight: 650;

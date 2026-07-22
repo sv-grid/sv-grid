@@ -68,4 +68,29 @@ export const COUNTRIES: Country[] = [
   { code: 'MX', name: 'Mexico', dial: '+52' },
 ]
 
+/**
+ * Expected national (post-dial-code) significant-digit count per country, as an
+ * exact length or an inclusive [min, max] range. A pragmatic length-based check
+ * (not full libphonenumber). Countries without an entry accept any non-empty
+ * number.
+ */
+export const PHONE_NATIONAL_LENGTHS: Record<string, number | [number, number]> = {
+  US: 10, CA: 10, GB: 10, IE: 9, FR: 9, DE: [10, 11], ES: 9, IT: [9, 10], NL: 9, BE: [8, 9],
+  CH: 9, AT: [10, 12], SE: [7, 9], NO: 8, DK: 8, FI: [9, 10], PL: 9, PT: 9, GR: 10, CZ: 9,
+  RU: 10, TR: 10, IL: 9, AE: 9, SA: 9, IN: 10, PK: 10, CN: 11, HK: 8, JP: 10, KR: [9, 10],
+  SG: 8, MY: [9, 10], TH: 9, ID: [9, 11], PH: 10, VN: 9, AU: 9, NZ: [8, 10], ZA: 9, NG: 10,
+  EG: 10, KE: 9, MA: 9, BR: 11, AR: 10, CL: 9, CO: 10, MX: 10,
+}
+
+/**
+ * Whether `nationalDigits` is a plausible national number for `code` (length
+ * check). Unknown countries pass on any non-empty input. Pure.
+ */
+export function phoneDigitsValid(code: string, nationalDigits: string): boolean {
+  const n = (nationalDigits.match(/\d/g) ?? []).length
+  const rule = PHONE_NATIONAL_LENGTHS[code.toUpperCase()]
+  if (rule == null) return n > 0
+  return typeof rule === 'number' ? n === rule : n >= rule[0] && n <= rule[1]
+}
+
 export const COUNTRY_BY_CODE = new Map(COUNTRIES.map((c) => [c.code, c]))

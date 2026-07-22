@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://svgrid.com">Website</a> ·
   <a href="https://svgrid.com/docs">Docs</a> ·
-  <a href="https://svgrid.com/demos">150+ Demos</a> ·
+  <a href="https://svgrid.com/demos">280+ Demos</a> ·
   <a href="https://svgrid.com/pricing">Pricing</a> ·
   <a href="https://svgrid.com/roadmap">Roadmap</a>
 </p>
@@ -69,9 +69,10 @@ That is a real, accessible grid. Sorting, filtering, virtualization, cell select
 - **Filtering** - Excel-style filter menu, inline filter row, set / value-list filter, locale-aware matching, between operators.
 - **Editing** - 14 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, textarea, color, checkbox, list, chips, rating, password) plus a `cellEditor` snippet slot for anything custom.
 - **Selection** - cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, row selection.
-- **Hierarchy** - row grouping with aggregation, tree data, master/detail, full-width detail rows.
-- **Layout** - row + column pinning, sticky header + first column, header drag-to-reorder, autosize, column sizing API, zebra rows.
+- **Views** - native Kanban board mode (drag cards between lanes), row grouping with aggregation, tree data, master/detail, full-width detail rows.
+- **Layout** - row + column pinning, sticky header + first column, header drag-to-reorder, autosize, keyboard-accessible column sizing, zebra rows.
 - **Data operations** - find in grid (Ctrl+F), undo / redo, transaction API, optimistic updates, server-side row model with sort / filter / group pushdown.
+- **UI components** - a Svelte 5 component suite ships in the package (inputs, selection, date/time, overlays, layout, feedback) - standalone or as grid cell editors.
 - **Accessibility** - WAI-ARIA grid roles, full keyboard navigation, RTL, high-contrast theme.
 - **Engineered for production** - first-class TypeScript types, CSP / Trusted-Types safe rendering, SSR-friendly, themeable via `--sg-*` CSS tokens.
 - **Lean** - ~7.5 KB gzipped headless core, ~42 KB gzipped full render component; Svelte stays a peer dependency.
@@ -115,7 +116,7 @@ Compatibility aliases are provided for the framework-neutral names: `createGrid`
 
 ## AI-native
 
-SvGrid publishes an [MCP server](https://www.npmjs.com/package/@svgrid/mcp) and `llms.txt` / `llms-full.txt`, so Claude, Cursor, and Zed answer with accurate, version-pinned APIs and all 150+ demo sources as context - not hallucinated methods.
+SvGrid publishes an [MCP server](https://www.npmjs.com/package/@svgrid/mcp) and `llms.txt` / `llms-full.txt`, so Claude, Cursor, and Zed answer with accurate, version-pinned APIs and all 280+ demo sources as context - not hallucinated methods.
 
 ## Enterprise
 
@@ -124,7 +125,7 @@ The MIT core is free for any use, including commercial. The optional [`@svgrid/e
 ## Documentation
 
 - [Getting started](https://svgrid.com/docs) - end-to-end walkthrough.
-- [150+ live demos](https://svgrid.com/demos) - copy-paste recipes for every feature.
+- [280+ live demos](https://svgrid.com/demos) - copy-paste recipes for every feature.
 - [Why headless?](https://svgrid.com/docs) - when to compose vs. drop in.
 - [Theming](https://svgrid.com/docs) - re-skin via `--sg-*` tokens and dark mode.
 

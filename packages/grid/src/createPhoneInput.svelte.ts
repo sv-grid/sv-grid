@@ -17,18 +17,30 @@
  *
  * The styled <SvPhoneInput> is just one renderer over this core.
  */
-import { COUNTRIES, COUNTRY_BY_CODE, flagEmoji } from './countries'
+import { COUNTRIES, COUNTRY_BY_CODE, flagEmoji, phoneDigitsValid } from './countries'
 import { applyMask } from './datetime/mask'
+import { editorAria, type EditorAriaState } from './editor-contract'
+
+/** Emitted alongside the phone value: parsed parts + per-country validity. */
+export type PhoneParts = { country: string; dial: string; national: string; valid: boolean; complete: boolean }
 
 /** Reactive inputs are passed as getters so the core tracks live prop changes. */
 export type PhoneInputConfig = {
   value: () => string
-  onChange?: (value: string, parts: { country: string; dial: string; national: string }) => void
+  onChange?: (value: string, parts: PhoneParts) => void
   /** Default country ISO code. */
   country?: () => string
   disabled?: () => boolean
   readonly?: () => boolean
   placeholder?: () => string | undefined
+  /** Accessible name for the country `<select>` (localizable). */
+  countryLabel?: () => string | undefined
+  // Editor contract (ARIA + validation) - folded into inputProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
   ariaLabel?: () => string | undefined
 }
 
@@ -69,8 +81,13 @@ export function createPhoneInput(config: PhoneInputConfig) {
     }
   })
 
+  // Per-country length validity: empty is valid (required handles emptiness);
+  // a non-empty number must match the country's expected national length.
+  const complete = $derived(national.length > 0 && phoneDigitsValid(iso, national))
+  const valid = $derived(national.length === 0 || phoneDigitsValid(iso, national))
+
   function emit() {
-    config.onChange?.(`${dial}${national}`, { country: iso, dial, national })
+    config.onChange?.(`${dial}${national}`, { country: iso, dial, national, valid, complete })
   }
   function onNumberInput(e: Event) {
     const raw = (e.currentTarget as HTMLInputElement).value.replace(/\D/g, '')
@@ -84,6 +101,15 @@ export function createPhoneInput(config: PhoneInputConfig) {
     emit()
   }
 
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
+
   return {
     /** Selected country ISO code. */
     get iso() { return iso },
@@ -95,21 +121,29 @@ export function createPhoneInput(config: PhoneInputConfig) {
     get displayNational() { return displayNational },
     /** The full emitted value (`+<dial><digits>`). */
     get value() { return `${dial}${national}` },
+    /** Whether the national number is a plausible length for the country. */
+    get valid() { return valid },
+    /** Whether a non-empty number matches the country's expected length. */
+    get complete() { return complete },
     /** Spread onto the country `<select>` element. */
     selectProps: () => ({
       value: iso,
       disabled: disabled(),
-      'aria-label': 'Country',
+      'aria-label': config.countryLabel?.() ?? 'Country',
       onchange: onCountryChange,
     }),
     /** Spread onto the national number input element. */
     inputProps: () => ({
+      id: config.id?.(),
       value: displayNational,
       type: 'tel' as const,
       inputmode: 'tel' as const,
       placeholder: config.placeholder?.() ?? 'Phone number',
       disabled: disabled(),
       readonly: readonly(),
+      // aria-invalid/required/describedby come from the editor contract; the
+      // aria-label default stays 'Phone number' so the field is always named.
+      ...editorAria(ariaState()),
       'aria-label': config.ariaLabel?.() ?? 'Phone number',
       oninput: onNumberInput,
     }),

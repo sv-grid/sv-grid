@@ -90,7 +90,7 @@
     <span class="st-hint" style="margin-left:auto">Double-click a row to edit - watch Total update as you type</span>
   {/snippet}
 
-  <SvGrid
+  <SvGrid responsive={true}
     data={view.rows}
     {columns}
     loading={view.loading}

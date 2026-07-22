@@ -6,6 +6,8 @@ in memory, and supports create / update / delete. Ideal for prototyping a schema
 tests, demos, static reference data, or seeding a screen before the backend
 exists.
 
+![A full CRUD screen sends filter, search, sort, page, and create/update/delete through the in-memory source, which applies them to a plain array in memory - no database, no API.](/docs-media/studio-in-memory.svg)
+
 It is the default backend the CLI emits when you scaffold from a
 [Drizzle schema](./drizzle.md) without `--db`, so the screen runs the moment you
 `npm run dev`.

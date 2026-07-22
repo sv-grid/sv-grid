@@ -322,7 +322,7 @@
   </div>
 
   <div class="flex-1 min-h-0 t30-grid-wrap">
-    <SvGrid
+    <SvGrid responsive={true}
       data={visibleParts}
       columns={columns}
       features={features}

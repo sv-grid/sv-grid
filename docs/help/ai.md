@@ -6,6 +6,8 @@ strictly model-agnostic: **natural-language filter**, **smart fill**,
 **[@svgrid/enterprise](https://www.npmjs.com/package/@svgrid/enterprise)** add-on; the
 Community build does not include these features.
 
+![Four model-agnostic helpers sit between your grid and a language model you bring through one model adapter.](/docs-media/grid-ai-assistant.svg)
+
 Run all four helpers live - the demo below is wired to the bundled
 deterministic `mockAIProvider`, so no keys required:
 
