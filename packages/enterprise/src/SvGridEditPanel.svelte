@@ -24,7 +24,7 @@
    */
   import { fade, fly } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
-  import { SvGridDropdown, type CellEditorOption } from '@svgrid/grid'
+  import { SvGridDropdown, SvNumberInput, SvColorInput, SvPasswordInput, SvSlider, SvSwitchButton, SvPhoneInput, SvCountryInput, SvMaskedInput, SvDateTimePicker, SvTagsInput, type CellEditorOption } from '@svgrid/grid'
   import { schemaToFormFields, type EntitySchema, type FormFieldDescriptor } from './schema'
   import SvFileInput from './SvFileInput.svelte'
   import {
@@ -34,6 +34,12 @@
     rowId,
     toSubmitValues,
     validateAll,
+    toDateString,
+    toDateTimeString,
+    toNumberValue,
+    fromNumberValue,
+    toSliderValue,
+    toTags,
     type EditMode,
   } from './edit-panel'
   import SvLookupInput from './SvLookupInput.svelte'
@@ -41,6 +47,7 @@
 
   type SubmitPayload = { mode: EditMode; id: string | null; values: Partial<TData> }
   type Presentation = 'drawer' | 'modal' | 'inline'
+
 
   type Props = {
     schema: EntitySchema<TData>
@@ -377,8 +384,32 @@
               disabled={f.readonly}
               placeholder={f.placeholder ?? 'Search…'}
             />
-          {:else if kind === 'checkbox'}
-            <input id={`sv-ef-${f.field}`} type="checkbox" bind:checked={values[f.field]} disabled={f.readonly} />
+          {:else if f.editorType === 'checkbox'}
+            <!-- Boolean fields render as the suite's switch (nicer than a raw checkbox). -->
+            <SvSwitchButton id={`sv-ef-${f.field}`} ariaLabel={f.label} checked={!!values[f.field]} disabled={f.readonly} onChange={(v) => (values[f.field] = v)} />
+          {:else if f.editorType === 'number'}
+            <SvNumberInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toNumberValue(values[f.field])} min={f.min} max={f.max} step={f.step} precision={f.precision} prefix={f.prefix} suffix={f.suffix} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = fromNumberValue(v))} />
+          {:else if f.editorType === 'color'}
+            <SvColorInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] || '#3b82f6'} disabled={f.readonly} invalid={!!errors[f.field]} onChange={(v) => (values[f.field] = v)} />
+          {:else if f.editorType === 'password'}
+            <SvPasswordInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
+          {:else if f.editorType === 'rating' || f.editorType === 'slider'}
+            {@const rmin = f.min ?? 0}
+            {@const rmax = f.max ?? (f.editorType === 'rating' ? 5 : 100)}
+            <SvSlider id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toSliderValue(values[f.field], rmin)} min={rmin} max={rmax} step={1} ticks={f.editorType === 'rating' ? rmax - rmin + 1 : undefined} disabled={f.readonly} onChange={(v) => (values[f.field] = v)} />
+          {:else if f.editorType === 'phone'}
+            <SvPhoneInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
+          {:else if f.editorType === 'country'}
+            <SvCountryInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} disabled={f.readonly} invalid={!!errors[f.field]} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
+          {:else if f.editorType === 'mask'}
+            <SvMaskedInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} mask={f.mask ?? ''} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(masked) => (values[f.field] = masked)} />
+          {:else if f.editorType === 'date'}
+            <SvDateTimePicker id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" nullable disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd'} onChange={(d) => (values[f.field] = toDateString(d))} />
+          {:else if f.editorType === 'datetime'}
+            <SvDateTimePicker id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} formatString="yyyy-MM-dd HH:mm" nullable disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd hh:mm'} onChange={(d) => (values[f.field] = toDateTimeString(d))} />
+          {:else if f.editorType === 'chips'}
+            <!-- Multi-value entry: stores a string[]. (Previously a chips field fell back to a single-select.) -->
+            <SvTagsInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toTags(values[f.field])} disabled={f.readonly} invalid={!!errors[f.field]} placeholder={f.placeholder ?? 'Add…'} onChange={(tags) => (values[f.field] = tags)} />
           {:else if kind === 'select'}
             {#if f.readonly}
               <input id={`sv-ef-${f.field}`} type="text" value={values[f.field] ?? ''} disabled />
@@ -674,10 +705,6 @@
     outline: none;
     border-color: var(--ep-accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--ep-accent) 22%, transparent);
-  }
-  .sv-ep-field input[type='checkbox'] {
-    width: 18px;
-    height: 18px;
   }
   .sv-ep-field textarea {
     min-height: 76px;

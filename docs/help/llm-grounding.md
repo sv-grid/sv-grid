@@ -110,8 +110,7 @@ Every file is exhaustive but tightly scoped to sv-grid surface area:
 - **Enterprise tier**: export, import, pivot, AI helpers - each documented as
   if it were free, with the licensing call-out at the top of the page
 - **Recipes**: 25+ copy-paste patterns from the cookbook
-- **Migrations**: how to translate AG Grid / TanStack Table / MUI X
-  DataGrid / Handsontable / Glide concepts
+- **Migrations**: how to translate concepts from other data grids
 - **Errors**: every typed error the library throws, with the trigger
   and the fix
 

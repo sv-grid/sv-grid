@@ -371,7 +371,7 @@
 
   <!-- Grid -->
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={filtered}
       columns={[
         { field: 'id', header: t.columns.id, width: 140, editable: false,

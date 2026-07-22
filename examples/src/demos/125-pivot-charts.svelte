@@ -363,7 +363,7 @@
 
   <div class="ch-grid-split flex flex-1 min-h-0 gap-3">
     <div class="ch-pivot-wrap flex-1 min-w-0">
-      <SvGrid
+      <SvGrid responsive={true}
         data={visibleRows}
         {columns}
         {features}

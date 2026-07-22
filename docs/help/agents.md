@@ -10,6 +10,8 @@ in order of how much agency you hand to the LLM:
 3. **Autonomous workflow agent** - the model orchestrates multiple
    grids + back-ends (smart import → enrich → export to BI tool)
 
+![Three patterns for an AI agent driving the grid, in order of agency: read grid state, propose operations you apply, and execute grid tools directly.](/docs-media/grid-agents.svg)
+
 The grid is designed to support all three. The headless engine + the
 imperative `SvGridApi` together form a clean tool surface that any
 agent SDK can consume.

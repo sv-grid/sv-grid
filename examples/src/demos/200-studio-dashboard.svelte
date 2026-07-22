@@ -112,7 +112,7 @@
   <div class="dash-demo">
     <SvSchemaDashboard {schema} getAggregate={(req) => source.getAggregate(req)} refreshKey={rev} spec={dashboard} onDrill={drill} />
 
-    <SvGrid
+    <SvGrid responsive={true}
       data={view.rows}
       {columns}
       loading={view.loading}

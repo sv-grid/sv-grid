@@ -4,6 +4,8 @@ Spanning lets a single body cell cover **multiple columns** and/or **rows** -
 merged report headers, grouped labels, financial statements. SvGrid does this
 with a real `colspan` / `rowspan` merge engine; there are two ways to drive it.
 
+<div data-docs-demo="170-cell-merging" data-height="480"></div>
+
 ## 1. Explicit merges (spreadsheet-style)
 
 Declare exact merges as `MergeSpec[]` and apply them with the

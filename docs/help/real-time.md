@@ -10,6 +10,8 @@ ranked by the rate of change:
    patches; you merge them into the in-memory state, optionally
    batching while the user has the page paused.
 
+![A live WebSocket or SSE feed pushes deltas that apply as add, update, or remove operations, run through the grid as a keyed row transaction, and surface as a cell flash on the changed row.](/docs-media/grid-realtime.svg)
+
 Try a streaming order desk - cell flashes on every change, pause / resume,
 disconnect / reconnect, configurable throughput slider:
 

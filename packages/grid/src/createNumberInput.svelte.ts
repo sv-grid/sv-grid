@@ -39,6 +39,7 @@ export type NumberInputConfig = {
   invalid?: () => boolean
   required?: () => boolean
   error?: () => string | undefined
+  hint?: () => string | undefined
   ariaLabel?: () => string | undefined
 }
 
@@ -138,6 +139,7 @@ export function createNumberInput(config: NumberInputConfig) {
     invalid: config.invalid?.(),
     required: config.required?.(),
     error: config.error?.(),
+    hint: config.hint?.(),
     ariaLabel: config.ariaLabel?.(),
   })
 

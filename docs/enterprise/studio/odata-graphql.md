@@ -5,6 +5,8 @@ Studio binds to OData and GraphQL the same way it binds to any API: implement th
 (paging + `sortModel` + `filterModel`) into the query the service expects. The
 grid, edit form, sorting, filtering, and pagination then work unchanged.
 
+![Your ServerDataSource translates the grid's one request into the query OData or GraphQL expects, so the grid and edit form stay unchanged.](/docs-media/studio-odata-graphql.svg)
+
 ## OData
 
 OData exposes a database as a REST API with `$top` / `$skip` / `$orderby` /

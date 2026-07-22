@@ -19,7 +19,7 @@
    *   Tab                - commit and let focus escape.
    */
   import type { CellEditorOption } from './editors/cell-editors'
-  import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
+  import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
 
   type Props = {
     options: ReadonlyArray<CellEditorOption>
@@ -369,6 +369,7 @@
       aria-multiselectable={multiple}
       bind:this={panelEl}
       use:portalToBody
+      use:popIn={{ up: panelRect.openUpward }}
       style:position="fixed"
       style:top={`${panelRect.top}px`}
       style:left={`${panelRect.left}px`}

@@ -4,6 +4,8 @@
 generous free tier and a browser-safe client. This guide takes you from an empty
 Supabase project to a live CRUD screen, step by step. No backend to run.
 
+![From an empty Supabase project, create a table, open access with Row-Level Security, and pass the anon key to createSupabaseDataSource to wire hosted Postgres straight into the grid.](/docs-media/studio-supabase.svg)
+
 > **Try it first:** the [Supabase demo](https://svgrid.com/#/demos/194-studio-supabase)
 > is exactly this - paste your project URL + anon key and it runs against your
 > real database in the browser.

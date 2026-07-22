@@ -6,6 +6,8 @@ definitions, and preview exports - all grounded in the same schemas
 the library ships with. No API key required; everything runs locally
 against your installed copy.
 
+![An AI coding agent calls the @svgrid/mcp server over the Model Context Protocol, which runs grid tools and returns structured JSON results back to the agent.](/docs-media/grid-mcp.svg)
+
 > **What is MCP?** Model Context Protocol is the open standard
 > ([modelcontextprotocol.io](https://modelcontextprotocol.io)) for
 > exposing tools / resources / prompts to LLM clients. sv-grid ships an

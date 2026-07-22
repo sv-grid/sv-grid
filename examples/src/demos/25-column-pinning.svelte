@@ -80,7 +80,7 @@
   </div>
 
   <div class="flex-1 min-h-0 pinning-host">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}
@@ -112,17 +112,21 @@
      feature. */
   .pinning-host {
     /* Body cells: a stronger accent-tinted background than the default
-       8% mix - the pinned strip should read as a clearly different surface. */
-    --sg-pinned-bg: color-mix(in oklab, var(--sg-bg, #ffffff) 55%, var(--sg-accent, #2563eb) 18%);
+       8% mix - the pinned strip should read as a clearly different surface.
+       The two color-mix percentages MUST sum to 100% - otherwise CSS scales
+       the result's alpha down (e.g. 55% + 18% = 73% -> 0.73 alpha), which
+       makes the pinned column semi-transparent and lets the scrolling
+       middle columns bleed through. */
+    --sg-pinned-bg: color-mix(in oklab, var(--sg-bg, #ffffff) 82%, var(--sg-accent, #2563eb) 18%);
     /* Header cells: even bolder so the frozen header is unmistakable. */
-    --sg-pinned-header-bg: color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 50%, var(--sg-accent, #2563eb) 30%);
+    --sg-pinned-header-bg: color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 70%, var(--sg-accent, #2563eb) 30%);
     /* Divider line on the inside edge - solid accent so it reads as
        intentional, not as a normal cell border. */
     --sg-pinned-divider: var(--sg-accent, #2563eb);
   }
   :global(html[data-theme='dark']) .pinning-host {
-    --sg-pinned-bg: color-mix(in oklab, var(--sg-bg, #181d27) 55%, var(--sg-accent, #3b82f6) 24%);
-    --sg-pinned-header-bg: color-mix(in oklab, var(--sg-header-bg, #1e2433) 50%, var(--sg-accent, #3b82f6) 36%);
+    --sg-pinned-bg: color-mix(in oklab, var(--sg-bg, #181d27) 76%, var(--sg-accent, #3b82f6) 24%);
+    --sg-pinned-header-bg: color-mix(in oklab, var(--sg-header-bg, #1e2433) 64%, var(--sg-accent, #3b82f6) 36%);
     --sg-pinned-divider: var(--sg-accent, #3b82f6);
   }
 
@@ -131,10 +135,10 @@
      on their own. Punch the header tint further to make it unmistakable
      even at a glance. */
   .pinning-host {
-    --sg-pinned-header-bg: color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 35%, var(--sg-accent, #2563eb) 42%);
+    --sg-pinned-header-bg: color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 58%, var(--sg-accent, #2563eb) 42%);
   }
   :global(html[data-theme='dark']) .pinning-host {
-    --sg-pinned-header-bg: color-mix(in oklab, var(--sg-header-bg, #1e2433) 35%, var(--sg-accent, #3b82f6) 48%);
+    --sg-pinned-header-bg: color-mix(in oklab, var(--sg-header-bg, #1e2433) 52%, var(--sg-accent, #3b82f6) 48%);
   }
   /* Make the pinned header text white on the now-strong accent fill so
      contrast stays readable in both modes. */

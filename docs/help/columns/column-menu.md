@@ -1,8 +1,10 @@
 # Column menu
 
 Every column header carries a menu button (⋮). By default it's a flat list of
-actions plus a "Choose columns" submenu. Opt into the AG-Grid **tabbed** layout
+actions plus a "Choose columns" submenu. Opt into the **tabbed** layout
 with `columnMenuTabs`:
+
+<div data-docs-demo="185-column-menu-tabs" data-height="480"></div>
 
 ```svelte
 <SvGrid {data} {columns} {features} columnMenuTabs />

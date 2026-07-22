@@ -456,7 +456,7 @@
           <p>Pick a file or paste text in the left panel, then click <strong>Preview from text</strong>.</p>
         </div>
       {:else}
-        <SvGrid
+        <SvGrid responsive={true}
           data={rows}
           columns={visibleColumns}
           features={features}

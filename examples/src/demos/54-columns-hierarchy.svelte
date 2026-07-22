@@ -491,7 +491,7 @@
 
   <!-- Grid -->
   <div class="ch-grid-wrap flex-1 min-w-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={deals}
       columns={columnTree}
       features={features}

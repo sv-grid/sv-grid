@@ -5,6 +5,8 @@ designed for both **fast unit tests** (Layer 2, the headless engine,
 runs in pure node) and **slow but accurate browser tests** (Layer 3,
 the `<SvGrid>` component, needs a real DOM or jsdom).
 
+![Three test levels, cheapest first: the headless engine with no DOM at the base, a component test that renders the grid in the middle, and end to end at the top.](/docs-media/grid-testing.svg)
+
 ## Test pyramid for a grid app
 
 ```

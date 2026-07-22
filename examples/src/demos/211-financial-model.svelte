@@ -2,7 +2,7 @@
   /**
    * 211. Financial model (loan amortization)
    * -----------------------------------------
-   * A real analyst model on a plain <SvGrid>. Three blue INPUT cells (Principal,
+   * A real analyst model on a plain <SvGrid responsive={true}>. Three blue INPUT cells (Principal,
    * APR, Term) drive a full 360-month amortization schedule built entirely from
    * formulas: PMT for the fixed payment, then per-period interest / principal /
    * running balance that each reference the row above. Change an input and all
@@ -245,7 +245,7 @@
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sheet" use:rowResize={{ onResize: onRowResize, min: 20, max: 320 }}>
-    <SvGrid
+    <SvGrid responsive={true}
       data={raw}
       columns={columns}
       features={features}

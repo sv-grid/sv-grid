@@ -2,7 +2,7 @@
   /**
    * 110. Locale-aware text filtering (accent + case insensitive)
    * ------------------------------------------------------------
-   * Set `filterLocale` on `<SvGrid>` (BCP-47 tag) and the grid filters
+   * Set `filterLocale` on `<SvGrid responsive={true}>` (BCP-47 tag) and the grid filters
    * text using NFD-decomposition + diacritic stripping + locale-aware
    * lowercasing. The result:
    *
@@ -129,7 +129,7 @@
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

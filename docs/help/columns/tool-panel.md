@@ -4,6 +4,8 @@ The tool panel is the docked sidebar - standard in enterprise grids - for
 managing columns and filters without hunting through a right-click menu. Turn it
 on with the `toolPanel` prop:
 
+<div data-docs-demo="146-tool-panel" data-height="480"></div>
+
 ```svelte
 <SvGrid {data} {columns} {features} toolPanel />
 ```

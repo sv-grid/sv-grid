@@ -180,7 +180,7 @@
     data-theme={theme}
     style={`--sg-row-height: ${density === 'compact' ? '28px' : density === 'comfortable' ? '48px' : '36px'}; ${themeStyle}`}
   >
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

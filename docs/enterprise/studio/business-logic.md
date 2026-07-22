@@ -5,6 +5,8 @@ derived from the row) and **hooks** (logic that runs when rows are created,
 updated, or deleted). Both live on the schema, so they apply everywhere the
 schema does - grid, edit form, and generated code.
 
+![Computed fields and hooks attach to the EntitySchema and apply everywhere it does: the grid, the edit form, and the generated code.](/docs-media/studio-business-logic.svg)
+
 > **No-code, in the designer.** You don't have to write these by hand. In the
 > [visual designer](./app-designer.md), a field's editor has a **ƒ formula** box
 > (e.g. `qty * price`, `first + ' ' + last`) that compiles into `computed`, and a

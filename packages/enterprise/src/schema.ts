@@ -63,6 +63,15 @@ export type EntityFieldType =
   | 'relation'
   | 'json'
 
+/**
+ * The control a form field renders as. A superset of the grid's `CellEditorType`:
+ * the grid cell editors (which double as form controls) plus a few form-only rich
+ * inputs from the editor suite - `phone` (SvPhoneInput), `country` (SvCountryInput),
+ * `mask` (SvMaskedInput), `slider` (SvSlider). Grid columns map the form-only kinds
+ * back to a safe cell editor (see `schemaToColumns`).
+ */
+export type StudioEditorType = CellEditorType | 'phone' | 'country' | 'mask' | 'slider'
+
 /** Describe one field of an entity. Keys off the row property `field`. */
 export type EntityField<TData extends RowData = RowData> = {
   /** Property key on the row. Becomes `ColumnDef.field`. */
@@ -152,11 +161,20 @@ export type EntityField<TData extends RowData = RowData> = {
   column?: Partial<ColumnDef<TableFeatures, TData>>
   /** Override the derived form control. Escape hatch. */
   input?: {
-    editorType?: CellEditorType
+    editorType?: StudioEditorType
     placeholder?: string
     /** Columns spanned in the form's 2-col grid. Defaults to 1. */
     span?: 1 | 2
     help?: string
+    /** Mask pattern for the `mask` editor (e.g. `'(999) 000-0000'`). */
+    mask?: string
+    /** Number/slider step increment (SvNumberInput / SvSlider). */
+    step?: number
+    /** Number decimal places (SvNumberInput). */
+    precision?: number
+    /** Number affix, e.g. `'$'` prefix or `'%'` suffix (SvNumberInput). */
+    prefix?: string
+    suffix?: string
   }
 }
 
@@ -219,10 +237,17 @@ export type ValidationRuleSpec = {
 export type FormFieldDescriptor = {
   field: string
   label: string
-  editorType: CellEditorType
+  editorType: StudioEditorType
   type: EntityFieldType
   required: boolean
   readonly: boolean
+  /** Mask pattern for the `mask` editor. */
+  mask?: string
+  /** Number editor options (step / decimals / affixes). */
+  step?: number
+  precision?: number
+  prefix?: string
+  suffix?: string
   min?: number
   max?: number
   minLength?: number
@@ -275,6 +300,18 @@ export function resolveIdField<TData extends RowData>(schema: EntitySchema<TData
   throw new Error(
     `EntitySchema "${schema.name}": no primary key. Set idField, flag a field primaryKey, or name a field "id".`,
   )
+}
+
+/**
+ * Map a form control (StudioEditorType) to a valid grid cell editor. The form-only
+ * editors have no in-cell equivalent, so they degrade: `slider` -> `number`,
+ * `phone`/`country`/`mask` -> `text`. Returns undefined when no override is set.
+ */
+function gridEditorType(t: StudioEditorType | undefined): CellEditorType | undefined {
+  if (!t) return undefined
+  if (t === 'slider') return 'number'
+  if (t === 'phone' || t === 'country' || t === 'mask') return 'text'
+  return t
 }
 
 /** Grid render defaults per entity type: which `cellDataType` + `editorType` a field maps to. */
@@ -331,7 +368,7 @@ export function schemaToColumns<TData extends RowData>(
         header: f.label ?? titleCase(f.field),
         editable: !f.readonly && !f.computed,
         ...(cellDataType ? { cellDataType } : {}),
-        ...(f.input?.editorType || editorType ? { editorType: f.input?.editorType ?? editorType } : {}),
+        ...(gridEditorType(f.input?.editorType) ?? editorType ? { editorType: (gridEditorType(f.input?.editorType) ?? editorType) as ColumnDef<TableFeatures, TData>['editorType'] } : {}),
         ...(f.options ? { editorOptions: f.options } : {}),
         ...(isMoney ? { format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } } : {}),
         // A computed field derives its cell value via the grid's value accessor,
@@ -365,6 +402,11 @@ export function schemaToFormFields<TData extends RowData>(
         type: f.type,
         required: !!f.required && !isId,
         readonly: !!f.readonly || isId || !!f.computed,
+        mask: f.input?.mask,
+        step: f.input?.step,
+        precision: f.input?.precision,
+        prefix: f.input?.prefix,
+        suffix: f.input?.suffix,
         min: f.min,
         max: f.max,
         minLength: f.minLength,

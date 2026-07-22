@@ -21,19 +21,74 @@ const PUBLIC_DIR = join(ROOT, 'website', 'public') // served copies for crawlers
 const SITE      = process.env.SVGRID_SITE_ORIGIN ?? 'https://svgrid.com'   // canonical doc origin
 
 const SECTION_TITLES = {
-  '':                'Overview',
-  'getting-started': 'Getting started',
-  'help':            'Help / topic pages',
-  'help/cells':      'Cells',
-  'help/columns':    'Columns',
-  'help/editing':    'Editing',
-  'help/filtering':  'Filtering',
-  'help/rows':       'Rows',
-  'recipes':         'Recipes / cookbook',
-  'reference':       'API reference',
-  'enterprise':             'Enterprise tier',
-  'compliance':      'Compliance',
+  '':                  'Overview',
+  'getting-started':   'Getting started',
+  'help':              'Help / topic pages',
+  'help/cells':        'Cells',
+  'help/columns':      'Columns',
+  'help/editing':      'Editing',
+  'help/filtering':    'Filtering',
+  'help/grouping':     'Grouping',
+  'help/headless':     'Headless',
+  'help/rows':         'Rows',
+  'help/server':       'Server data',
+  'help/state':        'State & views',
+  'help/ui-components':'UI components',
+  'recipes':           'Recipes / cookbook',
+  'reference':         'API reference',
+  'enterprise/studio': 'Studio',
+  'enterprise':        'Enterprise tier',
+  'compliance':        'Compliance',
+  'legal':             'Legal',
+  'brand':             'Brand',
 }
+
+// Product pillars — the top-level split a developer picks first, rendered as a
+// header dropdown on the site (mirrors the demos dropdown). Order here is the
+// dropdown order.
+const PILLARS = [
+  { id: 'grid',    title: 'SvGrid',        blurb: 'The Svelte 5 data grid.' },
+  { id: 'studio',  title: 'SvGrid Studio', blurb: 'Turn a database or schema into a CRUD data-app.' },
+  { id: 'ui',      title: 'SvGrid UI',     blurb: 'The Svelte component suite.' },
+  { id: 'company', title: 'Enterprise & company', blurb: 'Licensing, support, compliance, legal.' },
+]
+
+// Which pillar each section belongs to. Sections not listed default to 'grid'.
+const SECTION_PILLAR = {
+  '':                  'grid',
+  'getting-started':   'grid',
+  'help':              'grid',
+  'help/cells':        'grid',
+  'help/columns':      'grid',
+  'help/editing':      'grid',
+  'help/filtering':    'grid',
+  'help/grouping':     'grid',
+  'help/headless':     'grid',
+  'help/rows':         'grid',
+  'help/server':       'grid',
+  'help/state':        'grid',
+  'recipes':           'grid',
+  'reference':         'grid',
+  'enterprise/studio': 'studio',
+  'help/ui-components':'ui',
+  'enterprise':        'company',
+  'compliance':        'company',
+  'legal':             'company',
+  'brand':             'company',
+}
+
+// Curated sidebar order within a pillar (index = position; unknown → end).
+// Replaces the old alphabetical sort that buried Getting started behind Brand.
+const SECTION_ORDER = [
+  '', 'getting-started', 'help',
+  'help/cells', 'help/columns', 'help/rows',
+  'help/editing', 'help/filtering', 'help/grouping',
+  'help/headless', 'help/server', 'help/state',
+  'recipes', 'reference',
+  'enterprise/studio',
+  'help/ui-components',
+  'enterprise', 'compliance', 'legal', 'brand',
+]
 
 /** Walk a directory recursively, yielding absolute file paths. */
 async function* walk(dir) {
@@ -52,15 +107,26 @@ function extract(md) {
   const lines = md.split(/\r?\n/)
   let title = ''
   let summary = ''
+  let inFence = false
+  const isProse = (t) =>
+    t && !t.startsWith('#') && !t.startsWith('<') && !t.startsWith('|') &&
+    !t.startsWith('>') && !t.startsWith('```') && !t.startsWith('- ') &&
+    !t.startsWith('* ') && !/^\d+\.\s/.test(t)
   for (let i = 0; i < lines.length; i += 1) {
     const l = lines[i] ?? ''
+    const t = l.trim()
+    // Track fenced code so a leading ```svelte block is never mistaken for prose.
+    if (t.startsWith('```')) { inFence = !inFence; continue }
+    if (inFence) continue
     if (!title && l.startsWith('# ')) { title = l.slice(2).trim(); continue }
-    if (title && !summary && l.trim() && !l.startsWith('#') && !l.startsWith('<') && !l.startsWith('|') && !l.trim().startsWith('>')) {
-      // collect the whole paragraph (until blank line)
+    if (title && !summary && isProse(t)) {
+      // Collect the paragraph, stopping at a blank line or any non-prose block
+      // (HTML/demo embed, table, code fence) so markup never leaks into snippets.
       const para = []
       for (let j = i; j < lines.length; j += 1) {
-        if (!lines[j].trim()) break
-        para.push(lines[j].trim())
+        const pj = lines[j].trim()
+        if (!pj || pj.startsWith('<') || pj.startsWith('|') || pj.startsWith('```')) break
+        para.push(pj)
       }
       summary = para.join(' ')
         .replace(/`([^`]+)`/g, '$1')              // strip inline code marks
@@ -77,6 +143,9 @@ function extract(md) {
 function sectionOf(relPath) {
   const parts = relPath.split(sep)
   if (parts.length === 1) return ''
+  // Studio is its own section (and pillar), split out of the broad `enterprise`
+  // bucket so its ~40 pages don't share a sidebar with licensing/support.
+  if (parts[0] === 'enterprise' && parts[1] && parts[1].startsWith('studio')) return 'enterprise/studio'
   if (parts[0] === 'help' && parts.length > 2) return `help/${parts[1]}`
   return parts[0]
 }
@@ -90,12 +159,14 @@ async function main() {
     const { title, summary } = extract(src)
     if (!title) continue
     const s = await stat(file)
+    const section = sectionOf(rel.replaceAll('/', sep))
     docs.push({
       path:        rel,
       url:         `/${rel.replace(/\.md$/, '')}`,
       title,
       summary,
-      section:     sectionOf(rel.replaceAll('/', sep)),
+      section,
+      pillar:      SECTION_PILLAR[section] ?? 'grid',
       tier:        /\bEnterprise\b/.test(title) ? 'enterprise' : 'community',
       words:       src.split(/\s+/).filter(Boolean).length,
       lastUpdated: s.mtime.toISOString().slice(0, 10),
@@ -110,6 +181,18 @@ async function main() {
   docs.sort((a, b) => a.path.localeCompare(b.path))
 
   // ---- docs.json --------------------------------------------------------
+  const orderOf = (id) => {
+    const i = SECTION_ORDER.indexOf(id)
+    return i === -1 ? SECTION_ORDER.length : i
+  }
+  const sections = [...new Set(docs.map((d) => d.section))]
+    .sort((a, b) => orderOf(a) - orderOf(b) || a.localeCompare(b))
+    .map((id) => ({
+      id,
+      title:  SECTION_TITLES[id] ?? id,
+      pillar: SECTION_PILLAR[id] ?? 'grid',
+      pages:  docs.filter((d) => d.section === id).map((d) => d.path),
+    }))
   const manifest = {
     name:        'sv-grid documentation',
     site:        SITE,
@@ -119,13 +202,14 @@ async function main() {
       enterprise: docs.filter((d) => d.tier === 'enterprise').length,
       withDemo: docs.filter((d) => d.demoIds.length > 0).length,
     },
-    sections: [...new Set(docs.map((d) => d.section))]
-      .sort()
-      .map((id) => ({
-        id,
-        title: SECTION_TITLES[id] ?? id,
-        pages: docs.filter((d) => d.section === id).map((d) => d.path),
-      })),
+    // Product pillars — the top-level split, rendered as a header dropdown.
+    pillars: PILLARS.map((p) => ({
+      id:       p.id,
+      title:    p.title,
+      blurb:    p.blurb,
+      sections: sections.filter((s) => s.pillar === p.id).map((s) => s.id),
+    })),
+    sections,
     pages: docs,
   }
   await writeFile(join(DOCS_DIR, 'docs.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8')
@@ -143,16 +227,23 @@ async function main() {
   llmsLines.push('For the full text of every doc page concatenated: see [llms-full.txt](/llms-full.txt).')
   llmsLines.push('For a machine-readable manifest: see [docs.json](/docs.json).')
   llmsLines.push('')
-  for (const { id, title, pages } of manifest.sections) {
-    if (pages.length === 0) continue
-    llmsLines.push(`## ${title}`)
+  for (const pillar of manifest.pillars) {
+    const pillarSections = manifest.sections.filter(
+      (s) => s.pillar === pillar.id && s.pages.length > 0,
+    )
+    if (pillarSections.length === 0) continue
+    llmsLines.push(`## ${pillar.title}`)
     llmsLines.push('')
-    for (const p of pages) {
-      const d = docs.find((x) => x.path === p)
-      const trimmedSummary = d.summary.length > 200 ? d.summary.slice(0, 197) + '…' : d.summary
-      llmsLines.push(`- [${d.title}](${SITE}${d.url}): ${trimmedSummary || '(no summary yet)'}`)
+    for (const { title, pages } of pillarSections) {
+      llmsLines.push(`### ${title}`)
+      llmsLines.push('')
+      for (const p of pages) {
+        const d = docs.find((x) => x.path === p)
+        const trimmedSummary = d.summary.length > 200 ? d.summary.slice(0, 197) + '…' : d.summary
+        llmsLines.push(`- [${d.title}](${SITE}${d.url}): ${trimmedSummary || '(no summary yet)'}`)
+      }
+      llmsLines.push('')
     }
-    llmsLines.push('')
   }
   await writeFile(join(DOCS_DIR, 'llms.txt'), llmsLines.join('\n'), 'utf-8')
 

@@ -78,7 +78,7 @@
     <button class="st-btn st-btn--primary" onclick={() => (editing = null)}>+ New member</button>
   {/snippet}
 
-  <SvGrid
+  <SvGrid responsive={true}
     data={view.rows}
     columns={columns.map((c) => (c.field === 'avatar' ? { ...c, cell: (ctx) => renderSnippet(AvatarCell, { row: ctx.row.original as Member }) } : c))}
     loading={view.loading}

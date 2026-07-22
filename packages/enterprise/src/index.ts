@@ -89,6 +89,7 @@ export {
   type EntityFieldType,
   type EntityHooks,
   type FormFieldDescriptor,
+  type StudioEditorType,
   type StandardSchemaV1,
   type StandardSchemaResult,
   type ValidationOp,
@@ -120,6 +121,9 @@ export {
 export {
   createSupabaseDataSource,
   createRestDataSource,
+  offsetLimitAdapter,
+  dummyJsonAdapter,
+  jsonServerAdapter,
   introspectSupabaseTable,
   createSupabaseRealtime,
   createRelationLookup,
@@ -133,6 +137,8 @@ export {
   type SupabaseDataSourceConfig,
   type SupabaseClientLike,
   type RestDataSourceConfig,
+  type RestAdapter,
+  type OffsetLimitOptions,
   type IntrospectSupabaseOptions,
   type IntrospectedColumn,
   type ColumnReference,
@@ -154,6 +160,10 @@ export {
   withEntityRules,
   withRelationLabels,
   reduceValue,
+  kpiSeries,
+  sparklinePoints,
+  seriesDelta,
+  formatKpiValue,
   dashboardFromSchema,
   type AggregateReduce,
   type AggregateRequest,
@@ -182,6 +192,9 @@ export { default as SvFileInput } from './SvFileInput.svelte'
 export { default as SvAuthGate } from './SvAuthGate.svelte'
 export { default as SvSchemaChart } from './SvSchemaChart.svelte'
 export { default as SvSchemaDashboard } from './SvSchemaDashboard.svelte'
+export { default as SvBoard } from './SvBoard.svelte'
+export { default as SvSchedule } from './SvSchedule.svelte'
+export { default as SvRecordDetail } from './SvRecordDetail.svelte'
 
 export {
   FIELD_TYPES,
@@ -211,7 +224,13 @@ export {
   emitStudioApp,
   sampleApps,
   getSampleApp,
+  liveDataSamples,
+  getLiveDataSample,
   type SampleApp,
+  sanitizeStudioProject,
+  buildStudioBugReport,
+  type BugReport,
+  type BugReportInput,
   addBlock,
   addBlockAt,
   removeBlock,
@@ -221,6 +240,9 @@ export {
   addScreen,
   removeScreen,
   updateScreen,
+  duplicateScreen,
+  reorderScreen,
+  insertBlock,
   addEntity,
   removeEntity,
   updateEntity,
@@ -261,6 +283,7 @@ export {
   type GridColumnConfig,
   type ChartConfig,
   type KpiConfig,
+  type KpiFormat,
   type DashboardConfig,
   type MasterDetailConfig,
   type LookupConfig,
@@ -283,6 +306,19 @@ export {
   type PaletteItem,
   type ProjectIssue,
   type GeneratedFile,
+} from './studio'
+export {
+  buildConnectionString,
+  parseConnectionString,
+  redactConnectionString,
+  isFileDialect,
+  DRIVER_PACKAGE,
+  DEFAULT_PORT,
+  countTableRows,
+  probeConnection,
+  type SqlConnectionParts,
+  type TableRowCount,
+  type SqlDialectName,
 } from './studio'
 
 export {

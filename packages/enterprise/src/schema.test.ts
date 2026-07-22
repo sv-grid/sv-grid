@@ -138,6 +138,37 @@ describe('schemaToFormFields', () => {
     expect(ff('companyId').relation).toEqual({ entity: 'companies', labelField: 'name' })
   })
 
+  it('carries a form-only editor override (phone/mask) into the descriptor', () => {
+    const s: EntitySchema = {
+      name: 'm', idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true },
+        { field: 'phone', type: 'text', input: { editorType: 'phone' } },
+        { field: 'code', type: 'text', input: { editorType: 'mask', mask: '(999) 000-0000' } },
+        { field: 'score', type: 'number', input: { editorType: 'slider' } },
+      ],
+    }
+    const f = byField(schemaToFormFields(s))
+    expect(f('phone').editorType).toBe('phone')
+    expect(f('code').editorType).toBe('mask')
+    expect(f('code').mask).toBe('(999) 000-0000')
+    expect(f('score').editorType).toBe('slider')
+  })
+
+  it('degrades form-only editors to a safe grid cell editor (columns stay valid)', () => {
+    const s: EntitySchema = {
+      name: 'm', idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true },
+        { field: 'phone', type: 'text', input: { editorType: 'phone' } },
+        { field: 'score', type: 'number', input: { editorType: 'slider' } },
+      ],
+    }
+    const col = (name: string) => schemaToColumns(s).find((c) => c.field === name)!
+    expect(col('phone').editorType).toBe('text')   // phone/country/mask -> text in the grid
+    expect(col('score').editorType).toBe('number') // slider -> number in the grid
+  })
+
   it('threads an upload config through to the form descriptor', () => {
     const s: EntitySchema = {
       name: 'm', idField: 'id',

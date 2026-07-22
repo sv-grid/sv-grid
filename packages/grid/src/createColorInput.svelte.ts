@@ -17,6 +17,7 @@
  * The styled <SvColorInput> is just one renderer over this core (it adds the
  * portal + anchored positioning).
  */
+import { editorAria, type EditorAriaState } from './editor-contract'
 
 export const DEFAULT_PALETTE = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6',
@@ -39,6 +40,12 @@ export type ColorInputConfig = {
   disabled?: () => boolean
   readonly?: () => boolean
   palette?: () => string[]
+  // Editor contract (ARIA + validation) - folded into swatchProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
   ariaLabel?: () => string | undefined
 }
 
@@ -71,6 +78,15 @@ export function createColorInput(config: ColorInputConfig) {
   }
   const isActive = (c: string) => normalizeHex(c) === normalized
 
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
+
   // Popover control surface (open state + show/close/toggle), no DOM measurement.
   const popover = {
     get open() { return open },
@@ -96,9 +112,13 @@ export function createColorInput(config: ColorInputConfig) {
     isActive,
     /** Spread onto the swatch trigger button. */
     swatchProps: () => ({
+      id: config.id?.(),
       type: 'button' as const,
       'aria-haspopup': 'dialog' as const,
       'aria-expanded': open,
+      // aria-invalid/required/describedby come from the editor contract; the
+      // aria-label default names the swatch by its current color when unset.
+      ...editorAria(ariaState()),
       'aria-label': config.ariaLabel?.() ?? `Color ${normalized}`,
       disabled: !isInteractive,
       onclick: toggle,

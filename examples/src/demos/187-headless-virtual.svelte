@@ -5,7 +5,7 @@
    * -------------------------------------------------------
    * The `createSvelteVirtualizer` engine tells you which rows are in view and
    * where to put them; you render your own scroll container. Only ~20 rows get
-   * DOM nodes at a time, so 50,000 rows scroll smoothly. No <SvGrid>.
+   * DOM nodes at a time, so 50,000 rows scroll smoothly. No <SvGrid responsive={true}>.
    */
   import {
     createSvGrid,

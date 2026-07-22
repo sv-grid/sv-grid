@@ -7,6 +7,8 @@ re-theme it by declaring `--sg-*` CSS custom properties at any level
 above the grid - `:root` for the whole app, a wrapper `<div>` for one
 instance, or directly on the `<SvGrid>` element itself.
 
+![The --sg-* CSS custom properties declared at :root, a wrapper div, or the SvGrid element cascade into the grid, controlling light and dark themes and comfortable versus compact row density.](/docs-media/gs-theming.svg)
+
 ## Token surface
 
 The 20-odd tokens the renderer reads:

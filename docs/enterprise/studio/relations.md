@@ -5,6 +5,8 @@ line items. Studio models relations in the `EntitySchema` and turns them into
 **master-detail** screens (a row that expands into a nested grid) and
 **relation pickers** in the edit form.
 
+![A company-has-many-deals relation becomes a master-detail screen and a relation picker in the edit form.](/docs-media/studio-relations.svg)
+
 ## Auto-detected from foreign keys
 
 You usually don't declare relations by hand - introspection reads your

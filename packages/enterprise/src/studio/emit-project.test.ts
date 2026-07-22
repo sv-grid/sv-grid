@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, createProject, setEntityDataSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig } from './project'
-import { emitStudioProject, emitStudioAppBundle } from './emit-project'
+import { addBlock, addTabBlock, createProject, parseProject, setDeployTarget, setEntityDataSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
+import { emitStudioProject, emitStudioAppBundle, studioDeployInfo } from './emit-project'
 
 const customers: EntitySchema = {
   name: 'customers', label: 'Customer', idField: 'id',
@@ -80,6 +80,60 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(page).toContain('async function loadAll()')
   })
 
+  it('Gauge block: emits SvGauge bound to a reduced measure over allRows', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'gauge')
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/import \{[^}]*SvGauge[^}]*\} from '@svgrid\/grid'/)
+    expect(page).toContain('<SvGauge value={reduceValue(allRows,')
+    expect(page).toContain('min={0} max={100}')
+    expect(page).toContain('.gaugecard')
+  })
+
+  it('Tree block: folds rows into SvTree nodes by a self-referential parent', () => {
+    // A category entity that references itself via parent_id.
+    const categories: EntitySchema = {
+      name: 'categories', label: 'Category', idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true },
+        { field: 'name', type: 'text' },
+        { field: 'parent_id', type: 'relation', relation: { entity: 'categories', labelField: 'name' } },
+      ],
+    }
+    let p = createProject([categories])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'tree')
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/categories/+page.svelte')!.contents
+    expect(page).toMatch(/import \{[^}]*SvTree[^}]*\} from '@svgrid\/grid'/)
+    expect(page).toContain('function toTreeNodes(')
+    expect(page).toContain('<SvTree nodes={toTreeNodes(allRows')
+    // Default config picked the self-referential FK as the parent link.
+    expect(page).toContain('"name", "parent_id"')
+    // The configured tree page (SvTree markup + helper) compiles.
+    expect(() => compile(page, { filename: 'categories/+page.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('Tabs block: nests display blocks into SvTabs panels bound to allRows', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'tabs')
+    const tb = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'tabs')!
+    // Nest a chart in the first tab and a KPI in the second.
+    let cfg = addTabBlock(tb.config as TabsConfig, 0, 'chart', customers)
+    cfg = addTabBlock(cfg, 1, 'kpi', customers)
+    p = updateBlock(p, sid, tb.id, { config: cfg })
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/import \{[^}]*SvTabs[^}]*\} from '@svgrid\/grid'/)
+    expect(page).toContain('{#snippet panel(id)}')
+    expect(page).toContain('<SvSchemaChart')                 // chart child in tab 1
+    expect(page).toContain('reduceValue(allRows,')            // kpi child in tab 2 uses allRows
+    expect(page).toMatch(/let activeTab_\w+ = \$state\(/)      // one active-tab state var
+    expect(page).toContain('async function loadAll()')        // nested aggs still load allRows
+    expect(() => compile(page, { filename: 'customers/+page.svelte', generate: 'client' })).not.toThrow()
+  })
+
   it('a chart-only screen has no controller/edit modal', () => {
     let p = createProject([customers])
     const sid = p.screens[0]!.id
@@ -102,7 +156,7 @@ describe('emitStudioProject (per-block screens)', () => {
     // Cover a screen with every block kind, with master-detail fully configured.
     let p = createProject([customers, orders])
     const sid = p.screens[0]!.id
-    for (const k of ['chart', 'dashboard', 'kpi', 'master-detail', 'lookup', 'pivot', 'filter', 'record'] as const) p = addBlock(p, sid, k)
+    for (const k of ['chart', 'dashboard', 'kpi', 'gauge', 'tree', 'tabs', 'master-detail', 'lookup', 'pivot', 'filter', 'record'] as const) p = addBlock(p, sid, k)
     const mdId = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'master-detail')!.id
     p = updateBlock(p, sid, mdId, { config: { childEntity: 'orders', foreignKey: 'customer_id' } as Partial<MasterDetailConfig> })
     for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
@@ -191,6 +245,14 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(page).toContain("operator: 'contains'") // text facet
   })
 
+  it('renders an error banner (with retry) + a friendly grid empty message', () => {
+    const page = emitStudioProject(createProject([customers])).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain('{#if view.error}')                 // no longer a silent empty grid
+    expect(page).toContain('class="st-error"')
+    expect(page).toContain('controller.refresh()')             // retry
+    expect(page).toContain('emptyMessage="No customer yet."')  // friendly empty state
+  })
+
   it('emits a record panel wired to the grid selection', () => {
     let p = createProject([customers])
     const sid = p.screens[0]!.id
@@ -199,6 +261,23 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(page).toContain('let selectedRecord = $state')
     expect(page).toContain('onRowClick={(e) => (selectedRecord = e.row)}') // grid publishes selection
     expect(page).toContain('<dl class="st-record">')                        // read-only field list
+  })
+
+  it('record panel honors its presentation (inline / modal / drawer)', () => {
+    const pageFor = (presentation: 'inline' | 'modal' | 'drawer') => {
+      let p = createProject([customers])
+      const sid = p.screens[0]!.id
+      p = addBlock(p, sid, 'record')
+      const rid = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'record')!.id
+      p = updateBlock(p, sid, rid, { config: { editable: true, presentation } as Partial<import('./project').RecordConfig> })
+      return emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    }
+    expect(pageFor('inline')).toContain('<SvGridEditPanel schema={customersSchema} row={selectedRecord} presentation="inline"')
+    expect(pageFor('modal')).toContain('presentation="modal"')
+    expect(pageFor('drawer')).toContain('presentation="drawer"')
+    // Modal/drawer only mount while a row is selected (float over the page).
+    expect(pageFor('modal')).toContain('Select a row to open its edit dialog')
+    expect(pageFor('drawer')).toContain('Select a row to open its editor drawer')
   })
 
   it('RBAC: emits access.ts, gates the UI, guards the server route + nav, and compiles', () => {
@@ -276,7 +355,7 @@ describe('emitStudioProject (per-block screens)', () => {
     const gridId = p.screens.find((s) => s.id === cid)!.blocks[0]!.id
     p = updateBlock(p, cid, gridId, { colSpan: 5 }) // finer than 1/2/3
     const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
-    expect(page).toContain('grid-template-columns: repeat(12, 1fr)')
+    expect(page).toContain('class="st-screen"')    // 12-col grid lives in the responsive app.css class
     expect(page).toContain('grid-column: span 5') // colSpan honored
     // A legacy block with only `span` (default grid span 3) maps to 12 columns.
     const ordPage = emitStudioProject(p).find((f) => f.path === 'src/routes/orders/+page.svelte')!.contents
@@ -307,6 +386,111 @@ describe('emitStudioProject (per-block screens)', () => {
     // The no-code specs are NOT left in the data literal.
     expect(schemas).not.toContain('"formula"')
     expect(schemas).not.toContain('"validations"')
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('PGlite: a zero-setup embedded-Postgres entity generates a client DB + seed, no server route', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'pglite', table: 'customers' })
+    const files = emitStudioProject(p)
+    const data = files.find((f) => f.path === 'src/lib/data.ts')!.contents
+    expect(data).toContain("import { PGlite } from '@electric-sql/pglite'")
+    expect(data).toContain("new PGlite('idb://svgrid-studio')")
+    expect(data).toContain('CREATE TABLE IF NOT EXISTS "customers"')
+    // Schema-additions migrate on reload (CREATE TABLE IF NOT EXISTS is a no-op once the table exists).
+    expect(data).toContain('ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "mrr" double precision')
+    expect(data).not.toMatch(/ADD COLUMN IF NOT EXISTS "id"/) // never re-add the primary key
+    expect(data).toContain('"mrr" double precision')            // typed column
+    expect(data).toContain('createSqlDataSource<Customers>')     // real SQL source
+    expect(data).toContain('await pgReady')                      // gated on bootstrap
+    expect(data).toContain('_pgSeed(')                           // seeded once
+    // Runs in the browser: NO server route.
+    expect(files.find((f) => f.path === 'src/routes/api/customers/+server.ts')).toBeUndefined()
+    // The exported app declares the dependency.
+    const pkg = emitStudioAppBundle(p).find((f) => f.path === 'package.json')!.contents
+    expect(pkg).toContain('@electric-sql/pglite')
+  })
+
+  it('PGlite: a curated seed on the source (e.g. an imported CSV) is what the local DB seeds', () => {
+    let p = createProject([customers])
+    const seed = [{ id: 7, name: 'Zaphod', email: 'z@beeble.brox', mrr: 999, active: true }]
+    p = setEntityDataSource(p, 'customers', { kind: 'pglite', table: 'customers', seed })
+    const data = emitStudioProject(p).find((f) => f.path === 'src/lib/data.ts')!.contents
+    expect(data).toContain('"Zaphod"')          // the imported row, not the generator's
+    expect(data).toContain('_pgSeed("customers"')
+  })
+
+  it('Deploy: default (auto) ships adapter-auto and no provider config', () => {
+    const bundle = emitStudioAppBundle(createProject([customers]))
+    const svelteCfg = bundle.find((f) => f.path === 'svelte.config.js')!.contents
+    const pkg = bundle.find((f) => f.path === 'package.json')!.contents
+    expect(svelteCfg).toContain("import adapter from '@sveltejs/adapter-auto'")
+    expect(pkg).toContain('@sveltejs/adapter-auto')
+    // No provider-specific config files in auto mode.
+    expect(bundle.find((f) => f.path === 'netlify.toml')).toBeUndefined()
+    expect(bundle.find((f) => f.path === 'wrangler.toml')).toBeUndefined()
+  })
+
+  it('Deploy: picking a target swaps the adapter + config and the README deploy steps', () => {
+    const netlify = emitStudioAppBundle(setDeployTarget(createProject([customers]), 'netlify'))
+    expect(netlify.find((f) => f.path === 'svelte.config.js')!.contents).toContain("'@sveltejs/adapter-netlify'")
+    expect(netlify.find((f) => f.path === 'package.json')!.contents).toContain('@sveltejs/adapter-netlify')
+    expect(netlify.find((f) => f.path === 'netlify.toml')!.contents).toContain('npm run build')
+    expect(netlify.find((f) => f.path === 'README.md')!.contents).toContain('netlify deploy')
+
+    const cf = emitStudioAppBundle(setDeployTarget(createProject([customers], { title: 'My App' }), 'cloudflare'))
+    const wrangler = cf.find((f) => f.path === 'wrangler.toml')!.contents
+    expect(wrangler).toContain('name = "my-app"')
+    expect(wrangler).toContain('pages_build_output_dir = ".svelte-kit/cloudflare"')
+    expect(cf.find((f) => f.path === 'svelte.config.js')!.contents).toContain("'@sveltejs/adapter-cloudflare'")
+
+    // The designer's Deploy panel reads the same facts.
+    const info = studioDeployInfo(setDeployTarget(createProject([customers]), 'vercel'))
+    expect(info).toMatchObject({ label: 'Vercel', cli: 'npx vercel --prod', dashboard: 'https://vercel.com/new' })
+  })
+
+  it('Deploy: setDeployTarget(auto) clears the target (round-trips clean)', () => {
+    const p = setDeployTarget(setDeployTarget(createProject([customers]), 'vercel'), 'auto')
+    expect(p.deploy).toBeUndefined()
+    expect(parseProject(JSON.stringify(p)).deploy).toBeUndefined()
+  })
+
+  it('Round-trip: the exported bundle ships studio.config.json that re-parses into the designer', () => {
+    const p = setShell(createProject([customers, orders]), { brand: 'Acme', logo: 'data:image/png;base64,AA' })
+    const bundle = emitStudioAppBundle(p)
+    const cfg = bundle.find((f) => f.path === 'studio.config.json')
+    expect(cfg).toBeTruthy()
+    const reparsed = parseProject(cfg!.contents)         // Load-able back into the designer
+    expect(reparsed.entities.map((e) => e.name)).toEqual(['customers', 'orders'])
+    expect(reparsed.screens.length).toBe(p.screens.length)
+    expect(reparsed.theme?.shell?.logo).toBe('data:image/png;base64,AA') // logo survives the round-trip
+    expect(bundle.find((f) => f.path === 'README.md')!.contents).toContain('Round-tripping back into the designer')
+  })
+
+  it('Shell: responsive sidebar (burger + drawer), a company logo, and a stacking screen grid', () => {
+    let p = createProject([customers])
+    p = setShell(p, { style: 'sidebar', brand: 'Acme', logo: 'data:image/png;base64,AAAA' })
+    const files = emitStudioProject(p)
+    const layout = files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents
+    expect(layout).toContain('sv-app__mobilebar')                       // mobile bar
+    expect(layout).toContain('sv-app__burger')                          // hamburger toggle
+    expect(layout).toContain('let navOpen = $state(false)')             // drawer state
+    expect(layout).toContain('sv-app__backdrop')
+    expect(layout).toContain('const logo = "data:image/png;base64,AAAA"')
+    expect(layout).toContain('<img class="sv-app__logo"')              // logo rendered
+    // Collapsible sidebar: docks on desktop, collapses to a drawer on tablet/phone.
+    expect(layout).toContain('sv-app__collapse')                        // desktop collapse toggle
+    expect(layout).toContain('class:is-drawer={drawer}')               // drawer class binding
+    expect(layout).toContain("matchMedia('(max-width: 1024px)')")      // tablet/phone -> collapsed
+    expect(layout).toContain("localStorage.setItem('svapp:nav'")       // collapse choice persists
+
+    const appcss = emitStudioAppBundle(p).find((f) => f.path === 'src/app.css')!.contents
+    expect(appcss).toContain('.st-screen')
+    expect(appcss).toContain('grid-template-columns: repeat(12, 1fr)')
+    expect(appcss).toContain('@media (max-width: 720px)')              // blocks stack on mobile
+
     for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
     }
@@ -383,6 +567,23 @@ describe('emitStudioProject (per-block screens)', () => {
     }
   })
 
+  it('i18n: KPI / Gauge / Tab labels route through t() (not raw literals)', () => {
+    let p: StudioProject = { ...createProject([customers]), i18n: { enabled: true, locales: ['en', 'es'], defaultLocale: 'en' } }
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'kpi')
+    p = addBlock(p, sid, 'gauge')
+    p = addBlock(p, sid, 'tabs')
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/\{\$t\('block\.kpi-[^']+', /)   // KPI label localized
+    expect(page).toMatch(/\{\$t\('block\.gauge-[^']+', /) // Gauge label localized
+    expect(page).toMatch(/label: \$t\('tab\.tabs-[^']+'/) // Tab labels localized in the tabs array
+    // Without i18n the same labels stay raw literals (no $t wrapper).
+    let plain = createProject([customers])
+    plain = addBlock(plain, plain.screens[0]!.id, 'kpi')
+    const plainPage = emitStudioProject(plain).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(plainPage).not.toContain("$t('block.")
+  })
+
   it('throws on a screen pointing at a missing entity', () => {
     const broken = { ...project, screens: [{ ...project.screens[0]!, entity: 'ghosts' }] }
     expect(() => emitStudioProject(broken)).toThrow(/missing entity/)
@@ -443,12 +644,37 @@ describe('data-source codegen', () => {
   })
 
   it('picks the right driver per dialect', () => {
-    for (const [dialect, needle] of [['mysql', "import mysql from 'mysql2/promise'"], ['sqlite', "import Database from 'better-sqlite3'"], ['mssql', "import mssql from 'mssql'"]] as const) {
+    for (const [dialect, needle] of [['mysql', "import mysql from 'mysql2/promise'"], ['sqlite', "import Database from 'better-sqlite3'"], ['mssql', "import mssql from 'mssql'"], ['turso', "import { createClient } from '@libsql/client'"]] as const) {
       let p = createProject([customers])
       p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect })
       const route = byPathOf(emitStudioProject(p), 'src/routes/api/customers/+server.ts')!
       expect(route.contents).toContain(needle)
     }
+  })
+
+  it('Provisioning: a Turso (libSQL) entity wires the client + auth token + a .env.example', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'turso' })
+    const bundle = emitStudioAppBundle(p)
+    const route = bundle.find((f) => f.path === 'src/routes/api/customers/+server.ts')!.contents
+    expect(route).toContain("import { createClient } from '@libsql/client'")
+    expect(route).toContain('env.DATABASE_AUTH_TOKEN')
+    expect(route).toContain("dialect: { placeholders: '?' }")
+    const pkg = bundle.find((f) => f.path === 'package.json')!.contents
+    expect(pkg).toContain('@libsql/client')
+    const envEx = bundle.find((f) => f.path === '.env.example')!.contents
+    expect(envEx).toContain('DATABASE_URL=')
+    expect(envEx).toContain('DATABASE_AUTH_TOKEN=')
+  })
+
+  it('.env.example lists DATABASE_URL for SQL apps, and is omitted for zero-setup apps', () => {
+    let sql = createProject([customers])
+    sql = setEntityDataSource(sql, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    const envEx = emitStudioAppBundle(sql).find((f) => f.path === '.env.example')!.contents
+    expect(envEx).toContain('DATABASE_URL=')
+    expect(envEx).not.toContain('DATABASE_AUTH_TOKEN')
+    // In-memory / PGlite apps need no env, so no .env.example.
+    expect(emitStudioAppBundle(createProject([customers])).find((f) => f.path === '.env.example')).toBeUndefined()
   })
 
   it('emits a real Supabase client from a project URL + anon key', () => {
@@ -608,6 +834,23 @@ describe('emitStudioAppBundle (full runnable app)', () => {
     expect(pkg.devDependencies['vite']).toBeTruthy()
   })
 
+  it('ships a per-entity smoke test + vitest wiring', () => {
+    const bundle = emitStudioAppBundle(createProject([customers, orders], { title: 'My Sales App' }))
+    const pkg = JSON.parse(bundle.find((f) => f.path === 'package.json')!.contents)
+    expect(pkg.scripts.test).toBe('vitest run')
+    expect(pkg.devDependencies['vitest']).toBeTruthy()
+    expect(bundle.find((f) => f.path === 'vitest.config.ts')).toBeTruthy()
+    const test = bundle.find((f) => f.path === 'src/lib/schemas.test.ts')!.contents
+    // one describe block per entity, asserting render + data-source round-trip
+    expect(test).toContain('describe("Customer"')
+    expect(test).toContain('describe("Order"')
+    expect(test).toContain('schemaToColumns(customersSchema)')
+    expect(test).toContain('schemaToFormFields(customersSchema)')
+    expect(test).toContain('createInMemoryDataSource<Customers>([], customersSchema)')
+    expect(test).toContain('round-trips create -> read -> delete')
+    expect(test).toContain("from './schemas'")
+  })
+
   it('adds the driver dep when an entity binds to Supabase / SQL', () => {
     let sb = createProject([customers])
     sb = setEntityDataSource(sb, 'customers', { kind: 'supabase', table: 'customers', url: 'https://x.supabase.co', key: 'k' })
@@ -667,5 +910,14 @@ describe('pages (nav) + shell codegen', () => {
     const layout = layoutOf(p)
     expect(layout).toContain('--sg-accent: #123456')
     expect(layout).not.toContain('--sg-accent: #0969da')
+  })
+
+  it('custom CSS is appended to the generated app.css', () => {
+    const p = setTheme(createProject([customers]), { customCss: '.st__title { letter-spacing: -0.03em; }' })
+    const appcss = emitStudioAppBundle(p).find((f) => f.path === 'src/app.css')!.contents
+    expect(appcss).toContain('Custom CSS (from the designer)')
+    expect(appcss).toContain('.st__title { letter-spacing: -0.03em; }')
+    // No custom block when unset.
+    expect(emitStudioAppBundle(createProject([customers])).find((f) => f.path === 'src/app.css')!.contents).not.toContain('Custom CSS (from the designer)')
   })
 })

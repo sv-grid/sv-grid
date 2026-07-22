@@ -2,6 +2,64 @@
 
 Typed text controls. Each emits a clean value and themes from `--sg-*`.
 
+## SvTextInput
+
+The base single-line text editor on the shared editor contract (label / hint /
+error / RTL / a11y). Handles `text`, `email`, `url`, `tel` and `search`. As a
+grid cell editor it honours the interaction contract: Enter commits, Escape
+cancels.
+
+```svelte
+<SvTextInput value={name} onChange={(v) => (name = v)} placeholder="Full name" clearable />
+```
+
+Props: `value`, `onChange(value)`, `onCommit(value)`, `onCancel()`, `placeholder`,
+`type`, `maxlength`, `clearable`, `autocomplete`, `autofocus`, plus the shared
+editor-contract props (`label`, `hint`, `error`, `required`, `invalid`, `size`,
+`disabled`, `readonly`, `name`, `dir`).
+
+## SvTextArea
+
+A multi-line text editor with optional auto-grow and a character counter. In a
+cell: Escape cancels; Ctrl/Cmd+Enter commits (a bare Enter inserts a newline).
+
+```svelte
+<SvTextArea value={notes} onChange={(v) => (notes = v)} rows={4} autoGrow maxlength={280} showCount />
+```
+
+Props: `value`, `onChange`, `onCommit`, `onCancel`, `placeholder`, `rows`,
+`maxlength`, `autoGrow`, `showCount`, `autofocus`, plus the shared editor-contract
+props.
+
+## SvOtpInput
+
+A segmented one-time-code / PIN entry: N single-char cells with auto-advance,
+Backspace-to-previous, arrow navigation, and paste that distributes across cells.
+
+```svelte
+<SvOtpInput length={6} value={code} onChange={(v) => (code = v)} onComplete={(v) => verify(v)} />
+```
+
+Props: `value`, `onChange(value)`, `onComplete(value)`, `length` (default 6),
+`numeric` (digits only, default true), `mask`, `autofocus`, plus `label`, `hint`,
+`error`, `required`, `invalid`, `size`, `disabled`, `name`. The pure helpers
+`sanitizeOtp`, `otpCells` and `isOtpComplete` are exported.
+
+## SvDurationInput
+
+A duration editor whose value is a number of **minutes** but which accepts the
+human forms people type (`1h 30m`, `1:30`, `90`). Shows a formatted value when
+unfocused and re-parses on blur / Enter.
+
+```svelte
+<SvDurationInput value={mins} onChange={(m) => (mins = m)} style="units" />
+```
+
+Props: `value` (minutes | null), `onChange(minutes)`, `onCommit`, `onCancel`,
+`style` (`colon` -> `1:30`, or `units` -> `1h 30m`), `placeholder`, `autofocus`,
+plus the shared editor-contract props. The pure helpers `parseDuration` and
+`formatDuration` are exported.
+
 ## SvNumberInput
 
 Numeric input with min/max/step, spinner buttons, optional thousands grouping,
@@ -61,3 +119,34 @@ preset palette. Emits a `#rrggbb` string.
 ```
 
 Props: `value`, `onChange(hex)`, `palette` (string[]), `size`, `disabled`.
+
+## SvRichText
+
+A lightweight WYSIWYG editor over a `contentEditable` region, emitting HTML.
+Bold / italic / underline / strike, headings, lists, quote, code block,
+alignment, links, undo/redo; configurable toolbar. Bindable `value` (HTML).
+
+```svelte
+<SvRichText bind:value={html} placeholder="Write something…" />
+<SvRichText bind:value={note} tools={['bold', 'italic', '|', 'ul', 'ol', '|', 'link', 'clear']} />
+```
+
+Props: `value` (HTML string, bindable), `onChange(html)`, `placeholder`,
+`disabled`, `readonly`, `minHeight`, `tools` (`RichTextTool[]`, `'|'` = separator),
+`ariaLabel`.
+
+## Component guides
+
+Each component has its own full tutorial with props, keyboard behaviour and
+recipes:
+
+- [SvTextInput](./sv-text-input.md) - the base single-line text editor.
+- [SvTextArea](./sv-text-area.md) - a multi-line editor with auto-grow.
+- [SvNumberInput](./sv-number-input.md) - a numeric field with min/max/step spinners.
+- [SvPasswordInput](./sv-password-input.md) - a password field with reveal and strength.
+- [SvMaskedInput](./sv-masked-input.md) - a pattern-masked text input.
+- [SvPhoneInput](./sv-phone-input.md) - a dial-code selector plus national number.
+- [SvColorInput](./sv-color-input.md) - a swatch and hex color picker.
+- [SvOtpInput](./sv-otp-input.md) - a segmented one-time-code / PIN entry.
+- [SvDurationInput](./sv-duration-input.md) - a human-friendly duration-in-minutes editor.
+- [SvTagsInput](./sv-tags-input.md) - an editable free-form chips input.

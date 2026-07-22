@@ -14,17 +14,29 @@
  *
  * The styled <SvSwitchButton> is just one renderer over this core.
  */
+import { editorAria, type EditorAriaState } from './editor-contract'
+
 export type SwitchConfig = {
   checked: () => boolean
   onChange?: (checked: boolean) => void
   disabled?: () => boolean
+  // Editor contract (ARIA + validation) - folded into switchProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
   ariaLabel?: () => string | undefined
 }
 
 export type SwitchProps = {
   type: 'button'
   role: 'switch'
+  id: string | undefined
   'aria-checked': boolean
+  'aria-invalid': 'true' | undefined
+  'aria-required': 'true' | undefined
+  'aria-describedby': string | undefined
   'aria-label': string | undefined
   disabled: boolean
   'data-checked': '' | undefined
@@ -59,18 +71,29 @@ export function createSwitch(config: SwitchConfig): Switch {
     else if (e.key === 'ArrowLeft') { if (checked()) config.onChange?.(false) }
   }
 
+  // The validation/label ARIA is derived from the editor contract state.
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
+
   return {
     get checked() { return checked() },
     get disabled() { return disabled() },
     toggle,
     onKeydown,
     switchProps: () => ({
-      type: 'button',
-      role: 'switch',
+      type: 'button' as const,
+      role: 'switch' as const,
+      id: config.id?.(),
       'aria-checked': checked(),
-      'aria-label': config.ariaLabel?.(),
       disabled: disabled(),
       'data-checked': checked() ? '' : undefined,
+      ...editorAria(ariaState()),
       onclick: toggle,
       onkeydown: onKeydown,
     }),

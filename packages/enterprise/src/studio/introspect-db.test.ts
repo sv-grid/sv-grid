@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { introspectDatabase, listDatabaseTables, mapSqlType, type DbExecute } from './introspect-db'
+import { introspectDatabase, listDatabaseTables, countTableRows, probeConnection, mapSqlType, type DbExecute } from './introspect-db'
 
 describe('mapSqlType', () => {
   it('maps common SQL types across dialects', () => {
@@ -133,5 +133,54 @@ describe('listDatabaseTables', () => {
   it('returns base table names', async () => {
     const { execute } = fakeExec([[{ name: 'users' }, { name: 'orders' }]])
     expect(await listDatabaseTables('postgres', execute)).toEqual(['users', 'orders'])
+  })
+})
+
+describe('countTableRows', () => {
+  it('counts each table with dialect-correct quoting', async () => {
+    const { execute, calls } = fakeExec([[{ n: 42 }], [{ n: 7 }]])
+    const counts = await countTableRows('mysql', execute, ['users', 'orders'])
+    expect(counts).toEqual([{ name: 'users', rows: 42 }, { name: 'orders', rows: 7 }])
+    expect(calls[0]!.sql).toBe('SELECT COUNT(*) AS n FROM `users`')
+  })
+
+  it('quotes identifiers per dialect (mssql brackets, pg double-quotes)', async () => {
+    const { execute: e1, calls: c1 } = fakeExec([[{ n: 1 }]])
+    await countTableRows('mssql', e1, ['Orders'])
+    expect(c1[0]!.sql).toBe('SELECT COUNT(*) AS n FROM [Orders]')
+    const { execute: e2, calls: c2 } = fakeExec([[{ n: 1 }]])
+    await countTableRows('postgres', e2, ['orders'])
+    expect(c2[0]!.sql).toBe('SELECT COUNT(*) AS n FROM "orders"')
+  })
+
+  it('reports null (not a throw) for a table it cannot count', async () => {
+    let call = 0
+    const execute: DbExecute = async () => {
+      call += 1
+      if (call === 1) return [{ n: 5 }]
+      throw new Error('permission denied')
+    }
+    expect(await countTableRows('postgres', execute, ['ok', 'denied'])).toEqual([
+      { name: 'ok', rows: 5 },
+      { name: 'denied', rows: null },
+    ])
+  })
+})
+
+describe('probeConnection', () => {
+  it('lists tables and (with counts) reports row totals in one probe', async () => {
+    // call 1: table list; calls 2-3: per-table COUNT(*)
+    const { execute } = fakeExec([[{ name: 'users' }, { name: 'orders' }], [{ n: 3 }], [{ n: 9 }]])
+    expect(await probeConnection('postgres', execute, { counts: true })).toEqual({
+      ok: true,
+      tables: [{ name: 'users', rows: 3 }, { name: 'orders', rows: 9 }],
+    })
+  })
+
+  it('skips counting when counts are off', async () => {
+    const { execute, calls } = fakeExec([[{ name: 'users' }]])
+    const probe = await probeConnection('postgres', execute)
+    expect(probe.tables).toEqual([{ name: 'users', rows: null }])
+    expect(calls).toHaveLength(1) // no COUNT(*) queries
   })
 })

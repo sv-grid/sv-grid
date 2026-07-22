@@ -37,3 +37,15 @@ colored threshold bands, a needle and a center label. A display control.
 Props: `value`, `min`, `max`, `sweep` (degrees, default 270), `bands`, `needle`,
 `label`, `unit`, `size`, `thickness`, `formatValue`. Exposes ARIA `meter` with a
 clamped `aria-valuenow`.
+
+## Component guides
+
+Each component has its own full tutorial with props, keyboard behaviour and
+recipes:
+
+- [SvSlider](./sv-slider.md) - a single or dual-thumb range slider.
+- [SvGauge](./sv-gauge.md) - a radial arc gauge for a value.
+- [SvProgress](./sv-progress.md) - a linear progress bar, determinate or indeterminate.
+- [SvCircularProgress](./sv-circular-progress.md) - a circular ring progress indicator.
+- [SvSparkline](./sv-sparkline.md) - a tiny inline line/area/bar chart.
+- [SvStat](./sv-stat.md) - a KPI card with an auto-coloured delta.

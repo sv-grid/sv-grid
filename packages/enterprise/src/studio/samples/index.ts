@@ -22,8 +22,10 @@ import { realEstate } from './realestate.js'
 import { fleet } from './fleet.js'
 import { gym } from './gym.js'
 import { library } from './library.js'
+import { insurance } from './insurance.js'
 
 export type { SampleApp } from './shared.js'
+export { liveDataSamples, getLiveDataSample } from './live-data.js'
 
 /** All shipped sample apps, in gallery order. */
 export const sampleApps: SampleApp[] = [
@@ -44,6 +46,7 @@ export const sampleApps: SampleApp[] = [
   fleet,
   gym,
   library,
+  insurance,
 ]
 
 /** Look up a sample app by id (the `--template` value). */

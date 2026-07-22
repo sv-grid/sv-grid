@@ -6,6 +6,8 @@ across many `cell` callbacks and `editable` props, you declare a
 **schema** of `when`-rules per field and the grid evaluates them per
 row.
 
+![A rule engine over the form: a row's field values feed a schema of when-rules, which resolves each field to visible, hidden, or locked.](/docs-media/grid-conditional-form.svg)
+
 This is the data-entry pattern that procurement / KYC / onboarding
 flows usually need: some fields apply only to certain record types,
 others lock once the workflow moves past a state. SvGrid's `editable:

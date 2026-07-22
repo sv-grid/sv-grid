@@ -26,6 +26,9 @@ export type TreeNode = {
   label: string
   children?: TreeNode[]
   disabled?: boolean
+  /** Marks a node whose children are loaded on demand (shows an expand arrow
+   *  even with no children yet; the renderer loads them on first expand). */
+  lazy?: boolean
 }
 
 export type CheckState = 'checked' | 'indeterminate' | 'unchecked'
@@ -66,6 +69,64 @@ function findNode(list: ReadonlyArray<TreeNode>, id: string): TreeNode | null {
   return null
 }
 
+/** Where a dragged node lands relative to the drop target. */
+export type TreeDropPosition = 'before' | 'after' | 'inside'
+
+/** True if `id` is inside `node`'s subtree (used to block invalid drops). */
+export function treeContains(node: TreeNode, id: string): boolean {
+  return node.children?.some((c) => c.id === id || treeContains(c, id)) ?? false
+}
+
+/**
+ * Return a NEW node tree with `dragId` moved before/after/inside `targetId`
+ * (pure - the caller sets it back as the controlled `nodes`). No-ops on invalid
+ * moves (self, or into own descendant).
+ */
+export function moveTreeNode(
+  nodes: ReadonlyArray<TreeNode>,
+  dragId: string,
+  targetId: string,
+  position: TreeDropPosition,
+): TreeNode[] {
+  if (dragId === targetId) return [...nodes]
+  const dragged = findNode(nodes, dragId)
+  if (!dragged) return [...nodes]
+  if (dragId === targetId || treeContains(dragged, targetId)) return [...nodes]
+
+  const without = (list: ReadonlyArray<TreeNode>): TreeNode[] => {
+    const out: TreeNode[] = []
+    for (const n of list) {
+      if (n.id === dragId) continue
+      out.push(n.children ? { ...n, children: without(n.children) } : n)
+    }
+    return out
+  }
+  const insert = (list: ReadonlyArray<TreeNode>): TreeNode[] => {
+    const out: TreeNode[] = []
+    for (const n of list) {
+      if (n.id === targetId) {
+        if (position === 'before') { out.push(dragged, n) }
+        else if (position === 'after') { out.push(n, dragged) }
+        else out.push({ ...n, children: [...(n.children ?? []), dragged] })
+      } else if (n.children) {
+        out.push({ ...n, children: insert(n.children) })
+      } else out.push(n)
+    }
+    return out
+  }
+  return insert(without(nodes))
+}
+
+/** Sort siblings (recursively) by a comparator (pure). */
+export function sortTreeNodes(
+  nodes: ReadonlyArray<TreeNode>,
+  compare: (a: TreeNode, b: TreeNode) => number,
+): TreeNode[] {
+  return [...nodes]
+    .sort(compare)
+    .map((n) => (n.children ? { ...n, children: sortTreeNodes(n.children, compare) } : n))
+}
+
 /** Reactive inputs are passed as getters so the core tracks live prop changes. */
 export type TreeConfig = {
   nodes: () => ReadonlyArray<TreeNode>
@@ -78,6 +139,10 @@ export type TreeConfig = {
   checked?: () => string[]
   onCheck?: (ids: string[]) => void
   ariaLabel?: () => string | undefined
+  /** Text direction; under `'rtl'` the Left/Right expand/collapse keys swap. */
+  dir?: () => import('./editor-contract').EditorDir | undefined
+  /** Filter query: show only matching nodes + their ancestors, auto-expanded. */
+  filter?: () => string | undefined
 }
 
 export function createTree(config: TreeConfig) {
@@ -92,14 +157,34 @@ export function createTree(config: TreeConfig) {
     if (!seeded) { seeded = true; const ids = config.expandedIds?.(); if (ids) expanded = new Set(ids) }
   })
 
+  // When filtering, precompute which nodes to show (a match, or an ancestor of a
+  // match) and which to force-open so matches are revealed.
+  const filterInfo = $derived.by(() => {
+    const q = config.filter?.()?.trim().toLowerCase()
+    if (!q) return null
+    const visible = new Set<string>()
+    const forceOpen = new Set<string>()
+    const walk = (node: TreeNode): boolean => {
+      let childMatch = false
+      for (const c of node.children ?? []) childMatch = walk(c) || childMatch
+      const selfMatch = node.label.toLowerCase().includes(q)
+      if (selfMatch || childMatch) { visible.add(node.id); if (childMatch) forceOpen.add(node.id) }
+      return selfMatch || childMatch
+    }
+    for (const n of nodes()) walk(n)
+    return { visible, forceOpen }
+  })
+
   const rows = $derived.by<TreeRow[]>(() => {
     const out: TreeRow[] = []
+    const fi = filterInfo
     const walk = (list: ReadonlyArray<TreeNode>, depth: number, parentId: string | null) => {
       for (const node of list) {
-        const hasChildren = !!node.children?.length
-        const open = expanded.has(node.id)
+        if (fi && !fi.visible.has(node.id)) continue
+        const hasChildren = !!node.children?.length || !!node.lazy
+        const open = fi ? fi.forceOpen.has(node.id) || expanded.has(node.id) : expanded.has(node.id)
         out.push({ node, depth, hasChildren, open, parentId, index: out.length })
-        if (hasChildren && open) walk(node.children!, depth + 1, node.id)
+        if (open && node.children?.length) walk(node.children, depth + 1, node.id)
       }
     }
     walk(nodes(), 0, null)
@@ -120,7 +205,9 @@ export function createTree(config: TreeConfig) {
   const isSelected = (id: string) => id === selected()
 
   function toggleExpand(node: TreeNode) {
-    if (!node.children?.length) return
+    // Lazy nodes have no children *yet* - they must still be expandable so the
+    // toggle fires onToggle and the host can fetch children on demand.
+    if (!node.children?.length && !node.lazy) return
     const next = new Set(expanded)
     const willOpen = !next.has(node.id)
     willOpen ? next.add(node.id) : next.delete(node.id)
@@ -147,19 +234,22 @@ export function createTree(config: TreeConfig) {
   function onKeydown(e: KeyboardEvent) {
     const item = rows[active]
     if (!item) return
+    // "expand" opens the node or steps into the first child; "collapse" closes it
+    // or jumps to the parent. Under RTL the physical Left/Right keys are swapped.
+    const expand = () => {
+      if (item.hasChildren && !item.open) toggleExpand(item.node)
+      else if (item.hasChildren && item.open) setActive(Math.min(active + 1, rows.length - 1), true)
+    }
+    const collapse = () => {
+      if (item.hasChildren && item.open) toggleExpand(item.node)
+      else if (item.parentId) { const pi = rows.findIndex((r) => r.node.id === item.parentId); if (pi >= 0) setActive(pi, true) }
+    }
+    const rtl = config.dir?.() === 'rtl'
     switch (e.key) {
       case 'ArrowDown': e.preventDefault(); setActive(Math.min(active + 1, rows.length - 1), true); break
       case 'ArrowUp': e.preventDefault(); setActive(Math.max(active - 1, 0), true); break
-      case 'ArrowRight':
-        e.preventDefault()
-        if (item.hasChildren && !item.open) toggleExpand(item.node)
-        else if (item.hasChildren && item.open) setActive(Math.min(active + 1, rows.length - 1), true)
-        break
-      case 'ArrowLeft':
-        e.preventDefault()
-        if (item.hasChildren && item.open) toggleExpand(item.node)
-        else if (item.parentId) { const pi = rows.findIndex((r) => r.node.id === item.parentId); if (pi >= 0) setActive(pi, true) }
-        break
+      case 'ArrowRight': e.preventDefault(); (rtl ? collapse : expand)(); break
+      case 'ArrowLeft': e.preventDefault(); (rtl ? expand : collapse)(); break
       case 'Enter': e.preventDefault(); select(item.node); break
       case ' ': e.preventDefault(); checkable() ? toggleCheck(item.node) : select(item.node); break
       case 'Home': e.preventDefault(); setActive(0, true); break

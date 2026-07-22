@@ -4,6 +4,8 @@ Ship SvGrid as a framework-agnostic web component (custom element) and use
 the Svelte 5 data grid in React, Vue, Angular, or plain HTML - no Svelte
 required in the host app.
 
+![React, Vue, Angular, and plain HTML each render the same sv-grid custom element, which wraps one shared SvGrid engine.](/docs-media/grid-web-components.svg)
+
 SvGrid is authored in Svelte 5, but Svelte compiles to standards-based
 [custom elements](https://developer.mozilla.org/en-US/docs/Web/API/Web_components).
 That means you can wrap `<SvGrid>` once, build it to a single `.js` file, and

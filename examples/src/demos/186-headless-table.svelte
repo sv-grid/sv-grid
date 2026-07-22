@@ -3,7 +3,7 @@
   /**
    * 186. Headless engine -> your own <table>
    * ----------------------------------------
-   * No <SvGrid>. The `createSvGrid` engine computes the (filtered, sorted) rows;
+   * No <SvGrid responsive={true}>. The `createSvGrid` engine computes the (filtered, sorted) rows;
    * this component renders a plain, hand-styled <table>. Click a header to sort;
    * type to filter. The engine does the logic, you own every pixel of markup.
    */

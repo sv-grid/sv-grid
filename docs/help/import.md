@@ -6,6 +6,8 @@ preview of every parsed row - including per-cell validation errors -
 before any data lands in the grid. Ships in the paid
 **[@svgrid/enterprise](https://www.npmjs.com/package/@svgrid/enterprise)** add-on.
 
+![The import pipeline: a file or pasted CSV, TSV, or JSON is parsed into a matrix, source headers are mapped to grid fields, each row is validated, and the clean rows are added to the grid.](/docs-media/grid-import.svg)
+
 Click **Preview from text** below to run the bundled sample through
 the parser + validator, then **Commit** to push the clean rows into
 the grid:

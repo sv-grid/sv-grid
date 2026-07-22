@@ -4,15 +4,13 @@
    * `smart-switch-button`. Controlled via `checked` + `onChange`; keyboard
    * togglable; optional inline on/off labels.
    */
+  import SvField from './SvField.svelte'
+  import { nextEditorId, type SvEditorProps } from './editor-contract'
   import { createSwitch } from './createSwitch.svelte'
 
-  type Props = {
+  type Props = SvEditorProps & {
     checked?: boolean
     onChange?: (checked: boolean) => void
-    disabled?: boolean
-    size?: 'sm' | 'md' | 'lg'
-    name?: string
-    ariaLabel?: string
     /** Optional labels rendered inside the track. */
     onLabel?: string
     offLabel?: string
@@ -25,9 +23,19 @@
     size = 'md',
     name,
     ariaLabel,
+    invalid = false,
+    required = false,
+    error,
+    label,
+    hint,
+    dir,
+    id,
     onLabel,
     offLabel,
   }: Props = $props()
+
+  const autoId = nextEditorId('sv-switch')
+  const uid = $derived(id ?? autoId)
 
   // The styled switch is just a renderer over the headless core.
   const sw = createSwitch({
@@ -35,23 +43,30 @@
     onChange: (v) => onChange?.(v),
     disabled: () => disabled,
     ariaLabel: () => ariaLabel,
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
   })
 </script>
 
-<button
-  class="sv-switch sv-switch--{size}"
-  class:is-on={checked}
-  {...sw.switchProps()}
->
-  <span class="sv-switch__track">
-    {#if onLabel || offLabel}
-      <span class="sv-switch__txt sv-switch__txt--on">{onLabel ?? ''}</span>
-      <span class="sv-switch__txt sv-switch__txt--off">{offLabel ?? ''}</span>
-    {/if}
-    <span class="sv-switch__thumb"></span>
-  </span>
-  {#if name}<input type="hidden" {name} value={checked ? 'true' : 'false'} />{/if}
-</button>
+<SvField id={uid} {label} {hint} {error} {required} {dir}>
+  <button
+    class="sv-switch sv-switch--{size}"
+    class:is-on={checked}
+    {...sw.switchProps()}
+  >
+    <span class="sv-switch__track">
+      {#if onLabel || offLabel}
+        <span class="sv-switch__txt sv-switch__txt--on">{onLabel ?? ''}</span>
+        <span class="sv-switch__txt sv-switch__txt--off">{offLabel ?? ''}</span>
+      {/if}
+      <span class="sv-switch__thumb"></span>
+    </span>
+    {#if name}<input type="hidden" {name} value={checked ? 'true' : 'false'} />{/if}
+  </button>
+</SvField>
 
 <style>
   .sv-switch {
@@ -69,17 +84,17 @@
   }
   .sv-switch.is-on .sv-switch__track { background: var(--_accent); }
   .sv-switch__thumb {
-    position: absolute; left: 2px; top: 50%; transform: translateY(-50%);
+    position: absolute; inset-inline-start: 2px; top: 50%; transform: translateY(-50%);
     width: calc(var(--_h) - 4px); height: calc(var(--_h) - 4px); border-radius: 50%;
-    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: left 0.16s;
+    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: inset-inline-start 0.16s;
   }
-  .sv-switch.is-on .sv-switch__thumb { left: calc(var(--_w) - var(--_h) + 2px); }
+  .sv-switch.is-on .sv-switch__thumb { inset-inline-start: calc(var(--_w) - var(--_h) + 2px); }
   .sv-switch__txt {
     position: absolute; font-size: 9px; font-weight: 700; color: #fff; text-transform: uppercase;
     top: 50%; transform: translateY(-50%);
   }
-  .sv-switch__txt--on { left: 6px; opacity: 0; }
-  .sv-switch__txt--off { right: 5px; color: var(--sg-muted, #64748b); }
+  .sv-switch__txt--on { inset-inline-start: 6px; opacity: 0; }
+  .sv-switch__txt--off { inset-inline-end: 5px; color: var(--sg-muted, #64748b); }
   .sv-switch.is-on .sv-switch__txt--on { opacity: 1; }
   .sv-switch.is-on .sv-switch__txt--off { opacity: 0; }
   .sv-switch:focus-visible { outline: none; }

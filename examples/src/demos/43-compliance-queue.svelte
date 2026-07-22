@@ -411,7 +411,7 @@
   <!-- Main: grid + history side panel -->
   <div class="cq-body">
     <div class="cq-grid-wrap">
-      <SvGrid
+      <SvGrid responsive={true}
         data={cases}
         columns={[
           { field: 'id', header: 'Case', width: 130, editable: false,

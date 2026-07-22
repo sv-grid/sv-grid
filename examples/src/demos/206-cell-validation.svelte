@@ -114,7 +114,7 @@
   </div>
 
   <div class="cv-grid-wrap">
-    <SvGrid
+    <SvGrid responsive={true}
       data={data}
       columns={columns}
       features={features}

@@ -48,6 +48,7 @@ import {
   type SelectionState,
 } from './datetime/date-selection'
 import { isDisabledDay, isImportant, type RestrictOptions } from './datetime/date-restrict'
+import { matchesRecurrence, type RecurrenceRule } from './recurrence'
 
 export type DisplayMode = 'month' | 'year' | 'decade'
 export type CalendarNameFormat = 'narrow' | 'short' | 'long'
@@ -82,6 +83,8 @@ export type CalendarDayState = {
   outside: boolean
   focused: boolean
   preview: boolean
+  /** Matches one of the `recurrence` rules (repeat pattern). */
+  recurring: boolean
 }
 
 /** Reactive inputs are passed as getters so the core tracks live prop changes;
@@ -105,6 +108,8 @@ export type CalendarConfig = {
   dayNameFormat?: () => CalendarNameFormat
   monthNameFormat?: () => CalendarNameFormat
   dateTooltip?: () => ((date: Date) => string | null | undefined) | undefined
+  /** Repeat pattern(s) - matching days get `dayState().recurring = true`. */
+  recurrence?: () => RecurrenceRule | ReadonlyArray<RecurrenceRule> | null
 }
 
 const defaultLocale = () => (typeof navigator !== 'undefined' ? navigator.language : 'en-US')
@@ -216,6 +221,7 @@ export function createCalendar(config: CalendarConfig) {
       outside: !isSameMonth(d, panelMonth),
       focused: isSameDay(d, focusDate),
       preview: inPreview(d),
+      recurring: matchesRecurrence(d, config.recurrence?.() ?? null),
     }
   }
 

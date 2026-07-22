@@ -5,6 +5,8 @@ the sum of revenue, the average score, the count of deals. SvGrid does this
 declaratively: set `aggregate` on a column and the group header shows the
 result, formatted with that column's own `format`.
 
+<div data-docs-demo="142-group-aggregators" data-height="480"></div>
+
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, columnGroupingFeature, type ColumnDef } from '@svgrid/grid'

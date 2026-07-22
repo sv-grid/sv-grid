@@ -3,7 +3,7 @@
   /**
    * 135. Shortcut config (no feature wiring)
    * ----------------------------------------
-   * Every capability is OFF by default - a bare <SvGrid> is a plain,
+   * Every capability is OFF by default - a bare <SvGrid responsive={true}> is a plain,
    * read-only table. You opt into each power feature with a single boolean
    * shortcut prop, with no `tableFeatures({ ... })` import and no
    * fine-grained prop juggling:
@@ -110,7 +110,7 @@
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

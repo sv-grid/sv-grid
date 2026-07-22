@@ -25,6 +25,12 @@
   import { buildSparkline, toSparklineValues } from "./sparkline";
   import SvGridDropdown from "./SvGridDropdown.svelte";
   import SvDateTimePicker from "./SvDateTimePicker.svelte";
+  import {
+    hasCellEditor,
+    getCellEditor,
+    resolveEditorProps,
+    type CellEditorContext,
+  } from "./editor-registry";
   import { timeStringToDate, dateToTimeString } from "./SvGrid.helpers";
   import type {
     Props,
@@ -49,8 +55,20 @@
   import { createSvGridController } from "./SvGrid.controller.svelte";
   import GridMenus from "./GridMenus.svelte";
   import GridFooter from "./GridFooter.svelte";
+  import SvGridBoard from "./SvGridBoard.svelte";
   let props: Props<TFeatures, TData> = $props();
   const ctrl = createSvGridController(props);
+  // Kanban board mode: when `board` is set the grid renders lanes of cards
+  // instead of the table (see SvGridBoard). Narrowed derived so the template
+  // branch can pass it non-null.
+  const boardConfig = $derived(props.board);
+  // The board renders the grid's FILTERED + SORTED rows (not raw data), so the
+  // search box / column filters / sort all flow through to the lanes.
+  const boardData = $derived(
+    ctrl.allRowsBeforePagination
+      .filter((r) => !ctrl.isGroupRow(r))
+      .map((r) => r.original),
+  );
 
   // ---- View facade: re-bind the controller's reactive members as locals so the
   //      markup stays identical. Assignable state + bindings + DOM refs use c.* directly.
@@ -127,6 +145,16 @@
   const hasConditionalFormats = $derived(ctrl.hasConditionalFormats);
   const cellConditionalFormat = $derived(ctrl.cellConditionalFormat);
   const isGroupRow = $derived(ctrl.isGroupRow);
+  // Server-side group / tree a11y: aria-level on every tree row, aria-expanded
+  // on the expandable ones. Undefined (attribute omitted) when serverGroup is off.
+  const serverGroup = $derived(props.serverGroup);
+  function sgAriaLevel(row: Row<TData>): number | undefined {
+    return serverGroup ? serverGroup.level(row.original as TData) + 1 : undefined;
+  }
+  function sgAriaExpanded(row: Row<TData>): boolean | undefined {
+    if (!serverGroup || !serverGroup.isGroup(row.original as TData)) return undefined;
+    return serverGroup.expanded?.(row.original as TData) ?? false;
+  }
   const sortDirectionByColumn = $derived(ctrl.sortDirectionByColumn);
   const groupingColumns = $derived(ctrl.groupingColumns);
   const paginationState = $derived(ctrl.paginationState);
@@ -200,6 +228,22 @@
   ): string {
     if (cfg && typeof cfg === "object" && cfg.className) return cfg.className;
     return "sv-grid-cell-flash";
+  }
+
+  // Keyboard-accessible column resize (#79): focus a resize handle and use the
+  // arrow keys (Shift = fine 1px step). Complements the pointer-drag resize.
+  function resizeColumnByKeyboard(e: KeyboardEvent, columnId: string) {
+    let delta = 0;
+    const step = e.shiftKey ? 1 : 10;
+    if (e.key === "ArrowLeft") delta = -step;
+    else if (e.key === "ArrowRight") delta = step;
+    else return;
+    e.preventDefault();
+    const current = ctrl.getColumnWidth(columnId);
+    ctrl.columnWidths = {
+      ...ctrl.columnWidths,
+      [columnId]: Math.max(40, current + delta),
+    };
   }
 
   // ---- Full-row editing -------------------------------------------------
@@ -282,6 +326,27 @@
   const updateEditingCellValue = $derived(ctrl.updateEditingCellValue);
   const onEditorKeyDown = $derived(ctrl.onEditorKeyDown);
   const focusOnMount = $derived(ctrl.focusOnMount);
+
+  // Build the interaction context handed to a CUSTOM cell editor registered via
+  // `registerCellEditor`. Maps the grid's editing lifecycle onto the uniform
+  // change / commit / cancel contract every registered editor speaks.
+  function buildRegisteredEditorContext(): CellEditorContext {
+    const cell = ctrl.editingCell;
+    return {
+      value: cell?.value,
+      rowId: cell?.rowId ?? "",
+      columnId: cell?.columnId ?? "",
+      onChange: (v: unknown) => updateEditingCellValue(v),
+      onCommit: (v?: unknown) => {
+        if (v !== undefined) updateEditingCellValue(v);
+        saveEditingCell();
+      },
+      onCancel: () => {
+        ctrl.editingCell = null;
+        ctrl.gridRootEl?.focus({ preventScroll: true });
+      },
+    };
+  }
   const onHeaderSortClick = $derived(ctrl.onHeaderSortClick);
   const onGridKeyDown = $derived(ctrl.onGridKeyDown);
   const onGridPaste = $derived(ctrl.onGridPaste);
@@ -322,6 +387,39 @@
 {:else if props.error}
   <div class="sv-grid-state sv-grid-state-error" role="alert">
     {props.error}
+  </div>
+{:else if boardConfig}
+  <div
+    class="sv-grid-root sv-grid-board-root"
+    class:sv-grid-root-fill={props.containerHeight === "100%"}
+    style={`height: ${
+      typeof props.containerHeight === "string"
+        ? props.containerHeight
+        : `${props.containerHeight ?? 520}px`
+    }; display: flex; flex-direction: column;`}
+  >
+    {#if boardConfig.searchable !== false}
+      <label class="sv-grid-board-search">
+        <svg viewBox="0 0 16 16" aria-hidden="true" width="14" height="14">
+          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <line x1="10.2" y1="10.2" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        <input
+          type="search"
+          placeholder={boardConfig.searchPlaceholder ?? "Search cards..."}
+          bind:value={ctrl.globalFilter}
+          aria-label="Search cards"
+        />
+      </label>
+    {/if}
+    <div style="flex: 1 1 auto; min-height: 0;">
+      <SvGridBoard
+        data={boardData}
+        columns={props.columns}
+        board={boardConfig}
+        getRowId={props.getRowId}
+      />
+    </div>
   </div>
 {:else}
   {#snippet icon(name: string)}
@@ -874,6 +972,12 @@
         onblur={() => saveEditingCell()}
         onkeydown={onEditorKeyDown}
       />
+    {:else if hasCellEditor(String(ctrl.editingCell?.editorType ?? ""))}
+      <!-- Custom editor registered via `registerCellEditor(type, Component)`:
+           mount it and hand it the uniform change / commit / cancel context. -->
+      {@const _reg = getCellEditor(String(ctrl.editingCell?.editorType))!}
+      {@const CustomCellEditor = _reg.component}
+      <CustomCellEditor {...resolveEditorProps(_reg, buildRegisteredEditorContext())} />
     {:else}
       <input
         use:focusOnMount
@@ -1246,6 +1350,7 @@
       <div
         class="sv-grid-container sv-grid-container-custom-scrollbars"
         class:sv-grid-has-vscroll={hasMeasured && hasVerticalOverflow}
+        class:sv-grid-narrow={ctrl.isNarrowResponsive}
         bind:this={ctrl.scrollContainer}
         onscroll={onBodyScroll}
         style={`overflow: auto; position: relative; height: calc(100% - ${hasMeasured && hasHorizontalOverflow ? 16 : 0}px);`}
@@ -1258,6 +1363,7 @@
             activeDescendantId,
             rowCount: allRows.length,
             colCount: allColumns.length,
+            treegrid: !!props.serverGroup,
           })}
           onkeydown={onGridKeyDown}
           onpaste={onGridPaste}
@@ -1544,7 +1650,7 @@
                               class:is-active={isColumnFiltered(
                                 header.column.id,
                               )}
-                              aria-label="Filter"
+                              aria-label={`Filter ${toolPanelHeaderLabel(header.column)}`}
                               aria-haspopup="menu"
                               onclick={(event) =>
                                 openFilterMenu(event, header.column.id)}
@@ -1556,7 +1662,7 @@
                             type="button"
                             class="sv-grid-col-menu-btn"
                             class:is-open={columnMenuFor === header.column.id}
-                            aria-label="Column menu"
+                            aria-label={`${toolPanelHeaderLabel(header.column)} column menu`}
                             aria-haspopup="menu"
                             onclick={(event) =>
                               openColumnMenu(event, header.column.id)}
@@ -1595,9 +1701,12 @@
                             header.column.id}
                           role="separator"
                           aria-orientation="vertical"
-                          aria-label="Resize column"
+                          aria-label={`Resize ${toolPanelHeaderLabel(header.column)}`}
+                          tabindex="0"
                           onpointerdown={(event) =>
                             startColumnResize(event, header.column.id)}
+                          onkeydown={(event) =>
+                            resizeColumnByKeyboard(event, header.column.id)}
                           ondblclick={(event) => event.stopPropagation()}
                         ></div>
                       {/if}
@@ -1789,6 +1898,8 @@
                         rowIndex % 2 === 1}
                       class:sv-grid-row-draggable={rowDragManagedEffective}
                       {...getGridRowA11yProps(rowIndex + 1)}
+                      aria-level={sgAriaLevel(row)}
+                      aria-expanded={sgAriaExpanded(row)}
                       {...rowDragAttrs(rowIndex)}
                       style={`height: ${rowItem.size}px;`}
                     >
@@ -2038,6 +2149,8 @@
                       rowIndex % 2 === 1}
                     class:sv-grid-row-draggable={rowDragManagedEffective}
                     {...getGridRowA11yProps(rowIndex + 1)}
+                    aria-level={sgAriaLevel(row)}
+                    aria-expanded={sgAriaExpanded(row)}
                     {...rowDragAttrs(rowIndex)}
                   >
                     {#if showRowNumbersEffective}

@@ -273,7 +273,7 @@
         {toastReason}
       </div>
     {/if}
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

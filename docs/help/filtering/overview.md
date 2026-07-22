@@ -4,6 +4,8 @@ Click any column header's filter icon to open the operator + value
 popover; numeric and date columns range-bucket their distinct values
 so the menu stays usable on big datasets:
 
+![Per-column filters and the quick filter collapse into one filterModel that the engine or your ServerDataSource applies to produce the filtered rows.](/docs-media/grid-filter-model.svg)
+
 <div data-docs-demo="03-excel-filters" data-height="460"></div>
 
 SvGrid offers four filtering surfaces. You opt into the one(s) you need

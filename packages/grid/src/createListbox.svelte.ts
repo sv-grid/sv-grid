@@ -22,7 +22,8 @@
  *
  * The styled <SvListBox> is just one renderer over this core.
  */
-import type { ListOption } from './list-option'
+import { createTypeaheadBuffer, isTypeaheadKey, nextTypeaheadIndex, type ListOption } from './list-option'
+import { editorAria, type EditorAriaState } from './editor-contract'
 
 export type ListboxValue = string | number | Array<string | number> | null
 
@@ -35,6 +36,12 @@ export type ListboxConfig = {
   multiple?: () => boolean
   disabled?: () => boolean
   ariaLabel?: () => string | undefined
+  // Editor contract (ARIA + validation) - folded into rootProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
 }
 
 export type OptionProps = {
@@ -51,10 +58,14 @@ export type OptionProps = {
 
 export type ListboxRootProps = {
   role: 'listbox'
+  id: string | undefined
   'aria-multiselectable': boolean
   'aria-label': string | undefined
   'aria-disabled': boolean
   'aria-activedescendant': string | undefined
+  'aria-invalid': 'true' | undefined
+  'aria-required': 'true' | undefined
+  'aria-describedby': string | undefined
   tabindex: number
   onkeydown: (e: KeyboardEvent) => void
 }
@@ -136,6 +147,14 @@ export function createListbox(config: ListboxConfig): Listbox {
   const first = () => { active = enabledIdx[0] ?? 0 }
   const last = () => { active = enabledIdx.at(-1) ?? 0 }
 
+  // Type-ahead: typing a label prefix jumps the active highlight to it.
+  const typeahead = createTypeaheadBuffer()
+  function onTypeahead(char: string) {
+    const buffer = typeahead.push(char.toLowerCase())
+    const next = nextTypeaheadIndex(opts(), buffer, active)
+    if (next >= 0) active = next
+  }
+
   function onKeydown(e: KeyboardEvent) {
     if (disabled()) return
     switch (e.key) {
@@ -145,8 +164,19 @@ export function createListbox(config: ListboxConfig): Listbox {
       case 'End': e.preventDefault(); last(); break
       case ' ':
       case 'Enter': e.preventDefault(); pick(active); break
+      default: if (isTypeaheadKey(e)) onTypeahead(e.key)
     }
   }
+
+  // Editor-contract ARIA state, folded onto the focusable listbox root.
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
 
   return {
     get activeIndex() { return active },
@@ -160,11 +190,13 @@ export function createListbox(config: ListboxConfig): Listbox {
     last,
     onKeydown,
     rootProps: () => ({
-      role: 'listbox',
+      role: 'listbox' as const,
+      id: config.id?.(),
       'aria-multiselectable': multiple(),
-      'aria-label': config.ariaLabel?.(),
       'aria-disabled': disabled(),
       'aria-activedescendant': opts()[active] ? optionId(active) : undefined,
+      // aria-label + aria-invalid/required/describedby from the editor contract.
+      ...editorAria(ariaState()),
       tabindex: disabled() ? -1 : 0,
       onkeydown: onKeydown,
     }),

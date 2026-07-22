@@ -19,7 +19,8 @@
  * {/if}
  * ```
  */
-import type { ListOption } from './list-option'
+import { createTypeaheadBuffer, isTypeaheadKey, nextTypeaheadIndex, type ListOption } from './list-option'
+import { editorAria, type EditorAriaState } from './editor-contract'
 
 export type DropdownValue = string | number | null
 
@@ -32,11 +33,26 @@ export type DropdownListConfig = {
   ariaLabel?: () => string | undefined
   /** DOM focus hook provided by the renderer; the core never touches the DOM. */
   focusTrigger?: () => void
+  // Editor contract (ARIA + validation) - folded into triggerProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
 }
 
 export function createDropdownList(config: DropdownListConfig) {
   const opts = () => config.options()
   const disabled = () => config.disabled?.() ?? false
+
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
 
   let open = $state(false)
   let active = $state(-1)
@@ -61,8 +77,20 @@ export function createDropdownList(config: DropdownListConfig) {
     const pos = enabledIdx.indexOf(active)
     active = enabledIdx[(pos + d + enabledIdx.length) % enabledIdx.length] ?? active
   }
+  // Type-ahead: typing a label prefix jumps the active option (and selects it
+  // when the list is closed, matching a native <select>).
+  const typeahead = createTypeaheadBuffer()
+  function onTypeahead(char: string) {
+    const buffer = typeahead.push(char.toLowerCase())
+    const from = active >= 0 ? active : opts().findIndex((o) => o.value === config.value())
+    const next = nextTypeaheadIndex(opts(), buffer, from)
+    if (next < 0) return
+    active = next
+    if (!open) config.onChange?.(opts()[next]!.value)
+  }
   function onKeydown(e: KeyboardEvent) {
     if (disabled()) return
+    if (isTypeaheadKey(e)) { onTypeahead(e.key); return }
     if (!open && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openPanel(); return }
     if (!open) return
     if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
@@ -93,10 +121,11 @@ export function createDropdownList(config: DropdownListConfig) {
     onKeydown,
     /** Spread onto the trigger <button>. */
     triggerProps: () => ({
+      id: config.id?.(),
       type: 'button' as const,
       'aria-haspopup': 'listbox' as const,
       'aria-expanded': open,
-      'aria-label': config.ariaLabel?.(),
+      ...editorAria(ariaState()),
       disabled: disabled(),
       onclick: toggle,
       onkeydown: onKeydown,

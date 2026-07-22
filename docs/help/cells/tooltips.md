@@ -4,6 +4,8 @@ There is no built-in tooltip API on `ColumnDef`. Use the standard `title`
 attribute, an accessible `<dialog>`, or any popover library - wired
 through a custom cell renderer.
 
+<div data-docs-demo="85-tooltips-and-notes" data-height="480"></div>
+
 ## With `title` (no JS, screen-reader friendly)
 
 ```ts

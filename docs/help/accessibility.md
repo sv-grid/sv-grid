@@ -5,6 +5,8 @@ navigation and a screen-reader announcement layer. This page documents
 exactly what the grid does, where the responsibility line sits between
 the library and your code, and how to verify conformance.
 
+![An ARIA grid whose rows carry aria-rowindex and cells carry aria-colindex, a roving tabindex marking the active cell that arrow keys move, and an aria-live region announcing the new cell to a screen reader.](/docs-media/grid-a11y.svg)
+
 Live demo - high-contrast toggle, `aria-live` log, and a focus-trap
 walk-through:
 

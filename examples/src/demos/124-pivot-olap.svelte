@@ -707,7 +707,7 @@
         </div>
       </div>
       <div class="cube-grid-wrap">
-        <SvGrid
+        <SvGrid responsive={true}
           data={visibleRows}
           {columns}
           {features}

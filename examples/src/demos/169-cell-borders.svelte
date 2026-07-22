@@ -313,7 +313,7 @@
     onclick={maybeRefocusGrid}
     use:spreadsheetLayout={{ borders, columnOrder }}
   >
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

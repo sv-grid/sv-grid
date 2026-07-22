@@ -9,7 +9,8 @@
    * spinner + keyboard and ARIA all come from the core via prop-getters.
    */
   import SvRepeatButton from './SvRepeatButton.svelte'
-  import { editorErrorId, type SvEditorProps } from './editor-contract'
+  import SvField from './SvField.svelte'
+  import { nextEditorId, type SvEditorProps } from './editor-contract'
   import { createNumberInput } from './createNumberInput.svelte'
 
   type Props = SvEditorProps & {
@@ -25,6 +26,8 @@
     suffix?: string
     placeholder?: string
     spinButtons?: boolean
+    /** Show a clear (x) button when there is a value. */
+    clearable?: boolean
   }
 
   let {
@@ -41,14 +44,21 @@
     disabled = false,
     readonly = false,
     spinButtons = true,
+    clearable = false,
     name,
     size = 'md',
     ariaLabel,
     invalid = false,
     required = false,
     error,
+    label,
+    hint,
+    dir,
     id,
   }: Props = $props()
+
+  const autoId = nextEditorId('sv-num')
+  const uid = $derived(id ?? autoId)
 
   const num = createNumberInput({
     value: () => value,
@@ -63,17 +73,23 @@
     placeholder: () => placeholder,
     disabled: () => disabled,
     readonly: () => readonly,
-    id: () => id,
+    id: () => uid,
     invalid: () => invalid,
     required: () => required,
     error: () => error,
+    hint: () => hint,
     ariaLabel: () => ariaLabel,
   })
 </script>
 
-<div class="sv-field">
+<SvField id={uid} {label} {hint} {error} {required} {dir}>
   <div class="sv-num sv-num--{size}" class:is-disabled={disabled} class:is-invalid={invalid}>
     <input class="sv-num__input" {...num.inputProps()} />
+    {#if clearable && value != null && !disabled && !readonly}
+      <button type="button" class="sv-num__clear" aria-label="Clear" tabindex="-1" onclick={() => onChange?.(null)}>
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    {/if}
     {#if spinButtons}
       <div class="sv-num__spin">
         <SvRepeatButton size="sm" variant="ghost" ariaLabel="Increment" onclick={num.increment}>
@@ -86,13 +102,9 @@
     {/if}
     {#if name}<input type="hidden" {name} value={value ?? ''} />{/if}
   </div>
-  {#if error}<span class="sv-field__error" id={editorErrorId(id)} role="alert">{error}</span>{/if}
-</div>
+</SvField>
 
 <style>
-  /* Shared field wrapper: stacks the control box above an optional error line. */
-  .sv-field { display: inline-flex; flex-direction: column; gap: 3px; }
-  .sv-field__error { font-size: 11.5px; font-weight: 500; color: var(--sg-danger, #dc2626); line-height: 1.35; }
   .sv-num {
     --_accent: var(--sg-accent, #2563eb);
     display: inline-flex; align-items: stretch; width: 150px;
@@ -111,6 +123,8 @@
   .sv-num--sm { height: 28px; font-size: 12px; }
   .sv-num--md { height: 34px; font-size: 13px; }
   .sv-num--lg { height: 40px; font-size: 15px; }
-  .sv-num__spin { display: flex; flex-direction: column; border-left: 1px solid var(--sg-border, #e2e8f0); }
+  .sv-num__clear { display: grid; place-items: center; width: 22px; align-self: center; flex: none; background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; border-radius: 4px; }
+  .sv-num__clear:hover { color: var(--sg-danger, #dc2626); }
+  .sv-num__spin { display: flex; flex-direction: column; border-inline-start: 1px solid var(--sg-border, #e2e8f0); }
   .sv-num__spin :global(.sv-repeat) { flex: 1; padding: 0 6px; border-radius: 0; }
 </style>

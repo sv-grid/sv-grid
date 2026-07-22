@@ -2,6 +2,9 @@
 
 For any cell whose content is more than a string, use `cell:` with
 `renderSnippet` or `renderComponent`.
+
+![How a cell is rendered: a row value flows through a text formatter or a cell renderSnippet / renderComponent callback into the rendered table cell.](/docs-media/grid-cell-render.svg)
+
 <div data-docs-demo="10-custom-cells-and-themes" data-height="540"></div>
 
 ## Snippet

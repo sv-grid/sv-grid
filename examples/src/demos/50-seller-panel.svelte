@@ -544,7 +544,7 @@
   <!-- Grid area -->
   <div class="flex-1 min-h-0">
     {#if tab === 'catalog'}
-      <SvGrid
+      <SvGrid responsive={true}
         data={filteredProducts}
         columns={[
           { field: 'title', header: 'Product', width: 320, editable: false,
@@ -575,7 +575,7 @@
         fitColumns={true}
       />
     {:else if tab === 'inventory'}
-      <SvGrid
+      <SvGrid responsive={true}
         data={filteredProducts}
         columns={[
           { field: 'title', header: 'Product', width: 300, editable: false,
@@ -603,7 +603,7 @@
         fitColumns={true}
       />
     {:else if tab === 'orders'}
-      <SvGrid
+      <SvGrid responsive={true}
         data={orders}
         columns={[
           { field: 'id', header: 'Order', width: 120, editable: false },
@@ -633,7 +633,7 @@
         fitColumns={true}
       />
     {:else if tab === 'pricing'}
-      <SvGrid
+      <SvGrid responsive={true}
         data={rules}
         columns={[
           { field: 'name', header: 'Rule', width: 250, editable: false,

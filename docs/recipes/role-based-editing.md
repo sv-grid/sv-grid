@@ -2,6 +2,9 @@
 
 > Live in [demo 41-healthcare-emr](https://svgrid.com/#/demos/41-healthcare-emr).
 
+<div data-docs-demo="41-healthcare-emr" data-height="480"></div>
+
+
 ## When
 
 Different user roles can edit different cells; the grid hides editors per-row via the editable callback.

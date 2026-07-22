@@ -4,6 +4,8 @@ A Studio screen is accessible out of the box, because it is built from the grid
 and the edit form - both designed to the [WAI-ARIA](https://www.w3.org/WAI/ARIA/apg/)
 patterns. This page is what you get for free, what you own, and how to verify it.
 
+![A Studio screen is composed of the grid and the edit form, both built to the WAI-ARIA patterns, giving keyboard nav, ARIA roles, and managed focus for free while you own labels, colour signals, contrast, and custom renderers.](/docs-media/studio-a11y.svg)
+
 ## What you get for free
 
 - **The grid is a WAI-ARIA grid** - `role="grid"` with rows and cells, a **roving

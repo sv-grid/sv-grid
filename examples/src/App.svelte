@@ -181,6 +181,14 @@
     fullscreen = current.id === '201-studio-designer'
   })
 
+  // Mobile: the sidebar becomes an off-canvas drawer (see the .demo-sidebar
+  // media query). Opening a demo closes it so the demo gets the full width.
+  let mobileNavOpen = $state(false)
+  $effect(() => {
+    current.id // close the drawer whenever the selected demo changes
+    mobileNavOpen = false
+  })
+
   // ---- Smart demo search -------------------------------------------------
   // Matches across title, blurb, category, and id. Scores each demo so a
   // title hit beats a blurb-deep mention; multi-token queries treat each
@@ -329,8 +337,12 @@
 </script>
 
 <div class="demo-page flex h-screen">
+  {#if !fullscreen && mobileNavOpen}
+    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+    <div class="demo-backdrop" onclick={() => (mobileNavOpen = false)}></div>
+  {/if}
   {#if !fullscreen}
-  <aside class="w-72 shrink-0 border-r border-slate-200 dark:border-slate-700 p-4 overflow-y-auto">
+  <aside class="demo-sidebar w-72 shrink-0 border-r border-slate-200 dark:border-slate-700 p-4 overflow-y-auto" class:is-open={mobileNavOpen}>
     <div class="mb-6 flex items-center justify-between">
       <div class="product-switch relative">
         <button
@@ -535,15 +547,27 @@
   <main class="flex flex-col flex-1 overflow-x-hidden min-h-0" class:p-6={!fullscreen}>
     {#if !fullscreen}
     <header class="mb-5 flex shrink-0 items-start justify-between gap-4">
-      <div class="min-w-0">
-        <h2 class="text-2xl font-semibold">{current.title}</h2>
-        <p class="text-slate-600 dark:text-slate-300">{current.blurb}</p>
+      <div class="flex items-start gap-2 min-w-0">
+        <button
+          type="button"
+          onclick={() => (mobileNavOpen = true)}
+          class="demo-hamburger md:hidden mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300"
+          aria-label="Open menu"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <div class="min-w-0">
+          <h2 class="text-2xl font-semibold">{current.title}</h2>
+          <p class="text-slate-600 dark:text-slate-300">{current.blurb}</p>
+        </div>
       </div>
       <div class="flex shrink-0 items-center gap-2">
         <button
           type="button"
           onclick={() => (fullscreen = true)}
-          class="inline-flex items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
+          class="hidden md:inline-flex items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
           title="Full screen (hide sidebar)"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -595,6 +619,38 @@
 {/if}
 
 <style>
+  /* Mobile: the sidebar slides in as an off-canvas drawer over the demo. */
+  @media (max-width: 767px) {
+    .demo-sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 40;
+      width: 85vw;
+      max-width: 320px;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+      background: var(--sg-bg, #fff);
+    }
+    :global(.dark) .demo-sidebar {
+      background: #0f172a;
+    }
+    .demo-sidebar.is-open {
+      transform: translateX(0);
+      box-shadow: 0 12px 48px rgba(15, 23, 42, 0.35);
+    }
+  }
+  @media (min-width: 768px) {
+    .demo-backdrop {
+      display: none;
+    }
+  }
+  .demo-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(15, 23, 42, 0.45);
+  }
+
   .demo-search-wrap {
     position: relative;
     display: flex; align-items: center;

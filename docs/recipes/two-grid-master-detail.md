@@ -4,6 +4,8 @@ Goal: one grid shows the **master** (parents - orders, customers,
 projects, …), a second grid below shows the **detail** for whichever
 row is selected (line items, contacts, tasks, …).
 
+<div data-docs-demo="08-tree-and-master-detail" data-height="480"></div>
+
 This is one of the highest-leverage patterns in any back-office UI.
 Both halves are plain `<SvGrid>` instances; the wiring is one
 `$derived` and one `onRowSelectionChange` callback.

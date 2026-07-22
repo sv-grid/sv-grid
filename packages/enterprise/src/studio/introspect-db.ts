@@ -10,6 +10,7 @@
  * it's testable and adds no dependencies.
  */
 import type { EntityField, EntityFieldType, EntitySchema } from '../schema.js'
+import { refineField } from '../sources/field-inference.js'
 
 export type SqlDialectName = 'postgres' | 'supabase' | 'mysql' | 'mssql' | 'sqlite'
 export type DbExecute = (sql: string, params: unknown[]) => Promise<Array<Record<string, unknown>>>
@@ -20,6 +21,13 @@ function truthy(v: unknown): boolean {
 
 function identQuote(name: string): string {
   return `"${name.replace(/"/g, '""')}"`
+}
+
+/** Dialect-correct identifier quoting for ad-hoc queries (COUNT etc). */
+function quoteIdent(dialect: SqlDialectName, name: string): string {
+  if (dialect === 'mysql') return `\`${name.replace(/`/g, '``')}\``
+  if (dialect === 'mssql') return `[${name.replace(/]/g, ']]')}]`
+  return identQuote(name) // postgres, supabase, sqlite
 }
 
 /** Best-effort SQL type -> entity field type. The designer can refine edge cases. */
@@ -245,7 +253,9 @@ export async function introspectDatabase(options: IntrospectDbOptions): Promise<
     fks = []
   }
 
-  return { name: options.table, fields: applyForeignKeys(fields, fks) }
+  // Infer rich editors (phone / email / rating / mask / ...) from column names,
+  // after FK columns became relations so those are left untouched.
+  return { name: options.table, fields: applyForeignKeys(fields, fks).map(refineField) }
 }
 
 /** List the base tables in the connected database. */
@@ -256,4 +266,47 @@ export async function listDatabaseTables(
   const def = defFor(dialect)
   const rows = await execute(def.tables.sql, def.tables.params)
   return rows.map((r) => String(r.name)).filter(Boolean)
+}
+
+export type TableRowCount = { name: string; rows: number | null }
+
+/**
+ * Count rows in each table - powers the designer's "Test connection" step, which
+ * shows the user their real data volumes before they commit to importing. Fully
+ * resilient: a table that can't be counted (permissions, a view) yields
+ * `rows: null` instead of failing the whole probe.
+ */
+export async function countTableRows(
+  dialect: SqlDialectName,
+  execute: DbExecute,
+  tables: string[],
+): Promise<TableRowCount[]> {
+  const out: TableRowCount[] = []
+  for (const table of tables) {
+    try {
+      const rows = await execute(`SELECT COUNT(*) AS n FROM ${quoteIdent(dialect, table)}`, [])
+      const n = rows[0]?.n
+      out.push({ name: table, rows: n == null ? null : Number(n) })
+    } catch {
+      out.push({ name: table, rows: null })
+    }
+  }
+  return out
+}
+
+/**
+ * One round-trip "test connection": confirm we can talk to the database, list
+ * its tables, and (optionally) report each table's row count. Throws only if the
+ * connection itself is unusable (the caller maps that to a friendly message).
+ */
+export async function probeConnection(
+  dialect: SqlDialectName,
+  execute: DbExecute,
+  opts: { counts?: boolean } = {},
+): Promise<{ ok: true; tables: TableRowCount[] }> {
+  const names = await listDatabaseTables(dialect, execute)
+  const tables = opts.counts
+    ? await countTableRows(dialect, execute, names)
+    : names.map((name) => ({ name, rows: null }))
+  return { ok: true, tables }
 }

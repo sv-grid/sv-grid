@@ -31,6 +31,17 @@
   type Row = Record<string, unknown>
 
   // ---- Connection ---------------------------------------------------------
+  // A ready-to-run PUBLIC sample: Northwind hosted on Supabase, read-only for
+  // the publishable (anon) key via RLS - so embedding the key here is safe. The
+  // setup SQL lives in docs/enterprise/studio/supabase-sample.md. `order_lines`
+  // is the five-table JOIN view; switch to `products` / `customers` to browse
+  // the base tables (still read-only in the public sample).
+  const HOSTED_SAMPLE = {
+    url: 'https://rbnnlzgtfzsylllniozo.supabase.co',
+    anonKey: 'sb_publishable_SiT7CxGl4Z_Du1opTYbxVA_VQWumPUN',
+    table: 'order_lines',
+  }
+
   const LS_KEY = 'svgrid.studio.supabase'
   const saved =
     typeof localStorage !== 'undefined' ? localStorage.getItem(LS_KEY) : null
@@ -165,6 +176,13 @@
     connected = true
     liveUpdates = 0
     if (liveOn) subscribeLive()
+  }
+
+  function useHostedSample() {
+    url = HOSTED_SAMPLE.url
+    anonKey = HOSTED_SAMPLE.anonKey
+    table = HOSTED_SAMPLE.table
+    connect()
   }
 
   async function connect() {
@@ -359,6 +377,18 @@ create policy "svgrid demo access" on customers
 
   {#if !connected}
     <div class="sb__connect">
+      <div class="sb__sample">
+        <div>
+          <strong>In a hurry?</strong> Load a read-only public sample - the
+          <em>Northwind</em> database hosted on Supabase.
+        </div>
+        <button class="st-btn st-btn--primary" onclick={useHostedSample} disabled={connecting}>
+          {connecting ? 'Connecting…' : 'Try the hosted sample'}
+        </button>
+      </div>
+
+      <div class="sb__or"><span>or connect your own project</span></div>
+
       <ol class="sb__steps">
         <li>
           <strong>Point it at a table.</strong> The grid <em>adapts to your table's
@@ -456,7 +486,7 @@ create policy "svgrid demo access" on customers
       <p class="sb__error">⚠ {String((view.error as Error)?.message ?? view.error)}</p>
     {/if}
 
-    <SvGrid
+    <SvGrid responsive={true}
       data={view.rows}
       {columns}
       loading={view.loading}
@@ -500,6 +530,11 @@ create policy "svgrid demo access" on customers
 
 <style>
   .sb__connect { border: 1px solid var(--sg-border, #e2e2e2); border-radius: 10px; padding: 16px 18px; background: var(--sg-bg, #fff); display: flex; flex-direction: column; gap: 14px; }
+  .sb__sample { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--site-accent, #2563eb) 35%, var(--sg-border, #e2e2e2)); border-radius: 10px; background: color-mix(in srgb, var(--site-accent, #2563eb) 6%, transparent); font-size: 13px; line-height: 1.5; }
+  .sb__sample > div { flex: 1 1 260px; }
+  .sb__sample .st-btn { flex: 0 0 auto; }
+  .sb__or { display: flex; align-items: center; gap: 10px; color: var(--sg-muted, #999); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .sb__or::before, .sb__or::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--sg-border, #e2e2e2); }
   .sb__steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.5; }
   .sb__steps code { background: var(--sg-header-bg, #f2f2f2); padding: 1px 5px; border-radius: 3px; }
   .sb__link { border: none; background: none; color: var(--sg-accent, #2563eb); cursor: pointer; font: inherit; padding: 0 4px; text-decoration: underline; }

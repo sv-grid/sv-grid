@@ -7,11 +7,71 @@ write flows through `api.setCellValue` so dirty tracking, filtering,
 and external observers see every edit identically, whether it came
 from the desktop grid or from the mobile card.
 
+![A wide multi-column table on desktop collapsing to one stacked card per row of label and value pairs on a narrow screen.](/docs-media/grid-mobile-card.svg)
+
 The headless engine is the single source of truth - filter, sort,
 and selection state live on `api`, so swapping between viewport sizes
 preserves the user's working set.
 
 <div data-docs-demo="81-mobile-card-view" data-height="640"></div>
+
+## The quick win: the `responsive` prop
+
+The full card pivot below is the right call when the mobile layout is
+genuinely different from the table. But most grids just need to *stay a
+table* and stop being unusable on a phone - pinned columns eating the
+viewport, `fitColumns` crushing every column to nothing, no touch
+scroll. For that, flip one opt-in prop:
+
+```svelte
+<SvGrid data={rows} columns={columns} responsive={true} />
+```
+
+When the container measures narrower than the breakpoint (default
+640 px), `responsive` does three things, and undoes them the moment the
+container grows back:
+
+1. **Suspends column pinning.** Your `columnPinning` state is left
+   untouched - reads are just routed through an empty pinning set while
+   narrow, so a phone shows a normally scrollable table instead of two
+   frozen columns and a 20 px sliver. Pins snap back on rotate/resize.
+2. **Suspends `fitColumns`.** Squeezing 8 columns into 320 px makes every
+   one unreadable. Narrow mode falls back to natural column widths with
+   horizontal scroll.
+3. **Marks the scroll container** with `.sv-grid-narrow` and enables
+   momentum touch scrolling, so you can target mobile tweaks in your own
+   CSS.
+
+Set a custom breakpoint with the object form:
+
+```svelte
+<SvGrid responsive={{ breakpoint: 768 }} ... />
+```
+
+### Drop low-priority columns with `hideBelow`
+
+Pair `responsive` with a per-column `hideBelow` (in px) to shed
+secondary columns as the viewport narrows, keeping the columns that
+matter:
+
+```ts
+const columns: ColumnDef<F, Row>[] = [
+  { field: 'symbol', header: 'Symbol', width: 90 },              // always shown
+  { field: 'last',   header: 'Last',   width: 90 },              // always shown
+  { field: 'sector', header: 'Sector', width: 140, hideBelow: 700 },
+  { field: 'volume', header: 'Volume', width: 115, hideBelow: 700 },
+]
+```
+
+A column with `hideBelow: 700` is dropped whenever the measured
+container width is under 700 px, and reappears above it. `hideBelow`
+only takes effect when the grid has `responsive` set; on a desktop-only
+grid it is inert. Because the column is removed from layout (not merely
+hidden), its width is reclaimed by the remaining columns.
+
+This keeps the grid a real, sortable, editable grid on mobile - reach
+for the card pivot below only when you want a fundamentally different
+touch layout.
 
 ## The pivot
 
@@ -248,16 +308,29 @@ one line.
 ## See also
 
 - [Demo 81 - Mobile card view](../../examples/src/demos/81-mobile-card-view.svelte) - full source with KPI strip, view-mode toggle, and per-priority colour bars
-- [Demo 76 - Kanban board](../../examples/src/demos/76-kanban-board.svelte) - same headless-engine-driven-multiple-views pattern, four columns instead of one card list
+- [Kanban board mode](./rows/kanban-board.md) - the grid's built-in `board` prop renders rows as cards in lanes with drag-and-drop
 - [Conditional form schema](./conditional-form-schema.md) - if your card form needs declarative field-visibility rules
 
 ## Frequently asked questions
 
 ### Is SvGrid responsive / mobile-friendly?
 
-Yes. Above a breakpoint (720 px by convention) it renders as a normal grid;
-below it, the same `$state` data re-renders as touch-friendly cards. Both views
-are driven by one headless engine, so edits and state stay in sync.
+Yes, at two levels. The lightweight path is the built-in `responsive` prop: set
+`responsive={true}` and, under the breakpoint (640 px by default), the grid
+un-pins columns, suspends `fitColumns`, enables touch scrolling, and drops any
+columns marked `hideBelow` - so it stays a real table without eating the
+viewport. The heavier path is the card pivot: above a breakpoint (720 px by
+convention) it renders as a normal grid; below it, the same `$state` data
+re-renders as touch-friendly cards. Both are driven by one headless engine, so
+edits and state stay in sync.
+
+### What is the difference between `responsive` and `hideBelow`?
+
+`responsive` is a grid-level prop that turns on all the narrow-container
+behavior (un-pinning, `fitColumns` suspension, touch scroll, the
+`.sv-grid-narrow` class). `hideBelow` is a per-column number (px) that drops
+that one column when the container is narrower than the value. `hideBelow` only
+does anything when the grid also has `responsive` set.
 
 ### How do edits on mobile cards stay consistent with the grid?
 

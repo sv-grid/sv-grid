@@ -9,7 +9,7 @@
    * row-expanding feature.
    *
    * The lower grid demonstrates master/detail by mounting a second
-   * `<SvGrid>` instance keyed to the selected master row.
+   * `<SvGrid responsive={true}>` instance keyed to the selected master row.
    */
   import {
     SvGrid,
@@ -249,7 +249,7 @@
       or <kbd>Enter</kbd>/<kbd>Space</kbd> to toggle.
     </p>
     <div bind:this={treeContainerEl}>
-      <SvGrid
+      <SvGrid responsive={true}
         data={fsRows}
         columns={fsColumns}
         features={featuresFs}
@@ -292,7 +292,7 @@
       <div>
         <h4 class="mb-1 text-xs uppercase tracking-wide text-slate-500">Line items - {selectedOrder}</h4>
         {#key selectedOrder}
-          <SvGrid
+          <SvGrid responsive={true}
             data={detailRows}
             columns={lineColumns}
             features={featuresOrders}

@@ -1,3 +1,7 @@
+<script module lang="ts">
+  let lookupUid = 0
+</script>
+
 <script lang="ts">
   /**
    * SvLookupInput - a searchable single-select for a foreign-key ("lookup")
@@ -30,6 +34,8 @@
     debounceMs = 200,
   }: Props = $props()
 
+  // Stable listbox id so the combobox input can reference it via aria-controls.
+  const listboxId = `sv-lookup-list-${++lookupUid}`
   let open = $state(false)
   let query = $state('')
   let options = $state<RelationOption[]>([])
@@ -112,6 +118,7 @@
       type="text"
       role="combobox"
       aria-expanded={open}
+      aria-controls={listboxId}
       aria-autocomplete="list"
       autocomplete="off"
       {placeholder}
@@ -127,8 +134,7 @@
     {/if}
   </div>
 
-  {#if open}
-    <ul class="sv-lookup__menu" role="listbox">
+    <ul class="sv-lookup__menu" role="listbox" id={listboxId} hidden={!open}>
       {#if loading}
         <li class="sv-lookup__msg">Searching…</li>
       {:else if options.length === 0}
@@ -149,7 +155,6 @@
         {/each}
       {/if}
     </ul>
-  {/if}
 </div>
 
 <style>

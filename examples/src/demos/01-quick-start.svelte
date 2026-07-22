@@ -44,6 +44,7 @@
       header: 'Sell date',
       editorType: 'date',
       width: 110,
+      hideBelow: 640,
       format: { type: 'date', pattern: 'y-m-d' },
     },
     {
@@ -51,6 +52,7 @@
       header: 'In stock',
       editorType: 'checkbox',
       width: 90,
+      hideBelow: 640,
     },
     {
       field: 'quantity',
@@ -59,8 +61,8 @@
       width: 90,
       format: { type: 'number', options: { maximumFractionDigits: 0 } },
     },
-    { field: 'orderId', header: 'Order ID', editorType: 'text', width: 130 },
-    { field: 'country', header: 'Country',  editorType: 'text', width: 130 },
+    { field: 'orderId', header: 'Order ID', editorType: 'text', width: 130, hideBelow: 640 },
+    { field: 'country', header: 'Country',  editorType: 'text', width: 130, hideBelow: 640 },
     {
       field: 'price',
       header: 'Price',
@@ -95,6 +97,7 @@
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}
+      responsive={true}
       onApiReady={(next) => (api = next)}
     />
   </div>

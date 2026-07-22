@@ -75,9 +75,30 @@ validator only when you need custom logic.
 
 ## Controls
 
-The form control follows the field type: text / number / date / datetime / time
-inputs, a checkbox for booleans, a themed **dropdown** (`SvGridDropdown`) for
-enums, and a textarea for JSON. Override per field with `input.editorType`.
+The form renders each field with a control from the **editor suite**, not a bare
+native input: numbers use `SvNumberInput` (spinners, min/max/step), booleans a
+`SvSwitchButton`, colors `SvColorInput`, passwords `SvPasswordInput` (strength
+meter), ratings a `SvSlider`, dates and date-times a `SvDateTimePicker` (masked
+input + calendar dropdown), enums a themed **dropdown** (`SvGridDropdown`), and
+JSON a textarea. The default follows the field type; override per field with
+`input.editorType`.
+
+Beyond the grid's cell editors, the form also offers a few **form-only** controls
+via `input.editorType`: `phone` (`SvPhoneInput`), `country` (`SvCountryInput`),
+`mask` (`SvMaskedInput`, with an `input.mask` pattern like `'(999) 000-0000'`),
+and `slider`. In the [visual designer](./app-designer.md) each field has a
+**Control** picker (scoped to what fits its type) plus a **Wide** toggle
+(`input.span = 2`), so you pick the editor without touching code.
+
+```ts
+{ field: 'mrr',     type: 'number', input: { editorType: 'slider' } }
+{ field: 'brand',   type: 'text',   input: { editorType: 'color' } }
+{ field: 'phone',   type: 'text',   input: { editorType: 'phone' } }
+{ field: 'ssn',     type: 'text',   input: { editorType: 'mask', mask: '999-99-9999' } }
+```
+
+Form-only editors degrade to a safe in-cell editor when the same field shows in a
+grid (`slider` → number, `phone`/`country`/`mask` → text), so columns stay valid.
 
 **File / image upload.** Give a field an `upload` config and it renders
 `SvFileInput` (a picker with an image preview). With no handler it stores an

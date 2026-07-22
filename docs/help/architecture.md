@@ -5,6 +5,8 @@ topic in the docs. SvGrid is a strict three-layer system - if you know
 which layer a piece of code lives in, you know what it can and cannot
 do.
 
+![Three layers: your data feeds the headless createSvGrid engine, which the <SvGrid> renderer draws into a table.](/docs-media/grid-architecture.svg)
+
 ## The three layers
 
 ```

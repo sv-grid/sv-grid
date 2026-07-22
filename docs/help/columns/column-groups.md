@@ -69,8 +69,7 @@ Give a group a collapse toggle by tagging its child columns:
 - omitted - always shown.
 
 Setting it on any direct child adds a caret to the group header. Use
-`openByDefault` on the group to start expanded (default is collapsed, matching
-AG Grid).
+`openByDefault` on the group to start expanded (default is collapsed).
 
 ```ts
 {

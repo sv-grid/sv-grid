@@ -4,6 +4,8 @@ Put a Studio screen behind a login and scope its data per user. The pattern is
 **Supabase Auth for *who*, Row-Level Security for *what*** - auth establishes the
 signed-in user; RLS policies decide which rows that user can read and write.
 
+![Auth establishes the signed-in user, then Row-Level Security decides which rows that user can read and write, so the user sees only their own rows.](/docs-media/studio-auth-rls.svg)
+
 > **Live demo:** [Data-app Studio · secured](https://svgrid.com/#/demos/196-studio-auth)
 > - the grid sits behind a login (mock auth; any email + password).
 

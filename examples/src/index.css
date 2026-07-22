@@ -27,6 +27,11 @@
   --sg-pill-inactive-fg: #991b1b;
   --sg-input-bg: #ffffff;
   --sg-input-border: #cbd5e1;
+  /* Semantic status colors (badges, toasts, validation, the password meter). */
+  --sg-danger: #dc2626;
+  --sg-success: #16a34a;
+  --sg-warning: #f59e0b;
+  --sg-info: #0891b2;
 }
 
 /*
@@ -54,6 +59,11 @@ html[data-theme='dark'] {
   --sg-input-bg: #1a2130;
   --sg-input-border: #2c3548;
   --sg-accent: #3b82f6;
+  /* Semantic status colors, brightened for contrast on the dark surface. */
+  --sg-danger: #f87171;
+  --sg-success: #4ade80;
+  --sg-warning: #fbbf24;
+  --sg-info: #22d3ee;
   --sg-scrollbar-bg: #1a2130;
   --sg-scrollbar-border: rgba(148, 163, 184, 0.08);
   --sg-scrollbar-arrow: #64748b;

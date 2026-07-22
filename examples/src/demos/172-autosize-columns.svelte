@@ -85,7 +85,7 @@
   </header>
 
   <div class="az-wrap">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

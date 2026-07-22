@@ -3,6 +3,8 @@
 Pinning sticks a column to the **left** or **right** edge of the viewport so
 it does not scroll horizontally with the rest.
 
+![Three column regions: a pinned-left column and a pinned-right column stay fixed to the edges while the center columns scroll horizontally beneath them.](/docs-media/grid-column-pinning.svg)
+
 Live demo - pin Company left, Price right, scroll the middle:
 
 <div data-docs-demo="25-column-pinning" data-height="480"></div>
@@ -72,9 +74,15 @@ match your design system:
 
 | Token                       | Default                                                                   | Used for                       |
 |-----------------------------|---------------------------------------------------------------------------|--------------------------------|
-| `--sg-pinned-bg`            | `color-mix(in oklab, var(--sg-header-bg) 70%, var(--sg-accent) 8%)`       | Body cells in pinned columns   |
-| `--sg-pinned-header-bg`     | `color-mix(in oklab, var(--sg-header-bg) 60%, var(--sg-accent) 14%)`      | Header cells in pinned columns |
+| `--sg-pinned-bg`            | `color-mix(in oklab, var(--sg-header-bg) 92%, var(--sg-accent) 8%)`       | Body cells in pinned columns   |
+| `--sg-pinned-header-bg`     | `color-mix(in oklab, var(--sg-header-bg) 86%, var(--sg-accent) 14%)`      | Header cells in pinned columns |
 | `--sg-pinned-divider`       | `var(--sg-border)`                                                        | The 1-pixel inside-edge line   |
+
+> **Keep the pinned background opaque.** When you override `--sg-pinned-bg`
+> with `color-mix`, the two percentages **must sum to 100%**. If they add up
+> to less (e.g. `60% + 20% = 80%`), CSS scales the result's alpha down to
+> `0.8` - the pinned column turns semi-transparent and the scrolling middle
+> columns bleed through it. Always pair the percentages as `N%` / `(100 - N)%`.
 
 The fallbacks compute a subtle accent-tinted background from your
 existing header background, so a pinned column never looks identical
@@ -94,8 +102,8 @@ frozen:
 
 ```css
 .themed-host {
-  --sg-pinned-bg:        color-mix(in oklab, var(--sg-bg) 60%, var(--sg-accent) 20%);
-  --sg-pinned-header-bg: color-mix(in oklab, var(--sg-bg) 40%, var(--sg-accent) 30%);
+  --sg-pinned-bg:        color-mix(in oklab, var(--sg-bg) 80%, var(--sg-accent) 20%);
+  --sg-pinned-header-bg: color-mix(in oklab, var(--sg-bg) 70%, var(--sg-accent) 30%);
   --sg-pinned-divider:   var(--sg-accent);
 }
 ```

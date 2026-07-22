@@ -163,7 +163,7 @@ $: filtered = deals.filter(d =>
   Object.values(d).some(v =>
     String(v).toLowerCase().includes(query.toLowerCase())))
 
-<SvGrid data={filtered} {columns} {features}
+<SvGrid responsive={true} data={filtered} {columns} {features}
   fitColumns containerHeight="100%" />`
 </script>
 
@@ -213,7 +213,7 @@ $: filtered = deals.filter(d =>
         <span class="mg-side-tag">~22 KB gzipped</span>
       </header>
       <div class="mg-grid">
-        <SvGrid
+        <SvGrid responsive={true}
           data={svRows}
           columns={svColumns}
           {features}

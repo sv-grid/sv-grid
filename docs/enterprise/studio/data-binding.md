@@ -99,6 +99,7 @@ Wire it to the grid's native server-mode UI and you are done:
 
 | Option | Guide |
 | --- | --- |
+| A real, persistent database with **zero setup** (embedded Postgres) | [Local database](./local-database.md) |
 | SQL databases (Postgres, Supabase, MySQL, SQL Server, SQLite) | [Databases](./databases.md) |
 | A Drizzle `schema.ts` file | [Drizzle schema](./drizzle.md) |
 | An existing REST API, or any custom backend | [REST & custom APIs](./rest-api.md) |

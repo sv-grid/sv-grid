@@ -206,7 +206,7 @@
   <div class="smart-layout flex-1 min-h-0">
     <!-- Grid pane -->
     <div class="smart-grid-pane">
-      <SvGrid
+      <SvGrid responsive={true}
         data={rows}
         columns={columns}
         features={features}

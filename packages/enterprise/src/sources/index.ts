@@ -13,6 +13,13 @@ export {
 } from './schema-from-columns'
 export { createSupabaseDataSource, type SupabaseDataSourceConfig, type SupabaseClientLike } from './supabase'
 export { createRestDataSource, type RestDataSourceConfig } from './rest'
+export {
+  offsetLimitAdapter,
+  dummyJsonAdapter,
+  jsonServerAdapter,
+  type RestAdapter,
+  type OffsetLimitOptions,
+} from './rest-adapters'
 export { introspectSupabaseTable, type IntrospectSupabaseOptions } from './introspect-supabase'
 export {
   createSupabaseRealtime,
@@ -48,6 +55,10 @@ export { withEntityRules } from './with-entity-rules'
 export { withRelationLabels, type RelationLabelConfig } from './with-relation-labels'
 export {
   reduceValue,
+  kpiSeries,
+  sparklinePoints,
+  seriesDelta,
+  formatKpiValue,
   dashboardFromSchema,
   type DashboardSpec,
   type DashboardWidget,

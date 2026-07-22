@@ -19,6 +19,8 @@
  * ```
  */
 
+import { editorAria, type EditorAriaState } from './editor-contract'
+
 /** Reactive inputs are passed as getters so the core tracks live prop changes. */
 export type TagsInputConfig = {
   value: () => string[]
@@ -28,6 +30,16 @@ export type TagsInputConfig = {
   unique?: () => boolean
   max?: () => number
   ariaLabel?: () => string | undefined
+  /** Accessible label for the draft input (localizable). */
+  addLabel?: () => string | undefined
+  /** Accessible label prefix for a chip's remove button (localizable). */
+  removeLabel?: () => string | undefined
+  // Editor contract (ARIA + validation) - folded into rootProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
 }
 
 export function createTagsInput(config: TagsInputConfig) {
@@ -35,6 +47,15 @@ export function createTagsInput(config: TagsInputConfig) {
   const unique = () => config.unique?.() ?? true
   const max = () => config.max?.() ?? Infinity
   const tags = () => config.value()
+
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
 
   let draft = $state('')
 
@@ -70,14 +91,14 @@ export function createTagsInput(config: TagsInputConfig) {
     /** Spread onto the container element. */
     rootProps: () => ({
       role: 'group' as const,
-      'aria-label': config.ariaLabel?.(),
+      ...editorAria(ariaState()),
     }),
     /** Spread onto the text <input>. */
     inputProps: () => ({
       type: 'text' as const,
       value: draft,
       disabled: disabled(),
-      'aria-label': config.ariaLabel?.() ?? 'Add tag',
+      'aria-label': config.addLabel?.() ?? config.ariaLabel?.() ?? 'Add tag',
       oninput: onInput,
       onkeydown: onKeydown,
       onblur: onBlur,
@@ -89,7 +110,7 @@ export function createTagsInput(config: TagsInputConfig) {
     /** Spread onto a chip's remove <button> at `index`. */
     removeProps: (index: number) => ({
       type: 'button' as const,
-      'aria-label': `Remove ${tags()[index] ?? ''}`,
+      'aria-label': `${config.removeLabel?.() ?? 'Remove'} ${tags()[index] ?? ''}`.trim(),
       onclick: () => removeAt(index),
     }),
   }

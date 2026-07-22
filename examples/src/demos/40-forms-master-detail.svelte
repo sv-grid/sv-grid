@@ -276,7 +276,7 @@
       {/if}
     </header>
     <div class="flex-1 min-h-0">
-      <SvGrid
+      <SvGrid responsive={true}
         data={accounts}
         columns={[
           { field: 'id', header: 'ID', width: 100, editable: false },

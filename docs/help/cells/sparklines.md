@@ -5,6 +5,8 @@ renders them as a first-class column type: set `sparkline` on a column whose
 value is an array of numbers and the grid paints an inline SVG. No chart
 library, no custom cell snippet.
 
+<div data-docs-demo="140-sparkline-cells" data-height="480"></div>
+
 ```svelte
 <script lang="ts">
   import { SvGrid, type ColumnDef } from '@svgrid/grid'

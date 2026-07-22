@@ -8,6 +8,8 @@ generated UI *and* the generated API route. Server enforcement is the point - a
 tampered client can hide the buttons all it likes; the route still rejects the
 write.
 
+![RBAC gates screens and write actions per role, enforced in the generated UI and again in the generated API route, which rejects a tampered client's write.](/docs-media/studio-rbac.svg)
+
 > Reads are implied by screen access: if a role can open a screen, it can read
 > that entity. The three gated actions are **create**, **update**, **delete**.
 

@@ -2,11 +2,72 @@ import type { Component } from 'svelte'
 import Calendar250 from '../demos/250-calendar.svelte'
 import TimePicker251 from '../demos/251-timepicker.svelte'
 import DateTimePicker252 from '../demos/252-datetimepicker.svelte'
+import DateRangeInput283 from '../demos/283-daterange-input.svelte'
 import ButtonsToggles253 from '../demos/253-buttons-toggles.svelte'
+import ButtonGroup284 from '../demos/284-button-group.svelte'
+import ButtonDemo305 from '../demos/305-button.svelte'
+import RepeatButton306 from '../demos/306-repeat-button.svelte'
+import ToggleButton307 from '../demos/307-toggle-button.svelte'
+import Switch308 from '../demos/308-switch.svelte'
+import CheckBox309 from '../demos/309-checkbox.svelte'
+import RadioGroup310 from '../demos/310-radio-group.svelte'
+import Rating311 from '../demos/311-rating.svelte'
 import TextInputs254 from '../demos/254-text-inputs.svelte'
+import NumberInput300 from '../demos/300-number-input.svelte'
+import PasswordInput301 from '../demos/301-password-input.svelte'
+import MaskedInput302 from '../demos/302-masked-input.svelte'
+import PhoneInput303 from '../demos/303-phone-input.svelte'
+import ColorInput304 from '../demos/304-color-input.svelte'
 import Selection255 from '../demos/255-selection.svelte'
+import ListBox312 from '../demos/312-listbox.svelte'
+import ComboBox313 from '../demos/313-combobox.svelte'
+import DropDownList314 from '../demos/314-dropdownlist.svelte'
+import AutoComplete315 from '../demos/315-autocomplete.svelte'
+import TagsInput316 from '../demos/316-tags-input.svelte'
+import CountryInput317 from '../demos/317-country-input.svelte'
+import ListVirtualization323 from '../demos/323-list-virtualization.svelte'
+import ComboRemote329 from '../demos/329-combobox-remote.svelte'
 import RangeFeedback256 from '../demos/256-range-feedback.svelte'
 import TabsTreeForm257 from '../demos/257-tabs-tree-form.svelte'
+import Slider318 from '../demos/318-slider.svelte'
+import Gauge319 from '../demos/319-gauge.svelte'
+import Progress330 from '../demos/330-progress.svelte'
+import Tabs320 from '../demos/320-tabs.svelte'
+import Tree321 from '../demos/321-tree.svelte'
+import FormDemo322 from '../demos/322-form.svelte'
+import TreeScale324 from '../demos/324-tree-scale.svelte'
+import TabsAdvanced325 from '../demos/325-tabs-advanced.svelte'
+import Menu326 from '../demos/326-menu.svelte'
+import NavPane327 from '../demos/327-navpane.svelte'
+import TreeEditable328 from '../demos/328-tree-editable.svelte'
+import Accordion285 from '../demos/285-accordion.svelte'
+import Splitter286 from '../demos/286-splitter.svelte'
+import FileUpload287 from '../demos/287-file-upload.svelte'
+import Overlays288 from '../demos/288-overlays.svelte'
+import AppOverlays331 from '../demos/331-app-overlays.svelte'
+import AppNavigation332 from '../demos/332-app-navigation.svelte'
+import CommandPalette340 from '../demos/340-command-palette.svelte'
+import RichTextEditor341 from '../demos/341-rich-text-editor.svelte'
+import CarouselTour342 from '../demos/342-carousel-tour.svelte'
+import KanbanBoard343 from '../demos/343-kanban-board.svelte'
+import KanbanSprint344 from '../demos/344-kanban-sprint.svelte'
+import KanbanPipeline345 from '../demos/345-kanban-pipeline.svelte'
+import KanbanVirtualized346 from '../demos/346-kanban-virtualized.svelte'
+import KanbanSupport347 from '../demos/347-kanban-support.svelte'
+import KanbanContent348 from '../demos/348-kanban-content.svelte'
+import KanbanSubtasks349 from '../demos/349-kanban-subtasks.svelte'
+import KanbanStructure350 from '../demos/350-kanban-structure.svelte'
+import KanbanPower351 from '../demos/351-kanban-power.svelte'
+import KanbanEpics352 from '../demos/352-kanban-epics.svelte'
+import AppFeedback333 from '../demos/333-app-feedback.svelte'
+import StatusDisplay339 from '../demos/339-status-display.svelte'
+import InputEditors334 from '../demos/334-input-editors.svelte'
+import TreeSelect335 from '../demos/335-tree-select.svelte'
+import GridSelect336 from '../demos/336-grid-select.svelte'
+import CheckoutForm334Recipe from '../demos/334-checkout-form.svelte'
+import BookingForm335Recipe from '../demos/335-booking-form.svelte'
+import FilterBar336Recipe from '../demos/336-filter-bar.svelte'
+import EventCalendar338 from '../demos/338-event-calendar.svelte'
 import CalendarRange258 from '../demos/258-calendar-range.svelte'
 import DateTimePickerForms259 from '../demos/259-datetimepicker-forms.svelte'
 import HeadlessEditors260 from '../demos/260-headless-editors.svelte'
@@ -87,6 +148,7 @@ import AiAssistant from '../demos/51-ai-assistant.svelte'
 import PivotTable from '../demos/52-pivot-table.svelte'
 // Private (SvGrid Studio visual designer - not in the public repo): 192, 201.
 import StudioLiveSql from '../demos/193-studio-live-sql.svelte'
+import PgliteNorthwind from '../demos/338-pglite-northwind.svelte'
 import StudioSupabase from '../demos/194-studio-supabase.svelte'
 import StudioRelations from '../demos/195-studio-relations.svelte'
 import StudioAuth from '../demos/196-studio-auth.svelte'
@@ -116,7 +178,6 @@ import GraphqlAdapter from '../demos/72-graphql-adapter.svelte'
 import ChartJsSync from '../demos/73-chartjs-sync.svelte'
 import ThemeIntegrations from '../demos/74-theme-integrations.svelte'
 import AiSmartPaste from '../demos/75-ai-smart-paste.svelte'
-import KanbanBoard from '../demos/76-kanban-board.svelte'
 import SmartChart from '../demos/77-smart-chart.svelte'
 import MillionRows from '../demos/78-million-rows.svelte'
 import LoadingFromRest from '../demos/79-loading-from-rest.svelte'
@@ -206,6 +267,8 @@ import TransactionApi             from '../demos/145-transaction-api.svelte'
 import ToolPanel                 from '../demos/146-tool-panel.svelte'
 import IntegratedCharts          from '../demos/147-integrated-charts.svelte'
 import ServerRowModel            from '../demos/148-server-row-model.svelte'
+import ServerGroupingModel       from '../demos/344-server-grouping-model.svelte'
+import LiveRestDummyJson         from '../demos/337-live-rest-dummyjson.svelte'
 import RealtimeCollaboration     from '../demos/149-realtime-collaboration.svelte'
 import ScatterBubble             from '../demos/150-scatter-bubble.svelte'
 import TimeSeriesChart           from '../demos/151-time-series-chart.svelte'
@@ -275,6 +338,7 @@ export type DemoCategory =
   | 'Real-time & Streaming'
   | 'Spreadsheet'
   | 'Charts'
+  | 'Kanban'
   | 'Themes & Styling'
   | 'Keyboard & Accessibility'
   | 'Mobile & Responsive'
@@ -344,6 +408,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Real-time & Streaming',
   'Spreadsheet',
   'Charts',
+  'Kanban',
   'Themes & Styling',
   'Keyboard & Accessibility',
   'Mobile & Responsive',
@@ -394,11 +459,35 @@ export const demos: Demo[] = [
   demo('250-calendar',              'Calendar',                    'SvCalendar: a themeable month/year/decade calendar with single / range / week / multi selection, min-max, restricted + important dates and week numbers. The same component SvGrid mounts to edit a date cell - and usable standalone in any SvGrid app.', 'Date & Time', Calendar250),
   demo('251-timepicker',            'Time picker',                 'SvTimePicker: an analog clock-dial picker with 12/24-hour, minute snapping and hour to minute auto-switch. Drag the hand or click a number. The SvGrid time cell editor, usable standalone in any SvGrid app.', 'Date & Time', TimePicker251),
   demo('252-datetimepicker',        'Date-time picker',            'SvDateTimePicker: a formatted input plus a portalled dropdown with DATE / TIME tabs (calendar + clock). Type a masked value or pick it; invalid input reverts. min/max, nullable, 12/24-hour, spin buttons. The SvGrid datetime cell editor, standalone in any SvGrid app.', 'Date & Time', DateTimePicker252),
+  demo('283-daterange-input',       'Date-range input',            'SvDateRangeInput: a compact start/end field that opens a two-month range calendar with one-click presets (Today, Last 7 days, ...). Composes the same headless range engine as SvCalendar, and carries the shared editor contract - label, hint, error validation, dir (RTL) and localizable messages.', 'Date & Time', DateRangeInput283),
   demo('258-calendar-range',        'Calendar - range + presets', 'SvCalendar as a date-range picker: selectionMode="range" with a one-click presets rail (Today, Last 7 days, This month, Year to date...), animated month navigation and mouse-wheel scrolling. Presets resolve relative to today. Same component, no extra dependency.', 'Date & Time', CalendarRange258),
   demo('259-datetimepicker-forms',  'Date-time picker - form fields','SvDateTimePicker in five real shapes on one form: date-only, time-only, date+time, 12-hour with spin buttons, and a min/max-constrained field. Masked inputs (type or pick), portalled dropdowns, animated calendars. The SvGrid datetime cell editor, standalone.', 'Date & Time', DateTimePickerForms259),
+  demo('338-event-calendar',        'Event calendar (rich cells + recurrence)', 'SvCalendar extended into a FullCalendar-style scheduler: the `day` snippet fills each cell with event chips, and `recurrence` repeat patterns (weekly standups, every-other-week sprint, monthly invoices) mark repeating days and generate their events via matchesRecurrence. Navigation, keyboard, selection and theming stay the component\'s. Pick a day for its agenda.', 'Date & Time', EventCalendar338),
   demo('253-buttons-toggles',       'Buttons & toggles',           'The UI kit press/toggle primitives: SvButton (variants/sizes/loading), SvRepeatButton (hold-to-repeat), SvToggleButton, SvSwitchButton, SvCheckBox (+ indeterminate), SvRadioGroup (arrow-key nav) and SvRating (half stars). Theme-driven, standalone or as grid cell controls.', 'Buttons & Toggles', ButtonsToggles253),
+  demo('284-button-group',          'Button group',                'SvButtonGroup: a segmented button bar - single-select (radio semantics, a view switcher), multi-select (a toggle set / formatting toolbar) or plain actions. Roving tabindex + arrow keys, and the shared editor contract (label, validation, dir/RTL).', 'Buttons & Toggles', ButtonGroup284),
+  demo('305-button',                'Button',                      'SvButton in production: a toolbar (variants primary/secondary/outline/ghost/danger), sizes, icon slots, a loading state and a full-width CTA. Copy-paste-ready blocks.', 'Buttons & Toggles', ButtonDemo305),
+  demo('306-repeat-button',         'Repeat button',               'SvRepeatButton: hold-to-repeat with acceleration - a quantity stepper and a volume control block.', 'Buttons & Toggles', RepeatButton306),
+  demo('307-toggle-button',         'Toggle button',               'SvToggleButton: a pressed on/off button (aria-pressed) - a text-formatting toolbar and pin / live state toggles.', 'Buttons & Toggles', ToggleButton307),
+  demo('308-switch',                'Switch',                      'SvSwitchButton in a real settings panel: labelled rows with descriptions, on/off track labels and a disabled row.', 'Buttons & Toggles', Switch308),
+  demo('309-checkbox',              'Checkbox',                    'SvCheckBox: a role-permissions block with a tri-state select-all parent (indeterminate when partial) plus a required, validated terms checkbox.', 'Buttons & Toggles', CheckBox309),
+  demo('310-radio-group',           'Radio group',                'SvRadioGroup: a plan picker and a shipping selector with a disabled option, roving arrow-key focus and label + validation.', 'Buttons & Toggles', RadioGroup310),
+  demo('311-rating',                'Rating',                      'SvRating: an interactive review widget with a live label, plus a read-only half-star aggregate with a distribution breakdown.', 'Buttons & Toggles', Rating311),
   demo('254-text-inputs',           'Text inputs',                 'Typed text controls: SvNumberInput (min/max/step, grouping, precision, spinners), SvPasswordInput (reveal + strength), SvMaskedInput (pattern mask), SvPhoneInput (country dial code + national mask) and SvColorInput (swatch + palette popover). Each a SvGrid cell editor, standalone too.', 'Inputs', TextInputs254),
+  demo('300-number-input',          'Number input',                'SvNumberInput on its own: min/max/step, thousands grouping, precision, prefix/suffix, spinner buttons and the shared field contract (label, hint, required/error validation).', 'Inputs', NumberInput300),
+  demo('301-password-input',        'Password input',              'SvPasswordInput on its own: a reveal toggle and an optional 4-level strength meter, with localizable strings and the shared field contract.', 'Inputs', PasswordInput301),
+  demo('302-masked-input',          'Masked input',                'SvMaskedInput on its own: a fixed-pattern mask (# digit, A letter, * alphanumeric; other chars literal) emitting the masked + raw value and a complete flag.', 'Inputs', MaskedInput302),
+  demo('303-phone-input',           'Phone input',                 'SvPhoneInput on its own: a country dial-code selector plus a national number field emitting an E.164-ish string, with label / validation / dir.', 'Inputs', PhoneInput303),
+  demo('304-color-input',           'Color input',                 'SvColorInput on its own: a swatch that opens an animated, portalled popover with a hex field, the native picker and a preset palette. Emits a hex string.', 'Inputs', ColorInput304),
+  demo('287-file-upload',           'File upload',                 'SvFileUpload: a drag-and-drop file field with click-to-browse, accept / maxSize / maxFiles validation (rejects fire onReject) and a selected-files list. Carries the shared editor contract - label, hint, required/error validation - so it drops into a form like any input.', 'Inputs', FileUpload287),
   demo('255-selection',             'Selection controls',          'List and overlay pickers: SvListBox (inline multi-select), SvDropDownList, SvComboBox (type to filter), SvAutoComplete (free text + suggestions), SvTagsInput (chips) and SvCountryInput (searchable, flags). Every popover portals out of the scroll container. Grid cell editors, standalone too.', 'Selection', Selection255),
+  demo('312-listbox',               'List box',                    'SvListBox: an assignee picker - inline multi-select with grouped options (departments), roving keyboard + type-ahead and a live summary.', 'Selection', ListBox312),
+  demo('313-combobox',              'Combo box',                   'SvComboBox: a form field - type to filter a grouped, portalled list; the value must come from the list. With label + required validation.', 'Selection', ComboBox313),
+  demo('314-dropdownlist',          'Drop-down list',              'SvDropDownList: a status / priority toolbar with grouped options, type-ahead and animated portalled panels driving a live issue list.', 'Selection', DropDownList314),
+  demo('315-autocomplete',          'Autocomplete',                'SvAutoComplete: a free-text search field with live suggestion shortcuts (any value accepted) - city search and a filter-syntax helper.', 'Selection', AutoComplete315),
+  demo('316-tags-input',            'Tags input',                  'SvTagsInput: a token editor (Enter / comma to add, Backspace / x to remove) with unique + max enforced - skills and email recipients with validation.', 'Selection', TagsInput316),
+  demo('317-country-input',         'Country input',               'SvCountryInput: a searchable checkout country picker (flag + name + dial code) emitting the ISO code, with label + required validation.', 'Selection', CountryInput317),
+  demo('323-list-virtualization',   'Virtualized list',            'SvListBox scaling to 50,000 options via fixed-row windowing (only visible rows in the DOM) - scroll + type-ahead stay instant. Plus a custom itemTemplate row (avatar + role). Just add virtual.', 'Selection', ListVirtualization323),
+  demo('329-combobox-remote',       'Remote combo box',            'SvComboBox with a remote dataSource: debounced server search (loadOptions), a loading state, latest-response-wins race handling and a type-to-search hint. Local filtering off.', 'Selection', ComboRemote329),
   demo('260-headless-editors',      'Headless editors',            'Headless-first, like the grid: createListbox is the state machine behind SvListBox (roving focus, single/multi selection, keyboard, ARIA) exposed as prop-getters you spread onto YOUR own markup. One core drives both the styled SvListBox and a custom chip-cloud render, bound to one value.', 'Headless Editors', HeadlessEditors260),
   demo('261-headless-combobox',          'Combobox - headless',           'createCombobox drives the styled SvComboBox and a custom filter-input render, both bound to one value with a readout.', 'Headless Editors', HlCombobox),
   demo('262-headless-dropdownlist',      'Dropdown list - headless',      'createDropdownList drives SvDropDownList and a custom trigger+menu render, sharing one value.', 'Headless Editors', HlDropdownList),
@@ -423,7 +512,44 @@ export const demos: Demo[] = [
   demo('281-headless-slider',            'Slider - headless',             'createSlider drives styled SvSlider plus a custom draggable bar (rect measured in the component), one number.', 'Headless Editors', HlSlider),
   demo('282-headless-gauge',             'Gauge - headless',              'createGauge drives styled SvGauge plus a custom SVG meter sharing the same arc / needle geometry.', 'Headless Editors', HlGauge),
   demo('256-range-feedback',        'Range & feedback',            'SvSlider (single or dual-thumb range, ticks, keyboard, vertical) and SvGauge (radial arc with threshold bands, needle, half sweep). Theme-driven value controls, standalone or in-grid.', 'Range & Feedback', RangeFeedback256),
+  demo('318-slider',                'Slider',                      'SvSlider: a filter block - a dual-thumb price range plus single sliders for rating and distance, with ticks and live formatted readouts.', 'Range & Feedback', Slider318),
+  demo('319-gauge',                 'Gauge',                       'SvGauge: a KPI dashboard - radial gauges with colored threshold bands, a live-updating needle, and a needle-less storage tile.', 'Range & Feedback', Gauge319),
+  demo('330-progress',              'Progress (linear + circular)', 'SvProgress and SvCircularProgress: determinate + indeterminate progress with color intents, sizes, labels, striped fill, a buffered track, and a custom ring center. WAI-ARIA progressbar, reduced-motion aware.', 'Range & Feedback', Progress330),
   demo('257-tabs-tree-form',        'Tabs, tree & form',           'Composite controls: SvTabs (line + pill, roving keyboard), SvTree (expand/collapse, single-select + cascading tri-state checkboxes) and a schema-driven SvForm that wires the whole kit (inputs, select, switch, date, textarea) with required + custom validation.', 'Layout', TabsTreeForm257),
+  demo('320-tabs',                  'Tabs',                        'SvTabs: a settings screen with real panels (line tabs, a disabled tab) plus a pill-style view switcher. Roving arrow-key focus, automatic activation.', 'Layout', Tabs320),
+  demo('321-tree',                  'Tree',                        'SvTree: a file explorer with cascading tri-state checkboxes and a single-select highlight; keyboard up/down move, left/right collapse/expand.', 'Layout', Tree321),
+  demo('322-form',                  'Form',                        'SvForm: a schema-driven signup form wiring the whole kit (text, email, password, select, date, switch, rating) with required + cross-field custom validation in a two-column grid.', 'Layout', FormDemo322),
+  demo('324-tree-scale',            'Tree at scale (virtual + lazy)', 'SvTree scaling to 10,100 nodes via fixed-row virtualization (only ~15 rows in the DOM), plus a lazy-loading tree that fetches each folder’s children on first expand with a spinner. Keyboard, selection and cascading checkboxes intact.', 'Layout', TreeScale324),
+  demo('325-tabs-advanced',         'Tabs: closable + positions', 'SvTabs with closable tabs (browser-style, add button, Delete key) and the four tabPositions - top, bottom, left, right.', 'Layout', TabsAdvanced325),
+  demo('326-menu',                  'Menu',                        'SvMenu: a dropdown / actions menu with submenus, separators, icons and keyboard shortcuts. Portalled + animated, full keyboard (arrows, Enter, Escape, ArrowRight/Left).', 'Layout', Menu326),
+  demo('327-navpane',               'Navigation pane',             'SvNavPane: an Outlook-style sidebar - collapsible sections, unread badges, nested folders, single-select highlight, arrow-key nav, an icon-only collapsed rail, and a bottom module strip with a drag splitter (drag up to collapse modules into an icon rail).', 'Layout', NavPane327),
+  demo('328-tree-editable',         'Tree editing (drag / rename / sort)', 'SvTree with drag-drop reorder (drop before / after / inside), inline rename (double-click or F2) and sortable siblings. Uses the moveTreeNode helper.', 'Layout', TreeEditable328),
+  demo('285-accordion',             'Accordion',                   'SvAccordion: collapsible sections with single- or multiple-expand, roving header focus (Up/Down/Home/End) and full WAI-ARIA (region + aria-controls). The panel body is a snippet; RTL mirrors the chevron and layout.', 'Layout', Accordion285),
+  demo('286-splitter',              'Splitter',                    'SvSplitter: two resizable panes with a draggable WAI-ARIA separator - pointer drag + arrow-key resize (Home/End jump to bounds). Nest them for IDE / dashboard layouts. RTL flips the horizontal drag direction.', 'Layout', Splitter286),
+  demo('288-overlays',              'Overlays: popover, tooltip, modal', 'SvPopover (anchored floating panel, click/hover/manual), SvTooltip (delayed hover/focus tip, aria-describedby) and SvModal (focus-trapped dialog, Escape / backdrop close, optionally draggable + resizable). All portal to <body>, animate in, and respect reduced-motion.', 'Layout', Overlays288),
+  demo('331-app-overlays',          'App overlays: drawer, context menu, toasts', 'SvDrawer (edge side-sheet), SvContextMenu (right-click menu) and the toast() API + SvToaster - all built on the shared focus-trap, scroll-lock and dismissable-layer primitives, so nested overlays close top-first and every toast is announced to screen readers.', 'Layout', AppOverlays331),
+  demo('332-app-navigation',        'Navigation: breadcrumb, pager, stepper', 'SvBreadcrumb (collapsing trail), SvPagination (page-range with ellipsis, first/last, prev/next) and SvStepper (linear wizard with completed/active/upcoming states). Pure, keyboard-accessible, theme-token driven.', 'Layout', AppNavigation332),
+  demo('340-command-palette',       'Command palette (⌘K) + sparklines, avatars, scroll', 'SvCommand: a ⌘K fuzzy command palette built on the shared focus-trap / scroll-lock / dismissable primitives (arrow-key nav, groups, shortcuts, global hotkey). Plus SvSparkline (inline line/area/bar/win-loss charts), SvAvatarGroup (stacked members + overflow) and SvScrollArea (themed scrollbars).', 'Layout', CommandPalette340),
+  demo('342-carousel-tour',         'Carousel & guided tour', 'SvCarousel (sliding track with arrows, dot indicators, autoplay that pauses on hover, and swipe) and SvTour (a guided product tour that spotlights each target element and steps through Back / Next / Done - arrow keys navigate, Escape skips). Both portalled + themeable.', 'Layout', CarouselTour342),
+  demo('333-app-feedback',          'Feedback & display: badge, avatar, skeleton, card', 'SvBadge (status pills), SvAvatar (image + initials/colour-hash fallback + presence dot), SvSkeleton (shimmer loaders) and SvCard (surface) - the display layer for dashboards and detail panels. Toggle loading to swap content for skeletons.', 'Range & Feedback', AppFeedback333),
+  demo('339-status-display',        'Status & display: alert, stat, timeline, chip, divider, empty', 'SvAlert (inline info/success/warning/danger messages with actions), SvStat (KPI cards with auto-coloured up/down deltas, invertible), SvTimeline (activity feed), SvChip (removable/clickable pills with avatars), SvDivider (labeled + vertical) and SvEmptyState. The status + display layer for dashboards and detail screens.', 'Range & Feedback', StatusDisplay339),
+  demo('334-input-editors',         'Input editors: text, textarea, OTP, duration, multi-select', 'The Tier-1 editors on the shared contract: SvTextInput, SvTextArea (auto-grow + counter), SvOtpInput (segmented code, paste-distribute), SvDurationInput ("1h 30m" <-> minutes) and SvMultiSelect (portalled checkbox dropdown with search + chips). Standalone or as grid cell editors (Enter commits, Escape cancels).', 'Inputs', InputEditors334),
+  demo('341-rich-text-editor',      'Rich text editor (WYSIWYG)', 'SvRichText: a lightweight WYSIWYG over a contentEditable region - bold/italic/underline/strike, headings, lists, quote, code block, alignment, links, undo/redo - emitting HTML via bind:value, with a configurable toolbar. Parity: Smart editor.', 'Inputs', RichTextEditor341),
+  demo('335-tree-select',           'Tree select', 'SvTreeSelect: a single-select dropdown showing a collapsible tree in its portalled panel (the tree-select / cascader pattern). Arrow keys navigate, Right/Left expand/collapse, Enter selects; optional full-path label in the trigger.', 'Selection', TreeSelect335),
+  demo('336-grid-select',           'Grid select (multi-column)', 'SvGridSelect: a "grid in a dropdown" single-select - the panel shows options as a compact multi-column table with a header row and search, so you pick by more than a label. Built on its own panel (no embedded SvGrid); standalone or as a cell editor.', 'Selection', GridSelect336),
+  demo('334-checkout-form',         'Checkout form',               'A real payment form built entirely from SvGrid UI: SvMaskedInput (card number + expiry + CVC), SvCountryInput (billing country), SvNumberInput (amount), SvSwitchButton (save card) and SvButton - with live card-brand detection and validation. Copy the file and ship it.', 'Headless Editors', CheckoutForm334Recipe),
+  demo('335-booking-form',          'Appointment booking',         'A scheduling form from SvGrid UI: SvComboBox (service), SvCalendar (date), SvTimePicker (slot), SvButtonGroup (duration), SvNumberInput (guests) and a live summary. The same components SvGrid uses to edit cells, composed into a page.', 'Headless Editors', BookingForm335Recipe),
+  demo('336-filter-bar',            'Product filter bar',          'A faceted filter/search bar from SvGrid UI: SvComboBox (search), SvButtonGroup (category), SvTagsInput (tags), SvSlider (price range), SvSwitchButton (in stock) and SvDropDownList (sort) - filtering a live product list as you go.', 'Headless Editors', FilterBar336Recipe),
+  demo('343-kanban-board',          'Kanban board mode',           'The same <SvGrid>, same data + columns, rendered as a Kanban board by setting one `board` prop: rows become cards in horizontal lanes bucketed by a `status` field. Built-in drag-and-drop AND keyboard move (Space + arrows) reassign the lane and reorder; double-click / F2 opens a built-in card editor; WIP limits, add-card, and a rich card snippet (assignee avatar + priority chip). Toggle Board / Table to see it is one grid.', 'Kanban', KanbanBoard343),
+  demo('344-kanban-sprint',         'Sprint board (swimlanes + WIP)', 'An agile sprint board: status lanes crossed with a swimlane per assignee, an enforced WIP limit on In progress, and a story-point roll-up in every lane header via board.laneSummary. Drag across a band to reassign the owner; double-click to edit. Collapsible lanes.', 'Kanban', KanbanSprint344),
+  demo('345-kanban-pipeline',       'Sales pipeline (deal board)', 'A CRM deal board: stages as lanes with a live total-value roll-up per stage (board.laneSummary). Rich deal cards; drag to advance a deal, double-click to edit. Moves and edits persist to localStorage via onCardMove / onCardCommit, so a reload restores the board.', 'Kanban', KanbanPipeline345),
+  demo('346-kanban-virtualized',    'Large board (virtualized)', 'Thousands of cards per lane kept smooth with board.virtualized - only the cards in view are in the DOM. A slider scales the board from 1k to 50k cards; drag-and-drop and keyboard move still work across the whole window.', 'Kanban', KanbanVirtualized346),
+  demo('347-kanban-support',        'Support triage board', 'A helpdesk triage board: status lanes crossed with a priority swimlane, a search box front-and-center, and an SLA colour bar on each card driven by ticket age. Drag across a band to re-triage a ticket priority.', 'Kanban', KanbanSupport347),
+  demo('348-kanban-content',        'Content calendar', 'An editorial pipeline: stage lanes crossed with a swimlane per channel. Rich cards carry a cover glyph, author and target date. Drag a piece down the pipeline, or across a band to move it to another channel; double-click to edit.', 'Kanban', KanbanContent348),
+  demo('349-kanban-subtasks',       'Cards with sub-tasks & badges', 'The default board card made rich by config alone: label / due / assignee badges, a sub-task checklist with a progress bar (expand to tick items or add more), and a quick-add composer at the bottom of each lane. Double-click a card for the BUILT-IN detail drawer (board.drawer -> SvDrawer + SvForm with the UI-kit editors); toggle all fields vs a customized subset. Board / Table switcher.', 'Kanban', KanbanSubtasks349),
+  demo('350-kanban-structure',      'Group-by switch + reorderable lanes', 'Board structure, live: switch the lane axis at runtime (Status / Assignee / Priority) and the board re-buckets, and drag a lane header to reorder the columns. Both built-in - the group-by switch resets card positions to the new field; lane order is tracked and persists with persistKey. Board / Table switcher.', 'Kanban', KanbanStructure350),
+  demo('351-kanban-power',          'Board power tools (filters, multi-select, menus)', 'A facet filter bar (by tag + assignee), card multi-select with bulk move (click / Ctrl-click then drag the group), a blocked flag, a card-age badge, and both card + lane right-click menus - all from board config on the built-in default card. Board / Table switcher.', 'Kanban', KanbanPower351),
+  demo('352-kanban-epics',          'Epics -> stories (hierarchical cards)', 'Point board.childrenField at a row child rows and each card gains a children count that expands to show its sub-cards inline (Jira epic -> stories). Each child shows its own title + status. Board / Table switcher.', 'Kanban', KanbanEpics352),
 
   // ----- Getting Started (the first stop for every evaluator)
   demo('00-trading-desk',           'Trading desk - live',         '10,000 securities ticking on a 500 ms feed. Pinned Symbol + P&L, sparklines, sector chips, KPI strip. The hero.', 'Getting Started', TradingDesk),
@@ -534,7 +660,9 @@ export const demos: Demo[] = [
   demo('09-server-side',            'Server-side data',            'Sort/filter/page round-tripped to a mock endpoint with debounce + cancel.', 'Server-Side Data', ServerSide),
   demo('33-server-infinite',        'Server-side infinite scroll', '100k-event audit log behind a mock API. Sparse chunked load on scroll; sort + filter + search pushed to the server.', 'Server-Side Data', ServerInfinite),
   demo('148-server-row-model',      'Server-Side Row Model (SSRM)','One datasource contract for server-backed data: implement a single async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Here a 100,000-row in-memory server behind 250ms latency; the grid holds only the current 50-row page.', 'Server-Side Data', ServerRowModel),
+  demo('344-server-grouping-model', 'Server grouping (first-class)','First-class server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerGroupModel owns the group tree - lazy expand per level, aggregation, per-node caching, race-safety - handing back a flat displayRows list. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand.', 'Server-Side Data', ServerGroupingModel),
   demo('72-graphql-adapter',        'GraphQL adapter',             'Server-side sort / filter / page wired to a mock GraphQL resolver. Side panel shows the live query doc so you can compare what the grid sent to the network tab.', 'Server-Side Data', GraphqlAdapter),
+  demo('337-live-rest-dummyjson',   'Live REST (public API)',      'Real rows over the network from dummyjson.com via the enterprise createRestDataSource + a shape adapter (dummyJsonAdapter): skip/limit paging and sortBy/order sorting mapped to the API dialect. Swap URL + adapter (jsonServerAdapter / offsetLimitAdapter) to point at any public API. Includes an error/retry surface.', 'Server-Side Data', LiveRestDummyJson, { pro: true }),
   demo('79-loading-from-rest',      'Loading from REST',           'Fetches rows from a public REST API with loading skeleton, retry, error surface, and a Reload button. The pattern every line-of-business app needs.', 'Server-Side Data', LoadingFromRest),
   demo('113-cursor-pagination',     'Cursor (keyset) pagination',  'The modern alternative to offset paging: server returns prev/next cursor tokens so writes never shift rows across pages and deep pages stay O(log N). Page-size picker, live timing readout.', 'Server-Side Data', CursorPagination),
   demo('114-server-grouping',       'Server-side grouping + aggregates','GROUP BY + SUM/AVG/MIN/MAX pushed to the server; grid renders pre-aggregated buckets with on-demand drill-in. Side-by-side: client 100k = ~600ms vs server 12 grouped rows = ~80ms.', 'Server-Side Data', ServerGrouping),
@@ -617,18 +745,18 @@ export const demos: Demo[] = [
   demo('48-crm-sales-pipeline',     'CRM - sales pipeline',        'Deal board with stage chips, weighted forecast bar, inline stage / probability editing, deal detail aside with activity feed + advance / won / lost.', 'Industry Templates', CrmSalesPipeline),
   demo('49-admin-dashboard',        'Admin dashboard',             'CRUD-heavy users board: inline role / status / MFA edit, bulk activate / deactivate / delete, invite dialog, permissions matrix, live audit log.', 'Industry Templates', AdminDashboard),
   demo('50-seller-panel',           'Seller panel - e-commerce',   'Marketplace dashboard: catalog with SVG thumbnails, inventory bars vs reorder threshold, live orders pipeline, pricing rules - four tabs over one product list.', 'Industry Templates', SellerPanel),
-  demo('76-kanban-board',           'Kanban board',                'Four-lane Kanban (Backlog / In progress / Review / Done). Each lane is a separate SvGrid bound to the same $state array - HTML5 drag-and-drop rewrites status.', 'Industry Templates', KanbanBoard),
   demo('205-project-management',    'Project management board',    'Nested, collapsible column groups (Task / Details / Timeline / Progress), status + priority + assignee dropdowns, date cells, a custom progress-bar renderer, drag-to-reorder rows, and client pagination - all from stock props.', 'Industry Templates', ProjectManagement),
 
   // ----- Pro (commercial features in @svgrid/enterprise)
-  demo('193-studio-live-sql',         'Data-app Studio · live SQL',     'The Studio stack backed by a REAL Postgres running in the browser via PGlite (WASM), no server. createSqlDataSource turns the grid\'s sort / filter / page requests into parameterized SQL run through PGlite; the executed query is shown live under the toolbar. Full CRUD with optimistic updates against actual Postgres.', 'Studio', StudioLiveSql,          { pro: true }),
-  demo('194-studio-supabase',         'Data-app Studio · Supabase',     'The Studio stack over hosted Postgres on Supabase, straight from the browser via supabase-js (PostgREST) and your project\'s public anon key. createSupabaseDataSource maps the grid\'s sort / filter / page / CRUD onto the query builder, introspectSupabaseTable adapts to any table AND detects foreign keys (a FK column auto-becomes a searchable lookup in the form), and createSupabaseRealtime makes it LIVE - change a row in the Supabase dashboard and it flashes in the grid (toggle the Live pill). Paste your URL + anon key, run the one-time setup SQL, done. RLS keeps the anon key safe.', 'Studio', StudioSupabase,        { pro: true }),
-  demo('195-studio-relations',        'Data-app Studio · relations',    'Foreign-key lookup fields end to end. Contacts belong to a Company: the contact form renders a searchable Company picker (SvLookupInput + createRelationLookup) that queries the Companies source and stores the id, while the grid shows the resolved company NAME. The lookup runs over the same ServerDataSource contract, so related options can come from Supabase / REST / SQL / in-memory (here both entities are in-memory).', 'Studio', StudioRelations,       { pro: true }),
-  demo('196-studio-auth',             'Data-app Studio · secured',      'A secured screen: SvAuthGate requires a signed-in user (Supabase Auth via createSupabaseAuth) before showing the Studio grid, with a login / sign-up form and a signed-in bar. Uses a mock auth client so any email + password works here; swap for your supabase-js client and Row-Level Security scopes each user to their own rows (auth = who, RLS = what).', 'Studio', StudioAuth,             { pro: true }),
-  demo('197-studio-chart',            'Data-app Studio · chart',        'A live chart panel beside the grid, driven by the same data source: rowsToChartSpec aggregates the rows (group by tier / active, reduce MRR by sum / avg / count) and SvGridChart renders bar / pie / line - no external chart library. The chart doubles as a filter control: click a bar or slice to filter the grid to that category. Create / edit / delete and the chart updates.', 'Studio', StudioChart,            { pro: true }),
-  demo('198-studio-form-fields',      'Data-app Studio · rich fields',  'Rich edit-form fields: an image UPLOAD field (SvFileInput - preview + file picker, stores a data URL with no backend, or a URL via an uploads handler) shown as an avatar in the grid, and a CASCADING dropdown (City computed from the chosen Country via dependentOptions, cleared when the country changes). Both are schema-driven on SvGridEditPanel.', 'Studio', StudioFormFields,       { pro: true }),
-  demo('199-studio-computed-hooks',   'Data-app Studio · computed & hooks', 'Business logic on the schema. `total` is a COMPUTED field (qty * price) - read-only in grid + form, recomputed live as you type, never stored or submitted. withEntityRules materializes it onto every row and runs the schema hooks: beforeCreate stamps createdAt, and a cross-field validate rejects a non-positive quantity.', 'Studio', StudioComputedHooks,   { pro: true }),
-  demo('200-studio-dashboard',        'Data-app Studio · dashboard',    'A schema-driven dashboard above the grid. SvSchemaDashboard renders a declarative spec of KPI tiles (count / sum / avg) + charts (SvSchemaChart) over the same EntitySchema - a data view, not a page builder. Click a chart category to drill the grid; create / edit / delete and the KPIs and charts update.', 'Studio', StudioDashboard,        { pro: true }),
+  demo('193-studio-live-sql',         'SvGrid Studio · live SQL',     'The Studio stack backed by a REAL Postgres running in the browser via PGlite (WASM), no server. createSqlDataSource turns the grid\'s sort / filter / page requests into parameterized SQL run through PGlite; the executed query is shown live under the toolbar. Full CRUD with optimistic updates against actual Postgres.', 'Studio', StudioLiveSql,          { pro: true }),
+  demo('338-pglite-northwind',        'Northwind on PGlite',            'The classic Northwind sample DB (categories, customers, products, orders, order_details) seeded into a real in-browser Postgres (PGlite, WASM). Switch between a five-table JOIN exposed as a read-only VIEW and the editable base tables - each via createSqlDataSource. Sort / filter / page / edit all run as parameterized SQL; new rows get an auto id from a Postgres IDENTITY sequence.', 'Studio', PgliteNorthwind, { pro: true }),
+  demo('194-studio-supabase',         'SvGrid Studio · Supabase',     'The Studio stack over hosted Postgres on Supabase, straight from the browser via supabase-js (PostgREST) and your project\'s public anon key. createSupabaseDataSource maps the grid\'s sort / filter / page / CRUD onto the query builder, introspectSupabaseTable adapts to any table AND detects foreign keys (a FK column auto-becomes a searchable lookup in the form), and createSupabaseRealtime makes it LIVE - change a row in the Supabase dashboard and it flashes in the grid (toggle the Live pill). Paste your URL + anon key, run the one-time setup SQL, done. RLS keeps the anon key safe.', 'Studio', StudioSupabase,        { pro: true }),
+  demo('195-studio-relations',        'SvGrid Studio · relations',    'Foreign-key lookup fields end to end. Contacts belong to a Company: the contact form renders a searchable Company picker (SvLookupInput + createRelationLookup) that queries the Companies source and stores the id, while the grid shows the resolved company NAME. The lookup runs over the same ServerDataSource contract, so related options can come from Supabase / REST / SQL / in-memory (here both entities are in-memory).', 'Studio', StudioRelations,       { pro: true }),
+  demo('196-studio-auth',             'SvGrid Studio · secured',      'A secured screen: SvAuthGate requires a signed-in user (Supabase Auth via createSupabaseAuth) before showing the Studio grid, with a login / sign-up form and a signed-in bar. Uses a mock auth client so any email + password works here; swap for your supabase-js client and Row-Level Security scopes each user to their own rows (auth = who, RLS = what).', 'Studio', StudioAuth,             { pro: true }),
+  demo('197-studio-chart',            'SvGrid Studio · chart',        'A live chart panel beside the grid, driven by the same data source: rowsToChartSpec aggregates the rows (group by tier / active, reduce MRR by sum / avg / count) and SvGridChart renders bar / pie / line - no external chart library. The chart doubles as a filter control: click a bar or slice to filter the grid to that category. Create / edit / delete and the chart updates.', 'Studio', StudioChart,            { pro: true }),
+  demo('198-studio-form-fields',      'SvGrid Studio · rich fields',  'Rich edit-form fields: an image UPLOAD field (SvFileInput - preview + file picker, stores a data URL with no backend, or a URL via an uploads handler) shown as an avatar in the grid, and a CASCADING dropdown (City computed from the chosen Country via dependentOptions, cleared when the country changes). Both are schema-driven on SvGridEditPanel.', 'Studio', StudioFormFields,       { pro: true }),
+  demo('199-studio-computed-hooks',   'SvGrid Studio · computed & hooks', 'Business logic on the schema. `total` is a COMPUTED field (qty * price) - read-only in grid + form, recomputed live as you type, never stored or submitted. withEntityRules materializes it onto every row and runs the schema hooks: beforeCreate stamps createdAt, and a cross-field validate rejects a non-positive quantity.', 'Studio', StudioComputedHooks,   { pro: true }),
+  demo('200-studio-dashboard',        'SvGrid Studio · dashboard',    'A schema-driven dashboard above the grid. SvSchemaDashboard renders a declarative spec of KPI tiles (count / sum / avg) + charts (SvSchemaChart) over the same EntitySchema - a data view, not a page builder. Click a chart category to drill the grid; create / edit / delete and the KPIs and charts update.', 'Studio', StudioDashboard,        { pro: true }),
   demo('53-excel-import',             'Excel / CSV import',             'File picker + column mapping + per-row validation preview before commit. Reads xlsx / csv / tsv / json with format auto-detect.',     'Data Export & Import', ExcelImport,            { pro: true }),
   demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Editing', StagedEditing,          { pro: true }),
   demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'AI', AiAssistant,            { pro: true }),

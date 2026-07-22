@@ -5,6 +5,8 @@ over an entity. It's a declarative data *view*, not a drag-drop page builder: yo
 describe the widgets as plain data and the component lays them out, reusing
 `SvSchemaChart` for the charts.
 
+![SvSchemaDashboard reads a schema and widgets described as plain data, then lays out KPI tiles and charts automatically, reusing SvSchemaChart.](/docs-media/studio-dashboards.svg)
+
 ## Quick start
 
 Pass a schema and the rows; with no `spec`, a sensible default is proposed from

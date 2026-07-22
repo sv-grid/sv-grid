@@ -5,6 +5,8 @@ to the server; the response goes into [TanStack Query](https://tanstack.com/quer
 so we get **caching, deduplication, request cancellation, retries,
 optimistic updates, and stale-while-revalidate** for free.
 
+<div data-docs-demo="09-server-side" data-height="480"></div>
+
 The same pattern works with any data-fetching library (SWR for React,
 swrev for Svelte, hand-rolled `$effect`). TanStack Query is what most
 teams reach for in Svelte 5 today.

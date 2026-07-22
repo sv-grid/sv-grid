@@ -2,6 +2,9 @@
 
 > Live in [demo 81-mobile-card-view](https://svgrid.com/#/demos/81-mobile-card-view).
 
+<div data-docs-demo="81-mobile-card-view" data-height="480"></div>
+
+
 ## When
 
 Same data, two layouts. Auto-pivot below 720px or force one via a toolbar switch.

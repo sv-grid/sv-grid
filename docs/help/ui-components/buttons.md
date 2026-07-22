@@ -79,3 +79,17 @@ A star rating (ARIA slider) with hover preview, half steps and keyboard.
 
 Props: `value`, `onChange(value)`, `max` (default 5), `allowHalf`, `readOnly`,
 `size`, `disabled`. Uses the grid's `--sg-rating-*` tokens.
+
+## Component guides
+
+Each component has its own full tutorial with props, keyboard behaviour and
+recipes:
+
+- [SvButton](./sv-button.md) - the press primitive with variants, loading and icons.
+- [SvButtonGroup](./sv-button-group.md) - a segmented button bar or view switcher.
+- [SvRepeatButton](./sv-repeat-button.md) - fires repeatedly while held, for steppers.
+- [SvToggleButton](./sv-toggle-button.md) - a button with a pressed on/off state.
+- [SvSwitchButton](./sv-switch-button.md) - an on/off sliding switch control.
+- [SvCheckBox](./sv-check-box.md) - a checkbox with an indeterminate state.
+- [SvRadioGroup](./sv-radio-group.md) - an accessible single-choice radio group.
+- [SvRating](./sv-rating.md) - a star rating with half steps.

@@ -43,6 +43,16 @@ describe('scaffoldApp', () => {
     expect(layout).toContain('CRM')
   })
 
+  it('the sidebar is collapsible and starts collapsed on tablet / phone', () => {
+    const layout = byPath['src/routes/+layout.svelte']!.contents
+    // Off-canvas drawer driven by a collapse toggle + a <= 1024px media query.
+    expect(layout).toContain('matchMedia')
+    expect(layout).toContain('max-width: 1024px')
+    expect(layout).toContain('function toggleNav')
+    expect(layout).toContain('class:is-drawer={drawer}')
+    expect(layout).toContain('app-shell__burger')
+  })
+
   it('the home page lists the entities', () => {
     const home = byPath['src/routes/+page.svelte']!.contents
     expect(home).toContain('"label":"Companies"')

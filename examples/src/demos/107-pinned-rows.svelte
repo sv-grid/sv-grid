@@ -11,7 +11,7 @@
    *   - BOTTOM: a sticky "Page totals" row showing SUM / AVG just for
    *     the currently-filtered visible rows. Reacts to column filters.
    *
-   * Pattern: render three `<SvGrid>` instances stacked vertically -
+   * Pattern: render three `<SvGrid responsive={true}>` instances stacked vertically -
    * pinned-top (1 row), main (scrollable), pinned-bottom (1 row). They
    * share the same column widths and the same row schema. Right-click
    * any data row to pin it; pinned rows show a small badge.
@@ -174,7 +174,7 @@
   <div class="pin-strip pin-top">
     <div class="pin-tag pin-tag-top">TOP · ALL ACCOUNTS</div>
     <div class="pin-grid">
-      <SvGrid
+      <SvGrid responsive={true}
         data={topPinnedData}
         columns={baseColumns}
         features={features}
@@ -196,7 +196,7 @@
     oncontextmenu={onCtx}
     role="presentation"
   >
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={baseColumns}
       features={features}
@@ -220,7 +220,7 @@
       BOTTOM · {userPinned.length > 0 ? `${userPinned.length} PINNED + PAGE` : 'PAGE TOTALS'}
     </div>
     <div class="pin-grid">
-      <SvGrid
+      <SvGrid responsive={true}
         data={bottomPinnedData}
         columns={baseColumns}
         features={features}

@@ -9,6 +9,8 @@ export menu - ship in the paid
 **[@svgrid/enterprise](https://www.npmjs.com/package/@svgrid/enterprise)** add-on,
 which reuses the exact same serializers so the two tiers feel like one product.
 
+![Pick a row scope, then serialize the grid to Excel, CSV, TSV, HTML, PDF, or Print.](/docs-media/grid-export.svg)
+
 | Capability | Package |
 | ---------- | ------- |
 | CSV / TSV / JSON export, copy-to-clipboard (TSV / CSV / Markdown) | **Free** (`@svgrid/grid`) |

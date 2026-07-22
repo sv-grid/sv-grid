@@ -359,7 +359,7 @@
 
   <!-- Grid -->
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={shipments}
       columns={[
         { field: 'id', header: 'Load', width: 110, editable: false,

@@ -7,6 +7,8 @@ row model (rows in their original order). To enable sorting, filtering,
 grouping, pagination, expansion, or selection, register the matching
 feature; the wrapper wires the matching row-model factory for you.
 
+![The engine ships the core row model in original order; you opt into features that wire into the SvGrid component.](/docs-media/grid-feature-gating.svg)
+
 ```svelte
 <script lang="ts">
   import {

@@ -34,6 +34,9 @@
     containerHeight?: number | string
     /** Height of each nested detail grid. Default 200. */
     detailHeight?: number | string
+    /** When set, a parent row click calls this (with the row id) to drill into a
+     *  detail page, instead of expanding the inline child grid. */
+    onParentClick?: (id: string) => void
   }
 
   let {
@@ -43,6 +46,7 @@
     getChildren,
     containerHeight = 320,
     detailHeight = 200,
+    onParentClick,
   }: Props = $props()
 
   const parentIdOf = (p: TParent) => String(p[resolveIdField(schema)])
@@ -55,6 +59,9 @@
 
   function handleRowClick(row: unknown) {
     if (isDetailRow(row)) return
+    // When wired to a detail page, a parent row navigates there (the detail page
+    // shows this record's children); otherwise it expands the child grid inline.
+    if (onParentClick) { onParentClick(parentIdOf(row as TParent)); return }
     expanded = toggleExpanded(expanded, parentIdOf(row as TParent))
   }
 </script>

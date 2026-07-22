@@ -7,6 +7,8 @@ bag, and rehydrating the grid from one. Builds on
 [Saved views](./saved-views.md) but adds undo / redo, named
 bookmarks, JSON import / export, and debounced auto-save.
 
+![getState() captures a snapshot of sort, filters, column order, width and visibility, page and grouping into storage; setState() applies each slice to restore the grid to that exact view.](/docs-media/grid-state.svg)
+
 Live reference - the demo wires all five surfaces:
 
 <div data-docs-demo="55-state-maintenance" data-height="560"></div>

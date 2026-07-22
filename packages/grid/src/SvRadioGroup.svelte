@@ -8,17 +8,15 @@
    * roving tabindex + arrow-key navigation. Parity: Smart `smart-radio-button`
    * (as a managed group). Controlled via `value` + `onChange`.
    */
+  import SvField from './SvField.svelte'
+  import { nextEditorId, type SvEditorProps } from './editor-contract'
   import { createRadioGroup, type RadioOption } from './createRadioGroup.svelte'
 
-  type Props = {
+  type Props = SvEditorProps & {
     options: ReadonlyArray<RadioOption>
     value?: string | number | null
     onChange?: (value: string | number) => void
-    name?: string
-    disabled?: boolean
     orientation?: 'vertical' | 'horizontal'
-    size?: 'sm' | 'md' | 'lg'
-    ariaLabel?: string
   }
 
   let {
@@ -30,7 +28,17 @@
     orientation = 'vertical',
     size = 'md',
     ariaLabel,
+    invalid = false,
+    required = false,
+    error,
+    label,
+    hint,
+    dir,
+    id,
   }: Props = $props()
+
+  const autoId = nextEditorId('sv-radio')
+  const uid = $derived(id ?? autoId)
 
   // The styled radio group is just a renderer over the headless core.
   const rg = createRadioGroup({
@@ -38,26 +46,35 @@
     value: () => value,
     onChange: (v) => onChange?.(v),
     disabled: () => disabled,
-    ariaLabel: () => ariaLabel,
+    // A visible field `label` also names the group for assistive tech.
+    ariaLabel: () => ariaLabel ?? label,
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
   })
 </script>
 
-<div
-  class="sv-radiogroup sv-radiogroup--{orientation} sv-radiogroup--{size}"
-  {...rg.groupProps()}
->
-  {#each options as opt (opt.value)}
-    <button
-      class="sv-radio"
-      class:is-checked={opt.value === value}
-      {...rg.radioProps(opt)}
-    >
-      <span class="sv-radio__dot"></span>
-      <span class="sv-radio__label">{opt.label}</span>
-    </button>
-  {/each}
-  {#if name}<input type="hidden" {name} value={value ?? ''} />{/if}
-</div>
+<SvField id={uid} {label} {hint} {error} {required} {dir}>
+  <div
+    class="sv-radiogroup sv-radiogroup--{orientation} sv-radiogroup--{size}"
+    class:is-invalid={invalid}
+    {...rg.groupProps()}
+  >
+    {#each options as opt (opt.value)}
+      <button
+        class="sv-radio"
+        class:is-checked={opt.value === value}
+        {...rg.radioProps(opt)}
+      >
+        <span class="sv-radio__dot"></span>
+        <span class="sv-radio__label">{opt.label}</span>
+      </button>
+    {/each}
+    {#if name}<input type="hidden" {name} value={value ?? ''} />{/if}
+  </div>
+</SvField>
 
 <style>
   .sv-radiogroup { --_accent: var(--sg-accent, #2563eb); display: flex; gap: 10px; }
@@ -76,6 +93,7 @@
     border: 1.5px solid var(--sg-border, #cbd5e1); background: var(--sg-input-bg, #fff);
     display: grid; place-items: center; transition: border-color 0.12s;
   }
+  .sv-radiogroup.is-invalid .sv-radio__dot { border-color: var(--sg-danger, #dc2626); }
   .sv-radio.is-checked .sv-radio__dot { border-color: var(--_accent); }
   .sv-radio.is-checked .sv-radio__dot::after {
     content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--_accent);

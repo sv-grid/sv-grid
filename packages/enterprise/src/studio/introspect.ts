@@ -16,6 +16,7 @@
  */
 import { linkRelationLabels, type EntityField, type EntityFieldType, type EntitySchema } from '../schema.js'
 import { buildEntitySchema, type IntrospectedColumn } from '../sources/schema-from-columns.js'
+import { refineFields } from '../sources/field-inference.js'
 
 /** Infer an entity field type from a runtime JSON value. */
 export function inferType(value: unknown): EntityFieldType {
@@ -63,7 +64,7 @@ export function introspectJson(
     return field
   })
 
-  return { name, fields }
+  return refineFields({ name, fields })
 }
 
 /** Drizzle column builder -> entity field type. */

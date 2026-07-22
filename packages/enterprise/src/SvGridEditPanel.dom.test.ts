@@ -1,0 +1,146 @@
+/**
+ * The repo's first runtime (DOM) test: mount SvGridEditPanel in jsdom and assert
+ * it renders the *rich* editor suite (not bare native inputs) and round-trips a
+ * row's values - the path that was previously only compile-checked. Enabled by
+ * the svelte plugin in vite.config.ts.
+ */
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { mount, unmount, flushSync } from 'svelte'
+import SvGridEditPanel from './SvGridEditPanel.svelte'
+import type { EntitySchema } from './schema'
+import { getSampleApp } from './studio/samples/index'
+
+type Customer = { id: string; name: string; mrr: number; active: boolean; tier: string }
+
+const schema: EntitySchema<Customer> = {
+  name: 'customers',
+  idField: 'id',
+  fields: [
+    { field: 'id', type: 'text', primaryKey: true, readonly: true },
+    { field: 'name', type: 'text', required: true },
+    { field: 'mrr', type: 'number' },
+    { field: 'active', type: 'boolean' },
+    { field: 'tier', type: 'enum', options: [{ value: 'free', label: 'Free' }, { value: 'pro', label: 'Pro' }] },
+  ],
+}
+
+let host: HTMLElement | null = null
+let comp: ReturnType<typeof mount> | null = null
+
+afterEach(() => {
+  if (comp) { unmount(comp); comp = null }
+  if (host) { host.remove(); host = null }
+})
+
+function render(props: Record<string, unknown>): HTMLElement {
+  host = document.createElement('div')
+  document.body.appendChild(host)
+  comp = mount(SvGridEditPanel, { target: host, props })
+  flushSync()
+  return host
+}
+
+describe('SvGridEditPanel (DOM)', () => {
+  it('mounts and renders each field with its rich editor, seeded from the row', () => {
+    const el = render({
+      schema,
+      row: { id: '1', name: 'Ada', mrr: 1200, active: true, tier: 'pro' },
+      presentation: 'inline',
+      onSubmit: vi.fn(),
+      onCancel: vi.fn(),
+    })
+
+    // Field labels are present.
+    expect(el.textContent).toContain('Name')
+    expect(el.textContent).toContain('Mrr')
+
+    // number -> SvNumberInput (its .sv-num__input), not a bare <input type="number">.
+    const numInput = el.querySelector<HTMLInputElement>('.sv-num__input')
+    expect(numInput).toBeTruthy()
+    expect(numInput!.value).toBe('1200') // seeded from the row
+
+    // boolean -> SvSwitchButton, on because active === true.
+    const sw = el.querySelector('.sv-switch')
+    expect(sw).toBeTruthy()
+    expect(sw!.classList.contains('is-on')).toBe(true)
+
+    // The primary action reads "Save" in edit mode.
+    const submit = el.querySelector<HTMLButtonElement>('button[type="submit"]')
+    expect(submit?.textContent?.trim()).toBe('Save')
+  })
+
+  it('is in create mode with no row (empty number, switch off, "Create" button)', () => {
+    const el = render({ schema, presentation: 'inline', onSubmit: vi.fn(), onCancel: vi.fn() })
+    expect(el.querySelector<HTMLInputElement>('.sv-num__input')!.value).toBe('') // empty, not "0"
+    expect(el.querySelector('.sv-switch')!.classList.contains('is-on')).toBe(false)
+    expect(el.querySelector('button[type="submit"]')?.textContent?.trim()).toBe('Create')
+  })
+
+  it('routes each editorType to its rich editor from the suite', () => {
+    const rich: EntitySchema = {
+      name: 'assets',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'brand', type: 'text', input: { editorType: 'color' } },
+        { field: 'secret', type: 'text', input: { editorType: 'password' } },
+        { field: 'labels', type: 'text', input: { editorType: 'chips' } },
+        { field: 'due', type: 'date' },
+        { field: 'phone', type: 'text', input: { editorType: 'phone' } },
+        { field: 'score', type: 'number', input: { editorType: 'slider' }, min: 0, max: 10 },
+      ],
+    }
+    const el = render({
+      schema: rich,
+      row: { id: '1', brand: '#ff0000', secret: 'pw', labels: 'a,b', due: '2024-01-02', phone: '+14155550100', score: 7 },
+      presentation: 'inline',
+      onSubmit: vi.fn(),
+      onCancel: vi.fn(),
+    })
+    expect(el.querySelector('.sv-color')).toBeTruthy()  // color -> SvColorInput
+    expect(el.querySelector('.sv-pw')).toBeTruthy()     // password -> SvPasswordInput
+    expect(el.querySelector('.sv-tags')).toBeTruthy()   // chips -> SvTagsInput
+    expect(el.querySelector('.sv-dtp')).toBeTruthy()    // date -> SvDateTimePicker
+    expect(el.querySelector('.sv-phone')).toBeTruthy()  // phone -> SvPhoneInput
+    expect(el.querySelector('.sv-slider')).toBeTruthy() // slider -> SvSlider
+  })
+
+  it('renders the enriched CRM sample forms with real editors (samples <-> edit panel)', () => {
+    const proj = getSampleApp('crm')!.build()
+    const entity = (name: string) => proj.entities.find((e) => e.name === name)!
+    const firstRow = (name: string) => (proj.dataSources?.[name] as { seed?: Record<string, unknown>[] }).seed![0]!
+
+    // Contacts: phone -> SvPhoneInput, segments (chips) -> SvTagsInput.
+    const contacts = render({ schema: entity('contacts'), row: firstRow('contacts'), presentation: 'inline', onSubmit: vi.fn(), onCancel: vi.fn() })
+    expect(contacts.querySelector('.sv-phone')).toBeTruthy()
+    expect(contacts.querySelector('.sv-tags')).toBeTruthy()
+
+    // Deals: probability -> SvSlider (rendered for slider editorType).
+    const deals = render({ schema: entity('deals'), row: firstRow('deals'), presentation: 'inline', onSubmit: vi.fn(), onCancel: vi.fn() })
+    expect(deals.querySelector('.sv-slider')).toBeTruthy()
+
+    // Companies: country -> SvCountryInput, health (rating) -> SvSlider.
+    const companies = render({ schema: entity('companies'), row: firstRow('companies'), presentation: 'inline', onSubmit: vi.fn(), onCancel: vi.fn() })
+    expect(companies.querySelector('.sv-country')).toBeTruthy()
+    expect(companies.querySelector('.sv-slider')).toBeTruthy()
+  })
+
+  it('submits the row values (edit mode, readonly id omitted)', async () => {
+    const onSubmit = vi.fn()
+    const el = render({
+      schema,
+      row: { id: '1', name: 'Ada', mrr: 1200, active: true, tier: 'pro' },
+      presentation: 'inline',
+      onSubmit,
+      onCancel: vi.fn(),
+    })
+    el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click()
+    // Submit validates asynchronously before calling onSubmit.
+    await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const payload = onSubmit.mock.calls[0]![0] as { mode: string; id: string | null; values: Record<string, unknown> }
+    expect(payload.mode).toBe('edit')
+    expect(payload.id).toBe('1')
+    expect(payload.values).toMatchObject({ name: 'Ada', mrr: 1200, active: true, tier: 'pro' })
+    expect(payload.values).not.toHaveProperty('id') // readonly PK is never submitted
+  })
+})

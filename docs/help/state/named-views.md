@@ -5,6 +5,10 @@ order/width/visibility, page, grouping. Named views let a user save the layout
 they like and switch between them. SvGrid ships this as a small manager over
 the grid's `getState()` / `setState()`, with pluggable storage.
 
+![save() captures a getState snapshot of sort, filter, columns, and page into a named view held in storage; load() reads it back and setState restores the grid to that view.](/docs-media/grid-named-views.svg)
+
+<div data-docs-demo="143-named-views" data-height="480"></div>
+
 ```svelte
 <script lang="ts">
   import { SvGrid, createNamedViews, localStorageViews, type SvGridApi } from '@svgrid/grid'

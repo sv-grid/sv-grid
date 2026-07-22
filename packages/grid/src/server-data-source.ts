@@ -31,6 +31,9 @@ export type ServerFilterModel = {
   >
 }
 
+/** A value column to roll up per group. */
+export type ServerAggregation = { col: string; fn: 'sum' | 'avg' | 'min' | 'max' | 'count' }
+
 export type ServerRequest = {
   /** Zero-based index of the first row wanted (inclusive). */
   startRow: number
@@ -40,7 +43,102 @@ export type ServerRequest = {
   pageSize: number
   sortModel: ServerSortModel
   filterModel: ServerFilterModel
+  /**
+   * Server-side grouping / tree: the columns being grouped on, outer to inner.
+   * Omitted / empty for a flat request.
+   */
+  groupBy?: string[]
+  /**
+   * The path of group keys the grid is expanding, e.g. `['Germany', 'Berlin']`.
+   * Empty (`[]`) asks for the top level. When `groupKeys.length < groupBy.length`
+   * the server returns **group rows** (one per distinct key at this level,
+   * carrying the group key + aggregates); when they are equal it returns the
+   * **leaf rows** under that path.
+   */
+  groupKeys?: string[]
+  /** Value columns to aggregate per group. */
+  aggregations?: ServerAggregation[]
 }
+
+/**
+ * A group row in the server-side group/tree model - one distinct key at a
+ * level, with its rolled-up aggregates. The grid renders it with an expander;
+ * expanding it fetches its children through the same `getRows`.
+ */
+export type ServerGroupRow<TData> = {
+  kind: 'group'
+  /** Stable id (the group path). */
+  id: string
+  /** Group keys from the root to this node, e.g. `['Germany', 'Berlin']`. */
+  path: string[]
+  /** The column this group is on (the `groupBy` entry for this level). */
+  field: string
+  /** This group's key value. */
+  key: string
+  /** Zero-based depth (0 = top level). */
+  level: number
+  expanded: boolean
+  loading: boolean
+  /** Aggregate values keyed by column id, read from the group's response row. */
+  aggregates: Record<string, unknown>
+  /** The raw response row for this group (key + aggregates), for cell rendering. */
+  data: TData
+}
+
+export type ServerLeafRow<TData> = {
+  kind: 'leaf'
+  id: string
+  level: number
+  data: TData
+}
+
+/**
+ * A "load more" affordance emitted at the end of a group whose children are
+ * only partially loaded (intra-group paging). Trigger `loadMoreChildren(path)`
+ * to fetch the next block.
+ */
+export type ServerMoreRow = {
+  kind: 'more'
+  id: string
+  level: number
+  /** Path of the parent group whose children to load more of. */
+  path: string[]
+  /** How many children remain unloaded. */
+  remaining: number
+  loading: boolean
+}
+
+/**
+ * A subtotal / footer row emitted after an expanded group's children when
+ * `groupFooters` is on. Carries the group's aggregates a second time so a
+ * "Total" line sits under the detail.
+ */
+export type ServerFooterRow<TData> = {
+  kind: 'footer'
+  id: string
+  level: number
+  path: string[]
+  /** The group this footer totals (its key). */
+  key: string
+  aggregates: Record<string, unknown>
+  /** The group's response row (key + aggregates), so value columns show totals. */
+  data: TData
+}
+
+/** A placeholder row shown while a block of children is being fetched. */
+export type ServerSkeletonRow = {
+  kind: 'skeleton'
+  id: string
+  level: number
+}
+
+/** A row in the flattened server-side group/tree display list. */
+export type ServerDisplayRow<TData> =
+  | ServerGroupRow<TData>
+  | ServerLeafRow<TData>
+  | ServerMoreRow
+  | ServerFooterRow<TData>
+  | ServerSkeletonRow
 
 export type ServerResult<TData> = {
   rows: ReadonlyArray<TData>
@@ -161,6 +259,10 @@ export function createServerDataSource<TData>(
         pageSize: state.pageSize,
         sortModel: state.sortModel,
         filterModel: state.filterModel,
+        // Flat mode: no grouping. Group mode lives in createServerGroupModel.
+        groupBy: [],
+        groupKeys: [],
+        aggregations: [],
       })
       if (disposed || id !== requestSeq) return // stale
       state.rows = result.rows

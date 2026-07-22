@@ -493,7 +493,7 @@
   <!-- Main: grid + audit panel -->
   <div class="pa-body">
     <div class="pa-grid-wrap">
-      <SvGrid
+      <SvGrid responsive={true}
         data={visibleDeals}
         columns={[
           {

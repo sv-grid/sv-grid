@@ -2,6 +2,9 @@
 
 > Live in [demo 73-chartjs-sync](https://svgrid.com/#/demos/73-chartjs-sync).
 
+<div data-docs-demo="73-chartjs-sync" data-height="480"></div>
+
+
 ## When
 
 A chart that re-renders from api.getDisplayedRows() on every filter / sort change.

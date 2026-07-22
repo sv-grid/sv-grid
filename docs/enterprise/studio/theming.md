@@ -5,6 +5,8 @@ schema designer, and the generated screens - is styled with the grid's `--sg-*`
 CSS custom properties. Set the tokens once and everything follows, including
 light / dark. No per-component styling required.
 
+![One set of --sg-* tokens fans out to the grid, edit panel, schema designer, and generated screens, in light and dark.](/docs-media/studio-theming.svg)
+
 ## How it works
 
 The components read tokens like `--sg-bg`, `--sg-fg`, and `--sg-accent` with

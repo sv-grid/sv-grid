@@ -619,11 +619,12 @@
           editable: false,
           cell: (ctx) => renderSnippet(SymbolCell, { row: ctx.row.original }),
         },
-        { field: "name", header: "Company", width: 230, editable: false },
+        { field: "name", header: "Company", width: 230, editable: false, hideBelow: 700 },
         {
           field: "sector",
           header: "Sector",
           width: 140,
+          hideBelow: 700,
           editorType: "list",
           editorOptions: SECTORS as unknown as ReadonlyArray<string>,
           cell: (ctx) => renderSnippet(SectorChip, { row: ctx.row.original }),
@@ -658,6 +659,7 @@
           header: "Trend (30 ticks)",
           width: 180,
           editable: false,
+          hideBelow: 700,
           cell: (ctx) => renderSnippet(TrendCell, { row: ctx.row.original }),
         },
         {
@@ -666,6 +668,7 @@
           editorType: "number",
           width: 90,
           editable: false,
+          hideBelow: 700,
           cell: (ctx) => renderSnippet(BidCell, { row: ctx.row.original }),
         },
         {
@@ -674,6 +677,7 @@
           editorType: "number",
           width: 90,
           editable: false,
+          hideBelow: 700,
           cell: (ctx) => renderSnippet(AskCell, { row: ctx.row.original }),
         },
         {
@@ -682,6 +686,7 @@
           editorType: "number",
           width: 95,
           editable: false,
+          hideBelow: 700,
           cell: (ctx) => renderSnippet(SpreadCell, { row: ctx.row.original }),
         },
         {
@@ -690,6 +695,7 @@
           editorType: "number",
           width: 115,
           editable: false,
+          hideBelow: 700,
           cell: (ctx) => renderSnippet(VolumeCell, { row: ctx.row.original }),
         },
         // The only editable column. Trader sets share count; the tick stream
@@ -707,6 +713,7 @@
           field: "risk",
           header: "Risk",
           width: 95,
+          hideBelow: 700,
           editorType: "list",
           editorOptions: ["Low", "Med", "High"] as const,
           cell: (ctx) => renderSnippet(RiskCell, { row: ctx.row.original }),
@@ -732,6 +739,7 @@
       fitColumns={false}
       columnVirtualization={false}
       initialColumnPinning={{ left: ["symbol"], right: ["pnl"] }}
+      responsive={true}
       {onCellValueChange}
     />
   </div>

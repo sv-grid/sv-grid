@@ -29,8 +29,19 @@ import {
   updateBlock,
   updateEntity,
   updateScreen,
+  duplicateScreen,
+  reorderScreen,
+  insertBlock,
   validateProject,
+  addTab,
+  removeTab,
+  renameTab,
+  addTabBlock,
+  removeTabBlock,
+  flattenBlocks,
+  TAB_CHILD_KINDS,
   type MasterDetailConfig,
+  type TabsConfig,
   type StudioProject,
 } from './project'
 
@@ -48,6 +59,68 @@ const orders: EntitySchema = {
   name: 'orders', label: 'Order', idField: 'id',
   fields: [{ field: 'id', type: 'text', primaryKey: true }, { field: 'total', type: 'number' }],
 }
+
+describe('Tabs container ops', () => {
+  const base = () => defaultBlockConfig('tabs', customers) as TabsConfig
+
+  it('defaults to two empty tabs', () => {
+    const cfg = base()
+    expect(cfg.tabs.map((t) => t.label)).toEqual(['Overview', 'Details'])
+    expect(cfg.tabs.every((t) => t.blocks.length === 0)).toBe(true)
+  })
+
+  it('adds, renames, and removes tabs (keeps at least one)', () => {
+    let cfg = addTab(base(), 'Extra')
+    expect(cfg.tabs).toHaveLength(3)
+    cfg = renameTab(cfg, 0, 'Home')
+    expect(cfg.tabs[0]!.label).toBe('Home')
+    cfg = removeTab(cfg, 2)
+    expect(cfg.tabs).toHaveLength(2)
+    const one = removeTab(removeTab(cfg, 1), 0)
+    expect(one.tabs).toHaveLength(1) // never drops the last tab
+  })
+
+  it('adds only allowed child kinds, with unique ids, and removes them', () => {
+    let cfg = addTabBlock(base(), 0, 'chart', customers)
+    cfg = addTabBlock(cfg, 0, 'kpi', customers)
+    expect(cfg.tabs[0]!.blocks.map((b) => b.config.kind)).toEqual(['chart', 'kpi'])
+    const ids = cfg.tabs[0]!.blocks.map((b) => b.id)
+    expect(new Set(ids).size).toBe(2) // unique ids
+    // grid is controller-bound -> rejected inside tabs
+    expect(addTabBlock(cfg, 0, 'grid', customers)).toBe(cfg)
+    expect(TAB_CHILD_KINDS).not.toContain('grid')
+    const removed = removeTabBlock(cfg, 0, ids[0]!)
+    expect(removed.tabs[0]!.blocks.map((b) => b.config.kind)).toEqual(['kpi'])
+  })
+
+  it('flattenBlocks surfaces blocks nested in tabs', () => {
+    const cfg = addTabBlock(addTabBlock(base(), 0, 'chart', customers), 1, 'gauge', customers)
+    const block = { id: 'tabs-1', span: 3 as const, config: cfg }
+    const kinds = flattenBlocks([block]).map((b) => b.config.kind)
+    expect(kinds).toEqual(['tabs', 'chart', 'gauge'])
+  })
+
+  it('updateBlock / removeBlock reach a block nested inside a tab', () => {
+    // A screen whose only block is a Tabs container with a chart in tab 0.
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? { ...s, blocks: [] } : s)) }
+    p = addBlock(p, sid, 'tabs')
+    const tb = p.screens.find((s) => s.id === sid)!.blocks[0]!
+    p = updateBlock(p, sid, tb.id, { config: addTabBlock(tb.config as TabsConfig, 0, 'chart', customers) })
+    const childId = (p.screens.find((s) => s.id === sid)!.blocks[0]!.config as TabsConfig).tabs[0]!.blocks[0]!.id
+
+    // Update the nested chart's config through the normal updateBlock path.
+    p = updateBlock(p, sid, childId, { config: { measure: 'mrr', reduce: 'avg' } as Partial<import('./project').ChartConfig> })
+    const child = (p.screens.find((s) => s.id === sid)!.blocks[0]!.config as TabsConfig).tabs[0]!.blocks[0]!
+    expect(child.config).toMatchObject({ kind: 'chart', measure: 'mrr', reduce: 'avg' })
+
+    // Remove the nested chart; the tab is left empty, the container survives.
+    p = removeBlock(p, sid, childId)
+    expect((p.screens.find((s) => s.id === sid)!.blocks[0]!.config as TabsConfig).tabs[0]!.blocks).toHaveLength(0)
+    expect(p.screens.find((s) => s.id === sid)!.blocks).toHaveLength(1) // container intact
+  })
+})
 
 describe('createProject / defaultScreenFor', () => {
   it('makes one default screen per entity, each with a grid (editing = form)', () => {
@@ -204,6 +277,63 @@ describe('validateProject', () => {
     const mdId = p.screens[0]!.blocks.at(-1)!.id
     p = updateBlock(p, sid, mdId, { config: { childEntity: 'ghosts', foreignKey: 'id' } as Partial<MasterDetailConfig> })
     expect(validateProject(p).some((i) => /missing child entity "ghosts"/.test(i.message))).toBe(true)
+  })
+
+  it('attributes a block issue to its screen + block id (for inline badges + jump)', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'master-detail') // unconfigured -> warns
+    const mdId = p.screens.find((s) => s.id === sid)!.blocks.at(-1)!.id
+    const issue = validateProject(p).find((i) => i.block === mdId)
+    expect(issue).toBeDefined()
+    expect(issue!.screen).toBe(sid)
+    expect(issue!.message).toMatch(/child entity/)
+  })
+
+  it('flags an empty filter panel and a tree without its fields', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    // A tree with no label/parent field warns.
+    p = addBlock(p, sid, 'tree')
+    const treeId = p.screens.find((s) => s.id === sid)!.blocks.at(-1)!.id
+    p = updateBlock(p, sid, treeId, { config: { labelField: '', parentField: '' } as Partial<import('./project').TreeConfig> })
+    const treeIssue = validateProject(p).find((i) => i.block === treeId)
+    expect(treeIssue?.message).toMatch(/label field/)
+  })
+})
+
+describe('block/screen efficiency ops', () => {
+  it('insertBlock pastes a block into a screen with a fresh id', () => {
+    let p = createProject([customers, orders])
+    const src = p.screens.find((s) => s.entity === 'customers')!.blocks[0]! // the default grid
+    const target = p.screens.find((s) => s.entity === 'orders')!.id
+    const before = p.screens.find((s) => s.id === target)!.blocks.length
+    p = insertBlock(p, target, src)
+    const blocks = p.screens.find((s) => s.id === target)!.blocks
+    expect(blocks).toHaveLength(before + 1)
+    expect(blocks.at(-1)!.id).not.toBe(src.id)          // fresh id, no collision
+    expect(blocks.at(-1)!.config.kind).toBe(src.config.kind)
+  })
+
+  it('duplicateScreen clones a screen (fresh id/route/title + fresh block ids), inserted after', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = duplicateScreen(p, sid)
+    expect(p.screens).toHaveLength(2)
+    const [a, b] = p.screens
+    expect(b!.id).not.toBe(a!.id)
+    expect(b!.route).not.toBe(a!.route)
+    expect(b!.title).toMatch(/copy/)
+    // Block ids in the clone are unique vs the source.
+    const aIds = new Set(a!.blocks.map((x) => x.id))
+    expect(b!.blocks.every((x) => !aIds.has(x.id))).toBe(true)
+  })
+
+  it('reorderScreen moves a screen to a new index', () => {
+    let p = createProject([customers, orders])
+    const [first, second] = p.screens
+    p = reorderScreen(p, first!.id, 1)
+    expect(p.screens.map((s) => s.id)).toEqual([second!.id, first!.id])
   })
 })
 

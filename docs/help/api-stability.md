@@ -167,5 +167,4 @@ months on a case-by-case basis - contact `sales@jqwidgets.com`.
   badge.
 - [Error reference](./errors.md) - the stable error class + message
   inventory.
-- [Migrating from AG Grid](./migrating-from-ag-grid.md) - if you're
-  coming from a previous-generation grid.
+- [Migration guides](./index.md) - if you're coming from another grid.

@@ -2,6 +2,9 @@
 
 > Live in [demo 54-columns-hierarchy](https://svgrid.com/#/demos/54-columns-hierarchy).
 
+<div data-docs-demo="54-columns-hierarchy" data-height="480"></div>
+
+
 ## When
 
 Re-order columns by dragging them in a side panel; live grid reflects the new order.

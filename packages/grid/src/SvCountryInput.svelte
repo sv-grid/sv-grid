@@ -8,23 +8,48 @@
    * roving active index + keyboard); only portal/measure/focus render concerns
    * live here.
    */
-  import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
+  import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
   import { flagEmoji } from './countries'
+  import SvField from './SvField.svelte'
+  import { nextEditorId, resolveMessages, type SvEditorProps } from './editor-contract'
   import { createCountryInput } from './createCountryInput.svelte'
 
-  type Props = {
+  /** User-facing strings (localizable via `messages`). */
+  type CountryMessages = { search: string; noResults: string }
+  const DEFAULT_MESSAGES: CountryMessages = { search: 'Search countries', noResults: 'No matches' }
+
+  type Props = SvEditorProps & {
     value?: string | null
     onChange?: (code: string) => void
     /** Show the dial code beside each country. */
     showDial?: boolean
     placeholder?: string
-    disabled?: boolean
-    name?: string
-    size?: 'sm' | 'md' | 'lg'
-    ariaLabel?: string
+    /** Override the built-in strings (search + empty-state). */
+    messages?: Partial<CountryMessages>
   }
 
-  let { value = null, onChange, showDial = false, placeholder = 'Select country…', disabled = false, name, size = 'md', ariaLabel }: Props = $props()
+  let {
+    value = null,
+    onChange,
+    showDial = false,
+    placeholder = 'Select country…',
+    disabled = false,
+    name,
+    size = 'md',
+    ariaLabel,
+    invalid = false,
+    required = false,
+    error,
+    label,
+    hint,
+    dir,
+    id,
+    messages,
+  }: Props = $props()
+
+  const autoId = nextEditorId('sv-country')
+  const uid = $derived(id ?? autoId)
+  const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
 
   let triggerEl = $state<HTMLButtonElement | null>(null)
   let searchEl = $state<HTMLInputElement | null>(null)
@@ -36,7 +61,13 @@
     onChange: (c) => onChange?.(c),
     disabled: () => disabled,
     ariaLabel: () => ariaLabel,
+    searchLabel: () => M.search,
     focusTrigger: () => triggerEl?.focus(),
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
   })
 
   const selected = $derived(ci.selected)
@@ -61,20 +92,22 @@
   })
 </script>
 
-<button bind:this={triggerEl} class="sv-country sv-country--{size}" class:is-open={ci.open} class:is-disabled={disabled} {...ci.triggerProps()}>
-  {#if selected}
-    <span class="sv-country__flag" aria-hidden="true">{flagEmoji(selected.code)}</span>
-    <span class="sv-country__name">{selected.name}</span>
-    {#if showDial}<span class="sv-country__dial">{selected.dial}</span>{/if}
-  {:else}
-    <span class="sv-country__ph">{placeholder}</span>
-  {/if}
-  <svg class="sv-country__chev" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-</button>
+<SvField id={uid} {label} {hint} {error} {required} {dir}>
+  <button bind:this={triggerEl} class="sv-country sv-country--{size}" class:is-open={ci.open} class:is-disabled={disabled} class:is-invalid={invalid} {...ci.triggerProps()}>
+    {#if selected}
+      <span class="sv-country__flag" aria-hidden="true">{flagEmoji(selected.code)}</span>
+      <span class="sv-country__name">{selected.name}</span>
+      {#if showDial}<span class="sv-country__dial">{selected.dial}</span>{/if}
+    {:else}
+      <span class="sv-country__ph">{placeholder}</span>
+    {/if}
+    <svg class="sv-country__chev" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+  </button>
+</SvField>
 
 {#if ci.open}
-  <div bind:this={panelEl} class="sv-country__panel" use:portalToBody style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} role="dialog">
-    <input bind:this={searchEl} class="sv-country__search" placeholder="Search countries…" {...ci.searchProps()} />
+  <div bind:this={panelEl} class="sv-country__panel" use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} role="dialog">
+    <input bind:this={searchEl} class="sv-country__search" placeholder={`${M.search}…`} {...ci.searchProps()} />
     <div class="sv-country__list" {...ci.listboxProps()}>
       {#each ci.filtered as c, i (c.code)}
         <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
@@ -84,7 +117,7 @@
           <span class="sv-country__dial">{c.dial}</span>
         </div>
       {:else}
-        <div class="sv-ddl__empty">No matches</div>
+        <div class="sv-ddl__empty">{M.noResults}</div>
       {/each}
     </div>
   </div>
@@ -95,13 +128,15 @@
   .sv-country {
     --_accent: var(--sg-accent, #2563eb);
     display: inline-flex; align-items: center; gap: 8px; width: 220px;
-    background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); font: inherit; text-align: left;
+    background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); font: inherit; text-align: start;
     border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1)); border-radius: var(--sg-radius, 8px); padding: 0 10px; cursor: pointer;
   }
   .sv-country--sm { height: 28px; font-size: 12px; }
   .sv-country--md { height: 34px; font-size: 13px; }
   .sv-country--lg { height: 40px; font-size: 15px; }
   .sv-country.is-open, .sv-country:focus-visible { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); outline: none; }
+  .sv-country.is-invalid { border-color: var(--sg-danger, #dc2626); }
+  .sv-country.is-invalid.is-open, .sv-country.is-invalid:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
   .sv-country.is-disabled { opacity: 0.6; cursor: not-allowed; }
   .sv-country__flag { font-size: 16px; }
   .sv-country__name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

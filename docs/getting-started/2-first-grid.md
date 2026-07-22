@@ -2,6 +2,8 @@
 
 > Step 2 of 6 · [← Install](./1-install.md) · [Next: Data and columns →](./3-data-and-columns.md)
 
+![Anatomy of the minimal example: a data rows array and a columns ColumnDef array flow into a SvGrid element that renders a small table with a header row and three body rows.](/docs-media/gs-first-grid.svg)
+
 ```svelte
 <script lang="ts">
   import { SvGrid, type ColumnDef } from '@svgrid/grid'

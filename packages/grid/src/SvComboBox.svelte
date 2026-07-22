@@ -7,37 +7,106 @@
    * This is one styled renderer over the headless `createCombobox` core (state +
    * keyboard + ARIA); only portal/measure/scroll render concerns live here.
    */
-  import { anchoredRect, portalToBody, type AnchoredRect } from './popover'
-  import { type ListOption } from './list-option'
+  import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
+  import { createDismissableLayer } from './a11y/dismissable'
+  import { groupOptions, type ListOption } from './list-option'
+  import SvField from './SvField.svelte'
+  import { nextEditorId, resolveMessages, type SvEditorProps } from './editor-contract'
   import { createCombobox } from './createCombobox.svelte'
 
-  type Props = {
-    options: ReadonlyArray<ListOption>
+  /** User-facing strings (localizable via `messages`). */
+  type ComboMessages = { noResults: string; loading: string; typeMore: string }
+  const DEFAULT_MESSAGES: ComboMessages = { noResults: 'No matches', loading: 'Loading...', typeMore: 'Type to search' }
+
+  type Props = SvEditorProps & {
+    options?: ReadonlyArray<ListOption>
     value?: string | number | null
     onChange?: (value: string | number | null) => void
     placeholder?: string
-    disabled?: boolean
-    name?: string
-    size?: 'sm' | 'md' | 'lg'
-    ariaLabel?: string
     autoOpen?: boolean
+    /** Load options from a server as the user types (debounced). Disables local
+     *  filtering; the returned list is shown as-is. */
+    loadOptions?: (query: string) => Promise<ListOption[]>
+    /** Min chars before a remote search fires. Default 1. */
+    minLength?: number
+    /** Debounce (ms) before a remote search fires. Default 250. */
+    debounce?: number
+    /** Override the built-in strings (empty-state / loading text). */
+    messages?: Partial<ComboMessages>
   }
 
-  let { options, value = null, onChange, placeholder = 'Select…', disabled = false, name, size = 'md', ariaLabel, autoOpen = false }: Props = $props()
+  let {
+    options = [],
+    value = null,
+    onChange,
+    placeholder = 'Select…',
+    disabled = false,
+    name,
+    size = 'md',
+    ariaLabel,
+    invalid = false,
+    required = false,
+    error,
+    label,
+    hint,
+    dir,
+    id,
+    autoOpen = false,
+    loadOptions,
+    minLength = 1,
+    debounce = 250,
+    messages,
+  }: Props = $props()
+
+  const autoId = nextEditorId('sv-combo')
+  const uid = $derived(id ?? autoId)
+  const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
 
   let inputEl = $state<HTMLInputElement | null>(null)
   let fieldEl = $state<HTMLDivElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
   let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
 
+  // Remote data source: fetch options as the query changes (debounced).
+  let remoteOptions = $state<ListOption[]>([])
+  let loading = $state(false)
+  let searched = $state(false)
+  let debTimer: ReturnType<typeof setTimeout> | undefined
+  let reqSeq = 0
+  const effectiveOptions = $derived(loadOptions ? remoteOptions : options)
+
   const combo = createCombobox({
-    options: () => options,
+    options: () => effectiveOptions,
     value: () => value,
     onChange: (v) => onChange?.(v),
     disabled: () => disabled,
     ariaLabel: () => ariaLabel,
+    localFilter: () => !loadOptions,
     focusInput: () => inputEl?.focus(),
     blurInput: () => inputEl?.blur(),
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
+  })
+
+  // Debounced remote search driven by the combobox query while editing.
+  $effect(() => {
+    if (!loadOptions) return
+    const q = combo.editing ? combo.query : ''
+    if (debTimer) clearTimeout(debTimer)
+    if (q.trim().length < minLength) { remoteOptions = []; loading = false; searched = false; return }
+    loading = true
+    const seq = ++reqSeq
+    debTimer = setTimeout(async () => {
+      try {
+        const res = await loadOptions!(q.trim())
+        if (seq === reqSeq) { remoteOptions = res; searched = true }
+      } finally {
+        if (seq === reqSeq) loading = false
+      }
+    }, debounce)
   })
 
   function updatePos() {
@@ -51,9 +120,9 @@
     updatePos()
     const rp = () => updatePos()
     window.addEventListener('scroll', rp, true); window.addEventListener('resize', rp)
-    const od = (e: PointerEvent) => { const t = e.target as Node | null; if (t && (fieldEl?.contains(t) || panelEl?.contains(t))) return; combo.close() }
-    document.addEventListener('pointerdown', od, true)
-    return () => { window.removeEventListener('scroll', rp, true); window.removeEventListener('resize', rp); document.removeEventListener('pointerdown', od, true) }
+    const layer = createDismissableLayer({ element: () => [fieldEl, panelEl], onDismiss: () => combo.close(), closeOnEscape: false })
+    layer.activate()
+    return () => { window.removeEventListener('scroll', rp, true); window.removeEventListener('resize', rp); layer.release() }
   })
   // Keep the active option scrolled into view (render concern).
   $effect(() => {
@@ -64,28 +133,39 @@
   function focusOpen(node: HTMLInputElement) { if (autoOpen) { node.focus() } }
 </script>
 
-<div bind:this={fieldEl} class="sv-combo sv-combo--{size}" class:is-open={combo.open} class:is-disabled={disabled}>
-  <input
-    bind:this={inputEl}
-    class="sv-combo__input"
-    type="text"
-    {placeholder}
-    {...combo.inputProps()}
-    use:focusOpen
-  />
-  <button class="sv-combo__chev" {...combo.triggerProps()}>
-    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-  </button>
-</div>
+<SvField id={uid} {label} {hint} {error} {required} {dir}>
+  <div bind:this={fieldEl} class="sv-combo sv-combo--{size}" class:is-open={combo.open} class:is-disabled={disabled} class:is-invalid={invalid}>
+    <input
+      bind:this={inputEl}
+      class="sv-combo__input"
+      type="text"
+      {placeholder}
+      {...combo.inputProps()}
+      use:focusOpen
+    />
+    <button class="sv-combo__chev" {...combo.triggerProps()}>
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+    </button>
+  </div>
+</SvField>
 
 {#if combo.open}
-  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} {...combo.listboxProps()}>
-    {#each combo.filtered as opt, i (opt.value)}
-      <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-      <div class="sv-ddl__opt" class:is-active={combo.isActive(i)} class:is-selected={combo.isSelected(opt)} class:is-disabled={opt.disabled} {...combo.optionProps(i)}>{opt.label}</div>
+  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} {...combo.listboxProps()}>
+    {#if loading}
+      <div class="sv-ddl__empty sv-ddl__loading"><svg class="sv-ddl__spin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6" /></svg>{M.loading}</div>
+    {:else if loadOptions && !searched && combo.query.trim().length < minLength}
+      <div class="sv-ddl__empty">{M.typeMore}</div>
+    {:else if combo.filtered.length}
+      {#each groupOptions(combo.filtered) as g (g.group ?? ' ')}
+        {#if g.group != null}<div class="sv-ddl__group-label" aria-hidden="true">{g.group}</div>{/if}
+        {#each g.options as opt (opt.value)}
+          <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
+          <div class="sv-ddl__opt" class:is-active={combo.isActive(opt.index)} class:is-selected={combo.isSelected(opt)} class:is-disabled={opt.disabled} {...combo.optionProps(opt.index)}>{opt.label}</div>
+        {/each}
+      {/each}
     {:else}
-      <div class="sv-ddl__empty">No matches</div>
-    {/each}
+      <div class="sv-ddl__empty">{M.noResults}</div>
+    {/if}
   </div>
 {/if}
 {#if name}<input type="hidden" {name} value={value ?? ''} />{/if}
@@ -101,8 +181,14 @@
   .sv-combo--md { height: 34px; font-size: 13px; }
   .sv-combo--lg { height: 40px; font-size: 15px; }
   .sv-combo.is-open, .sv-combo:focus-within { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
+  .sv-combo.is-invalid { border-color: var(--sg-danger, #dc2626); }
+  .sv-combo.is-invalid.is-open, .sv-combo.is-invalid:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
   .sv-combo.is-disabled { opacity: 0.6; }
-  .sv-combo__input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: inherit; font: inherit; padding: 0 4px 0 10px; }
+  .sv-combo__input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: inherit; font: inherit; padding-block: 0; padding-inline: 10px 4px; }
   .sv-combo__chev { display: grid; place-items: center; width: 28px; align-self: stretch; background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; }
   :global(.sv-ddl__empty) { padding: 8px 10px; color: var(--sg-muted, #94a3b8); font-size: 13px; }
+  :global(.sv-ddl__loading) { display: flex; align-items: center; gap: 7px; }
+  :global(.sv-ddl__spin) { animation: sv-combo-spin 0.7s linear infinite; }
+  @keyframes sv-combo-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { :global(.sv-ddl__spin) { animation: none; } }
 </style>

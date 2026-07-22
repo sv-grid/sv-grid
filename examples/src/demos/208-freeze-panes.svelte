@@ -2,7 +2,7 @@
   /**
    * 208. Freeze panes
    * ------------------
-   * A plain <SvGrid> as an Excel freeze-panes sheet. The row-number gutter is
+   * A plain <SvGrid responsive={true}> as an Excel freeze-panes sheet. The row-number gutter is
    * sticky by construction; pinning the first two letter columns
    * (initialColumnPinning) keeps Account + Owner in view while you scroll across
    * a full year of months, and the sticky header keeps A..O in view while you
@@ -126,7 +126,7 @@
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sheet" use:rowResize={{ onResize: onRowResize, min: 20, max: 320 }}>
-    <SvGrid
+    <SvGrid responsive={true}
       data={raw}
       columns={columns}
       features={features}

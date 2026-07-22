@@ -8,8 +8,8 @@
    * `statusBar` (and `enableCellSelection`), then drag a rectangle across
    * the numeric cells.
    *
-   *   <SvGrid enableCellSelection statusBar />
-   *   <SvGrid enableCellSelection statusBar={{ aggregates: ['sum', 'avg'] }} />
+   *   <SvGrid responsive={true} enableCellSelection statusBar />
+   *   <SvGrid responsive={true} enableCellSelection statusBar={{ aggregates: ['sum', 'avg'] }} />
    */
   import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'
 
@@ -66,7 +66,7 @@
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

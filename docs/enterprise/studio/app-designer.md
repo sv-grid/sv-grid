@@ -88,11 +88,12 @@ screen / block counts, current selection, data source).
   sets the **default source kind** for new entities, the **app layout**, and adds
   screens from a **template** (CRUD, dashboard, master-detail, empty).
 - **Top bar** - rename the app, set an **accent color** (themes the whole app),
-  add a **New entity** from scratch, **Connect DB** (the launcher's live-database
-  wizard - see [Launch the designer](./launch.md)), **Import schema** (paste a
-  Drizzle / Prisma schema to add its entities), **Save / Load** the design as
-  `studio.config.json`, and **Generate app**. With no entities yet, the canvas
-  shows an **onboarding** screen offering the same three ways to start.
+  add a **New entity** from scratch, **Import CSV** (drop in a spreadsheet - see
+  below), **Connect DB** (the launcher's live-database wizard - see
+  [Launch the designer](./launch.md)), **Import schema** (paste a Drizzle / Prisma
+  schema to add its entities), **Save / Load** the design as `studio.config.json`,
+  and **Generate app**. With no entities yet, the canvas shows an **onboarding**
+  screen offering the same ways to start.
 - **✨ Copilot** (when the host wires it) - describe a change in plain English
   ("add an orders screen with a revenue chart", "make mrr required") and the AI
   edits your project. It's a host hook: `<SvStudioDesigner onCopilot={...} />`
@@ -142,6 +143,9 @@ views, not generic widgets:
 | **Pivot** | A full pivot table (`SvPivotDesigner`) the end user can re-pivot live. | Row + column dimensions (checkboxes), a measure, and its aggregate. |
 | **Dashboard** | A schema-driven KPI + chart board (`SvSchemaDashboard`). | - |
 | **KPI** | A single reduced metric tile. | Label, measure, reduce. |
+| **Gauge** | A radial gauge (`SvGauge`) of one reduced measure within a range - utilization, progress, scores. | Label, measure, reduce, min / max, unit. |
+| **Tree** | A hierarchical tree (`SvTree`) built from the entity's own rows via a self-referential parent. | A label field + a parent field (a row's link to its parent row). |
+| **Tabs** | A tabbed container (`SvTabs`) that **groups display blocks** into tabs - e.g. an Overview tab of KPIs + a Details tab with a chart. | Add / rename / remove tabs; per tab, add child blocks (charts, KPIs, gauges, pivots, trees). |
 | **Master / detail** | A row that expands into a nested grid of related records. | Child entity + foreign key. |
 | **Filter panel** | A faceted sidebar that **filters the screen's grid** - enum / boolean facets pick a value, text facets search. | Title + which fields become facets. |
 | **Record panel** | Shows the row **selected in the grid** - a read-only field list, or an inline edit form. | Editable on / off, and (read-only) which fields to show. |
@@ -180,6 +184,10 @@ data source per app. In the inspector (no block selected), the **Data source**
 section binds the screen's entity to:
 
 - **In-memory** - seeded sample rows, runs with no backend (the default).
+- **Local database (no setup)** - a real, persistent Postgres ([PGlite](https://pglite.dev))
+  running in the browser and saved to IndexedDB, so rows survive reloads with zero
+  backend. Same SQL as production - swap to a hosted **SQL** source later without
+  touching the schema. See [Local database](./local-database.md).
 - **REST API** - a spacious request builder (Open request builder): **method**,
   **base URL**, **path** (path params auto-derive from `{tokens}`), and **Query /
   Path / Header** tabs. **Send** runs it live and shows a **response table** plus
@@ -205,15 +213,40 @@ a generated `src/lib/connections.ts` - the one manual step is wiring a real
 `SqlExecutor` / Supabase client there (you can't ship DB credentials to the
 browser). See [Databases](./databases.md) and [REST API](./rest-api.md).
 
+## Import a CSV / spreadsheet
+
+The fastest way to start from **your own data**: **Import CSV** in the top bar
+takes a `.csv` file and turns it into a running screen. The designer parses the
+file (quoted fields, embedded newlines, and CRLF included), **infers a type per
+column** from its values (number, boolean, date, or text - thousands separators
+and `yes/no/true/false` are understood), ensures a **primary key** (it reuses an
+`id` column or synthesizes one), and adds an entity with a full CRUD screen,
+**seeded with the real rows**. Unsafe headers (`First Name`, `E-mail`) become safe
+field keys and the note tells you what was renamed.
+
+Imported rows ship **in-memory** by default (no dependencies), so the app runs
+immediately. Switch that entity's **Data source** to **Local database** to make
+the same imported rows **persist** across reloads - the seed carries over. This is
+all client-side: `csvToEntity(name, text)` is a pure function exported from
+`@svgrid/enterprise`, so the same import works in the CLI and your own tools.
+
+> **Large files:** the imported rows are stored as the entity's seed, so they are
+> embedded in `studio.config.json` when you **Save** the design. That is fine for
+> reference data and samples; for a large dataset, import a representative sample
+> and point the entity at a **database** (Local database / SQL) for the full data.
+
 ## Pages and layout
 
 - **Pages** - each screen is a route. In the inspector's **Page** section, toggle
   **Show in navigation**, set a **nav label** and **nav order**, or start a page
   from the **Empty** template. Hidden pages stay routable but drop out of the nav.
 - **App layout** - the rail's **App layout** section themes the generated shell:
-  **Sidebar** or **Top navigation**, a **brand** name, a **footer**, and (for the
-  sidebar) the **nav position** (left / right). This drives the generated
-  `src/routes/+layout.svelte`.
+  **Sidebar** or **Top navigation**, a **brand** name, a **company logo**
+  (uploaded - stored inline and shown in the nav in place of the brand text), a
+  **footer**, and (for the sidebar) the **nav position** (left / right). This
+  drives the generated `src/routes/+layout.svelte`. The generated shell is
+  **responsive**: on phones the sidebar collapses to a hamburger drawer, the
+  top-nav links scroll, and each screen's block grid stacks to one column.
 
 ## Save, regenerate, round-trip
 
@@ -233,6 +266,15 @@ const json = serializeProject(project)      // save the design
 const project2 = parseProject(json)         // reopen it
 const files = emitStudioProject(project2)   // -> the app's source files
 ```
+
+**The exported app carries its own design.** The downloaded zip includes a
+`studio.config.json` at its root. To keep editing the app visually after you've
+worked on it locally, open the designer and **Load** that file - entities,
+screens, blocks, theme, RBAC, i18n, and now the logo all come back exactly as
+generated. Because the designer regenerates the files under `src/`, keep any
+hand-written code in **new** files/modules you import, so a re-generate never
+overwrites it (or use the CLI's `svgrid:managed` markers - see
+[Code generation](./code-generation.md)).
 
 ## Generate the app
 

@@ -4,6 +4,8 @@ The pattern for "user changes sort + filters + columns; reopens the
 page next week; everything is where they left it." Powered entirely
 by your own state - the grid never writes to storage on its own.
 
+![Named-view chips act as a switcher; the active view captures sort, filters, columns, and grouping, then replays into the grid.](/docs-media/grid-saved-views.svg)
+
 Live reference: a reporting workspace with named saved views in
 localStorage:
 

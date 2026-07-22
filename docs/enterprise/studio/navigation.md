@@ -5,6 +5,8 @@ two kinds of flow, both grid-native: **drill-through** (click a row or a chart
 category to open another screen, filtered to what you clicked) and **row action
 buttons** (per-row Edit / Delete / Open).
 
+![Two navigation flows turn screens into an app: drill-through opens a filtered target screen from a clicked row or chart category, and per-row action buttons render an Edit / Delete / Open actions column.](/docs-media/studio-navigation.svg)
+
 ## Drill-through (row click)
 
 Select a grid, open **Navigation & actions** in the inspector, and set **Row

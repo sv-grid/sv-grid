@@ -1,0 +1,118 @@
+# SvPasswordInput
+
+A password field with a reveal toggle and an optional 4-level strength meter.
+
+`SvPasswordInput` is the credential editor for sign-in and sign-up forms. It hides
+the value behind dots, offers an eye toggle to reveal it, and can show a
+four-level strength meter driven by the headless `createPasswordInput` core. All
+of its user-facing strings (the toggle labels and the strength words) are
+localizable through `messages`. Its label / hint / error chrome comes from
+[SvField](sv-field.md).
+
+<div data-docs-demo="301-password-input" data-height="420"></div>
+
+## Basic usage
+
+```svelte
+<script lang="ts">
+  import { SvPasswordInput } from '@svgrid/grid'
+  let pw = $state('')
+</script>
+
+<SvPasswordInput
+  label="Password"
+  bind:value={pw}
+  showStrength
+  autocomplete="new-password"
+/>
+```
+
+## Props
+
+`SvPasswordInput` extends the shared `SvEditorProps` (`disabled`, `readonly`,
+`required`, `invalid`, `error`, `label`, `hint`, `size`, `dir`, `name`, `id`,
+`ariaLabel`) and adds:
+
+| Prop           | Type                            | Default              | Description                                       |
+| -------------- | ------------------------------- | -------------------- | ------------------------------------------------- |
+| `value`        | `string`                        | `''`                 | The password value.                               |
+| `onChange`     | `(value: string) => void`       | -                    | Fires on every input.                             |
+| `placeholder`  | `string`                        | -                    | Empty-state hint text.                            |
+| `revealable`   | `boolean`                       | `true`               | Show the show/hide eye toggle.                    |
+| `showStrength` | `boolean`                       | `false`              | Show a 4-level strength meter.                    |
+| `autocomplete` | `string`                        | `current-password`   | Native autocomplete token.                        |
+| `messages`     | `Partial<PasswordMessages>`     | -                    | Override the built-in strings (see below).        |
+
+`PasswordMessages` is `{ show; hide; weak; fair; good; strong }`.
+
+## Patterns
+
+### Sign-up with a strength meter
+
+Turn on `showStrength` and set `autocomplete="new-password"` so browsers offer to
+generate and store a strong secret:
+
+```svelte
+<SvPasswordInput label="New password" bind:value={pw} showStrength autocomplete="new-password" />
+```
+
+### Localized strings
+
+Pass a partial `messages` object; only the keys you set are replaced, the rest
+keep their defaults:
+
+```svelte
+<SvPasswordInput
+  bind:value={pw}
+  showStrength
+  messages={{ show: 'Afficher', hide: 'Masquer', weak: 'Faible', strong: 'Fort' }}
+/>
+```
+
+### Confirm-password match
+
+Compare two fields with a `$derived` check and mark only the confirm field
+invalid. Turn off `revealable` on the confirm field so the value cannot be peeked:
+
+```svelte
+<script lang="ts">
+  import { SvPasswordInput } from '@svgrid/grid'
+  let pw = $state('')
+  let confirm = $state('')
+  const mismatch = $derived(confirm.length > 0 && confirm !== pw)
+</script>
+
+<SvPasswordInput
+  label="New password"
+  bind:value={pw}
+  showStrength
+  autocomplete="new-password"
+  hint="At least 8 characters"
+/>
+<SvPasswordInput
+  label="Confirm password"
+  bind:value={confirm}
+  revealable={false}
+  autocomplete="new-password"
+  invalid={mismatch}
+  error={mismatch ? 'Passwords do not match' : undefined}
+/>
+```
+
+Tip: the strength meter is `aria-hidden`, so put any hard requirements in `hint`
+or `error` text - that is the part assistive tech actually reads.
+
+## Accessibility
+
+- The reveal toggle is a real `<button>` with `show` / `hide` `aria-label`s from
+  `messages`, and toggles the input between `password` and `text`.
+- `label`, `hint`, and `error` are wired via [SvField](sv-field.md); `required`
+  and `invalid` add `aria-required` / `aria-invalid`.
+- The strength meter is `aria-hidden`; convey requirements through `hint` or
+  `error` text so they reach assistive tech.
+
+## See also
+
+- [Inputs overview](inputs.md) - the whole input family at a glance.
+- [SvOtpInput](sv-otp-input.md) - segmented one-time codes.
+- [SvTextInput](sv-text-input.md) - the base single-line field.

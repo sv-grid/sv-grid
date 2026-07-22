@@ -2,7 +2,7 @@
   /**
    * 109. Column reorder - engine-level (`enableColumnReorder`)
    * ---------------------------------------------------------
-   * Set `enableColumnReorder` on `<SvGrid>` and every header becomes
+   * Set `enableColumnReorder` on `<SvGrid responsive={true}>` and every header becomes
    * draggable. The grid paints a vertical drop indicator between
    * neighbouring headers, fires `onColumnOrderChange` on every change,
    * and exposes `api.setColumnOrder()` / `api.getColumnOrder()` for
@@ -122,7 +122,7 @@
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={rows}
       columns={columns}
       features={features}

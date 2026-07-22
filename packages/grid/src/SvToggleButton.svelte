@@ -4,18 +4,34 @@
    * Parity: Smart `smart-toggle-button`. Controlled via `pressed` + `onChange`.
    */
   import type { Snippet } from 'svelte'
+  import SvField from './SvField.svelte'
+  import { nextEditorId, type SvEditorProps } from './editor-contract'
   import { createToggle } from './createToggle.svelte'
 
-  type Props = {
+  type Props = SvEditorProps & {
     pressed?: boolean
     onChange?: (pressed: boolean) => void
-    disabled?: boolean
-    size?: 'sm' | 'md' | 'lg'
-    ariaLabel?: string
     children?: Snippet
   }
 
-  let { pressed = false, onChange, disabled = false, size = 'md', ariaLabel, children }: Props = $props()
+  let {
+    pressed = false,
+    onChange,
+    disabled = false,
+    size = 'md',
+    ariaLabel,
+    invalid = false,
+    required = false,
+    error,
+    label,
+    hint,
+    dir,
+    id,
+    children,
+  }: Props = $props()
+
+  const autoId = nextEditorId('sv-toggle')
+  const uid = $derived(id ?? autoId)
 
   // The styled toggle is just a renderer over the headless core.
   const t = createToggle({
@@ -23,16 +39,24 @@
     onChange: (v) => onChange?.(v),
     disabled: () => disabled,
     ariaLabel: () => ariaLabel,
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
   })
 </script>
 
-<button
-  class="sv-toggle sv-toggle--{size}"
-  class:is-pressed={pressed}
-  {...t.buttonProps()}
->
-  {#if children}{@render children()}{/if}
-</button>
+<SvField id={uid} {label} {hint} {error} {required} {dir}>
+  <button
+    class="sv-toggle sv-toggle--{size}"
+    class:is-pressed={pressed}
+    class:is-invalid={invalid}
+    {...t.buttonProps()}
+  >
+    {#if children}{@render children()}{/if}
+  </button>
+</SvField>
 
 <style>
   .sv-toggle {
@@ -53,5 +77,6 @@
     background: var(--_accent); color: var(--sg-on-accent, #fff); border-color: var(--_accent);
   }
   .sv-toggle[disabled] { opacity: 0.55; cursor: not-allowed; }
+  .sv-toggle.is-invalid { border-color: var(--sg-danger, #dc2626); }
   .sv-toggle:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--_accent)); outline-offset: 2px; }
 </style>

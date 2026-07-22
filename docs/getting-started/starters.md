@@ -3,6 +3,8 @@
 The fastest way to a working SvGrid app. One command scaffolds a project
 with the grid already wired up - no copy-paste, no config archaeology.
 
+![Running npm create @svgrid@latest scaffolds a SvelteKit project with SvGrid already wired into src/routes/+page.svelte and a template choice of minimal or admin-dashboard, then npm run dev starts the local server.](/docs-media/gs-starters.svg)
+
 ## `npm create @svgrid`
 
 ```bash

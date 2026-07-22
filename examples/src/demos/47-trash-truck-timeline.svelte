@@ -425,7 +425,7 @@
 
     <!-- Grid -->
     <div class="flex-1 min-h-0">
-      <SvGrid
+      <SvGrid responsive={true}
         data={fleet}
         columns={[
           { field: 'id', header: 'Truck', width: LEFT_W.id, editable: false,

@@ -7,6 +7,12 @@ import {
   rowId,
   toSubmitValues,
   validateAll,
+  toDateString,
+  toDateTimeString,
+  toNumberValue,
+  fromNumberValue,
+  toSliderValue,
+  toTags,
 } from './edit-panel'
 
 type Customer = {
@@ -167,5 +173,41 @@ describe('toSubmitValues', () => {
 describe('rowId', () => {
   it('resolves the primary key as a string', () => {
     expect(rowId(schema, { id: 99 } as unknown as Customer)).toBe('99')
+  })
+})
+
+describe('editor value coercion', () => {
+  it('formats a Date to a local yyyy-MM-dd (no UTC shift)', () => {
+    // Local midnight - toISOString would shift the day in negative-offset zones; local formatting must not.
+    const d = new Date(2024, 0, 2, 0, 0) // 2 Jan 2024, local
+    expect(toDateString(d)).toBe('2024-01-02')
+    expect(toDateString(null)).toBe('')
+  })
+
+  it('formats a Date to a local yyyy-MM-ddTHH:mm', () => {
+    expect(toDateTimeString(new Date(2024, 2, 4, 9, 5))).toBe('2024-03-04T09:05')
+    expect(toDateTimeString(null)).toBe('')
+  })
+
+  it('coerces numbers in/out with the empty-string convention', () => {
+    expect(toNumberValue(1200)).toBe(1200)
+    expect(toNumberValue('1200')).toBeNull() // strings are not numbers
+    expect(toNumberValue(NaN)).toBeNull()
+    expect(fromNumberValue(null)).toBe('')
+    expect(fromNumberValue(0)).toBe(0) // 0 is a real value, not empty
+  })
+
+  it('slider falls back to min when unset', () => {
+    expect(toSliderValue(42, 0)).toBe(42)
+    expect(toSliderValue('', 10)).toBe(10)
+    expect(toSliderValue(undefined, 5)).toBe(5)
+  })
+
+  it('coerces tags from arrays, comma strings, or empty', () => {
+    expect(toTags(['a', 'b'])).toEqual(['a', 'b'])
+    expect(toTags('a, b ,c')).toEqual(['a', 'b', 'c'])
+    expect(toTags('')).toEqual([])
+    expect(toTags(null)).toEqual([])
+    expect(toTags([1, 2])).toEqual(['1', '2'])
   })
 })

@@ -22,14 +22,18 @@ import {
   serializeProject,
   introspectDatabase,
   listDatabaseTables,
+  probeConnection,
   linkRelationLabels,
+  buildConnectionString,
   getSampleApp,
   type EntitySchema,
   type GeneratedFile,
+  type SqlConnectionParts,
   type SqlDialectName,
   type StudioProject,
 } from '@svgrid/enterprise/studio'
 import { connect } from './db-connect.js'
+import { DRIVER_FOR, installDriver, isDriverInstalled } from './driver-install.js'
 
 export type DesignerServerOptions = {
   /** studio.config.json path to load + auto-save. */
@@ -58,15 +62,6 @@ const MIME: Record<string, string> = {
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
   '.map': 'application/json; charset=utf-8',
-}
-
-/** The driver package each dialect needs installed for live introspection. */
-const DRIVER_FOR: Record<SqlDialectName, string> = {
-  postgres: 'pg',
-  supabase: 'pg',
-  mysql: 'mysql2',
-  mssql: 'mssql',
-  sqlite: 'better-sqlite3',
 }
 
 /** The runtime deps the generated code imports, keyed by a source needle. */
@@ -224,12 +219,45 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
       return
     }
 
+    // Assemble a connection string from guided-form fields (host/port/user/...).
+    if (path === '/api/build-connection' && req.method === 'POST') {
+      const body = await readBody(req)
+      const reqBody = JSON.parse(body) as { dialect?: SqlDialectName; parts?: SqlConnectionParts }
+      if (!reqBody.dialect) {
+        send(res, 400, JSON.stringify({ error: 'dialect is required' }))
+        return
+      }
+      try {
+        const url = buildConnectionString(reqBody.dialect, reqBody.parts ?? {})
+        send(res, 200, JSON.stringify({ url }))
+      } catch (err) {
+        send(res, 400, JSON.stringify({ error: err instanceof Error ? err.message : String(err) }))
+      }
+      return
+    }
+
+    // Install the dialect's driver into the user's project (auto-detects the PM).
+    if (path === '/api/install-driver' && req.method === 'POST') {
+      const body = await readBody(req)
+      const reqBody = JSON.parse(body) as { dialect?: SqlDialectName }
+      if (!reqBody.dialect) {
+        send(res, 400, JSON.stringify({ error: 'dialect is required' }))
+        return
+      }
+      const cwd = process.cwd()
+      log(`  installing ${DRIVER_FOR[reqBody.dialect]} driver...`)
+      const result = await installDriver(reqBody.dialect, cwd)
+      log(result.ok ? `  driver ready (${result.package})` : `  driver install failed (${result.package})`)
+      send(res, result.ok ? 200 : 500, JSON.stringify(result))
+      return
+    }
+
     if (path === '/api/introspect' && req.method === 'POST') {
       const body = await readBody(req)
       const reqBody = JSON.parse(body) as {
         dialect?: SqlDialectName
         url?: string
-        action?: 'tables' | 'introspect'
+        action?: 'tables' | 'introspect' | 'test'
         tables?: string[]
       }
       const { dialect, url, action } = reqBody
@@ -241,13 +269,23 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
       try {
         execute = await connect(dialect, url)
       } catch (err) {
-        // Missing driver / bad connection string - report it, don't crash.
+        // Missing driver / bad connection string - report it, don't crash. When
+        // the driver is simply absent, flag it so the UI can offer to install it.
         const msg = err instanceof Error ? err.message : String(err)
         const driver = DRIVER_FOR[dialect]
-        const hint = /cannot find|module not found|err_module/i.test(msg)
-          ? ` Install the "${driver}" driver in this project (npm i ${driver}).`
-          : ''
-        send(res, 502, JSON.stringify({ error: `Could not connect: ${msg}.${hint}` }))
+        const missingDriver = /cannot find|module not found|err_module/i.test(msg) && !isDriverInstalled(dialect, process.cwd())
+        const hint = missingDriver ? ` Install the "${driver}" driver in this project (npm i ${driver}).` : ''
+        send(res, 502, JSON.stringify({ error: `Could not connect: ${msg}.${hint}`, missingDriver, driver }))
+        return
+      }
+      if (action === 'test') {
+        // "Test connection": prove connectivity + show real row counts per table.
+        try {
+          const probe = await probeConnection(dialect, execute, { counts: true })
+          send(res, 200, JSON.stringify(probe))
+        } catch (err) {
+          send(res, 502, JSON.stringify({ error: err instanceof Error ? err.message : String(err) }))
+        }
         return
       }
       if (action === 'introspect') {

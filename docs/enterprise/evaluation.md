@@ -4,6 +4,8 @@ The `@svgrid/enterprise` package is soft-gated; you can evaluate every
 feature in production-equivalent code paths without contacting
 sales. This page is the playbook.
 
+![Soft-gated evaluation: install, try every feature while a watermark shows, then set a license key when ready, with no gated-off code paths.](/docs-media/enterprise-evaluation.svg)
+
 ## Step 1: Install
 
 ```bash
@@ -121,9 +123,9 @@ automatically; cancel anytime.
 
 ## Migrating from another grid mid-evaluation
 
-If you're swapping out AG Grid / TanStack Table / MUI X / Handsontable
-/ Glide, see the [migration guides](../help/migrating-from-ag-grid.md)
-- typically a half-day port for a 5-grid app.
+If you're swapping out an existing grid, see the
+[migration guides](../help/migrating-from-ag-grid.md) - typically a half-day
+port for a 5-grid app.
 
 ## See also
 

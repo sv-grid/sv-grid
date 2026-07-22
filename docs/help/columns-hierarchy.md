@@ -5,6 +5,8 @@ A side-panel "column manager" exposes the column tree to the user:
 they pick what's visible, what gets collapsed into a one-cell summary,
 and what order leaves appear in within each group.
 
+![A multi-level header where parent groups Q1 and Q2 span their child month columns, with a Q3 group collapsed to one summary column.](/docs-media/grid-column-hierarchy.svg)
+
 Try it live - drag a leaf chip between siblings, click a group's
 chevron to collapse it into a summary column, toggle a checkbox to
 hide:

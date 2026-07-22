@@ -2,6 +2,9 @@
 
 > Live in [demo 51-ai-assistant](https://svgrid.com/#/demos/51-ai-assistant).
 
+<div data-docs-demo="51-ai-assistant" data-height="480"></div>
+
+
 ## When
 
 "show last quarter > $10k sorted by date" - one natural-language input drives setFilter + setSort.

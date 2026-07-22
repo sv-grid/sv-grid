@@ -11,13 +11,17 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { Block, EntityDataSource, FilterPanelConfig, GridConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
-import { blockColumns, entityDataSource } from './project.js'
+import type { Block, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
+import { blockColumns, entityDataSource, flattenBlocks, serializeProject } from './project.js'
 import { resolveThemeTokens, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
-import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, type NavItem } from './emit-schema.js'
+import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, relationDisplayFields, type NavItem } from './emit-schema.js'
 
 const has = (blocks: Block[], kind: Block['config']['kind']) => blocks.some((b) => b.config.kind === kind)
+
+/** Per-Tabs-block active-tab state var + a stable tab id. */
+const tabsStateVar = (blockId: string) => `activeTab_${blockId.replace(/[^a-zA-Z0-9_$]/g, '_')}`
+const tabId = (blockId: string, i: number) => `${blockId}-${i}`
 
 /** A state var holding a master-detail block's child rows (loaded in full). */
 const mdChildVar = (childName: string) => `md_${childName.replace(/[^a-zA-Z0-9]/g, '_')}_rows`
@@ -51,13 +55,16 @@ function gridColumnsExpr(schemaVar: string, block: Block): string {
 
 /** Markup for one block inside the screen grid. `ctx.hasRecord` tells a grid to
  *  publish its clicked row into `selectedRecord` for a sibling record panel. */
-function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string> } = { hasRecord: false }): string {
+function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean; rawEntity?: EntitySchema; rawResolve?: (name: string) => EntitySchema | undefined } = { hasRecord: false }): string {
+  // A block's display label: localized via $t('block.<id>', 'literal') when i18n is on.
+  const tLabel = (label: string, key: string) => (ctx.i18n ? `{$t('block.${key}', ${JSON.stringify(label)})}` : label)
   const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
   const cfg = block.config
   switch (cfg.kind) {
     case 'grid': {
       const colVar = `columns_${block.id.replace(/-/g, '_')}`
-      const lines = [`data={view.rows}`, `columns={${colVar}}`, `loading={view.loading}`, `loadingOverlay`, `fitColumns`]
+      const emptyMsg = `No ${(entity.label ?? entity.name).toLowerCase()} yet.`
+      const lines = [`data={view.rows}`, `columns={${colVar}}`, `loading={view.loading}`, `loadingOverlay`, `emptyMessage=${JSON.stringify(emptyMsg)}`, `fitColumns`]
       lines.push(`enableRowSummaries={${cfg.rowSummaries ? 'true' : 'false'}}`)
       if (cfg.striped) lines.push(`zebraRows`)
       if (cfg.cellSelection) lines.push(`enableCellSelection`)
@@ -112,12 +119,75 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       <SvSchemaDashboard schema={${schemaVar}} rows={allRows} />
     </div>`
     case 'kpi': {
-      // Format the value: thousands separators, "$" for money measures ("... ($)").
+      const measurePart = cfg.measure ? `measure: '${cfg.measure}', ` : ''
+      const valueNum = `reduceValue(allRows, { ${measurePart}reduce: '${cfg.reduce}' })`
+      // Value formatting: explicit format wins, else auto ("$" for money measures).
       const money = cfg.measure ? /\$/.test(entity.fields.find((f) => f.field === cfg.measure)?.label ?? '') : false
-      const expr = `${money ? "'$' + " : ''}reduceValue(allRows, { ${cfg.measure ? `measure: '${cfg.measure}', ` : ''}reduce: '${cfg.reduce}' }).toLocaleString(undefined, { maximumFractionDigits: 1 })`
-      return `    <div ${span} class="kpi">
-      <span class="kpi__label">${cfg.label}</span>
-      <strong class="kpi__value">{${expr}}</strong>
+      const fmt = cfg.format ?? 'auto'
+      const valueExpr = fmt === 'auto'
+        ? `${money ? "'$' + " : ''}(${valueNum}).toLocaleString(undefined, { maximumFractionDigits: 1 })`
+        : `formatKpiValue(${valueNum}, '${fmt}')`
+      const rows: string[] = [
+        `      <div class="kpi__head"><span class="kpi__label">${tLabel(cfg.label, block.id)}</span></div>`,
+        `      <strong class="kpi__value">{${valueExpr}}</strong>`,
+      ]
+      // Target: a "% of target" chip (green at/over target).
+      if (cfg.target != null && cfg.target !== 0) {
+        rows.push(`      <span class="kpi__delta" class:is-up={${valueNum} >= ${cfg.target}}>{Math.round(${valueNum} / ${cfg.target} * 100)}% of target</span>`)
+      }
+      // Trend: an inline sparkline over `trendField`, with a first-to-last delta chip.
+      if (cfg.trendField) {
+        const tReduce = cfg.trendReduce ?? cfg.reduce
+        const seriesExpr = `kpiSeries(allRows, { trendField: '${cfg.trendField}', ${measurePart}reduce: '${tReduce}' })`
+        rows.push(`      {#if ${seriesExpr}.length > 1}
+        {@const _s = ${seriesExpr}}
+        {@const _d = seriesDelta(_s)}
+        {#if _d != null && ${cfg.target == null}}<span class="kpi__delta" class:is-up={_d >= 0} class:is-down={_d < 0}>{_d >= 0 ? '▲' : '▼'} {Math.abs(_d).toFixed(0)}%</span>{/if}
+        <svg class="kpi__spark" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"><polyline points={sparklinePoints(_s)} fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" /></svg>
+      {/if}`)
+      }
+      return `    <div ${span} class="kpi">\n${rows.join('\n')}\n    </div>`
+    }
+    case 'gauge': {
+      const gexpr = `reduceValue(allRows, { ${cfg.measure ? `measure: '${cfg.measure}', ` : ''}reduce: '${cfg.reduce}' })`
+      const unit = cfg.unit ? ` unit=${JSON.stringify(cfg.unit)}` : ''
+      return `    <div ${span} class="gaugecard">
+      <span class="kpi__label">${tLabel(cfg.label, block.id)}</span>
+      <SvGauge value={${gexpr}} min={${cfg.min}} max={${cfg.max}}${unit} size={172} />
+    </div>`
+    }
+    case 'tree': {
+      if (!cfg.labelField || !cfg.parentField) {
+        return `    <div ${span}><!-- tree: set a label field + a self-referential parent field in the inspector --></div>`
+      }
+      const idExpr = `${schemaVar}.idField ?? 'id'`
+      return `    <div ${span} class="treecard">
+      <SvTree nodes={toTreeNodes(allRows as Record<string, unknown>[], ${idExpr}, ${JSON.stringify(cfg.labelField)}, ${JSON.stringify(cfg.parentField)})} />
+    </div>`
+    }
+    case 'tabs': {
+      const tabsVar = tabsStateVar(block.id)
+      // Localize tab labels via $t('tab.<id>', 'literal') when i18n is on (build the
+      // array as an expression so the labels can be function calls).
+      const items = ctx.i18n
+        ? `[${cfg.tabs.map((t, i) => `{ id: ${JSON.stringify(tabId(block.id, i))}, label: $t('tab.${tabId(block.id, i)}', ${JSON.stringify(t.label)}) }`).join(', ')}]`
+        : JSON.stringify(cfg.tabs.map((t, i) => ({ id: tabId(block.id, i), label: t.label })))
+      const panels = cfg.tabs
+        .map((t, i) => {
+          const children = t.blocks.map((cb) => blockMarkup(entity, schemaVar, typeName, cb, resolve, ctx)).filter(Boolean).join('\n')
+          return `          {#if id === '${tabId(block.id, i)}'}
+            <div class="st-screen">
+${children || '            <p style="color: var(--sg-muted, #94a3b8); font-size: 13px; padding: 10px;">This tab is empty.</p>'}
+            </div>
+          {/if}`
+        })
+        .join('\n')
+      return `    <div ${span}>
+      <SvTabs tabs={${items}} value={${tabsVar}} onChange={(id) => (${tabsVar} = id)}>
+        {#snippet panel(id)}
+${panels}
+        {/snippet}
+      </SvTabs>
     </div>`
     }
     case 'master-detail': {
@@ -127,8 +197,12 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       }
       const cn = namesFor(child)
       const childRows = mdChildVar(child.name)
+      // Optionally, a parent row drills into a detail screen (linkScreen) instead
+      // of expanding inline - the detail page shows the same children as a timeline.
+      const mdRoute = cfg.linkScreen ? ctx.routeById?.get(cfg.linkScreen) : undefined
+      const onParent = mdRoute ? ` onParentClick={(id) => goto('/${mdRoute}?id=' + encodeURIComponent(id))}` : ''
       return `    <div ${span}>
-      <SvGridMasterDetail schema={${schemaVar}} data={allRows} detailSchema={${cn.schemaVar}} getChildren={(p) => ${childRows}.filter((c) => String((c as Record<string, unknown>)['${cfg.foreignKey}']) === String((p as Record<string, unknown>)[${schemaVar}.idField ?? 'id']))}${block.height ? ` containerHeight={${block.height}}` : ''} />
+      <SvGridMasterDetail schema={${schemaVar}} data={allRows} detailSchema={${cn.schemaVar}} getChildren={(p) => ${childRows}.filter((c) => String((c as Record<string, unknown>)['${cfg.foreignKey}']) === String((p as Record<string, unknown>)[${schemaVar}.idField ?? 'id']))}${onParent}${block.height ? ` containerHeight={${block.height}}` : ''} />
     </div>`
     }
     case 'pivot': {
@@ -141,6 +215,79 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       return filterPanelMarkup(entity, block, cfg)
     case 'record':
       return recordPanelMarkup(entity, schemaVar, block, cfg)
+    case 'board': {
+      const h = block.height ?? 480
+      // A relation title/subtitle renders as the raw FK id unless pointed at the
+      // denormalized display field that withRelationLabels fills in (e.g. company).
+      // Compute against the RAW entity (ctx.rawEntity): the prepared `entity` already
+      // has the display columns appended, which would false-collide the naming and
+      // diverge from what withRelationLabels actually put on the rows.
+      const disp = relationDisplayFields(ctx.rawEntity ?? entity, resolve)
+      const asText = (field: string) => disp.get(field) ?? field
+      const badge = cfg.badgeField ? ` badgeField=${JSON.stringify(cfg.badgeField)}` : ''
+      const sub = cfg.subtitleField ? ` subtitleField=${JSON.stringify(asText(cfg.subtitleField))}` : ''
+      // A card click drills into a detail screen (openScreen), filtered by ?id.
+      const openRoute = cfg.openScreen ? ctx.routeById?.get(cfg.openScreen) : undefined
+      const onOpen = openRoute ? ` onOpen={(id) => goto('/${openRoute}?id=' + encodeURIComponent(id))}` : ''
+      // Dragging a card updates its groupBy value in the local row state (optimistic).
+      return `    <div style="grid-column: span ${blockColumns(block)}; min-width: 0">
+      <SvBoard schema={${schemaVar}} rows={allRows} loading={!allRowsReady} groupBy=${JSON.stringify(cfg.groupBy)} titleField=${JSON.stringify(asText(cfg.titleField))}${badge}${sub}${onOpen} height={${h}} onMove={(id, value) => { allRows = allRows.map((r) => String((r as Record<string, unknown>)[idField]) === String(id) ? ({ ...r, ['${cfg.groupBy}']: value }) : r) }} />
+    </div>`
+    }
+    case 'calendar': {
+      const h = block.height ?? 560
+      // Compute against the RAW entity (ctx.rawEntity): the prepared `entity` already
+      // has the display columns appended, which would false-collide the naming and
+      // diverge from what withRelationLabels actually put on the rows.
+      const disp = relationDisplayFields(ctx.rawEntity ?? entity, resolve)
+      const asText = (field: string) => disp.get(field) ?? field
+      const color = cfg.colorField ? ` colorField=${JSON.stringify(cfg.colorField)}` : ''
+      // An event click drills into a detail screen (openScreen), filtered by ?id.
+      const calRoute = cfg.openScreen ? ctx.routeById?.get(cfg.openScreen) : undefined
+      const onSelect = calRoute ? ` onSelect={(id) => goto('/${calRoute}?id=' + encodeURIComponent(id))}` : ''
+      return `    <div style="grid-column: span ${blockColumns(block)}; min-width: 0">
+      <SvSchedule schema={${schemaVar}} rows={allRows} loading={!allRowsReady} dateField=${JSON.stringify(cfg.dateField)} titleField=${JSON.stringify(asText(cfg.titleField))}${color}${onSelect} height={${h}} />
+    </div>`
+    }
+    case 'detail': {
+      const h = block.height
+      // Parent relation fields (title/subtitle/section) -> their display columns.
+      const disp = relationDisplayFields(ctx.rawEntity ?? entity, resolve)
+      const asText = (field: string) => disp.get(field) ?? field
+      const props: string[] = [`schema={${schemaVar}}`, `rows={allRows}`, `loading={!allRowsReady}`, `titleField=${JSON.stringify(asText(cfg.titleField))}`]
+      if (cfg.subtitleField) props.push(`subtitleField=${JSON.stringify(asText(cfg.subtitleField))}`)
+      if (cfg.statusField) props.push(`statusField=${JSON.stringify(cfg.statusField)}`)
+      if (cfg.metricFields?.length) props.push(`metricFields={${JSON.stringify(cfg.metricFields)}}`)
+      if (cfg.sections?.length) {
+        const secs = cfg.sections.map((s) => `{ label: ${JSON.stringify(s.label)}, fields: ${JSON.stringify(s.fields.map(asText))} }`).join(', ')
+        props.push(`sections={[${secs}]}`)
+      }
+      // Related child collections load into `md_<name>_rows` and filter by the FK.
+      const rels = (cfg.related ?? []).map((rel) => {
+        const child = rel.entity ? resolve(rel.entity) : undefined
+        if (!child || !rel.foreignKey) return null
+        const cn = namesFor(child)
+        const rawChild = ctx.rawResolve?.(rel.entity) ?? child
+        const cdisp = relationDisplayFields(rawChild, resolve)
+        const cAs = (f: string) => cdisp.get(f) ?? f
+        const label = rel.label ?? child.label ?? child.name
+        const titleF = cAs(rel.titleField ?? child.fields.find((f) => f.type === 'text' && !f.primaryKey)?.field ?? child.fields[0]?.field ?? 'id')
+        const parts = [`label: ${JSON.stringify(label)}`, `schema: ${cn.schemaVar}`, `rows: ${mdChildVar(child.name)}`, `foreignKey: ${JSON.stringify(rel.foreignKey)}`, `titleField: ${JSON.stringify(titleF)}`]
+        if (rel.parentField) parts.push(`parentField: ${JSON.stringify(rel.parentField)}`)
+        if (rel.subtitleField) parts.push(`subtitleField: ${JSON.stringify(cAs(rel.subtitleField))}`)
+        if (rel.dateField) parts.push(`dateField: ${JSON.stringify(rel.dateField)}`)
+        if (rel.statusField) parts.push(`statusField: ${JSON.stringify(rel.statusField)}`)
+        return `{ ${parts.join(', ')} }`
+      }).filter(Boolean)
+      if (rels.length) props.push(`related={[${rels.join(', ')}]}`)
+      // Open the record named by the URL `?id=` (set by a grid / board / calendar
+      // drill-through); stays switchable via the header dropdown.
+      props.push(`selectedId={$page.url.searchParams.get('id') ?? undefined}`)
+      if (h) props.push(`height={${h}}`)
+      return `    <div style="grid-column: span ${blockColumns(block)}; min-width: 0">
+      <SvRecordDetail ${props.join(' ')} />
+    </div>`
+    }
     case 'lookup':
       return `    <div ${span}><!-- lookup (${cfg.field}): shown in the edit form --></div>`
     case 'form':
@@ -298,10 +445,18 @@ function recordPanelMarkup(entity: EntitySchema, schemaVar: string, block: Block
   const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
   let inner: string
   if (cfg.editable) {
-    inner = `      {#if selectedRecord}
+    const pres = cfg.presentation ?? 'inline'
+    // Modal / drawer float over the page (shown only while a row is selected);
+    // inline lives in the block, with a prompt when nothing is selected.
+    inner = pres === 'inline'
+      ? `      {#if selectedRecord}
         <SvGridEditPanel schema={${schemaVar}} row={selectedRecord} presentation="inline" onSubmit={saveRecord} onCancel={() => (selectedRecord = null)} />
       {:else}
         <p class="st-hint">Select a row to see its details.</p>
+      {/if}`
+      : `      <p class="st-hint">Select a row to open its ${pres === 'drawer' ? 'editor drawer' : 'edit dialog'}.</p>
+      {#if selectedRecord}
+        <SvGridEditPanel schema={${schemaVar}} row={selectedRecord} presentation="${pres}" onSubmit={saveRecord} onCancel={() => (selectedRecord = null)} />
       {/if}`
   } else {
     const pk = entity.idField ?? entity.fields.find((f) => f.primaryKey)?.field
@@ -325,10 +480,14 @@ ${inner}
 /** A self-contained screen page composing the screen's blocks. When `accessEnabled`
  *  the page gates create / update affordances by the current role (server still
  *  enforces via the route's `authorize`). */
-function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string) => EntitySchema | undefined, accessEnabled = false, i18nEnabled = false, routeById: Map<string, string> = new Map(), drillEnabled = false): GeneratedFile {
+function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Screen, resolve: (name: string) => EntitySchema | undefined, rawResolve: (name: string) => EntitySchema | undefined, accessEnabled = false, i18nEnabled = false, routeById: Map<string, string> = new Map(), drillEnabled = false): GeneratedFile {
   const n = namesFor(schema)
   const label = schema.label ?? n.label
   const blocks = screen.blocks
+  // Display blocks (chart/kpi/gauge/pivot/tree/dashboard) can be nested inside Tabs;
+  // flatten so their imports + data loading are detected. Controller-bound kinds
+  // (grid/form/filter/record) only live at the top level.
+  const allBlocks = flattenBlocks(blocks)
   const hasGrid = has(blocks, 'grid')
   const hasForm = has(blocks, 'form') // legacy standalone form block
   // Editing is a Grid property: a grid with editing 'form' opens the edit panel.
@@ -341,37 +500,57 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   // An unpaginated grid loads everything (one big page); else its configured size.
   const gridPageSize = gridConfigs[0] ? (gridConfigs[0].paginated !== false ? gridConfigs[0].pageSize : 1000) : 10
   const formPres = formGrid?.formPresentation ?? 'modal'
-  const hasPivot = has(blocks, 'pivot')
+  const hasPivot = has(allBlocks, 'pivot')
   const hasFilter = has(blocks, 'filter')
   const hasRecord = has(blocks, 'record')
   const recordEditable = blocks.some((b) => b.config.kind === 'record' && b.config.editable)
   // Filter panels drive the grid's controller; record panels read the grid's
   // selection - both need the controller even if the grid isn't editable.
   const needsController = hasGrid || wantsForm || hasFilter || hasRecord
-  const hasAgg = has(blocks, 'chart') || has(blocks, 'dashboard') || has(blocks, 'kpi')
+  const hasAgg = has(allBlocks, 'chart') || has(allBlocks, 'dashboard') || has(allBlocks, 'kpi') || has(allBlocks, 'gauge') || has(allBlocks, 'tree')
   const relationFields = schema.fields.filter((f) => f.type === 'relation' && f.relation)
 
-  // Distinct, resolvable child entities referenced by master-detail blocks.
+  // Distinct, resolvable child entities referenced by master-detail blocks, and by
+  // a detail page's related child collections (both load the child table into a
+  // `md_<name>_rows` state var + filter it by the foreign key at render time).
   const mdChildren = new Map<string, EntitySchema>()
   for (const b of blocks) {
     if (b.config.kind === 'master-detail' && b.config.childEntity && b.config.foreignKey) {
       const c = resolve(b.config.childEntity)
       if (c) mdChildren.set(c.name, c)
     }
+    if (b.config.kind === 'detail') {
+      for (const rel of b.config.related ?? []) {
+        if (!rel.entity || !rel.foreignKey) continue
+        const c = resolve(rel.entity)
+        if (c) mdChildren.set(c.name, c)
+      }
+    }
   }
   const childList = [...mdChildren.values()]
   const hasMD = childList.length > 0
   // The pivot reads the whole table (like charts / dashboards).
-  const needsAllRows = hasAgg || hasMD || hasPivot
+  const needsAllRows = hasAgg || hasMD || hasPivot || has(allBlocks, 'board') || has(allBlocks, 'calendar') || has(allBlocks, 'detail')
 
   // --- imports ---
-  const gridImports = needsController ? `import { SvGrid, createServerDataSource, ${hasRowActions ? 'renderSnippet, ' : ''}type ServerState } from '@svgrid/grid'\n  ` : ''
+  const gridSpecs: string[] = []
+  if (needsController) gridSpecs.push('SvGrid', 'createServerDataSource', ...(hasRowActions ? ['renderSnippet'] : []), 'type ServerState')
+  if (has(allBlocks, 'gauge')) gridSpecs.push('SvGauge')
+  if (has(allBlocks, 'tree')) gridSpecs.push('SvTree')
+  if (has(blocks, 'tabs')) gridSpecs.push('SvTabs')
+  const gridImports = gridSpecs.length ? `import { ${gridSpecs.join(', ')} } from '@svgrid/grid'\n  ` : ''
   const entImports: string[] = []
   if (hasGrid) entImports.push('schemaToColumns')
   if (wantsForm || (hasRecord && recordEditable)) entImports.push('SvGridEditPanel')
-  if (has(blocks, 'chart')) entImports.push('SvSchemaChart')
-  if (has(blocks, 'dashboard')) entImports.push('SvSchemaDashboard')
-  if (has(blocks, 'kpi')) entImports.push('reduceValue')
+  if (has(allBlocks, 'chart')) entImports.push('SvSchemaChart')
+  if (has(allBlocks, 'dashboard')) entImports.push('SvSchemaDashboard')
+  if (has(allBlocks, 'board')) entImports.push('SvBoard')
+  if (has(allBlocks, 'calendar')) entImports.push('SvSchedule')
+  if (has(allBlocks, 'detail')) entImports.push('SvRecordDetail')
+  if (has(allBlocks, 'kpi') || has(allBlocks, 'gauge')) entImports.push('reduceValue')
+  const kpiCfgs = allBlocks.filter((b) => b.config.kind === 'kpi').map((b) => b.config as KpiConfig)
+  if (kpiCfgs.some((c) => c.format && c.format !== 'auto')) entImports.push('formatKpiValue')
+  if (kpiCfgs.some((c) => c.trendField)) entImports.push('kpiSeries', 'sparklinePoints', 'seriesDelta')
   if (hasMD) entImports.push('SvGridMasterDetail')
   if (hasPivot) entImports.push('SvPivotDesigner')
   // Dedupe: record + form both want SvGridEditPanel.
@@ -391,7 +570,9 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   const usesGoto = blocks.some((b) =>
     (b.config.kind === 'grid' && b.config.rowLink && routeById.has(b.config.rowLink.screen)) ||
     (b.config.kind === 'grid' && b.config.rowActions?.some((a) => a.kind === 'navigate' && a.screen && routeById.has(a.screen))) ||
-    (b.config.kind === 'chart' && b.config.drillScreen && routeById.has(b.config.drillScreen)))
+    (b.config.kind === 'chart' && b.config.drillScreen && routeById.has(b.config.drillScreen)) ||
+    ((b.config.kind === 'board' || b.config.kind === 'calendar') && b.config.openScreen != null && routeById.has(b.config.openScreen)) ||
+    (b.config.kind === 'master-detail' && b.config.linkScreen != null && routeById.has(b.config.linkScreen)))
   const applyUrlFilters = drillEnabled && needsController
   const filterableFieldNames = schema.fields.filter((f) => !f.primaryKey).map((f) => f.field)
   // RBAC gates the UI only where there's a create/update affordance to gate.
@@ -431,7 +612,8 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   }
   if (needsAllRows) {
     parts.push(`let allRows = $state<${n.type}[]>([])
-  async function loadAll() { allRows = [...(await ${n.sourceVar}.getRows({ startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} })).rows] }
+  let allRowsReady = $state(false)
+  async function loadAll() { allRows = [...(await ${n.sourceVar}.getRows({ startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} })).rows]; allRowsReady = true }
   loadAll()`)
   }
   for (const c of childList) {
@@ -466,6 +648,26 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
     if (b.config.kind !== 'filter') continue
     parts.push(filterPanelState(schema, b, b.config))
   }
+  // Tabs container(s): one active-tab state var per block (first tab active).
+  for (const b of blocks) {
+    if (b.config.kind !== 'tabs') continue
+    parts.push(`let ${tabsStateVar(b.id)} = $state('${tabId(b.id, 0)}')`)
+  }
+  // Tree block: fold the flat rows into SvTree nodes by a self-referential parent.
+  if (has(allBlocks, 'tree')) {
+    parts.push(`type TreeNode = { id: string; label: string; children: TreeNode[] }
+  function toTreeNodes(rows: Record<string, unknown>[], idField: string, labelField: string, parentField: string): TreeNode[] {
+    const byId = new Map<string, TreeNode>(rows.map((r) => [String(r[idField]), { id: String(r[idField]), label: String(r[labelField] ?? r[idField]), children: [] }]))
+    const roots: TreeNode[] = []
+    for (const r of rows) {
+      const node = byId.get(String(r[idField]))!
+      const pid = r[parentField] != null && r[parentField] !== '' ? String(r[parentField]) : null
+      if (pid && pid !== node.id && byId.has(pid)) byId.get(pid)!.children.push(node)
+      else roots.push(node)
+    }
+    return roots
+  }`)
+  }
 
   // --- markup ---
   const newLabel = i18nEnabled ? `{$t('new.${schema.name}', ${JSON.stringify('+ New ' + label)})}` : `+ New ${label}`
@@ -473,15 +675,24 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
   const toolbar = wantsForm
     ? `<div class="st__toolbar">\n  ${gatesUi ? `{#if can($currentRole, 'create')}${newBtn}{/if}` : newBtn}\n</div>\n\n`
     : ''
-  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById })).filter(Boolean).join('\n')
+  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve })).filter(Boolean).join('\n')
   const modal = wantsForm
     ? `\n\n{#if editing !== undefined}\n  <SvGridEditPanel schema={${n.schemaVar}} row={editing}${relationFields.length ? ' {lookups}' : ''} presentation="${formPres}" persistKey="${screen.route}" onSubmit={save} onCancel={() => (editing = undefined)} />\n{/if}`
     : ''
   const accessImport = gatesUi ? `import { currentRole, can } from '$lib/access'\n  ` : ''
   const i18nImport = i18nEnabled ? `import { t, localizeCols } from '$lib/i18n'\n  ` : ''
   const gotoImport = usesGoto ? `import { goto } from '$app/navigation'\n  ` : ''
-  const pageImport = applyUrlFilters ? `import { page } from '$app/stores'\n  ` : ''
+  const pageImport = applyUrlFilters || has(allBlocks, 'detail') ? `import { page } from '$app/stores'\n  ` : ''
   const title = i18nEnabled ? `{$t('screen.${screen.id}', ${JSON.stringify(screen.title)})}` : screen.title
+  // Surface a failed data load (silent empty grid otherwise) with a retry.
+  const errorBanner = needsController
+    ? `\n{#if view.error}
+  <div class="st-error" role="alert">
+    <span>Couldn't load data. {view.error instanceof Error ? view.error.message : String(view.error)}</span>
+    <button type="button" class="st-btn" onclick={() => controller.refresh()}>Retry</button>
+  </div>
+{/if}\n`
+    : ''
 
   return {
     path: `src/routes/${screen.route}/+page.svelte`,
@@ -494,15 +705,23 @@ function screenPage(schema: EntitySchema, screen: Screen, resolve: (name: string
 </script>
 
 <h1 class="st__title">${title}</h1>
-
-${toolbar}<div class="screen" style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: start;">
+${errorBanner}
+${toolbar}<div class="st-screen">
 ${body}
 </div>${modal}${actionSnippets.length ? '\n\n' + actionSnippets.join('\n\n') : ''}
-${has(blocks, 'kpi') ? `
+${has(blocks, 'kpi') || has(blocks, 'gauge') || has(blocks, 'tree') ? `
 <style>
-  .kpi { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
-  .kpi__label { font-size: 13px; color: var(--sg-muted, #64748b); }
-  .kpi__value { font-size: 26px; font-weight: 700; }
+  .kpi { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); overflow: hidden; }
+  .kpi__head { display: flex; align-items: center; justify-content: space-between; }
+  .kpi__label { font-size: 12.5px; font-weight: 600; color: var(--sg-muted, #64748b); text-transform: uppercase; letter-spacing: 0.03em; }
+  .kpi__value { font-size: 28px; font-weight: 750; line-height: 1.1; color: var(--sg-fg, #0f172a); }
+  .kpi__delta { align-self: flex-start; display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: color-mix(in srgb, var(--sg-muted, #64748b) 14%, transparent); color: var(--sg-muted, #64748b); }
+  .kpi__delta.is-up { background: color-mix(in srgb, #16a34a 15%, transparent); color: #16a34a; }
+  .kpi__delta.is-down { background: color-mix(in srgb, #dc2626 15%, transparent); color: #dc2626; }
+  .kpi__spark { width: 100%; height: 30px; margin-top: 2px; color: var(--sg-accent, #4f46e5); opacity: 0.85; }
+  .gaugecard { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
+  .gaugecard .kpi__label { align-self: flex-start; }
+  .treecard { padding: 12px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
 </style>
 ` : ''}`,
   }
@@ -521,6 +740,10 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   const i18nEnabled = project.i18n?.enabled === true && (project.i18n?.locales.length ?? 0) > 0
   const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled })
   const byName = new Map(prepared.map((s) => [s.name, s]))
+  // Raw (unprepared) entities keep their original field set - needed to derive
+  // relation display-field names that match withRelationLabels (the prepared
+  // schemas already carry the appended display columns, which would false-collide).
+  const rawByName = new Map(project.entities.map((e) => [e.name, e]))
   const resolve = (name: string) => byName.get(name)
 
   // Drill-through wiring: map screen id -> route, and detect whether any block
@@ -536,7 +759,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     if (!schema) throw new Error(`emitStudioProject: screen "${screen.title}" references missing entity "${screen.entity}"`)
     if (seenRoute.has(screen.route)) throw new Error(`emitStudioProject: duplicate route "/${screen.route}"`)
     seenRoute.add(screen.route)
-    pages.push(screenPage(schema, screen, resolve, accessEnabled, i18nEnabled, routeById, drillEnabled))
+    pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled))
   }
 
   // Nav: only screens flagged into the menu, ordered, with an optional custom label.
@@ -790,7 +1013,6 @@ const appSlug = (title: string): string =>
 
 /** The static SvelteKit + Vite scaffolding around the generated screens. */
 const SCAFFOLD_STATIC: ReadonlyArray<GeneratedFile> = [
-  { path: 'svelte.config.js', description: 'SvelteKit config (adapter-auto).', contents: `import adapter from '@sveltejs/adapter-auto'\nimport { vitePreprocess } from '@sveltejs/vite-plugin-svelte'\n\n/** @type {import('@sveltejs/kit').Config} */\nconst config = {\n  preprocess: vitePreprocess(),\n  kit: { adapter: adapter() },\n}\n\nexport default config\n` },
   { path: 'vite.config.ts', description: 'Vite config.', contents: `import { sveltekit } from '@sveltejs/vite-plugin-svelte'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({ plugins: [sveltekit()] })\n` },
   { path: 'tsconfig.json', description: 'TypeScript config.', contents: `{\n  "extends": "./.svelte-kit/tsconfig.json",\n  "compilerOptions": {\n    "allowJs": true,\n    "checkJs": true,\n    "esModuleInterop": true,\n    "forceConsistentCasingInFileNames": true,\n    "resolveJsonModule": true,\n    "skipLibCheck": true,\n    "sourceMap": true,\n    "strict": true,\n    "moduleResolution": "bundler"\n  }\n}\n` },
   { path: 'src/app.html', description: 'HTML shell.', contents: `<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    %sveltekit.head%\n  </head>\n  <body data-sveltekit-preload-data="hover">\n    <div style="display: contents">%sveltekit.body%</div>\n  </body>\n</html>\n` },
@@ -809,6 +1031,7 @@ body { font-family: var(--sg-font, ui-sans-serif, system-ui, -apple-system, "Seg
 .st__sub code { background: var(--sg-header-bg, #f1f5f9); padding: 1px 6px; border-radius: 5px; font-size: 0.9em; }
 .st__toolbar { display: flex; align-items: center; gap: 10px; }
 .st-hint { font-size: 12.5px; color: var(--sg-muted, #94a3b8); }
+.st-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 11px 14px; border: 1px solid color-mix(in srgb, var(--sg-danger, #dc2626) 40%, var(--sg-border, #e6e8ec)); border-radius: 10px; background: color-mix(in srgb, var(--sg-danger, #dc2626) 8%, var(--sg-bg, #fff)); color: var(--sg-danger, #b3261e); font-size: 13.5px; }
 .st-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; font: inherit; font-size: 13.5px; font-weight: 560; line-height: 1; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 10px; background: var(--sg-bg, #fff); color: var(--sg-fg, inherit); cursor: pointer; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); }
 .st-btn:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 5%, var(--sg-bg, #fff)); }
 .st-btn:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
@@ -828,12 +1051,113 @@ body { font-family: var(--sg-font, ui-sans-serif, system-ui, -apple-system, "Seg
 .st-record__row { display: grid; grid-template-columns: 40% 1fr; gap: 10px; align-items: baseline; border-bottom: 1px solid var(--sg-border, #f1f5f9); padding-bottom: 6px; }
 .st-record__row dt { margin: 0; font-size: 12px; font-weight: 600; color: var(--sg-muted, #64748b); }
 .st-record__row dd { margin: 0; font-size: 13.5px; color: var(--sg-fg, inherit); overflow-wrap: anywhere; }
+.st-screen { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: start; }
+/* Mobile: blocks stack full-width (a span-N block clamps to the single column). */
+@media (max-width: 720px) { .st-screen { grid-template-columns: 1fr; gap: 12px; } }
+@media (max-width: 640px) { .st__title { font-size: 19px; } }
 .st-rowactions { display: inline-flex; gap: 6px; }
 .st-rowaction { padding: 3px 9px; font: inherit; font-size: 12px; font-weight: 550; line-height: 1.4; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 7px; background: var(--sg-bg, #fff); color: var(--sg-fg, inherit); cursor: pointer; }
 .st-rowaction:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 5%, var(--sg-bg, #fff)); }
 .st-rowaction--danger { color: #dc2626; border-color: color-mix(in srgb, #dc2626 40%, var(--sg-border, #e6e8ec)); }
 .st-rowaction--danger:hover { background: color-mix(in srgb, #dc2626 8%, var(--sg-bg, #fff)); }
 `
+
+/**
+ * Deploy target -> the SvelteKit adapter + provider config the bundle ships, plus
+ * the one-liner and dashboard link the designer's Deploy panel shows. `auto`
+ * (the default) uses adapter-auto, which detects Vercel / Netlify / Cloudflare at
+ * build time; picking a specific target pins the adapter and adds its config so a
+ * `git push` (or the CLI one-liner) deploys with no further setup.
+ */
+type DeployPlan = {
+  adapterModule: string
+  adapterDep: [name: string, version: string]
+  files: GeneratedFile[]
+  /** Copy-paste command that deploys the app. */
+  cli: string
+  /** Provider "new project" dashboard link (for the import-from-Git path). */
+  dashboard?: string
+  label: string
+}
+
+function deployPlan(project: StudioProject): DeployPlan {
+  const slug = appSlug(project.title)
+  const target = project.deploy ?? 'auto'
+  switch (target) {
+    case 'vercel':
+      return {
+        adapterModule: '@sveltejs/adapter-vercel',
+        adapterDep: ['@sveltejs/adapter-vercel', '^5.5.0'],
+        files: [],
+        cli: 'npx vercel --prod',
+        dashboard: 'https://vercel.com/new',
+        label: 'Vercel',
+      }
+    case 'netlify':
+      return {
+        adapterModule: '@sveltejs/adapter-netlify',
+        adapterDep: ['@sveltejs/adapter-netlify', '^5.0.0'],
+        files: [{ path: 'netlify.toml', description: 'Netlify build config.', contents: `[build]\n  command = "npm run build"\n` }],
+        cli: 'npx netlify deploy --build --prod',
+        dashboard: 'https://app.netlify.com/start',
+        label: 'Netlify',
+      }
+    case 'cloudflare':
+      return {
+        adapterModule: '@sveltejs/adapter-cloudflare',
+        adapterDep: ['@sveltejs/adapter-cloudflare', '^7.0.0'],
+        files: [{ path: 'wrangler.toml', description: 'Cloudflare Pages config.', contents: `name = "${slug}"\npages_build_output_dir = ".svelte-kit/cloudflare"\ncompatibility_date = "2024-11-01"\n` }],
+        cli: 'npm run build && npx wrangler pages deploy .svelte-kit/cloudflare',
+        dashboard: 'https://dash.cloudflare.com/?to=/:account/pages/new',
+        label: 'Cloudflare Pages',
+      }
+    case 'node':
+      return {
+        adapterModule: '@sveltejs/adapter-node',
+        adapterDep: ['@sveltejs/adapter-node', '^5.2.0'],
+        files: [],
+        cli: 'npm run build && node build',
+        label: 'Node server',
+      }
+    default:
+      return {
+        adapterModule: '@sveltejs/adapter-auto',
+        adapterDep: ['@sveltejs/adapter-auto', '^6.0.0'],
+        files: [],
+        cli: 'npx vercel --prod',
+        dashboard: 'https://vercel.com/new',
+        label: 'Auto (Vercel / Netlify / Cloudflare)',
+      }
+  }
+}
+
+/** The deploy facts the designer's Deploy panel shows (label, CLI one-liner, dashboard link). */
+export function studioDeployInfo(project: StudioProject): { label: string; cli: string; dashboard?: string; adapter: string } {
+  const p = deployPlan(project)
+  return { label: p.label, cli: p.cli, dashboard: p.dashboard, adapter: p.adapterModule }
+}
+
+/** A `.env.example` listing the env vars the generated code reads, when any. */
+function envExample(allSource: string): string | null {
+  const lines: string[] = []
+  if (allSource.includes('env.DATABASE_URL')) {
+    lines.push('# Your database connection string (Neon / Supabase / Postgres / MySQL / SQLite path).')
+    lines.push('DATABASE_URL=')
+  }
+  if (allSource.includes('env.DATABASE_AUTH_TOKEN')) {
+    lines.push('# Turso / libSQL database auth token.')
+    lines.push('DATABASE_AUTH_TOKEN=')
+  }
+  if (lines.length === 0) return null
+  lines.push('')
+  lines.push('# Optional: your SvGrid license key removes the unlicensed watermark.')
+  lines.push('# VITE_SVPRO_KEY=')
+  return lines.join('\n') + '\n'
+}
+
+function svelteConfig(plan: DeployPlan): string {
+  return `import adapter from '${plan.adapterModule}'\nimport { vitePreprocess } from '@sveltejs/vite-plugin-svelte'\n\n/** @type {import('@sveltejs/kit').Config} */\nconst config = {\n  preprocess: vitePreprocess(),\n  kit: { adapter: adapter() },\n}\n\nexport default config\n`
+}
 
 function packageJson(project: StudioProject, allSource: string): string {
   const dependencies: Record<string, string> = { '@svgrid/grid': 'latest', '@svgrid/enterprise': 'latest' }
@@ -842,25 +1166,80 @@ function packageJson(project: StudioProject, allSource: string): string {
   if (allSource.includes("from 'mysql2/promise'")) dependencies['mysql2'] = '^3.9.0'
   if (allSource.includes("import mssql from 'mssql'")) dependencies['mssql'] = '^10.0.0'
   if (allSource.includes("import Database from 'better-sqlite3'")) dependencies['better-sqlite3'] = '^11.0.0'
+  if (allSource.includes("from '@libsql/client'")) dependencies['@libsql/client'] = '^0.14.0'
+  if (allSource.includes("from '@electric-sql/pglite'")) dependencies['@electric-sql/pglite'] = '^0.5.0'
   const pkg = {
     name: appSlug(project.title),
     version: '0.0.1',
     private: true,
     type: 'module',
-    scripts: { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json' },
+    scripts: { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json', test: 'vitest run' },
     dependencies,
     devDependencies: {
-      '@sveltejs/adapter-auto': '^6.0.0',
+      [deployPlan(project).adapterDep[0]]: deployPlan(project).adapterDep[1],
       '@sveltejs/kit': '^2.15.0',
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       svelte: '^5.55.5',
       'svelte-check': '^4.4.6',
       typescript: '^5.7.0',
       vite: '^8.0.10',
+      vitest: '^4.1.5',
     },
   }
   return JSON.stringify(pkg, null, 2) + '\n'
 }
+
+/**
+ * A per-entity smoke test shipped with the generated app. It proves the two
+ * things a screen depends on still hold: every schema yields grid columns +
+ * form fields (so the page renders), and the schema round-trips through the
+ * data-source layer (create -> read -> delete). It builds a fresh in-memory
+ * source from the schema, so it runs offline regardless of the real backend
+ * (SQL / Supabase / PGlite) - a fast regression guard on schema edits.
+ */
+function smokeTestFile(project: StudioProject): string {
+  const imports = project.entities.map((e) => {
+    const n = namesFor(e)
+    return `${n.schemaVar}, type ${n.type}`
+  })
+  const blocks = project.entities.map((e) => {
+    const n = namesFor(e)
+    return `describe(${JSON.stringify(n.label)}, () => {
+  it('exposes grid columns and form fields', () => {
+    expect(schemaToColumns(${n.schemaVar}).length).toBeGreaterThan(0)
+    expect(schemaToFormFields(${n.schemaVar}).length).toBeGreaterThan(0)
+  })
+
+  it('round-trips create -> read -> delete through an in-memory source', async () => {
+    const idField = ${n.schemaVar}.idField ?? ${n.schemaVar}.fields.find((f) => f.primaryKey)?.field ?? 'id'
+    const source = createInMemoryDataSource<${n.type}>([], ${n.schemaVar})
+    await source.createRow({ [idField]: 'smoke-1' } as unknown as Partial<${n.type}>)
+    expect((await source.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rowCount).toBe(1)
+    await source.deleteRow('smoke-1')
+    expect((await source.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rowCount).toBe(0)
+  })
+})`
+  })
+  return `// Smoke tests generated by SvGrid Studio. Run with \`npm test\`.
+// They prove every entity's schema still renders (grid columns + form fields)
+// and round-trips through the data-source layer, so a schema edit that would
+// break a screen fails here first. Regenerating the app refreshes this file.
+import { describe, it, expect } from 'vitest'
+import { schemaToColumns, schemaToFormFields, createInMemoryDataSource } from '@svgrid/enterprise'
+import { ${imports.join(', ')} } from './schemas'
+
+${blocks.join('\n\n')}
+`
+}
+
+const VITEST_CONFIG = `import { defineConfig } from 'vitest/config'
+
+// Node-only test runner for the generated smoke tests (no Svelte/DOM needed).
+// Kept separate from vite.config so the SvelteKit plugin doesn't load here.
+export default defineConfig({
+  test: { environment: 'node', include: ['src/**/*.test.ts'] },
+})
+`
 
 /**
  * Emit the COMPLETE runnable SvelteKit + Vite app: the generated screens/data
@@ -871,11 +1250,23 @@ function packageJson(project: StudioProject, allSource: string): string {
 export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
   const generated = emitStudioProject(project)
   const allSource = generated.map((f) => f.contents).join('\n')
-  const readme = `# ${project.title}\n\nGenerated with SvGrid Studio.\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\nSQL / Supabase entities read their connection from \`.env\` (\`DATABASE_URL\`) or\n\`src/lib/connections.ts\`. Everything else runs on seeded in-memory data.\n`
+  const plan = deployPlan(project)
+  const deploySteps = plan.dashboard
+    ? `1. Push this folder to a Git repo (GitHub / GitLab / Bitbucket).\n2. Import it at <${plan.dashboard}> - build settings are detected automatically.\n\nOr deploy straight from your machine with the CLI:\n\n\`\`\`bash\n${plan.cli}\n\`\`\``
+    : `Build and run the server:\n\n\`\`\`bash\n${plan.cli}\n\`\`\``
+  const readme = `# ${project.title}\n\nGenerated with SvGrid Studio.\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\nSQL / Supabase entities read their connection from \`.env\` (\`DATABASE_URL\`) or\n\`src/lib/connections.ts\`. Everything else runs on seeded in-memory data.\n\n## Deploy (${plan.label})\n\nThis app is configured for **${plan.label}** (SvelteKit \`${plan.adapterModule}\`).\n\n${deploySteps}\n\nTo target a different host, pick another **Deploy target** in the designer and\nre-generate, or swap the adapter in \`svelte.config.js\`. Entities on **Local\ndatabase** (PGlite) or **In-memory** need no server env; SQL / Supabase entities\nneed their connection set in the host's environment variables.\n\n## Round-tripping back into the designer\n\nThis app ships its own design model in \`studio.config.json\`. To keep editing\nvisually, open the SvGrid Studio designer and **Load** that file - your entities,\nscreens, blocks, theme, RBAC, i18n, etc. come back exactly as generated, and you\ncan re-generate from there.\n\nThe designer regenerates the files under \`src/routes\` and \`src/lib\` from the\nmodel, so **keep your own custom code in new files/modules and import it**, rather\nthan editing the generated screens in place - that way a re-generate never\nclobbers your work. (The CLI workflow, \`npx @svgrid/studio add\`, is the\nalternative: it wraps generated code in \`svgrid:managed\` markers and preserves\nanything you write outside them.)\n`
   const scaffold: GeneratedFile[] = [
     { path: 'package.json', description: 'Dependencies + scripts (npm install, npm run dev).', contents: packageJson(project, allSource) },
+    { path: 'svelte.config.js', description: `SvelteKit config (${plan.adapterModule}).`, contents: svelteConfig(plan) },
+    { path: 'vitest.config.ts', description: 'Test runner config for the generated smoke tests (npm test).', contents: VITEST_CONFIG },
+    { path: 'src/lib/schemas.test.ts', description: 'Smoke tests: every entity renders + round-trips through its data source.', contents: smokeTestFile(project) },
+    ...plan.files,
     ...SCAFFOLD_STATIC,
-    { path: 'src/app.css', description: 'App theme + page styles.', contents: APP_CSS },
+    ...(envExample(allSource) ? [{ path: '.env.example', description: 'Environment variables the app reads (copy to .env and fill in).', contents: envExample(allSource)! }] : []),
+    { path: 'src/app.css', description: 'App theme + page styles.', contents: APP_CSS + (project.theme?.customCss ? `\n\n/* --- Custom CSS (from the designer) --- */\n${project.theme.customCss}\n` : '') },
+    // The design model, shipped with the app so it can be re-imported (Load) into
+    // the designer for further visual editing - the export/import round-trip.
+    { path: 'studio.config.json', description: 'The Studio project model - Load it back into the designer to keep editing visually.', contents: serializeProject(project) + '\n' },
     { path: 'README.md', description: 'How to run the app.', contents: readme },
   ]
   return [...scaffold, ...generated]

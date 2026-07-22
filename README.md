@@ -12,9 +12,9 @@
 
 > The Svelte 5 native data grid. **Headless-first. Render-ready.**
 
-A modern data grid built from the first line for Svelte 5 runes, not a React grid wrapped in a Svelte shim. A headless engine you can compose plus a full `<SvGrid />` render component you can drop in. MIT core, MCP server for AI assistants, 150+ live demos.
+A modern data grid built from the first line for Svelte 5 runes, not a React grid wrapped in a Svelte shim. A headless engine you can compose plus a full `<SvGrid />` render component you can drop in. MIT core, MCP server for AI assistants, 280+ live demos.
 
-**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs) · [150+ Demos](https://svgrid.com/demos) · [Pricing](https://svgrid.com/pricing) · [Roadmap](https://svgrid.com/roadmap) · [Blog](https://svgrid.com/blog) · [npm](https://www.npmjs.com/package/@svgrid/grid)
+**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs) · [280+ Demos](https://svgrid.com/demos) · [Pricing](https://svgrid.com/pricing) · [Roadmap](https://svgrid.com/roadmap) · [Blog](https://svgrid.com/blog) · [npm](https://www.npmjs.com/package/@svgrid/grid)
 
 ---
 
@@ -61,27 +61,29 @@ That is a real, working, accessible grid. Sorting, filtering, virtualization, ce
 - **Filtering.** Excel-style filter menu, inline filter row, locale-aware text matching, set / value-list filter, between operator on numbers and dates.
 - **Editing.** 14 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, textarea, color, checkbox, list, chips, rating, password) plus a `cellEditor` snippet slot for anything else.
 - **Selection.** Cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, row selection.
-- **Hierarchy.** Row grouping with aggregation, tree data, master/detail, full-width detail rows.
-- **Layout.** Row + column pinning, sticky header + first column, header drag-to-reorder, column sizing API.
+- **Views.** Native Kanban board mode (drag cards between lanes), row grouping with aggregation, tree data, master/detail, full-width detail rows.
+- **Layout.** Row + column pinning, sticky header + first column, header drag-to-reorder, keyboard-accessible column sizing.
 - **Operations.** Find in grid (Ctrl+F), undo / redo (Ctrl+Z), transaction API, optimistic updates, server-side row model with sort / filter / group pushdown.
+- **UI components.** A Svelte 5 component suite ships in the same package - inputs, selection, date/time, overlays, layout, feedback - usable standalone or as grid cell editors.
 - **A11y.** WAI-ARIA grid roles, full keyboard navigation, RTL, high-contrast theme.
 - **Bundle.** ~7.5 KB gzipped headless core, ~42 KB gzipped full render component (Svelte stays a peer).
 
 The MIT community core has zero feature gating, no license key, no watermark, no row-count cap.
 
-## Two packages
+## Packages
 
 | Package | License | What it adds |
 |---|---|---|
-| [`@svgrid/grid`](packages/grid/) | **MIT** | The full data grid, free for commercial use |
-| [`@svgrid/enterprise`](packages/enterprise/) | Commercial | Export to Excel / PDF / CSV / TSV / HTML, paginated print, pivot tables with drag-and-drop Designer + drill-through, AI helpers |
+| [`@svgrid/grid`](packages/grid/) | **MIT** | The full data grid **+ a Svelte 5 UI component suite**, free for commercial use |
+| [`@svgrid/enterprise`](packages/enterprise/) | Commercial | Export to Excel / PDF / CSV / TSV / HTML, paginated print, pivot tables with drag-and-drop Designer + drill-through, AI helpers, and the SvGrid Studio codegen |
+| [`@svgrid/studio`](packages/studio/) | Commercial (preview) | Grid-powered CRUD screens - a CLI + visual designer that generates a runnable SvelteKit app from your schema, over PGlite / Supabase / REST |
 | [`@svgrid/mcp`](packages/mcp/) | Commercial | MCP server for Claude / Cursor / Zed |
 
 OSS projects get the Enterprise pack free. See [Pricing](https://svgrid.com/pricing).
 
 ## AI-native
 
-SvGrid ships an MCP (Model Context Protocol) server so Claude, Cursor, and Zed give accurate, version-pinned answers about every prop, method, and event in the library plus all 150+ demo sources as context.
+SvGrid ships an MCP (Model Context Protocol) server so Claude, Cursor, and Zed give accurate, version-pinned answers about every prop, method, and event in the library plus all 280+ demo sources as context.
 
 ```json
 {
@@ -116,11 +118,13 @@ SvGrid is open core: the MIT `@svgrid/grid` is free for any use, and the project
 This is a **pnpm workspace** monorepo:
 
 ```
-packages/grid/            @svgrid/grid        - MIT data grid
-packages/enterprise/      @svgrid/enterprise  - paid feature pack
+packages/grid/            @svgrid/grid        - MIT data grid + UI component suite
+packages/enterprise/      @svgrid/enterprise  - paid feature pack + Studio codegen
+packages/studio/          @svgrid/studio      - Studio CLI + visual designer
 packages/mcp/             @svgrid/mcp         - MCP server
-packages/create-sv-grid/  @svgrid/create      - scaffolder
-examples/                                     - 150+ live demos
+packages/create-sv-grid/  @svgrid/create      - grid scaffolder
+packages/create-studio/   create @svgrid/studio - Studio app scaffolder
+examples/                                     - 280+ live demos
 website/                                      - svgrid.com source
 docs/                                         - markdown docs
 ```

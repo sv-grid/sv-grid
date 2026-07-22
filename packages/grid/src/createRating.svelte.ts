@@ -19,6 +19,8 @@
  */
 export type RatingFill = 'full' | 'half' | 'empty'
 
+import { editorAria, type EditorAriaState } from './editor-contract'
+
 /** Reactive inputs are passed as getters so the core tracks live prop changes. */
 export type RatingConfig = {
   value: () => number
@@ -28,12 +30,24 @@ export type RatingConfig = {
   readonly?: () => boolean
   disabled?: () => boolean
   ariaLabel?: () => string | undefined
+  /** Accessible label for a star given its 1-based position (localizable). */
+  starLabel?: (position: number) => string | undefined
+  // Editor contract (ARIA + validation) - folded into rootProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
 }
 
 export type RatingRootProps = {
   role: 'slider'
+  id: string | undefined
   tabindex: number
   'aria-label': string
+  'aria-invalid': 'true' | undefined
+  'aria-required': 'true' | undefined
+  'aria-describedby': string | undefined
   'aria-valuenow': number
   'aria-valuemin': number
   'aria-valuemax': number
@@ -112,6 +126,15 @@ export function createRating(config: RatingConfig): Rating {
     else if (e.key === 'End') { e.preventDefault(); config.onChange?.(max()) }
   }
 
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
+
   return {
     get value() { return config.value() },
     get preview() { return preview },
@@ -123,7 +146,9 @@ export function createRating(config: RatingConfig): Rating {
     onKeydown,
     rootProps: () => ({
       role: 'slider',
+      id: config.id?.(),
       tabindex: interactive() ? 0 : -1,
+      ...editorAria(ariaState()),
       'aria-label': config.ariaLabel?.() ?? 'Rating',
       'aria-valuenow': config.value(),
       'aria-valuemin': 0,
@@ -136,7 +161,7 @@ export function createRating(config: RatingConfig): Rating {
       type: 'button',
       tabindex: -1,
       disabled: !interactive(),
-      'aria-label': `${index + 1} star${index ? 's' : ''}`,
+      'aria-label': config.starLabel?.(index + 1) ?? `${index + 1} star${index ? 's' : ''}`,
       'data-fill': fillOf(index),
       onpointermove: (e: PointerEvent) => { if (interactive()) hover = valueAt(e, index) },
       onclick: (e: MouseEvent) => { if (interactive()) config.onChange?.(valueAt(e, index)) },

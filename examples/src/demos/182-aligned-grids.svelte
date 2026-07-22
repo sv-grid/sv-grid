@@ -62,7 +62,7 @@
     <div class="ag-block">
       <div class="ag-title">Budget</div>
       <div class="ag-grid">
-        <SvGrid
+        <SvGrid responsive={true}
           data={budget}
           columns={budgetCols}
           features={features}
@@ -79,7 +79,7 @@
     <div class="ag-block">
       <div class="ag-title">Actuals</div>
       <div class="ag-grid">
-        <SvGrid
+        <SvGrid responsive={true}
           data={actuals}
           columns={actualCols}
           features={features}

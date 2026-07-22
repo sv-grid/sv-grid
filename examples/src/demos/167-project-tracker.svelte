@@ -634,7 +634,7 @@
 
   <!-- Grid ------------------------------------------------------------ -->
   <div class="pt-grid-wrap">
-    <SvGrid
+    <SvGrid responsive={true}
       data={data}
       columns={columns}
       features={features}

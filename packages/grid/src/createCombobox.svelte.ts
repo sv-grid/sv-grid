@@ -20,6 +20,7 @@
  * ```
  */
 import { filterOptions, type ListOption } from './list-option'
+import { editorAria, type EditorAriaState } from './editor-contract'
 
 export type ComboboxValue = string | number | null
 
@@ -30,9 +31,17 @@ export type ComboboxConfig = {
   onChange?: (value: ComboboxValue) => void
   disabled?: () => boolean
   ariaLabel?: () => string | undefined
+  /** Filter the options locally by the query. Set false for server-side search. */
+  localFilter?: () => boolean
   /** DOM focus hooks provided by the renderer; the core itself never touches the DOM. */
   focusInput?: () => void
   blurInput?: () => void
+  // Editor contract (ARIA + validation) - folded into inputProps().
+  id?: () => string | undefined
+  invalid?: () => boolean
+  required?: () => boolean
+  error?: () => string | undefined
+  hint?: () => string | undefined
 }
 
 let uid = 0
@@ -48,14 +57,24 @@ export function createCombobox(config: ComboboxConfig) {
   let active = $state(0)
   let editing = $state(false)
 
+  const localFilter = () => config.localFilter?.() ?? true
   const selected = $derived(opts().find((o) => o.value === config.value()) ?? null)
-  const filtered = $derived(editing ? filterOptions(opts(), query) : [...opts()])
+  const filtered = $derived(editing && localFilter() ? filterOptions(opts(), query) : [...opts()])
   const shownText = $derived(editing ? query : selected?.label ?? '')
 
   // While not actively editing, keep the shown text in sync with the selection.
   $effect(() => { if (!editing) query = selected?.label ?? '' })
 
   const optionId = (i: number) => `${listId}-opt-${i}`
+
+  const ariaState = (): EditorAriaState => ({
+    id: config.id?.(),
+    invalid: config.invalid?.(),
+    required: config.required?.(),
+    error: config.error?.(),
+    hint: config.hint?.(),
+    ariaLabel: config.ariaLabel?.(),
+  })
 
   function openPanel() { if (disabled() || open) return; open = true; active = 0 }
   function close(revert = true) {
@@ -114,11 +133,12 @@ export function createCombobox(config: ComboboxConfig) {
     onKeydown,
     /** Spread onto the editable <input>. */
     inputProps: () => ({
+      id: config.id?.(),
       role: 'combobox' as const,
       'aria-expanded': open,
       'aria-controls': listId,
       'aria-autocomplete': 'list' as const,
-      'aria-label': config.ariaLabel?.(),
+      ...editorAria(ariaState()),
       value: shownText,
       disabled: disabled(),
       oninput: onInput,

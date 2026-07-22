@@ -66,3 +66,56 @@ Field types: `text` `email` `tel` `textarea` `number` `password` `select`
 `{ name, label, type?, required?, placeholder?, options?, validate?, full? }`.
 Props: `fields`, `initial`, `onSubmit(values)`, `onChange(values)`, `columns`,
 `submitLabel`, `disabled`.
+
+## SvDivider
+
+A separator line, horizontal or vertical, optionally with a label.
+
+```svelte
+<SvDivider label="OR" />
+<SvDivider orientation="vertical" />
+```
+
+Props: `orientation`, `label`, `align` (`start` | `center` | `end`), `dashed`, `children`.
+
+## SvScrollArea
+
+A scroll container with the kit's themed custom scrollbars (consumes the
+`--sg-scrollbar-*` tokens with `--sg-fg`-derived fallbacks) - so a panel matches
+the grid/demos without hand-rolling `::-webkit-scrollbar` CSS.
+
+```svelte
+<SvScrollArea maxHeight="240px">…long content…</SvScrollArea>
+```
+
+Props: `maxHeight`, `height`, `horizontal`, `children`.
+
+## SvCarousel
+
+A slideshow: a sliding track with arrows, dot indicators, autoplay (pauses on
+hover/focus) and swipe. Slides come from the `slide` snippet.
+
+```svelte
+<SvCarousel count={imgs.length} autoplay={4000}>
+  {#snippet slide(i)}<img src={imgs[i]} alt="" />{/snippet}
+</SvCarousel>
+```
+
+Props: `count`, `slide` snippet, `current` (bindable), `autoplay` (ms; 0 = off),
+`loop`, `arrows`, `dots`.
+
+## Component guides
+
+Each component has its own full tutorial with props, keyboard behaviour and
+recipes:
+
+- [SvTabs](./sv-tabs.md) - a WAI-ARIA tabs widget with panels.
+- [SvAccordion](./sv-accordion.md) - collapsible sections, single or multi-expand.
+- [SvSplitter](./sv-splitter.md) - two resizable panes with a draggable gutter.
+- [SvCard](./sv-card.md) - a themed surface with header, body and footer.
+- [SvDivider](./sv-divider.md) - a separator line with an optional label.
+- [SvScrollArea](./sv-scroll-area.md) - a scroll container with themed scrollbars.
+- [SvGridChart](./sv-grid-chart.md) - an inline-SVG chart bound to your data.
+- [SvForm](./sv-form.md) - a schema-driven form of kit controls.
+- [SvField](./sv-field.md) - the shared label/hint/error chrome for editors.
+- [SvFileUpload](./sv-file-upload.md) - a drag-and-drop file field with validation.

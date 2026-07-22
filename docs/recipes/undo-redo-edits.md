@@ -2,6 +2,9 @@
 
 > Live in [demo 55-state-maintenance](https://svgrid.com/#/demos/55-state-maintenance).
 
+<div data-docs-demo="55-state-maintenance" data-height="480"></div>
+
+
 ## When
 
 Maintain a history stack of cell edits; Ctrl+Z / Ctrl+Y replay backwards / forwards.

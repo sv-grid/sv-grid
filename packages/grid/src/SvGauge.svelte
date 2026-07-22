@@ -7,6 +7,7 @@
    * The arc/needle geometry + `role="meter"` ARIA live in the headless
    * `createGauge` core; this component is just one styled renderer over it.
    */
+  import { type EditorDir } from './editor-contract'
   import { createGauge } from './createGauge.svelte'
 
   type Band = { from: number; to: number; color: string }
@@ -28,6 +29,8 @@
     thickness?: number
     formatValue?: (v: number) => string
     ariaLabel?: string
+    /** Text direction for the center label / unit. */
+    dir?: EditorDir
   }
 
   let {
@@ -43,7 +46,10 @@
     thickness = 14,
     formatValue,
     ariaLabel,
+    dir,
   }: Props = $props()
+
+  const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
 
   const gauge = createGauge({
     value: () => value,
@@ -63,7 +69,7 @@
   const display = $derived(label ?? `${formatValue ? formatValue(clamped) : Math.round(clamped)}${unit}`)
 </script>
 
-<div class="sv-gauge" {...gauge.rootProps()}>
+<div class="sv-gauge" dir={resolvedDir} {...gauge.rootProps()}>
   <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} class="sv-gauge__svg">
     <!-- track -->
     <path d={arcPath(min, max, r)} class="sv-gauge__track" fill="none" stroke-width={thickness} stroke-linecap="round" />

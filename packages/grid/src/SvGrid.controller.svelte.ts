@@ -441,6 +441,28 @@ export function createSvGridController<
     viewportVersion;
     return scrollContainer ? scrollContainer.clientHeight : 0;
   });
+
+  // --- responsive (narrow-container) mode ---
+  const responsiveBreakpoint = $derived(
+    props.responsive && typeof props.responsive === "object" && props.responsive.breakpoint != null
+      ? props.responsive.breakpoint
+      : 640,
+  );
+  // Below the breakpoint: un-pin columns (pan the whole grid), suspend
+  // fitColumns, and hide `hideBelow` columns. Guarded on width > 0 so it never
+  // triggers before the grid has measured.
+  const isNarrowResponsive = $derived(
+    !!props.responsive && viewportWidth > 0 && viewportWidth < responsiveBreakpoint,
+  );
+  const EMPTY_PINNING = { left: [] as string[], right: [] as string[] };
+  const effectivePinning = $derived(isNarrowResponsive ? EMPTY_PINNING : columnPinning);
+  // A column with `hideBelow: N` is dropped while `responsive` is on and the
+  // grid is narrower than N px (reads viewportWidth so it re-runs on resize).
+  function isHiddenByResponsive(column: { columnDef?: { hideBelow?: number } }): boolean {
+    if (!props.responsive) return false;
+    const hb = column.columnDef?.hideBelow;
+    return hb != null && viewportWidth > 0 && viewportWidth < hb;
+  }
   const scrollMetrics = $derived.by(() => {
     scrollVersion;
     viewportVersion;
@@ -698,7 +720,12 @@ export function createSvGridController<
   const allColumns = $derived.by(() => {
     let raw = grid
       .getAllColumns()
-      .filter((column) => !hiddenColumns[column.id] && !hiddenByGroupCollapse[column.id]);
+      .filter(
+        (column) =>
+          !hiddenColumns[column.id] &&
+          !hiddenByGroupCollapse[column.id] &&
+          !isHiddenByResponsive(column),
+      );
     // Apply user reorder (if any). Unknown ids in userColumnOrder are
     // skipped; columns not in userColumnOrder keep their original
     // relative order after the user-ordered ones.
@@ -715,8 +742,8 @@ export function createSvGridController<
       }
       raw = ordered;
     }
-    const leftIds = columnPinning.left;
-    const rightIds = columnPinning.right;
+    const leftIds = effectivePinning.left;
+    const rightIds = effectivePinning.right;
     if (!leftIds.length && !rightIds.length) return raw;
     const pinned = new Set([...leftIds, ...rightIds]);
     const findById = (id: string) => raw.find((column) => column.id === id);
@@ -907,14 +934,14 @@ export function createSvGridController<
     const selectionWidth = showRowSelectionEffective ? selectionColumnWidth : 0;
     const left: Record<string, number> = {};
     let leftAcc = rowNumberWidth + selectionWidth;
-    for (const id of columnPinning.left) {
+    for (const id of effectivePinning.left) {
       left[id] = leftAcc;
       leftAcc += getColumnWidth(id);
     }
     const right: Record<string, number> = {};
     let rightAcc = 0;
-    for (let i = columnPinning.right.length - 1; i >= 0; i -= 1) {
-      const id = columnPinning.right[i];
+    for (let i = effectivePinning.right.length - 1; i >= 0; i -= 1) {
+      const id = effectivePinning.right[i];
       if (!id) continue;
       right[id] = rightAcc;
       rightAcc += getColumnWidth(id);
@@ -1471,8 +1498,8 @@ export function createSvGridController<
     // that edge and the window are also rendered; negligible for typical grids,
     // and correctness beats shaving a few off-screen cells.)
     const window = virtualColumns;
-    const hasLeft = columnPinning.left.length > 0;
-    const hasRight = columnPinning.right.length > 0;
+    const hasLeft = effectivePinning.left.length > 0;
+    const hasRight = effectivePinning.right.length > 0;
     if ((!hasLeft && !hasRight) || window.length === 0) return window;
 
     const firstIdx = window[0]!.index;
@@ -1828,7 +1855,8 @@ export function createSvGridController<
     // Track viewport size (not scrollVersion) so we don't recompute on
     // every scroll - only when the container actually resizes.
     viewportVersion;
-    if (!props.fitColumns) return null;
+    // Narrow responsive mode pans instead of scaling, so skip fit scaling.
+    if (!props.fitColumns || isNarrowResponsive) return null;
     const cols = grid.getAllColumns().filter((c) => !hiddenColumns[c.id]);
     if (!cols.length) return null;
     const rowNumberWidth = showRowNumbersEffective ? rowNumberColumnWidth : 0;
@@ -2016,11 +2044,39 @@ export function createSvGridController<
     return map;
   });
 
+  // Server-side set-filter values: when a column's filter menu opens and the
+  // consumer provides `serverFilterValues`, fetch the distinct values from the
+  // server once (cached per column) instead of deriving them from the loaded
+  // page - so the checklist shows every value, not just what's on screen.
+  let serverFacetValues = $state<Record<string, Array<string>>>({});
+  let serverFacetLoading = $state<string | null>(null);
+  $effect(() => {
+    const columnId = filterMenuFor ?? columnMenuFor;
+    const fetcher = props.serverFilterValues;
+    if (!columnId || !fetcher || serverFacetValues[columnId]) return;
+    serverFacetLoading = columnId;
+    let cancelled = false;
+    void fetcher(columnId)
+      .then((values) => {
+        if (cancelled) return;
+        serverFacetValues = { ...serverFacetValues, [columnId]: values };
+        serverFacetLoading = null;
+      })
+      .catch(() => {
+        if (!cancelled) serverFacetLoading = null;
+      });
+    return () => {
+      cancelled = true;
+    };
+  });
+
   const columnMenuFacetValues = $derived.by(() => {
     // The funnel popover drives via `filterMenuFor`; the column menu's Filter
     // tab drives via `columnMenuFor`. Support whichever is open.
     const columnId = filterMenuFor ?? columnMenuFor;
     if (!columnId) return [] as Array<string>;
+    // Server-provided distinct values win (fetched + cached above).
+    if (props.serverFilterValues) return serverFacetValues[columnId] ?? [];
     const column = allColumns.find((entry) => entry.id === columnId);
     if (!column) return [] as Array<string>;
     // Range-bucketed facets for numeric / date columns with many values.
@@ -2150,6 +2206,8 @@ export function createSvGridController<
     get MIN_COLUMN_WIDTH() { return MIN_COLUMN_WIDTH; },
     get columnPinning() { return columnPinning; },
     set columnPinning(v) { columnPinning = v as never; },
+    get effectivePinning() { return effectivePinning; },
+    get isNarrowResponsive() { return isNarrowResponsive; },
     get columnVirtualizerVersion() { return columnVirtualizerVersion; },
     set columnVirtualizerVersion(v) { columnVirtualizerVersion = v as never; },
     get gridStateVersion() { return gridStateVersion; },
@@ -2450,6 +2508,7 @@ export function createSvGridController<
     get buildBuckets() { return buildBuckets; },
     get isInBucket() { return isInBucket; },
     get facetBucketsByColumn() { return facetBucketsByColumn; },
+    get serverFacetLoading() { return serverFacetLoading; },
     get columnMenuFacetValues() { return columnMenuFacetValues; },
     get columnMenuVisibleFacets() { return columnMenuVisibleFacets; },
     get isFacetChecked() { return isFacetChecked; },

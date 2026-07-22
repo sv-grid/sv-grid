@@ -4,6 +4,8 @@ A Studio-generated app is a normal SvelteKit app - the screens are `+page.svelte
 files and the data endpoints are `+server.ts` routes. It deploys anywhere
 SvelteKit runs. This page is the production checklist.
 
+![A Studio-generated app is a normal SvelteKit app of +page.svelte screens and +server.ts data routes that deploys anywhere SvelteKit runs: node, serverless, or static plus API.](/docs-media/studio-deploy.svg)
+
 ## Checklist
 
 - [ ] **License key set** - call `setLicenseKey(...)` at startup to remove the
@@ -38,12 +40,36 @@ Fly / a container), not in the repo:
 DATABASE_URL="postgres://user:pass@host:5432/app"
 ```
 
+## Deploy (from the designer)
+
+The visual designer has a **Deploy** button (and a **Deploy target** picker in the
+panel). Choose **Vercel**, **Netlify**, **Cloudflare Pages**, **Node**, or
+**Auto-detect**, and **Generate app** bundles the matching SvelteKit adapter and
+provider config for you - the download deploys with **no hand-editing of config**.
+It is not literally one click: you still `git push` (then import the repo) or run
+the provider's CLI one-liner - but there is nothing SvelteKit-specific left to wire:
+
+| Target | Adapter emitted | Extra config | One-liner |
+| --- | --- | --- | --- |
+| Auto-detect (default) | `@sveltejs/adapter-auto` | none | `npx vercel --prod` |
+| Vercel | `@sveltejs/adapter-vercel` | none | `npx vercel --prod` |
+| Netlify | `@sveltejs/adapter-netlify` | `netlify.toml` | `npx netlify deploy --build --prod` |
+| Cloudflare Pages | `@sveltejs/adapter-cloudflare` | `wrangler.toml` | `npm run build && npx wrangler pages deploy .svelte-kit/cloudflare` |
+| Node server | `@sveltejs/adapter-node` | none | `npm run build && node build` |
+
+The Deploy panel shows the copy-paste CLI command and a link to the provider's
+**import-from-Git** page; the generated `README.md` carries the same steps. Apps
+whose entities all use **Local database** (PGlite) or **In-memory** need no server
+environment at all - push and deploy. SQL / Supabase entities still need their
+connection set in the host's environment variables (below).
+
 ## Adapters
 
 The API routes are standard SvelteKit endpoints, so any adapter works -
 `adapter-node`, `adapter-vercel`, `adapter-netlify`, `adapter-cloudflare`
 (with a Workers-compatible database driver), etc. No Studio-specific
-configuration is required.
+configuration is required. (The designer's **Deploy target** wires the adapter
+below for you; pick a target and re-generate to switch.)
 
 | Host | Adapter | Notes |
 | --- | --- | --- |

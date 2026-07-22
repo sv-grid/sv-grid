@@ -8,19 +8,22 @@
    * state + parsing live in the core, spread here via prop-getters.
    */
   import { COUNTRIES, flagEmoji } from './countries'
-  import { createPhoneInput } from './createPhoneInput.svelte'
+  import SvField from './SvField.svelte'
+  import { nextEditorId, resolveMessages, type SvEditorProps } from './editor-contract'
+  import { createPhoneInput, type PhoneParts } from './createPhoneInput.svelte'
 
-  type Props = {
+  /** User-facing strings for the phone input (localizable via `messages`). */
+  type PhoneMessages = { country: string }
+  const DEFAULT_MESSAGES: PhoneMessages = { country: 'Country' }
+
+  type Props = SvEditorProps & {
     value?: string
-    onChange?: (value: string, parts: { country: string; dial: string; national: string }) => void
+    onChange?: (value: string, parts: PhoneParts) => void
     /** Default country ISO code. */
     country?: string
-    disabled?: boolean
-    readonly?: boolean
     placeholder?: string
-    name?: string
-    size?: 'sm' | 'md' | 'lg'
-    ariaLabel?: string
+    /** Override the built-in strings (e.g. the country selector aria-label). */
+    messages?: Partial<PhoneMessages>
   }
 
   let {
@@ -33,7 +36,19 @@
     name,
     size = 'md',
     ariaLabel,
+    invalid = false,
+    required = false,
+    error,
+    label,
+    hint,
+    dir,
+    id,
+    messages,
   }: Props = $props()
+
+  const autoId = nextEditorId('sv-phone')
+  const uid = $derived(id ?? autoId)
+  const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
 
   const ph = createPhoneInput({
     value: () => value,
@@ -42,11 +57,18 @@
     disabled: () => disabled,
     readonly: () => readonly,
     placeholder: () => placeholder,
+    countryLabel: () => M.country,
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
     ariaLabel: () => ariaLabel,
   })
 </script>
 
-<div class="sv-phone sv-phone--{size}" class:is-disabled={disabled}>
+<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<div class="sv-phone sv-phone--{size}" class:is-disabled={disabled} class:is-invalid={invalid}>
   <div class="sv-phone__country">
     <span class="sv-phone__flag" aria-hidden="true">{ph.flag}</span>
     <span class="sv-phone__dial">{ph.dial}</span>
@@ -60,6 +82,7 @@
   <input class="sv-phone__number" {...ph.inputProps()} />
   {#if name}<input type="hidden" {name} value={ph.value} />{/if}
 </div>
+</SvField>
 
 <style>
   .sv-phone {
@@ -70,16 +93,25 @@
     overflow: hidden;
   }
   .sv-phone:focus-within { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
+  .sv-phone.is-invalid { border-color: var(--sg-danger, #dc2626); }
+  .sv-phone.is-invalid:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
   .sv-phone.is-disabled { opacity: 0.6; }
   .sv-phone__country {
     position: relative; display: inline-flex; align-items: center; gap: 4px;
-    padding: 0 6px 0 10px; border-right: 1px solid var(--sg-border, #e2e8f0);
+    padding-block: 0; padding-inline: 10px 6px; border-inline-end: 1px solid var(--sg-border, #e2e8f0);
     background: var(--sg-header-bg, #f8fafc); cursor: pointer;
   }
   .sv-phone__flag { font-size: 15px; }
   .sv-phone__dial { font-size: 13px; font-weight: 600; }
   .sv-phone__chev { color: var(--sg-muted, #64748b); }
-  .sv-phone__select { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 13px; }
+  /* The native <select> is an invisible overlay, but its option popup is drawn by
+     the OS using the control's own color/background - so theme them explicitly or
+     dark themes get light text on the default white popup. */
+  .sv-phone__select {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 13px;
+    color: var(--sg-fg, #0f172a); background: var(--sg-bg, #fff);
+  }
+  .sv-phone__select option { color: var(--sg-fg, #0f172a); background: var(--sg-bg, #fff); }
   .sv-phone__number { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: inherit; font: inherit; padding: 0 10px; }
   .sv-phone--sm { height: 28px; font-size: 12px; }
   .sv-phone--md { height: 34px; font-size: 13px; }

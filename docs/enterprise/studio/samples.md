@@ -10,8 +10,8 @@ no placeholder rows.
 
 In the designer, click **Sample apps** (toolbar or the onboarding screen) and pick
 one of **17** ready-made apps. Each loads instantly as a full multi-entity app - a
-dashboard (KPIs + charts), grids, and a master/detail - themed and **seeded with
-believable data**, so you see the real thing, not `name 1 / email 1`.
+dashboard (KPIs + charts), grids, a master/detail, and **rich edit forms** - themed
+and **seeded with believable data**, so you see the real thing, not `name 1 / email 1`.
 
 | Sample | What's inside |
 | --- | --- |
@@ -54,12 +54,36 @@ in-memory entity - the shipped samples *and* the ones you build - in both the
 live preview and the generated app's seed. Sample apps also carry **hand-curated
 seed** so their dashboards and charts look their best out of the box.
 
+## Rich edit forms
+
+Every sample models its fields with the **right editor**, not a wall of text
+boxes - so an edit form looks and behaves like a real app. Across the gallery you
+get:
+
+- **Phone** and **country** pickers (SvPhoneInput / SvCountryInput), **masked**
+  inputs for structured codes (SSN, VIN, license plate, ISBN, ZIP, tax id),
+- **rating** stars and **sliders** for scores and percentages (deal probability,
+  usage, fuel level, tip),
+- **tag** inputs for multi-value fields (skills, amenities, dietary tags, segments),
+  **color** pickers, **password** fields, and **date / date-time** pickers,
+- real **validation** (required, min/max, patterns) and **computed fields** - e.g.
+  a deal's weighted value (`value * probability / 100`), an invoice total
+  (`subtotal + tax`), or a trip's cost-per-mile - that recalculate as you type.
+
+Each sample also ships a **form screen**: a grid plus an inline edit panel, so you
+can click a row and see the full editor form immediately. It's all declared on the
+entity's fields (`type`, `input.editorType`, `format`, `formula`), so it carries
+straight through **Generate app** into the SvelteKit code - and you can change any
+field's editor from the designer's field inspector.
+
 ## Bind your data
 
 **Use my data** (toolbar) points a sample's screens at your real backend without
 rebuilding them:
 
-1. Connect (pick a database + paste a connection string).
+1. Connect: pick a database and either fill the **guided form** (host / port /
+   database / user / password / SSL) or paste a connection string. **Test
+   connection** confirms it and lists each table's row count before you commit.
 2. **Map** each entity to one of your tables - matches are auto-suggested by name;
    leave one as "Keep sample data" to skip it.
 3. **Bind**. Each mapped entity is bound to SQL, so **Generate app** emits a
@@ -75,7 +99,9 @@ extra columns are added as new fields. If a chart or master/detail references a
 sample field with no matching column, the wizard lists it so you can adjust.
 
 The database driver (`pg` / `mysql2` / `mssql` / `better-sqlite3`) must be
-installed where you launched the designer; the connection stays on your machine.
+installed where you launched the designer - if it's missing, the wizard offers a
+one-click **Install driver** that runs your project's package manager. The
+connection stays on your machine.
 
 ## See also
 

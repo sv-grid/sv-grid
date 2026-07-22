@@ -16,9 +16,11 @@ export function getGridRootA11yProps(input: {
   activeDescendantId?: string | null
   rowCount?: number
   colCount?: number
+  /** Use the treegrid role (expandable server group / tree rows are present). */
+  treegrid?: boolean
 } = {}) {
   return {
-    role: 'grid',
+    role: input.treegrid ? 'treegrid' : 'grid',
     tabindex: 0,
     ...(input.activeDescendantId
       ? { 'aria-activedescendant': input.activeDescendantId }

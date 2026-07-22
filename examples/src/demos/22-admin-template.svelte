@@ -505,7 +505,7 @@
               </button>
             </div>
             <div class="flex-1 min-h-0">
-              <SvGrid
+              <SvGrid responsive={true}
                 data={recentOrders}
                 columns={dashboardColumns}
                 features={features}
@@ -569,7 +569,7 @@
               <p class="text-xs" style="color: #f87171;">{exportErr}</p>
             {/if}
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
-              <SvGrid
+              <SvGrid responsive={true}
                 data={orders}
                 columns={ordersColumns}
                 features={features}
@@ -599,7 +599,7 @@
               {/if}
             </div>
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
-              <SvGrid
+              <SvGrid responsive={true}
                 data={customers}
                 columns={customerColumns}
                 features={features}
@@ -642,7 +642,7 @@
               </div>
             </div>
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
-              <SvGrid
+              <SvGrid responsive={true}
                 data={products}
                 columns={productColumns}
                 features={features}
@@ -678,7 +678,7 @@
               {/each}
             </div>
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
-              <SvGrid
+              <SvGrid responsive={true}
                 data={users}
                 columns={userColumns}
                 features={features}
@@ -722,7 +722,7 @@
               </div>
             </div>
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
-              <SvGrid
+              <SvGrid responsive={true}
                 data={reportRows}
                 columns={reportColumns}
                 features={features}

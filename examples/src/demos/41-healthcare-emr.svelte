@@ -304,7 +304,7 @@
 
   <!-- Grid -->
   <div class="flex-1 min-h-0">
-    <SvGrid
+    <SvGrid responsive={true}
       data={patients}
       columns={[
         { field: 'mrn', header: 'MRN / pt.', width: 150, editable: false,
