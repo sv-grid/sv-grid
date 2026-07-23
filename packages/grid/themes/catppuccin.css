@@ -1,0 +1,59 @@
+/* Catppuccin - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #eff1f5;
+  --sg-fg: #4c4f69;
+  --sg-muted: #6c6f85;
+  --sg-border: #ccd0da;
+  --sg-header-bg: #e6e9ef;
+  --sg-header-fg: #4c4f69;
+  --sg-bg-subtle: #e6e9ef;
+  --sg-row-alt-bg: #e6e9ef;
+  --sg-row-hover-bg: #dce0e8;
+  --sg-selection-bg: #dce0e8;
+  --sg-input-bg: #eff1f5;
+  --sg-input-border: #ccd0da;
+  --sg-accent: #8839ef;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 8px;
+  --sg-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sg-scrollbar-bg: #e6e9ef;
+  --sg-scrollbar-border: #ccd0da;
+  --sg-scrollbar-thumb: #6c6f85;
+  --sg-scrollbar-thumb-hover: #4c4f69;
+  --sg-scrollbar-thumb-active: #4c4f69;
+  --sg-scrollbar-arrow: #6c6f85;
+  --sg-scrollbar-arrow-hover: #4c4f69;
+  --sg-scrollbar-arrow-hover-bg: #dce0e8;
+  --sg-scrollbar-arrow-active: #4c4f69;
+  --sg-scrollbar-arrow-active-bg: #dce0e8;
+  --sg-scrollbar-arrow-disabled: #ccd0da;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #1e1e2e;
+  --sg-fg: #cdd6f4;
+  --sg-muted: #a6adc8;
+  --sg-border: #313244;
+  --sg-header-bg: #181825;
+  --sg-header-fg: #cdd6f4;
+  --sg-bg-subtle: #181825;
+  --sg-row-alt-bg: #1a1a28;
+  --sg-row-hover-bg: #313244;
+  --sg-selection-bg: #45475a;
+  --sg-input-bg: #1e1e2e;
+  --sg-input-border: #313244;
+  --sg-accent: #cba6f7;
+  --sg-on-accent: #18181b;
+  --sg-radius: 8px;
+  --sg-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sg-scrollbar-bg: #181825;
+  --sg-scrollbar-border: #313244;
+  --sg-scrollbar-thumb: #a6adc8;
+  --sg-scrollbar-thumb-hover: #cdd6f4;
+  --sg-scrollbar-thumb-active: #cdd6f4;
+  --sg-scrollbar-arrow: #a6adc8;
+  --sg-scrollbar-arrow-hover: #cdd6f4;
+  --sg-scrollbar-arrow-hover-bg: #313244;
+  --sg-scrollbar-arrow-active: #cdd6f4;
+  --sg-scrollbar-arrow-active-bg: #45475a;
+  --sg-scrollbar-arrow-disabled: #313244;
+}

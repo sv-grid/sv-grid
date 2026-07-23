@@ -11,13 +11,32 @@ It is part of the **Enterprise** license and is **soft-gate only** - everything
 runs unlicensed, it just nudges. See
 [licensing](./licensing.md#studio-data-app-generator).
 
-> **New to Studio?** Follow the step-by-step
+> **Just want to run it?** One command scaffolds a complete, working app - no
+> manual setup, no database required:
+>
+> ```bash
+> npm create @svgrid/studio@latest my-app
+> cd my-app && npm install && npm run dev
+> ```
+>
+> You'll be asked to pick a **theme** (one of `@svgrid/grid`'s 19 built-in
+> presets) and **light or dark** mode - or skip the prompts with
+> `-- --theme material --dark`. Open `http://localhost:5173` and you have a
+> real SvelteKit app - nav shell, **Customers** and **Orders** screens (linked
+> by a searchable lookup), grid + modal create/edit/delete, seeded data.
+> Nothing to configure. See
+> [Getting started](./studio/getting-started.md#fastest-path-a-downloadable-ready-to-run-example)
+> for what to do next.
+
+> **Want to build it yourself, step by step?** Follow the
 > **[Getting started](./studio/getting-started.md)** guide - from an empty app to
 > a working Customers screen, no prior SvGrid experience assumed.
 
 > **Prefer not to write code?** Build the same app **visually** - point, click,
-> preview, then press one button to generate it. Start with
-> **[Build it visually](./studio/launch.md)**, or open a one-click
+> preview, then press one button to generate it. Try it right now, no install,
+> at **[svgrid.com/studio](https://svgrid.com/studio)** - or see
+> **[Launch the designer](./studio/launch.md)** for the local CLI version
+> (auto-saves to disk, generates straight into a folder), or open a one-click
 > **[sample app](./studio/samples.md)**.
 
 > **Live demos:** [Data-app Studio](https://svgrid.com/#/demos/192-data-app-studio)
@@ -33,16 +52,27 @@ runs unlicensed, it just nudges. See
 
 ## A CRUD app in under a minute
 
+This assumes you already have a SvelteKit app and a `customers` table in your
+database. Starting from nothing? Use **[Getting started](./studio/getting-started.md)**
+instead - it builds the same screen from an empty folder, no database required.
+
 ```bash
-npm i @svgrid/grid @svgrid/enterprise
+npm i @svgrid/grid @svgrid/enterprise pg   # pg = driver for your database
 npx @svgrid/studio add customers --db postgres --url "$DATABASE_URL"
 npm run dev            # open /customers
 ```
 
-You get three files - the entity schema, a SvelteKit `+server.ts` API route, and
-a `+page.svelte` screen - and a working `/customers` page with **search, sort,
-pagination, multi-select delete, and create/edit**. Re-running `add` is safe:
-only the `svgrid:managed` regions are regenerated.
+`add customers` introspects the `customers` table and writes three files - the
+entity schema, a SvelteKit `+server.ts` API route, and a `+page.svelte` screen -
+giving you a working `/customers` page with **search, sort, pagination,
+multi-select delete, and create/edit**. Re-running `add` is safe: only the
+`svgrid:managed` regions are regenerated.
+
+> The grid themes its own borders, backgrounds, and hover states out of the box. Font is
+> the one thing it inherits from your page rather than forcing - if your app doesn't set
+> one yet (a bare `npx sv create` scaffold doesn't), add a `body { font-family: ... }`
+> rule or a [`--sg-font`](./studio/theming.md) token, or the screen renders in the
+> browser's default serif font.
 
 ---
 

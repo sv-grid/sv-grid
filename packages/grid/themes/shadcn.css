@@ -1,0 +1,59 @@
+/* shadcn/ui - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #09090b;
+  --sg-muted: #71717a;
+  --sg-border: #e4e4e7;
+  --sg-header-bg: #fafafa;
+  --sg-header-fg: #71717a;
+  --sg-bg-subtle: #fafafa;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f4f4f5;
+  --sg-selection-bg: #f4f4f5;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #e4e4e7;
+  --sg-accent: #18181b;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 6px;
+  --sg-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sg-scrollbar-bg: #fafafa;
+  --sg-scrollbar-border: #e4e4e7;
+  --sg-scrollbar-thumb: #71717a;
+  --sg-scrollbar-thumb-hover: #09090b;
+  --sg-scrollbar-thumb-active: #09090b;
+  --sg-scrollbar-arrow: #71717a;
+  --sg-scrollbar-arrow-hover: #09090b;
+  --sg-scrollbar-arrow-hover-bg: #f4f4f5;
+  --sg-scrollbar-arrow-active: #09090b;
+  --sg-scrollbar-arrow-active-bg: #f4f4f5;
+  --sg-scrollbar-arrow-disabled: #e4e4e7;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #0a0a0a;
+  --sg-fg: #fafafa;
+  --sg-muted: #a1a1aa;
+  --sg-border: #27272a;
+  --sg-header-bg: #18181b;
+  --sg-header-fg: #a1a1aa;
+  --sg-bg-subtle: #18181b;
+  --sg-row-alt-bg: #0a0a0a;
+  --sg-row-hover-bg: #18181b;
+  --sg-selection-bg: #27272a;
+  --sg-input-bg: #0a0a0a;
+  --sg-input-border: #27272a;
+  --sg-accent: #fafafa;
+  --sg-on-accent: #18181b;
+  --sg-radius: 6px;
+  --sg-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sg-scrollbar-bg: #18181b;
+  --sg-scrollbar-border: #27272a;
+  --sg-scrollbar-thumb: #a1a1aa;
+  --sg-scrollbar-thumb-hover: #fafafa;
+  --sg-scrollbar-thumb-active: #fafafa;
+  --sg-scrollbar-arrow: #a1a1aa;
+  --sg-scrollbar-arrow-hover: #fafafa;
+  --sg-scrollbar-arrow-hover-bg: #18181b;
+  --sg-scrollbar-arrow-active: #fafafa;
+  --sg-scrollbar-arrow-active-bg: #27272a;
+  --sg-scrollbar-arrow-disabled: #27272a;
+}

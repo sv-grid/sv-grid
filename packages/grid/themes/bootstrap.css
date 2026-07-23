@@ -1,0 +1,59 @@
+/* Bootstrap 5 - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #212529;
+  --sg-muted: #6c757d;
+  --sg-border: #dee2e6;
+  --sg-header-bg: #f8f9fa;
+  --sg-header-fg: #212529;
+  --sg-bg-subtle: #f8f9fa;
+  --sg-row-alt-bg: #fcfcfd;
+  --sg-row-hover-bg: #f2f2f2;
+  --sg-selection-bg: #cfe2ff;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #dee2e6;
+  --sg-accent: #0d6efd;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 6px;
+  --sg-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sg-scrollbar-bg: #f8f9fa;
+  --sg-scrollbar-border: #dee2e6;
+  --sg-scrollbar-thumb: #6c757d;
+  --sg-scrollbar-thumb-hover: #212529;
+  --sg-scrollbar-thumb-active: #212529;
+  --sg-scrollbar-arrow: #6c757d;
+  --sg-scrollbar-arrow-hover: #212529;
+  --sg-scrollbar-arrow-hover-bg: #f2f2f2;
+  --sg-scrollbar-arrow-active: #212529;
+  --sg-scrollbar-arrow-active-bg: #cfe2ff;
+  --sg-scrollbar-arrow-disabled: #dee2e6;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #212529;
+  --sg-fg: #dee2e6;
+  --sg-muted: #adb5bd;
+  --sg-border: #495057;
+  --sg-header-bg: #2b3035;
+  --sg-header-fg: #dee2e6;
+  --sg-bg-subtle: #2b3035;
+  --sg-row-alt-bg: #25292e;
+  --sg-row-hover-bg: #2c3034;
+  --sg-selection-bg: #031633;
+  --sg-input-bg: #212529;
+  --sg-input-border: #495057;
+  --sg-accent: #0d6efd;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 6px;
+  --sg-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sg-scrollbar-bg: #2b3035;
+  --sg-scrollbar-border: #495057;
+  --sg-scrollbar-thumb: #adb5bd;
+  --sg-scrollbar-thumb-hover: #dee2e6;
+  --sg-scrollbar-thumb-active: #dee2e6;
+  --sg-scrollbar-arrow: #adb5bd;
+  --sg-scrollbar-arrow-hover: #dee2e6;
+  --sg-scrollbar-arrow-hover-bg: #2c3034;
+  --sg-scrollbar-arrow-active: #dee2e6;
+  --sg-scrollbar-arrow-active-bg: #031633;
+  --sg-scrollbar-arrow-disabled: #495057;
+}

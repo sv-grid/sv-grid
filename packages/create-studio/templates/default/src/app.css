@@ -1,14 +1,18 @@
 /* App theme + chrome. The grid ships its own styles; these tokens drive the
- * accent + surfaces (light / dark friendly), the nav shell, and the buttons. */
+ * accent + surfaces (light / dark friendly), the nav shell, and the buttons.
+ * The block between the markers is rewritten by create-studio's CLI to match
+ * the theme + mode you pick when scaffolding - edit freely afterwards. */
+/* svgrid-theme:start */
 :root {
   --sg-accent: #4f46e5;
   color-scheme: light dark;
 }
+/* svgrid-theme:end */
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--sg-font, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
   color: var(--sg-fg, #0f172a);
   background: var(--sg-bg, #ffffff);
 }

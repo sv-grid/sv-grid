@@ -52,6 +52,12 @@
       "svelte": "./dist/flex-render.js",
       "import": "./dist/flex-render.js"
     },
+    "./themes": {
+      "types": "./dist/themes/index.d.ts",
+      "svelte": "./dist/themes/index.js",
+      "import": "./dist/themes/index.js"
+    },
+    "./themes/*.css": "./themes/*.css",
     "./package.json": "./package.json"
   },
   "engines": {
@@ -59,7 +65,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "themes"
   ],
   "scripts": {
     "clean": "rimraf ./build && rimraf ./dist",
@@ -67,7 +74,7 @@
     "test:types": "svelte-check --tsconfig ./tsconfig.json",
     "test:lib": "vitest run --coverage",
     "test:build": "publint --strict",
-    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ./scripts/build-cdn.mjs"
+    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-themes.mjs"
   },
   "devDependencies": {
     "@sveltejs/package": "^2.5.7",

@@ -133,6 +133,20 @@ Theme presets ship in
 Design, MUI, Fluent, Base Web, and shadcn - each with a light AND a
 dark token bundle ready to copy.
 
+### Built-in design-system presets
+
+`@svgrid/grid` also ships 19 ready-made presets as plain stylesheets - import the
+one you want and the grid re-skins immediately, light and dark both included
+(toggle with the same `[data-theme="dark"]` attribute as above):
+
+```css
+@import '@svgrid/grid/themes/material.css';
+```
+
+Available ids: `shadcn`, `tailwind`, `material`, `excel`, `fluent`, `carbon`,
+`sap`, `salesforce`, `atlassian`, `github`, `antd`, `ag-alpine`, `bootstrap`,
+`vercel`, `linear`, `notion`, `nord`, `dracula`, `catppuccin`.
+
 ## Stability promise
 
 Core surface tokens (the first table) are **stable**: they will not

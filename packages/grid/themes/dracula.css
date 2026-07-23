@@ -1,0 +1,59 @@
+/* Dracula - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #fffbeb;
+  --sg-fg: #1f1f1f;
+  --sg-muted: #6c664b;
+  --sg-border: #dedccf;
+  --sg-header-bg: #ece9df;
+  --sg-header-fg: #1f1f1f;
+  --sg-bg-subtle: #ece9df;
+  --sg-row-alt-bg: #fffdf5;
+  --sg-row-hover-bg: #f2efe3;
+  --sg-selection-bg: #cfcfde;
+  --sg-input-bg: #fffbeb;
+  --sg-input-border: #dedccf;
+  --sg-accent: #644ac9;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 6px;
+  --sg-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sg-scrollbar-bg: #ece9df;
+  --sg-scrollbar-border: #dedccf;
+  --sg-scrollbar-thumb: #6c664b;
+  --sg-scrollbar-thumb-hover: #1f1f1f;
+  --sg-scrollbar-thumb-active: #1f1f1f;
+  --sg-scrollbar-arrow: #6c664b;
+  --sg-scrollbar-arrow-hover: #1f1f1f;
+  --sg-scrollbar-arrow-hover-bg: #f2efe3;
+  --sg-scrollbar-arrow-active: #1f1f1f;
+  --sg-scrollbar-arrow-active-bg: #cfcfde;
+  --sg-scrollbar-arrow-disabled: #dedccf;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #282a36;
+  --sg-fg: #f8f8f2;
+  --sg-muted: #6272a4;
+  --sg-border: #44475a;
+  --sg-header-bg: #21222c;
+  --sg-header-fg: #f8f8f2;
+  --sg-bg-subtle: #21222c;
+  --sg-row-alt-bg: #2d2f3b;
+  --sg-row-hover-bg: #343746;
+  --sg-selection-bg: #44475a;
+  --sg-input-bg: #282a36;
+  --sg-input-border: #44475a;
+  --sg-accent: #bd93f9;
+  --sg-on-accent: #18181b;
+  --sg-radius: 6px;
+  --sg-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sg-scrollbar-bg: #21222c;
+  --sg-scrollbar-border: #44475a;
+  --sg-scrollbar-thumb: #6272a4;
+  --sg-scrollbar-thumb-hover: #f8f8f2;
+  --sg-scrollbar-thumb-active: #f8f8f2;
+  --sg-scrollbar-arrow: #6272a4;
+  --sg-scrollbar-arrow-hover: #f8f8f2;
+  --sg-scrollbar-arrow-hover-bg: #343746;
+  --sg-scrollbar-arrow-active: #f8f8f2;
+  --sg-scrollbar-arrow-active-bg: #44475a;
+  --sg-scrollbar-arrow-disabled: #44475a;
+}

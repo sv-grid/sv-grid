@@ -94,10 +94,14 @@ importers:
   packages/create-studio:
     dependencies:
       '@svgrid/enterprise':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../enterprise
 
-  packages/create-sv-grid: {}
+  packages/create-sv-grid:
+    dependencies:
+      '@svgrid/grid':
+        specifier: workspace:^
+        version: link:../grid
 
   packages/enterprise:
     devDependencies:
@@ -105,7 +109,7 @@ importers:
         specifier: ^7.0.0
         version: 7.1.2(svelte@5.55.9)(vite@8.0.14(@types/node@22.19.19)(jiti@2.7.0))
       '@svgrid/grid':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../grid
       jszip:
         specifier: ^3.10.1
@@ -156,7 +160,7 @@ importers:
         specifier: ^7.0.0
         version: 7.1.2(svelte@5.55.9)(vite@8.0.14(@types/node@22.19.19)(jiti@2.7.0))
       '@svgrid/grid':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../grid
       svelte:
         specifier: ^5.55.5
@@ -171,7 +175,7 @@ importers:
         specifier: ^1.0.4
         version: 1.29.0(zod@3.25.76)
       '@svgrid/enterprise':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../enterprise
       zod:
         specifier: ^3.23.8
@@ -187,7 +191,7 @@ importers:
   packages/studio:
     dependencies:
       '@svgrid/enterprise':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../enterprise
     devDependencies:
       '@types/node':

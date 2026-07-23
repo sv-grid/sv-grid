@@ -549,6 +549,7 @@
     background: var(--ep-bg);
     color: var(--ep-fg);
     font: inherit;
+    font-family: var(--sg-font, inherit);
   }
   .sv-ep--drawer {
     width: min(440px, 100vw);

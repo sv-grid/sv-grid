@@ -1569,7 +1569,7 @@
     flex-direction: column;
     background: var(--sg-bg, #fff);
     color: var(--sg-fg, #101828);
-    font-family: var(--sg-font-family, inherit);
+    font-family: var(--sg-font, inherit);
   }
   .sv-board.is-swim {
     overflow-y: auto;

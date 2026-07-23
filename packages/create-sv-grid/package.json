@@ -34,5 +34,8 @@
   "scripts": {
     "sync-templates": "node sync-templates.mjs",
     "prepack": "node sync-templates.mjs"
+  },
+  "dependencies": {
+    "@svgrid/grid": "workspace:^"
   }
 }

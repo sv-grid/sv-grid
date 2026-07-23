@@ -1,0 +1,59 @@
+/* Notion - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #37352f;
+  --sg-muted: #787774;
+  --sg-border: #e9e9e7;
+  --sg-header-bg: #f7f6f3;
+  --sg-header-fg: #787774;
+  --sg-bg-subtle: #f7f6f3;
+  --sg-row-alt-bg: #fbfbfa;
+  --sg-row-hover-bg: #f1f1ef;
+  --sg-selection-bg: #d9eaf7;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #e9e9e7;
+  --sg-accent: #2383e2;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 4px;
+  --sg-font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --sg-scrollbar-bg: #f7f6f3;
+  --sg-scrollbar-border: #e9e9e7;
+  --sg-scrollbar-thumb: #787774;
+  --sg-scrollbar-thumb-hover: #37352f;
+  --sg-scrollbar-thumb-active: #37352f;
+  --sg-scrollbar-arrow: #787774;
+  --sg-scrollbar-arrow-hover: #37352f;
+  --sg-scrollbar-arrow-hover-bg: #f1f1ef;
+  --sg-scrollbar-arrow-active: #37352f;
+  --sg-scrollbar-arrow-active-bg: #d9eaf7;
+  --sg-scrollbar-arrow-disabled: #e9e9e7;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #191919;
+  --sg-fg: #d4d4d4;
+  --sg-muted: #9b9b9b;
+  --sg-border: #2f2f2f;
+  --sg-header-bg: #202020;
+  --sg-header-fg: #9b9b9b;
+  --sg-bg-subtle: #202020;
+  --sg-row-alt-bg: #1c1c1c;
+  --sg-row-hover-bg: #252525;
+  --sg-selection-bg: #20415c;
+  --sg-input-bg: #191919;
+  --sg-input-border: #2f2f2f;
+  --sg-accent: #529cca;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 4px;
+  --sg-font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --sg-scrollbar-bg: #202020;
+  --sg-scrollbar-border: #2f2f2f;
+  --sg-scrollbar-thumb: #9b9b9b;
+  --sg-scrollbar-thumb-hover: #d4d4d4;
+  --sg-scrollbar-thumb-active: #d4d4d4;
+  --sg-scrollbar-arrow: #9b9b9b;
+  --sg-scrollbar-arrow-hover: #d4d4d4;
+  --sg-scrollbar-arrow-hover-bg: #252525;
+  --sg-scrollbar-arrow-active: #d4d4d4;
+  --sg-scrollbar-arrow-active-bg: #20415c;
+  --sg-scrollbar-arrow-disabled: #2f2f2f;
+}

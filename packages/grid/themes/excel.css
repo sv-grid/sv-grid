@@ -1,0 +1,59 @@
+/* Excel - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #323130;
+  --sg-muted: #605e5c;
+  --sg-border: #d2d0ce;
+  --sg-header-bg: #f3f2f1;
+  --sg-header-fg: #444444;
+  --sg-bg-subtle: #f3f2f1;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #edebe9;
+  --sg-selection-bg: rgba(16, 124, 65, 0.10);
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #d2d0ce;
+  --sg-accent: #107c41;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 0px;
+  --sg-font: "Aptos", "Segoe UI", Calibri, Arial, sans-serif;
+  --sg-scrollbar-bg: #f3f2f1;
+  --sg-scrollbar-border: #d2d0ce;
+  --sg-scrollbar-thumb: #605e5c;
+  --sg-scrollbar-thumb-hover: #323130;
+  --sg-scrollbar-thumb-active: #323130;
+  --sg-scrollbar-arrow: #605e5c;
+  --sg-scrollbar-arrow-hover: #323130;
+  --sg-scrollbar-arrow-hover-bg: #edebe9;
+  --sg-scrollbar-arrow-active: #323130;
+  --sg-scrollbar-arrow-active-bg: rgba(16, 124, 65, 0.10);
+  --sg-scrollbar-arrow-disabled: #d2d0ce;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #1b1a19;
+  --sg-fg: #f3f2f1;
+  --sg-muted: #c8c6c4;
+  --sg-border: #3b3a39;
+  --sg-header-bg: #252423;
+  --sg-header-fg: #c8c6c4;
+  --sg-bg-subtle: #252423;
+  --sg-row-alt-bg: #1b1a19;
+  --sg-row-hover-bg: #323130;
+  --sg-selection-bg: rgba(88, 193, 136, 0.16);
+  --sg-input-bg: #1b1a19;
+  --sg-input-border: #3b3a39;
+  --sg-accent: #58c188;
+  --sg-on-accent: #18181b;
+  --sg-radius: 0px;
+  --sg-font: "Aptos", "Segoe UI", Calibri, Arial, sans-serif;
+  --sg-scrollbar-bg: #252423;
+  --sg-scrollbar-border: #3b3a39;
+  --sg-scrollbar-thumb: #c8c6c4;
+  --sg-scrollbar-thumb-hover: #f3f2f1;
+  --sg-scrollbar-thumb-active: #f3f2f1;
+  --sg-scrollbar-arrow: #c8c6c4;
+  --sg-scrollbar-arrow-hover: #f3f2f1;
+  --sg-scrollbar-arrow-hover-bg: #323130;
+  --sg-scrollbar-arrow-active: #f3f2f1;
+  --sg-scrollbar-arrow-active-bg: rgba(88, 193, 136, 0.16);
+  --sg-scrollbar-arrow-disabled: #3b3a39;
+}

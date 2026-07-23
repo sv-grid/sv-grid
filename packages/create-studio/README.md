@@ -39,11 +39,26 @@ and generate the exact screens + blocks you arranged:
 npm create @svgrid/studio@latest my-app -- --project ./studio.config.json
 ```
 
+## Pick a theme
+
+Running interactively, you'll be asked to pick a theme (one of `@svgrid/grid`'s
+19 built-in presets - shadcn, Tailwind, Material, Excel, Fluent, and more) and
+whether to start in light or dark mode. Both are also available as flags for
+scripted use:
+
+```bash
+npm create @svgrid/studio@latest my-app -- --theme material --dark
+```
+
+Skipped when generating `--project ./studio.config.json` - that export already
+carries the theme you chose in the designer.
+
 ## What you get
 
 A full [SvelteKit](https://svelte.dev/docs/kit) app - not a snippet - wired end to end:
 
-- **Nav shell + modern theme** (plain CSS, light/dark aware, no Tailwind).
+- **Nav shell + theme** (plain CSS, light/dark aware, no Tailwind) - your pick
+  from `@svgrid/grid`'s built-in presets.
 - **Two linked entities** - Customers and Orders - where an order references a
   customer through a **searchable lookup** field.
 - **Grid + modal CRUD** on every screen: sort, filter, global search, paging,
