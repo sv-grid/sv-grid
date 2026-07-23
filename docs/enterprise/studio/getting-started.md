@@ -14,6 +14,57 @@ needed:
 
 ---
 
+## Fastest path - a downloadable, ready-to-run example
+
+Rather have a working project on your machine than type code into a blank
+file? One command scaffolds a complete SvelteKit app with everything already
+wired up:
+
+```bash
+npm create @svgrid/studio@latest my-app
+```
+
+You'll be asked to pick a **theme** - one of `@svgrid/grid`'s 19 built-in
+presets (shadcn, Tailwind, Material, Excel, Fluent, and more) - and whether to
+start in **light or dark** mode. Scripting this instead? Both are flags:
+
+```bash
+npm create @svgrid/studio@latest my-app -- --theme material --dark
+```
+
+Then:
+
+```bash
+cd my-app
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. You get:
+
+- A **nav shell** and a home page (`src/routes/+layout.svelte`).
+- Two linked entities - **Customers** and **Orders** - each a full grid +
+  modal create/edit/delete screen. Orders has a searchable lookup back to
+  Customers, so you can see how relations work.
+- **Seeded in-memory data** - nothing to install or configure, no database.
+- The **theme and mode you picked**, applied to the whole app - not just the grid.
+
+It is a real project, not a read-only demo - edit it, add fields, connect a
+database, deploy it. A few places to start:
+
+| Want to... | Edit |
+| --- | --- |
+| Add or change a field | `src/lib/schemas.ts` - the grid and the form update together |
+| See how a screen is built | `src/lib/EntityScreen.svelte` - the reusable grid + modal CRUD screen every route uses |
+| Connect a real database | `src/lib/data.ts` - swap `createInMemoryDataSource` for `createSqlDataSource` / `createSupabaseDataSource` (see [Databases](./databases.md)) |
+| Add another screen from a live table | `npx @svgrid/studio add invoices --db postgres --url "$DATABASE_URL"` |
+
+The template's own `README.md` covers the same ground once you're in the
+project. Prefer to see each piece built up by hand instead, or add a screen to
+an *existing* app rather than a fresh one? Continue below.
+
+---
+
 ## Two ways to build - pick yours
 
 ![Build a data app in four no-code steps: open the designer, start from a sample or your database, arrange it visually, then generate the app.](/docs-media/studio-nocode-steps.svg)
@@ -25,10 +76,11 @@ press **Generate**:
 ![The visual app designer with a customer grid previewed live and a properties panel for the screen and its fields.](/docs-media/studio-app-designer.png)
 
 - **No code (visual).** You never write code - you point, click, and preview,
-  then press one button to generate the finished app. If you are not a developer,
-  or you just want it fast, **start here:
-  [Build it visually](./launch.md)**. The [sample apps](./samples.md) let you open
-  a complete, realistic app in one click and point it at your own data.
+  then press one button to generate the finished app. Try it immediately, no
+  install, at **[svgrid.com/studio](https://svgrid.com/studio)** - or run it
+  locally with **[Launch the designer](./launch.md)**, which auto-saves to disk
+  and generates straight into a folder. The [sample apps](./samples.md) let you
+  open a complete, realistic app in one click and point it at your own data.
 - **With code.** Prefer to work in an editor? Continue below - this page builds
   the same screen by hand so you can see exactly what Studio generates.
 
@@ -154,6 +206,12 @@ you have a database. Create `src/routes/customers/+page.svelte`:
   }
 </script>
 
+<style>
+  :global(body) {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+</style>
+
 <button onclick={() => (editing = null)}>+ New customer</button>
 
 <SvGrid
@@ -176,6 +234,14 @@ you have a database. Create `src/routes/customers/+page.svelte`:
     onSubmit={save} onCancel={() => (editing = undefined)} />
 {/if}
 ```
+
+The `<style>` block is just a plain font reset - a fresh `npx sv create` app ships no CSS
+at all, so without it the page falls back to the browser's default serif font. `<SvGrid>`
+and `<SvGridEditPanel>` already theme their own borders, backgrounds, and hover states out
+of the box (via [`--sg-*` tokens](../../help/tokens.md) with built-in fallbacks) - font is
+the one thing they intentionally inherit from the page rather than force, so it fits
+whatever type your app already uses. If your app already sets a body font (or a
+[`--sg-font`](../theming.md) token), skip this block.
 
 ---
 

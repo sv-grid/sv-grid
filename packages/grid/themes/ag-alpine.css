@@ -1,0 +1,59 @@
+/* Alpine - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #181d1f;
+  --sg-muted: rgba(24, 29, 31, 0.5);
+  --sg-border: #babfc7;
+  --sg-header-bg: #f8f8f8;
+  --sg-header-fg: #181d1f;
+  --sg-bg-subtle: #f8f8f8;
+  --sg-row-alt-bg: #fcfcfc;
+  --sg-row-hover-bg: rgba(33, 150, 243, 0.1);
+  --sg-selection-bg: rgba(33, 150, 243, 0.3);
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #babfc7;
+  --sg-accent: #2196f3;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 3px;
+  --sg-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sg-scrollbar-bg: #f8f8f8;
+  --sg-scrollbar-border: #babfc7;
+  --sg-scrollbar-thumb: rgba(24, 29, 31, 0.5);
+  --sg-scrollbar-thumb-hover: #181d1f;
+  --sg-scrollbar-thumb-active: #181d1f;
+  --sg-scrollbar-arrow: rgba(24, 29, 31, 0.5);
+  --sg-scrollbar-arrow-hover: #181d1f;
+  --sg-scrollbar-arrow-hover-bg: rgba(33, 150, 243, 0.1);
+  --sg-scrollbar-arrow-active: #181d1f;
+  --sg-scrollbar-arrow-active-bg: rgba(33, 150, 243, 0.3);
+  --sg-scrollbar-arrow-disabled: #babfc7;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #181d1f;
+  --sg-fg: #ffffff;
+  --sg-muted: rgba(255, 255, 255, 0.5);
+  --sg-border: #68686e;
+  --sg-header-bg: #222628;
+  --sg-header-fg: #ffffff;
+  --sg-bg-subtle: #222628;
+  --sg-row-alt-bg: #222628;
+  --sg-row-hover-bg: rgba(33, 150, 243, 0.1);
+  --sg-selection-bg: rgba(33, 150, 243, 0.3);
+  --sg-input-bg: #181d1f;
+  --sg-input-border: #68686e;
+  --sg-accent: #2196f3;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 3px;
+  --sg-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sg-scrollbar-bg: #222628;
+  --sg-scrollbar-border: #68686e;
+  --sg-scrollbar-thumb: rgba(255, 255, 255, 0.5);
+  --sg-scrollbar-thumb-hover: #ffffff;
+  --sg-scrollbar-thumb-active: #ffffff;
+  --sg-scrollbar-arrow: rgba(255, 255, 255, 0.5);
+  --sg-scrollbar-arrow-hover: #ffffff;
+  --sg-scrollbar-arrow-hover-bg: rgba(33, 150, 243, 0.1);
+  --sg-scrollbar-arrow-active: #ffffff;
+  --sg-scrollbar-arrow-active-bg: rgba(33, 150, 243, 0.3);
+  --sg-scrollbar-arrow-disabled: #68686e;
+}

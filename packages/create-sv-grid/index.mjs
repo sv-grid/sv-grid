@@ -51,13 +51,17 @@ const c = {
 const color = stdout.isTTY ? (k, s) => `${c[k]}${s}${c.reset}` : (_k, s) => s
 
 function parseArgs(argv) {
-  const args = { _: [], template: null, force: false, help: false }
+  const args = { _: [], template: null, force: false, help: false, theme: null, mode: null }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--help' || a === '-h') args.help = true
     else if (a === '--force' || a === '-f') args.force = true
     else if (a === '--template' || a === '-t') args.template = argv[++i]
     else if (a.startsWith('--template=')) args.template = a.slice('--template='.length)
+    else if (a === '--theme') args.theme = argv[++i]
+    else if (a.startsWith('--theme=')) args.theme = a.slice('--theme='.length)
+    else if (a === '--dark') args.mode = 'dark'
+    else if (a === '--light') args.mode = 'light'
     else if (!a.startsWith('-')) args._.push(a)
   }
   return args
@@ -75,11 +79,129 @@ ${Object.entries(TEMPLATES)
   .map(([k, t]) => `  ${color('cyan', k.padEnd(16))} ${t.label.replace(/^\S+\s+-\s+/, '')}`)
   .join('\n')}
 
+${color('bold', 'Options')}
+  --theme <id>       admin-dashboard only. One of: ${THEME_IDS.join(', ')} (default: tailwind).
+  --dark / --light   admin-dashboard only. Start in dark or light mode (default: dark).
+  --force            Scaffold into a non-empty directory.
+
 ${color('bold', 'Examples')}
   npm  create @svgrid@latest
   npm  create @svgrid@latest my-app -- --template admin-dashboard
+  npm  create @svgrid@latest my-app -- -t admin-dashboard --theme material --light
   pnpm create @svgrid my-app -t minimal
 `)
+}
+
+const THEME_IDS = [
+  'shadcn', 'tailwind', 'material', 'excel', 'fluent', 'carbon', 'sap',
+  'salesforce', 'atlassian', 'github', 'antd', 'ag-alpine', 'bootstrap',
+  'vercel', 'linear', 'notion', 'nord', 'dracula', 'catppuccin',
+]
+
+/**
+ * Resolve the theme + mode to apply (admin-dashboard only): from `--theme` /
+ * `--dark` / `--light` flags, or (in a TTY) an interactive prompt; otherwise
+ * left untouched (the template's own dark-by-default look stands). Reuses
+ * `@svgrid/grid/themes`'s own preset list, so the picker can never drift from
+ * the canonical set.
+ */
+async function promptTheme(args, ask, interactive) {
+  let themes
+  try {
+    themes = await import('@svgrid/grid/themes')
+  } catch {
+    return null // theming is best-effort; the template's own default stands in.
+  }
+
+  let themeId = args.theme ? args.theme.trim().toLowerCase() : null
+  if (themeId && !themes.getThemePreset(themeId)) {
+    stdout.write(`${color('yellow', '!')} Unknown theme "${themeId}" - using tailwind. (${THEME_IDS.join(', ')})\n`)
+    themeId = null
+  }
+  if (!themeId && interactive) {
+    const list = themes.themePresets.map((t, i) => `  ${i + 1}. ${t.name} ${color('dim', `(${t.id})`)}`).join('\n')
+    stdout.write(`\n${color('bold', 'Theme')}\n${list}\n`)
+    const choice = await ask('Pick a number or id:', 'tailwind')
+    const byIndex = themes.themePresets[Number(choice) - 1]
+    themeId = byIndex ? byIndex.id : (themes.getThemePreset(choice.trim().toLowerCase())?.id ?? 'tailwind')
+  }
+  themeId ??= 'tailwind'
+
+  let mode = args.mode
+  if (!mode && interactive) {
+    const a = await ask('Light or dark mode? (light/dark)', 'dark')
+    mode = /^l(ight)?$/i.test(a) ? 'light' : 'dark'
+  }
+  mode ??= 'dark' // matches the template's existing default - only patched when 'light' is chosen.
+
+  return { themeId, mode, name: themes.getThemePreset(themeId)?.name ?? themeId, themes }
+}
+
+/** Rewrite `app.css` (between the `svgrid-theme` markers) with the resolved
+ *  `--sg-*` tokens for the chosen theme. */
+async function applyTheme(destDir, choice) {
+  if (!choice) return
+  const { themeId, themes } = choice
+  const preset = themes.getThemePreset(themeId) ?? themes.defaultThemePreset
+  const light = themes.resolveThemeTokens(preset, 'light')
+  const dark = themes.resolveThemeTokens(preset, 'dark')
+  const block = (selector, tokens, scheme) => {
+    const lines = Object.entries(tokens).map(([k, v]) => `  ${k}: ${v};`).join('\n')
+    return `${selector} {\n${lines}\n  color-scheme: ${scheme};\n}`
+  }
+  const css = `${block(':root', light, 'light')}\n${block(":root[data-theme='dark']", dark, 'dark')}`
+
+  const cssPath = join(destDir, 'src', 'app.css')
+  const cssText = await readFile(cssPath, 'utf8').catch(() => null)
+  if (cssText == null) return
+  const marked = /\/\* svgrid-theme:start \*\/[\s\S]*?\/\* svgrid-theme:end \*\//
+  if (marked.test(cssText)) {
+    await writeFile(cssPath, cssText.replace(marked, `/* svgrid-theme:start */\n${css}\n/* svgrid-theme:end */`))
+  }
+}
+
+/** admin-dashboard defaults to dark (see app.html / src/lib/theme.ts /
+ *  +layout.svelte). Flip all three to light-by-default when 'light' is chosen
+ *  - a no-op when 'dark' is chosen, since that already matches the template. */
+async function applyMode(destDir, choice) {
+  if (!choice || choice.mode !== 'light') return
+
+  const htmlPath = join(destDir, 'src', 'app.html')
+  const html = await readFile(htmlPath, 'utf8').catch(() => null)
+  if (html != null) {
+    await writeFile(
+      htmlPath,
+      html
+        .replace(`data-theme="dark"`, `data-theme="light"`)
+        .replace(`t === 'light' ? 'light' : 'dark'`, `t === 'dark' ? 'dark' : 'light'`),
+    )
+  }
+
+  const themeTsPath = join(destDir, 'src', 'lib', 'theme.ts')
+  const themeTs = await readFile(themeTsPath, 'utf8').catch(() => null)
+  if (themeTs != null) {
+    await writeFile(
+      themeTsPath,
+      themeTs
+        .replace('Defaults to dark (matches app.html).', 'Defaults to light (matches app.html).')
+        .replace(`if (!browser) return 'dark'`, `if (!browser) return 'light'`)
+        .replace(
+          `return localStorage.getItem('theme') === 'light' ? 'light' : 'dark'`,
+          `return localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'`,
+        ),
+    )
+  }
+
+  const layoutPath = join(destDir, 'src', 'routes', '+layout.svelte')
+  const layout = await readFile(layoutPath, 'utf8').catch(() => null)
+  if (layout != null) {
+    await writeFile(
+      layoutPath,
+      layout
+        .replace('// Theme: dark by default (see app.html), toggleable + persisted.', '// Theme: light by default (see app.html), toggleable + persisted.')
+        .replace(`let theme = $state<Theme>('dark')`, `let theme = $state<Theme>('light')`),
+    )
+  }
 }
 
 function sanitizeName(name) {
@@ -206,15 +328,25 @@ async function main() {
     process.exit(1)
   }
 
+  // 3b. Theme + light/dark mode - admin-dashboard only (minimal has no theme
+  // system to pick from).
+  const themeChoice = template === 'admin-dashboard' ? await promptTheme(args, ask, interactive) : null
+  if (rl) rl.close()
+
   // 4. Scaffold.
   await mkdir(destDir, { recursive: true })
   await copyTemplate(srcDir, destDir)
   await setProjectName(destDir, projectName)
-  if (rl) rl.close()
+  await applyTheme(destDir, themeChoice)
+  await applyMode(destDir, themeChoice)
 
   // 5. Next steps.
   const rel = isAbsolute(target) || target.startsWith('.') ? target : `./${target}`
-  stdout.write(`\n${color('green', '✔')} Scaffolded ${color('bold', projectName)} (${template}) into ${rel}\n\n`)
+  stdout.write(`\n${color('green', '✔')} Scaffolded ${color('bold', projectName)} (${template}) into ${rel}\n`)
+  if (themeChoice) {
+    stdout.write(`  ${color('dim', 'theme')} ${themeChoice.name} (${themeChoice.mode})\n`)
+  }
+  stdout.write(`\n`)
   stdout.write(`${color('bold', 'Next steps')}\n`)
   stdout.write(`  cd ${target}\n`)
   stdout.write(`  npm install\n`)

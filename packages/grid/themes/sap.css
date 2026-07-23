@@ -1,0 +1,59 @@
+/* SAP Fiori - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #f5f6f7;
+  --sg-fg: #131e29;
+  --sg-muted: #556b82;
+  --sg-border: #e5e5e5;
+  --sg-header-bg: #ffffff;
+  --sg-header-fg: #131e29;
+  --sg-bg-subtle: #ffffff;
+  --sg-row-alt-bg: #f5f6f7;
+  --sg-row-hover-bg: #eaecee;
+  --sg-selection-bg: #ebf8ff;
+  --sg-input-bg: #f5f6f7;
+  --sg-input-border: #e5e5e5;
+  --sg-accent: #0070f2;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 6px;
+  --sg-font: "72", "72full", "Arial", sans-serif;
+  --sg-scrollbar-bg: #ffffff;
+  --sg-scrollbar-border: #e5e5e5;
+  --sg-scrollbar-thumb: #556b82;
+  --sg-scrollbar-thumb-hover: #131e29;
+  --sg-scrollbar-thumb-active: #131e29;
+  --sg-scrollbar-arrow: #556b82;
+  --sg-scrollbar-arrow-hover: #131e29;
+  --sg-scrollbar-arrow-hover-bg: #eaecee;
+  --sg-scrollbar-arrow-active: #131e29;
+  --sg-scrollbar-arrow-active-bg: #ebf8ff;
+  --sg-scrollbar-arrow-disabled: #e5e5e5;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #12171c;
+  --sg-fg: #f5f6f7;
+  --sg-muted: #8396a8;
+  --sg-border: #2e3742;
+  --sg-header-bg: #1d232a;
+  --sg-header-fg: #f5f6f7;
+  --sg-bg-subtle: #1d232a;
+  --sg-row-alt-bg: #12171c;
+  --sg-row-hover-bg: #222b35;
+  --sg-selection-bg: #1d2d3e;
+  --sg-input-bg: #12171c;
+  --sg-input-border: #2e3742;
+  --sg-accent: #4db1ff;
+  --sg-on-accent: #18181b;
+  --sg-radius: 6px;
+  --sg-font: "72", "72full", "Arial", sans-serif;
+  --sg-scrollbar-bg: #1d232a;
+  --sg-scrollbar-border: #2e3742;
+  --sg-scrollbar-thumb: #8396a8;
+  --sg-scrollbar-thumb-hover: #f5f6f7;
+  --sg-scrollbar-thumb-active: #f5f6f7;
+  --sg-scrollbar-arrow: #8396a8;
+  --sg-scrollbar-arrow-hover: #f5f6f7;
+  --sg-scrollbar-arrow-hover-bg: #222b35;
+  --sg-scrollbar-arrow-active: #f5f6f7;
+  --sg-scrollbar-arrow-active-bg: #1d2d3e;
+  --sg-scrollbar-arrow-disabled: #2e3742;
+}

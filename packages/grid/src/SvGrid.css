@@ -12,6 +12,7 @@
  * viewport. */
 .sv-grid-root {
   position: relative;
+  font-family: var(--sg-font, inherit);
 }
 .sv-grid-sr-only {
   position: absolute;
@@ -647,12 +648,12 @@
 .sv-grid-pinned-row td {
   position: sticky;
   z-index: 4;
-  background: var(--sg-pinned-bg, color-mix(in oklab, #6366f1 4%, #ffffff));
-  border-bottom: 1px solid var(--sg-pinned-border, color-mix(in oklab, #6366f1 24%, transparent));
+  background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 92%, var(--sg-accent, #2563eb) 8%));
+  border-bottom: 1px solid var(--sg-pinned-border, color-mix(in oklab, var(--sg-accent, #2563eb) 24%, transparent));
   font-weight: 600;
 }
 .sv-grid-pinned-row-top td    { top: var(--sg-thead-h, 36px); }
-.sv-grid-pinned-row-bottom td { bottom: 0; border-top: 1px solid var(--sg-pinned-border, color-mix(in oklab, #6366f1 24%, transparent)); }
+.sv-grid-pinned-row-bottom td { bottom: 0; border-top: 1px solid var(--sg-pinned-border, color-mix(in oklab, var(--sg-accent, #2563eb) 24%, transparent)); }
 /* Stack multiple pinned-top rows: row 1 stops at thead, row 2 stops
  * at thead + 36px, etc. The component itself sets --sg-pinned-top-h
  * to the current pinned-top stack height via $effect. */

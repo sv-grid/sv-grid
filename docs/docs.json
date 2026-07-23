@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-07-22T13:52:44.653Z",
+  "generatedAt": "2026-07-23T14:51:40.613Z",
   "counts": {
     "pages": 340,
     "enterprise": 8,
@@ -685,8 +685,8 @@
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "community",
-      "words": 1432,
-      "lastUpdated": "2026-07-15",
+      "words": 1695,
+      "lastUpdated": "2026-07-23",
       "demoIds": [
         "192-data-app-studio",
         "193-studio-live-sql",
@@ -921,8 +921,8 @@
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "community",
-      "words": 1229,
-      "lastUpdated": "2026-07-15",
+      "words": 1667,
+      "lastUpdated": "2026-07-23",
       "demoIds": [
         "192-data-app-studio",
         "193-studio-live-sql",
@@ -961,8 +961,8 @@
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "community",
-      "words": 813,
-      "lastUpdated": "2026-07-15",
+      "words": 911,
+      "lastUpdated": "2026-07-23",
       "demoIds": []
     },
     {
@@ -3145,8 +3145,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 869,
-      "lastUpdated": "2026-06-12",
+      "words": 931,
+      "lastUpdated": "2026-07-23",
       "demoIds": [
         "74-theme-integrations",
         "10-custom-cells-and-themes"

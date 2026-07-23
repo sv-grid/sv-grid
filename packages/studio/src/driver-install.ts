@@ -34,17 +34,22 @@ export function detectPackageManager(cwd: string): PackageManager {
   return 'npm'
 }
 
-/** The install args to add `pkg` as a dev dependency for a given manager. */
+/**
+ * The install args to add `pkg` as a regular dependency for a given manager.
+ * A regular dependency, not dev - the generated `+server.ts` imports the
+ * driver at module scope (see `DRIVERS` in `@svgrid/enterprise/studio`'s
+ * `scaffold.ts`), so it must survive a production `--omit=dev` install.
+ */
 export function installArgs(pm: PackageManager, pkg: string): string[] {
   switch (pm) {
     case 'pnpm':
-      return ['add', '-D', pkg]
+      return ['add', pkg]
     case 'yarn':
-      return ['add', '--dev', pkg]
+      return ['add', pkg]
     case 'bun':
-      return ['add', '-d', pkg]
+      return ['add', pkg]
     default:
-      return ['install', '--save-dev', pkg]
+      return ['install', '--save', pkg]
   }
 }
 

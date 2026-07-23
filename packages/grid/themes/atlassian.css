@@ -1,0 +1,59 @@
+/* Atlassian - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #172b4d;
+  --sg-muted: #44546f;
+  --sg-border: #dcdfe4;
+  --sg-header-bg: #fafbfc;
+  --sg-header-fg: #44546f;
+  --sg-bg-subtle: #fafbfc;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f1f2f4;
+  --sg-selection-bg: #e9f2ff;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #dcdfe4;
+  --sg-accent: #0c66e4;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 3px;
+  --sg-font: "Charlie Display", "Atlassian Sans", -apple-system, "Segoe UI", sans-serif;
+  --sg-scrollbar-bg: #fafbfc;
+  --sg-scrollbar-border: #dcdfe4;
+  --sg-scrollbar-thumb: #44546f;
+  --sg-scrollbar-thumb-hover: #172b4d;
+  --sg-scrollbar-thumb-active: #172b4d;
+  --sg-scrollbar-arrow: #44546f;
+  --sg-scrollbar-arrow-hover: #172b4d;
+  --sg-scrollbar-arrow-hover-bg: #f1f2f4;
+  --sg-scrollbar-arrow-active: #172b4d;
+  --sg-scrollbar-arrow-active-bg: #e9f2ff;
+  --sg-scrollbar-arrow-disabled: #dcdfe4;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #1d2125;
+  --sg-fg: #b6c2cf;
+  --sg-muted: #8590a2;
+  --sg-border: #38414a;
+  --sg-header-bg: #22272b;
+  --sg-header-fg: #8590a2;
+  --sg-bg-subtle: #22272b;
+  --sg-row-alt-bg: #1d2125;
+  --sg-row-hover-bg: #2c333a;
+  --sg-selection-bg: #09326c;
+  --sg-input-bg: #1d2125;
+  --sg-input-border: #38414a;
+  --sg-accent: #579dff;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 3px;
+  --sg-font: "Charlie Display", "Atlassian Sans", -apple-system, "Segoe UI", sans-serif;
+  --sg-scrollbar-bg: #22272b;
+  --sg-scrollbar-border: #38414a;
+  --sg-scrollbar-thumb: #8590a2;
+  --sg-scrollbar-thumb-hover: #b6c2cf;
+  --sg-scrollbar-thumb-active: #b6c2cf;
+  --sg-scrollbar-arrow: #8590a2;
+  --sg-scrollbar-arrow-hover: #b6c2cf;
+  --sg-scrollbar-arrow-hover-bg: #2c333a;
+  --sg-scrollbar-arrow-active: #b6c2cf;
+  --sg-scrollbar-arrow-active-bg: #09326c;
+  --sg-scrollbar-arrow-disabled: #38414a;
+}

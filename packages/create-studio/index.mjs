@@ -41,7 +41,7 @@ const c = {
 const color = stdout.isTTY ? (k, s) => `${c[k]}${s}${c.reset}` : (_k, s) => s
 
 function parseArgs(argv) {
-  const args = { _: [], force: false, help: false, from: null, project: null }
+  const args = { _: [], force: false, help: false, from: null, project: null, theme: null, dark: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--help' || a === '-h') args.help = true
@@ -50,6 +50,9 @@ function parseArgs(argv) {
     else if (a.startsWith('--from=')) args.from = a.slice('--from='.length)
     else if (a === '--project') args.project = argv[++i]
     else if (a.startsWith('--project=')) args.project = a.slice('--project='.length)
+    else if (a === '--theme') args.theme = argv[++i]
+    else if (a.startsWith('--theme=')) args.theme = a.slice('--theme='.length)
+    else if (a === '--dark') args.dark = true
     else if (!a.startsWith('-')) args._.push(a)
   }
   return args
@@ -72,6 +75,8 @@ ${color('bold', 'Options')}
                      schema instead of the seeded example (auto-detected).
   --project <path>   Generate the app from a studio.config.json exported by the
                      visual designer (screens + blocks, not just entities).
+  --theme <id>       One of: ${THEME_IDS.join(', ')} (default: tailwind).
+  --dark             Start the app in dark mode.
   --force            Scaffold into a non-empty directory.
 
 ${color('bold', 'Examples')}
@@ -79,7 +84,81 @@ ${color('bold', 'Examples')}
   pnpm create @svgrid/studio my-data-app
   npm  create @svgrid/studio@latest my-app -- --from ./prisma/schema.prisma
   npm  create @svgrid/studio@latest my-app -- --project ./studio.config.json
+  npm  create @svgrid/studio@latest my-app -- --theme material --dark
 `)
+}
+
+const THEME_IDS = [
+  'shadcn', 'tailwind', 'material', 'excel', 'fluent', 'carbon', 'sap',
+  'salesforce', 'atlassian', 'github', 'antd', 'ag-alpine', 'bootstrap',
+  'vercel', 'linear', 'notion', 'nord', 'dracula', 'catppuccin',
+]
+
+/**
+ * Resolve the theme + mode to apply: from `--theme`/`--dark` flags, or (in a
+ * TTY) an interactive prompt; otherwise the default (tailwind, light). Reuses
+ * `@svgrid/enterprise/studio`'s own preset list, so the picker can never drift
+ * from the canonical set in `@svgrid/grid/themes`.
+ */
+async function promptTheme(args, ask, interactive) {
+  let studio
+  try {
+    studio = await import('@svgrid/enterprise/studio')
+  } catch {
+    return null // theming is best-effort; the template's own default stands in.
+  }
+
+  let themeId = args.theme ? args.theme.trim().toLowerCase() : null
+  if (themeId && !studio.getStudioTheme(themeId)) {
+    stdout.write(`${color('yellow', '!')} Unknown theme "${themeId}" - using tailwind. (${THEME_IDS.join(', ')})\n`)
+    themeId = null
+  }
+  if (!themeId && interactive) {
+    const list = studio.studioThemes.map((t, i) => `  ${i + 1}. ${t.name} ${color('dim', `(${t.id})`)}`).join('\n')
+    stdout.write(`\n${color('bold', 'Theme')}\n${list}\n`)
+    const choice = await ask('Pick a number or id:', 'tailwind')
+    const byIndex = studio.studioThemes[Number(choice) - 1]
+    themeId = byIndex ? byIndex.id : (studio.getStudioTheme(choice.trim().toLowerCase())?.id ?? 'tailwind')
+  }
+  themeId ??= 'tailwind'
+
+  let dark = args.dark
+  if (!dark && interactive) {
+    const a = await ask('Start in dark mode? (y/N)', 'N')
+    dark = /^y(es)?$/i.test(a)
+  }
+
+  return { themeId, dark, name: studio.getStudioTheme(themeId)?.name ?? themeId, studio }
+}
+
+/** Rewrite the template's `app.css` (between the `svgrid-theme` markers) with
+ *  the resolved `--sg-*` tokens for the chosen theme + mode, and set
+ *  `data-theme="dark"` on `<html>` when dark mode was picked. */
+async function applyTheme(destDir, choice) {
+  if (!choice) return
+  const { themeId, dark, studio } = choice
+  const light = studio.resolveThemeTokens({ preset: themeId, mode: 'light' })
+  const darkTokens = studio.resolveThemeTokens({ preset: themeId, mode: 'dark' })
+  const block = (selector, tokens, scheme) => {
+    const lines = Object.entries(tokens).map(([k, v]) => `  ${k}: ${v};`).join('\n')
+    return `${selector} {\n${lines}\n  color-scheme: ${scheme};\n}`
+  }
+  const css = `${block(':root', light, 'light')}\n${block(":root[data-theme='dark']", darkTokens, 'dark')}`
+
+  const cssPath = join(destDir, 'src', 'app.css')
+  const cssText = await readFile(cssPath, 'utf8')
+  const marked = /\/\* svgrid-theme:start \*\/[\s\S]*?\/\* svgrid-theme:end \*\//
+  if (marked.test(cssText)) {
+    await writeFile(cssPath, cssText.replace(marked, `/* svgrid-theme:start */\n${css}\n/* svgrid-theme:end */`))
+  }
+
+  if (dark) {
+    const htmlPath = join(destDir, 'src', 'app.html')
+    const htmlText = await readFile(htmlPath, 'utf8').catch(() => null)
+    if (htmlText && !/data-theme=/.test(htmlText)) {
+      await writeFile(htmlPath, htmlText.replace('<html lang="en">', '<html lang="en" data-theme="dark">'))
+    }
+  }
 }
 
 /**
@@ -265,11 +344,16 @@ async function main() {
     process.exit(1)
   }
 
+  // 2b. Theme + light/dark mode. Skipped for --project - a designer export
+  // already carries its own theme, applied straight into +layout.svelte.
+  const themeChoice = args.project ? null : await promptTheme(args, ask, interactive)
+  if (rl) rl.close()
+
   // 3. Scaffold.
   await mkdir(destDir, { recursive: true })
   await copyTemplate(TEMPLATE_DIR, destDir)
   await setProjectName(destDir, projectName)
-  if (rl) rl.close()
+  await applyTheme(destDir, themeChoice)
 
   // 3b. Generate from a designer project (--project) or a schema file (--from).
   let entities = null
@@ -290,6 +374,9 @@ async function main() {
   // 4. Next steps.
   const rel = isAbsolute(target) || target.startsWith('.') ? target : `./${target}`
   stdout.write(`\n${color('green', '✔')} Scaffolded ${color('bold', projectName)} into ${rel}\n`)
+  if (themeChoice) {
+    stdout.write(`  ${color('dim', 'theme')} ${themeChoice.name}${themeChoice.dark ? ' (dark)' : ''}\n`)
+  }
   if (entities) {
     stdout.write(`  ${color('dim', 'from')} ${source} ${color('dim', '->')} ${entities.join(', ')}\n`)
   }

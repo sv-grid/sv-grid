@@ -1,5 +1,14 @@
 # Launch the designer
 
+> **No install at all?** Open **[svgrid.com/studio](https://svgrid.com/studio)**
+> directly - the same designer, running in your browser, nothing to run
+> locally. It can't write to your filesystem, so **Generate app** gives you a
+> **Download .zip** instead of the CLI's save-to-folder, and **Add data ->
+> Get a database** can provision a free Neon / Supabase / Turso database for
+> you without leaving the browser. Everything else - screens, entities, the
+> visual editor - is identical. Want auto-save-to-disk, or to point it at a
+> database already on your machine? Use the CLI below instead.
+
 One command opens the visual [app designer](./app-designer.md) in your browser,
 backed by a tiny local server that **auto-saves** your design to disk and
 **generates the app** into a folder - no host app to build, no copy-paste JSON.

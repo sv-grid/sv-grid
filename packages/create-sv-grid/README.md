@@ -31,8 +31,17 @@ pnpm create @svgrid my-app -t minimal
 | Flag | Description |
 | --- | --- |
 | `--template`, `-t` | `minimal` or `admin-dashboard` |
+| `--theme <id>` | `admin-dashboard` only. One of `@svgrid/grid`'s 19 built-in presets - shadcn, Tailwind, Material, Excel, Fluent, and more (default: `tailwind`) |
+| `--dark` / `--light` | `admin-dashboard` only. Start in dark or light mode (default: `dark`) |
 | `--force`, `-f` | Scaffold into a non-empty directory |
 | `--help`, `-h` | Show usage |
+
+Choosing `admin-dashboard` interactively also prompts for a theme and light/dark
+mode - or skip the prompts with flags:
+
+```bash
+npm create @svgrid@latest my-app -- -t admin-dashboard --theme material --light
+```
 
 Then:
 

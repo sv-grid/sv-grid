@@ -1,0 +1,59 @@
+/* GitHub - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #1f2328;
+  --sg-muted: #59636e;
+  --sg-border: #d1d9e0;
+  --sg-header-bg: #f6f8fa;
+  --sg-header-fg: #59636e;
+  --sg-bg-subtle: #f6f8fa;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f6f8fa;
+  --sg-selection-bg: #ddf4ff;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #d1d9e0;
+  --sg-accent: #0969da;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 6px;
+  --sg-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --sg-scrollbar-bg: #f6f8fa;
+  --sg-scrollbar-border: #d1d9e0;
+  --sg-scrollbar-thumb: #59636e;
+  --sg-scrollbar-thumb-hover: #1f2328;
+  --sg-scrollbar-thumb-active: #1f2328;
+  --sg-scrollbar-arrow: #59636e;
+  --sg-scrollbar-arrow-hover: #1f2328;
+  --sg-scrollbar-arrow-hover-bg: #f6f8fa;
+  --sg-scrollbar-arrow-active: #1f2328;
+  --sg-scrollbar-arrow-active-bg: #ddf4ff;
+  --sg-scrollbar-arrow-disabled: #d1d9e0;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #0d1117;
+  --sg-fg: #f0f6fc;
+  --sg-muted: #9198a1;
+  --sg-border: #3d444d;
+  --sg-header-bg: #151b23;
+  --sg-header-fg: #9198a1;
+  --sg-bg-subtle: #151b23;
+  --sg-row-alt-bg: #0d1117;
+  --sg-row-hover-bg: #151b23;
+  --sg-selection-bg: rgba(56, 139, 253, 0.10);
+  --sg-input-bg: #0d1117;
+  --sg-input-border: #3d444d;
+  --sg-accent: #4493f8;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 6px;
+  --sg-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --sg-scrollbar-bg: #151b23;
+  --sg-scrollbar-border: #3d444d;
+  --sg-scrollbar-thumb: #9198a1;
+  --sg-scrollbar-thumb-hover: #f0f6fc;
+  --sg-scrollbar-thumb-active: #f0f6fc;
+  --sg-scrollbar-arrow: #9198a1;
+  --sg-scrollbar-arrow-hover: #f0f6fc;
+  --sg-scrollbar-arrow-hover-bg: #151b23;
+  --sg-scrollbar-arrow-active: #f0f6fc;
+  --sg-scrollbar-arrow-active-bg: rgba(56, 139, 253, 0.10);
+  --sg-scrollbar-arrow-disabled: #3d444d;
+}

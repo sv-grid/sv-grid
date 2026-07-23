@@ -1,0 +1,59 @@
+/* Tailwind - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #0f172a;
+  --sg-muted: #64748b;
+  --sg-border: #e2e8f0;
+  --sg-header-bg: #f8fafc;
+  --sg-header-fg: #0f172a;
+  --sg-bg-subtle: #f8fafc;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f1f5f9;
+  --sg-selection-bg: #e0e7ff;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #e2e8f0;
+  --sg-accent: #4f46e5;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 6px;
+  --sg-font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sg-scrollbar-bg: #f8fafc;
+  --sg-scrollbar-border: #e2e8f0;
+  --sg-scrollbar-thumb: #64748b;
+  --sg-scrollbar-thumb-hover: #0f172a;
+  --sg-scrollbar-thumb-active: #0f172a;
+  --sg-scrollbar-arrow: #64748b;
+  --sg-scrollbar-arrow-hover: #0f172a;
+  --sg-scrollbar-arrow-hover-bg: #f1f5f9;
+  --sg-scrollbar-arrow-active: #0f172a;
+  --sg-scrollbar-arrow-active-bg: #e0e7ff;
+  --sg-scrollbar-arrow-disabled: #e2e8f0;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #0f172a;
+  --sg-fg: #f8fafc;
+  --sg-muted: #94a3b8;
+  --sg-border: #334155;
+  --sg-header-bg: #1e293b;
+  --sg-header-fg: #f8fafc;
+  --sg-bg-subtle: #1e293b;
+  --sg-row-alt-bg: #0f172a;
+  --sg-row-hover-bg: #1e293b;
+  --sg-selection-bg: #312e81;
+  --sg-input-bg: #0f172a;
+  --sg-input-border: #334155;
+  --sg-accent: #818cf8;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 6px;
+  --sg-font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sg-scrollbar-bg: #1e293b;
+  --sg-scrollbar-border: #334155;
+  --sg-scrollbar-thumb: #94a3b8;
+  --sg-scrollbar-thumb-hover: #f8fafc;
+  --sg-scrollbar-thumb-active: #f8fafc;
+  --sg-scrollbar-arrow: #94a3b8;
+  --sg-scrollbar-arrow-hover: #f8fafc;
+  --sg-scrollbar-arrow-hover-bg: #1e293b;
+  --sg-scrollbar-arrow-active: #f8fafc;
+  --sg-scrollbar-arrow-active-bg: #312e81;
+  --sg-scrollbar-arrow-disabled: #334155;
+}

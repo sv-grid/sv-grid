@@ -27,6 +27,7 @@ import {
   type StudioProject,
 } from '@svgrid/enterprise/studio'
 import { connect } from './db-connect.js'
+import { DRIVER_FOR, installDriver, isDriverInstalled } from './driver-install.js'
 import { startDesignerServer } from './designer-server.js'
 
 const io: StudioIO = {
@@ -162,6 +163,40 @@ async function main(): Promise<void> {
       process.stderr.write('svgrid-studio: --url is required with --db\n\n' + HELP)
       process.exit(1)
     }
+    // Studio detects the project's package manager and installs the driver for
+    // the user - they never need to know `pg`/`mysql2`/etc. must be present
+    // before --db works (mirrors the designer's "Install driver" flow).
+    const cwd = process.cwd()
+    if (!isDriverInstalled(opts.db, cwd)) {
+      const driver = DRIVER_FOR[opts.db]
+      process.stdout.write(`Installing ${driver} (required for --db ${opts.db})...\n`)
+      const result = await installDriver(opts.db, cwd)
+      if (!result.ok) {
+        process.stderr.write(
+          `svgrid-studio: could not install "${driver}" automatically.\n${result.output}\n` +
+            `Run \`${result.manager} install ${driver}\` yourself and try again.\n`,
+        )
+        process.exit(1)
+      }
+      process.stdout.write(`Installed ${driver}.\n`)
+
+      // The install child process can report success before the new module is
+      // reliably resolvable (seen on Windows - antivirus/file-sync tools can
+      // briefly hold the just-written files). Poll rather than racing straight
+      // into connect(), which would resolve the driver too early and crash.
+      const deadline = Date.now() + 5000
+      while (!isDriverInstalled(opts.db, cwd) && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 200))
+      }
+      if (!isDriverInstalled(opts.db, cwd)) {
+        process.stderr.write(
+          `svgrid-studio: installed "${driver}" but it's still not resolvable from this directory.\n` +
+            `Something (antivirus, a file-sync tool) may be holding a lock on the new files. Try running the command again.\n`,
+        )
+        process.exit(1)
+      }
+    }
+
     const execute = await connect(opts.db, opts.url)
     // A dialect dataSource emits a fully-connected +server.ts (driver + DATABASE_URL);
     // --sql keeps the generic execute() stub instead.

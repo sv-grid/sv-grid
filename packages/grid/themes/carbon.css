@@ -1,0 +1,59 @@
+/* Carbon - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #161616;
+  --sg-muted: #525252;
+  --sg-border: #e0e0e0;
+  --sg-header-bg: #e0e0e0;
+  --sg-header-fg: #161616;
+  --sg-bg-subtle: #e0e0e0;
+  --sg-row-alt-bg: #f4f4f4;
+  --sg-row-hover-bg: #e8e8e8;
+  --sg-selection-bg: #d0e2ff;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #e0e0e0;
+  --sg-accent: #0f62fe;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 0px;
+  --sg-font: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --sg-scrollbar-bg: #e0e0e0;
+  --sg-scrollbar-border: #e0e0e0;
+  --sg-scrollbar-thumb: #525252;
+  --sg-scrollbar-thumb-hover: #161616;
+  --sg-scrollbar-thumb-active: #161616;
+  --sg-scrollbar-arrow: #525252;
+  --sg-scrollbar-arrow-hover: #161616;
+  --sg-scrollbar-arrow-hover-bg: #e8e8e8;
+  --sg-scrollbar-arrow-active: #161616;
+  --sg-scrollbar-arrow-active-bg: #d0e2ff;
+  --sg-scrollbar-arrow-disabled: #e0e0e0;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #161616;
+  --sg-fg: #f4f4f4;
+  --sg-muted: #c6c6c6;
+  --sg-border: #393939;
+  --sg-header-bg: #393939;
+  --sg-header-fg: #f4f4f4;
+  --sg-bg-subtle: #393939;
+  --sg-row-alt-bg: #262626;
+  --sg-row-hover-bg: #333333;
+  --sg-selection-bg: #393939;
+  --sg-input-bg: #161616;
+  --sg-input-border: #393939;
+  --sg-accent: #78a9ff;
+  --sg-on-accent: #18181b;
+  --sg-radius: 0px;
+  --sg-font: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --sg-scrollbar-bg: #393939;
+  --sg-scrollbar-border: #393939;
+  --sg-scrollbar-thumb: #c6c6c6;
+  --sg-scrollbar-thumb-hover: #f4f4f4;
+  --sg-scrollbar-thumb-active: #f4f4f4;
+  --sg-scrollbar-arrow: #c6c6c6;
+  --sg-scrollbar-arrow-hover: #f4f4f4;
+  --sg-scrollbar-arrow-hover-bg: #333333;
+  --sg-scrollbar-arrow-active: #f4f4f4;
+  --sg-scrollbar-arrow-active-bg: #393939;
+  --sg-scrollbar-arrow-disabled: #393939;
+}

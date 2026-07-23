@@ -1,0 +1,59 @@
+/* Salesforce - generated from packages/grid/src/themes/index.ts. Do not edit by hand. */
+:root {
+  --sg-bg: #ffffff;
+  --sg-fg: #181818;
+  --sg-muted: #757575;
+  --sg-border: #c9c9c9;
+  --sg-header-bg: #f3f3f3;
+  --sg-header-fg: #181818;
+  --sg-bg-subtle: #f3f3f3;
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f3f3f3;
+  --sg-selection-bg: #ecebea;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #c9c9c9;
+  --sg-accent: #0176d3;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 4px;
+  --sg-font: "Salesforce Sans", "SF Pro", Helvetica, Arial, sans-serif;
+  --sg-scrollbar-bg: #f3f3f3;
+  --sg-scrollbar-border: #c9c9c9;
+  --sg-scrollbar-thumb: #757575;
+  --sg-scrollbar-thumb-hover: #181818;
+  --sg-scrollbar-thumb-active: #181818;
+  --sg-scrollbar-arrow: #757575;
+  --sg-scrollbar-arrow-hover: #181818;
+  --sg-scrollbar-arrow-hover-bg: #f3f3f3;
+  --sg-scrollbar-arrow-active: #181818;
+  --sg-scrollbar-arrow-active-bg: #ecebea;
+  --sg-scrollbar-arrow-disabled: #c9c9c9;
+}
+:root[data-theme='dark'] {
+  --sg-bg: #181818;
+  --sg-fg: #ffffff;
+  --sg-muted: #c9c9c9;
+  --sg-border: #3e3e3c;
+  --sg-header-bg: #2e2e2e;
+  --sg-header-fg: #ffffff;
+  --sg-bg-subtle: #2e2e2e;
+  --sg-row-alt-bg: #181818;
+  --sg-row-hover-bg: #2e2e2e;
+  --sg-selection-bg: #1e4d8e;
+  --sg-input-bg: #181818;
+  --sg-input-border: #3e3e3c;
+  --sg-accent: #1b96ff;
+  --sg-on-accent: #ffffff;
+  --sg-radius: 4px;
+  --sg-font: "Salesforce Sans", "SF Pro", Helvetica, Arial, sans-serif;
+  --sg-scrollbar-bg: #2e2e2e;
+  --sg-scrollbar-border: #3e3e3c;
+  --sg-scrollbar-thumb: #c9c9c9;
+  --sg-scrollbar-thumb-hover: #ffffff;
+  --sg-scrollbar-thumb-active: #ffffff;
+  --sg-scrollbar-arrow: #c9c9c9;
+  --sg-scrollbar-arrow-hover: #ffffff;
+  --sg-scrollbar-arrow-hover-bg: #2e2e2e;
+  --sg-scrollbar-arrow-active: #ffffff;
+  --sg-scrollbar-arrow-active-bg: #1e4d8e;
+  --sg-scrollbar-arrow-disabled: #3e3e3c;
+}

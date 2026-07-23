@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/create-studio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scaffold a runnable SvGrid Studio data app in one command: npm create @svgrid/studio@latest",
   "type": "module",
   "license": "MIT",
@@ -30,10 +30,13 @@
     "index.mjs",
     "templates"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "@svgrid/enterprise": "workspace:*"
+    "@svgrid/enterprise": "workspace:^"
   }
 }
