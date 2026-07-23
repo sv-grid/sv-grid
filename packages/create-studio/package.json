@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/create-studio",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Scaffold a runnable SvGrid Studio data app in one command: npm create @svgrid/studio@latest",
   "type": "module",
   "license": "MIT",
