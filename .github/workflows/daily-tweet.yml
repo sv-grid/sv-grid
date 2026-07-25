@@ -20,6 +20,10 @@ name: Daily tweet
 on:
   workflow_dispatch:
     inputs:
+      verify:
+        description: 'Verify credentials only (prints the handle, posts nothing)'
+        type: boolean
+        default: false
       force:
         description: 'Force a topic type (release | blog | highlight | ai)'
         type: string
@@ -79,7 +83,7 @@ jobs:
       - name: Post tweet
         # Scheduled runs always post. Manual runs post only when the `post`
         # input is checked, so you can dry-run from the Actions tab first.
-        run: node tools/post-tweet.mjs ${{ (github.event_name == 'schedule' || inputs.post) && '--post' || '' }}
+        run: node tools/post-tweet.mjs ${{ inputs.verify && '--verify' || ((github.event_name == 'schedule' || inputs.post) && '--post' || '') }}
         env:
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
