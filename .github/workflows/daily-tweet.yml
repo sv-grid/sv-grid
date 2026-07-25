@@ -7,7 +7,7 @@ name: Daily tweet
 # design and the X developer-portal setup.
 #
 # Required repo secrets (posting):
-#   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET
+#   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET
 # Optional repo secrets:
 #   ANTHROPIC_API_KEY - enables AI-written hooks (templates are used without it).
 #   WEBSITE_TOKEN     - PAT to read the private website for the blog check.
@@ -84,7 +84,7 @@ jobs:
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
-          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TWEET_MODEL: ${{ vars.TWEET_MODEL }}
           TWEET_FORCE: ${{ inputs.force }}
