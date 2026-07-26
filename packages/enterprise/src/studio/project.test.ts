@@ -5,6 +5,7 @@ import {
   duplicateBlock,
   blockColumns,
   addBlockAt,
+  addComponentBlock,
   addEntity,
   addFreestandingScreen,
   addScreen,
@@ -292,6 +293,51 @@ describe('freestanding screens + custom actions', () => {
     const id1 = p.screens.find((s) => s.id === s1)!.actions![0]!.id
     const id2 = p.screens.find((s) => s.id === s2)!.actions![0]!.id
     expect(id1).not.toBe(id2)
+  })
+})
+
+describe('component blocks', () => {
+  it('addComponentBlock adds a component block to a freestanding screen (no entity needed)', () => {
+    const p = addFreestandingScreen(createProject([customers]), { title: 'Reports' })
+    const sid = p.screens.find((s) => s.title === 'Reports')!.id
+    const next = addComponentBlock(p, sid, 'button', { variant: 'primary' })
+    const screen = next.screens.find((s) => s.id === sid)!
+    expect(screen.blocks).toHaveLength(1)
+    expect(screen.blocks[0]!.config).toMatchObject({ kind: 'component', component: 'button', props: { variant: 'primary' } })
+  })
+
+  it('addComponentBlock also works mixed onto an entity-bound screen', () => {
+    const p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const before = p.screens[0]!.blocks.length
+    const next = addComponentBlock(p, sid, 'alert', {})
+    const screen = next.screens.find((s) => s.id === sid)!
+    expect(screen.blocks).toHaveLength(before + 1)
+    expect(screen.blocks.at(-1)!.config).toMatchObject({ kind: 'component', component: 'alert' })
+  })
+
+  it('addComponentBlock inserts at an index and gives the block a unique id', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Reports' })
+    const sid = p.screens.find((s) => s.title === 'Reports')!.id
+    p = addComponentBlock(p, sid, 'button', {})
+    p = addComponentBlock(p, sid, 'badge', {}, 0)
+    const screen = p.screens.find((s) => s.id === sid)!
+    expect(screen.blocks.map((b) => (b.config as { component: string }).component)).toEqual(['badge', 'button'])
+    expect(new Set(screen.blocks.map((b) => b.id)).size).toBe(2)
+  })
+
+  it('validateProject warns on a component block with no component selected', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Reports' })
+    const sid = p.screens.find((s) => s.title === 'Reports')!.id
+    p = addComponentBlock(p, sid, '', {})
+    expect(validateProject(p).some((i) => /Component block has no component selected/.test(i.message))).toBe(true)
+  })
+
+  it('a freestanding screen with only a component block does not warn about being empty', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Reports' })
+    const sid = p.screens.find((s) => s.title === 'Reports')!.id
+    p = addComponentBlock(p, sid, 'button', {})
+    expect(validateProject(p).some((i) => /is empty/.test(i.message))).toBe(false)
   })
 })
 

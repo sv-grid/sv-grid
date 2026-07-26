@@ -11,8 +11,9 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { ActionConfig, Block, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
+import type { ActionConfig, Block, ComponentConfig, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
 import { blockColumns, entityDataSource, flattenBlocks, serializeProject } from './project.js'
+import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
 import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, relationDisplayFields, type NavItem } from './emit-schema.js'
@@ -290,10 +291,37 @@ ${panels}
     }
     case 'lookup':
       return `    <div ${span}><!-- lookup (${cfg.field}): shown in the edit form --></div>`
+    case 'component':
+      return componentBlockMarkup(block, cfg)
     case 'form':
     default:
       return '' // the form is the edit modal, rendered after the screen grid
   }
+}
+
+/** Emits a UI-kit component block (see `UI_COMPONENT_REGISTRY`): a literal
+ *  `<SvXxx .../>` tag carrying its configured "chrome" props + optional text
+ *  content. Entity-agnostic - used both from `blockMarkup` (mixed onto an
+ *  entity-bound screen) and directly from `freestandingScreenPage`. String/select/
+ *  color values go through `jsStr` so free-typed text (quotes, braces, HTML) can
+ *  never break out of the attribute or the surrounding markup. */
+function componentBlockMarkup(block: Block, cfg: ComponentConfig): string {
+  const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
+  const spec = uiComponentSpec(cfg.component)
+  if (!spec) return `    <div ${span}><!-- unknown component "${cfg.component}" --></div>`
+  const attrs: string[] = []
+  for (const p of spec.props) {
+    const v = cfg.props[p.key] ?? p.default
+    if (v == null || v === '') continue
+    if (p.type === 'boolean') { if (v) attrs.push(p.key) }
+    else if (p.type === 'number') attrs.push(`${p.key}={${Number(v)}}`)
+    else attrs.push(`${p.key}={${jsStr(String(v))}}`)
+  }
+  const openTag = `<${spec.importName}${attrs.length ? ' ' + attrs.join(' ') : ''}`
+  const inner = spec.hasContent ? `>{${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}}</${spec.importName}>` : ' />'
+  return `    <div ${span}>
+      ${openTag}${inner}
+    </div>`
 }
 
 // --- new-block helpers ------------------------------------------------------
@@ -559,9 +587,10 @@ ${inner}
     </div>`
 }
 
-/** A freestanding page - no bound entity, so no data binding / blocks (every
- *  `BlockKind` is entity-bound). Just a title, an optional toolbar of custom
- *  actions, and an empty content area for the developer's own markup. */
+/** A freestanding page - no bound entity, so no entity-bound `Block`; it can
+ *  still hold `'component'` blocks (UI-kit widgets, not data-bound). Renders a
+ *  title, an optional toolbar of custom actions, and those component blocks (or
+ *  a placeholder comment if it has none yet). */
 function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnabled: boolean): GeneratedFile {
   const screenActions = screenActionsOf(screen)
   const gatesActions = accessEnabled && screenActions.length > 0
@@ -571,16 +600,28 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
   const title = i18nEnabled ? `{$t('screen.${screen.id}', ${JSON.stringify(screen.title)})}` : screen.title
   const actionButtons = screenActions.map((a) => actionToolbarButton(a, screen.id, gatesActions)).join('\n  ')
   const toolbar = screenActions.length > 0 ? `<div class="st__toolbar">\n  ${actionButtons}\n</div>\n\n` : ''
+
+  const componentImports = [...new Set(
+    screen.blocks
+      .filter((b): b is Block & { config: ComponentConfig } => b.config.kind === 'component')
+      .map((b) => uiComponentSpec(b.config.component)?.importName)
+      .filter((n): n is string => !!n),
+  )].sort()
+  const gridImport = componentImports.length ? `import { ${componentImports.join(', ')} } from '@svgrid/grid'\n  ` : ''
+  const content = screen.blocks.length
+    ? screen.blocks.map((b) => (b.config.kind === 'component' ? componentBlockMarkup(b, b.config) : '')).filter(Boolean).join('\n')
+    : '  <!-- Freestanding page - no entity bound. Add your own content here. -->'
+
   return {
     path: `src/routes/${screen.route}/+page.svelte`,
     description: `${screen.title} screen (freestanding, no bound entity).`,
     contents: `<script lang="ts">
-  ${accessImport}${i18nImport}${parts.join('\n\n  ')}
+  ${gridImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}
 </script>
 
 <h1 class="st__title">${title}</h1>
 ${toolbar}<div class="st-screen">
-  <!-- Freestanding page - no entity bound. Add your own content here. -->
+${content}
 </div>
 `,
   }
@@ -647,7 +688,12 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   if (has(allBlocks, 'gauge')) gridSpecs.push('SvGauge')
   if (has(allBlocks, 'tree')) gridSpecs.push('SvTree')
   if (has(blocks, 'tabs')) gridSpecs.push('SvTabs')
-  const gridImports = gridSpecs.length ? `import { ${gridSpecs.join(', ')} } from '@svgrid/grid'\n  ` : ''
+  for (const b of allBlocks) {
+    if (b.config.kind !== 'component') continue
+    const importName = uiComponentSpec(b.config.component)?.importName
+    if (importName) gridSpecs.push(importName)
+  }
+  const gridImports = gridSpecs.length ? `import { ${[...new Set(gridSpecs)].join(', ')} } from '@svgrid/grid'\n  ` : ''
   const entImports: string[] = []
   if (hasGrid) entImports.push('schemaToColumns')
   if (wantsForm || (hasRecord && recordEditable)) entImports.push('SvGridEditPanel')

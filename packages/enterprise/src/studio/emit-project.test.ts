@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addFreestandingScreen, addScreenAction, addTabBlock, createProject, parseProject, setDeployTarget, setEntityDataSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
+import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, createProject, parseProject, setDeployTarget, setEntityDataSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
 import { emitStudioProject, emitStudioAppBundle, studioDeployInfo } from './emit-project'
 
 const customers: EntitySchema = {
@@ -689,6 +689,67 @@ describe('Custom actions', () => {
     for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
     }
+  })
+})
+
+describe('Component blocks', () => {
+  it('a component block mixed onto an entity-bound screen emits the import + literal markup, and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addComponentBlock(p, sid, 'button', { variant: 'primary', block: true }, 0)
+    const files = emitStudioProject(p)
+
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    const importLine = page.split('\n').find((l) => l.includes("from '@svgrid/grid'"))!
+    expect(importLine).toContain('SvButton') // merged into the screen's one @svgrid/grid import
+    expect(page).toContain("<SvButton variant={'primary'} size={'md'} block>{'Click me'}</SvButton>")
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('a freestanding screen with component blocks emits deduped imports + markup for each, and compiles', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Reports', route: 'reports' })
+    const sid = p.screens.find((s) => s.title === 'Reports')!.id
+    p = addComponentBlock(p, sid, 'button', { variant: 'secondary' })
+    p = addComponentBlock(p, sid, 'badge', { variant: 'success' })
+    const files = emitStudioProject(p)
+
+    const page = files.find((f) => f.path === 'src/routes/reports/+page.svelte')!.contents
+    expect(page).toContain("import { SvBadge, SvButton } from '@svgrid/grid'") // sorted, deduped
+    expect(page).toContain("<SvButton variant={'secondary'} size={'md'}>{'Click me'}</SvButton>")
+    expect(page).toContain("<SvBadge variant={'success'} size={'md'} pill>{'Badge'}</SvBadge>")
+    expect(page).not.toContain('Add your own content here')
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('an empty freestanding screen (no blocks) still emits the placeholder comment', () => {
+    const p = addFreestandingScreen(createProject([customers]), { title: 'Reports', route: 'reports' })
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/reports/+page.svelte')!.contents
+    expect(page).toContain('Add your own content here')
+  })
+
+  it('a component with a free-typed label containing quotes/braces cannot break out of the markup, and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addComponentBlock(p, sid, 'button', { _content: `it's a "test" {value}` }, 0)
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(() => compile(page, { filename: 'page.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('an unrecognized component key emits a harmless placeholder comment instead of throwing', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Reports', route: 'reports' })
+    const sid = p.screens.find((s) => s.title === 'Reports')!.id
+    p = addComponentBlock(p, sid, 'not-a-real-component', {})
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/reports/+page.svelte')!.contents
+    expect(page).toContain('unknown component "not-a-real-component"')
+    expect(() => compile(page, { filename: 'page.svelte', generate: 'client' })).not.toThrow()
   })
 })
 
