@@ -10,6 +10,7 @@ import {
     createSortedRowModel,
     createSvGrid,
     getGridCellDomId,
+    rowsToChartSpec,
     sortFns,
     tableFeatures,
     rowSortingFeature,
@@ -21,6 +22,9 @@ import {
     type Row,
     type RowData,
     type TableFeatures,
+    type ChartType,
+    type ChartSpec,
+    type ChartValueFormat,
   } from "./index";
 import {
   createRowScrollScaling,
@@ -40,6 +44,7 @@ import type {
     FilterOperator,
     MenuPosition,
     ContextMenuTarget,
+    ChartingConfig,
   } from "./SvGrid.types";
 import {
     rawToNumber,
@@ -1302,6 +1307,356 @@ export function createSvGridController<
     return ordered;
   });
 
+  // ===================================================================
+  // Integrated charting (the `charting` prop)
+  // ===================================================================
+  const chartCfg = $derived.by<ChartingConfig<TData> | null>(() => {
+    const c = props.charting;
+    if (!c) return null;
+    return c === true ? ({} as ChartingConfig<TData>) : (c as ChartingConfig<TData>);
+  });
+  const chartingEnabled = $derived(!!chartCfg);
+  const chartIsCustom = $derived(typeof chartCfg?.buildSpec === "function");
+  const chartingConfig = $derived(
+    chartCfg
+      ? {
+          position: chartCfg.position ?? "right",
+          defaultOpen: chartCfg.defaultOpen === true,
+          defaultType: chartCfg.defaultType ?? "bar",
+          height: chartCfg.height ?? 300,
+          width: chartCfg.width ?? 460,
+          crossFilter: chartCfg.crossFilter !== false,
+        }
+      : null,
+  );
+
+  let chartPanelOpen = $state(
+    !!props.charting && props.charting !== true && (props.charting as ChartingConfig).defaultOpen === true,
+  );
+  let chartSize = $state<number | null>(null);
+  let chartFloating = $state(false);
+  let chartMaximized = $state(false);
+  let chartFloatRect = $state.raw<{ x: number; y: number; w: number; h: number } | null>(null);
+  let chartAiHandler = $state<
+    ((prompt: string) => Promise<Record<string, unknown> | null>) | null
+  >(null);
+
+  // Multiple charts, each an independently-configured working set switched by a
+  // tab strip. Pickers / spec read the ACTIVE chart.
+  type ChartTabState = {
+    id: string;
+    title: string;
+    type: ChartType;
+    reduce: "sum" | "avg" | "count";
+    dimensionId: string | null;
+    measureId: string | null;
+    seriesId: string | null | undefined;
+    stacked: boolean | null;
+    dataLabels: boolean | null;
+    logScale: boolean | null;
+    timeAxis: boolean | null;
+    valueFormat: ChartValueFormat | null;
+  };
+  let chartSeq = 0;
+  const makeChart = (title: string): ChartTabState => ({
+    id: `chart-${chartSeq++}`,
+    title,
+    type:
+      (props.charting && props.charting !== true && (props.charting as ChartingConfig).defaultType) || "bar",
+    reduce:
+      (props.charting && props.charting !== true && (props.charting as ChartingConfig).reduce) || "sum",
+    dimensionId: null,
+    measureId: null,
+    seriesId: undefined,
+    stacked: null,
+    dataLabels: null,
+    logScale: null,
+    timeAxis: null,
+    valueFormat: null,
+  });
+  // svelte-ignore state_referenced_locally
+  let charts = $state<ChartTabState[]>([makeChart("Chart 1")]);
+  let activeChartIndex = $state(0);
+  const activeChart = $derived(
+    (charts[Math.min(activeChartIndex, charts.length - 1)] ?? charts[0])!,
+  );
+  const chartType = $derived(activeChart.type);
+  const chartReduce = $derived(activeChart.reduce);
+  const chartDimensionId = $derived(activeChart.dimensionId);
+  const chartMeasureId = $derived(activeChart.measureId);
+  const chartSeriesId = $derived(activeChart.seriesId);
+  const chartStacked = $derived(activeChart.stacked);
+  const chartDataLabels = $derived(activeChart.dataLabels);
+  const chartLogScale = $derived(activeChart.logScale);
+  const chartTimeAxis = $derived(activeChart.timeAxis);
+  const chartValueFormat = $derived(activeChart.valueFormat);
+
+  const asMeasureList = (m: string | string[] | undefined): string[] =>
+    m == null ? [] : Array.isArray(m) ? m : [m];
+  const isNumericColumn = (col: Column<TData>): boolean => {
+    const dt = col.columnDef.cellDataType;
+    if (dt === "number") return true;
+    if (dt) return false;
+    for (const row of allRows) {
+      const v = row.getCellValueByColumnId(col.id);
+      if (v == null || v === "") continue;
+      return typeof v === "number" || (typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v)));
+    }
+    return false;
+  };
+  const columnLabel = (col: Column<TData>): string => {
+    const h = col.columnDef.header;
+    return typeof h === "string" && h ? h : (col.columnDef.field ?? col.id);
+  };
+  const chartableColumns = $derived.by(() => {
+    const dims: Array<{ id: string; field: string; label: string }> = [];
+    const measures: Array<{ id: string; field: string; label: string }> = [];
+    for (const col of allColumns) {
+      const field = col.columnDef.field;
+      if (!field) continue;
+      const entry = { id: col.id, field, label: columnLabel(col) };
+      if (isNumericColumn(col)) measures.push(entry);
+      else dims.push(entry);
+    }
+    return { dims, measures };
+  });
+  const chartColumnDefaults = $derived.by(() => {
+    const { dims, measures } = chartableColumns;
+    let dimId = dims[0]?.id ?? null;
+    let seriesId: string | null = null;
+    let measureIds = measures[0] ? [measures[0].id] : [];
+    const rects = getSelectionRects();
+    if (rects.length) {
+      let minCol = Infinity;
+      let maxCol = -Infinity;
+      for (const r of rects) {
+        minCol = Math.min(minCol, r.minCol);
+        maxCol = Math.max(maxCol, r.maxCol);
+      }
+      const span = allColumns.slice(minCol, maxCol + 1);
+      const spanDims = span.filter((c) => dims.some((d) => d.id === c.id));
+      const spanMeasures = span.filter((c) => measures.some((m) => m.id === c.id));
+      if (maxCol > minCol) {
+        if (spanDims[0]) dimId = spanDims[0].id;
+        if (spanDims[1]) seriesId = spanDims[1].id;
+        if (spanMeasures.length) measureIds = spanMeasures.map((c) => c.id);
+      } else {
+        if (spanDims[0]) dimId = spanDims[0].id;
+        if (spanMeasures[0]) measureIds = [spanMeasures[0].id];
+      }
+    }
+    return { dimId, seriesId, measureIds, measureId: measureIds[0] ?? null };
+  });
+  const effectiveChartDimensionId = $derived(
+    chartDimensionId ?? chartCfg?.dimension ?? chartColumnDefaults.dimId,
+  );
+  const effectiveChartMeasureId = $derived(
+    chartMeasureId ?? asMeasureList(chartCfg?.measures)[0] ?? chartColumnDefaults.measureId,
+  );
+  const effectiveChartSeriesId = $derived(
+    chartSeriesId !== undefined ? chartSeriesId : (chartCfg?.series ?? chartColumnDefaults.seriesId),
+  );
+  const effectiveChartMeasureIds = $derived.by<string[]>(() => {
+    if (chartMeasureId) return [chartMeasureId];
+    const configured = asMeasureList(chartCfg?.measures);
+    if (configured.length) return configured;
+    return chartColumnDefaults.measureIds;
+  });
+  const effectiveChartStacked = $derived(chartStacked ?? chartCfg?.stacked ?? false);
+  const effectiveChartDataLabels = $derived(chartDataLabels ?? chartCfg?.dataLabels ?? false);
+  const effectiveChartLogScale = $derived(chartLogScale ?? chartCfg?.yScale === "log");
+  const effectiveChartTimeAxis = $derived(chartTimeAxis ?? chartCfg?.timeAxis === true);
+  const chartMeasureFormatDefault = $derived.by<ChartValueFormat | undefined>(() => {
+    const col = allColumns.find((c) => c.id === effectiveChartMeasureId);
+    const t = (col?.columnDef.format as { type?: string } | undefined)?.type;
+    if (t === "currency") return "currency";
+    if (t === "percent") return "percent";
+    return undefined;
+  });
+  const effectiveChartValueFormat = $derived<ChartValueFormat | undefined>(
+    chartValueFormat ?? chartCfg?.valueFormat ?? chartMeasureFormatDefault,
+  );
+  const chartAutoYAxisTitle = $derived.by<string | undefined>(() => {
+    if (effectiveChartMeasureIds.length !== 1) return undefined;
+    const col = allColumns.find((c) => c.id === effectiveChartMeasureId);
+    const label = col ? columnLabel(col) : "";
+    if (!label) return undefined;
+    return chartReduce === "count"
+      ? "Count"
+      : `${chartReduce === "avg" ? "Average" : "Sum"} of ${label}`;
+  });
+  const chartDimensionIsDate = $derived.by<boolean>(() => {
+    const col = allColumns.find((c) => c.id === effectiveChartDimensionId);
+    if (!col) return false;
+    if (col.columnDef.cellDataType === "date") return true;
+    if (col.columnDef.cellDataType) return false;
+    for (const row of allRows) {
+      const v = row.getCellValueByColumnId(col.id);
+      if (v == null || v === "") continue;
+      if (v instanceof Date) return true;
+      return typeof v === "string" && /^\d{4}-\d{2}(-\d{2})?/.test(v);
+    }
+    return false;
+  });
+  const chartRows = $derived.by<TData[]>(() => {
+    const rects = getSelectionRects();
+    const pushLeaf = (out: TData[], row: Row<TData> | undefined) => {
+      if (!row || (row.subRows && row.subRows.length > 0)) return;
+      out.push(row.original as TData);
+    };
+    if (!rects.length) {
+      const out: TData[] = [];
+      for (const row of allRows) pushLeaf(out, row);
+      return out;
+    }
+    const idx = new Set<number>();
+    for (const r of rects) for (let i = r.minRow; i <= r.maxRow; i += 1) idx.add(i);
+    const out: TData[] = [];
+    for (const i of Array.from(idx).sort((a, b) => a - b)) pushLeaf(out, allRows[i]);
+    return out;
+  });
+  const fieldOf = (id: string | null | undefined): string | undefined =>
+    id ? allColumns.find((c) => c.id === id)?.columnDef.field : undefined;
+
+  // ---- Server-side aggregation (charting.getAggregate) ----
+  let chartServerBuckets = $state.raw<ReadonlyArray<{ category: string; series?: string; value: number }> | null>(null);
+  let chartReqSeq = 0;
+  $effect(() => {
+    const fn = chartCfg?.getAggregate;
+    if (!fn) return;
+    const category = fieldOf(effectiveChartDimensionId);
+    const measure = fieldOf(effectiveChartMeasureIds[0]) ?? null;
+    const series = fieldOf(effectiveChartSeriesId);
+    // Read valueFilters + filterMenuValues so the fetch re-runs when either
+    // changes; hand the model the facet checklists + operator filters + global.
+    const facets = Object.fromEntries(
+      Object.entries(valueFilters).map(([k, set]) => [k, Array.from(set)]),
+    );
+    const filterModel = {
+      facets,
+      columns: { ...filterMenuValues },
+      global: globalFilter,
+    } as Record<string, unknown>;
+    void chartCfg?.refreshKey;
+    const seq = ++chartReqSeq;
+    Promise.resolve(fn({ dimension: category, measure, series, reduce: chartReduce, filterModel }))
+      .then((buckets) => {
+        if (seq === chartReqSeq) chartServerBuckets = buckets;
+      })
+      .catch(() => {
+        if (seq === chartReqSeq) chartServerBuckets = [];
+      });
+  });
+  const bucketsToSpec = (
+    buckets: ReadonlyArray<{ category: string; series?: string; value: number }>,
+    type: ChartType,
+    hasSeries: boolean,
+  ): ChartSpec => {
+    const cats: string[] = [];
+    const catIdx = new Map<string, number>();
+    const ensureCat = (c: string) => {
+      let i = catIdx.get(c);
+      if (i === undefined) { i = cats.length; catIdx.set(c, i); cats.push(c); }
+      return i;
+    };
+    const seriesMap = new Map<string, number[]>();
+    for (const b of buckets) {
+      const ci = ensureCat(b.category);
+      const key = hasSeries ? (b.series ?? "") : "value";
+      let arr = seriesMap.get(key);
+      if (!arr) { arr = []; seriesMap.set(key, arr); }
+      arr[ci] = (arr[ci] ?? 0) + b.value;
+    }
+    return {
+      type,
+      categories: cats,
+      series: [...seriesMap.entries()].map(([label, values]) => ({
+        label,
+        values: cats.map((_, i) => values[i] ?? 0),
+      })),
+    };
+  };
+
+  const chartSpec = $derived.by<ChartSpec | null>(() => {
+    if (!chartingEnabled || !chartCfg) return null;
+    if (chartCfg.getAggregate) {
+      if (!chartServerBuckets) return null;
+      const spec = bucketsToSpec(chartServerBuckets, chartType, !!effectiveChartSeriesId);
+      if (effectiveChartStacked || chartCfg.stacked100) spec.stacked = true;
+      if (chartCfg.stacked100) spec.stacked100 = true;
+      if (chartCfg.palette) spec.palette = chartCfg.palette;
+      if (effectiveChartTimeAxis) spec.xType = "time";
+      if (effectiveChartLogScale) spec.yScale = "log";
+      if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
+      return spec;
+    }
+    if (chartCfg.buildSpec) return chartCfg.buildSpec(chartRows) ?? null;
+
+    const category = fieldOf(effectiveChartDimensionId);
+    const values = effectiveChartMeasureIds.map((id) => fieldOf(id)).filter((f): f is string => !!f);
+    if (!category || !values.length) return null;
+    const seriesField = fieldOf(effectiveChartSeriesId);
+
+    const spec = rowsToChartSpec<Record<string, unknown>>(chartRows as Array<Record<string, unknown>>, {
+      type: chartType,
+      category: category as string,
+      value: values.length === 1 ? values[0]! : values,
+      ...(seriesField ? { series: seriesField } : {}),
+      reduce: chartReduce,
+      stacked: effectiveChartStacked || chartCfg.stacked100 === true,
+      stacked100: chartCfg.stacked100 === true,
+      ...(chartCfg.palette ? { palette: chartCfg.palette } : {}),
+      ...(chartCfg.topN ? { topN: chartCfg.topN } : {}),
+      ...(chartCfg.otherLabel ? { otherLabel: chartCfg.otherLabel } : {}),
+      ...(chartCfg.sort ? { sort: chartCfg.sort } : {}),
+    });
+
+    if (chartCfg.orientation) spec.orientation = chartCfg.orientation;
+    if (effectiveChartTimeAxis) spec.xType = "time";
+    if (effectiveChartLogScale) spec.yScale = "log";
+    if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
+    if (chartType !== "pie" && spec.orientation !== "horizontal" && !spec.yAxisTitle && chartAutoYAxisTitle) {
+      spec.yAxisTitle = chartAutoYAxisTitle;
+    }
+    if (effectiveChartValueFormat && activeChart.valueFormat === null) { /* inherited default */ }
+    if (chartType === "pie") {
+      if (chartCfg.donut) spec.innerRadius = typeof chartCfg.donut === "number" ? chartCfg.donut : 0.6;
+    }
+    if (chartCfg.annotations) spec.annotations = chartCfg.annotations;
+    if (chartCfg.patternFallback) spec.patternFallback = true;
+    const refLines = [...(chartCfg.referenceLines ?? [])];
+    if (chartCfg.averageLine && spec.series[0]?.values.length) {
+      const vals = spec.series[0].values;
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      refLines.push({ value: avg, label: "Average", dashed: true });
+    }
+    if (refLines.length) spec.referenceLines = refLines;
+    for (const s of spec.series) {
+      if (chartCfg.trend) s.overlay = chartCfg.trend === "linear" ? "linear" : `${chartCfg.trend}:7`;
+      if (chartCfg.smooth) s.smooth = true;
+      if (chartCfg.seriesTypes?.[s.label]) s.type = chartCfg.seriesTypes[s.label];
+      if (chartCfg.seriesAxes?.[s.label]) s.axis = chartCfg.seriesAxes[s.label];
+    }
+    return spec;
+  });
+
+  function applyChartCrossFilter(category: string) {
+    const dimId = effectiveChartDimensionId;
+    if (!dimId) return;
+    const existing = valueFilters[dimId];
+    const next = new Set(existing && existing.has(category) ? existing : []);
+    if (next.has(category)) next.delete(category);
+    else next.add(category);
+    valueFilters = { ...valueFilters, [dimId]: next };
+  }
+  function clearChartCrossFilter() {
+    const dimId = effectiveChartDimensionId;
+    if (!dimId) return;
+    const next = { ...valueFilters };
+    delete next[dimId];
+    valueFilters = next;
+  }
+
 
   // Forward sort-clause changes to the consumer. Same dedupe pattern as the
   // selection callback above - fires only when the serialized clauses change.
@@ -2351,6 +2706,132 @@ export function createSvGridController<
     get toolPanelHeaderLabel() { return toolPanelHeaderLabel; },
     get toggleColumnVisibleInPanel() { return toggleColumnVisibleInPanel; },
     get moveColumnInPanel() { return moveColumnInPanel; },
+    // ---- Integrated charting ----
+    get chartingEnabled() { return chartingEnabled; },
+    get chartingConfig() { return chartingConfig; },
+    get chartCfg() { return chartCfg; },
+    get chartIsCustom() { return chartIsCustom; },
+    get chartPanelOpen() { return chartPanelOpen; },
+    set chartPanelOpen(v) { chartPanelOpen = v as never; },
+    get chartType() { return chartType; },
+    set chartType(v) { activeChart.type = v as never; },
+    get chartReduce() { return chartReduce; },
+    set chartReduce(v) { activeChart.reduce = v as never; },
+    get chartDimensionId() { return effectiveChartDimensionId; },
+    set chartDimensionId(v) { activeChart.dimensionId = v as never; },
+    get chartMeasureId() { return effectiveChartMeasureId; },
+    set chartMeasureId(v) { activeChart.measureId = v as never; },
+    get chartSeriesId() { return effectiveChartSeriesId; },
+    set chartSeriesId(v) { activeChart.seriesId = v as never; },
+    get chartStacked() { return effectiveChartStacked; },
+    set chartStacked(v) { activeChart.stacked = v as never; },
+    get chartDataLabels() { return effectiveChartDataLabels; },
+    set chartDataLabels(v) { activeChart.dataLabels = v as never; },
+    get chartLogScale() { return effectiveChartLogScale; },
+    set chartLogScale(v) { activeChart.logScale = v as never; },
+    get chartTimeAxis() { return effectiveChartTimeAxis; },
+    set chartTimeAxis(v) { activeChart.timeAxis = v as never; },
+    get chartValueFormat() { return effectiveChartValueFormat ?? "number"; },
+    set chartValueFormat(v) { activeChart.valueFormat = v as never; },
+    get chartDimensionIsDate() { return chartDimensionIsDate; },
+    get chartSize() { return chartSize; },
+    set chartSize(v) { chartSize = v as never; },
+    get chartFloating() { return chartFloating; },
+    set chartFloating(v) { chartFloating = v as never; },
+    get chartMaximized() { return chartMaximized; },
+    set chartMaximized(v) { chartMaximized = v as never; },
+    get chartFloatRect() { return chartFloatRect; },
+    set chartFloatRect(v) { chartFloatRect = v as never; },
+    get chartableColumns() { return chartableColumns; },
+    get chartSpec() { return chartSpec; },
+    applyChartCrossFilter,
+    clearChartCrossFilter,
+    // Multiple charts (tab strip)
+    get charts() { return charts.map((c) => ({ id: c.id, title: c.title })); },
+    get activeChartIndex() { return Math.min(activeChartIndex, charts.length - 1); },
+    set activeChartIndex(v) { activeChartIndex = Math.max(0, Math.min(charts.length - 1, v as number)); },
+    addChart() {
+      charts = [...charts, makeChart(`Chart ${charts.length + 1}`)];
+      activeChartIndex = charts.length - 1;
+    },
+    removeChart(index?: number) {
+      if (charts.length <= 1) return;
+      const idx = index ?? activeChartIndex;
+      charts = charts.filter((_, k) => k !== idx);
+      if (activeChartIndex >= charts.length) activeChartIndex = charts.length - 1;
+    },
+    renameChart(index: number, title: string) {
+      const c = charts[index];
+      if (c) c.title = title;
+    },
+    getChartsState() {
+      return charts.map((c) => ({
+        title: c.title,
+        type: c.type,
+        dimension: c.dimensionId,
+        series: c.seriesId ?? null,
+        measure: c.measureId,
+        reduce: c.reduce,
+        stacked: c.stacked,
+        dataLabels: c.dataLabels,
+        logScale: c.logScale,
+        timeAxis: c.timeAxis,
+        valueFormat: c.valueFormat,
+      }));
+    },
+    applyChartsState(list: ReadonlyArray<Record<string, unknown>>, active?: number) {
+      const restored = list.map((c, i) => ({
+        id: `chart-${chartSeq++}`,
+        title: typeof c.title === "string" ? c.title : `Chart ${i + 1}`,
+        type: (c.type as ChartType) ?? "bar",
+        reduce: (c.reduce as "sum" | "avg" | "count") ?? "sum",
+        dimensionId: (c.dimension as string | null) ?? null,
+        measureId: (c.measure as string | null) ?? null,
+        seriesId: c.series as string | null | undefined,
+        stacked: (c.stacked as boolean | null) ?? null,
+        dataLabels: (c.dataLabels as boolean | null) ?? null,
+        logScale: (c.logScale as boolean | null) ?? null,
+        timeAxis: (c.timeAxis as boolean | null) ?? null,
+        valueFormat: (c.valueFormat as ChartValueFormat | null) ?? null,
+      }));
+      charts = restored.length ? restored : [makeChart("Chart 1")];
+      activeChartIndex = Math.max(0, Math.min(charts.length - 1, active ?? 0));
+    },
+    get chartAiHandler() { return chartAiHandler; },
+    set chartAiHandler(v) { chartAiHandler = v as never; },
+    applyChartConfig(config: {
+      open?: boolean;
+      type?: ChartType;
+      dimension?: string | null;
+      series?: string | null;
+      measure?: string | null;
+      reduce?: "sum" | "avg" | "count";
+      stacked?: boolean;
+      dataLabels?: boolean;
+      logScale?: boolean;
+      timeAxis?: boolean;
+      valueFormat?: ChartValueFormat;
+    }) {
+      const cols = [...chartableColumns.dims, ...chartableColumns.measures];
+      const resolve = (v: string | null | undefined): string | null => {
+        if (v == null) return null;
+        const byId = cols.find((c) => c.id === v);
+        if (byId) return byId.id;
+        const byField = cols.find((c) => c.field === v);
+        return byField ? byField.id : v;
+      };
+      if (config.open !== false) chartPanelOpen = true;
+      if (config.type) activeChart.type = config.type;
+      if ("dimension" in config) activeChart.dimensionId = resolve(config.dimension);
+      if ("series" in config) activeChart.seriesId = config.series == null ? null : resolve(config.series);
+      if ("measure" in config) activeChart.measureId = resolve(config.measure);
+      if (config.reduce) activeChart.reduce = config.reduce;
+      if (typeof config.stacked === "boolean") activeChart.stacked = config.stacked;
+      if (typeof config.dataLabels === "boolean") activeChart.dataLabels = config.dataLabels;
+      if (typeof config.logScale === "boolean") activeChart.logScale = config.logScale;
+      if (typeof config.timeAxis === "boolean") activeChart.timeAxis = config.timeAxis;
+      if (config.valueFormat) activeChart.valueFormat = config.valueFormat;
+    },
     get toggleGroupInPanel() { return toggleGroupInPanel; },
     get lastSortingSerialized() { return lastSortingSerialized; },
     set lastSortingSerialized(v) { lastSortingSerialized = v as never; },

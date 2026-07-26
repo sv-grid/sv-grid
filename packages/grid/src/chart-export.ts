@@ -9,6 +9,8 @@
  * Pass the chart's `<svg class="sv-grid-chart-svg">` element (or any ancestor
  * that contains it).
  */
+import type { ChartSpec } from './chart'
+
 function resolveSvg(el: SVGSVGElement | HTMLElement): SVGSVGElement | null {
   if (el instanceof SVGSVGElement) return el
   return el.querySelector('svg.sv-grid-chart-svg') ?? el.querySelector('svg')
@@ -47,6 +49,29 @@ export function chartToSvgString(
   clone.setAttribute('width', String(w))
   clone.setAttribute('height', String(h))
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+
+  // Inline computed paint/text styles so the export is what's on screen -
+  // dynamic SVG presentation attributes (a line's `stroke={color}`) and scoped
+  // component CSS don't survive a raw clone + XMLSerializer. Walk the live tree
+  // and its clone (1:1 here, before we prune hit layers) and copy the resolved
+  // style, so line paths etc. export with their real stroke instead of nothing.
+  const PAINT_PROPS = [
+    'fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity',
+    'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'opacity',
+    'font-size', 'font-family', 'font-weight', 'text-anchor',
+  ]
+  const liveNodes = svg.querySelectorAll('*')
+  const cloneNodes = clone.querySelectorAll('*')
+  for (let i = 0; i < liveNodes.length; i += 1) {
+    const el = cloneNodes[i] as (SVGElement & { style: CSSStyleDeclaration }) | undefined
+    if (!el || !el.style) continue
+    const cs = getComputedStyle(liveNodes[i]!)
+    for (const prop of PAINT_PROPS) {
+      const v = cs.getPropertyValue(prop)
+      if (v && v !== 'normal') el.style.setProperty(prop, v)
+    }
+  }
+
   // Drop interaction-only hit layers.
   clone.querySelectorAll('.sv-grid-chart-hit').forEach((n) => n.remove())
 
@@ -141,4 +166,36 @@ export async function downloadChartPng(
   const url = URL.createObjectURL(blob)
   triggerDownload(url, filename)
   setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+const csvCell = (v: unknown): string => {
+  const s = v == null ? '' : String(v)
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
+/**
+ * Serialize a chart's data to CSV: one row per category, one column per series
+ * (`Category, <series 1>, ...`). Empty for exotic specs (sankey/treemap/gauge/
+ * calendar) that don't carry a rectangular categories x series grid.
+ */
+export function chartSpecToCsv(spec: ChartSpec): string {
+  const cats = spec.categories ?? []
+  const series = spec.series ?? []
+  if (!cats.length || !series.length) return ''
+  const header = ['Category', ...series.map((s) => s.label)].map(csvCell).join(',')
+  const rows = cats.map((cat, i) =>
+    [cat, ...series.map((s) => s.values[i] ?? '')].map(csvCell).join(','),
+  )
+  return [header, ...rows].join('\n')
+}
+
+/** Download the chart's data as a `.csv` file. Returns false if there's no
+ *  rectangular category/series data to export. */
+export function downloadChartCsv(spec: ChartSpec, filename = 'chart.csv'): boolean {
+  const csv = chartSpecToCsv(spec)
+  if (!csv) return false
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  triggerDownload(url, filename)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  return true
 }

@@ -106,6 +106,16 @@ export type ChartSpec = {
   height?: number
   /** Palette used when a series has no explicit `color`. */
   palette?: string[]
+  /** Per-category color overrides (by category label) - for pie / donut slice
+   *  recolouring, where colour follows the category, not a series. */
+  categoryColors?: Record<string, string>
+  /** Number format for the value axis, tooltips, data labels and reference
+   *  lines. Unset = the default compact `1.2k` / `1.2M` style. */
+  valueFormat?: ChartValueFormat
+  /** Grouped (nested) category axis: a parent tier spanning consecutive leaf
+   *  categories (spans must sum to `categories.length`). Vertical category
+   *  charts only (ignored for time / horizontal / pie). */
+  categoryGroups?: Array<{ label: string; span: number }>
   /** Stack bar / area series (per axis) instead of grouping them. */
   stacked?: boolean
   /** Stack to 100% (each category normalized to its total). Implies stacked. */
@@ -387,6 +397,9 @@ export type ChartGeometry = {
   y2Ticks: ChartAxisTick[]
   hasRightAxis: boolean
   xTicks: ChartCategoryTick[]
+  /** Grouped category axis parent tier: label + span extent (pixels). Empty
+   *  unless `spec.categoryGroups` is set on a vertical category chart. */
+  categoryGroupTicks: Array<{ label: string; xCenter: number; x0: number; x1: number }>
   /** True when x labels are long/many and should be rotated. */
   xLabelRotated: boolean
   legend: ChartLegendItem[]
@@ -730,6 +743,25 @@ function fmtTick(n: number): string {
   return String(Math.round(n * 100) / 100)
 }
 
+/** Value-axis / tooltip / label number format. */
+export type ChartValueFormat = 'number' | 'currency' | 'percent' | 'compact'
+
+/**
+ * Format a numeric value for display, honouring an optional `valueFormat`.
+ * Builds on the compact `1.2k` / `1.2M` base: currency prefixes `$` (sign
+ * outside), percent multiplies by 100 and suffixes `%`. Unset / `'number'` /
+ * `'compact'` = the plain compact form.
+ */
+export function formatChartValue(n: number, format?: ChartValueFormat): string {
+  if (!Number.isFinite(n)) return ''
+  if (format === 'currency') return `${n < 0 ? '-' : ''}$${fmtTick(Math.abs(n))}`
+  if (format === 'percent') {
+    const p = n * 100
+    return `${Math.round(p * 10) / 10}%`
+  }
+  return fmtTick(n)
+}
+
 const DAY = 86_400_000
 /** Nice date-tick timestamps across [min, max]. */
 function dateTicks(tMin: number, tMax: number): number[] {
@@ -833,6 +865,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     y2Ticks: [],
     hasRightAxis: false,
     xTicks: [],
+    categoryGroupTicks: [],
     xLabelRotated: false,
     legend,
     donut: null,
@@ -945,7 +978,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
       x: round(padL + slotW * i + slotW / 2),
     }))
     const yTicks: ChartAxisTick[] = dom.ticks.map((value) => ({
-      value, y: yOfW(value), label: fmtTick(value),
+      value, y: yOfW(value), label: formatChartValue(value, spec.valueFormat),
     }))
     return {
       ...empty,
@@ -1132,7 +1165,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     const legend = Array.from({ length: 5 }, (_, i) => {
       const t = i / 4
       const value = vMin + (vMax - vMin) * t
-      return { value, color: colorAt(value), label: fmtTick(value) }
+      return { value, color: colorAt(value), label: formatChartValue(value, spec.valueFormat) }
     })
     return {
       ...empty,
@@ -1486,7 +1519,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     const heatmapLegend = Array.from({ length: 5 }, (_, i) => {
       const t = i / 4
       const value = vMin + (vMax - vMin) * t
-      return { value, color: colorAt(value), label: fmtTick(value) }
+      return { value, color: colorAt(value), label: formatChartValue(value, spec.valueFormat) }
     })
     return {
       ...empty,
@@ -1537,10 +1570,11 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
       } else {
         path = `M${round(cx)},${round(cy)} L${round(ox0)},${round(oy0)} A${r},${r} 0 ${large} 1 ${round(ox1)},${round(oy1)} Z`
       }
+      const catLabel = spec.categories[i] ?? String(i)
       return {
         path,
-        color: palette[i % palette.length]!,
-        label: spec.categories[i] ?? String(i),
+        color: spec.categoryColors?.[catLabel] ?? palette[i % palette.length]!,
+        label: catLabel,
         value: v,
         percent: frac * 100,
         cx: round(cx + labelR * Math.cos(mid)),
@@ -1550,7 +1584,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     return {
       ...empty,
       slices,
-      legend: spec.categories.map((label, i) => ({ label, color: palette[i % palette.length]! })),
+      legend: spec.categories.map((label, i) => ({ label, color: spec.categoryColors?.[label] ?? palette[i % palette.length]! })),
       donut: ir > 0 ? { cx: round(cx), cy: round(cy), r: round(ir), total: s.values.reduce((a, b) => a + Math.max(0, b), 0) } : null,
     }
   }
@@ -1606,7 +1640,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
     const referenceLines: ChartRefLineGeo[] = (spec.referenceLines ?? []).map((ref) => ({
       y: yOf(ref.value),
-      label: ref.label ?? fmtTick(ref.value),
+      label: ref.label ?? formatChartValue(ref.value, spec.valueFormat),
       color: ref.color ?? '#ef4444',
       dashed: ref.dashed !== false,
     }))
@@ -1615,7 +1649,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
       plot,
       scatterPoints,
       referenceLines,
-      yTicks: yDom.ticks.map((value) => ({ value, y: yOf(value), label: fmtTick(value) })),
+      yTicks: yDom.ticks.map((value) => ({ value, y: yOf(value), label: formatChartValue(value, spec.valueFormat) })),
       xTicks: xDom.ticks.map((value) => ({ label: fmtTick(value), x: xOf(value) })),
     }
   }
@@ -1702,7 +1736,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
 
     const valueTicks: ChartCategoryTick[] = dom.ticks.map((value) => ({
-      label: spec.stacked100 ? `${fmtTick(value)}%` : fmtTick(value),
+      label: spec.stacked100 ? `${fmtTick(value)}%` : formatChartValue(value, spec.valueFormat),
       x: xOf(value),
     }))
     const catTicks: ChartAxisTick[] = spec.categories.map((label, i) => ({
@@ -1712,7 +1746,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }))
     const referenceLinesV: ChartRefLineGeoV[] = (spec.referenceLines ?? []).map((ref) => ({
       x: xOf(ref.value),
-      label: ref.label ?? fmtTick(ref.value),
+      label: ref.label ?? formatChartValue(ref.value, spec.valueFormat),
       color: ref.color ?? '#ef4444',
       dashed: ref.dashed !== false,
     }))
@@ -1736,10 +1770,20 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
 
   const maxLabel = spec.categories.reduce((m, c) => Math.max(m, c.length), 0)
   const xLabelRotated = spec.categories.length > 8 || maxLabel > 9
+  // Grouped (nested) category axis: valid only when the spans cover every leaf.
+  const validGroups =
+    spec.categoryGroups &&
+    spec.categoryGroups.length > 0 &&
+    spec.xType !== 'time' &&
+    spec.orientation !== 'horizontal' &&
+    spec.categoryGroups.reduce((a, g) => a + g.span, 0) === spec.categories.length
+      ? spec.categoryGroups
+      : null
+  const groupTierH = validGroups ? 18 : 0
   const padL = 48 + (spec.yAxisTitle ? 16 : 0)
   const padR = (hasRightAxis ? 48 : 12) + (spec.y2AxisTitle ? 16 : 0)
   const padT = 10
-  const padB = (xLabelRotated ? 54 : 28) + (spec.xAxisTitle ? 16 : 0)
+  const padB = (xLabelRotated ? 54 : 28) + (spec.xAxisTitle ? 16 : 0) + groupTierH
   const plotW = Math.max(1, width - padL - padR)
   const plotH = Math.max(1, height - padT - padB)
   const plot = { x: padL, y: padT, w: plotW, h: plotH }
@@ -1789,6 +1833,18 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
         x: round(padL + ((t - tMin) / tSpan) * plotW),
       }))
     : spec.categories.map((label, i) => ({ label, x: xCenter(i) }))
+
+  // Parent-tier ticks for a grouped category axis: each spans its leaves.
+  const categoryGroupTicks: ChartGeometry['categoryGroupTicks'] = []
+  if (validGroups && !timeOk) {
+    let start = 0
+    for (const g of validGroups) {
+      const x0 = round(padL + slot * start)
+      const x1 = round(padL + slot * (start + g.span))
+      categoryGroupTicks.push({ label: g.label, x0, x1, xCenter: round((x0 + x1) / 2) })
+      start += g.span
+    }
+  }
 
   const barSeries = series.filter((s) => s.kind === 'bar')
   const bars: ChartBar[] = []
@@ -1992,7 +2048,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
   }
 
   const tickFor = (dom: NiceScale, log: boolean): ChartAxisTick[] =>
-    dom.ticks.map((value) => ({ value, y: yOf(dom, value, log), label: fmtTick(value) }))
+    dom.ticks.map((value) => ({ value, y: yOf(dom, value, log), label: formatChartValue(value, spec.valueFormat) }))
 
   const referenceLines: ChartRefLineGeo[] = (spec.referenceLines ?? []).map((ref) => {
     const onRight = ref.axis === 'right'
@@ -2000,7 +2056,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     const log = onRight ? rightLog : leftLog
     return {
       y: yOf(dom, ref.value, log),
-      label: ref.label ?? fmtTick(ref.value),
+      label: ref.label ?? formatChartValue(ref.value, spec.valueFormat),
       color: ref.color ?? '#ef4444',
       dashed: ref.dashed !== false,
     }
@@ -2081,6 +2137,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     y2Ticks: rightDom ? tickFor(rightDom, rightLog) : [],
     hasRightAxis,
     xTicks,
+    categoryGroupTicks,
     xLabelRotated: timeOk ? false : xLabelRotated,
     referenceLines,
     overlays,

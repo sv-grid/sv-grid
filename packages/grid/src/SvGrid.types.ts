@@ -10,6 +10,84 @@ import type {
 } from "./index";
 import type { ConditionalFormat } from "./conditional-formatting";
 import type { MenuItem } from "./SvMenuList.svelte";
+import type {
+  ChartType,
+  ChartSpec,
+  ChartAnnotation,
+  ChartReferenceLine,
+} from "./chart";
+
+/** One aggregated bucket returned by a server-side `getAggregate`. */
+export type ChartAggregateBucket = { category: string; series?: string; value: number };
+/** The request a server-side `getAggregate` receives (whole-dataset charting). */
+export type ChartAggregateRequest = {
+  dimension: string | undefined;
+  measure: string | null;
+  series?: string;
+  reduce: "sum" | "avg" | "count";
+  filterModel: Record<string, unknown>;
+};
+
+/**
+ * Config for the built-in `charting` prop. All fields optional and additive;
+ * `charting={true}` is the zero-config form. Column references are column
+ * field names / ids.
+ */
+export type ChartingConfig<TData extends RowData = RowData> = {
+  /** Right-side drawer (default) or bottom dock. */
+  position?: "bottom" | "right";
+  /** Open the panel on first render. */
+  defaultOpen?: boolean;
+  /** Initial chart type. */
+  defaultType?: ChartType;
+  /** Docked-bottom height (px). */
+  height?: number;
+  /** Drawer width (px). */
+  width?: number;
+  /** Clicking a chart category filters the grid on the charted dimension. */
+  crossFilter?: boolean;
+  /** Group-by column. */
+  dimension?: string;
+  /** Split-by column: one series per distinct value. */
+  series?: string;
+  /** Measure column, or several for a multi-series chart. */
+  measures?: string | string[];
+  reduce?: "sum" | "avg" | "count";
+  stacked?: boolean;
+  stacked100?: boolean;
+  /** Per-series-label type override (combo). */
+  seriesTypes?: Record<string, "bar" | "line" | "area">;
+  /** Per-series-label axis override (dual axis). */
+  seriesAxes?: Record<string, "left" | "right">;
+  referenceLines?: ChartReferenceLine[];
+  averageLine?: boolean;
+  trend?: "sma" | "ema" | "linear";
+  annotations?: ChartAnnotation[];
+  yScale?: "linear" | "log";
+  timeAxis?: boolean;
+  valueFormat?: "number" | "currency" | "percent" | "compact";
+  smooth?: boolean;
+  orientation?: "vertical" | "horizontal";
+  donut?: number | boolean;
+  palette?: string[];
+  patternFallback?: boolean;
+  topN?: number;
+  otherLabel?: string;
+  sort?: "value-desc" | "value-asc" | "category" | "none";
+  dataLabels?: boolean;
+  zoom?: boolean;
+  brush?: boolean;
+  /** Show the chart's PNG/SVG export toolbar. */
+  export?: boolean;
+  /** Escape hatch: build a fully custom ChartSpec from the (scoped) rows. */
+  buildSpec?: (rows: TData[]) => ChartSpec | null;
+  /** Server-side aggregation: chart the whole dataset, not just loaded rows. */
+  getAggregate?: (
+    request: ChartAggregateRequest,
+  ) => Promise<ReadonlyArray<ChartAggregateBucket>>;
+  /** Bump to force a server-side refetch. */
+  refreshKey?: unknown;
+};
 
 /**
  * The built-in card detail drawer. Set `board.drawer` (`true` for all fields,
@@ -578,6 +656,11 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * grid; the panel docks on the right edge.
    */
   toolPanel?: boolean;
+  /**
+   * Integrated charting: `true` for the zero-config docked chart panel, or a
+   * {@link ChartingConfig} object to author defaults + advanced options.
+   */
+  charting?: boolean | ChartingConfig<TData>;
   /**
    * Render the header column menu (⋮) as a tabbed popover - **General**,
    * **Filter**, and **Columns** tabs (the AG-Grid layout). Defaults to `false`,

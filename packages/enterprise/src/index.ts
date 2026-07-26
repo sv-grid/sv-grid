@@ -381,4 +381,12 @@ export {
   type AIAnomaly,
   type AIAnomalyOptions,
   type AIAnomalyResult,
+  // Natural-language chart ("chart this")
+  aiChart,
+  enableAiCharting,
+  disableAiCharting,
+  type AIChartOptions,
+  type AIChartPlan,
+  type AIChartType,
 } from './ai'
+export { pivotToChartSpec, type PivotChartOptions } from './pivot-chart'

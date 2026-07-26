@@ -1,5 +1,6 @@
 ﻿import type { CellFormatConfig, ColumnDef, RowData, SvGridOptions, TableFeatures } from './core'
 import type { GridExportOptions, GridClipboardOptions } from './export-format'
+import type { ChartSpec, ChartType } from './chart'
 
 export type SvGridFilterOperator =
   | 'contains'
@@ -33,6 +34,32 @@ export type SvGridViewState = {
   >
   /** Facet (Excel-style value checklist) selections, keyed by column id. */
   facetFilters: Record<string, string[]>
+  /** Built-in chart panel state (present only when `charting` is on): the
+   *  ACTIVE chart, for back-compat + spread-and-tweak. */
+  chart?: {
+    open: boolean
+    type: ChartType
+    dimension: string | null
+    series: string | null
+    measure: string | null
+    reduce: 'sum' | 'avg' | 'count'
+    stacked: boolean
+  }
+  /** All charts in the tab strip (multi-chart), plus the active index. */
+  charts?: Array<{
+    title: string
+    type: ChartType
+    dimension: string | null
+    series: string | null
+    measure: string | null
+    reduce: 'sum' | 'avg' | 'count'
+    stacked: boolean | null
+    dataLabels: boolean | null
+    logScale: boolean | null
+    timeAxis: boolean | null
+    valueFormat: 'number' | 'currency' | 'percent' | 'compact' | null
+  }>
+  chartActive?: number
 }
 
 /**
@@ -93,6 +120,41 @@ export type SvGridApi<
    * `selectCells` accepts. Empty array when no range is active.
    */
   getSelected(): Array<[number, number, number, number]>
+
+  // ----- Integrated charting (requires the `charting` prop) -----
+  /** Open the built-in chart panel. */
+  openChart(): void
+  /** Close the built-in chart panel. */
+  closeChart(): void
+  /** The live chart spec the panel is rendering, or `null`. */
+  getChartSpec(): ChartSpec | null
+  /** Select cell rectangles + open the chart panel (scopes to the range). */
+  chartRange(ranges?: ReadonlyArray<readonly [number, number, number, number]>): void
+  /**
+   * Configure the built-in chart panel's ACTIVE chart. Column references
+   * accept a column id OR field name. Opens the panel unless `open === false`.
+   */
+  configureChart(config: {
+    open?: boolean
+    type?: ChartType
+    dimension?: string | null
+    series?: string | null
+    measure?: string | null
+    reduce?: 'sum' | 'avg' | 'count'
+    stacked?: boolean
+    dataLabels?: boolean
+    logScale?: boolean
+    timeAxis?: boolean
+    valueFormat?: 'number' | 'currency' | 'percent' | 'compact'
+  }): void
+  /**
+   * Register a natural-language "chart this" handler. When set, the chart
+   * panel shows an AI button. `@svgrid/enterprise`'s `enableAiCharting(api)`
+   * fills this. Pass `null` to remove it.
+   */
+  setChartAiHandler(
+    handler: ((prompt: string) => Promise<Record<string, unknown> | null>) | null,
+  ): void
 
   // ----- Rows -----
   /** Add one row. `position` defaults to `'bottom'`. */
