@@ -239,6 +239,25 @@ export function createGridApi<
             [r.minRow, r.minCol, r.maxRow, r.maxCol] as [number, number, number, number],
           );
       },
+      openChart() {
+        ctx.chartPanelOpen = true;
+      },
+      closeChart() {
+        ctx.chartPanelOpen = false;
+      },
+      getChartSpec() {
+        return ctx.chartSpec;
+      },
+      chartRange(ranges) {
+        if (ranges && ranges.length) this.selectCells(ranges);
+        ctx.chartPanelOpen = true;
+      },
+      configureChart(config) {
+        if (ctx.chartingEnabled) ctx.applyChartConfig(config);
+      },
+      setChartAiHandler(handler) {
+        ctx.chartAiHandler = handler ?? null;
+      },
       addRow(row, position = "bottom") {
         this.addRows([row], position);
       },
@@ -752,6 +771,21 @@ export function createGridApi<
               Array.from(set),
             ]),
           ),
+          ...(ctx.chartingEnabled
+            ? {
+                chart: {
+                  open: ctx.chartPanelOpen,
+                  type: ctx.chartType,
+                  dimension: ctx.chartDimensionId,
+                  series: ctx.chartSeriesId,
+                  measure: ctx.chartMeasureId,
+                  reduce: ctx.chartReduce,
+                  stacked: ctx.chartStacked,
+                },
+                charts: ctx.getChartsState(),
+                chartActive: ctx.activeChartIndex,
+              }
+            : {}),
         };
       },
       setState(state) {
@@ -784,6 +818,21 @@ export function createGridApi<
           for (const [k, arr] of Object.entries(state.facetFilters))
             next[k] = new Set(arr);
           ctx.valueFilters = next;
+        }
+        if ((state.chart || state.charts) && ctx.chartingEnabled) {
+          if (Array.isArray(state.charts) && state.charts.length) {
+            ctx.applyChartsState(state.charts, state.chartActive);
+          }
+          if (state.chart) {
+            const c = state.chart;
+            ctx.chartPanelOpen = c.open;
+            ctx.chartType = c.type;
+            ctx.chartDimensionId = c.dimension;
+            ctx.chartSeriesId = c.series;
+            ctx.chartMeasureId = c.measure;
+            ctx.chartReduce = c.reduce;
+            ctx.chartStacked = c.stacked;
+          }
         }
       },
       refresh() {

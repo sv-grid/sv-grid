@@ -249,6 +249,7 @@
 {#snippet treeRow(item)}
   {@const cs = checkable ? tree.checkStateOf(item.node) : 'unchecked'}
   {@const isLoading = loadingIds.has(item.node.id)}
+  {@const rowProps = tree.itemProps(item)}
   <div
     class="sv-tree__row"
     class:is-selected={item.node.id === selected}
@@ -267,8 +268,11 @@
     ondrop={reorderable ? (e) => onRowDrop(e, item.node) : undefined}
     ondragend={reorderable ? endDrag : undefined}
     ondblclick={editable ? () => startEdit(item.node) : undefined}
-    onkeydown={editable ? (e) => { if (e.key === 'F2') { e.preventDefault(); startEdit(item.node) } } : undefined}
-    {...tree.itemProps(item)}
+    {...rowProps}
+    onkeydown={(e) => {
+      rowProps.onkeydown(e)
+      if (editable && e.key === 'F2') { e.preventDefault(); startEdit(item.node) }
+    }}
   >
     <button
       type="button"
@@ -277,7 +281,7 @@
       class:is-leaf={!item.hasChildren}
       class:is-loading={isLoading}
       tabindex="-1"
-      aria-hidden={!item.hasChildren}
+      aria-hidden="true"
       onclick={(e) => { e.stopPropagation(); tree.toggleExpand(item.node) }}
     >
       {#if isLoading}

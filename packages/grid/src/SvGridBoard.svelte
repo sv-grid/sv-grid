@@ -656,19 +656,43 @@
     if (dragLaneId == null) return;
     e.preventDefault();
     const ids = lanes.map((l) => l.id);
-    const from = ids.indexOf(dragLaneId);
     const to = ids.indexOf(laneId);
-    if (from > -1 && to > -1 && from !== to) {
-      ids.splice(to, 0, ids.splice(from, 1)[0]!);
-      laneOrder = ids;
-      board.onLaneReorder?.(ids);
-    }
+    if (to > -1) reorderLaneTo(dragLaneId, to);
     dragLaneId = null;
     overLaneId = null;
   }
   function onLaneHeaderDragEnd() {
     dragLaneId = null;
     overLaneId = null;
+  }
+
+  // Shared by mouse drag-drop (above) and keyboard reorder (below): moves
+  // `fromId` to `toIndex` in the lane order, persists it, and notifies.
+  // Returns the new ordered ids, or null if the move was a no-op / invalid.
+  function reorderLaneTo(fromId: string, toIndex: number): string[] | null {
+    const ids = lanes.map((l) => l.id);
+    const from = ids.indexOf(fromId);
+    if (from < 0 || toIndex < 0 || toIndex >= ids.length || from === toIndex) return null;
+    ids.splice(toIndex, 0, ids.splice(from, 1)[0]!);
+    laneOrder = ids;
+    board.onLaneReorder?.(ids);
+    return ids;
+  }
+  // Keyboard lane reorder: Ctrl/Cmd+ArrowLeft/Right shifts the focused lane
+  // header by one position, mirroring the drag-reorder above.
+  function onLaneHeaderKeydown(e: KeyboardEvent, laneId: string) {
+    if (!board.reorderableLanes) return;
+    if ((e.key !== "ArrowLeft" && e.key !== "ArrowRight") || !(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const ids = lanes.map((l) => l.id);
+    const from = ids.indexOf(laneId);
+    if (from < 0) return;
+    const to = from + (e.key === "ArrowRight" ? 1 : -1);
+    const moved = reorderLaneTo(laneId, to);
+    if (moved) {
+      const pos = moved.indexOf(laneId) + 1;
+      announce(`Moved ${laneTitleById(laneId)} to position ${pos} of ${moved.length}.`);
+    }
   }
 
   // Runtime group-by change: the position overlay (laneOf/orderOf/laneOrder) is
@@ -872,6 +896,19 @@
     if (e.key === "F2" && (editable || board.onCardEdit || board.drawer)) {
       e.preventDefault();
       openEditor(row);
+      return;
+    }
+    // Keyboard multi-select: Ctrl/Cmd+Space toggles this card's selection,
+    // mirroring onCardClick's ctrl/meta-click branch. Kept on a modifier so it
+    // never collides with plain Space, which grabs the card for a move.
+    if (board.selectable && e.key === " " && (e.ctrlKey || e.metaKey) && grabbed == null) {
+      e.preventDefault();
+      const k = key(row);
+      selected[k] = !selected[k];
+      emitSelection();
+      announce(
+        `${selected[k] ? "Selected" : "Deselected"} ${cardLabel(row)}. ${selectedRows().length} selected.`,
+      );
       return;
     }
     if (e.key === " " || e.key === "Enter") {
@@ -1214,10 +1251,15 @@
       class:is-reorderable={board.reorderableLanes}
       class:is-lane-dropover={overLaneId === lane.id && dragLaneId !== lane.id}
       draggable={board.reorderableLanes ? true : undefined}
+      tabindex={board.reorderableLanes ? 0 : undefined}
+      role={board.reorderableLanes ? "group" : undefined}
+      aria-roledescription={board.reorderableLanes ? "Reorderable lane" : undefined}
+      title={board.reorderableLanes ? "Ctrl+Left/Right arrow to reorder this lane" : undefined}
       ondragstart={board.reorderableLanes ? (e) => onLaneHeaderDragStart(e, lane.id) : undefined}
       ondragover={board.reorderableLanes ? (e) => onLaneHeaderDragOver(e, lane.id) : undefined}
       ondrop={board.reorderableLanes ? (e) => onLaneHeaderDrop(e, lane.id) : undefined}
       ondragend={board.reorderableLanes ? onLaneHeaderDragEnd : undefined}
+      onkeydown={board.reorderableLanes ? (e) => onLaneHeaderKeydown(e, lane.id) : undefined}
       oncontextmenu={board.laneMenu ? (e) => openLaneMenu(e, lane.id, cards) : undefined}
     >
       {#if board.collapsibleLanes}
@@ -1241,14 +1283,21 @@
           }}
           onblur={() => commitRename(lane.id)}
         />
+      {:else if board.onLaneRename}
+        <button
+          type="button"
+          class="sv-board-lane-title is-renamable"
+          ondblclick={() => startRename(lane)}
+          onkeydown={(e) => {
+            if (e.key === "Enter" || e.key === "F2") {
+              e.preventDefault();
+              startRename(lane);
+            }
+          }}
+          title="Double-click, Enter, or F2 to rename"
+        >{laneTitle(lane)}</button>
       {:else}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <span
-          class="sv-board-lane-title"
-          class:is-renamable={board.onLaneRename}
-          ondblclick={board.onLaneRename ? () => startRename(lane) : undefined}
-          title={board.onLaneRename ? "Double-click to rename" : undefined}
-        >{laneTitle(lane)}</span>
+        <span class="sv-board-lane-title">{laneTitle(lane)}</span>
       {/if}
       <span
         class="sv-board-lane-count"
@@ -1630,7 +1679,16 @@
     color: color-mix(in srgb, var(--sg-fg, #101828) 60%, transparent);
   }
   .sv-board-lane-title.is-renamable {
+    all: unset;
     cursor: text;
+    font-weight: 600;
+    font-size: 0.82rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
   }
   .sv-board-lane-rename {
     flex: 1 1 auto;

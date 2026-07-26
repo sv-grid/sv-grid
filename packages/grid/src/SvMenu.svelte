@@ -18,6 +18,8 @@
   import type { Snippet } from 'svelte'
   import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
   import { createDismissableLayer } from './a11y/dismissable'
+  import { getFocusable } from './a11y/focus-trap'
+  import { type EditorDir } from './editor-contract'
   import SvMenuList, { type MenuItem } from './SvMenuList.svelte'
 
   let {
@@ -27,6 +29,7 @@
     onSelect,
     ariaLabel,
     anchor,
+    dir,
   }: {
     items: ReadonlyArray<MenuItem>
     open?: boolean
@@ -34,7 +37,11 @@
     onSelect?: (item: MenuItem) => void
     ariaLabel?: string
     anchor?: Snippet
+    /** Text direction (rtl mirrors the submenu chevron + flips ArrowLeft/Right). */
+    dir?: EditorDir
   } = $props()
+
+  const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
 
   let anchorEl = $state<HTMLSpanElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
@@ -45,6 +52,13 @@
   function updatePos() {
     if (!anchorEl) return
     rect = anchoredRect(anchorEl.getBoundingClientRect(), { estimatedHeight: Math.min(items.length, 10) * 34 + 8, minWidth: 180 })
+  }
+  /** Return focus to the trigger. Every dismissal path (Escape, item selection,
+   *  outside-click, Tab) funnels through the effect cleanup below, so this
+   *  fires uniformly instead of dropping focus to <body> on close. */
+  function focusTrigger() {
+    if (!anchorEl) return
+    ;(getFocusable(anchorEl)[0] ?? anchorEl)?.focus?.()
   }
 
   $effect(() => {
@@ -66,12 +80,20 @@
       window.removeEventListener('scroll', rp, true)
       window.removeEventListener('resize', rp)
       layer.release()
+      // Only on an actual close (not a mid-open rerun from e.g. `items` changing).
+      if (!open) focusTrigger()
     }
   })
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-<span bind:this={anchorEl} class="sv-menu__anchor" onclick={toggle}>
+<span
+  bind:this={anchorEl}
+  class="sv-menu__anchor"
+  aria-haspopup="menu"
+  aria-expanded={open}
+  onclick={toggle}
+>
   {@render anchor?.()}
 </span>
 
@@ -84,9 +106,10 @@
     style:position="fixed"
     style:top={`${rect.top}px`}
     style:left={`${rect.left}px`}
+    dir={resolvedDir}
     aria-label={ariaLabel}
   >
-    <SvMenuList {items} onclose={() => setOpen(false)} onselect={(i) => onSelect?.(i)} />
+    <SvMenuList {items} onclose={() => setOpen(false)} onselect={(i) => onSelect?.(i)} dir={resolvedDir} />
   </div>
 {/if}
 

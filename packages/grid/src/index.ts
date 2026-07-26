@@ -286,8 +286,11 @@ export {
 export { default as FlexRender } from './FlexRender.svelte'
 export { renderComponent, renderSnippet } from './render-component'
 export { default as SvGridChart } from './SvGridChart.svelte'
+export { default as SvGridChartPanel } from './SvGridChartPanel.svelte'
+export type { ChartingConfig, ChartAggregateRequest, ChartAggregateBucket } from './SvGrid.types'
 export {
   buildChart,
+  formatChartValue,
   rowsToChartSpec,
   niceScale,
   niceLogScale,
@@ -326,6 +329,7 @@ export {
   type ChartGaugeLayout,
   type ChartSankeyNode,
   type ChartSankeyLink,
+  type ChartValueFormat,
   type TreeNode,
 } from './chart'
 export {
@@ -333,6 +337,8 @@ export {
   downloadChartSvg,
   chartToPngBlob,
   downloadChartPng,
+  chartSpecToCsv,
+  downloadChartCsv,
   type ChartExportOptions,
 } from './chart-export'
 export {

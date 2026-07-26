@@ -37,4 +37,26 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
 // these for visual layout (column widths, virtualization windowing), so the
 // zeros are harmless for behavioral tests.
 
+// jsdom lacks the Web Animations API that Svelte 5 transitions (e.g. the chart
+// drawer's slide-in) drive via element.animate(). Provide a no-op so mounting
+// transitioned components doesn't throw "element.animate is not a function".
+if (typeof Element !== 'undefined' && !Element.prototype.animate) {
+  ;(Element.prototype as any).animate = function () {
+    return {
+      cancel() {},
+      finish() {},
+      play() {},
+      pause() {},
+      reverse() {},
+      addEventListener() {},
+      removeEventListener() {},
+      finished: Promise.resolve(),
+      currentTime: 0,
+      playState: 'finished',
+      onfinish: null,
+      oncancel: null,
+    }
+  }
+}
+
 export {}

@@ -77,6 +77,7 @@
     if (ch) focusCell(i + 1)
   }
   function onCellKeydown(i: number, e: KeyboardEvent) {
+    const rtl = dir === 'rtl'
     if (e.key === 'Backspace') {
       e.preventDefault()
       const arr = currentCells()
@@ -90,10 +91,10 @@
       }
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault()
-      focusCell(i - 1)
+      focusCell(rtl ? i + 1 : i - 1)
     } else if (e.key === 'ArrowRight') {
       e.preventDefault()
-      focusCell(i + 1)
+      focusCell(rtl ? i - 1 : i + 1)
     }
   }
   function onPaste(i: number, e: ClipboardEvent) {

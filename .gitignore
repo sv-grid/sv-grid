@@ -24,6 +24,9 @@ build/
 vite.config.*.timestamp-*
 vite.config.*.timestamp_*
 
+# Automated tweet scratch output (rendered card / preview media)
+.tweet-out/
+
 # Env files (keep the documented examples)
 .env
 .env.*

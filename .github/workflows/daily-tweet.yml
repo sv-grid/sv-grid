@@ -2,20 +2,19 @@ name: Daily tweet
 
 # Post one tweet per day to the @svgrid account. Each run picks the most timely
 # thing to promote (a recent npm release, the blog post that went live today, a
-# curated feature highlight, or an AI-generated original), renders a branded
-# card, and posts it via the X API. See tools/twitter/README.md for the full
-# design and the X developer-portal setup.
+# curated feature highlight, or an AI-generated original), attaches an image, and
+# posts it via the X API. The BLOG tweet uses the post's own hero image; other
+# types use a rendered branded card. See tools/twitter/README.md.
 #
 # Required repo secrets (posting):
 #   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET
-# Optional repo secrets:
-#   ANTHROPIC_API_KEY - enables AI-written hooks (templates are used without it).
-#   WEBSITE_TOKEN     - PAT to read the private website for the blog check.
-# Optional repo variables:
-#   TWEET_MODEL       - model id for AI copy (default: claude-sonnet-4-6).
+# Optional:
+#   ANTHROPIC_API_KEY - AI-written hooks (templates used without it)
+#   WEBSITE_TOKEN     - PAT to read the private website (blog check + blog images)
+#   vars.TWEET_MODEL  - model id for AI copy (default claude-sonnet-4-6)
 #
-# 07:40 UTC: after the website rebuild (deploy-website.yml, 07:12) so the blog
-# post whose date is today is already live when we link to it.
+# 07:40 UTC: after the website rebuild (deploy-website.yml, 07:12) so today's
+# blog post and its /blog-media image are present when we link to and post them.
 
 on:
   workflow_dispatch:
@@ -45,15 +44,14 @@ concurrency:
 jobs:
   tweet:
     runs-on: ubuntu-latest
-    # Bound the run so a hung API call can't hold the concurrency lock.
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
 
-      # The blog lives in the PRIVATE website submodule. Clone it so the blog
-      # check can see today's post. If WEBSITE_TOKEN is absent the step is
-      # skipped and the selector simply falls back past the blog type.
-      - name: Check out the private website (for the blog check)
+      # The blog + its /blog-media images live in the PRIVATE website submodule.
+      # Clone it so the blog check can see today's post and its hero image. If
+      # WEBSITE_TOKEN is absent the selector simply falls back past 'blog'.
+      - name: Check out the private website
         env:
           WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
         run: |
@@ -81,8 +79,6 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Post tweet
-        # Scheduled runs always post. Manual runs post only when the `post`
-        # input is checked, so you can dry-run from the Actions tab first.
         run: node tools/post-tweet.mjs ${{ inputs.verify && '--verify' || ((github.event_name == 'schedule' || inputs.post) && '--post' || '') }}
         env:
           X_API_KEY: ${{ secrets.X_API_KEY }}
@@ -93,10 +89,10 @@ jobs:
           TWEET_MODEL: ${{ vars.TWEET_MODEL }}
           TWEET_FORCE: ${{ inputs.force }}
 
-      - name: Upload rendered card
+      - name: Upload media preview
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tweet-card
-          path: .tweet-out/card.png
+          name: tweet-media
+          path: .tweet-out/*
           if-no-files-found: ignore

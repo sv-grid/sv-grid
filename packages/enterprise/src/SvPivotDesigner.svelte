@@ -21,13 +21,16 @@
    */
   import {
     SvGrid,
+    SvGridChart,
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
+    type ChartType,
   } from '@svgrid/grid'
   import { createPivotModel, filterCollapsedPivotRows, type PivotRow, type PivotAggregatorId } from './pivot'
+  import { pivotToChartSpec } from './pivot-chart'
   import {
     ALL_AGGREGATORS, AGG_LABEL, EMPTY_LAYOUT, defaultLayoutFor,
     type PivotField, type PivotLayout, type PivotPreset, type Well,
@@ -79,6 +82,10 @@
     /** Click handler forwarded to the embedded SvGrid - typically used
      *  to drive a drill-through side panel. */
     onCellClick?: (ctx: { columnId: string; row: PivotRow; value: unknown }) => void
+    /** Offer a Table <-> Chart view toggle (same layout as a live chart). Default true. */
+    chartable?: boolean
+    /** Which view to show first when `chartable`. Default 'table'. */
+    defaultView?: 'table' | 'chart'
   }
   let {
     data,
@@ -97,6 +104,8 @@
     expandable = false,
     decorateColumns,
     onCellClick,
+    chartable = true,
+    defaultView = 'table',
   }: Props = $props()
 
   // Default the layout once on mount if the consumer passed nothing
@@ -180,6 +189,10 @@
       next.filters.splice(Math.min(next.filters.length, index), 0, { field, allowed: null })
     }
     emit(next)
+    // A filter added with `allowed: null` passes every row, so dropping a field
+    // into Filters changes nothing until you pick values - auto-open the picker
+    // so the drop has an immediate, obvious effect.
+    if (well === 'filters') openMenu = { kind: 'filter', field }
   }
   function removeFromWell(field: string, well: Well, valueIndex?: number) {
     const next: PivotLayout = { ...layout }
@@ -322,6 +335,22 @@
   $effect(() => {
     if (pivot) onPivot?.(pivot.rows, pivot.columns)
   })
+
+  // ---- Table <-> Chart view (the same layout as a live pivot chart) ----
+  let view = $state<'table' | 'chart'>(defaultView === 'chart' && chartable ? 'chart' : 'table')
+  let chartType = $state<ChartType>('bar')
+  let chartStacked = $state(false)
+  const CHART_TYPES: Array<{ value: ChartType; label: string }> = [
+    { value: 'bar', label: 'Bar' },
+    { value: 'line', label: 'Line' },
+    { value: 'area', label: 'Area' },
+    { value: 'pie', label: 'Pie' },
+  ]
+  const chartSpec = $derived.by(() =>
+    pivot && chartable && view === 'chart'
+      ? pivotToChartSpec(pivot, { type: chartType, stacked: chartStacked })
+      : null,
+  )
 
   // ---- Expand / collapse (when `expandable` is on) ------------------
   // We hold a `collapsed` set of pivot row ids; descendants of a
@@ -476,6 +505,24 @@
       <label class="pvd-toggle">
         <input type="checkbox" checked={!layout.hideGrandTotals} onchange={toggleHideGrandTotals} /> Grand totals
       </label>
+      {#if chartable}
+        <div class="pvd-viewswitch" role="group" aria-label="View">
+          <button type="button" class="pvd-view-btn" class:is-active={view === 'table'} onclick={() => (view = 'table')}>Table</button>
+          <button type="button" class="pvd-view-btn" class:is-active={view === 'chart'} onclick={() => (view = 'chart')}>Chart</button>
+        </div>
+        {#if view === 'chart'}
+          <label class="pvd-toggle">
+            <select class="pvd-select" value={chartType} onchange={(e) => (chartType = e.currentTarget.value as ChartType)}>
+              {#each CHART_TYPES as t (t.value)}<option value={t.value}>{t.label}</option>{/each}
+            </select>
+          </label>
+          {#if chartType !== 'pie'}
+            <label class="pvd-toggle">
+              <input type="checkbox" checked={chartStacked} onchange={(e) => (chartStacked = e.currentTarget.checked)} /> Stacked
+            </label>
+          {/if}
+        {/if}
+      {/if}
       <div class="pvd-spacer"></div>
       {#if onExport && pivot}
         <button type="button" class="pvd-btn pvd-btn-primary" onclick={() => onExport!(layout, pivot!.rows)}>Export…</button>
@@ -533,8 +580,8 @@
               {#each layout.filters as f (f.field)}
                 {@const fd = fieldsByName.get(f.field)}
                 <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, f.field, 'filters')}>
-                  <button type="button" class="pvd-chip-label" onclick={() => toggleFilterMenu(f.field)}>
-                    {fd?.label ?? f.field}{f.allowed ? ` (${f.allowed.length})` : ''}
+                  <button type="button" class="pvd-chip-label" title="Choose which values pass" onclick={() => toggleFilterMenu(f.field)}>
+                    {fd?.label ?? f.field}{f.allowed ? `: ${f.allowed.length}` : ''} <span class="pvd-chip-caret">▾</span>
                   </button>
                   <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(f.field, 'filters')} aria-label="Remove">×</button>
                   {#if openMenu?.kind === 'filter' && openMenu?.field === f.field}
@@ -645,7 +692,13 @@
 
       {#if embedGrid}
         <div class="pvd-grid" style={`height:${typeof gridHeight === 'number' ? gridHeight + 'px' : gridHeight}`}>
-          {#if pivot}
+          {#if pivot && chartable && view === 'chart'}
+            {#if chartSpec && chartSpec.series.length}
+              <div class="pvd-chart"><SvGridChart spec={chartSpec} interactive legend /></div>
+            {:else}
+              <div class="pvd-empty pvd-grid-empty">Add a measure and a row / column field to chart the pivot.</div>
+            {/if}
+          {:else if pivot}
             <SvGrid
               data={visibleRows}
               columns={finalColumns}
@@ -1042,4 +1095,16 @@
     }
     .pvd-wells, .pvd-wells.two { grid-template-columns: repeat(2, 1fr); }
   }
+  .pvd-chip-caret { font-size: 9px; color: var(--sg-muted, #94a3b8); }
+  .pvd-select {
+    font: inherit; font-size: 12px; color: var(--sg-fg);
+    background: var(--sg-input-bg, var(--sg-bg, #fff));
+    border: 1px solid var(--sg-input-border, var(--sg-border, #e2e8f0));
+    border-radius: var(--sg-radius, 6px); padding: 3px 6px;
+  }
+  .pvd-viewswitch { display: inline-flex; border: 1px solid var(--sg-border, #e2e8f0); border-radius: var(--sg-radius, 6px); overflow: hidden; }
+  .pvd-view-btn { font: inherit; font-size: 12px; padding: 3px 12px; border: 0; background: var(--sg-bg, #fff); color: var(--sg-muted, #64748b); cursor: pointer; }
+  .pvd-view-btn.is-active { background: var(--sg-accent, #2563eb); color: #fff; }
+  .pvd-chart { width: 100%; height: 100%; padding: 8px 10px; box-sizing: border-box; overflow: hidden; display: flex; }
+  .pvd-chart > :global(.sv-grid-chart) { width: 100%; }
 </style>

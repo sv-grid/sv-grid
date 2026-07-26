@@ -60,6 +60,7 @@ export {
   blockPalette,
   addBlock,
   addBlockAt,
+  addComponentBlock,
   removeBlock,
   duplicateBlock,
   moveBlock,
@@ -69,6 +70,9 @@ export {
   removeEntity,
   updateEntity,
   addScreen,
+  addFreestandingScreen,
+  addScreenAction,
+  removeScreenAction,
   removeScreen,
   updateScreen,
   duplicateScreen,
@@ -116,6 +120,8 @@ export {
   type RowLink,
   type RowAction,
   type RowActionKind,
+  type ActionConfig,
+  type ComponentConfig,
   type FormatOp,
   type FormatRule,
   type GridEditing,
@@ -167,6 +173,13 @@ export {
   type VerifyIssue,
   type VerifySeverity,
 } from './verify.js'
+export {
+  UI_COMPONENT_REGISTRY,
+  uiComponentSpec,
+  type UiPropType,
+  type UiComponentProp,
+  type UiComponentSpec,
+} from './ui-components.js'
 export {
   runStudioAdd,
   runStudioAddApp,

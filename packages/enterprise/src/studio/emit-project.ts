@@ -11,8 +11,9 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { Block, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
+import type { ActionConfig, Block, ComponentConfig, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
 import { blockColumns, entityDataSource, flattenBlocks, serializeProject } from './project.js'
+import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
 import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, relationDisplayFields, type NavItem } from './emit-schema.js'
@@ -290,10 +291,37 @@ ${panels}
     }
     case 'lookup':
       return `    <div ${span}><!-- lookup (${cfg.field}): shown in the edit form --></div>`
+    case 'component':
+      return componentBlockMarkup(block, cfg)
     case 'form':
     default:
       return '' // the form is the edit modal, rendered after the screen grid
   }
+}
+
+/** Emits a UI-kit component block (see `UI_COMPONENT_REGISTRY`): a literal
+ *  `<SvXxx .../>` tag carrying its configured "chrome" props + optional text
+ *  content. Entity-agnostic - used both from `blockMarkup` (mixed onto an
+ *  entity-bound screen) and directly from `freestandingScreenPage`. String/select/
+ *  color values go through `jsStr` so free-typed text (quotes, braces, HTML) can
+ *  never break out of the attribute or the surrounding markup. */
+function componentBlockMarkup(block: Block, cfg: ComponentConfig): string {
+  const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
+  const spec = uiComponentSpec(cfg.component)
+  if (!spec) return `    <div ${span}><!-- unknown component "${cfg.component}" --></div>`
+  const attrs: string[] = []
+  for (const p of spec.props) {
+    const v = cfg.props[p.key] ?? p.default
+    if (v == null || v === '') continue
+    if (p.type === 'boolean') { if (v) attrs.push(p.key) }
+    else if (p.type === 'number') attrs.push(`${p.key}={${Number(v)}}`)
+    else attrs.push(`${p.key}={${jsStr(String(v))}}`)
+  }
+  const openTag = `<${spec.importName}${attrs.length ? ' ' + attrs.join(' ') : ''}`
+  const inner = spec.hasContent ? `>{${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}}</${spec.importName}>` : ' />'
+  return `    <div ${span}>
+      ${openTag}${inner}
+    </div>`
 }
 
 // --- new-block helpers ------------------------------------------------------
@@ -414,7 +442,7 @@ ${controls}
 }
 /** A `{#snippet}` rendering a grid row's action buttons (edit / delete / navigate).
  *  Buttons are unrolled statically; RBAC gates edit/delete when `gate` is set. */
-function rowActionsSnippet(idSafe: string, typeName: string, entity: EntitySchema, actions: RowAction[], routeById: Map<string, string>, gate: boolean): string {
+function rowActionsSnippet(idSafe: string, typeName: string, entity: EntitySchema, actions: RowAction[], routeById: Map<string, string>, gate: boolean, screenId: string): string {
   const idField = entity.idField ?? entity.fields.find((f) => f.primaryKey)?.field ?? 'id'
   const rowId = `String((row as Record<string, unknown>)[${jsStr(idField)}] ?? '')`
   const buttons = actions.map((a) => {
@@ -425,6 +453,14 @@ function rowActionsSnippet(idSafe: string, typeName: string, entity: EntitySchem
     if (a.kind === 'delete') {
       const btn = `<button type="button" class="st-rowaction st-rowaction--danger" onclick={(e) => { e.stopPropagation(); controller.deleteRow(${rowId}) }}>${a.label ?? 'Delete'}</button>`
       return gate ? `{#if can($currentRole, 'delete')}${btn}{/if}` : btn
+    }
+    if (a.kind === 'custom') {
+      if (!a.id) return ''
+      const safe = actionIdSafe(a.id)
+      const call = `runAction_${safe}({ id: ${rowId} })`
+      const onclick = a.confirm ? `(e) => { e.stopPropagation(); if (confirm(${jsStr(a.confirm)})) ${call} }` : `(e) => { e.stopPropagation(); ${call} }`
+      const btn = `<button type="button" class="st-rowaction" disabled={actionBusy_${safe}} onclick={${onclick}}>${a.icon ? `${a.icon} ` : ''}${a.label ?? 'Run'}</button>`
+      return gate ? `{#if canScreen($currentRole, ${jsStr(screenId)})}${btn}{/if}` : btn
     }
     const route = a.screen && routeById.get(a.screen)
     if (!route) return ''
@@ -437,6 +473,80 @@ function rowActionsSnippet(idSafe: string, typeName: string, entity: EntitySchem
     ${buttons}
   </div>
 {/snippet}`
+}
+
+/** Sanitize a user action id into a valid JS identifier suffix. */
+const actionIdSafe = (id: string): string => id.replace(/[^a-zA-Z0-9_]/g, '_')
+
+/** `let <busy> = $state(false)` + `async function runAction_<id>(payload?)` for one
+ *  custom action - POSTs to its generated stub route, tracks a busy flag the button
+ *  binds to, surfaces a failure via `alert` (no toast/notification dependency
+ *  assumed - swap for the app's own if it has one). */
+function actionHandlerScript(a: ActionConfig): string {
+  const safe = actionIdSafe(a.id)
+  return `let actionBusy_${safe} = $state(false)
+  async function runAction_${safe}(payload?: Record<string, unknown>) {
+    actionBusy_${safe} = true
+    try {
+      const res = await fetch('/api/actions/${a.id}', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload ?? {}) })
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? 'Action failed')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Action failed')
+    } finally {
+      actionBusy_${safe} = false
+    }
+  }`
+}
+
+/** A toolbar action button - RBAC-gated by screen access (not a CRUD `can()`
+ *  check, since a custom action isn't inherently create/update/delete). */
+function actionToolbarButton(a: ActionConfig, screenId: string, gate: boolean): string {
+  const safe = actionIdSafe(a.id)
+  const onclick = a.confirm ? `() => { if (confirm(${jsStr(a.confirm)})) runAction_${safe}() }` : `() => runAction_${safe}()`
+  const btn = `<button type="button" class="st-btn" disabled={actionBusy_${safe}} onclick={${onclick}}>${a.icon ? `${a.icon} ` : ''}${a.label}</button>`
+  return gate ? `{#if canScreen($currentRole, ${jsStr(screenId)})}${btn}{/if}` : btn
+}
+
+/** The stub API route for one custom action: RBAC-gated by screen access (when
+ *  enabled), everything else left as a `// TODO` for the developer. This is the
+ *  file they actually edit - the button + client wiring around it is generated. */
+function actionRouteFile(a: ActionConfig, screenId: string, accessEnabled: boolean): GeneratedFile {
+  const accessImport = accessEnabled ? `\nimport { getServerRole, canScreen } from '$lib/access'` : ''
+  const guard = accessEnabled
+    ? `\n  if (!canScreen(getServerRole(event), ${jsStr(screenId)})) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 })\n`
+    : ''
+  return {
+    path: `src/routes/api/actions/${a.id}/+server.ts`,
+    description: `Stub route for the "${a.label}" action - fill in the actual logic.`,
+    contents: `${accessImport}
+export async function POST(event: { request: Request; locals?: Record<string, unknown> }) {${guard}
+  const body = await event.request.json().catch(() => ({})) as Record<string, unknown>
+  void body // the row id (row actions) or {} (toolbar actions) - use it to look up what to act on
+
+  // TODO: your business logic here.
+
+  return new Response(JSON.stringify({ ok: true }))
+}
+`,
+  }
+}
+
+/** All custom actions used by a screen - its own toolbar actions, plus any
+ *  `'custom'` row actions inside its grid blocks - deduped by id. Used both to
+ *  emit the client-side handler scripts on the page itself, and (once per
+ *  project, not per screen) to generate each action's stub API route. */
+function screenActionsOf(screen: Screen): ActionConfig[] {
+  const byId = new Map<string, ActionConfig>()
+  for (const a of screen.actions ?? []) byId.set(a.id, a)
+  for (const b of flattenBlocks(screen.blocks)) {
+    if (b.config.kind !== 'grid') continue
+    for (const a of b.config.rowActions ?? []) {
+      if (a.kind === 'custom' && a.id && !byId.has(a.id)) {
+        byId.set(a.id, { id: a.id, label: a.label ?? 'Run', icon: a.icon, confirm: a.confirm })
+      }
+    }
+  }
+  return [...byId.values()]
 }
 
 /** The record detail panel markup: an inline edit form (editable) or a read-only
@@ -475,6 +585,46 @@ ${rows}
   return `    <div ${span} class="st-record-card">
 ${inner}
     </div>`
+}
+
+/** A freestanding page - no bound entity, so no entity-bound `Block`; it can
+ *  still hold `'component'` blocks (UI-kit widgets, not data-bound). Renders a
+ *  title, an optional toolbar of custom actions, and those component blocks (or
+ *  a placeholder comment if it has none yet). */
+function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnabled: boolean): GeneratedFile {
+  const screenActions = screenActionsOf(screen)
+  const gatesActions = accessEnabled && screenActions.length > 0
+  const parts = screenActions.map((a) => actionHandlerScript(a))
+  const accessImport = gatesActions ? `import { currentRole, canScreen } from '$lib/access'\n  ` : ''
+  const i18nImport = i18nEnabled ? `import { t } from '$lib/i18n'\n  ` : ''
+  const title = i18nEnabled ? `{$t('screen.${screen.id}', ${JSON.stringify(screen.title)})}` : screen.title
+  const actionButtons = screenActions.map((a) => actionToolbarButton(a, screen.id, gatesActions)).join('\n  ')
+  const toolbar = screenActions.length > 0 ? `<div class="st__toolbar">\n  ${actionButtons}\n</div>\n\n` : ''
+
+  const componentImports = [...new Set(
+    screen.blocks
+      .filter((b): b is Block & { config: ComponentConfig } => b.config.kind === 'component')
+      .map((b) => uiComponentSpec(b.config.component)?.importName)
+      .filter((n): n is string => !!n),
+  )].sort()
+  const gridImport = componentImports.length ? `import { ${componentImports.join(', ')} } from '@svgrid/grid'\n  ` : ''
+  const content = screen.blocks.length
+    ? screen.blocks.map((b) => (b.config.kind === 'component' ? componentBlockMarkup(b, b.config) : '')).filter(Boolean).join('\n')
+    : '  <!-- Freestanding page - no entity bound. Add your own content here. -->'
+
+  return {
+    path: `src/routes/${screen.route}/+page.svelte`,
+    description: `${screen.title} screen (freestanding, no bound entity).`,
+    contents: `<script lang="ts">
+  ${gridImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}
+</script>
+
+<h1 class="st__title">${title}</h1>
+${toolbar}<div class="st-screen">
+${content}
+</div>
+`,
+  }
 }
 
 /** A self-contained screen page composing the screen's blocks. When `accessEnabled`
@@ -534,11 +684,16 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
 
   // --- imports ---
   const gridSpecs: string[] = []
-  if (needsController) gridSpecs.push('SvGrid', 'createServerDataSource', ...(hasRowActions ? ['renderSnippet'] : []), 'type ServerState')
+  if (needsController) gridSpecs.push('SvGrid', 'createServerDataSource', ...(hasRowActions ? ['renderSnippet', 'type CellContext'] : []), 'type ServerState')
   if (has(allBlocks, 'gauge')) gridSpecs.push('SvGauge')
   if (has(allBlocks, 'tree')) gridSpecs.push('SvTree')
   if (has(blocks, 'tabs')) gridSpecs.push('SvTabs')
-  const gridImports = gridSpecs.length ? `import { ${gridSpecs.join(', ')} } from '@svgrid/grid'\n  ` : ''
+  for (const b of allBlocks) {
+    if (b.config.kind !== 'component') continue
+    const importName = uiComponentSpec(b.config.component)?.importName
+    if (importName) gridSpecs.push(importName)
+  }
+  const gridImports = gridSpecs.length ? `import { ${[...new Set(gridSpecs)].join(', ')} } from '@svgrid/grid'\n  ` : ''
   const entImports: string[] = []
   if (hasGrid) entImports.push('schemaToColumns')
   if (wantsForm || (hasRecord && recordEditable)) entImports.push('SvGridEditPanel')
@@ -577,9 +732,12 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const filterableFieldNames = schema.fields.filter((f) => !f.primaryKey).map((f) => f.field)
   // RBAC gates the UI only where there's a create/update affordance to gate.
   const gatesUi = accessEnabled && (wantsForm || gridConfigs.some((c) => c.editing === 'inline') || hasRowActions)
+  const screenActions = screenActionsOf(screen)
+  const gatesActions = accessEnabled && screenActions.length > 0
 
   // --- script body ---
   const parts: string[] = []
+  for (const a of screenActions) parts.push(actionHandlerScript(a))
   if (needsController) {
     const urlFilter = applyUrlFilters
       ? `\n    const sp = $page.url.searchParams
@@ -603,8 +761,8 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
       const actions = (b.config.rowActions ?? []).filter((a) => a.kind !== 'edit' || wantsForm)
       if (actions.length) {
         // A synthetic action column (id, no field, cell renderer) - type-clean.
-        colValue = `[...(${colValue}), { id: '__actions', header: 'Actions', sortable: false, cell: (ctx) => renderSnippet(rowActions_${idSafe}, { row: ctx.row.original }) }]`
-        actionSnippets.push(rowActionsSnippet(idSafe, n.type, schema, actions, routeById, gatesUi))
+        colValue = `[...(${colValue}), { id: '__actions', header: 'Actions', sortable: false, cell: (ctx: CellContext<${n.type}>) => renderSnippet(rowActions_${idSafe}, { row: ctx.row.original }) }]`
+        actionSnippets.push(rowActionsSnippet(idSafe, n.type, schema, actions, routeById, gatesUi, screen.id))
       }
       const reactive = i18nEnabled || actions.length > 0
       parts.push(`const columns_${idSafe} = ${reactive ? `$derived(${colValue})` : colValue}`)
@@ -672,14 +830,19 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // --- markup ---
   const newLabel = i18nEnabled ? `{$t('new.${schema.name}', ${JSON.stringify('+ New ' + label)})}` : `+ New ${label}`
   const newBtn = `<button class="st-btn st-btn--primary" onclick={() => (editing = null)}>${newLabel}</button>`
-  const toolbar = wantsForm
-    ? `<div class="st__toolbar">\n  ${gatesUi ? `{#if can($currentRole, 'create')}${newBtn}{/if}` : newBtn}\n</div>\n\n`
+  const actionButtons = screenActions.map((a) => actionToolbarButton(a, screen.id, gatesActions)).join('\n  ')
+  const toolbar = (wantsForm || screenActions.length > 0)
+    ? `<div class="st__toolbar">\n  ${wantsForm ? (gatesUi ? `{#if can($currentRole, 'create')}${newBtn}{/if}` : newBtn) : ''}${actionButtons ? `\n  ${actionButtons}` : ''}\n</div>\n\n`
     : ''
   const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve })).filter(Boolean).join('\n')
   const modal = wantsForm
     ? `\n\n{#if editing !== undefined}\n  <SvGridEditPanel schema={${n.schemaVar}} row={editing}${relationFields.length ? ' {lookups}' : ''} presentation="${formPres}" persistKey="${screen.route}" onSubmit={save} onCancel={() => (editing = undefined)} />\n{/if}`
     : ''
-  const accessImport = gatesUi ? `import { currentRole, can } from '$lib/access'\n  ` : ''
+  // currentRole is needed for either a create/update UI gate or an action's
+  // screen-access gate; `can`/`canScreen` are pulled in only where actually used.
+  const needsCurrentRole = gatesUi || gatesActions
+  const accessSpecs = [...(needsCurrentRole ? ['currentRole'] : []), ...(gatesUi ? ['can'] : []), ...(gatesActions ? ['canScreen'] : [])]
+  const accessImport = accessSpecs.length ? `import { ${accessSpecs.join(', ')} } from '$lib/access'\n  ` : ''
   const i18nImport = i18nEnabled ? `import { t, localizeCols } from '$lib/i18n'\n  ` : ''
   const gotoImport = usesGoto ? `import { goto } from '$app/navigation'\n  ` : ''
   const pageImport = applyUrlFilters || has(allBlocks, 'detail') ? `import { page } from '$app/stores'\n  ` : ''
@@ -738,7 +901,15 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   // Audit only fires on server routes, so it needs at least one SQL-bound entity.
   const auditEnabled = project.audit === true && Object.values(sources).some((s) => s.kind === 'sql')
   const i18nEnabled = project.i18n?.enabled === true && (project.i18n?.locales.length ?? 0) > 0
-  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled })
+  // Which screen(s) read-gate each entity's SQL route: a role may read the entity's
+  // data only if it can open at least one screen bound to it (an entity with no
+  // screen - e.g. a relation lookup target - has nothing to gate by, so it stays open).
+  const screensByEntity = new Map<string, string[]>()
+  for (const s of project.screens) {
+    if (s.entity === undefined) continue // freestanding screen - gates no entity route
+    screensByEntity.set(s.entity, [...(screensByEntity.get(s.entity) ?? []), s.id])
+  }
+  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled, screensByEntity })
   const byName = new Map(prepared.map((s) => [s.name, s]))
   // Raw (unprepared) entities keep their original field set - needed to derive
   // relation display-field names that match withRelationLabels (the prepared
@@ -754,13 +925,26 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
 
   const pages: GeneratedFile[] = []
   const seenRoute = new Set<string>()
+  // Custom actions' stub API routes: one file per unique id, generated once
+  // project-wide (a row action + a toolbar action, or two screens, could in
+  // principle reuse the same id - last screen to declare it wins the route's
+  // RBAC gate, matching how duplicate ids are the developer's responsibility
+  // the same way duplicate block/screen ids already are).
+  const actionsById = new Map<string, { action: ActionConfig; screenId: string }>()
   for (const screen of project.screens) {
-    const schema = byName.get(screen.entity)
-    if (!schema) throw new Error(`emitStudioProject: screen "${screen.title}" references missing entity "${screen.entity}"`)
     if (seenRoute.has(screen.route)) throw new Error(`emitStudioProject: duplicate route "/${screen.route}"`)
     seenRoute.add(screen.route)
+    for (const a of screenActionsOf(screen)) actionsById.set(a.id, { action: a, screenId: screen.id })
+
+    if (screen.entity === undefined) {
+      pages.push(freestandingScreenPage(screen, accessEnabled, i18nEnabled))
+      continue
+    }
+    const schema = byName.get(screen.entity)
+    if (!schema) throw new Error(`emitStudioProject: screen "${screen.title}" references missing entity "${screen.entity}"`)
     pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled))
   }
+  const actionRouteFiles = [...actionsById.values()].map(({ action, screenId }) => actionRouteFile(action, screenId, accessEnabled))
 
   // Nav: only screens flagged into the menu, ordered, with an optional custom label.
   // Carry the screen id so RBAC can hide links the current role can't open.
@@ -772,7 +956,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   const auditFiles = auditEnabled ? [auditModule(), auditRouteFile(), auditViewerPage()] : []
   const navWithAudit = auditEnabled ? [...nav, { href: '/audit', label: 'Audit log', id: '__audit__' }] : nav
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
-  return [...files, ...accessFiles, ...auditFiles, ...i18nFiles, ...pages, layoutFile(navWithAudit, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), dark: isDarkTheme(project.theme), access: accessEnabled, i18n: i18nEnabled }), homeFile(navWithAudit)]
+  return [...files, ...accessFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, layoutFile(navWithAudit, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), dark: isDarkTheme(project.theme), access: accessEnabled, i18n: i18nEnabled }), homeFile(navWithAudit)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the
@@ -998,9 +1182,15 @@ export function getServerRole(event: { locals?: Record<string, unknown> }): AppR
   const r = event?.locals?.role
   return (typeof r === 'string' && (ROLES as string[]).includes(r) ? r : ${JSON.stringify(defaultRole)}) as AppRole
 }
-/** Authorize a CRUD action for a role - used by the API routes' \`authorize\` hook. */
-export function authorizeAction(role: AppRole, action: 'read' | WriteAction): boolean {
-  return action === 'read' ? true : can(role, action)
+/** Authorize a CRUD action for a role - used by the API routes' \`authorize\` hook.
+ *  \`screenIds\` are the screen(s) bound to this route's entity: a read is allowed
+ *  only if the role can open at least one of them (an entity with no screen of its
+ *  own - e.g. a relation lookup target - has nothing to gate reads by, so it stays
+ *  open). Writes are still governed purely by \`can()\`. */
+export function authorizeAction(role: AppRole, action: 'read' | WriteAction, screenIds: string[] = []): boolean {
+  if (action !== 'read') return can(role, action)
+  if (screenIds.length === 0) return true
+  return screenIds.some((id) => canScreen(role, id))
 }
 `,
   }

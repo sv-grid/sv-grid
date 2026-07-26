@@ -2375,3 +2375,145 @@ select.sv-grid-fr-editor {
   font-size: 0.82rem;
   color: var(--sg-fg, #101828);
 }
+
+/* ===================================================================
+   Integrated chart panel (the `charting` prop)
+   =================================================================== */
+.sv-grid-chart-toggle svg { flex: none; }
+.sv-grid-chart-panel {
+  position: absolute;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  background: var(--sg-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+}
+.sv-grid-chart-panel.is-bottom {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-top: 1px solid var(--sg-border, #e2e8f0);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+}
+.sv-grid-chart-panel.is-right {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-left: 1px solid var(--sg-border, #e2e8f0);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+}
+.sv-grid-chart-panel.is-floating {
+  top: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: calc(var(--sg-radius, 6px) + 2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+.sv-grid-chart-resizer {
+  position: absolute;
+  z-index: 1;
+  background: transparent;
+  touch-action: none;
+}
+.sv-grid-chart-panel.is-bottom > .sv-grid-chart-resizer { top: -3px; left: 0; right: 0; height: 7px; cursor: ns-resize; }
+.sv-grid-chart-panel.is-right > .sv-grid-chart-resizer { left: -3px; top: 0; bottom: 0; width: 7px; cursor: ew-resize; }
+.sv-grid-chart-resizer:hover,
+.sv-grid-chart-resizer.is-dragging { background: color-mix(in srgb, var(--sg-accent, #2563eb) 30%, transparent); }
+.sv-grid-chart-float-resizer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(135deg, transparent 50%, color-mix(in srgb, var(--sg-muted, #64748b) 55%, transparent) 50%);
+  border-bottom-right-radius: calc(var(--sg-radius, 6px) + 2px);
+}
+.sv-grid-chart-panel-head {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid var(--sg-border, #e2e8f0);
+  background: var(--sg-header-bg, #f8fafc);
+}
+.sv-grid-chart-drawer-title { display: flex; align-items: center; gap: 7px; }
+.sv-grid-chart-drawer-title.is-drag-handle { cursor: move; user-select: none; }
+.sv-grid-chart-title-icon { color: var(--sg-accent, #2563eb); flex: none; }
+.sv-grid-chart-title { font-size: 13px; font-weight: 700; letter-spacing: 0.01em; color: var(--sg-fg, #0f172a); }
+.sv-grid-chart-drawer-title .sv-grid-chart-actions { margin-left: auto; }
+.sv-grid-chart-actions { display: inline-flex; align-items: center; gap: 6px; }
+.sv-grid-chart-controls { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.sv-grid-chart-controls:empty { display: none; }
+.sv-grid-chart-ctl { display: flex; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 600; color: var(--sg-muted, #64748b); }
+.sv-grid-chart-ctl select {
+  font: inherit; font-size: 12.5px; font-weight: 400; color: var(--sg-fg, #0f172a);
+  background: var(--sg-input-bg, var(--sg-bg, #fff));
+  border: 1px solid var(--sg-input-border, var(--sg-border, #e2e8f0));
+  border-radius: var(--sg-radius, 6px); padding: 4px 8px;
+}
+.sv-grid-chart-toggle {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600;
+  color: var(--sg-muted, #64748b); cursor: pointer; white-space: nowrap;
+}
+.sv-grid-chart-btn {
+  font: inherit; font-size: 12px; font-weight: 550; padding: 5px 10px;
+  border: 1px solid var(--sg-border, #e2e8f0); border-radius: var(--sg-radius, 6px);
+  background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); cursor: pointer;
+}
+.sv-grid-chart-btn:hover:not(:disabled) { border-color: var(--sg-accent, #2563eb); color: var(--sg-accent, #2563eb); }
+.sv-grid-chart-btn:disabled { opacity: 0.5; cursor: default; }
+.sv-grid-chart-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+  border: 1px solid transparent; border-radius: var(--sg-radius, 6px); background: transparent;
+  color: var(--sg-muted, #64748b); cursor: pointer;
+}
+.sv-grid-chart-icon-btn:hover { border-color: var(--sg-border, #e2e8f0); color: var(--sg-accent, #2563eb); background: var(--sg-bg, #fff); }
+.sv-grid-chart-close { border: 0; background: transparent; color: var(--sg-muted, #64748b); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.sv-grid-chart-close:hover { color: var(--sg-fg, #0f172a); }
+.sv-grid-chart-panel-body {
+  flex: 1; min-height: 0; padding: 4px 10px 8px; overflow: hidden;
+  display: flex; align-items: stretch; justify-content: center;
+}
+.sv-grid-chart-panel-body > .sv-grid-chart { width: 100%; justify-content: center; }
+.sv-grid-chart-empty { margin: 0; font-size: 13px; color: var(--sg-muted, #64748b); text-align: center; max-width: 42ch; }
+/* Export menu */
+.sv-grid-chart-export { position: relative; display: inline-flex; }
+.sv-grid-chart-export-menu {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 5; min-width: 150px; padding: 4px;
+  display: flex; flex-direction: column; background: var(--sg-bg, #fff);
+  border: 1px solid var(--sg-border, #e2e8f0); border-radius: var(--sg-radius, 6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.sv-grid-chart-export-menu button {
+  font: inherit; font-size: 12.5px; text-align: left; padding: 6px 10px; border: 0;
+  border-radius: calc(var(--sg-radius, 6px) - 2px); background: transparent; color: var(--sg-fg, #0f172a); cursor: pointer; white-space: nowrap;
+}
+.sv-grid-chart-export-menu button:hover:not(:disabled) { background: var(--sg-hover-bg, color-mix(in srgb, var(--sg-accent, #2563eb) 10%, transparent)); }
+.sv-grid-chart-export-menu button:disabled { opacity: 0.45; cursor: default; }
+/* AI "chart this" */
+.sv-grid-chart-ai-btn { display: inline-flex; align-items: center; gap: 4px; }
+.sv-grid-chart-ai-btn.is-active { border-color: var(--sg-accent, #2563eb); color: var(--sg-accent, #2563eb); }
+.sv-grid-chart-ai { display: flex; flex-direction: column; gap: 4px; }
+.sv-grid-chart-ai-row { display: flex; gap: 6px; align-items: center; }
+.sv-grid-chart-ai-input {
+  flex: 1; min-width: 0; font: inherit; font-size: 12.5px; color: var(--sg-fg, #0f172a);
+  background: var(--sg-input-bg, var(--sg-bg, #fff)); border: 1px solid var(--sg-input-border, var(--sg-border, #e2e8f0));
+  border-radius: var(--sg-radius, 6px); padding: 5px 9px;
+}
+.sv-grid-chart-ai-input:focus { outline: none; border-color: var(--sg-accent, #2563eb); }
+.sv-grid-chart-ai-msg { margin: 0; font-size: 12px; color: var(--sg-muted, #64748b); }
+.sv-grid-chart-ai-msg.is-error { color: var(--sg-danger, #dc2626); }
+/* Multi-chart tab strip */
+.sv-grid-chart-tabs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.sv-grid-chart-tab { display: inline-flex; align-items: center; border: 1px solid var(--sg-border, #e2e8f0); border-radius: var(--sg-radius, 6px); background: var(--sg-bg, #fff); overflow: hidden; }
+.sv-grid-chart-tab.is-active { border-color: var(--sg-accent, #2563eb); background: color-mix(in srgb, var(--sg-accent, #2563eb) 10%, transparent); }
+.sv-grid-chart-tab-label { font: inherit; font-size: 12px; font-weight: 600; color: var(--sg-fg, #0f172a); background: transparent; border: 0; padding: 3px 8px; cursor: pointer; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-grid-chart-tab.is-active .sv-grid-chart-tab-label { color: var(--sg-accent, #2563eb); }
+.sv-grid-chart-tab-x { border: 0; background: transparent; color: var(--sg-muted, #64748b); font-size: 14px; line-height: 1; padding: 0 6px 0 2px; cursor: pointer; }
+.sv-grid-chart-tab-x:hover { color: var(--sg-fg, #0f172a); }

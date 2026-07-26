@@ -56,6 +56,14 @@
     onCancel,
   }: Props = $props()
 
+  /** Stable per-instance id used to build option ids for
+   *  `aria-activedescendant` - screen readers need a real id to announce
+   *  the highlighted option while arrow-keying through the list. */
+  const instanceId = $props.id()
+  function optionId(index: number): string | undefined {
+    return index >= 0 && index < visibleOptions.length ? `${instanceId}-opt-${index}` : undefined
+  }
+
   let searchQuery = $state('')
   const visibleOptions = $derived(
     !searchable || !searchQuery.trim()
@@ -300,12 +308,19 @@
   onpointerdown={(event) => event.stopPropagation()}
   onmousedown={(event) => event.stopPropagation()}
 >
+  <!-- The implicit "button" role isn't in ARIA's supported-roles list for
+       aria-activedescendant, but focus deliberately stays on the trigger
+       (not the portal'd listbox) so arrow-key highlighting has to be
+       announced from here - without it, screen-reader users get no
+       feedback about which option is highlighted while navigating. -->
+  <!-- svelte-ignore a11y_role_supports_aria_props_implicit -->
   <button
     type="button"
     class="sv-grid-dropdown-trigger"
     class:sv-grid-dropdown-trigger-chips={renderChipsInTrigger && selectedArr.length > 0}
     aria-haspopup="listbox"
     aria-expanded={open}
+    aria-activedescendant={open ? optionId(highlighted) : undefined}
     bind:this={triggerEl}
     use:focusTrigger
     onclick={() => (open ? closePanel() : openPanel())}
@@ -403,6 +418,7 @@
             class:sv-grid-dropdown-option-selected={selected}
             class:sv-grid-dropdown-option-highlighted={i === highlighted}
             role="option"
+            id={optionId(i)}
             aria-selected={selected}
             data-opt-idx={i}
             onmousedown={(event) => {
@@ -471,7 +487,7 @@
     border: 0;
     outline: none;
     font: inherit;
-    text-align: left;
+    text-align: start;
     cursor: pointer;
     box-sizing: border-box;
   }
@@ -642,7 +658,7 @@
     white-space: nowrap;
   }
   .sv-grid-chip-removable {
-    padding-right: 2px;
+    padding-inline-end: 2px;
   }
   .sv-grid-chip-remove {
     display: inline-flex;

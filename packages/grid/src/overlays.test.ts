@@ -79,6 +79,11 @@ describe('SvTooltip', () => {
       expect(tip).not.toBeNull()
       expect(tip.getAttribute('role')).toBe('tooltip')
       expect(anchor.getAttribute('aria-describedby')).toBe(tip.id)
+      // The wrapper span is never itself focusable, so AT users only ever land
+      // on the real interactive child below - it must carry the description
+      // too, or it's never announced on focus (see SvTooltip.svelte effect).
+      const focusEl = target.querySelector<HTMLElement>('.t')!
+      expect(focusEl.getAttribute('aria-describedby')).toBe(tip.id)
       destroy()
     } finally { vi.useRealTimers() }
   })
