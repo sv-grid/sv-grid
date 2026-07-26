@@ -17,13 +17,24 @@
     height?: string
     /** Scroll horizontally instead of vertically. */
     horizontal?: boolean
+    /** Accessible name for the scrollable region, announced by screen readers. */
+    ariaLabel?: string
     children?: Snippet
   }
 
-  let { maxHeight, height, horizontal = false, children }: Props = $props()
+  let { maxHeight, height, horizontal = false, ariaLabel = 'Scrollable content', children }: Props = $props()
 </script>
 
-<div class="sv-scroll" class:is-x={horizontal} style:max-height={maxHeight} style:height={height}>
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<div
+  class="sv-scroll"
+  class:is-x={horizontal}
+  style:max-height={maxHeight}
+  style:height={height}
+  tabindex="0"
+  role="region"
+  aria-label={ariaLabel}
+>
   {@render children?.()}
 </div>
 

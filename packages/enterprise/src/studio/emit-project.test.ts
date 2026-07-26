@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addTabBlock, createProject, parseProject, setDeployTarget, setEntityDataSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
+import { addBlock, addFreestandingScreen, addScreenAction, addTabBlock, createProject, parseProject, setDeployTarget, setEntityDataSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
 import { emitStudioProject, emitStudioAppBundle, studioDeployInfo } from './emit-project'
 
 const customers: EntitySchema = {
@@ -282,7 +282,10 @@ describe('emitStudioProject (per-block screens)', () => {
 
   it('RBAC: emits access.ts, gates the UI, guards the server route + nav, and compiles', () => {
     let p = createProject([customers, orders])
-    p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' }) // gets a +server.ts
+    // Both entities get a +server.ts, so we can prove each route's authorize call
+    // is bound to ITS OWN entity's screen id, not a shared/blanket value.
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' })
     p = { ...p, access: { enabled: true, defaultRole: 'viewer', roles: [
       { role: 'admin', screens: '*', actions: '*' },
       { role: 'viewer', screens: ['customers'], actions: [] },
@@ -294,14 +297,23 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(access).toContain('export const currentRole = writable<AppRole>("viewer")')
     expect(access).toContain('export function authorizeAction')
     expect(access).toContain('export function getServerRole')
+    // Reads are gated by screen access now (server-enforced), not blanket-allowed:
+    // an entity with no bound screen (e.g. a lookup-only relation target) stays
+    // open since there's nothing to gate it by.
+    expect(access).toContain("if (action !== 'read') return can(role, action)")
+    expect(access).toContain('if (screenIds.length === 0) return true')
+    expect(access).toContain('return screenIds.some((id) => canScreen(role, id))')
 
     const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
     expect(page).toContain("import { currentRole, can } from '$lib/access'")
     expect(page).toContain("{#if can($currentRole, 'create')}") // New button gated
     expect(page).toContain("if (can($currentRole, 'update'))")   // edit gated
 
-    const route = files.find((f) => f.path === 'src/routes/api/orders/+server.ts')!.contents
-    expect(route).toContain('authorize: ({ action, event }) => authorizeAction(getServerRole(event), action)')
+    // Each entity's route carries its OWN screen id(s) - not a shared/static value.
+    const customersRoute = files.find((f) => f.path === 'src/routes/api/customers/+server.ts')!.contents
+    expect(customersRoute).toContain('authorize: ({ action, event }) => authorizeAction(getServerRole(event), action, ["customers"])')
+    const ordersRoute = files.find((f) => f.path === 'src/routes/api/orders/+server.ts')!.contents
+    expect(ordersRoute).toContain('authorize: ({ action, event }) => authorizeAction(getServerRole(event), action, ["orders"])')
 
     const layout = files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents
     expect(layout).toContain('canScreen($currentRole, item.id)') // nav hides forbidden screens
@@ -587,6 +599,96 @@ describe('emitStudioProject (per-block screens)', () => {
   it('throws on a screen pointing at a missing entity', () => {
     const broken = { ...project, screens: [{ ...project.screens[0]!, entity: 'ghosts' }] }
     expect(() => emitStudioProject(broken)).toThrow(/missing entity/)
+  })
+})
+
+describe('Custom actions', () => {
+  it('a toolbar action on an entity-bound screen emits a wired handler + button + stub route, and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addScreenAction(p, sid, { label: 'Sync now', icon: '\u{1F504}', confirm: 'Sync now?' })
+    const actionId = p.screens[0]!.actions![0]!.id
+    const files = emitStudioProject(p)
+
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain(`let actionBusy_${actionId.replace(/-/g, '_')} = $state(false)`)
+    expect(page).toContain(`fetch('/api/actions/${actionId}'`)
+    expect(page).toContain('Sync now')
+    expect(page).toContain(`confirm('Sync now?')`)
+
+    const route = files.find((f) => f.path === `src/routes/api/actions/${actionId}/+server.ts`)!.contents
+    expect(route).toContain('export async function POST')
+    expect(route).toContain('TODO: your business logic here')
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('a row-level custom action renders per row, wired to the same stub route, and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gridId = p.screens[0]!.blocks.find((b) => b.config.kind === 'grid')!.id
+    p = addScreenAction(p, sid, { label: 'Resend invoice' })
+    const actionId = p.screens[0]!.actions![0]!.id
+    p = updateScreen(p, sid, { actions: [] }) // the action now lives only on the row, not the toolbar
+    p = updateBlock(p, sid, gridId, { config: {
+      rowActions: [{ kind: 'custom', id: actionId, label: 'Resend invoice' }],
+    } as Partial<GridConfig> })
+    const files = emitStudioProject(p)
+
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain("id: '__actions'") // synthetic action column
+    expect(page).toContain(`runAction_${actionId.replace(/-/g, '_')}({ id: `)
+    expect(page).toContain('Resend invoice')
+
+    expect(files.find((f) => f.path === `src/routes/api/actions/${actionId}/+server.ts`)).toBeTruthy()
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('a freestanding screen (no entity) renders a toolbar action and no grid/data plumbing, and compiles', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Reports', route: 'reports' })
+    const sid = p.screens.find((s) => s.title === 'Reports')!.id
+    p = addScreenAction(p, sid, { label: 'Run report' })
+    const actionId = p.screens.find((s) => s.id === sid)!.actions![0]!.id
+    const files = emitStudioProject(p)
+
+    const page = files.find((f) => f.path === 'src/routes/reports/+page.svelte')!.contents
+    expect(page).toContain('Run report')
+    expect(page).toContain(`fetch('/api/actions/${actionId}'`)
+    expect(page).not.toContain('createServerDataSource')
+    expect(page).not.toContain('<SvGrid')
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('RBAC-gated action: the toolbar button and the stub route both check canScreen', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Reports', route: 'reports' })
+    const sid = p.screens.find((s) => s.title === 'Reports')!.id
+    p = addScreenAction(p, sid, { label: 'Run report' })
+    const actionId = p.screens.find((s) => s.id === sid)!.actions![0]!.id
+    p = { ...p, access: { enabled: true, defaultRole: 'viewer', roles: [
+      { role: 'admin', screens: '*', actions: '*' },
+      { role: 'viewer', screens: [], actions: [] },
+    ] } }
+    const files = emitStudioProject(p)
+
+    const page = files.find((f) => f.path === 'src/routes/reports/+page.svelte')!.contents
+    expect(page).toContain(`{#if canScreen($currentRole, '${sid}')}`)
+
+    const route = files.find((f) => f.path === `src/routes/api/actions/${actionId}/+server.ts`)!.contents
+    expect(route).toContain("import { getServerRole, canScreen } from '$lib/access'")
+    expect(route).toContain(`if (!canScreen(getServerRole(event), '${sid}'))`)
+    expect(route).toContain('status: 403')
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
   })
 })
 
@@ -881,6 +983,21 @@ describe('pages (nav) + shell codegen', () => {
     expect(layout).toContain('sv-app--top')
     expect(layout).toContain('Acme')
     expect(layout).toContain('(c) Acme')
+  })
+
+  it('emits a bottom-nav shell (fixed bar, no sidebar drawer state, footer text dropped) that compiles', () => {
+    const p = setShell(createProject([customers, orders]), { style: 'bottom-nav', brand: 'Acme', footer: '(c) Acme' })
+    const layout = layoutOf(p)
+    expect(layout).toContain('sv-app--bottom')
+    expect(layout).toContain('sv-app__bar--bottom')
+    expect(layout).toContain('Acme')
+    // The bottom bar occupies that visual role; footer text is intentionally not rendered
+    // in the markup (the `const footer = ...` script declaration is unconditional and stays,
+    // but nothing in the bottom-nav body dereferences it).
+    expect(layout).not.toContain('<footer class="sv-app__footbar">')
+    // top-nav/sidebar-only collapse state must not leak into the bottom-nav shell.
+    expect(layout).not.toContain('let collapsed = $state')
+    expect(() => compile(layout, { filename: '+layout.svelte', generate: 'client' })).not.toThrow()
   })
 
   it('defaults to sidebar; an empty footer omits the footer element', () => {

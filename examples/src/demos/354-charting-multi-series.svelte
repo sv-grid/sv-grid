@@ -18,24 +18,49 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  type Sale = { id: number; region: string; product: string; quarter: string; revenue: number }
+  type Sale = {
+    id: number
+    region: string
+    product: string
+    quarter: string
+    channel: string
+    revenue: number
+    units: number
+    margin: number
+  }
   const REGIONS = ['Americas', 'EMEA', 'APAC']
   const PRODUCTS = ['PLC', 'Drivers', 'Rivets']
   const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4']
+  const CHANNELS = ['Direct', 'Partner', 'Online']
   let seed = 0x5a1e5
   const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 0xffffffff)
   const rows: Sale[] = []
   let id = 0
   for (const region of REGIONS)
     for (const product of PRODUCTS)
-      for (const quarter of QUARTERS)
-        rows.push({ id: id++, region, product, quarter, revenue: Math.round(20_000 + rnd() * 80_000) })
+      for (const quarter of QUARTERS) {
+        const revenue = Math.round(20_000 + rnd() * 80_000)
+        rows.push({
+          id: id++,
+          region,
+          product,
+          quarter,
+          channel: CHANNELS[id % 3]!,
+          revenue,
+          units: Math.round(40 + rnd() * 560),
+          margin: Math.round(revenue * (0.12 + rnd() * 0.28)),
+        })
+      }
 
+  const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
   const columns: ColumnDef<typeof features, Sale>[] = [
-    { field: 'region', header: 'Region', width: 130 },
-    { field: 'product', header: 'Product', width: 130 },
-    { field: 'quarter', header: 'Quarter', width: 110 },
-    { field: 'revenue', header: 'Revenue', width: 150, align: 'right', cellDataType: 'number', format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },
+    { field: 'region', header: 'Region', width: 120 },
+    { field: 'product', header: 'Product', width: 120 },
+    { field: 'quarter', header: 'Quarter', width: 100 },
+    { field: 'channel', header: 'Channel', width: 110 },
+    { field: 'revenue', header: 'Revenue', width: 140, align: 'right', cellDataType: 'number', format: money },
+    { field: 'margin', header: 'Margin', width: 130, align: 'right', cellDataType: 'number', format: money },
+    { field: 'units', header: 'Units', width: 100, align: 'right', cellDataType: 'number' },
   ]
 </script>
 

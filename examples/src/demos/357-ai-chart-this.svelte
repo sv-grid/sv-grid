@@ -26,7 +26,7 @@
 
   // Project to just the chartable fields so the AI's column schema (built from
   // the row data) matches the grid's columns - no stray id / date fields.
-  type Sale = { country: string; product: string; company: string; quantity: number; price: number }
+  type Sale = { country: string; product: string; company: string; quantity: number; price: number; revenue: number }
   const features = tableFeatures({})
   let rows = $state<Sale[]>(
     makeOrders(200).map((o) => ({
@@ -35,15 +35,18 @@
       company: o.company,
       quantity: o.quantity,
       price: o.price,
+      revenue: Math.round(o.quantity * o.price),
     })),
   )
 
+  const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
   const columns: ColumnDef<typeof features, Sale>[] = [
     { field: 'country', header: 'Country', width: 120 },
     { field: 'product', header: 'Product', width: 150 },
-    { field: 'company', header: 'Company', width: 160 },
-    { field: 'quantity', header: 'Qty', width: 90, align: 'right', cellDataType: 'number', format: { type: 'number', options: { maximumFractionDigits: 0 } } },
-    { field: 'price', header: 'Price', width: 120, align: 'right', cellDataType: 'number', format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },
+    { field: 'company', header: 'Company', width: 150 },
+    { field: 'quantity', header: 'Qty', width: 80, align: 'right', cellDataType: 'number', format: { type: 'number', options: { maximumFractionDigits: 0 } } },
+    { field: 'price', header: 'Price', width: 110, align: 'right', cellDataType: 'number', format: money },
+    { field: 'revenue', header: 'Revenue', width: 130, align: 'right', cellDataType: 'number', format: money },
   ]
 
   // installEnterprise(api) wires the chart panel's AI button to aiChart() via

@@ -11,48 +11,39 @@
    */
   import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'
 
-  type Row = { month: string; channel: string; units: number; revenue: number }
+  type Row = { month: string; region: string; channel: string; units: number; revenue: number; cost: number }
 
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+  const REGIONS = ['NA', 'EMEA']
   const CHANNELS = ['Online', 'Retail', 'Wholesale']
   // Seed a plausible ramp so the starting chart already looks like a real report.
   const base: Record<string, number> = { Online: 42000, Retail: 31000, Wholesale: 58000 }
   const seed: Row[] = []
   MONTHS.forEach((month, m) => {
-    CHANNELS.forEach((channel) => {
-      const revenue = Math.round((base[channel]! * (1 + m * 0.12)) / 500) * 500
-      seed.push({ month, channel, units: Math.round(revenue / 120), revenue })
+    REGIONS.forEach((region, r) => {
+      CHANNELS.forEach((channel) => {
+        const revenue = Math.round((base[channel]! * (1 + m * 0.12) * (r === 0 ? 1 : 0.7)) / 500) * 500
+        seed.push({ month, region, channel, units: Math.round(revenue / 120), revenue, cost: Math.round(revenue * 0.62) })
+      })
     })
   })
 
   let rows = $state<Row[]>(seed)
   const features = tableFeatures({})
 
+  const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
   const columns: ColumnDef<typeof features, Row>[] = [
-    { field: 'month', header: 'Month', width: 110 },
-    { field: 'channel', header: 'Channel', width: 130 },
-    {
-      field: 'units',
-      header: 'Units',
-      width: 120,
-      align: 'right',
-      cellDataType: 'number',
-      editorType: 'number',
-      format: { type: 'number', options: { maximumFractionDigits: 0 } },
-    },
-    {
-      field: 'revenue',
-      header: 'Revenue',
-      width: 150,
-      align: 'right',
-      cellDataType: 'number',
-      editorType: 'number',
-      format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } },
-    },
+    { field: 'month', header: 'Month', width: 100 },
+    { field: 'region', header: 'Region', width: 100 },
+    { field: 'channel', header: 'Channel', width: 120 },
+    { field: 'units', header: 'Units', width: 110, align: 'right', cellDataType: 'number', editorType: 'number', format: { type: 'number', options: { maximumFractionDigits: 0 } } },
+    { field: 'revenue', header: 'Revenue', width: 130, align: 'right', cellDataType: 'number', editorType: 'number', format: money },
+    { field: 'cost', header: 'Cost', width: 120, align: 'right', cellDataType: 'number', editorType: 'number', format: money },
   ]
 
+  const EDITABLE = new Set(['units', 'revenue', 'cost'])
   function onCellValueChange(e: { rowIndex: number; columnId: string; newValue: unknown }) {
-    if (e.columnId !== 'units' && e.columnId !== 'revenue') return
+    if (!EDITABLE.has(e.columnId)) return
     const n = Number(e.newValue)
     if (!Number.isFinite(n)) return
     const next = rows.slice()

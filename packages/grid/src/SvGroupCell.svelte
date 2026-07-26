@@ -34,7 +34,7 @@
   <button
     type="button"
     class="sv-group-cell"
-    style={`padding-left: ${meta.level * indent}px`}
+    style={`padding-inline-start: ${meta.level * indent}px`}
     aria-expanded={meta.expanded}
     aria-label={meta.expanded ? 'Collapse group' : 'Expand group'}
     onclick={() => onToggle(row)}
@@ -47,18 +47,18 @@
   <button
     type="button"
     class="sv-group-more"
-    style={`padding-left: ${meta.level * indent}px`}
+    style={`padding-inline-start: ${meta.level * indent}px`}
     disabled={meta.loading}
     onclick={() => onToggle(row)}
   >
     {meta.loading ? 'Loading...' : `Load ${meta.remaining} more`}
   </button>
 {:else if meta && meta.kind === 'footer'}
-  <span class="sv-group-footer" style={`padding-left: ${meta.level * indent}px`}>Total</span>
+  <span class="sv-group-footer" style={`padding-inline-start: ${meta.level * indent}px`}>Total</span>
 {:else if meta && meta.kind === 'skeleton'}
-  <span class="sv-group-skeleton" style={`margin-left: ${meta.level * indent}px`} aria-hidden="true"></span>
+  <span class="sv-group-skeleton" style={`margin-inline-start: ${meta.level * indent}px`} aria-hidden="true"></span>
 {:else if meta}
-  <span class="sv-group-leaf" style={`padding-left: ${(meta.level + 1) * indent}px`}>
+  <span class="sv-group-leaf" style={`padding-inline-start: ${(meta.level + 1) * indent}px`}>
     {leafField ? (row[leafField] ?? '') : ''}
   </span>
 {/if}

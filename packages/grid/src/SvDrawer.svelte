@@ -171,12 +171,14 @@
     box-shadow: 0 24px 64px -16px rgba(15, 23, 42, 0.5);
     overflow: hidden;
   }
-  /* Left / right: full height, fixed width, slide along X. */
+  /* Left / right: full height, fixed width, slide along X. `side` is a stated
+     physical edge (like SvToaster's position prop), not a text-flow-relative
+     "start/end" - so it stays physical left/right regardless of page dir. */
   :global(.sv-drawer--right), :global(.sv-drawer--left) {
     top: 0; bottom: 0; width: var(--sv-drawer-size); max-width: 100vw;
   }
-  :global(.sv-drawer--right) { inset-inline-end: 0; border-inline-start: 1px solid var(--sg-border, #e2e8f0); animation: sv-drawer-in-right 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  :global(.sv-drawer--left) { inset-inline-start: 0; border-inline-end: 1px solid var(--sg-border, #e2e8f0); animation: sv-drawer-in-left 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  :global(.sv-drawer--right) { right: 0; border-left: 1px solid var(--sg-border, #e2e8f0); animation: sv-drawer-in-right 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  :global(.sv-drawer--left) { left: 0; border-right: 1px solid var(--sg-border, #e2e8f0); animation: sv-drawer-in-left 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
   /* Top / bottom: full width, fixed height, slide along Y. */
   :global(.sv-drawer--top), :global(.sv-drawer--bottom) {
     left: 0; right: 0; height: var(--sv-drawer-size); max-height: 100vh;

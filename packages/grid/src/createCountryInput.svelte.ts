@@ -41,7 +41,12 @@ export type CountryInputConfig = {
   hint?: () => string | undefined
 }
 
+let uid = 0
+
 export function createCountryInput(config: CountryInputConfig) {
+  const id = `sv-country-${uid++}`
+  const listId = `${id}-list`
+  const optionId = (i: number) => `${listId}-opt-${i}`
   const disabled = () => config.disabled?.() ?? false
 
   const ariaState = (): EditorAriaState => ({
@@ -75,6 +80,8 @@ export function createCountryInput(config: CountryInputConfig) {
   function pick(code: string) { config.onChange?.(code); open = false; config.focusTrigger?.() }
   function setQuery(v: string) { query = v; active = 0 }
   function onSearchInput(e: Event) { setQuery((e.currentTarget as HTMLInputElement).value) }
+  /** The current active-descendant id (for the focused search input), or undefined. */
+  const activeDescendant = () => (open && filtered.length > 0 ? optionId(active) : undefined)
   function onKeydown(e: KeyboardEvent) {
     if (!open) return
     if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, filtered.length - 1) }
@@ -111,6 +118,7 @@ export function createCountryInput(config: CountryInputConfig) {
       type: 'button' as const,
       'aria-haspopup': 'listbox' as const,
       'aria-expanded': open,
+      'aria-controls': listId,
       ...editorAria(ariaState()),
       disabled: disabled(),
       onclick: toggle,
@@ -120,17 +128,21 @@ export function createCountryInput(config: CountryInputConfig) {
       type: 'text' as const,
       value: query,
       'aria-label': config.searchLabel?.() ?? 'Search countries',
+      'aria-controls': listId,
+      'aria-activedescendant': activeDescendant(),
       oninput: onSearchInput,
       onkeydown: onKeydown,
     }),
     /** Spread onto the listbox container. */
     listboxProps: () => ({
+      id: listId,
       role: 'listbox' as const,
     }),
     /** Spread onto the country option at `index` (index into `filtered`). */
     optionProps: (index: number) => {
       const c = filtered[index]
       return {
+        id: optionId(index),
         role: 'option' as const,
         tabindex: -1,
         'aria-selected': c ? c.code === config.value() : false,

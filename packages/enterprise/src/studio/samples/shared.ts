@@ -10,7 +10,7 @@
 import type { EntitySchema } from '../../schema.js'
 import type { ChartType } from '@svgrid/grid'
 import { generateValue } from '../sample-data.js'
-import { defaultBlockConfig, sanitizeProject, screenFromTemplate, type Block, type BlockConfig, type DetailRelated, type FormatRule, type GridConfig, type GridDensity, type KpiFormat, type Reduce, type RowAction, type RowLink, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource } from '../project.js'
+import { defaultBlockConfig, sanitizeProject, screenFromTemplate, type Block, type BlockConfig, type DetailRelated, type FormatRule, type GridConfig, type GridDensity, type KpiFormat, type Reduce, type RowAction, type RowLink, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle } from '../project.js'
 
 type Row = Record<string, unknown>
 
@@ -277,7 +277,7 @@ export function project(opts: {
   brand: string
   accent: string
   footer?: string
-  navStyle?: 'sidebar' | 'top-nav'
+  navStyle?: ShellStyle
   navPosition?: 'left' | 'right'
   /** A design-system preset id (font + radius + palette) from `studioThemes` -
    *  what makes each app read as a distinct product (Salesforce vs Excel vs Linear). */

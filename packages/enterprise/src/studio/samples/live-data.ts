@@ -14,7 +14,7 @@
  */
 import type { EntitySchema } from '../../schema.js'
 import { listScreen, dashScreen, detailScreen, type SampleApp } from './shared.js'
-import { sanitizeProject, type EntityDataSource, type Screen, type StudioProject } from '../project.js'
+import { sanitizeProject, type EntityDataSource, type Screen, type StudioProject, type ShellStyle } from '../project.js'
 
 type Row = Record<string, unknown>
 
@@ -112,7 +112,7 @@ function assemble(opts: {
   accent: string
   mode?: 'light' | 'dark'
   preset?: string
-  navStyle?: 'sidebar' | 'top-nav'
+  navStyle?: ShellStyle
   entities: EntitySchema[]
   screens: Screen[]
   sources: Record<string, EntityDataSource>

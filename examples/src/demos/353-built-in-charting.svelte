@@ -22,27 +22,52 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  type Sale = { id: number; rep: string; region: string; product: string; revenue: number; deals: number }
+  type Sale = {
+    id: number
+    rep: string
+    region: string
+    product: string
+    quarter: string
+    channel: string
+    revenue: number
+    deals: number
+    units: number
+    margin: number
+  }
   const REGIONS = ['Americas', 'EMEA', 'APAC']
   const PRODUCTS = ['PLC', 'Drivers', 'Rivets', 'Stock']
+  const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4']
+  const CHANNELS = ['Direct', 'Partner', 'Online']
   const NAMES = ['Ada', 'Grace', 'Alan', 'Margaret', 'Linus', 'Donald', 'Brian', 'Dennis']
   let seed = 0x51ce
   const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 0xffffffff)
-  const rows: Sale[] = Array.from({ length: 48 }, (_, id) => ({
-    id,
-    rep: NAMES[id % NAMES.length]!,
-    region: REGIONS[id % 3]!,
-    product: PRODUCTS[id % 4]!,
-    revenue: Math.round(10_000 + rnd() * 90_000),
-    deals: Math.round(2 + rnd() * 30),
-  }))
+  const rows: Sale[] = Array.from({ length: 96 }, (_, id) => {
+    const revenue = Math.round(10_000 + rnd() * 90_000)
+    return {
+      id,
+      rep: NAMES[id % NAMES.length]!,
+      region: REGIONS[id % 3]!,
+      product: PRODUCTS[id % 4]!,
+      quarter: QUARTERS[id % 4]!,
+      channel: CHANNELS[id % 3]!,
+      revenue,
+      deals: Math.round(2 + rnd() * 30),
+      units: Math.round(20 + rnd() * 480),
+      margin: Math.round(revenue * (0.12 + rnd() * 0.28)),
+    }
+  })
 
+  const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
   const columns: ColumnDef<typeof features, Sale>[] = [
-    { field: 'rep', header: 'Rep', width: 120 },
-    { field: 'region', header: 'Region', width: 130 },
-    { field: 'product', header: 'Product', width: 130 },
-    { field: 'revenue', header: 'Revenue', width: 150, align: 'right', cellDataType: 'number', format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },
-    { field: 'deals', header: 'Deals', width: 100, align: 'right', cellDataType: 'number' },
+    { field: 'rep', header: 'Rep', width: 110 },
+    { field: 'region', header: 'Region', width: 120 },
+    { field: 'product', header: 'Product', width: 120 },
+    { field: 'quarter', header: 'Quarter', width: 100 },
+    { field: 'channel', header: 'Channel', width: 110 },
+    { field: 'revenue', header: 'Revenue', width: 140, align: 'right', cellDataType: 'number', format: money },
+    { field: 'margin', header: 'Margin', width: 130, align: 'right', cellDataType: 'number', format: money },
+    { field: 'deals', header: 'Deals', width: 90, align: 'right', cellDataType: 'number' },
+    { field: 'units', header: 'Units', width: 100, align: 'right', cellDataType: 'number' },
   ]
 </script>
 

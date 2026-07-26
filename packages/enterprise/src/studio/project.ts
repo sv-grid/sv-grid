@@ -56,8 +56,10 @@ export type PgliteSource = { kind: 'pglite'; table: string; seed?: Record<string
 /** Where one entity's rows come from. */
 export type EntityDataSource = MemorySource | RestSource | SqlSource | SupabaseSource | PgliteSource
 
-/** The kinds of data-bound block a screen can hold. */
-export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar' | 'detail'
+/** The kinds of block a screen can hold: data-bound (entity-derived) or the
+ *  entity-agnostic `'component'` (a UI-kit component from `UI_COMPONENT_REGISTRY`,
+ *  usable on any screen, including a freestanding one with no entity). */
+export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar' | 'detail' | 'component'
 
 export type GridAlign = 'left' | 'center' | 'right'
 export type GridColumnConfig = { field: string; show: boolean; header?: string; width?: number; align?: GridAlign; pin?: 'left' | 'right' }
@@ -105,7 +107,7 @@ export type FormatRule = { field: string; op: FormatOp; value?: string | number;
 /** A row-click drill-through to another screen. */
 export type RowLink = { screen: string; sourceField?: string; targetField: string }
 /** One per-row action button. */
-export type RowActionKind = 'edit' | 'delete' | 'navigate'
+export type RowActionKind = 'edit' | 'delete' | 'navigate' | 'custom'
 export type RowAction = {
   kind: RowActionKind
   label?: string
@@ -115,7 +117,22 @@ export type RowAction = {
   sourceField?: string
   /** navigate: field on the target entity to filter by. */
   targetField?: string
+  /** custom: stable id - becomes the generated `/api/actions/<id>` route + handler
+   *  name. Required when `kind` is `'custom'`. */
+  id?: string
+  /** custom: icon glyph (rendered next to the label). */
+  icon?: string
+  /** custom: confirm before running, e.g. "Approve this order?". */
+  confirm?: string
 }
+
+/** A custom action: a button wired to a generated stub API route + client
+ *  handler - the plumbing (fetch, loading state, error handling, RBAC gate) is
+ *  generated; the developer fills in the actual logic in the stub route.
+ *  Screen-level actions render in the screen's toolbar and work on ANY screen,
+ *  including one with no bound entity. Row-level actions (via `RowAction`'s
+ *  `'custom'` kind) render per-row in a grid, alongside edit/delete/navigate. */
+export type ActionConfig = { id: string; label: string; icon?: string; confirm?: string }
 /** Legacy standalone edit-form block. Editing is now a Grid property; kept so old
  *  `studio.config.json` files still parse. Not offered in the palette. */
 export type FormConfig = { kind: 'form'; presentation: Presentation }
@@ -178,13 +195,19 @@ export type DetailRelated = { entity: string; foreignKey: string; label?: string
  *  timeline of the children pointing back at the record). The universal signature
  *  view for relation-heavy entities where a board / calendar does not fit. */
 export type DetailConfig = { kind: 'detail'; titleField: string; subtitleField?: string; statusField?: string; metricFields?: string[]; sections?: { label: string; fields: string[] }[]; related?: DetailRelated[] }
+/** A UI-kit component (from `UI_COMPONENT_REGISTRY`, keyed by `component`) dropped
+ *  onto a screen. Entity-agnostic - works on a freestanding page or mixed onto an
+ *  entity-bound screen alike. `props` holds its configured "chrome" values, keyed
+ *  by the registry entry's prop `key`; a component with `hasContent` also stores
+ *  its literal text content under the reserved `_content` key. */
+export type ComponentConfig = { kind: 'component'; component: string; props: Record<string, unknown> }
 export type BlockConfig =
   | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | DashboardConfig | MasterDetailConfig | LookupConfig
-  | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig | DetailConfig
+  | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig | DetailConfig | ComponentConfig
 
 /** Block kinds allowed inside a Tabs container: the controller-free, `allRows`-driven
  *  display blocks (no grid / form / master-detail, which need the screen controller). */
-export const TAB_CHILD_KINDS: ReadonlyArray<BlockKind> = ['chart', 'kpi', 'gauge', 'dashboard', 'pivot', 'tree']
+export const TAB_CHILD_KINDS: ReadonlyArray<BlockKind> = ['chart', 'kpi', 'gauge', 'dashboard', 'pivot', 'tree', 'component']
 
 /** All blocks on a screen, flattened to include the children nested in Tabs
  *  containers - used to detect kinds for imports / data loading. */
@@ -214,10 +237,14 @@ export const blockColumns = (b: Pick<Block, 'span' | 'colSpan'>): number =>
   Math.max(1, Math.min(12, Math.round(b.colSpan ?? b.span * 4)))
 /** Navigation placement for a screen (Manage Pages: show/hide + label + order). */
 export type ScreenNav = { show?: boolean; label?: string; order?: number }
-export type Screen = { id: string; entity: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav }
+/** `entity` is optional: a screen with none is a freestanding page (no data
+ *  binding, no blocks - every `BlockKind` is entity-bound) - just a title, an
+ *  empty content area, and optionally a toolbar of custom `actions`. Wire up a
+ *  "Run report" / "Sync now" button on a blank page without a table behind it. */
+export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[] }
 
-/** The generated app's shell (master layout): sidebar vs top-nav, brand, footer. */
-export type ShellStyle = 'sidebar' | 'top-nav'
+/** The generated app's shell (master layout): sidebar, top-nav, or bottom-nav; brand, footer. */
+export type ShellStyle = 'sidebar' | 'top-nav' | 'bottom-nav'
 export type ShellConfig = { style?: ShellStyle; brand?: string; footer?: string; navPosition?: 'left' | 'right'; logo?: string; toolbar?: boolean }
 export type ProjectTheme = { accent?: string; preset?: string; mode?: 'light' | 'dark'; shell?: ShellConfig; customCss?: string }
 
@@ -309,7 +336,8 @@ function uid(prefix: string, taken: ReadonlySet<string>): string {
   return `${prefix}${n}`
 }
 
-export function entityOf(project: StudioProject, name: string): EntitySchema | undefined {
+export function entityOf(project: StudioProject, name: string | undefined): EntitySchema | undefined {
+  if (name == null) return undefined
   return project.entities.find((e) => e.name === name)
 }
 
@@ -406,6 +434,9 @@ export function defaultBlockConfig(kind: BlockKind, entity: EntitySchema): Block
       const metrics = nonKey.filter((f) => f.type === 'number').slice(0, 3).map((f) => f.field)
       return { kind, titleField: titleF, ...(subF ? { subtitleField: subF } : {}), ...(statusF ? { statusField: statusF } : {}), ...(metrics.length ? { metricFields: metrics } : {}) }
     }
+    case 'component':
+      // Entity-agnostic - built directly by `addComponentBlock`, never through here.
+      return { kind, component: '', props: {} }
   }
 }
 
@@ -421,7 +452,7 @@ export function pickFacetFields(entity: EntitySchema): string[] {
 const facetRank = (t: EntityFieldType): number => (t === 'enum' ? 0 : t === 'boolean' ? 1 : 2)
 
 const DEFAULT_SPAN: Record<BlockKind, 1 | 2 | 3> = {
-  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3, calendar: 3, detail: 3,
+  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3, calendar: 3, detail: 3, component: 1,
 }
 
 function makeBlock(kind: BlockKind, entity: EntitySchema, taken: ReadonlySet<string>): Block {
@@ -496,6 +527,19 @@ export function addBlockAt(project: StudioProject, screenId: string, kind: Block
     const block = makeBlock(kind, entity, taken)
     const blocks = [...s.blocks]
     blocks.splice(Math.max(0, Math.min(index, blocks.length)), 0, block)
+    return { ...s, blocks }
+  })
+}
+
+/** Add a UI-kit component block (see `ui-components.ts`'s `UI_COMPONENT_REGISTRY`)
+ *  to a screen. Unlike `addBlock`/`addBlockAt`, this needs no entity - it works on
+ *  any screen, including a freestanding one, or mixed onto an entity-bound one. */
+export function addComponentBlock(project: StudioProject, screenId: string, componentKey: string, defaultProps: Record<string, unknown> = {}, index?: number): StudioProject {
+  return mapScreen(project, screenId, (s) => {
+    const taken = new Set(flattenBlocks(s.blocks).map((b) => b.id))
+    const block: Block = { id: uid('component-', taken), span: DEFAULT_SPAN.component, config: { kind: 'component', component: componentKey, props: { ...defaultProps } } }
+    const blocks = [...s.blocks]
+    blocks.splice(index != null ? Math.max(0, Math.min(index, blocks.length)) : blocks.length, 0, block)
     return { ...s, blocks }
   })
 }
@@ -627,8 +671,44 @@ export function removeScreen(project: StudioProject, screenId: string): StudioPr
   return { ...project, screens: project.screens.filter((s) => s.id !== screenId) }
 }
 
-export function updateScreen(project: StudioProject, screenId: string, patch: Partial<Pick<Screen, 'title' | 'route' | 'entity' | 'nav'>>): StudioProject {
+export function updateScreen(project: StudioProject, screenId: string, patch: Partial<Pick<Screen, 'title' | 'route' | 'entity' | 'nav' | 'actions'>>): StudioProject {
   return mapScreen(project, screenId, (s) => ({ ...s, ...patch }))
+}
+
+/** A freestanding screen: no bound entity, so no blocks/data binding - just a
+ *  title and (once actions are added) a toolbar. For a blank page the developer
+ *  builds on, or one that's purely a home for custom actions ("Run report"). */
+export function addFreestandingScreen(project: StudioProject, opts: { title: string; route?: string }): StudioProject {
+  const id = 'screen'
+  const route = opts.route ?? id
+  return appendScreen(project, { id, title: opts.title, route, blocks: [] }, 'screen')
+}
+
+/** Every custom action id already used project-wide (screen toolbars + row
+ *  actions) - action ids become `/api/actions/<id>` routes, so they must be
+ *  unique across the whole project, not just within one screen. */
+function takenActionIds(project: StudioProject): Set<string> {
+  const taken = new Set<string>()
+  for (const s of project.screens) {
+    for (const a of s.actions ?? []) taken.add(a.id)
+    for (const b of flattenBlocks(s.blocks)) {
+      if (b.config.kind !== 'grid') continue
+      for (const a of b.config.rowActions ?? []) if (a.kind === 'custom' && a.id) taken.add(a.id)
+    }
+  }
+  return taken
+}
+
+/** Add a toolbar-level custom action to a screen (works on a freestanding screen
+ *  too). Generates a stable id from `taken` project-wide ids; the generated app
+ *  gets a wired-up button + a stub `/api/actions/<id>` route to fill in. */
+export function addScreenAction(project: StudioProject, screenId: string, action: { label: string; icon?: string; confirm?: string }): StudioProject {
+  const id = uid('action-', takenActionIds(project))
+  return mapScreen(project, screenId, (s) => ({ ...s, actions: [...(s.actions ?? []), { id, ...action }] }))
+}
+
+export function removeScreenAction(project: StudioProject, screenId: string, actionId: string): StudioProject {
+  return mapScreen(project, screenId, (s) => ({ ...s, actions: (s.actions ?? []).filter((a) => a.id !== actionId) }))
 }
 
 /** Deep-clone `block` with fresh ids (recursing into Tabs children). */
@@ -881,12 +961,18 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
 
   const routes = new Set<string>()
   for (const s of project.screens) {
-    if (!entityOf(project, s.entity)) {
+    // `entity` is optional (a freestanding screen has none, by design) - only a
+    // *dangling* reference (set but unresolvable) is an error.
+    if (s.entity !== undefined && !entityOf(project, s.entity)) {
       issues.push({ level: 'error', message: `Screen "${s.title}" points at a missing entity "${s.entity}".`, screen: s.id })
     }
     if (routes.has(s.route)) issues.push({ level: 'error', message: `Duplicate route "/${s.route}".`, screen: s.id })
     routes.add(s.route)
-    if (s.blocks.length === 0) issues.push({ level: 'warning', message: `Screen "${s.title}" has no blocks.`, screen: s.id })
+    if (s.entity !== undefined && s.blocks.length === 0) {
+      issues.push({ level: 'warning', message: `Screen "${s.title}" has no blocks.`, screen: s.id })
+    } else if (s.entity === undefined && !s.actions?.length && s.blocks.length === 0) {
+      issues.push({ level: 'warning', message: `Screen "${s.title}" is empty - add an action or some content.`, screen: s.id })
+    }
     for (const b of flattenBlocks(s.blocks)) {
       const at = (message: string, level: ProjectIssueLevel = 'warning'): ProjectIssue => ({ level, message, screen: s.id, block: b.id })
       const c = b.config
@@ -905,6 +991,8 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
         if (!c.rows.length && !c.cols.length) issues.push(at('Pivot has no row or column dimensions.'))
       } else if (c.kind === 'tabs') {
         if (c.tabs.every((t) => t.blocks.length === 0)) issues.push(at('Tabs container has no blocks in any tab.'))
+      } else if (c.kind === 'component') {
+        if (!c.component) issues.push(at('Component block has no component selected.'))
       }
     }
   }

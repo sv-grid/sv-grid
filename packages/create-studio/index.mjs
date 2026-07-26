@@ -163,7 +163,13 @@ async function applyTheme(destDir, choice) {
 
 /**
  * Generate the app from a studio.config.json (the visual designer's export):
- * parse it, emit each screen's composed blocks, and replace the seeded example.
+ * the COMPLETE runnable bundle - same code path as the designer's own "Download
+ * .zip" - so the deploy target picked in the designer (Vercel / Netlify /
+ * Cloudflare / Node) gets its real adapter + config, and every driver dependency
+ * the generated code needs (pg / mysql2 / mssql / better-sqlite3 / libsql /
+ * pglite / supabase-js) is detected and added, instead of layering a partial
+ * set of routes on top of the static template's fixed adapter-auto/package.json.
+ * No static template involved for this path - the bundle is self-sufficient.
  */
 async function applyProject(destDir, projectPath) {
   const abs = resolve(process.cwd(), projectPath)
@@ -178,43 +184,13 @@ async function applyProject(destDir, projectPath) {
   }
 
   const project = studio.parseProject(json)
-  const files = studio.emitStudioProject(project)
-
-  for (const ex of ['customers', 'orders']) {
-    await rm(join(destDir, 'src', 'routes', ex), { recursive: true, force: true })
-  }
+  const files = studio.emitStudioAppBundle(project)
   for (const f of files) {
     const full = join(destDir, f.path)
     await mkdir(dirname(full), { recursive: true })
     await writeFile(full, f.contents)
   }
-  // Add the runtime deps the generated code imports (Supabase client / SQL
-  // drivers) so the app installs + runs turnkey.
-  const allSource = files.map((f) => f.contents).join('\n')
-  const DEPS = [
-    ["from '@supabase/supabase-js'", '@supabase/supabase-js', '^2.45.0'],
-    ["import pg from 'pg'", 'pg', '^8.11.0'],
-    ["from 'mysql2/promise'", 'mysql2', '^3.9.0'],
-    ["import mssql from 'mssql'", 'mssql', '^10.0.0'],
-    ["import Database from 'better-sqlite3'", 'better-sqlite3', '^11.0.0'],
-  ]
-  for (const [needle, dep, version] of DEPS) {
-    if (allSource.includes(needle)) await addDependency(destDir, dep, version)
-  }
-  return project.screens.map((s) => s.title)
-}
-
-/** Add a runtime dependency to the generated app's package.json (idempotent). */
-async function addDependency(destDir, name, version) {
-  const pkgPath = join(destDir, 'package.json')
-  if (!existsSync(pkgPath)) return
-  try {
-    const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
-    pkg.dependencies = { ...pkg.dependencies, [name]: version }
-    await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
-  } catch {
-    // leave deps as-is if package.json isn't valid JSON
-  }
+  return { titles: project.screens.map((s) => s.title), deployLabel: studio.studioDeployInfo(project).label }
 }
 
 /**
@@ -349,18 +325,27 @@ async function main() {
   const themeChoice = args.project ? null : await promptTheme(args, ask, interactive)
   if (rl) rl.close()
 
-  // 3. Scaffold.
+  // 3. Scaffold. --project ships a complete, self-sufficient bundle (its own
+  // package.json/adapter config/theme) - skip the static template for that path
+  // so its deploy-target choice isn't immediately overwritten by the template's
+  // fixed adapter-auto. --from and the default (seeded example) path still
+  // build on the template.
   await mkdir(destDir, { recursive: true })
-  await copyTemplate(TEMPLATE_DIR, destDir)
-  await setProjectName(destDir, projectName)
-  await applyTheme(destDir, themeChoice)
+  if (!args.project) {
+    await copyTemplate(TEMPLATE_DIR, destDir)
+    await setProjectName(destDir, projectName)
+    await applyTheme(destDir, themeChoice)
+  }
 
   // 3b. Generate from a designer project (--project) or a schema file (--from).
   let entities = null
   let source = null
+  let deployLabel = null
   try {
     if (args.project) {
-      entities = await applyProject(destDir, args.project)
+      const result = await applyProject(destDir, args.project)
+      entities = result.titles
+      deployLabel = result.deployLabel
       source = args.project
     } else if (args.from) {
       entities = await applyFromSchema(destDir, args.from)
@@ -374,6 +359,9 @@ async function main() {
   // 4. Next steps.
   const rel = isAbsolute(target) || target.startsWith('.') ? target : `./${target}`
   stdout.write(`\n${color('green', '✔')} Scaffolded ${color('bold', projectName)} into ${rel}\n`)
+  if (deployLabel) {
+    stdout.write(`  ${color('dim', 'deploy')} ${deployLabel}\n`)
+  }
   if (themeChoice) {
     stdout.write(`  ${color('dim', 'theme')} ${themeChoice.name}${themeChoice.dark ? ' (dark)' : ''}\n`)
   }

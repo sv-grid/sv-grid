@@ -1,0 +1,98 @@
+name: Daily tweet
+
+# Post one tweet per day to the @svgrid account. Each run picks the most timely
+# thing to promote (a recent npm release, the blog post that went live today, a
+# curated feature highlight, or an AI-generated original), attaches an image, and
+# posts it via the X API. The BLOG tweet uses the post's own hero image; other
+# types use a rendered branded card. See tools/twitter/README.md.
+#
+# Required repo secrets (posting):
+#   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET
+# Optional:
+#   ANTHROPIC_API_KEY - AI-written hooks (templates used without it)
+#   WEBSITE_TOKEN     - PAT to read the private website (blog check + blog images)
+#   vars.TWEET_MODEL  - model id for AI copy (default claude-sonnet-4-6)
+#
+# 07:40 UTC: after the website rebuild (deploy-website.yml, 07:12) so today's
+# blog post and its /blog-media image are present when we link to and post them.
+
+on:
+  workflow_dispatch:
+    inputs:
+      verify:
+        description: 'Verify credentials only (prints the handle, posts nothing)'
+        type: boolean
+        default: false
+      force:
+        description: 'Force a topic type (release | blog | highlight | ai)'
+        type: string
+        default: ''
+      post:
+        description: 'Actually post to X (unchecked = dry run)'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '40 7 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-tweet
+  cancel-in-progress: false
+
+jobs:
+  tweet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      # The blog + its /blog-media images live in the PRIVATE website submodule.
+      # Clone it so the blog check can see today's post and its hero image. If
+      # WEBSITE_TOKEN is absent the selector simply falls back past 'blog'.
+      - name: Check out the private website
+        env:
+          WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
+        run: |
+          if [ -z "$WEBSITE_TOKEN" ]; then
+            echo "No WEBSITE_TOKEN set; skipping blog check (selector falls back past 'blog')."
+            exit 0
+          fi
+          rm -rf website
+          git clone --depth 1 --branch main \
+            "https://x-access-token:${WEBSITE_TOKEN}@github.com/sv-grid/website.git" website
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium (for the card renderer)
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Post tweet
+        run: node tools/post-tweet.mjs ${{ inputs.verify && '--verify' || ((github.event_name == 'schedule' || inputs.post) && '--post' || '') }}
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TWEET_MODEL: ${{ vars.TWEET_MODEL }}
+          TWEET_FORCE: ${{ inputs.force }}
+
+      - name: Upload media preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tweet-media
+          path: .tweet-out/*
+          if-no-files-found: ignore
