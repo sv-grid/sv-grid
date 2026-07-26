@@ -13,6 +13,9 @@ node_modules/
 # Build output (CI rebuilds these; never commit)
 dist/
 build/
+
+# Automated tweet scratch output (rendered card + preview)
+.tweet-out/
 .svelte-kit/
 .vercel/
 *.tsbuildinfo

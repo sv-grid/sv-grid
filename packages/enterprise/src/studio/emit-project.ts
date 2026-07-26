@@ -1203,7 +1203,7 @@ const appSlug = (title: string): string =>
 
 /** The static SvelteKit + Vite scaffolding around the generated screens. */
 const SCAFFOLD_STATIC: ReadonlyArray<GeneratedFile> = [
-  { path: 'vite.config.ts', description: 'Vite config.', contents: `import { sveltekit } from '@sveltejs/vite-plugin-svelte'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({ plugins: [sveltekit()] })\n` },
+  { path: 'vite.config.ts', description: 'Vite config.', contents: `import { sveltekit } from '@sveltejs/kit/vite'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({ plugins: [sveltekit()] })\n` },
   { path: 'tsconfig.json', description: 'TypeScript config.', contents: `{\n  "extends": "./.svelte-kit/tsconfig.json",\n  "compilerOptions": {\n    "allowJs": true,\n    "checkJs": true,\n    "esModuleInterop": true,\n    "forceConsistentCasingInFileNames": true,\n    "resolveJsonModule": true,\n    "skipLibCheck": true,\n    "sourceMap": true,\n    "strict": true,\n    "moduleResolution": "bundler"\n  }\n}\n` },
   { path: 'src/app.html', description: 'HTML shell.', contents: `<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    %sveltekit.head%\n  </head>\n  <body data-sveltekit-preload-data="hover">\n    <div style="display: contents">%sveltekit.body%</div>\n  </body>\n</html>\n` },
   { path: 'src/app.d.ts', description: 'SvelteKit app types.', contents: `declare global {\n  namespace App {}\n}\n\nexport {}\n` },
