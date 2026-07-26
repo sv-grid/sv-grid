@@ -84,6 +84,14 @@
   let hoverTimer: ReturnType<typeof setTimeout> | undefined
   function onEnter() { if (trigger === 'hover') { clearTimeout(hoverTimer); setOpen(true) } }
   function onLeave() { if (trigger === 'hover') { hoverTimer = setTimeout(() => setOpen(false), 120) } }
+
+  /** Fallback accessible name for the panel when `ariaLabel` isn't given: the
+   * anchor's own aria-label, else its trimmed text content. */
+  function anchorFallbackLabel(): string | undefined {
+    const label = anchorEl?.getAttribute('aria-label')
+    if (label) return label
+    return anchorEl?.textContent?.trim() || undefined
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -93,6 +101,8 @@
   onclick={() => trigger === 'click' && toggle()}
   onpointerenter={onEnter}
   onpointerleave={onLeave}
+  onfocusin={onEnter}
+  onfocusout={onLeave}
 >
   {@render anchor?.()}
 </span>
@@ -108,9 +118,11 @@
     style:left={`${rect.left}px`}
     style:min-width={minWidth ? `${rect.width}px` : undefined}
     role="dialog"
-    aria-label={ariaLabel}
+    aria-label={ariaLabel ?? anchorFallbackLabel()}
     onpointerenter={onEnter}
     onpointerleave={onLeave}
+    onfocusin={onEnter}
+    onfocusout={onLeave}
   >
     {@render children?.()}
   </div>

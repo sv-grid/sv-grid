@@ -12,6 +12,7 @@
    * ```
    */
   import type { Snippet } from 'svelte'
+  import { type EditorDir } from './editor-contract'
 
   type Props = {
     count: number
@@ -24,6 +25,8 @@
     arrows?: boolean
     dots?: boolean
     ariaLabel?: string
+    /** Text direction (rtl mirrors the prev/next arrows + slide direction). */
+    dir?: EditorDir
   }
 
   let {
@@ -35,7 +38,11 @@
     arrows = true,
     dots = true,
     ariaLabel = 'Carousel',
+    dir,
   }: Props = $props()
+
+  const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
+  const rtl = $derived(resolvedDir === 'rtl')
 
   function go(i: number) {
     if (count === 0) return
@@ -44,10 +51,13 @@
   const next = () => go(current + 1)
   const prev = () => go(current - 1)
 
-  // Autoplay, paused while hovered/focused.
+  // Autoplay, paused while hovered/focused, or stopped via the persistent
+  // play/pause toggle (WCAG 2.2.2: auto-advancing content needs a way to stop
+  // it that doesn't depend on hover/focus).
   let paused = $state(false)
+  let userPaused = $state(false)
   $effect(() => {
-    if (!autoplay || paused || count < 2) return
+    if (!autoplay || paused || userPaused || count < 2) return
     const t = setInterval(next, autoplay)
     return () => clearInterval(t)
   })
@@ -82,9 +92,9 @@
 >
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sv-carousel__viewport" onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up}>
-    <div class="sv-carousel__track" class:is-dragging={dragging} style:transform={`translateX(calc(${-current * 100}% + ${dx}px))`}>
+    <div class="sv-carousel__track" class:is-dragging={dragging} style:transform={`translateX(calc(${(rtl ? current : -current) * 100}% + ${dx}px))`}>
       {#each Array(count) as _, i (i)}
-        <div class="sv-carousel__slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${count}`} aria-hidden={i !== current}>
+        <div class="sv-carousel__slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${count}`} aria-hidden={i !== current} inert={i !== current}>
           {@render slide?.(i)}
         </div>
       {/each}
@@ -92,8 +102,8 @@
   </div>
 
   {#if arrows && count > 1}
-    <button type="button" class="sv-carousel__arrow is-prev" aria-label="Previous slide" onclick={prev} disabled={!loop && current === 0}>‹</button>
-    <button type="button" class="sv-carousel__arrow is-next" aria-label="Next slide" onclick={next} disabled={!loop && current === count - 1}>›</button>
+    <button type="button" class="sv-carousel__arrow is-prev" aria-label={rtl ? 'Next slide' : 'Previous slide'} onclick={rtl ? next : prev} disabled={rtl ? (!loop && current === count - 1) : (!loop && current === 0)}>{rtl ? '›' : '‹'}</button>
+    <button type="button" class="sv-carousel__arrow is-next" aria-label={rtl ? 'Previous slide' : 'Next slide'} onclick={rtl ? prev : next} disabled={rtl ? (!loop && current === 0) : (!loop && current === count - 1)}>{rtl ? '‹' : '›'}</button>
   {/if}
 
   {#if dots && count > 1}
@@ -102,6 +112,16 @@
         <button type="button" class="sv-carousel__dot" class:is-active={i === current} aria-label={`Go to slide ${i + 1}`} aria-current={i === current ? 'true' : undefined} onclick={() => go(i)}></button>
       {/each}
     </div>
+  {/if}
+
+  {#if autoplay > 0}
+    <button
+      type="button"
+      class="sv-carousel__playpause"
+      aria-label={userPaused ? 'Play autoplay' : 'Pause autoplay'}
+      aria-pressed={userPaused}
+      onclick={() => (userPaused = !userPaused)}
+    >{userPaused ? '▶' : '⏸'}</button>
   {/if}
 </div>
 
@@ -131,4 +151,13 @@
     background: color-mix(in srgb, var(--sg-fg, #0f172a) 30%, var(--sg-bg, #fff)); transition: background 0.15s, width 0.15s;
   }
   .sv-carousel__dot.is-active { width: 20px; border-radius: 4px; background: var(--sg-accent, #2563eb); }
+
+  .sv-carousel__playpause {
+    position: absolute; top: 10px; inset-inline-end: 10px; z-index: 2;
+    width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%;
+    background: color-mix(in srgb, var(--sg-bg, #fff) 82%, transparent); color: var(--sg-fg, #0f172a);
+    border: 1px solid var(--sg-border, #e2e8f0); cursor: pointer; font-size: 12px; line-height: 1;
+    box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.3);
+  }
+  .sv-carousel__playpause:hover { background: var(--sg-bg, #fff); }
 </style>

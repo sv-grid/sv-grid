@@ -18,6 +18,7 @@
   import type { Snippet } from 'svelte'
   import { portalToBody, popIn } from './popover'
   import { createDismissableLayer } from './a11y/dismissable'
+  import { createFocusTrap } from './a11y/focus-trap'
   import SvMenuList, { type MenuItem } from './SvMenuList.svelte'
 
   type Props = {
@@ -33,6 +34,7 @@
   let open = $state(false)
   let pos = $state({ x: 0, y: 0 })
   let panelEl = $state<HTMLDivElement | null>(null)
+  let zoneEl = $state<HTMLDivElement | null>(null)
 
   const MENU_W = 200
   function openAt(clientX: number, clientY: number) {
@@ -50,9 +52,24 @@
     openAt(e.clientX, e.clientY)
   }
 
+  // Keyboard equivalent of a right-click: the ContextMenu key, or Shift+F10.
+  // Anchors at the focused zone's own position instead of the (nonexistent)
+  // pointer coordinates.
+  function onZoneKeydown(e: KeyboardEvent) {
+    if (disabled) return
+    const isMenuKey = e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)
+    if (!isMenuKey) return
+    e.preventDefault()
+    const rect = zoneEl?.getBoundingClientRect()
+    openAt(rect ? rect.left : 0, rect ? rect.bottom : 0)
+  }
+
   $effect(() => {
-    if (!open) return
-    queueMicrotask(() => panelEl?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')?.focus())
+    if (!open || !panelEl) return
+    const trap = createFocusTrap(panelEl, {
+      initialFocus: () => panelEl?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])') ?? null,
+    })
+    trap.activate()
     const layer = createDismissableLayer({
       element: () => panelEl,
       onDismiss: () => (open = false),
@@ -61,12 +78,12 @@
     // Reposition-close on scroll (a moved anchor would leave the menu stranded).
     const onScroll = () => (open = false)
     window.addEventListener('scroll', onScroll, true)
-    return () => { layer.release(); window.removeEventListener('scroll', onScroll, true) }
+    return () => { layer.release(); trap.release(); window.removeEventListener('scroll', onScroll, true) }
   })
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="sv-ctx__zone" oncontextmenu={onContextMenu}>
+<!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_tabindex -->
+<div class="sv-ctx__zone" bind:this={zoneEl} tabindex={disabled ? -1 : 0} oncontextmenu={onContextMenu} onkeydown={onZoneKeydown}>
   {@render children?.()}
 </div>
 
@@ -86,7 +103,10 @@
 {/if}
 
 <style>
-  .sv-ctx__zone { display: contents; }
+  /* display:contents generates no box and per spec cannot receive focus - it
+     must be a real box for the keyboard-open path (tabindex) to work at all. */
+  .sv-ctx__zone { display: block; }
+  .sv-ctx__zone:focus-visible { outline: 2px solid var(--sg-accent, #6366f1); outline-offset: 1px; }
   :global(.sv-ctx) {
     z-index: 2147483646; min-width: 200px;
     background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a);

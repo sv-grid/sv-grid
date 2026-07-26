@@ -41,7 +41,11 @@ export type DropdownListConfig = {
   hint?: () => string | undefined
 }
 
+let uid = 0
+
 export function createDropdownList(config: DropdownListConfig) {
+  const listId = `sv-ddl-${uid++}`
+  const optionId = (index: number) => `${listId}-opt-${index}`
   const opts = () => config.options()
   const disabled = () => config.disabled?.() ?? false
 
@@ -125,6 +129,8 @@ export function createDropdownList(config: DropdownListConfig) {
       type: 'button' as const,
       'aria-haspopup': 'listbox' as const,
       'aria-expanded': open,
+      'aria-controls': listId,
+      'aria-activedescendant': open && opts()[active] ? optionId(active) : undefined,
       ...editorAria(ariaState()),
       disabled: disabled(),
       onclick: toggle,
@@ -132,6 +138,7 @@ export function createDropdownList(config: DropdownListConfig) {
     }),
     /** Spread onto the listbox container. */
     listboxProps: () => ({
+      id: listId,
       role: 'listbox' as const,
       tabindex: -1,
     }),
@@ -140,6 +147,7 @@ export function createDropdownList(config: DropdownListConfig) {
       const o = opts()[index]
       return {
         role: 'option' as const,
+        id: optionId(index),
         tabindex: -1,
         'aria-selected': o ? o.value === config.value() : false,
         'aria-disabled': o?.disabled,

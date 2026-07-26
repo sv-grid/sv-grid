@@ -138,6 +138,7 @@ export function createCombobox(config: ComboboxConfig) {
       'aria-expanded': open,
       'aria-controls': listId,
       'aria-autocomplete': 'list' as const,
+      'aria-activedescendant': open && filtered[active] ? optionId(active) : undefined,
       ...editorAria(ariaState()),
       value: shownText,
       disabled: disabled(),

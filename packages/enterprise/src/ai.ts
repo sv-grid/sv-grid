@@ -60,7 +60,7 @@ export type AIRequest = {
   maxOutputTokens?: number
 }
 
-export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify' | 'export' | 'anomaly'
+export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify' | 'export' | 'anomaly' | 'chart'
 
 let provider: AIProvider | null = null
 
@@ -807,7 +807,157 @@ export async function aiFindAnomalies<
 }
 
 // ---------------------------------------------------------------------------
-// 7. Mock provider for examples + tests
+// 7. Natural-language chart ("chart this")
+// ---------------------------------------------------------------------------
+
+export type AIChartType = 'bar' | 'line' | 'area' | 'pie'
+
+export type AIChartPlan = {
+  type: AIChartType
+  /** Group-by (category-axis) column field, or null. */
+  dimension: string | null
+  /** Split-by column field: one series per distinct value, or null. */
+  series: string | null
+  /** Measure (value-axis) column field, or null. */
+  measure: string | null
+  reduce: 'sum' | 'avg' | 'count'
+  stacked: boolean
+  logScale: boolean
+  timeAxis: boolean
+  valueFormat: 'number' | 'currency' | 'percent'
+  rationale: string
+}
+
+export type AIChartOptions = {
+  /** Apply the plan to the grid's chart panel (open + configure). Default false. */
+  apply?: boolean
+  signal?: AbortSignal
+}
+
+/**
+ * Translate a natural-language request into a chart plan for the grid's built-in
+ * `charting` panel. Validates every field against the real schema, then (with
+ * `apply: true`) pushes it into the panel through `api.configureChart`.
+ */
+export async function aiChart<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: SvGridApi<TFeatures, TData>,
+  query: string,
+  opts: AIChartOptions = {},
+): Promise<AIChartPlan> {
+  assertEnterpriseLicensed('AI assistant')
+  const schema = buildColumnSchema(api)
+  const prompt =
+    `You are a charting assistant for a data grid. Translate the user's request ` +
+    `into a strict-JSON chart plan the grid can render.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Output JSON schema:\n` +
+    `{ "type": "bar"|"line"|"area"|"pie", ` +
+    `"dimension": "<a categorical column to group by>", ` +
+    `"series": "<a second categorical column to split into series, or null>", ` +
+    `"measure": "<a numeric column to aggregate>", ` +
+    `"reduce": "sum"|"avg"|"count", ` +
+    `"stacked": true|false, ` +
+    `"logScale": true|false, ` +
+    `"timeAxis": true|false, ` +
+    `"valueFormat": "number"|"currency"|"percent", ` +
+    `"rationale": "<one-sentence explanation>" }\n\n` +
+    `Rules: pick "dimension" and "series" from text/date columns and "measure" ` +
+    `from a numeric column; use only column names from the list above; ` +
+    `"stacked"/"stack" -> stacked:true; "log"/"logarithmic" -> logScale:true; ` +
+    `"over time"/"by date"/a date dimension -> timeAxis:true; ` +
+    `money/revenue/price/$ -> valueFormat:"currency"; rate/%/share -> valueFormat:"percent"; ` +
+    `else valueFormat:"number". default reduce is "sum". ` +
+    `Return JSON only, no prose.\n\n` +
+    `User request: ${query}`
+
+  const plan = await callJSON<AIChartPlan>({
+    prompt,
+    task: 'chart',
+    signal: opts.signal,
+    maxOutputTokens: 300,
+  })
+
+  const valid = new Set(schema.map((c) => c.field))
+  const numericFields = new Set(schema.filter((c) => c.type === 'number').map((c) => c.field))
+  const CHART_TYPES: AIChartType[] = ['bar', 'line', 'area', 'pie']
+  plan.type = CHART_TYPES.includes(plan.type) ? plan.type : 'bar'
+  plan.dimension = plan.dimension && valid.has(plan.dimension) ? plan.dimension : null
+  plan.series = plan.series && valid.has(plan.series) && plan.series !== plan.dimension ? plan.series : null
+  plan.measure =
+    plan.measure && numericFields.has(plan.measure)
+      ? plan.measure
+      : (schema.find((c) => c.type === 'number')?.field ?? null)
+  plan.reduce = ['sum', 'avg', 'count'].includes(plan.reduce) ? plan.reduce : 'sum'
+  plan.stacked = plan.stacked === true
+  plan.logScale = plan.logScale === true
+  plan.timeAxis = plan.timeAxis === true
+  plan.valueFormat = ['number', 'currency', 'percent'].includes(plan.valueFormat) ? plan.valueFormat : 'number'
+  plan.rationale = plan.rationale ?? ''
+
+  if (opts.apply === true) {
+    const cfg = api as unknown as { configureChart?: (c: Record<string, unknown>) => void }
+    cfg.configureChart?.({
+      open: true,
+      type: plan.type,
+      dimension: plan.dimension,
+      series: plan.series,
+      measure: plan.measure,
+      reduce: plan.reduce,
+      stacked: plan.stacked,
+      logScale: plan.logScale,
+      timeAxis: plan.timeAxis,
+      valueFormat: plan.valueFormat,
+    })
+  }
+
+  return plan
+}
+
+/**
+ * Wire the grid's chart-panel AI button to the model: registers a handler (via
+ * `api.setChartAiHandler`) that runs `aiChart` and returns the plan for the
+ * panel to apply + explain. Call once after `onApiReady`. `installEnterprise`
+ * calls this for you.
+ */
+export function enableAiCharting<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(api: SvGridApi<TFeatures, TData>): void {
+  const hook = api as unknown as {
+    setChartAiHandler?: (
+      fn: ((prompt: string) => Promise<Record<string, unknown> | null>) | null,
+    ) => void
+  }
+  hook.setChartAiHandler?.(async (prompt: string) => {
+    const plan = await aiChart(api, prompt)
+    return {
+      type: plan.type,
+      dimension: plan.dimension,
+      series: plan.series,
+      measure: plan.measure,
+      reduce: plan.reduce,
+      stacked: plan.stacked,
+      logScale: plan.logScale,
+      timeAxis: plan.timeAxis,
+      valueFormat: plan.valueFormat,
+      rationale: plan.rationale,
+    }
+  })
+}
+
+export function disableAiCharting<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(api: SvGridApi<TFeatures, TData>): void {
+  const hook = api as unknown as { setChartAiHandler?: (fn: null) => void }
+  hook.setChartAiHandler?.(null)
+}
+
+// ---------------------------------------------------------------------------
+// 8. Mock provider for examples + tests
 // ---------------------------------------------------------------------------
 
 /**
@@ -838,7 +988,57 @@ export const mockAIProvider: AIProvider = async (req) => {
   if (req.task === 'anomaly') {
     return JSON.stringify(buildMockAnomaly(req.prompt))
   }
+  if (req.task === 'chart') {
+    return JSON.stringify(buildMockChart(req.prompt))
+  }
   return '{}'
+}
+
+function buildMockChart(prompt: string): AIChartPlan {
+  const q = extractUserRequest(prompt)
+  const typed = extractFieldTypes(prompt)
+  const textFields = typed.filter((f) => f.type === 'string' || f.type === 'date').map((f) => f.name)
+  const numberFields = typed.filter((f) => f.type === 'number').map((f) => f.name)
+
+  const type: AIChartType =
+    /\bline\b|\btrend\b|over time/.test(q) ? 'line'
+    : /\barea\b/.test(q) ? 'area'
+    : /\bpie\b|share|proportion|breakdown/.test(q) ? 'pie'
+    : 'bar'
+
+  const byMatch = q.match(/\bby\s+([a-z0-9_ ]+?)(?:\s+(?:split|stacked|grouped|by|as|,|$))/)
+  const pickText = (hint?: string): string | null => {
+    if (hint) {
+      const f = textFields.find((t) => t.toLowerCase() === hint.trim() || (hint.trim().length >= 4 && t.toLowerCase().includes(hint.trim())))
+      if (f) return f
+    }
+    return null
+  }
+  const dimension = pickText(byMatch?.[1]) ?? textFields[0] ?? null
+  const series =
+    /\b(split|stack(?:ed)?|by product|by category|per)\b/.test(q)
+      ? (textFields.find((t) => t !== dimension) ?? null)
+      : null
+  const measure = numberFields.find((n) => q.includes(n.toLowerCase())) ?? numberFields[0] ?? null
+  const reduce: 'sum' | 'avg' | 'count' =
+    /\b(average|avg|mean)\b/.test(q) ? 'avg' : /\b(count|number of|how many)\b/.test(q) ? 'count' : 'sum'
+  const stacked = /\bstack(ed)?\b/.test(q)
+  const logScale = /\b(log|logarithmic)\b/.test(q)
+  const timeAxis = /\b(over time|by date|by day|by month|by week|time series|timeline|trend)\b/.test(q)
+  const valueFormat: 'number' | 'currency' | 'percent' =
+    /\b(currency|money|revenue|sales|price|cost|\$|dollar)\b/.test(q) || /(price|revenue|amount|cost|sales)/i.test(measure ?? '')
+      ? 'currency'
+      : /\b(percent|percentage|%|rate|share)\b/.test(q)
+        ? 'percent'
+        : 'number'
+
+  return {
+    type, dimension, series, measure, reduce, stacked, logScale, timeAxis, valueFormat,
+    rationale:
+      `${type} chart of ${reduce}(${measure ?? 'value'}) by ${dimension ?? 'category'}` +
+      `${series ? `, split by ${series}` : ''}${stacked ? ', stacked' : ''}` +
+      `${logScale ? ', log scale' : ''}${timeAxis ? ', date axis' : ''} (mock - wire a real model for genuine parsing).`,
+  }
 }
 
 function extractUserRequest(prompt: string): string {

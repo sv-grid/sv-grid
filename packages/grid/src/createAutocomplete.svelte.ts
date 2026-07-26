@@ -41,7 +41,12 @@ export type AutocompleteConfig = {
   hint?: () => string | undefined
 }
 
+let uid = 0
+
 export function createAutocomplete(config: AutocompleteConfig) {
+  const id = `sv-ac-${uid++}`
+  const listId = `${id}-list`
+  const optionId = (index: number) => `${listId}-opt-${index}`
   const minChars = () => config.minChars?.() ?? 1
 
   const ariaState = (): EditorAriaState => ({
@@ -82,6 +87,8 @@ export function createAutocomplete(config: AutocompleteConfig) {
     get filtered() { return filtered },
     /** Controlled text value. */
     get value() { return config.value() },
+    /** id of the listbox element (matches inputProps `aria-controls`). */
+    listId,
     isActive: (i: number) => i === active,
     setActive: (i: number) => { active = i },
     maybeOpen,
@@ -94,7 +101,9 @@ export function createAutocomplete(config: AutocompleteConfig) {
       id: config.id?.(),
       role: 'combobox' as const,
       'aria-expanded': open,
+      'aria-controls': listId,
       'aria-autocomplete': 'list' as const,
+      'aria-activedescendant': open && filtered[active] ? optionId(active) : undefined,
       ...editorAria(ariaState()),
       value: config.value(),
       disabled: config.disabled?.() ?? false,
@@ -104,10 +113,12 @@ export function createAutocomplete(config: AutocompleteConfig) {
     }),
     /** Spread onto the listbox container. */
     listboxProps: () => ({
+      id: listId,
       role: 'listbox' as const,
     }),
     /** Spread onto the suggestion at `index` (index into `filtered`). */
     optionProps: (index: number) => ({
+      id: optionId(index),
       role: 'option' as const,
       tabindex: -1,
       'aria-selected': index === active,

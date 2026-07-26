@@ -54,6 +54,7 @@
   } from "./SvGrid.helpers";
   import { createSvGridController } from "./SvGrid.controller.svelte";
   import GridMenus from "./GridMenus.svelte";
+  import SvGridChartPanel from "./SvGridChartPanel.svelte";
   import GridFooter from "./GridFooter.svelte";
   import SvGridBoard from "./SvGridBoard.svelte";
   let props: Props<TFeatures, TData> = $props();
@@ -1303,35 +1304,52 @@
       </label>
     {/if}
 
-    {#if toolPanelEnabled}
+    {#if toolPanelEnabled || ctrl.chartingEnabled}
       <div class="sv-grid-toolbar">
-        <button
-          type="button"
-          class="sv-grid-toolbar-btn"
-          class:is-active={ctrl.toolPanelOpen}
-          aria-label={ctrl.toolPanelOpen
-            ? "Close tool panel"
-            : "Open tool panel (columns & filters)"}
-          aria-expanded={ctrl.toolPanelOpen}
-          onclick={() => (ctrl.toolPanelOpen = !ctrl.toolPanelOpen)}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="15"
-            height="15"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
+        {#if toolPanelEnabled}
+          <button
+            type="button"
+            class="sv-grid-toolbar-btn"
+            class:is-active={ctrl.toolPanelOpen}
+            aria-label={ctrl.toolPanelOpen
+              ? "Close tool panel"
+              : "Open tool panel (columns & filters)"}
+            aria-expanded={ctrl.toolPanelOpen}
+            onclick={() => (ctrl.toolPanelOpen = !ctrl.toolPanelOpen)}
           >
-            <rect x="3" y="4" width="6" height="16" rx="1" />
-            <rect x="11" y="4" width="4" height="16" rx="1" />
-            <rect x="17" y="4" width="4" height="16" rx="1" />
-          </svg>
-          Columns &amp; Filters
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              width="15"
+              height="15"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="4" width="6" height="16" rx="1" />
+              <rect x="11" y="4" width="4" height="16" rx="1" />
+              <rect x="17" y="4" width="4" height="16" rx="1" />
+            </svg>
+            Columns &amp; Filters
+          </button>
+        {/if}
+        {#if ctrl.chartingEnabled}
+          <button
+            type="button"
+            class="sv-grid-toolbar-btn sv-grid-chart-toggle"
+            class:is-active={ctrl.chartPanelOpen}
+            aria-label={ctrl.chartPanelOpen ? "Close chart" : "Open chart"}
+            aria-expanded={ctrl.chartPanelOpen}
+            onclick={() => (ctrl.chartPanelOpen = !ctrl.chartPanelOpen)}
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" />
+            </svg>
+            Chart
+          </button>
+        {/if}
       </div>
     {/if}
 
@@ -2756,6 +2774,10 @@
           {/if}
         </aside>
       {/if}
+    {/if}
+
+    {#if ctrl.chartingEnabled && ctrl.chartPanelOpen}
+      <SvGridChartPanel {ctrl} />
     {/if}
   </div>
   <!-- /.sv-grid-root -->

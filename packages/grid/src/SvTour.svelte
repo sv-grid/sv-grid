@@ -18,6 +18,8 @@
    */
   import type { TourStep } from './ui-app.types'
   import { portalToBody } from './popover'
+  import { createFocusTrap } from './a11y/focus-trap'
+  import type { EditorDir } from './editor-contract'
 
   type Props = {
     steps: ReadonlyArray<TourStep>
@@ -25,12 +27,15 @@
     onFinish?: () => void
     onSkip?: () => void
     onStep?: (index: number) => void
+    /** Text direction; under `'rtl'` the Left/Right advance/back keys swap. */
+    dir?: EditorDir
   }
 
-  let { steps, open = $bindable(false), onFinish, onSkip, onStep }: Props = $props()
+  let { steps, open = $bindable(false), onFinish, onSkip, onStep, dir }: Props = $props()
 
   let index = $state(0)
   let rect = $state<DOMRect | null>(null)
+  let popEl = $state<HTMLDivElement | null>(null)
   const step = $derived(steps[index])
 
   function targetEl(): HTMLElement | null {
@@ -43,10 +48,16 @@
     el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
     rect = el ? el.getBoundingClientRect() : null
   }
+  // Move focus into the popover on open + on every step change (its Next button
+  // is the sensible default target); the Tab trap (below) keeps it there.
+  function focusPopover() {
+    const btn = popEl?.querySelector<HTMLElement>('.sv-tour__next')
+    ;(btn ?? popEl)?.focus()
+  }
   function goto(i: number) {
     index = Math.max(0, Math.min(i, steps.length - 1))
     onStep?.(index)
-    queueMicrotask(measure)
+    queueMicrotask(() => { measure(); focusPopover() })
   }
   function next() { if (index >= steps.length - 1) finish(); else goto(index + 1) }
   function back() { goto(index - 1) }
@@ -56,14 +67,15 @@
   $effect(() => {
     if (!open) return
     index = 0
-    queueMicrotask(measure)
+    queueMicrotask(() => { measure(); focusPopover() })
     const reflow = () => measure()
     window.addEventListener('resize', reflow)
     window.addEventListener('scroll', reflow, true)
+    const rtl = dir === 'rtl'
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.preventDefault(); skip() }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); next() }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); back() }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); (rtl ? back : next)() }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); (rtl ? next : back)() }
     }
     window.addEventListener('keydown', onKey)
     return () => {
@@ -71,6 +83,18 @@
       window.removeEventListener('scroll', reflow, true)
       window.removeEventListener('keydown', onKey)
     }
+  })
+
+  // Focus trap for the duration the tour is open, from the shared primitive
+  // (same one SvModal/SvDrawer use): traps Tab within the popover and restores
+  // focus to whatever triggered the tour once it closes.
+  $effect(() => {
+    if (!open || !popEl) return
+    const trap = createFocusTrap(popEl, {
+      initialFocus: () => popEl?.querySelector<HTMLElement>('.sv-tour__next') ?? null,
+    })
+    trap.activate()
+    return () => trap.release()
   })
 
   const POP_W = 300
@@ -100,6 +124,7 @@
     {/if}
 
     <div
+      bind:this={popEl}
       class="sv-tour__pop sv-tour__pop--{pop.place}"
       style:top={pop.top}
       style:left={pop.left}

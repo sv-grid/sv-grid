@@ -48,6 +48,24 @@
     const id = e.dataTransfer?.getData('text/sv-column')
     if (id) add(id)
   }
+  /** Keyboard equivalent of dragging a chip: moves the chip at `i` one slot earlier/later,
+   *  reusing `reorder()` (via `dragIndex`) so there is a single source of truth for the move. */
+  function moveByKeyboard(i: number, delta: number) {
+    const to = i + delta
+    if (to < 0 || to >= groupBy.length) return
+    dragIndex = i
+    reorder(to)
+  }
+  function onChipKeydown(e: KeyboardEvent, i: number) {
+    if (!e.altKey) return
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      moveByKeyboard(i, -1)
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      moveByKeyboard(i, 1)
+    }
+  }
 </script>
 
 <div
@@ -63,14 +81,19 @@
   {:else}
     {#each groupBy as id, i (id)}
       {#if i > 0}<span class="sv-rgp-sep" aria-hidden="true">›</span>{/if}
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
       <span
         class="sv-rgp-chip"
         class:sv-rgp-chip-drag={dragIndex === i}
+        role="group"
+        tabindex="0"
+        aria-label={`Grouped by ${labelOf(id)}, position ${i + 1} of ${groupBy.length}. Press Alt+Arrow keys to reorder.`}
         draggable="true"
         ondragstart={() => (dragIndex = i)}
         ondragend={() => (dragIndex = null)}
         ondragover={(e) => e.preventDefault()}
         ondrop={() => reorder(i)}
+        onkeydown={(e) => onChipKeydown(e, i)}
       >
         <span class="sv-rgp-grip" aria-hidden="true">⠿</span>
         {labelOf(id)}

@@ -84,7 +84,6 @@
     const layer = createDismissableLayer({
       element: () => [triggerEl, panelEl],
       onDismiss: () => col.popover.close(),
-      closeOnEscape: false,
     })
     layer.activate()
     return () => {

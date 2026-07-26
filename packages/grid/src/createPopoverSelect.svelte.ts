@@ -182,9 +182,11 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
     onPanelKeydown,
     /** True when item `i` is the roving-active one. */
     isActive: (i: number) => i === active,
-    /** Spread onto the trigger button. */
-    triggerProps: () => ({
-      'aria-haspopup': 'listbox' as const,
+    /** Spread onto the trigger button. Pass the ARIA popup type the panel
+     *  exposes (mirrors `focusOwnerProps(role)`); defaults to 'listbox' for
+     *  the classic select panels. */
+    triggerProps: (haspopup: 'listbox' | 'tree' | 'grid' = 'listbox') => ({
+      'aria-haspopup': haspopup,
       'aria-expanded': open,
       'aria-controls': open ? panelId : undefined,
       onkeydown: onTriggerKeydown,

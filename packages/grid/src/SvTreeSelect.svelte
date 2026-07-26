@@ -104,16 +104,23 @@
     estimatedHeight: () => 300,
     onExtraKey: (e, act) => {
       const row = rows[act]
-      if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        if (row?.hasChildren && !row.expanded) setExpanded(row.node.value, true)
-        return true
+      if (!row) return false
+      // "expand" opens the node or steps into the first child; "collapse" closes
+      // it or jumps to the parent - same fallback as createTree's core.
+      const expand = () => {
+        if (row.hasChildren && !row.expanded) setExpanded(row.node.value, true)
+        else if (row.hasChildren && row.expanded) ts.active = Math.min(act + 1, rows.length - 1)
       }
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        if (row?.hasChildren && row.expanded) setExpanded(row.node.value, false)
-        return true
+      const collapse = () => {
+        if (row.hasChildren && row.expanded) setExpanded(row.node.value, false)
+        else {
+          let pi = act - 1
+          while (pi >= 0 && rows[pi]!.depth >= row.depth) pi--
+          if (pi >= 0) ts.active = pi
+        }
       }
+      if (e.key === 'ArrowRight') { e.preventDefault(); expand(); return true }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); collapse(); return true }
       return false
     },
     idPrefix: 'sv-ts',
@@ -129,7 +136,7 @@
       class:is-invalid={invalid}
       {disabled}
       onclick={() => ts.toggle()}
-      {...ts.triggerProps()}
+      {...ts.triggerProps('tree')}
       {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
     >
       <span class="sv-ts__value" class:is-placeholder={!triggerText}>{triggerText || placeholder}</span>

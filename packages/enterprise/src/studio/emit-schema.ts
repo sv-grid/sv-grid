@@ -12,7 +12,7 @@
  */
 import { resolveIdField, titleCase, type EntityField, type EntityFieldType, type EntitySchema, type ValidationRuleSpec } from '../schema.js'
 import type { GeneratedFile } from './scaffold.js'
-import type { EntityDataSource, RestSource, ShellConfig, SqlDialectKind } from './project.js'
+import type { EntityDataSource, RestSource, ShellConfig, ShellStyle, SqlDialectKind } from './project.js'
 import { generateValue } from './sample-data.js'
 
 const pascal = (name: string): string =>
@@ -311,7 +311,7 @@ const SQL_DRIVERS: Record<'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso', {
  *  the route imports the shared access policy and rejects unauthorized writes -
  *  server-enforced, so a tampered client can't bypass it. When audit is on, every
  *  successful write is recorded. */
-function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean } = {}): GeneratedFile {
+function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean; screenIds?: string[] } = {}): GeneratedFile {
   const n = namesFor(schema)
   const key = (dialect === 'supabase' ? 'postgres' : (dialect ?? 'postgres')) as 'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso'
   const driver = SQL_DRIVERS[key]
@@ -321,7 +321,7 @@ function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectK
   // Every connected route validates writes against the schema server-side, and
   // (when enabled) authorizes them by role + records an audit entry.
   const opts = [`schema: ${n.schemaVar}`, `source`, `validate: true`]
-  if (feat.access) opts.push(`// Server-enforced RBAC: the caller's role comes from the session (event.locals).\n  authorize: ({ action, event }) => authorizeAction(getServerRole(event), action)`)
+  if (feat.access) opts.push(`// Server-enforced RBAC: the caller's role comes from the session (event.locals). Reads\n  // are allowed only if the role can open one of this entity's own screens.\n  authorize: ({ action, event }) => authorizeAction(getServerRole(event), action, ${JSON.stringify(feat.screenIds ?? [])})`)
   if (feat.audit) opts.push(`// Record every successful write to the audit trail.\n  audit: (e) => recordAudit({ entity: ${JSON.stringify(schema.name)}, action: e.action, recordId: e.id, values: e.values as Record<string, unknown> | undefined, actor: String(e.event.locals?.role ?? e.event.locals?.user ?? 'system') })`)
   const handlers = `export const { POST } = createKitHandlers({\n  ${opts.join(',\n  ')},\n})`
   return {
@@ -556,7 +556,7 @@ export type NavItem = { href: string; label: string; id?: string }
 export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; dark?: boolean; access?: boolean; i18n?: boolean } = {}): GeneratedFile {
   const links = [{ href: '/', label: 'Home' }, ...nav]
   const shell = opts.shell ?? {}
-  const style: 'sidebar' | 'top-nav' = shell.style ?? 'sidebar'
+  const style: ShellStyle = shell.style ?? 'sidebar'
   const brand = (shell.brand ?? '').trim() || opts.title || 'My Studio App'
   const footer = shell.footer === undefined ? 'Built with SvGrid Studio' : shell.footer
   const right = style === 'sidebar' && shell.navPosition === 'right'
@@ -590,8 +590,9 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   const footConst = footer ? `\n  const footer = ${JSON.stringify(footer)}` : ''
   // Sidebar-only: a collapsible sidebar that docks on wide screens and becomes an
   // off-canvas drawer when collapsed or on tablet/phone (<= 1024px). The collapse
-  // choice persists; tablet/phone start collapsed.
-  const sideState = style === 'top-nav' ? '' : `
+  // choice persists; tablet/phone start collapsed. top-nav and bottom-nav are
+  // always-visible bars with no collapse/drawer state.
+  const sideState = style !== 'sidebar' ? '' : `
   let collapsed = $state(false)
   let narrow = $state(false)
   const drawer = $derived(collapsed || narrow)
@@ -693,6 +694,14 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   </header>
   ${mainMarkup}${footer ? `\n  <footer class="sv-app__footbar">{footer}</footer>` : ''}
 </div>`
+    : style === 'bottom-nav'
+    ? `<div class="sv-app sv-app--bottom">
+  ${mainMarkup}
+  <footer class="sv-app__bar sv-app__bar--bottom">
+    ${brandLink}
+    ${linksMarkup}
+  </footer>
+</div>`
     : `<div class="sv-app sv-app--side${right ? ' sv-app--right' : ''}" class:is-drawer={drawer} class:is-navopen={navOpen}>
   ${mobileBar}
   <aside class="sv-app__side">
@@ -717,6 +726,24 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
     .sv-app__bar { flex-direction: column; align-items: stretch; gap: 10px; padding: 10px 14px; }
     .sv-app__links { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
     .sv-app__link { white-space: nowrap; }
+  }`
+    : style === 'bottom-nav'
+    ? `  .sv-app--bottom { display: flex; flex-direction: column; min-height: 100vh; }
+  .sv-app__bar--bottom {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; align-items: center; gap: 20px; padding: 12px 22px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid color-mix(in srgb, var(--sg-fg, #0f172a) 16%, var(--sg-border, #e6e8ec));
+    background: var(--sg-header-bg, #f8fafc);
+  }
+  .sv-app__bar--bottom .sv-app__links { display: flex; flex-direction: row; gap: 4px; flex-wrap: wrap; }
+  /* Clears the fixed bottom bar so page content never renders underneath it. */
+  .sv-app--bottom .sv-app__main { padding-bottom: 70px; }
+  /* Mobile: brand drops out so the tab strip stays roomy; ties overflow to a horizontal scroll if there are many screens. */
+  @media (max-width: 640px) {
+    .sv-app__bar--bottom { gap: 10px; padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)); }
+    .sv-app__bar--bottom .sv-app__brand { display: none; }
+    .sv-app__bar--bottom .sv-app__links { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; }
+    .sv-app__bar--bottom .sv-app__link { white-space: nowrap; }
   }`
     : `  .sv-app--side { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
   .sv-app--side.sv-app--right { grid-template-columns: minmax(0, 1fr) 240px; }
@@ -894,13 +921,13 @@ export function prepareEntities(schemas: EntitySchema[]): { entries: Prepared[];
 /** Emit the shared entity modules: `src/lib/schemas.ts` + `src/lib/data.ts` (+ `connections.ts`). */
 export function emitEntityModules(
   schemas: EntitySchema[],
-  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean } = {},
+  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean; screensByEntity?: Map<string, string[]> } = {},
 ): { files: GeneratedFile[]; prepared: EntitySchema[] } {
   const { entries, seed } = prepareEntities(schemas)
   const { file: data, needs } = dataModule(entries, seed, opts.sources)
   const files: GeneratedFile[] = [schemasModule(entries), data]
   if (needs.supabase) files.push(connectionsModule(needs))
-  for (const r of needs.sqlRoutes) files.push(sqlRouteFile(r.schema, r.table, r.dialect, { access: opts.accessEnabled, audit: opts.auditEnabled }))
+  for (const r of needs.sqlRoutes) files.push(sqlRouteFile(r.schema, r.table, r.dialect, { access: opts.accessEnabled, audit: opts.auditEnabled, screenIds: opts.screensByEntity?.get(r.schema.name) ?? [] }))
   return { files, prepared: entries.map((e) => e.schema) }
 }
 

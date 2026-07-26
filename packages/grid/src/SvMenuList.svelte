@@ -21,19 +21,29 @@
    * Rendered inside a portalled panel by SvMenu; it self-imports for submenus.
    */
   import Self from './SvMenuList.svelte'
+  import { type EditorDir } from './editor-contract'
 
   let {
     items,
     onclose,
     onselect,
     submenu = false,
+    oncollapse,
+    dir,
   }: {
     items: ReadonlyArray<MenuItem>
-    /** Close the WHOLE menu (a leaf was chosen or Escape at the root). */
+    /** Close the WHOLE menu (a leaf was chosen, Escape, or outside-click). */
     onclose: () => void
     /** Report the chosen leaf item. */
     onselect: (item: MenuItem) => void
     submenu?: boolean
+    /** Collapse just THIS submenu level (ArrowLeft, or ArrowRight under `rtl`)
+     *  and refocus the item that opened it. Only meaningful when `submenu` is
+     *  true; the root list has nowhere to collapse into. */
+    oncollapse?: () => void
+    /** Text direction; under `rtl` the ArrowRight/ArrowLeft submenu open/close
+     *  keys swap (see createTree.svelte.ts for the reference pattern). */
+    dir?: EditorDir
   } = $props()
 
   // Indexes of real (non-separator) items, for roving focus.
@@ -61,20 +71,25 @@
   }
   function onKeydown(e: KeyboardEvent, i: number) {
     const item = items[i]
+    const rtl = dir === 'rtl'
+    // Open this item's submenu (opposite key under rtl).
+    const openThis = () => { if (item?.children?.length) { e.preventDefault(); openSub = i } }
+    // Collapse just THIS list back into its parent item (opposite key under
+    // rtl) - `oncollapse` is local to this nesting level, unlike `onclose`.
+    const collapseThis = () => { if (submenu) { e.preventDefault(); oncollapse?.() } }
     switch (e.key) {
       case 'ArrowDown': e.preventDefault(); move(1); break
       case 'ArrowUp': e.preventDefault(); move(-1); break
       case 'Home': e.preventDefault(); focusItem(focusable[0] ?? 0); break
       case 'End': e.preventDefault(); focusItem(focusable.at(-1) ?? 0); break
-      case 'ArrowRight':
-        if (item?.children?.length) { e.preventDefault(); openSub = i }
-        break
-      case 'ArrowLeft':
-        if (submenu) { e.preventDefault(); onclose() } // parent listens via its own onclose wiring
-        break
+      case 'ArrowRight': (rtl ? collapseThis : openThis)(); break
+      case 'ArrowLeft': (rtl ? openThis : collapseThis)(); break
       case 'Enter':
       case ' ': e.preventDefault(); if (item) choose(item); break
       case 'Escape': e.preventDefault(); onclose(); break
+      // Tab leaves the menu entirely (WAI-ARIA menu button pattern): close the
+      // whole tree rather than trapping focus inside a portalled panel.
+      case 'Tab': onclose(); break
     }
   }
 </script>
@@ -108,7 +123,14 @@
         </button>
         {#if item.children?.length && openSub === i}
           <div class="sv-menu__flyout">
-            <Self items={item.children} onclose={onclose} onselect={onselect} submenu />
+            <Self
+              items={item.children}
+              {onclose}
+              {onselect}
+              oncollapse={() => { openSub = -1; focusItem(i) }}
+              {dir}
+              submenu
+            />
           </div>
         {/if}
       </div>
@@ -134,7 +156,7 @@
   .sv-menu__label { flex: 1; white-space: nowrap; }
   .sv-menu__shortcut { color: var(--sg-muted, #94a3b8); font-size: 11.5px; margin-inline-start: 12px; }
   .sv-menu__chev { color: var(--sg-muted, #94a3b8); flex: none; }
-  .sv-menu[dir='rtl'] .sv-menu__chev, .sv-menu__list.is-submenu .sv-menu__chev { }
+  .sv-menu[dir='rtl'] .sv-menu__chev, .sv-menu__list.is-submenu .sv-menu__chev { transform: scaleX(-1); }
   .sv-menu__flyout {
     position: absolute; top: -5px; inset-inline-start: 100%; z-index: 1;
     background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e2e8f0);

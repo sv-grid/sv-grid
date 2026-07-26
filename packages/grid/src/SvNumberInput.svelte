@@ -118,7 +118,7 @@
   .sv-num.is-disabled { opacity: 0.6; }
   .sv-num__input {
     flex: 1; min-width: 0; border: 0; background: none; outline: none; color: inherit; font: inherit;
-    text-align: right; padding: 0 8px;
+    text-align: end; padding: 0 8px;
   }
   .sv-num--sm { height: 28px; font-size: 12px; }
   .sv-num--md { height: 34px; font-size: 13px; }

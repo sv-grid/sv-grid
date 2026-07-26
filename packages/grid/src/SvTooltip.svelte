@@ -2,8 +2,9 @@
   /**
    * SvTooltip - a small hover/focus tooltip anchored to its child, portalled to
    * <body> so it is never clipped. Shows after a short delay, hides on leave /
-   * blur / Escape, and is wired via `aria-describedby` (role="tooltip"). Respects
-   * keyboard users (opens on focus).
+   * blur / Escape, and is wired via `aria-describedby` (role="tooltip") onto the
+   * focusable child itself, so AT users get it announced on focus, not just
+   * sighted users on hover.
    *
    * ```svelte
    * <SvTooltip text="Delete row"><button aria-label="Delete">🗑</button></SvTooltip>
@@ -12,6 +13,7 @@
   import type { Snippet } from 'svelte'
   import { portalToBody, popIn } from './popover'
   import { nextEditorId } from './editor-contract'
+  import { getFocusable } from './a11y/focus-trap'
 
   type Props = {
     text: string
@@ -63,6 +65,29 @@
       window.removeEventListener('scroll', rp, true)
       window.removeEventListener('resize', rp)
       document.removeEventListener('keydown', onKey)
+    }
+  })
+
+  // The wrapper span above is never itself Tab-focusable, so putting
+  // aria-describedby only on it does nothing for keyboard/AT users - they
+  // focus the real interactive child (e.g. the <button> in the doc example),
+  // and that's the element whose accessible description actually gets
+  // announced. Mirror the id onto that child too, merging with (and later
+  // restoring) any aria-describedby it already carries.
+  $effect(() => {
+    if (!open || !anchorEl) return
+    const child = getFocusable(anchorEl)[0]
+    if (!child) return
+    const before = child.getAttribute('aria-describedby')
+    const ids = new Set((before ?? '').split(/\s+/).filter(Boolean))
+    ids.add(tid)
+    child.setAttribute('aria-describedby', [...ids].join(' '))
+    return () => {
+      const remaining = (child.getAttribute('aria-describedby') ?? '')
+        .split(/\s+/)
+        .filter((id) => id && id !== tid)
+      if (remaining.length) child.setAttribute('aria-describedby', remaining.join(' '))
+      else child.removeAttribute('aria-describedby')
     }
   })
 </script>

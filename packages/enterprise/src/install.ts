@@ -12,6 +12,8 @@ import { isLicenseKeySet } from './license'
 import { emitUnlicensedNudge } from './watermark'
 import {
   aiFilter, aiSmartFill, aiSummarize, aiClassify, aiExport, aiFindAnomalies,
+  aiChart, enableAiCharting,
+  type AIChartOptions, type AIChartPlan,
   type AIFilterOptions, type AIFilterResult,
   type AISmartFillOptions, type AISmartFillResult,
   type AISummarizeOptions, type AISummary,
@@ -38,6 +40,8 @@ export type EnterpriseAIApi<TData extends RowData> = {
   export(query: string, opts?: AIExportOptions): Promise<AIExportPlan>
   /** Scan a slice for anomalies / outliers, returning a structured list. */
   findAnomalies(opts?: AIAnomalyOptions): Promise<AIAnomalyResult>
+  /** Natural-language chart: "revenue by region, stacked by product". */
+  chart(query: string, opts?: AIChartOptions): Promise<AIChartPlan>
   // TData is referenced so the type stays bound to the row shape even
   // though the helpers all read through `api.getData()`. Lets callers
   // get correct inference downstream without explicit generics.
@@ -117,7 +121,10 @@ export function installEnterprise<
     classify: (opts) => aiClassify(pro, opts),
     export: (query, opts) => aiExport(pro, query, opts),
     findAnomalies: (opts) => aiFindAnomalies(pro, opts),
+    chart: (query, opts) => aiChart(pro, query, opts),
   }
+  // Wire the built-in chart panel's AI button (no-op without the `charting` prop).
+  enableAiCharting(pro)
   pro.pivot = {
     build: (config) =>
       createPivotModel<TFeatures, TData>(pro.getData(), config),

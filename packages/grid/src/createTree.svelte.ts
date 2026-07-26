@@ -231,6 +231,18 @@ export function createTree(config: TreeConfig) {
     config.onCheck?.([...next])
   }
 
+  // Step from `from` towards `dir` (+1/-1), skipping disabled rows, so roving
+  // focus never lands on a node with zero semantic affordance for AT users.
+  // Falls back to `from` if every row in that direction is disabled.
+  function stepEnabled(from: number, dir: 1 | -1): number {
+    let i = from
+    while (i + dir >= 0 && i + dir <= rows.length - 1) {
+      i += dir
+      if (!rows[i]?.node.disabled) return i
+    }
+    return from
+  }
+
   function onKeydown(e: KeyboardEvent) {
     const item = rows[active]
     if (!item) return
@@ -246,8 +258,8 @@ export function createTree(config: TreeConfig) {
     }
     const rtl = config.dir?.() === 'rtl'
     switch (e.key) {
-      case 'ArrowDown': e.preventDefault(); setActive(Math.min(active + 1, rows.length - 1), true); break
-      case 'ArrowUp': e.preventDefault(); setActive(Math.max(active - 1, 0), true); break
+      case 'ArrowDown': e.preventDefault(); setActive(stepEnabled(active, 1), true); break
+      case 'ArrowUp': e.preventDefault(); setActive(stepEnabled(active, -1), true); break
       case 'ArrowRight': e.preventDefault(); (rtl ? collapse : expand)(); break
       case 'ArrowLeft': e.preventDefault(); (rtl ? expand : collapse)(); break
       case 'Enter': e.preventDefault(); select(item.node); break
@@ -294,6 +306,7 @@ export function createTree(config: TreeConfig) {
         'aria-selected': row.node.id === selected(),
         'aria-expanded': row.hasChildren ? row.open : undefined,
         'aria-checked': ariaChecked,
+        'aria-disabled': row.node.disabled || undefined,
         'data-row': row.index,
         tabindex: row.index === active ? 0 : -1,
         onclick: () => { setActive(row.index); select(row.node) },

@@ -7,7 +7,7 @@
    * focus tooltips, a clickable legend that toggles series, optional data
    * labels, and an `onSelect` drill hook. No external charting dependency.
    */
-  import { buildChart, DEFAULT_PALETTE, type ChartSpec, type ChartSelection } from './chart'
+  import { buildChart, DEFAULT_PALETTE, formatChartValue, type ChartSpec, type ChartSelection } from './chart'
 
   type Props = {
     spec: ChartSpec
@@ -38,6 +38,10 @@
      *  export (PNG / SVG / copy). Default true when zoomable or onDrill is
      *  set, otherwise false. Set to `false` to hide explicitly. */
     toolbar?: boolean
+    /** Explicit chart pixel size (viewBox). When set, the chart lays out to
+     *  fit exactly - used by the docked panel to size the chart to its body. */
+    width?: number
+    height?: number
   }
   let {
     spec,
@@ -51,15 +55,19 @@
     brush = false,
     brushHeight = 88,
     toolbar,
+    width,
+    height,
   }: Props = $props()
   const showToolbar = $derived(toolbar ?? (zoomable || !!onDrill))
 
   const fmt = (v: number) =>
     formatValue
       ? formatValue(v)
-      : Number.isFinite(v)
-        ? v.toLocaleString(undefined, { maximumFractionDigits: 2 })
-        : String(v)
+      : spec.valueFormat
+        ? formatChartValue(v, spec.valueFormat)
+        : Number.isFinite(v)
+          ? v.toLocaleString(undefined, { maximumFractionDigits: 2 })
+          : String(v)
 
   let hidden = $state(new Set<string>())
   // Isolate: double-clicking a legend chip shows ONLY that series/slice.
@@ -290,7 +298,9 @@
   // chartEl) and hand buildChart a light/dark hint so low-value cells render as
   // "cold" rather than glaring white rectangles on a dark grid.
   let isDark = $state(false)
-  const geo = $derived(buildChart(visibleSpec, isDark ? 'dark' : 'light'))
+  const geo = $derived(
+    buildChart(width || height ? { ...visibleSpec, width, height } : visibleSpec, isDark ? 'dark' : 'light'),
+  )
   const isCartesian = $derived(
     spec.type !== 'pie' && spec.type !== 'heatmap' &&
     spec.type !== 'funnel' && spec.type !== 'radar' &&
@@ -727,6 +737,15 @@
           <text class="sv-grid-chart-axis" x={t.x} y={geo.plot.y + geo.plot.h + 16} text-anchor="middle">{truncate(t.label, 16)}</text>
         {/if}
       {/each}
+      <!-- Grouped (nested) category axis: parent tier under the leaf labels. -->
+      {#each geo.categoryGroupTicks as g (g.label + g.x0)}
+        {@const gy = geo.plot.y + geo.plot.h + (geo.xLabelRotated ? 46 : 32)}
+        <line class="sv-grid-chart-gridline" x1={g.x0 + 3} y1={gy - 9} x2={g.x1 - 3} y2={gy - 9} />
+        {#if g.x0 > geo.plot.x + 1}
+          <line class="sv-grid-chart-gridline" x1={g.x0} y1={geo.plot.y + geo.plot.h} x2={g.x0} y2={gy - 9} opacity="0.5" />
+        {/if}
+        <text class="sv-grid-chart-axis sv-grid-chart-group-label" x={g.xCenter} y={gy} text-anchor="middle">{truncate(g.label, Math.max(4, Math.floor((g.x1 - g.x0) / 7)))}</text>
+      {/each}
       {#if spec.yAxisTitle}
         <text class="sv-grid-chart-axis-title" x={13} y={geo.plot.y + geo.plot.h / 2} text-anchor="middle" transform={`rotate(-90 13 ${geo.plot.y + geo.plot.h / 2})`}>{spec.yAxisTitle}</text>
       {/if}
@@ -850,6 +869,7 @@
           onmousemove={(e) => hoverCell(e.clientX, e.clientY, cell)}
           onmouseleave={clearActive}
           onclick={() => select(cell.colLabel, cell.rowLabel, cell.value)}
+          onkeydown={(e) => { if (onSelect && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(cell.colLabel, cell.rowLabel, cell.value) } }}
         />
         {#if dataLabels && cell.w > 22 && cell.h > 14}
           <text class="sv-grid-chart-heatlabel" x={cell.x + cell.w / 2} y={cell.y + cell.h / 2 + 3} text-anchor="middle" fill={cell.textColor}>{fmt(cell.value)}</text>
@@ -887,6 +907,7 @@
           onmousemove={(e) => hoverFunnel(e.clientX, e.clientY, seg)}
           onmouseleave={clearActive}
           onclick={() => select(seg.label, seg.label, seg.value, fi)}
+          onkeydown={(e) => { if (onSelect && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(seg.label, seg.label, seg.value, fi) } }}
         />
         <text class="sv-grid-chart-funnel-label" x={seg.cx} y={seg.cy - 3} text-anchor="middle" fill={seg.textColor}>{truncate(seg.label, 24)}</text>
         <text class="sv-grid-chart-funnel-value" x={seg.cx} y={seg.cy + 11} text-anchor="middle" fill={seg.textColor}>
@@ -997,15 +1018,18 @@
 
     {#if isTreemap}
       {#each geo.treemapCells as cell, ti (ti)}
-        <!-- svelte-ignore a11y_no_static_element_interactions a11y_mouse_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions a11y_mouse_events_have_key_events a11y_no_noninteractive_tabindex -->
         <rect
           class="sv-grid-chart-treemap-cell"
           x={cell.x} y={cell.y} width={cell.w} height={cell.h}
           fill={cell.color}
+          role={onSelect ? 'button' : 'presentation'}
+          tabindex={onSelect ? 0 : undefined}
           aria-label={`${cell.name}: ${fmt(cell.value)}`}
           onmousemove={(e) => showTip(e.clientX, e.clientY, cell.name, [{ color: cell.color, value: fmt(cell.value) }])}
           onmouseleave={clearActive}
           onclick={() => select(cell.name, '', cell.value)}
+          onkeydown={(e) => { if (onSelect && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(cell.name, '', cell.value) } }}
         />
         {#if cell.w > 36 && cell.h > 18}
           <text class="sv-grid-chart-treemap-label" x={cell.x + 4} y={cell.y + 12} fill={cell.textColor}>{truncate(cell.name, Math.max(3, Math.floor(cell.w / 7)))}</text>
@@ -1034,17 +1058,23 @@
       {/each}
       <!-- Node rectangles + labels. -->
       {#each geo.sankeyNodes as node, ni (ni)}
-        <!-- svelte-ignore a11y_no_static_element_interactions a11y_mouse_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions a11y_mouse_events_have_key_events a11y_no_noninteractive_tabindex -->
         <rect
           class="sv-grid-chart-sankey-node"
           x={node.x} y={node.y} width={node.w} height={node.h}
           fill={node.color}
+          tabindex={0}
           aria-label={`${node.label}: in ${fmt(node.totalIn)}, out ${fmt(node.totalOut)}`}
           onmousemove={(e) => showTip(e.clientX, e.clientY, node.label, [
             { label: 'in',  value: fmt(node.totalIn) },
             { label: 'out', value: fmt(node.totalOut) },
           ])}
           onmouseleave={clearActive}
+          onfocus={(e) => { const b = e.currentTarget.getBoundingClientRect(); showTip(b.left + b.width / 2, b.top, node.label, [
+            { label: 'in',  value: fmt(node.totalIn) },
+            { label: 'out', value: fmt(node.totalOut) },
+          ]) }}
+          onblur={clearActive}
         />
         <text class="sv-grid-chart-sankey-label"
           x={node.column === 0 ? node.x + node.w + 4 : node.x - 4}
@@ -1269,6 +1299,10 @@
     font-size: 11px;
     font-weight: 600;
     font-family: inherit;
+  }
+  .sv-grid-chart-group-label {
+    fill: var(--sg-fg, #0f172a);
+    font-weight: 600;
   }
   .sv-grid-chart-crosshair {
     stroke: var(--sg-accent, #2563eb);
