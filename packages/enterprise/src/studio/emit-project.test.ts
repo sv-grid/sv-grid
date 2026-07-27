@@ -1139,9 +1139,21 @@ describe('code companion (design + your own code)', () => {
     const { p } = build()
     const page = emitStudioProject(p).find((f) => f.path === 'src/routes/report/+page.svelte')!
     expect(page.contents).toContain("import * as handlers from './handlers'")
-    expect(page.contents).toContain('handlers.onLoad({ setRows:')
+    expect(page.contents).toContain('handlers.onLoad({ grid: gridApi!, setRows:')
     expect(page.contents).toContain('<SvGrid data={rows} columns={columns} features={features}')
     expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+  })
+
+  it('the Grid is exposed as its real SvGridApi (ctx.grid), typed in page-context', () => {
+    const { p } = build()
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/report/+page.svelte')!
+    const ctx = files.find((f) => f.path === 'src/routes/report/page-context.ts')!
+    expect(page.contents).toContain('let gridApi = $state<SvGridApi<any, any> | null>(null)')
+    expect(page.contents).toContain('onApiReady={(a) => (gridApi = a)}')
+    expect(page.contents).toMatch(/import type \{[^}]*\bSvGridApi\b/)
+    expect(ctx.contents).toContain('grid: SvGridApi<any, any>')
+    expect(ctx.contents).toMatch(/import type \{[^}]*\bSvGridApi\b/)
   })
 
   it('a dropped component becomes a named, imperative handle in code + markup', () => {
@@ -1156,7 +1168,7 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('<SvButton {...button1.props}>{button1.text}</SvButton>')
     expect(page.contents).toContain("import { handle } from '$lib/handles.svelte'")
     expect(page.contents).toContain('button1.fire(\'click\', e)')
-    expect(page.contents).toContain('handlers.onLoad({ button1, setRows:')
+    expect(page.contents).toContain('handlers.onLoad({ grid: gridApi!, button1, setRows:')
     // Typed in the context; suggested in the manifest.
     expect(ctx.contents).toContain('button1: Handle')
     expect(companion.contents).toContain('ctx.button1')
