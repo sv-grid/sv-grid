@@ -237,11 +237,23 @@ export const blockColumns = (b: Pick<Block, 'span' | 'colSpan'>): number =>
   Math.max(1, Math.min(12, Math.round(b.colSpan ?? b.span * 4)))
 /** Navigation placement for a screen (Manage Pages: show/hide + label + order). */
 export type ScreenNav = { show?: boolean; label?: string; order?: number }
+
+/** A lifecycle/DOM event a screen can wire to a user-written handler. Phase 1
+ *  ships the screen lifecycle (`load`); per-block DOM events (grid row click,
+ *  form submit) resolve to the same companion in a later phase. */
+export type ScreenEvent = 'load'
+/** Wiring from an event to a handler function name exported by the screen's
+ *  `handlers.ts` companion. See HANDLERS-DESIGN.md for the round-trip contract. */
+export type EventBinding = { on: ScreenEvent; handler: string }
+
 /** `entity` is optional: a screen with none is a freestanding page (no data
  *  binding, no blocks - every `BlockKind` is entity-bound) - just a title, an
  *  empty content area, and optionally a toolbar of custom `actions`. Wire up a
- *  "Run report" / "Sync now" button on a blank page without a table behind it. */
-export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[] }
+ *  "Run report" / "Sync now" button on a blank page without a table behind it.
+ *
+ *  `code` opts the screen into a create-once `handlers.ts` companion (user-owned,
+ *  never regenerated); `events` wires lifecycle/DOM events to functions it exports. */
+export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; events?: EventBinding[]; handlersSource?: string }
 
 /** The generated app's shell (master layout): sidebar, top-nav, or bottom-nav; brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav' | 'bottom-nav'
@@ -709,6 +721,43 @@ export function addScreenAction(project: StudioProject, screenId: string, action
 
 export function removeScreenAction(project: StudioProject, screenId: string, actionId: string): StudioProject {
   return mapScreen(project, screenId, (s) => ({ ...s, actions: (s.actions ?? []).filter((a) => a.id !== actionId) }))
+}
+
+/** Opt a screen into a user-owned `handlers.ts` companion (design + your own code).
+ *  The generator scaffolds the stub once and never rewrites it. */
+export function enableScreenCode(project: StudioProject, screenId: string): StudioProject {
+  return mapScreen(project, screenId, (s) => ({ ...s, code: true }))
+}
+
+/** Drop the code companion binding (leaves any file the user already wrote on disk;
+ *  the generator simply stops emitting/importing it). */
+export function disableScreenCode(project: StudioProject, screenId: string): StudioProject {
+  return mapScreen(project, screenId, (s) => ({ ...s, code: false, events: [] }))
+}
+
+/** Wire a screen event (e.g. `load`) to a handler function name exported by the
+ *  screen's companion. Implies `code: true`. Re-binding the same event replaces it. */
+export function bindScreenEvent(project: StudioProject, screenId: string, on: ScreenEvent, handler: string): StudioProject {
+  return mapScreen(project, screenId, (s) => ({
+    ...s,
+    code: true,
+    events: [...(s.events ?? []).filter((e) => e.on !== on), { on, handler }],
+  }))
+}
+
+/** Remove the wiring for one screen event (the handler function stays in the
+ *  companion - it's the user's file). */
+export function unbindScreenEvent(project: StudioProject, screenId: string, on: ScreenEvent): StudioProject {
+  return mapScreen(project, screenId, (s) => ({ ...s, events: (s.events ?? []).filter((e) => e.on !== on) }))
+}
+
+/** Set the source the designer writes into the screen's `handlers.ts` companion.
+ *  When present it is emitted verbatim (the designer is the source of truth); when
+ *  absent the generator emits a typed stub. Empty string clears it back to the stub.
+ *  Implies `code: true`. */
+export function setScreenHandlersSource(project: StudioProject, screenId: string, source: string): StudioProject {
+  const trimmed = source.trim()
+  return mapScreen(project, screenId, (s) => ({ ...s, code: true, handlersSource: trimmed || undefined }))
 }
 
 /** Deep-clone `block` with fresh ids (recursing into Tabs children). */

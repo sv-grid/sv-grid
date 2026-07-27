@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, createProject, parseProject, setDeployTarget, setEntityDataSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
+import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, bindScreenEvent, createProject, enableScreenCode, parseProject, setDeployTarget, setEntityDataSource, setScreenHandlersSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
 import { emitStudioProject, emitStudioAppBundle, studioDeployInfo } from './emit-project'
 
 const customers: EntitySchema = {
@@ -1097,5 +1097,62 @@ describe('pages (nav) + shell codegen', () => {
     expect(appcss).toContain('.st__title { letter-spacing: -0.03em; }')
     // No custom block when unset.
     expect(emitStudioAppBundle(createProject([customers])).find((f) => f.path === 'src/app.css')!.contents).not.toContain('Custom CSS (from the designer)')
+  })
+})
+
+describe('code companion (design + your own code)', () => {
+  // A blank page with a user-owned handlers.ts, wired to the screen `load` lifecycle.
+  const build = () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Report', route: 'report' })
+    const sid = p.screens.find((s) => s.route === 'report')!.id
+    p = bindScreenEvent(p, sid, 'load', 'load') // implies enableScreenCode
+    return { p, sid }
+  }
+
+  it('emits a user-owned handlers.ts companion (never regenerated) with a typed load stub', () => {
+    const { p } = build()
+    const files = emitStudioProject(p)
+    const companion = files.find((f) => f.path === 'src/routes/report/handlers.ts')
+    expect(companion, 'companion emitted').toBeTruthy()
+    expect(companion!.userOwned).toBe(true)
+    expect(companion!.contents).toContain('export async function load(): Promise<RowData[]>')
+    expect(companion!.contents).toContain("import type { RowData } from '@svgrid/grid'")
+    expect(companion!.contents).toContain('never overwrites')
+  })
+
+  it('the page imports the companion, runs load in onMount, renders the hero Grid, and compiles', () => {
+    const { p } = build()
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/report/+page.svelte')!
+    expect(page.contents).toContain("import * as handlers from './handlers'")
+    expect(page.contents).toContain("import { onMount } from 'svelte'")
+    expect(page.contents).toContain('await handlers.load()')
+    // The Grid is the hero: rows from the handler, auto-columns from the first row.
+    expect(page.contents).toContain('<SvGrid data={rows} columns={columns} features={features}')
+    expect(page.contents).toMatch(/import \{[^}]*\bSvGrid\b/)
+    expect(page.contents).toContain('Object.keys(rows[0])')
+    expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+  })
+
+  it('handlersSource from the designer is emitted verbatim (designer is the source of truth)', () => {
+    const { p: base, sid } = build()
+    const src = "import type { RowData } from '@svgrid/grid'\nexport async function load(): Promise<RowData[]> {\n  const r = await fetch('/api/report').then((x) => x.json())\n  return r.rows\n}"
+    const p = setScreenHandlersSource(base, sid, src)
+    const companion = emitStudioProject(p).find((f) => f.path === 'src/routes/report/handlers.ts')!
+    expect(companion.userOwned).toBe(true)
+    expect(companion.contents).toContain("await fetch('/api/report')")
+    expect(companion.contents).not.toContain('// TODO: fetch or compute your rows.') // stub replaced
+  })
+
+  it('no companion and no wiring when the screen opts out of code', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Plain', route: 'plain' })
+    const files = emitStudioProject(p)
+    expect(files.find((f) => f.path === 'src/routes/plain/handlers.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/routes/plain/+page.svelte')!.contents).not.toContain("from './handlers'")
+    // enableScreenCode alone (no events) still emits a companion, but the page stays unwired.
+    const sid = p.screens.find((s) => s.route === 'plain')!.id
+    p = enableScreenCode(p, sid)
+    const withCode = emitStudioProject(p)
+    expect(withCode.find((f) => f.path === 'src/routes/plain/handlers.ts')!.contents).toContain('export {}')
+    expect(withCode.find((f) => f.path === 'src/routes/plain/+page.svelte')!.contents).not.toContain("from './handlers'")
   })
 })

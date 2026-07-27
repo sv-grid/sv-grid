@@ -591,6 +591,46 @@ ${inner}
  *  still hold `'component'` blocks (UI-kit widgets, not data-bound). Renders a
  *  title, an optional toolbar of custom actions, and those component blocks (or
  *  a placeholder comment if it has none yet). */
+/** Does this screen carry a user-owned code companion (design + your own code)? */
+function screenHasCode(screen: Screen): boolean {
+  return screen.code === true || (screen.events?.length ?? 0) > 0
+}
+
+/** The handler name wired to the screen's `load` lifecycle, if any. */
+function screenLoadHandler(screen: Screen): string | undefined {
+  return screen.events?.find((e) => e.on === 'load')?.handler
+}
+
+/** The user-owned `handlers.ts` companion for a screen: design in Studio, write
+ *  behavior here. Scaffolded once (userOwned) and never regenerated - the page
+ *  imports it, never rewrites it. See HANDLERS-DESIGN.md. */
+function screenHandlersFile(screen: Screen): GeneratedFile {
+  const load = screenLoadHandler(screen)
+  const header = `// Your code for the "${screen.title}" screen.
+// SvGrid Studio scaffolds this file once and never overwrites it - it's yours.
+// Design the screen visually in Studio; write its behavior here.
+`
+  // Designer is the source of truth when handlersSource is set; otherwise a stub.
+  const stub = load
+    ? `import type { RowData } from '@svgrid/grid'
+
+/** Runs when the page mounts (wired to the screen's \`load\` event in Studio).
+ *  Return the rows to render, fetch data, or set up state. */
+export async function ${load}(): Promise<RowData[]> {
+  // TODO: fetch or compute your rows.
+  return []
+}
+`
+    : `\n// Export functions here and wire them to events in Studio.\nexport {}\n`
+  const body = screen.handlersSource ? `${screen.handlersSource}\n` : stub
+  return {
+    path: `src/routes/${screen.route}/handlers.ts`,
+    description: `Your code for the "${screen.title}" screen - scaffolded once, never regenerated.`,
+    userOwned: true,
+    contents: header + body,
+  }
+}
+
 function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnabled: boolean): GeneratedFile {
   const screenActions = screenActionsOf(screen)
   const gatesActions = accessEnabled && screenActions.length > 0
@@ -607,16 +647,32 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
       .map((b) => uiComponentSpec(b.config.component)?.importName)
       .filter((n): n is string => !!n),
   )].sort()
-  const gridImport = componentImports.length ? `import { ${componentImports.join(', ')} } from '@svgrid/grid'\n  ` : ''
-  const content = screen.blocks.length
+  // Code companion: wire the screen's `load` handler into onMount and render the
+  // rows it returns in a live SvGrid - the "empty page + your code + the Grid as
+  // the hero" flow. Auto-columns from the first row keep the stub runnable as-is.
+  const loadHandler = screenLoadHandler(screen)
+  const gridNames = [...new Set([...componentImports, ...(loadHandler ? ['SvGrid', 'tableFeatures', 'rowSortingFeature', 'columnFilteringFeature', 'rowSelectionFeature', 'type RowData'] : [])])].sort()
+  const gridImport = gridNames.length ? `import { ${gridNames.join(', ')} } from '@svgrid/grid'\n  ` : ''
+
+  const codeImport = loadHandler ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  ` : ''
+  const codeScript = loadHandler
+    ? `\n  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })\n  let rows = $state<RowData[]>([])\n  const columns = $derived(rows.length ? Object.keys(rows[0]).map((field) => ({ field, header: field })) : [])\n  onMount(async () => { rows = await handlers.${loadHandler}() })`
+    : ''
+  const gridMarkup = loadHandler
+    ? `  <SvGrid data={rows} columns={columns} features={features} showRowNumbers />`
+    : ''
+
+  const blockContent = screen.blocks.length
     ? screen.blocks.map((b) => (b.config.kind === 'component' ? componentBlockMarkup(b, b.config) : '')).filter(Boolean).join('\n')
-    : '  <!-- Freestanding page - no entity bound. Add your own content here. -->'
+    : ''
+  const content = [blockContent, gridMarkup].filter(Boolean).join('\n')
+    || '  <!-- Freestanding page - no entity bound. Add your own content here. -->'
 
   return {
     path: `src/routes/${screen.route}/+page.svelte`,
     description: `${screen.title} screen (freestanding, no bound entity).`,
     contents: `<script lang="ts">
-  ${gridImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}
+  ${gridImport}${codeImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}${codeScript}
 </script>
 
 <h1 class="st__title">${title}</h1>
@@ -931,10 +987,15 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   // RBAC gate, matching how duplicate ids are the developer's responsibility
   // the same way duplicate block/screen ids already are).
   const actionsById = new Map<string, { action: ActionConfig; screenId: string }>()
+  // Per-screen user-owned code companions (design + your own code). Emitted once
+  // as a stub; in-place writers must skip if present. See HANDLERS-DESIGN.md.
+  const companions: GeneratedFile[] = []
   for (const screen of project.screens) {
     if (seenRoute.has(screen.route)) throw new Error(`emitStudioProject: duplicate route "/${screen.route}"`)
     seenRoute.add(screen.route)
     for (const a of screenActionsOf(screen)) actionsById.set(a.id, { action: a, screenId: screen.id })
+
+    if (screenHasCode(screen)) companions.push(screenHandlersFile(screen))
 
     if (screen.entity === undefined) {
       pages.push(freestandingScreenPage(screen, accessEnabled, i18nEnabled))
@@ -956,7 +1017,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   const auditFiles = auditEnabled ? [auditModule(), auditRouteFile(), auditViewerPage()] : []
   const navWithAudit = auditEnabled ? [...nav, { href: '/audit', label: 'Audit log', id: '__audit__' }] : nav
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
-  return [...files, ...accessFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, layoutFile(navWithAudit, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), dark: isDarkTheme(project.theme), access: accessEnabled, i18n: i18nEnabled }), homeFile(navWithAudit)]
+  return [...files, ...accessFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, ...companions, layoutFile(navWithAudit, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), dark: isDarkTheme(project.theme), access: accessEnabled, i18n: i18nEnabled }), homeFile(navWithAudit)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the

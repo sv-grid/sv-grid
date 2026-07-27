@@ -20,6 +20,10 @@ export type GeneratedFile = {
   path: string
   contents: string
   description: string
+  /** A user-owned companion (e.g. a screen's `handlers.ts`): scaffolded once as a
+   *  starting stub, then never overwritten. In-place writers must skip it if it
+   *  already exists. See HANDLERS-DESIGN.md. */
+  userOwned?: boolean
 }
 
 export type ScaffoldOptions = {
