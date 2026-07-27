@@ -1109,63 +1109,59 @@ describe('code companion (design + your own code)', () => {
     return { p, sid }
   }
 
-  it('emits a user-owned handlers.ts with an always-present onLoad(ctx) stub', () => {
+  it('emits a user-owned handlers.ts (onLoad) + a regenerated page-context.ts', () => {
     const { p } = build()
     const files = emitStudioProject(p)
     const companion = files.find((f) => f.path === 'src/routes/report/handlers.ts')
     expect(companion, 'companion emitted').toBeTruthy()
     expect(companion!.userOwned).toBe(true)
     expect(companion!.contents).toContain('export async function onLoad(ctx: PageContext): Promise<void>')
-    expect(companion!.contents).toContain('export type PageContext')
+    expect(companion!.contents).toContain("import type { PageContext } from './page-context'")
     expect(companion!.contents).toContain('never overwrites')
+    // The context type + shared handle runtime are generated (not user-owned).
+    const ctx = files.find((f) => f.path === 'src/routes/report/page-context.ts')!
+    expect(ctx.userOwned).toBeFalsy()
+    expect(ctx.contents).toContain('export type PageContext')
+    expect(files.find((f) => f.path === 'src/lib/handles.svelte.ts')).toBeTruthy()
   })
 
   it('onLoad exists even with no Grid (a general mount hook, not grid-gated)', () => {
     let p = addFreestandingScreen(createProject([customers]), { title: 'Plain', route: 'plain' })
     const sid = p.screens.find((s) => s.route === 'plain')!.id
     p = enableScreenCode(p, sid) // code on, but renderGrid off
-    const companion = emitStudioProject(p).find((f) => f.path === 'src/routes/plain/handlers.ts')!
-    expect(companion.contents).toContain('export async function onLoad(ctx: PageContext)')
-    // No Grid markup on the page when renderGrid is off.
     const page = emitStudioProject(p).find((f) => f.path === 'src/routes/plain/+page.svelte')!
+    expect(emitStudioProject(p).find((f) => f.path === 'src/routes/plain/handlers.ts')!.contents).toContain('export async function onLoad(ctx: PageContext)')
     expect(page.contents).not.toContain('<SvGrid')
     expect(page.contents).toContain('handlers.onLoad(') // still wired on mount
   })
 
-  it('the page runs onLoad in onMount with a ctx, renders the Grid, and compiles', () => {
+  it('the page runs onLoad in onMount, renders the Grid, and compiles', () => {
     const { p } = build()
     const page = emitStudioProject(p).find((f) => f.path === 'src/routes/report/+page.svelte')!
     expect(page.contents).toContain("import * as handlers from './handlers'")
-    expect(page.contents).toContain("import { onMount } from 'svelte'")
-    expect(page.contents).toContain('handlers.onLoad({ refs, setRows:')
+    expect(page.contents).toContain('handlers.onLoad({ setRows:')
     expect(page.contents).toContain('<SvGrid data={rows} columns={columns} features={features}')
     expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
   })
 
-  it('the onLoad slot body is placed inside the generated function, indented', () => {
+  it('a dropped component becomes a named, imperative handle in code + markup', () => {
     const { p: base, sid } = build()
-    const p = setHandlerBody(base, sid, 'onLoad', "const r = await fetch('/api/report')\nctx.setRows((await r.json()).rows)")
-    const companion = emitStudioProject(p).find((f) => f.path === 'src/routes/report/handlers.ts')!
-    expect(companion.contents).toContain('export async function onLoad(ctx: PageContext): Promise<void> {')
-    expect(companion.contents).toContain("  const r = await fetch('/api/report')") // indented into the fn
-    expect(companion.contents).toContain('  ctx.setRows((await r.json()).rows)')
-  })
-
-  it('components are reachable via ctx.refs (Svelte bind:this), not getElementById', () => {
-    const { p: base, sid } = build()
-    const p = addComponentBlock(base, sid, 'button')
-    const companion = emitStudioProject(p).find((f) => f.path === 'src/routes/report/handlers.ts')!
-    expect(companion.contents).toContain('In onLoad, ctx gives you:')
-    expect(companion.contents).toContain('ctx.setRows(rows) fills the page Grid')
-    expect(companion.contents).toMatch(/ctx\.refs\[/)
+    const p = addComponentBlock(base, sid, 'button', { variant: 'primary' })
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/report/+page.svelte')!
+    const ctx = files.find((f) => f.path === 'src/routes/report/page-context.ts')!
+    const companion = files.find((f) => f.path === 'src/routes/report/handlers.ts')!
+    // Named handle (button1) created + wired into the component markup.
+    expect(page.contents).toContain('const button1 = handle(')
+    expect(page.contents).toContain('<SvButton {...button1.props}>{button1.text}</SvButton>')
+    expect(page.contents).toContain("import { handle } from '$lib/handles.svelte'")
+    expect(page.contents).toContain('button1.fire(\'click\', e)')
+    expect(page.contents).toContain('handlers.onLoad({ button1, setRows:')
+    // Typed in the context; suggested in the manifest.
+    expect(ctx.contents).toContain('button1: Handle')
+    expect(companion.contents).toContain('ctx.button1')
     expect(companion.contents).not.toContain('getElementById')
-    // The page binds that component into refs by the same id.
-    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/report/+page.svelte')!
-    const idMatch = companion.contents.match(/ctx\.refs\["([^"]+)"\]/)
-    expect(idMatch, 'manifest has a ref id').toBeTruthy()
-    const id = idMatch![1]
-    expect(page.contents).toMatch(new RegExp(`bind:this=\\{refs\\[['"]${id}['"]\\]\\}`))
-    expect(page.contents).toContain(`id="${id}"`)
+    expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
   })
 
   it('handlersSource from the designer is emitted verbatim (advanced override)', () => {
@@ -1175,7 +1171,7 @@ describe('code companion (design + your own code)', () => {
     const companion = emitStudioProject(p).find((f) => f.path === 'src/routes/report/handlers.ts')!
     expect(companion.userOwned).toBe(true)
     expect(companion.contents).toContain("await fetch('/api/report')")
-    expect(companion.contents).not.toContain('export type PageContext') // structured shell replaced
+    expect(companion.contents).not.toContain('export async function onLoad(ctx') // structured shell replaced
   })
 
   it('no companion and no wiring when the screen has no code', () => {

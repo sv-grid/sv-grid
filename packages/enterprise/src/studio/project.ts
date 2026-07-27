@@ -200,7 +200,7 @@ export type DetailConfig = { kind: 'detail'; titleField: string; subtitleField?:
  *  entity-bound screen alike. `props` holds its configured "chrome" values, keyed
  *  by the registry entry's prop `key`; a component with `hasContent` also stores
  *  its literal text content under the reserved `_content` key. */
-export type ComponentConfig = { kind: 'component'; component: string; props: Record<string, unknown> }
+export type ComponentConfig = { kind: 'component'; component: string; props: Record<string, unknown>; name?: string }
 export type BlockConfig =
   | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | DashboardConfig | MasterDetailConfig | LookupConfig
   | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig | DetailConfig | ComponentConfig
@@ -546,11 +546,38 @@ export function addBlockAt(project: StudioProject, screenId: string, kind: Block
 export function addComponentBlock(project: StudioProject, screenId: string, componentKey: string, defaultProps: Record<string, unknown> = {}, index?: number): StudioProject {
   return mapScreen(project, screenId, (s) => {
     const taken = new Set(flattenBlocks(s.blocks).map((b) => b.id))
-    const block: Block = { id: uid('component-', taken), span: DEFAULT_SPAN.component, config: { kind: 'component', component: componentKey, props: { ...defaultProps } } }
+    const name = uniqueComponentName(componentKey, s)
+    const block: Block = { id: uid('component-', taken), span: DEFAULT_SPAN.component, config: { kind: 'component', component: componentKey, props: { ...defaultProps }, name } }
     const blocks = [...s.blocks]
     blocks.splice(index != null ? Math.max(0, Math.min(index, blocks.length)) : blocks.length, 0, block)
     return { ...s, blocks }
   })
+}
+
+/** A valid, unique JS identifier for a component handle on a screen, e.g. `button1`.
+ *  Handles are the named objects code reaches (btn.setLabel(...), btn.onclick = ...). */
+export function componentHandleName(cfg: ComponentConfig): string {
+  const raw = (cfg.name ?? cfg.component).trim()
+  const id = raw.replace(/[^A-Za-z0-9_$]/g, '_').replace(/^([0-9])/, '_$1')
+  return id || 'el'
+}
+function uniqueComponentName(componentKey: string, screen: Screen): string {
+  const taken = new Set(
+    flattenBlocks(screen.blocks)
+      .filter((b) => b.config.kind === 'component')
+      .map((b) => componentHandleName(b.config as ComponentConfig)),
+  )
+  let n = 1
+  while (taken.has(`${componentKey}${n}`)) n++
+  return `${componentKey}${n}`
+}
+
+/** Rename a component's handle (the variable code uses to reach it). */
+export function setComponentName(project: StudioProject, screenId: string, blockId: string, name: string): StudioProject {
+  return mapScreen(project, screenId, (s) => ({
+    ...s,
+    blocks: mapBlockTree(s.blocks, blockId, (b) => (b.config.kind === 'component' ? { ...b, config: { ...b.config, name: name.trim() || undefined } } : b)),
+  }))
 }
 
 /** Apply `fn` to the block with `id` anywhere in the tree (top level or nested in a Tabs container). */

@@ -12,7 +12,7 @@
  */
 import type { GeneratedFile } from './scaffold.js'
 import type { ActionConfig, Block, ComponentConfig, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
-import { blockColumns, entityDataSource, flattenBlocks, serializeProject, ON_LOAD } from './project.js'
+import { blockColumns, componentHandleName, entityDataSource, flattenBlocks, serializeProject, ON_LOAD } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -305,10 +305,19 @@ ${panels}
  *  entity-bound screen) and directly from `freestandingScreenPage`. String/select/
  *  color values go through `jsStr` so free-typed text (quotes, braces, HTML) can
  *  never break out of the attribute or the surrounding markup. */
-function componentBlockMarkup(block: Block, cfg: ComponentConfig, refsVar?: string): string {
+function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: string): string {
   const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
   const spec = uiComponentSpec(cfg.component)
   if (!spec) return `    <div ${span}><!-- unknown component "${cfg.component}" --></div>`
+  if (handleName) {
+    // Handle mode (code page): props + content come from the reactive handle, and
+    // clicks fire on it - so button1.setVariant(...) / button1.onclick = fn work.
+    const inner = spec.hasContent ? `>{${handleName}.text}</${spec.importName}>` : ' />'
+    return `    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+    <div id="${block.id}" onclick={(e) => ${handleName}.fire('click', e)} ${span}>
+      <${spec.importName} {...${handleName}.props}${inner}
+    </div>`
+  }
   const attrs: string[] = []
   for (const p of spec.props) {
     const v = cfg.props[p.key] ?? p.default
@@ -319,11 +328,23 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, refsVar?: stri
   }
   const openTag = `<${spec.importName}${attrs.length ? ' ' + attrs.join(' ') : ''}`
   const inner = spec.hasContent ? `>{${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}}</${spec.importName}>` : ' />'
-  // Stable id + (on code pages) a Svelte ref so onLoad can reach it via ctx.refs.
-  const ref = refsVar ? ` bind:this={${refsVar}[${jsStr(block.id)}]}` : ''
-  return `    <div id="${block.id}"${ref} ${span}>
+  return `    <div id="${block.id}" ${span}>
       ${openTag}${inner}
     </div>`
+}
+
+/** The `{ props, text }` init literal for a component's reactive handle. */
+function handleInit(cfg: ComponentConfig): string {
+  const spec = uiComponentSpec(cfg.component)
+  const props: string[] = []
+  for (const p of spec?.props ?? []) {
+    const v = cfg.props[p.key] ?? p.default
+    if (v == null || v === '') continue
+    props.push(`${p.key}: ${p.type === 'number' ? Number(v) : p.type === 'boolean' ? !!v : jsStr(String(v))}`)
+  }
+  const parts = [`props: { ${props.join(', ')} }`]
+  if (spec?.hasContent) parts.push(`text: ${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}`)
+  return `{ ${parts.join(', ')} }`
 }
 
 // --- new-block helpers ------------------------------------------------------
@@ -604,13 +625,17 @@ function screenComponentBlocks(screen: Screen): Block[] {
   return screen.blocks.filter((b) => b.config.kind === 'component')
 }
 
-/** A comment manifest of what `onLoad(ctx)` can reach - each component by ref
- *  (Svelte's bind:this, not getElementById) plus the Grid feed when present. */
+/** A comment manifest of what `onLoad(ctx)` can reach - each component as a named,
+ *  imperative handle (ctx.button1.setLabel(...), ctx.button1.onclick = ...) plus
+ *  the Grid feed. Mirrored in the designer's Code view. */
 function screenElementsManifest(screen: Screen): string {
   const lines: string[] = []
-  if (screen.renderGrid) lines.push('//   - Grid: ctx.setRows(rows) fills the page Grid with your data.')
+  if (screen.renderGrid) lines.push('//   - ctx.setRows(rows): fills the page Grid with your data.')
   for (const b of screenComponentBlocks(screen)) {
-    if (b.config.kind === 'component') lines.push(`//   - ${b.config.component}: ctx.refs[${JSON.stringify(b.id)}] (bound via bind:this)`)
+    if (b.config.kind === 'component') {
+      const name = componentHandleName(b.config)
+      lines.push(`//   - ctx.${name}: the ${b.config.component} - setText/set<Prop>(...), onclick = fn, onClick(fn).`)
+    }
   }
   return lines.length ? `//\n// In onLoad, ctx gives you:\n${lines.join('\n')}\n` : ''
 }
@@ -618,6 +643,77 @@ function screenElementsManifest(screen: Screen): string {
 /** Indent a user-written handler body two spaces so it sits inside the function. */
 function indentBody(body: string): string {
   return body.split('\n').map((l) => (l.trim() ? `  ${l}` : l)).join('\n')
+}
+
+/** Shared runtime: the reactive, imperative handle behind each component. Lets page
+ *  code do button1.setLabel('Save'), button1.setVariant('danger'), button1.onclick = fn. */
+function handlesModuleFile(): GeneratedFile {
+  return {
+    path: 'src/lib/handles.svelte.ts',
+    description: 'Reactive imperative handles for UI components (btn.setLabel, btn.onclick = ...).',
+    contents: `// Regenerated by SvGrid Studio.
+/** An imperative, reactive handle over a UI component. In page code you get one
+ *  per component (e.g. \`button1\`); mutate it and the component updates. */
+export class ComponentHandle {
+  props = $state<Record<string, unknown>>({})
+  text = $state('')
+  on = $state<Record<string, (e: Event) => void>>({})
+  constructor(init: { props?: Record<string, unknown>; text?: string }) {
+    this.props = { ...(init.props ?? {}) }
+    this.text = init.text ?? ''
+  }
+  set(name: string, value: unknown): this { this.props = { ...this.props, [name]: value }; return this }
+  get(name: string): unknown { return this.props[name] }
+  setText(value: string): this { this.text = value; return this }
+  setLabel(value: string): this { this.text = value; return this }
+  onEvent(name: string, fn: (e: Event) => void): this { this.on = { ...this.on, [name]: fn }; return this }
+  onClick(fn: (e: Event) => void): this { return this.onEvent('click', fn) }
+  fire(name: string, e: Event): void { this.on[name]?.(e) }
+}
+
+/** A handle plus dynamic setX / onX helpers and \`el.onclick = fn\` assignment. */
+export type Handle = ComponentHandle & Record<string, any>
+
+export function handle(init: { props?: Record<string, unknown>; text?: string }): Handle {
+  const h = new ComponentHandle(init)
+  return new Proxy(h, {
+    get(t, k) {
+      if (Reflect.has(t, k)) { const v = (t as unknown as Record<string, unknown>)[k as string]; return typeof v === 'function' ? v.bind(t) : v }
+      if (typeof k === 'string' && /^set[A-Z]/.test(k)) { const p = k[3]!.toLowerCase() + k.slice(4); return (v: unknown) => t.set(p, v) }
+      if (typeof k === 'string' && /^on[A-Z]/.test(k)) { const e = k[2]!.toLowerCase() + k.slice(3); return (fn: (ev: Event) => void) => t.onEvent(e, fn) }
+      return typeof k === 'string' ? t.props[k] : undefined
+    },
+    set(t, k, v) {
+      if (typeof k === 'string' && /^on[a-z]/.test(k)) { t.onEvent(k.slice(2), v as (e: Event) => void); return true }
+      if (typeof k === 'string') t.set(k, v)
+      return true
+    },
+  }) as Handle
+}
+`,
+  }
+}
+
+/** Per-screen, regenerated PageContext type: the named handles + setRows. Kept OUT
+ *  of the user-owned handlers.ts so its types stay fresh as components change. */
+function screenContextFile(screen: Screen): GeneratedFile {
+  const handles = screenComponentBlocks(screen)
+    .map((b) => (b.config.kind === 'component' ? `  ${componentHandleName(b.config)}: Handle` : ''))
+    .filter(Boolean)
+    .join('\n')
+  return {
+    path: `src/routes/${screen.route}/page-context.ts`,
+    description: `Typed page context for "${screen.title}" (regenerated).`,
+    contents: `// Regenerated by SvGrid Studio. Edits here are overwritten - write code in handlers.ts.
+import type { Handle } from '$lib/handles.svelte'
+import type { RowData } from '@svgrid/grid'
+
+/** What onLoad(ctx) gives you: each component as a named handle, plus the Grid feed. */
+export type PageContext = {
+${handles}${handles ? '\n' : ''}  setRows: (rows: RowData[]) => void
+}
+`,
+  }
 }
 
 /** The user-owned `handlers.ts` companion for a screen: design in Studio, write
@@ -637,18 +733,11 @@ ${screenElementsManifest(screen)}`
     // The always-present onLoad slot: runs on mount with a page context. The
     // function shell is generated; its body is the block the user edits.
     const raw = screen.handlerBodies?.[ON_LOAD]?.trim()
-    const inner = raw ? indentBody(raw) : '  // Runs when the page mounts. Use ctx.refs / ctx.setRows.'
-    body = `import type { RowData } from '@svgrid/grid'
+    const inner = raw ? indentBody(raw) : '  // Runs when the page mounts. Reach components via ctx.<name>, fill a Grid via ctx.setRows.'
+    body = `import type { PageContext } from './page-context'
 
-/** The page's elements and helpers, passed to onLoad. */
-export type PageContext = {
-  /** Each component by id, bound with Svelte's bind:this. */
-  refs: Record<string, HTMLElement | undefined>
-  /** Fill the page Grid with rows (no-op when the page has no Grid). */
-  setRows: (rows: RowData[]) => void
-}
-
-/** Runs when the page mounts. Fetch data, set up state, or touch ctx.refs. */
+/** Runs when the page mounts. Reach components (ctx.button1.setLabel('Save'),
+ *  ctx.button1.onclick = () => {}), fetch data, or fill the Grid via ctx.setRows. */
 export async function ${ON_LOAD}(ctx: PageContext): Promise<void> {
 ${inner}
 }
@@ -678,27 +767,30 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
       .map((b) => uiComponentSpec(b.config.component)?.importName)
       .filter((n): n is string => !!n),
   )].sort()
-  // Code companion: onLoad(ctx) runs on mount with a page context (component refs
-  // + a Grid feed). The Grid renders only when renderGrid is on; refs let onLoad
-  // reach any component the Svelte way (bind:this), not via getElementById.
+  // Code companion: onLoad(ctx) runs on mount with a page context. Each component
+  // becomes a named reactive handle (button1.setLabel(...), button1.onclick = fn);
+  // the Grid renders only when renderGrid is on and is filled via ctx.setRows.
   const hasCode = screenHasCode(screen)
   const grid = screen.renderGrid === true
-  const refsVar = hasCode ? 'refs' : undefined
+  const compBlocks = screen.blocks.filter((b): b is Block & { config: ComponentConfig } => b.config.kind === 'component')
   const gridNames = [...new Set([...componentImports, ...(grid ? ['SvGrid', 'tableFeatures', 'rowSortingFeature', 'columnFilteringFeature', 'rowSelectionFeature'] : [])])].sort()
   const gridImport = gridNames.length ? `import { ${gridNames.join(', ')} } from '@svgrid/grid'\n  ` : ''
   const typeImport = hasCode ? `import type { RowData } from '@svgrid/grid'\n  ` : ''
+  const handleImport = hasCode ? `import { handle } from '$lib/handles.svelte'\n  ` : ''
 
   const codeImport = hasCode ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  ` : ''
+  const handleDecls = compBlocks.map((b) => `const ${componentHandleName(b.config)} = handle(${handleInit(b.config)})`).join('\n  ')
   const gridScript = grid
     ? `\n  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })\n  const columns = $derived(rows.length ? Object.keys(rows[0]).map((field) => ({ field, header: field })) : [])`
     : ''
+  const ctxArg = `{ ${[...compBlocks.map((b) => componentHandleName(b.config)), 'setRows: (r) => (rows = r)'].join(', ')} }`
   const codeScript = hasCode
-    ? `\n  const refs = $state<Record<string, HTMLElement | undefined>>({})\n  let rows = $state<RowData[]>([])${gridScript}\n  onMount(() => handlers.${ON_LOAD}({ refs, setRows: (r) => (rows = r) }))`
+    ? `\n  ${handleDecls ? handleDecls + '\n  ' : ''}let rows = $state<RowData[]>([])${gridScript}\n  onMount(() => handlers.${ON_LOAD}(${ctxArg}))`
     : ''
   const gridMarkup = grid ? `  <SvGrid data={rows} columns={columns} features={features} showRowNumbers />` : ''
 
   const blockContent = screen.blocks.length
-    ? screen.blocks.map((b) => (b.config.kind === 'component' ? componentBlockMarkup(b, b.config, refsVar) : '')).filter(Boolean).join('\n')
+    ? screen.blocks.map((b) => (b.config.kind === 'component' ? componentBlockMarkup(b, b.config, hasCode ? componentHandleName(b.config) : undefined) : '')).filter(Boolean).join('\n')
     : ''
   const content = [blockContent, gridMarkup].filter(Boolean).join('\n')
     || '  <!-- Freestanding page - no entity bound. Add your own content here. -->'
@@ -707,7 +799,7 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
     path: `src/routes/${screen.route}/+page.svelte`,
     description: `${screen.title} screen (freestanding, no bound entity).`,
     contents: `<script lang="ts">
-  ${gridImport}${typeImport}${codeImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}${codeScript}
+  ${gridImport}${typeImport}${handleImport}${codeImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}${codeScript}
 </script>
 
 <h1 class="st__title">${title}</h1>
@@ -1030,7 +1122,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     seenRoute.add(screen.route)
     for (const a of screenActionsOf(screen)) actionsById.set(a.id, { action: a, screenId: screen.id })
 
-    if (screenHasCode(screen)) companions.push(screenHandlersFile(screen))
+    if (screenHasCode(screen)) { companions.push(screenHandlersFile(screen), screenContextFile(screen)) }
 
     if (screen.entity === undefined) {
       pages.push(freestandingScreenPage(screen, accessEnabled, i18nEnabled))
@@ -1052,7 +1144,8 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   const auditFiles = auditEnabled ? [auditModule(), auditRouteFile(), auditViewerPage()] : []
   const navWithAudit = auditEnabled ? [...nav, { href: '/audit', label: 'Audit log', id: '__audit__' }] : nav
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
-  return [...files, ...accessFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, ...companions, layoutFile(navWithAudit, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), dark: isDarkTheme(project.theme), access: accessEnabled, i18n: i18nEnabled }), homeFile(navWithAudit)]
+  const handleFiles = project.screens.some(screenHasCode) ? [handlesModuleFile()] : []
+  return [...files, ...accessFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, ...companions, ...handleFiles, layoutFile(navWithAudit, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), dark: isDarkTheme(project.theme), access: accessEnabled, i18n: i18nEnabled }), homeFile(navWithAudit)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the

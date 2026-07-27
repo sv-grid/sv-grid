@@ -78,6 +78,8 @@ export {
   setScreenRenderGrid,
   setHandlerBody,
   setScreenHandlersSource,
+  setComponentName,
+  componentHandleName,
   ON_LOAD,
   removeScreen,
   updateScreen,
