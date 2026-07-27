@@ -253,7 +253,7 @@ export type EventBinding = { on: ScreenEvent; handler: string }
  *
  *  `code` opts the screen into a create-once `handlers.ts` companion (user-owned,
  *  never regenerated); `events` wires lifecycle/DOM events to functions it exports. */
-export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; events?: EventBinding[]; handlersSource?: string }
+export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; events?: EventBinding[]; handlerBodies?: Record<string, string>; handlersSource?: string }
 
 /** The generated app's shell (master layout): sidebar, top-nav, or bottom-nav; brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav' | 'bottom-nav'
@@ -751,10 +751,21 @@ export function unbindScreenEvent(project: StudioProject, screenId: string, on: 
   return mapScreen(project, screenId, (s) => ({ ...s, events: (s.events ?? []).filter((e) => e.on !== on) }))
 }
 
-/** Set the source the designer writes into the screen's `handlers.ts` companion.
- *  When present it is emitted verbatim (the designer is the source of truth); when
- *  absent the generator emits a typed stub. Empty string clears it back to the stub.
- *  Implies `code: true`. */
+/** Set the body of one event handler (e.g. `load`) - the code inside the generated
+ *  function. This is what the designer's Code view edits per slot (the "single
+ *  onLoad block"). Empty clears it back to the stub default. Implies `code: true`. */
+export function setHandlerBody(project: StudioProject, screenId: string, handler: string, body: string): StudioProject {
+  return mapScreen(project, screenId, (s) => {
+    const bodies = { ...(s.handlerBodies ?? {}) }
+    if (body.trim()) bodies[handler] = body
+    else delete bodies[handler]
+    return { ...s, code: true, handlerBodies: Object.keys(bodies).length ? bodies : undefined }
+  })
+}
+
+/** Set the full source the designer writes into the screen's `handlers.ts` companion.
+ *  An advanced escape hatch that overrides the structured per-event bodies: when
+ *  present it is emitted verbatim. Empty string clears it. Implies `code: true`. */
 export function setScreenHandlersSource(project: StudioProject, screenId: string, source: string): StudioProject {
   const trimmed = source.trim()
   return mapScreen(project, screenId, (s) => ({ ...s, code: true, handlersSource: trimmed || undefined }))

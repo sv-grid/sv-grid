@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, bindScreenEvent, createProject, enableScreenCode, parseProject, setDeployTarget, setEntityDataSource, setScreenHandlersSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
+import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, bindScreenEvent, createProject, enableScreenCode, parseProject, setDeployTarget, setEntityDataSource, setHandlerBody, setScreenHandlersSource, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
 import { emitStudioProject, emitStudioAppBundle, studioDeployInfo } from './emit-project'
 
 const customers: EntitySchema = {
@@ -1131,6 +1131,30 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toMatch(/import \{[^}]*\bSvGrid\b/)
     expect(page.contents).toContain('Object.keys(rows[0])')
     expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+  })
+
+  it('the onLoad slot body is placed inside the generated function, indented', () => {
+    const { p: base, sid } = build()
+    const p = setHandlerBody(base, sid, 'load', "const r = await fetch('/api/report')\nreturn (await r.json()).rows")
+    const companion = emitStudioProject(p).find((f) => f.path === 'src/routes/report/handlers.ts')!
+    expect(companion.contents).toContain('export async function load(): Promise<RowData[]> {')
+    expect(companion.contents).toContain("  const r = await fetch('/api/report')") // indented into the fn
+    expect(companion.contents).toContain('  return (await r.json()).rows')
+    expect(companion.contents).not.toContain('// TODO: fetch or compute your rows.') // default replaced
+  })
+
+  it('handlers.ts carries an element-id manifest for code to target', () => {
+    const { p: base, sid } = build()
+    const p = addComponentBlock(base, sid, 'button')
+    const companion = emitStudioProject(p).find((f) => f.path === 'src/routes/report/handlers.ts')!
+    expect(companion.contents).toContain('Page elements you can target:')
+    expect(companion.contents).toContain('renders the array you return from load()')
+    expect(companion.contents).toMatch(/document\.getElementById\(/)
+    // The page gives that component a matching id.
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/report/+page.svelte')!
+    const idMatch = companion.contents.match(/getElementById\("([^"]+)"\)/)
+    expect(idMatch, 'manifest has an id').toBeTruthy()
+    expect(page.contents).toContain(`id="${idMatch![1]}"`)
   })
 
   it('handlersSource from the designer is emitted verbatim (designer is the source of truth)', () => {

@@ -319,7 +319,8 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig): string {
   }
   const openTag = `<${spec.importName}${attrs.length ? ' ' + attrs.join(' ') : ''}`
   const inner = spec.hasContent ? `>{${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}}</${spec.importName}>` : ' />'
-  return `    <div ${span}>
+  // Stable id so page code (handlers.ts) can target the element: getElementById(block.id).
+  return `    <div id="${block.id}" ${span}>
       ${openTag}${inner}
     </div>`
 }
@@ -601,6 +602,22 @@ function screenLoadHandler(screen: Screen): string | undefined {
   return screen.events?.find((e) => e.on === 'load')?.handler
 }
 
+/** A comment manifest of the elements on the page that handler code can target -
+ *  the "know the page element ids to work with" reference, mirrored in the Code view. */
+function screenElementsManifest(screen: Screen): string {
+  const lines: string[] = []
+  if (screenLoadHandler(screen)) lines.push('//   - Grid: renders the array you return from load() (the `rows` on the page).')
+  for (const b of screen.blocks) {
+    if (b.config.kind === 'component') lines.push(`//   - ${b.config.component}: document.getElementById(${JSON.stringify(b.id)})`)
+  }
+  return lines.length ? `//\n// Page elements you can target:\n${lines.join('\n')}\n` : ''
+}
+
+/** Indent a user-written handler body two spaces so it sits inside the function. */
+function indentBody(body: string): string {
+  return body.split('\n').map((l) => (l.trim() ? `  ${l}` : l)).join('\n')
+}
+
 /** The user-owned `handlers.ts` companion for a screen: design in Studio, write
  *  behavior here. Scaffolded once (userOwned) and never regenerated - the page
  *  imports it, never rewrites it. See HANDLERS-DESIGN.md. */
@@ -609,20 +626,28 @@ function screenHandlersFile(screen: Screen): GeneratedFile {
   const header = `// Your code for the "${screen.title}" screen.
 // SvGrid Studio scaffolds this file once and never overwrites it - it's yours.
 // Design the screen visually in Studio; write its behavior here.
-`
-  // Designer is the source of truth when handlersSource is set; otherwise a stub.
-  const stub = load
-    ? `import type { RowData } from '@svgrid/grid'
+${screenElementsManifest(screen)}`
+
+  let body: string
+  if (screen.handlersSource) {
+    // Advanced escape hatch: the whole file, verbatim from the designer.
+    body = `${screen.handlersSource}\n`
+  } else if (load) {
+    // Structured onLoad slot: the function shell is generated; its body is the
+    // "single onLoad block" the user edits in the Code view.
+    const raw = screen.handlerBodies?.[load]?.trim()
+    const inner = raw ? indentBody(raw) : '  // TODO: fetch or compute your rows.\n  return []'
+    body = `import type { RowData } from '@svgrid/grid'
 
 /** Runs when the page mounts (wired to the screen's \`load\` event in Studio).
  *  Return the rows to render, fetch data, or set up state. */
 export async function ${load}(): Promise<RowData[]> {
-  // TODO: fetch or compute your rows.
-  return []
+${inner}
 }
 `
-    : `\n// Export functions here and wire them to events in Studio.\nexport {}\n`
-  const body = screen.handlersSource ? `${screen.handlersSource}\n` : stub
+  } else {
+    body = `\n// Export functions here and wire them to events in Studio.\nexport {}\n`
+  }
   return {
     path: `src/routes/${screen.route}/handlers.ts`,
     description: `Your code for the "${screen.title}" screen - scaffolded once, never regenerated.`,

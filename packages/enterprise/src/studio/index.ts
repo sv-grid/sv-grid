@@ -77,6 +77,7 @@ export {
   disableScreenCode,
   bindScreenEvent,
   unbindScreenEvent,
+  setHandlerBody,
   setScreenHandlersSource,
   removeScreen,
   updateScreen,
