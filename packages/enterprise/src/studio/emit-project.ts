@@ -12,7 +12,7 @@
  */
 import type { GeneratedFile } from './scaffold.js'
 import type { ActionConfig, Block, ComponentConfig, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
-import { blockColumns, entityDataSource, flattenBlocks, serializeProject } from './project.js'
+import { blockColumns, entityDataSource, flattenBlocks, serializeProject, ON_LOAD } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -305,7 +305,7 @@ ${panels}
  *  entity-bound screen) and directly from `freestandingScreenPage`. String/select/
  *  color values go through `jsStr` so free-typed text (quotes, braces, HTML) can
  *  never break out of the attribute or the surrounding markup. */
-function componentBlockMarkup(block: Block, cfg: ComponentConfig): string {
+function componentBlockMarkup(block: Block, cfg: ComponentConfig, refsVar?: string): string {
   const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
   const spec = uiComponentSpec(cfg.component)
   if (!spec) return `    <div ${span}><!-- unknown component "${cfg.component}" --></div>`
@@ -319,8 +319,9 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig): string {
   }
   const openTag = `<${spec.importName}${attrs.length ? ' ' + attrs.join(' ') : ''}`
   const inner = spec.hasContent ? `>{${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}}</${spec.importName}>` : ' />'
-  // Stable id so page code (handlers.ts) can target the element: getElementById(block.id).
-  return `    <div id="${block.id}" ${span}>
+  // Stable id + (on code pages) a Svelte ref so onLoad can reach it via ctx.refs.
+  const ref = refsVar ? ` bind:this={${refsVar}[${jsStr(block.id)}]}` : ''
+  return `    <div id="${block.id}"${ref} ${span}>
       ${openTag}${inner}
     </div>`
 }
@@ -592,25 +593,26 @@ ${inner}
  *  still hold `'component'` blocks (UI-kit widgets, not data-bound). Renders a
  *  title, an optional toolbar of custom actions, and those component blocks (or
  *  a placeholder comment if it has none yet). */
-/** Does this screen carry a user-owned code companion (design + your own code)? */
+/** Does this screen carry a user-owned code companion (design + your own code)?
+ *  Any of: the code flag, a Grid to fill, or an already-written handler body. */
 function screenHasCode(screen: Screen): boolean {
-  return screen.code === true || (screen.events?.length ?? 0) > 0
+  return screen.code === true || screen.renderGrid === true || Object.keys(screen.handlerBodies ?? {}).length > 0
 }
 
-/** The handler name wired to the screen's `load` lifecycle, if any. */
-function screenLoadHandler(screen: Screen): string | undefined {
-  return screen.events?.find((e) => e.on === 'load')?.handler
+/** The component blocks on a screen, exposed to code as refs (the Svelte way). */
+function screenComponentBlocks(screen: Screen): Block[] {
+  return screen.blocks.filter((b) => b.config.kind === 'component')
 }
 
-/** A comment manifest of the elements on the page that handler code can target -
- *  the "know the page element ids to work with" reference, mirrored in the Code view. */
+/** A comment manifest of what `onLoad(ctx)` can reach - each component by ref
+ *  (Svelte's bind:this, not getElementById) plus the Grid feed when present. */
 function screenElementsManifest(screen: Screen): string {
   const lines: string[] = []
-  if (screenLoadHandler(screen)) lines.push('//   - Grid: renders the array you return from load() (the `rows` on the page).')
-  for (const b of screen.blocks) {
-    if (b.config.kind === 'component') lines.push(`//   - ${b.config.component}: document.getElementById(${JSON.stringify(b.id)})`)
+  if (screen.renderGrid) lines.push('//   - Grid: ctx.setRows(rows) fills the page Grid with your data.')
+  for (const b of screenComponentBlocks(screen)) {
+    if (b.config.kind === 'component') lines.push(`//   - ${b.config.component}: ctx.refs[${JSON.stringify(b.id)}] (bound via bind:this)`)
   }
-  return lines.length ? `//\n// Page elements you can target:\n${lines.join('\n')}\n` : ''
+  return lines.length ? `//\n// In onLoad, ctx gives you:\n${lines.join('\n')}\n` : ''
 }
 
 /** Indent a user-written handler body two spaces so it sits inside the function. */
@@ -622,7 +624,6 @@ function indentBody(body: string): string {
  *  behavior here. Scaffolded once (userOwned) and never regenerated - the page
  *  imports it, never rewrites it. See HANDLERS-DESIGN.md. */
 function screenHandlersFile(screen: Screen): GeneratedFile {
-  const load = screenLoadHandler(screen)
   const header = `// Your code for the "${screen.title}" screen.
 // SvGrid Studio scaffolds this file once and never overwrites it - it's yours.
 // Design the screen visually in Studio; write its behavior here.
@@ -632,21 +633,26 @@ ${screenElementsManifest(screen)}`
   if (screen.handlersSource) {
     // Advanced escape hatch: the whole file, verbatim from the designer.
     body = `${screen.handlersSource}\n`
-  } else if (load) {
-    // Structured onLoad slot: the function shell is generated; its body is the
-    // "single onLoad block" the user edits in the Code view.
-    const raw = screen.handlerBodies?.[load]?.trim()
-    const inner = raw ? indentBody(raw) : '  // TODO: fetch or compute your rows.\n  return []'
+  } else {
+    // The always-present onLoad slot: runs on mount with a page context. The
+    // function shell is generated; its body is the block the user edits.
+    const raw = screen.handlerBodies?.[ON_LOAD]?.trim()
+    const inner = raw ? indentBody(raw) : '  // Runs when the page mounts. Use ctx.refs / ctx.setRows.'
     body = `import type { RowData } from '@svgrid/grid'
 
-/** Runs when the page mounts (wired to the screen's \`load\` event in Studio).
- *  Return the rows to render, fetch data, or set up state. */
-export async function ${load}(): Promise<RowData[]> {
+/** The page's elements and helpers, passed to onLoad. */
+export type PageContext = {
+  /** Each component by id, bound with Svelte's bind:this. */
+  refs: Record<string, HTMLElement | undefined>
+  /** Fill the page Grid with rows (no-op when the page has no Grid). */
+  setRows: (rows: RowData[]) => void
+}
+
+/** Runs when the page mounts. Fetch data, set up state, or touch ctx.refs. */
+export async function ${ON_LOAD}(ctx: PageContext): Promise<void> {
 ${inner}
 }
 `
-  } else {
-    body = `\n// Export functions here and wire them to events in Studio.\nexport {}\n`
   }
   return {
     path: `src/routes/${screen.route}/handlers.ts`,
@@ -672,23 +678,27 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
       .map((b) => uiComponentSpec(b.config.component)?.importName)
       .filter((n): n is string => !!n),
   )].sort()
-  // Code companion: wire the screen's `load` handler into onMount and render the
-  // rows it returns in a live SvGrid - the "empty page + your code + the Grid as
-  // the hero" flow. Auto-columns from the first row keep the stub runnable as-is.
-  const loadHandler = screenLoadHandler(screen)
-  const gridNames = [...new Set([...componentImports, ...(loadHandler ? ['SvGrid', 'tableFeatures', 'rowSortingFeature', 'columnFilteringFeature', 'rowSelectionFeature', 'type RowData'] : [])])].sort()
+  // Code companion: onLoad(ctx) runs on mount with a page context (component refs
+  // + a Grid feed). The Grid renders only when renderGrid is on; refs let onLoad
+  // reach any component the Svelte way (bind:this), not via getElementById.
+  const hasCode = screenHasCode(screen)
+  const grid = screen.renderGrid === true
+  const refsVar = hasCode ? 'refs' : undefined
+  const gridNames = [...new Set([...componentImports, ...(grid ? ['SvGrid', 'tableFeatures', 'rowSortingFeature', 'columnFilteringFeature', 'rowSelectionFeature'] : [])])].sort()
   const gridImport = gridNames.length ? `import { ${gridNames.join(', ')} } from '@svgrid/grid'\n  ` : ''
+  const typeImport = hasCode ? `import type { RowData } from '@svgrid/grid'\n  ` : ''
 
-  const codeImport = loadHandler ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  ` : ''
-  const codeScript = loadHandler
-    ? `\n  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })\n  let rows = $state<RowData[]>([])\n  const columns = $derived(rows.length ? Object.keys(rows[0]).map((field) => ({ field, header: field })) : [])\n  onMount(async () => { rows = await handlers.${loadHandler}() })`
+  const codeImport = hasCode ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  ` : ''
+  const gridScript = grid
+    ? `\n  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })\n  const columns = $derived(rows.length ? Object.keys(rows[0]).map((field) => ({ field, header: field })) : [])`
     : ''
-  const gridMarkup = loadHandler
-    ? `  <SvGrid data={rows} columns={columns} features={features} showRowNumbers />`
+  const codeScript = hasCode
+    ? `\n  const refs = $state<Record<string, HTMLElement | undefined>>({})\n  let rows = $state<RowData[]>([])${gridScript}\n  onMount(() => handlers.${ON_LOAD}({ refs, setRows: (r) => (rows = r) }))`
     : ''
+  const gridMarkup = grid ? `  <SvGrid data={rows} columns={columns} features={features} showRowNumbers />` : ''
 
   const blockContent = screen.blocks.length
-    ? screen.blocks.map((b) => (b.config.kind === 'component' ? componentBlockMarkup(b, b.config) : '')).filter(Boolean).join('\n')
+    ? screen.blocks.map((b) => (b.config.kind === 'component' ? componentBlockMarkup(b, b.config, refsVar) : '')).filter(Boolean).join('\n')
     : ''
   const content = [blockContent, gridMarkup].filter(Boolean).join('\n')
     || '  <!-- Freestanding page - no entity bound. Add your own content here. -->'
@@ -697,7 +707,7 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
     path: `src/routes/${screen.route}/+page.svelte`,
     description: `${screen.title} screen (freestanding, no bound entity).`,
     contents: `<script lang="ts">
-  ${gridImport}${codeImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}${codeScript}
+  ${gridImport}${typeImport}${codeImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}${codeScript}
 </script>
 
 <h1 class="st__title">${title}</h1>
