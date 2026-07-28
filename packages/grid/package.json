@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/grid",
-  "version": "2.1.9",
+  "version": "2.1.10",
   "description": "SvGrid - a headless-first, Svelte 5-native data grid engine and render component.",
   "author": "jQWidgets <boikom@jqwidgets.com>",
   "license": "MIT",
