@@ -56,7 +56,7 @@ function gridColumnsExpr(schemaVar: string, block: Block): string {
 
 /** Markup for one block inside the screen grid. `ctx.hasRecord` tells a grid to
  *  publish its clicked row into `selectedRecord` for a sibling record panel. */
-function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean; rawEntity?: EntitySchema; rawResolve?: (name: string) => EntitySchema | undefined } = { hasRecord: false }): string {
+function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean; rawEntity?: EntitySchema; rawResolve?: (name: string) => EntitySchema | undefined; captureApi?: string } = { hasRecord: false }): string {
   // A block's display label: localized via $t('block.<id>', 'literal') when i18n is on.
   const tLabel = (label: string, key: string) => (ctx.i18n ? `{$t('block.${key}', ${JSON.stringify(label)})}` : label)
   const span = `style="grid-column: span ${blockColumns(block)}; min-width: 0"`
@@ -101,6 +101,8 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       // No-code conditional formatting -> the grid's rule engine.
       const cf = conditionalFormatsExpr(cfg)
       if (cf) lines.push(`conditionalFormats={${cf}}`)
+      // Code-behind: bind the grid's api so onLoad can reach ctx.grid (SvGridApi).
+      if (ctx.captureApi) lines.push(`onApiReady={(a) => (${ctx.captureApi} = a)}`)
       lines.push(`containerHeight={${block.height ?? 360}}`)
       return `    <div ${span}>
       <SvGrid
@@ -625,16 +627,23 @@ function screenComponentBlocks(screen: Screen): Block[] {
   return screen.blocks.filter((b) => b.config.kind === 'component')
 }
 
-/** A comment manifest of what `onLoad(ctx)` can reach - each component as a named,
- *  imperative handle (ctx.button1.setLabel(...), ctx.button1.onclick = ...) plus
- *  the Grid feed. Mirrored in the designer's Code view. */
+/** Does this screen have a Grid whose API code can reach as ctx.grid? Either the
+ *  freestanding data-Grid (renderGrid) or an entity screen's own grid block. */
+function screenHasGrid(screen: Screen): boolean {
+  return screen.renderGrid === true || flattenBlocks(screen.blocks).some((b) => b.config.kind === 'grid')
+}
+/** The first grid block's id (the one whose api we bind), if any. */
+function firstGridBlockId(screen: Screen): string | undefined {
+  return flattenBlocks(screen.blocks).find((b) => b.config.kind === 'grid')?.id
+}
+
+/** A comment manifest of what `onLoad(ctx)` can reach - the Grid's real API when
+ *  present, setRows for the freestanding data-grid, and each component handle. */
 function screenElementsManifest(screen: Screen): string {
   const lines: string[] = []
-  if (screen.renderGrid) {
-    lines.push('//   - ctx.grid: the Grid\'s full SvGridApi - exportCsv(), selectCells(), startEditing(), ...')
-    lines.push('//   - ctx.setRows(rows): fills the Grid with your data.')
-  }
-  for (const b of screenComponentBlocks(screen)) {
+  if (screenHasGrid(screen)) lines.push('//   - ctx.grid: the Grid\'s full SvGridApi - exportCsv(), selectCells(), startEditing(), ...')
+  if (screen.renderGrid) lines.push('//   - ctx.setRows(rows): fills the Grid with your data.')
+  for (const b of (screen.entity === undefined ? screenComponentBlocks(screen) : [])) {
     if (b.config.kind === 'component') {
       const name = componentHandleName(b.config)
       lines.push(`//   - ctx.${name}: the ${b.config.component} - setText/set<Prop>(...), onclick = fn, onClick(fn).`)
@@ -700,22 +709,27 @@ export function handle(init: { props?: Record<string, unknown>; text?: string })
 /** Per-screen, regenerated PageContext type: the named handles + setRows. Kept OUT
  *  of the user-owned handlers.ts so its types stay fresh as components change. */
 function screenContextFile(screen: Screen): GeneratedFile {
-  const grid = screen.renderGrid === true
-  const lines = [
-    ...(grid ? ['  /** The Grid on this page - its full, real SvGridApi. */\n  grid: SvGridApi<any, any>'] : []),
-    ...screenComponentBlocks(screen).map((b) => (b.config.kind === 'component' ? `  ${componentHandleName(b.config)}: Handle` : '')),
+  const hasGrid = screenHasGrid(screen)
+  const renderGrid = screen.renderGrid === true
+  // Component handles are wired on freestanding pages; entity screens expose ctx.grid.
+  const comps = screen.entity === undefined ? screenComponentBlocks(screen) : []
+  const members = [
+    ...(hasGrid ? ['  /** The Grid on this page - its full, real SvGridApi. */\n  grid: SvGridApi<any, any>'] : []),
+    ...comps.map((b) => (b.config.kind === 'component' ? `  ${componentHandleName(b.config)}: Handle` : '')),
+    ...(renderGrid ? ['  /** Replace the Grid rows (this page owns its data). */\n  setRows: (rows: RowData[]) => void'] : []),
+  ].filter(Boolean)
+  const gridTypes = [hasGrid ? 'SvGridApi' : '', renderGrid ? 'RowData' : ''].filter(Boolean)
+  const imports = [
+    comps.length ? "import type { Handle } from '$lib/handles.svelte'" : '',
+    gridTypes.length ? `import type { ${gridTypes.join(', ')} } from '@svgrid/grid'` : '',
   ].filter(Boolean).join('\n')
   return {
     path: `src/routes/${screen.route}/page-context.ts`,
     description: `Typed page context for "${screen.title}" (regenerated).`,
     contents: `// Regenerated by SvGrid Studio. Edits here are overwritten - write code in handlers.ts.
-import type { Handle } from '$lib/handles.svelte'
-import type { RowData${grid ? ', SvGridApi' : ''} } from '@svgrid/grid'
-
-/** What onLoad(ctx) gives you: the Grid's real API, each component as a handle, and setRows. */
+${imports}${imports ? '\n\n' : ''}/** What onLoad(ctx) gives you: the Grid's real API, each component as a handle, and (blank pages) setRows. */
 export type PageContext = {
-${lines}${lines ? '\n' : ''}  setRows: (rows: RowData[]) => void
-}
+${members.join('\n')}${members.length ? '\n' : ''}}
 `,
   }
 }
@@ -779,7 +793,8 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
   const compBlocks = screen.blocks.filter((b): b is Block & { config: ComponentConfig } => b.config.kind === 'component')
   const gridNames = [...new Set([...componentImports, ...(grid ? ['SvGrid', 'tableFeatures', 'rowSortingFeature', 'columnFilteringFeature', 'rowSelectionFeature'] : [])])].sort()
   const gridImport = gridNames.length ? `import { ${gridNames.join(', ')} } from '@svgrid/grid'\n  ` : ''
-  const typeImport = hasCode ? `import type { RowData${grid ? ', SvGridApi' : ''} } from '@svgrid/grid'\n  ` : ''
+  const gridTypes = [grid ? 'RowData' : '', grid ? 'SvGridApi' : ''].filter(Boolean)
+  const typeImport = hasCode && gridTypes.length ? `import type { ${gridTypes.join(', ')} } from '@svgrid/grid'\n  ` : ''
   const handleImport = hasCode ? `import { handle } from '$lib/handles.svelte'\n  ` : ''
 
   const codeImport = hasCode ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  ` : ''
@@ -787,11 +802,11 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
   // The Grid exposes its real SvGridApi (onApiReady) so code gets the full, typed
   // grid API - ctx.grid.exportCsv(), selectCells(), startEditing(), ... - not a stub.
   const gridScript = grid
-    ? `\n  let gridApi = $state<SvGridApi<any, any> | null>(null)\n  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })\n  const columns = $derived(rows.length ? Object.keys(rows[0]).map((field) => ({ field, header: field })) : [])`
+    ? `\n  let rows = $state<RowData[]>([])\n  let gridApi = $state<SvGridApi<any, any> | null>(null)\n  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })\n  const columns = $derived(rows.length ? Object.keys(rows[0]).map((field) => ({ field, header: field })) : [])`
     : ''
-  const ctxArg = `{ ${[...(grid ? ['grid: gridApi!'] : []), ...compBlocks.map((b) => componentHandleName(b.config)), 'setRows: (r) => (rows = r)'].join(', ')} }`
+  const ctxArg = `{ ${[...(grid ? ['grid: gridApi!'] : []), ...compBlocks.map((b) => componentHandleName(b.config)), ...(grid ? ['setRows: (r) => (rows = r)'] : [])].join(', ')} }`
   const codeScript = hasCode
-    ? `\n  ${handleDecls ? handleDecls + '\n  ' : ''}let rows = $state<RowData[]>([])${gridScript}\n  onMount(() => handlers.${ON_LOAD}(${ctxArg}))`
+    ? `\n  ${handleDecls ? handleDecls + '\n  ' : ''}${gridScript ? gridScript.trimStart() + '\n  ' : ''}onMount(() => handlers.${ON_LOAD}(${ctxArg}))`
     : ''
   const gridMarkup = grid ? `  <SvGrid data={rows} columns={columns} features={features} onApiReady={(a) => (gridApi = a)} showRowNumbers />` : ''
 
@@ -828,6 +843,10 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // (grid/form/filter/record) only live at the top level.
   const allBlocks = flattenBlocks(blocks)
   const hasGrid = has(blocks, 'grid')
+  // Code-behind: wire onLoad(ctx) and expose the grid's real api as ctx.grid.
+  const codeEnabled = screenHasCode(screen)
+  const codeGrid = codeEnabled && hasGrid
+  const codeGridBlockId = firstGridBlockId(screen)
   const hasForm = has(blocks, 'form') // legacy standalone form block
   // Editing is a Grid property: a grid with editing 'form' opens the edit panel.
   const gridConfigs = blocks.map((b) => b.config).filter((c): c is GridConfig => c.kind === 'grid')
@@ -882,6 +901,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     const importName = uiComponentSpec(b.config.component)?.importName
     if (importName) gridSpecs.push(importName)
   }
+  if (codeGrid) gridSpecs.push('type SvGridApi')
   const gridImports = gridSpecs.length ? `import { ${[...new Set(gridSpecs)].join(', ')} } from '@svgrid/grid'\n  ` : ''
   const entImports: string[] = []
   if (hasGrid) entImports.push('schemaToColumns')
@@ -926,6 +946,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
 
   // --- script body ---
   const parts: string[] = []
+  if (codeGrid) parts.push('let gridApi = $state<SvGridApi<any, any> | null>(null)')
   for (const a of screenActions) parts.push(actionHandlerScript(a))
   if (needsController) {
     const urlFilter = applyUrlFilters
@@ -1015,6 +1036,8 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     return roots
   }`)
   }
+  // Code-behind: run the user's onLoad on mount, with the grid's api as ctx.grid.
+  if (codeEnabled) parts.push(`onMount(() => handlers.${ON_LOAD}({ ${codeGrid ? 'grid: gridApi!' : ''} }))`)
 
   // --- markup ---
   const newLabel = i18nEnabled ? `{$t('new.${schema.name}', ${JSON.stringify('+ New ' + label)})}` : `+ New ${label}`
@@ -1023,7 +1046,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const toolbar = (wantsForm || screenActions.length > 0)
     ? `<div class="st__toolbar">\n  ${wantsForm ? (gatesUi ? `{#if can($currentRole, 'create')}${newBtn}{/if}` : newBtn) : ''}${actionButtons ? `\n  ${actionButtons}` : ''}\n</div>\n\n`
     : ''
-  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve })).filter(Boolean).join('\n')
+  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve, captureApi: codeGrid && b.id === codeGridBlockId ? 'gridApi' : undefined })).filter(Boolean).join('\n')
   const modal = wantsForm
     ? `\n\n{#if editing !== undefined}\n  <SvGridEditPanel schema={${n.schemaVar}} row={editing}${relationFields.length ? ' {lookups}' : ''} presentation="${formPres}" persistKey="${screen.route}" onSubmit={save} onCancel={() => (editing = undefined)} />\n{/if}`
     : ''
@@ -1034,6 +1057,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const accessImport = accessSpecs.length ? `import { ${accessSpecs.join(', ')} } from '$lib/access'\n  ` : ''
   const i18nImport = i18nEnabled ? `import { t, localizeCols } from '$lib/i18n'\n  ` : ''
   const gotoImport = usesGoto ? `import { goto } from '$app/navigation'\n  ` : ''
+  const codeImport = codeEnabled ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  ` : ''
   const pageImport = applyUrlFilters || has(allBlocks, 'detail') ? `import { page } from '$app/stores'\n  ` : ''
   const title = i18nEnabled ? `{$t('screen.${screen.id}', ${JSON.stringify(screen.title)})}` : screen.title
   // Surface a failed data load (silent empty grid otherwise) with a retry.
@@ -1050,7 +1074,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     path: `src/routes/${screen.route}/+page.svelte`,
     description: `${screen.title} screen (${blocks.map((b) => b.config.kind).join(', ') || 'empty'}).`,
     contents: `<script lang="ts">
-  ${gridImports}${entImport}${accessImport}${i18nImport}${gotoImport}${pageImport}import { ${schemaVarImports.join(', ')}, ${typeImports.map((t) => `type ${t}`).join(', ')} } from '$lib/schemas'
+  ${gridImports}${entImport}${accessImport}${i18nImport}${gotoImport}${codeImport}${pageImport}import { ${schemaVarImports.join(', ')}, ${typeImports.map((t) => `type ${t}`).join(', ')} } from '$lib/schemas'
   import { ${dataImports.join(', ')} } from '$lib/data'
 
   ${parts.join('\n\n  ')}

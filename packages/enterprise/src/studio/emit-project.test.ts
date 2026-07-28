@@ -1192,4 +1192,21 @@ describe('code companion (design + your own code)', () => {
     expect(files.find((f) => f.path === 'src/routes/bare/handlers.ts')).toBeUndefined()
     expect(files.find((f) => f.path === 'src/routes/bare/+page.svelte')!.contents).not.toContain("from './handlers'")
   })
+
+  it('entity screens wire onLoad + expose their grid as ctx.grid (not setRows)', () => {
+    let p = createProject([customers, orders])
+    const sid = p.screens.find((s) => s.entity === 'customers')!.id
+    p = setHandlerBody(p, sid, 'onLoad', 'ctx.grid.autosizeAllColumns()')
+    const route = p.screens.find((s) => s.id === sid)!.route
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === `src/routes/${route}/+page.svelte`)!
+    const ctx = files.find((f) => f.path === `src/routes/${route}/page-context.ts`)!
+    expect(page.contents).toContain("import * as handlers from './handlers'")
+    expect(page.contents).toContain('let gridApi = $state<SvGridApi<any, any> | null>(null)')
+    expect(page.contents).toContain('onApiReady={(a) => (gridApi = a)}')
+    expect(page.contents).toContain('onMount(() => handlers.onLoad({ grid: gridApi! }))')
+    expect(ctx.contents).toContain('grid: SvGridApi<any, any>')
+    expect(ctx.contents).not.toContain('setRows: (rows') // the entity grid is controller-fed, no setRows member
+    expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+  })
 })
