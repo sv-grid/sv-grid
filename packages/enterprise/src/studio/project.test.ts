@@ -4,6 +4,8 @@ import {
   addBlock,
   duplicateBlock,
   blockColumns,
+  blockStyleCss,
+  mergeBlockStyle,
   addBlockAt,
   addComponentBlock,
   addEntity,
@@ -63,6 +65,39 @@ const orders: EntitySchema = {
   name: 'orders', label: 'Order', idField: 'id',
   fields: [{ field: 'id', type: 'text', primaryKey: true }, { field: 'total', type: 'number' }],
 }
+
+describe('per-block style', () => {
+  it('blockStyleCss emits override declarations and sanitizes the color', () => {
+    expect(blockStyleCss(undefined)).toBe('')
+    expect(blockStyleCss({})).toBe('')
+    expect(blockStyleCss({ border: false })).toBe('border: none')
+    expect(blockStyleCss({ border: true })).toContain('border: 1px solid')
+    expect(blockStyleCss({ shadow: false })).toBe('box-shadow: none')
+    expect(blockStyleCss({ padding: 16, margin: 8, radius: 12 })).toBe('padding: 16px; margin: 8px; border-radius: 12px')
+    // A malicious color can't break out of the inline style attribute.
+    expect(blockStyleCss({ background: '#fff' })).toBe('background: #fff')
+    expect(blockStyleCss({ background: 'red;"><script>' })).toBe('background: redscript')
+  })
+
+  it('mergeBlockStyle merges and drops cleared keys (undefined)', () => {
+    expect(mergeBlockStyle(undefined, { padding: 12 })).toEqual({ padding: 12 })
+    expect(mergeBlockStyle({ padding: 12, border: false }, { margin: 4 })).toEqual({ padding: 12, border: false, margin: 4 })
+    expect(mergeBlockStyle({ padding: 12, border: false }, { border: undefined })).toEqual({ padding: 12 })
+    expect(mergeBlockStyle({ padding: 12 }, { padding: undefined })).toBeUndefined()
+  })
+
+  it('updateBlock merges a style patch onto the block, round-trips through parse', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const bid = p.screens[0]!.blocks[0]!.id
+    p = updateBlock(p, sid, bid, { style: { border: false, padding: 24 } })
+    expect(p.screens[0]!.blocks[0]!.style).toEqual({ border: false, padding: 24 })
+    p = updateBlock(p, sid, bid, { style: { padding: undefined } })
+    expect(p.screens[0]!.blocks[0]!.style).toEqual({ border: false })
+    const round = parseProject(serializeProject(p))
+    expect(round.screens[0]!.blocks[0]!.style).toEqual({ border: false })
+  })
+})
 
 describe('Tabs container ops', () => {
   const base = () => defaultBlockConfig('tabs', customers) as TabsConfig

@@ -2,6 +2,7 @@
   import {
     applyExcelFilter,
     normalizeForFilter,
+    splitInTokens,
     createColumnVirtualizer,
     createCoreRowModel,
     createExpandedRowModel,
@@ -124,6 +125,12 @@
   const operatorsForColumn = $derived(ctrl.operatorsForColumn);
   const defaultOperatorFor = $derived(ctrl.defaultOperatorFor);
   const operatorLabelFor = $derived(ctrl.operatorLabelFor);
+  const filterRowValues = $derived(ctrl.filterRowValues);
+  const inSuggestFor = $derived(ctrl.inSuggestFor);
+  const inSuggestPos = $derived(ctrl.inSuggestPos);
+  const inSuggestValues = $derived(ctrl.inSuggestValues);
+  const toggleFilterToken = $derived(ctrl.toggleFilterToken);
+  const facetValuesForColumn = $derived(ctrl.facetValuesForColumn);
 
   // Patch a column's menu filter (used for the optional 2nd condition + join
   // of multi-condition filtering). Merges into the existing entry, creating a
@@ -202,14 +209,30 @@
           <option value={option.value}>{operatorLabelFor(option, menuColumn)}</option>
         {/each}
       </select>
-      {#if menuActiveOperator !== "isBlank"}
+      {#if menuActiveOperator !== "isBlank" && menuActiveOperator !== "isNotBlank"}
+        {@const isSetOp =
+          menuActiveOperator === "in" || menuActiveOperator === "notIn"}
         <input
           class="sv-grid-menu-condition-value"
-          type={menuInputType}
+          type={menuActiveOperator === "regex" ? "text" : menuInputType}
+          list={isSetOp ? `sv-in-list-${colId}` : undefined}
           value={filterMenuValues[colId]?.value ?? ""}
-          placeholder={menuActiveOperator === "between" ? "From" : "Filter value..."}
+          placeholder={menuActiveOperator === "between"
+            ? "From"
+            : isSetOp
+              ? "value, value..."
+              : menuActiveOperator === "regex"
+                ? "Pattern..."
+                : "Filter value..."}
           oninput={(event) => updateFilterMenuValue(colId, (event.currentTarget as HTMLInputElement).value)}
         />
+        {#if isSetOp}
+          <datalist id={`sv-in-list-${colId}`}>
+            {#each facetValuesForColumn(colId).slice(0, 200) as v (v)}
+              <option value={v}></option>
+            {/each}
+          </datalist>
+        {/if}
         {#if menuActiveOperator === "between"}
           <input
             class="sv-grid-menu-condition-value"
@@ -581,6 +604,47 @@
           >
           {operatorLabelFor(option, opColumn)}
         </button>
+      {/each}
+    </div>
+  {/if}
+
+  {#if inSuggestFor}
+    {@const suggestColId = inSuggestFor}
+    {@const selectedTokens = new Set(
+      splitInTokens(filterRowValues[suggestColId] ?? ""),
+    )}
+    <!-- Value suggestions for an `in` / `notIn` chip input. Items use
+         `onmousedown` (preventDefault) so clicking one keeps focus in the
+         chip input and the dropdown stays open for multi-select; the input's
+         own blur handler closes it when focus truly leaves. -->
+    <div
+      class="sv-grid-menu sv-grid-in-suggest"
+      role="listbox"
+      aria-multiselectable="true"
+      aria-label="Filter values"
+      style={`left: ${inSuggestPos.x}px; top: ${inSuggestPos.y}px;`}
+    >
+      {#each inSuggestValues as value (value)}
+        {@const checked = selectedTokens.has(value)}
+        <button
+          type="button"
+          class="sv-grid-menu-item sv-grid-in-suggest-item"
+          role="option"
+          aria-selected={checked}
+          onmousedown={(event) => {
+            event.preventDefault();
+            toggleFilterToken(suggestColId, value);
+          }}
+        >
+          <span class="sv-grid-in-suggest-check" aria-hidden="true"
+            >{checked ? "✓" : ""}</span
+          >
+          <span class="sv-grid-in-suggest-label"
+            >{value === "" ? "(Blanks)" : value}</span
+          >
+        </button>
+      {:else}
+        <div class="sv-grid-facet-empty">No values</div>
       {/each}
     </div>
   {/if}

@@ -1,8 +1,33 @@
 # Studio: design-time + your own code ("handlers")
 
-Status: **Phase 0 contract + Phase 1 foundation landing.** This doc is the agreed
-boundary for the "empty page + toolbox + handlers" builder. Read it before adding
-code to the generator or the designer.
+Status: **Contract + tiered code-behind shipped.** The whole screen is scriptable,
+not just the grid. Read this before adding code to the generator or the designer.
+
+## What ships today (the tiered `ctx`)
+
+Every block on a code-enabled screen becomes a named, typed member of the page
+`ctx`, tiered by how much API it has. `screenHandles()` in `emit-project.ts` is the
+single source of truth the page wiring, the `PageContext` type, and the
+`handlers.ts` manifest all agree on.
+
+- **Tier 1 - the Grid (`ctx.grid`)**: the real, full `SvGridApi`, typed to the
+  entity's row (`SvGridApi<any, Customers>`). exportCsv(), setFilter(), addRow(), ...
+- **Tier 2 - data-viz blocks (`ctx.chart1`, `ctx.kpi1`, `ctx.gauge1`, ...)**: a
+  reactive `DataHandle`. By default it mirrors the screen dataset; `setData(rows)`
+  feeds the block its own rows, `.rows` reads them, `clear()` follows the dataset
+  again. Kinds: chart, kpi, gauge, pivot, tree, dashboard (top-level blocks).
+- **Tier 3 - UI components (`ctx.button1`, ...)**: a typed `Handle` (e.g.
+  `ButtonHandle = Handle & { setVariant('primary' | ...): void; onclick: ... }`),
+  now wired on entity screens too (not just freestanding).
+- **Batteries**: `ctx.data` (the screen dataset: `setRows` on a freestanding
+  data-grid, `reload()` on an entity grid), `ctx.goto(path)`, `ctx.params`.
+
+Lifecycle slots: **`onLoad(ctx)`** on mount and **`onDestroy(ctx)`** on unmount
+(both structured, per-slot bodies in the model's `handlerBodies`). The advanced
+`handlersSource` escape hatch still overrides the whole file verbatim.
+
+The rest of this doc is the original Phase-0/1 contract, kept for the round-trip
+rules (still authoritative) - the generated-shape examples below predate the tiers.
 
 ## Goal
 
@@ -27,10 +52,12 @@ identically in the browser "Generate" path and the CLI - the browser can't merge
 against files it can't see, so we never put user code in a file the generator
 rewrites. The generated page *imports* the companion; it never edits it.
 
-Enforcement: a companion `GeneratedFile` carries `userOwned: true`. Any in-place
-writer (CLI regenerate) **skips it if it already exists**. The browser zip includes
-the stub only as a starting point; extracting over an existing project is the
-user's choice (documented).
+Enforcement: a companion `GeneratedFile` carries `userOwned: true`, and every
+in-place writer runs it through the shared `skipUserOwned(file, exists)` predicate
+(`scaffold.ts`) and **skips it if it already exists** - wired into both the CLI
+regenerate (`cli.ts writeAll`) and the designer's bundle write
+(`designer-server.ts writeBundle`). The browser zip includes the stub only as a
+starting point; extracting over an existing project is the user's choice.
 
 ## Schema (model)
 
@@ -95,12 +122,21 @@ output - no entity/CRUD scaffolding required. That is the flagship of this featu
 
 ## Increment plan
 
-1. **Foundation (this increment):** schema (`code`/`events` + builders), companion
-   emission (`userOwned`), page wiring for screen `load`, emit tests. Freestanding
-   (empty) screens first.
-2. Grid-on-empty-page fed by `handlers.load()` rows; toolbox components gain event
-   props that bind to companion handlers.
-3. Designer **Design | Code** toggle: edit `handlers.ts` in-panel (reuse the
-   playground editor), pick events per block, generated `Row` types as reference.
-4. Broaden events (row click, form submit lifecycle) across entity screens too.
-5. CLI writer: skip-if-exists for `userOwned` files; docs + a sample app.
+1. **Foundation** [done]: schema + companion emission (`userOwned`), page wiring,
+   emit tests. Freestanding screens first.
+2. **Grid-on-empty-page** [done] + toolbox component handles.
+3. **Designer Design | Code toggle** [done]: edit `handlers.ts` in-panel.
+4. **Tiered ctx across all screens** [done]: `screenHandles()` unifies grid /
+   data-viz (`DataHandle.setData`) / typed component handles on both entity and
+   freestanding screens; `ctx.data` / `ctx.goto` / `ctx.params` batteries;
+   `onDestroy` lifecycle slot; typed component handle aliases.
+5. **Write-once enforced** [done]: `skipUserOwned` in both in-place writers.
+
+### Next
+- Designer Code view: surface the `onDestroy` slot tab + refresh the "ctx gives
+  you" reference / completions for data handles + batteries.
+- Per-block **event slots** beyond lifecycle: component `onclick`, grid
+  `onRowClick(ctx, row)`, chart `onSelect/onDrill` resolving to named handlers.
+- Data handles for tabs-nested viz blocks (today only top-level blocks get one).
+- Surface non-grid kit component controllers via an `onReady` callback (upgrade
+  Tier 3 components to Tier 1 rich APIs where a headless core exists).

@@ -2,7 +2,32 @@ import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
 import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, createProject, enableScreenCode, parseProject, setDeployTarget, setEntityDataSource, setHandlerBody, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
-import { emitStudioProject, emitStudioAppBundle, studioDeployInfo } from './emit-project'
+import ts from 'typescript'
+import { emitStudioProject, emitStudioAppBundle, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
+
+/** Type-check a handler BODY against a generated ambient ctx `.d.ts` using the real
+ *  TypeScript compiler - the same surface the in-editor language service uses.
+ *  Returns main.ts diagnostics (empty = clean). Mirrors the editor's function wrap. */
+function typeCheckBody(dts: string, body: string): string[] {
+  const PRE = 'async function __run(ctx: PageContext): Promise<void> {\n'
+  const files: Record<string, string> = { 'env.d.ts': dts, 'main.ts': `${PRE}${body}\n}\n` }
+  const options: ts.CompilerOptions = {
+    target: ts.ScriptTarget.ES2021, lib: ['lib.es2021.d.ts', 'lib.dom.d.ts'],
+    module: ts.ModuleKind.ESNext, strict: false, noEmit: true, skipLibCheck: true, types: [],
+  }
+  const host = ts.createCompilerHost(options, true)
+  const origGet = host.getSourceFile.bind(host)
+  const origRead = host.readFile.bind(host)
+  const origExists = host.fileExists.bind(host)
+  host.getSourceFile = (name, langOrOpts, onErr, shouldCreate) =>
+    files[name] != null ? ts.createSourceFile(name, files[name], langOrOpts, true) : origGet(name, langOrOpts, onErr, shouldCreate)
+  host.readFile = (name) => files[name] ?? origRead(name)
+  host.fileExists = (name) => files[name] != null || origExists(name)
+  const program = ts.createProgram(['env.d.ts', 'main.ts'], options, host)
+  const main = program.getSourceFile('main.ts')
+  return [...program.getSemanticDiagnostics(main), ...program.getSyntacticDiagnostics(main)]
+    .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'))
+}
 
 const customers: EntitySchema = {
   name: 'customers', label: 'Customer', idField: 'id',
@@ -997,6 +1022,17 @@ describe('emitStudioAppBundle (full runnable app)', () => {
     expect(pkg.devDependencies['vite']).toBeTruthy()
   })
 
+  it('pins Vite 7 (not 8) so the app boots in StackBlitz WebContainer', () => {
+    const bundle = emitStudioAppBundle(createProject([customers]))
+    const pkg = JSON.parse(bundle.find((f) => f.path === 'package.json')!.contents)
+    // Vite 8's Rolldown bundler crashes in the WebContainer; pin the Rollup-based stack.
+    expect(pkg.devDependencies['vite']).toBe('^7.0.0')
+    expect(pkg.devDependencies['@sveltejs/vite-plugin-svelte']).toBe('^6.0.0')
+    expect(pkg.devDependencies['vitest']).toMatch(/^\^4\./) // vitest 4 supports vite 7
+    // engine-strict must not hard-fail install in a sandbox whose Node may differ.
+    expect(bundle.find((f) => f.path === '.npmrc')!.contents).toContain('engine-strict=false')
+  })
+
   it('ships a per-entity smoke test + vitest wiring', () => {
     const bundle = emitStudioAppBundle(createProject([customers, orders], { title: 'My Sales App' }))
     const pkg = JSON.parse(bundle.find((f) => f.path === 'package.json')!.contents)
@@ -1090,13 +1126,46 @@ describe('pages (nav) + shell codegen', () => {
     expect(layout).not.toContain('--sg-accent: #0969da')
   })
 
-  it('custom CSS is appended to the generated app.css', () => {
+  it('custom CSS goes to its own src/custom.css, imported after app.css by the layout', () => {
     const p = setTheme(createProject([customers]), { customCss: '.st__title { letter-spacing: -0.03em; }' })
-    const appcss = emitStudioAppBundle(p).find((f) => f.path === 'src/app.css')!.contents
-    expect(appcss).toContain('Custom CSS (from the designer)')
-    expect(appcss).toContain('.st__title { letter-spacing: -0.03em; }')
-    // No custom block when unset.
-    expect(emitStudioAppBundle(createProject([customers])).find((f) => f.path === 'src/app.css')!.contents).not.toContain('Custom CSS (from the designer)')
+    const files = emitStudioAppBundle(p)
+    const customCss = files.find((f) => f.path === 'src/custom.css')!
+    expect(customCss.contents).toContain('.st__title { letter-spacing: -0.03em; }')
+    // app.css no longer carries the user's CSS.
+    expect(files.find((f) => f.path === 'src/app.css')!.contents).not.toContain('.st__title { letter-spacing: -0.03em; }')
+    // The layout imports both, custom.css after app.css so it overrides.
+    const layout = files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents
+    expect(layout.indexOf("import '../custom.css'")).toBeGreaterThan(layout.indexOf("import '../app.css'"))
+    // custom.css is always emitted (even empty) so the import never dangles.
+    expect(emitStudioAppBundle(createProject([customers])).find((f) => f.path === 'src/custom.css')).toBeTruthy()
+  })
+
+  it('no "Home" nav link; / redirects to the first screen', () => {
+    const files = emitStudioProject(createProject([customers, orders]))
+    const layout = files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents
+    // The auto "Home" link is gone (it duplicated the first screen's landing).
+    expect(layout).not.toContain('>Home<')
+    expect(layout).not.toContain("label: 'Home'")
+    // `/` is a redirect to the first navigable screen, not a distinct page.
+    const home = files.find((f) => f.path === 'src/routes/+page.svelte')!.contents
+    expect(home).toContain('const home = "/customers"')
+    expect(home).toContain('goto(home, { replaceState: true })')
+  })
+
+  it('ships a light/dark switcher: both token sets scoped by [data-theme] + a toggle', () => {
+    const p = setThemePreset(createProject([customers]), 'tailwind')
+    const layout = layoutOf(p)
+    // Both palettes emitted, keyed off <html data-theme>.
+    expect(layout).toContain(':root[data-theme="light"]')
+    expect(layout).toContain(':root[data-theme="dark"]')
+    expect(layout).toContain('--sg-bg: #ffffff')   // Tailwind light bg
+    expect(layout).toContain('--sg-bg: #0f172a')   // Tailwind dark bg
+    // The toggle + its runtime are wired in and persist the choice.
+    expect(layout).toContain('function toggleTheme()')
+    expect(layout).toContain("document.documentElement.dataset.theme")
+    expect(layout).toContain("localStorage.setItem('svapp:theme'")
+    expect(layout).toContain('sv-app__theme')
+    expect(() => compile(layout, { filename: '+layout.svelte', generate: 'client' })).not.toThrow()
   })
 })
 
@@ -1139,12 +1208,15 @@ describe('code companion (design + your own code)', () => {
     const { p } = build()
     const page = emitStudioProject(p).find((f) => f.path === 'src/routes/report/+page.svelte')!
     expect(page.contents).toContain("import * as handlers from './handlers'")
-    expect(page.contents).toContain('handlers.onLoad({ grid: gridApi!, setRows:')
+    // onLoad runs on mount and onDestroy on unmount, both with the full ctx (grid +
+    // the settable data battery, since this freestanding page owns its rows).
+    expect(page.contents).toContain('handlers.onLoad({ grid: gridApi!, data: { get rows() { return rows }, setRows: (r) => (rows = r) }')
+    expect(page.contents).toContain('return () => handlers.onDestroy(')
     expect(page.contents).toContain('<SvGrid data={rows} columns={columns} features={features}')
     expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
   })
 
-  it('the Grid is exposed as its real SvGridApi (ctx.grid), typed in page-context', () => {
+  it('the Grid is exposed as its real SvGridApi (ctx.grid), typed to the row in page-context', () => {
     const { p } = build()
     const files = emitStudioProject(p)
     const page = files.find((f) => f.path === 'src/routes/report/+page.svelte')!
@@ -1152,11 +1224,13 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('let gridApi = $state<SvGridApi<any, any> | null>(null)')
     expect(page.contents).toContain('onApiReady={(a) => (gridApi = a)}')
     expect(page.contents).toMatch(/import type \{[^}]*\bSvGridApi\b/)
-    expect(ctx.contents).toContain('grid: SvGridApi<any, any>')
+    // Freestanding data-grid rows are RowData; the grid api is typed to it.
+    expect(ctx.contents).toContain('grid: SvGridApi<any, RowData>')
+    expect(ctx.contents).toContain("import type { RowData } from '@svgrid/grid'")
     expect(ctx.contents).toMatch(/import type \{[^}]*\bSvGridApi\b/)
   })
 
-  it('a dropped component becomes a named, imperative handle in code + markup', () => {
+  it('a dropped component becomes a named, typed handle in code + markup', () => {
     const { p: base, sid } = build()
     const p = addComponentBlock(base, sid, 'button', { variant: 'primary' })
     const files = emitStudioProject(p)
@@ -1168,9 +1242,11 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('<SvButton {...button1.props}>{button1.text}</SvButton>')
     expect(page.contents).toContain("import { handle } from '$lib/handles.svelte'")
     expect(page.contents).toContain('button1.fire(\'click\', e)')
-    expect(page.contents).toContain('handlers.onLoad({ grid: gridApi!, button1, setRows:')
-    // Typed in the context; suggested in the manifest.
-    expect(ctx.contents).toContain('button1: Handle')
+    expect(page.contents).toContain('handlers.onLoad({ grid: gridApi!, button1, data:')
+    // Typed handle: ButtonHandle intersects Handle with the button's real setters.
+    expect(ctx.contents).toContain('button1: ButtonHandle')
+    expect(ctx.contents).toContain('type ButtonHandle = Handle & {')
+    expect(ctx.contents).toContain("setVariant(value: \"primary\" | \"secondary\" | \"outline\" | \"ghost\" | \"danger\"): void")
     expect(companion.contents).toContain('ctx.button1')
     expect(companion.contents).not.toContain('getElementById')
     expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
@@ -1193,7 +1269,7 @@ describe('code companion (design + your own code)', () => {
     expect(files.find((f) => f.path === 'src/routes/bare/+page.svelte')!.contents).not.toContain("from './handlers'")
   })
 
-  it('entity screens wire onLoad + expose their grid as ctx.grid (not setRows)', () => {
+  it('entity screens wire onLoad/onDestroy + expose their grid as ctx.grid (reload, not setRows)', () => {
     let p = createProject([customers, orders])
     const sid = p.screens.find((s) => s.entity === 'customers')!.id
     p = setHandlerBody(p, sid, 'onLoad', 'ctx.grid.autosizeAllColumns()')
@@ -1204,9 +1280,175 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain("import * as handlers from './handlers'")
     expect(page.contents).toContain('let gridApi = $state<SvGridApi<any, any> | null>(null)')
     expect(page.contents).toContain('onApiReady={(a) => (gridApi = a)}')
-    expect(page.contents).toContain('onMount(() => handlers.onLoad({ grid: gridApi! }))')
-    expect(ctx.contents).toContain('grid: SvGridApi<any, any>')
+    // Full ctx on mount + cleanup on unmount; the grid exposes reload(), not setRows.
+    expect(page.contents).toContain('onMount(() => { handlers.onLoad({ grid: gridApi!, data: { get rows() { return view.rows }, reload: () => controller.refresh() }, goto, params: Object.fromEntries($page.url.searchParams) })')
+    expect(page.contents).toContain('return () => handlers.onDestroy(')
+    // The grid api is typed to the entity's row (Customers), not any.
+    expect(ctx.contents).toContain('grid: SvGridApi<any, Customers>')
+    expect(ctx.contents).toContain("import type { Customers } from '$lib/schemas'")
     expect(ctx.contents).not.toContain('setRows: (rows') // the entity grid is controller-fed, no setRows member
     expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+  })
+
+  it('data-viz blocks become setData handles; entity components + batteries are in ctx', () => {
+    let p = createProject([customers, orders])
+    const sid = p.screens.find((s) => s.entity === 'customers')!.id
+    // A chart + a KPI + a button on the customers screen, with code enabled.
+    p = addBlock(p, sid, 'chart')
+    p = addBlock(p, sid, 'kpi')
+    p = addComponentBlock(p, sid, 'button', { variant: 'primary' })
+    p = enableScreenCode(p, sid)
+    const route = p.screens.find((s) => s.id === sid)!.route
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === `src/routes/${route}/+page.svelte`)!
+    const ctx = files.find((f) => f.path === `src/routes/${route}/page-context.ts`)!
+    // Per-block DataHandles declared and fed to the chart/kpi markup.
+    expect(page.contents).toContain('const chart1 = dataHandle<Customers>(() => allRows)')
+    expect(page.contents).toContain('const kpi1 = dataHandle<Customers>(() => allRows)')
+    expect(page.contents).toContain('rows={chart1.rows}')
+    expect(page.contents).toContain("import { handle, dataHandle } from '$lib/handles.svelte'")
+    // ctx carries the data handles + the entity component handle + batteries.
+    expect(ctx.contents).toContain('chart1: DataHandle<Customers>')
+    expect(ctx.contents).toContain('kpi1: DataHandle<Customers>')
+    expect(ctx.contents).toContain('button1: ButtonHandle')
+    expect(ctx.contents).toContain('goto: (path: string) => void')
+    expect(ctx.contents).toContain('params: Record<string, string>')
+    expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+  })
+
+  it('emits the shared DataHandle runtime, and its private-$state pattern is valid Svelte', () => {
+    let p = createProject([customers])
+    const sid = p.screens.find((s) => s.entity === 'customers')!.id
+    p = addBlock(p, sid, 'chart') // needs a DataHandle
+    p = addComponentBlock(p, sid, 'button', {}) // needs a ComponentHandle
+    p = enableScreenCode(p, sid)
+    const mod = emitStudioProject(p).find((f) => f.path === 'src/lib/handles.svelte.ts')!
+    expect(mod.contents).toContain('export class DataHandle')
+    expect(mod.contents).toContain('setData(rows: T[]): void')
+    // The generated .svelte.ts is stripped of types + compiled by the bundler's
+    // svelte plugin; here we prove the reactive private-field pattern it relies on
+    // (a `#field = $state()` read through a getter) is valid Svelte 5 via the
+    // component compiler (which strips TS in `<script lang="ts">`).
+    const probe = `<script lang="ts">
+  class DataHandle<T> {
+    #override = $state<T[] | null>(null)
+    #fallback: () => T[]
+    constructor(fallback: () => T[]) { this.#fallback = fallback }
+    get rows(): T[] { return this.#override ?? this.#fallback() }
+    setData(rows: T[]): void { this.#override = rows }
+    clear(): void { this.#override = null }
+  }
+  let all = $state<number[]>([1, 2])
+  const h = new DataHandle<number>(() => all)
+</script>
+<p>{h.rows.length}</p>`
+    expect(() => compile(probe, { filename: 'probe.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('ctxCompletions exposes the FULL grid api + every handle member + batteries', () => {
+    let p = createProject([customers])
+    const sid = p.screens.find((s) => s.entity === 'customers')!.id
+    p = addBlock(p, sid, 'chart')
+    p = addComponentBlock(p, sid, 'button', {})
+    p = enableScreenCode(p, sid)
+    const screen = p.screens.find((s) => s.id === sid)!
+    const comp = ctxCompletions(screen)
+    // The whole grid surface, not a handful.
+    expect(comp).toContain('ctx.grid.exportCsv()')
+    expect(comp).toContain('ctx.grid.autosizeAllColumns()')
+    expect(comp).toContain('ctx.grid.applyTransaction()')
+    expect(comp.filter((c) => c.startsWith('ctx.grid.')).length).toBeGreaterThan(40)
+    // Data handle + typed component setters + batteries.
+    expect(comp).toContain('ctx.chart1.setData()')
+    expect(comp).toContain('ctx.chart1.rows')
+    expect(comp).toContain('ctx.button1.setVariant()')
+    expect(comp).toContain('ctx.button1.onclick')
+    expect(comp).toContain('ctx.data.reload()')
+    expect(comp).toContain('ctx.goto()')
+    expect(comp).toContain('ctx.params')
+  })
+
+  it('per-block style overrides are emitted as inline CSS on the block wrapper', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    // Give the grid block a border-off + padding + margin override.
+    const bid = p.screens[0]!.blocks[0]!.id
+    p = updateBlock(p, sid, bid, { style: { border: false, padding: 24, margin: 8, radius: 10, background: '#fafafa' } })
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!
+    expect(page.contents).toContain('border: none')
+    expect(page.contents).toContain('padding: 24px')
+    expect(page.contents).toContain('margin: 8px')
+    expect(page.contents).toContain('border-radius: 10px')
+    expect(page.contents).toContain('background: #fafafa')
+    expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+  })
+
+  it('per-block className is emitted on the wrapper (merged with base classes) + sanitized', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'kpi')
+    const gridId = p.screens[0]!.blocks.find((b) => b.config.kind === 'grid')!.id
+    const kpiId = p.screens[0]!.blocks.find((b) => b.config.kind === 'kpi')!.id
+    p = updateBlock(p, sid, gridId, { className: 'my-grid highlight' })
+    p = updateBlock(p, sid, kpiId, { className: 'evil"onload=x' }) // sanitized
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!
+    expect(page.contents).toContain('class="my-grid highlight"')
+    // kpi keeps its base class, appends the (sanitized) user class - no attribute break-out.
+    expect(page.contents).toContain('class="kpi evilonloadx"')
+    expect(page.contents).not.toContain('onload=x')
+    expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+  })
+
+  it('per-screen className lands on .st-screen; app className lands on the shell root', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = updateScreen(p, sid, { className: 'crm-screen' })
+    p = setTheme(p, { appClass: 'brand-app' })
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!
+    expect(page.contents).toContain('<div class="st-screen crm-screen">')
+    const layout = files.find((f) => f.path === 'src/routes/+layout.svelte')!
+    expect(layout.contents).toMatch(/class="sv-app sv-app--\w+ brand-app"/)
+    expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+    expect(() => compile(layout.contents, { filename: layout.path, generate: 'client' })).not.toThrow()
+  })
+
+  it('ctxAmbientDts type-checks real ctx usage and catches grid/data typos (editor TS surface)', () => {
+    let p = createProject([customers])
+    const sid = p.screens.find((s) => s.entity === 'customers')!.id
+    p = addBlock(p, sid, 'chart')
+    p = addComponentBlock(p, sid, 'button', {})
+    p = enableScreenCode(p, sid)
+    const screen = p.screens.find((s) => s.id === sid)!
+    const dts = ctxAmbientDts(screen, customers)
+    // Valid, real code compiles clean: awaited grid export, feed a chart from the
+    // dataset, type a component setter, navigate, read a param.
+    expect(typeCheckBody(dts, [
+      'const csv = await ctx.grid.exportCsv()',
+      'console.log(csv.length)',
+      'ctx.chart1.setData(ctx.data.rows)',
+      "ctx.button1.setVariant('danger')",
+      "ctx.goto('/orders')",
+      'const id = ctx.params.id',
+      'ctx.grid.setSort("mrr", "desc")',
+    ].join('\n'))).toEqual([])
+    // A misspelled grid method is a hard error (SvGridApi is precisely typed).
+    const gridTypo = typeCheckBody(dts, 'ctx.grid.exprtCsv()')
+    expect(gridTypo.length).toBeGreaterThan(0)
+    expect(gridTypo.join(' ')).toMatch(/exprtCsv/)
+    // Feeding a chart the wrong element type is caught (DataHandle<Customers>).
+    expect(typeCheckBody(dts, 'ctx.chart1.setData([1, 2, 3])').length).toBeGreaterThan(0)
+    // An unknown ctx member is caught.
+    expect(typeCheckBody(dts, 'ctx.notAThing()').length).toBeGreaterThan(0)
+  })
+
+  it('onDestroy is a first-class slot in handlers.ts + page-context manifest', () => {
+    let p = createProject([customers])
+    const sid = p.screens.find((s) => s.entity === 'customers')!.id
+    p = setHandlerBody(p, sid, 'onDestroy', 'clearInterval(timer)')
+    const route = p.screens.find((s) => s.id === sid)!.route
+    const companion = emitStudioProject(p).find((f) => f.path === `src/routes/${route}/handlers.ts`)!
+    expect(companion.contents).toContain('export function onDestroy(ctx: PageContext): void')
+    expect(companion.contents).toContain('clearInterval(timer)')
   })
 })

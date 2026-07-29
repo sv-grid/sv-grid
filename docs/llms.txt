@@ -76,6 +76,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Real-time / streaming updates](https://svgrid.com/help/real-time): How to drive the grid from a WebSocket / SSE / poll. Three patterns ranked by the rate of change:
 - [Recipes / Cookbook](https://svgrid.com/help/recipes): Quick patterns for the questions that come up over and over. Each recipe is paired with a live demo or a minimal snippet that runs against the shipping library.
 - [Saved views & layout persistence](https://svgrid.com/help/saved-views): The pattern for "user changes sort + filters + columns; reopens the page next week; everything is where they left it." Powered entirely by your own state - the grid never writes to storage on its own.
+- [Scheduling: automate exports and reminders](https://svgrid.com/help/scheduling): Two jobs turn up in almost every data app the moment it goes into daily use: *"email me this report every weekday at 17:30"* and *"remind the desk at 09:00 to reconcile."* The reflex is to stand up…
 - [Security & supply chain](https://svgrid.com/help/security): SvGrid is built for shipping into regulated environments where every dependency, every runtime call, and every network egress has to be justified before procurement signs. This page is the answer t…
 - [Server-side data](https://svgrid.com/help/server-side-data): The patterns for moving sort, filter, group, and pagination off the client and onto your API. Three flavours, ranked by complexity:
 - [Spreadsheet formulas](https://svgrid.com/help/spreadsheet-formulas): A minimal Excel-style formula engine that runs in the browser, with no dependencies. Cells can hold either a literal value (number, string, boolean) or a formula starting with =. When the formula r…
@@ -156,10 +157,10 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Filter API](https://svgrid.com/help/filtering/filter-api): Two surfaces - pick based on whether the caller is inside or outside the component that owns the grid state.
 - [Filter conditions](https://svgrid.com/help/filtering/filter-conditions): A "filter condition" is a (column, operator, value) triple. The grid stores filter conditions in state.columnFilters.
 - [Floating filters](https://svgrid.com/help/filtering/floating-filters): "Floating filters" are the always-visible filter inputs that sit **between** the header row and the body. In SvGrid the filter row is **per-operator and per-type**: each cell has a funnel to pick t…
-- [Number filter](https://svgrid.com/help/filtering/number-filter): A column with editorType: 'number' gets the **number** filter operator set: equals, greaterThan, lessThan, **between**, isBlank. The default operator is equals.
+- [Number filter](https://svgrid.com/help/filtering/number-filter): A column with editorType: 'number' gets the **number** filter operator set: equals, notEquals, greaterThan, lessThan, **between**, in, notIn, isBlank, isNotBlank. The default operator is equals.
 - [Filtering - overview](https://svgrid.com/help/filtering/overview): Click any column header's filter icon to open the operator + value popover; numeric and date columns range-bucket their distinct values so the menu stays usable on big datasets:
 - [Set filter](https://svgrid.com/help/filtering/set-filter): A "set filter" (a.k.a. value filter, list filter) shows a checklist of all distinct values in a column and lets the user pick which to include. It's what you reach for to filter status to "active O…
-- [Text filter](https://svgrid.com/help/filtering/text-filter): A column with no editorType (or editorType: 'text') gets the **text** filter operator set: contains, equals, startsWith, isBlank. The default operator is contains.
+- [Text filter](https://svgrid.com/help/filtering/text-filter): A column with no editorType (or editorType: 'text') gets the full **text** filter operator set. The default operator is contains.
 
 ### Grouping
 

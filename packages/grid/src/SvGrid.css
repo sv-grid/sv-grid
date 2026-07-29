@@ -871,6 +871,100 @@
   box-sizing: border-box;
 }
 
+/* Invalid regex pattern: flag the input so the user knows the half-typed
+   pattern isn't being applied (it matches nothing until it compiles). */
+.sv-grid-filter-value.sv-grid-filter-value-invalid,
+.sv-grid-tp-filter-input.sv-grid-filter-value-invalid {
+  border-color: var(--sg-danger, #e5484d) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sg-danger, #e5484d) 45%, transparent);
+}
+
+/* In / Not-in chip (token) input: chips + a flex-growing text box share one
+   bordered control that reads like a single field. */
+.sv-grid-filter-chips {
+  flex: 3 1 0;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border: 1px solid var(--sg-input-border, #8794a8);
+  border-radius: 4px;
+  background: var(--sg-input-bg, #fff);
+  overflow: hidden;
+}
+
+/* A few chips stay visible; the rest collapse into a non-wrapping "+N" pill
+   that opens the value dropdown (select / unselect). */
+.sv-grid-filter-chip .sv-grid-filter-chip-label {
+  max-width: 84px;
+}
+.sv-grid-filter-chip-more {
+  flex: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--sg-text, inherit);
+}
+.sv-grid-filter-chip-more:hover {
+  background: color-mix(in srgb, var(--sg-accent, #0b63f3) 26%, transparent);
+}
+.sv-grid-filter-chips:focus-within {
+  border-color: var(--sg-accent, #0b63f3);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sg-accent, #0b63f3) 45%, transparent);
+}
+.sv-grid-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 120px;
+  padding: 0 2px 0 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 16px;
+  background: color-mix(in srgb, var(--sg-accent, #0b63f3) 16%, transparent);
+  color: var(--sg-text, inherit);
+}
+.sv-grid-filter-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sv-grid-filter-chip-x {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.sv-grid-filter-chip-x:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--sg-accent, #0b63f3) 28%, transparent);
+}
+.sv-grid-filter-chips .sv-grid-filter-chip-input {
+  flex: 1 1 14px;
+  min-width: 14px;
+  border: 0 !important;
+  padding: 0 2px;
+  background: transparent;
+  box-shadow: none !important;
+  outline: none;
+}
+
 /* Brief glow used when the user clicks the funnel icon while the grid
    is in row-filter mode - draws attention to where the input is so
    the click isn't a no-op. */
@@ -1750,6 +1844,38 @@ select.sv-grid-fr-editor {
 
 .sv-grid-menu-item:hover {
   background: var(--sg-row-hover-bg, #eef2f8);
+}
+
+/* In / Not-in value-suggestions dropdown (anchored under the chip input).
+   Defined AFTER .sv-grid-menu so its tighter sizing wins - the element
+   carries both classes. Compact rows keep a long value list scannable. */
+.sv-grid-menu.sv-grid-in-suggest {
+  min-width: 140px;
+  max-width: 260px;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+.sv-grid-in-suggest-item {
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+.sv-grid-in-suggest-item[aria-selected="true"] {
+  color: var(--sg-accent, #0b63f3);
+  font-weight: 600;
+}
+.sv-grid-in-suggest-check {
+  flex: none;
+  width: 12px;
+  text-align: center;
+  color: var(--sg-accent, #0b63f3);
+}
+.sv-grid-in-suggest-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sv-grid-menu-item[aria-checked="true"] {

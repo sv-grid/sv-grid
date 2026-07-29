@@ -220,6 +220,24 @@ export function flattenBlocks(blocks: ReadonlyArray<Block>): Block[] {
   return out
 }
 
+/** User style overrides for a block's wrapper element (the card around the block).
+ *  Each field is an OVERRIDE - `undefined` keeps the block kind's default look. Applied
+ *  identically in the designer preview and the generated app (see `blockStyleCss`). */
+export type BlockStyle = {
+  /** Force a border on (true) or off (false); undefined = the kind's default. */
+  border?: boolean
+  /** Force a drop shadow on (true) or off (false); undefined = default. */
+  shadow?: boolean
+  /** Inner padding, px. */
+  padding?: number
+  /** Outer margin, px. */
+  margin?: number
+  /** Background color (any CSS color). */
+  background?: string
+  /** Corner radius, px. */
+  radius?: number
+}
+
 export type Block = {
   id: string
   /** Coarse width in a 3-col grid (legacy + quick buttons). `colSpan` overrides it. */
@@ -230,17 +248,65 @@ export type Block = {
   /** Canvas/preview region height in px. Undefined = the kind's natural default.
    *  Applies to height-driven blocks (grid, chart, master-detail). */
   height?: number
+  /** Per-block appearance overrides (border / shadow / padding / margin / bg / radius). */
+  style?: BlockStyle
+  /** Extra CSS class(es) put on the block's wrapper, so custom.css can target it. */
+  className?: string
   config: BlockConfig
+}
+
+/** Sanitize a user-typed class list to a safe value (letters/digits/_/- and spaces) so
+ *  it can never break out of a `class="..."` attribute. Shared by block/screen/app. */
+export function sanitizeClassName(raw: string | undefined): string {
+  return (raw ?? '').replace(/[^a-zA-Z0-9 _-]/g, '').trim().replace(/\s+/g, ' ').slice(0, 120)
+}
+/** The sanitized extra class(es) for a block's wrapper. */
+export function blockClassName(block: Pick<Block, 'className'>): string {
+  return sanitizeClassName(block.className)
 }
 /** The number of columns (1-12) a block occupies in the 12-col layout. */
 export const blockColumns = (b: Pick<Block, 'span' | 'colSpan'>): number =>
   Math.max(1, Math.min(12, Math.round(b.colSpan ?? b.span * 4)))
+
+/** Restrict a user-typed color to a safe subset so it can't break out of an inline
+ *  `style="..."` attribute (hex, rgb()/hsl(), named colors, css vars). */
+const safeColor = (c: string): string => c.replace(/[^#a-zA-Z0-9(),.%\s_-]/g, '').slice(0, 64)
+
+/** The CSS declarations for a block's style overrides, for its wrapper element - shared
+ *  by codegen and the designer so the preview matches the generated app. Empty when no
+ *  overrides. Numeric fields are safe; the background color is sanitized. */
+export function blockStyleCss(style: BlockStyle | undefined): string {
+  if (!style) return ''
+  const d: string[] = []
+  if (style.border === true) d.push('border: 1px solid var(--sg-border, #e6e8ec)')
+  else if (style.border === false) d.push('border: none')
+  if (style.shadow === true) d.push('box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06)')
+  else if (style.shadow === false) d.push('box-shadow: none')
+  if (typeof style.padding === 'number') d.push(`padding: ${style.padding}px`)
+  if (typeof style.margin === 'number') d.push(`margin: ${style.margin}px`)
+  if (style.background) d.push(`background: ${safeColor(style.background)}`)
+  if (typeof style.radius === 'number') d.push(`border-radius: ${style.radius}px`)
+  return d.join('; ')
+}
+
+/** Merge a partial style patch over a block's style, dropping keys set to undefined;
+ *  returns undefined when nothing is left (keeps the model + serialized config clean). */
+export function mergeBlockStyle(base: BlockStyle | undefined, patch: Partial<BlockStyle>): BlockStyle | undefined {
+  const merged: Record<string, unknown> = { ...base, ...patch }
+  for (const k of Object.keys(merged)) if (merged[k] === undefined) delete merged[k]
+  return Object.keys(merged).length ? (merged as BlockStyle) : undefined
+}
 /** Navigation placement for a screen (Manage Pages: show/hide + label + order). */
 export type ScreenNav = { show?: boolean; label?: string; order?: number }
 
-/** The always-present page lifecycle handler the Code view edits. Kept as a named
- *  constant so codegen, the designer, and the manifest agree on the slot name. */
+/** The always-present page lifecycle handlers the Code view edits. Kept as named
+ *  constants so codegen, the designer, and the manifest agree on the slot names.
+ *  `onLoad` runs on mount (with the page context); `onDestroy` runs on unmount
+ *  (cleanup: timers, subscriptions, aborts). */
 export const ON_LOAD = 'onLoad'
+export const ON_DESTROY = 'onDestroy'
+/** Every lifecycle slot the Code view can edit, in display order. */
+export const HANDLER_SLOTS: ReadonlyArray<string> = [ON_LOAD, ON_DESTROY]
 
 /** `entity` is optional: a screen with none is a freestanding page (no data
  *  binding, no blocks - every `BlockKind` is entity-bound) - just a title, an
@@ -250,12 +316,12 @@ export const ON_LOAD = 'onLoad'
  *  `code` opts the screen into a create-once `handlers.ts` companion (user-owned,
  *  never regenerated) whose `onLoad(ctx)` runs on mount; `renderGrid` adds a Grid
  *  fed via `ctx.setRows`. `handlerBodies` holds each handler's body (keyed by name). */
-export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlersSource?: string }
+export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlersSource?: string; className?: string }
 
 /** The generated app's shell (master layout): sidebar, top-nav, or bottom-nav; brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav' | 'bottom-nav'
 export type ShellConfig = { style?: ShellStyle; brand?: string; footer?: string; navPosition?: 'left' | 'right'; logo?: string; toolbar?: boolean }
-export type ProjectTheme = { accent?: string; preset?: string; mode?: 'light' | 'dark'; shell?: ShellConfig; customCss?: string }
+export type ProjectTheme = { accent?: string; preset?: string; mode?: 'light' | 'dark'; shell?: ShellConfig; customCss?: string; appClass?: string }
 
 /** A mutating CRUD action, gated by RBAC (reads are implied by screen access). */
 export type CrudAction = 'create' | 'update' | 'delete'
@@ -638,12 +704,13 @@ export function reorderBlock(project: StudioProject, screenId: string, blockId: 
   })
 }
 
-/** Patch a block's config (merged) and/or span. */
+/** Patch a block's config (merged), span/height, and/or appearance `style` (merged;
+ *  keys set to undefined are cleared). */
 export function updateBlock(
   project: StudioProject,
   screenId: string,
   blockId: string,
-  patch: { span?: 1 | 2 | 3; colSpan?: number; height?: number; config?: Partial<BlockConfig> },
+  patch: { span?: 1 | 2 | 3; colSpan?: number; height?: number; config?: Partial<BlockConfig>; style?: Partial<BlockStyle>; className?: string },
 ): StudioProject {
   return mapScreen(project, screenId, (s) => ({
     ...s,
@@ -652,6 +719,8 @@ export function updateBlock(
       span: patch.span ?? b.span,
       colSpan: patch.colSpan ?? b.colSpan,
       height: patch.height ?? b.height,
+      style: patch.style ? mergeBlockStyle(b.style, patch.style) : b.style,
+      className: patch.className !== undefined ? (patch.className.trim() || undefined) : b.className,
       config: patch.config ? ({ ...b.config, ...patch.config } as BlockConfig) : b.config,
     })),
   }))
@@ -707,7 +776,7 @@ export function removeScreen(project: StudioProject, screenId: string): StudioPr
   return { ...project, screens: project.screens.filter((s) => s.id !== screenId) }
 }
 
-export function updateScreen(project: StudioProject, screenId: string, patch: Partial<Pick<Screen, 'title' | 'route' | 'entity' | 'nav' | 'actions'>>): StudioProject {
+export function updateScreen(project: StudioProject, screenId: string, patch: Partial<Pick<Screen, 'title' | 'route' | 'entity' | 'nav' | 'actions' | 'className'>>): StudioProject {
   return mapScreen(project, screenId, (s) => ({ ...s, ...patch }))
 }
 

@@ -26,6 +26,7 @@ import {
   linkRelationLabels,
   buildConnectionString,
   getSampleApp,
+  skipUserOwned,
   type EntitySchema,
   type GeneratedFile,
   type SqlConnectionParts,
@@ -134,10 +135,16 @@ function serveStatic(res: ServerResponse, dir: string, urlPath: string): void {
 
 /** Write the generated app bundle to disk and add any runtime deps it imports. */
 async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<number> {
+  let written = 0
   for (const f of files) {
     const full = join(outDir, f.path)
+    // User-owned companions (a screen's handlers.ts) are scaffolded once, then the
+    // developer's forever: never overwrite one that already exists on disk. This is
+    // the make-or-break round-trip guarantee. See HANDLERS-DESIGN.md.
+    if (skipUserOwned(f, existsSync(full))) continue
     await mkdir(dirname(full), { recursive: true })
     await writeFile(full, f.contents)
+    written++
   }
   const allSource = files.map((f) => f.contents).join('\n')
   const pkgPath = join(outDir, 'package.json')
@@ -156,7 +163,7 @@ async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<numb
       // leave package.json untouched if it isn't valid JSON
     }
   }
-  return files.length
+  return written
 }
 
 /** Best-effort open the default browser (no dependency). */

@@ -34,6 +34,7 @@ import "./sv-grid-scrollbar";
 import {
     computeColumnStat,
     formatsNeedingStats,
+    formatNeedsStats,
     type ColumnStat,
   } from "./conditional-formatting";
 import SvGridDropdown from "./SvGridDropdown.svelte";
@@ -429,6 +430,12 @@ export function createSvGridController<
   let filterMenuPos = $state<MenuPosition>({ x: 0, y: 0 });
   let operatorMenuFor = $state<string | null>(null);
   let operatorMenuPos = $state<MenuPosition>({ x: 0, y: 0 });
+  // `in` / `notIn` value-suggestions dropdown: the column whose chip input is
+  // active, its anchor position, and the current typed query (for filtering
+  // the distinct-value list as the user types).
+  let inSuggestFor = $state<string | null>(null);
+  let inSuggestPos = $state<MenuPosition>({ x: 0, y: 0 });
+  let inSuggestQuery = $state("");
   let chooseColumnsPos = $state<MenuPosition | null>(null);
   let contextMenuFor = $state<ContextMenuTarget<TData> | null>(null);
   let contextMenuPos = $state<MenuPosition>({ x: 0, y: 0 });
@@ -990,26 +997,35 @@ export function createSvGridController<
     const map = new Map<string, ColumnStat>();
     const formats = props.conditionalFormats;
     if (!formats?.length || !formatsNeedingStats(formats)) return map;
+    // `visible` (default): the currently displayed rows (filtered + paged),
+    // so the heat map reflects what the user is looking at. `all`: the full
+    // unfiltered dataset, for a stable scale independent of filter/paging.
+    const scanAll = props.conditionalStatScope === "all";
     for (const column of allColumns) {
       const needs = formats.some(
-        (f) =>
-          (f.type === "colorScale" || f.type === "dataBar") &&
-          (!f.columns || f.columns.includes(column.id)),
+        (f) => formatNeedsStats(f) && (!f.columns || f.columns.includes(column.id)),
       );
       if (!needs) continue;
       const def = column.columnDef;
       const fieldFn = def.fieldFn;
       const field = def.field;
       const stat = computeColumnStat(
-        (function* () {
-          for (const row of allRows) {
-            yield fieldFn
-              ? fieldFn(row.original)
-              : field
-                ? (row.original as Record<string, unknown>)[field]
-                : row.getCellValueByColumnId(column.id);
-          }
-        })(),
+        scanAll
+          ? (function* () {
+              // Raw data objects (unfiltered); field/fieldFn only - no Row wrapper.
+              for (const obj of internalData as ReadonlyArray<Record<string, unknown>>) {
+                yield fieldFn ? fieldFn(obj as any) : field ? obj[field] : undefined;
+              }
+            })()
+          : (function* () {
+              for (const row of allRows) {
+                yield fieldFn
+                  ? fieldFn(row.original)
+                  : field
+                    ? (row.original as Record<string, unknown>)[field]
+                    : row.getCellValueByColumnId(column.id);
+              }
+            })(),
       );
       if (stat) map.set(column.id, stat);
     }
@@ -1076,7 +1092,7 @@ export function createSvGridController<
 
     // A single condition is "active" if it has the value(s) it needs.
     const condActive = (op: FilterOperator, value: string, valueTo?: string): boolean => {
-      if (op === "isBlank") return true;
+      if (op === "isBlank" || op === "isNotBlank") return true;
       if (op === "between") return value.trim().length > 0 && (valueTo ?? "").trim().length > 0;
       return value.trim().length > 0;
     };
@@ -1683,7 +1699,7 @@ export function createSvGridController<
     if (!props.onFiltersChange) return;
     const menuEntries = Object.entries(filterMenuValues)
       .filter(([, f]) => {
-        if (f.operator === "isBlank") return true;
+        if (f.operator === "isBlank" || f.operator === "isNotBlank") return true;
         if (f.operator === "between") {
           return f.value.trim().length > 0 && (f.valueTo ?? "").trim().length > 0;
         }
@@ -2425,15 +2441,19 @@ export function createSvGridController<
     };
   });
 
-  const columnMenuFacetValues = $derived.by(() => {
-    // The funnel popover drives via `filterMenuFor`; the column menu's Filter
-    // tab drives via `columnMenuFor`. Support whichever is open.
-    const columnId = filterMenuFor ?? columnMenuFor;
-    if (!columnId) return [] as Array<string>;
+  /**
+   * Distinct values for a column, for the set-filter checklist and the
+   * `in` / `notIn` suggestions dropdown. Server-provided values win; numeric /
+   * date columns with many values collapse into range buckets; otherwise the
+   * distinct raw values are collected and sorted naturally. Callable for any
+   * column id (not just the open menu) so the filter row can drive it too.
+   */
+  function facetValuesForColumn(columnId: string): Array<string> {
+    if (!columnId) return [];
     // Server-provided distinct values win (fetched + cached above).
     if (props.serverFilterValues) return serverFacetValues[columnId] ?? [];
     const column = allColumns.find((entry) => entry.id === columnId);
-    if (!column) return [] as Array<string>;
+    if (!column) return [];
     // Range-bucketed facets for numeric / date columns with many values.
     const buckets = facetBucketsByColumn.get(columnId);
     if (buckets) return buckets.map((b) => b.label);
@@ -2445,6 +2465,14 @@ export function createSvGridController<
     return Array.from(seen).sort((a, b) =>
       a.localeCompare(b, undefined, { numeric: true }),
     );
+  }
+
+  const columnMenuFacetValues = $derived.by(() => {
+    // The funnel popover drives via `filterMenuFor`; the column menu's Filter
+    // tab drives via `columnMenuFor`. Support whichever is open.
+    const columnId = filterMenuFor ?? columnMenuFor;
+    if (!columnId) return [] as Array<string>;
+    return facetValuesForColumn(columnId);
   });
 
   const columnMenuVisibleFacets = $derived.by(() => {
@@ -2453,6 +2481,20 @@ export function createSvGridController<
     return columnMenuFacetValues.filter((value) =>
       value.toLowerCase().includes(query),
     );
+  });
+
+  // Distinct values offered in the `in` / `notIn` suggestions dropdown for the
+  // active chip input, narrowed by whatever the user has typed. Capped so a
+  // high-cardinality column can't render thousands of rows into the popover.
+  const IN_SUGGEST_LIMIT = 200;
+  const inSuggestValues = $derived.by(() => {
+    if (!inSuggestFor) return [] as Array<string>;
+    const query = inSuggestQuery.trim().toLowerCase();
+    const all = facetValuesForColumn(inSuggestFor);
+    const matched = query
+      ? all.filter((value) => value.toLowerCase().includes(query))
+      : all;
+    return matched.slice(0, IN_SUGGEST_LIMIT);
   });
 
 
@@ -2591,6 +2633,14 @@ export function createSvGridController<
     set operatorMenuFor(v) { operatorMenuFor = v as never; },
     get operatorMenuPos() { return operatorMenuPos; },
     set operatorMenuPos(v) { operatorMenuPos = v as never; },
+    get inSuggestFor() { return inSuggestFor; },
+    set inSuggestFor(v) { inSuggestFor = v as never; },
+    get inSuggestPos() { return inSuggestPos; },
+    set inSuggestPos(v) { inSuggestPos = v as never; },
+    get inSuggestQuery() { return inSuggestQuery; },
+    set inSuggestQuery(v) { inSuggestQuery = v as never; },
+    get inSuggestValues() { return inSuggestValues; },
+    get facetValuesForColumn() { return facetValuesForColumn; },
     get chooseColumnsPos() { return chooseColumnsPos; },
     set chooseColumnsPos(v) { chooseColumnsPos = v as never; },
     get contextMenuFor() { return contextMenuFor; },
@@ -2981,6 +3031,11 @@ export function createSvGridController<
     get openColumnMenu() { return openColumnMenu; },
     get openFilterMenu() { return openFilterMenu; },
     get openOperatorMenu() { return openOperatorMenu; },
+    get openInSuggest() { return openInSuggest; },
+    get closeInSuggest() { return closeInSuggest; },
+    get addFilterToken() { return addFilterToken; },
+    get removeFilterToken() { return removeFilterToken; },
+    get toggleFilterToken() { return toggleFilterToken; },
     get sortColumnFromMenu() { return sortColumnFromMenu; },
     get clearColumnSort() { return clearColumnSort; },
     get groupByColumnFromMenu() { return groupByColumnFromMenu; },
@@ -3007,7 +3062,7 @@ export function createSvGridController<
   const { showTooltipFor, hideTooltip, flushScheduledScrollSync, scheduleScrollSync, onBodyScroll } = createScrollSync<TFeatures, TData>(ctx);
   const { onGridKeyDown, onWindowKeydown, onHeaderSortClick } = createKeyboard<TFeatures, TData>(ctx);
   const { computeSummaries, hasRenderedColumn } = createSummaries<TFeatures, TData>(ctx);
-  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
+  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);

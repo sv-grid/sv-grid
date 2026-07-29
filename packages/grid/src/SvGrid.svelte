@@ -52,6 +52,10 @@
     colorfulChipStyle,
     getEditorClass,
   } from "./SvGrid.helpers";
+  import {
+    splitInTokens,
+    joinInTokens,
+  } from "./filtering/excel-filters";
   import { createSvGridController } from "./SvGrid.controller.svelte";
   import GridMenus from "./GridMenus.svelte";
   import SvGridChartPanel from "./SvGridChartPanel.svelte";
@@ -367,7 +371,149 @@
   const openColumnMenu = $derived(ctrl.openColumnMenu);
   const openFilterMenu = $derived(ctrl.openFilterMenu);
   const openOperatorMenu = $derived(ctrl.openOperatorMenu);
+  const openInSuggest = $derived(ctrl.openInSuggest);
+  const closeInSuggest = $derived(ctrl.closeInSuggest);
+  const addFilterToken = $derived(ctrl.addFilterToken);
+  const removeFilterToken = $derived(ctrl.removeFilterToken);
+  const facetValuesForColumn = $derived(ctrl.facetValuesForColumn);
   const onWindowKeydown = $derived(ctrl.onWindowKeydown);
+
+  // True when a `regex` filter's pattern won't compile - used to flag the
+  // input so the user sees a half-typed pattern isn't being applied.
+  function isInvalidRegex(pattern: string): boolean {
+    if (!pattern) return false;
+    try {
+      new RegExp(pattern);
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
+  // Commit the token currently typed in an `in` / `notIn` chip input,
+  // appending it to the column's token list and clearing the box.
+  function commitFilterChip(columnId: string, input: HTMLInputElement): void {
+    const raw = input.value.trim();
+    if (!raw) return;
+    addFilterToken(columnId, raw);
+    input.value = "";
+    ctrl.inSuggestQuery = "";
+  }
+
+  function removeFilterChip(columnId: string, token: string): void {
+    removeFilterToken(columnId, token);
+  }
+
+  // Focus opens the value-suggestions dropdown under this input; typing
+  // narrows it via `inSuggestQuery`.
+  function onFilterChipFocus(
+    event: FocusEvent,
+    columnId: string,
+  ): void {
+    openInSuggest(event.currentTarget as HTMLInputElement, columnId);
+  }
+
+  function onFilterChipInput(
+    event: Event,
+    columnId: string,
+  ): void {
+    const input = event.currentTarget as HTMLInputElement;
+    ctrl.inSuggestQuery = input.value;
+    // Reopen the dropdown if a prior selection/blur had closed it.
+    if (ctrl.inSuggestFor !== columnId) openInSuggest(input, columnId);
+  }
+
+  // Overflow layout for the `in` / `notIn` chip row: render every chip, then
+  // measure how many fit on one line and collapse the rest into the "+N" pill.
+  // A guess-by-width heuristic can't work (labels vary), so we measure real
+  // element widths and re-run on column resize (ResizeObserver) and whenever
+  // the token set or width changes (action param -> update()).
+  function fitChips(node: HTMLElement, _param?: string) {
+    const INPUT_MIN = 14; // small sliver kept clickable to focus + type
+    const recompute = () => {
+      const chips = Array.from(
+        node.querySelectorAll<HTMLElement>("[data-chip]"),
+      );
+      const more = node.querySelector<HTMLElement>("[data-more]");
+      if (!more) return;
+      // Reset to the all-visible baseline before measuring.
+      for (const chip of chips) chip.style.display = "";
+      more.style.display = "none";
+      if (!chips.length || node.clientWidth === 0) return;
+
+      const style = getComputedStyle(node);
+      const padX =
+        parseFloat(style.paddingLeft || "0") +
+        parseFloat(style.paddingRight || "0");
+      const gap = parseFloat(style.columnGap || style.gap || "0") || 3;
+      const avail = node.clientWidth - padX - INPUT_MIN;
+
+      // Do all chips fit without needing a "+N" pill?
+      let used = 0;
+      let fit = 0;
+      for (const chip of chips) {
+        const w = chip.offsetWidth + gap;
+        if (used + w <= avail) {
+          used += w;
+          fit++;
+        } else break;
+      }
+      if (fit >= chips.length) return; // everything fits
+
+      // Reserve space for the "+N" pill, then re-fit.
+      more.style.display = "";
+      more.textContent = `+${chips.length}`; // widest label, for measuring
+      const budget = avail - (more.offsetWidth + gap);
+      used = 0;
+      fit = 0;
+      for (const chip of chips) {
+        const w = chip.offsetWidth + gap;
+        if (used + w <= budget) {
+          used += w;
+          fit++;
+        } else break;
+      }
+      if (fit < 1) fit = 1;
+      for (const chip of chips.slice(fit)) chip.style.display = "none";
+      const hidden = chips.length - fit;
+      more.textContent = `+${hidden}`;
+      more.title = chips
+        .slice(fit)
+        .map((c) => c.textContent?.replace(/×$/, "").trim() ?? "")
+        .join(", ");
+    };
+    // Measure after layout settles.
+    const schedule = () =>
+      typeof requestAnimationFrame === "function"
+        ? requestAnimationFrame(recompute)
+        : recompute();
+    schedule();
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(schedule)
+        : null;
+    ro?.observe(node);
+    return {
+      update: schedule,
+      destroy: () => ro?.disconnect(),
+    };
+  }
+
+  function onFilterChipKeydown(
+    event: KeyboardEvent,
+    columnId: string,
+  ): void {
+    const input = event.currentTarget as HTMLInputElement;
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault();
+      commitFilterChip(columnId, input);
+    } else if (event.key === "Escape") {
+      closeInSuggest();
+    } else if (event.key === "Backspace" && input.value === "") {
+      const tokens = splitInTokens(filterRowValues[columnId] ?? "");
+      if (tokens.length) removeFilterChip(columnId, tokens[tokens.length - 1]!);
+    }
+  }
 </script>
 
 <svelte:window
@@ -473,6 +619,34 @@
       {:else if name === "op-isBlank"}
         <circle cx="12" cy="12" r="8" />
         <path d="M6.5 6.5l11 11" />
+      {:else if name === "op-isNotBlank"}
+        <circle cx="12" cy="12" r="8" />
+        <circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none" />
+      {:else if name === "op-notContains"}
+        <circle cx="11" cy="11" r="6" />
+        <path d="M20 20l-4.5-4.5" />
+        <path d="M7 11h8" />
+      {:else if name === "op-notEquals"}
+        <path d="M5 9.5h14" />
+        <path d="M5 14.5h14" />
+        <path d="M16 5l-8 14" />
+      {:else if name === "op-endsWith"}
+        <path d="M19 5v14" />
+        <path d="M15 9H5" />
+        <path d="M15 15H8" />
+      {:else if name === "op-regex"}
+        <path d="M12 5v9" />
+        <path d="M8.1 7.4l7.8 4.5" />
+        <path d="M15.9 7.4l-7.8 4.5" />
+        <circle cx="6" cy="18" r="1.4" fill="currentColor" stroke="none" />
+      {:else if name === "op-in"}
+        <path d="M14 5a7 7 0 1 0 0 14" />
+        <path d="M6 12h9" />
+        <path d="M12 9l3 3-3 3" />
+      {:else if name === "op-notIn"}
+        <path d="M14 5a7 7 0 1 0 0 14" />
+        <path d="M15 12H6" />
+        <path d="M9 9l-3 3 3 3" />
       {:else if name === "autosize"}
         <path d="M3 12h18" />
         <path d="M3 12l4-4" />
@@ -645,10 +819,18 @@
       {#if cf.dataBar}
         <div
           class="sv-grid-cf-bar"
-          style={`width:${cf.dataBar.percent}%;background:${cf.dataBar.color}`}
+          style={`width:${cf.dataBar.percent}%;background:${
+            cf.dataBar.gradient
+              ? `linear-gradient(90deg, color-mix(in srgb, ${cf.dataBar.color} 35%, transparent), ${cf.dataBar.color})`
+              : cf.dataBar.color
+          }`}
         ></div>
       {/if}
-      <span class="sv-grid-cf-content" style={cfTextStyle(cf)}>
+      <span
+        class="sv-grid-cf-content"
+        style={cfTextStyle(cf)}
+        title={cf.title ?? undefined}
+      >
         {#if cf.icon}<span class="sv-grid-cf-icon">{cf.icon}</span>{/if}
         {#if !cf.iconOnly}{@render cellBody(row, column, cellValue)}{/if}
       </span>
@@ -1789,18 +1971,84 @@
                             >{@render icon("chevron-down")}</span
                           >
                         </button>
-                        {#if activeOperator !== "isBlank"}
+                        {#if activeOperator === "in" || activeOperator === "notIn"}
+                          {@const frTokens = splitInTokens(
+                            filterRowValues[rendered.column.id] ?? "",
+                          )}
+                          <div
+                            class="sv-grid-filter-chips"
+                            use:fitChips={`${frTokens.length}:${rendered.item.size}`}
+                          >
+                            {#each frTokens as token (token)}
+                              <span class="sv-grid-filter-chip" data-chip>
+                                <span class="sv-grid-filter-chip-label"
+                                  >{token}</span
+                                >
+                                <button
+                                  type="button"
+                                  class="sv-grid-filter-chip-x"
+                                  aria-label={`Remove ${token}`}
+                                  onmousedown={(event) => {
+                                    event.preventDefault();
+                                    removeFilterChip(rendered.column.id, token);
+                                  }}>×</button
+                                >
+                              </span>
+                            {/each}
+                            <!-- Overflow pill: the fitChips action shows/labels
+                                 it when chips don't fit; click opens the list. -->
+                            <button
+                              type="button"
+                              class="sv-grid-filter-chip sv-grid-filter-chip-more"
+                              data-more
+                              style="display: none;"
+                              aria-label="More selected values. Open value list"
+                              onclick={(event) => {
+                                (
+                                  event.currentTarget as HTMLElement
+                                ).parentElement
+                                  ?.querySelector<HTMLInputElement>("input")
+                                  ?.focus();
+                              }}
+                            ></button>
+                            <input
+                              class="sv-grid-filter-value sv-grid-filter-chip-input"
+                              type="text"
+                              placeholder={frTokens.length ? "" : "Add value…"}
+                              data-svgrid-filter-col={rendered.column.id}
+                              onfocus={(event) =>
+                                onFilterChipFocus(event, rendered.column.id)}
+                              oninput={(event) =>
+                                onFilterChipInput(event, rendered.column.id)}
+                              onkeydown={(event) =>
+                                onFilterChipKeydown(event, rendered.column.id)}
+                              onblur={(event) => {
+                                commitFilterChip(
+                                  rendered.column.id,
+                                  event.currentTarget as HTMLInputElement,
+                                );
+                                closeInSuggest();
+                              }}
+                            />
+                          </div>
+                        {:else if activeOperator !== "isBlank" && activeOperator !== "isNotBlank"}
                           {@const frType = getEditorInputType(
                             rendered.column.columnDef.editorType ?? "text",
                           )}
+                          {@const frValue =
+                            filterRowValues[rendered.column.id] ?? ""}
                           <input
                             class="sv-grid-filter-value"
-                            type={frType}
+                            class:sv-grid-filter-value-invalid={activeOperator ===
+                              "regex" && isInvalidRegex(frValue)}
+                            type={activeOperator === "regex" ? "text" : frType}
                             placeholder={activeOperator === "between"
                               ? "From"
-                              : "Filter…"}
+                              : activeOperator === "regex"
+                                ? "Pattern…"
+                                : "Filter…"}
                             data-svgrid-filter-col={rendered.column.id}
-                            value={filterRowValues[rendered.column.id] ?? ""}
+                            value={frValue}
                             oninput={(event) =>
                               updateFilterRow(
                                 rendered.column.id,
@@ -2741,11 +2989,19 @@
                         >
                       {/each}
                     </select>
-                    {#if active !== "isBlank"}
+                    {#if active !== "isBlank" && active !== "isNotBlank"}
+                      {@const tpIsSetOp = active === "in" || active === "notIn"}
                       <input
                         class="sv-grid-tp-filter-input"
-                        type={fType}
-                        placeholder={active === "between" ? "From" : "Filter…"}
+                        type={active === "regex" ? "text" : fType}
+                        list={tpIsSetOp ? `sv-tp-in-list-${column.id}` : undefined}
+                        placeholder={active === "between"
+                          ? "From"
+                          : tpIsSetOp
+                            ? "value, value…"
+                            : active === "regex"
+                              ? "Pattern…"
+                              : "Filter…"}
                         value={filterMenuValues[column.id]?.value ?? ""}
                         oninput={(e) =>
                           updateFilterMenuValue(
@@ -2753,6 +3009,13 @@
                             e.currentTarget.value,
                           )}
                       />
+                      {#if tpIsSetOp}
+                        <datalist id={`sv-tp-in-list-${column.id}`}>
+                          {#each facetValuesForColumn(column.id).slice(0, 200) as v (v)}
+                            <option value={v}></option>
+                          {/each}
+                        </datalist>
+                      {/if}
                       {#if active === "between"}
                         <input
                           class="sv-grid-tp-filter-input"

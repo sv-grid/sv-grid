@@ -6,6 +6,8 @@ import {
   NUMBER_OPERATORS,
   DATE_OPERATORS,
   CHECKBOX_OPERATORS,
+  SET_OPERATORS,
+  VALUELESS_OPERATORS,
   operatorOption,
   operatorsForColumn,
   defaultOperatorFor,
@@ -54,6 +56,63 @@ describe("filter-operators: catalogue integrity", () => {
     const values = filterOperatorOptions.map((o) => o.value);
     expect(values).toContain("between");
     expect(values).toContain("isBlank");
+  });
+
+  it("catalogues the extended operator set (parity with jQWidgets-style row)", () => {
+    const values = filterOperatorOptions.map((o) => o.value);
+    for (const op of [
+      "notContains",
+      "notEquals",
+      "endsWith",
+      "regex",
+      "in",
+      "notIn",
+      "isNotBlank",
+    ]) {
+      expect(values).toContain(op);
+    }
+  });
+
+  it("SET_OPERATORS and VALUELESS_OPERATORS reference catalogued operators", () => {
+    const known = new Set(filterOperatorOptions.map((o) => o.value));
+    for (const id of [...SET_OPERATORS, ...VALUELESS_OPERATORS]) {
+      expect(known.has(id)).toBe(true);
+    }
+    expect([...SET_OPERATORS]).toEqual(["in", "notIn"]);
+    expect([...VALUELESS_OPERATORS]).toEqual(["isBlank", "isNotBlank"]);
+  });
+});
+
+describe("filter-operators: per-type coverage of the new operators", () => {
+  it("text columns expose the full string + set operator range", () => {
+    for (const op of [
+      "notContains",
+      "notEquals",
+      "endsWith",
+      "regex",
+      "in",
+      "notIn",
+      "isNotBlank",
+    ] as FilterOperator[]) {
+      expect(TEXT_OPERATORS).toContain(op);
+    }
+  });
+
+  it("number columns gain notEquals + in/notIn + isNotBlank but not text-only ops", () => {
+    expect(NUMBER_OPERATORS).toContain("notEquals");
+    expect(NUMBER_OPERATORS).toContain("in");
+    expect(NUMBER_OPERATORS).toContain("isNotBlank");
+    expect(NUMBER_OPERATORS).not.toContain("contains");
+    expect(NUMBER_OPERATORS).not.toContain("regex");
+  });
+
+  it("checkbox columns gain isNotBlank alongside equals/isBlank", () => {
+    expect(CHECKBOX_OPERATORS).toContain("isNotBlank");
+  });
+
+  it("date columns keep before/after semantics and add isNotBlank", () => {
+    expect(DATE_OPERATORS).toContain("isNotBlank");
+    expect(DATE_OPERATORS).not.toContain("in");
   });
 });
 

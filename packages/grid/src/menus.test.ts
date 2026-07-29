@@ -98,6 +98,54 @@ describe('createMenus - filter row/menu value updates', () => {
     expect(ctx.filterRowValues.name).toBe('foo')
   })
 
+  it('addFilterToken builds a newline-serialised in/notIn list, ignoring dupes/blanks', () => {
+    const ctx = makeCtx()
+    const m = createMenus(ctx)
+    m.addFilterToken('symbol', 'TSM')
+    m.addFilterToken('symbol', 'BP')
+    m.addFilterToken('symbol', 'TSM') // dupe - ignored
+    m.addFilterToken('symbol', '   ') // blank - ignored
+    expect(ctx.filterRowValues.symbol).toBe('TSM\nBP')
+    // mirrored into the menu model too, so both filter surfaces agree
+    expect(ctx.filterMenuValues.symbol.value).toBe('TSM\nBP')
+  })
+
+  it('removeFilterToken drops a value from the list', () => {
+    const ctx = makeCtx({ filterRowValues: { symbol: 'TSM\nBP\nBABA' } })
+    const m = createMenus(ctx)
+    m.removeFilterToken('symbol', 'BP')
+    expect(ctx.filterRowValues.symbol).toBe('TSM\nBABA')
+  })
+
+  it('toggleFilterToken adds when absent and removes when present', () => {
+    const ctx = makeCtx()
+    const m = createMenus(ctx)
+    m.toggleFilterToken('symbol', 'BP')
+    expect(ctx.filterRowValues.symbol).toBe('BP')
+    m.toggleFilterToken('symbol', 'BP')
+    expect(ctx.filterRowValues.symbol).toBe('')
+  })
+
+  it('openInSuggest anchors the dropdown and targets the column; closeInSuggest clears it', () => {
+    const ctx = makeCtx()
+    const m = createMenus(ctx)
+    const anchor = {
+      getBoundingClientRect: () => ({ left: 40, bottom: 80 }),
+    } as unknown as HTMLElement
+    m.openInSuggest(anchor, 'symbol')
+    expect(ctx.inSuggestFor).toBe('symbol')
+    expect(ctx.inSuggestPos).toMatchObject({ y: 84 })
+    m.closeInSuggest()
+    expect(ctx.inSuggestFor).toBe(null)
+  })
+
+  it('closeMenus also dismisses the in-suggest dropdown', () => {
+    const ctx = makeCtx({ inSuggestFor: 'symbol' })
+    const m = createMenus(ctx)
+    m.closeMenus()
+    expect(ctx.inSuggestFor).toBe(null)
+  })
+
   it('updateFilterMenuValueTo sets the upper bound for between', () => {
     const ctx = makeCtx({ filterMenuValues: { age: { operator: 'between', value: '5' } } })
     const m = createMenus(ctx)

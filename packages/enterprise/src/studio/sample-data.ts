@@ -97,7 +97,10 @@ function isoDate(offsetDays: number, withTime: boolean): string {
   const day = Math.max(1, Math.min(28, (((dayOfYear % 30) + 30) % 30) + 1))
   const mm = String(month + 1).padStart(2, '0')
   const dd = String(day).padStart(2, '0')
-  return withTime ? `${BASE_YEAR}-${mm}-${dd}T09:${String(10 + (offsetDays % 40)).padStart(2, '0')}:00Z` : `${BASE_YEAR}-${mm}-${dd}`
+  // Minutes must land in 00-59 even when offsetDays is negative (JS `%` keeps the
+  // sign, which would emit an invalid "T09:-2:00Z"). Normalise to a positive range.
+  const minute = 10 + ((((offsetDays % 40) + 40) % 40))
+  return withTime ? `${BASE_YEAR}-${mm}-${dd}T09:${String(minute).padStart(2, '0')}:00Z` : `${BASE_YEAR}-${mm}-${dd}`
 }
 
 // --- the generator ----------------------------------------------------------

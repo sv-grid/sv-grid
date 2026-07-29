@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { MANAGED_END, MANAGED_START, mergeManaged, scaffold } from './scaffold'
+import { MANAGED_END, MANAGED_START, mergeManaged, scaffold, skipUserOwned } from './scaffold'
 
 const schema: EntitySchema = {
   name: 'customers',
@@ -174,5 +174,19 @@ describe('mergeManaged', () => {
 
   it('falls back to generated when existing has no markers', () => {
     expect(mergeManaged('no markers here', 'GEN')).toBe('GEN')
+  })
+})
+
+describe('skipUserOwned (the handlers.ts write-once contract)', () => {
+  it('skips a user-owned file that already exists on disk (never clobber user code)', () => {
+    expect(skipUserOwned({ userOwned: true }, true)).toBe(true)
+  })
+  it('writes a user-owned file when it does not exist yet (scaffold the stub once)', () => {
+    expect(skipUserOwned({ userOwned: true }, false)).toBe(false)
+  })
+  it('always writes a generated (non-user-owned) file, whether or not it exists', () => {
+    expect(skipUserOwned({ userOwned: false }, true)).toBe(false)
+    expect(skipUserOwned({}, true)).toBe(false)
+    expect(skipUserOwned({ userOwned: undefined }, true)).toBe(false)
   })
 })

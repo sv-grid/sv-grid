@@ -40,6 +40,7 @@ import {
   type TableFeatures,
 } from "./index";
 import "./sv-grid-scrollbar";
+import { untrack } from "svelte";
 import type { Snippet } from "svelte";
 import { getKeyboardIntent, getNextActiveCell } from "./keyboard";
 import {
@@ -115,6 +116,7 @@ import {
   buildBuckets,
   isInBucket,
 } from "./facet-buckets";
+import { splitInTokens, joinInTokens } from "./filtering/excel-filters";
 import {
   getColumnBaseValue,
   isGroupRow,
@@ -179,6 +181,34 @@ export function createMenus<
     };
   }
 
+  /** Current `in` / `notIn` token list for a column (from the filter-row value). */
+  function filterTokens(columnId: string): string[] {
+    return splitInTokens(ctx.filterRowValues[columnId] ?? "");
+  }
+
+  /** Add a value to a column's `in` / `notIn` list (no-op if already present). */
+  function addFilterToken(columnId: string, token: string) {
+    const t = token.trim();
+    if (!t) return;
+    const tokens = filterTokens(columnId);
+    if (!tokens.includes(t)) tokens.push(t);
+    updateFilterRow(columnId, joinInTokens(tokens));
+  }
+
+  /** Remove a value from a column's `in` / `notIn` list. */
+  function removeFilterToken(columnId: string, token: string) {
+    updateFilterRow(
+      columnId,
+      joinInTokens(filterTokens(columnId).filter((t) => t !== token)),
+    );
+  }
+
+  /** Toggle a value in a column's `in` / `notIn` list (checklist behaviour). */
+  function toggleFilterToken(columnId: string, token: string) {
+    if (filterTokens(columnId).includes(token)) removeFilterToken(columnId, token);
+    else addFilterToken(columnId, token);
+  }
+
   function toggleCheckboxWithKeyboard(
     event: KeyboardEvent,
     toggle: () => void,
@@ -193,7 +223,9 @@ export function createMenus<
     const menuFilter = ctx.filterMenuValues[columnId];
     return Boolean(
       menuFilter &&
-        (menuFilter.operator === "isBlank" || menuFilter.value.trim()),
+        (menuFilter.operator === "isBlank" ||
+          menuFilter.operator === "isNotBlank" ||
+          menuFilter.value.trim()),
     );
   }
 
@@ -201,7 +233,21 @@ export function createMenus<
     ctx.columnMenuFor = null;
     ctx.filterMenuFor = null;
     ctx.operatorMenuFor = null;
+    ctx.inSuggestFor = null;
     ctx.chooseColumnsPos = null;
+  }
+
+  /** Open the `in` / `notIn` value-suggestions dropdown under a chip input. */
+  function openInSuggest(anchor: HTMLElement, columnId: string) {
+    const rect = anchor.getBoundingClientRect();
+    ctx.inSuggestPos = { x: clampMenuX(rect.left, 220), y: rect.bottom + 4 };
+    ctx.inSuggestQuery = "";
+    ctx.inSuggestFor = columnId;
+  }
+
+  function closeInSuggest() {
+    ctx.inSuggestFor = null;
+    ctx.inSuggestQuery = "";
   }
 
   function openChooseColumns(event: MouseEvent) {
@@ -351,21 +397,27 @@ export function createMenus<
   }
 
   function clearColumnFilter(columnId: string) {
-    if (ctx.valueFilters[columnId]) {
-      const next = { ...ctx.valueFilters };
-      delete next[columnId];
-      ctx.valueFilters = next;
-    }
-    if (ctx.filterMenuValues[columnId]) {
-      const next = { ...ctx.filterMenuValues };
-      delete next[columnId];
-      ctx.filterMenuValues = next;
-    }
-    if (ctx.filterRowValues[columnId]) {
-      const next = { ...ctx.filterRowValues };
-      delete next[columnId];
-      ctx.filterRowValues = next;
-    }
+    // `untrack`: read-modify-write on the filter maps. Keeps the method safe to
+    // call from a consumer's reactive `$effect` (e.g. via `api.clearFilter`)
+    // without capturing these reads as a dependency and looping. See
+    // `build-api`'s `setFilter` for the full rationale.
+    untrack(() => {
+      if (ctx.valueFilters[columnId]) {
+        const next = { ...ctx.valueFilters };
+        delete next[columnId];
+        ctx.valueFilters = next;
+      }
+      if (ctx.filterMenuValues[columnId]) {
+        const next = { ...ctx.filterMenuValues };
+        delete next[columnId];
+        ctx.filterMenuValues = next;
+      }
+      if (ctx.filterRowValues[columnId]) {
+        const next = { ...ctx.filterRowValues };
+        delete next[columnId];
+        ctx.filterRowValues = next;
+      }
+    });
   }
 
   // External pagination is controlled: emit the requested page/size and let
@@ -553,9 +605,14 @@ export function createMenus<
     updateFilterOperator,
     updateFilterMenuValue,
     updateFilterMenuValueTo,
+    addFilterToken,
+    removeFilterToken,
+    toggleFilterToken,
     toggleCheckboxWithKeyboard,
     isColumnFiltered,
     closeMenus,
+    openInSuggest,
+    closeInSuggest,
     openChooseColumns,
     openColumnMenu,
     openFilterMenu,

@@ -2,7 +2,12 @@
  * Unit tests for applyExcelFilter. Every operator + edge case.
  */
 import { describe, expect, it } from 'vitest'
-import { applyExcelFilter, type ExcelFilter } from './excel-filters'
+import {
+  applyExcelFilter,
+  splitInTokens,
+  joinInTokens,
+  type ExcelFilter,
+} from './excel-filters'
 
 const make = (
   operator: ExcelFilter['operator'],
@@ -127,5 +132,85 @@ describe('applyExcelFilter - isBlank', () => {
   it('rejects non-blank content', () => {
     expect(applyExcelFilter('x', make('isBlank'))).toBe(false)
     expect(applyExcelFilter(0, make('isBlank'))).toBe(false)
+  })
+})
+
+describe('applyExcelFilter - isNotBlank', () => {
+  it('is the exact inverse of isBlank', () => {
+    expect(applyExcelFilter(null, make('isNotBlank'))).toBe(false)
+    expect(applyExcelFilter('', make('isNotBlank'))).toBe(false)
+    expect(applyExcelFilter('   ', make('isNotBlank'))).toBe(false)
+    expect(applyExcelFilter('x', make('isNotBlank'))).toBe(true)
+    expect(applyExcelFilter(0, make('isNotBlank'))).toBe(true)
+  })
+})
+
+describe('applyExcelFilter - notContains', () => {
+  it('is the inverse of contains', () => {
+    expect(applyExcelFilter('Hello World', make('notContains', 'world'))).toBe(false)
+    expect(applyExcelFilter('Hello', make('notContains', 'xyz'))).toBe(true)
+  })
+  it('treats empty value as universal match (nothing excluded)', () => {
+    expect(applyExcelFilter('anything', make('notContains', ''))).toBe(true)
+  })
+})
+
+describe('applyExcelFilter - notEquals', () => {
+  it('is the inverse of equals, case-insensitive', () => {
+    expect(applyExcelFilter('Boston', make('notEquals', 'boston'))).toBe(false)
+    expect(applyExcelFilter('Boston', make('notEquals', 'bost'))).toBe(true)
+  })
+})
+
+describe('applyExcelFilter - endsWith', () => {
+  it('matches a suffix case-insensitively', () => {
+    expect(applyExcelFilter('Brooklyn', make('endsWith', 'LYN'))).toBe(true)
+    expect(applyExcelFilter('Brooklyn', make('endsWith', 'brook'))).toBe(false)
+  })
+})
+
+describe('applyExcelFilter - regex', () => {
+  it('matches with a valid case-insensitive pattern', () => {
+    expect(applyExcelFilter('T-240007', make('regex', '^T-\\d+$'))).toBe(true)
+    expect(applyExcelFilter('BABA', make('regex', 'ba'))).toBe(true)
+    expect(applyExcelFilter('XYZ', make('regex', '^a'))).toBe(false)
+  })
+  it('treats an empty pattern as a universal match', () => {
+    expect(applyExcelFilter('anything', make('regex', ''))).toBe(true)
+  })
+  it('matches nothing (no throw) when the pattern is invalid', () => {
+    expect(applyExcelFilter('anything', make('regex', '('))).toBe(false)
+    expect(applyExcelFilter('a[b', make('regex', '['))).toBe(false)
+  })
+})
+
+describe('applyExcelFilter - in / notIn', () => {
+  it('in matches when the cell equals any token (newline- or comma-separated)', () => {
+    expect(applyExcelFilter('BP', make('in', 'TSM\nBP\nBABA'))).toBe(true)
+    expect(applyExcelFilter('bp', make('in', 'TSM, BP, BABA'))).toBe(true)
+    expect(applyExcelFilter('HSBA', make('in', 'TSM\nBP'))).toBe(false)
+  })
+  it('notIn is the inverse of in', () => {
+    expect(applyExcelFilter('BP', make('notIn', 'TSM\nBP'))).toBe(false)
+    expect(applyExcelFilter('HSBA', make('notIn', 'TSM\nBP'))).toBe(true)
+  })
+  it('matches only whole values, not substrings', () => {
+    expect(applyExcelFilter('BPX', make('in', 'BP'))).toBe(false)
+  })
+  it('treats an empty token list as a universal match', () => {
+    expect(applyExcelFilter('anything', make('in', ''))).toBe(true)
+    expect(applyExcelFilter('anything', make('notIn', '  '))).toBe(true)
+  })
+})
+
+describe('in-token serialization helpers', () => {
+  it('splitInTokens accepts newline and comma separators and trims', () => {
+    expect(splitInTokens('a\nb, c ,,\n')).toEqual(['a', 'b', 'c'])
+    expect(splitInTokens('')).toEqual([])
+    expect(splitInTokens(null)).toEqual([])
+  })
+  it('joinInTokens round-trips through splitInTokens', () => {
+    expect(splitInTokens(joinInTokens(['a', 'b', 'c']))).toEqual(['a', 'b', 'c'])
+    expect(joinInTokens([' a ', '', 'b'])).toBe('a\nb')
   })
 })

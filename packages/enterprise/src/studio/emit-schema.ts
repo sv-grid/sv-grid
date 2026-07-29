@@ -13,6 +13,7 @@
 import { resolveIdField, titleCase, type EntityField, type EntityFieldType, type EntitySchema, type ValidationRuleSpec } from '../schema.js'
 import type { GeneratedFile } from './scaffold.js'
 import type { EntityDataSource, RestSource, ShellConfig, ShellStyle, SqlDialectKind } from './project.js'
+import { sanitizeClassName } from './project.js'
 import { generateValue } from './sample-data.js'
 
 const pascal = (name: string): string =>
@@ -553,20 +554,44 @@ export function entityScreenPage(schema: EntitySchema, route?: string, title?: s
 
 export type NavItem = { href: string; label: string; id?: string }
 
-export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; dark?: boolean; access?: boolean; i18n?: boolean } = {}): GeneratedFile {
-  const links = [{ href: '/', label: 'Home' }, ...nav]
+export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; lightVars?: Record<string, string>; darkVars?: Record<string, string>; dark?: boolean; access?: boolean; i18n?: boolean; appClass?: string } = {}): GeneratedFile {
+  // Nav is the app's own screens; `/` just redirects to the first one, so no separate
+  // "Home" link (it would duplicate the first screen).
+  const links = nav
   const shell = opts.shell ?? {}
   const style: ShellStyle = shell.style ?? 'sidebar'
+  // App-level styling hook: an extra class on the shell root so custom.css can target the whole app.
+  const appCls = sanitizeClassName(opts.appClass)
+  const appClsAttr = appCls ? ` ${appCls}` : ''
   const brand = (shell.brand ?? '').trim() || opts.title || 'My Studio App'
   const footer = shell.footer === undefined ? 'Built with SvGrid Studio' : shell.footer
   const right = style === 'sidebar' && shell.navPosition === 'right'
-  // Emit the full theme token bundle (+ color-scheme for dark themes) so the
-  // generated app matches the look-and-feel picked in the designer.
-  const vars = { ...(opts.themeVars ?? {}) }
-  if (opts.accent) vars['--sg-accent'] = opts.accent
-  const varLines = Object.entries(vars).map(([k, v]) => `${k}: ${v};`).join(' ')
-  const rootRule = [varLines, opts.dark ? 'color-scheme: dark;' : ''].filter(Boolean).join(' ')
-  const themeHead = rootRule ? `\n<svelte:head><style>:root { ${rootRule} }</style></svelte:head>\n` : ''
+  // Emit the full theme token bundle so the generated app matches the look chosen
+  // in the designer. When both light + dark token sets are supplied we ship a
+  // built-in light/dark switcher: both sets are scoped by [data-theme] on <html>,
+  // and the bare :root falls back to the mode picked in Studio (pre-hydration).
+  const defaultMode: 'light' | 'dark' = opts.dark ? 'dark' : 'light'
+  const withAccent = (m?: Record<string, string>) => {
+    const v = { ...(m ?? {}) }
+    if (opts.accent) v['--sg-accent'] = opts.accent
+    return v
+  }
+  const declLines = (m: Record<string, string>) => Object.entries(m).map(([k, v]) => `${k}: ${v};`).join(' ')
+  const hasSwitch = !!(opts.lightVars && opts.darkVars)
+  let themeHead = ''
+  if (hasSwitch) {
+    const lv = withAccent(opts.lightVars)
+    const dv = withAccent(opts.darkVars)
+    const defRule = [declLines(defaultMode === 'dark' ? dv : lv), `color-scheme: ${defaultMode};`].join(' ')
+    const lightRule = [declLines(lv), 'color-scheme: light;'].join(' ')
+    const darkRule = [declLines(dv), 'color-scheme: dark;'].join(' ')
+    themeHead = `\n<svelte:head><style>:root { ${defRule} }\n:root[data-theme="light"] { ${lightRule} }\n:root[data-theme="dark"] { ${darkRule} }</style></svelte:head>\n`
+  } else {
+    const vars = withAccent(opts.themeVars)
+    const varLines = declLines(vars)
+    const rootRule = [varLines, opts.dark ? 'color-scheme: dark;' : ''].filter(Boolean).join(' ')
+    themeHead = rootRule ? `\n<svelte:head><style>:root { ${rootRule} }</style></svelte:head>\n` : ''
+  }
 
   // i18n: translate nav labels via `nav.<id>` keys (Home has no id -> literal).
   const navLabel = opts.i18n ? `{item.id ? $t('nav.' + item.id, item.label) : item.label}` : '{item.label}'
@@ -580,12 +605,21 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
         {#each locales as loc (loc)}<option value={loc} selected={loc === $currentLocale}>{loc}</option>{/each}
       </select>`
     : ''
+  const toolbarOn = shell.toolbar !== false && nav.length > 0
+  // Built-in light/dark switcher (a sun/moon button). Lives in the toolbar's tools
+  // cluster when the toolbar is on, else trails the nav links. Only rendered when
+  // both token sets are available (i.e. from the full Studio project emitter).
+  const themeToggleBtn = `<button type="button" class="sv-app__tool sv-app__theme" aria-label="Toggle color theme" title="Toggle light / dark" onclick={toggleTheme}>
+          {#if theme === 'dark'}<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>{:else}<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>{/if}
+        </button>`
+  // When there's no toolbar, the toggle trails the nav in its own inline slot.
+  const navToggleSlot = hasSwitch && !toolbarOn ? `\n      <div class="sv-app__navtools">${themeToggleBtn}</div>` : ''
   // Clicking any nav link closes the mobile drawer.
   const linksMarkup = `<nav class="sv-app__links" onclick={() => (navOpen = false)}>
       {#each nav as item (item.href)}
         ${linkGate}
       {/each}
-    </nav>${localeSwitcher}`
+    </nav>${localeSwitcher}${navToggleSlot}`
   const footMarkup = footer ? `\n      <span class="sv-app__foot">{footer}</span>` : ''
   const footConst = footer ? `\n  const footer = ${JSON.stringify(footer)}` : ''
   // Sidebar-only: a collapsible sidebar that docks on wide screens and becomes an
@@ -630,7 +664,6 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   // App-chrome toolbar (docked at the top of the content area for both layouts):
   // a functional quick-search over the app's screens + an account cluster. Reads as
   // a real product header. Opt out with `shell.toolbar === false`.
-  const toolbarOn = shell.toolbar !== false && nav.length > 0
   const initials = ((brand.match(/\b[A-Za-z0-9]/g) ?? []).slice(0, 2).join('') || 'A').toUpperCase()
   const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'app'
   const resultLabel = opts.i18n ? `{r.id ? $t('nav.' + r.id, r.label) : r.label}` : '{r.label}'
@@ -649,6 +682,7 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
         {/if}
       </div>
       <div class="sv-app__tools">
+        ${hasSwitch ? themeToggleBtn : ''}
         <div class="sv-app__pop">
           <button type="button" class="sv-app__tool" aria-label="Notifications" aria-expanded={bellOpen} onclick={() => { bellOpen = !bellOpen; menuOpen = false }}>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
@@ -687,7 +721,7 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   </main>`
 
   const body = style === 'top-nav'
-    ? `<div class="sv-app sv-app--top">
+    ? `<div class="sv-app sv-app--top${appClsAttr}">
   <header class="sv-app__bar">
     ${brandLink}
     ${linksMarkup}
@@ -695,14 +729,14 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   ${mainMarkup}${footer ? `\n  <footer class="sv-app__footbar">{footer}</footer>` : ''}
 </div>`
     : style === 'bottom-nav'
-    ? `<div class="sv-app sv-app--bottom">
+    ? `<div class="sv-app sv-app--bottom${appClsAttr}">
   ${mainMarkup}
   <footer class="sv-app__bar sv-app__bar--bottom">
     ${brandLink}
     ${linksMarkup}
   </footer>
 </div>`
-    : `<div class="sv-app sv-app--side${right ? ' sv-app--right' : ''}" class:is-drawer={drawer} class:is-navopen={navOpen}>
+    : `<div class="sv-app sv-app--side${right ? ' sv-app--right' : ''}${appClsAttr}" class:is-drawer={drawer} class:is-navopen={navOpen}>
   ${mobileBar}
   <aside class="sv-app__side">
     <div class="sv-app__sidehead">
@@ -777,6 +811,7 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
     description: `App shell (${style}): nav linking every screen.`,
     contents: `<script lang="ts">
   import '../app.css'
+  import '../custom.css'
   import { page } from '$app/stores'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}
 
   let { children } = $props()
@@ -784,7 +819,22 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   const brand = ${JSON.stringify(brand)}${footConst}${logoConst}
   let navOpen = $state(false)
   // Close the mobile drawer whenever the route changes.
-  $effect(() => { void $page.url.pathname; navOpen = false })${sideState}${toolbarOn ? `
+  $effect(() => { void $page.url.pathname; navOpen = false })${hasSwitch ? `
+  // Light/dark switcher: defaults to the mode picked in Studio, then honours the
+  // visitor's saved choice. Applies via [data-theme] on <html> (see the token
+  // sets in <svelte:head>), and persists per browser.
+  let theme = $state<'light' | 'dark'>('${defaultMode}')
+  function applyTheme(t: 'light' | 'dark') {
+    theme = t
+    try { document.documentElement.dataset.theme = t } catch (_) { /* no DOM */ }
+    try { localStorage.setItem('svapp:theme', t) } catch (_) { /* storage blocked */ }
+  }
+  function toggleTheme() { applyTheme(theme === 'dark' ? 'light' : 'dark') }
+  $effect(() => {
+    let t: 'light' | 'dark' = '${defaultMode}'
+    try { const s = localStorage.getItem('svapp:theme'); if (s === 'light' || s === 'dark') t = s } catch (_) { /* storage blocked */ }
+    applyTheme(t)
+  })` : ''}${sideState}${toolbarOn ? `
   // App-chrome quick-search: filter the screens by label as you type.
   const initials = ${JSON.stringify(initials)}
   const acctEmail = ${JSON.stringify(`admin@${brandSlug}.com`)}
@@ -859,6 +909,10 @@ ${styles}
   .sv-app__menu-item:hover { background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent); color: var(--sg-accent, #6366f1); }
   .sv-app__menu-item--danger:hover { background: color-mix(in srgb, #ef4444 12%, transparent); color: #ef4444; }
   .sv-app__locale { margin-top: 10px; padding: 5px 8px; font: inherit; font-size: 12.5px; color: var(--sg-fg, #0f172a); background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 8px; }
+  .sv-app__theme { align-items: center; justify-content: center; cursor: pointer; }
+  /* No-toolbar fallback slot: trails the nav, pushed to the far edge in row bars. */
+  .sv-app__navtools { display: flex; align-items: center; }
+  .sv-app--top .sv-app__navtools, .sv-app__bar--bottom .sv-app__navtools { margin-left: auto; }
   /* Mobile bar + drawer chrome (hidden on desktop; media queries above switch it on) */
   .sv-app__mobilebar { display: none; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--sg-border, #e6e8ec); background: var(--sg-header-bg, #f8fafc); position: sticky; top: 0; z-index: 50; }
   .sv-app__burger { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 9px; background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); cursor: pointer; }

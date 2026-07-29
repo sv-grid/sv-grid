@@ -10,15 +10,59 @@
  * component just paints the result and the logic is unit-testable.
  */
 
+/** A single gradient stop along the normalized 0..1 domain. */
+export type ColorScaleStop = { offset: number; color: string }
+
+/**
+ * How `minValue`/`maxValue` (and the derived column extremes) are read:
+ * - `absolute` (default): literal data values.
+ * - `percent`: 0..100 positions along the column's own min..max span, so you
+ *   can say "tint the top 20%" without knowing the numbers up front.
+ */
+export type ScaleBounds = 'absolute' | 'percent'
+
 export type ColorScaleFormat = {
   type: 'colorScale'
   /** 2-stop (min/max) or 3-stop (min/mid/max) gradient. Hex colors. */
-  min: string
+  min?: string
   mid?: string
-  max: string
+  max?: string
+  /**
+   * N-stop gradient along the normalized domain (offsets 0..1). When present
+   * this overrides `min`/`mid`/`max`, enabling banded / traffic-light scales.
+   */
+  stops?: ReadonlyArray<ColorScaleStop>
+  /**
+   * `hue` (default): interpolate between stop colors into an opaque fill.
+   * `alpha`: keep a single `base` color and interpolate its *opacity*, so the
+   * tint composites over zebra striping, selection, and pinned backgrounds
+   * instead of painting over them - Adaptable's "live heat map" look.
+   */
+  mode?: 'hue' | 'alpha'
+  /** Base color for `alpha` mode. Default `#2563eb`. */
+  base?: string
+  /** [min, max] opacity for `alpha` mode. Default [0.05, 0.85]. */
+  alphaBounds?: readonly [number, number]
   /** Fix the scale; otherwise derived from the column's data. */
   minValue?: number
   maxValue?: number
+  /** Interpret `minValue`/`maxValue` as absolute values or 0..100 percents. */
+  bounds?: ScaleBounds
+  /**
+   * Diverging scale pinned at 0: negatives and positives shade outward from a
+   * neutral midpoint, symmetric around zero. Ideal for P&L / price deltas.
+   */
+  zeroCentred?: boolean
+  /** Flip the ramp so the lowest values attract the most attention. */
+  reverse?: boolean
+  /**
+   * Tint by this cell's value as a proportion of another column's value on the
+   * SAME row (a field key on the row object), instead of the column extremes.
+   * Column comparison - e.g. filled vs target, open vs total.
+   */
+  compareColumn?: string
+  /** Attach a tooltip showing the raw value or its % position on the ramp. */
+  tooltip?: 'value' | 'percent'
 }
 
 export type DataBarFormat = {
@@ -27,6 +71,15 @@ export type DataBarFormat = {
   negativeColor?: string
   minValue?: number
   maxValue?: number
+  /** Interpret `minValue`/`maxValue` as absolute values or 0..100 percents. */
+  bounds?: ScaleBounds
+  /**
+   * Size the bar by this cell's value as a proportion of another column's
+   * value on the same row (a field key), instead of the column extremes.
+   */
+  compareColumn?: string
+  /** Fill the bar with a left-to-right gradient rather than a flat color. */
+  gradient?: boolean
   /** Show the cell's text on top of the bar. Default true. */
   showValue?: boolean
 }
@@ -66,9 +119,11 @@ export type ResolvedCellFormat = {
   background?: string
   color?: string
   fontWeight?: string | number
-  dataBar?: { percent: number; color: string; fromRight: boolean }
+  dataBar?: { percent: number; color: string; fromRight: boolean; gradient?: boolean }
   icon?: string
   iconOnly?: boolean
+  /** Tooltip text (value / percentile), when a format requests one. */
+  title?: string
 }
 
 export type ColumnStat = { min: number; max: number }
@@ -158,13 +213,85 @@ export function lerpColor(a: string, b: string, t: number): string {
   ])
 }
 
+/** Build an `rgba()` string from a hex color + opacity. Falls back to the hex. */
+export function rgba(hex: string, alpha: number): string {
+  const rgb = parseHex(hex)
+  if (!rgb) return hex
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${clamp01(alpha).toFixed(3)})`
+}
+
+/** Color of an N-stop ramp at normalized position `t`. Stops sorted by offset. */
+function stopsColorAt(stops: ReadonlyArray<ColorScaleStop>, t: number): string {
+  const sorted = [...stops].sort((a, b) => a.offset - b.offset)
+  if (sorted.length === 0) return '#000000'
+  if (t <= sorted[0]!.offset) return sorted[0]!.color
+  const last = sorted[sorted.length - 1]!
+  if (t >= last.offset) return last.color
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const a = sorted[i]!
+    const b = sorted[i + 1]!
+    if (t >= a.offset && t <= b.offset) {
+      const span = b.offset - a.offset || 1
+      return lerpColor(a.color, b.color, (t - a.offset) / span)
+    }
+  }
+  return last.color
+}
+
+/** The interpolated color for a color-scale at normalized position `t`. */
 function colorScaleAt(fmt: ColorScaleFormat, t: number): string {
+  if (fmt.stops && fmt.stops.length >= 2) return stopsColorAt(fmt.stops, t)
+  const min = fmt.min ?? '#ffffff'
+  const max = fmt.max ?? '#000000'
   if (fmt.mid) {
     return t <= 0.5
-      ? lerpColor(fmt.min, fmt.mid, t / 0.5)
-      : lerpColor(fmt.mid, fmt.max, (t - 0.5) / 0.5)
+      ? lerpColor(min, fmt.mid, t / 0.5)
+      : lerpColor(fmt.mid, max, (t - 0.5) / 0.5)
   }
-  return lerpColor(fmt.min, fmt.max, t)
+  return lerpColor(min, max, t)
+}
+
+/**
+ * Normalized position (0..1) of `n` within a format's domain, honoring
+ * absolute/percent bounds, zero-centred diverging scales, cross-column
+ * comparison, and reverse. Returns null when the domain can't be resolved
+ * (e.g. compareColumn missing / zero on the row).
+ */
+function domainT(
+  fmt: ColorScaleFormat | DataBarFormat,
+  n: number,
+  row: unknown,
+  stat: ColumnStat | null,
+): number | null {
+  let t: number
+
+  if (fmt.compareColumn) {
+    const other = Number((row as Record<string, unknown> | null)?.[fmt.compareColumn])
+    if (!Number.isFinite(other) || other === 0) return null
+    t = clamp01(n / other)
+  } else if (fmt.type === 'colorScale' && fmt.zeroCentred) {
+    const dMin = fmt.minValue ?? stat?.min ?? n
+    const dMax = fmt.maxValue ?? stat?.max ?? n
+    const bound = Math.max(Math.abs(dMin), Math.abs(dMax)) || 1
+    t = clamp01(0.5 + n / bound / 2)
+  } else {
+    const dMin = stat?.min ?? n
+    const dMax = stat?.max ?? n
+    let lo: number
+    let hi: number
+    if (fmt.bounds === 'percent') {
+      const span = dMax - dMin
+      lo = dMin + ((fmt.minValue ?? 0) / 100) * span
+      hi = dMin + ((fmt.maxValue ?? 100) / 100) * span
+    } else {
+      lo = fmt.minValue ?? dMin
+      hi = fmt.maxValue ?? dMax
+    }
+    t = hi === lo ? 0.5 : clamp01((n - lo) / (hi - lo))
+  }
+
+  if (fmt.type === 'colorScale' && fmt.reverse) t = 1 - t
+  return t
 }
 
 /**
@@ -203,23 +330,42 @@ export function resolveCellFormat<TData = unknown>(
     if (value == null || value === '' || !Number.isFinite(n)) continue
 
     if (fmt.type === 'colorScale') {
-      const lo = fmt.minValue ?? stat?.min ?? n
-      const hi = fmt.maxValue ?? stat?.max ?? n
-      const t = hi === lo ? 0.5 : clamp01((n - lo) / (hi - lo))
-      out.background = colorScaleAt(fmt, t)
-      // The scale fills the whole cell, so keep the text legible against it.
-      const c = contrastText(out.background)
-      if (c) out.color = c
+      const t = domainT(fmt, n, row, stat)
+      if (t == null) continue
+      if (fmt.mode === 'alpha') {
+        const [alo, ahi] = fmt.alphaBounds ?? [0.05, 0.85]
+        out.background = rgba(fmt.base ?? '#2563eb', alo + (ahi - alo) * t)
+        // Translucent tint composites over the row bg; leave text color alone.
+      } else {
+        out.background = colorScaleAt(fmt, t)
+        // The scale fills the whole cell, so keep the text legible against it.
+        const c = contrastText(out.background)
+        if (c) out.color = c
+      }
+      if (fmt.tooltip === 'value') out.title = String(value)
+      else if (fmt.tooltip === 'percent') out.title = `${Math.round(t * 100)}%`
     } else if (fmt.type === 'dataBar') {
-      const lo = fmt.minValue ?? Math.min(0, stat?.min ?? 0)
-      const hi = fmt.maxValue ?? stat?.max ?? n
-      const span = hi - lo || 1
-      const percent = clamp01((n - lo) / span) * 100
+      let percent: number
+      if (fmt.compareColumn) {
+        const t = domainT(fmt, n, row, stat)
+        if (t == null) continue
+        percent = t * 100
+      } else if (fmt.bounds === 'percent') {
+        const t = domainT(fmt, n, row, stat)
+        if (t == null) continue
+        percent = t * 100
+      } else {
+        const lo = fmt.minValue ?? Math.min(0, stat?.min ?? 0)
+        const hi = fmt.maxValue ?? stat?.max ?? n
+        const span = hi - lo || 1
+        percent = clamp01((n - lo) / span) * 100
+      }
       const negative = n < 0
       out.dataBar = {
         percent,
         color: negative ? (fmt.negativeColor ?? '#ef4444') : fmt.color,
         fromRight: false,
+        gradient: fmt.gradient,
       }
       if (fmt.showValue === false) out.color = 'transparent'
     } else if (fmt.type === 'iconSet') {
@@ -231,9 +377,20 @@ export function resolveCellFormat<TData = unknown>(
   return out
 }
 
-/** Column ids that need a numeric min/max precomputed (colorScale/dataBar). */
+/**
+ * Whether any format needs a numeric min/max precomputed. Color-scale and
+ * data-bar formats do, EXCEPT when they derive their range from another column
+ * on the same row (`compareColumn`) - those read the row, not column stats.
+ */
+export function formatNeedsStats(f: ConditionalFormat<any>): boolean {
+  return (
+    (f.type === 'colorScale' || f.type === 'dataBar') &&
+    !('compareColumn' in f && f.compareColumn)
+  )
+}
+
 export function formatsNeedingStats(
   formats: ReadonlyArray<ConditionalFormat<any>>,
 ): boolean {
-  return formats.some((f) => f.type === 'colorScale' || f.type === 'dataBar')
+  return formats.some(formatNeedsStats)
 }

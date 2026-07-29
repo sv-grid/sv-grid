@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-07-23T14:51:40.613Z",
+  "generatedAt": "2026-07-28T13:00:20.728Z",
   "counts": {
-    "pages": 340,
+    "pages": 341,
     "enterprise": 8,
     "withDemo": 224
   },
@@ -136,6 +136,7 @@
         "help/real-time.md",
         "help/recipes.md",
         "help/saved-views.md",
+        "help/scheduling.md",
         "help/security.md",
         "help/server-side-data.md",
         "help/spreadsheet-formulas.md",
@@ -573,7 +574,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 853,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-07-25",
       "demoIds": []
     },
     {
@@ -1509,8 +1510,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 441,
-      "lastUpdated": "2026-07-21",
+      "words": 896,
+      "lastUpdated": "2026-07-28",
       "demoIds": [
         "141-conditional-formatting"
       ]
@@ -1634,7 +1635,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1326,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-07-25",
       "demoIds": []
     },
     {
@@ -2113,12 +2114,12 @@
       "path": "help/filtering/number-filter.md",
       "url": "/help/filtering/number-filter",
       "title": "Number filter",
-      "summary": "A column with editorType: 'number' gets the **number** filter operator set: equals, greaterThan, lessThan, **between**, isBlank. The default operator is equals.",
+      "summary": "A column with editorType: 'number' gets the **number** filter operator set: equals, notEquals, greaterThan, lessThan, **between**, in, notIn, isBlank, isNotBlank. The default operator is equals.",
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
-      "words": 257,
-      "lastUpdated": "2026-06-16",
+      "words": 261,
+      "lastUpdated": "2026-07-28",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -2156,12 +2157,12 @@
       "path": "help/filtering/text-filter.md",
       "url": "/help/filtering/text-filter",
       "title": "Text filter",
-      "summary": "A column with no editorType (or editorType: 'text') gets the **text** filter operator set: contains, equals, startsWith, isBlank. The default operator is contains.",
+      "summary": "A column with no editorType (or editorType: 'text') gets the full **text** filter operator set. The default operator is contains.",
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
-      "words": 358,
-      "lastUpdated": "2026-06-16",
+      "words": 698,
+      "lastUpdated": "2026-07-28",
       "demoIds": [
         "69-highlighted-search",
         "110-locale-aware-filter"
@@ -2642,7 +2643,7 @@
       "pillar": "grid",
       "tier": "enterprise",
       "words": 1166,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-07-25",
       "demoIds": [
         "52-pivot-table"
       ]
@@ -2920,6 +2921,18 @@
       "demoIds": [
         "36-reporting-workspace"
       ]
+    },
+    {
+      "path": "help/scheduling.md",
+      "url": "/help/scheduling",
+      "title": "Scheduling: automate exports and reminders",
+      "summary": "Two jobs turn up in almost every data app the moment it goes into daily use: *\"email me this report every weekday at 17:30\"* and *\"remind the desk at 09:00 to reconcile.\"* The reflex is to stand up a backend job runner. But in a long-lived data app - a dashboard that stays open on a wall screen, an ops console a team lives in all day - a schedule is just **a timer plus an action you already have**: an export or a toast alert.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 2124,
+      "lastUpdated": "2026-07-28",
+      "demoIds": []
     },
     {
       "path": "help/security.md",

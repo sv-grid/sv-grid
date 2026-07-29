@@ -40,6 +40,7 @@ import {
   type TableFeatures,
 } from "./index";
 import "./sv-grid-scrollbar";
+import { untrack } from "svelte";
 import type { Snippet } from "svelte";
 import { getKeyboardIntent, getNextActiveCell } from "./keyboard";
 import {
@@ -372,63 +373,77 @@ export function createGridApi<
         ctx.grid.setGrouping([...columnIds]);
       },
       setFilter(columnId, filter) {
-        // Honour the column's `filterable` opt-out. Same approach as
-        // `setSort` - `getCanFilter()` already combines the feature flag
-        // and the per-column field.
-        const col = ctx.allColumns.find((c: any) => c.id === columnId);
-        if (col && !col.getCanFilter?.()) return;
-        if (!filter) {
-          this.clearFilter(columnId);
-          return;
-        }
-        ctx.filterMenuValues = {
-          ...ctx.filterMenuValues,
-          [columnId]: {
-            operator: filter.operator,
-            value: filter.value ?? "",
-            ...(filter.operator === "between"
-              ? { valueTo: filter.valueTo ?? "" }
-              : {}),
-            // Optional second condition + join (multi-condition filtering).
-            ...(filter.operator2
-              ? {
-                  operator2: filter.operator2,
-                  value2: filter.value2 ?? "",
-                  join: filter.join ?? "AND",
-                  ...(filter.operator2 === "between"
-                    ? { valueTo2: filter.valueTo2 ?? "" }
-                    : {}),
-                }
-              : {}),
-          },
-        };
+        // `untrack`: these imperative mutators read the same filter state they
+        // write (read-modify-write on `filterMenuValues`). When a consumer
+        // calls them from inside a reactive `$effect`, that internal read would
+        // otherwise be captured as a dependency of the caller's effect, and the
+        // write would re-dirty it - an infinite update loop. Untracking the
+        // body keeps the API safe to drive from an effect.
+        untrack(() => {
+          // Honour the column's `filterable` opt-out. Same approach as
+          // `setSort` - `getCanFilter()` already combines the feature flag
+          // and the per-column field.
+          const col = ctx.allColumns.find((c: any) => c.id === columnId);
+          if (col && !col.getCanFilter?.()) return;
+          if (!filter) {
+            this.clearFilter(columnId);
+            return;
+          }
+          ctx.filterMenuValues = {
+            ...ctx.filterMenuValues,
+            [columnId]: {
+              operator: filter.operator,
+              value: filter.value ?? "",
+              ...(filter.operator === "between"
+                ? { valueTo: filter.valueTo ?? "" }
+                : {}),
+              // Optional second condition + join (multi-condition filtering).
+              ...(filter.operator2
+                ? {
+                    operator2: filter.operator2,
+                    value2: filter.value2 ?? "",
+                    join: filter.join ?? "AND",
+                    ...(filter.operator2 === "between"
+                      ? { valueTo2: filter.valueTo2 ?? "" }
+                      : {}),
+                  }
+                : {}),
+            },
+          };
+        });
       },
       setFacetFilter(columnId, values) {
-        // Empty array OR null both mean "clear this column's facet" -
-        // mirrors how the column menu treats unchecking the last value.
-        if (!values || values.length === 0) {
-          if (ctx.valueFilters[columnId]) {
-            const next = { ...ctx.valueFilters };
-            delete next[columnId];
-            ctx.valueFilters = next;
+        // See `setFilter` for why the read-modify-write is untracked.
+        untrack(() => {
+          // Empty array OR null both mean "clear this column's facet" -
+          // mirrors how the column menu treats unchecking the last value.
+          if (!values || values.length === 0) {
+            if (ctx.valueFilters[columnId]) {
+              const next = { ...ctx.valueFilters };
+              delete next[columnId];
+              ctx.valueFilters = next;
+            }
+            return;
           }
-          return;
-        }
-        ctx.valueFilters = {
-          ...ctx.valueFilters,
-          [columnId]: new Set(values),
-        };
+          ctx.valueFilters = {
+            ...ctx.valueFilters,
+            [columnId]: new Set(values),
+          };
+        });
       },
       clearFilter(columnId) {
         ctx.clearColumnFilter(columnId);
       },
       clearAllFilters() {
-        // Wipe every filter surface in one go: column-menu, filter-row, set
-        // filters, and the global search box.
-        ctx.filterMenuValues = {};
-        ctx.filterRowValues = {};
-        ctx.valueFilters = {};
-        if (ctx.globalFilter !== "") ctx.globalFilter = "";
+        // See `setFilter` for why the read-modify-write is untracked.
+        untrack(() => {
+          // Wipe every filter surface in one go: column-menu, filter-row, set
+          // filters, and the global search box.
+          ctx.filterMenuValues = {};
+          ctx.filterRowValues = {};
+          ctx.valueFilters = {};
+          if (ctx.globalFilter !== "") ctx.globalFilter = "";
+        });
       },
       getFilters() {
         // Return a defensive copy so callers can't mutate internal state.

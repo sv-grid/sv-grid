@@ -1,11 +1,18 @@
 export type ExcelFilterOperator =
   | 'contains'
+  | 'notContains'
   | 'equals'
+  | 'notEquals'
   | 'startsWith'
+  | 'endsWith'
+  | 'regex'
+  | 'in'
+  | 'notIn'
   | 'greaterThan'
   | 'lessThan'
   | 'between'
   | 'isBlank'
+  | 'isNotBlank'
 
 export type ExcelFilter = {
   id: string
@@ -48,6 +55,33 @@ export function normalizeForFilter(
     : stripped.toLowerCase()
 }
 
+/**
+ * Delimiter used to serialise the `in` / `notIn` value list into the single
+ * `value` string that the filter model carries. A newline is used because it
+ * (unlike a comma) practically never appears inside a typed token, so tokens
+ * survive the round-trip unescaped. The chip input in the filter row reads and
+ * writes with the same separator via {@link splitInTokens} / {@link joinInTokens}.
+ */
+export const IN_TOKEN_SEP = '\n'
+
+/**
+ * Split a serialised `in` / `notIn` value into its individual tokens. Accepts
+ * both the newline separator the chip input writes and a plain comma-separated
+ * string (what a raw text field, e.g. the tool-panel filter, produces), so the
+ * same value round-trips through either UI.
+ */
+export function splitInTokens(value: unknown): string[] {
+  return String(value ?? '')
+    .split(/[\n,]/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
+}
+
+/** Serialise a list of tokens back into the single `in` / `notIn` value. */
+export function joinInTokens(tokens: ReadonlyArray<string>): string {
+  return tokens.map((t) => t.trim()).filter((t) => t.length > 0).join(IN_TOKEN_SEP)
+}
+
 export function applyExcelFilter(
   cellValue: unknown,
   filter: ExcelFilter,
@@ -59,10 +93,39 @@ export function applyExcelFilter(
   switch (filter.operator) {
     case 'contains':
       return normalizedText.includes(normalizedValue)
+    case 'notContains':
+      // An empty needle is no constraint (mirrors `contains` returning true),
+      // so nothing is excluded until the user types something.
+      return normalizedValue === '' || !normalizedText.includes(normalizedValue)
     case 'equals':
       return normalizedText === normalizedValue
+    case 'notEquals':
+      return normalizedValue === '' || normalizedText !== normalizedValue
     case 'startsWith':
       return normalizedText.startsWith(normalizedValue)
+    case 'endsWith':
+      return normalizedText.endsWith(normalizedValue)
+    case 'regex': {
+      // Case-insensitive by default (matches the accent/case-folded feel of
+      // the other text operators). An invalid pattern matches nothing rather
+      // than throwing, so a half-typed regex never crashes the row model.
+      const pattern = String(filter.value ?? '')
+      if (!pattern) return true
+      try {
+        return new RegExp(pattern, 'i').test(text)
+      } catch {
+        return false
+      }
+    }
+    case 'in':
+    case 'notIn': {
+      const tokens = splitInTokens(filter.value)
+      if (tokens.length === 0) return true
+      const hit = tokens.some(
+        (t) => normalizeForFilter(t, options?.locale) === normalizedText,
+      )
+      return filter.operator === 'in' ? hit : !hit
+    }
     case 'greaterThan': {
       const a = Number(cellValue)
       const b = Number(filter.value)
@@ -97,5 +160,7 @@ export function applyExcelFilter(
     }
     case 'isBlank':
       return text.trim().length === 0
+    case 'isNotBlank':
+      return text.trim().length > 0
   }
 }

@@ -53,6 +53,12 @@ export function normalizeFilters(model: ServerFilterModel | undefined): Normaliz
       case 'lessThan':
         if (value) predicates.push({ column, op: 'lt', value })
         break
+      // The grid's client-side filter row supports a wider operator set
+      // (notContains, notEquals, endsWith, regex, in, notIn, isNotBlank).
+      // Server data sources don't translate those yet - they fall through to
+      // `contains` below so a backend query stays valid and predictable
+      // rather than silently dropping the predicate. Widen this switch when
+      // per-backend support for the extra operators lands.
       case 'contains':
       default:
         if (value) predicates.push({ column, op: 'contains', value })

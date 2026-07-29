@@ -1,8 +1,8 @@
 # Number filter
 
 A column with `editorType: 'number'` gets the **number** filter operator
-set: `equals`, `greaterThan`, `lessThan`, **`between`**, `isBlank`. The
-default operator is `equals`.
+set: `equals`, `notEquals`, `greaterThan`, `lessThan`, **`between`**, `in`,
+`notIn`, `isBlank`, `isNotBlank`. The default operator is `equals`.
 <div data-docs-demo="64-filter-between-operator" data-height="540"></div>
 
 ```ts

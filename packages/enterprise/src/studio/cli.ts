@@ -12,7 +12,7 @@
 import type { EntitySchema } from '../schema.js'
 import { introspectDrizzle, introspectDrizzleAll, introspectJson } from './introspect.js'
 import { introspectPrisma, introspectPrismaAll } from './introspect-prisma.js'
-import { mergeManaged, scaffold, type ScaffoldOptions } from './scaffold.js'
+import { mergeManaged, scaffold, skipUserOwned, type ScaffoldOptions } from './scaffold.js'
 import { scaffoldApp, type ScaffoldAppOptions } from './scaffold-app.js'
 import { verifyScaffold, type VerifyResult } from './verify.js'
 
@@ -75,10 +75,15 @@ export async function resolveSchemas(from: string, io: StudioIO): Promise<Entity
 }
 
 /** Merge-write a set of generated files, preserving user edits outside managed regions. */
-async function writeAll(files: { path: string; contents: string }[], io: StudioIO): Promise<string[]> {
+async function writeAll(files: { path: string; contents: string; userOwned?: boolean }[], io: StudioIO): Promise<string[]> {
   const written: string[] = []
   for (const file of files) {
     const existing = await io.readFile(file.path)
+    // User-owned companions (a screen's `handlers.ts`) carry no managed markers -
+    // they're scaffolded once and then the developer's code forever. Skip if it
+    // already exists so a regenerate never clobbers hand-written logic. See
+    // HANDLERS-DESIGN.md (the round-trip contract).
+    if (skipUserOwned(file, existing != null)) continue
     // Regenerating? Replace only the managed region, keep the user's edits.
     await io.writeFile(file.path, mergeManaged(existing, file.contents))
     written.push(file.path)

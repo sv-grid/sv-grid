@@ -1,9 +1,29 @@
 # Text filter
 
-A column with no `editorType` (or `editorType: 'text'`) gets the **text**
-filter operator set: `contains`, `equals`, `startsWith`, `isBlank`. The
-default operator is `contains`.
+A column with no `editorType` (or `editorType: 'text'`) gets the full **text**
+filter operator set. The default operator is `contains`.
 <div data-docs-demo="69-highlighted-search" data-height="540"></div>
+
+## Operators
+
+| Operator | Label | Matches when the cell value… |
+| --- | --- | --- |
+| `contains` | Contains | includes the entered text |
+| `notContains` | Not contains | does **not** include the entered text |
+| `equals` | Equals | equals the entered text exactly |
+| `notEquals` | Not equals | does **not** equal the entered text |
+| `startsWith` | Starts with | begins with the entered text |
+| `endsWith` | Ends with | ends with the entered text |
+| `regex` | Regex | matches the entered regular expression (case-insensitive) |
+| `in` | In | equals **any** value in the entered list |
+| `notIn` | Not in | equals **none** of the values in the entered list |
+| `isBlank` | Blank | is empty / whitespace-only |
+| `isNotBlank` | Not blank | has any non-whitespace content |
+
+`isBlank` / `isNotBlank` take no value; `in` / `notIn` take a value **list**.
+All comparisons are case- and accent-insensitive (see below). An invalid
+`regex` pattern matches nothing (it never throws) and the filter-row input is
+flagged until the pattern compiles.
 
 ## Through the column menu
 
@@ -16,7 +36,28 @@ press Enter. The grid filters as you type (with a 150ms debounce).
 <SvGrid {data} {columns} features={features} filterMode="row" />
 ```
 
-Each text column shows a single input. The applied operator is `contains`.
+Each text column shows the operator picker plus a value control. Most operators
+use a single input; `isBlank` / `isNotBlank` hide the input entirely, and
+`in` / `notIn` show a **chip input** - type a value and press <kbd>Enter</kbd>
+or <kbd>,</kbd> to add it, <kbd>Backspace</kbd> to remove the last one.
+
+## In / Not-in value lists
+
+`in` and `notIn` test the cell against a list of whole values (not
+substrings).
+
+**Pick from the column's values.** When you focus the `in` / `notIn` chip
+input, a dropdown of the column's **distinct values** opens beneath it (the same
+values the [set filter](./set-filter.md) checklist uses). Typing narrows the
+list; click a value to toggle it in or out. In the funnel menu and tool panel
+the plain text input offers the same values as native autocomplete suggestions.
+
+Through the API, pass the list as a newline- or comma-separated string:
+
+```ts
+api.setFilter('symbol', { operator: 'in',    value: 'TSM\nBP\nBABA' })
+api.setFilter('side',   { operator: 'notIn', value: 'Sell' })
+```
 
 ## Programmatically
 

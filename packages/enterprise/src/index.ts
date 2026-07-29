@@ -56,6 +56,18 @@ export {
   type StagedEditingApi,
   type StagedEditingEvent,
 } from './staged-editing'
+export {
+  createScheduler,
+  parseCron,
+  cronMatches,
+  cronMatchesParsed,
+  isScheduleDue,
+  nextRun,
+  CRON_PRESETS,
+  type Schedule,
+  type Scheduler,
+  type SchedulerOptions,
+} from './scheduling'
 export { dismissUnlicensedNudge } from './watermark'
 export {
   showUpgradePrompt,

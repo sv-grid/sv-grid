@@ -808,6 +808,13 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * or omit it to apply to every column. Later entries win on conflict.
    */
   conditionalFormats?: ReadonlyArray<ConditionalFormat<TData>>;
+  /**
+   * Which rows feed the min/max range that `colorScale` / `dataBar` formats
+   * scale against. `visible` (default): the currently displayed rows (after
+   * filtering + paging), so the heat map adapts to what's on screen. `all`:
+   * the full unfiltered dataset, for a scale that stays put as you filter.
+   */
+  conditionalStatScope?: "visible" | "all";
   onCellValueChange?: (event: {
     rowIndex: number;
     columnId: string;
@@ -1013,12 +1020,19 @@ export type CellEditState = {
 } | null;
 export type FilterOperator =
   | "contains"
+  | "notContains"
   | "equals"
+  | "notEquals"
   | "startsWith"
+  | "endsWith"
+  | "regex"
+  | "in"
+  | "notIn"
   | "greaterThan"
   | "lessThan"
   | "between"
-  | "isBlank";
+  | "isBlank"
+  | "isNotBlank";
 export type FilterOption = {
   value: FilterOperator;
   label: string;

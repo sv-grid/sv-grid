@@ -47,6 +47,13 @@ export function resolveThemeTokens(theme?: ProjectTheme): Record<string, string>
   return resolveTokens(preset, mode, theme?.accent)
 }
 
+/** Resolve the `--sg-*` tokens for a project theme in an EXPLICIT mode (for the
+ *  generated app's light/dark switcher, which ships both token sets). */
+export function resolveThemeTokensFor(theme: ProjectTheme | undefined, mode: 'light' | 'dark'): Record<string, string> {
+  const preset = getStudioTheme(theme?.preset) ?? defaultStudioTheme
+  return resolveTokens(preset, mode, theme?.accent)
+}
+
 /** An inline `style` string (`--sg-x: y; ...; color-scheme; font-family`) for previews. */
 export function themeStyleString(theme?: ProjectTheme): string {
   const tokens = resolveThemeTokens(theme)

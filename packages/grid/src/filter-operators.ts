@@ -6,35 +6,68 @@ import type { FilterOperator, FilterOption } from "./SvGrid.types";
 
 export const filterOperatorOptions: Array<FilterOption> = [
   { value: "contains", label: "Contains", iconName: "op-contains" },
+  { value: "notContains", label: "Not contains", iconName: "op-notContains" },
   { value: "equals", label: "Equals", iconName: "op-equals" },
+  { value: "notEquals", label: "Not equals", iconName: "op-notEquals" },
   { value: "startsWith", label: "Starts with", iconName: "op-startsWith" },
+  { value: "endsWith", label: "Ends with", iconName: "op-endsWith" },
+  { value: "regex", label: "Regex", iconName: "op-regex" },
+  { value: "in", label: "In", iconName: "op-in" },
+  { value: "notIn", label: "Not in", iconName: "op-notIn" },
   { value: "greaterThan", label: "Greater than", iconName: "op-greaterThan" },
   { value: "lessThan", label: "Less than", iconName: "op-lessThan" },
   { value: "between", label: "Between", iconName: "op-between" },
-  { value: "isBlank", label: "Is blank", iconName: "op-isBlank" },
+  { value: "isBlank", label: "Blank", iconName: "op-isBlank" },
+  { value: "isNotBlank", label: "Not blank", iconName: "op-isNotBlank" },
+];
+/** Operators whose predicate is a set-membership test over a token list.
+ *  The filter row renders a multi-value chip input for these instead of a
+ *  single text box. */
+export const SET_OPERATORS: ReadonlyArray<FilterOperator> = ["in", "notIn"];
+/** Operators that need no value input - they act on emptiness alone. */
+export const VALUELESS_OPERATORS: ReadonlyArray<FilterOperator> = [
+  "isBlank",
+  "isNotBlank",
 ];
 /** Which operators make sense for each column editor type. */
 export const TEXT_OPERATORS: Array<FilterOperator> = [
   "contains",
+  "notContains",
   "equals",
+  "notEquals",
   "startsWith",
+  "endsWith",
+  "regex",
+  "in",
+  "notIn",
   "isBlank",
+  "isNotBlank",
 ];
 export const NUMBER_OPERATORS: Array<FilterOperator> = [
   "equals",
+  "notEquals",
   "greaterThan",
   "lessThan",
   "between",
+  "in",
+  "notIn",
   "isBlank",
+  "isNotBlank",
 ];
 export const DATE_OPERATORS: Array<FilterOperator> = [
   "equals",
+  "notEquals",
   "lessThan",
   "greaterThan",
   "between",
   "isBlank",
+  "isNotBlank",
 ];
-export const CHECKBOX_OPERATORS: Array<FilterOperator> = ["equals", "isBlank"];
+export const CHECKBOX_OPERATORS: Array<FilterOperator> = [
+  "equals",
+  "isBlank",
+  "isNotBlank",
+];
 export const fallbackOperatorOption: FilterOption = {
   value: "contains",
   label: "Contains",
