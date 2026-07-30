@@ -88,6 +88,8 @@
     left: 0,
     width: 0,
     openUpward: false,
+    maxHeight: 0,
+    availHeight: 0,
   })
 
   const selectedArr = $derived(
@@ -376,7 +378,12 @@
          Panel is `position: fixed` + portal'd to <body> so it escapes
          the grid's overflow:hidden scroll container. -->
     {@const needsScroll = options.length > 10}
-    {@const panelMax = needsScroll ? 10 * 32 + (multiple ? 40 : 0) + 8 : null}
+    <!-- Cap to the comfortable 10-row height AND the room the viewport allows,
+         so a panel near the bottom edge scrolls instead of overflowing. -->
+    {@const panelMax = Math.min(
+      needsScroll ? 10 * 32 + (multiple ? 40 : 0) + 8 : Number.POSITIVE_INFINITY,
+      panelRect.maxHeight,
+    )}
     <div
       class="sv-grid-dropdown-panel"
       class:sv-grid-dropdown-panel-fits={!needsScroll}

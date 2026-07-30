@@ -22,12 +22,18 @@
   import {
     SvGrid,
     SvGridChart,
+    SvMenuList,
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
+    portalToBody,
+    popIn,
+    createDismissableLayer,
+    createFocusTrap,
     type ColumnDef,
     type ChartType,
+    type MenuItem,
   } from '@svgrid/grid'
   import { createPivotModel, filterCollapsedPivotRows, type PivotRow, type PivotAggregatorId } from './pivot'
   import { pivotToChartSpec } from './pivot-chart'
@@ -86,6 +92,43 @@
     chartable?: boolean
     /** Which view to show first when `chartable`. Default 'table'. */
     defaultView?: 'table' | 'chart'
+
+    // ---- Presentation -------------------------------------------------
+    /**
+     * Where the authoring UI (field picker + wells) lives relative to the
+     * grid. `'top'` (default) keeps the classic Excel layout: left rail +
+     * a horizontal row of wells above the grid. `'right'` docks everything
+     * as a single vertical tool panel on the right of the grid - the
+     * "enterprise data grid" / AG-Grid pivot-panel arrangement.
+     */
+    panelPosition?: 'top' | 'right'
+    /** Width of the docked panel when `panelPosition='right'`. Default 280. */
+    panelWidth?: number | string
+    /**
+     * Enables a "Pivot Mode" toggle. When OFF the embedded grid renders the
+     * flat source rows with `flatColumns`; when ON it renders the pivot.
+     * Requires `flatColumns` to be provided. Bindable.
+     */
+    pivotMode?: boolean
+    /** Columns for the flat (pivot-off) grid. Enables the Pivot Mode toggle. */
+    flatColumns?: ColumnDef<typeof features, T>[]
+    /** Fired when the Pivot Mode toggle changes. */
+    onPivotModeChange?: (on: boolean) => void
+    /** Fit the embedded grid's columns to width. Default true. Set false to
+     *  let a wide pivot scroll horizontally (recommended with many columns). */
+    gridFitColumns?: boolean
+    /** Enable the right-click context menu on field-list rows, well chips, and
+     *  the pivot grid (add/move/remove fields, change aggregator, expand /
+     *  collapse). Default true. */
+    contextMenu?: boolean
+    /**
+     * Column virtualization on the embedded grid. Default true. Set FALSE for
+     * wide pivots with grouped column headers: the grouped header band isn't
+     * virtualized, so a virtualized body leaves off-window group columns
+     * looking empty until scrolled. Disabling it renders every column, so
+     * header and body always stay in sync (fine up to a few hundred columns).
+     */
+    columnVirtualization?: boolean
   }
   let {
     data,
@@ -106,7 +149,21 @@
     onCellClick,
     chartable = true,
     defaultView = 'table',
+    panelPosition = 'top',
+    panelWidth = 280,
+    pivotMode = $bindable(true),
+    flatColumns,
+    onPivotModeChange,
+    gridFitColumns = true,
+    columnVirtualization = true,
+    contextMenu = true,
   }: Props = $props()
+
+  const showPivotToggle = $derived(!!flatColumns)
+  function setPivotMode(on: boolean) {
+    pivotMode = on
+    onPivotModeChange?.(on)
+  }
 
   // Default the layout once on mount if the consumer passed nothing
   // meaningful. We seed inside $effect.pre so $bindable picks up the
@@ -480,6 +537,119 @@
     window.addEventListener('mousedown', on)
     return () => window.removeEventListener('mousedown', on)
   })
+
+  // ---- Right-click context menu ------------------------------------
+  // A single portalled SvMenuList whose items are computed from whatever
+  // was right-clicked: a field-list row, a well chip, or the pivot grid.
+  const WELL_LABEL: Record<Well, string> = { rows: 'Rows', cols: 'Columns', values: 'Values', filters: 'Filters' }
+  const KIND_WELLS: Record<'dimension' | 'measure', Well[]> = {
+    dimension: ['rows', 'cols', 'filters'],
+    measure: ['values', 'filters'],
+  }
+  let ctx = $state<{ x: number; y: number; items: MenuItem[] } | null>(null)
+  let ctxPanelEl = $state<HTMLDivElement | null>(null)
+  function openCtx(e: MouseEvent, items: MenuItem[]) {
+    if (!contextMenu || items.length === 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    const W = 210
+    const estH = Math.min(items.length, 12) * 32 + 10
+    const x = Math.min(e.clientX, window.innerWidth - W - 6)
+    const y = Math.min(e.clientY, window.innerHeight - estH - 6)
+    ctx = { x: Math.max(6, x), y: Math.max(6, y), items }
+  }
+  function closeCtx() { ctx = null }
+  $effect(() => {
+    if (!ctx || !ctxPanelEl) return
+    const trap = createFocusTrap(ctxPanelEl, {
+      initialFocus: () => ctxPanelEl?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])') ?? null,
+    })
+    trap.activate()
+    const layer = createDismissableLayer({ element: () => ctxPanelEl, onDismiss: closeCtx })
+    layer.activate()
+    const onScroll = () => closeCtx()
+    window.addEventListener('scroll', onScroll, true)
+    return () => { layer.release(); trap.release(); window.removeEventListener('scroll', onScroll, true) }
+  })
+
+  function clearWell(well: Well) {
+    if (well === 'rows') emit({ ...layout, rows: [] })
+    else if (well === 'cols') emit({ ...layout, cols: [] })
+    else if (well === 'values') emit({ ...layout, values: [] })
+    else emit({ ...layout, filters: [] })
+  }
+
+  /** Menu for a field-list (rail) row. */
+  function fieldMenu(field: string): MenuItem[] {
+    const f = fieldsByName.get(field)
+    if (!f) return []
+    const items: MenuItem[] = KIND_WELLS[f.kind].map((w) => ({
+      label: `Add to ${WELL_LABEL[w]}`,
+      onSelect: () => addToWell(field, w),
+    }))
+    if (isFieldInLayout(field)) {
+      items.push({ separator: true }, { label: 'Remove from pivot', onSelect: () => toggleFieldDefault(field) })
+    }
+    return items
+  }
+
+  /** Menu for a chip already sitting in a well. */
+  function chipMenu(well: Well, field: string, valueIndex?: number): MenuItem[] {
+    const f = fieldsByName.get(field)
+    const items: MenuItem[] = []
+    if (well === 'values' && valueIndex !== undefined) {
+      const current = layout.values[valueIndex]?.agg
+      items.push({
+        label: 'Aggregate',
+        children: aggregators.map((agg) => ({
+          label: AGG_LABEL[agg],
+          shortcut: agg === current ? '✓' : undefined,
+          onSelect: () => setAggregatorAt(valueIndex, agg),
+        })),
+      })
+    }
+    if (f) {
+      const targets = KIND_WELLS[f.kind].filter((w) => w !== well)
+      if (targets.length) {
+        items.push({
+          label: 'Move to',
+          children: targets.map((w) => ({
+            label: WELL_LABEL[w],
+            onSelect: () => addToWell(field, w, Infinity, well === 'values' ? valueIndex : undefined),
+          })),
+        })
+      }
+    }
+    if (well === 'filters') items.push({ label: 'Edit filter…', onSelect: () => toggleFilterMenu(field) })
+    items.push(
+      { separator: true },
+      { label: 'Remove', onSelect: () => removeFromWell(field, well, valueIndex) },
+      { label: `Clear ${WELL_LABEL[well]}`, onSelect: () => clearWell(well) },
+    )
+    return items
+  }
+
+  /** Menu for an empty area of a well. */
+  function wellMenu(well: Well): MenuItem[] {
+    const count = well === 'values' ? layout.values.length : layout[well].length
+    return [{ label: `Clear ${WELL_LABEL[well]}`, disabled: count === 0, onSelect: () => clearWell(well) }]
+  }
+
+  /** Menu for the pivot grid area (expand / collapse when expandable). */
+  function gridMenu(): MenuItem[] {
+    const items: MenuItem[] = []
+    if (expandable && pivot) {
+      items.push(
+        { label: 'Expand all', onSelect: expandAll },
+        { label: 'Collapse all', onSelect: collapseAll },
+      )
+    }
+    if (onExport && pivot) {
+      if (items.length) items.push({ separator: true })
+      items.push({ label: 'Export…', onSelect: () => onExport!(layout, pivot!.rows) })
+    }
+    return items
+  }
 </script>
 
 <section class="pvd" data-uid={uid}>
@@ -530,202 +700,262 @@
     </header>
   {/if}
 
-  <div class="pvd-body" class:no-rail={!showFieldList}>
-    {#if showFieldList}
-      <aside class="pvd-rail" aria-label="Available fields">
-        <input
-          type="search"
-          class="pvd-search"
-          placeholder="Search fields…"
-          bind:value={search}
-        />
-        <div class="pvd-fieldlist">
-          {#each groupedFields as [groupName, items] (groupName)}
-            <div class="pvd-group-head">{groupName}</div>
-            {#each items as f (f.field)}
-              {@const inUse = isFieldInLayout(f.field)}
-              <div
-                class="pvd-field"
-                class:in-use={inUse}
-                draggable="true"
-                ondragstart={(e) => onDragStart(e, f.field, 'rail')}
-                role="button"
-                tabindex="0"
-                onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFieldDefault(f.field) } }}
-              >
-                <input type="checkbox" checked={inUse} onchange={() => toggleFieldDefault(f.field)} aria-label={`Toggle ${f.label}`} />
-                <span class="pvd-field-label">{f.label}</span>
-                <span class="pvd-field-kind">{f.kind === 'dimension' ? 'D' : 'Σ'}</span>
+  <div class="pvd-body" data-panel={panelPosition} class:no-rail={!showFieldList && panelPosition === 'top'}>
+    {#if panelPosition === 'right'}
+      <div class="pvd-gridwrap">{@render gridBlock()}</div>
+      <aside class="pvd-panel" style={`width:${typeof panelWidth === 'number' ? panelWidth + 'px' : panelWidth}`} aria-label="Pivot panel">
+        {#if showPivotToggle}{@render pivotToggle()}{/if}
+        {#if showFieldList}<div class="pvd-panel-rail">{@render railBlock()}</div>{/if}
+        <div class="pvd-wells pvd-wells--vertical" class:two={!showFiltersWell}>{@render wellsBlock()}</div>
+      </aside>
+    {:else}
+      {#if showFieldList}
+        <aside class="pvd-rail" aria-label="Available fields">{@render railBlock()}</aside>
+      {/if}
+      <div class="pvd-main">
+        {#if showPivotToggle}<div class="pvd-topbar">{@render pivotToggle()}</div>{/if}
+        <div class="pvd-wells" class:two={!showFiltersWell}>{@render wellsBlock()}</div>
+        {@render gridBlock()}
+      </div>
+    {/if}
+  </div>
+</section>
+
+{#if ctx}
+  <div
+    bind:this={ctxPanelEl}
+    class="pvd-ctx"
+    use:portalToBody
+    use:popIn={{}}
+    style:position="fixed"
+    style:top={`${ctx.y}px`}
+    style:left={`${ctx.x}px`}
+    role="presentation"
+  >
+    <SvMenuList items={ctx.items} onclose={closeCtx} onselect={() => {}} />
+  </div>
+{/if}
+
+<!-- ============================ Sub-blocks ============================ -->
+{#snippet pivotToggle()}
+  <label class="pvd-pivot-toggle">
+    <input type="checkbox" checked={pivotMode} onchange={(e) => setPivotMode(e.currentTarget.checked)} />
+    <span class="pvd-switch" class:on={pivotMode}><span class="pvd-switch-knob"></span></span>
+    <span class="pvd-pivot-label">Pivot Mode</span>
+  </label>
+{/snippet}
+
+{#snippet railBlock()}
+  <input
+    type="search"
+    class="pvd-search"
+    placeholder="Search fields…"
+    bind:value={search}
+  />
+  <div class="pvd-fieldlist">
+    {#each groupedFields as [groupName, items] (groupName)}
+      <div class="pvd-group-head">{groupName}</div>
+      {#each items as f (f.field)}
+        {@const inUse = isFieldInLayout(f.field)}
+        <div
+          class="pvd-field"
+          class:in-use={inUse}
+          draggable="true"
+          ondragstart={(e) => onDragStart(e, f.field, 'rail')}
+          oncontextmenu={(e) => openCtx(e, fieldMenu(f.field))}
+          role="button"
+          tabindex="0"
+          onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFieldDefault(f.field) } }}
+        >
+          <input type="checkbox" checked={inUse} onchange={() => toggleFieldDefault(f.field)} aria-label={`Toggle ${f.label}`} />
+          <span class="pvd-field-label">{f.label}</span>
+          <span class="pvd-field-kind">{f.kind === 'dimension' ? 'D' : 'Σ'}</span>
+        </div>
+      {/each}
+    {/each}
+    {#if !filteredFields.length}
+      <div class="pvd-empty">No fields match "{search}"</div>
+    {/if}
+  </div>
+{/snippet}
+
+{#snippet wellsBlock()}
+  <!-- Filters -->
+  {#if showFiltersWell}
+    <div class="pvd-well"
+      class:drag-over={dragOver === 'filters'}
+      ondragover={(e) => onDragOver(e, 'filters')}
+      ondragleave={onDragLeave}
+      ondrop={(e) => onDrop(e, 'filters')}
+      oncontextmenu={(e) => openCtx(e, wellMenu('filters'))}>
+      <div class="pvd-well-head">Filters</div>
+      <div class="pvd-well-body">
+        {#each layout.filters as f (f.field)}
+          {@const fd = fieldsByName.get(f.field)}
+          <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, f.field, 'filters')} oncontextmenu={(e) => openCtx(e, chipMenu('filters', f.field))}>
+            <button type="button" class="pvd-chip-label" title="Choose which values pass" onclick={() => toggleFilterMenu(f.field)}>
+              {fd?.label ?? f.field}{f.allowed ? `: ${f.allowed.length}` : ''} <span class="pvd-chip-caret">▾</span>
+            </button>
+            <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(f.field, 'filters')} aria-label="Remove">×</button>
+            {#if openMenu?.kind === 'filter' && openMenu?.field === f.field}
+              {@const all = distinctValuesFor(f.field)}
+              <div class="pvd-popover pvd-popover-filter" data-pvd-menu={uid}>
+                <div class="pvd-popover-head">
+                  <button type="button" class="pvd-popover-mini" onclick={() => setFilterAllowed(f.field, null)}>All</button>
+                  <button type="button" class="pvd-popover-mini" onclick={() => setFilterAllowed(f.field, [])}>None</button>
+                </div>
+                <div class="pvd-popover-list">
+                  {#each all as v (v)}
+                    {@const checked = f.allowed == null || f.allowed.includes(v)}
+                    <label class="pvd-popover-item pvd-popover-check">
+                      <input type="checkbox" checked={checked}
+                        onchange={() => {
+                          const cur = f.allowed ?? all.slice()
+                          const next = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]
+                          setFilterAllowed(f.field, next.length === all.length ? null : next)
+                        }} />
+                      <span>{v}</span>
+                    </label>
+                  {/each}
+                </div>
               </div>
-            {/each}
-          {/each}
-          {#if !filteredFields.length}
-            <div class="pvd-empty">No fields match "{search}"</div>
+            {/if}
+          </div>
+        {/each}
+        {#if !layout.filters.length}<span class="pvd-well-hint">drop fields here to filter the source rows</span>{/if}
+      </div>
+    </div>
+  {/if}
+
+  <!-- Columns -->
+  <div class="pvd-well"
+    class:drag-over={dragOver === 'cols'}
+    ondragover={(e) => onDragOver(e, 'cols')}
+    ondragleave={onDragLeave}
+    ondrop={(e) => onDrop(e, 'cols')}
+    oncontextmenu={(e) => openCtx(e, wellMenu('cols'))}>
+    <div class="pvd-well-head">Columns</div>
+    <div class="pvd-well-body">
+      {#each layout.cols as field (field)}
+        {@const fd = fieldsByName.get(field)}
+        <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, field, 'cols')} oncontextmenu={(e) => openCtx(e, chipMenu('cols', field))}>
+          <span class="pvd-chip-label">{fd?.label ?? field}</span>
+          <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(field, 'cols')} aria-label="Remove">×</button>
+        </div>
+      {/each}
+      {#if !layout.cols.length}<span class="pvd-well-hint">drop dimensions to pivot along the column axis</span>{/if}
+    </div>
+  </div>
+
+  <!-- Rows -->
+  <div class="pvd-well"
+    class:drag-over={dragOver === 'rows'}
+    ondragover={(e) => onDragOver(e, 'rows')}
+    ondragleave={onDragLeave}
+    ondrop={(e) => onDrop(e, 'rows')}
+    oncontextmenu={(e) => openCtx(e, wellMenu('rows'))}>
+    <div class="pvd-well-head">Rows</div>
+    <div class="pvd-well-body">
+      {#each layout.rows as field (field)}
+        {@const fd = fieldsByName.get(field)}
+        <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, field, 'rows')} oncontextmenu={(e) => openCtx(e, chipMenu('rows', field))}>
+          <span class="pvd-chip-label">{fd?.label ?? field}</span>
+          <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(field, 'rows')} aria-label="Remove">×</button>
+        </div>
+      {/each}
+      {#if !layout.rows.length}<span class="pvd-well-hint">drop dimensions to group rows</span>{/if}
+    </div>
+  </div>
+
+  <!-- Values -->
+  <div class="pvd-well"
+    class:drag-over={dragOver === 'values'}
+    ondragover={(e) => onDragOver(e, 'values')}
+    ondragleave={onDragLeave}
+    ondrop={(e) => onDrop(e, 'values')}
+    oncontextmenu={(e) => openCtx(e, wellMenu('values'))}>
+    <div class="pvd-well-head">Values</div>
+    <div class="pvd-well-body">
+      {#each layout.values as v, vi (v.field + '|' + v.agg + '|' + vi)}
+        {@const fd = fieldsByName.get(v.field)}
+        <div class="pvd-chip pvd-chip-value" draggable="true" ondragstart={(e) => onDragStart(e, v.field, 'values', vi)} oncontextmenu={(e) => openCtx(e, chipMenu('values', v.field, vi))}>
+          <button type="button" class="pvd-chip-label" onclick={() => toggleAggMenu(vi)}>
+            <span class="pvd-chip-agg">{AGG_LABEL[v.agg]}</span>
+            <span class="pvd-chip-sep">·</span>
+            <span>{fd?.label ?? v.field}</span>
+          </button>
+          <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(v.field, 'values', vi)} aria-label="Remove">×</button>
+          {#if openMenu?.kind === 'agg' && openMenu.index === vi}
+            <div class="pvd-popover" data-pvd-menu={uid}>
+              {#each aggregators as agg (agg)}
+                <button
+                  type="button"
+                  class="pvd-popover-item"
+                  class:is-active={v.agg === agg}
+                  onclick={() => { setAggregatorAt(vi, agg); closeMenu() }}
+                >
+                  {AGG_LABEL[agg]}
+                </button>
+              {/each}
+            </div>
           {/if}
         </div>
-      </aside>
-    {/if}
+      {/each}
+      {#if !layout.values.length}<span class="pvd-well-hint">drop measures to aggregate</span>{/if}
+    </div>
+  </div>
+{/snippet}
 
-    <div class="pvd-main">
-      <div class="pvd-wells" class:two={!showFiltersWell}>
-        <!-- Filters -->
-        {#if showFiltersWell}
-          <div class="pvd-well"
-            class:drag-over={dragOver === 'filters'}
-            ondragover={(e) => onDragOver(e, 'filters')}
-            ondragleave={onDragLeave}
-            ondrop={(e) => onDrop(e, 'filters')}>
-            <div class="pvd-well-head">Filters</div>
-            <div class="pvd-well-body">
-              {#each layout.filters as f (f.field)}
-                {@const fd = fieldsByName.get(f.field)}
-                <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, f.field, 'filters')}>
-                  <button type="button" class="pvd-chip-label" title="Choose which values pass" onclick={() => toggleFilterMenu(f.field)}>
-                    {fd?.label ?? f.field}{f.allowed ? `: ${f.allowed.length}` : ''} <span class="pvd-chip-caret">▾</span>
-                  </button>
-                  <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(f.field, 'filters')} aria-label="Remove">×</button>
-                  {#if openMenu?.kind === 'filter' && openMenu?.field === f.field}
-                    {@const all = distinctValuesFor(f.field)}
-                    <div class="pvd-popover pvd-popover-filter" data-pvd-menu={uid}>
-                      <div class="pvd-popover-head">
-                        <button type="button" class="pvd-popover-mini" onclick={() => setFilterAllowed(f.field, null)}>All</button>
-                        <button type="button" class="pvd-popover-mini" onclick={() => setFilterAllowed(f.field, [])}>None</button>
-                      </div>
-                      <div class="pvd-popover-list">
-                        {#each all as v (v)}
-                          {@const checked = f.allowed == null || f.allowed.includes(v)}
-                          <label class="pvd-popover-item pvd-popover-check">
-                            <input type="checkbox" checked={checked}
-                              onchange={() => {
-                                const cur = f.allowed ?? all.slice()
-                                const next = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]
-                                setFilterAllowed(f.field, next.length === all.length ? null : next)
-                              }} />
-                            <span>{v}</span>
-                          </label>
-                        {/each}
-                      </div>
-                    </div>
-                  {/if}
-                </div>
-              {/each}
-              {#if !layout.filters.length}<span class="pvd-well-hint">drop fields here to filter the source rows</span>{/if}
-            </div>
-          </div>
+{#snippet gridBlock()}
+  {#if embedGrid}
+    <div class="pvd-grid" style={`height:${typeof gridHeight === 'number' ? gridHeight + 'px' : gridHeight}`} oncontextmenu={(e) => openCtx(e, gridMenu())}>
+      {#if showPivotToggle && !pivotMode}
+        <SvGrid
+          data={data}
+          columns={flatColumns!}
+          features={features}
+          filterMode="row"
+          sortable
+          selectionMode="none"
+          rowHeight={32}
+          containerHeight="100%"
+          fitColumns={gridFitColumns}
+          columnVirtualization={columnVirtualization}
+          enableRowSummaries={false}
+        />
+      {:else if pivot && chartable && view === 'chart'}
+        {#if chartSpec && chartSpec.series.length}
+          <div class="pvd-chart"><SvGridChart spec={chartSpec} interactive legend /></div>
+        {:else}
+          <div class="pvd-empty pvd-grid-empty">Add a measure and a row / column field to chart the pivot.</div>
         {/if}
-
-        <!-- Columns -->
-        <div class="pvd-well"
-          class:drag-over={dragOver === 'cols'}
-          ondragover={(e) => onDragOver(e, 'cols')}
-          ondragleave={onDragLeave}
-          ondrop={(e) => onDrop(e, 'cols')}>
-          <div class="pvd-well-head">Columns</div>
-          <div class="pvd-well-body">
-            {#each layout.cols as field (field)}
-              {@const fd = fieldsByName.get(field)}
-              <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, field, 'cols')}>
-                <span class="pvd-chip-label">{fd?.label ?? field}</span>
-                <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(field, 'cols')} aria-label="Remove">×</button>
-              </div>
-            {/each}
-            {#if !layout.cols.length}<span class="pvd-well-hint">drop dimensions to pivot along the column axis</span>{/if}
-          </div>
-        </div>
-
-        <!-- Rows -->
-        <div class="pvd-well"
-          class:drag-over={dragOver === 'rows'}
-          ondragover={(e) => onDragOver(e, 'rows')}
-          ondragleave={onDragLeave}
-          ondrop={(e) => onDrop(e, 'rows')}>
-          <div class="pvd-well-head">Rows</div>
-          <div class="pvd-well-body">
-            {#each layout.rows as field (field)}
-              {@const fd = fieldsByName.get(field)}
-              <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, field, 'rows')}>
-                <span class="pvd-chip-label">{fd?.label ?? field}</span>
-                <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(field, 'rows')} aria-label="Remove">×</button>
-              </div>
-            {/each}
-            {#if !layout.rows.length}<span class="pvd-well-hint">drop dimensions to group rows</span>{/if}
-          </div>
-        </div>
-
-        <!-- Values -->
-        <div class="pvd-well"
-          class:drag-over={dragOver === 'values'}
-          ondragover={(e) => onDragOver(e, 'values')}
-          ondragleave={onDragLeave}
-          ondrop={(e) => onDrop(e, 'values')}>
-          <div class="pvd-well-head">Values</div>
-          <div class="pvd-well-body">
-            {#each layout.values as v, vi (v.field + '|' + v.agg + '|' + vi)}
-              {@const fd = fieldsByName.get(v.field)}
-              <div class="pvd-chip pvd-chip-value" draggable="true" ondragstart={(e) => onDragStart(e, v.field, 'values', vi)}>
-                <button type="button" class="pvd-chip-label" onclick={() => toggleAggMenu(vi)}>
-                  <span class="pvd-chip-agg">{AGG_LABEL[v.agg]}</span>
-                  <span class="pvd-chip-sep">·</span>
-                  <span>{fd?.label ?? v.field}</span>
-                </button>
-                <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(v.field, 'values', vi)} aria-label="Remove">×</button>
-                {#if openMenu?.kind === 'agg' && openMenu.index === vi}
-                  <div class="pvd-popover" data-pvd-menu={uid}>
-                    {#each aggregators as agg (agg)}
-                      <button
-                        type="button"
-                        class="pvd-popover-item"
-                        class:is-active={v.agg === agg}
-                        onclick={() => { setAggregatorAt(vi, agg); closeMenu() }}
-                      >
-                        {AGG_LABEL[agg]}
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {/each}
-            {#if !layout.values.length}<span class="pvd-well-hint">drop measures to aggregate</span>{/if}
-          </div>
-        </div>
-      </div>
-
-      {#if embedGrid}
-        <div class="pvd-grid" style={`height:${typeof gridHeight === 'number' ? gridHeight + 'px' : gridHeight}`}>
-          {#if pivot && chartable && view === 'chart'}
-            {#if chartSpec && chartSpec.series.length}
-              <div class="pvd-chart"><SvGridChart spec={chartSpec} interactive legend /></div>
-            {:else}
-              <div class="pvd-empty pvd-grid-empty">Add a measure and a row / column field to chart the pivot.</div>
-            {/if}
-          {:else if pivot}
-            <SvGrid
-              data={visibleRows}
-              columns={finalColumns}
-              features={features}
-              sortable
-              filterable
-              selectionMode="none"
-              rowHeight={32}
-              containerHeight="100%"
-              fitColumns={true}
-              enableRowSummaries={false}
-              {onCellClick}
-            />
+      {:else if pivot}
+        <SvGrid
+          data={visibleRows}
+          columns={finalColumns}
+          features={features}
+          sortable
+          filterable
+          selectionMode="none"
+          rowHeight={32}
+          containerHeight="100%"
+          fitColumns={gridFitColumns}
+          columnVirtualization={columnVirtualization}
+          enableRowSummaries={false}
+          {onCellClick}
+        />
+      {:else}
+        <div class="pvd-empty pvd-grid-empty">
+          {#if !layout.values.length}
+            Drop at least one <strong>measure</strong> into Values to render the pivot.
           {:else}
-            <div class="pvd-empty pvd-grid-empty">
-              {#if !layout.values.length}
-                Drop at least one <strong>measure</strong> into Values to render the pivot.
-              {:else}
-                No data.
-              {/if}
-            </div>
+            No data.
           {/if}
         </div>
       {/if}
     </div>
-  </div>
-</section>
+  {/if}
+{/snippet}
 
 <!-- Label cell renderer used when `expandable` is on. Indents by
      pivot depth and shows a clickable chevron for expandable rows
@@ -1107,4 +1337,102 @@
   .pvd-view-btn.is-active { background: var(--sg-accent, #2563eb); color: #fff; }
   .pvd-chart { width: 100%; height: 100%; padding: 8px 10px; box-sizing: border-box; overflow: hidden; display: flex; }
   .pvd-chart > :global(.sv-grid-chart) { width: 100%; }
+
+  /* ---- Right-docked tool panel (panelPosition="right") -------------- */
+  .pvd-body[data-panel='right'] {
+    display: flex;
+    flex-direction: row;
+  }
+  .pvd-gridwrap {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .pvd-gridwrap .pvd-grid { flex: 1; min-height: 0; }
+  .pvd-panel {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid var(--sg-border, #e2e8f0);
+    background: var(--sg-header-bg, #f8fafc);
+    overflow-y: auto;
+  }
+  .pvd-panel-rail {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 120px;
+    border-bottom: 1px solid var(--sg-border, #e2e8f0);
+  }
+  .pvd-panel-rail .pvd-search {
+    background: var(--sg-input-bg, var(--sg-bg, #fff));
+    border: 1px solid var(--sg-input-border, var(--sg-border, #e2e8f0));
+    border-radius: var(--sg-radius, 6px);
+    margin: 10px 10px 6px;
+    padding: 6px 9px;
+  }
+  .pvd-panel-rail .pvd-fieldlist { padding-bottom: 8px; }
+  .pvd-wells--vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-bottom: 0;
+    flex: 0 0 auto;
+  }
+  .pvd-wells--vertical .pvd-well { min-height: 56px; background: var(--sg-bg, #fff); }
+
+  /* ---- Pivot Mode toggle ------------------------------------------- */
+  .pvd-topbar {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--sg-border, #e2e8f0);
+    background: var(--sg-header-bg, #f8fafc);
+  }
+  .pvd-panel > .pvd-pivot-toggle {
+    padding: 12px;
+    border-bottom: 1px solid var(--sg-border, #e2e8f0);
+  }
+  .pvd-pivot-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .pvd-pivot-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .pvd-switch {
+    width: 34px; height: 18px; border-radius: 999px; flex-shrink: 0;
+    background: var(--sg-border, #cbd5e1);
+    position: relative; transition: background 120ms ease;
+  }
+  .pvd-switch.on { background: var(--sg-accent, #2563eb); }
+  .pvd-switch-knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px; border-radius: 999px; background: #fff;
+    transition: transform 120ms ease;
+  }
+  .pvd-switch.on .pvd-switch-knob { transform: translateX(16px); }
+  .pvd-pivot-label { font-size: 13px; font-weight: 600; color: var(--sg-fg, #0f172a); }
+
+  /* ---- Right-click context menu panel ------------------------------ */
+  :global(.pvd-ctx) {
+    z-index: 2147483646;
+    min-width: 200px;
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
+    border: 1px solid var(--sg-border, #e2e8f0);
+    border-radius: 10px;
+    box-shadow: 0 16px 48px -12px rgba(15, 23, 42, 0.35);
+    font-size: 13px;
+  }
+
+  @media (max-width: 900px) {
+    .pvd-body[data-panel='right'] { flex-direction: column; }
+    .pvd-panel { width: auto !important; border-left: 0; border-top: 1px solid var(--sg-border, #e2e8f0); }
+    .pvd-wells--vertical { flex-direction: row; flex-wrap: wrap; }
+    .pvd-wells--vertical .pvd-well { flex: 1 1 40%; }
+  }
 </style>

@@ -47,7 +47,7 @@
 
   let fieldEl = $state<HTMLInputElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
-  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
+  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false, maxHeight: 0, availHeight: 0 })
 
   const ac = createAutocomplete({
     value: () => value,
@@ -92,7 +92,7 @@
 </SvField>
 
 {#if ac.open}
-  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} {...ac.listboxProps()}>
+  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} style:max-height={`${rect.maxHeight}px`} {...ac.listboxProps()}>
     {#each ac.filtered as opt, i (opt.value)}
       <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
       <div class="sv-ddl__opt" class:is-active={ac.isActive(i)} {...ac.optionProps(i)}>{opt.label}</div>

@@ -22,6 +22,8 @@ import Selection255 from '../demos/255-selection.svelte'
 import ListBox312 from '../demos/312-listbox.svelte'
 import ComboBox313 from '../demos/313-combobox.svelte'
 import DropDownList314 from '../demos/314-dropdownlist.svelte'
+import DockLayout361 from '../demos/361-dock-layout.svelte'
+import DockManager362 from '../demos/362-dock-manager.svelte'
 import AutoComplete315 from '../demos/315-autocomplete.svelte'
 import TagsInput316 from '../demos/316-tags-input.svelte'
 import CountryInput317 from '../demos/317-country-input.svelte'
@@ -273,6 +275,7 @@ import SpreadsheetChart          from '../demos/356-spreadsheet-chart.svelte'
 import ChartingByDate            from '../demos/358-charting-by-date.svelte'
 import AiChartThis               from '../demos/357-ai-chart-this.svelte'
 import PivotChart                from '../demos/359-pivot-chart.svelte'
+import PivotModeGrid             from '../demos/360-pivot-mode-grid.svelte'
 import ServerRowModel            from '../demos/148-server-row-model.svelte'
 import ServerGroupingModel       from '../demos/344-server-grouping-model.svelte'
 import LiveRestDummyJson         from '../demos/337-live-rest-dummyjson.svelte'
@@ -533,6 +536,8 @@ export const demos: Demo[] = [
   demo('328-tree-editable',         'Tree editing (drag / rename / sort)', 'SvTree with drag-drop reorder (drop before / after / inside), inline rename (double-click or F2) and sortable siblings. Uses the moveTreeNode helper.', 'Layout', TreeEditable328),
   demo('285-accordion',             'Accordion',                   'SvAccordion: collapsible sections with single- or multiple-expand, roving header focus (Up/Down/Home/End) and full WAI-ARIA (region + aria-controls). The panel body is a snippet; RTL mirrors the chevron and layout.', 'Layout', Accordion285),
   demo('286-splitter',              'Splitter',                    'SvSplitter: two resizable panes with a draggable WAI-ARIA separator - pointer drag + arrow-key resize (Home/End jump to bounds). Nest them for IDE / dashboard layouts. RTL flips the horizontal drag direction.', 'Layout', Splitter286),
+  demo('361-dock-layout',           'Docking layout',              'SvDockLayout: an IDE-style docking workspace - drag a tab onto another pane and drop on an edge to split or the centre to stack as a tab, drag the splitters to resize, close panes. The whole layout is a serializable, bindable DockNode tree.', 'Layout', DockLayout361),
+  demo('362-dock-manager',           'Docking manager',             'SvDockManager: SvDockLayout plus floating / pop-out windows, tab reordering and pinning / auto-hide. Drag a tab into open space to float it, along its strip to reorder, or use the tab buttons to auto-hide (collapse to an edge) and pin back.', 'Layout', DockManager362),
   demo('288-overlays',              'Overlays: popover, tooltip, modal', 'SvPopover (anchored floating panel, click/hover/manual), SvTooltip (delayed hover/focus tip, aria-describedby) and SvModal (focus-trapped dialog, Escape / backdrop close, optionally draggable + resizable). All portal to <body>, animate in, and respect reduced-motion.', 'Layout', Overlays288),
   demo('331-app-overlays',          'App overlays: drawer, context menu, toasts', 'SvDrawer (edge side-sheet), SvContextMenu (right-click menu) and the toast() API + SvToaster - all built on the shared focus-trap, scroll-lock and dismissable-layer primitives, so nested overlays close top-first and every toast is announced to screen readers.', 'Layout', AppOverlays331),
   demo('332-app-navigation',        'Navigation: breadcrumb, pager, stepper', 'SvBreadcrumb (collapsing trail), SvPagination (page-range with ellipsis, first/last, prev/next) and SvStepper (linear wizard with completed/active/upcoming states). Pure, keyboard-accessible, theme-token driven.', 'Layout', AppNavigation332),
@@ -795,6 +800,7 @@ export const demos: Demo[] = [
   demo('125-pivot-charts',            'Pivot + linked charts',          'Pivot cube wired to a horizontal bar chart + multi-year line chart. Click any cube row to drill the charts one level deeper (region → country → product); scope KPI strip tracks selection; charts are zero-dep inline SVG.', 'Pivot Grid', PivotCharts,            { pro: true }),
   demo('166-pivot-analysis-workspace','Pivot - Analysis workspace',     'Excel-style pivot analysis: left-rail field picker (search + checkboxes) feeding four wells (Rows / Columns / Data / Filters), live re-pivot on every layout change, click-to-cycle aggregator chips, data-bar Total Spend cells + amber Avg Rating strips, subtotal + grand-total row tints.', 'Pivot Grid', PivotAnalysisWorkspace, { pro: true }),
   demo('168-pivot-designer',          'Pivot designer component',       'SvPivotDesigner: self-contained, enterprise-ready pivot authoring with a left-rail field picker (search + grouped), four drop wells (Filters / Columns / Rows / Values), drag-and-drop between wells, per-chip aggregator + filter menus, presets toolbar, and an inline pivot grid driven by createPivotModel. Single bindable `layout` prop so the page can persist or restore it.', 'Pivot Grid', PivotDesigner,          { pro: true }),
+  demo('360-pivot-mode-grid',         'Pivot mode grid (AG-style)',     'Built on <SvPivotDesigner panelPosition="right">: a docked tool panel with a PIVOT MODE toggle, field checklist, and Columns / Rows / Values wells (drag-and-drop). OFF renders the flat participant grid (column groups, flags, ratings, inline filter row via `flatColumns`); ON pivots Language -> Country x Game with heat-mapped avg measures via `decorateColumns`. Exercises the new designer props panelPosition / pivotMode / flatColumns / gridFitColumns.', 'Pivot Grid', PivotModeGrid, { pro: true }),
 
   // ----- Pro: Export cluster (kept together at the very bottom)
   demo('21-export-and-print',         'Export + Print',                 'Pro feature pack: download to Excel, PDF, CSV, TSV, HTML, or open a printable view in a new window.',           'Data Export & Import', ExportAndPrint,         { pro: true }),

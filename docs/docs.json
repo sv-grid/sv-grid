@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-07-28T13:00:20.728Z",
+  "generatedAt": "2026-07-30T00:21:48.769Z",
   "counts": {
-    "pages": 341,
+    "pages": 344,
     "enterprise": 8,
-    "withDemo": 224
+    "withDemo": 227
   },
   "pillars": [
     {
@@ -91,6 +91,7 @@
         "help/accessibility.md",
         "help/agents.md",
         "help/ai-smart-paste.md",
+        "help/ai-toolkit.md",
         "help/ai.md",
         "help/api-stability.md",
         "help/architecture.md",
@@ -448,6 +449,8 @@
         "help/ui-components/sv-date-range-input.md",
         "help/ui-components/sv-date-time-picker.md",
         "help/ui-components/sv-divider.md",
+        "help/ui-components/sv-dock-layout.md",
+        "help/ui-components/sv-dock-manager.md",
         "help/ui-components/sv-drawer.md",
         "help/ui-components/sv-drop-down-list.md",
         "help/ui-components/sv-duration-input.md",
@@ -1391,6 +1394,20 @@
       "lastUpdated": "2026-07-22",
       "demoIds": [
         "75-ai-smart-paste"
+      ]
+    },
+    {
+      "path": "help/ai-toolkit.md",
+      "url": "/help/ai-toolkit",
+      "title": "AI Toolkit",
+      "summary": "Everything SvGrid ships for building with language models, in one place. The toolkit spans two axes: **AI inside your running app** (helpers your users invoke - natural-language filter, smart fill, summarise, classify) and **AI inside your editor** (the MCP server + grounding files that make Claude, Cursor, and friends write correct SvGrid code).",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 2077,
+      "lastUpdated": "2026-07-29",
+      "demoIds": [
+        "51-ai-assistant"
       ]
     },
     {
@@ -2343,8 +2360,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1267,
-      "lastUpdated": "2026-07-02",
+      "words": 1287,
+      "lastUpdated": "2026-07-29",
       "demoIds": [
         "00-trading-desk"
       ]
@@ -3632,6 +3649,34 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-dock-layout.md",
+      "url": "/help/ui-components/sv-dock-layout",
+      "title": "SvDockLayout",
+      "summary": "A basic docking layout: nested resizable split groups and tabbed leaves, with drag-to-dock. Drag any pane's tab onto another pane and drop it on an **edge** to split, or the **centre** to stack it as a tab; drag the splitters to resize; close panes with the x. It is the building block for IDE-style workspaces, BI dashboards, and trading desks.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 685,
+      "lastUpdated": "2026-07-29",
+      "demoIds": [
+        "361-dock-layout"
+      ]
+    },
+    {
+      "path": "help/ui-components/sv-dock-manager.md",
+      "url": "/help/ui-components/sv-dock-manager",
+      "title": "SvDockManager",
+      "summary": "A full docking manager built on top of SvDockLayout. It keeps everything the tiled layout does - nested resizable splits, tabbed leaves, drag-to-dock - and adds the three features a real IDE workspace needs:",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 728,
+      "lastUpdated": "2026-07-30",
+      "demoIds": [
+        "362-dock-manager"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-drawer.md",
       "url": "/help/ui-components/sv-drawer",
       "title": "SvDrawer",
@@ -3653,8 +3698,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 824,
-      "lastUpdated": "2026-07-21",
+      "words": 1016,
+      "lastUpdated": "2026-07-29",
       "demoIds": [
         "314-dropdownlist"
       ]

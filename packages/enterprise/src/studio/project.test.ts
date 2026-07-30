@@ -43,11 +43,20 @@ import {
   removeTab,
   renameTab,
   addTabBlock,
+  addTabComponent,
   removeTabBlock,
+  addAccordionSection,
+  removeAccordionSection,
+  renameAccordionSection,
+  setAccordionMultiple,
+  addAccordionBlock,
+  addAccordionComponent,
+  removeAccordionBlock,
   flattenBlocks,
   TAB_CHILD_KINDS,
   type MasterDetailConfig,
   type TabsConfig,
+  type AccordionConfig,
   type StudioProject,
 } from './project'
 
@@ -158,6 +167,74 @@ describe('Tabs container ops', () => {
     p = removeBlock(p, sid, childId)
     expect((p.screens.find((s) => s.id === sid)!.blocks[0]!.config as TabsConfig).tabs[0]!.blocks).toHaveLength(0)
     expect(p.screens.find((s) => s.id === sid)!.blocks).toHaveLength(1) // container intact
+  })
+
+  it('a component can be dropped into a tab (specific registry key -> configured child)', () => {
+    const base = defaultBlockConfig('tabs', customers) as TabsConfig
+    const cfg = addTabComponent(base, 0, 'badge')
+    const child = cfg.tabs[0]!.blocks[0]!
+    expect(child.config.kind).toBe('component')
+    expect((child.config as { component: string }).component).toBe('badge')
+    // Seeded with the registry's default props + content, so it renders immediately.
+    expect((child.config as { props: Record<string, unknown> }).props).toMatchObject({ variant: 'neutral', _content: 'Badge' })
+    // An unknown component key is a no-op (never inserts a broken child).
+    expect(addTabComponent(base, 0, 'not-real')).toBe(base)
+  })
+})
+
+describe('Accordion container (mirrors Tabs)', () => {
+  const base = () => defaultBlockConfig('accordion', customers) as AccordionConfig
+
+  it('defaults to two empty sections, single-open', () => {
+    const cfg = base()
+    expect(cfg.sections.map((s) => s.label)).toEqual(['Section 1', 'Section 2'])
+    expect(cfg.sections.every((s) => s.blocks.length === 0)).toBe(true)
+    expect(cfg.multiple).toBe(false)
+  })
+
+  it('adds / renames / removes sections (keeps at least one) + toggles multiple', () => {
+    let cfg = addAccordionSection(base(), 'Extra')
+    expect(cfg.sections).toHaveLength(3)
+    cfg = renameAccordionSection(cfg, 0, 'First')
+    expect(cfg.sections[0]!.label).toBe('First')
+    cfg = setAccordionMultiple(cfg, true)
+    expect(cfg.multiple).toBe(true)
+    cfg = removeAccordionSection(cfg, 2)
+    expect(cfg.sections).toHaveLength(2)
+    const one = removeAccordionSection(removeAccordionSection(cfg, 1), 0)
+    expect(one.sections).toHaveLength(1) // never drops the last section
+  })
+
+  it('hosts display blocks + components with unique ids, and removes them', () => {
+    let cfg = addAccordionBlock(base(), 0, 'chart', customers)
+    cfg = addAccordionComponent(cfg, 0, 'stat')
+    expect(cfg.sections[0]!.blocks.map((b) => b.config.kind)).toEqual(['chart', 'component'])
+    const ids = cfg.sections[0]!.blocks.map((b) => b.id)
+    expect(new Set(ids).size).toBe(2)
+    // grid is controller-bound -> rejected inside a section
+    expect(addAccordionBlock(cfg, 0, 'grid', customers)).toBe(cfg)
+    cfg = removeAccordionBlock(cfg, 0, ids[0]!)
+    expect(cfg.sections[0]!.blocks.map((b) => b.config.kind)).toEqual(['component'])
+  })
+
+  it('flattenBlocks + updateBlock + removeBlock reach a block nested in a section', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? { ...s, blocks: [] } : s)) }
+    p = addBlock(p, sid, 'accordion')
+    const ab = p.screens.find((s) => s.id === sid)!.blocks[0]!
+    p = updateBlock(p, sid, ab.id, { config: addAccordionBlock(ab.config as AccordionConfig, 1, 'gauge', customers) })
+    const cfg0 = p.screens.find((s) => s.id === sid)!.blocks[0]!.config as AccordionConfig
+    const childId = cfg0.sections[1]!.blocks[0]!.id
+    expect(flattenBlocks(p.screens.find((s) => s.id === sid)!.blocks).map((b) => b.config.kind)).toEqual(['accordion', 'gauge'])
+
+    p = updateBlock(p, sid, childId, { config: { measure: 'mrr', reduce: 'avg' } as Partial<import('./project').GaugeConfig> })
+    const child = (p.screens.find((s) => s.id === sid)!.blocks[0]!.config as AccordionConfig).sections[1]!.blocks[0]!
+    expect(child.config).toMatchObject({ kind: 'gauge', measure: 'mrr' })
+
+    p = removeBlock(p, sid, childId)
+    expect((p.screens.find((s) => s.id === sid)!.blocks[0]!.config as AccordionConfig).sections[1]!.blocks).toHaveLength(0)
+    expect(p.screens.find((s) => s.id === sid)!.blocks).toHaveLength(1)
   })
 })
 

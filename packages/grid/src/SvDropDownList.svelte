@@ -9,6 +9,7 @@
    */
   import { flushSync } from 'svelte'
   import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
+  import { startPanelResize } from './panel-resize'
   import { createDismissableLayer } from './a11y/dismissable'
   import { groupOptions, hasGroups, type ListOption } from './list-option'
   import { virtualRange, scrollToIndex } from './virtual'
@@ -26,6 +27,9 @@
     virtual?: boolean
     /** Fixed option height in px (must match the CSS). Default 34. */
     rowHeight?: number
+    /** Show a bottom drag grip so the user can resize the open panel's height
+     *  (only while it opens downward). Off by default. */
+    resizable?: boolean
   }
 
   let {
@@ -47,6 +51,7 @@
     autoOpen = false,
     virtual = false,
     rowHeight = 34,
+    resizable = false,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-ddl')
@@ -61,7 +66,15 @@
 
   let triggerEl = $state<HTMLButtonElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
-  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
+  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false, maxHeight: 0, availHeight: 0 })
+  // User-chosen panel height (px) once they drag the resize grip; null = auto.
+  let userHeight = $state<number | null>(null)
+  // Effective height cap: the user's drag if any (clamped to the viewport
+  // ceiling), otherwise the comfortable bounds-aware height.
+  const panelMaxH = $derived(
+    resizable && userHeight != null ? Math.min(userHeight, rect.availHeight) : rect.maxHeight,
+  )
+  const showGrip = $derived(resizable && !rect.openUpward)
 
   const ddl = createDropdownList({
     options: () => options,
@@ -81,7 +94,24 @@
 
   function updatePos() {
     if (!triggerEl) return
-    rect = anchoredRect(triggerEl.getBoundingClientRect(), { estimatedHeight: Math.min(options.length, 8) * 34 + 8 })
+    // When the user has resized, anchor to THAT height so the flip decision and
+    // upward top stay correct; otherwise estimate from the option count.
+    const estimatedHeight =
+      resizable && userHeight != null ? userHeight : Math.min(options.length, 8) * 34 + 8
+    rect = anchoredRect(triggerEl.getBoundingClientRect(), { estimatedHeight })
+  }
+
+  function startResize(e: PointerEvent) {
+    if (!panelEl) return
+    startPanelResize(e, {
+      startHeight: panelEl.clientHeight,
+      min: 96,
+      max: () => rect.availHeight,
+      onHeight: (h) => {
+        userHeight = h
+        updatePos()
+      },
+    })
   }
 
   $effect(() => {
@@ -132,7 +162,7 @@
 </SvField>
 
 {#if ddl.open}
-  <div bind:this={panelEl} class="sv-ddl__panel" class:is-virtual={useVirtual} use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} onscroll={(e) => { scrollTop = e.currentTarget.scrollTop; if (useVirtual) flushSync() }} bind:clientHeight={viewportH} {...ddl.listboxProps()}>
+  <div bind:this={panelEl} class="sv-ddl__panel" class:is-virtual={useVirtual} class:is-resizable={showGrip} use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} style:max-height={`${panelMaxH}px`} style:height={resizable && userHeight != null ? `${panelMaxH}px` : undefined} onscroll={(e) => { scrollTop = e.currentTarget.scrollTop; if (useVirtual) flushSync() }} bind:clientHeight={viewportH} {...ddl.listboxProps()}>
     {#if useVirtual}
       <div class="sv-ddl__sizer" aria-hidden="true" style:height={`${vr.totalHeight}px`}></div>
       {#each windowed as opt (opt.value)}
@@ -156,6 +186,12 @@
         {/each}
       {/if}
     {/each}
+    {/if}
+    {#if showGrip}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="sv-ddl__grip" onpointerdown={startResize} title="Drag to resize" aria-hidden="true">
+        <span class="sv-ddl__grip-dots"></span>
+      </div>
     {/if}
   </div>
 {/if}
@@ -186,6 +222,21 @@
     border: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px; box-shadow: 0 16px 48px -12px rgba(15,23,42,0.35);
   }
   :global(.sv-ddl__opt) { box-sizing: border-box; display: flex; align-items: center; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  /* Bottom resize grip: a row of dots ("····") the user drags to resize the
+     panel. Sticky so it stays pinned at the panel's bottom while options scroll. */
+  :global(.sv-ddl__panel.is-resizable) { padding-bottom: 0; }
+  :global(.sv-ddl__grip) {
+    position: sticky; bottom: 0; z-index: 1; margin: 2px -4px -4px; height: 15px;
+    display: flex; align-items: center; justify-content: center; cursor: ns-resize;
+    background: var(--sg-bg, #fff); border-top: 1px solid var(--sg-border, #e2e8f0);
+    border-radius: 0 0 10px 10px; touch-action: none;
+  }
+  :global(.sv-ddl__grip-dots) {
+    width: 26px; height: 4px; color: var(--sg-muted, #94a3b8); opacity: 0.6;
+    background-image: radial-gradient(currentColor 1px, transparent 1.6px);
+    background-size: 6px 4px; background-position: center; background-repeat: repeat-x;
+  }
+  :global(.sv-ddl__grip:hover .sv-ddl__grip-dots) { opacity: 1; }
   :global(.sv-ddl__panel.is-virtual) { position: fixed; will-change: scroll-position; }
   :global(.sv-ddl__sizer) { padding: 0; margin: 0; pointer-events: none; }
   :global(.sv-ddl__opt--abs) { position: absolute; inset-inline: 4px; top: 4px; }

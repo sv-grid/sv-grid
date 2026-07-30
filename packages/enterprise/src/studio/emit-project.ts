@@ -12,7 +12,7 @@
  */
 import type { GeneratedFile } from './scaffold.js'
 import type { ActionConfig, Block, ComponentConfig, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
-import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, entityDataSource, flattenBlocks, serializeProject, ON_LOAD, ON_DESTROY } from './project.js'
+import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, entityDataSource, flattenBlocks, serializeProject, seedUsers, ON_LOAD, ON_DESTROY } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -23,6 +23,10 @@ const has = (blocks: Block[], kind: Block['config']['kind']) => blocks.some((b) 
 /** Per-Tabs-block active-tab state var + a stable tab id. */
 const tabsStateVar = (blockId: string) => `activeTab_${blockId.replace(/[^a-zA-Z0-9_$]/g, '_')}`
 const tabId = (blockId: string, i: number) => `${blockId}-${i}`
+
+/** Per-Accordion-block expanded-ids state var + a stable section id. */
+const accStateVar = (blockId: string) => `accOpen_${blockId.replace(/[^a-zA-Z0-9_$]/g, '_')}`
+const accSectionId = (blockId: string, i: number) => `${blockId}-s${i}`
 
 /** A state var holding a master-detail block's child rows (loaded in full). */
 const mdChildVar = (childName: string) => `md_${childName.replace(/[^a-zA-Z0-9]/g, '_')}_rows`
@@ -221,6 +225,29 @@ ${panels}
       </SvTabs>
     </div>`
     }
+    case 'accordion': {
+      const accVar = accStateVar(block.id)
+      const items = ctx.i18n
+        ? `[${cfg.sections.map((s, i) => `{ id: ${JSON.stringify(accSectionId(block.id, i))}, label: $t('section.${accSectionId(block.id, i)}', ${JSON.stringify(s.label)}) }`).join(', ')}]`
+        : JSON.stringify(cfg.sections.map((s, i) => ({ id: accSectionId(block.id, i), label: s.label })))
+      const panels = cfg.sections
+        .map((s, i) => {
+          const children = s.blocks.map((cb) => blockMarkup(entity, schemaVar, typeName, cb, resolve, ctx)).filter(Boolean).join('\n')
+          return `          {#if item.id === '${accSectionId(block.id, i)}'}
+            <div class="st-screen">
+${children || '            <p style="color: var(--sg-muted, #94a3b8); font-size: 13px; padding: 10px;">This section is empty.</p>'}
+            </div>
+          {/if}`
+        })
+        .join('\n')
+      return `    <div ${span}${cls}>
+      <SvAccordion items={${items}} expandMode="${cfg.multiple ? 'multiple' : 'single'}" expanded={${accVar}} onChange={(ids) => (${accVar} = ids)}>
+        {#snippet panel(item)}
+${panels}
+        {/snippet}
+      </SvAccordion>
+    </div>`
+    }
     case 'master-detail': {
       const child = cfg.childEntity ? resolve(cfg.childEntity) : undefined
       if (!child || !cfg.foreignKey) {
@@ -357,6 +384,8 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: s
     else if (p.type === 'number') attrs.push(`${p.key}={${Number(v)}}`)
     else attrs.push(`${p.key}={${jsStr(String(v))}}`)
   }
+  // Baked-in array/object props (Timeline items, Sparkline data): emitted verbatim.
+  for (const f of spec.fixed ?? []) attrs.push(`${f.key}={${f.expr}}`)
   const openTag = `<${spec.importName}${attrs.length ? ' ' + attrs.join(' ') : ''}`
   const inner = spec.hasContent ? `>{${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}}</${spec.importName}>` : ' />'
   return `    <div id="${block.id}" ${span}${cls}>
@@ -373,6 +402,7 @@ function handleInit(cfg: ComponentConfig): string {
     if (v == null || v === '') continue
     props.push(`${p.key}: ${p.type === 'number' ? Number(v) : p.type === 'boolean' ? !!v : jsStr(String(v))}`)
   }
+  for (const f of spec?.fixed ?? []) props.push(`${f.key}: ${f.expr}`)
   const parts = [`props: { ${props.join(', ')} }`]
   if (spec?.hasContent) parts.push(`text: ${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}`)
   return `{ ${parts.join(', ')} }`
@@ -755,8 +785,12 @@ const DATA_HANDLE_MEMBERS: ReadonlyArray<string> = ['setData()', 'rows', 'clear(
 export function componentHandleMembers(componentKey: string): string[] {
   const spec = uiComponentSpec(componentKey)
   const out: string[] = []
-  if (spec?.hasContent) out.push('setText()', 'setLabel()')
-  for (const p of spec?.props ?? []) out.push(`set${p.key[0]!.toUpperCase()}${p.key.slice(1)}()`)
+  if (spec?.hasContent) out.push('text', 'setText()', 'setLabel()')
+  // Each prop shows up as a settable property (checked) AND a setter method (setChecked()).
+  for (const p of spec?.props ?? []) {
+    out.push(p.key)
+    out.push(`set${p.key[0]!.toUpperCase()}${p.key.slice(1)}()`)
+  }
   out.push('onclick', 'onClick()', 'set()', 'get()')
   return out
 }
@@ -986,7 +1020,8 @@ export function handle(init: { props?: Record<string, unknown>; text?: string })
     },
     set(t, k, v) {
       if (typeof k === 'string' && /^on[a-z]/.test(k)) { t.onEvent(k.slice(2), v as (e: Event) => void); return true }
-      if (typeof k === 'string') t.set(k, v)
+      if (k === 'text') { t.text = v as string; return true }              // content, not a prop
+      if (typeof k === 'string') t.set(k, v)                                 // checkbox1.checked = true
       return true
     },
   }) as Handle
@@ -1007,19 +1042,30 @@ function componentHandleTypeName(componentKey: string): string {
  *  setters (setVariant('primary' | ...), setDisabled(boolean), ...) plus setText /
  *  onclick, so `ctx.button1.setVariant(...)` autocompletes and type-checks instead
  *  of falling through to the untyped proxy. */
+/** The TS type of a component prop (for its handle property + setter signature). */
+function uiPropTsType(p: { type: string; options?: string[] }): string {
+  return p.type === 'boolean' ? 'boolean'
+    : p.type === 'number' ? 'number'
+    : p.type === 'select' && p.options?.length ? p.options.map((o) => JSON.stringify(o)).join(' | ')
+    : 'string'
+}
 function componentHandleTypeDecl(componentKey: string): string | null {
   const spec = uiComponentSpec(componentKey)
   if (!spec) return null
   const members: string[] = []
   for (const p of spec.props) {
+    const t = uiPropTsType(p)
     const setter = `set${p.key[0]!.toUpperCase()}${p.key.slice(1)}`
-    const t = p.type === 'boolean' ? 'boolean'
-      : p.type === 'number' ? 'number'
-      : p.type === 'select' && p.options?.length ? p.options.map((o) => JSON.stringify(o)).join(' | ')
-      : 'string'
+    // Each prop is exposed BOTH as a read/write property (checkbox1.checked = true)
+    // and as a fluent setter method (checkbox1.setChecked(true)).
+    members.push(`  ${p.key}: ${t}`)
     members.push(`  ${setter}(value: ${t}): void`)
   }
-  if (spec.hasContent) { members.push('  setText(value: string): void'); members.push('  setLabel(value: string): void') }
+  if (spec.hasContent) {
+    members.push('  text: string')
+    members.push('  setText(value: string): void')
+    members.push('  setLabel(value: string): void')
+  }
   members.push('  onclick: (e: Event) => void')
   members.push('  onClick(fn: (e: Event) => void): void')
   return `type ${componentHandleTypeName(componentKey)} = Handle & {\n${members.join('\n')}\n}`
@@ -1280,6 +1326,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   if (has(allBlocks, 'gauge')) gridSpecs.push('SvGauge')
   if (has(allBlocks, 'tree')) gridSpecs.push('SvTree')
   if (has(blocks, 'tabs')) gridSpecs.push('SvTabs')
+  if (has(blocks, 'accordion')) gridSpecs.push('SvAccordion')
   for (const b of allBlocks) {
     if (b.config.kind !== 'component') continue
     const importName = uiComponentSpec(b.config.component)?.importName
@@ -1405,6 +1452,11 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     if (b.config.kind !== 'tabs') continue
     parts.push(`let ${tabsStateVar(b.id)} = $state('${tabId(b.id, 0)}')`)
   }
+  // Accordion container(s): one expanded-ids state var per block (first section open).
+  for (const b of blocks) {
+    if (b.config.kind !== 'accordion') continue
+    parts.push(`let ${accStateVar(b.id)} = $state<string[]>(['${accSectionId(b.id, 0)}'])`)
+  }
   // Tree block: fold the flat rows into SvTree nodes by a self-referential parent.
   if (has(allBlocks, 'tree')) {
     parts.push(`type TreeNode = { id: string; label: string; children: TreeNode[] }
@@ -1504,6 +1556,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     project.entities.map((e) => [e.name, entityDataSource(project, e.name)]),
   )
   const accessEnabled = project.access?.enabled === true && (project.access?.roles.length ?? 0) > 0
+  const authEnabled = project.auth?.enabled === true
   // Audit only fires on server routes, so it needs at least one SQL-bound entity.
   const auditEnabled = project.audit === true && Object.values(sources).some((s) => s.kind === 'sql')
   const i18nEnabled = project.i18n?.enabled === true && (project.i18n?.locales.length ?? 0) > 0
@@ -1570,11 +1623,14 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     .sort((a, b) => (a.nav?.order ?? 0) - (b.nav?.order ?? 0))
     .map((s) => ({ href: `/${s.route}`, label: s.nav?.label ?? s.title, id: s.id }))
   const accessFiles = accessEnabled ? [accessModule(project)] : []
+  const authFileList = authEnabled ? authFiles(project) : []
+  const sqlEntities = project.entities.filter((e) => sources[e.name]?.kind === 'sql')
+  const dataLayerList = project.dataLayer === 'drizzle' && sqlEntities.length > 0 ? dataLayerFiles(project, sqlEntities, sources) : []
   const auditFiles = auditEnabled ? [auditModule(), auditRouteFile(), auditViewerPage()] : []
   const navWithAudit = auditEnabled ? [...nav, { href: '/audit', label: 'Audit log', id: '__audit__' }] : nav
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
   const handleFiles = project.screens.some(screenHasCode) ? [handlesModuleFile()] : []
-  return [...files, ...accessFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, ...companions, ...handleFiles, layoutFile(navWithAudit, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navWithAudit)]
+  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, ...companions, ...handleFiles, layoutFile(navWithAudit, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navWithAudit)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the
@@ -1814,6 +1870,407 @@ export function authorizeAction(role: AppRole, action: 'read' | WriteAction, scr
   }
 }
 
+/** The authentication starter (emitted when `project.auth.enabled`): a dependency-free
+ *  session (Web Crypto: PBKDF2 hashing + HMAC-signed stateless cookies), a users seed,
+ *  `hooks.server.ts` that resolves the caller into `event.locals.role`/`user` (the loop
+ *  the RBAC layer already expects), a `/login` page + sign-out, and the `App.Locals`
+ *  type augmentation. Works across every data source (no DB required for the demo). */
+function authFiles(project: StudioProject): GeneratedFile[] {
+  const users = seedUsers(project)
+  const demo = users[0]!
+  const protect = project.auth?.protect !== false
+  const usersLiteral = users
+    .map((u) => `  { email: ${JSON.stringify(u.email)}, name: ${JSON.stringify(u.name)}, role: ${JSON.stringify(u.role)}, password: ${JSON.stringify(u.password)} }`)
+    .join(',\n')
+
+  const authTs = `// Regenerated by SvGrid Studio. Dependency-free auth: PBKDF2 password hashing +
+// stateless HMAC-signed session cookies (Web Crypto - runs on Node and edge runtimes).
+import { env } from '$env/dynamic/private'
+
+export const SESSION_COOKIE = 'sv_session'
+export const SESSION_MAX_AGE = 60 * 60 * 24 * 7 // 7 days (seconds)
+
+export type SessionUser = { email: string; name: string; role: string }
+
+const enc = new TextEncoder()
+// Signing secret. Set SESSION_SECRET in the environment for production (see .env.example).
+const secret = () => env.SESSION_SECRET || 'dev-insecure-secret-change-me'
+
+function b64url(bytes: ArrayBuffer | Uint8Array): string {
+  const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
+  let s = ''
+  for (const byte of b) s += String.fromCharCode(byte)
+  return btoa(s).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '')
+}
+function fromB64url(s: string): Uint8Array {
+  const p = s.replace(/-/g, '+').replace(/_/g, '/')
+  const bin = atob(p + '==='.slice((p.length + 3) % 4))
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let out = 0
+  for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return out === 0
+}
+async function hmac(data: string): Promise<string> {
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret()), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  return b64url(await crypto.subtle.sign('HMAC', key, enc.encode(data)))
+}
+
+/** Sign a stateless session token: base64url(payload).hmac(payload). */
+export async function signSession(user: SessionUser): Promise<string> {
+  const payload = { ...user, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE }
+  const body = b64url(enc.encode(JSON.stringify(payload)))
+  return body + '.' + (await hmac(body))
+}
+/** Verify a token; returns the user, or null if missing / tampered / expired. */
+export async function readSession(token: string | undefined): Promise<SessionUser | null> {
+  if (!token) return null
+  const dot = token.lastIndexOf('.')
+  if (dot < 0) return null
+  const body = token.slice(0, dot)
+  const sig = token.slice(dot + 1)
+  if (!timingSafeEqual(sig, await hmac(body))) return null
+  try {
+    const p = JSON.parse(new TextDecoder().decode(fromB64url(body))) as SessionUser & { exp: number }
+    if (typeof p.exp !== 'number' || p.exp * 1000 < Date.now()) return null
+    return { email: p.email, name: p.name, role: p.role }
+  } catch {
+    return null
+  }
+}
+
+// ---- password hashing (PBKDF2) --------------------------------------------
+// Use these to store hashed passwords in a real user store: keep hashPassword()'s
+// output as \`passwordHash\`, then check with verifyPassword(input, passwordHash).
+export async function hashPassword(password: string, salt?: string): Promise<string> {
+  const s = salt ?? b64url(crypto.getRandomValues(new Uint8Array(16)))
+  const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits'])
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: enc.encode(s), iterations: 100000, hash: 'SHA-256' }, key, 256)
+  return s + ':' + b64url(bits)
+}
+export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  const salt = stored.split(':')[0]
+  if (!salt) return false
+  return timingSafeEqual(await hashPassword(password, salt), stored)
+}
+`
+
+  const usersTs = `// Regenerated by SvGrid Studio. DEMO user store - replace with your own (a DB table,
+// an external identity provider, ...). Passwords here are demo seeds, like sample rows:
+// change them and store hashes for production (see hashPassword / verifyPassword in ./auth).
+export type AppUser = { email: string; name: string; role: string; password: string }
+
+export const USERS: AppUser[] = [
+${usersLiteral},
+]
+
+export function findUser(email: string): AppUser | undefined {
+  const e = email.trim().toLowerCase()
+  return USERS.find((u) => u.email.toLowerCase() === e)
+}
+`
+
+  const hooksTs = `import type { Handle } from '@sveltejs/kit'
+import { SESSION_COOKIE, readSession } from '$lib/server/auth'
+
+// Resolve the signed session on every request into event.locals - the RBAC layer
+// (getServerRole / authorize) and the app shell read event.locals.role from here.
+export const handle: Handle = async ({ event, resolve }) => {
+  const user = await readSession(event.cookies.get(SESSION_COOKIE))
+  event.locals.user = user ?? undefined
+  event.locals.role = user?.role
+  return resolve(event)
+}
+`
+
+  const localsDts = `import type { SessionUser } from '$lib/server/auth'
+
+declare global {
+  namespace App {
+    interface Locals {
+      user?: SessionUser
+      role?: string
+    }
+  }
+}
+
+export {}
+`
+
+  const layoutServerTs = `import type { LayoutServerLoad } from './$types'
+${protect ? "import { redirect } from '@sveltejs/kit'\n" : ''}
+// Expose the signed-in user + role to every page (read as \`data.user\` / \`data.role\`,
+// or \`$page.data\`).${protect ? ' Unauthenticated visitors are sent to /login.' : ''}
+export const load: LayoutServerLoad = async ({ locals${protect ? ', url' : ''} }) => {
+${protect ? "  if (!locals.user && url.pathname !== '/login') throw redirect(302, '/login?redirectTo=' + encodeURIComponent(url.pathname))\n" : ''}  return { user: locals.user ?? null, role: locals.role ?? null }
+}
+`
+
+  const loginServerTs = `import { fail, redirect } from '@sveltejs/kit'
+import type { Actions, PageServerLoad } from './$types'
+import { SESSION_COOKIE, SESSION_MAX_AGE, signSession } from '$lib/server/auth'
+import { findUser } from '$lib/server/users'
+
+export const load: PageServerLoad = async ({ locals }) => {
+  if (locals.user) throw redirect(302, '/')
+  return {}
+}
+
+export const actions: Actions = {
+  default: async ({ request, cookies, url }) => {
+    const form = await request.formData()
+    const email = String(form.get('email') ?? '')
+    const password = String(form.get('password') ?? '')
+    const user = findUser(email)
+    // DEMO: plain comparison against the seed. For a real store keep a passwordHash and
+    // use \`await verifyPassword(password, user.passwordHash)\` from '$lib/server/auth'.
+    if (!user || user.password !== password) return fail(401, { email, error: 'Invalid email or password.' })
+    const token = await signSession({ email: user.email, name: user.name, role: user.role })
+    cookies.set(SESSION_COOKIE, token, {
+      path: '/', httpOnly: true, sameSite: 'lax',
+      secure: url.hostname !== 'localhost' && url.hostname !== '127.0.0.1',
+      maxAge: SESSION_MAX_AGE,
+    })
+    throw redirect(302, url.searchParams.get('redirectTo') || '/')
+  },
+}
+`
+
+  const loginPage = `<script lang="ts">
+  import { enhance } from '$app/forms'
+  let { form } = $props()
+</script>
+
+<div class="auth">
+  <form method="POST" use:enhance class="auth__card">
+    <h1 class="auth__title">Sign in</h1>
+    <p class="auth__sub">${jsStrHtml(project.title || 'Welcome back')}</p>
+    {#if form?.error}<p class="auth__err" role="alert">{form.error}</p>{/if}
+    <label class="auth__field"><span>Email</span>
+      <input name="email" type="email" autocomplete="username" value={form?.email ?? ''} required />
+    </label>
+    <label class="auth__field"><span>Password</span>
+      <input name="password" type="password" autocomplete="current-password" required />
+    </label>
+    <button class="auth__btn" type="submit">Sign in</button>
+    <p class="auth__hint">Demo account: <code>${demo.email}</code> / <code>${demo.password}</code></p>
+  </form>
+</div>
+
+<style>
+  .auth { display: grid; place-items: center; min-height: 100vh; padding: 24px; background: var(--sg-bg-subtle, #f8fafc); }
+  .auth__card { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 28px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 16px; box-shadow: 0 12px 40px -12px rgba(15, 23, 42, 0.18); }
+  .auth__title { margin: 0; font-size: 22px; font-weight: 720; letter-spacing: -0.02em; }
+  .auth__sub { margin: -6px 0 6px; font-size: 13.5px; color: var(--sg-muted, #64748b); }
+  .auth__field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--sg-muted, #64748b); }
+  .auth__field input { padding: 9px 11px; font: inherit; font-size: 14px; font-weight: 400; color: var(--sg-fg, #0f172a); background: var(--sg-input-bg, #fff); border: 1px solid var(--sg-input-border, #e6e8ec); border-radius: 9px; }
+  .auth__field input:focus { outline: none; border-color: var(--sg-accent, #6366f1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sg-accent, #6366f1) 18%, transparent); }
+  .auth__btn { margin-top: 4px; padding: 10px; font: inherit; font-size: 14px; font-weight: 640; color: var(--sg-on-accent, #fff); background: var(--sg-accent, #6366f1); border: none; border-radius: 9px; cursor: pointer; }
+  .auth__btn:hover { filter: brightness(1.06); }
+  .auth__err { margin: 0; padding: 8px 11px; font-size: 13px; color: var(--sg-danger, #b3261e); background: color-mix(in srgb, var(--sg-danger, #dc2626) 9%, var(--sg-bg, #fff)); border: 1px solid color-mix(in srgb, var(--sg-danger, #dc2626) 35%, var(--sg-border, #e6e8ec)); border-radius: 9px; }
+  .auth__hint { margin: 6px 0 0; font-size: 12px; color: var(--sg-muted, #94a3b8); text-align: center; }
+  .auth__hint code { background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent); padding: 1px 5px; border-radius: 5px; }
+</style>
+`
+
+  const logoutServerTs = `import { redirect } from '@sveltejs/kit'
+import type { Actions } from './$types'
+import { SESSION_COOKIE } from '$lib/server/auth'
+
+export const actions: Actions = {
+  default: async ({ cookies }) => {
+    cookies.delete(SESSION_COOKIE, { path: '/' })
+    throw redirect(302, '/login')
+  },
+}
+`
+
+  const envExample = `# Session signing secret - set a long random value in production.
+SESSION_SECRET=change-me-to-a-long-random-string
+`
+
+  return [
+    { path: 'src/lib/server/auth.ts', description: 'Session + password crypto (Web Crypto, dependency-free).', contents: authTs },
+    { path: 'src/lib/server/users.ts', description: 'Demo user store (replace with your own).', contents: usersTs },
+    { path: 'src/hooks.server.ts', description: 'Resolves the session into event.locals on every request.', contents: hooksTs },
+    { path: 'src/auth.d.ts', description: 'App.Locals augmentation (user + role).', contents: localsDts },
+    { path: 'src/routes/+layout.server.ts', description: 'Exposes user/role to pages; guards routes.', contents: layoutServerTs },
+    { path: 'src/routes/login/+page.svelte', description: 'Sign-in page.', contents: loginPage },
+    { path: 'src/routes/login/+page.server.ts', description: 'Sign-in form action.', contents: loginServerTs },
+    { path: 'src/routes/logout/+page.server.ts', description: 'Sign-out action.', contents: logoutServerTs },
+    { path: '.env.example', description: 'Environment template.', contents: envExample },
+  ]
+}
+
+/** Escape a string for safe use as literal text inside emitted Svelte markup. */
+function jsStrHtml(s: string): string {
+  return s.replace(/[&<>{}]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '{': '&#123;', '}': '&#125;' }[c]!))
+}
+
+// --- Typed data layer (Drizzle ORM + drizzle-kit migrations) ----------------
+type DzDialect = 'postgres' | 'sqlite' | 'turso'
+/** Per-dialect Drizzle wiring. Only the `.returning()`-capable dialects ship here
+ *  (postgres covers Supabase + most; sqlite / turso cover embedded + edge). MySQL /
+ *  MSSQL keep the raw connected route until their repo variants are added. */
+const DZ: Record<DzDialect, { kit: string; table: string; core: string; client: string; setup: string; creds: string }> = {
+  postgres: {
+    kit: 'postgresql', table: 'pgTable', core: 'drizzle-orm/pg-core',
+    client: "import { drizzle } from 'drizzle-orm/node-postgres'\nimport pg from 'pg'",
+    setup: 'const pool = new pg.Pool({ connectionString: env.DATABASE_URL })\nexport const db = drizzle(pool, { schema })',
+    creds: 'dbCredentials: { url: process.env.DATABASE_URL! }',
+  },
+  sqlite: {
+    kit: 'sqlite', table: 'sqliteTable', core: 'drizzle-orm/sqlite-core',
+    client: "import { drizzle } from 'drizzle-orm/better-sqlite3'\nimport Database from 'better-sqlite3'",
+    setup: "const sqlite = new Database(env.DATABASE_URL ?? 'data.db')\nexport const db = drizzle(sqlite, { schema })",
+    creds: "dbCredentials: { url: process.env.DATABASE_URL ?? 'data.db' }",
+  },
+  turso: {
+    kit: 'turso', table: 'sqliteTable', core: 'drizzle-orm/sqlite-core',
+    client: "import { drizzle } from 'drizzle-orm/libsql'\nimport { createClient } from '@libsql/client'",
+    setup: "const client = createClient({ url: env.DATABASE_URL ?? '', authToken: env.DATABASE_AUTH_TOKEN })\nexport const db = drizzle(client, { schema })",
+    creds: 'dbCredentials: { url: process.env.DATABASE_URL!, authToken: process.env.DATABASE_AUTH_TOKEN }',
+  },
+}
+
+/** Normalize a Studio SQL dialect to a Drizzle-supported one, or null if unsupported. */
+function dzDialect(dialect: string | undefined): DzDialect | null {
+  if (dialect === 'supabase' || dialect === 'postgres' || dialect == null) return 'postgres'
+  if (dialect === 'sqlite') return 'sqlite'
+  if (dialect === 'turso') return 'turso'
+  return null // mysql / mssql: not yet in the Drizzle layer
+}
+
+/** A safe JS identifier for a Drizzle table export (e.g. `orderItems`). */
+function dzTableVar(name: string): string {
+  const parts = name.replace(/[^a-zA-Z0-9]+/g, ' ').trim().split(' ').filter(Boolean)
+  const id = (parts[0] ?? 'table').toLowerCase() + parts.slice(1).map((w) => w[0]!.toUpperCase() + w.slice(1)).join('')
+  return /^[0-9]/.test(id) ? 't' + id : id || 'table'
+}
+
+/** The Drizzle column expression for a field + the core import(s) it needs. */
+function dzColumn(dialect: DzDialect, field: EntityField, colName: string, isPk: boolean, pkIsNumber: boolean): { expr: string; imports: string[] } {
+  const q = JSON.stringify(colName)
+  if (isPk) {
+    if (dialect === 'postgres') return pkIsNumber ? { expr: `serial(${q}).primaryKey()`, imports: ['serial'] } : { expr: `text(${q}).primaryKey()`, imports: ['text'] }
+    // sqlite / turso
+    return pkIsNumber ? { expr: `integer(${q}).primaryKey({ autoIncrement: true })`, imports: ['integer'] } : { expr: `text(${q}).primaryKey()`, imports: ['text'] }
+  }
+  if (dialect === 'postgres') {
+    switch (field.type) {
+      case 'number': return { expr: `doublePrecision(${q})`, imports: ['doublePrecision'] }
+      case 'boolean': return { expr: `boolean(${q})`, imports: ['boolean'] }
+      case 'date': return { expr: `date(${q})`, imports: ['date'] }
+      case 'datetime': return { expr: `timestamp(${q}, { withTimezone: true })`, imports: ['timestamp'] }
+      case 'json': return { expr: `jsonb(${q})`, imports: ['jsonb'] }
+      default: return { expr: `text(${q})`, imports: ['text'] }
+    }
+  }
+  // sqlite / turso
+  switch (field.type) {
+    case 'number': return { expr: `real(${q})`, imports: ['real'] }
+    case 'boolean': return { expr: `integer(${q}, { mode: 'boolean' })`, imports: ['integer'] }
+    case 'json': return { expr: `text(${q}, { mode: 'json' })`, imports: ['text'] }
+    default: return { expr: `text(${q})`, imports: ['text'] }
+  }
+}
+
+/** The typed Drizzle data layer (emitted when `project.dataLayer === 'drizzle'` and
+ *  there's a SQL-bound entity on a supported dialect): a schema (the source of truth
+ *  for drizzle-kit migrations), a client, a typed repository per entity, and the
+ *  drizzle.config.ts. The connected `+server.ts` routes read the same tables. */
+function dataLayerFiles(project: StudioProject, sqlEntities: EntitySchema[], sources: Record<string, EntityDataSource>): GeneratedFile[] {
+  const firstSql = sources[sqlEntities[0]!.name]
+  const dialect = dzDialect(firstSql?.kind === 'sql' ? firstSql.dialect : undefined)
+  if (!dialect) return [] // MySQL / MSSQL: raw route only, for now
+  const cfg = DZ[dialect]
+
+  // schema.ts - one table per SQL entity + inferred row / insert types.
+  const colImports = new Set<string>([cfg.table])
+  const tableBlocks: string[] = []
+  const meta: Array<{ e: EntitySchema; tableVar: string; pkKey: string; pkNumber: boolean }> = []
+  for (const e of sqlEntities) {
+    const src = sources[e.name]
+    const table = (src?.kind === 'sql' ? src.table : undefined) ?? e.name
+    const pk = e.idField ?? e.fields.find((f) => f.primaryKey)?.field ?? 'id'
+    const pkField = e.fields.find((f) => f.field === pk)
+    const pkNumber = pkField?.type === 'number'
+    const tableVar = dzTableVar(e.name)
+    const type = namesFor(e).type
+    const cols = e.fields.map((f) => {
+      const c = dzColumn(dialect, f, f.dbColumn ?? f.field, f.field === pk, pkNumber)
+      c.imports.forEach((i) => colImports.add(i))
+      return `  ${JSON.stringify(f.field)}: ${c.expr},`
+    })
+    tableBlocks.push(`export const ${tableVar} = ${cfg.table}(${JSON.stringify(table)}, {\n${cols.join('\n')}\n})\nexport type ${type}Row = typeof ${tableVar}.$inferSelect\nexport type ${type}New = typeof ${tableVar}.$inferInsert`)
+    meta.push({ e, tableVar, pkKey: pk, pkNumber })
+  }
+  const schemaTs = `// Regenerated by SvGrid Studio. Typed database schema (Drizzle ORM) - the source of
+// truth for migrations: edit here, then run \`npm run db:generate\` && \`npm run db:migrate\`.
+import { ${[...colImports].sort().join(', ')} } from '${cfg.core}'
+
+${tableBlocks.join('\n\n')}
+`
+
+  const indexTs = `// Regenerated by SvGrid Studio. The Drizzle client (reads DATABASE_URL).
+${cfg.client}
+import { env } from '$env/dynamic/private'
+import * as schema from './schema'
+
+${cfg.setup}
+export { schema }
+`
+
+  const repoFiles = meta.map(({ e, tableVar, pkKey, pkNumber }) => {
+    const type = namesFor(e).type
+    const idT = pkNumber ? 'number' : 'string'
+    return {
+      path: `src/lib/server/db/${namesFor(e).route}.ts`,
+      description: `Typed repository for ${namesFor(e).label} (Drizzle).`,
+      contents: `// Regenerated by SvGrid Studio. Typed CRUD over the ${tableVar} table - call from
+// server code, form actions, or your own API routes.
+import { eq } from 'drizzle-orm'
+import { db } from './index'
+import { ${tableVar}, type ${type}Row, type ${type}New } from './schema'
+
+export const ${tableVar}Repo = {
+  list: (): Promise<${type}Row[]> => db.select().from(${tableVar}),
+  get: async (id: ${idT}): Promise<${type}Row | undefined> =>
+    (await db.select().from(${tableVar}).where(eq(${tableVar}.${pkKey}, id))).at(0),
+  create: async (values: ${type}New): Promise<${type}Row> =>
+    (await db.insert(${tableVar}).values(values).returning()).at(0)!,
+  update: async (id: ${idT}, values: Partial<${type}New>): Promise<${type}Row | undefined> =>
+    (await db.update(${tableVar}).set(values).where(eq(${tableVar}.${pkKey}, id)).returning()).at(0),
+  remove: async (id: ${idT}): Promise<void> => {
+    await db.delete(${tableVar}).where(eq(${tableVar}.${pkKey}, id))
+  },
+}
+`,
+    }
+  })
+
+  const configTs = `import { defineConfig } from 'drizzle-kit'
+
+export default defineConfig({
+  schema: './src/lib/server/db/schema.ts',
+  out: './drizzle',
+  dialect: '${cfg.kit}',
+  ${cfg.creds},
+})
+`
+
+  return [
+    { path: 'src/lib/server/db/schema.ts', description: 'Drizzle schema (migration source of truth).', contents: schemaTs },
+    { path: 'src/lib/server/db/index.ts', description: 'Drizzle client.', contents: indexTs },
+    ...repoFiles,
+    { path: 'drizzle.config.ts', description: 'drizzle-kit config (migrations).', contents: configTs },
+  ]
+}
+
 // --- Full runnable app (download / npm-install-and-run) ---------------------
 
 const appSlug = (title: string): string =>
@@ -1985,12 +2442,22 @@ function packageJson(project: StudioProject, allSource: string): string {
   if (/from ['"]hyperformula['"]/.test(allSource)) dependencies['hyperformula'] = '^3.3.0'
   if (/from ['"]jszip['"]/.test(allSource)) dependencies['jszip'] = '^3.10.1'
   if (/from ['"]pdfmake(?:\/[^'"]*)?['"]/.test(allSource)) dependencies['pdfmake'] = '^0.2.10'
+  // Typed data layer: drizzle-orm at runtime, drizzle-kit (dev) for migrations + scripts.
+  const drizzle = project.dataLayer === 'drizzle' && /from ['"]drizzle-orm(?:\/[^'"]*)?['"]/.test(allSource)
+  if (drizzle) dependencies['drizzle-orm'] = '^0.44.0'
+  const scripts: Record<string, string> = { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json', test: 'vitest run' }
+  if (drizzle) {
+    scripts['db:generate'] = 'drizzle-kit generate'
+    scripts['db:migrate'] = 'drizzle-kit migrate'
+    scripts['db:push'] = 'drizzle-kit push'
+    scripts['db:studio'] = 'drizzle-kit studio'
+  }
   const pkg = {
     name: appSlug(project.title),
     version: '0.0.1',
     private: true,
     type: 'module',
-    scripts: { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json', test: 'vitest run' },
+    scripts,
     dependencies,
     // Pinned to Vite 7 (Rollup) + vite-plugin-svelte 6, NOT Vite 8. Vite 8's native
     // Rolldown bundler crashes in StackBlitz's WebContainer ("Invalid atomic access
@@ -2005,6 +2472,10 @@ function packageJson(project: StudioProject, allSource: string): string {
       typescript: '^5.7.0',
       vite: '^7.0.0',
       vitest: '^4.1.5',
+      // Driver typings so the connected route + data layer type-check cleanly.
+      ...(dependencies['pg'] ? { '@types/pg': '^8.11.0' } : {}),
+      ...(dependencies['better-sqlite3'] ? { '@types/better-sqlite3': '^7.6.0' } : {}),
+      ...(drizzle ? { 'drizzle-kit': '^0.31.0' } : {}),
     },
   }
   return JSON.stringify(pkg, null, 2) + '\n'

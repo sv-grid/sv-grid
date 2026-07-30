@@ -178,6 +178,7 @@
     style:top={`${ms.rect.top}px`}
     style:left={`${ms.rect.left}px`}
     style:min-width={`${ms.rect.width}px`}
+    style:max-height={`${ms.rect.maxHeight}px`}
     onkeydown={ms.onPanelKeydown}
   >
     {#if searchable}

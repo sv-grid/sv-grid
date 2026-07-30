@@ -1928,6 +1928,43 @@ export function createSvGridController<
     Math.max(totalColumnWidth - columnWindowEnd, 0),
   );
 
+  /**
+   * `groupHeaderRows` clipped to the rendered column window. The multi-level
+   * group-header band must virtualize in lock-step with the leaf-header row
+   * and the body: otherwise a group cell spanning off-window leaves renders a
+   * header over empty space (its cells were dropped by body virtualization),
+   * so wide grouped/pivot grids show group headers with no cells beneath.
+   *
+   * We reuse each cell's `firstLeafIndex` + `colSpan` (leaf-index range) to
+   * clip against the rendered leaf window, dropping fully-off-window cells and
+   * shrinking partially-visible ones to their visible leaves. The template
+   * frames the result with the SAME left/right spacers the leaf row uses, so
+   * everything stays pixel-aligned. When virtualization is off this is a
+   * pass-through.
+   */
+  const groupHeaderRowsWindowed = $derived.by(() => {
+    const base = groupHeaderRows;
+    if (!columnVirtualizationEnabled || base.length === 0) return base;
+    const items = renderedColumnItems;
+    if (items.length === 0) return base;
+    const winFirst = items[0]!.index;
+    const winLast = items[items.length - 1]!.index; // inclusive
+    return base.map((row) => {
+      const cells: GroupHeaderCell[] = [];
+      for (const cell of row.cells) {
+        const start = cell.firstLeafIndex;
+        const end = start + cell.colSpan; // exclusive
+        const from = Math.max(start, winFirst);
+        const to = Math.min(end, winLast + 1);
+        if (to <= from) continue; // cell is entirely outside the window
+        let widthPx = 0;
+        for (let i = from; i < to; i += 1) widthPx += getColumnWidth(allColumns[i]!.id);
+        cells.push({ ...cell, colSpan: to - from, widthPx, firstLeafIndex: from });
+      }
+      return { ...row, cells };
+    });
+  });
+
   const activeCell = $derived.by(() => {
     gridStateVersion;
     return (
@@ -2687,6 +2724,7 @@ export function createSvGridController<
     get allColumns() { return allColumns; },
     get headerGroups() { return headerGroups; },
     get groupHeaderRows() { return groupHeaderRows; },
+    get groupHeaderRowsWindowed() { return groupHeaderRowsWindowed; },
     get pinnedOffsets() { return pinnedOffsets; },
     get cellPinStyle() { return cellPinStyle; },
     get isColumnPinned() { return isColumnPinned; },

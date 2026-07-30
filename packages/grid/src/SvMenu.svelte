@@ -45,7 +45,7 @@
 
   let anchorEl = $state<HTMLSpanElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
-  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
+  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false, maxHeight: 0, availHeight: 0 })
 
   function setOpen(v: boolean) { if (v !== open) { open = v; onOpenChange?.(v) } }
   function toggle() { setOpen(!open) }

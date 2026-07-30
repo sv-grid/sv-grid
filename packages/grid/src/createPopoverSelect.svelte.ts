@@ -54,7 +54,7 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
 
   let open = $state(false)
   let active = $state(0)
-  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
+  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false, maxHeight: 0, availHeight: 0 })
 
   const count = () => config.itemCount()
   const isDisabled = (i: number) => config.disabled?.(i) ?? false

@@ -153,6 +153,7 @@
     style:top={`${gs.rect.top}px`}
     style:left={`${gs.rect.left}px`}
     style:min-width={`${Math.max(gs.rect.width, 320)}px`}
+    style:max-height={`${gs.rect.maxHeight}px`}
     onkeydown={gs.onPanelKeydown}
   >
     {#if searchable}

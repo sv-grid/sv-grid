@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, createProject, enableScreenCode, parseProject, setDeployTarget, setEntityDataSource, setHandlerBody, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type StudioProject } from './project'
+import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, parseProject, setAuth, setDataLayer, setDeployTarget, setEntityDataSource, setHandlerBody, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
 import { emitStudioProject, emitStudioAppBundle, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
+import { UI_COMPONENT_REGISTRY } from './ui-components'
 
 /** Type-check a handler BODY against a generated ambient ctx `.d.ts` using the real
  *  TypeScript compiler - the same surface the in-editor language service uses.
@@ -156,6 +157,25 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(page).toContain('reduceValue(allRows,')            // kpi child in tab 2 uses allRows
     expect(page).toMatch(/let activeTab_\w+ = \$state\(/)      // one active-tab state var
     expect(page).toContain('async function loadAll()')        // nested aggs still load allRows
+    expect(() => compile(page, { filename: 'customers/+page.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('Accordion block: nests display blocks + components into SvAccordion sections', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'accordion')
+    const ab = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'accordion')!
+    let cfg = addAccordionBlock(ab.config as AccordionConfig, 0, 'chart', customers)   // display child
+    cfg = addAccordionComponent(cfg, 1, 'badge')                                       // component child
+    p = updateBlock(p, sid, ab.id, { config: cfg })
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/import \{[^}]*SvAccordion[^}]*\} from '@svgrid\/grid'/)
+    expect(page).toMatch(/import \{[^}]*SvBadge[^}]*\} from '@svgrid\/grid'/)  // nested component imported
+    expect(page).toContain('{#snippet panel(item)}')
+    expect(page).toContain('expandMode="single"')
+    expect(page).toContain('<SvSchemaChart')                        // display child renders
+    expect(page).toContain('<SvBadge')                              // component child renders
+    expect(page).toMatch(/let accOpen_\w+ = \$state<string\[\]>\(\['/)  // expanded-ids state var
     expect(() => compile(page, { filename: 'customers/+page.svelte', generate: 'client' })).not.toThrow()
   })
 
@@ -354,6 +374,121 @@ describe('emitStudioProject (per-block screens)', () => {
     const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
     expect(page).not.toContain('$lib/access')
     expect(page).not.toContain('$currentRole')
+  })
+
+  it('Auth: scaffolds session + hooks + login + seed users, closes the RBAC loop, and compiles', () => {
+    let p = createProject([customers])
+    p = { ...p, access: { enabled: true, defaultRole: 'viewer', roles: [
+      { role: 'admin', screens: '*', actions: '*' },
+      { role: 'viewer', screens: ['customers'], actions: [] },
+    ] } }
+    p = setAuth(p, { enabled: true })
+    const files = emitStudioProject(p)
+    const get = (path: string) => files.find((f) => f.path === path)?.contents
+
+    // The whole starter is emitted.
+    for (const path of ['src/lib/server/auth.ts', 'src/lib/server/users.ts', 'src/hooks.server.ts', 'src/auth.d.ts', 'src/routes/+layout.server.ts', 'src/routes/login/+page.svelte', 'src/routes/login/+page.server.ts', 'src/routes/logout/+page.server.ts', '.env.example']) {
+      expect(files.find((f) => f.path === path), path).toBeTruthy()
+    }
+    // hooks resolves the session into event.locals.role - the value getServerRole reads.
+    expect(get('src/hooks.server.ts')).toContain('event.locals.role = user?.role')
+    // Dependency-free crypto (no external auth lib).
+    expect(get('src/lib/server/auth.ts')).toContain('crypto.subtle')
+    expect(get('src/lib/server/auth.ts')).toContain('export async function signSession')
+    // One demo user per RBAC role.
+    expect(get('src/lib/server/users.ts')).toContain('admin@example.com')
+    expect(get('src/lib/server/users.ts')).toContain('viewer@example.com')
+    // Protect-by-default guards the app in the root server load.
+    expect(get('src/routes/+layout.server.ts')).toContain("throw redirect(302, '/login?redirectTo='")
+    // Login form action signs + sets the session cookie.
+    expect(get('src/routes/login/+page.server.ts')).toContain('cookies.set(SESSION_COOKIE')
+    // The shell wires the session in: login bypass, real user, sign-out, role seed.
+    const layout = get('src/routes/+layout.svelte')!
+    expect(layout).toContain("$page.url.pathname === '/login'")
+    expect(layout).toContain('action="/logout"')
+    expect(layout).toContain('currentRole.set(data.role')
+    expect(layout).toContain('data?.user?.email')
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  // A SQL entity with a NUMBER primary key + a db-column alias, to exercise the
+  // serial / autoincrement + dbColumn mapping paths.
+  const products: EntitySchema = {
+    name: 'products', label: 'Product', idField: 'id',
+    fields: [
+      { field: 'id', type: 'number', primaryKey: true },
+      { field: 'title', type: 'text' },
+      { field: 'price', type: 'number' },
+      { field: 'inStock', type: 'boolean', dbColumn: 'in_stock' },
+    ],
+  }
+
+  it('Data layer: Drizzle schema + typed repos + migrations config for SQL entities', () => {
+    let p = createProject([products])
+    p = setEntityDataSource(p, 'products', { kind: 'sql', table: 'products_tbl', dialect: 'postgres' })
+    p = setDataLayer(p, true)
+    const files = emitStudioProject(p)
+    const get = (path: string) => files.find((f) => f.path === path)?.contents
+
+    for (const path of ['src/lib/server/db/schema.ts', 'src/lib/server/db/index.ts', 'src/lib/server/db/products.ts', 'drizzle.config.ts']) {
+      expect(files.find((f) => f.path === path), path).toBeTruthy()
+    }
+    const schema = get('src/lib/server/db/schema.ts')!
+    expect(schema).toContain("from 'drizzle-orm/pg-core'")
+    expect(schema).toContain('pgTable("products_tbl"')                  // real DB table name
+    expect(schema).toContain('"id": serial("id").primaryKey()')         // number PK -> serial
+    expect(schema).toContain('"inStock": boolean("in_stock")')          // dbColumn alias
+    expect(schema).toContain('typeof products.$inferSelect')
+    // A typed repo with returning-based CRUD, id typed from the PK.
+    const repo = get('src/lib/server/db/products.ts')!
+    expect(repo).toContain('export const productsRepo')
+    expect(repo).toContain('.returning()).at(0)!')
+    expect(repo).toContain('get: async (id: number)')
+    // drizzle-kit migration config + client.
+    expect(get('drizzle.config.ts')).toContain("dialect: 'postgresql'")
+    expect(get('src/lib/server/db/index.ts')).toContain('drizzle-orm/node-postgres')
+  })
+
+  it('Data layer: package.json wires drizzle deps + migration scripts; SQLite maps a number id to autoincrement', () => {
+    let p = createProject([products])
+    p = setEntityDataSource(p, 'products', { kind: 'sql', table: 'products', dialect: 'sqlite' })
+    p = setDataLayer(p, true)
+    const files = emitStudioAppBundle(p)
+    const pkg = JSON.parse(files.find((f) => f.path === 'package.json')!.contents)
+    expect(pkg.dependencies['drizzle-orm']).toBeTruthy()
+    expect(pkg.devDependencies['drizzle-kit']).toBeTruthy()
+    expect(pkg.scripts['db:generate']).toBe('drizzle-kit generate')
+    expect(pkg.scripts['db:migrate']).toBe('drizzle-kit migrate')
+    const schema = files.find((f) => f.path === 'src/lib/server/db/schema.ts')!.contents
+    expect(schema).toContain("from 'drizzle-orm/sqlite-core'")
+    expect(schema).toContain('integer("id").primaryKey({ autoIncrement: true })')
+  })
+
+  it('no data layer without the toggle, without a SQL entity, or on an unsupported dialect', () => {
+    // Off by default.
+    let sqlOnly = setEntityDataSource(createProject([customers]), 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    expect(emitStudioProject(sqlOnly).find((f) => f.path === 'src/lib/server/db/schema.ts')).toBeUndefined()
+    // Toggle on but no SQL entity (memory source) -> nothing.
+    expect(emitStudioProject(setDataLayer(createProject([customers]), true)).find((f) => f.path.startsWith('src/lib/server/db/'))).toBeUndefined()
+    // Toggle on + MySQL (not yet supported) -> raw route only, no Drizzle layer.
+    const mysql = setDataLayer(setEntityDataSource(createProject([customers]), 'customers', { kind: 'sql', table: 'customers', dialect: 'mysql' }), true)
+    expect(emitStudioProject(mysql).find((f) => f.path === 'src/lib/server/db/schema.ts')).toBeUndefined()
+  })
+
+  it('no auth files unless auth.enabled; protect:false drops the route guard', () => {
+    // Off by default.
+    expect(emitStudioProject(createProject([customers])).find((f) => f.path === 'src/hooks.server.ts')).toBeUndefined()
+    // protect:false still scaffolds login but does not force a redirect.
+    const p = setAuth(createProject([customers]), { enabled: true, protect: false })
+    const layoutServer = emitStudioProject(p).find((f) => f.path === 'src/routes/+layout.server.ts')!.contents
+    expect(layoutServer).not.toContain('throw redirect')
+    // Single admin seed user when RBAC is off.
+    const users = emitStudioProject(p).find((f) => f.path === 'src/lib/server/users.ts')!.contents
+    expect(users).toContain('admin@example.com')
+    expect(users).not.toContain('viewer@example.com')
   })
 
   it('Audit: emits the store + route + viewer, wires connected routes, and compiles', () => {
@@ -765,6 +900,32 @@ describe('Component blocks', () => {
     const files = emitStudioProject(p)
     const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
     expect(() => compile(page, { filename: 'page.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('every registry component codegens to a page that compiles, from the full UI kit', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Sink', route: 'sink' })
+    const sid = p.screens.find((s) => s.title === 'Sink')!.id
+    for (const spec of UI_COMPONENT_REGISTRY) p = addComponentBlock(p, sid, spec.key)
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/sink/+page.svelte')!.contents
+    // The kit spans well beyond the original eight (inputs, nav, display, ...).
+    expect(UI_COMPONENT_REGISTRY.length).toBeGreaterThanOrEqual(24)
+    // Every importName is present in the single @svgrid/grid import.
+    for (const spec of UI_COMPONENT_REGISTRY) expect(page).toContain(spec.importName)
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('array/object "fixed" props (Timeline items, Sparkline data) emit verbatim, not stringified', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'Viz', route: 'viz' })
+    const sid = p.screens.find((s) => s.title === 'Viz')!.id
+    p = addComponentBlock(p, sid, 'timeline')
+    p = addComponentBlock(p, sid, 'sparkline', { type: 'line' })
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/viz/+page.svelte')!.contents
+    expect(page).toContain("items={[{ title: 'Order placed'")   // real array expression
+    expect(page).toContain('data={[4, 8, 5, 9')                 // real number array
+    expect(page).not.toContain("items={'[")                      // never quoted as a string
   })
 
   it('an unrecognized component key emits a harmless placeholder comment instead of throwing', () => {
@@ -1247,6 +1408,10 @@ describe('code companion (design + your own code)', () => {
     expect(ctx.contents).toContain('button1: ButtonHandle')
     expect(ctx.contents).toContain('type ButtonHandle = Handle & {')
     expect(ctx.contents).toContain("setVariant(value: \"primary\" | \"secondary\" | \"outline\" | \"ghost\" | \"danger\"): void")
+    // Each prop is ALSO a read/write property (button1.variant = 'danger'), not just a setter.
+    expect(ctx.contents).toContain("variant: \"primary\" | \"secondary\" | \"outline\" | \"ghost\" | \"danger\"")
+    expect(ctx.contents).toContain('disabled: boolean')
+    expect(ctx.contents).toContain('text: string')
     expect(companion.contents).toContain('ctx.button1')
     expect(companion.contents).not.toContain('getElementById')
     expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
@@ -1428,10 +1593,16 @@ describe('code companion (design + your own code)', () => {
       'console.log(csv.length)',
       'ctx.chart1.setData(ctx.data.rows)',
       "ctx.button1.setVariant('danger')",
+      "ctx.button1.variant = 'ghost'",        // prop assignment, not just the setter
+      'ctx.button1.disabled = true',
+      "ctx.button1.text = 'Save'",
       "ctx.goto('/orders')",
       'const id = ctx.params.id',
       'ctx.grid.setSort("mrr", "desc")',
     ].join('\n'))).toEqual([])
+    // Assigning the wrong type to a typed prop is caught.
+    expect(typeCheckBody(dts, "ctx.button1.variant = 'nope'").length).toBeGreaterThan(0)
+    expect(typeCheckBody(dts, 'ctx.button1.disabled = 5').length).toBeGreaterThan(0)
     // A misspelled grid method is a hard error (SvGridApi is precisely typed).
     const gridTypo = typeCheckBody(dts, 'ctx.grid.exprtCsv()')
     expect(gridTypo.length).toBeGreaterThan(0)

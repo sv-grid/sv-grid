@@ -12,6 +12,7 @@
  */
 import type { EntityField, EntityFieldType, EntitySchema } from '../schema.js'
 import type { ChartType } from '@svgrid/grid'
+import { uiComponentSpec } from './ui-components.js'
 
 export type Reduce = 'sum' | 'avg' | 'count' | 'min' | 'max'
 export type DataSourceKind = 'memory' | 'sql' | 'supabase' | 'rest' | 'pglite'
@@ -59,7 +60,7 @@ export type EntityDataSource = MemorySource | RestSource | SqlSource | SupabaseS
 /** The kinds of block a screen can hold: data-bound (entity-derived) or the
  *  entity-agnostic `'component'` (a UI-kit component from `UI_COMPONENT_REGISTRY`,
  *  usable on any screen, including a freestanding one with no entity). */
-export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar' | 'detail' | 'component'
+export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'accordion' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar' | 'detail' | 'component'
 
 export type GridAlign = 'left' | 'center' | 'right'
 export type GridColumnConfig = { field: string; show: boolean; header?: string; width?: number; align?: GridAlign; pin?: 'left' | 'right' }
@@ -167,6 +168,12 @@ export type StudioTab = { label: string; blocks: Block[] }
 /** A tabbed container (SvTabs) grouping display blocks into tabs. Children are the
  *  controller-free, `allRows`-driven blocks (see `TAB_CHILD_KINDS`). */
 export type TabsConfig = { kind: 'tabs'; tabs: StudioTab[] }
+/** One section of an Accordion container: a label + its own ordered child blocks. */
+export type AccordionSection = { label: string; blocks: Block[] }
+/** An accordion container (SvAccordion): collapsible sections, each hosting its own
+ *  child blocks (same container-child set as Tabs). `multiple` lets several sections
+ *  stay open at once (default: single-open). */
+export type AccordionConfig = { kind: 'accordion'; sections: AccordionSection[]; multiple?: boolean }
 export type DashboardConfig = { kind: 'dashboard' }
 export type MasterDetailConfig = { kind: 'master-detail'; childEntity: string; foreignKey: string; linkScreen?: string }
 export type LookupConfig = { kind: 'lookup'; field: string }
@@ -202,12 +209,18 @@ export type DetailConfig = { kind: 'detail'; titleField: string; subtitleField?:
  *  its literal text content under the reserved `_content` key. */
 export type ComponentConfig = { kind: 'component'; component: string; props: Record<string, unknown>; name?: string }
 export type BlockConfig =
-  | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | DashboardConfig | MasterDetailConfig | LookupConfig
+  | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | AccordionConfig | DashboardConfig | MasterDetailConfig | LookupConfig
   | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig | DetailConfig | ComponentConfig
 
-/** Block kinds allowed inside a Tabs container: the controller-free, `allRows`-driven
- *  display blocks (no grid / form / master-detail, which need the screen controller). */
+/** Block kinds allowed inside a Tabs / Accordion container: the controller-free,
+ *  `allRows`-driven display blocks (no grid / form / master-detail, which need the
+ *  screen controller). `component` covers any UI-kit component added by key. */
 export const TAB_CHILD_KINDS: ReadonlyArray<BlockKind> = ['chart', 'kpi', 'gauge', 'dashboard', 'pivot', 'tree', 'component']
+/** Alias: the same set applies to Accordion sections. */
+export const CONTAINER_CHILD_KINDS = TAB_CHILD_KINDS
+/** Display-block child kinds (no `component`) - what the container "add block" menu offers;
+ *  components are added separately, by registry key, via `addContainerComponent`. */
+export const CONTAINER_DISPLAY_KINDS: ReadonlyArray<BlockKind> = ['chart', 'kpi', 'gauge', 'dashboard', 'pivot', 'tree']
 
 /** All blocks on a screen, flattened to include the children nested in Tabs
  *  containers - used to detect kinds for imports / data loading. */
@@ -216,6 +229,7 @@ export function flattenBlocks(blocks: ReadonlyArray<Block>): Block[] {
   for (const b of blocks) {
     out.push(b)
     if (b.config.kind === 'tabs') for (const t of b.config.tabs) out.push(...flattenBlocks(t.blocks))
+    if (b.config.kind === 'accordion') for (const s of b.config.sections) out.push(...flattenBlocks(s.blocks))
   }
   return out
 }
@@ -342,6 +356,16 @@ export type AccessControl = {
   /** Fallback role when the app can't resolve one from the session. Default-denies. */
   defaultRole?: string
 }
+/** Authentication starter. When `enabled`, the generator scaffolds a real sign-in:
+ *  a session cookie + `hooks.server.ts` that populates `event.locals.role`/`user`
+ *  (closing the loop the RBAC layer expects), a `/login` page, sign-out, and demo
+ *  seed users (one per RBAC role, or a single admin). Dependency-free: Web Crypto +
+ *  stateless signed cookies. `protect` gates the whole app behind login (default). */
+export type AuthConfig = {
+  enabled: boolean
+  /** Redirect unauthenticated visitors to /login for every route. Default true. */
+  protect?: boolean
+}
 /** Does a role's rules permit opening a screen? */
 export const roleCanScreen = (r: RoleAccess, screenId: string): boolean =>
   r.screens === '*' || r.screens.includes(screenId)
@@ -360,6 +384,12 @@ export type StudioProject = {
   theme?: ProjectTheme
   /** Role-based access control (optional; off unless `access.enabled`). */
   access?: AccessControl
+  /** Authentication starter (optional; off unless `auth.enabled`). Provides the
+   *  session/login that populates the role RBAC consumes. */
+  auth?: AuthConfig
+  /** Typed data layer: when `'drizzle'` and there's a SQL-bound entity, emit a
+   *  Drizzle schema + typed repositories + drizzle-kit migrations. */
+  dataLayer?: 'drizzle'
   /** Emit an audit trail: connected routes log create/update/delete + an /audit viewer. */
   audit?: boolean
   /** Localization: when enabled, emit a message catalog + locale switcher and route
@@ -393,6 +423,7 @@ export const blockPalette: ReadonlyArray<PaletteItem> = [
   { kind: 'gauge', label: 'Gauge', needs: 'measure' },
   { kind: 'tree', label: 'Tree' },
   { kind: 'tabs', label: 'Tabs' },
+  { kind: 'accordion', label: 'Accordion' },
   { kind: 'master-detail', label: 'Master / detail', needs: 'child' },
   { kind: 'board', label: 'Board' },
   { kind: 'calendar', label: 'Calendar' },
@@ -474,6 +505,8 @@ export function defaultBlockConfig(kind: BlockKind, entity: EntitySchema): Block
     }
     case 'tabs':
       return { kind, tabs: [{ label: 'Overview', blocks: [] }, { label: 'Details', blocks: [] }] }
+    case 'accordion':
+      return { kind, sections: [{ label: 'Section 1', blocks: [] }, { label: 'Section 2', blocks: [] }], multiple: false }
     case 'dashboard':
       return { kind }
     case 'master-detail':
@@ -527,7 +560,7 @@ export function pickFacetFields(entity: EntitySchema): string[] {
 const facetRank = (t: EntityFieldType): number => (t === 'enum' ? 0 : t === 'boolean' ? 1 : 2)
 
 const DEFAULT_SPAN: Record<BlockKind, 1 | 2 | 3> = {
-  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3, calendar: 3, detail: 3, component: 1,
+  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, accordion: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3, calendar: 3, detail: 3, component: 1,
 }
 
 function makeBlock(kind: BlockKind, entity: EntitySchema, taken: ReadonlySet<string>): Block {
@@ -560,6 +593,66 @@ export function addTabBlock(cfg: TabsConfig, index: number, kind: BlockKind, ent
 /** Remove a child block from a tab by id. */
 export function removeTabBlock(cfg: TabsConfig, index: number, blockId: string): TabsConfig {
   return { ...cfg, tabs: cfg.tabs.map((t, i) => (i === index ? { ...t, blocks: t.blocks.filter((b) => b.id !== blockId) } : t)) }
+}
+
+/** Build a UI-kit component child block for a container section (Tabs / Accordion),
+ *  seeded with the registry's default props + content. Returns null for an unknown
+ *  component key. Entity-agnostic - components need no entity. */
+function makeComponentChild(componentKey: string, taken: ReadonlySet<string>): Block | null {
+  const spec = uiComponentSpec(componentKey)
+  if (!spec) return null
+  const props: Record<string, unknown> = {}
+  for (const p of spec.props) if (p.default != null) props[p.key] = p.default
+  if (spec.hasContent) props._content = spec.contentDefault ?? spec.label
+  const set = new Set(taken)
+  return { id: uid('component-', set), span: DEFAULT_SPAN.component, config: { kind: 'component', component: componentKey, props } }
+}
+/** Add a specific UI-kit component (by registry key) to a tab. */
+export function addTabComponent(cfg: TabsConfig, index: number, componentKey: string): TabsConfig {
+  const taken = new Set<string>()
+  cfg.tabs.forEach((t) => flattenBlocks(t.blocks).forEach((b) => taken.add(b.id)))
+  const block = makeComponentChild(componentKey, taken)
+  if (!block) return cfg
+  return { ...cfg, tabs: cfg.tabs.map((t, i) => (i === index ? { ...t, blocks: [...t.blocks, block] } : t)) }
+}
+
+// --- Accordion container (mirrors the Tabs helpers) ------------------------
+/** Append a section (collapsible panel) to an accordion. */
+export function addAccordionSection(cfg: AccordionConfig, label?: string): AccordionConfig {
+  return { ...cfg, sections: [...cfg.sections, { label: label ?? `Section ${cfg.sections.length + 1}`, blocks: [] }] }
+}
+/** Remove a section by index (keeps at least one). */
+export function removeAccordionSection(cfg: AccordionConfig, index: number): AccordionConfig {
+  if (cfg.sections.length <= 1) return cfg
+  return { ...cfg, sections: cfg.sections.filter((_, i) => i !== index) }
+}
+/** Rename a section by index. */
+export function renameAccordionSection(cfg: AccordionConfig, index: number, label: string): AccordionConfig {
+  return { ...cfg, sections: cfg.sections.map((s, i) => (i === index ? { ...s, label } : s)) }
+}
+/** Toggle single- vs multiple-open behaviour. */
+export function setAccordionMultiple(cfg: AccordionConfig, multiple: boolean): AccordionConfig {
+  return { ...cfg, multiple }
+}
+/** Add a display-block child (default config for `kind`) to a section. Only CONTAINER_CHILD_KINDS. */
+export function addAccordionBlock(cfg: AccordionConfig, index: number, kind: BlockKind, entity: EntitySchema): AccordionConfig {
+  if (!CONTAINER_CHILD_KINDS.includes(kind)) return cfg
+  const taken = new Set<string>()
+  cfg.sections.forEach((s) => flattenBlocks(s.blocks).forEach((b) => taken.add(b.id)))
+  const block: Block = { id: uid(`${kind}-`, taken), span: DEFAULT_SPAN[kind], config: defaultBlockConfig(kind, entity) }
+  return { ...cfg, sections: cfg.sections.map((s, i) => (i === index ? { ...s, blocks: [...s.blocks, block] } : s)) }
+}
+/** Add a specific UI-kit component (by registry key) to a section. */
+export function addAccordionComponent(cfg: AccordionConfig, index: number, componentKey: string): AccordionConfig {
+  const taken = new Set<string>()
+  cfg.sections.forEach((s) => flattenBlocks(s.blocks).forEach((b) => taken.add(b.id)))
+  const block = makeComponentChild(componentKey, taken)
+  if (!block) return cfg
+  return { ...cfg, sections: cfg.sections.map((s, i) => (i === index ? { ...s, blocks: [...s.blocks, block] } : s)) }
+}
+/** Remove a child block from a section by id. */
+export function removeAccordionBlock(cfg: AccordionConfig, index: number, blockId: string): AccordionConfig {
+  return { ...cfg, sections: cfg.sections.map((s, i) => (i === index ? { ...s, blocks: s.blocks.filter((b) => b.id !== blockId) } : s)) }
 }
 
 /** A default screen for an entity: a grid (editing via a popup form by default). */
@@ -646,21 +739,28 @@ export function setComponentName(project: StudioProject, screenId: string, block
   }))
 }
 
-/** Apply `fn` to the block with `id` anywhere in the tree (top level or nested in a Tabs container). */
+/** Apply `fn` to the block with `id` anywhere in the tree (top level or nested in a Tabs / Accordion container). */
 function mapBlockTree(blocks: Block[], id: string, fn: (b: Block) => Block): Block[] {
   return blocks.map((b) => {
     if (b.id === id) return fn(b)
     if (b.config.kind === 'tabs') {
       return { ...b, config: { ...b.config, tabs: b.config.tabs.map((t) => ({ ...t, blocks: mapBlockTree(t.blocks, id, fn) })) } }
     }
+    if (b.config.kind === 'accordion') {
+      return { ...b, config: { ...b.config, sections: b.config.sections.map((s) => ({ ...s, blocks: mapBlockTree(s.blocks, id, fn) })) } }
+    }
     return b
   })
 }
-/** Remove the block with `id` anywhere in the tree (top level or nested in a Tabs container). */
+/** Remove the block with `id` anywhere in the tree (top level or nested in a Tabs / Accordion container). */
 function removeBlockTree(blocks: Block[], id: string): Block[] {
   return blocks
     .filter((b) => b.id !== id)
-    .map((b) => (b.config.kind === 'tabs' ? { ...b, config: { ...b.config, tabs: b.config.tabs.map((t) => ({ ...t, blocks: removeBlockTree(t.blocks, id) })) } } : b))
+    .map((b) =>
+      b.config.kind === 'tabs' ? { ...b, config: { ...b.config, tabs: b.config.tabs.map((t) => ({ ...t, blocks: removeBlockTree(t.blocks, id) })) } }
+      : b.config.kind === 'accordion' ? { ...b, config: { ...b.config, sections: b.config.sections.map((s) => ({ ...s, blocks: removeBlockTree(s.blocks, id) })) } }
+      : b,
+    )
 }
 
 export function removeBlock(project: StudioProject, screenId: string, blockId: string): StudioProject {
@@ -861,6 +961,7 @@ function freshBlockIds(blocks: ReadonlyArray<Block>, taken: Set<string>): Block[
     const id = uid(`${config.kind}-`, taken)
     taken.add(id)
     if (config.kind === 'tabs') config.tabs = config.tabs.map((t) => ({ ...t, blocks: freshBlockIds(t.blocks, taken) }))
+    if (config.kind === 'accordion') config.sections = config.sections.map((s) => ({ ...s, blocks: freshBlockIds(s.blocks, taken) }))
     return { ...b, id, config }
   })
 }
@@ -910,6 +1011,33 @@ export function setDataSource(project: StudioProject, dataSource: DataSourceKind
 export function setDeployTarget(project: StudioProject, deploy: DeployTarget): StudioProject {
   if (deploy === 'auto') { const { deploy: _drop, ...rest } = project; return rest }
   return { ...project, deploy }
+}
+
+/** Enable / disable the authentication starter (login + session + hooks). */
+export function setAuth(project: StudioProject, patch: Partial<AuthConfig> & { enabled: boolean }): StudioProject {
+  if (!patch.enabled) { const { auth: _drop, ...rest } = project; return rest }
+  return { ...project, auth: { enabled: true, protect: patch.protect ?? project.auth?.protect ?? true } }
+}
+
+/** Enable / disable the typed Drizzle data layer (schema + repos + migrations). */
+export function setDataLayer(project: StudioProject, enabled: boolean): StudioProject {
+  if (!enabled) { const { dataLayer: _drop, ...rest } = project; return rest }
+  return { ...project, dataLayer: 'drizzle' }
+}
+
+/** A demo user seed for the auth starter: one user per RBAC role (so you can sign in
+ *  and see each role's access), or a single admin when RBAC is off. Passwords are
+ *  demo seeds (like sample rows) - the generated code flags them for replacement. */
+export type SeedUser = { email: string; name: string; role: string; password: string }
+export function seedUsers(project: StudioProject): SeedUser[] {
+  const roles = project.access?.enabled ? project.access.roles.map((r) => r.role) : []
+  if (!roles.length) return [{ email: 'admin@example.com', name: 'Admin', password: 'admin1234', role: 'admin' }]
+  return roles.map((role) => ({
+    email: `${role.replace(/[^a-z0-9]+/gi, '')}@example.com`.toLowerCase(),
+    name: role.charAt(0).toUpperCase() + role.slice(1),
+    role,
+    password: `${role.replace(/[^a-z0-9]+/gi, '').toLowerCase()}1234`,
+  }))
 }
 
 /** A skeleton binding for a kind, seeded with the entity's name as its table/path. */
@@ -1090,6 +1218,8 @@ export function parseProject(json: string): StudioProject {
     ...(p.dataSources && typeof p.dataSources === 'object' ? { dataSources: p.dataSources as Record<string, EntityDataSource> } : {}),
     ...(p.theme && typeof p.theme === 'object' ? { theme: p.theme as ProjectTheme } : {}),
     ...(p.access && typeof p.access === 'object' ? { access: p.access as AccessControl } : {}),
+    ...(p.auth && typeof p.auth === 'object' && (p.auth as AuthConfig).enabled ? { auth: p.auth as AuthConfig } : {}),
+    ...(p.dataLayer === 'drizzle' ? { dataLayer: 'drizzle' as const } : {}),
     ...(typeof p.audit === 'boolean' ? { audit: p.audit } : {}),
     ...(p.i18n && typeof p.i18n === 'object' ? { i18n: p.i18n as I18nConfig } : {}),
     ...(typeof p.deploy === 'string' && p.deploy !== 'auto' ? { deploy: p.deploy as DeployTarget } : {}),
@@ -1134,6 +1264,8 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
         if (!c.rows.length && !c.cols.length) issues.push(at('Pivot has no row or column dimensions.'))
       } else if (c.kind === 'tabs') {
         if (c.tabs.every((t) => t.blocks.length === 0)) issues.push(at('Tabs container has no blocks in any tab.'))
+      } else if (c.kind === 'accordion') {
+        if (c.sections.every((s) => s.blocks.length === 0)) issues.push(at('Accordion container has no blocks in any section.'))
       } else if (c.kind === 'component') {
         if (!c.component) issues.push(at('Component block has no component selected.'))
       }

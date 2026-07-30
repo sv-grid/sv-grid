@@ -166,6 +166,7 @@
       aria-label={label ?? ariaLabel ?? 'Tree'}
       aria-activedescendant={ts.activeDescendant()}
       tabindex="0"
+      style:max-height={`${ts.rect.maxHeight}px`}
       onkeydown={ts.onPanelKeydown}
     >
       {#each rows as row, i (row.node.value)}

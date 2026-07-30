@@ -105,7 +105,7 @@
   const grid = $derived(ctrl.grid);
   const allColumns = $derived(ctrl.allColumns);
   const headerGroups = $derived(ctrl.headerGroups);
-  const groupHeaderRows = $derived(ctrl.groupHeaderRows);
+  const groupHeaderRows = $derived(ctrl.groupHeaderRowsWindowed);
   const cellPinStyle = $derived(ctrl.cellPinStyle);
   const isColumnPinned = $derived(ctrl.isColumnPinned);
   const colDragId = $derived(ctrl.colDragId);
@@ -1550,6 +1550,7 @@
       <div
         class="sv-grid-container sv-grid-container-custom-scrollbars"
         class:sv-grid-has-vscroll={hasMeasured && hasVerticalOverflow}
+        class:sv-grid-has-hscroll={hasMeasured && hasHorizontalOverflow}
         class:sv-grid-narrow={ctrl.isNarrowResponsive}
         bind:this={ctrl.scrollContainer}
         onscroll={onBodyScroll}
@@ -1595,6 +1596,13 @@
                     class="sv-grid-column sv-grid-selection-column"
                     style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
                     aria-hidden="true"
+                  ></th>
+                {/if}
+                {#if columnVirtualizationEnabled && columnWindowStart > 0}
+                  <th
+                    class="sv-grid-column sv-grid-column-spacer"
+                    aria-hidden="true"
+                    style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
                   ></th>
                 {/if}
                 {#each row.cells as cell (cell.key)}
@@ -1645,6 +1653,13 @@
                     {/if}
                   </th>
                 {/each}
+                {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+                  <th
+                    class="sv-grid-column sv-grid-column-spacer"
+                    aria-hidden="true"
+                    style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
+                  ></th>
+                {/if}
               </tr>
             {/each}
             {#each headerGroups as headerGroup (headerGroup.id)}

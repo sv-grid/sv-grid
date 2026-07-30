@@ -39,6 +39,7 @@ auto-flip, it stays visible even inside a scrolling toolbar or a dialog.
 | `autoOpen`    | `boolean`                           | `false`    | Focus the trigger and open the panel on mount.               |
 | `virtual`     | `boolean`                           | `false`    | Window the option list for large sets. Flat lists only.      |
 | `rowHeight`   | `number`                            | `34`       | Fixed option height in px; must match the CSS.               |
+| `resizable`   | `boolean`                           | `false`    | Show a bottom drag grip so users can resize the open panel.  |
 | `size`        | `sm \| md \| lg`                    | `md`       | Control height and font size.                                |
 | `disabled`    | `boolean`                           | `false`    | Blocks interaction and dims the trigger.                     |
 | `label`       | `string`                            | -          | Visible field label, wired to the control.                   |
@@ -80,6 +81,29 @@ For hundreds of flat options, add `virtual` so only the visible rows render:
 
 ```svelte
 <SvDropDownList {options} virtual rowHeight={34} />
+```
+
+### Bounds detection (auto flip up/down)
+
+The panel measures the room around its trigger every time it opens and on
+scroll/resize. When there is not enough space below and there is more above, it
+**flips up**; otherwise it opens down. Either way its height is **capped to the
+space that actually fits the viewport**, so a long list near a screen edge
+scrolls inside the panel instead of overflowing or clipping off-screen. This is
+automatic - no configuration - and applies to every SvGrid dropdown
+(`SvComboBox`, `SvAutoComplete`, `SvMultiSelect`, `SvGridSelect`, `SvTreeSelect`,
+and the in-grid cell-editor dropdown), since they share one anchoring engine.
+
+### Resizable panel
+
+Add `resizable` to give the open panel a bottom drag grip (a "····" handle). The
+user drags it to make the list taller or shorter; the height is clamped so it
+never grows past the viewport. The grip appears only while the panel opens
+**downward** - on an upward flip there is no room below to grow into, so it is
+hidden.
+
+```svelte
+<SvDropDownList {options} resizable />
 ```
 
 ### Cascading selects

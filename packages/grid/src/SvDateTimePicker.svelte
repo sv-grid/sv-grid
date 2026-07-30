@@ -130,7 +130,7 @@
   // --- Portalled dropdown positioning (DOM-bound; stays in the component) -----
   let triggerEl = $state<HTMLDivElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
-  let panelRect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
+  let panelRect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false, maxHeight: 0, availHeight: 0 })
 
   function updatePos() {
     if (!triggerEl) return

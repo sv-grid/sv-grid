@@ -554,7 +554,7 @@ export function entityScreenPage(schema: EntitySchema, route?: string, title?: s
 
 export type NavItem = { href: string; label: string; id?: string }
 
-export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; lightVars?: Record<string, string>; darkVars?: Record<string, string>; dark?: boolean; access?: boolean; i18n?: boolean; appClass?: string } = {}): GeneratedFile {
+export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; lightVars?: Record<string, string>; darkVars?: Record<string, string>; dark?: boolean; access?: boolean; auth?: boolean; i18n?: boolean; appClass?: string } = {}): GeneratedFile {
   // Nav is the app's own screens; `/` just redirects to the first one, so no separate
   // "Home" link (it would duplicate the first screen).
   const links = nav
@@ -702,11 +702,13 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
           <button type="button" class="sv-app__avatar" title={brand} aria-label="Account" aria-expanded={menuOpen} onclick={() => { menuOpen = !menuOpen; bellOpen = false }}>{initials}</button>
           {#if menuOpen}
             <div class="sv-app__menu sv-app__menu--acct" role="menu">
-              <div class="sv-app__acct-head"><span class="sv-app__avatar sv-app__avatar--lg" aria-hidden="true">{initials}</span><div class="sv-app__acct-id"><strong>{brand}</strong><span>{acctEmail}</span></div></div>
+              <div class="sv-app__acct-head"><span class="sv-app__avatar sv-app__avatar--lg" aria-hidden="true">{initials}</span><div class="sv-app__acct-id"><strong>${opts.auth ? '{data?.user?.name ?? brand}' : '{brand}'}</strong><span>${opts.auth ? '{data?.user?.email ?? acctEmail}' : '{acctEmail}'}</span></div></div>
               <a class="sv-app__menu-item" href="/" role="menuitem" onclick={() => (menuOpen = false)}>Dashboard</a>
               <button type="button" class="sv-app__menu-item" role="menuitem" onclick={() => (menuOpen = false)}>Profile</button>
               <button type="button" class="sv-app__menu-item" role="menuitem" onclick={() => (menuOpen = false)}>Settings</button>
-              <button type="button" class="sv-app__menu-item sv-app__menu-item--danger" role="menuitem" onclick={() => (menuOpen = false)}>Sign out</button>
+              ${opts.auth
+                ? `<form method="POST" action="/logout" class="sv-app__signout"><button type="submit" class="sv-app__menu-item sv-app__menu-item--danger" role="menuitem">Sign out</button></form>`
+                : `<button type="button" class="sv-app__menu-item sv-app__menu-item--danger" role="menuitem" onclick={() => (menuOpen = false)}>Sign out</button>`}
             </div>
           {/if}
         </div>
@@ -812,12 +814,12 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
     contents: `<script lang="ts">
   import '../app.css'
   import '../custom.css'
-  import { page } from '$app/stores'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}
+  import { page } from '$app/stores'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}${opts.auth ? `\n  import type { LayoutData } from './$types'` : ''}
 
-  let { children } = $props()
+  let { children${opts.auth ? ', data' : ''} }${opts.auth ? ": { children: import('svelte').Snippet; data: LayoutData }" : ''} = $props()
   const nav = ${JSON.stringify(links)}
   const brand = ${JSON.stringify(brand)}${footConst}${logoConst}
-  let navOpen = $state(false)
+  let navOpen = $state(false)${opts.auth && opts.access ? `\n  // Seed the client role store from the signed-in session (server-resolved).\n  $effect(() => { if (data?.role) currentRole.set(data.role as never) })` : ''}
   // Close the mobile drawer whenever the route changes.
   $effect(() => { void $page.url.pathname; navOpen = false })${hasSwitch ? `
   // Light/dark switcher: defaults to the mode picked in Studio, then honours the
@@ -862,7 +864,11 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
 </script>
 ${themeHead}
 
+${opts.auth ? `{#if $page.url.pathname === '/login'}
+{@render children()}
+{:else}
 ${body}
+{/if}` : body}
 
 <style>
 ${styles}
@@ -908,6 +914,8 @@ ${styles}
   .sv-app__menu-item { display: block; width: 100%; text-align: left; padding: 8px 10px; font: inherit; font-size: 13px; color: var(--sg-fg, #334155); background: none; border: none; border-radius: 8px; text-decoration: none; cursor: pointer; }
   .sv-app__menu-item:hover { background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent); color: var(--sg-accent, #6366f1); }
   .sv-app__menu-item--danger:hover { background: color-mix(in srgb, #ef4444 12%, transparent); color: #ef4444; }
+  .sv-app__signout { margin: 0; display: block; }
+  .sv-app__signout .sv-app__menu-item { width: 100%; }
   .sv-app__locale { margin-top: 10px; padding: 5px 8px; font: inherit; font-size: 12.5px; color: var(--sg-fg, #0f172a); background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 8px; }
   .sv-app__theme { align-items: center; justify-content: center; cursor: pointer; }
   /* No-toolbar fallback slot: trails the nav, pushed to the far edge in row bars. */

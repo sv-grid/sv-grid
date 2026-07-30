@@ -65,7 +65,7 @@
   let inputEl = $state<HTMLInputElement | null>(null)
   let fieldEl = $state<HTMLDivElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
-  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false })
+  let rect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false, maxHeight: 0, availHeight: 0 })
 
   // Remote data source: fetch options as the query changes (debounced).
   let remoteOptions = $state<ListOption[]>([])
@@ -150,7 +150,7 @@
 </SvField>
 
 {#if combo.open}
-  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} {...combo.listboxProps()}>
+  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} style:max-height={`${rect.maxHeight}px`} {...combo.listboxProps()}>
     {#if loading}
       <div class="sv-ddl__empty sv-ddl__loading"><svg class="sv-ddl__spin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6" /></svg>{M.loading}</div>
     {:else if loadOptions && !searched && combo.query.trim().length < minLength}

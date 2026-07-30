@@ -218,6 +218,53 @@ export { default as SvAccordion, type AccordionItem, type AccordionExpandMode } 
 export { createAccordion, type Accordion, type AccordionConfig } from './createAccordion.svelte'
 export { default as SvSplitter, type SplitterOrientation } from './SvSplitter.svelte'
 export { createSplitter, type Splitter, type SplitterConfig, type SplitterPoint } from './createSplitter.svelte'
+export { default as SvDockLayout } from './SvDockLayout.svelte'
+export { default as SvDockManager } from './SvDockManager.svelte'
+export {
+  dockPane,
+  dockTabs,
+  dockGroup,
+  removePane,
+  movePane,
+  dockInto,
+  reorderPane,
+  removeLeaf,
+  dockLeafToEdge,
+  setActive as dockSetActive,
+  setSizes as dockSetSizes,
+  normalize as dockNormalize,
+  findTabsWithPane,
+  allPaneIds,
+  type DockNode,
+  type DockGroup,
+  type DockTabs,
+  type DockPane,
+  type DockZone,
+} from './dock-model'
+export {
+  floatPane,
+  dockPaneOnto,
+  dockWindowOnto,
+  dockPaneToEmptyMain,
+  reorderTab,
+  autoHideLeaf,
+  pinAutoHidden,
+  setAutoHideSize,
+  closePane as dockManagerClosePane,
+  moveWindow,
+  resizeWindow,
+  bringToFront,
+  resizeGroup as dockManagerResizeGroup,
+  setManagerActive,
+  locatePane,
+  surfaceOfTabs,
+  allManagerPaneIds,
+  type DockManagerState,
+  type FloatWindow,
+  type AutoHideEntry,
+  type DockSide,
+  type PaneLocation,
+} from './dock-manager-model'
 export { default as SvFileUpload, type FileRejection, type FileRejectReason } from './SvFileUpload.svelte'
 export { createFileUpload, fileMatchesAccept, type FileUpload, type FileUploadConfig } from './createFileUpload.svelte'
 // UI kit - overlays (popover / tooltip / modal), sharing the popover.ts positioning + animation
@@ -264,6 +311,7 @@ export {
   type ToastFn,
 } from './toast-store.svelte'
 export { default as SvMenu, type MenuItem } from './SvMenu.svelte'
+export { default as SvMenuList } from './SvMenuList.svelte'
 export { default as SvNavPane, type NavItem, type NavSection, type NavModule } from './SvNavPane.svelte'
 export { default as SvProgress } from './SvProgress.svelte'
 export { default as SvCircularProgress } from './SvCircularProgress.svelte'

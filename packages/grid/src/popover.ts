@@ -68,7 +68,23 @@ export function popIn(node: HTMLElement, param: { up?: boolean; duration?: numbe
   return {}
 }
 
-export type AnchoredRect = { top: number; left: number; width: number; openUpward: boolean }
+export type AnchoredRect = {
+  top: number
+  left: number
+  width: number
+  openUpward: boolean
+  /**
+   * Comfortable panel height: the estimate, capped to the room on the chosen
+   * side so the panel never leaves the viewport. Apply as the panel's
+   * `max-height` and long content scrolls inside instead of overflowing.
+   */
+  maxHeight: number
+  /**
+   * Absolute height the panel may occupy on the chosen side (room minus the
+   * viewport margin). The hard ceiling a user resize must clamp to.
+   */
+  availHeight: number
+}
 
 export type AnchorOptions = {
   /** Estimated panel height, used to decide whether to flip upward. */
@@ -79,19 +95,30 @@ export type AnchorOptions = {
   minWidth?: number
   /** Keep the panel within the viewport horizontally. Default true. */
   clampHorizontal?: boolean
+  /** Viewport edge kept clear top/bottom so a panel never touches it. Default 8. */
+  viewportMargin?: number
+  /** Floor for `maxHeight`/`availHeight` so a cramped panel stays usable. Default 96. */
+  minHeight?: number
 }
 
 /**
  * Compute a `position: fixed` rect anchored to `triggerRect`, flipping above the
- * trigger when there isn't room below and there's more room above. Mirrors the
- * behavior SvGridDropdown shipped with, generalized with min-width + horizontal
- * clamping for wider panels (date/time popovers).
+ * trigger when there isn't room below and there's more room above. Generalized
+ * with min-width + horizontal clamping for wider panels (date/time popovers),
+ * and with vertical bounds detection: `maxHeight` caps the panel to the room on
+ * the chosen side (minus a viewport margin) so a long list near a screen edge
+ * scrolls internally rather than overflowing, and an upward flip is clamped so
+ * its top never leaves the viewport.
  */
 export function anchoredRect(triggerRect: DOMRect, opts: AnchorOptions): AnchoredRect {
   const gap = opts.gap ?? 2
-  const spaceBelow = window.innerHeight - triggerRect.bottom
-  const spaceAbove = triggerRect.top
+  const margin = opts.viewportMargin ?? 8
+  const minH = opts.minHeight ?? 96
+  const spaceBelow = window.innerHeight - triggerRect.bottom - gap - margin
+  const spaceAbove = triggerRect.top - gap - margin
   const openUpward = spaceBelow < opts.estimatedHeight && spaceAbove > spaceBelow
+  const availHeight = Math.max(minH, Math.floor(openUpward ? spaceAbove : spaceBelow))
+  const maxHeight = Math.min(opts.estimatedHeight, availHeight)
   const width = Math.max(triggerRect.width, opts.minWidth ?? 0)
   let left = triggerRect.left
   if (opts.clampHorizontal !== false) {
@@ -99,9 +126,15 @@ export function anchoredRect(triggerRect: DOMRect, opts: AnchorOptions): Anchore
     left = Math.max(4, Math.min(left, maxLeft))
   }
   return {
-    top: openUpward ? triggerRect.top - opts.estimatedHeight - gap : triggerRect.bottom + gap,
+    // Upward: pin by the comfortable height and clamp to the top margin so the
+    // panel can never start off-screen. Downward: sit just below the trigger.
+    top: openUpward
+      ? Math.max(margin, triggerRect.top - gap - maxHeight)
+      : triggerRect.bottom + gap,
     left,
     width,
     openUpward,
+    maxHeight,
+    availHeight,
   }
 }

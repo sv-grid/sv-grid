@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-07-28 from 341 pages.
+Generated 2026-07-30 from 344 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -10623,6 +10623,319 @@ model.
 - [Import](./import.md) - file picker for xlsx / csv / tsv / json
 
 <!-- =================================================================
+     /help/ai-toolkit  (community)
+     ================================================================== -->
+
+# AI Toolkit
+
+Everything SvGrid ships for building with language models, in one place.
+The toolkit spans two axes: **AI inside your running app** (helpers your
+users invoke - natural-language filter, smart fill, summarise, classify)
+and **AI inside your editor** (the MCP server + grounding files that make
+Claude, Cursor, and friends write correct SvGrid code).
+
+Nothing here bundles a model. SvGrid is **model-agnostic and
+bring-your-own-key**: you register one adapter and keep full control of
+model choice, routing, and what data leaves the browser.
+
+<div data-docs-demo="51-ai-assistant" data-height="560"></div>
+
+## The two surfaces
+
+| | AI in your app (runtime) | AI in your editor (build time) |
+| --- | --- | --- |
+| **Who invokes it** | your end users | you and your coding agent |
+| **What it does** | filter / fill / summarise / classify / export the live grid | scaffold columns, generate CRUD screens, answer API questions |
+| **Package** | `@svgrid/enterprise` (`api.ai.*`) | `@sv-grid/mcp-server`, `@svgrid/mcp`, grounding files |
+| **Needs a model key** | yes - the one you register | no - your agent brings its own |
+| **Deep dive** | [AI assistant](./ai.md) | [MCP server](./mcp-server.md) · [LLM grounding](./llm-grounding.md) |
+
+Most teams use both: the MCP server to write the grid, the in-grid
+helpers to power features inside it.
+
+## How it works
+
+The grid never calls a model directly. Every runtime AI call routes
+through a single async **provider** you register once at app boot:
+
+```ts
+import { setAIProvider, type AIProvider } from '@svgrid/enterprise'
+
+const provider: AIProvider = async ({ prompt, responseFormat, signal, task }) => {
+  const r = await fetch('/api/ai', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ prompt, responseFormat, task }),
+    signal,
+  })
+  if (!r.ok) throw new Error(`AI provider returned ${r.status}`)
+  return r.text()
+}
+
+setAIProvider(provider)
+```
+
+Three design choices make this robust:
+
+- **Structured JSON, validated.** Helpers request `responseFormat: 'json'`
+  and the grid `JSON.parse`s the reply. It strips a single markdown code
+  fence automatically, so a model that wraps output in ` ```json ... ``` `
+  still parses. On malformed output you get a typed error, not a silent
+  wrong result.
+- **The prompt is grounded in your columns.** Before each call the grid
+  embeds the live column schema (names, types, sampled values) into the
+  prompt, so the model picks real field names instead of inventing them.
+- **A hallucination guard on the way back.** If a model still returns a
+  column that does not exist, the clause is dropped rather than passed to
+  `setFilter` - you lose a clause, never crash the page.
+
+The provider shape is deliberately tiny (one async call, `text` or `json`
+response) so the same adapter drives an OpenAI `chat.completions` call, an
+Anthropic `messages` call, a self-hosted endpoint, or a server-side proxy.
+No model client is ever bundled into your grid.
+
+> **Just evaluating?** The package ships a deterministic `mockAIProvider`
+> that returns plausible canned shapes per task. Wire it in with
+> `setAIProvider(mockAIProvider)` and every helper works end to end with
+> no key. The demo above runs on it.
+
+## In-grid helpers
+
+`installEnterprise(api)` - the same call you use for export and print -
+augments your `SvGridApi` with an `ai` namespace. Six helpers, all
+model-agnostic:
+
+```ts
+api.ai.filter(query, opts?)     // NL sentence  -> filter + sort plan
+api.ai.smartFill(opts)          // 1-2 examples -> proposed column values
+api.ai.summarize(opts)          // row/selection/group/all -> text + bullets
+api.ai.classify(opts)           // free-text cells -> a clean enum label
+api.ai.export(query, opts?)     // NL sentence  -> filter + group + format, then export
+api.ai.findAnomalies(opts?)     // scan a slice  -> outliers + severity
+```
+
+### Natural-language filter
+
+The highest-leverage feature: replace a dozen per-column filter operators
+with one search box.
+
+```ts
+const plan = await api.ai.filter('accounts losing momentum in EMEA, by NPS')
+// {
+//   filters: [
+//     { field: 'region', operator: 'equals',   value: 'EMEA' },
+//     { field: 'nps',    operator: 'lessThan', value: '30' },
+//   ],
+//   sort: [{ field: 'nps', desc: false }],
+//   rationale: 'EMEA region, low NPS, sorted ascending.',
+// }
+```
+
+By default it **returns the plan without applying it**, so you can show a
+"here is what I would do, accept?" preview and surface the `rationale`.
+Pass `{ apply: true }` to commit straight to the grid.
+
+### Smart fill
+
+The killer feature for spreadsheet-style entry: type one or two examples
+in a column, let the model propose the rest.
+
+```ts
+const result = await api.ai.smartFill({
+  field: 'tier',
+  examples: [
+    { input: { company: 'Northwind' }, output: 'enterprise' },
+    { input: { company: 'Helios' },    output: 'growth' },
+  ],
+})
+// result.predictions: [{ rowIndex, value, confidence }, ...]
+```
+
+You choose what to do with the predictions - accept-all, accept-per-cell
+with a confidence pill, or write them onto the row for review.
+
+### Summarise, classify, export, anomalies
+
+- **`summarize`** drops a slice (row / selection / group / all) into the
+  model and returns a paragraph, bullets, and the fields the story leans
+  on. Large slices are sampled uniformly to stay under a token budget.
+- **`classify`** buckets free-text cells into a known set of labels, and
+  filters out any prediction not in your `classes` list so the output is a
+  clean enum.
+- **`export`** turns "export EU orders from Q2 as a grouped PDF by
+  country" into a `{ format, filters, sort, groupBy }` plan and hands it to
+  the exporter - self-contained, so the download is correct regardless of
+  the grid's current view.
+- **`findAnomalies`** scans a slice for outliers and inconsistent values,
+  each tagged `low | medium | high`. Pairs naturally with export: find the
+  odd rows, then export just those.
+
+Full API, response shapes, and the license gate are on the
+[AI assistant](./ai.md) page.
+
+## Build an agent that drives the grid
+
+The imperative `SvGridApi` is a clean tool surface - each method becomes
+one function a model can call. Three patterns, in order of how much agency
+you hand over:
+
+1. **Read-only summary agent** - the model describes the current view
+   (`api.getDisplayedRows()`), no tool calling.
+2. **Stateful UI agent** - the model calls `setFilter` / `setSort` /
+   `setGroupBy` in response to natural language, bounded by a max-turns loop.
+3. **Autonomous workflow agent** - the grid is one node in a longer chain
+   (import -> enrich -> human approval -> export), and the visible table is
+   the state a human can audit between steps.
+
+```ts
+// Pattern 2, sketched: each SvGridApi method is one tool the model can call.
+switch (call.function.name) {
+  case 'setFilter':       api.setFilter(args.columnId, args); break
+  case 'setSort':         api.setSort(args.columnId, args.direction); break
+  case 'setGroupBy':      api.setGroupBy(args.columnIds); break
+  case 'clearAllFilters': api.clearAllFilters(); break
+}
+```
+
+Full worked code, the sandboxing rules (whitelist tools, validate every
+argument against the shipped JSON Schemas, bound the loop), and the common
+failure modes are on the [Agents](./agents.md) page.
+
+## MCP server: let your coding agent write the grid
+
+The [MCP server](./mcp-server.md) exposes SvGrid to AI clients (Claude
+Desktop, Cursor, Zed, Continue, custom agents) over the Model Context
+Protocol. It grounds the model in the schemas the library actually ships,
+so your assistant retrieves version-pinned facts instead of hallucinating
+an API from its training cutoff. No API key, all local.
+
+```json
+{
+  "mcpServers": {
+    "sv-grid": { "command": "npx", "args": ["-y", "@sv-grid/mcp-server"] }
+  }
+}
+```
+
+It registers callable tools - `searchDocs`, `getDocPage`, `scaffoldColumns`
+(sample row -> `ColumnDef[]`), `validateColumns`, `previewExport`,
+`listDemos` - plus read-only resources (the docs manifest and JSON Schemas)
+and pre-built prompts (`/svgrid:scaffold-grid`, `/svgrid:refactor-to-pivot`,
+`/svgrid:wire-server-side`).
+
+For **Studio** (turning a database or schema into a CRUD data-app), the
+separate [`@svgrid/mcp`](../enterprise/studio/ai-generation.md) server adds
+`introspect_source` and `scaffold_entity`. The generated screen is run
+through the Svelte compiler before it comes back, and each file carries
+`svgrid:managed` markers so a re-generation updates the managed regions and
+leaves your hand-written code untouched.
+
+## Ground any model, no MCP required
+
+If you are not on an MCP client, four static artefacts ship with the docs
+so any model can ground itself in current facts:
+
+| File | Use for |
+| --- | --- |
+| [`/llms.txt`](/llms.txt) | First-pass context: the topic map with one-line summaries |
+| [`/llms-full.txt`](/llms-full.txt) | Deep grounding: every doc page concatenated |
+| [`/docs.json`](/docs.json) | Programmatic crawling: section tree + per-page metadata |
+| [`/schemas/index.json`](/schemas/index.json) | Validation: machine-checkable `ColumnDef`, `<SvGrid>` props, export options |
+
+Upload `llms-full.txt` into a custom GPT or Claude project, drop a rules
+block into `.cursorrules`, or fetch the topic map into your own agent's
+system prompt at boot. All four are regenerated on every commit and served
+from the docs origin. Full recipes are on the
+[LLM grounding](./llm-grounding.md) page.
+
+## Best practices
+
+**Prompting the in-grid helpers.** These are handled for you - the grid
+already embeds the column schema and samples rows before each call - but
+if you customise the prompt on your provider side:
+
+- Keep the live column set in front of the model every turn; it is the
+  single biggest defence against invented field names.
+- Include a few sample rows so the model learns value shapes (region codes,
+  date formats, enum spellings).
+- State the column ids exactly, including case - ids are case-sensitive
+  (`snake_case` vs `PascalCase` matters).
+
+**Previewing before committing.** `filter` and `export` default to
+returning a plan without touching the grid. Show the `rationale`, let the
+user confirm, then apply. This is the pattern that makes NL features feel
+trustworthy rather than magic-that-sometimes-breaks.
+
+**Cost routing.** The `task` tag (`filter | smart-fill | summarize |
+classify`) and the `maxOutputTokens` hint let you route a cheap model for
+filters and a stronger one for summaries from inside your one adapter.
+
+**Data handling.** The grid makes no network calls of its own - the AI
+helpers send exactly the prompt you construct to the adapter you configure.
+Route through your own `/api/ai` proxy if you need to redact, log, or keep
+data within a boundary before it reaches a provider.
+
+## Examples
+
+- **[Demo 51 - AI assistant](../../examples/src/demos/51-ai-assistant.svelte)** -
+  all six helpers wired to the mock provider, per-cell accept with
+  confidence pills.
+- **[AI Smart Paste](./ai-smart-paste.md)** - parse vCard / Markdown /
+  signature blocks / CSV into typed rows, with email-typo correction and
+  phone normalisation.
+
+## API reference
+
+| Symbol | Package | What it is |
+| --- | --- | --- |
+| `setAIProvider(p)` | `@svgrid/enterprise` | Register the model adapter every AI call routes through. `null` clears it. |
+| `mockAIProvider` | `@svgrid/enterprise` | Deterministic canned provider for demos and tests. |
+| `type AIProvider` | `@svgrid/enterprise` | `(req: AIRequest) => Promise<string>` - the one function you implement. |
+| `api.ai.filter` / `smartFill` / `summarize` / `classify` / `export` / `findAnomalies` | `@svgrid/enterprise` | The in-grid helpers, added by `installEnterprise(api)`. |
+| `scaffoldColumns`, `validateColumns`, `previewExport`, ... | `@sv-grid/mcp-server` | Build-time MCP tools your coding agent calls. |
+| `introspect_source`, `scaffold_entity` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen). |
+
+Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../reference/auto/svgrid-enterprise-ai.md).
+
+## See also
+
+- [AI assistant - Enterprise](./ai.md) - the in-grid helpers in full, with response shapes and the license gate
+- [Agents](./agents.md) - build an agent that drives the live grid
+- [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
+- [LLM grounding](./llm-grounding.md) - the static files any model reads
+- [AI generation - Studio](../enterprise/studio/ai-generation.md) - scaffold CRUD data-apps from a schema
+
+## Frequently asked questions
+
+### What AI features does SvGrid have?
+
+Two kinds. At runtime, the `@svgrid/enterprise` AI assistant adds six
+model-agnostic helpers to the grid - natural-language filter, smart fill,
+summarise, classify, export, and anomaly detection. At build time, an MCP
+server plus grounding files let your coding agent write correct SvGrid code
+and scaffold CRUD screens.
+
+### Which model does SvGrid use?
+
+None by default - it is bring-your-own. You register one adapter for
+OpenAI, Anthropic Claude, a local model, or a server proxy, and the grid
+routes every AI call through it. A deterministic mock provider ships so you
+can evaluate the whole flow without a key.
+
+### Is my grid data sent to a model provider?
+
+Only if you wire one up and invoke a helper. SvGrid itself makes no network
+calls; the AI helpers send exactly the prompt you construct to the adapter
+you configure, so you decide what leaves the browser and can proxy it
+through your own backend first.
+
+### Do I need the MCP server to use the AI features?
+
+No. The in-grid helpers and the grounding files work without it. The MCP
+server is the turnkey path for desktop AI clients; for a custom in-app
+agent you call `SvGridApi` directly.
+
+<!-- =================================================================
      /help/ai  (enterprise)
      ================================================================== -->
 
@@ -19717,6 +20030,7 @@ real-world scale:
 - [**Enterprise feature pack**](../enterprise/README.md) - landing page for the paid add-on; what's in it + how to license it
 - [Data export and printing - Enterprise](./export.md) - Excel, PDF, CSV, TSV, HTML, and Print
 - [Data import - Enterprise](./import.md) - Excel, CSV, TSV, and JSON import with column mapping + validation
+- [**AI Toolkit**](./ai-toolkit.md) - the hub for every AI feature: in-grid helpers, agents, MCP server, and LLM grounding, all model-agnostic
 - [AI assistant - Enterprise](./ai.md) - natural-language filter, smart fill, summarise, classify; bring-your-own model adapter
 - [Pivot tables - Enterprise](./pivot.md) - `createPivotModel` + nested column headers; designer UI is a separate demo
 - **Migrating to SvGrid** - column / API translation guides from other grids:
@@ -34735,6 +35049,255 @@ like "OR" or a group name.
 - [Layout overview](layout.md) - the whole layout family at a glance.
 
 <!-- =================================================================
+     /help/ui-components/sv-dock-layout  (community)
+     ================================================================== -->
+
+# SvDockLayout
+
+A basic docking layout: nested resizable split groups and tabbed leaves, with
+drag-to-dock. Drag any pane's tab onto another pane and drop it on an **edge** to
+split, or the **centre** to stack it as a tab; drag the splitters to resize;
+close panes with the x. It is the building block for IDE-style workspaces,
+BI dashboards, and trading desks.
+
+The entire layout is a plain, serializable `DockNode` tree you pass in and
+`bind`. Every gesture - dock, resize, close, switch tab - is a pure transform
+that produces a new tree, so you can persist a workspace to JSON, restore it, or
+drive it programmatically. The model is unit-tested independently of the DOM.
+
+<div data-docs-demo="361-dock-layout" data-height="520"></div>
+
+## Basic usage
+
+Build a tree with the `dockGroup` / `dockTabs` / `dockPane` helpers, bind it, and
+provide a `pane` snippet that renders each pane's content by id. Give the layout
+a sized container - it fills its parent.
+
+```svelte
+<script lang="ts">
+  import { SvDockLayout, dockGroup, dockTabs, dockPane, type DockNode } from '@svgrid/grid'
+
+  let layout = $state<DockNode>(
+    dockGroup('row', [
+      dockTabs([dockPane('explorer', 'Explorer')]),
+      dockGroup('column', [
+        dockTabs([dockPane('editor', 'index.ts'), dockPane('readme', 'README.md')]),
+        dockTabs([dockPane('terminal', 'Terminal')]),
+      ], [0.7, 0.3]),
+    ], [0.25, 0.75]),
+  )
+</script>
+
+<div style="height: 480px">
+  <SvDockLayout bind:layout>
+    {#snippet pane(p)}
+      {#if p.id === 'explorer'}<FileTree />
+      {:else if p.id === 'editor'}<Editor />
+      {:else}<div>{p.title}</div>{/if}
+    {/snippet}
+  </SvDockLayout>
+</div>
+```
+
+## The tree model
+
+Two node kinds make up a layout:
+
+| Node | Built with | Meaning |
+| ---- | ---------- | ------- |
+| **group** | `dockGroup(direction, children, sizes?)` | A `'row'` (side-by-side) or `'column'` (stacked) of children, with a splitter between each. `sizes` are optional weights (normalized). |
+| **tabs**  | `dockTabs(panes, active?)` | A leaf: one or more `dockPane`s shown as tabs; only `active` is visible. |
+| **pane**  | `dockPane(id, title, closable?)` | A single tab. `id` keys your content snippet. `closable` defaults to `true`. |
+
+Because it is just data, you can save and restore it:
+
+```ts
+localStorage.setItem('workspace', JSON.stringify(layout))
+layout = JSON.parse(localStorage.getItem('workspace')!)   // fully restores
+```
+
+## Props
+
+| Prop             | Type                          | Default | Description                                             |
+| ---------------- | ----------------------------- | ------- | ------------------------------------------------------- |
+| `layout`         | `DockNode`                    | -       | The layout tree. **Bindable** - every edit writes a new tree. |
+| `pane`           | `Snippet<[DockPane]>`         | -       | Renders each pane's content, keyed off the `DockPane`.  |
+| `onLayoutChange` | `(layout: DockNode) => void`  | -       | Notified after any structural change (dock / resize / close). |
+| `minSize`        | `number`                      | `80`    | Minimum pane size in px along the split axis.           |
+
+## How docking works
+
+While you drag a tab, the pane under the pointer shows a drop-zone highlight. The
+outcome depends on where you release:
+
+- **Edge (left / right / top / bottom)** - splits that pane, placing the dragged
+  pane on that side. When the edge matches the parent group's direction the new
+  pane slots in beside its neighbour (the tree stays flat); otherwise the target
+  is wrapped in a new cross-direction group.
+- **Centre** - adds the dragged pane to that leaf as a new tab and activates it.
+
+Dropping the last pane out of a leaf collapses the empty leaf, and a group left
+with a single child unwraps - so the tree never accumulates dead structure.
+
+## Programmatic control
+
+Every model transform is exported for building toolbars, "reset layout" buttons,
+or server-driven workspaces. All return a new tree (immutable):
+
+```ts
+import { movePane, removePane, allPaneIds } from '@svgrid/grid'
+
+// `genId` mints ids for nodes created while docking - any unique string source.
+let seq = 0
+const genId = () => `n${seq++}`
+
+layout = movePane(layout, 'terminal', targetLeafId, 'bottom', genId) // relocate a pane
+layout = removePane(layout, 'problems').root ?? layout               // close a pane
+const ids = allPaneIds(layout)                                       // every pane id
+```
+
+## Accessibility
+
+- Tab strips use `role="tablist"` / `role="tab"` with `aria-selected`; the active
+  tab is keyboard-focusable and `Enter` / `Space` activate it.
+- Splitters expose `role="separator"` with `aria-orientation`.
+- Content areas are `role="tabpanel"`.
+
+## See also
+
+- [SvSplitter](sv-splitter.md) - a single two-pane resizable split.
+- [SvTabs](sv-tabs.md) - a standalone tab strip without docking.
+
+<!-- =================================================================
+     /help/ui-components/sv-dock-manager  (community)
+     ================================================================== -->
+
+# SvDockManager
+
+A full docking manager built on top of [SvDockLayout](sv-dock-layout.md). It
+keeps everything the tiled layout does - nested resizable splits, tabbed leaves,
+drag-to-dock - and adds the three features a real IDE workspace needs:
+
+- **Floating / pop-out windows** - drag a tab into open space (or hit the float
+  button) to pop it into a movable, resizable window; drag the window back to redock.
+- **Tab reordering** - drag a tab along its own strip to reorder it.
+- **Pinning / auto-hide** - collapse a panel to an edge strip; hovering the edge
+  reveals a fly-out, and "pin" docks it back.
+
+The whole workspace - tiled `main` area, `floating` windows, and `autoHide`
+edges - is one serializable `DockManagerState` you `bind`. Every gesture is a
+pure transform (from `dock-manager-model`), so a full multi-window workspace
+saves to JSON and restores exactly, and the logic is unit-tested without a browser.
+
+<div data-docs-demo="362-dock-manager" data-height="560"></div>
+
+## Basic usage
+
+Build the initial workspace from the base `dockGroup` / `dockTabs` / `dockPane`
+helpers, start with empty `floating` / `autoHide`, and provide a `pane` snippet.
+
+```svelte
+<script lang="ts">
+  import { SvDockManager, dockGroup, dockTabs, dockPane, type DockManagerState } from '@svgrid/grid'
+
+  let workspace = $state<DockManagerState>({
+    main: dockGroup('row', [
+      dockTabs([dockPane('explorer', 'Explorer')]),
+      dockGroup('column', [
+        dockTabs([dockPane('editor', 'index.ts'), dockPane('readme', 'README.md')]),
+        dockTabs([dockPane('terminal', 'Terminal')]),
+      ], [0.7, 0.3]),
+    ], [0.22, 0.78]),
+    floating: [],
+    autoHide: [],
+  })
+</script>
+
+<div style="height: 520px">
+  <SvDockManager bind:workspace>
+    {#snippet pane(p)}
+      {#if p.id === 'explorer'}<FileTree />{:else}<div>{p.title}</div>{/if}
+    {/snippet}
+  </SvDockManager>
+</div>
+```
+
+## The workspace model
+
+`DockManagerState` has three surfaces, each holding the same `DockNode` /
+`DockTabs` pieces as the base layout:
+
+| Field | Type | Meaning |
+| ----- | ---- | ------- |
+| `main` | `DockNode \| null` | The tiled dock area (a group / tabs tree). `null` when everything has been floated or hidden - a drop placeholder appears. |
+| `floating` | `FloatWindow[]` | Pop-out windows: `{ id, leaf, x, y, width, height, z }`. Each is a single tab-leaf. |
+| `autoHide` | `AutoHideEntry[]` | Collapsed panels: `{ id, side, leaf, size }` on an edge. |
+
+Because it is plain data, save and restore it:
+
+```ts
+localStorage.setItem('ws', JSON.stringify(workspace))
+workspace = JSON.parse(localStorage.getItem('ws')!)   // tiled + floating + hidden, all restored
+```
+
+## Props
+
+| Prop       | Type                               | Default | Description                                  |
+| ---------- | ---------------------------------- | ------- | -------------------------------------------- |
+| `workspace`| `DockManagerState`                 | -       | The whole workspace. **Bindable.**           |
+| `pane`     | `Snippet<[DockPane]>`              | -       | Renders each pane's content, keyed by `DockPane`. |
+| `onChange` | `(workspace: DockManagerState) => void` | -  | Notified after any change.                   |
+| `minSize`  | `number`                           | `80`    | Minimum pane size in px along a split.       |
+
+## Gestures
+
+- **Float** - drag a tab off into open space, or click the tab's float button
+  (`□`). Drag a floating window by its title bar; drag the corner to resize.
+- **Redock** - drag a floating window's title bar over the tiled area and drop
+  on an edge (split) or centre (tab).
+- **Reorder** - drag a tab along its own strip; a live insertion point shows
+  where it will land.
+- **Auto-hide** - click a tab's auto-hide button (`▽`) to collapse its whole
+  leaf to an edge strip. Hover the edge tab to fly the panel out; click **pin**
+  (in the fly-out) to dock it back where it came from.
+- **Close** - the tab's `×`, wherever the pane lives.
+
+## Programmatic control
+
+Every surface transform is exported (all immutable, all returning a new
+`DockManagerState`) for toolbars, "reset workspace" buttons, or server-driven
+layouts:
+
+```ts
+import {
+  floatPane, dockPaneOnto, dockWindowOnto, reorderTab,
+  autoHideLeaf, pinAutoHidden, dockManagerClosePane, allManagerPaneIds,
+} from '@svgrid/grid'
+
+let seq = 0
+const genId = () => `w${seq++}`
+
+workspace = floatPane(workspace, 'terminal', { x: 60, y: 60, width: 360, height: 240 }, genId)
+workspace = autoHideLeaf(workspace, leafId, 'left')
+workspace = dockManagerClosePane(workspace, 'problems')
+const ids = allManagerPaneIds(workspace)
+```
+
+## Relationship to SvDockLayout
+
+`SvDockManager` renders `SvDockLayout` in "manager mode": the tiled area and each
+floating window are `SvDockLayout` instances that delegate their gestures up to
+the manager, so a single drag can flow across the main area, floating windows and
+edge strips. Reach for `SvDockLayout` directly when you only need a tiled,
+in-place docking layout; reach for `SvDockManager` when you need floating
+windows, reordering, or auto-hide.
+
+## See also
+
+- [SvDockLayout](sv-dock-layout.md) - the tiled docking layout underneath.
+- [SvSplitter](sv-splitter.md) - a single two-pane resizable split.
+
+<!-- =================================================================
      /help/ui-components/sv-drawer  (community)
      ================================================================== -->
 
@@ -34912,6 +35475,7 @@ auto-flip, it stays visible even inside a scrolling toolbar or a dialog.
 | `autoOpen`    | `boolean`                           | `false`    | Focus the trigger and open the panel on mount.               |
 | `virtual`     | `boolean`                           | `false`    | Window the option list for large sets. Flat lists only.      |
 | `rowHeight`   | `number`                            | `34`       | Fixed option height in px; must match the CSS.               |
+| `resizable`   | `boolean`                           | `false`    | Show a bottom drag grip so users can resize the open panel.  |
 | `size`        | `sm \| md \| lg`                    | `md`       | Control height and font size.                                |
 | `disabled`    | `boolean`                           | `false`    | Blocks interaction and dims the trigger.                     |
 | `label`       | `string`                            | -          | Visible field label, wired to the control.                   |
@@ -34953,6 +35517,29 @@ For hundreds of flat options, add `virtual` so only the visible rows render:
 
 ```svelte
 <SvDropDownList {options} virtual rowHeight={34} />
+```
+
+### Bounds detection (auto flip up/down)
+
+The panel measures the room around its trigger every time it opens and on
+scroll/resize. When there is not enough space below and there is more above, it
+**flips up**; otherwise it opens down. Either way its height is **capped to the
+space that actually fits the viewport**, so a long list near a screen edge
+scrolls inside the panel instead of overflowing or clipping off-screen. This is
+automatic - no configuration - and applies to every SvGrid dropdown
+(`SvComboBox`, `SvAutoComplete`, `SvMultiSelect`, `SvGridSelect`, `SvTreeSelect`,
+and the in-grid cell-editor dropdown), since they share one anchoring engine.
+
+### Resizable panel
+
+Add `resizable` to give the open panel a bottom drag grip (a "····" handle). The
+user drags it to make the list taller or shorter; the height is clamped so it
+never grows past the viewport. The grip appears only while the panel opens
+**downward** - on an upward flip there is no room below to grow into, so it is
+hidden.
+
+```svelte
+<SvDropDownList {options} resizable />
 ```
 
 ### Cascading selects

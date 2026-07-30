@@ -485,12 +485,27 @@
   justify-content: flex-end;
 }
 /* The custom vertical scrollbar overlays the right 16px of the viewport
-   (absolute, z-index 40). Nudge the last column's right-aligned content in by
-   that width when the scrollbar is visible, so numbers/values aren't hidden
-   underneath it. Left/center content already clears the right edge. */
-.sv-grid-has-vscroll .sv-grid-table tr > :last-child.sv-grid-cell[data-align="right"],
-.sv-grid-has-vscroll .sv-grid-table tr > :last-child.sv-grid-column[data-align="right"] {
+   (absolute, z-index 40) and does NOT shrink the scroll container's
+   clientWidth. Two cases keep the last column clear of it:
+
+   1. No horizontal overflow (content fits, nothing to scroll): nudge the last
+      column's right-aligned content in by the scrollbar width so numbers
+      aren't hidden underneath it. Left/center content already clears it.
+   2. Horizontal overflow: there's nothing to nudge (you scroll to the end and
+      the last 16px sit under the bar with no room left). Instead reserve a
+      trailing gutter on the scroll container so you can scroll the last column
+      fully out from under the overlay. See `.sv-grid-has-vscroll.sv-grid-has-hscroll`. */
+.sv-grid-has-vscroll:not(.sv-grid-has-hscroll) .sv-grid-table tr > :last-child.sv-grid-cell[data-align="right"],
+.sv-grid-has-vscroll:not(.sv-grid-has-hscroll) .sv-grid-table tr > :last-child.sv-grid-column[data-align="right"] {
   padding-right: calc(var(--sg-cell-px, 7px) + 16px);
+}
+/* Case 2: reserve the overlay scrollbar's width as end-of-scroll space so the
+   final column can be scrolled clear of the vertical scrollbar. Modern browsers
+   include a scroll container's inline-end padding in its scrollable overflow;
+   the custom scrollbars are siblings of this container, so their layout is
+   unaffected. */
+.sv-grid-container.sv-grid-has-vscroll.sv-grid-has-hscroll {
+  padding-right: 16px;
 }
 .sv-grid-column[data-align="center"] .sv-grid-header-sort {
   justify-content: center;
@@ -857,6 +872,11 @@
   flex-direction: row;
   align-items: center;
   gap: 4px;
+  box-sizing: border-box;
+  /* Inset the operator button + input from the cell edges so the filter row
+     lines up with the header label / body text (same --sg-cell-px gutter) and
+     isn't cramped against the top/side borders. */
+  padding: 5px var(--sg-filter-cell-px, var(--sg-cell-px, 7px));
 }
 
 .sv-grid-filter-operator {

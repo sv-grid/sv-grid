@@ -26,6 +26,7 @@ real-world scale:
 - [**Enterprise feature pack**](../enterprise/README.md) - landing page for the paid add-on; what's in it + how to license it
 - [Data export and printing - Enterprise](./export.md) - Excel, PDF, CSV, TSV, HTML, and Print
 - [Data import - Enterprise](./import.md) - Excel, CSV, TSV, and JSON import with column mapping + validation
+- [**AI Toolkit**](./ai-toolkit.md) - the hub for every AI feature: in-grid helpers, agents, MCP server, and LLM grounding, all model-agnostic
 - [AI assistant - Enterprise](./ai.md) - natural-language filter, smart fill, summarise, classify; bring-your-own model adapter
 - [Pivot tables - Enterprise](./pivot.md) - `createPivotModel` + nested column headers; designer UI is a separate demo
 - **Migrating to SvGrid** - column / API translation guides from other grids:
