@@ -64,6 +64,8 @@
     onClose?: (paneId: string) => void
     /** Manager mode: route splitter resize to the parent (controlled). */
     onResize?: (groupId: string, sizes: number[]) => void
+    /** Which side of each leaf the tab strip sits on. Default `'top'`. */
+    headerPosition?: 'top' | 'bottom'
   }
 
   let {
