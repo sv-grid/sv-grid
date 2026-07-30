@@ -1,0 +1,153 @@
+<script lang="ts">
+  /**
+   * 363. Scheduler / calendar mode
+   * ------------------------------
+   * The SAME <SvGrid>, same data + columns, rendered two ways: as a table, or
+   * as a full calendar by setting one `scheduler` prop. Rows become events
+   * bucketed by time; switch Month / Week / Day / Agenda in the toolbar. Drag
+   * an event to a new day/time and `onEventMove` writes the new start/end back
+   * onto your own row (so the Table view agrees). Just like the Kanban board,
+   * the calendar is a pure *view of the grid*.
+   */
+  import {
+    SvGrid,
+    type ColumnDef,
+    type SchedulerEventMoveEvent,
+    type SchedulerEventResizeEvent,
+    type SchedulerEventCommitEvent,
+  } from '@svgrid/grid'
+
+  type Meeting = {
+    id: number
+    title: string
+    start: string
+    end: string
+    kind: 'Meeting' | 'Focus' | 'Review' | 'Personal'
+    owner: string
+    color: string
+  }
+
+  // Build ISO datetimes anchored on the CURRENT week so the demo always shows
+  // events "now" without a fixed date.
+  const now = new Date()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7)) // this week's Monday
+  monday.setHours(0, 0, 0, 0)
+  const at = (dayOffset: number, h: number, m = 0) => {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + dayOffset)
+    d.setHours(h, m, 0, 0)
+    // local ISO (no timezone shift)
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+  }
+
+  const KIND_COLOR = {
+    Meeting: '#4f46e5',
+    Focus: '#0891b2',
+    Review: '#d97706',
+    Personal: '#16a34a',
+  }
+
+  let seq = 100
+  let rows = $state<Meeting[]>([
+    { id: 1, title: 'Sprint planning', start: at(0, 9, 30), end: at(0, 11, 0), kind: 'Meeting', owner: 'Sam', color: KIND_COLOR.Meeting },
+    { id: 2, title: 'Deep work: grid views', start: at(0, 13, 0), end: at(0, 16, 0), kind: 'Focus', owner: 'Lee', color: KIND_COLOR.Focus },
+    { id: 3, title: 'Design review', start: at(1, 10, 0), end: at(1, 11, 30), kind: 'Review', owner: 'Ada', color: KIND_COLOR.Review },
+    { id: 4, title: '1:1 with Ada', start: at(1, 15, 0), end: at(1, 15, 30), kind: 'Meeting', owner: 'Sam', color: KIND_COLOR.Meeting },
+    { id: 5, title: 'Release cut', start: at(2, 14, 0), end: at(2, 15, 0), kind: 'Review', owner: 'Lee', color: KIND_COLOR.Review },
+    { id: 6, title: 'Gym', start: at(2, 18, 0), end: at(2, 19, 0), kind: 'Personal', owner: 'Sam', color: KIND_COLOR.Personal },
+    { id: 7, title: 'Customer call', start: at(3, 11, 0), end: at(3, 12, 0), kind: 'Meeting', owner: 'Ada', color: KIND_COLOR.Meeting },
+    { id: 8, title: 'Retro', start: at(4, 15, 30), end: at(4, 16, 30), kind: 'Review', owner: 'Lee', color: KIND_COLOR.Review },
+  ])
+
+  const columns: ColumnDef<any, Meeting>[] = [
+    { field: 'title', header: 'Title', editorType: 'text', width: 220 },
+    { field: 'start', header: 'Start', editorType: 'datetime', width: 170 },
+    { field: 'end', header: 'End', editorType: 'datetime', width: 170 },
+    { field: 'kind', header: 'Type', editorType: 'list', editorOptions: ['Meeting', 'Focus', 'Review', 'Personal'], width: 120 },
+    { field: 'owner', header: 'Owner', editorType: 'text', width: 110 },
+  ]
+
+  let view = $state<'calendar' | 'table'>('calendar')
+
+  const iso = (d: Date) => {
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+  }
+
+  // The scheduler applied the move to its overlay already; we mirror the new
+  // start/end onto our row so the Table view (and any persistence) agree.
+  function onEventMove(e: SchedulerEventMoveEvent<Meeting>) {
+    e.row.start = iso(e.start)
+    e.row.end = iso(e.end)
+  }
+  function onEventResize(e: SchedulerEventResizeEvent<Meeting>) {
+    e.row.end = iso(e.end)
+  }
+  function onEventCommit(e: SchedulerEventCommitEvent<Meeting>) {
+    Object.assign(e.row, e.values)
+    e.row.color = KIND_COLOR[e.row.kind] ?? e.row.color
+  }
+</script>
+
+<section class="flex flex-col flex-1 min-h-0 gap-3">
+  <div class="flex items-center justify-between gap-3 shrink-0">
+    <div class="text-sm text-slate-600 dark:text-slate-300">
+      The same grid, two views. Switch <strong>Month / Week / Day / Agenda</strong>
+      in the toolbar. <strong>Drag</strong> an event to reschedule it, drag its
+      bottom edge to resize, <strong>click</strong> to edit in a drawer, and
+      search to filter. Toggle Calendar / Table to see it is one grid.
+    </div>
+    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
+      <button
+        class="px-3 py-1 {view === 'calendar' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        onclick={() => (view = 'calendar')}>Calendar</button>
+      <button
+        class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        onclick={() => (view = 'table')}>Table</button>
+    </div>
+  </div>
+
+  <div class="flex-1 min-h-0">
+    {#if view === 'calendar'}
+      <SvGrid
+        data={rows}
+        columns={columns}
+        getRowId={(r) => String(r.id)}
+        containerHeight="100%"
+        scheduler={{
+          startField: 'start',
+          endField: 'end',
+          titleField: 'title',
+          colorField: 'color',
+          initialView: 'week',
+          weekStartsOn: 1,
+          dayStartHour: 7,
+          dayEndHour: 20,
+          editable: true,
+          drawer: true,
+          onEventMove,
+          onEventResize,
+          onEventCommit,
+        }}
+      />
+    {:else}
+      <SvGrid
+        data={rows}
+        columns={columns}
+        getRowId={(r) => String(r.id)}
+        sortable
+        enableInlineEditing
+        showPagination={false}
+        rowHeight={36}
+        containerHeight="100%"
+        fitColumns
+      />
+    {/if}
+  </div>
+
+  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+    {rows.length} events this week
+  </footer>
+</section>

@@ -387,9 +387,13 @@ describe('emitStudioProject (per-block screens)', () => {
     const get = (path: string) => files.find((f) => f.path === path)?.contents
 
     // The whole starter is emitted.
-    for (const path of ['src/lib/server/auth.ts', 'src/lib/server/users.ts', 'src/hooks.server.ts', 'src/auth.d.ts', 'src/routes/+layout.server.ts', 'src/routes/login/+page.svelte', 'src/routes/login/+page.server.ts', 'src/routes/logout/+page.server.ts', '.env.example']) {
+    for (const path of ['src/lib/server/auth.ts', 'src/lib/server/users.ts', 'src/hooks.server.ts', 'src/auth.d.ts', 'src/routes/+layout.server.ts', 'src/routes/login/+page.svelte', 'src/routes/login/+page.server.ts', 'src/routes/logout/+page.server.ts']) {
       expect(files.find((f) => f.path === path), path).toBeTruthy()
     }
+    // SESSION_SECRET merges into the single shared .env.example (bundle level).
+    const envEx = emitStudioAppBundle(p).filter((f) => f.path === '.env.example')
+    expect(envEx).toHaveLength(1)
+    expect(envEx[0]!.contents).toContain('SESSION_SECRET')
     // hooks resolves the session into event.locals.role - the value getServerRole reads.
     expect(get('src/hooks.server.ts')).toContain('event.locals.role = user?.role')
     // Dependency-free crypto (no external auth lib).
@@ -404,7 +408,7 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(get('src/routes/login/+page.server.ts')).toContain('cookies.set(SESSION_COOKIE')
     // The shell wires the session in: login bypass, real user, sign-out, role seed.
     const layout = get('src/routes/+layout.svelte')!
-    expect(layout).toContain("$page.url.pathname === '/login'")
+    expect(layout).toContain('["/login"].includes($page.url.pathname)') // login renders bare (no shell)
     expect(layout).toContain('action="/logout"')
     expect(layout).toContain('currentRole.set(data.role')
     expect(layout).toContain('data?.user?.email')
@@ -473,9 +477,149 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(emitStudioProject(sqlOnly).find((f) => f.path === 'src/lib/server/db/schema.ts')).toBeUndefined()
     // Toggle on but no SQL entity (memory source) -> nothing.
     expect(emitStudioProject(setDataLayer(createProject([customers]), true)).find((f) => f.path.startsWith('src/lib/server/db/'))).toBeUndefined()
-    // Toggle on + MySQL (not yet supported) -> raw route only, no Drizzle layer.
-    const mysql = setDataLayer(setEntityDataSource(createProject([customers]), 'customers', { kind: 'sql', table: 'customers', dialect: 'mysql' }), true)
-    expect(emitStudioProject(mysql).find((f) => f.path === 'src/lib/server/db/schema.ts')).toBeUndefined()
+    // Toggle on + MSSQL (Drizzle has no SQL Server driver) -> raw route only, no Drizzle layer.
+    const mssql = setDataLayer(setEntityDataSource(createProject([customers]), 'customers', { kind: 'sql', table: 'customers', dialect: 'mssql' }), true)
+    expect(emitStudioProject(mssql).find((f) => f.path === 'src/lib/server/db/schema.ts')).toBeUndefined()
+  })
+
+  it('Data layer: MySQL emits a re-select repo (no RETURNING) + int autoincrement PK', () => {
+    let p = createProject([products])
+    p = setEntityDataSource(p, 'products', { kind: 'sql', table: 'products', dialect: 'mysql' })
+    p = setDataLayer(p, true)
+    const files = emitStudioProject(p)
+    const schema = files.find((f) => f.path === 'src/lib/server/db/schema.ts')!.contents
+    expect(schema).toContain("from 'drizzle-orm/mysql-core'")
+    expect(schema).toContain('int("id").autoincrement().primaryKey()')
+    const repo = files.find((f) => f.path === 'src/lib/server/db/products.ts')!.contents
+    expect(repo).toContain('async function getById')           // re-select helper
+    expect(repo).toContain('.insertId')                        // uses the insert id
+    expect(repo).not.toContain('.returning()')                 // MySQL has none
+  })
+
+  it('DB-backed auth: auth + data layer moves the user store into an auth_users table (hashed)', () => {
+    let p = createProject([products])
+    p = setEntityDataSource(p, 'products', { kind: 'sql', table: 'products', dialect: 'postgres' })
+    p = setDataLayer(p, true)
+    p = setAuth(p, { enabled: true })
+    const files = emitStudioProject(p)
+    // The auth_users table lives in the same Drizzle schema (one migration covers it).
+    expect(files.find((f) => f.path === 'src/lib/server/db/schema.ts')!.contents).toContain('authUsers = pgTable("auth_users"')
+    // users.ts queries the DB + seeds once; login verifies the PBKDF2 hash.
+    const users = files.find((f) => f.path === 'src/lib/server/users.ts')!.contents
+    expect(users).toContain("from './db/schema'")
+    expect(users).toContain('function ensureSeeded')
+    expect(users).toContain('passwordHash: await hashPassword(u.password)')
+    const login = files.find((f) => f.path === 'src/routes/login/+page.server.ts')!.contents
+    expect(login).toContain('const user = await findUser(email)')
+    expect(login).toContain('await verifyPassword(password, user.passwordHash)')
+    // Without the data layer, auth stays on the in-code demo store.
+    const inCode = emitStudioProject(setAuth(createProject([products]), { enabled: true }))
+    expect(inCode.find((f) => f.path === 'src/lib/server/users.ts')!.contents).toContain('export const USERS')
+  })
+
+  it('Auth depth: register + password reset + change-password + admin user management (DB-backed)', () => {
+    let p = createProject([products])
+    p = { ...p, access: { enabled: true, defaultRole: 'viewer', roles: [
+      { role: 'admin', screens: '*', actions: '*' },
+      { role: 'viewer', screens: ['products'], actions: [] },
+    ] } }
+    p = setEntityDataSource(p, 'products', { kind: 'sql', table: 'products', dialect: 'postgres' })
+    p = setDataLayer(p, true)
+    p = setAuth(p, { enabled: true, register: true, userAdmin: true })
+    const files = emitStudioProject(p)
+    const get = (path: string) => files.find((f) => f.path === path)?.contents
+
+    // Change-password (any signed-in user), self-service sign-up + recovery, admin screen.
+    for (const path of ['src/routes/account/+page.server.ts', 'src/routes/register/+page.server.ts', 'src/routes/forgot-password/+page.server.ts', 'src/routes/reset-password/+page.server.ts', 'src/routes/users/+page.server.ts', 'src/routes/users/+page.svelte']) {
+      expect(files.find((f) => f.path === path), path).toBeTruthy()
+    }
+    // Registration assigns the (least-privileged) default role.
+    expect(get('src/routes/register/+page.server.ts')).toContain('role: "viewer"')
+    // Password recovery uses signed reset tokens + an email stub (no extra table).
+    expect(get('src/lib/server/auth.ts')).toContain('export async function signReset')
+    expect(get('src/lib/server/auth.ts')).toContain('export async function sendResetEmail')
+    // User admin is role-gated server-side (only a full-access role can manage users).
+    expect(get('src/routes/users/+page.server.ts')).toContain("canScreen(getServerRole(event), '__users__')")
+    // The DB store gained full CRUD.
+    const users = get('src/lib/server/users.ts')!
+    for (const fn of ['createUser', 'updatePassword', 'setUserRole', 'deleteUser', 'listUsers']) expect(users).toContain(`export async function ${fn}`)
+    // Nav gains the admin Users screen (canScreen-gated); the auth pages render bare.
+    const layout = get('src/routes/+layout.svelte')!
+    expect(layout).toContain('"/users"')
+    expect(layout).toContain('"/register"') // bare-render set includes the sign-up flow
+    expect(get('src/routes/+layout.server.ts')).toContain('const PUBLIC = new Set(["/login","/register","/forgot-password","/reset-password"])')
+    expect(get('src/routes/login/+page.svelte')).toContain('href="/register"')
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('Auth extras: OAuth (github/google/oidc) + email 2FA + real email, all DB-backed', () => {
+    let p = createProject([products])
+    p = { ...p, access: { enabled: true, defaultRole: 'viewer', roles: [{ role: 'admin', screens: '*', actions: '*' }, { role: 'viewer', screens: ['products'], actions: [] }] } }
+    p = setEntityDataSource(p, 'products', { kind: 'sql', table: 'products', dialect: 'postgres' })
+    p = setDataLayer(p, true)
+    p = setAuth(p, { enabled: true, oauth: ['github', 'google', 'oidc'], twoFactor: true })
+    const files = emitStudioProject(p)
+    const bundle = emitStudioAppBundle(p)
+    const get = (path: string) => files.find((f) => f.path === path)?.contents
+
+    // OAuth: shared provider module + a [provider] start + callback endpoint.
+    for (const path of ['src/lib/server/oauth.ts', 'src/routes/auth/[provider]/+server.ts', 'src/routes/auth/[provider]/callback/+server.ts']) {
+      expect(files.find((f) => f.path === path), path).toBeTruthy()
+    }
+    expect(get('src/lib/server/oauth.ts')).toContain('export async function pkceChallenge') // PKCE
+    expect(get('src/lib/server/oauth.ts')).toContain('.well-known/openid-configuration') // OIDC discovery (Azure AD)
+    expect(get('src/routes/auth/[provider]/+server.ts')).toContain('code_challenge_method')
+    expect(get('src/routes/auth/[provider]/+server.ts')).toContain('new Set<Provider>(["github", "google", "oidc"])')
+    expect(get('src/routes/login/+page.svelte')).toContain('/auth/github')
+
+    // Email 2FA: schema column, challenge helpers, login branch, verify route, account toggle.
+    expect(get('src/lib/server/db/schema.ts')).toContain('"twoFactor": boolean("two_factor").notNull().default(false)')
+    expect(get('src/lib/server/auth.ts')).toContain('export async function signChallenge')
+    expect(get('src/routes/login/+page.server.ts')).toContain('if (user.twoFactor)')
+    expect(files.find((f) => f.path === 'src/routes/login/verify/+page.server.ts')).toBeTruthy()
+    expect(get('src/lib/server/users.ts')).toContain('export async function setTwoFactor')
+
+    // Real email layer (2FA implies it) + nodemailer wired only as an optional SMTP dep.
+    expect(get('src/lib/server/email.ts')).toContain('api.resend.com')
+    expect(get('src/lib/server/email.ts')).toContain("await import('nodemailer')")
+    const pkg = JSON.parse(bundle.find((f) => f.path === 'package.json')!.contents)
+    expect(pkg.dependencies.nodemailer).toBeTruthy()
+    expect(pkg.devDependencies['@types/nodemailer']).toBeTruthy()
+    // .env.example documents the OAuth + email vars.
+    const env = bundle.find((f) => f.path === '.env.example')!.contents
+    expect(env).toContain('GITHUB_CLIENT_ID')
+    expect(env).toContain('OIDC_ISSUER')
+    expect(env).toMatch(/RESEND_API_KEY|SMTP_HOST/)
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('Auth extras: OAuth / 2FA are inert without the DB-backed store', () => {
+    const p = setAuth(createProject([products]), { enabled: true, oauth: ['github'], twoFactor: true })
+    const files = emitStudioProject(p) // memory source -> no data layer
+    expect(files.find((f) => f.path === 'src/lib/server/oauth.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/lib/server/email.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/routes/login/verify/+page.server.ts')).toBeUndefined()
+    // Falls back to the in-code demo store + plain login.
+    expect(files.find((f) => f.path === 'src/routes/login/+page.server.ts')!.contents).not.toContain('user.twoFactor')
+  })
+
+  it('Auth depth: register/userAdmin are inert without the DB-backed store or RBAC', () => {
+    // register requested but no data layer -> no register routes (needs persistence).
+    const noDb = emitStudioProject(setAuth(createProject([products]), { enabled: true, register: true, userAdmin: true }))
+    expect(noDb.find((f) => f.path === 'src/routes/register/+page.server.ts')).toBeUndefined()
+    expect(noDb.find((f) => f.path === 'src/routes/users/+page.server.ts')).toBeUndefined()
+    // DB-backed but RBAC off -> register yes, userAdmin no (needs a role to gate on).
+    let p = setEntityDataSource(createProject([products]), 'products', { kind: 'sql', table: 'products', dialect: 'postgres' })
+    p = setAuth(setDataLayer(p, true), { enabled: true, register: true, userAdmin: true })
+    const files = emitStudioProject(p)
+    expect(files.find((f) => f.path === 'src/routes/register/+page.server.ts')).toBeTruthy()
+    expect(files.find((f) => f.path === 'src/routes/users/+page.server.ts')).toBeUndefined()
   })
 
   it('no auth files unless auth.enabled; protect:false drops the route guard', () => {
@@ -627,6 +771,44 @@ describe('emitStudioProject (per-block screens)', () => {
     const p = setDeployTarget(setDeployTarget(createProject([customers]), 'vercel'), 'auto')
     expect(p.deploy).toBeUndefined()
     expect(parseProject(JSON.stringify(p)).deploy).toBeUndefined()
+  })
+
+  it('Deploy pipeline: CI workflow always, a push-to-deploy workflow + DEPLOY.md + deploy script per target', () => {
+    const bundle = emitStudioAppBundle(setDeployTarget(createProject([customers]), 'vercel'))
+    const get = (p: string) => bundle.find((f) => f.path === p)?.contents
+    // Universal CI (robust without a committed lockfile).
+    const ci = get('.github/workflows/ci.yml')!
+    expect(ci).toContain('npm install')
+    expect(ci).not.toContain('npm ci')       // no lockfile is shipped
+    expect(ci).not.toContain('cache: npm')
+    expect(ci).toContain('npm run build')
+    // Push-to-deploy workflow, gated on the secret so an unconfigured repo stays green.
+    const deploy = get('.github/workflows/deploy.yml')!
+    expect(deploy).toContain("if: ${{ secrets.VERCEL_TOKEN != '' }}")
+    expect(deploy).toContain('vercel deploy --prebuilt --prod')
+    // Runbook + npm deploy script.
+    expect(get('DEPLOY.md')).toContain('VERCEL_TOKEN')
+    expect(JSON.parse(get('package.json')!).scripts.deploy).toBe('vercel deploy --prod')
+    // Designer panel exposes the required secrets.
+    expect(studioDeployInfo(setDeployTarget(createProject([customers]), 'vercel')).secrets).toEqual(['VERCEL_TOKEN', 'VERCEL_ORG_ID', 'VERCEL_PROJECT_ID'])
+  })
+
+  it('Deploy pipeline: node target ships a Dockerfile + .dockerignore and no deploy workflow', () => {
+    const bundle = emitStudioAppBundle(setDeployTarget(createProject([customers], { title: 'My App' }), 'node'))
+    expect(bundle.find((f) => f.path === 'Dockerfile')!.contents).toContain('CMD ["node", "build"]')
+    expect(bundle.find((f) => f.path === '.dockerignore')).toBeTruthy()
+    expect(bundle.find((f) => f.path === '.github/workflows/deploy.yml')).toBeUndefined() // self-hosted: no push-deploy
+    expect(bundle.find((f) => f.path === '.github/workflows/ci.yml')).toBeTruthy()        // ...but still CI
+    expect(bundle.find((f) => f.path === 'DEPLOY.md')!.contents).toContain('docker build')
+  })
+
+  it('Deploy pipeline: a single .env.example merges DATABASE_URL + SESSION_SECRET (no duplicate)', () => {
+    let p = setEntityDataSource(createProject([customers]), 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    p = setAuth(p, { enabled: true })
+    const envs = emitStudioAppBundle(p).filter((f) => f.path === '.env.example')
+    expect(envs).toHaveLength(1)
+    expect(envs[0]!.contents).toContain('DATABASE_URL')
+    expect(envs[0]!.contents).toContain('SESSION_SECRET')
   })
 
   it('Round-trip: the exported bundle ships studio.config.json that re-parses into the designer', () => {

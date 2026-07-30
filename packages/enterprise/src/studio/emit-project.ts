@@ -11,7 +11,7 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { ActionConfig, Block, ComponentConfig, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
+import type { ActionConfig, Block, ComponentConfig, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
 import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, entityDataSource, flattenBlocks, serializeProject, seedUsers, ON_LOAD, ON_DESTROY } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
@@ -1623,14 +1623,26 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     .sort((a, b) => (a.nav?.order ?? 0) - (b.nav?.order ?? 0))
     .map((s) => ({ href: `/${s.route}`, label: s.nav?.label ?? s.title, id: s.id }))
   const accessFiles = accessEnabled ? [accessModule(project)] : []
-  const authFileList = authEnabled ? authFiles(project) : []
   const sqlEntities = project.entities.filter((e) => sources[e.name]?.kind === 'sql')
-  const dataLayerList = project.dataLayer === 'drizzle' && sqlEntities.length > 0 ? dataLayerFiles(project, sqlEntities, sources) : []
+  // The Drizzle layer is only "active" on a supported dialect (not MSSQL). DB-backed
+  // auth requires that active layer, so its user store can live in the same schema.
+  const firstSqlSrc = sqlEntities.length ? sources[sqlEntities[0]!.name] : undefined
+  const dataLayerActive = project.dataLayer === 'drizzle' && sqlEntities.length > 0 && dzDialect(firstSqlSrc?.kind === 'sql' ? firstSqlSrc.dialect : undefined) !== null
+  const dbBackedAuth = authEnabled && dataLayerActive
+  const authRegister = dbBackedAuth && project.auth?.register === true
+  const authUserAdmin = dbBackedAuth && accessEnabled && project.auth?.userAdmin === true
+  const authTwoFactor = dbBackedAuth && project.auth?.twoFactor === true
+  const dataLayerList = project.dataLayer === 'drizzle' && sqlEntities.length > 0 ? dataLayerFiles(project, sqlEntities, sources, dbBackedAuth, authTwoFactor) : []
+  const authFileList = authEnabled ? authFiles(project, dbBackedAuth, accessEnabled) : []
   const auditFiles = auditEnabled ? [auditModule(), auditRouteFile(), auditViewerPage()] : []
-  const navWithAudit = auditEnabled ? [...nav, { href: '/audit', label: 'Audit log', id: '__audit__' }] : nav
+  // Routes that render bare (no shell) + skip the login guard.
+  const publicAuthRoutes = authEnabled ? ['/login', ...(authTwoFactor ? ['/login/verify'] : []), ...(authRegister ? ['/register', '/forgot-password', '/reset-password'] : [])] : []
+  let navExtras = auditEnabled ? [...nav, { href: '/audit', label: 'Audit log', id: '__audit__' }] : nav
+  // The admin Users screen is nav-gated by canScreen('__users__') - only full-access ('*') roles see it.
+  if (authUserAdmin) navExtras = [...navExtras, { href: '/users', label: 'Users', id: '__users__' }]
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
   const handleFiles = project.screens.some(screenHasCode) ? [handlesModuleFile()] : []
-  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, ...companions, ...handleFiles, layoutFile(navWithAudit, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navWithAudit)]
+  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the
@@ -1852,7 +1864,7 @@ export function can(role: AppRole, action: WriteAction): boolean {
 // ---- server side ----------------------------------------------------------
 /** Resolve the caller's role on the server. Wire this to YOUR auth: by default it
  *  reads \`event.locals.role\` - set it in \`hooks.server.ts\` from the session. */
-export function getServerRole(event: { locals?: Record<string, unknown> }): AppRole {
+export function getServerRole(event: { locals?: { role?: unknown } }): AppRole {
   const r = event?.locals?.role
   return (typeof r === 'string' && (ROLES as string[]).includes(r) ? r : ${JSON.stringify(defaultRole)}) as AppRole
 }
@@ -1875,11 +1887,26 @@ export function authorizeAction(role: AppRole, action: 'read' | WriteAction, scr
  *  `hooks.server.ts` that resolves the caller into `event.locals.role`/`user` (the loop
  *  the RBAC layer already expects), a `/login` page + sign-out, and the `App.Locals`
  *  type augmentation. Works across every data source (no DB required for the demo). */
-function authFiles(project: StudioProject): GeneratedFile[] {
+function authFiles(project: StudioProject, dbBacked = false, accessEnabled = false): GeneratedFile[] {
   const users = seedUsers(project)
   const demo = users[0]!
   const protect = project.auth?.protect !== false
+  // Self-service + admin flows need the DB-backed store (persistence); user admin also needs RBAC.
+  const register = project.auth?.register === true && dbBacked
+  const userAdmin = project.auth?.userAdmin === true && dbBacked && accessEnabled
+  const twoFactor = project.auth?.twoFactor === true && dbBacked
+  const emailReal = dbBacked && (project.auth?.email === true || twoFactor)
+  const oauthProviders: OAuthProvider[] = dbBacked ? (project.auth?.oauth ?? []) : []
+  const registerRole = project.access?.defaultRole && project.access.roles.some((r) => r.role === project.access!.defaultRole)
+    ? project.access.defaultRole
+    : project.access?.roles[0]?.role ?? 'user'
   const usersLiteral = users
+    .map((u) => `  { email: ${JSON.stringify(u.email)}, name: ${JSON.stringify(u.name)}, role: ${JSON.stringify(u.role)}, password: ${JSON.stringify(u.password)} }`)
+    .join(',\n')
+  // When the Drizzle data layer is on, the user store is DB-backed (an `auth_users`
+  // table) with hashed passwords, seeded once on first login. Otherwise it's the
+  // in-code demo array below.
+  const seedLiteral = users
     .map((u) => `  { email: ${JSON.stringify(u.email)}, name: ${JSON.stringify(u.name)}, role: ${JSON.stringify(u.role)}, password: ${JSON.stringify(u.password)} }`)
     .join(',\n')
 
@@ -1957,11 +1984,144 @@ export async function verifyPassword(password: string, stored: string): Promise<
   if (!salt) return false
   return timingSafeEqual(await hashPassword(password, salt), stored)
 }
-`
 
-  const usersTs = `// Regenerated by SvGrid Studio. DEMO user store - replace with your own (a DB table,
+// ---- password reset (stateless, signed link) ------------------------------
+const RESET_MAX_AGE = 60 * 30 // 30 minutes
+/** A short-lived, signed password-reset token for an email (no DB row needed). */
+export async function signReset(email: string): Promise<string> {
+  const body = b64url(enc.encode(JSON.stringify({ email, exp: Math.floor(Date.now() / 1000) + RESET_MAX_AGE, k: 'reset' })))
+  return body + '.' + (await hmac(body))
+}
+/** Verify a reset token; returns the email, or null if invalid / expired. */
+export async function readReset(token: string | undefined): Promise<string | null> {
+  if (!token) return null
+  const dot = token.lastIndexOf('.')
+  if (dot < 0) return null
+  const body = token.slice(0, dot)
+  if (!timingSafeEqual(token.slice(dot + 1), await hmac(body))) return null
+  try {
+    const p = JSON.parse(new TextDecoder().decode(fromB64url(body))) as { email: string; exp: number; k: string }
+    if (p.k !== 'reset' || typeof p.exp !== 'number' || p.exp * 1000 < Date.now()) return null
+    return p.email
+  } catch {
+    return null
+  }
+}
+
+/** Deliver a password-reset link. STUB: logs it in dev - wire your email provider
+ *  (Resend / SendGrid / Postmark / SMTP) here for production. */
+export async function sendResetEmail(email: string, link: string): Promise<void> {
+  console.log('[auth] password reset for ' + email + ' -> ' + link)
+}
+${twoFactor ? `
+// ---- email two-factor challenge (stateless, signed) -----------------------
+export const TFA_COOKIE = 'sv_2fa'
+const TFA_MAX_AGE = 60 * 10 // 10 minutes
+/** A random 6-digit one-time code. */
+export function otpCode(): string {
+  return String(crypto.getRandomValues(new Uint32Array(1))[0]! % 1000000).padStart(6, '0')
+}
+async function codeHash(email: string, code: string): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', enc.encode(email + ':' + code))
+  return b64url(d)
+}
+/** A signed pending-2FA token binding an email to a hashed code (the code itself is emailed). */
+export async function signChallenge(email: string, code: string): Promise<string> {
+  const body = b64url(enc.encode(JSON.stringify({ email, ch: await codeHash(email, code), exp: Math.floor(Date.now() / 1000) + TFA_MAX_AGE, k: '2fa' })))
+  return body + '.' + (await hmac(body))
+}
+/** Verify a submitted code against the pending token; returns the email or null. */
+export async function readChallenge(token: string | undefined, code: string): Promise<string | null> {
+  if (!token) return null
+  const dot = token.lastIndexOf('.')
+  if (dot < 0) return null
+  const body = token.slice(0, dot)
+  if (!timingSafeEqual(token.slice(dot + 1), await hmac(body))) return null
+  try {
+    const p = JSON.parse(new TextDecoder().decode(fromB64url(body))) as { email: string; ch: string; exp: number; k: string }
+    if (p.k !== '2fa' || typeof p.exp !== 'number' || p.exp * 1000 < Date.now()) return null
+    if (!timingSafeEqual(p.ch, await codeHash(p.email, code))) return null
+    return p.email
+  } catch {
+    return null
+  }
+}
+` : ''}`
+
+  const usersTs = dbBacked
+    ? `// Regenerated by SvGrid Studio. DB-backed user store: reads the \`auth_users\` table
+// (Drizzle) with hashed passwords. The demo users below are seeded ONCE, on the first
+// login, if the table is empty - delete the seed for production, or manage users in the DB.
+import { eq } from 'drizzle-orm'
+import { db } from './db/index'
+import { authUsers, type AuthUserRow } from './db/schema'
+import { hashPassword } from './auth'
+
+export type AppUser = AuthUserRow
+
+const SEED: Array<{ email: string; name: string; role: string; password: string }> = [
+${seedLiteral},
+]
+
+// Seed the demo users once (idempotent + concurrency-safe: the unique email index
+// rejects a racing duplicate, which we swallow). Cached per process after the first run.
+let seeding: Promise<void> | null = null
+function ensureSeeded(): Promise<void> {
+  if (!seeding) seeding = (async () => {
+    const existing = await db.select({ email: authUsers.email }).from(authUsers).limit(1)
+    if (existing.length) return
+    for (const u of SEED) {
+      try {
+        await db.insert(authUsers).values({ email: u.email, name: u.name, role: u.role, passwordHash: await hashPassword(u.password) })
+      } catch { /* unique-email race: another request seeded it first */ }
+    }
+  })()
+  return seeding
+}
+
+export async function findUser(email: string): Promise<AppUser | undefined> {
+  await ensureSeeded()
+  const e = email.trim().toLowerCase()
+  return (await db.select().from(authUsers).where(eq(authUsers.email, e))).at(0)
+}
+
+/** Public view of a user (no password hash) - for the admin list. */
+export type PublicUser = { email: string; name: string; role: string }
+export async function listUsers(): Promise<PublicUser[]> {
+  await ensureSeeded()
+  return db.select({ email: authUsers.email, name: authUsers.name, role: authUsers.role }).from(authUsers)
+}
+
+/** Create a user (hashed password). Returns undefined if the email already exists. */
+export async function createUser(input: { email: string; name: string; password: string; role: string }): Promise<AppUser | undefined> {
+  const email = input.email.trim().toLowerCase()
+  if (await findUser(email)) return undefined
+  const passwordHash = await hashPassword(input.password)
+  try {
+    await db.insert(authUsers).values({ email, name: input.name, role: input.role, passwordHash })
+  } catch {
+    return undefined // unique-email race
+  }
+  return findUser(email)
+}
+
+export async function updatePassword(email: string, newPassword: string): Promise<void> {
+  await db.update(authUsers).set({ passwordHash: await hashPassword(newPassword) }).where(eq(authUsers.email, email.trim().toLowerCase()))
+}
+export async function setUserRole(email: string, role: string): Promise<void> {
+  await db.update(authUsers).set({ role }).where(eq(authUsers.email, email.trim().toLowerCase()))
+}
+export async function deleteUser(email: string): Promise<void> {
+  await db.delete(authUsers).where(eq(authUsers.email, email.trim().toLowerCase()))
+}${twoFactor ? `
+export async function setTwoFactor(email: string, on: boolean): Promise<void> {
+  await db.update(authUsers).set({ twoFactor: on }).where(eq(authUsers.email, email.trim().toLowerCase()))
+}` : ''}
+`
+    : `// Regenerated by SvGrid Studio. DEMO user store - replace with your own (a DB table,
 // an external identity provider, ...). Passwords here are demo seeds, like sample rows:
 // change them and store hashes for production (see hashPassword / verifyPassword in ./auth).
+// Tip: turn on the Drizzle data layer and this becomes a real \`auth_users\` DB table.
 export type AppUser = { email: string; name: string; role: string; password: string }
 
 export const USERS: AppUser[] = [
@@ -2001,19 +2161,41 @@ declare global {
 export {}
 `
 
+  // Routes that render bare (no app shell) and don't require a session.
+  const publicRoutes = ['/login', ...(twoFactor ? ['/login/verify'] : []), ...(register ? ['/register', '/forgot-password', '/reset-password'] : [])]
   const layoutServerTs = `import type { LayoutServerLoad } from './$types'
-${protect ? "import { redirect } from '@sveltejs/kit'\n" : ''}
+${protect ? `import { redirect } from '@sveltejs/kit'\n\nconst PUBLIC = new Set(${JSON.stringify(publicRoutes)})\n` : ''}
 // Expose the signed-in user + role to every page (read as \`data.user\` / \`data.role\`,
 // or \`$page.data\`).${protect ? ' Unauthenticated visitors are sent to /login.' : ''}
 export const load: LayoutServerLoad = async ({ locals${protect ? ', url' : ''} }) => {
-${protect ? "  if (!locals.user && url.pathname !== '/login') throw redirect(302, '/login?redirectTo=' + encodeURIComponent(url.pathname))\n" : ''}  return { user: locals.user ?? null, role: locals.role ?? null }
+${protect ? "  if (!locals.user && !PUBLIC.has(url.pathname)) throw redirect(302, '/login?redirectTo=' + encodeURIComponent(url.pathname))\n" : ''}  return { user: locals.user ?? null, role: locals.role ?? null }
 }
 `
 
+  const loginCheck = dbBacked
+    ? `const user = await findUser(email)
+    // DB-backed store: verify against the stored PBKDF2 hash.
+    if (!user || !(await verifyPassword(password, user.passwordHash))) return fail(401, { email, error: 'Invalid email or password.' })`
+    : `const user = findUser(email)
+    // DEMO: plain comparison against the seed. For a real store keep a passwordHash and
+    // use \`await verifyPassword(password, user.passwordHash)\` from '$lib/server/auth'.
+    if (!user || user.password !== password) return fail(401, { email, error: 'Invalid email or password.' })`
+  // 2FA (email code): after the password check, email a code + park a pending token,
+  // then send the user to /login/verify instead of issuing the session immediately.
+  const twoFactorBranch = twoFactor ? `
+    if (user.twoFactor) {
+      const code = otpCode()
+      await sendEmail(user.email, 'Your verification code', '<p>Your sign-in code is <strong>' + code + '</strong>. It expires in 10 minutes.</p>')
+      cookies.set(TFA_COOKIE, await signChallenge(user.email, code), { path: '/', httpOnly: true, sameSite: 'lax', secure: url.hostname !== 'localhost' && url.hostname !== '127.0.0.1', maxAge: 600 })
+      const rt = url.searchParams.get('redirectTo')
+      throw redirect(302, '/login/verify' + (rt ? '?redirectTo=' + encodeURIComponent(rt) : ''))
+    }` : ''
+  const loginImports = twoFactor
+    ? "import { SESSION_COOKIE, SESSION_MAX_AGE, TFA_COOKIE, signSession, verifyPassword, otpCode, signChallenge } from '$lib/server/auth'\nimport { findUser } from '$lib/server/users'\nimport { sendEmail } from '$lib/server/email'"
+    : `import { SESSION_COOKIE, SESSION_MAX_AGE, signSession${dbBacked ? ', verifyPassword' : ''} } from '$lib/server/auth'\nimport { findUser } from '$lib/server/users'`
   const loginServerTs = `import { fail, redirect } from '@sveltejs/kit'
 import type { Actions, PageServerLoad } from './$types'
-import { SESSION_COOKIE, SESSION_MAX_AGE, signSession } from '$lib/server/auth'
-import { findUser } from '$lib/server/users'
+${loginImports}
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (locals.user) throw redirect(302, '/')
@@ -2025,10 +2207,7 @@ export const actions: Actions = {
     const form = await request.formData()
     const email = String(form.get('email') ?? '')
     const password = String(form.get('password') ?? '')
-    const user = findUser(email)
-    // DEMO: plain comparison against the seed. For a real store keep a passwordHash and
-    // use \`await verifyPassword(password, user.passwordHash)\` from '$lib/server/auth'.
-    if (!user || user.password !== password) return fail(401, { email, error: 'Invalid email or password.' })
+    ${loginCheck}${twoFactorBranch}
     const token = await signSession({ email: user.email, name: user.name, role: user.role })
     cookies.set(SESSION_COOKIE, token, {
       path: '/', httpOnly: true, sameSite: 'lax',
@@ -2039,6 +2218,30 @@ export const actions: Actions = {
   },
 }
 `
+
+  // Shared full-screen auth-page styles (login / register / forgot / reset).
+  const authStyle = `<style>
+  .auth { display: grid; place-items: center; min-height: 100vh; padding: 24px; background: var(--sg-bg-subtle, #f8fafc); }
+  .auth__card { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 28px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 16px; box-shadow: 0 12px 40px -12px rgba(15, 23, 42, 0.18); }
+  .auth__title { margin: 0; font-size: 22px; font-weight: 720; letter-spacing: -0.02em; }
+  .auth__sub { margin: -6px 0 6px; font-size: 13.5px; color: var(--sg-muted, #64748b); }
+  .auth__field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--sg-muted, #64748b); }
+  .auth__field input { padding: 9px 11px; font: inherit; font-size: 14px; font-weight: 400; color: var(--sg-fg, #0f172a); background: var(--sg-input-bg, #fff); border: 1px solid var(--sg-input-border, #e6e8ec); border-radius: 9px; }
+  .auth__field input:focus { outline: none; border-color: var(--sg-accent, #6366f1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sg-accent, #6366f1) 18%, transparent); }
+  .auth__btn { margin-top: 4px; padding: 10px; font: inherit; font-size: 14px; font-weight: 640; color: var(--sg-on-accent, #fff); background: var(--sg-accent, #6366f1); border: none; border-radius: 9px; cursor: pointer; }
+  .auth__btn:hover { filter: brightness(1.06); }
+  .auth__err { margin: 0; padding: 8px 11px; font-size: 13px; color: var(--sg-danger, #b3261e); background: color-mix(in srgb, var(--sg-danger, #dc2626) 9%, var(--sg-bg, #fff)); border: 1px solid color-mix(in srgb, var(--sg-danger, #dc2626) 35%, var(--sg-border, #e6e8ec)); border-radius: 9px; }
+  .auth__ok { margin: 0; padding: 8px 11px; font-size: 13px; color: #166534; background: color-mix(in srgb, #16a34a 9%, var(--sg-bg, #fff)); border: 1px solid color-mix(in srgb, #16a34a 35%, var(--sg-border, #e6e8ec)); border-radius: 9px; }
+  .auth__hint { margin: 6px 0 0; font-size: 12px; color: var(--sg-muted, #94a3b8); text-align: center; }
+  .auth__hint code { background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent); padding: 1px 5px; border-radius: 5px; }
+  .auth__links { margin: 2px 0 0; display: flex; justify-content: space-between; font-size: 12.5px; }
+  .auth__links a { color: var(--sg-accent, #6366f1); text-decoration: none; font-weight: 600; }
+  .auth__or { display: flex; align-items: center; gap: 10px; margin: 2px 0; color: var(--sg-muted, #94a3b8); font-size: 12px; }
+  .auth__or::before, .auth__or::after { content: ''; flex: 1; height: 1px; background: var(--sg-border, #e6e8ec); }
+  .auth__oauth { display: flex; flex-direction: column; gap: 8px; }
+  .auth__oauth-btn { display: block; text-align: center; padding: 9px; font-size: 13.5px; font-weight: 600; color: var(--sg-fg, #0f172a); background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 9px; text-decoration: none; }
+  .auth__oauth-btn:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 4%, var(--sg-bg, #fff)); }
+</style>`
 
   const loginPage = `<script lang="ts">
   import { enhance } from '$app/forms'
@@ -2056,25 +2259,17 @@ export const actions: Actions = {
     <label class="auth__field"><span>Password</span>
       <input name="password" type="password" autocomplete="current-password" required />
     </label>
-    <button class="auth__btn" type="submit">Sign in</button>
-    <p class="auth__hint">Demo account: <code>${demo.email}</code> / <code>${demo.password}</code></p>
+    <button class="auth__btn" type="submit">Sign in</button>${oauthProviders.length ? `
+    <div class="auth__or"><span>or</span></div>
+    <div class="auth__oauth">
+      ${oauthProviders.map((p) => `<a class="auth__oauth-btn" href="/auth/${p}">Continue with ${({ github: 'GitHub', google: 'Google', oidc: 'SSO' } as Record<string, string>)[p]}</a>`).join('\n      ')}
+    </div>` : ''}
+    <p class="auth__hint">Demo account: <code>${demo.email}</code> / <code>${demo.password}</code></p>${register ? `
+    <p class="auth__links"><a href="/forgot-password">Forgot password?</a><a href="/register">Create account</a></p>` : ''}
   </form>
 </div>
 
-<style>
-  .auth { display: grid; place-items: center; min-height: 100vh; padding: 24px; background: var(--sg-bg-subtle, #f8fafc); }
-  .auth__card { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; padding: 28px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 16px; box-shadow: 0 12px 40px -12px rgba(15, 23, 42, 0.18); }
-  .auth__title { margin: 0; font-size: 22px; font-weight: 720; letter-spacing: -0.02em; }
-  .auth__sub { margin: -6px 0 6px; font-size: 13.5px; color: var(--sg-muted, #64748b); }
-  .auth__field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--sg-muted, #64748b); }
-  .auth__field input { padding: 9px 11px; font: inherit; font-size: 14px; font-weight: 400; color: var(--sg-fg, #0f172a); background: var(--sg-input-bg, #fff); border: 1px solid var(--sg-input-border, #e6e8ec); border-radius: 9px; }
-  .auth__field input:focus { outline: none; border-color: var(--sg-accent, #6366f1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sg-accent, #6366f1) 18%, transparent); }
-  .auth__btn { margin-top: 4px; padding: 10px; font: inherit; font-size: 14px; font-weight: 640; color: var(--sg-on-accent, #fff); background: var(--sg-accent, #6366f1); border: none; border-radius: 9px; cursor: pointer; }
-  .auth__btn:hover { filter: brightness(1.06); }
-  .auth__err { margin: 0; padding: 8px 11px; font-size: 13px; color: var(--sg-danger, #b3261e); background: color-mix(in srgb, var(--sg-danger, #dc2626) 9%, var(--sg-bg, #fff)); border: 1px solid color-mix(in srgb, var(--sg-danger, #dc2626) 35%, var(--sg-border, #e6e8ec)); border-radius: 9px; }
-  .auth__hint { margin: 6px 0 0; font-size: 12px; color: var(--sg-muted, #94a3b8); text-align: center; }
-  .auth__hint code { background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent); padding: 1px 5px; border-radius: 5px; }
-</style>
+${authStyle}
 `
 
   const logoutServerTs = `import { redirect } from '@sveltejs/kit'
@@ -2089,10 +2284,495 @@ export const actions: Actions = {
 }
 `
 
-  const envExample = `# Session signing secret - set a long random value in production.
-SESSION_SECRET=change-me-to-a-long-random-string
+  // --- change password (any signed-in user; DB-backed only) ---
+  const accountServerTs = `import { fail, redirect } from '@sveltejs/kit'
+import type { Actions, PageServerLoad } from './$types'
+import { findUser, updatePassword${twoFactor ? ', setTwoFactor' : ''} } from '$lib/server/users'
+import { verifyPassword } from '$lib/server/auth'
+
+export const load: PageServerLoad = async ({ locals }) => {
+  if (!locals.user) throw redirect(302, '/login')
+${twoFactor ? `  const me = await findUser(locals.user.email)
+  return { user: locals.user, twoFactor: me?.twoFactor ?? false }` : '  return { user: locals.user }'}
+}
+
+export const actions: Actions = {
+  default: async ({ request, locals }) => {
+    if (!locals.user) throw redirect(302, '/login')
+    const form = await request.formData()
+    const current = String(form.get('current') ?? '')
+    const next = String(form.get('next') ?? '')
+    if (next.length < 8) return fail(400, { error: 'New password must be at least 8 characters.' })
+    const user = await findUser(locals.user.email)
+    if (!user || !(await verifyPassword(current, user.passwordHash))) return fail(401, { error: 'Current password is incorrect.' })
+    await updatePassword(user.email, next)
+    return { ok: true }
+  },${twoFactor ? `
+  tfa: async ({ request, locals }) => {
+    if (!locals.user) throw redirect(302, '/login')
+    const on = String((await request.formData()).get('on') ?? '') === 'true'
+    await setTwoFactor(locals.user.email, on)
+    return { tfa: on }
+  },` : ''}
+}
+`
+  const accountPage = `<script lang="ts">
+  import { enhance } from '$app/forms'
+  let { data, form } = $props()
+</script>
+
+<h1 class="st__title">Account</h1>
+<div class="acct">
+  <p class="st__sub">Signed in as <strong>{data.user.name}</strong> ({data.user.email}).</p>
+  <form method="POST" use:enhance class="acct__form">
+    <h2 class="acct__h">Change password</h2>
+    {#if form?.ok}<p class="acct__ok">Password updated.</p>{/if}
+    {#if form?.error}<p class="acct__err" role="alert">{form.error}</p>{/if}
+    <label class="acct__field"><span>Current password</span><input name="current" type="password" autocomplete="current-password" required /></label>
+    <label class="acct__field"><span>New password</span><input name="next" type="password" autocomplete="new-password" minlength="8" required /></label>
+    <button class="acct__btn" type="submit">Update password</button>
+  </form>${twoFactor ? `
+  <form method="POST" action="?/tfa" use:enhance class="acct__form">
+    <h2 class="acct__h">Two-factor authentication</h2>
+    <p class="st-hint">{data.twoFactor ? 'Enabled - a code is emailed to you at sign-in.' : 'Add an emailed one-time code at sign-in.'}</p>
+    <input type="hidden" name="on" value={data.twoFactor ? 'false' : 'true'} />
+    <button class="acct__btn" type="submit">{data.twoFactor ? 'Disable' : 'Enable'} two-factor</button>
+  </form>` : ''}
+</div>
+
+<style>
+  .acct { max-width: 420px; margin-top: 12px; }
+  .acct__form { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; padding: 18px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; background: var(--sg-bg, #fff); }
+  .acct__h { margin: 0; font-size: 15px; }
+  .acct__field { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; font-weight: 600; color: var(--sg-muted, #64748b); }
+  .acct__field input { padding: 8px 10px; font: inherit; font-size: 14px; font-weight: 400; border: 1px solid var(--sg-input-border, #e6e8ec); border-radius: 8px; background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); }
+  .acct__btn { align-self: start; margin-top: 4px; padding: 8px 16px; font: inherit; font-size: 13.5px; font-weight: 620; color: var(--sg-on-accent, #fff); background: var(--sg-accent, #6366f1); border: none; border-radius: 8px; cursor: pointer; }
+  .acct__ok { margin: 0; color: #166534; font-size: 13px; }
+  .acct__err { margin: 0; color: var(--sg-danger, #b3261e); font-size: 13px; }
+</style>
 `
 
+  // --- self-service register + password recovery (register flag) ---
+  const registerServerTs = `import { fail, redirect } from '@sveltejs/kit'
+import type { Actions, PageServerLoad } from './$types'
+import { createUser } from '$lib/server/users'
+import { SESSION_COOKIE, SESSION_MAX_AGE, signSession } from '$lib/server/auth'
+
+export const load: PageServerLoad = async ({ locals }) => {
+  if (locals.user) throw redirect(302, '/')
+  return {}
+}
+
+export const actions: Actions = {
+  default: async ({ request, cookies, url }) => {
+    const form = await request.formData()
+    const email = String(form.get('email') ?? '')
+    const name = String(form.get('name') ?? '')
+    const password = String(form.get('password') ?? '')
+    if (!email.trim() || !name.trim() || password.length < 8) return fail(400, { email, name, error: 'Enter a name, email, and a password of at least 8 characters.' })
+    const user = await createUser({ email, name, password, role: ${JSON.stringify(registerRole)} })
+    if (!user) return fail(409, { email, name, error: 'That email is already registered.' })
+    const token = await signSession({ email: user.email, name: user.name, role: user.role })
+    cookies.set(SESSION_COOKIE, token, { path: '/', httpOnly: true, sameSite: 'lax', secure: url.hostname !== 'localhost' && url.hostname !== '127.0.0.1', maxAge: SESSION_MAX_AGE })
+    throw redirect(302, '/')
+  },
+}
+`
+  const registerPage = `<script lang="ts">
+  import { enhance } from '$app/forms'
+  let { form } = $props()
+</script>
+
+<div class="auth">
+  <form method="POST" use:enhance class="auth__card">
+    <h1 class="auth__title">Create account</h1>
+    <p class="auth__sub">${jsStrHtml(project.title || '')}</p>
+    {#if form?.error}<p class="auth__err" role="alert">{form.error}</p>{/if}
+    <label class="auth__field"><span>Name</span><input name="name" autocomplete="name" value={form?.name ?? ''} required /></label>
+    <label class="auth__field"><span>Email</span><input name="email" type="email" autocomplete="username" value={form?.email ?? ''} required /></label>
+    <label class="auth__field"><span>Password</span><input name="password" type="password" autocomplete="new-password" minlength="8" required /></label>
+    <button class="auth__btn" type="submit">Create account</button>
+    <p class="auth__links"><a href="/login">Have an account? Sign in</a></p>
+  </form>
+</div>
+
+${authStyle}
+`
+  const forgotSend = emailReal
+    ? `if (user) {
+      const link = url.origin + '/reset-password?token=' + encodeURIComponent(await signReset(user.email))
+      await sendEmail(user.email, 'Reset your password', '<p>Reset your password with the link below (expires in 30 minutes):</p><p><a href="' + link + '">' + link + '</a></p>')
+    }`
+    : `if (user) await sendResetEmail(user.email, url.origin + '/reset-password?token=' + encodeURIComponent(await signReset(user.email)))`
+  const forgotServerTs = `import type { Actions } from './$types'
+import { findUser } from '$lib/server/users'
+import { signReset${emailReal ? '' : ', sendResetEmail'} } from '$lib/server/auth'${emailReal ? "\nimport { sendEmail } from '$lib/server/email'" : ''}
+
+export const actions: Actions = {
+  default: async ({ request, url }) => {
+    const email = String((await request.formData()).get('email') ?? '').trim().toLowerCase()
+    const user = await findUser(email)
+    // Respond identically whether or not the account exists (no account enumeration).
+    ${forgotSend}
+    return { sent: true }
+  },
+}
+`
+  const forgotPage = `<script lang="ts">
+  import { enhance } from '$app/forms'
+  let { form } = $props()
+</script>
+
+<div class="auth">
+  <form method="POST" use:enhance class="auth__card">
+    <h1 class="auth__title">Reset password</h1>
+    <p class="auth__sub">We'll email you a reset link.</p>
+    {#if form?.sent}<p class="auth__ok">If that account exists, a reset link is on its way. (Dev: the link is logged to the server console.)</p>{/if}
+    <label class="auth__field"><span>Email</span><input name="email" type="email" autocomplete="username" required /></label>
+    <button class="auth__btn" type="submit">Send reset link</button>
+    <p class="auth__links"><a href="/login">Back to sign in</a></p>
+  </form>
+</div>
+
+${authStyle}
+`
+  const resetServerTs = `import { fail, redirect } from '@sveltejs/kit'
+import type { Actions, PageServerLoad } from './$types'
+import { readReset } from '$lib/server/auth'
+import { updatePassword } from '$lib/server/users'
+
+export const load: PageServerLoad = async ({ url }) => {
+  return { valid: !!(await readReset(url.searchParams.get('token') ?? undefined)) }
+}
+
+export const actions: Actions = {
+  default: async ({ request, url }) => {
+    const email = await readReset(url.searchParams.get('token') ?? undefined)
+    if (!email) return fail(400, { error: 'This reset link is invalid or has expired.' })
+    const next = String((await request.formData()).get('password') ?? '')
+    if (next.length < 8) return fail(400, { error: 'Password must be at least 8 characters.' })
+    await updatePassword(email, next)
+    throw redirect(302, '/login')
+  },
+}
+`
+  const resetPage = `<script lang="ts">
+  import { enhance } from '$app/forms'
+  let { data, form } = $props()
+</script>
+
+<div class="auth">
+  <form method="POST" use:enhance class="auth__card">
+    <h1 class="auth__title">Set a new password</h1>
+    {#if !data.valid}
+      <p class="auth__err">This reset link is invalid or has expired. <a href="/forgot-password">Request a new one</a>.</p>
+    {:else}
+      {#if form?.error}<p class="auth__err" role="alert">{form.error}</p>{/if}
+      <label class="auth__field"><span>New password</span><input name="password" type="password" autocomplete="new-password" minlength="8" required /></label>
+      <button class="auth__btn" type="submit">Update password</button>
+    {/if}
+    <p class="auth__links"><a href="/login">Back to sign in</a></p>
+  </form>
+</div>
+
+${authStyle}
+`
+
+  // --- admin user management (userAdmin flag: DB-backed + RBAC) ---
+  const usersServerTs = `import { fail, redirect } from '@sveltejs/kit'
+import type { Actions, PageServerLoad, RequestEvent } from './$types'
+import { getServerRole, canScreen, ROLES } from '$lib/access'
+import { listUsers, createUser, setUserRole, deleteUser } from '$lib/server/users'
+
+// Only a full-access role (screens: '*') may manage users.
+function guard(event: RequestEvent): void {
+  if (!canScreen(getServerRole(event), '__users__')) throw redirect(302, '/')
+}
+
+export const load: PageServerLoad = async (event) => {
+  guard(event)
+  return { users: await listUsers(), roles: ROLES }
+}
+
+export const actions: Actions = {
+  create: async (event) => {
+    guard(event)
+    const form = await event.request.formData()
+    const email = String(form.get('email') ?? '')
+    const name = String(form.get('name') ?? '')
+    const password = String(form.get('password') ?? '')
+    const role = String(form.get('role') ?? ROLES[0])
+    if (!email.trim() || !name.trim() || password.length < 8) return fail(400, { error: 'Name, email, and an 8+ character password are required.' })
+    if (!(await createUser({ email, name, password, role }))) return fail(409, { error: 'That email already exists.' })
+    return { ok: 'created' }
+  },
+  role: async (event) => {
+    guard(event)
+    const form = await event.request.formData()
+    await setUserRole(String(form.get('email') ?? ''), String(form.get('role') ?? ''))
+    return { ok: 'updated' }
+  },
+  remove: async (event) => {
+    guard(event)
+    await deleteUser(String((await event.request.formData()).get('email') ?? ''))
+    return { ok: 'removed' }
+  },
+}
+`
+  const usersPage = `<script lang="ts">
+  import { enhance } from '$app/forms'
+  let { data, form } = $props()
+</script>
+
+<h1 class="st__title">Users</h1>
+{#if form?.error}<p class="usr__msg usr__msg--err" role="alert">{form.error}</p>{/if}
+<div class="usr">
+  <table class="usr__table">
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+    <tbody>
+      {#each data.users as u (u.email)}
+        <tr>
+          <td>{u.name}</td>
+          <td>{u.email}</td>
+          <td>
+            <form method="POST" action="?/role" use:enhance>
+              <input type="hidden" name="email" value={u.email} />
+              <select name="role" onchange={(e) => e.currentTarget.form?.requestSubmit()}>
+                {#each data.roles as r (r)}<option value={r} selected={r === u.role}>{r}</option>{/each}
+              </select>
+            </form>
+          </td>
+          <td>
+            <form method="POST" action="?/remove" use:enhance>
+              <input type="hidden" name="email" value={u.email} />
+              <button class="usr__del" type="submit">Remove</button>
+            </form>
+          </td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+
+  <form method="POST" action="?/create" use:enhance class="usr__add">
+    <h2 class="usr__h">Add user</h2>
+    <input name="name" placeholder="Name" required />
+    <input name="email" type="email" placeholder="Email" required />
+    <input name="password" type="password" placeholder="Password (8+)" minlength="8" required />
+    <select name="role">{#each data.roles as r (r)}<option value={r}>{r}</option>{/each}</select>
+    <button class="usr__btn" type="submit">Add user</button>
+  </form>
+</div>
+
+<style>
+  .usr { display: flex; flex-direction: column; gap: 18px; margin-top: 14px; }
+  .usr__table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .usr__table th { text-align: left; padding: 8px 10px; color: var(--sg-muted, #64748b); font-weight: 600; border-bottom: 1px solid var(--sg-border, #e6e8ec); }
+  .usr__table td { padding: 7px 10px; border-bottom: 1px solid var(--sg-border, #f1f5f9); }
+  .usr__table select { padding: 5px 8px; font: inherit; font-size: 13px; border: 1px solid var(--sg-input-border, #e6e8ec); border-radius: 7px; background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); }
+  .usr__del { padding: 4px 10px; font: inherit; font-size: 12.5px; color: #dc2626; background: none; border: 1px solid color-mix(in srgb, #dc2626 40%, var(--sg-border, #e6e8ec)); border-radius: 7px; cursor: pointer; }
+  .usr__add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 16px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; background: var(--sg-bg, #fff); }
+  .usr__h { width: 100%; margin: 0 0 4px; font-size: 15px; }
+  .usr__add input, .usr__add select { padding: 8px 10px; font: inherit; font-size: 13.5px; border: 1px solid var(--sg-input-border, #e6e8ec); border-radius: 8px; background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); }
+  .usr__btn { padding: 8px 16px; font: inherit; font-size: 13.5px; font-weight: 620; color: var(--sg-on-accent, #fff); background: var(--sg-accent, #6366f1); border: none; border-radius: 8px; cursor: pointer; }
+  .usr__msg { margin: 0 0 10px; padding: 8px 11px; border-radius: 9px; font-size: 13px; }
+  .usr__msg--err { color: var(--sg-danger, #b3261e); background: color-mix(in srgb, var(--sg-danger, #dc2626) 9%, var(--sg-bg, #fff)); border: 1px solid color-mix(in srgb, var(--sg-danger, #dc2626) 35%, var(--sg-border, #e6e8ec)); }
+</style>
+`
+
+  // --- real email (Resend HTTP / SMTP nodemailer / dev console) ---
+  const emailTs = `// Regenerated by SvGrid Studio. Email delivery: Resend (HTTP API, works on edge) or
+// SMTP (nodemailer, Node runtimes). Logs to the console in dev when neither is set.
+import { env } from '$env/dynamic/private'
+
+export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+  const from = env.EMAIL_FROM || 'onboarding@resend.dev'
+  if (env.RESEND_API_KEY) {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + env.RESEND_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({ from, to, subject, html }),
+    })
+    if (!res.ok) throw new Error('Resend send failed: ' + res.status + ' ' + (await res.text()))
+    return
+  }
+  if (env.SMTP_HOST) {
+    // Dynamic import so edge builds (Resend, or no email) never bundle nodemailer.
+    const nodemailer = (await import('nodemailer')).default
+    const transport = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: Number(env.SMTP_PORT ?? 587),
+      secure: env.SMTP_SECURE === 'true',
+      auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+    })
+    await transport.sendMail({ from, to, subject, html })
+    return
+  }
+  console.log('[email] (dev - set RESEND_API_KEY or SMTP_* to send) To: ' + to + ' | ' + subject + '\\n' + html)
+}
+`
+
+  // --- email 2FA verify step ---
+  const verifyServerTs = `import { fail, redirect } from '@sveltejs/kit'
+import type { Actions, PageServerLoad } from './$types'
+import { SESSION_COOKIE, SESSION_MAX_AGE, TFA_COOKIE, readChallenge, signSession } from '$lib/server/auth'
+import { findUser } from '$lib/server/users'
+
+export const load: PageServerLoad = async ({ cookies }) => {
+  if (!cookies.get(TFA_COOKIE)) throw redirect(302, '/login')
+  return {}
+}
+
+export const actions: Actions = {
+  default: async ({ request, cookies, url }) => {
+    const code = String((await request.formData()).get('code') ?? '')
+    const email = await readChallenge(cookies.get(TFA_COOKIE), code)
+    if (!email) return fail(401, { error: 'That code is invalid or has expired.' })
+    const user = await findUser(email)
+    if (!user) return fail(401, { error: 'Account not found.' })
+    cookies.delete(TFA_COOKIE, { path: '/' })
+    cookies.set(SESSION_COOKIE, await signSession({ email: user.email, name: user.name, role: user.role }), {
+      path: '/', httpOnly: true, sameSite: 'lax', secure: url.hostname !== 'localhost' && url.hostname !== '127.0.0.1', maxAge: SESSION_MAX_AGE,
+    })
+    throw redirect(302, url.searchParams.get('redirectTo') || '/')
+  },
+}
+`
+  const verifyPage = `<script lang="ts">
+  import { enhance } from '$app/forms'
+  let { form } = $props()
+</script>
+
+<div class="auth">
+  <form method="POST" use:enhance class="auth__card">
+    <h1 class="auth__title">Enter your code</h1>
+    <p class="auth__sub">We emailed you a 6-digit verification code.</p>
+    {#if form?.error}<p class="auth__err" role="alert">{form.error}</p>{/if}
+    <label class="auth__field"><span>Code</span><input name="code" inputmode="numeric" autocomplete="one-time-code" required /></label>
+    <button class="auth__btn" type="submit">Verify</button>
+    <p class="auth__links"><a href="/login">Back to sign in</a></p>
+  </form>
+</div>
+
+${authStyle}
+`
+
+  // --- OAuth / OIDC (dependency-free authorization-code + PKCE) ---
+  const providerSet = `new Set<Provider>([${oauthProviders.map((p) => JSON.stringify(p)).join(', ')}])`
+  const oauthTs = `// Regenerated by SvGrid Studio. Dependency-free OAuth 2.0 / OpenID Connect sign-in
+// (authorization-code + PKCE). Set each provider's client id/secret in the environment;
+// register the redirect URI <origin>/auth/<provider>/callback with the provider.
+import { env } from '$env/dynamic/private'
+
+export type Provider = 'github' | 'google' | 'oidc'
+type Endpoints = { authorize: string; token: string; userinfo: string }
+export type ProviderConfig = { clientId: string; clientSecret: string; scope: string; pkce: boolean; endpoints: Endpoints }
+
+function b64url(bytes: ArrayBuffer): string {
+  const b = new Uint8Array(bytes)
+  let s = ''
+  for (const byte of b) s += String.fromCharCode(byte)
+  return btoa(s).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '')
+}
+export function randomToken(): string { return b64url(crypto.getRandomValues(new Uint8Array(32)).buffer) }
+export async function pkceChallenge(verifier: string): Promise<string> {
+  return b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)))
+}
+
+async function endpointsFor(provider: Provider): Promise<Endpoints> {
+  if (provider === 'github') return { authorize: 'https://github.com/login/oauth/authorize', token: 'https://github.com/login/oauth/access_token', userinfo: 'https://api.github.com/user' }
+  if (provider === 'google') return { authorize: 'https://accounts.google.com/o/oauth2/v2/auth', token: 'https://oauth2.googleapis.com/token', userinfo: 'https://openidconnect.googleapis.com/v1/userinfo' }
+  // Generic OIDC (Azure AD / Entra, Okta, Auth0, Keycloak): discover from OIDC_ISSUER.
+  const issuer = (env.OIDC_ISSUER ?? '').replace(/\\/$/, '')
+  const disc = (await (await fetch(issuer + '/.well-known/openid-configuration')).json()) as { authorization_endpoint: string; token_endpoint: string; userinfo_endpoint: string }
+  return { authorize: disc.authorization_endpoint, token: disc.token_endpoint, userinfo: disc.userinfo_endpoint }
+}
+
+export async function providerConfig(provider: Provider): Promise<ProviderConfig> {
+  const prefix = provider.toUpperCase()
+  return {
+    clientId: env[prefix + '_CLIENT_ID'] ?? '',
+    clientSecret: env[prefix + '_CLIENT_SECRET'] ?? '',
+    scope: provider === 'github' ? 'read:user user:email' : 'openid email profile',
+    pkce: provider !== 'github',
+    endpoints: await endpointsFor(provider),
+  }
+}
+
+export type OAuthProfile = { email: string; name: string }
+export async function fetchProfile(provider: Provider, accessToken: string, userinfo: string): Promise<OAuthProfile | null> {
+  const headers = { authorization: 'Bearer ' + accessToken, accept: 'application/json', 'user-agent': 'svgrid-app' }
+  const data = (await (await fetch(userinfo, { headers })).json()) as Record<string, unknown>
+  let email = typeof data.email === 'string' ? data.email : ''
+  const name = typeof data.name === 'string' ? data.name : (typeof data.login === 'string' ? data.login : email)
+  if (provider === 'github' && !email) {
+    const emails = (await (await fetch('https://api.github.com/user/emails', { headers })).json()) as Array<{ email: string; primary: boolean; verified: boolean }>
+    email = (emails.find((e) => e.primary && e.verified) ?? emails.find((e) => e.verified))?.email ?? ''
+  }
+  return email ? { email: email.toLowerCase(), name: name || email } : null
+}
+`
+  const oauthLoginServerTs = `import { error, redirect } from '@sveltejs/kit'
+import type { RequestHandler } from './$types'
+import { providerConfig, randomToken, pkceChallenge, type Provider } from '$lib/server/oauth'
+
+const PROVIDERS = ${providerSet}
+
+export const GET: RequestHandler = async ({ params, url, cookies }) => {
+  const provider = params.provider as Provider
+  if (!PROVIDERS.has(provider)) throw error(404)
+  const cfg = await providerConfig(provider)
+  if (!cfg.clientId) throw error(500, provider + ' sign-in is not configured (set ' + provider.toUpperCase() + '_CLIENT_ID).')
+  const secure = url.protocol === 'https:'
+  const state = randomToken()
+  cookies.set('oauth_state', state, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 600, secure })
+  const q = new URLSearchParams({ client_id: cfg.clientId, redirect_uri: url.origin + '/auth/' + provider + '/callback', response_type: 'code', scope: cfg.scope, state })
+  if (cfg.pkce) {
+    const verifier = randomToken()
+    cookies.set('oauth_verifier', verifier, { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 600, secure })
+    q.set('code_challenge', await pkceChallenge(verifier))
+    q.set('code_challenge_method', 'S256')
+  }
+  throw redirect(302, cfg.endpoints.authorize + '?' + q.toString())
+}
+`
+  const oauthCallbackServerTs = `import { error, redirect } from '@sveltejs/kit'
+import type { RequestHandler } from './$types'
+import { providerConfig, fetchProfile, type Provider } from '$lib/server/oauth'
+import { findUser, createUser } from '$lib/server/users'
+import { SESSION_COOKIE, SESSION_MAX_AGE, signSession } from '$lib/server/auth'
+
+const PROVIDERS = ${providerSet}
+
+export const GET: RequestHandler = async ({ params, url, cookies }) => {
+  const provider = params.provider as Provider
+  if (!PROVIDERS.has(provider)) throw error(404)
+  const code = url.searchParams.get('code')
+  const state = url.searchParams.get('state')
+  if (!code || !state || state !== cookies.get('oauth_state')) throw error(400, 'Invalid OAuth state.')
+  const cfg = await providerConfig(provider)
+  const body = new URLSearchParams({ client_id: cfg.clientId, client_secret: cfg.clientSecret, code, redirect_uri: url.origin + '/auth/' + provider + '/callback', grant_type: 'authorization_code' })
+  const verifier = cookies.get('oauth_verifier')
+  if (cfg.pkce && verifier) body.set('code_verifier', verifier)
+  const tokenRes = await fetch(cfg.endpoints.token, { method: 'POST', headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' }, body })
+  if (!tokenRes.ok) throw error(502, 'OAuth token exchange failed.')
+  const token = (await tokenRes.json()) as { access_token?: string }
+  if (!token.access_token) throw error(502, 'No access token returned.')
+  const profile = await fetchProfile(provider, token.access_token, cfg.endpoints.userinfo)
+  if (!profile) throw error(502, 'Could not read a verified email from the provider.')
+  cookies.delete('oauth_state', { path: '/' })
+  cookies.delete('oauth_verifier', { path: '/' })
+  let user = await findUser(profile.email)
+  if (!user) user = await createUser({ email: profile.email, name: profile.name, password: crypto.randomUUID() + crypto.randomUUID(), role: ${JSON.stringify(registerRole)} })
+  if (!user) throw error(500, 'Could not create your account.')
+  cookies.set(SESSION_COOKIE, await signSession({ email: user.email, name: user.name, role: user.role }), {
+    path: '/', httpOnly: true, sameSite: 'lax', secure: url.protocol === 'https:', maxAge: SESSION_MAX_AGE,
+  })
+  throw redirect(302, '/')
+}
+`
+
+  // NOTE: SESSION_SECRET is added to the shared .env.example by envExample() (which
+  // scans the generated source), so it merges with DATABASE_URL etc. - no duplicate file.
   return [
     { path: 'src/lib/server/auth.ts', description: 'Session + password crypto (Web Crypto, dependency-free).', contents: authTs },
     { path: 'src/lib/server/users.ts', description: 'Demo user store (replace with your own).', contents: usersTs },
@@ -2102,7 +2782,32 @@ SESSION_SECRET=change-me-to-a-long-random-string
     { path: 'src/routes/login/+page.svelte', description: 'Sign-in page.', contents: loginPage },
     { path: 'src/routes/login/+page.server.ts', description: 'Sign-in form action.', contents: loginServerTs },
     { path: 'src/routes/logout/+page.server.ts', description: 'Sign-out action.', contents: logoutServerTs },
-    { path: '.env.example', description: 'Environment template.', contents: envExample },
+    ...(emailReal ? [{ path: 'src/lib/server/email.ts', description: 'Email delivery (Resend / SMTP / dev console).', contents: emailTs }] : []),
+    ...(twoFactor ? [
+      { path: 'src/routes/login/verify/+page.svelte', description: 'Two-factor code entry.', contents: verifyPage },
+      { path: 'src/routes/login/verify/+page.server.ts', description: 'Two-factor verify action.', contents: verifyServerTs },
+    ] : []),
+    ...(oauthProviders.length ? [
+      { path: 'src/lib/server/oauth.ts', description: 'OAuth / OIDC providers + PKCE helpers.', contents: oauthTs },
+      { path: 'src/routes/auth/[provider]/+server.ts', description: 'OAuth: start the sign-in redirect.', contents: oauthLoginServerTs },
+      { path: 'src/routes/auth/[provider]/callback/+server.ts', description: 'OAuth: handle the provider callback.', contents: oauthCallbackServerTs },
+    ] : []),
+    ...(dbBacked ? [
+      { path: 'src/routes/account/+page.svelte', description: 'Account: change password.', contents: accountPage },
+      { path: 'src/routes/account/+page.server.ts', description: 'Change-password action.', contents: accountServerTs },
+    ] : []),
+    ...(register ? [
+      { path: 'src/routes/register/+page.svelte', description: 'Sign-up page.', contents: registerPage },
+      { path: 'src/routes/register/+page.server.ts', description: 'Sign-up action.', contents: registerServerTs },
+      { path: 'src/routes/forgot-password/+page.svelte', description: 'Request a password reset.', contents: forgotPage },
+      { path: 'src/routes/forgot-password/+page.server.ts', description: 'Send a reset link.', contents: forgotServerTs },
+      { path: 'src/routes/reset-password/+page.svelte', description: 'Set a new password from a reset link.', contents: resetPage },
+      { path: 'src/routes/reset-password/+page.server.ts', description: 'Apply a password reset.', contents: resetServerTs },
+    ] : []),
+    ...(userAdmin ? [
+      { path: 'src/routes/users/+page.svelte', description: 'Admin: user management.', contents: usersPage },
+      { path: 'src/routes/users/+page.server.ts', description: 'User-management actions (role-gated).', contents: usersServerTs },
+    ] : []),
   ]
 }
 
@@ -2112,25 +2817,31 @@ function jsStrHtml(s: string): string {
 }
 
 // --- Typed data layer (Drizzle ORM + drizzle-kit migrations) ----------------
-type DzDialect = 'postgres' | 'sqlite' | 'turso'
-/** Per-dialect Drizzle wiring. Only the `.returning()`-capable dialects ship here
- *  (postgres covers Supabase + most; sqlite / turso cover embedded + edge). MySQL /
- *  MSSQL keep the raw connected route until their repo variants are added. */
-const DZ: Record<DzDialect, { kit: string; table: string; core: string; client: string; setup: string; creds: string }> = {
+type DzDialect = 'postgres' | 'mysql' | 'sqlite' | 'turso'
+/** Per-dialect Drizzle wiring. `returning` marks dialects that support INSERT/UPDATE
+ *  ... RETURNING (postgres / sqlite / turso); MySQL doesn't, so its repos re-select.
+ *  MSSQL is absent because Drizzle ORM has no SQL Server driver - it keeps the raw route. */
+const DZ: Record<DzDialect, { kit: string; table: string; core: string; client: string; setup: string; creds: string; returning: boolean }> = {
   postgres: {
-    kit: 'postgresql', table: 'pgTable', core: 'drizzle-orm/pg-core',
+    kit: 'postgresql', table: 'pgTable', core: 'drizzle-orm/pg-core', returning: true,
     client: "import { drizzle } from 'drizzle-orm/node-postgres'\nimport pg from 'pg'",
     setup: 'const pool = new pg.Pool({ connectionString: env.DATABASE_URL })\nexport const db = drizzle(pool, { schema })',
     creds: 'dbCredentials: { url: process.env.DATABASE_URL! }',
   },
+  mysql: {
+    kit: 'mysql', table: 'mysqlTable', core: 'drizzle-orm/mysql-core', returning: false,
+    client: "import { drizzle } from 'drizzle-orm/mysql2'\nimport mysql from 'mysql2/promise'",
+    setup: "const pool = mysql.createPool(env.DATABASE_URL ?? '')\nexport const db = drizzle(pool, { schema, mode: 'default' })",
+    creds: 'dbCredentials: { url: process.env.DATABASE_URL! }',
+  },
   sqlite: {
-    kit: 'sqlite', table: 'sqliteTable', core: 'drizzle-orm/sqlite-core',
+    kit: 'sqlite', table: 'sqliteTable', core: 'drizzle-orm/sqlite-core', returning: true,
     client: "import { drizzle } from 'drizzle-orm/better-sqlite3'\nimport Database from 'better-sqlite3'",
     setup: "const sqlite = new Database(env.DATABASE_URL ?? 'data.db')\nexport const db = drizzle(sqlite, { schema })",
     creds: "dbCredentials: { url: process.env.DATABASE_URL ?? 'data.db' }",
   },
   turso: {
-    kit: 'turso', table: 'sqliteTable', core: 'drizzle-orm/sqlite-core',
+    kit: 'turso', table: 'sqliteTable', core: 'drizzle-orm/sqlite-core', returning: true,
     client: "import { drizzle } from 'drizzle-orm/libsql'\nimport { createClient } from '@libsql/client'",
     setup: "const client = createClient({ url: env.DATABASE_URL ?? '', authToken: env.DATABASE_AUTH_TOKEN })\nexport const db = drizzle(client, { schema })",
     creds: 'dbCredentials: { url: process.env.DATABASE_URL!, authToken: process.env.DATABASE_AUTH_TOKEN }',
@@ -2140,9 +2851,10 @@ const DZ: Record<DzDialect, { kit: string; table: string; core: string; client: 
 /** Normalize a Studio SQL dialect to a Drizzle-supported one, or null if unsupported. */
 function dzDialect(dialect: string | undefined): DzDialect | null {
   if (dialect === 'supabase' || dialect === 'postgres' || dialect == null) return 'postgres'
+  if (dialect === 'mysql') return 'mysql'
   if (dialect === 'sqlite') return 'sqlite'
   if (dialect === 'turso') return 'turso'
-  return null // mysql / mssql: not yet in the Drizzle layer
+  return null // mssql: Drizzle ORM has no SQL Server driver - stays on the raw route
 }
 
 /** A safe JS identifier for a Drizzle table export (e.g. `orderItems`). */
@@ -2157,6 +2869,7 @@ function dzColumn(dialect: DzDialect, field: EntityField, colName: string, isPk:
   const q = JSON.stringify(colName)
   if (isPk) {
     if (dialect === 'postgres') return pkIsNumber ? { expr: `serial(${q}).primaryKey()`, imports: ['serial'] } : { expr: `text(${q}).primaryKey()`, imports: ['text'] }
+    if (dialect === 'mysql') return pkIsNumber ? { expr: `int(${q}).autoincrement().primaryKey()`, imports: ['int'] } : { expr: `varchar(${q}, { length: 255 }).primaryKey()`, imports: ['varchar'] }
     // sqlite / turso
     return pkIsNumber ? { expr: `integer(${q}).primaryKey({ autoIncrement: true })`, imports: ['integer'] } : { expr: `text(${q}).primaryKey()`, imports: ['text'] }
   }
@@ -2170,6 +2883,16 @@ function dzColumn(dialect: DzDialect, field: EntityField, colName: string, isPk:
       default: return { expr: `text(${q})`, imports: ['text'] }
     }
   }
+  if (dialect === 'mysql') {
+    switch (field.type) {
+      case 'number': return { expr: `double(${q})`, imports: ['double'] }
+      case 'boolean': return { expr: `boolean(${q})`, imports: ['boolean'] }
+      case 'date': return { expr: `date(${q})`, imports: ['date'] }
+      case 'datetime': return { expr: `datetime(${q})`, imports: ['datetime'] }
+      case 'json': return { expr: `json(${q})`, imports: ['json'] }
+      default: return { expr: `varchar(${q}, { length: 255 })`, imports: ['varchar'] }
+    }
+  }
   // sqlite / turso
   switch (field.type) {
     case 'number': return { expr: `real(${q})`, imports: ['real'] }
@@ -2179,14 +2902,41 @@ function dzColumn(dialect: DzDialect, field: EntityField, colName: string, isPk:
   }
 }
 
+/** The Drizzle `auth_users` table (added when auth + data layer are both on): the
+ *  DB-backed user store the login flow reads. Fixed shape: id, unique email, name,
+ *  role, passwordHash. Returns the table block + the core imports it needs. */
+function dzUsersTable(dialect: DzDialect, tableFn: string, with2fa = false): { block: string; imports: string[] } {
+  const tail = '\n})\nexport type AuthUserRow = typeof authUsers.$inferSelect\nexport type AuthUserNew = typeof authUsers.$inferInsert'
+  if (dialect === 'postgres') {
+    const tfa = with2fa ? '\n  "twoFactor": boolean("two_factor").notNull().default(false),' : ''
+    return {
+      imports: [tableFn, 'serial', 'text', ...(with2fa ? ['boolean'] : [])],
+      block: `export const authUsers = ${tableFn}("auth_users", {\n  "id": serial("id").primaryKey(),\n  "email": text("email").notNull().unique(),\n  "name": text("name").notNull(),\n  "role": text("role").notNull(),\n  "passwordHash": text("password_hash").notNull(),${tfa}${tail}`,
+    }
+  }
+  if (dialect === 'mysql') {
+    const tfa = with2fa ? '\n  "twoFactor": boolean("two_factor").notNull().default(false),' : ''
+    return {
+      imports: [tableFn, 'int', 'varchar', ...(with2fa ? ['boolean'] : [])],
+      block: `export const authUsers = ${tableFn}("auth_users", {\n  "id": int("id").autoincrement().primaryKey(),\n  "email": varchar("email", { length: 320 }).notNull().unique(),\n  "name": varchar("name", { length: 255 }).notNull(),\n  "role": varchar("role", { length: 64 }).notNull(),\n  "passwordHash": varchar("password_hash", { length: 255 }).notNull(),${tfa}${tail}`,
+    }
+  }
+  // sqlite / turso
+  const tfa = with2fa ? "\n  \"twoFactor\": integer(\"two_factor\", { mode: 'boolean' }).notNull().default(false)," : ''
+  return {
+    imports: [tableFn, 'integer', 'text'],
+    block: `export const authUsers = ${tableFn}("auth_users", {\n  "id": integer("id").primaryKey({ autoIncrement: true }),\n  "email": text("email").notNull().unique(),\n  "name": text("name").notNull(),\n  "role": text("role").notNull(),\n  "passwordHash": text("password_hash").notNull(),${tfa}${tail}`,
+  }
+}
+
 /** The typed Drizzle data layer (emitted when `project.dataLayer === 'drizzle'` and
  *  there's a SQL-bound entity on a supported dialect): a schema (the source of truth
  *  for drizzle-kit migrations), a client, a typed repository per entity, and the
  *  drizzle.config.ts. The connected `+server.ts` routes read the same tables. */
-function dataLayerFiles(project: StudioProject, sqlEntities: EntitySchema[], sources: Record<string, EntityDataSource>): GeneratedFile[] {
+function dataLayerFiles(project: StudioProject, sqlEntities: EntitySchema[], sources: Record<string, EntityDataSource>, includeUsers = false, usersTwoFactor = false): GeneratedFile[] {
   const firstSql = sources[sqlEntities[0]!.name]
   const dialect = dzDialect(firstSql?.kind === 'sql' ? firstSql.dialect : undefined)
-  if (!dialect) return [] // MySQL / MSSQL: raw route only, for now
+  if (!dialect) return [] // MSSQL: raw route only (Drizzle has no SQL Server driver)
   const cfg = DZ[dialect]
 
   // schema.ts - one table per SQL entity + inferred row / insert types.
@@ -2209,6 +2959,12 @@ function dataLayerFiles(project: StudioProject, sqlEntities: EntitySchema[], sou
     tableBlocks.push(`export const ${tableVar} = ${cfg.table}(${JSON.stringify(table)}, {\n${cols.join('\n')}\n})\nexport type ${type}Row = typeof ${tableVar}.$inferSelect\nexport type ${type}New = typeof ${tableVar}.$inferInsert`)
     meta.push({ e, tableVar, pkKey: pk, pkNumber })
   }
+  // Auth: the DB-backed user store lives in the same schema (so one migration covers it).
+  if (includeUsers) {
+    const u = dzUsersTable(dialect, cfg.table, usersTwoFactor)
+    u.imports.forEach((i) => colImports.add(i))
+    tableBlocks.push(u.block)
+  }
   const schemaTs = `// Regenerated by SvGrid Studio. Typed database schema (Drizzle ORM) - the source of
 // truth for migrations: edit here, then run \`npm run db:generate\` && \`npm run db:migrate\`.
 import { ${[...colImports].sort().join(', ')} } from '${cfg.core}'
@@ -2228,16 +2984,9 @@ export { schema }
   const repoFiles = meta.map(({ e, tableVar, pkKey, pkNumber }) => {
     const type = namesFor(e).type
     const idT = pkNumber ? 'number' : 'string'
-    return {
-      path: `src/lib/server/db/${namesFor(e).route}.ts`,
-      description: `Typed repository for ${namesFor(e).label} (Drizzle).`,
-      contents: `// Regenerated by SvGrid Studio. Typed CRUD over the ${tableVar} table - call from
-// server code, form actions, or your own API routes.
-import { eq } from 'drizzle-orm'
-import { db } from './index'
-import { ${tableVar}, type ${type}Row, type ${type}New } from './schema'
-
-export const ${tableVar}Repo = {
+    // MySQL has no RETURNING, so create/update re-select the row after writing.
+    const crud = cfg.returning
+      ? `export const ${tableVar}Repo = {
   list: (): Promise<${type}Row[]> => db.select().from(${tableVar}),
   get: async (id: ${idT}): Promise<${type}Row | undefined> =>
     (await db.select().from(${tableVar}).where(eq(${tableVar}.${pkKey}, id))).at(0),
@@ -2248,7 +2997,38 @@ export const ${tableVar}Repo = {
   remove: async (id: ${idT}): Promise<void> => {
     await db.delete(${tableVar}).where(eq(${tableVar}.${pkKey}, id))
   },
+}`
+      : `async function getById(id: ${idT}): Promise<${type}Row | undefined> {
+  return (await db.select().from(${tableVar}).where(eq(${tableVar}.${pkKey}, id))).at(0)
 }
+
+export const ${tableVar}Repo = {
+  list: (): Promise<${type}Row[]> => db.select().from(${tableVar}),
+  get: getById,
+  // MySQL: no RETURNING - re-select by the new/insertId after the write.
+  create: async (values: ${type}New): Promise<${type}Row> => {
+    const res = await db.insert(${tableVar}).values(values)
+    const id = ((values as Record<string, unknown>).${pkKey} ?? (res as unknown as Array<{ insertId: number }>)[0]?.insertId) as ${idT}
+    return (await getById(id))!
+  },
+  update: async (id: ${idT}, values: Partial<${type}New>): Promise<${type}Row | undefined> => {
+    await db.update(${tableVar}).set(values).where(eq(${tableVar}.${pkKey}, id))
+    return getById(id)
+  },
+  remove: async (id: ${idT}): Promise<void> => {
+    await db.delete(${tableVar}).where(eq(${tableVar}.${pkKey}, id))
+  },
+}`
+    return {
+      path: `src/lib/server/db/${namesFor(e).route}.ts`,
+      description: `Typed repository for ${namesFor(e).label} (Drizzle).`,
+      contents: `// Regenerated by SvGrid Studio. Typed CRUD over the ${tableVar} table - call from
+// server code, form actions, or your own API routes.
+import { eq } from 'drizzle-orm'
+import { db } from './index'
+import { ${tableVar}, type ${type}Row, type ${type}New } from './schema'
+
+${crud}
 `,
     }
   })
@@ -2344,9 +3124,58 @@ type DeployPlan = {
   files: GeneratedFile[]
   /** Copy-paste command that deploys the app. */
   cli: string
+  /** The npm `deploy` script command. */
+  deployScript: string
   /** Provider "new project" dashboard link (for the import-from-Git path). */
   dashboard?: string
+  /** GitHub repo secrets the deploy workflow needs (documented in DEPLOY.md). */
+  secrets: string[]
+  /** `.github/workflows/deploy.yml` body - a push-to-main deploy pipeline (steps
+   *  gate on their secret so an unconfigured repo never fails CI). */
+  deployWorkflow?: string
   label: string
+}
+
+// NOTE: the generated app ships without a package-lock.json, so the workflows use
+// `npm install` (not `npm ci`) and omit setup-node's lockfile-dependent `cache: npm`
+// - both hard-fail when no lockfile is present. Commit a lockfile later to speed CI up.
+/** Universal CI: install + build + smoke tests on every push / PR. */
+const CI_WORKFLOW = `name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run build
+      - run: npm test
+`
+
+/** Wrap deploy steps in the standard checkout + node + install prelude. */
+function deployWorkflow(steps: string): string {
+  return `name: Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+${steps}`
 }
 
 function deployPlan(project: StudioProject): DeployPlan {
@@ -2359,8 +3188,22 @@ function deployPlan(project: StudioProject): DeployPlan {
         adapterDep: ['@sveltejs/adapter-vercel', '^5.5.0'],
         files: [],
         cli: 'npx vercel --prod',
+        deployScript: 'vercel deploy --prod',
         dashboard: 'https://vercel.com/new',
         label: 'Vercel',
+        secrets: ['VERCEL_TOKEN', 'VERCEL_ORG_ID', 'VERCEL_PROJECT_ID'],
+        deployWorkflow: deployWorkflow(`      - name: Deploy to Vercel
+        if: \${{ secrets.VERCEL_TOKEN != '' }}
+        env:
+          VERCEL_TOKEN: \${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: \${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: \${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npm i -g vercel
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+`),
       }
     case 'netlify':
       return {
@@ -2368,8 +3211,17 @@ function deployPlan(project: StudioProject): DeployPlan {
         adapterDep: ['@sveltejs/adapter-netlify', '^5.0.0'],
         files: [{ path: 'netlify.toml', description: 'Netlify build config.', contents: `[build]\n  command = "npm run build"\n` }],
         cli: 'npx netlify deploy --build --prod',
+        deployScript: 'netlify deploy --build --prod',
         dashboard: 'https://app.netlify.com/start',
         label: 'Netlify',
+        secrets: ['NETLIFY_AUTH_TOKEN', 'NETLIFY_SITE_ID'],
+        deployWorkflow: deployWorkflow(`      - name: Deploy to Netlify
+        if: \${{ secrets.NETLIFY_AUTH_TOKEN != '' }}
+        env:
+          NETLIFY_AUTH_TOKEN: \${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: \${{ secrets.NETLIFY_SITE_ID }}
+        run: npx netlify deploy --build --prod
+`),
       }
     case 'cloudflare':
       return {
@@ -2377,16 +3229,31 @@ function deployPlan(project: StudioProject): DeployPlan {
         adapterDep: ['@sveltejs/adapter-cloudflare', '^7.0.0'],
         files: [{ path: 'wrangler.toml', description: 'Cloudflare Pages config.', contents: `name = "${slug}"\npages_build_output_dir = ".svelte-kit/cloudflare"\ncompatibility_date = "2024-11-01"\n` }],
         cli: 'npm run build && npx wrangler pages deploy .svelte-kit/cloudflare',
+        deployScript: `npm run build && wrangler pages deploy .svelte-kit/cloudflare --project-name=${slug}`,
         dashboard: 'https://dash.cloudflare.com/?to=/:account/pages/new',
         label: 'Cloudflare Pages',
+        secrets: ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID'],
+        deployWorkflow: deployWorkflow(`      - run: npm run build
+      - name: Deploy to Cloudflare Pages
+        if: \${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages deploy .svelte-kit/cloudflare --project-name=${slug}
+`),
       }
     case 'node':
       return {
         adapterModule: '@sveltejs/adapter-node',
         adapterDep: ['@sveltejs/adapter-node', '^5.2.0'],
-        files: [],
+        files: [
+          { path: 'Dockerfile', description: 'Container image (multi-stage: build then run `node build`).', contents: `# Build stage\nFROM node:20-alpine AS build\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\nRUN npm run build\nRUN npm prune --omit=dev\n\n# Run stage\nFROM node:20-alpine\nWORKDIR /app\nENV NODE_ENV=production\nCOPY --from=build /app/build ./build\nCOPY --from=build /app/node_modules ./node_modules\nCOPY --from=build /app/package.json ./package.json\nEXPOSE 3000\nCMD ["node", "build"]\n` },
+          { path: '.dockerignore', description: 'Files kept out of the image.', contents: `node_modules\n.svelte-kit\nbuild\n.env\n.env.*\n.git\n.github\n` },
+        ],
         cli: 'npm run build && node build',
+        deployScript: 'npm run build && node build',
         label: 'Node server',
+        secrets: [],
       }
     default:
       return {
@@ -2394,16 +3261,48 @@ function deployPlan(project: StudioProject): DeployPlan {
         adapterDep: ['@sveltejs/adapter-auto', '^6.0.0'],
         files: [],
         cli: 'npx vercel --prod',
+        deployScript: 'vercel deploy --prod',
         dashboard: 'https://vercel.com/new',
         label: 'Auto (Vercel / Netlify / Cloudflare)',
+        secrets: [],
       }
   }
 }
 
 /** The deploy facts the designer's Deploy panel shows (label, CLI one-liner, dashboard link). */
-export function studioDeployInfo(project: StudioProject): { label: string; cli: string; dashboard?: string; adapter: string } {
+export function studioDeployInfo(project: StudioProject): { label: string; cli: string; dashboard?: string; adapter: string; secrets: string[] } {
   const p = deployPlan(project)
-  return { label: p.label, cli: p.cli, dashboard: p.dashboard, adapter: p.adapterModule }
+  return { label: p.label, cli: p.cli, dashboard: p.dashboard, adapter: p.adapterModule, secrets: p.secrets }
+}
+
+/** DEPLOY.md - the runbook: required env vars, then Git-integration / CI / CLI paths. */
+function deployDocs(project: StudioProject, plan: DeployPlan, envKeys: string[], hasMigrations: boolean): string {
+  const envBlock = envKeys.length
+    ? `## Environment variables\n\nSet these on your host (and locally in \`.env\` - copy \`.env.example\`):\n\n${envKeys.map((k) => `- \`${k}\``).join('\n')}\n\n`
+    : ''
+  const migrations = hasMigrations
+    ? `## Database migrations\n\nThis app has a typed Drizzle schema (\`src/lib/server/db/schema.ts\`). Create + apply the tables:\n\n\`\`\`bash\nnpm run db:generate   # SQL migrations from the schema\nnpm run db:migrate    # apply them to DATABASE_URL\n\`\`\`\n\n(Run these against your production database as part of your release step.)\n\n`
+    : ''
+  const gitIntegration = plan.dashboard
+    ? `## Option A - Git integration (simplest, no secrets)\n\n1. Push this repo to GitHub.\n2. Import it at <${plan.dashboard}> - the SvelteKit build is auto-detected.\n3. Add the environment variables above in the host's dashboard.\n\nEvery push to \`main\` then redeploys automatically.\n\n`
+    : ''
+  const ci = plan.deployWorkflow
+    ? `## Option B - GitHub Actions (included)\n\n\`.github/workflows/deploy.yml\` deploys on every push to \`main\`. Add these repository secrets to enable it (Settings -> Secrets and variables -> Actions):\n\n${plan.secrets.map((s) => `- \`${s}\``).join('\n')}\n\nUntil the secrets are set the deploy step is skipped, so CI stays green. Prefer Option A? Delete \`deploy.yml\`.\n\n`
+    : ''
+  const dockerNote = project.deploy === 'node'
+    ? `## Container\n\nA \`Dockerfile\` is included:\n\n\`\`\`bash\ndocker build -t ${appSlug(project.title)} .\ndocker run -p 3000:3000 --env-file .env ${appSlug(project.title)}\n\`\`\`\n\nThe server listens on \`PORT\` (default 3000).\n\n`
+    : ''
+  const cli = `## Option C - Deploy from your machine\n\n\`\`\`bash\nnpm run deploy\n\`\`\`\n\n(runs \`${plan.deployScript}\`)\n`
+  return `# Deploying ${project.title}\n\nConfigured for **${plan.label}** (SvelteKit \`${plan.adapterModule}\`). A CI workflow (\`.github/workflows/ci.yml\`) builds + tests every push.\n\n${envBlock}${migrations}${gitIntegration}${ci}${dockerNote}${cli}`
+}
+
+/** The env-var keys the generated app reads (for DEPLOY.md). */
+function envKeysUsed(allSource: string): string[] {
+  const keys: string[] = []
+  if (allSource.includes('env.DATABASE_URL')) keys.push('DATABASE_URL')
+  if (allSource.includes('env.DATABASE_AUTH_TOKEN')) keys.push('DATABASE_AUTH_TOKEN')
+  if (allSource.includes('SESSION_SECRET')) keys.push('SESSION_SECRET')
+  return keys
 }
 
 /** A `.env.example` listing the env vars the generated code reads, when any. */
@@ -2416,6 +3315,31 @@ function envExample(allSource: string): string | null {
   if (allSource.includes('env.DATABASE_AUTH_TOKEN')) {
     lines.push('# Turso / libSQL database auth token.')
     lines.push('DATABASE_AUTH_TOKEN=')
+  }
+  if (allSource.includes('SESSION_SECRET')) {
+    if (lines.length) lines.push('')
+    lines.push('# Session signing secret - set a long random value in production.')
+    lines.push('SESSION_SECRET=change-me-to-a-long-random-string')
+  }
+  if (allSource.includes("from '$lib/server/email'")) {
+    lines.push('')
+    lines.push('# Email delivery (for password reset / two-factor). Use EITHER Resend OR SMTP;')
+    lines.push('# without either, emails are logged to the server console (dev).')
+    lines.push('EMAIL_FROM=')
+    lines.push('# RESEND_API_KEY=')
+    lines.push('# SMTP_HOST=')
+    lines.push('# SMTP_PORT=587')
+    lines.push('# SMTP_USER=')
+    lines.push('# SMTP_PASS=')
+    lines.push('# SMTP_SECURE=false')
+  }
+  if (allSource.includes("from '$lib/server/oauth'")) {
+    lines.push('')
+    lines.push('# OAuth / OIDC sign-in. Fill in the providers you enabled; register the redirect')
+    lines.push('# URI <origin>/auth/<provider>/callback with each provider.')
+    if (allSource.includes("'github'") || allSource.includes('"github"')) { lines.push('# GITHUB_CLIENT_ID='); lines.push('# GITHUB_CLIENT_SECRET=') }
+    if (allSource.includes("'google'") || allSource.includes('"google"')) { lines.push('# GOOGLE_CLIENT_ID='); lines.push('# GOOGLE_CLIENT_SECRET=') }
+    if (allSource.includes("'oidc'") || allSource.includes('"oidc"')) { lines.push('# OIDC_ISSUER=  # e.g. https://login.microsoftonline.com/<tenant>/v2.0'); lines.push('# OIDC_CLIENT_ID='); lines.push('# OIDC_CLIENT_SECRET=') }
   }
   if (lines.length === 0) return null
   lines.push('')
@@ -2442,10 +3366,13 @@ function packageJson(project: StudioProject, allSource: string): string {
   if (/from ['"]hyperformula['"]/.test(allSource)) dependencies['hyperformula'] = '^3.3.0'
   if (/from ['"]jszip['"]/.test(allSource)) dependencies['jszip'] = '^3.10.1'
   if (/from ['"]pdfmake(?:\/[^'"]*)?['"]/.test(allSource)) dependencies['pdfmake'] = '^0.2.10'
+  // nodemailer is dynamically imported by the email layer only on the SMTP branch.
+  const usesNodemailer = /import\(['"]nodemailer['"]\)/.test(allSource)
+  if (usesNodemailer) dependencies['nodemailer'] = '^6.9.0'
   // Typed data layer: drizzle-orm at runtime, drizzle-kit (dev) for migrations + scripts.
   const drizzle = project.dataLayer === 'drizzle' && /from ['"]drizzle-orm(?:\/[^'"]*)?['"]/.test(allSource)
   if (drizzle) dependencies['drizzle-orm'] = '^0.44.0'
-  const scripts: Record<string, string> = { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json', test: 'vitest run' }
+  const scripts: Record<string, string> = { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json', test: 'vitest run', deploy: deployPlan(project).deployScript }
   if (drizzle) {
     scripts['db:generate'] = 'drizzle-kit generate'
     scripts['db:migrate'] = 'drizzle-kit migrate'
@@ -2475,6 +3402,7 @@ function packageJson(project: StudioProject, allSource: string): string {
       // Driver typings so the connected route + data layer type-check cleanly.
       ...(dependencies['pg'] ? { '@types/pg': '^8.11.0' } : {}),
       ...(dependencies['better-sqlite3'] ? { '@types/better-sqlite3': '^7.6.0' } : {}),
+      ...(usesNodemailer ? { '@types/nodemailer': '^6.4.0' } : {}),
       ...(drizzle ? { 'drizzle-kit': '^0.31.0' } : {}),
     },
   }
@@ -2563,6 +3491,11 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     // the designer for further visual editing - the export/import round-trip.
     { path: 'studio.config.json', description: 'The Studio project model - Load it back into the designer to keep editing visually.', contents: serializeProject(project) + '\n' },
     { path: 'README.md', description: 'How to run the app.', contents: readme },
+    // CI/CD: a build+test pipeline always, a push-to-deploy pipeline when the target
+    // has one, and a DEPLOY.md runbook.
+    { path: '.github/workflows/ci.yml', description: 'CI: build + test on push / PR.', contents: CI_WORKFLOW },
+    ...(plan.deployWorkflow ? [{ path: '.github/workflows/deploy.yml', description: `Deploy to ${plan.label} on push to main.`, contents: plan.deployWorkflow }] : []),
+    { path: 'DEPLOY.md', description: 'Deploy runbook (env vars, Git integration, CI, CLI).', contents: deployDocs(project, plan, envKeysUsed(allSource), generated.some((f) => f.path === 'drizzle.config.ts')) },
   ]
   return [...scaffold, ...generated]
 }

@@ -278,18 +278,23 @@ export function removeLeaf(root: DockNode, tabsId: string): { root: DockNode | n
 }
 
 /** Dock a whole leaf against an EDGE of the entire tree (for pinning an
- *  auto-hidden panel back in). Wraps the root in a new group as needed. */
+ *  auto-hidden panel back in). Wraps the root in a new group as needed; the
+ *  pinned leaf takes `fraction` of that axis (clamped 0.1..0.6), the rest keeps
+ *  the existing content. */
 export function dockLeafToEdge(
   root: DockNode | null,
   leaf: DockTabs,
   side: Exclude<DockZone, 'center'>,
   genId: IdGen,
+  fraction = 0.25,
 ): DockNode {
   if (!root) return leaf
   const dir: 'row' | 'column' = side === 'left' || side === 'right' ? 'row' : 'column'
   const before = side === 'left' || side === 'top'
+  const f = Math.min(0.6, Math.max(0.1, fraction))
   const kids = before ? [leaf, root] : [root, leaf]
-  return normalize(group(genId, dir, kids)) ?? leaf
+  const sizes = before ? [f, 1 - f] : [1 - f, f]
+  return normalize(group(genId, dir, kids, sizes)) ?? leaf
 }
 
 /** Move an existing pane to a new dock position (remove then dock). */

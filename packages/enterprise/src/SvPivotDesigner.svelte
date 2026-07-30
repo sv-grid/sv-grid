@@ -129,6 +129,25 @@
      * header and body always stay in sync (fine up to a few hundred columns).
      */
     columnVirtualization?: boolean
+    /**
+     * Render the field picker as an AG-Grid-style **Columns** tool panel: a
+     * collapsible column-group TREE whose checkboxes toggle column VISIBILITY
+     * (with a select-all), instead of the flat "tick to add to a well" list.
+     * Fields still drag into the Rows / Columns / Values wells. The embedded
+     * flat grid (pivot off) hides deselected columns. Default false.
+     */
+    columnTree?: boolean
+    /** Hidden column ids (field names) when `columnTree` is on. Bindable. */
+    hiddenFields?: string[]
+    /** Fired when column visibility changes (columnTree mode). */
+    onHiddenFieldsChange?: (hidden: string[]) => void
+    /**
+     * Show a vertical Columns / Filters tab rail on the docked panel
+     * (`panelPosition='right'`). The Filters tab is an AG-Grid-style set-filter
+     * builder: "Add Filter" -> pick a column -> tick which values pass. Filters
+     * narrow the source rows (they drive `layout.filters`). Default false.
+     */
+    toolTabs?: boolean
   }
   let {
     data,
@@ -157,7 +176,52 @@
     gridFitColumns = true,
     columnVirtualization = true,
     contextMenu = true,
+    columnTree = false,
+    hiddenFields = $bindable<string[]>([]),
+    onHiddenFieldsChange,
+    toolTabs = false,
   }: Props = $props()
+
+  // ---- Columns / Filters tab rail ----------------------------------
+  let activeTab = $state<'columns' | 'filters'>('columns')
+  let filterCollapsed = $state<Set<string>>(new Set())
+  let filterSearch = $state<Record<string, string>>({})
+  let addFilterOpen = $state(false)
+  let addFilterSearch = $state('')
+  function toggleFilterCard(field: string) {
+    const next = new Set(filterCollapsed)
+    if (next.has(field)) next.delete(field); else next.add(field)
+    filterCollapsed = next
+  }
+  function toggleFilterValue(f: { field: string; allowed: string[] | null }, v: string, all: string[]) {
+    const cur = f.allowed ?? all.slice()
+    const next = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]
+    setFilterAllowed(f.field, next.length === all.length ? null : next)
+  }
+  function addFilterField(field: string) {
+    if (!layout.filters.some((f) => f.field === field)) {
+      emit({ ...layout, filters: [...layout.filters, { field, allowed: null }] })
+    }
+    const nc = new Set(filterCollapsed); nc.delete(field); filterCollapsed = nc
+    addFilterOpen = false
+    addFilterSearch = ''
+  }
+  const availableFilterFields = $derived.by(() => {
+    const used = new Set(layout.filters.map((f) => f.field))
+    const q = addFilterSearch.trim().toLowerCase()
+    return fields.filter((f) => !used.has(f.field) && (!q || f.label.toLowerCase().includes(q)))
+  })
+  // Close the Add-Filter column picker on outside click.
+  $effect(() => {
+    if (!addFilterOpen) return
+    function on(e: MouseEvent) {
+      const t = e.target as HTMLElement | null
+      if (t && t.closest(`[data-pvd-addfilter="${uid}"]`)) return
+      addFilterOpen = false
+    }
+    window.addEventListener('mousedown', on)
+    return () => window.removeEventListener('mousedown', on)
+  })
 
   const showPivotToggle = $derived(!!flatColumns)
   function setPivotMode(on: boolean) {
@@ -200,6 +264,67 @@
       arr.push(f); groups.set(key, arr)
     }
     return [...groups.entries()]
+  })
+
+  // ---- Columns tool panel: visibility tree (columnTree mode) --------
+  const hiddenSet = $derived(new Set(hiddenFields))
+  const isFieldVisible = (field: string) => !hiddenSet.has(field)
+  let collapsedGroups = $state<Set<string>>(new Set())
+  function toggleGroupCollapsed(group: string) {
+    const next = new Set(collapsedGroups)
+    if (next.has(group)) next.delete(group); else next.add(group)
+    collapsedGroups = next
+  }
+  function emitHidden(next: Set<string>) {
+    const arr = [...next]
+    hiddenFields = arr
+    onHiddenFieldsChange?.(arr)
+  }
+  function setFieldVisible(field: string, visible: boolean) {
+    const next = new Set(hiddenSet)
+    if (visible) next.delete(field); else next.add(field)
+    emitHidden(next)
+  }
+  /** Every field id (across all groups), regardless of the search filter. */
+  const allFieldIds = $derived(fields.map((f) => f.field))
+  /** Visibility of a whole group: 'all' | 'some' | 'none'. */
+  function groupVisibility(items: PivotField<T>[]): 'all' | 'some' | 'none' {
+    const vis = items.filter((f) => isFieldVisible(f.field)).length
+    return vis === 0 ? 'none' : vis === items.length ? 'all' : 'some'
+  }
+  function toggleGroupVisible(items: PivotField<T>[]) {
+    const makeVisible = groupVisibility(items) !== 'all'
+    const next = new Set(hiddenSet)
+    for (const f of items) { if (makeVisible) next.delete(f.field); else next.add(f.field) }
+    emitHidden(next)
+  }
+  const allVisibility = $derived.by<'all' | 'some' | 'none'>(() => {
+    const vis = allFieldIds.filter((id) => isFieldVisible(id)).length
+    return vis === 0 ? 'none' : vis === allFieldIds.length ? 'all' : 'some'
+  })
+  function toggleAllVisible() {
+    const makeVisible = allVisibility !== 'all'
+    emitHidden(makeVisible ? new Set<string>() : new Set(allFieldIds))
+  }
+  /** `flatColumns` with hidden leaves removed (and now-empty groups dropped). */
+  const visibleFlatColumns = $derived.by(() => {
+    if (!flatColumns || !columnTree || hiddenSet.size === 0) return flatColumns
+    type Col = ColumnDef<typeof features, T>
+    const filter = (cols: Col[]): Col[] => {
+      const out: Col[] = []
+      for (const c of cols) {
+        const kids = (c as { columns?: Col[] }).columns
+        if (kids?.length) {
+          const fk = filter(kids)
+          if (fk.length) out.push({ ...c, columns: fk } as Col)
+        } else {
+          const id = ((c as { field?: string }).field ?? c.id) as string | undefined
+          if (!id || !hiddenSet.has(id)) out.push(c)
+        }
+      }
+      return out
+    }
+    return filter(flatColumns)
   })
 
   // ---- Mutation helpers ---------------------------------------------
@@ -585,10 +710,11 @@
     if (!f) return []
     const items: MenuItem[] = KIND_WELLS[f.kind].map((w) => ({
       label: `Add to ${WELL_LABEL[w]}`,
+      icon: icPlus,
       onSelect: () => addToWell(field, w),
     }))
     if (isFieldInLayout(field)) {
-      items.push({ separator: true }, { label: 'Remove from pivot', onSelect: () => toggleFieldDefault(field) })
+      items.push({ separator: true }, { label: 'Remove from pivot', icon: icTrash, onSelect: () => toggleFieldDefault(field) })
     }
     return items
   }
@@ -601,6 +727,7 @@
       const current = layout.values[valueIndex]?.agg
       items.push({
         label: 'Aggregate',
+        icon: icSigma,
         children: aggregators.map((agg) => ({
           label: AGG_LABEL[agg],
           shortcut: agg === current ? '✓' : undefined,
@@ -613,6 +740,7 @@
       if (targets.length) {
         items.push({
           label: 'Move to',
+          icon: icMove,
           children: targets.map((w) => ({
             label: WELL_LABEL[w],
             onSelect: () => addToWell(field, w, Infinity, well === 'values' ? valueIndex : undefined),
@@ -620,11 +748,11 @@
         })
       }
     }
-    if (well === 'filters') items.push({ label: 'Edit filter…', onSelect: () => toggleFilterMenu(field) })
+    if (well === 'filters') items.push({ label: 'Edit filter…', icon: icFilter, onSelect: () => toggleFilterMenu(field) })
     items.push(
       { separator: true },
-      { label: 'Remove', onSelect: () => removeFromWell(field, well, valueIndex) },
-      { label: `Clear ${WELL_LABEL[well]}`, onSelect: () => clearWell(well) },
+      { label: 'Remove', icon: icTrash, onSelect: () => removeFromWell(field, well, valueIndex) },
+      { label: `Clear ${WELL_LABEL[well]}`, icon: icClear, onSelect: () => clearWell(well) },
     )
     return items
   }
@@ -632,7 +760,7 @@
   /** Menu for an empty area of a well. */
   function wellMenu(well: Well): MenuItem[] {
     const count = well === 'values' ? layout.values.length : layout[well].length
-    return [{ label: `Clear ${WELL_LABEL[well]}`, disabled: count === 0, onSelect: () => clearWell(well) }]
+    return [{ label: `Clear ${WELL_LABEL[well]}`, icon: icClear, disabled: count === 0, onSelect: () => clearWell(well) }]
   }
 
   /** Menu for the pivot grid area (expand / collapse when expandable). */
@@ -640,13 +768,13 @@
     const items: MenuItem[] = []
     if (expandable && pivot) {
       items.push(
-        { label: 'Expand all', onSelect: expandAll },
-        { label: 'Collapse all', onSelect: collapseAll },
+        { label: 'Expand all', icon: icExpand, onSelect: expandAll },
+        { label: 'Collapse all', icon: icCollapse, onSelect: collapseAll },
       )
     }
     if (onExport && pivot) {
       if (items.length) items.push({ separator: true })
-      items.push({ label: 'Export…', onSelect: () => onExport!(layout, pivot!.rows) })
+      items.push({ label: 'Export…', icon: icExport, onSelect: () => onExport!(layout, pivot!.rows) })
     }
     return items
   }
@@ -656,10 +784,10 @@
   {#if showToolbar}
     <header class="pvd-toolbar">
       <strong class="pvd-title">Pivot designer</strong>
-      <button type="button" class="pvd-btn" onclick={reset} title="Restore the default layout">↺ Reset</button>
+      <button type="button" class="pvd-btn" onclick={reset} title="Restore the default layout">{@render ic('reset')} Reset</button>
       {#if presets?.length}
         <div class="pvd-presets" data-pvd-presets={uid}>
-          <button type="button" class="pvd-btn" onclick={togglePresets}>Presets ▾</button>
+          <button type="button" class="pvd-btn" onclick={togglePresets}>{@render ic('presets')} Presets {@render ic('chevron-down')}</button>
           {#if presetsOpen}
             <div class="pvd-popover">
               {#each presets as p (p.name)}
@@ -677,8 +805,8 @@
       </label>
       {#if chartable}
         <div class="pvd-viewswitch" role="group" aria-label="View">
-          <button type="button" class="pvd-view-btn" class:is-active={view === 'table'} onclick={() => (view = 'table')}>Table</button>
-          <button type="button" class="pvd-view-btn" class:is-active={view === 'chart'} onclick={() => (view = 'chart')}>Chart</button>
+          <button type="button" class="pvd-view-btn" class:is-active={view === 'table'} onclick={() => (view = 'table')}>{@render ic('table')} Table</button>
+          <button type="button" class="pvd-view-btn" class:is-active={view === 'chart'} onclick={() => (view = 'chart')}>{@render ic('chart')} Chart</button>
         </div>
         {#if view === 'chart'}
           <label class="pvd-toggle">
@@ -695,7 +823,7 @@
       {/if}
       <div class="pvd-spacer"></div>
       {#if onExport && pivot}
-        <button type="button" class="pvd-btn pvd-btn-primary" onclick={() => onExport!(layout, pivot!.rows)}>Export…</button>
+        <button type="button" class="pvd-btn pvd-btn-primary" onclick={() => onExport!(layout, pivot!.rows)}>{@render ic('export')} Export…</button>
       {/if}
     </header>
   {/if}
@@ -703,10 +831,22 @@
   <div class="pvd-body" data-panel={panelPosition} class:no-rail={!showFieldList && panelPosition === 'top'}>
     {#if panelPosition === 'right'}
       <div class="pvd-gridwrap">{@render gridBlock()}</div>
-      <aside class="pvd-panel" style={`width:${typeof panelWidth === 'number' ? panelWidth + 'px' : panelWidth}`} aria-label="Pivot panel">
-        {#if showPivotToggle}{@render pivotToggle()}{/if}
-        {#if showFieldList}<div class="pvd-panel-rail">{@render railBlock()}</div>{/if}
-        <div class="pvd-wells pvd-wells--vertical" class:two={!showFiltersWell}>{@render wellsBlock()}</div>
+      <aside class="pvd-panel" class:pvd-panel-tabbed={toolTabs} style={`width:${typeof panelWidth === 'number' ? panelWidth + 'px' : panelWidth}`} aria-label="Pivot panel">
+        {#if toolTabs}
+          <div class="pvd-tabbody">
+            {#if activeTab === 'columns'}{@render columnsPanel()}{:else}{@render filtersPanel()}{/if}
+          </div>
+          <div class="pvd-tabrail" role="tablist" aria-label="Tool panel tabs">
+            <button type="button" class="pvd-tabbtn" role="tab" aria-selected={activeTab === 'columns'} class:is-active={activeTab === 'columns'} onclick={() => (activeTab = 'columns')}>
+              {@render ic('columns')}<span>Columns</span>
+            </button>
+            <button type="button" class="pvd-tabbtn" role="tab" aria-selected={activeTab === 'filters'} class:is-active={activeTab === 'filters'} onclick={() => (activeTab = 'filters')}>
+              {@render ic('filter')}<span>Filters</span>
+            </button>
+          </div>
+        {:else}
+          {@render columnsPanel()}
+        {/if}
       </aside>
     {:else}
       {#if showFieldList}
@@ -736,47 +876,174 @@
   </div>
 {/if}
 
+<!-- ============================ Icons ============================ -->
+{#snippet ic(name: string)}
+  <svg class="pvd-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    {#if name === 'filter'}
+      <path d="M3 5h18l-7 8v6l-4 2v-8z" />
+    {:else if name === 'columns'}
+      <rect x="3" y="4" width="18" height="16" rx="1.5" />
+      <path d="M9 4v16" /><path d="M15 4v16" />
+    {:else if name === 'rows'}
+      <rect x="3" y="4" width="18" height="16" rx="1.5" />
+      <path d="M3 10h18" /><path d="M3 15h18" />
+    {:else if name === 'sigma'}
+      <path d="M17 5H7l6 7-6 7h10" />
+    {:else if name === 'dimension'}
+      <path d="M7 7h.01" />
+      <path d="M11 3h4.6a2 2 0 0 1 1.4.6l4 4a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0l-4-4a2 2 0 0 1-.6-1.4V6a3 3 0 0 1 3-3z" />
+    {:else if name === 'reset'}
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" />
+    {:else if name === 'presets'}
+      <path d="M12 3l8 4.5-8 4.5-8-4.5z" /><path d="M4 12l8 4.5 8-4.5" /><path d="M4 16.5l8 4.5 8-4.5" />
+    {:else if name === 'export'}
+      <path d="M12 3v12" /><path d="M8 11l4 4 4-4" /><path d="M4 19h16" />
+    {:else if name === 'table'}
+      <rect x="3" y="4" width="18" height="16" rx="1.5" />
+      <path d="M3 9h18" /><path d="M9 9v11" />
+    {:else if name === 'chart'}
+      <path d="M4 20V4" /><path d="M4 20h16" />
+      <rect x="7" y="12" width="3" height="5" /><rect x="12" y="8" width="3" height="9" /><rect x="17" y="5" width="3" height="12" />
+    {:else if name === 'chevron-down'}
+      <path d="M6 9l6 6 6-6" />
+    {:else if name === 'grip'}
+      <circle cx="9" cy="6" r="1.3" fill="currentColor" stroke="none" /><circle cx="15" cy="6" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="12" r="1.3" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="18" r="1.3" fill="currentColor" stroke="none" /><circle cx="15" cy="18" r="1.3" fill="currentColor" stroke="none" />
+    {:else if name === 'plus'}
+      <path d="M12 5v14" /><path d="M5 12h14" />
+    {:else if name === 'move'}
+      <path d="M5 9l-3 3 3 3" /><path d="M9 5l3-3 3 3" /><path d="M15 19l-3 3-3-3" /><path d="M19 9l3 3-3 3" /><path d="M2 12h20" /><path d="M12 2v20" />
+    {:else if name === 'trash'}
+      <path d="M4 7h16" /><path d="M9 7V5h6v2" /><path d="M6 7l1 13h10l1-13" />
+    {:else if name === 'clear'}
+      <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
+    {:else if name === 'expand'}
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M16 3h3a2 2 0 0 1 2 2v3" /><path d="M8 21H5a2 2 0 0 1-2-2v-3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    {:else if name === 'collapse'}
+      <path d="M3 8h3a2 2 0 0 0 2-2V3" /><path d="M21 8h-3a2 2 0 0 1-2-2V3" /><path d="M3 16h3a2 2 0 0 1 2 2v3" /><path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+    {:else if name === 'pivot'}
+      <rect x="3" y="3" width="18" height="18" rx="1.5" /><path d="M3 9h18" /><path d="M9 9v12" />
+    {:else if name === 'check'}
+      <path d="M5 13l4 4 10-11" />
+    {:else if name === 'addfilter'}
+      <path d="M3 6h13" /><path d="M3 12h9" /><path d="M3 18h6" />
+      <path d="M17 13v8" /><path d="M13 17h8" />
+    {:else if name === 'search'}
+      <circle cx="11" cy="11" r="6" /><path d="M20 20l-4.5-4.5" />
+    {/if}
+  </svg>
+{/snippet}
+
+<!-- Zero-arg wrappers so icons can be attached to context-menu items. -->
+{#snippet icPlus()}{@render ic('plus')}{/snippet}
+{#snippet icTrash()}{@render ic('trash')}{/snippet}
+{#snippet icClear()}{@render ic('clear')}{/snippet}
+{#snippet icMove()}{@render ic('move')}{/snippet}
+{#snippet icSigma()}{@render ic('sigma')}{/snippet}
+{#snippet icFilter()}{@render ic('filter')}{/snippet}
+{#snippet icExpand()}{@render ic('expand')}{/snippet}
+{#snippet icCollapse()}{@render ic('collapse')}{/snippet}
+{#snippet icExport()}{@render ic('export')}{/snippet}
+
 <!-- ============================ Sub-blocks ============================ -->
 {#snippet pivotToggle()}
   <label class="pvd-pivot-toggle">
     <input type="checkbox" checked={pivotMode} onchange={(e) => setPivotMode(e.currentTarget.checked)} />
     <span class="pvd-switch" class:on={pivotMode}><span class="pvd-switch-knob"></span></span>
+    <span class="pvd-pivot-icon">{@render ic('pivot')}</span>
     <span class="pvd-pivot-label">Pivot Mode</span>
   </label>
 {/snippet}
 
 {#snippet railBlock()}
-  <input
-    type="search"
-    class="pvd-search"
-    placeholder="Search fields…"
-    bind:value={search}
-  />
-  <div class="pvd-fieldlist">
-    {#each groupedFields as [groupName, items] (groupName)}
-      <div class="pvd-group-head">{groupName}</div>
-      {#each items as f (f.field)}
-        {@const inUse = isFieldInLayout(f.field)}
-        <div
-          class="pvd-field"
-          class:in-use={inUse}
-          draggable="true"
-          ondragstart={(e) => onDragStart(e, f.field, 'rail')}
-          oncontextmenu={(e) => openCtx(e, fieldMenu(f.field))}
-          role="button"
-          tabindex="0"
-          onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFieldDefault(f.field) } }}
-        >
-          <input type="checkbox" checked={inUse} onchange={() => toggleFieldDefault(f.field)} aria-label={`Toggle ${f.label}`} />
-          <span class="pvd-field-label">{f.label}</span>
-          <span class="pvd-field-kind">{f.kind === 'dimension' ? 'D' : 'Σ'}</span>
+  {#if columnTree}
+    <!-- AG-style Columns tool panel: select-all + search, then a collapsible
+         column-group TREE whose checkboxes toggle column visibility. Fields
+         still drag into the wells. -->
+    <div class="pvd-tree-top">
+      <input
+        type="checkbox"
+        class="pvd-tree-check"
+        checked={allVisibility === 'all'}
+        indeterminate={allVisibility === 'some'}
+        onchange={toggleAllVisible}
+        aria-label="Toggle all columns"
+      />
+      <input type="search" class="pvd-search pvd-tree-search" placeholder="Search…" bind:value={search} />
+    </div>
+    <div class="pvd-fieldlist pvd-tree">
+      {#each groupedFields as [groupName, items] (groupName)}
+        {@const gv = groupVisibility(items)}
+        {@const open = !collapsedGroups.has(groupName)}
+        <div class="pvd-tree-group">
+          <button type="button" class="pvd-tree-twisty" class:is-open={open} onclick={() => toggleGroupCollapsed(groupName)} aria-label={open ? `Collapse ${groupName}` : `Expand ${groupName}`}>
+            {@render ic('chevron-down')}
+          </button>
+          <input type="checkbox" class="pvd-tree-check" checked={gv === 'all'} indeterminate={gv === 'some'} onchange={() => toggleGroupVisible(items)} aria-label={`Toggle ${groupName}`} />
+          <span class="pvd-grip" aria-hidden="true">{@render ic('grip')}</span>
+          <span class="pvd-tree-group-name">{groupName}</span>
         </div>
+        {#if open}
+          {#each items as f (f.field)}
+            <div
+              class="pvd-tree-leaf"
+              draggable="true"
+              ondragstart={(e) => onDragStart(e, f.field, 'rail')}
+              oncontextmenu={(e) => openCtx(e, fieldMenu(f.field))}
+              role="button"
+              tabindex="0"
+              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFieldVisible(f.field, !isFieldVisible(f.field)) } }}
+            >
+              <input type="checkbox" class="pvd-tree-check" checked={isFieldVisible(f.field)} onchange={(e) => setFieldVisible(f.field, e.currentTarget.checked)} aria-label={`Toggle ${f.label}`} />
+              <span class="pvd-grip" aria-hidden="true">{@render ic('grip')}</span>
+              <span class="pvd-field-kind" class:is-measure={f.kind === 'measure'} title={f.kind === 'dimension' ? 'Dimension' : 'Measure'}>
+                {@render ic(f.kind === 'dimension' ? 'dimension' : 'sigma')}
+              </span>
+              <span class="pvd-field-label">{f.label}</span>
+            </div>
+          {/each}
+        {/if}
       {/each}
-    {/each}
-    {#if !filteredFields.length}
-      <div class="pvd-empty">No fields match "{search}"</div>
-    {/if}
-  </div>
+      {#if !filteredFields.length}
+        <div class="pvd-empty">No columns match "{search}"</div>
+      {/if}
+    </div>
+  {:else}
+    <input
+      type="search"
+      class="pvd-search"
+      placeholder="Search fields…"
+      bind:value={search}
+    />
+    <div class="pvd-fieldlist">
+      {#each groupedFields as [groupName, items] (groupName)}
+        <div class="pvd-group-head">{groupName}</div>
+        {#each items as f (f.field)}
+          {@const inUse = isFieldInLayout(f.field)}
+          <div
+            class="pvd-field"
+            class:in-use={inUse}
+            draggable="true"
+            ondragstart={(e) => onDragStart(e, f.field, 'rail')}
+            oncontextmenu={(e) => openCtx(e, fieldMenu(f.field))}
+            role="button"
+            tabindex="0"
+            onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFieldDefault(f.field) } }}
+          >
+            <input type="checkbox" checked={inUse} onchange={() => toggleFieldDefault(f.field)} aria-label={`Toggle ${f.label}`} />
+            <span class="pvd-field-kind" class:is-measure={f.kind === 'measure'} title={f.kind === 'dimension' ? 'Dimension' : 'Measure'}>
+              {@render ic(f.kind === 'dimension' ? 'dimension' : 'sigma')}
+            </span>
+            <span class="pvd-field-label">{f.label}</span>
+          </div>
+        {/each}
+      {/each}
+      {#if !filteredFields.length}
+        <div class="pvd-empty">No fields match "{search}"</div>
+      {/if}
+    </div>
+  {/if}
 {/snippet}
 
 {#snippet wellsBlock()}
@@ -788,11 +1055,12 @@
       ondragleave={onDragLeave}
       ondrop={(e) => onDrop(e, 'filters')}
       oncontextmenu={(e) => openCtx(e, wellMenu('filters'))}>
-      <div class="pvd-well-head">Filters</div>
+      <div class="pvd-well-head">{@render ic('filter')} Filters</div>
       <div class="pvd-well-body">
         {#each layout.filters as f (f.field)}
           {@const fd = fieldsByName.get(f.field)}
           <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, f.field, 'filters')} oncontextmenu={(e) => openCtx(e, chipMenu('filters', f.field))}>
+            <span class="pvd-chip-grip" aria-hidden="true">{@render ic('grip')}</span>
             <button type="button" class="pvd-chip-label" title="Choose which values pass" onclick={() => toggleFilterMenu(f.field)}>
               {fd?.label ?? f.field}{f.allowed ? `: ${f.allowed.length}` : ''} <span class="pvd-chip-caret">▾</span>
             </button>
@@ -834,11 +1102,12 @@
     ondragleave={onDragLeave}
     ondrop={(e) => onDrop(e, 'cols')}
     oncontextmenu={(e) => openCtx(e, wellMenu('cols'))}>
-    <div class="pvd-well-head">Columns</div>
+    <div class="pvd-well-head">{@render ic('columns')} Columns</div>
     <div class="pvd-well-body">
       {#each layout.cols as field (field)}
         {@const fd = fieldsByName.get(field)}
         <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, field, 'cols')} oncontextmenu={(e) => openCtx(e, chipMenu('cols', field))}>
+          <span class="pvd-chip-grip" aria-hidden="true">{@render ic('grip')}</span>
           <span class="pvd-chip-label">{fd?.label ?? field}</span>
           <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(field, 'cols')} aria-label="Remove">×</button>
         </div>
@@ -854,11 +1123,12 @@
     ondragleave={onDragLeave}
     ondrop={(e) => onDrop(e, 'rows')}
     oncontextmenu={(e) => openCtx(e, wellMenu('rows'))}>
-    <div class="pvd-well-head">Rows</div>
+    <div class="pvd-well-head">{@render ic('rows')} Rows</div>
     <div class="pvd-well-body">
       {#each layout.rows as field (field)}
         {@const fd = fieldsByName.get(field)}
         <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, field, 'rows')} oncontextmenu={(e) => openCtx(e, chipMenu('rows', field))}>
+          <span class="pvd-chip-grip" aria-hidden="true">{@render ic('grip')}</span>
           <span class="pvd-chip-label">{fd?.label ?? field}</span>
           <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(field, 'rows')} aria-label="Remove">×</button>
         </div>
@@ -874,11 +1144,12 @@
     ondragleave={onDragLeave}
     ondrop={(e) => onDrop(e, 'values')}
     oncontextmenu={(e) => openCtx(e, wellMenu('values'))}>
-    <div class="pvd-well-head">Values</div>
+    <div class="pvd-well-head">{@render ic('sigma')} Values</div>
     <div class="pvd-well-body">
       {#each layout.values as v, vi (v.field + '|' + v.agg + '|' + vi)}
         {@const fd = fieldsByName.get(v.field)}
         <div class="pvd-chip pvd-chip-value" draggable="true" ondragstart={(e) => onDragStart(e, v.field, 'values', vi)} oncontextmenu={(e) => openCtx(e, chipMenu('values', v.field, vi))}>
+          <span class="pvd-chip-grip" aria-hidden="true">{@render ic('grip')}</span>
           <button type="button" class="pvd-chip-label" onclick={() => toggleAggMenu(vi)}>
             <span class="pvd-chip-agg">{AGG_LABEL[v.agg]}</span>
             <span class="pvd-chip-sep">·</span>
@@ -906,13 +1177,81 @@
   </div>
 {/snippet}
 
+<!-- The Columns tab body: pivot toggle + field picker + the wells. -->
+{#snippet columnsPanel()}
+  {#if showPivotToggle}{@render pivotToggle()}{/if}
+  {#if showFieldList}<div class="pvd-panel-rail">{@render railBlock()}</div>{/if}
+  <div class="pvd-wells pvd-wells--vertical" class:two={!showFiltersWell}>{@render wellsBlock()}</div>
+{/snippet}
+
+<!-- The Filters tab body: AG-style set filters. Each active column filter is a
+     collapsible card with (Select All) + a searchable value checklist; the
+     "Add Filter" button opens a column picker to add another. Backed by the
+     same `layout.filters` the pivot uses, so filters narrow the source rows. -->
+{#snippet filtersPanel()}
+  <div class="pvd-filters-tab">
+    {#each layout.filters as f (f.field)}
+      {@const fd = fieldsByName.get(f.field)}
+      {@const open = !filterCollapsed.has(f.field)}
+      {@const all = distinctValuesFor(f.field)}
+      {@const q = (filterSearch[f.field] ?? '').trim().toLowerCase()}
+      {@const shown = q ? all.filter((v) => v.toLowerCase().includes(q)) : all}
+      <div class="pvd-filt-card">
+        <div class="pvd-filt-head">
+          <button type="button" class="pvd-filt-title" onclick={() => toggleFilterCard(f.field)}>
+            <span class="pvd-filt-twisty" class:is-open={open}>{@render ic('chevron-down')}</span>
+            {fd?.label ?? f.field}{f.allowed ? ` (${f.allowed.length})` : ''}
+          </button>
+          <button type="button" class="pvd-filt-x" onclick={() => removeFromWell(f.field, 'filters')} aria-label={`Remove ${fd?.label ?? f.field} filter`}>×</button>
+        </div>
+        {#if open}
+          <input class="pvd-filt-search" type="search" placeholder="Search…" value={filterSearch[f.field] ?? ''} oninput={(e) => (filterSearch = { ...filterSearch, [f.field]: e.currentTarget.value })} />
+          <label class="pvd-filt-opt pvd-filt-all">
+            <input type="checkbox" checked={f.allowed == null} indeterminate={!!f.allowed && f.allowed.length > 0} onchange={() => setFilterAllowed(f.field, f.allowed == null ? [] : null)} />
+            <span>(Select All)</span>
+          </label>
+          <div class="pvd-filt-list">
+            {#each shown as v (v)}
+              <label class="pvd-filt-opt">
+                <input type="checkbox" checked={f.allowed == null || f.allowed.includes(v)} onchange={() => toggleFilterValue(f, v, all)} />
+                <span>{v}</span>
+              </label>
+            {/each}
+            {#if !shown.length}<div class="pvd-empty">No values match "{filterSearch[f.field]}"</div>{/if}
+          </div>
+        {/if}
+      </div>
+    {/each}
+
+    <div class="pvd-addfilter" data-pvd-addfilter={uid}>
+      <button type="button" class="pvd-addfilter-btn" onclick={() => (addFilterOpen = !addFilterOpen)}>
+        {@render ic('addfilter')} Add Filter
+      </button>
+      {#if addFilterOpen}
+        <div class="pvd-addfilter-menu">
+          <div class="pvd-addfilter-searchwrap">
+            <span class="pvd-addfilter-searchicon">{@render ic('search')}</span>
+            <input class="pvd-addfilter-search" type="search" placeholder="Search columns…" bind:value={addFilterSearch} />
+          </div>
+          <div class="pvd-addfilter-list">
+            {#each availableFilterFields as f (f.field)}
+              <button type="button" class="pvd-addfilter-item" onclick={() => addFilterField(f.field)}>{f.label}</button>
+            {/each}
+            {#if !availableFilterFields.length}<div class="pvd-empty">No columns</div>{/if}
+          </div>
+        </div>
+      {/if}
+    </div>
+  </div>
+{/snippet}
+
 {#snippet gridBlock()}
   {#if embedGrid}
     <div class="pvd-grid" style={`height:${typeof gridHeight === 'number' ? gridHeight + 'px' : gridHeight}`} oncontextmenu={(e) => openCtx(e, gridMenu())}>
       {#if showPivotToggle && !pivotMode}
         <SvGrid
-          data={data}
-          columns={flatColumns!}
+          data={filteredData}
+          columns={visibleFlatColumns!}
           features={features}
           filterMode="row"
           sortable
@@ -1014,6 +1353,9 @@
   }
   .pvd-spacer { flex: 1; }
   .pvd-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     border: 1px solid var(--sg-border, #cbd5e1);
     background: var(--sg-bg, #ffffff);
     color: var(--sg-fg, #1e293b);
@@ -1024,6 +1366,8 @@
     cursor: pointer;
     transition: background 100ms ease, border-color 100ms ease;
   }
+  .pvd-btn .pvd-ic { color: var(--sg-muted, #64748b); }
+  .pvd-btn-primary .pvd-ic { color: currentColor; }
   .pvd-btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); border-color: var(--sg-accent, #2563eb); }
   .pvd-btn-primary {
     background: var(--sg-accent, #2563eb);
@@ -1085,7 +1429,7 @@
   }
   .pvd-field {
     display: grid;
-    grid-template-columns: 16px 1fr auto;
+    grid-template-columns: 16px auto 1fr;
     align-items: center;
     gap: 8px;
     padding: 5px 12px;
@@ -1101,14 +1445,91 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* Dimension vs measure indicator - a tinted icon puck. */
   .pvd-field-kind {
-    font-family: ui-monospace, monospace;
-    font-size: 10px;
-    color: var(--sg-muted, #94a3b8);
-    background: var(--sg-header-bg, #f1f5f9);
-    padding: 1px 5px;
-    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    color: var(--sg-accent, #2563eb);
+    background: color-mix(in srgb, var(--sg-accent, #2563eb) 12%, transparent);
   }
+  .pvd-field-kind.is-measure {
+    color: #0e9f6e;
+    background: color-mix(in srgb, #0e9f6e 12%, transparent);
+  }
+
+  /* Base icon sizing (inline SVGs from the `ic` snippet). */
+  :global(.pvd .pvd-ic),
+  :global(.pvd-ctx .pvd-ic) {
+    width: 14px;
+    height: 14px;
+    flex: none;
+    display: block;
+  }
+
+  /* ---- Columns tool panel: visibility tree (columnTree) ------------ */
+  .pvd-tree-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px 6px;
+  }
+  .pvd-tree-search {
+    flex: 1;
+    border: 1px solid var(--sg-input-border, var(--sg-border, #e2e8f0));
+    border-radius: var(--sg-radius, 6px);
+    padding: 6px 9px;
+  }
+  .pvd-tree-check { accent-color: var(--sg-accent, #2563eb); width: 14px; height: 14px; flex: none; cursor: pointer; }
+  .pvd-tree { padding: 2px 0 6px; }
+  .pvd-tree-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px 4px 6px;
+    cursor: default;
+  }
+  .pvd-tree-group:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .pvd-tree-group-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sg-fg, #0f172a);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pvd-tree-twisty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--sg-muted, #64748b);
+    cursor: pointer;
+    transition: transform 100ms ease;
+  }
+  .pvd-tree-twisty:not(.is-open) { transform: rotate(-90deg); }
+  .pvd-tree-leaf {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* Indent past the twisty so leaves nest under their group. */
+    padding: 4px 12px 4px 30px;
+    font-size: 12px;
+    cursor: grab;
+    transition: background 80ms ease;
+  }
+  .pvd-tree-leaf:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .pvd-tree-leaf:active { cursor: grabbing; }
+  .pvd-tree-leaf .pvd-field-label { flex: 1; }
+  .pvd-tree .pvd-grip { display: inline-flex; align-items: center; color: var(--sg-muted, #cbd5e1); }
+  .pvd-tree .pvd-grip .pvd-ic { width: 12px; height: 12px; }
 
   /* Main area */
   .pvd-main {
@@ -1142,6 +1563,9 @@
     background: color-mix(in srgb, var(--sg-accent, #2563eb) 8%, var(--sg-bg, #ffffff));
   }
   .pvd-well-head {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     padding: 4px 8px 2px;
     font-size: 10.5px;
     font-weight: 700;
@@ -1149,6 +1573,7 @@
     letter-spacing: 0.06em;
     color: var(--sg-muted, #64748b);
   }
+  .pvd-well-head .pvd-ic { color: var(--sg-accent, #2563eb); }
   .pvd-well-body {
     display: flex;
     flex-wrap: wrap;
@@ -1182,10 +1607,18 @@
     background: color-mix(in srgb, var(--sg-accent, #2563eb) 14%, var(--sg-bg, #ffffff));
     border-color: var(--sg-accent, #2563eb);
   }
+  .pvd-chip-grip {
+    display: inline-flex;
+    align-items: center;
+    padding-left: 4px;
+    color: var(--sg-muted, #94a3b8);
+    cursor: grab;
+  }
+  .pvd-chip-grip .pvd-ic { width: 12px; height: 12px; }
   .pvd-chip-label {
     border: 0;
     background: transparent;
-    padding: 4px 8px;
+    padding: 4px 6px 4px 4px;
     font: inherit;
     color: inherit;
     cursor: pointer;
@@ -1333,7 +1766,7 @@
     border-radius: var(--sg-radius, 6px); padding: 3px 6px;
   }
   .pvd-viewswitch { display: inline-flex; border: 1px solid var(--sg-border, #e2e8f0); border-radius: var(--sg-radius, 6px); overflow: hidden; }
-  .pvd-view-btn { font: inherit; font-size: 12px; padding: 3px 12px; border: 0; background: var(--sg-bg, #fff); color: var(--sg-muted, #64748b); cursor: pointer; }
+  .pvd-view-btn { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12px; padding: 3px 12px; border: 0; background: var(--sg-bg, #fff); color: var(--sg-muted, #64748b); cursor: pointer; }
   .pvd-view-btn.is-active { background: var(--sg-accent, #2563eb); color: #fff; }
   .pvd-chart { width: 100%; height: 100%; padding: 8px 10px; box-sizing: border-box; overflow: hidden; display: flex; }
   .pvd-chart > :global(.sv-grid-chart) { width: 100%; }
@@ -1360,6 +1793,124 @@
     background: var(--sg-header-bg, #f8fafc);
     overflow-y: auto;
   }
+  /* Tabbed panel: content column + a vertical Columns/Filters rail on the right. */
+  .pvd-panel-tabbed {
+    flex-direction: row;
+    overflow: hidden;
+  }
+  .pvd-tabbody {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .pvd-tabrail {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--sg-border, #e2e8f0);
+    background: var(--sg-bg, #fff);
+  }
+  .pvd-tabbtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 7px;
+    border: 0;
+    border-left: 2px solid transparent;
+    background: transparent;
+    color: var(--sg-muted, #64748b);
+    cursor: pointer;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .pvd-tabbtn span { writing-mode: vertical-rl; }
+  .pvd-tabbtn:hover { color: var(--sg-fg, #0f172a); background: var(--sg-row-hover-bg, #f1f5f9); }
+  .pvd-tabbtn.is-active {
+    color: var(--sg-accent, #2563eb);
+    border-left-color: var(--sg-accent, #2563eb);
+    background: var(--sg-header-bg, #f8fafc);
+  }
+  .pvd-tabbtn.is-active .pvd-ic { color: var(--sg-accent, #2563eb); }
+
+  /* ---- Filters tab (set filters) ---- */
+  .pvd-filters-tab { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+  .pvd-filt-card {
+    border: 1px solid var(--sg-border, #e2e8f0);
+    border-radius: 8px;
+    background: var(--sg-bg, #fff);
+    overflow: hidden;
+  }
+  .pvd-filt-head {
+    display: flex; align-items: center;
+    border-bottom: 1px solid var(--sg-border, #e2e8f0);
+  }
+  .pvd-filt-title {
+    flex: 1; min-width: 0;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 8px;
+    border: 0; background: transparent;
+    font-size: 12.5px; font-weight: 600; color: var(--sg-fg, #0f172a);
+    cursor: pointer; text-align: left;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pvd-filt-twisty { display: inline-flex; color: var(--sg-muted, #64748b); transition: transform 100ms ease; }
+  .pvd-filt-twisty:not(.is-open) { transform: rotate(-90deg); }
+  .pvd-filt-x {
+    border: 0; background: transparent; color: var(--sg-muted, #94a3b8);
+    cursor: pointer; font-size: 15px; line-height: 1; padding: 4px 9px;
+  }
+  .pvd-filt-x:hover { color: #ef4444; }
+  .pvd-filt-search {
+    width: 100%; box-sizing: border-box;
+    border: 0; border-bottom: 1px solid var(--sg-border, #e2e8f0);
+    padding: 7px 9px; font-size: 12px; background: transparent; color: var(--sg-fg, #0f172a);
+    outline: none;
+  }
+  .pvd-filt-list { max-height: 220px; overflow-y: auto; }
+  .pvd-filt-opt {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px; font-size: 12.5px; color: var(--sg-fg, #0f172a); cursor: pointer;
+  }
+  .pvd-filt-opt:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .pvd-filt-opt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pvd-filt-opt input { accent-color: var(--sg-accent, #2563eb); flex: none; }
+  .pvd-filt-all { font-weight: 600; border-bottom: 1px solid var(--sg-border, #e2e8f0); }
+
+  .pvd-addfilter { position: relative; }
+  .pvd-addfilter-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    width: 100%; box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid var(--sg-border, #cbd5e1); border-radius: 8px;
+    background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a);
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .pvd-addfilter-btn:hover { border-color: var(--sg-accent, #2563eb); background: var(--sg-row-hover-bg, #f1f5f9); }
+  .pvd-addfilter-btn .pvd-ic { color: var(--sg-muted, #64748b); }
+  .pvd-addfilter-menu {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+    background: var(--sg-bg, #fff);
+    border: 1px solid var(--sg-border, #cbd5e1); border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+    overflow: hidden;
+  }
+  .pvd-addfilter-searchwrap {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 9px; border-bottom: 1px solid var(--sg-border, #e2e8f0);
+    color: var(--sg-muted, #94a3b8);
+  }
+  .pvd-addfilter-search { flex: 1; border: 0; outline: none; background: transparent; color: var(--sg-fg, #0f172a); font-size: 12px; }
+  .pvd-addfilter-list { max-height: 240px; overflow-y: auto; padding: 4px 0; }
+  .pvd-addfilter-item {
+    display: block; width: 100%; text-align: left;
+    border: 0; background: transparent; color: var(--sg-fg, #0f172a);
+    padding: 6px 12px; font-size: 12.5px; cursor: pointer;
+  }
+  .pvd-addfilter-item:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
   .pvd-panel-rail {
     display: flex;
     flex-direction: column;
@@ -1415,6 +1966,7 @@
     transition: transform 120ms ease;
   }
   .pvd-switch.on .pvd-switch-knob { transform: translateX(16px); }
+  .pvd-pivot-icon { display: inline-flex; align-items: center; color: var(--sg-accent, #2563eb); }
   .pvd-pivot-label { font-size: 13px; font-weight: 600; color: var(--sg-fg, #0f172a); }
 
   /* ---- Right-click context menu panel ------------------------------ */

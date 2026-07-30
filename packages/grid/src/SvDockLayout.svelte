@@ -51,11 +51,13 @@
      * ignored; the manager owns the gesture from here.
      */
     onBeginDrag?: (event: PointerEvent, paneId: string, tabsId: string) => void
-    /** Manager mode: the externally-computed drop highlight to paint. */
-    externalDrop?: { tabsId: string; zone: DockZone } | null
-    /** Per-pane header actions (e.g. float / auto-hide buttons) rendered by the
-     *  manager into every tab. */
-    paneActions?: Snippet<[DockPane]>
+    /** Manager mode: the externally-computed dock guide/highlight to paint. */
+    externalDrop?: { tabsId: string; zone: DockZone | null; centerOnly?: boolean } | null
+    /** Manager mode: the externally-computed tab-reorder insertion indicator. */
+    externalReorder?: { tabsId: string; index: number } | null
+    /** Stack-header controls for a leaf (maximize / float / pop-out), rendered
+     *  by the manager once per leaf at the right of its tab strip. */
+    leafActions?: Snippet<[import('./dock-model').DockTabs]>
     /** Manager mode: route tab activation to the parent (controlled). */
     onActivate?: (tabsId: string, index: number) => void
     /** Manager mode: route pane close to the parent (controlled). */
@@ -72,7 +74,8 @@
     surface = 'main',
     onBeginDrag,
     externalDrop = null,
-    paneActions,
+    externalReorder = null,
+    leafActions,
     onActivate,
     onClose,
     onResize,
@@ -171,7 +174,7 @@
 
   setContext<DockContext>(DOCK_CONTEXT, {
     get pane() { return pane },
-    get paneActions() { return paneActions },
+    get leafActions() { return leafActions },
     activate,
     close,
     beginDrag,
@@ -179,6 +182,7 @@
     minSize: () => minSize,
     // In manager mode the highlight is driven from outside.
     dropTarget: () => (managed ? externalDrop : dropTarget),
+    reorderTarget: () => (managed ? externalReorder : null),
   })
 </script>
 

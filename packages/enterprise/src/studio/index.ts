@@ -135,6 +135,7 @@ export {
   type RoleAccess,
   type AccessControl,
   type AuthConfig,
+  type OAuthProvider,
   type SeedUser,
   type I18nConfig,
   type DeployTarget,

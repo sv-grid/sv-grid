@@ -1,21 +1,35 @@
 # Automated Twitter/X posting
 
-One tweet per day for [svgrid.com](https://svgrid.com), posted from the `@svgrid`
-account by GitHub Actions. Each run picks the most timely thing to promote,
-composes the copy, attaches an image, and posts it.
+**Two tweets per day** for [svgrid.com](https://svgrid.com), posted from the
+`@svgrid` account by GitHub Actions:
 
-## What it posts (priority order)
+1. A **promo tweet** (`daily-tweet.yml`, 07:40 UTC) - the day's news.
+2. A **product-tip tweet** (`daily-tip.yml`, 15:40 UTC) - one tip about SvGrid,
+   SvGrid UI Components, or SvGrid Studio.
+
+## Tweet 1: the promo tweet (priority order)
 
 `tools/twitter/select-content.mjs`:
 
-1. **Release** - a new `@svgrid/grid` or `@svgrid/enterprise` version hit npm in
-   the last ~26h (checked against the npm registry).
+1. **Release** - a **major or minor** `@svgrid/grid` / `@svgrid/enterprise`
+   release (1st or 2nd version number bumped) hit npm in the last ~26h.
+   **Patch-only releases (3rd number) are ignored** so they never repeat the
+   same announcement. A major/minor release takes over the tweet for that day.
 2. **Blog** - a blog post whose frontmatter `date` is today (just went live via
-   the drip). **Uses the post's own hero image** (see below).
+   the drip). **Uses the post's own hero image** and AI copy that talks about
+   that specific post (see below). This is the normal daily tweet.
 3. **Highlight** - a curated feature highlight (`highlights.mjs`), rotated one
    step per day. Even days.
 4. **AI** - an original tweet written by the Anthropic API, grounded on the real
    export surface from `packages/grid/src/index.ts`. Odd days.
+
+## Tweet 2: the product-tip tweet
+
+`daily-tip.yml` runs `TWEET_FORCE=tip`, which selects one tip from
+`PRODUCT_TIPS` in `tools/twitter/tips-data.mjs` (10 SvGrid + 6 UI Components + 6
+Studio tips), rotated one step per day so it cycles across all three areas. Copy
+is deterministic (no model call); it renders a branded card and puts the docs
+link in a first reply. This job needs only the four `X_*` secrets.
 
 ## The blog tweet: image + info + link
 
@@ -41,7 +55,8 @@ TWEET_FORCE=blog node tools/post-tweet.mjs # preview the blog tweet (uses today'
 node tools/post-tweet.mjs --post           # actually post (needs the four X_* creds)
 ```
 
-Force types: `release | blog | highlight | ai`.
+Force types: `release | blog | highlight | ai | tip`. Preview the tip tweet with
+`TWEET_FORCE=tip node tools/post-tweet.mjs`.
 
 ## One-time setup: X developer portal
 
@@ -65,10 +80,13 @@ Actions** (or `gh secret set X_API_KEY`, etc.).
 
 ## Schedule
 
-`.github/workflows/daily-tweet.yml` runs at **07:40 UTC** (after the website
-rebuild at 07:12, so today's blog post + its image are present). Trigger manually
-from the Actions tab: leave `post` unchecked for a dry run (media uploaded as an
-artifact), check it to post now; `force` pins the type.
+- `.github/workflows/daily-tweet.yml` - the promo tweet at **07:40 UTC** (after
+  the website rebuild at 07:12, so today's blog post + its image are present).
+- `.github/workflows/daily-tip.yml` - the product-tip tweet at **15:40 UTC**.
+
+Trigger either manually from the Actions tab: leave `post` unchecked for a dry
+run (media uploaded as an artifact), check it to post now; on the promo tweet
+`force` pins the type.
 
 ## Files
 
@@ -80,6 +98,9 @@ artifact), check it to post now; `force` pins the type.
 | `tools/twitter/render-card.mjs` | Renders the branded PNG (non-blog types) |
 | `tools/twitter/highlights.mjs` | Curated feature highlights |
 | `tools/twitter/x-client.mjs` | Zero-dependency X API client (OAuth 1.0a) |
+| `tools/twitter/tips-data.mjs` | Tip pool: feeds both the tip tweet and the SEO tips pages |
 
-Note: `tools/twitter/tips-data.mjs` + `build-tips-pages.mjs` are unrelated - they
-generate the SEO tips blog pages, not tweets.
+Note: `tools/twitter/tips-data.mjs` is the single source of truth for tips. Its
+`PRODUCT_TIPS` (grid + UI + Studio) drive the daily **tip tweet**;
+`SVELTE_TIPS` + `SVGRID_TIPS` also drive the SEO tips blog pages via
+`build-tips-pages.mjs`. The new UI/Studio tips are tweet-only for now (no page).

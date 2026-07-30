@@ -10,6 +10,8 @@ import type {
 } from "./index";
 import type { ConditionalFormat } from "./conditional-formatting";
 import type { MenuItem } from "./SvMenuList.svelte";
+import type { RecurrenceRule } from "./recurrence";
+import type { SchedulerView, SchedulerResource } from "./scheduler-model";
 import type {
   ChartType,
   ChartSpec,
@@ -450,6 +452,137 @@ export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData e
   onLayoutChange?: (layout: BoardLayout) => void;
 };
 
+/**
+ * The built-in event detail drawer for the scheduler. Set `scheduler.drawer`
+ * (`true` for all fields, or this object) and clicking an event opens a drawer
+ * with an `SvForm` of its fields. Mirrors {@link BoardDrawerConfig}.
+ */
+export type SchedulerDrawerConfig<TData extends RowData = RowData> = {
+  /** Fields to show, in order. Omit for every column that has a `field`. */
+  fields?: ReadonlyArray<keyof TData & string>;
+  /** Drawer title - a string or derived from the row. Defaults to the title field. */
+  title?: string | ((row: TData) => string);
+  /** Which edge the drawer opens from. Defaults to `'right'`. */
+  side?: "right" | "left" | "top" | "bottom";
+  /** Drawer size (any CSS length). Defaults to `'380px'`. */
+  size?: string;
+  /** Save button label. Defaults to `'Save'`. */
+  submitLabel?: string;
+  /** Form columns inside the drawer. Defaults to `1`. */
+  columns?: number;
+};
+
+/** Emitted when an event is dragged to a new time (and/or resource). */
+export type SchedulerEventMoveEvent<TData extends RowData = RowData> = {
+  /** The dragged row. */
+  row: TData;
+  /** New start / end after the move. */
+  start: Date;
+  end: Date;
+  /** Whether the event is all-day after the move. */
+  allDay: boolean;
+  /** Resource it came from (only with `resourceField`). */
+  fromResource?: string;
+  /** Resource it was dropped on (only with `resourceField`). */
+  toResource?: string;
+};
+
+/** Emitted when an event's start or end edge is dragged to resize it. */
+export type SchedulerEventResizeEvent<TData extends RowData = RowData> = {
+  row: TData;
+  start: Date;
+  end: Date;
+};
+
+/** Emitted when an event's built-in editor/drawer is saved. */
+export type SchedulerEventCommitEvent<TData extends RowData = RowData> = {
+  row: TData;
+  /** Only the fields that changed, `{ field: newValue }`. */
+  changes: Record<string, unknown>;
+  /** The full set of edited field values. */
+  values: Record<string, unknown>;
+};
+
+/**
+ * Turns the grid into a calendar / scheduler. Set `scheduler` and the grid
+ * renders its rows as events on a Month / Week / Day / Agenda calendar (bucketed
+ * by time, and optionally split into per-resource columns) instead of a table.
+ * Dragging an event fires {@link SchedulerConfig.onEventMove} where you reassign
+ * the start / end (and resource) on your own data. Like the Kanban board, it is
+ * a pure *view of the grid*: it renders the grid's filtered + sorted rows and
+ * writes back only through callbacks, never mutating your data.
+ */
+export type SchedulerConfig<
+  TFeatures extends TableFeatures = TableFeatures,
+  TData extends RowData = RowData,
+> = {
+  /** Field holding each event's start (`Date` | epoch-ms | ISO string). Required. */
+  startField: keyof TData & string;
+  /** Field holding the end. Omit to use `defaultDurationMin` from the start. */
+  endField?: keyof TData & string;
+  /** Boolean field marking an event as all-day (rendered in the all-day row). */
+  allDayField?: keyof TData & string;
+  /** Field for the event title. Defaults to the first column's field. */
+  titleField?: keyof TData & string;
+  /** Field holding a per-event accent color (any CSS color). Else `color`. */
+  colorField?: keyof TData & string;
+  /** Fallback accent color for every event. */
+  color?: string;
+  /**
+   * Field holding a {@link RecurrenceRule} (or array) - the row renders as one
+   * event per matching day in view, keeping its time-of-day + duration.
+   */
+  recurrenceField?: keyof TData & string;
+  /** Event length in minutes when a row has a start but no `endField`. Default 60. */
+  defaultDurationMin?: number;
+
+  /** Which views to offer in the toolbar. Default all four. */
+  views?: ReadonlyArray<SchedulerView>;
+  /** The view shown first. Default `'month'`. */
+  initialView?: SchedulerView;
+  /** The date the calendar opens on. Defaults to "today". */
+  initialDate?: Date | number | string;
+  /** First day of the week, 0-6 (0 = Sunday). Default 0. */
+  weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  /** Time-grid slot size in minutes (week / day snap granularity). Default 30. */
+  slotMinutes?: number;
+  /** First / last hour shown in the time-grid band (0-24). Default 0..24. */
+  dayStartHour?: number;
+  dayEndHour?: number;
+  /** How many days the agenda view spans. Default 30. */
+  agendaDays?: number;
+
+  /**
+   * Field whose value buckets events into per-resource columns (people, rooms).
+   * Applies to the Week / Day time-grid views (like a second axis).
+   */
+  resourceField?: keyof TData & string;
+  /** Explicit, ordered resources. Omit to derive from the distinct field values. */
+  resources?: ReadonlyArray<SchedulerResource>;
+
+  /** Enable drag-to-move and edge-resize. Without it the calendar is read-only. */
+  editable?: boolean;
+  /** Fired when an event is dragged to a new time / resource. */
+  onEventMove?: (event: SchedulerEventMoveEvent<TData>) => void;
+  /** Fired when an event edge is dragged to resize it. */
+  onEventResize?: (event: SchedulerEventResizeEvent<TData>) => void;
+  /** Fired when an empty slot is double-clicked (create affordance). */
+  onEventAdd?: (start: Date, end: Date, resourceId?: string) => void;
+
+  /** Custom event body. Receives the row. Omit for the built-in default. */
+  event?: Snippet<[TData]>;
+  /** Built-in detail drawer: `true` for all fields, or a config object. */
+  drawer?: boolean | SchedulerDrawerConfig<TData>;
+  /** Fired when the drawer / editor is saved. */
+  onEventCommit?: (event: SchedulerEventCommitEvent<TData>) => void;
+  /** Right-click menu for an event. Return items or `undefined` to suppress. */
+  eventMenu?: (row: TData) => MenuItem[] | undefined;
+
+  /** Show the search box (binds to the grid's global filter). Default `true`. */
+  searchable?: boolean;
+  searchPlaceholder?: string;
+};
+
 export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
   data: ReadonlyArray<TData>;
   columns: Array<ColumnDef<TFeatures, TData>>;
@@ -459,6 +592,12 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * {@link BoardConfig}.
    */
   board?: BoardConfig<TFeatures, TData>;
+  /**
+   * Scheduler / calendar mode. When set, the grid renders its rows as events on
+   * a Month / Week / Day / Agenda calendar instead of a table. See
+   * {@link SchedulerConfig}.
+   */
+  scheduler?: SchedulerConfig<TFeatures, TData>;
   /**
    * Right-click context menu. `true` shows the default item set (copy, cut,
    * paste, clear, insert row above/below, remove row, remove column). Pass an

@@ -22,6 +22,8 @@
 
 export const SVELTE_TIPS_SLUG = 'svelte-5-tips-and-tricks'
 export const SVGRID_TIPS_SLUG = 'svgrid-tips-and-tricks'
+export const SVGRID_UI_TIPS_SLUG = 'svgrid-ui-components-tips-and-tricks'
+export const SVGRID_STUDIO_TIPS_SLUG = 'svgrid-studio-tips-and-tricks'
 
 // General Svelte 5 tips - the audience play. These target real search demand
 // ("svelte $state", "svelte snippets", "svelte $derived") and pull Svelte devs
@@ -203,4 +205,134 @@ export const SVGRID_TIPS = [
     hashtags: ['Svelte', 'Responsive'],
     link: 'https://svgrid.com/docs/help/columns/overview',
   },
+]
+
+// SvGrid UI Components tips - the standalone Svelte 5 component kit that ships
+// alongside the grid (buttons, inputs, overlays, tree, forms, command palette,
+// date/time). Each tip references a real exported component and its actual props.
+export const SVGRID_UI_TIPS = [
+  {
+    anchor: 'ui-button',
+    title: 'SvButton has states baked in',
+    tweet: 'SvButton is not just a styled button: variant, size, a loading spinner and a leading icon snippet are all props. One component covers primary, danger, ghost and link buttons.',
+    body: 'Set `loading` and the button shows a spinner and goes disabled, so async actions cannot double-fire. `href` renders an anchor that still looks like a button.',
+    code: `<SvButton variant="danger" {loading} onclick={remove}>Delete</SvButton>`,
+    hashtags: ['Svelte', 'UI'],
+    link: 'https://svgrid.com/docs/help/ui-components/sv-button',
+  },
+  {
+    anchor: 'ui-command',
+    title: 'Add a Cmd+K palette in one component',
+    tweet: 'SvCommand gives you a full command palette - fuzzy search, keyboard nav, and a built-in Cmd/Ctrl+K hotkey. Pass a list of commands and an onRun handler, done.',
+    body: 'The hotkey is configurable (`mod+k`, `mod+p`, or off) and the open state is bindable, so you can also trigger it from a button.',
+    code: `<SvCommand bind:open {commands} hotkey="mod+k" onRun={run} />`,
+    hashtags: ['Svelte', 'UI'],
+    link: 'https://svgrid.com/docs/help/ui-components/sv-command',
+  },
+  {
+    anchor: 'ui-tree',
+    title: 'SvTree scales to big hierarchies',
+    tweet: 'SvTree does cascading checkboxes, a built-in search box, lazy children on expand, and row virtualization - so a tree of thousands of nodes stays smooth.',
+    body: 'Turn on `virtual` with a `height` to window the rows, `searchable` for the filter box, and `loadChildren` to fetch a lazy branch the first time it opens.',
+    code: `<SvTree {nodes} checkable searchable virtual height={480} />`,
+    hashtags: ['Svelte', 'UI'],
+    link: 'https://svgrid.com/docs/help/ui-components/sv-tree',
+  },
+  {
+    anchor: 'ui-form',
+    title: 'Generate a form from a fields schema',
+    tweet: 'SvForm builds a labelled, validated form from a plain fields array - multi-column layout, initial values and an onSubmit that hands you the typed values. No markup per field.',
+    body: 'Describe each field once (type, label, validation) and SvForm renders the inputs, wires validation, and lays them out across `columns`.',
+    code: `<SvForm {fields} initial={row} columns={2} onSubmit={save} />`,
+    hashtags: ['Svelte', 'UI'],
+    link: 'https://svgrid.com/docs/help/ui-components/sv-form',
+  },
+  {
+    anchor: 'ui-datetime',
+    title: 'A date/time field that actually parses',
+    tweet: 'SvDateTimePicker is a masked field plus a calendar: type or pick, with min/max bounds, 12 or 24-hour time, week numbers and locale-aware formatting via a format string.',
+    body: 'It commits on Enter/blur and cancels on Escape, so it drops straight into a grid cell or a form. `formatString` controls both display and parsing.',
+    code: `<SvDateTimePicker bind:value min={today} hourFormat="24-hour" />`,
+    hashtags: ['Svelte', 'UI'],
+    link: 'https://svgrid.com/docs/help/ui-components/sv-date-time-picker',
+  },
+  {
+    anchor: 'ui-editor-contract',
+    title: 'Every input shares one field contract',
+    tweet: 'label, hint, error, required and RTL work the same on every SvGrid input - text, number, multi-select, date. Learn the contract once and it holds across the whole kit.',
+    body: 'Inputs share a common editor-props layer, so a11y wiring, validation display and right-to-left mirroring are consistent instead of per-component guesswork.',
+    code: `<SvMultiSelect {options} bind:value label="Tags" required hint="Pick a few" />`,
+    hashtags: ['Svelte', 'UI'],
+    link: 'https://svgrid.com/docs/help/ui-components/inputs',
+  },
+]
+
+// SvGrid Studio tips - the data-app layer: design entities and screens, then
+// generate a real SvelteKit app. These are capability tips (Studio is a
+// designer, so snippets are config/CLI-shaped rather than component markup).
+export const SVGRID_STUDIO_TIPS = [
+  {
+    anchor: 'studio-ai',
+    title: 'Describe an app, get real screens',
+    tweet: 'SvGrid Studio has an AI generator (and its own MCP server): describe the app you want and it scaffolds the entities, grids and screens - then you refine them in the designer.',
+    body: 'The generator writes the same project a human would build by hand, so nothing is a black box: everything it makes is editable and emits real code.',
+    code: `npx @svgrid/studio generate "a CRM with contacts, deals and tasks"`,
+    hashtags: ['Svelte', 'Studio'],
+    link: 'https://svgrid.com/docs/enterprise/studio/ai-generation',
+  },
+  {
+    anchor: 'studio-designer',
+    title: 'The designer emits a real SvelteKit app',
+    tweet: 'Studio is not a runtime you are locked into. Design entities and screens visually and it generates a real SvelteKit project - routes, +page.svelte, API handlers - that you own.',
+    body: 'Drag screens together in the app designer; the output is plain, readable SvelteKit code you can keep building on outside Studio.',
+    code: `npx @svgrid/studio build ./my-app.studio.json`,
+    hashtags: ['Svelte', 'Studio'],
+    link: 'https://svgrid.com/docs/enterprise/studio/app-designer',
+  },
+  {
+    anchor: 'studio-forms',
+    title: 'Edit forms come from your schema',
+    tweet: 'Mark a screen as a form screen and Studio derives a full edit form from the entity schema - inputs, validation and computed fields included. Change the schema, the form follows.',
+    body: 'Field types, required rules and computed values live on the entity, so the create/edit form stays in sync instead of being hand-maintained.',
+    code: `screen: { type: 'form', entity: 'contact' }`,
+    hashtags: ['Svelte', 'Studio'],
+    link: 'https://svgrid.com/docs/enterprise/studio/edit-forms',
+  },
+  {
+    anchor: 'studio-code-behind',
+    title: 'Add code-behind with ctx.grid',
+    tweet: 'Screens are not sealed. Studio wires code-behind into every entity screen and exposes ctx.grid, so your custom logic can drive the grid the designer generated.',
+    body: 'Drop into a handler and you get the live grid API plus the screen context - the escape hatch for anything the visual designer does not cover.',
+    code: `onRowClick(row, ctx) { ctx.grid.selectRow(row.id) }`,
+    hashtags: ['Svelte', 'Studio'],
+    link: 'https://svgrid.com/docs/enterprise/studio/business-logic',
+  },
+  {
+    anchor: 'studio-production',
+    title: 'Studio apps ship to production',
+    tweet: 'Studio is not just a prototype tool: toggle on an auth/session starter, a typed Drizzle data layer (pg/sqlite/turso) and a CI/CD deploy pipeline. The generated app is production-shaped.',
+    body: 'These are real, standard building blocks emitted into the project - auth, a typed database layer and deploy config - not a proprietary hosting lock-in.',
+    code: `project.auth = true\nproject.dataLayer = 'drizzle'\nproject.deploy = 'docker'`,
+    hashtags: ['Svelte', 'Studio'],
+    link: 'https://svgrid.com/docs/enterprise/studio/auth',
+  },
+  {
+    anchor: 'studio-data-binding',
+    title: 'Bind screens to real data sources',
+    tweet: 'Studio screens bind to in-memory data, a REST endpoint or SQL - and you can flip a sample from in-memory to a local Postgres with one toggle, no rewrite.',
+    body: 'Design against seeded in-memory data, then point the same screens at a live database when you are ready. The binding, not the UI, is what changes.',
+    code: `entity.source = { kind: 'sql', table: 'contacts' }`,
+    hashtags: ['Svelte', 'Studio'],
+    link: 'https://svgrid.com/docs/enterprise/studio/data-binding',
+  },
+]
+
+// The pool the daily TIP tweet rotates through: product tips across all three
+// areas (grid, UI components, Studio). Grid first so the flagship leads. Each
+// carries its `page` (the on-site tips page slug) so the tweet can deep-link to
+// that tip's #anchor - rankable, on-site content that then routes on to the docs.
+export const PRODUCT_TIPS = [
+  ...SVGRID_TIPS.map((t) => ({ ...t, area: 'SvGrid', page: SVGRID_TIPS_SLUG })),
+  ...SVGRID_UI_TIPS.map((t) => ({ ...t, area: 'SvGrid UI', page: SVGRID_UI_TIPS_SLUG })),
+  ...SVGRID_STUDIO_TIPS.map((t) => ({ ...t, area: 'SvGrid Studio', page: SVGRID_STUDIO_TIPS_SLUG })),
 ]

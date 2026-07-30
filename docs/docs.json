@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-07-30T00:21:48.769Z",
+  "generatedAt": "2026-07-30T16:29:54.014Z",
   "counts": {
-    "pages": 344,
+    "pages": 345,
     "enterprise": 8,
-    "withDemo": 227
+    "withDemo": 228
   },
   "pillars": [
     {
@@ -206,6 +206,7 @@
         "help/rows/row-pinning.md",
         "help/rows/row-sorting.md",
         "help/rows/row-spanning.md",
+        "help/rows/scheduler.md",
         "help/rows/styling-rows.md",
         "help/rows/transactions.md",
         "help/rows/tree-rows.md"
@@ -2884,6 +2885,24 @@
       "demoIds": []
     },
     {
+      "path": "help/rows/scheduler.md",
+      "url": "/help/rows/scheduler",
+      "title": "Scheduler / calendar mode",
+      "summary": "Set one scheduler prop and the grid renders its rows as **events on a calendar** instead of a table. It is the same <SvGrid>, the same data and columns - only the presentation changes. Events are placed by time across four views (Month, Week, Day, Agenda); dragging an event to a new day or time tells you to reassign its start/end on your own data.",
+      "section": "help/rows",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1089,
+      "lastUpdated": "2026-07-30",
+      "demoIds": [
+        "363-scheduler-intro",
+        "364-scheduler-timegrid",
+        "365-scheduler-resources",
+        "366-scheduler-recurring",
+        "367-scheduler-agenda"
+      ]
+    },
+    {
       "path": "help/rows/styling-rows.md",
       "url": "/help/rows/styling-rows",
       "title": "Styling rows",
@@ -3670,7 +3689,7 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 728,
+      "words": 1107,
       "lastUpdated": "2026-07-30",
       "demoIds": [
         "362-dock-manager"

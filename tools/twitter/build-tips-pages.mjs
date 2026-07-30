@@ -10,6 +10,8 @@
  * Output (into the private website submodule, alongside the blog):
  *   website/src/content/blog/svelte-5-tips-and-tricks.md
  *   website/src/content/blog/svgrid-tips-and-tricks.md
+ *   website/src/content/blog/svgrid-ui-components-tips-and-tricks.md
+ *   website/src/content/blog/svgrid-studio-tips-and-tricks.md
  *
  * These are comprehensive, anchor-linked posts (one <h2> per tip, each with an
  * <a id> the tweets deep-link to). Comprehensive pages rank better than many
@@ -22,7 +24,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  SVELTE_TIPS, SVGRID_TIPS, SVELTE_TIPS_SLUG, SVGRID_TIPS_SLUG,
+  SVELTE_TIPS, SVGRID_TIPS, SVGRID_UI_TIPS, SVGRID_STUDIO_TIPS,
+  SVELTE_TIPS_SLUG, SVGRID_TIPS_SLUG, SVGRID_UI_TIPS_SLUG, SVGRID_STUDIO_TIPS_SLUG,
 } from './tips-data.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -130,6 +133,47 @@ buildPage({
     'Every tip above links to its full documentation. Start with the ' +
     '[getting-started guide](https://svgrid.com/docs/getting-started) or browse the ' +
     '[150+ live examples](https://svgrid.com/demos).',
+})
+
+buildPage({
+  slug: SVGRID_UI_TIPS_SLUG,
+  title: 'SvGrid UI Components Tips and Tricks: Svelte 5 Buttons, Inputs, Tree, Forms',
+  description:
+    'Practical tips for the SvGrid UI component kit - SvButton states, a Cmd+K command palette, a virtualized searchable tree, schema-driven forms, a parsing date/time field, and the shared field contract - each with a code snippet.',
+  tags: ['svgrid', 'svelte ui components', 'svelte 5', 'ui kit', 'tips', 'tutorial'],
+  intro:
+    'SvGrid ships more than a grid: a Svelte 5-native UI component kit - buttons, ' +
+    'inputs, overlays, a tree, forms, a command palette and date/time pickers - that ' +
+    'you can use standalone or as grid cell editors. These tips show the parts people ' +
+    'most often miss, each a copy-ready one-liner. This page grows over time, so bookmark it.',
+  tips: SVGRID_UI_TIPS,
+  outro:
+    '### Explore the kit\n\n' +
+    'Every tip links to its component docs. Browse the full ' +
+    '[UI components reference](https://svgrid.com/docs/help/ui-components) or see them ' +
+    'live in the [examples gallery](https://svgrid.com/demos). The same components double ' +
+    'as in-cell editors inside [SvGrid](https://svgrid.com), the Svelte 5 data grid.',
+})
+
+buildPage({
+  slug: SVGRID_STUDIO_TIPS_SLUG,
+  title: 'SvGrid Studio Tips and Tricks: Build Svelte Data Apps, Fast',
+  description:
+    'Practical SvGrid Studio tips - AI app generation, a designer that emits real SvelteKit, schema-driven edit forms, code-behind with ctx.grid, production auth/data/deploy toggles, and real data-source binding - each with a snippet.',
+  tags: ['svgrid studio', 'svelte data app', 'low code svelte', 'sveltekit', 'tips', 'tutorial'],
+  intro:
+    '[SvGrid Studio](https://svgrid.com/docs/enterprise/studio) turns entities and ' +
+    'screens into a real, ejectable SvelteKit app - no runtime lock-in. These tips cover ' +
+    'the moves that make it feel like a team-scale tool: generate from a prompt, drop into ' +
+    'code-behind, and ship to production. Each is a short, concrete example. This page grows ' +
+    'over time, so bookmark it.',
+  tips: SVGRID_STUDIO_TIPS,
+  outro:
+    '### Start building\n\n' +
+    'Every tip links to its Studio docs. Begin with the ' +
+    '[Studio getting-started guide](https://svgrid.com/docs/enterprise/studio/getting-started) ' +
+    'or read how the [app designer](https://svgrid.com/docs/enterprise/studio/app-designer) ' +
+    'generates code you own.',
 })
 
 console.log(DRY_RUN ? '\n(dry run - nothing written)' : 'done')

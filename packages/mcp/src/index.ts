@@ -19,6 +19,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 import { apiReference, docs, examples } from './data.js'
+import { projectTools, handleProjectTool } from './project-tools.js'
 import {
   checkLicenseKey,
   introspectDrizzle,
@@ -151,12 +152,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['schema'],
         },
       },
+      // SvGrid Studio "drive the model" tools: build/edit the same validated project
+      // model the visual designer uses, then generate the app or export the config.
+      ...projectTools.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema })),
     ],
   }
 })
 
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: args } = req.params
+
+  // Project-model tools (studio_*) are handled by their own dispatcher.
+  const projectResult = handleProjectTool(name, (args ?? {}) as Record<string, unknown>)
+  if (projectResult) return projectResult
 
   switch (name) {
     case 'list_examples': {

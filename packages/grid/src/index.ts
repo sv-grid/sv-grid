@@ -71,6 +71,23 @@ export { subscribeGrid, subscribeSvGrid } from './subscribe'
 export { default as SvGrid } from './SvGrid.svelte'
 export { default as SvGridBoard } from './SvGridBoard.svelte'
 export type { BoardConfig, BoardLane, BoardCardMoveEvent, BoardCardCommitEvent, BoardLayout, BoardSubtask, BoardComment, BoardMenuContext, BoardLaneMenuContext, BoardDrawerConfig } from './SvGrid.types'
+export { default as SvGridScheduler } from './SvGridScheduler.svelte'
+export type { SchedulerConfig, SchedulerDrawerConfig, SchedulerEventMoveEvent, SchedulerEventResizeEvent, SchedulerEventCommitEvent } from './SvGrid.types'
+export {
+  resolveEvents,
+  eventsOnDay,
+  layoutDayEvents,
+  agendaGroups,
+  rangeForView,
+  daysForView,
+  navigateAnchor,
+  type SchedulerView,
+  type SchedulerResource,
+  type ResolvedEvent,
+  type EventSpec,
+  type PositionedEvent,
+  type AgendaGroup,
+} from './scheduler-model'
 export { default as SvGridDropdown } from './SvGridDropdown.svelte'
 export { default as SvCalendar, type CalendarValue, type CalendarPreset, type CalendarAnimation } from './SvCalendar.svelte'
 export { matchesRecurrence, expandRecurrence, type RecurrenceRule, type RecurrenceFreq } from './recurrence'
@@ -219,7 +236,7 @@ export { createAccordion, type Accordion, type AccordionConfig } from './createA
 export { default as SvSplitter, type SplitterOrientation } from './SvSplitter.svelte'
 export { createSplitter, type Splitter, type SplitterConfig, type SplitterPoint } from './createSplitter.svelte'
 export { default as SvDockLayout } from './SvDockLayout.svelte'
-export { default as SvDockManager } from './SvDockManager.svelte'
+export { default as SvDockManager, type DockManagerApi } from './SvDockManager.svelte'
 export {
   dockPane,
   dockTabs,
@@ -248,12 +265,20 @@ export {
   dockPaneToEmptyMain,
   reorderTab,
   autoHideLeaf,
+  autoHidePaneToSide,
   pinAutoHidden,
   setAutoHideSize,
   closePane as dockManagerClosePane,
   moveWindow,
   resizeWindow,
   bringToFront,
+  setWindowMinimized,
+  toggleWindowMaximized,
+  closeWindow,
+  autoHideWindow,
+  toggleMaximizeLeaf,
+  findLeafById,
+  addPaneToMain,
   resizeGroup as dockManagerResizeGroup,
   setManagerActive,
   locatePane,

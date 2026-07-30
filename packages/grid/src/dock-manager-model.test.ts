@@ -6,11 +6,19 @@ import {
   dockWindowOnto,
   reorderTab,
   autoHideLeaf,
+  autoHidePaneToSide,
   pinAutoHidden,
   closePane,
   moveWindow,
   resizeWindow,
   bringToFront,
+  setWindowMinimized,
+  toggleWindowMaximized,
+  closeWindow,
+  autoHideWindow,
+  toggleMaximizeLeaf,
+  findLeafById,
+  addPaneToMain,
   locatePane,
   surfaceOfTabs,
   allManagerPaneIds,
@@ -112,6 +120,44 @@ describe('auto-hide + pin', () => {
   })
 })
 
+describe('auto-hide to any of the 4 sides', () => {
+  it.each(['left', 'right', 'top', 'bottom'] as const)('collapses + pins back on the %s edge', (side) => {
+    const { state, B, g } = base()
+    const hidden = autoHideLeaf(state, B.id, side)
+    expect(hidden.autoHide[0]!.side).toBe(side)
+    const pinned = pinAutoHidden(hidden, hidden.autoHide[0]!.id, g)
+    const root = pinned.main as Extract<DockNode, { type: 'group' }>
+    expect(root.type).toBe('group')
+    // Row for left/right, column for top/bottom.
+    expect(root.direction).toBe(side === 'left' || side === 'right' ? 'row' : 'column')
+    expect(allPaneIds(pinned.main!).sort()).toEqual(['a', 'b'])
+  })
+
+  it('pins back with the requested size fraction (not 50/50)', () => {
+    const { state, B, g } = base()
+    const hidden = autoHideLeaf(state, B.id, 'right')
+    const pinned = pinAutoHidden(hidden, hidden.autoHide[0]!.id, g, 0.2)
+    const root = pinned.main as Extract<DockNode, { type: 'group' }>
+    // Right side => [content, pinnedLeaf]; the pinned leaf takes ~0.2.
+    expect(root.sizes[1]).toBeCloseTo(0.2, 1)
+    expect(root.sizes[0]).toBeCloseTo(0.8, 1)
+  })
+})
+
+describe('autoHidePaneToSide (drag a tab to an edge)', () => {
+  it('pulls a single pane out to an edge as its own entry', () => {
+    const g = counter()
+    const leaf = tabs(g, [pane('a', 'A'), pane('b', 'B')])
+    const s: DockManagerState = { main: leaf, floating: [], autoHide: [] }
+    const next = autoHidePaneToSide(s, 'a', 'bottom', g)
+    expect(next.autoHide).toHaveLength(1)
+    expect(next.autoHide[0]!.side).toBe('bottom')
+    expect(next.autoHide[0]!.leaf.panes.map((p) => p.id)).toEqual(['a'])
+    // 'b' stays in the tiled leaf.
+    expect(allPaneIds(next.main!)).toEqual(['b'])
+  })
+})
+
 describe('dockWindowOnto', () => {
   it('docks a whole window edge-wise into main', () => {
     const { state, A, g } = base()
@@ -120,6 +166,54 @@ describe('dockWindowOnto', () => {
     const next = dockWindowOnto(floated, wid, A.id, 'right', g)
     expect(next.floating).toHaveLength(0)
     expect(allPaneIds(next.main!)).toEqual(['a', 'b'])
+  })
+})
+
+describe('maximize a tiled leaf + addPaneToMain', () => {
+  it('toggles maximizedLeaf and finds a leaf by id', () => {
+    const { state, A } = base()
+    expect(findLeafById(state, A.id)?.id).toBe(A.id)
+    const on = toggleMaximizeLeaf(state, A.id)
+    expect(on.maximizedLeaf).toBe(A.id)
+    expect(toggleMaximizeLeaf(on, A.id).maximizedLeaf).toBeNull()
+  })
+
+  it('adds a pane into the first main leaf (or as main when empty)', () => {
+    const { state } = base()
+    const next = addPaneToMain(state, pane('z', 'Z'), counter())
+    expect(allManagerPaneIds(next)).toContain('z')
+    const empty: DockManagerState = { main: null, floating: [], autoHide: [] }
+    const filled = addPaneToMain(empty, pane('z', 'Z'), counter())
+    expect(filled.main?.type).toBe('tabs')
+    expect(allManagerPaneIds(filled)).toEqual(['z'])
+  })
+})
+
+describe('window controls', () => {
+  it('minimizes, maximizes (toggle), closes, and auto-hides a window', () => {
+    const { state, g } = base()
+    let s = floatPane(state, 'a', rect, g)
+    const wid = s.floating[0]!.id
+    s = setWindowMinimized(s, wid, true)
+    expect(s.floating[0]!.minimized).toBe(true)
+    s = toggleWindowMaximized(s, wid)
+    expect(s.floating[0]!.maximized).toBe(true)
+    expect(s.floating[0]!.minimized).toBe(false) // max clears min
+    s = toggleWindowMaximized(s, wid)
+    expect(s.floating[0]!.maximized).toBe(false)
+    // auto-hide the window to the left edge
+    s = autoHideWindow(s, wid, 'left', g)
+    expect(s.floating).toHaveLength(0)
+    expect(s.autoHide[0]!.side).toBe('left')
+    expect(s.autoHide[0]!.leaf.panes.map((p) => p.id)).toEqual(['a'])
+  })
+
+  it('closeWindow drops the window and its panes', () => {
+    const { state, g } = base()
+    const s = floatPane(state, 'a', rect, g)
+    const next = closeWindow(s, s.floating[0]!.id)
+    expect(next.floating).toHaveLength(0)
+    expect(allManagerPaneIds(next)).toEqual(['b'])
   })
 })
 

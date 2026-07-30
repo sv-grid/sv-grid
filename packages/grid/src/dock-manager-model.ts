@@ -43,6 +43,10 @@ export type FloatWindow = {
   height: number
   /** Stacking order; higher is on top. */
   z: number
+  /** Collapsed to just its title bar. */
+  minimized?: boolean
+  /** Expanded to fill the manager (its x/y/w/h are kept for restore). */
+  maximized?: boolean
 }
 
 /** A leaf collapsed to an edge; a fly-out reveals it, "pin" re-docks it. */
@@ -58,6 +62,8 @@ export type DockManagerState = {
   main: DockNode | null
   floating: FloatWindow[]
   autoHide: AutoHideEntry[]
+  /** A tiled leaf shown maximized (filling the docked area), or null. */
+  maximizedLeaf?: string | null
 }
 
 // ---- queries --------------------------------------------------------------
@@ -225,6 +231,23 @@ export function dockPaneOnto(
   }
 }
 
+/** Insert a NEW pane into the main area - the first leaf (as a tab), or as the
+ *  whole main when empty. Used to pop a window/pop-out back into the layout. */
+export function addPaneToMain(state: DockManagerState, p: DockPane, genId: IdGen): DockManagerState {
+  if (!state.main) return { ...state, main: tabs(genId, [p], 0) }
+  let added = false
+  const walk = (n: DockNode): DockNode => {
+    if (added) return n
+    if (n.type === 'tabs') {
+      added = true
+      const panes = [...n.panes, p]
+      return { ...n, panes, active: panes.length - 1 }
+    }
+    return { ...n, children: n.children.map(walk) }
+  }
+  return { ...state, main: walk(state.main) }
+}
+
 /** Dock a pane into an empty main area (main becomes a single leaf holding it). */
 export function dockPaneToEmptyMain(state: DockManagerState, paneId: string, genId: IdGen): DockManagerState {
   const moving = findPaneObject(state, paneId)
@@ -320,7 +343,64 @@ export function bringToFront(state: DockManagerState, windowId: string): DockMan
   return { ...state, floating: state.floating.map((w) => (w.id === windowId ? { ...w, z: top + 1 } : w)) }
 }
 
-/** Collapse a MAIN leaf to an edge strip (auto-hide). */
+/** Collapse a floating window to just its title bar (or restore it). */
+export function setWindowMinimized(state: DockManagerState, windowId: string, minimized: boolean): DockManagerState {
+  return {
+    ...state,
+    floating: state.floating.map((w) =>
+      w.id === windowId ? { ...w, minimized, maximized: minimized ? false : w.maximized } : w,
+    ),
+  }
+}
+
+/** Toggle a floating window between filling the manager and its own rect. */
+export function toggleWindowMaximized(state: DockManagerState, windowId: string): DockManagerState {
+  return {
+    ...state,
+    floating: state.floating.map((w) =>
+      w.id === windowId ? { ...w, maximized: !w.maximized, minimized: false } : w,
+    ),
+  }
+}
+
+/** Close a floating window and all its panes. */
+export function closeWindow(state: DockManagerState, windowId: string): DockManagerState {
+  return { ...state, floating: state.floating.filter((w) => w.id !== windowId) }
+}
+
+/** Find a tabs leaf anywhere (main or a floating window) by id. */
+export function findLeafById(state: DockManagerState, tabsId: string): DockTabs | null {
+  const scan = (n: DockNode): DockTabs | null => {
+    if (n.type === 'tabs') return n.id === tabsId ? n : null
+    for (const c of n.children) { const hit = scan(c); if (hit) return hit }
+    return null
+  }
+  if (state.main) { const m = scan(state.main); if (m) return m }
+  const w = state.floating.find((f) => f.leaf.id === tabsId)
+  return w ? w.leaf : null
+}
+
+/** Toggle a tiled leaf maximized (filling the docked area). Clears if it is gone. */
+export function toggleMaximizeLeaf(state: DockManagerState, tabsId: string): DockManagerState {
+  const on = state.maximizedLeaf === tabsId
+  return { ...state, maximizedLeaf: on ? null : tabsId }
+}
+
+/** Send a floating window's panel to an edge as an auto-hidden entry. */
+export function autoHideWindow(
+  state: DockManagerState,
+  windowId: string,
+  side: DockSide,
+  genId: IdGen,
+  size = 260,
+): DockManagerState {
+  const w = state.floating.find((f) => f.id === windowId)
+  if (!w) return state
+  const entry: AutoHideEntry = { id: genId(), side, leaf: tabs(genId, w.leaf.panes, w.leaf.active), size }
+  return { ...state, floating: state.floating.filter((f) => f.id !== windowId), autoHide: [...state.autoHide, entry] }
+}
+
+/** Collapse a MAIN leaf to an edge strip (auto-hide) on the given side. */
 export function autoHideLeaf(
   state: DockManagerState,
   tabsId: string,
@@ -334,15 +414,39 @@ export function autoHideLeaf(
   return { ...state, main: root, autoHide: [...state.autoHide, entry] }
 }
 
-/** Pin an auto-hidden entry back into the main dock area on its edge. */
-export function pinAutoHidden(state: DockManagerState, entryId: string, genId: IdGen): DockManagerState {
+/** Auto-hide a single pane to an edge (drag a tab to the manager border). The
+ *  pane leaves its leaf and becomes its own collapsed entry on that side. */
+export function autoHidePaneToSide(
+  state: DockManagerState,
+  paneId: string,
+  side: DockSide,
+  genId: IdGen,
+  size = 260,
+): DockManagerState {
+  const moving = findPaneObject(state, paneId)
+  if (!moving) return state
+  const stripped = stripPane(state, paneId)
+  const entry: AutoHideEntry = { id: genId(), side, leaf: tabs(genId, [moving], 0), size }
+  return { ...stripped, autoHide: [...stripped.autoHide, entry] }
+}
+
+/**
+ * Pin an auto-hidden entry back into the main dock area on its edge. `fraction`
+ * is the share of the axis the re-docked panel should take (default 0.25).
+ */
+export function pinAutoHidden(
+  state: DockManagerState,
+  entryId: string,
+  genId: IdGen,
+  fraction = 0.25,
+): DockManagerState {
   const entry = state.autoHide.find((e) => e.id === entryId)
   if (!entry) return state
   const leaf = tabs(genId, entry.leaf.panes, entry.leaf.active)
   return {
     ...state,
     autoHide: state.autoHide.filter((e) => e.id !== entryId),
-    main: dockLeafToEdge(state.main, leaf, entry.side, genId),
+    main: dockLeafToEdge(state.main, leaf, entry.side, genId, fraction),
   }
 }
 

@@ -61,14 +61,17 @@
   import SvGridChartPanel from "./SvGridChartPanel.svelte";
   import GridFooter from "./GridFooter.svelte";
   import SvGridBoard from "./SvGridBoard.svelte";
+  import SvGridScheduler from "./SvGridScheduler.svelte";
   let props: Props<TFeatures, TData> = $props();
   const ctrl = createSvGridController(props);
   // Kanban board mode: when `board` is set the grid renders lanes of cards
   // instead of the table (see SvGridBoard). Narrowed derived so the template
   // branch can pass it non-null.
   const boardConfig = $derived(props.board);
-  // The board renders the grid's FILTERED + SORTED rows (not raw data), so the
-  // search box / column filters / sort all flow through to the lanes.
+  // Scheduler / calendar mode: same "view of the grid" seam as the board.
+  const schedulerConfig = $derived(props.scheduler);
+  // The board / scheduler render the grid's FILTERED + SORTED rows (not raw
+  // data), so the search box / column filters / sort all flow through to them.
   const boardData = $derived(
     ctrl.allRowsBeforePagination
       .filter((r) => !ctrl.isGroupRow(r))
@@ -564,6 +567,39 @@
         data={boardData}
         columns={props.columns}
         board={boardConfig}
+        getRowId={props.getRowId}
+      />
+    </div>
+  </div>
+{:else if schedulerConfig}
+  <div
+    class="sv-grid-root sv-grid-scheduler-root"
+    class:sv-grid-root-fill={props.containerHeight === "100%"}
+    style={`height: ${
+      typeof props.containerHeight === "string"
+        ? props.containerHeight
+        : `${props.containerHeight ?? 520}px`
+    }; display: flex; flex-direction: column;`}
+  >
+    {#if schedulerConfig.searchable !== false}
+      <label class="sv-grid-board-search">
+        <svg viewBox="0 0 16 16" aria-hidden="true" width="14" height="14">
+          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <line x1="10.2" y1="10.2" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        <input
+          type="search"
+          placeholder={schedulerConfig.searchPlaceholder ?? "Search events..."}
+          bind:value={ctrl.globalFilter}
+          aria-label="Search events"
+        />
+      </label>
+    {/if}
+    <div style="flex: 1 1 auto; min-height: 0;">
+      <SvGridScheduler
+        data={boardData}
+        columns={props.columns}
+        scheduler={schedulerConfig}
         getRowId={props.getRowId}
       />
     </div>

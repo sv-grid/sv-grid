@@ -28,8 +28,9 @@
     <h2>Docking manager</h2>
     <p>
       <b>Float:</b> the &#9634; button (or drag a tab into open space).
-      <b>Reorder:</b> drag a tab along its strip.
-      <b>Auto-hide:</b> the &#9663; button collapses a panel to an edge - hover the edge tab, then Pin (&#128204;) to re-dock.
+      <b>Reorder:</b> drag a tab along its strip (an insertion line shows where).
+      <b>Dock:</b> drag a tab over a pane - a 5-way guide + preview show where it lands.
+      <b>Auto-hide:</b> the &#9663; button sends a panel to its nearest edge, or drag a tab to any border. Click the edge tab to fly it out, then Pin (&#128204;) to re-dock.
     </p>
   </header>
 

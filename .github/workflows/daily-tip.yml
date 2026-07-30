@@ -1,0 +1,69 @@
+name: Daily tip
+
+# The SECOND daily tweet: one product tip about SvGrid, SvGrid UI Components, or
+# SvGrid Studio, rotated day by day through the whole pool (tools/twitter/
+# tips-data.mjs -> PRODUCT_TIPS). Posted on a branded card with the docs link in
+# a first reply. Runs independently from the main promo tweet (daily-tweet.yml).
+#
+# Required repo secrets (posting):
+#   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET
+# The tip copy is deterministic (no model call) and links to the PUBLIC docs
+# site, so this job needs neither ANTHROPIC_API_KEY nor the private website.
+#
+# 15:40 UTC: spaced ~8h from the 07:40 promo tweet so the two do not bunch up.
+
+on:
+  workflow_dispatch:
+    inputs:
+      post:
+        description: 'Actually post to X (unchecked = dry run)'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '40 15 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-tip
+  cancel-in-progress: false
+
+jobs:
+  tip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium (for the card renderer)
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Post tip
+        run: node tools/post-tweet.mjs ${{ (github.event_name == 'schedule' || inputs.post) && '--post' || '' }}
+        env:
+          TWEET_FORCE: tip
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+
+      - name: Upload media preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tip-media
+          path: .tweet-out/*
+          if-no-files-found: ignore

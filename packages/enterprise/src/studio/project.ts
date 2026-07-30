@@ -361,10 +361,26 @@ export type AccessControl = {
  *  (closing the loop the RBAC layer expects), a `/login` page, sign-out, and demo
  *  seed users (one per RBAC role, or a single admin). Dependency-free: Web Crypto +
  *  stateless signed cookies. `protect` gates the whole app behind login (default). */
+/** Social / enterprise sign-in providers. `oidc` is a generic OpenID Connect issuer
+ *  (covers Azure AD / Entra ID, Okta, Auth0, Keycloak, ... via discovery). */
+export type OAuthProvider = 'github' | 'google' | 'oidc'
 export type AuthConfig = {
   enabled: boolean
   /** Redirect unauthenticated visitors to /login for every route. Default true. */
   protect?: boolean
+  /** Self-service sign-up + password recovery (/register, /forgot-password,
+   *  /reset-password). Needs the DB-backed user store (turn on the data layer). */
+  register?: boolean
+  /** An admin user-management screen (/users: list, invite, change role, remove).
+   *  Needs the DB-backed store + RBAC (only a full-access role can open it). */
+  userAdmin?: boolean
+  /** OAuth / OpenID Connect sign-in buttons. Needs the DB-backed store. */
+  oauth?: OAuthProvider[]
+  /** Email one-time-code two-factor auth. Needs the DB-backed store + real email. */
+  twoFactor?: boolean
+  /** Real email delivery (Resend HTTP API or SMTP via nodemailer); dev console otherwise.
+   *  Implied when `twoFactor` is on. */
+  email?: boolean
 }
 /** Does a role's rules permit opening a screen? */
 export const roleCanScreen = (r: RoleAccess, screenId: string): boolean =>
@@ -1016,7 +1032,20 @@ export function setDeployTarget(project: StudioProject, deploy: DeployTarget): S
 /** Enable / disable the authentication starter (login + session + hooks). */
 export function setAuth(project: StudioProject, patch: Partial<AuthConfig> & { enabled: boolean }): StudioProject {
   if (!patch.enabled) { const { auth: _drop, ...rest } = project; return rest }
-  return { ...project, auth: { enabled: true, protect: patch.protect ?? project.auth?.protect ?? true } }
+  const prev = project.auth
+  const oauth = patch.oauth ?? prev?.oauth
+  return {
+    ...project,
+    auth: {
+      enabled: true,
+      protect: patch.protect ?? prev?.protect ?? true,
+      register: patch.register ?? prev?.register ?? false,
+      userAdmin: patch.userAdmin ?? prev?.userAdmin ?? false,
+      ...(oauth && oauth.length ? { oauth } : {}),
+      ...((patch.twoFactor ?? prev?.twoFactor) ? { twoFactor: true } : {}),
+      ...((patch.email ?? prev?.email) ? { email: true } : {}),
+    },
+  }
 }
 
 /** Enable / disable the typed Drizzle data layer (schema + repos + migrations). */

@@ -231,9 +231,10 @@
       Flip <strong>Pivot Mode</strong> in the right panel: OFF shows the flat participant grid
       (column groups, flags, ratings, inline filter row); ON pivots
       <strong>Language → Country</strong> down the side and <strong>Game</strong> across the top,
-      heat-tinted low → high. Drag fields between the Columns / Rows / Values wells to re-pivot, or
-      <strong>right-click</strong> a field, a chip, or the grid for a context menu (add / move / remove,
-      change aggregator, expand / collapse).
+      heat-tinted low → high. The right panel has <strong>Columns</strong> (a column-group tree with
+      visibility checkboxes) and <strong>Filters</strong> tabs (Add Filter → pick a column → tick which
+      values pass). Drag fields between the Columns / Rows / Values wells to re-pivot, or
+      <strong>right-click</strong> a field, a chip, or the grid for a context menu.
     </p>
   </div>
 
@@ -248,6 +249,8 @@
       showToolbar={false}
       showFiltersWell={false}
       gridFitColumns={false}
+      columnTree
+      toolTabs
       expandable
       decorateColumns={(cols) => decorate(cols)}
       onPivot={(r) => (pivotRows = r)}

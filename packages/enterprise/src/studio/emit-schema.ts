@@ -554,7 +554,7 @@ export function entityScreenPage(schema: EntitySchema, route?: string, title?: s
 
 export type NavItem = { href: string; label: string; id?: string }
 
-export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; lightVars?: Record<string, string>; darkVars?: Record<string, string>; dark?: boolean; access?: boolean; auth?: boolean; i18n?: boolean; appClass?: string } = {}): GeneratedFile {
+export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; lightVars?: Record<string, string>; darkVars?: Record<string, string>; dark?: boolean; access?: boolean; auth?: boolean; authRoutes?: string[]; authAccount?: boolean; i18n?: boolean; appClass?: string } = {}): GeneratedFile {
   // Nav is the app's own screens; `/` just redirects to the first one, so no separate
   // "Home" link (it would duplicate the first screen).
   const links = nav
@@ -704,8 +704,10 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
             <div class="sv-app__menu sv-app__menu--acct" role="menu">
               <div class="sv-app__acct-head"><span class="sv-app__avatar sv-app__avatar--lg" aria-hidden="true">{initials}</span><div class="sv-app__acct-id"><strong>${opts.auth ? '{data?.user?.name ?? brand}' : '{brand}'}</strong><span>${opts.auth ? '{data?.user?.email ?? acctEmail}' : '{acctEmail}'}</span></div></div>
               <a class="sv-app__menu-item" href="/" role="menuitem" onclick={() => (menuOpen = false)}>Dashboard</a>
-              <button type="button" class="sv-app__menu-item" role="menuitem" onclick={() => (menuOpen = false)}>Profile</button>
-              <button type="button" class="sv-app__menu-item" role="menuitem" onclick={() => (menuOpen = false)}>Settings</button>
+              ${opts.authAccount
+                ? `<a class="sv-app__menu-item" href="/account" role="menuitem" onclick={() => (menuOpen = false)}>Account</a>`
+                : `<button type="button" class="sv-app__menu-item" role="menuitem" onclick={() => (menuOpen = false)}>Profile</button>
+              <button type="button" class="sv-app__menu-item" role="menuitem" onclick={() => (menuOpen = false)}>Settings</button>`}
               ${opts.auth
                 ? `<form method="POST" action="/logout" class="sv-app__signout"><button type="submit" class="sv-app__menu-item sv-app__menu-item--danger" role="menuitem">Sign out</button></form>`
                 : `<button type="button" class="sv-app__menu-item sv-app__menu-item--danger" role="menuitem" onclick={() => (menuOpen = false)}>Sign out</button>`}
@@ -864,7 +866,7 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
 </script>
 ${themeHead}
 
-${opts.auth ? `{#if $page.url.pathname === '/login'}
+${opts.auth ? `{#if ${JSON.stringify(opts.authRoutes ?? ['/login'])}.includes($page.url.pathname)}
 {@render children()}
 {:else}
 ${body}

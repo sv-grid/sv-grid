@@ -78,15 +78,44 @@ workspace = JSON.parse(localStorage.getItem('ws')!)   // tiled + floating + hidd
 ## Gestures
 
 - **Float** - drag a tab off into open space, or click the tab's float button
-  (`□`). Drag a floating window by its title bar; drag the corner to resize.
+  (`□`). Drag a floating window by its title bar; drag the corner to resize. Each
+  window's title bar carries **auto-hide** (`▽`), **minimize** (collapse to the
+  bar), **maximize / restore** (double-click the bar too) and **close** controls.
 - **Redock** - drag a floating window's title bar over the tiled area and drop
   on an edge (split) or centre (tab).
-- **Reorder** - drag a tab along its own strip; a live insertion point shows
-  where it will land.
-- **Auto-hide** - click a tab's auto-hide button (`▽`) to collapse its whole
-  leaf to an edge strip. Hover the edge tab to fly the panel out; click **pin**
-  (in the fly-out) to dock it back where it came from.
+- **Reorder** - drag a tab along its own strip; an insertion line marks where it
+  will land.
+- **Stack header controls** - each tiled panel's strip carries **maximize**
+  (fills the docked area in place; restore returns), **auto-hide**, **float**,
+  and **pop-out** buttons on the right.
+- **Pop-out to a native window** - the pop-out button (`⤡`) opens the panel in a
+  real browser window (styles + theme carried across); closing that window docks
+  the panel back in. Falls back to a floating window if the browser blocks pop-ups.
+- **Auto-hide** - click a tab's auto-hide button (`▽`) to collapse its leaf to
+  the **nearest** edge (left / right / top / bottom, inferred from where it
+  sits), or drag a tab to any of the four manager borders to auto-hide it there.
+  Each collapsed panel becomes one edge tab; click it to **slide** the panel out
+  (animated, capped so it never covers the whole workspace, and **resizable** by
+  its inner edge; click away or press Escape to dismiss), then click **pin**
+  (`📌`) to dock it back on that side at a sensible width.
 - **Close** - the tab's `×`, wherever the pane lives.
+
+### Drop indicators
+
+While you drag, the target shows live feedback so the outcome is never a
+surprise:
+
+- a **5-direction dock guide** (a plus of targets) appears on the pane under the
+  pointer. **Drop on a guide chip to dock** there (with a translucent preview of
+  the region the panel will take); **release off the guide and the tab floats**
+  into a new window. Floating windows show only the centre chip (they accept
+  tabs, not splits).
+- a **reorder insertion line** appears when you drag a tab along its own strip;
+- an **edge bar** lights up along a manager border when a drop will auto-hide to
+  that side.
+
+Dragging a floating window's title bar over the tiled area follows the same rule:
+drop on a guide chip to redock, or release off it to leave the window floating.
 
 ## Programmatic control
 
@@ -107,6 +136,28 @@ workspace = floatPane(workspace, 'terminal', { x: 60, y: 60, width: 360, height:
 workspace = autoHideLeaf(workspace, leafId, 'left')
 workspace = dockManagerClosePane(workspace, 'problems')
 const ids = allManagerPaneIds(workspace)
+```
+
+## Imperative API
+
+Pass `onReady` to receive a handle for driving the manager from code (toolbars,
+menus, keyboard shortcuts):
+
+```svelte
+<script lang="ts">
+  import { SvDockManager, type DockManagerApi } from '@svgrid/grid'
+  let api: DockManagerApi
+</script>
+
+<SvDockManager bind:workspace onReady={(a) => (api = a)}>...</SvDockManager>
+
+<!-- later -->
+api.float('terminal')      // pop into a floating window
+api.popout('editor')       // pop out to a native browser window
+api.autoHide('explorer')   // collapse to its nearest edge
+api.maximize(leafId)       // maximize a tiled leaf in place (toggle)
+api.close('problems')      // close a pane anywhere
+api.getState() / api.setState(s)   // snapshot / restore the whole workspace
 ```
 
 ## Relationship to SvDockLayout

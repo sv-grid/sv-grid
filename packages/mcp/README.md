@@ -26,6 +26,26 @@ Point any MCP-capable client - Claude Desktop, Claude Code, Cursor, Zed - at thi
 | `get_doc` | Markdown for a single doc by slug. |
 | `search_docs` | Case-insensitive substring search across the docs. |
 | `get_api_reference` | The curated public-API surface, grouped by category. |
+| `introspect_source` | Studio: infer an `EntitySchema` from a Drizzle file or sample rows. |
+| `scaffold_entity` | Studio: generate SvelteKit files for a single entity. |
+
+### Studio: drive the app model (agent co-designer)
+
+The `studio_*` tools let an agent build and edit the **same validated project model the visual designer uses** - add entities, screens, blocks, components, wire data sources, theme, RBAC, auth, the typed data layer, and the deploy target - then generate the full runnable app or export the `studio.config.json` the designer can Load. Every edit runs through the model's own functions + `validateProject`, so the agent can't produce an invalid app.
+
+| Tool | Purpose |
+| --- | --- |
+| `studio_new_project` / `studio_load_project` | Start fresh, or load an existing `studio.config.json`. |
+| `studio_describe_project` / `studio_get_config` | Inspect the model / export it as `studio.config.json`. |
+| `studio_capabilities` | List block kinds, component keys, theme presets, data-source kinds, deploy targets. |
+| `studio_add_entity` | Add a table/model (+ default screen), by schema or introspection. |
+| `studio_add_screen` / `studio_add_block` / `studio_add_component` | Compose screens from data blocks + UI components. |
+| `studio_set_entity_source` | Bind an entity to memory / SQL / Supabase / REST / PGlite. |
+| `studio_set_theme` / `studio_set_access` / `studio_set_auth` / `studio_set_data_layer` / `studio_set_deploy_target` | Configure app-wide features. |
+| `studio_validate` | Report errors + warnings. |
+| `studio_generate_app` | Emit every file of the runnable SvelteKit app. |
+
+A typical session: `studio_new_project` → `studio_add_entity` (×N) → `studio_set_entity_source` → `studio_set_data_layer` → `studio_set_auth` → `studio_generate_app` → write the files and run `svelte-check`.
 
 ## Run
 

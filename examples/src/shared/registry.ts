@@ -61,6 +61,11 @@ import KanbanSubtasks349 from '../demos/349-kanban-subtasks.svelte'
 import KanbanStructure350 from '../demos/350-kanban-structure.svelte'
 import KanbanPower351 from '../demos/351-kanban-power.svelte'
 import KanbanEpics352 from '../demos/352-kanban-epics.svelte'
+import SchedulerIntro363 from '../demos/363-scheduler-intro.svelte'
+import SchedulerTimegrid364 from '../demos/364-scheduler-timegrid.svelte'
+import SchedulerResources365 from '../demos/365-scheduler-resources.svelte'
+import SchedulerRecurring366 from '../demos/366-scheduler-recurring.svelte'
+import SchedulerAgenda367 from '../demos/367-scheduler-agenda.svelte'
 import AppFeedback333 from '../demos/333-app-feedback.svelte'
 import StatusDisplay339 from '../demos/339-status-display.svelte'
 import InputEditors334 from '../demos/334-input-editors.svelte'
@@ -349,6 +354,7 @@ export type DemoCategory =
   | 'Spreadsheet'
   | 'Charts'
   | 'Kanban'
+  | 'Scheduler'
   | 'Themes & Styling'
   | 'Keyboard & Accessibility'
   | 'Mobile & Responsive'
@@ -419,6 +425,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Spreadsheet',
   'Charts',
   'Kanban',
+  'Scheduler',
   'Themes & Styling',
   'Keyboard & Accessibility',
   'Mobile & Responsive',
@@ -562,6 +569,12 @@ export const demos: Demo[] = [
   demo('350-kanban-structure',      'Group-by switch + reorderable lanes', 'Board structure, live: switch the lane axis at runtime (Status / Assignee / Priority) and the board re-buckets, and drag a lane header to reorder the columns. Both built-in - the group-by switch resets card positions to the new field; lane order is tracked and persists with persistKey. Board / Table switcher.', 'Kanban', KanbanStructure350),
   demo('351-kanban-power',          'Board power tools (filters, multi-select, menus)', 'A facet filter bar (by tag + assignee), card multi-select with bulk move (click / Ctrl-click then drag the group), a blocked flag, a card-age badge, and both card + lane right-click menus - all from board config on the built-in default card. Board / Table switcher.', 'Kanban', KanbanPower351),
   demo('352-kanban-epics',          'Epics -> stories (hierarchical cards)', 'Point board.childrenField at a row child rows and each card gains a children count that expands to show its sub-cards inline (Jira epic -> stories). Each child shows its own title + status. Board / Table switcher.', 'Kanban', KanbanEpics352),
+
+  demo('363-scheduler-intro',       'Scheduler / calendar mode',   'The same <SvGrid>, same data + columns, rendered as a full calendar by setting one `scheduler` prop: rows become events bucketed by time. Switch Month / Week / Day / Agenda in the toolbar; drag an event to reschedule, drag its edge to resize, click to edit in a drawer. onEventMove / onEventResize write the new times back onto your row. Toggle Calendar / Table to see it is one grid.', 'Scheduler', SchedulerIntro363),
+  demo('364-scheduler-timegrid',    'Time-grid (week / day) + drag/resize', 'The Week and Day views lay overlapping events out into side-by-side columns. `editable` turns on drag-to-move and bottom-edge resize; both snap to slotMinutes and fire onEventMove / onEventResize where you persist the new times.', 'Scheduler', SchedulerTimegrid364),
+  demo('365-scheduler-resources',   'Resource scheduling (rooms as columns)', 'Point scheduler.resourceField at a column and the Day view splits into one column per resource - a room / staff booking board. Drag an event across columns and onEventMove reports both the new time AND the new resource.', 'Scheduler', SchedulerResources365),
+  demo('366-scheduler-recurring',   'Recurring events',            'A row can carry a recurrenceField (a RecurrenceRule) and the scheduler renders one event per matching day - reusing the same pure recurrence engine behind SvCalendar. Daily standups, weekly 1:1s, every-other-Friday reviews - all from a rule on the row. Calendar / Table switcher.', 'Scheduler', SchedulerRecurring366),
+  demo('367-scheduler-agenda',      'Agenda view + event editor',  'The Agenda view is a chronological list grouped by day. Clicking an event opens the built-in detail drawer (scheduler.drawer -> SvDrawer + SvForm with the UI-kit editors); onEventCommit mirrors the edit back onto the row and re-colours it by priority.', 'Scheduler', SchedulerAgenda367),
 
   // ----- Getting Started (the first stop for every evaluator)
   demo('00-trading-desk',           'Trading desk - live',         '10,000 securities ticking on a 500 ms feed. Pinned Symbol + P&L, sparklines, sector chips, KPI strip. The hero.', 'Getting Started', TradingDesk),

@@ -116,17 +116,27 @@ async function composeHighlight(topic) {
   }
 }
 
+// Rotate the reply lead-in so the link reply is not word-for-word identical
+// every day. Deterministic (day-based) so a given day is reproducible.
+const READ_PREFIXES = ['New on the blog:', 'Read the full post:', 'Full write-up:', 'Read it here:', "Today's post:"]
+const readPrefix = () => READ_PREFIXES[Math.floor(Date.now() / 86400000) % READ_PREFIXES.length]
+
 async function composeBlog(topic) {
   const link = `${SITE}/blog/${topic.slug}`
   const fallback = topic.description || topic.title
   const hook = await aiHook(
-    `Write a tweet hook that makes a developer want to read this new SvGrid blog post.\n` +
-      `Title: ${topic.title}\nSummary: ${topic.description}\nCategory: ${topic.category}`,
+    `Write a tweet hook (max 180 chars) for today's new SvGrid blog post. It must ` +
+      `talk about what THIS specific post covers - reference a concrete idea or ` +
+      `takeaway from it, not a generic pitch. Do not restate the title verbatim.\n\n` +
+      `Title: ${topic.title}\n` +
+      `Summary: ${topic.description}\n` +
+      `Category: ${topic.category}\n` +
+      `How the post opens: ${topic.excerpt || ''}`,
     fallback,
   )
   return {
     text: assemble(hook, ['Svelte', 'SvelteKit']),
-    replyText: buildReply('Read it here:', link),
+    replyText: buildReply(readPrefix(), link),
     link,
     // The post's own hero image (preferred); orchestrator falls back to `card`.
     image: topic.image || null,
@@ -151,12 +161,29 @@ async function composeAi() {
   }
 }
 
+// A product tip (grid / UI components / Studio). Deterministic, brand-safe copy
+// straight from tips-data (no model call); the docs link goes in the reply and
+// the branded card shows the tip. `area` labels which product it is about.
+async function composeTip(topic) {
+  const eyebrow = `${topic.area || 'SvGrid'} tip`
+  // Deep-link to this tip's own #anchor on the rankable, on-site tips page (which
+  // in turn links out to the docs). Fall back to the docs link if no page.
+  const link = topic.page && topic.anchor ? `${SITE}/blog/${topic.page}#${topic.anchor}` : topic.link
+  return {
+    text: assemble(topic.tweet, topic.hashtags || ['Svelte']),
+    replyText: buildReply('Full tip:', link),
+    link,
+    card: { eyebrow, headline: topic.title, subline: topic.body, footerRight: 'svgrid.com' },
+  }
+}
+
 export async function compose(topic) {
   switch (topic.type) {
     case 'release': return composeRelease(topic)
     case 'blog': return composeBlog(topic)
     case 'highlight': return composeHighlight(topic)
     case 'ai': return composeAi()
+    case 'tip': return composeTip(topic)
     default: throw new Error(`Unknown topic type: ${topic.type}`)
   }
 }
