@@ -64,6 +64,7 @@
     autoHide: (paneId: string) => void
     maximize: (tabsId: string) => void
     close: (paneId: string) => void
+    focus: (paneId: string) => void
   }
 
   /** Granular lifecycle events (in addition to `onChange`). */
@@ -76,6 +77,7 @@
     | { type: 'pin'; paneId: string }
     | { type: 'maximize'; tabsId: string; maximized: boolean }
     | { type: 'window'; windowId: string; action: 'minimize' | 'maximize' | 'close' | 'autoHide' }
+    | { type: 'focus'; paneId: string }
 
   type Props = {
     /** The whole workspace: tiled `main` + `floating` windows + `autoHide` edges. Bindable. */
@@ -91,7 +93,10 @@
     /** Allow dragging tabs to reorder them within a strip. Default `true`. */
     reorderEnabled?: boolean
     /** Which side of each panel its tab strip sits on. Default `'top'`. */
-    headerPosition?: 'top' | 'bottom'
+    headerPosition?: 'top' | 'bottom' | 'left' | 'right'
+    /** Keep inactive tabs mounted (hidden) so their content state persists.
+     *  Default `false` (only the active tab renders). */
+    keepAlive?: boolean
     /** Receive the imperative API once, on mount. */
     onReady?: (api: DockManagerApi) => void
   }
@@ -104,6 +109,7 @@
     minSize = 80,
     reorderEnabled = true,
     headerPosition = 'top',
+    keepAlive = false,
     onReady,
   }: Props = $props()
   const emit = (e: DockEvent) => onEvent?.(e)
@@ -115,9 +121,32 @@
   const genId = () => `dm-${nextId++}`
   function commit(next: DockManagerState) { workspace = next; onChange?.(next) }
 
+  // Focus tracking (which pane the user last engaged) for the active-panel ring.
+  let focusedPaneId = $state<string | null>(null)
+  function setFocus(paneId: string | null) {
+    if (paneId === focusedPaneId) return
+    focusedPaneId = paneId
+    if (paneId) emit({ type: 'focus', paneId })
+  }
+  const focusedLeafId = $derived.by(() => {
+    if (!focusedPaneId) return null
+    const scan = (n: any): string | null => {
+      if (n.type === 'tabs') return n.panes.some((p: DockPane) => p.id === focusedPaneId) ? n.id : null
+      for (const c of n.children) { const id = scan(c); if (id) return id }
+      return null
+    }
+    if (workspace.main) { const id = scan(workspace.main); if (id) return id }
+    const w = workspace.floating.find((f) => f.leaf.panes.some((p) => p.id === focusedPaneId))
+    return w ? w.leaf.id : null
+  })
+
   // Controlled handlers each SvDockLayout routes back to the manager.
-  const onActivate = (tabsId: string, i: number) => commit(setManagerActive(workspace, tabsId, i))
-  const onClose = (paneId: string) => commit(closePane(workspace, paneId))
+  const onActivate = (tabsId: string, i: number) => {
+    const paneId = findLeafById(workspace, tabsId)?.panes[i]?.id
+    commit(setManagerActive(workspace, tabsId, i))
+    if (paneId) { setFocus(paneId); emit({ type: 'activePane', tabsId, paneId }) }
+  }
+  const onClose = (paneId: string) => { commit(closePane(workspace, paneId)); emit({ type: 'close', paneId }) }
   const onResize = (groupId: string, sizes: number[]) => commit(resizeGroup(workspace, groupId, sizes))
 
   function paneTitle(paneId: string): string {
@@ -175,16 +204,20 @@
   }
 
   function beginTabDrag(e: PointerEvent, paneId: string, tabsId: string) {
+    setFocus(paneId)
     src = { paneId, sourceTabsId: tabsId, sx: e.clientX, sy: e.clientY }
     window.addEventListener('pointermove', onTabMove)
     window.addEventListener('pointerup', onTabUp)
   }
 
-  function insertIndex(strip: Element, x: number): number {
+  const verticalHeader = $derived(headerPosition === 'left' || headerPosition === 'right')
+
+  function insertIndex(strip: Element, x: number, y: number): number {
     const tabsEls = Array.from(strip.querySelectorAll('[data-dock-tab]')) as HTMLElement[]
     for (let i = 0; i < tabsEls.length; i++) {
       const r = tabsEls[i]!.getBoundingClientRect()
-      if (x < r.left + r.width / 2) return i
+      const before = verticalHeader ? y < r.top + r.height / 2 : x < r.left + r.width / 2
+      if (before) return i
     }
     return tabsEls.length
   }
@@ -203,7 +236,7 @@
     const strip = el.closest('.sv-dock__tabstrip')
     // Reorder wins over everything when over the source leaf's own strip.
     if (reorderEnabled && leafEl && strip && leafEl.dataset.dockTabs === src!.sourceTabsId) {
-      return { kind: 'reorder', tabsId: src!.sourceTabsId, index: insertIndex(strip, x) }
+      return { kind: 'reorder', tabsId: src!.sourceTabsId, index: insertIndex(strip, x, y) }
     }
     // Near the manager's outer border -> auto-hide to that side. Checked AFTER
     // the source-strip reorder (above) so reordering still wins, but before the
@@ -373,6 +406,7 @@
   function floatOne(paneId: string) {
     const r = rootEl?.getBoundingClientRect()
     commit(floatPane(workspace, paneId, { x: (r ? r.width : 400) * 0.3, y: 60, width: 340, height: 240 }, genId))
+    emit({ type: 'float', paneId })
   }
 
   function findPaneObject(paneId: string): DockPane | null {
@@ -403,6 +437,7 @@
     if (!handle) { floatOne(paneId); return } // blocked -> float instead
     popouts.set(paneId, handle)
     commit(removed)
+    emit({ type: 'popout', paneId })
   }
 
   /** Dock a popped-out pane back into the layout (window closed / API call). */
@@ -444,6 +479,7 @@
     const lr = leafRect(tabsId)
     const size = lr ? Math.round(side === 'left' || side === 'right' ? lr.width : lr.height) : 260
     commit(autoHideLeaf(workspace, tabsId, side, size))
+    emit({ type: 'autoHide', paneId, side })
   }
   function pinPane(paneId: string) {
     const entry = workspace.autoHide.find((e) => e.leaf.panes.some((p) => p.id === paneId))
@@ -452,6 +488,7 @@
     const dim = mr ? (entry.side === 'left' || entry.side === 'right' ? mr.width : mr.height) : 1000
     const frac = Math.min(0.5, Math.max(0.12, entry.size / (dim || 1000)))
     commit(pinAutoHidden(workspace, entry.id, genId, frac))
+    emit({ type: 'pin', paneId })
   }
 
   /** Auto-hide a floating window to the manager edge nearest its position. */
@@ -507,6 +544,7 @@
     autoHide: (id) => autoHidePane(id),
     maximize: (tabsId) => { if (findLeafById(workspace, tabsId)) commit(toggleMaximizeLeaf(workspace, tabsId)) },
     close: (id) => commit(closePane(workspace, id)),
+    focus: (id) => setFocus(id),
   })
 
   // Close every pop-out window when the manager itself is torn down.
@@ -549,6 +587,9 @@
         layout={maxLeaf}
         {pane}
         {minSize}
+        {headerPosition}
+        focusedLeaf={focusedLeafId}
+        {keepAlive}
         surface="main"
         onBeginDrag={beginTabDrag}
         externalDrop={guideGlobal}
@@ -563,6 +604,9 @@
         layout={workspace.main}
         {pane}
         {minSize}
+        {headerPosition}
+        focusedLeaf={focusedLeafId}
+        {keepAlive}
         surface="main"
         onBeginDrag={beginTabDrag}
         externalDrop={guideGlobal}
@@ -590,6 +634,9 @@
           layout={e.leaf}
           {pane}
           {minSize}
+        {headerPosition}
+        focusedLeaf={focusedLeafId}
+        {keepAlive}
           surface={e.id}
           onBeginDrag={beginTabDrag}
           externalDrop={guideGlobal}
@@ -631,13 +678,13 @@
         <span class="sv-dockmgr__wintitle">{w.leaf.panes[w.leaf.active]?.title ?? 'Window'}</span>
         <div class="sv-dockmgr__winctl">
           <button type="button" title="Auto-hide" aria-label="Auto-hide window"
-            onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); autoHideWin(w.id) }}>&#9663;</button>
+            onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); autoHideWin(w.id); emit({ type: 'window', windowId: w.id, action: 'autoHide' }) }}>&#9663;</button>
           <button type="button" title={w.minimized ? 'Restore' : 'Minimize'} aria-label="Minimize window"
-            onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); commit(setWindowMinimized(workspace, w.id, !w.minimized)) }}>&#8211;</button>
+            onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); commit(setWindowMinimized(workspace, w.id, !w.minimized)); emit({ type: 'window', windowId: w.id, action: 'minimize' }) }}>&#8211;</button>
           <button type="button" title={w.maximized ? 'Restore' : 'Maximize'} aria-label="Maximize window"
-            onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); commit(toggleWindowMaximized(workspace, w.id)) }}>{w.maximized ? '❐' : '□'}</button>
+            onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); commit(toggleWindowMaximized(workspace, w.id)); emit({ type: 'window', windowId: w.id, action: 'maximize' }) }}>{w.maximized ? '❐' : '□'}</button>
           <button type="button" class="sv-dockmgr__winclose" title="Close" aria-label="Close window"
-            onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); commit(closeWindow(workspace, w.id)) }}>&times;</button>
+            onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); commit(closeWindow(workspace, w.id)); emit({ type: 'window', windowId: w.id, action: 'close' }) }}>&times;</button>
         </div>
       </div>
       {#if !w.minimized}
@@ -646,6 +693,9 @@
             layout={w.leaf}
             {pane}
             {minSize}
+        {headerPosition}
+        focusedLeaf={focusedLeafId}
+        {keepAlive}
             surface={w.id}
             onBeginDrag={beginTabDrag}
             externalDrop={guideGlobal}
@@ -676,7 +726,7 @@
 {#snippet mainLeafActions(leaf: DockTabs)}
   {@const active = leaf.panes[leaf.active] ?? leaf.panes[0]}
   <button type="button" class="sv-dockmgr__pact" title={workspace.maximizedLeaf === leaf.id ? 'Restore' : 'Maximize'} aria-label="Maximize panel"
-    onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); commit(toggleMaximizeLeaf(workspace, leaf.id)) }}>{workspace.maximizedLeaf === leaf.id ? '❐' : '⤢'}</button>
+    onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); const on = workspace.maximizedLeaf !== leaf.id; commit(toggleMaximizeLeaf(workspace, leaf.id)); emit({ type: 'maximize', tabsId: leaf.id, maximized: on }) }}>{workspace.maximizedLeaf === leaf.id ? '❐' : '⤢'}</button>
   <button type="button" class="sv-dockmgr__pact" title="Auto-hide" aria-label="Auto-hide panel"
     onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); if (active) autoHidePane(active.id) }}>&#9663;</button>
   {#if active}
@@ -744,7 +794,7 @@
   .sv-dockmgr__flyout--bottom { bottom: 35px; left: 4px; right: 4px; max-height: 62%; }
 
   /* Fly-out resize handle on the panel's inner edge. */
-  .sv-dockmgr__flyresize { position: absolute; z-index: 2; }
+  .sv-dockmgr__flyresize { position: absolute; z-index: 2; touch-action: none; }
   .sv-dockmgr__flyresize--left { top: 0; bottom: 0; right: -3px; width: 7px; cursor: ew-resize; }
   .sv-dockmgr__flyresize--right { top: 0; bottom: 0; left: -3px; width: 7px; cursor: ew-resize; }
   .sv-dockmgr__flyresize--top { left: 0; right: 0; bottom: -3px; height: 7px; cursor: ns-resize; }
@@ -777,7 +827,7 @@
   .sv-dockmgr__winbody { flex: 1; min-height: 0; display: flex; }
   .sv-dockmgr__winbody > :global(*) { flex: 1; min-width: 0; min-height: 0; }
   .sv-dockmgr__winresize {
-    position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize;
+    position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; touch-action: none;
     background: linear-gradient(135deg, transparent 50%, var(--sg-border, #cbd5e1) 50%);
   }
 

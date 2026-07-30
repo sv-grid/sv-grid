@@ -101,6 +101,22 @@ run (media uploaded as an artifact), check it to post now; on the promo tweet
 | `tools/twitter/tips-data.mjs` | Tip pool: feeds both the tip tweet and the SEO tips pages |
 
 Note: `tools/twitter/tips-data.mjs` is the single source of truth for tips. Its
-`PRODUCT_TIPS` (grid + UI + Studio) drive the daily **tip tweet**;
-`SVELTE_TIPS` + `SVGRID_TIPS` also drive the SEO tips blog pages via
-`build-tips-pages.mjs`. The new UI/Studio tips are tweet-only for now (no page).
+`PRODUCT_TIPS` (grid + UI + Studio) drive the daily **tip tweet**, and every tip
+also becomes a section on an SEO tips **page** via `build-tips-pages.mjs`:
+
+| Tip array | Tweet | Page (`/blog/...`) |
+| --- | --- | --- |
+| `SVELTE_TIPS` | - | `svelte-5-tips-and-tricks` |
+| `SVGRID_TIPS` | grid | `svgrid-tips-and-tricks` |
+| `SVGRID_UI_TIPS` | UI components | `svgrid-ui-components-tips-and-tricks` |
+| `SVGRID_STUDIO_TIPS` | Studio | `svgrid-studio-tips-and-tricks` |
+
+The tip tweet's reply **deep-links** to that tip's `#anchor` on its page (which
+in turn links out to the docs). Regenerate the pages after editing tips:
+`node tools/twitter/build-tips-pages.mjs`.
+
+**Publishing the pages:** `build-tips-pages.mjs` writes into the PRIVATE website
+submodule (`website/src/content/blog/`); it is NOT run at deploy time. To make
+the pages live, commit + push them inside `website/` (the `sv-grid/website`
+repo), then the site rebuilds. Until then the tweet deep-links 404, so publish
+the pages before enabling the tip tweets.

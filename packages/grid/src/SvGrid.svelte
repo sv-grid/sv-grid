@@ -61,7 +61,7 @@
   import SvGridChartPanel from "./SvGridChartPanel.svelte";
   import GridFooter from "./GridFooter.svelte";
   import SvGridBoard from "./SvGridBoard.svelte";
-  import SvGridScheduler from "./SvGridScheduler.svelte";
+  import { getSchedulerView } from "./scheduler-view.svelte";
   let props: Props<TFeatures, TData> = $props();
   const ctrl = createSvGridController(props);
   // Kanban board mode: when `board` is set the grid renders lanes of cards
@@ -596,12 +596,26 @@
       </label>
     {/if}
     <div style="flex: 1 1 auto; min-height: 0;">
-      <SvGridScheduler
-        data={boardData}
-        columns={props.columns}
-        scheduler={schedulerConfig}
-        getRowId={props.getRowId}
-      />
+      {#if getSchedulerView()}
+        {@const SchedulerView = getSchedulerView()}
+        <SchedulerView
+          data={boardData}
+          columns={props.columns}
+          scheduler={schedulerConfig}
+          getRowId={props.getRowId}
+        />
+      {:else}
+        <!-- The scheduler renderer ships in @svgrid/enterprise. Call
+             `enableSchedulerView()` (or `installEnterprise(api)`) to register it. -->
+        <div class="sv-grid-scheduler-upsell" role="note">
+          <strong>Scheduler view</strong>
+          <p>
+            The calendar / scheduler view is an Enterprise feature. Install
+            <code>@svgrid/enterprise</code> and call <code>enableSchedulerView()</code>
+            to render it.
+          </p>
+        </div>
+      {/if}
     </div>
   </div>
 {:else}

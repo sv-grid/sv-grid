@@ -11,7 +11,26 @@ import type {
 import type { ConditionalFormat } from "./conditional-formatting";
 import type { MenuItem } from "./SvMenuList.svelte";
 import type { RecurrenceRule } from "./recurrence";
-import type { SchedulerView, SchedulerResource } from "./scheduler-model";
+
+/** The calendar views the scheduler can render. {@link SchedulerConfig}. */
+export type SchedulerView = "month" | "week" | "day" | "agenda";
+
+/**
+ * How overlapping ("colliding") time-grid events are laid out:
+ * - `split` - every collision divides the column width evenly (default).
+ * - `cap`   - show up to `maxColumns` columns; the rest collapse into a
+ *             clickable `+N more` overflow tile.
+ * - `stack` - overlapping events overlap with a horizontal offset + z-order
+ *             instead of shrinking, so each stays readable (hover to raise).
+ */
+export type SchedulerCollisionMode = "split" | "cap" | "stack";
+
+/** A scheduler resource - a person / room / machine an event can be assigned to. */
+export type SchedulerResource = {
+  id: string;
+  title?: string;
+  color?: string;
+};
 import type {
   ChartType,
   ChartSpec,
@@ -549,6 +568,14 @@ export type SchedulerConfig<
   /** First / last hour shown in the time-grid band (0-24). Default 0..24. */
   dayStartHour?: number;
   dayEndHour?: number;
+  /**
+   * How overlapping time-grid events are laid out. `split` (default) divides the
+   * width evenly per collision; `cap` shows up to `maxColumns` then a clickable
+   * `+N more` tile; `stack` overlaps them with an offset instead of shrinking.
+   */
+  collisionMode?: SchedulerCollisionMode;
+  /** For `collisionMode: 'cap'`: max side-by-side columns before overflow (min 2). Default 3. */
+  maxColumns?: number;
   /** How many days the agenda view spans. Default 30. */
   agendaDays?: number;
 

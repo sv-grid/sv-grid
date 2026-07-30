@@ -12,7 +12,12 @@
     type ColumnDef,
     type SchedulerEventMoveEvent,
     type SchedulerEventResizeEvent,
+    type SchedulerCollisionMode,
   } from '@svgrid/grid'
+  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+
+  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
+  enableSchedulerView()
 
   type Slot = { id: number; title: string; start: string; end: string; color: string }
 
@@ -28,17 +33,28 @@
     return iso(d)
   }
 
-  // Several events that overlap on "today" to show the column packing.
+  // Several events that overlap on "today" to show collision handling - the
+  // 09:00-11:00 block piles up 6 events at once so the modes differ clearly.
   let rows = $state<Slot[]>([
-    { id: 1, title: 'Standup', start: at(0, 9, 0), end: at(0, 9, 30), color: '#4f46e5' },
-    { id: 2, title: 'Pairing: DnD', start: at(0, 9, 30), end: at(0, 11, 30), color: '#0891b2' },
-    { id: 3, title: 'Interview', start: at(0, 10, 0), end: at(0, 11, 0), color: '#d97706' },
-    { id: 4, title: 'Lunch & learn', start: at(0, 12, 0), end: at(0, 13, 0), color: '#16a34a' },
-    { id: 5, title: 'Roadmap sync', start: at(0, 13, 30), end: at(0, 14, 30), color: '#4f46e5' },
-    { id: 6, title: 'Focus block', start: at(0, 14, 30), end: at(0, 17, 0), color: '#0891b2' },
-    { id: 7, title: 'Bug triage', start: at(0, 15, 0), end: at(0, 16, 0), color: '#dc2626' },
-    { id: 8, title: 'Demo prep', start: at(1, 10, 0), end: at(1, 12, 0), color: '#d97706' },
+    { id: 1, title: 'Standup', start: at(0, 9, 0), end: at(0, 10, 0), color: '#4f46e5' },
+    { id: 2, title: 'Pairing: DnD', start: at(0, 9, 0), end: at(0, 11, 0), color: '#0891b2' },
+    { id: 3, title: 'Interview', start: at(0, 9, 0), end: at(0, 10, 30), color: '#d97706' },
+    { id: 4, title: 'Design crit', start: at(0, 9, 30), end: at(0, 11, 0), color: '#7c3aed' },
+    { id: 5, title: 'Vendor call', start: at(0, 9, 30), end: at(0, 10, 30), color: '#dc2626' },
+    { id: 6, title: '1:1', start: at(0, 10, 0), end: at(0, 11, 0), color: '#0d9488' },
+    { id: 7, title: 'Lunch & learn', start: at(0, 12, 0), end: at(0, 13, 0), color: '#16a34a' },
+    { id: 8, title: 'Roadmap sync', start: at(0, 13, 30), end: at(0, 14, 30), color: '#4f46e5' },
+    { id: 9, title: 'Focus block', start: at(0, 14, 30), end: at(0, 17, 0), color: '#0891b2' },
+    { id: 10, title: 'Bug triage', start: at(0, 15, 0), end: at(0, 16, 0), color: '#dc2626' },
+    { id: 11, title: 'Demo prep', start: at(1, 10, 0), end: at(1, 12, 0), color: '#d97706' },
   ])
+
+  const MODES: { id: SchedulerCollisionMode; label: string }[] = [
+    { id: 'split', label: 'Split' },
+    { id: 'cap', label: 'Cap + more' },
+    { id: 'stack', label: 'Stack' },
+  ]
+  let mode = $state<SchedulerCollisionMode>('split')
 
   const columns: ColumnDef<any, Slot>[] = [
     { field: 'title', header: 'Title', editorType: 'text' },
@@ -56,10 +72,19 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
-    Overlapping events share the column width. <strong>Drag</strong> an event to
-    move it (snaps to 15-min slots), or drag its <strong>bottom edge</strong> to
-    resize. Switch to <strong>Day</strong> for the single-day view.
+  <div class="flex items-center justify-between gap-3 shrink-0">
+    <div class="text-sm text-slate-600 dark:text-slate-300">
+      <strong>Drag</strong> an event to move it, or its <strong>top / bottom
+      edge</strong> to resize. The 9-11am block collides 6-deep - switch the
+      <strong>collision mode</strong> to see how it is displayed.
+    </div>
+    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
+      {#each MODES as m (m.id)}
+        <button
+          class="px-3 py-1 {mode === m.id ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          onclick={() => (mode = m.id)}>{m.label}</button>
+      {/each}
+    </div>
   </div>
 
   <div class="flex-1 min-h-0">
@@ -80,6 +105,8 @@
         dayStartHour: 8,
         dayEndHour: 18,
         editable: true,
+        collisionMode: mode,
+        maxColumns: 3,
         onEventMove,
         onEventResize,
       }}

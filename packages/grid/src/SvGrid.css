@@ -2522,6 +2522,32 @@ select.sv-grid-fr-editor {
   color: var(--sg-fg, #101828);
 }
 
+/* Placeholder shown when `scheduler` is set but the enterprise renderer that
+   powers the calendar view has not been registered. */
+.sv-grid-scheduler-upsell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  text-align: left;
+  border: 1px dashed var(--sg-border, #e4e7ec);
+  border-radius: var(--sg-radius, 8px);
+  background: var(--sg-subtle, #fafafa);
+  color: color-mix(in srgb, var(--sg-fg, #101828) 70%, transparent);
+}
+.sv-grid-scheduler-upsell strong { font-size: 0.95rem; }
+.sv-grid-scheduler-upsell p { margin: 0; font-size: 0.85rem; max-width: 42ch; }
+.sv-grid-scheduler-upsell code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82em;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--sg-fg, #101828) 8%, transparent);
+}
+
 /* ===================================================================
    Integrated chart panel (the `charting` prop)
    =================================================================== */

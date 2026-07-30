@@ -68,12 +68,38 @@ workspace = JSON.parse(localStorage.getItem('ws')!)   // tiled + floating + hidd
 
 ## Props
 
-| Prop       | Type                               | Default | Description                                  |
-| ---------- | ---------------------------------- | ------- | -------------------------------------------- |
-| `workspace`| `DockManagerState`                 | -       | The whole workspace. **Bindable.**           |
-| `pane`     | `Snippet<[DockPane]>`              | -       | Renders each pane's content, keyed by `DockPane`. |
-| `onChange` | `(workspace: DockManagerState) => void` | -  | Notified after any change.                   |
-| `minSize`  | `number`                           | `80`    | Minimum pane size in px along a split.       |
+| Prop             | Type                               | Default | Description                                  |
+| ---------------- | ---------------------------------- | ------- | -------------------------------------------- |
+| `workspace`      | `DockManagerState`                 | -       | The whole workspace. **Bindable.**           |
+| `pane`           | `Snippet<[DockPane]>`              | -       | Renders each pane's content, keyed by `DockPane`. |
+| `onChange`       | `(workspace: DockManagerState) => void` | -  | Notified after any change.                   |
+| `onEvent`        | `(event: DockEvent) => void`       | -       | Granular lifecycle events (see below).       |
+| `onReady`        | `(api: DockManagerApi) => void`    | -       | Receive the imperative API once, on mount.   |
+| `minSize`        | `number`                           | `80`    | Minimum pane size in px along a split.       |
+| `reorderEnabled` | `boolean`                          | `true`  | Allow dragging tabs to reorder within a strip. |
+| `headerPosition` | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'` | Which side of each panel its tab strip sits on (left/right render vertical tabs). |
+| `keepAlive`      | `boolean`                          | `false` | Keep inactive tabs mounted (hidden) so their DOM state (scroll, form input) persists across switches. |
+
+### Events
+
+`onEvent` fires a typed `DockEvent` for each user action, alongside the
+whole-state `onChange`:
+
+```ts
+type DockEvent =
+  | { type: 'activePane'; paneId: string; tabsId: string }
+  | { type: 'close'; paneId: string }
+  | { type: 'float'; paneId: string }
+  | { type: 'popout'; paneId: string }
+  | { type: 'autoHide'; paneId: string; side: 'left' | 'right' | 'top' | 'bottom' }
+  | { type: 'pin'; paneId: string }
+  | { type: 'maximize'; tabsId: string; maximized: boolean }
+  | { type: 'window'; windowId: string; action: 'minimize' | 'maximize' | 'close' | 'autoHide' }
+  | { type: 'focus'; paneId: string }
+```
+
+The **focused** panel (last engaged) is highlighted with an accent header; drive
+it from `api.focus(paneId)` and listen via the `focus` event.
 
 ## Gestures
 
@@ -159,6 +185,13 @@ api.maximize(leafId)       // maximize a tiled leaf in place (toggle)
 api.close('problems')      // close a pane anywhere
 api.getState() / api.setState(s)   // snapshot / restore the whole workspace
 ```
+
+## Touch
+
+Every gesture is built on pointer events with `touch-action: none` on the tabs,
+splitters, window bars and resize handles, so dragging to dock, reorder, resize,
+move windows and pull out fly-outs all work on touch devices without the browser
+hijacking the drag to scroll.
 
 ## Relationship to SvDockLayout
 

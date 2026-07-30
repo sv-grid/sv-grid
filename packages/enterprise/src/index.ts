@@ -50,6 +50,10 @@ export {
 } from './import'
 export { default as SvImportDialog } from './SvImportDialog.svelte'
 export { installEnterprise, type EnterpriseGridApi, type EnterpriseAIApi, type EnterprisePivotApi } from './install'
+// Scheduler / calendar view (Pro). `enableSchedulerView()` registers the
+// renderer so `<SvGrid scheduler={...}>` shows a Month/Week/Day/Agenda calendar.
+// The pure model helpers + config types live in @svgrid/grid; import them from there.
+export { enableSchedulerView, SvGridScheduler } from './scheduler'
 export {
   createStagedEditing,
   type StagedChange,

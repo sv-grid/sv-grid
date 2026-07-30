@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-07-30T16:29:54.014Z",
+  "generatedAt": "2026-07-30T17:53:21.282Z",
   "counts": {
-    "pages": 345,
+    "pages": 346,
     "enterprise": 8,
-    "withDemo": 228
+    "withDemo": 229
   },
   "pillars": [
     {
@@ -140,6 +140,7 @@
         "help/scheduling.md",
         "help/security.md",
         "help/server-side-data.md",
+        "help/shadcn.md",
         "help/spreadsheet-formulas.md",
         "help/state-maintenance.md",
         "help/status-bar.md",
@@ -2892,7 +2893,7 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1089,
+      "words": 1404,
       "lastUpdated": "2026-07-30",
       "demoIds": [
         "363-scheduler-intro",
@@ -3089,6 +3090,20 @@
       "lastUpdated": "2026-07-21",
       "demoIds": [
         "31-lazy-tree-load"
+      ]
+    },
+    {
+      "path": "help/shadcn.md",
+      "url": "/help/shadcn",
+      "title": "shadcn-svelte integration",
+      "summary": "If your Svelte 5 app already uses shadcn-svelte, SvGrid drops in without a redesign. You keep the exact palette, radius, font, and dark mode you already have - the grid reads them straight from the same CSS variables your Button, Input, and Table components use.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 963,
+      "lastUpdated": "2026-07-30",
+      "demoIds": [
+        "74-theme-integrations"
       ]
     },
     {
@@ -3675,8 +3690,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 685,
-      "lastUpdated": "2026-07-29",
+      "words": 700,
+      "lastUpdated": "2026-07-30",
       "demoIds": [
         "361-dock-layout"
       ]
@@ -3689,7 +3704,7 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1107,
+      "words": 1379,
       "lastUpdated": "2026-07-30",
       "demoIds": [
         "362-dock-manager"

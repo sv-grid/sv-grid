@@ -16,6 +16,12 @@
     type SchedulerEventResizeEvent,
     type SchedulerEventCommitEvent,
   } from '@svgrid/grid'
+  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+
+  // The scheduler / calendar VIEW ships in @svgrid/enterprise. Register it once
+  // (setLicenseKey avoids the unlicensed watermark in this gallery).
+  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
+  enableSchedulerView()
 
   type Meeting = {
     id: number

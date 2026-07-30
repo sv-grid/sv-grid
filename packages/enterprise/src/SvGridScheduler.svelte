@@ -15,25 +15,21 @@
   //     / `onEventResize` fire purely as notifications for persistence.
   // Themes entirely from the grid's `--sg-*` tokens; the model math lives in
   // ./scheduler-model (pure + unit-tested).
-  import type { ColumnDef, RowData, TableFeatures } from "./index";
   import type {
+    ColumnDef,
+    RowData,
+    TableFeatures,
     SchedulerConfig,
     SchedulerEventMoveEvent,
     SchedulerEventResizeEvent,
-  } from "./SvGrid.types";
-  import {
-    resolveEvents,
-    eventsOnDay,
-    layoutDayEvents,
-    agendaGroups,
-    rangeForView,
-    daysForView,
-    navigateAnchor,
-    type EventSpec,
-    type ResolvedEvent,
-    type SchedulerView,
-    type SchedulerResource,
-  } from "./scheduler-model";
+    SchedulerView,
+    SchedulerResource,
+    MenuItem,
+    FormField,
+    FormFieldType,
+    EventSpec,
+    ResolvedEvent,
+  } from "@svgrid/grid";
   import {
     startOfDay,
     startOfMonth,
@@ -41,15 +37,22 @@
     monthMatrix,
     weekdayOrder,
     isSameDay,
-    withTime,
     snapMinute,
     toDate,
-  } from "./datetime/date-core";
-  import SvMenuList, { type MenuItem } from "./SvMenuList.svelte";
-  import SvForm, { type FormField, type FormFieldType } from "./SvForm.svelte";
-  import SvDrawer from "./SvDrawer.svelte";
-  import { portalToBody, popIn } from "./popover";
-  import { createDismissableLayer } from "./a11y/dismissable";
+    resolveEvents,
+    eventsOnDay,
+    layoutDayEvents,
+    agendaGroups,
+    rangeForView,
+    daysForView,
+    navigateAnchor,
+    SvMenuList,
+    SvForm,
+    SvDrawer,
+    portalToBody,
+    popIn,
+    createDismissableLayer,
+  } from "@svgrid/grid";
 
   let {
     data,
@@ -72,11 +75,15 @@
   const agendaDays = $derived(scheduler.agendaDays ?? 30);
   const editable = $derived(scheduler.editable === true);
   const resourceField = $derived(scheduler.resourceField);
+  const collisionMode = $derived(scheduler.collisionMode ?? "split");
+  const maxColumns = $derived(scheduler.maxColumns ?? 3);
   const HOUR_PX = 48;
 
+  // svelte-ignore state_referenced_locally
   let view = $state<SchedulerView>(scheduler.initialView ?? "month");
   // Component context: the arg-less `new Date()` is fine here (runtime), unlike
   // the pure model. Default the anchor to today, at local midnight.
+  // svelte-ignore state_referenced_locally
   let anchor = $state<Date>(startOfDay(toDate(scheduler.initialDate) ?? new Date()));
 
   // --- value access + stable per-row key (mirrors SvGridBoard) ---
@@ -183,8 +190,17 @@
       col.resourceId != null ? (e.resourceId ?? "") === col.resourceId : true,
     );
   }
-  function colTimed(col: GridCol) {
-    return layoutDayEvents(colEvents(col).filter((e) => !e.allDay), col.date, dayStartHour, dayEndHour);
+  function colLayout(col: GridCol) {
+    return layoutDayEvents(
+      colEvents(col).filter((e) => !e.allDay),
+      col.date,
+      {
+        dayStartHour,
+        dayEndHour,
+        mode: collisionMode,
+        maxColumns,
+      },
+    );
   }
   function colAllDay(col: GridCol) {
     return colEvents(col).filter((e) => e.allDay);
@@ -240,20 +256,32 @@
     view = v;
   }
 
-  // --- drag to move / resize (time-grid + month), non-recurring events only ---
+  // --- drag to move / resize in the time-grid, non-recurring timed events only.
+  //   move        - drag the body: shifts start (+ end) and can cross columns
+  //   resize-start - drag the TOP grip: moves start, end stays put
+  //   resize-end   - drag the BOTTOM grip: moves end, start stays put
+  // A small threshold distinguishes a drag from a click, and `suppressClick`
+  // stops the click that follows a real drag from also opening the event. ---
+  type DragMode = "move" | "resize-start" | "resize-end";
   type Drag = {
     ev: ResolvedEvent<TData>;
-    mode: "move" | "resize";
+    mode: DragMode;
+    startX: number;
+    startY: number;
     grabOffsetMin: number; // where inside the event the pointer grabbed (move)
     durationMin: number;
-    startCol: GridCol | null;
-    // live preview
-    previewStart: Date | null;
-    previewEnd: Date | null;
-    previewCol: GridCol | null;
+    origStart: Date;
+    origEnd: Date;
+    startCol: GridCol;
+    moved: boolean;
+    previewStart: Date;
+    previewEnd: Date;
+    previewCol: GridCol;
   };
   let drag = $state<Drag | null>(null);
   let bodyEl = $state<HTMLElement | null>(null);
+  let suppressClick = false;
+  const DRAG_THRESHOLD = 4; // px before a press becomes a drag
 
   function minuteAt(clientY: number): number {
     if (!bodyEl) return dayStartHour * 60;
@@ -272,19 +300,39 @@
     }
     return null;
   }
+  // Absolute Date for a minute-of-day on `day` (handles 1440 = next midnight).
+  const dateAtMinute = (day: Date, min: number): Date =>
+    new Date(startOfDay(day).getTime() + min * 60000);
+  const minuteOfDay = (d: Date): number => d.getHours() * 60 + d.getMinutes();
+  // % offsets within the visible band, for positioning an event (or its preview).
+  const pctTop = (d: Date): number =>
+    ((minuteOfDay(d) - dayStartHour * 60) / (bandHours * 60)) * 100;
+  const pctHeight = (s: Date, e: Date): number =>
+    (((e.getTime() - s.getTime()) / 60000) / (bandHours * 60)) * 100;
 
-  function startTimeDrag(e: PointerEvent, ev: ResolvedEvent<TData>, col: GridCol, mode: "move" | "resize") {
+  function startTimeDrag(
+    e: PointerEvent,
+    ev: ResolvedEvent<TData>,
+    col: GridCol,
+    mode: DragMode,
+  ) {
+    // Clear any stale suppress from a prior drag whose trailing click never
+    // reached openEvent (e.g. a grip resize), so this press decides afresh.
+    suppressClick = false;
     if (!editable || ev.recurring || ev.allDay) return;
     e.preventDefault();
     e.stopPropagation();
-    const durationMin = (ev.end.getTime() - ev.start.getTime()) / 60000;
-    const grab = minuteAt(e.clientY) - (ev.start.getHours() * 60 + ev.start.getMinutes());
     drag = {
       ev,
       mode,
-      grabOffsetMin: Math.max(0, grab),
-      durationMin,
+      startX: e.clientX,
+      startY: e.clientY,
+      grabOffsetMin: Math.max(0, minuteAt(e.clientY) - minuteOfDay(ev.start)),
+      durationMin: (ev.end.getTime() - ev.start.getTime()) / 60000,
+      origStart: ev.start,
+      origEnd: ev.end,
       startCol: col,
+      moved: false,
       previewStart: ev.start,
       previewEnd: ev.end,
       previewCol: col,
@@ -294,35 +342,59 @@
   }
   function onDragMove(e: PointerEvent) {
     if (!drag) return;
-    const col = (drag.mode === "move" ? colAt(e.clientX) : drag.startCol) ?? drag.startCol;
+    if (!drag.moved) {
+      if (
+        Math.abs(e.clientX - drag.startX) < DRAG_THRESHOLD &&
+        Math.abs(e.clientY - drag.startY) < DRAG_THRESHOLD
+      )
+        return;
+      drag.moved = true;
+    }
     const rawMin = minuteAt(e.clientY);
+    const bandStart = dayStartHour * 60;
+    const bandEnd = dayEndHour * 60;
     if (drag.mode === "move") {
-      const startMin = snapMinute(Math.max(0, rawMin - drag.grabOffsetMin), slotMinutes);
-      const s = withTime(col!.date, dayFromMinutes(startMin));
+      const col = colAt(e.clientX) ?? drag.startCol;
+      const startMin = snapMinute(
+        Math.min(bandEnd - drag.durationMin, Math.max(bandStart, rawMin - drag.grabOffsetMin)),
+        slotMinutes,
+      );
+      const s = dateAtMinute(col.date, startMin);
       drag.previewStart = s;
       drag.previewEnd = new Date(s.getTime() + drag.durationMin * 60000);
       drag.previewCol = col;
+    } else if (drag.mode === "resize-end") {
+      const startMin = minuteOfDay(drag.origStart);
+      const endMin = Math.min(
+        bandEnd,
+        Math.max(startMin + slotMinutes, snapMinute(rawMin, slotMinutes)),
+      );
+      drag.previewStart = drag.origStart;
+      drag.previewEnd = dateAtMinute(drag.startCol.date, endMin);
     } else {
-      const endMin = snapMinute(rawMin, slotMinutes);
-      const startMin = drag.ev.start.getHours() * 60 + drag.ev.start.getMinutes();
-      const clamped = Math.max(startMin + slotMinutes, endMin);
-      drag.previewEnd = withTime(drag.startCol!.date, dayFromMinutes(clamped));
-      drag.previewStart = drag.ev.start;
+      // resize-start: drag the top edge, end stays put
+      const endMin = minuteOfDay(drag.origEnd);
+      const startMin = Math.max(
+        bandStart,
+        Math.min(endMin - slotMinutes, snapMinute(rawMin, slotMinutes)),
+      );
+      drag.previewStart = dateAtMinute(drag.startCol.date, startMin);
+      drag.previewEnd = drag.origEnd;
     }
   }
   function onDragEnd() {
     window.removeEventListener("pointermove", onDragMove);
-    if (!drag || !drag.previewStart || !drag.previewEnd) {
-      drag = null;
-      return;
-    }
-    const { ev, previewStart, previewEnd, previewCol, mode } = drag;
+    const d = drag;
+    drag = null;
+    if (!d || !d.moved) return;
+    suppressClick = true; // this drag's trailing click must not open the event
+    const { ev, previewStart, previewEnd, previewCol, mode } = d;
     const k = ev.rowKey;
     startOfE[k] = previewStart;
     endOfE[k] = previewEnd;
-    const toResource = previewCol?.resourceId;
-    if (toResource != null) resourceOfE[k] = toResource;
     if (mode === "move") {
+      const toResource = previewCol.resourceId;
+      if (toResource != null) resourceOfE[k] = toResource;
       scheduler.onEventMove?.({
         row: ev.row,
         start: previewStart,
@@ -338,18 +410,12 @@
         end: previewEnd,
       } satisfies SchedulerEventResizeEvent<TData>);
     }
-    drag = null;
-  }
-  // Build a Date carrying only a minute-of-day (used with withTime's day part).
-  function dayFromMinutes(min: number): Date {
-    const d = new Date(2000, 0, 1);
-    d.setHours(Math.floor(min / 60), Math.round(min % 60), 0, 0);
-    return d;
   }
 
   // --- month drag: shift an event by whole days ---
   let monthDrag = $state<{ ev: ResolvedEvent<TData> } | null>(null);
   function startMonthDrag(e: PointerEvent, ev: ResolvedEvent<TData>) {
+    suppressClick = false;
     if (!editable || ev.recurring) return;
     e.preventDefault();
     monthDrag = { ev };
@@ -362,6 +428,7 @@
       const ev = monthDrag.ev;
       const dayDelta = Math.round((startOfDay(target).getTime() - startOfDay(ev.start).getTime()) / 86400000);
       if (dayDelta !== 0) {
+        suppressClick = true; // the drop's trailing click must not open the event
         const s = addDays(ev.start, dayDelta);
         const en = addDays(ev.end, dayDelta);
         startOfE[ev.rowKey] = s;
@@ -415,6 +482,44 @@
     });
     layer.activate();
     const onScroll = () => (menuOpen = false);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      layer.release();
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  });
+
+  // --- "+N more" popover: a list of the events a cap-overflow tile (or a month
+  // day cell) couldn't show. Clicking one opens it. Same dismissable pattern. ---
+  let listOpen = $state(false);
+  let listEvents = $state<ResolvedEvent<TData>[]>([]);
+  let listTitle = $state("");
+  let listPos = $state({ x: 0, y: 0 });
+  let listPanel = $state<HTMLElement | null>(null);
+  function openList(e: MouseEvent, evs: ResolvedEvent<TData>[], title: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
+    listEvents = [...evs].sort((a, b) => a.start.getTime() - b.start.getTime());
+    listTitle = title;
+    listPos = { x: e.clientX, y: e.clientY };
+    listOpen = true;
+  }
+  function pickFromList(ev: ResolvedEvent<TData>) {
+    listOpen = false;
+    openEvent(ev);
+  }
+  $effect(() => {
+    if (!listOpen) return;
+    const layer = createDismissableLayer({
+      element: () => listPanel,
+      onDismiss: () => (listOpen = false),
+    });
+    layer.activate();
+    const onScroll = () => (listOpen = false);
     window.addEventListener("scroll", onScroll, true);
     return () => {
       layer.release();
@@ -481,6 +586,11 @@
     });
   });
   function openEvent(ev: ResolvedEvent<TData>) {
+    // A click that ended a drag/resize must not also open the event.
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
     if (scheduler.drawer) {
       const row = ev.row;
       const next: Record<string, unknown> = {};
@@ -527,7 +637,7 @@
   function onSlotDblClick(col: GridCol, e: MouseEvent) {
     if (!scheduler.onEventAdd) return;
     const min = snapMinute(minuteAt(e.clientY), slotMinutes);
-    const s = withTime(col.date, dayFromMinutes(min));
+    const s = dateAtMinute(col.date, min);
     const en = new Date(s.getTime() + (scheduler.defaultDurationMin ?? 60) * 60000);
     scheduler.onEventAdd(s, en, col.resourceId);
   }
@@ -584,6 +694,7 @@
                       type="button"
                       class="sv-sched-chip"
                       class:sv-sched-chip-recurring={ev.recurring}
+                      class:sv-sched-chip-draggable={editable && !ev.recurring}
                       style={eventStyle(ev)}
                       onclick={() => openEvent(ev)}
                       oncontextmenu={(e) => openMenu(e, ev)}
@@ -597,7 +708,11 @@
                     </button>
                   {/each}
                   {#if dayEvents.length > 3}
-                    <div class="sv-sched-more">+{dayEvents.length - 3} more</div>
+                    <button
+                      type="button"
+                      class="sv-sched-more"
+                      onclick={(e) => openList(e, dayEvents, `${mon(cell.date.getMonth())} ${cell.date.getDate()}`)}
+                    >+{dayEvents.length - 3} more</button>
                   {/if}
                 </div>
               </div>
@@ -676,6 +791,8 @@
             {/each}
           </div>
           {#each gridCols as col (col.key)}
+            {@const layout = colLayout(col)}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               class="sv-sched-col"
               data-col-key={col.key}
@@ -684,31 +801,58 @@
               {#each hourList as h (h)}
                 <div class="sv-sched-slot" style={`height:${HOUR_PX}px`}></div>
               {/each}
-              {#each colTimed(col) as p (p.event.key)}
-                {@const isDrag = drag?.ev.key === p.event.key}
-                {@const top = isDrag && drag?.previewStart ? ((drag.previewStart.getHours() * 60 + drag.previewStart.getMinutes() - dayStartHour * 60) / (bandHours * 60)) * 100 : p.topPct}
+              {#each layout.events as p (p.event.key)}
+                {@const isDrag = drag?.ev.key === p.event.key && drag?.moved === true}
+                {@const evStart = isDrag ? drag!.previewStart : p.event.start}
+                {@const evEnd = isDrag ? drag!.previewEnd : p.event.end}
+                {@const top = isDrag ? pctTop(evStart) : p.topPct}
+                {@const height = isDrag ? pctHeight(evStart, evEnd) : p.heightPct}
+                {@const canEdit = editable && !p.event.recurring}
                 <button
                   type="button"
                   class="sv-sched-event"
                   class:sv-sched-event-recurring={p.event.recurring}
+                  class:sv-sched-event-draggable={canEdit}
                   class:sv-sched-event-dragging={isDrag}
-                  style={`top:${top}%; height:${p.heightPct}%; left:calc(${(p.col / p.colCount) * 100}% + 2px); width:calc(${100 / p.colCount}% - 4px); ${eventStyle(p.event)}`}
+                  class:sv-sched-event-stacked={collisionMode === "stack" && p.zIndex > 1}
+                  style={`top:${top}%; height:${height}%; left:calc(${p.leftPct}% + 2px); width:calc(${p.widthPct}% - 4px); --z:${p.zIndex}; ${eventStyle(p.event)}`}
                   onpointerdown={(e) => startTimeDrag(e, p.event, col, "move")}
                   onclick={() => openEvent(p.event)}
                   oncontextmenu={(e) => openMenu(e, p.event)}
                   onkeydown={(e) => onEventKey(e, p.event)}
                 >
-                  <span class="sv-sched-event-time">{fmtTime(p.event.start)}</span>
-                  <span class="sv-sched-event-title">{p.event.title}</span>
-                  {#if editable && !p.event.recurring}
+                  {#if canEdit}
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <span
-                      class="sv-sched-resize"
-                      role="separator"
-                      aria-label="Resize event"
-                      onpointerdown={(e) => startTimeDrag(e, p.event, col, "resize")}
+                      class="sv-sched-resize sv-sched-resize-top"
+                      aria-hidden="true"
+                      onpointerdown={(e) => startTimeDrag(e, p.event, col, "resize-start")}
+                      onclick={(e) => e.stopPropagation()}
+                    ></span>
+                  {/if}
+                  <span class="sv-sched-event-time">
+                    {fmtTime(evStart)}{isDrag ? ` - ${fmtTime(evEnd)}` : ""}
+                  </span>
+                  <span class="sv-sched-event-title">{p.event.title}</span>
+                  {#if canEdit}
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <span
+                      class="sv-sched-resize sv-sched-resize-bottom"
+                      aria-hidden="true"
+                      onpointerdown={(e) => startTimeDrag(e, p.event, col, "resize-end")}
+                      onclick={(e) => e.stopPropagation()}
                     ></span>
                   {/if}
                 </button>
+              {/each}
+              {#each layout.overflows as o, i (col.key + ":ovf:" + i)}
+                <button
+                  type="button"
+                  class="sv-sched-overflow"
+                  style={`top:${o.topPct}%; height:${o.heightPct}%; left:calc(${o.leftPct}% + 2px); width:calc(${o.widthPct}% - 4px);`}
+                  onclick={(e) => openList(e, o.events, `${o.count} more events`)}
+                  title={`${o.count} more events`}
+                >+{o.count} more</button>
               {/each}
             </div>
           {/each}
@@ -730,6 +874,38 @@
     aria-label="Event actions"
   >
     <SvMenuList items={menuItems} onclose={() => (menuOpen = false)} onselect={() => (menuOpen = false)} />
+  </div>
+{/if}
+
+{#if listOpen}
+  <div
+    bind:this={listPanel}
+    class="sv-sched-listpop"
+    use:portalToBody
+    use:popIn={{}}
+    style:position="fixed"
+    style:top={`${listPos.y}px`}
+    style:left={`${listPos.x}px`}
+    role="dialog"
+    aria-label={listTitle}
+  >
+    <div class="sv-sched-listpop-head">{listTitle}</div>
+    <div class="sv-sched-listpop-body">
+      {#each listEvents as ev (ev.key)}
+        <button
+          type="button"
+          class="sv-sched-listpop-item"
+          style={eventStyle(ev)}
+          onclick={() => pickFromList(ev)}
+        >
+          <span class="sv-sched-dot"></span>
+          <span class="sv-sched-listpop-time">
+            {ev.allDay ? "all day" : `${fmtTime(ev.start)} - ${fmtTime(ev.end)}`}
+          </span>
+          <span class="sv-sched-listpop-title">{ev.title}</span>
+        </button>
+      {/each}
+    </div>
   </div>
 {/if}
 
@@ -834,7 +1010,21 @@
     text-align: center;
   }
   .sv-sched-daylist { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
-  .sv-sched-more { font-size: 0.72rem; color: var(--sg-muted, #6b7280); padding-left: 3px; }
+  .sv-sched-more {
+    align-self: flex-start;
+    border: none;
+    background: none;
+    color: var(--sg-muted, #6b7280);
+    font: inherit;
+    font-size: 0.72rem;
+    padding: 0 3px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .sv-sched-more:hover {
+    color: var(--sv-sched-accent);
+    background: color-mix(in srgb, var(--sv-sched-accent) 12%, transparent);
+  }
 
   /* chips (month + all-day) */
   .sv-sched-chip {
@@ -856,6 +1046,8 @@
     white-space: nowrap;
   }
   .sv-sched-chip:hover { background: color-mix(in srgb, var(--sv-sched-accent) 24%, transparent); }
+  .sv-sched-chip-draggable { cursor: grab; }
+  .sv-sched-chip-draggable:active { cursor: grabbing; }
   .sv-sched-chip-recurring { border-left: 2px solid var(--sv-sched-accent); }
   .sv-sched-chip-time { color: var(--sg-muted, #6b7280); font-variant-numeric: tabular-nums; }
   .sv-sched-chip-title { overflow: hidden; text-overflow: ellipsis; }
@@ -931,17 +1123,78 @@
     flex-direction: column;
     gap: 1px;
     touch-action: none;
+    z-index: var(--z, 1);
   }
+  .sv-sched-event:hover,
+  .sv-sched-event:focus-visible { z-index: 30; }
   .sv-sched-event:hover { background: color-mix(in srgb, var(--sv-sched-accent) 26%, var(--sg-bg, #fff)); }
-  .sv-sched-event-dragging { opacity: 0.75; box-shadow: 0 4px 12px rgba(0,0,0,0.18); z-index: 5; }
+  /* Stacked (offset) events get a subtle ring so overlaps read as separate cards. */
+  .sv-sched-event-stacked { box-shadow: -1px 0 0 0 color-mix(in srgb, var(--sg-bg, #fff) 70%, transparent); }
+  .sv-sched-event-draggable { cursor: grab; }
+  .sv-sched-event-dragging {
+    opacity: 0.92;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+    z-index: 40;
+    cursor: grabbing;
+  }
+  /* "+N more" overflow tile for collisionMode 'cap'. */
+  .sv-sched-overflow {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px dashed var(--sg-border, #cbd5e1);
+    background: var(--sg-subtle, #f1f5f9);
+    color: var(--sg-muted, #64748b);
+    border-radius: 4px;
+    padding: 2px 4px;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    z-index: 3;
+  }
+  .sv-sched-overflow:hover {
+    background: color-mix(in srgb, var(--sv-sched-accent) 14%, var(--sg-subtle, #f1f5f9));
+    color: var(--sv-sched-accent);
+    border-color: var(--sv-sched-accent);
+  }
   .sv-sched-event-recurring { border-left-style: double; border-left-width: 4px; }
   .sv-sched-event-time { color: var(--sg-muted, #6b7280); font-variant-numeric: tabular-nums; font-size: 0.7rem; }
   .sv-sched-event-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Resize grips (indicators) at the top + bottom edges. Hidden until the event
+     is hovered / focused / being dragged, then a short centred bar appears. */
   .sv-sched-resize {
     position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 6px;
+    left: 0;
+    right: 0;
+    height: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: ns-resize;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    touch-action: none;
+    z-index: 2;
+  }
+  .sv-sched-resize-top { top: 0; }
+  .sv-sched-resize-bottom { bottom: 0; }
+  .sv-sched-resize::after {
+    content: "";
+    width: 26px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--sv-sched-accent);
+    box-shadow: 0 0 0 1.5px var(--sg-bg, #fff);
+  }
+  .sv-sched-event-draggable:hover .sv-sched-resize,
+  .sv-sched-event-draggable:focus-visible .sv-sched-resize,
+  .sv-sched-event-dragging .sv-sched-resize {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sv-sched-resize { transition: none; }
   }
 
   /* agenda */
@@ -986,4 +1239,44 @@
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
     overflow: hidden;
   }
+
+  /* "+N more" event-list popover (cap overflow + month day cell). */
+  .sv-sched-listpop {
+    min-width: 220px;
+    max-width: 320px;
+    max-height: 320px;
+    display: flex;
+    flex-direction: column;
+    background: var(--sg-bg, #fff);
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+    z-index: 60;
+  }
+  .sv-sched-listpop-head {
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    border-bottom: 1px solid var(--sg-border, #e5e7eb);
+  }
+  .sv-sched-listpop-body { overflow-y: auto; padding: 4px; display: flex; flex-direction: column; gap: 2px; }
+  .sv-sched-listpop-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: none;
+    color: inherit;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .sv-sched-listpop-item:hover { background: var(--sg-hover, #f3f4f6); }
+  .sv-sched-listpop-time { flex: 0 0 auto; color: var(--sg-muted, #6b7280); font-variant-numeric: tabular-nums; font-size: 0.74rem; }
+  .sv-sched-listpop-title { flex: 1 1 auto; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

@@ -12,6 +12,10 @@
     type ColumnDef,
     type SchedulerEventCommitEvent,
   } from '@svgrid/grid'
+  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+
+  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
+  enableSchedulerView()
 
   type Task = {
     id: number

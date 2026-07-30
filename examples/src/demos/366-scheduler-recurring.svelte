@@ -9,6 +9,10 @@
    * (edit the series in the Table view).
    */
   import { SvGrid, type ColumnDef, type RecurrenceRule } from '@svgrid/grid'
+  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+
+  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
+  enableSchedulerView()
 
   type Event = {
     id: number

@@ -53,7 +53,7 @@ Two node kinds make up a layout:
 | ---- | ---------- | ------- |
 | **group** | `dockGroup(direction, children, sizes?)` | A `'row'` (side-by-side) or `'column'` (stacked) of children, with a splitter between each. `sizes` are optional weights (normalized). |
 | **tabs**  | `dockTabs(panes, active?)` | A leaf: one or more `dockPane`s shown as tabs; only `active` is visible. |
-| **pane**  | `dockPane(id, title, closable?)` | A single tab. `id` keys your content snippet. `closable` defaults to `true`. |
+| **pane**  | `dockPane(id, title, { closable?, minSize? })` | A single tab. `id` keys your content snippet. `closable` defaults to `true`; `minSize` (px) stops a splitter crushing the pane's leaf below that size. |
 
 Because it is just data, you can save and restore it:
 

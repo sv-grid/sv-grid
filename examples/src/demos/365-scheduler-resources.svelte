@@ -13,6 +13,10 @@
     type SchedulerEventMoveEvent,
     type SchedulerResource,
   } from '@svgrid/grid'
+  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+
+  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
+  enableSchedulerView()
 
   type Booking = { id: number; title: string; start: string; end: string; room: string; color: string }
 

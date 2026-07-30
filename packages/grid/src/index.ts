@@ -71,8 +71,22 @@ export { subscribeGrid, subscribeSvGrid } from './subscribe'
 export { default as SvGrid } from './SvGrid.svelte'
 export { default as SvGridBoard } from './SvGridBoard.svelte'
 export type { BoardConfig, BoardLane, BoardCardMoveEvent, BoardCardCommitEvent, BoardLayout, BoardSubtask, BoardComment, BoardMenuContext, BoardLaneMenuContext, BoardDrawerConfig } from './SvGrid.types'
-export { default as SvGridScheduler } from './SvGridScheduler.svelte'
-export type { SchedulerConfig, SchedulerDrawerConfig, SchedulerEventMoveEvent, SchedulerEventResizeEvent, SchedulerEventCommitEvent } from './SvGrid.types'
+// Scheduler / calendar view. The `scheduler` prop + its config types live in
+// the free grid, but the RENDERER ships in @svgrid/enterprise and registers
+// itself through this seam (see scheduler-view.svelte.ts). Mirrors editor-registry.
+export type {
+  SchedulerConfig,
+  SchedulerDrawerConfig,
+  SchedulerEventMoveEvent,
+  SchedulerEventResizeEvent,
+  SchedulerEventCommitEvent,
+  SchedulerView,
+  SchedulerResource,
+  SchedulerCollisionMode,
+} from './SvGrid.types'
+export { registerSchedulerView, getSchedulerView, hasSchedulerView } from './scheduler-view.svelte'
+// Pure scheduler layout/model helpers (framework-free, like recurrence/date-core).
+// The calendar RENDERER that consumes these ships in @svgrid/enterprise.
 export {
   resolveEvents,
   eventsOnDay,
@@ -81,11 +95,12 @@ export {
   rangeForView,
   daysForView,
   navigateAnchor,
-  type SchedulerView,
-  type SchedulerResource,
   type ResolvedEvent,
   type EventSpec,
   type PositionedEvent,
+  type OverflowMarker,
+  type DayLayout,
+  type LayoutOptions,
   type AgendaGroup,
 } from './scheduler-model'
 export { default as SvGridDropdown } from './SvGridDropdown.svelte'
@@ -236,7 +251,7 @@ export { createAccordion, type Accordion, type AccordionConfig } from './createA
 export { default as SvSplitter, type SplitterOrientation } from './SvSplitter.svelte'
 export { createSplitter, type Splitter, type SplitterConfig, type SplitterPoint } from './createSplitter.svelte'
 export { default as SvDockLayout } from './SvDockLayout.svelte'
-export { default as SvDockManager, type DockManagerApi } from './SvDockManager.svelte'
+export { default as SvDockManager, type DockManagerApi, type DockEvent } from './SvDockManager.svelte'
 export {
   dockPane,
   dockTabs,
@@ -345,8 +360,8 @@ export { default as SvForm, type FormField, type FormFieldType } from './SvForm.
 export { rules, runRules, isEmptyValue, type Validator, type RuleOptions, type CompareOp } from './validators'
 export { anchoredRect, portalToBody, PANEL_THEME_VARS, type AnchoredRect } from './popover'
 export {
-  toDate, startOfDay, addDays, addMonths, addYears, clampDate, isSameDay,
-  monthMatrix, isoWeek, decadeRange, withTime, snapMinute, type DateLike,
+  toDate, startOfDay, startOfWeek, startOfMonth, addDays, addMonths, addYears, clampDate, isSameDay,
+  monthMatrix, weekdayOrder, isoWeek, decadeRange, withTime, snapMinute, type DateLike,
 } from './datetime/date-core'
 export { formatDate, parseDate, tokenizeMask } from './datetime/date-format'
 export {

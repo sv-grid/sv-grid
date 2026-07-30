@@ -9,7 +9,7 @@
   import { getContext } from 'svelte'
   import Self from './DockNodeView.svelte'
   import { DOCK_CONTEXT, type DockContext } from './dock-context'
-  import type { DockNode, DockGroup } from './dock-model'
+  import { leafMinSize, type DockNode, type DockGroup } from './dock-model'
 
   let { node }: { node: DockNode } = $props()
 
@@ -17,6 +17,11 @@
 
   // ---- splitter drag (group children resize) ----------------------------
   let groupEl = $state<HTMLElement | null>(null)
+
+  /** A child's minimum size (px): a leaf's largest per-pane `minSize`, else 0. */
+  function nodeMin(n: DockNode | undefined): number {
+    return n && n.type === 'tabs' ? leafMinSize(n) : 0
+  }
 
   function onSplitterDown(e: PointerEvent, group: DockGroup, index: number) {
     if (e.button !== 0 || !groupEl) return
@@ -27,15 +32,17 @@
     if (total <= 0) return
     const startSizes = group.sizes.slice()
     const startPos = vertical ? e.clientY : e.clientX
-    const minFrac = ctx.minSize() / total
-    // Only the two panes adjacent to this gutter move; the rest stay put.
+    // Only the two panes adjacent to this gutter move; the rest stay put. Each
+    // honors its own minimum (a leaf's largest per-pane `minSize`, else global).
     const a = index
     const b = index + 1
+    const minA = Math.max(ctx.minSize(), nodeMin(group.children[a])) / total
+    const minB = Math.max(ctx.minSize(), nodeMin(group.children[b])) / total
     const pairTotal = startSizes[a]! + startSizes[b]!
 
     const onMove = (ev: PointerEvent) => {
       const delta = ((vertical ? ev.clientY : ev.clientX) - startPos) / total
-      let fa = Math.min(Math.max(startSizes[a]! + delta, minFrac), pairTotal - minFrac)
+      let fa = Math.min(Math.max(startSizes[a]! + delta, minA), pairTotal - minB)
       const next = startSizes.slice()
       next[a] = fa
       next[b] = pairTotal - fa
@@ -79,7 +86,8 @@
   {@const active = node.panes[node.active] ?? node.panes[0]}
   {@const reorder = ctx.reorderTarget?.() ?? null}
   {@const reorderHere = reorder && reorder.tabsId === node.id ? reorder.index : -1}
-  <div class="sv-dock__leaf" data-dock-tabs={node.id}>
+  {@const hp = ctx.headerPosition?.() ?? 'top'}
+  <div class="sv-dock__leaf sv-dock__leaf--h-{hp}" class:is-focused={ctx.focusedLeaf?.() === node.id} data-dock-tabs={node.id}>
     <div class="sv-dock__tabstrip" role="tablist">
       {#each node.panes as p, i (p.id)}
         {#if reorderHere === i}<div class="sv-dock__ins" aria-hidden="true"></div>{/if}
@@ -117,9 +125,22 @@
       {/if}
     </div>
 
-    <div class="sv-dock__content" role="tabpanel">
-      {#if active}{@render ctx.pane(active)}{/if}
-    </div>
+    {#if ctx.keepAlive?.()}
+      <!-- Keep every tab mounted; hide the inactive ones so their state persists. -->
+      {#each node.panes as p (p.id)}
+        <div class="sv-dock__content" role="tabpanel" style:display={p.id === active?.id ? '' : 'none'}>
+          {@render ctx.pane(p)}
+        </div>
+      {/each}
+    {:else}
+      <!-- Only the active tab renders; `{#key}` remounts on switch so a pane's
+           content never bleeds into the next (use keepAlive to persist state). -->
+      {#if active}
+        {#key active.id}
+          <div class="sv-dock__content" role="tabpanel">{@render ctx.pane(active)}</div>
+        {/key}
+      {/if}
+    {/if}
 
     {#if ctx.dropTarget()?.tabsId === node.id}
       {@const dt = ctx.dropTarget()!}
@@ -158,7 +179,7 @@
   .sv-dock__cell { min-width: 0; min-height: 0; overflow: hidden; display: flex; }
   .sv-dock__cell > :global(*) { flex: 1; min-width: 0; min-height: 0; }
 
-  .sv-dock__splitter { flex: none; background: var(--sg-border, #e2e8f0); position: relative; }
+  .sv-dock__splitter { flex: none; background: var(--sg-border, #e2e8f0); position: relative; touch-action: none; }
   .sv-dock__splitter::after { content: ''; position: absolute; inset: -3px; }
   .sv-dock__splitter--row { width: 4px; cursor: col-resize; }
   .sv-dock__splitter--column { height: 4px; cursor: row-resize; }
@@ -173,6 +194,39 @@
     display: flex; flex: none; gap: 2px; padding: 4px 4px 0; overflow-x: auto;
     background: var(--sg-header-bg, #f6f7f9); border-bottom: 1px solid var(--sg-border, #e2e8f0);
   }
+  /* Focused leaf: accent-tinted header + active-tab underline. */
+  .sv-dock__leaf.is-focused > .sv-dock__tabstrip { background: color-mix(in srgb, var(--sg-accent, #2563eb) 8%, var(--sg-header-bg, #f6f7f9)); }
+  .sv-dock__leaf.is-focused .sv-dock__tab.is-active { box-shadow: inset 0 -2px 0 var(--sg-accent, #2563eb); }
+  /* Header on the bottom: content first, strip below with flipped chrome. */
+  .sv-dock__leaf--h-bottom { flex-direction: column-reverse; }
+  .sv-dock__leaf--h-bottom .sv-dock__tabstrip { padding: 0 4px 4px; border-bottom: none; border-top: 1px solid var(--sg-border, #e2e8f0); }
+  .sv-dock__leaf--h-bottom .sv-dock__tab { border-radius: 0 0 7px 7px; border-top: none; border-bottom: 1px solid transparent; }
+  .sv-dock__leaf--h-bottom .sv-dock__tab.is-active { border-color: var(--sg-border, #e2e8f0); border-top: none; }
+
+  /* Header on the left/right: a VERTICAL tab strip beside the content. */
+  .sv-dock__leaf--h-left { flex-direction: row; }
+  .sv-dock__leaf--h-right { flex-direction: row-reverse; }
+  .sv-dock__leaf--h-left .sv-dock__tabstrip,
+  .sv-dock__leaf--h-right .sv-dock__tabstrip {
+    flex-direction: column; overflow-x: hidden; overflow-y: auto; padding: 4px 0 4px 4px;
+    border-bottom: none;
+  }
+  .sv-dock__leaf--h-left .sv-dock__tabstrip { border-right: 1px solid var(--sg-border, #e2e8f0); }
+  .sv-dock__leaf--h-right .sv-dock__tabstrip { padding: 4px 4px 4px 0; border-left: 1px solid var(--sg-border, #e2e8f0); }
+  .sv-dock__leaf--h-left .sv-dock__tab,
+  .sv-dock__leaf--h-right .sv-dock__tab {
+    writing-mode: vertical-rl; padding: 10px 6px; border-radius: 7px 0 0 7px; border-bottom: 1px solid transparent;
+    max-height: 200px; overflow: hidden;
+  }
+  .sv-dock__leaf--h-right .sv-dock__tab { border-radius: 0 7px 7px 0; }
+  .sv-dock__leaf--h-left .sv-dock__tab.is-active,
+  .sv-dock__leaf--h-right .sv-dock__tab.is-active { border-color: var(--sg-border, #e2e8f0); }
+  /* Stack controls go to the bottom of a vertical strip. */
+  .sv-dock__leaf--h-left .sv-dock__leafctl,
+  .sv-dock__leaf--h-right .sv-dock__leafctl { flex-direction: column; margin-inline-start: 0; margin-top: auto; padding: 2px 0; align-self: center; }
+  /* Reorder insertion line runs horizontally between stacked tabs. */
+  .sv-dock__leaf--h-left .sv-dock__ins,
+  .sv-dock__leaf--h-right .sv-dock__ins { width: auto; height: 3px; align-self: stretch; margin: 0 3px; }
   .sv-dock__tab {
     display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; cursor: grab;
     font-size: 12.5px; font-weight: 600; color: var(--sg-muted, #64748b); white-space: nowrap;

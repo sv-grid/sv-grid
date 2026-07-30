@@ -95,17 +95,30 @@ describe('eventsOnDay', () => {
   })
 })
 
-describe('layoutDayEvents', () => {
+// N overlapping events, all starting at 09:00 for `hours` hours.
+function pileUp(n: number, hours = 1): Row[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `e${i}`,
+    title: `e${i}`,
+    start: '2026-07-15T09:00',
+    end: `2026-07-15T${String(9 + hours).padStart(2, '0')}:00`,
+  }))
+}
+
+describe('layoutDayEvents (split, default)', () => {
   it('places two overlapping events in two half-width columns', () => {
     const rows: Row[] = [
       { id: 'a', title: 'a', start: '2026-07-15T09:00', end: '2026-07-15T10:00' },
       { id: 'b', title: 'b', start: '2026-07-15T09:30', end: '2026-07-15T10:30' },
     ]
     const evs = resolveEvents(rows, spec(), at(2026, 7, 15), at(2026, 7, 16))
-    const laid = layoutDayEvents(evs, at(2026, 7, 15), 0, 24)
-    expect(laid).toHaveLength(2)
-    expect(laid.every((p) => p.colCount === 2)).toBe(true)
-    expect(new Set(laid.map((p) => p.col))).toEqual(new Set([0, 1]))
+    const { events, overflows } = layoutDayEvents(evs, at(2026, 7, 15))
+    expect(events).toHaveLength(2)
+    expect(overflows).toHaveLength(0)
+    expect(events.every((p) => p.colCount === 2)).toBe(true)
+    expect(new Set(events.map((p) => p.col))).toEqual(new Set([0, 1]))
+    expect(events.every((p) => Math.abs(p.widthPct - 50) < 0.01)).toBe(true)
+    expect(new Set(events.map((p) => p.leftPct))).toEqual(new Set([0, 50]))
   })
 
   it('gives a non-overlapping event the full width', () => {
@@ -114,14 +127,14 @@ describe('layoutDayEvents', () => {
       { id: 'b', title: 'b', start: '2026-07-15T11:00', end: '2026-07-15T12:00' },
     ]
     const evs = resolveEvents(rows, spec(), at(2026, 7, 15), at(2026, 7, 16))
-    const laid = layoutDayEvents(evs, at(2026, 7, 15), 0, 24)
-    expect(laid.every((p) => p.colCount === 1)).toBe(true)
+    const { events } = layoutDayEvents(evs, at(2026, 7, 15))
+    expect(events.every((p) => p.colCount === 1 && p.widthPct === 100)).toBe(true)
   })
 
   it('positions events as a percentage of the visible band', () => {
     const rows: Row[] = [{ id: 'a', title: 'a', start: '2026-07-15T12:00', end: '2026-07-15T13:00' }]
     const evs = resolveEvents(rows, spec(), at(2026, 7, 15), at(2026, 7, 16))
-    const p = layoutDayEvents(evs, at(2026, 7, 15), 8, 20)[0]! // 12h band, noon is 4h in
+    const p = layoutDayEvents(evs, at(2026, 7, 15), { dayStartHour: 8, dayEndHour: 20 }).events[0]!
     expect(p.topPct).toBeCloseTo((4 / 12) * 100)
     expect(p.heightPct).toBeCloseTo((1 / 12) * 100)
   })
@@ -129,7 +142,62 @@ describe('layoutDayEvents', () => {
   it('ignores all-day events', () => {
     const rows: Row[] = [{ id: 'a', title: 'a', start: '2026-07-15T00:00', allDay: true }]
     const evs = resolveEvents(rows, spec(), at(2026, 7, 15), at(2026, 7, 16))
-    expect(layoutDayEvents(evs, at(2026, 7, 15), 0, 24)).toHaveLength(0)
+    expect(layoutDayEvents(evs, at(2026, 7, 15)).events).toHaveLength(0)
+  })
+
+  it('splits N-way with no cap', () => {
+    const evs = resolveEvents(pileUp(8), spec(), at(2026, 7, 15), at(2026, 7, 16))
+    const { events, overflows } = layoutDayEvents(evs, at(2026, 7, 15))
+    expect(events).toHaveLength(8)
+    expect(overflows).toHaveLength(0)
+    expect(events.every((p) => p.colCount === 8 && Math.abs(p.widthPct - 12.5) < 0.01)).toBe(true)
+  })
+})
+
+describe('layoutDayEvents (cap)', () => {
+  it('keeps clusters that fit within maxColumns fully visible', () => {
+    const evs = resolveEvents(pileUp(3), spec(), at(2026, 7, 15), at(2026, 7, 16))
+    const { events, overflows } = layoutDayEvents(evs, at(2026, 7, 15), { mode: 'cap', maxColumns: 3 })
+    expect(events).toHaveLength(3)
+    expect(overflows).toHaveLength(0)
+  })
+
+  it('shows maxColumns-1 events + one "+N more" overflow tile', () => {
+    const evs = resolveEvents(pileUp(6), spec(), at(2026, 7, 15), at(2026, 7, 16))
+    const { events, overflows } = layoutDayEvents(evs, at(2026, 7, 15), { mode: 'cap', maxColumns: 3 })
+    // 3 columns -> 2 real + 1 overflow slot; 6 events => 2 shown, 4 hidden.
+    expect(events).toHaveLength(2)
+    expect(overflows).toHaveLength(1)
+    expect(overflows[0]!.count).toBe(4)
+    expect(overflows[0]!.events).toHaveLength(4)
+    // Overflow tile sits in the last of the 3 columns.
+    expect(overflows[0]!.leftPct).toBeCloseTo((2 / 3) * 100)
+    expect(overflows[0]!.widthPct).toBeCloseTo(100 / 3)
+  })
+
+  it('clamps maxColumns to a minimum of 2', () => {
+    const evs = resolveEvents(pileUp(5), spec(), at(2026, 7, 15), at(2026, 7, 16))
+    const { events, overflows } = layoutDayEvents(evs, at(2026, 7, 15), { mode: 'cap', maxColumns: 1 })
+    expect(events).toHaveLength(1) // maxColumns floored to 2 -> 1 real + overflow
+    expect(overflows[0]!.count).toBe(4)
+  })
+})
+
+describe('layoutDayEvents (stack)', () => {
+  it('offsets overlapping events instead of shrinking them, with rising z-index', () => {
+    const evs = resolveEvents(pileUp(3), spec(), at(2026, 7, 15), at(2026, 7, 16))
+    const { events, overflows } = layoutDayEvents(evs, at(2026, 7, 15), {
+      mode: 'stack',
+      stackOffsetPct: 14,
+    })
+    expect(events).toHaveLength(3)
+    expect(overflows).toHaveLength(0)
+    const byCol = [...events].sort((a, b) => a.col - b.col)
+    expect(byCol.map((p) => p.leftPct)).toEqual([0, 14, 28])
+    expect(byCol.map((p) => p.zIndex)).toEqual([1, 2, 3])
+    // Earliest column is widest; later ones are offset but still wide.
+    expect(byCol[0]!.widthPct).toBe(100)
+    expect(byCol[2]!.widthPct).toBe(72)
   })
 })
 

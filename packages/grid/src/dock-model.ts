@@ -18,6 +18,8 @@ export type DockPane = {
   title: string
   /** Show a close (x) affordance on the tab. Default true. */
   closable?: boolean
+  /** Minimum size (px) for this pane's leaf along the split axis. */
+  minSize?: number
 }
 
 /** A leaf: a stack of panes rendered as tabs (`active` is the visible one). */
@@ -49,6 +51,11 @@ export type IdGen = () => string
 
 export function pane(id: string, title: string, closable = true): DockPane {
   return { id, title, closable }
+}
+
+/** Largest per-pane `minSize` in a leaf (0 if none). Used by splitter clamping. */
+export function leafMinSize(node: DockTabs): number {
+  return node.panes.reduce((m, p) => Math.max(m, p.minSize ?? 0), 0)
 }
 
 export function tabs(genId: IdGen, panes: DockPane[], active = 0): DockTabs {
@@ -337,8 +344,13 @@ let AUTO = 0
 const autoId: IdGen = () => `d${AUTO++}`
 
 /** A pane (tab). Alias of `pane`, named for the public builder set. */
-export function dockPane(id: string, title: string, closable = true): DockPane {
-  return pane(id, title, closable)
+export function dockPane(
+  id: string,
+  title: string,
+  opts?: boolean | { closable?: boolean; minSize?: number },
+): DockPane {
+  const o = typeof opts === 'boolean' ? { closable: opts } : (opts ?? {})
+  return { id, title, closable: o.closable ?? true, ...(o.minSize != null ? { minSize: o.minSize } : {}) }
 }
 
 /** A tab-leaf holding one or more panes. */

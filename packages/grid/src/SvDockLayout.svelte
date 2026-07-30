@@ -65,7 +65,11 @@
     /** Manager mode: route splitter resize to the parent (controlled). */
     onResize?: (groupId: string, sizes: number[]) => void
     /** Which side of each leaf the tab strip sits on. Default `'top'`. */
-    headerPosition?: 'top' | 'bottom'
+    headerPosition?: 'top' | 'bottom' | 'left' | 'right'
+    /** Manager mode: id of the focused leaf, for the active-panel highlight. */
+    focusedLeaf?: string | null
+    /** Keep inactive tabs mounted (hidden) so their content state persists. */
+    keepAlive?: boolean
   }
 
   let {
@@ -81,6 +85,9 @@
     onActivate,
     onClose,
     onResize,
+    headerPosition = 'top',
+    focusedLeaf = null,
+    keepAlive = false,
   }: Props = $props()
 
   const managed = $derived(!!onBeginDrag)
@@ -185,6 +192,9 @@
     // In manager mode the highlight is driven from outside.
     dropTarget: () => (managed ? externalDrop : dropTarget),
     reorderTarget: () => (managed ? externalReorder : null),
+    headerPosition: () => headerPosition,
+    focusedLeaf: () => focusedLeaf,
+    keepAlive: () => keepAlive,
   })
 </script>
 

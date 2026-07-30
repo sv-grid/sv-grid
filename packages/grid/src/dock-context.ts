@@ -34,7 +34,11 @@ export type DockContext = {
   /** The live tab-reorder target, for the insertion-line indicator. */
   reorderTarget?: () => { tabsId: string; index: number } | null
   /** Which side of each leaf the tab strip sits on. Default `'top'`. */
-  headerPosition?: () => 'top' | 'bottom'
+  headerPosition?: () => 'top' | 'bottom' | 'left' | 'right'
+  /** The id of the currently focused leaf, for the active-panel highlight. */
+  focusedLeaf?: () => string | null
+  /** Keep inactive tabs mounted (hidden) so their content state persists. */
+  keepAlive?: () => boolean
 }
 
 export const DOCK_CONTEXT = Symbol('svgrid-dock')

@@ -26,6 +26,7 @@ import {
   type PivotConfig,
   type PivotResult,
 } from './pivot'
+import { enableSchedulerView } from './scheduler'
 
 export type EnterpriseAIApi<TData extends RowData> = {
   /** Natural-language -> filter + sort plan (and optionally apply it). */
@@ -125,6 +126,8 @@ export function installEnterprise<
   }
   // Wire the built-in chart panel's AI button (no-op without the `charting` prop).
   enableAiCharting(pro)
+  // Register the scheduler / calendar view (no-op without the `scheduler` prop).
+  enableSchedulerView()
   pro.pivot = {
     build: (config) =>
       createPivotModel<TFeatures, TData>(pro.getData(), config),

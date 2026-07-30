@@ -26,15 +26,9 @@ import {
   type DateLike,
 } from './datetime/date-core'
 import { expandRecurrence, type RecurrenceRule } from './recurrence'
+import type { SchedulerView, SchedulerResource, SchedulerCollisionMode } from './SvGrid.types'
 
-export type SchedulerView = 'month' | 'week' | 'day' | 'agenda'
-
-/** A scheduler resource - a person / room / machine an event can be assigned to. */
-export type SchedulerResource = {
-  id: string
-  title?: string
-  color?: string
-}
+export type { SchedulerView, SchedulerResource, SchedulerCollisionMode }
 
 /** A concrete event instance placed on the calendar (one row may yield many when
  *  it recurs). `key` is unique per instance; `rowKey` ties it back to its row. */
@@ -166,27 +160,68 @@ export function eventsOnDay<TData>(
 }
 
 /** A timed event positioned within a time-grid column. `topPct`/`heightPct` are
- *  0-100 of the visible day; `col`/`colCount` place it among overlapping peers. */
+ *  0-100 of the visible day; `leftPct`/`widthPct`/`zIndex` place it horizontally
+ *  among overlapping peers (already resolved for the chosen collision mode). */
 export type PositionedEvent<TData = unknown> = {
   event: ResolvedEvent<TData>
   topPct: number
   heightPct: number
   col: number
   colCount: number
+  leftPct: number
+  widthPct: number
+  zIndex: number
+}
+
+/** A `+N more` tile emitted by `cap` mode for the events that didn't fit. */
+export type OverflowMarker<TData = unknown> = {
+  topPct: number
+  heightPct: number
+  leftPct: number
+  widthPct: number
+  /** Number of hidden events this tile stands for. */
+  count: number
+  /** The hidden events (chronological), for the "+N more" popover. */
+  events: ResolvedEvent<TData>[]
+}
+
+/** The full time-grid layout for one day: positioned events + any overflow tiles. */
+export type DayLayout<TData = unknown> = {
+  events: PositionedEvent<TData>[]
+  overflows: OverflowMarker<TData>[]
+}
+
+export type LayoutOptions = {
+  dayStartHour?: number
+  dayEndHour?: number
+  /** Collision layout mode. Default `split`. */
+  mode?: SchedulerCollisionMode
+  /** `cap` mode: max columns before overflow (min 2). Default 3. */
+  maxColumns?: number
+  /** `stack` mode: horizontal offset per overlapping event, in % of column. */
+  stackOffsetPct?: number
+  /** `stack` mode: the narrowest a stacked event may get, in % of column. */
+  stackMinWidthPct?: number
 }
 
 /**
- * Lay out the timed events of a single day into side-by-side columns so
- * overlapping events share the width. `dayStartHour`/`dayEndHour` bound the
- * visible band (e.g. 8..18); events are clamped to it. All-day events are
- * ignored here (the view renders them in a separate all-day row).
+ * Lay out the timed events of a single day for the time-grid, resolving
+ * collisions per {@link SchedulerCollisionMode}. `dayStartHour`/`dayEndHour`
+ * bound the visible band (e.g. 8..18); events are clamped to it. All-day events
+ * are ignored here (the view renders them in a separate all-day row).
  */
 export function layoutDayEvents<TData>(
   dayEvents: ReadonlyArray<ResolvedEvent<TData>>,
   day: Date,
-  dayStartHour = 0,
-  dayEndHour = 24,
-): PositionedEvent<TData>[] {
+  opts: LayoutOptions = {},
+): DayLayout<TData> {
+  const dayStartHour = opts.dayStartHour ?? 0
+  const dayEndHour = opts.dayEndHour ?? 24
+  const mode = opts.mode ?? 'split'
+  const maxColumns = Math.max(2, Math.floor(opts.maxColumns ?? 3))
+  const stackOffset = opts.stackOffsetPct ?? 14
+  const stackMinWidth = opts.stackMinWidthPct ?? 42
+
   const base = startOfDay(day)
   const bandStartMin = dayStartHour * 60
   const bandEndMin = dayEndHour * 60
@@ -203,9 +238,14 @@ export function layoutDayEvents<TData>(
   }
   items.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin)
 
-  const result: PositionedEvent<TData>[] = []
+  const events: PositionedEvent<TData>[] = []
+  const overflows: OverflowMarker<TData>[] = []
+  const topOf = (min: number) => ((min - bandStartMin) / bandLen) * 100
+  const heightOf = (a: number, b: number) => ((b - a) / bandLen) * 100
+  const maxStackShift = Math.max(0, Math.floor((100 - stackMinWidth) / stackOffset))
+
   // Walk clusters of transitively-overlapping events; within each cluster assign
-  // greedy columns and give every member the cluster's column count for width.
+  // greedy columns, then resolve horizontal geometry for the chosen mode.
   let cluster: Item[] = []
   let clusterEnd = -Infinity
   const flush = () => {
@@ -218,15 +258,68 @@ export function layoutDayEvents<TData>(
       it.col = c
     }
     const colCount = colEnds.length
-    for (const it of cluster) {
-      result.push({
-        event: it.event,
-        topPct: ((it.startMin - bandStartMin) / bandLen) * 100,
-        heightPct: ((it.endMin - it.startMin) / bandLen) * 100,
-        col: it.col,
-        colCount,
-      })
+
+    if (mode === 'stack' && colCount > 1) {
+      for (const it of cluster) {
+        const shift = Math.min(it.col, maxStackShift) * stackOffset
+        events.push({
+          event: it.event,
+          topPct: topOf(it.startMin),
+          heightPct: heightOf(it.startMin, it.endMin),
+          col: it.col,
+          colCount,
+          leftPct: shift,
+          widthPct: 100 - shift,
+          zIndex: it.col + 1,
+        })
+      }
+    } else if (mode === 'cap' && colCount > maxColumns) {
+      const realCols = maxColumns - 1 // reserve the last visible slot for overflow
+      const hidden: Item[] = []
+      for (const it of cluster) {
+        if (it.col < realCols) {
+          events.push({
+            event: it.event,
+            topPct: topOf(it.startMin),
+            heightPct: heightOf(it.startMin, it.endMin),
+            col: it.col,
+            colCount: maxColumns,
+            leftPct: (it.col / maxColumns) * 100,
+            widthPct: 100 / maxColumns,
+            zIndex: 1,
+          })
+        } else {
+          hidden.push(it)
+        }
+      }
+      if (hidden.length) {
+        const start = Math.min(...hidden.map((h) => h.startMin))
+        const end = Math.max(...hidden.map((h) => h.endMin))
+        overflows.push({
+          topPct: topOf(start),
+          heightPct: heightOf(start, end),
+          leftPct: (realCols / maxColumns) * 100,
+          widthPct: 100 / maxColumns,
+          count: hidden.length,
+          events: hidden.map((h) => h.event),
+        })
+      }
+    } else {
+      // split (and cap when the cluster fits within maxColumns)
+      for (const it of cluster) {
+        events.push({
+          event: it.event,
+          topPct: topOf(it.startMin),
+          heightPct: heightOf(it.startMin, it.endMin),
+          col: it.col,
+          colCount,
+          leftPct: (it.col / colCount) * 100,
+          widthPct: 100 / colCount,
+          zIndex: 1,
+        })
+      }
     }
+
     cluster = []
     clusterEnd = -Infinity
   }
@@ -236,7 +329,7 @@ export function layoutDayEvents<TData>(
     clusterEnd = Math.max(clusterEnd, it.endMin)
   }
   flush()
-  return result
+  return { events, overflows }
 }
 
 /** One day's bucket of events for the agenda (list) view. */

@@ -11,6 +11,19 @@ Like [Kanban board mode](/help/rows/kanban-board), the scheduler is a pure
 searched rows and writes back only through callbacks - it never mutates your
 data.
 
+> **Enterprise feature.** The `scheduler` prop and its config types are part of
+> the free grid, but the calendar *renderer* ships in `@svgrid/enterprise`.
+> Register it once and the view lights up:
+>
+> ```ts
+> import { setLicenseKey, enableSchedulerView } from '@svgrid/enterprise'
+> setLicenseKey('YOUR-KEY')   // omit to run soft-gated with a watermark
+> enableSchedulerView()
+> ```
+>
+> `installEnterprise(api)` also calls `enableSchedulerView()` for you. Without
+> the renderer registered, a grid with a `scheduler` prop shows an upgrade note.
+
 <div data-docs-demo="363-scheduler-intro" data-height="620"></div>
 
 ## The minimum
@@ -49,9 +62,30 @@ Open on a specific date with `initialDate` (defaults to today).
 - **Month** - a fixed six-week grid; each day lists its events with a "+N more"
   overflow, and multi-day events appear on every day they span.
 - **Week / Day** - a time-grid with an hourly band. Overlapping events are laid
-  out into side-by-side columns automatically.
+  out by the chosen [collision mode](#colliding-overlapping-events).
 - **Agenda** - a chronological list grouped by day. Its span is `agendaDays`
   (default 30).
+
+## Colliding (overlapping) events
+
+When events overlap in the time-grid, `collisionMode` decides how they're shown:
+
+- **`split`** (default) - every collision divides the column width evenly. Two
+  overlaps → halves, three → thirds, N → `1/N`. All stay visible.
+- **`cap`** - show up to `maxColumns` columns (default 3); the events that don't
+  fit collapse into a clickable **`+N more`** tile. Clicking it opens a popover
+  listing those events; clicking one opens it. Best when a slot can pile up deep.
+- **`stack`** - overlapping events overlap with a horizontal offset and z-order
+  instead of shrinking, so each stays wide and readable; hovering brings one to
+  the front.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{ startField: 'start', endField: 'end', collisionMode: 'cap', maxColumns: 3 }} />
+```
+
+The **Month** view uses the same idea vertically: a day cell shows its first few
+events, then a **`+N more`** button that opens the day's full list in a popover.
 
 ## Titles, colors
 
@@ -65,10 +99,14 @@ color (any CSS color), or set one `color` for all of them.
 
 ## Drag to move, resize
 
-Set **`editable`** to turn on drag-to-move and bottom-edge resize in the
-time-grid (and drag-to-another-day in Month). The scheduler computes the new
-time itself and applies it as an overlay, then fires a notification so you can
-mirror it onto your row or persist it. Moves and resizes snap to `slotMinutes`.
+Set **`editable`** to turn on drag-and-drop and resizing in the time-grid (and
+drag-to-another-day in Month). An editable event shows a grab cursor; hovering
+it reveals **resize grips at its top and bottom edges**. Drag the body to move
+it, the bottom grip to change the end, or the top grip to change the start. The
+scheduler computes the new time itself and applies it as an overlay, then fires
+a notification so you can mirror it onto your row or persist it. Moves and
+resizes snap to `slotMinutes`, and dragging across columns (days or resources)
+also reassigns the day / resource.
 
 ```svelte
 <SvGrid {data} {columns}
@@ -177,6 +215,8 @@ source.
 | `weekStartsOn` | First day of the week, 0-6 (default 0). |
 | `slotMinutes` | Time-grid slot size and move/resize snap (default 30). |
 | `dayStartHour` / `dayEndHour` | Visible time-grid band (default 0..24). |
+| `collisionMode` | Overlap layout: `split` (default) / `cap` / `stack`. |
+| `maxColumns` | `cap` mode: columns before a `+N more` tile (min 2, default 3). |
 | `agendaDays` | How many days the agenda spans (default 30). |
 | `resourceField` / `resources` | Split the Day view into per-resource columns. |
 | `editable` | Enable drag-to-move and edge-resize. |
