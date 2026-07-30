@@ -33,6 +33,8 @@ export type DockContext = {
   dropTarget: () => { tabsId: string; zone: DockZone | null; centerOnly?: boolean } | null
   /** The live tab-reorder target, for the insertion-line indicator. */
   reorderTarget?: () => { tabsId: string; index: number } | null
+  /** Which side of each leaf the tab strip sits on. Default `'top'`. */
+  headerPosition?: () => 'top' | 'bottom'
 }
 
 export const DOCK_CONTEXT = Symbol('svgrid-dock')
