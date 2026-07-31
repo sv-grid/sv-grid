@@ -8,9 +8,26 @@ it shows what is missing and offers the button that fixes it - a new record, a
 cleared filter, a first import. It is theme-driven, and a `compact` mode fits it
 inside small panels and empty dropdowns.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvSkeleton](sv-skeleton.md) · [SvAlert](sv-alert.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvEmptyState` starter into your app:
+
+<div data-docs-add="add empty-state"></div>
+
+Or install the package and import it directly. `SvEmptyState` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvEmptyState } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -32,7 +49,7 @@ inside small panels and empty dropdowns.
 | `icon`        | `Snippet` | -       | Custom icon or illustration, overriding the default glyph.    |
 | `children`    | `Snippet` | -       | Action buttons or links rendered below the description.       |
 
-## Patterns
+## Examples
 
 ### No results vs no data
 

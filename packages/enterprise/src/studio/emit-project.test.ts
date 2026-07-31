@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, parseProject, setAuth, setDataLayer, setDeployTarget, setEntityDataSource, setHandlerBody, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
+import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
 import { emitStudioProject, emitStudioAppBundle, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
 import { UI_COMPONENT_REGISTRY } from './ui-components'
@@ -1084,6 +1084,43 @@ describe('Component blocks', () => {
     expect(() => compile(page, { filename: 'page.svelte', generate: 'client' })).not.toThrow()
   })
 
+  it('component props bound to data emit reactive expressions over allRows (aggregate / field / expr), get no code handle, and compile', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const flat = () => flattenBlocks(p.screens.find((s) => s.id === sid)!.blocks).filter((b) => b.config.kind === 'component')
+
+    p = addComponentBlock(p, sid, 'stat', { label: 'Total spend' })
+    const stat = flat()[0]!
+    p = setComponentBinding(p, sid, stat.id, 'value', { kind: 'aggregate', field: 'spend', reduce: 'sum' })
+
+    p = addComponentBlock(p, sid, 'badge', { _content: 'tier' })
+    const badge = flat()[1]!
+    p = setComponentBinding(p, sid, badge.id, '_content', { kind: 'field', field: 'tier' })
+
+    p = addComponentBlock(p, sid, 'progress', { value: 0, max: 100 })
+    const prog = flat()[2]!
+    p = setComponentBinding(p, sid, prog.id, 'value', { kind: 'expr', code: 'rows.filter((r) => r.spend > 100).length' })
+
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+
+    // aggregate -> reduceValue over allRows; imported once.
+    expect(page).toContain("value={(reduceValue(allRows, { measure: 'spend', reduce: 'sum' })).toLocaleString()}")
+    expect(page).toMatch(/import \{[^}]*reduceValue[^}]*\} from '@svgrid\/enterprise'/)
+    // field -> first row's value.
+    expect(page).toContain("{String(allRows[0]?.['tier'] ?? '')}")
+    // expr -> the user code wrapped with rows = allRows.
+    expect(page).toContain('value={((rows) => (rows.filter((r) => r.spend > 100).length))(allRows)}')
+    // the screen loads every row for the bindings.
+    expect(page).toContain('async function loadAll()')
+    // bound components are static reactive markup, not code handles.
+    expect(page).not.toContain('= handle(')
+
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
   it('every registry component codegens to a page that compiles, from the full UI kit', () => {
     let p = addFreestandingScreen(createProject([customers]), { title: 'Sink', route: 'sink' })
     const sid = p.screens.find((s) => s.title === 'Sink')!.id
@@ -1341,6 +1378,142 @@ describe('grid editing (a Grid property) -> codegen', () => {
     expect(page).toContain("initialColumnPinning={{ left: ['name'] }}")
     expect(page).toContain('columnVirtualization={false}')
   })
+
+  it('row grouping switches the grid to full-client mode + seeds setGroupBy + rolls up column aggregates', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    const cfg = p.screens[0]!.blocks[0]!.config as GridConfig
+    const columns = cfg.columns.map((c) => (c.field === 'mrr' ? { ...c, aggregate: 'sum' as const } : c))
+    p = updateBlock(p, sid, gid, { config: { grouping: ['tier'], columns } as Partial<import('./project').BlockConfig> })
+    const page = pageFor(p)
+    // Full-client data + grouping controls + seeded grouping.
+    expect(page).toContain('data={allRows}')
+    expect(page).toContain('loading={!allRowsReady}')
+    expect(page).toContain('groupable')
+    expect(page).toContain("a.setGroupBy(['tier'])")
+    // Per-column aggregate flows into the column override.
+    expect(page).toContain("'mrr': { aggregate: 'sum' }")
+    // Client-side sort/paginate, NOT the server controller wiring.
+    expect(page).not.toContain('externalSort')
+    expect(page).not.toContain('externalPagination')
+    expect(page).not.toContain('onSortingChange')
+    // Loads the whole dataset.
+    expect(page).toContain('async function loadAll()')
+    for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('per-column value formats compile to the grid format (CellFormatConfig)', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    const cfg = p.screens[0]!.blocks[0]!.config as GridConfig
+    const columns = cfg.columns.map((c) =>
+      c.field === 'mrr' ? { ...c, format: { type: 'currency', currency: 'EUR' } as const } : c,
+    )
+    p = updateBlock(p, sid, gid, { config: { columns } as Partial<import('./project').BlockConfig> })
+    const page = pageFor(p)
+    expect(page).toContain("'mrr': { format: { type: 'currency', currency: 'EUR' } }")
+    for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('percent + number formats emit decimals via Intl options', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    const cfg = p.screens[0]!.blocks[0]!.config as GridConfig
+    const columns = cfg.columns.map((c) =>
+      c.field === 'mrr' ? { ...c, format: { type: 'percent', decimals: 1, valueIsPercentPoints: true } as const } : c,
+    )
+    p = updateBlock(p, sid, gid, { config: { columns } as Partial<import('./project').BlockConfig> })
+    expect(pageFor(p)).toContain("format: { type: 'percent', valueIsPercentPoints: true, options: { minimumFractionDigits: 1, maximumFractionDigits: 1 } }")
+  })
+
+  it('rich cell renderers emit per-column cell snippets + imports (badge / progress / link) and compile', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    const cfg = p.screens[0]!.blocks[0]!.config as GridConfig
+    const columns = cfg.columns.map((c) =>
+      c.field === 'tier' ? { ...c, cellType: { kind: 'badge' } as const }
+      : c.field === 'mrr' ? { ...c, cellType: { kind: 'progress', max: 500 } as const }
+      : c.field === 'name' ? { ...c, cellType: { kind: 'link', as: 'email' } as const }
+      : c,
+    )
+    p = updateBlock(p, sid, gid, { config: { columns } as Partial<import('./project').BlockConfig> })
+    const page = pageFor(p)
+    // Imports pulled in for the renderers.
+    expect(page).toMatch(/import \{[^}]*renderSnippet[^}]*\} from '@svgrid\/grid'/)
+    expect(page).toMatch(/import \{[^}]*SvBadge[^}]*\} from '@svgrid\/grid'/)
+    expect(page).toMatch(/import \{[^}]*SvProgress[^}]*\} from '@svgrid\/grid'/)
+    // Cell refs + snippets.
+    expect(page).toContain('cell: (ctx: CellContext<Customers>) => renderSnippet(cellRender_')
+    expect(page).toContain('<SvBadge variant={stBadgeVariant(value)}')
+    expect(page).toContain('max={500}')
+    expect(page).toContain("href={'mailto:' + String(value ?? '')}")
+    // The shared badge-intent helper is emitted once.
+    expect(page.match(/function stBadgeVariant\(/g)?.length).toBe(1)
+    for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('an export toolbar captures the grid api + wires CSV / JSON / copy buttons, and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    p = updateBlock(p, sid, gid, { config: { export: { csv: true, json: true, copy: true } } as Partial<import('./project').BlockConfig> })
+    const page = pageFor(p)
+    expect(page).toMatch(/import \{[^}]*type SvGridApi[^}]*\} from '@svgrid\/grid'/)
+    expect(page).toContain('let gridApi_' + gid.replace(/-/g, '_') + ' = $state<SvGridApi<any, any> | null>(null)')
+    expect(page).toContain('<div class="st-grid-toolbar">')
+    expect(page).toContain('.exportCsv({ filename: \'customers\' })')
+    expect(page).toContain('.exportJson({ filename: \'customers\' })')
+    expect(page).toContain('.copyToClipboard()')
+    for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('no export config emits no toolbar', () => {
+    expect(pageFor(createProject([customers]))).not.toContain('st-grid-toolbar')
+  })
+
+  it('tree data renders a client hierarchy: visible-row walk + tree cell on the label column, no flat sort/paginate', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    p = updateBlock(p, sid, gid, { config: { treeData: { parentField: 'tier', labelField: 'name' } } as Partial<import('./project').BlockConfig> })
+    const page = pageFor(p)
+    // Full-client tree state + derivation.
+    expect(page).toContain('let treeExpanded_' + gid.replace(/-/g, '_'))
+    expect(page).toContain('function treeBuild_' + gid.replace(/-/g, '_'))
+    expect(page).toContain('data={tree_' + gid.replace(/-/g, '_') + '.visible}')
+    expect(page).toContain('loading={!allRowsReady}')
+    // Tree cell on the label column; other columns untouched.
+    expect(page).toContain('renderSnippet(treeCell_' + gid.replace(/-/g, '_'))
+    expect(page).toContain('{#snippet treeCell_' + gid.replace(/-/g, '_'))
+    expect(page).toContain('async function loadAll()')
+    // No flat sort / paginate / grouping that would break the hierarchy.
+    expect(page).not.toContain('externalSort')
+    expect(page).not.toContain('showPagination')
+    expect(page).not.toContain('groupable')
+    for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('an ungrouped grid stays server-driven (no groupable, keeps the controller view)', () => {
+    const page = pageFor(createProject([customers]))
+    expect(page).not.toContain('groupable')
+    expect(page).not.toContain('setGroupBy')
+    expect(page).toContain('data={view.rows}')
+    expect(page).toContain('externalSort')
+  })
 })
 
 describe('emitStudioAppBundle (full runnable app)', () => {
@@ -1553,8 +1726,10 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain("import * as handlers from './handlers'")
     // onLoad runs on mount and onDestroy on unmount, both with the full ctx (grid +
     // the settable data battery, since this freestanding page owns its rows).
-    expect(page.contents).toContain('handlers.onLoad({ grid: gridApi!, data: { get rows() { return rows }, setRows: (r) => (rows = r) }')
-    expect(page.contents).toContain('return () => handlers.onDestroy(')
+    expect(page.contents).toContain('const ctx = { grid: gridApi!, data: { get rows() { return rows }, setRows: (r) => (rows = r) }')
+    expect(page.contents).toContain('as PageContext')
+    expect(page.contents).toContain('handlers.onLoad(ctx)')
+    expect(page.contents).toContain('return () => handlers.onDestroy(ctx)')
     expect(page.contents).toContain('<SvGrid data={rows} columns={columns} features={features}')
     expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
   })
@@ -1585,7 +1760,8 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('<SvButton {...button1.props}>{button1.text}</SvButton>')
     expect(page.contents).toContain("import { handle } from '$lib/handles.svelte'")
     expect(page.contents).toContain('button1.fire(\'click\', e)')
-    expect(page.contents).toContain('handlers.onLoad({ grid: gridApi!, button1, data:')
+    expect(page.contents).toContain('const ctx = { grid: gridApi!, button1, data:')
+    expect(page.contents).toContain('handlers.onLoad(ctx)')
     // Typed handle: ButtonHandle intersects Handle with the button's real setters.
     expect(ctx.contents).toContain('button1: ButtonHandle')
     expect(ctx.contents).toContain('type ButtonHandle = Handle & {')
@@ -1597,6 +1773,62 @@ describe('code companion (design + your own code)', () => {
     expect(companion.contents).toContain('ctx.button1')
     expect(companion.contents).not.toContain('getElementById')
     expect(() => compile(page.contents, { filename: page.path, generate: 'client' })).not.toThrow()
+  })
+
+  it('Methods panel: visual action steps compile to the ctx handler body + component onclick', () => {
+    const { p: base, sid } = build()
+    const withGrid = setScreenRenderGrid(base, sid, true) // gives ctx.grid
+    let p = addComponentBlock(withGrid, sid, 'button', { _content: 'Export' })
+    const btn = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'component')!
+    // onLoad steps + the button's on-click steps.
+    p = setHandlerSteps(p, sid, 'onLoad', [
+      { type: 'gridSort', field: 'name', dir: 'desc' },
+      { type: 'setText', target: 'button1', value: 'Download' },
+    ])
+    p = setHandlerSteps(p, sid, clickSlot(btn.id), [
+      { type: 'gridExport', format: 'csv' },
+      { type: 'navigate', to: '/other' },
+      { type: 'alert', message: 'Done' },
+    ])
+    const files = emitStudioProject(p)
+    const handlers = files.find((f) => f.path === 'src/routes/report/handlers.ts')!.contents
+    // onLoad compiled from steps.
+    expect(handlers).toContain("ctx.grid.setSort('name', 'desc')")
+    expect(handlers).toContain("ctx.button1.text = 'Download'")
+    // The button's click steps become an onclick assignment inside onLoad.
+    expect(handlers).toContain('ctx.button1.onclick = async () => {')
+    expect(handlers).toContain('await ctx.grid.exportCsv()')
+    expect(handlers).toContain("ctx.goto('/other')")
+    expect(handlers).toContain("alert('Done')")
+    // The page runs it + compiles.
+    const page = files.find((f) => f.path === 'src/routes/report/+page.svelte')!
+    expect(page.contents).toContain('handlers.onLoad(ctx)')
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('Methods: stepsToCode drops the visual steps into the raw code editor (take over)', () => {
+    const { p: base, sid } = build()
+    let p = setHandlerSteps(base, sid, 'onLoad', [{ type: 'alert', message: 'hi' }, { type: 'navigate', to: '/x' }])
+    p = stepsToCode(p, sid, 'onLoad')
+    const screen = p.screens.find((s) => s.id === sid)!
+    expect(screen.handlerSteps?.onLoad).toBeUndefined()        // steps cleared
+    expect(screen.handlerBodies?.onLoad).toBe("alert('hi')\nctx.goto('/x')") // compiled to raw body
+  })
+
+  it('Methods: a hand-written onLoad body MERGES with component on-click wiring (neither replaces the other)', () => {
+    const { p: base, sid } = build()
+    const withGrid = setScreenRenderGrid(base, sid, true)
+    let p = addComponentBlock(withGrid, sid, 'button', { _content: 'Go' })
+    const btn = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'component')!
+    // Hand-written onLoad code AND a button with on-click steps.
+    p = setHandlerBody(p, sid, 'onLoad', "console.log('mounted')")
+    p = setHandlerSteps(p, sid, clickSlot(btn.id), [{ type: 'navigate', to: '/next' }])
+    const handlers = emitStudioProject(p).find((f) => f.path === 'src/routes/report/handlers.ts')!.contents
+    expect(handlers).toContain("console.log('mounted')")          // the hand-written body survives
+    expect(handlers).toContain('ctx.button1.onclick = async () => {') // + the onclick wiring is added
+    expect(handlers).toContain("ctx.goto('/next')")
   })
 
   it('handlersSource from the designer is emitted verbatim (advanced override)', () => {
@@ -1628,8 +1860,9 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('let gridApi = $state<SvGridApi<any, any> | null>(null)')
     expect(page.contents).toContain('onApiReady={(a) => (gridApi = a)}')
     // Full ctx on mount + cleanup on unmount; the grid exposes reload(), not setRows.
-    expect(page.contents).toContain('onMount(() => { handlers.onLoad({ grid: gridApi!, data: { get rows() { return view.rows }, reload: () => controller.refresh() }, goto, params: Object.fromEntries($page.url.searchParams) })')
-    expect(page.contents).toContain('return () => handlers.onDestroy(')
+    expect(page.contents).toContain('const ctx = { grid: gridApi!, data: { get rows() { return view.rows }, reload: () => controller.refresh() }, goto, params: Object.fromEntries($page.url.searchParams) } as unknown as PageContext')
+    expect(page.contents).toContain('handlers.onLoad(ctx)')
+    expect(page.contents).toContain('return () => handlers.onDestroy(ctx)')
     // The grid api is typed to the entity's row (Customers), not any.
     expect(ctx.contents).toContain('grid: SvGridApi<any, Customers>')
     expect(ctx.contents).toContain("import type { Customers } from '$lib/schemas'")

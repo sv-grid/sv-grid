@@ -8,9 +8,26 @@ opens on pointer-enter and on keyboard focus, hides on leave, blur, or Escape,
 and wires itself to the trigger via `aria-describedby` with `role="tooltip"`. It
 reads its colors from the grid's `--sg-*` tokens, so it matches in light and dark.
 
-<div data-docs-demo="288-overlays" data-height="440"></div>
+Related: [SvPopover](sv-popover.md) · [SvButton](sv-button.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTooltip` starter into your app:
+
+<div data-docs-add="add tooltip"></div>
+
+Or install the package and import it directly. `SvTooltip` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTooltip } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="288-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -32,7 +49,7 @@ reads its colors from the grid's `--sg-*` tokens, so it matches in light and dar
 | `disabled`  | `boolean`            | `false` | Never show the tooltip while set.                    |
 | `children`  | `Snippet`            | -       | The element the tooltip describes.                   |
 
-## Patterns
+## Examples
 
 ### Icon-only buttons
 

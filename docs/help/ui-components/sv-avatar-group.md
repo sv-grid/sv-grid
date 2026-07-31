@@ -8,9 +8,26 @@ overlapping stack, capping the count with `max` and rolling the rest into a
 "+N" pill. Each entry is a subset of [SvAvatar](sv-avatar.md) props, so the same
 initials-and-color fallback applies to every face.
 
-<div data-docs-demo="340-command-palette" data-height="420"></div>
+Related: [SvAvatar](sv-avatar.md) · [SvChip](sv-chip.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAvatarGroup` starter into your app:
+
+<div data-docs-add="add avatar-group"></div>
+
+Or install the package and import it directly. `SvAvatarGroup` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAvatarGroup } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="340-command-palette" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -48,7 +65,7 @@ type AvatarProps = {
 
 The overlap and the "+N" pill size scale automatically with `size`.
 
-## Patterns
+## Examples
 
 ### Assignees on a card
 

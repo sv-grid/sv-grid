@@ -10,9 +10,26 @@ by their `group` heading, and each row can be a custom `itemTemplate`. Turn on
 of options while scroll and type-ahead stay instant. Colors come from the grid's
 `--sg-*` tokens, so it matches the grid and the rest of the kit in light and dark.
 
-<div data-docs-demo="312-listbox" data-height="420"></div>
+Related: [SvDropDownList](sv-drop-down-list.md) · [SvMultiSelect](sv-multi-select.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvListBox` starter into your app:
+
+<div data-docs-add="add list-box"></div>
+
+Or install the package and import it directly. `SvListBox` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvListBox } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="312-listbox" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -62,7 +79,7 @@ type ListOption = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Multi-select with a summary
 

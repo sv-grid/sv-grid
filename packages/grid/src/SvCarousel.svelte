@@ -13,6 +13,7 @@
    */
   import type { Snippet } from 'svelte'
   import { type EditorDir } from './editor-contract'
+  import { createCarousel } from './createCarousel.svelte'
 
   type Props = {
     count: number
@@ -41,28 +42,20 @@
     dir,
   }: Props = $props()
 
-  const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
-  const rtl = $derived(resolvedDir === 'rtl')
-
-  function go(i: number) {
-    if (count === 0) return
-    current = loop ? (i + count) % count : Math.max(0, Math.min(i, count - 1))
-  }
-  const next = () => go(current + 1)
-  const prev = () => go(current - 1)
-
-  // Autoplay, paused while hovered/focused, or stopped via the persistent
-  // play/pause toggle (WCAG 2.2.2: auto-advancing content needs a way to stop
-  // it that doesn't depend on hover/focus).
-  let paused = $state(false)
-  let userPaused = $state(false)
-  $effect(() => {
-    if (!autoplay || paused || userPaused || count < 2) return
-    const t = setInterval(next, autoplay)
-    return () => clearInterval(t)
+  // Navigation, autoplay (pause on hover/focus + WCAG 2.2.2 stop toggle) and the
+  // rtl-aware arrow wiring live in the shared headless core; this component keeps
+  // only the visual track + swipe. See createCarousel.svelte.ts.
+  const car = createCarousel({
+    count: () => count,
+    current: () => current,
+    onChange: (i) => (current = i),
+    loop: () => loop,
+    autoplay: () => autoplay,
+    dir: () => (dir === 'ltr' || dir === 'rtl' ? dir : undefined),
   })
+  const rtl = $derived(car.rtl())
 
-  // Swipe.
+  // Swipe (a DOM gesture the renderer owns; delegates to the core's next/prev).
   let dragging = $state(false)
   let startX = 0
   let dx = $state(0)
@@ -75,26 +68,17 @@
   function up() {
     if (!dragging) return
     dragging = false
-    if (Math.abs(dx) > 50) (dx < 0 ? next() : prev())
+    if (Math.abs(dx) > 50) (dx < 0 ? car.next() : car.prev())
     dx = 0
   }
 </script>
 
-<div
-  class="sv-carousel"
-  role="group"
-  aria-roledescription="carousel"
-  aria-label={ariaLabel}
-  onpointerenter={() => (paused = true)}
-  onpointerleave={() => (paused = false)}
-  onfocusin={() => (paused = true)}
-  onfocusout={() => (paused = false)}
->
+<div class="sv-carousel" {...car.rootProps(ariaLabel)}>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sv-carousel__viewport" onpointerdown={down} onpointermove={move} onpointerup={up} onpointercancel={up}>
     <div class="sv-carousel__track" class:is-dragging={dragging} style:transform={`translateX(calc(${(rtl ? current : -current) * 100}% + ${dx}px))`}>
       {#each Array(count) as _, i (i)}
-        <div class="sv-carousel__slide" role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${count}`} aria-hidden={i !== current} inert={i !== current}>
+        <div class="sv-carousel__slide" {...car.slideProps(i)}>
           {@render slide?.(i)}
         </div>
       {/each}
@@ -102,26 +86,20 @@
   </div>
 
   {#if arrows && count > 1}
-    <button type="button" class="sv-carousel__arrow is-prev" aria-label={rtl ? 'Next slide' : 'Previous slide'} onclick={rtl ? next : prev} disabled={rtl ? (!loop && current === count - 1) : (!loop && current === 0)}>{rtl ? '›' : '‹'}</button>
-    <button type="button" class="sv-carousel__arrow is-next" aria-label={rtl ? 'Previous slide' : 'Next slide'} onclick={rtl ? prev : next} disabled={rtl ? (!loop && current === 0) : (!loop && current === count - 1)}>{rtl ? '‹' : '›'}</button>
+    <button type="button" class="sv-carousel__arrow is-prev" {...car.prevArrowProps()}>{rtl ? '›' : '‹'}</button>
+    <button type="button" class="sv-carousel__arrow is-next" {...car.nextArrowProps()}>{rtl ? '‹' : '›'}</button>
   {/if}
 
   {#if dots && count > 1}
     <div class="sv-carousel__dots">
       {#each Array(count) as _, i (i)}
-        <button type="button" class="sv-carousel__dot" class:is-active={i === current} aria-label={`Go to slide ${i + 1}`} aria-current={i === current ? 'true' : undefined} onclick={() => go(i)}></button>
+        <button type="button" class="sv-carousel__dot" class:is-active={car.isActive(i)} {...car.dotProps(i)}></button>
       {/each}
     </div>
   {/if}
 
   {#if autoplay > 0}
-    <button
-      type="button"
-      class="sv-carousel__playpause"
-      aria-label={userPaused ? 'Play autoplay' : 'Pause autoplay'}
-      aria-pressed={userPaused}
-      onclick={() => (userPaused = !userPaused)}
-    >{userPaused ? '▶' : '⏸'}</button>
+    <button type="button" class="sv-carousel__playpause" {...car.playPauseProps()}>{car.userPaused ? '▶' : '⏸'}</button>
   {/if}
 </div>
 

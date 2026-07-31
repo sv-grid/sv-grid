@@ -11,9 +11,26 @@ inline rename, drag-drop reorder, and merging lazily-loaded children. Turn on
 `virtual` to scale to tens of thousands of nodes, or `loadChildren` to fetch each
 folder's children on first expand. Colors come from the `--sg-*` tokens.
 
-<div data-docs-demo="321-tree" data-height="440"></div>
+Related: [SvNavPane](sv-nav-pane.md) · [SvTreeSelect](sv-tree-select.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTree` starter into your app:
+
+<div data-docs-add="add tree"></div>
+
+Or install the package and import it directly. `SvTree` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTree } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="321-tree" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -61,7 +78,7 @@ folder's children on first expand. Colors come from the `--sg-*` tokens.
 Set `lazy: true` on a node to show an expand arrow before its children exist and
 load them via `loadChildren`.
 
-## Patterns
+## Examples
 
 ### Cascading checkboxes
 

@@ -12,6 +12,7 @@
     type ColumnDef,
     type SchedulerEventMoveEvent,
     type SchedulerEventResizeEvent,
+    type SchedulerEventCommitEvent,
     type SchedulerCollisionMode,
   } from '@svgrid/grid'
   import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
@@ -62,54 +63,97 @@
     { field: 'end', header: 'End', editorType: 'datetime' },
   ]
 
+  let seq = 100
+  let view = $state<'calendar' | 'table'>('calendar')
+
   function onEventMove(e: SchedulerEventMoveEvent<Slot>) {
     e.row.start = iso(e.start)
     e.row.end = iso(e.end)
   }
   function onEventResize(e: SchedulerEventResizeEvent<Slot>) {
+    e.row.start = iso(e.start)
     e.row.end = iso(e.end)
+  }
+  function onEventCommit(e: SchedulerEventCommitEvent<Slot>) {
+    Object.assign(e.row, e.values)
+  }
+  function onEventAdd(start: Date, end: Date) {
+    rows = [...rows, { id: ++seq, title: 'New event', start: iso(start), end: iso(end), color: '#4f46e5' }]
+  }
+  function onEventDelete(row: Slot) {
+    rows = rows.filter((r) => r !== row)
   }
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
     <div class="text-sm text-slate-600 dark:text-slate-300">
-      <strong>Drag</strong> an event to move it, or its <strong>top / bottom
-      edge</strong> to resize. The 9-11am block collides 6-deep - switch the
-      <strong>collision mode</strong> to see how it is displayed.
+      <strong>Drag</strong> to move, or an <strong>edge</strong> to resize;
+      double-click a slot to add, click to edit / delete. The 9-11am block
+      collides 6-deep - switch the <strong>collision mode</strong> to see it.
     </div>
-    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
-      {#each MODES as m (m.id)}
+    <div class="flex items-center gap-2 shrink-0">
+      {#if view === 'calendar'}
+        <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
+          {#each MODES as m (m.id)}
+            <button
+              class="px-3 py-1 {mode === m.id ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+              onclick={() => (mode = m.id)}>{m.label}</button>
+          {/each}
+        </div>
+      {/if}
+      <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
         <button
-          class="px-3 py-1 {mode === m.id ? 'bg-slate-800 text-white' : 'bg-transparent'}"
-          onclick={() => (mode = m.id)}>{m.label}</button>
-      {/each}
+          class="px-3 py-1 {view === 'calendar' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          onclick={() => (view = 'calendar')}>Calendar</button>
+        <button
+          class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          onclick={() => (view = 'table')}>Table</button>
+      </div>
     </div>
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
-      data={rows}
-      columns={columns}
-      getRowId={(r) => String(r.id)}
-      containerHeight="100%"
-      scheduler={{
-        startField: 'start',
-        endField: 'end',
-        titleField: 'title',
-        colorField: 'color',
-        views: ['week', 'day'],
-        initialView: 'day',
-        weekStartsOn: 1,
-        slotMinutes: 15,
-        dayStartHour: 8,
-        dayEndHour: 18,
-        editable: true,
-        collisionMode: mode,
-        maxColumns: 3,
-        onEventMove,
-        onEventResize,
-      }}
-    />
+    {#if view === 'calendar'}
+      <SvGrid
+        data={rows}
+        columns={columns}
+        getRowId={(r) => String(r.id)}
+        containerHeight="100%"
+        scheduler={{
+          startField: 'start',
+          endField: 'end',
+          titleField: 'title',
+          colorField: 'color',
+          views: ['week', 'day'],
+          initialView: 'day',
+          weekStartsOn: 1,
+          slotMinutes: 15,
+          dayStartHour: 8,
+          dayEndHour: 18,
+          editable: true,
+          drawer: true,
+          collisionMode: mode,
+          maxColumns: 3,
+          onEventMove,
+          onEventResize,
+          onEventCommit,
+          onEventAdd,
+          onEventDelete,
+        }}
+      />
+    {:else}
+      <SvGrid
+        data={rows}
+        columns={columns}
+        getRowId={(r) => String(r.id)}
+        sortable
+        enableInlineEditing
+        showPagination={false}
+        rowHeight={36}
+        containerHeight="100%"
+        fitColumns
+      />
+    {/if}
   </div>
 </section>

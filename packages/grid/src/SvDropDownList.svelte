@@ -156,7 +156,7 @@
     {...ddl.triggerProps()}
     use:focusOpen
   >
-    <span class="sv-ddl__value" class:is-placeholder={!selected}>{selected?.label ?? placeholder}</span>
+    <span class="sv-ddl__value" class:is-placeholder={!selected}>{#if selected?.color}<span class="sv-ddl__swatch" style:background={selected.color}></span>{/if}{selected?.label ?? placeholder}</span>
     <svg class="sv-ddl__chev" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
   </button>
 </SvField>
@@ -167,7 +167,7 @@
       <div class="sv-ddl__sizer" aria-hidden="true" style:height={`${vr.totalHeight}px`}></div>
       {#each windowed as opt (opt.value)}
         <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-        <div class="sv-ddl__opt sv-ddl__opt--abs" style:height={`${rowHeight}px`} style:transform={`translateY(${opt.index * rowHeight}px)`} class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{opt.label}</div>
+        <div class="sv-ddl__opt sv-ddl__opt--abs" style:height={`${rowHeight}px`} style:transform={`translateY(${opt.index * rowHeight}px)`} class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
       {/each}
     {:else}
     {#each groupOptions(options) as g (g.group ?? '')}
@@ -176,13 +176,13 @@
           <div class="sv-ddl__group-label" aria-hidden="true">{g.group}</div>
           {#each g.options as opt (opt.value)}
             <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-            <div class="sv-ddl__opt" class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{opt.label}</div>
+            <div class="sv-ddl__opt" class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
           {/each}
         </div>
       {:else}
         {#each g.options as opt (opt.value)}
           <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-          <div class="sv-ddl__opt" class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{opt.label}</div>
+          <div class="sv-ddl__opt" class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
         {/each}
       {/if}
     {/each}
@@ -222,6 +222,13 @@
     border: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px; box-shadow: 0 16px 48px -12px rgba(15,23,42,0.35);
   }
   :global(.sv-ddl__opt) { box-sizing: border-box; display: flex; align-items: center; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  /* Color swatch shown before an option's label (option.color) - in both the
+     trigger value and the portalled panel options. */
+  :global(.sv-ddl__swatch) {
+    display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 3px;
+    margin-inline-end: 8px; vertical-align: middle;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 18%, transparent);
+  }
   /* Bottom resize grip: a row of dots ("····") the user drags to resize the
      panel. Sticky so it stays pinned at the panel's bottom while options scroll. */
   :global(.sv-ddl__panel.is-resizable) { padding-bottom: 0; }

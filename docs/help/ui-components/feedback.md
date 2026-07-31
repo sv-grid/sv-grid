@@ -4,6 +4,18 @@ Status, identity, loading and surface primitives for dashboards and detail
 panels. All are theme-token driven (light / dark + presets) and reduced-motion
 aware.
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add feedback"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvBadge
 
 A small status pill or count label, tinted from `--sg-*` tokens with soft

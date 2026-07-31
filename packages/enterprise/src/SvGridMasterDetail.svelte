@@ -83,7 +83,10 @@
 </SvGrid>
 
 <style>
-  .sv-md-detail {
+  /* `:global` because this div lives in the `renderDetailRow` snippet, which SvGrid
+     renders inside ITS OWN tree - a scoped rule can get pruned / not match there, which
+     left the detail region with no padding / background. Global keeps it reliable. */
+  :global(.sv-md-detail) {
     padding: 10px 12px;
     /* Fall back to the themed header surface (not a fixed light grey) so the
        detail region tracks light/dark - `--sg-bg-subtle` is unset by default,

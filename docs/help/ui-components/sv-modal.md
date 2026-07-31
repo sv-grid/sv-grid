@@ -9,9 +9,26 @@ primitives, so its behaviour matches [SvDrawer](sv-drawer.md) and nested overlay
 close top-first. It can optionally be dragged by its header and resized from the
 bottom-right handle. Controlled via a bindable `open`.
 
-<div data-docs-demo="288-overlays" data-height="440"></div>
+Related: [SvDrawer](sv-drawer.md) · [SvPopover](sv-popover.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvModal` starter into your app:
+
+<div data-docs-add="add modal"></div>
+
+Or install the package and import it directly. `SvModal` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvModal } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="288-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -43,7 +60,7 @@ bottom-right handle. Controlled via a bindable `open`.
 | `children`        | `Snippet`            | -       | Dialog body.                                         |
 | `footer`          | `Snippet`            | -       | Footer content, typically the action buttons.        |
 
-## Patterns
+## Examples
 
 ### Draggable and resizable
 

@@ -1,0 +1,1462 @@
+{
+  "$schema": "./registry.schema.json",
+  "groups": {
+    "date-time": {
+      "title": "Date & time family",
+      "items": [
+        "calendar",
+        "time-picker",
+        "date-time-picker",
+        "date-range-input"
+      ]
+    },
+    "buttons": {
+      "title": "Buttons & toggles",
+      "items": [
+        "button",
+        "button-group",
+        "repeat-button",
+        "toggle-button",
+        "switch-button",
+        "check-box",
+        "radio-group",
+        "rating"
+      ]
+    },
+    "inputs": {
+      "title": "Inputs",
+      "items": [
+        "text-input",
+        "text-area",
+        "number-input",
+        "password-input",
+        "masked-input",
+        "phone-input",
+        "color-input",
+        "otp-input",
+        "duration-input",
+        "tags-input"
+      ]
+    },
+    "selection": {
+      "title": "Selection",
+      "items": [
+        "list-box",
+        "drop-down-list",
+        "combo-box",
+        "auto-complete",
+        "multi-select",
+        "tree-select",
+        "grid-select",
+        "country-input"
+      ]
+    },
+    "range": {
+      "title": "Range & meters",
+      "items": [
+        "slider",
+        "gauge",
+        "progress",
+        "circular-progress",
+        "sparkline",
+        "stat"
+      ]
+    },
+    "overlays": {
+      "title": "Overlays & menus",
+      "items": [
+        "popover",
+        "tooltip",
+        "modal",
+        "drawer",
+        "toaster",
+        "context-menu",
+        "menu"
+      ]
+    },
+    "layout": {
+      "title": "Layout & composite",
+      "items": [
+        "tabs",
+        "accordion",
+        "splitter",
+        "dock-layout",
+        "dock-manager",
+        "card",
+        "divider",
+        "scroll-area",
+        "grid-chart",
+        "form",
+        "field",
+        "file-upload"
+      ]
+    },
+    "feedback": {
+      "title": "Feedback & display",
+      "items": [
+        "badge",
+        "skeleton",
+        "alert",
+        "empty-state",
+        "chip",
+        "timeline",
+        "avatar",
+        "avatar-group",
+        "carousel"
+      ]
+    },
+    "navigation": {
+      "title": "Navigation & rich",
+      "items": [
+        "breadcrumb",
+        "pagination",
+        "stepper",
+        "nav-pane",
+        "tree",
+        "command",
+        "tour",
+        "rich-text"
+      ]
+    }
+  },
+  "items": [
+    {
+      "id": "calendar",
+      "title": "Calendar",
+      "description": "Themeable month / year / decade calendar with every selection mode.",
+      "aliases": [
+        "svcalendar"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "calendar.svelte",
+          "from": "date-time/calendar.svelte"
+        }
+      ],
+      "group": "date-time"
+    },
+    {
+      "id": "time-picker",
+      "title": "Time picker",
+      "description": "Analog clock-dial time picker (12/24-hour, minute snapping).",
+      "aliases": [
+        "svtimepicker",
+        "timepicker"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "time-picker.svelte",
+          "from": "date-time/time-picker.svelte"
+        }
+      ],
+      "group": "date-time"
+    },
+    {
+      "id": "date-time-picker",
+      "title": "Date-time picker",
+      "description": "Masked text field with DATE / TIME dropdown tabs.",
+      "aliases": [
+        "svdatetimepicker",
+        "datetimepicker",
+        "datetime-picker"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "date-time-picker.svelte",
+          "from": "date-time/date-time-picker.svelte"
+        }
+      ],
+      "group": "date-time"
+    },
+    {
+      "id": "date-range-input",
+      "title": "Date-range input",
+      "description": "Compact start-to-end range field with preset shortcuts.",
+      "aliases": [
+        "svdaterangeinput",
+        "daterangeinput",
+        "date-range"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "date-range-input.svelte",
+          "from": "date-time/date-range-input.svelte"
+        }
+      ],
+      "group": "date-time"
+    },
+    {
+      "id": "button",
+      "title": "Button",
+      "description": "Themeable press primitive with variants, sizes, loading state, icon slot, and auto anchor rendering.",
+      "aliases": [
+        "svbutton",
+        "button"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "button.svelte",
+          "from": "buttons/button.svelte"
+        }
+      ],
+      "group": "buttons"
+    },
+    {
+      "id": "button-group",
+      "title": "Button group",
+      "description": "Segmented button bar - single-select switcher, multi-select toggle set, or plain action row.",
+      "aliases": [
+        "svbuttongroup",
+        "buttongroup"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "button-group.svelte",
+          "from": "buttons/button-group.svelte"
+        }
+      ],
+      "group": "buttons"
+    },
+    {
+      "id": "repeat-button",
+      "title": "Repeat button",
+      "description": "A button that keeps firing while held - after an initial delay, then at a steady interval.",
+      "aliases": [
+        "svrepeatbutton",
+        "repeatbutton"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "repeat-button.svelte",
+          "from": "buttons/repeat-button.svelte"
+        }
+      ],
+      "group": "buttons"
+    },
+    {
+      "id": "toggle-button",
+      "title": "Toggle button",
+      "description": "A button with a sticky pressed on/off state, exposed via aria-pressed.",
+      "aliases": [
+        "svtogglebutton",
+        "togglebutton"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "toggle-button.svelte",
+          "from": "buttons/toggle-button.svelte"
+        }
+      ],
+      "group": "buttons"
+    },
+    {
+      "id": "switch-button",
+      "title": "Switch button",
+      "description": "An on/off sliding switch with the ARIA switch role for settings that apply immediately.",
+      "aliases": [
+        "svswitchbutton",
+        "switchbutton"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "switch-button.svelte",
+          "from": "buttons/switch-button.svelte"
+        }
+      ],
+      "group": "buttons"
+    },
+    {
+      "id": "check-box",
+      "title": "Checkbox",
+      "description": "A themed checkbox with a true indeterminate state and an optional inline label.",
+      "aliases": [
+        "svcheckbox",
+        "checkbox"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "check-box.svelte",
+          "from": "buttons/check-box.svelte"
+        }
+      ],
+      "group": "buttons"
+    },
+    {
+      "id": "radio-group",
+      "title": "Radio group",
+      "description": "Accessible single-select radio group with roving tabindex and arrow-key navigation.",
+      "aliases": [
+        "svradiogroup",
+        "radiogroup"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "radio-group.svelte",
+          "from": "buttons/radio-group.svelte"
+        }
+      ],
+      "group": "buttons"
+    },
+    {
+      "id": "rating",
+      "title": "Rating",
+      "description": "Star rating control on the ARIA slider pattern with hover preview, keyboard, and half steps.",
+      "aliases": [
+        "svrating",
+        "rating"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "rating.svelte",
+          "from": "buttons/rating.svelte"
+        }
+      ],
+      "group": "buttons"
+    },
+    {
+      "id": "text-input",
+      "title": "Text input",
+      "description": "Single-line text field for text, email, url, tel and search, with clear button and validation chrome.",
+      "aliases": [
+        "svtextinput",
+        "textinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "text-input.svelte",
+          "from": "inputs/text-input.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "text-area",
+      "title": "Text area",
+      "description": "Multi-line text field with optional auto-grow and a character counter.",
+      "aliases": [
+        "svtextarea",
+        "textarea"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "text-area.svelte",
+          "from": "inputs/text-area.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "number-input",
+      "title": "Number input",
+      "description": "Numeric field with min/max/step, spinner buttons, thousands grouping, precision and prefix/suffix.",
+      "aliases": [
+        "svnumberinput",
+        "numberinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "number-input.svelte",
+          "from": "inputs/number-input.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "password-input",
+      "title": "Password input",
+      "description": "Password field with a reveal toggle and an optional 4-level strength meter.",
+      "aliases": [
+        "svpasswordinput",
+        "passwordinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "password-input.svelte",
+          "from": "inputs/password-input.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "masked-input",
+      "title": "Masked input",
+      "description": "Pattern-masked text input that formats as you type and reports masked and raw values.",
+      "aliases": [
+        "svmaskedinput",
+        "maskedinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "masked-input.svelte",
+          "from": "inputs/masked-input.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "phone-input",
+      "title": "Phone input",
+      "description": "Country dial-code selector plus a national number field that emits an E.164-style string.",
+      "aliases": [
+        "svphoneinput",
+        "phoneinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "phone-input.svelte",
+          "from": "inputs/phone-input.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "color-input",
+      "title": "Color input",
+      "description": "Color swatch that opens a popover with a hex field, native picker and preset palette.",
+      "aliases": [
+        "svcolorinput",
+        "colorinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "color-input.svelte",
+          "from": "inputs/color-input.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "otp-input",
+      "title": "OTP input",
+      "description": "Segmented one-time-code / PIN entry with auto-advance and paste distribution.",
+      "aliases": [
+        "svotpinput",
+        "otpinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "otp-input.svelte",
+          "from": "inputs/otp-input.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "duration-input",
+      "title": "Duration input",
+      "description": "Duration editor whose value is minutes but which accepts 1h 30m, 1:30 or 90.",
+      "aliases": [
+        "svdurationinput",
+        "durationinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "duration-input.svelte",
+          "from": "inputs/duration-input.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "tags-input",
+      "title": "Tags input",
+      "description": "Editable token / chips input over a string array with de-dupe and a max cap.",
+      "aliases": [
+        "svtagsinput",
+        "tagsinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "tags-input.svelte",
+          "from": "inputs/tags-input.svelte"
+        }
+      ],
+      "group": "inputs"
+    },
+    {
+      "id": "list-box",
+      "title": "List box",
+      "description": "Inline single/multi-select list, a WAI-ARIA listbox with type-ahead and optional windowing.",
+      "aliases": [
+        "svlistbox",
+        "listbox"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "list-box.svelte",
+          "from": "selection/list-box.svelte"
+        }
+      ],
+      "group": "selection"
+    },
+    {
+      "id": "drop-down-list",
+      "title": "Drop-down list",
+      "description": "Single-select dropdown with a portalled, auto-flipping option list and no typing.",
+      "aliases": [
+        "svdropdownlist",
+        "dropdownlist"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "drop-down-list.svelte",
+          "from": "selection/drop-down-list.svelte"
+        }
+      ],
+      "group": "selection"
+    },
+    {
+      "id": "combo-box",
+      "title": "Combo box",
+      "description": "Searchable single-select where the value must come from the list; local or remote filtering.",
+      "aliases": [
+        "svcombobox",
+        "combobox"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "combo-box.svelte",
+          "from": "selection/combo-box.svelte"
+        }
+      ],
+      "group": "selection"
+    },
+    {
+      "id": "auto-complete",
+      "title": "Auto complete",
+      "description": "Free-text input with a live-filtered suggestion list; any value allowed.",
+      "aliases": [
+        "svautocomplete",
+        "autocomplete"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "auto-complete.svelte",
+          "from": "selection/auto-complete.svelte"
+        }
+      ],
+      "group": "selection"
+    },
+    {
+      "id": "multi-select",
+      "title": "Multi select",
+      "description": "Multi-select dropdown with a chip trigger, search box, and remote options.",
+      "aliases": [
+        "svmultiselect",
+        "multiselect"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "multi-select.svelte",
+          "from": "selection/multi-select.svelte"
+        }
+      ],
+      "group": "selection"
+    },
+    {
+      "id": "tree-select",
+      "title": "Tree select",
+      "description": "Single-select dropdown over an indented, collapsible tree (cascader pattern).",
+      "aliases": [
+        "svtreeselect",
+        "treeselect"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "tree-select.svelte",
+          "from": "selection/tree-select.svelte"
+        }
+      ],
+      "group": "selection"
+    },
+    {
+      "id": "grid-select",
+      "title": "Grid select",
+      "description": "Grid-in-a-dropdown single-select that picks a row across multiple columns.",
+      "aliases": [
+        "svgridselect",
+        "gridselect"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "grid-select.svelte",
+          "from": "selection/grid-select.svelte"
+        }
+      ],
+      "group": "selection"
+    },
+    {
+      "id": "country-input",
+      "title": "Country input",
+      "description": "Searchable country picker with flag, dial code, and ISO alpha-2 output.",
+      "aliases": [
+        "svcountryinput",
+        "countryinput"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "country-input.svelte",
+          "from": "selection/country-input.svelte"
+        }
+      ],
+      "group": "selection"
+    },
+    {
+      "id": "slider",
+      "title": "Slider",
+      "description": "Single or dual-thumb range slider with steps, ticks, scale labels, and keyboard control.",
+      "aliases": [
+        "svslider"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "slider.svelte",
+          "from": "range/slider.svelte"
+        }
+      ],
+      "group": "range"
+    },
+    {
+      "id": "gauge",
+      "title": "Gauge",
+      "description": "Radial arc gauge for a single KPI with optional colored threshold bands.",
+      "aliases": [
+        "svgauge"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "gauge.svelte",
+          "from": "range/gauge.svelte"
+        }
+      ],
+      "group": "range"
+    },
+    {
+      "id": "progress",
+      "title": "Progress",
+      "description": "Linear determinate or indeterminate progress bar with intents, sizes, and label.",
+      "aliases": [
+        "svprogress"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "progress.svelte",
+          "from": "range/progress.svelte"
+        }
+      ],
+      "group": "range"
+    },
+    {
+      "id": "circular-progress",
+      "title": "Circular progress",
+      "description": "Ring progress indicator, determinate or spinning, with center label or content.",
+      "aliases": [
+        "svcircularprogress",
+        "circularprogress"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "circular-progress.svelte",
+          "from": "range/circular-progress.svelte"
+        }
+      ],
+      "group": "range"
+    },
+    {
+      "id": "sparkline",
+      "title": "Sparkline",
+      "description": "Tiny inline line, area, bar, or win/loss chart from a plain number array.",
+      "aliases": [
+        "svsparkline"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "sparkline.svelte",
+          "from": "range/sparkline.svelte"
+        }
+      ],
+      "group": "range"
+    },
+    {
+      "id": "stat",
+      "title": "Stat",
+      "description": "KPI metric card with a big value and auto-colored up/down delta trend.",
+      "aliases": [
+        "svstat"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "stat.svelte",
+          "from": "range/stat.svelte"
+        }
+      ],
+      "group": "range"
+    },
+    {
+      "id": "popover",
+      "title": "Popover",
+      "description": "A floating panel anchored to a trigger, portalled to escape overflow-hidden ancestors.",
+      "aliases": [
+        "svpopover"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "popover.svelte",
+          "from": "overlays/popover.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
+      "id": "tooltip",
+      "title": "Tooltip",
+      "description": "A small hover and focus tooltip anchored to its child, wired via aria-describedby.",
+      "aliases": [
+        "svtooltip"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "tooltip.svelte",
+          "from": "overlays/tooltip.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
+      "id": "modal",
+      "title": "Modal",
+      "description": "An accessible modal dialog with backdrop, focus trap, and Escape/backdrop close.",
+      "aliases": [
+        "svmodal"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "modal.svelte",
+          "from": "overlays/modal.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
+      "id": "drawer",
+      "title": "Drawer",
+      "description": "An edge-anchored side sheet (right/left/top/bottom) with the full dialog a11y contract.",
+      "aliases": [
+        "svdrawer"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "drawer.svelte",
+          "from": "overlays/drawer.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
+      "id": "toaster",
+      "title": "Toaster",
+      "description": "The host that renders the shared toast queue; call toast() from anywhere.",
+      "aliases": [
+        "svtoaster"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "toaster.svelte",
+          "from": "overlays/toaster.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
+      "id": "context-menu",
+      "title": "Context menu",
+      "description": "Wraps a region and opens a menu at the pointer on right-click or long-press.",
+      "aliases": [
+        "svcontextmenu",
+        "contextmenu"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "context-menu.svelte",
+          "from": "overlays/context-menu.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
+      "id": "menu",
+      "title": "Menu",
+      "description": "A trigger-opened dropdown menu with submenus, icons, shortcuts, and keyboard support.",
+      "aliases": [
+        "svmenu"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "menu.svelte",
+          "from": "overlays/menu.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
+      "id": "tabs",
+      "title": "Tabs",
+      "description": "WAI-ARIA tab strip with roving arrow-key navigation, four positions, and optional closable tabs.",
+      "aliases": [
+        "svtabs"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "tabs.svelte",
+          "from": "layout/tabs.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "accordion",
+      "title": "Accordion",
+      "description": "WAI-ARIA accordion of collapsible sections with single- or multiple-expand and roving header focus.",
+      "aliases": [
+        "svaccordion"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "accordion.svelte",
+          "from": "layout/accordion.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "splitter",
+      "title": "Splitter",
+      "description": "Two resizable panes split by a draggable WAI-ARIA separator, with pointer drag and arrow-key resize.",
+      "aliases": [
+        "svsplitter"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "splitter.svelte",
+          "from": "layout/splitter.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "dock-layout",
+      "title": "Dock layout",
+      "description": "Basic docking layout with nested resizable split groups, tabbed leaves, and drag-to-dock.",
+      "aliases": [
+        "svdocklayout",
+        "docklayout"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "dock-layout.svelte",
+          "from": "layout/dock-layout.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "dock-manager",
+      "title": "Dock manager",
+      "description": "Full docking manager with floating windows, tab reordering, and pinning / auto-hide.",
+      "aliases": [
+        "svdockmanager",
+        "dockmanager"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "dock-manager.svelte",
+          "from": "layout/dock-manager.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "card",
+      "title": "Card",
+      "description": "Themed surface container with an optional header, body, and footer.",
+      "aliases": [
+        "svcard"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "card.svelte",
+          "from": "layout/card.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "divider",
+      "title": "Divider",
+      "description": "Theme-driven separator line, horizontal or vertical, solid or dashed, with an optional label.",
+      "aliases": [
+        "svdivider"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "divider.svelte",
+          "from": "layout/divider.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "scroll-area",
+      "title": "Scroll area",
+      "description": "Scroll container with the kit's themed custom scrollbars and contained overscroll.",
+      "aliases": [
+        "svscrollarea",
+        "scrollarea"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "scroll-area.svelte",
+          "from": "layout/scroll-area.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "grid-chart",
+      "title": "Grid chart",
+      "description": "Inline-SVG chart that renders a ChartSpec with no external charting dependency, bound to grid data.",
+      "aliases": [
+        "svgridchart",
+        "gridchart"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "grid-chart.svelte",
+          "from": "layout/grid-chart.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "form",
+      "title": "Form",
+      "description": "Schema-driven form that renders the UI-kit controls from a FormField[] with validation and submit.",
+      "aliases": [
+        "svform"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "form.svelte",
+          "from": "layout/form.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "field",
+      "title": "Field",
+      "description": "Shared label / hint / error chrome that makes any control behave consistently.",
+      "aliases": [
+        "svfield"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "field.svelte",
+          "from": "layout/field.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "file-upload",
+      "title": "File upload",
+      "description": "Drag-and-drop file field with click-to-browse, accept / size / count validation, and a file list.",
+      "aliases": [
+        "svfileupload",
+        "fileupload"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "file-upload.svelte",
+          "from": "layout/file-upload.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "badge",
+      "title": "Badge",
+      "description": "Small status pill or count label tinted from the grid's semantic tokens.",
+      "aliases": [
+        "svbadge"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "badge.svelte",
+          "from": "feedback/badge.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "skeleton",
+      "title": "Skeleton",
+      "description": "Shimmering loading placeholder that reserves layout space while data loads.",
+      "aliases": [
+        "svskeleton"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "skeleton.svelte",
+          "from": "feedback/skeleton.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "alert",
+      "title": "Alert",
+      "description": "Inline contextual message with icon, title, dismiss, and trailing actions.",
+      "aliases": [
+        "svalert"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "alert.svelte",
+          "from": "feedback/alert.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "empty-state",
+      "title": "Empty state",
+      "description": "Centered placeholder for empty lists and no-results screens with an action slot.",
+      "aliases": [
+        "svemptystate",
+        "emptystate"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "empty-state.svelte",
+          "from": "feedback/empty-state.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "chip",
+      "title": "Chip",
+      "description": "Compact interactive pill for tags, filter tokens, and entities with remove.",
+      "aliases": [
+        "svchip"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "chip.svelte",
+          "from": "feedback/chip.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "timeline",
+      "title": "Timeline",
+      "description": "Vertical activity or history feed with a connecting rail and colored markers.",
+      "aliases": [
+        "svtimeline"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "timeline.svelte",
+          "from": "feedback/timeline.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "avatar",
+      "title": "Avatar",
+      "description": "User avatar with automatic initials-and-color fallback and presence status dot.",
+      "aliases": [
+        "svavatar"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "avatar.svelte",
+          "from": "feedback/avatar.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "avatar-group",
+      "title": "Avatar group",
+      "description": "Overlapping stacked avatars with a +N overflow pill for members and assignees.",
+      "aliases": [
+        "svavatargroup",
+        "avatargroup"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "avatar-group.svelte",
+          "from": "feedback/avatar-group.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "carousel",
+      "title": "Carousel",
+      "description": "Sliding slideshow with arrows, dots, autoplay that pauses on hover, and swipe.",
+      "aliases": [
+        "svcarousel"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "carousel.svelte",
+          "from": "feedback/carousel.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "breadcrumb",
+      "title": "Breadcrumb",
+      "description": "A navigation trail that shows where the current page sits in your app's hierarchy.",
+      "aliases": [
+        "svbreadcrumb"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "breadcrumb.svelte",
+          "from": "navigation/breadcrumb.svelte"
+        }
+      ],
+      "group": "navigation"
+    },
+    {
+      "id": "pagination",
+      "title": "Pagination",
+      "description": "A standalone pager: page numbers with ellipsis, prev/next, and optional first/last.",
+      "aliases": [
+        "svpagination"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "pagination.svelte",
+          "from": "navigation/pagination.svelte"
+        }
+      ],
+      "group": "navigation"
+    },
+    {
+      "id": "stepper",
+      "title": "Stepper",
+      "description": "A progress stepper for wizards and multi-step forms, horizontal or vertical.",
+      "aliases": [
+        "svstepper"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "stepper.svelte",
+          "from": "navigation/stepper.svelte"
+        }
+      ],
+      "group": "navigation"
+    },
+    {
+      "id": "nav-pane",
+      "title": "Nav pane",
+      "description": "An Outlook-style app-shell sidebar with collapsible sections, badges, and modules.",
+      "aliases": [
+        "svnavpane",
+        "navpane"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "nav-pane.svelte",
+          "from": "navigation/nav-pane.svelte"
+        }
+      ],
+      "group": "navigation"
+    },
+    {
+      "id": "tree",
+      "title": "Tree",
+      "description": "A WAI-ARIA tree view with expand/select, tri-state checkboxes, virtualization, and lazy load.",
+      "aliases": [
+        "svtree"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "tree.svelte",
+          "from": "navigation/tree.svelte"
+        }
+      ],
+      "group": "navigation"
+    },
+    {
+      "id": "command",
+      "title": "Command",
+      "description": "A Cmd+K command palette: fuzzy-searchable actions in a focus-trapped dialog.",
+      "aliases": [
+        "svcommand"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "command.svelte",
+          "from": "navigation/command.svelte"
+        }
+      ],
+      "group": "navigation"
+    },
+    {
+      "id": "tour",
+      "title": "Tour",
+      "description": "A guided product tour that spotlights targets and walks users through each step.",
+      "aliases": [
+        "svtour"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "tour.svelte",
+          "from": "navigation/tour.svelte"
+        }
+      ],
+      "group": "navigation"
+    },
+    {
+      "id": "rich-text",
+      "title": "Rich text",
+      "description": "A lightweight WYSIWYG editor with a formatting toolbar that emits HTML.",
+      "aliases": [
+        "svrichtext",
+        "richtext"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "rich-text.svelte",
+          "from": "navigation/rich-text.svelte"
+        }
+      ],
+      "group": "navigation"
+    }
+  ]
+}

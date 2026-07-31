@@ -11,9 +11,26 @@ light and dark. It renders a real `<button>` (or an `<a>` when given `href`),
 so keyboard focus, `Enter` / `Space` activation, and screen-reader semantics are
 the platform's, not a re-implementation.
 
-<div data-docs-demo="305-button" data-height="420"></div>
+Related: [SvButtonGroup](sv-button-group.md) · [SvToggleButton](sv-toggle-button.md) · [SvSwitchButton](sv-switch-button.md) · [SvRepeatButton](sv-repeat-button.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvButton` starter into your app:
+
+<div data-docs-add="add button"></div>
+
+Or install the package and import it directly. `SvButton` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvButton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="305-button" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -30,7 +47,7 @@ the platform's, not a re-implementation.
 
 | Prop        | Type                                                        | Default     | Description                                                        |
 | ----------- | ----------------------------------------------------------- | ----------- | ------------------------------------------------------------------ |
-| `variant`   | `primary` \| `secondary` \| `outline` \| `ghost` \| `danger` | `secondary` | Visual weight. `danger` uses the destructive accent.               |
+| `variant`   | `primary` \| `secondary` \| `outline` \| `ghost` \| `danger` | `primary`   | Visual weight. `danger` uses the destructive accent.               |
 | `size`      | `sm` \| `md` \| `lg`                                        | `md`        | Padding and font size. Shared with the rest of the kit.            |
 | `type`      | `button` \| `submit` \| `reset`                             | `button`    | Native button type. Use `submit` inside an [SvForm](sv-form.md).   |
 | `disabled`  | `boolean`                                                   | `false`     | Blocks clicks and dims the control.                                |
@@ -42,7 +59,7 @@ the platform's, not a re-implementation.
 | `icon`      | `Snippet`                                                   | -           | Leading icon slot, rendered before the label.                      |
 | `children`  | `Snippet`                                                   | -           | The button label.                                                  |
 
-## Patterns
+## Examples
 
 ### Icon buttons
 

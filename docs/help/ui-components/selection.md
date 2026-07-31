@@ -7,6 +7,18 @@ List and overlay pickers. The overlay controls portal their panel to `<body>`
 type ListOption = { value: string | number; label: string; disabled?: boolean; group?: string }
 ```
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add selection"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvMultiSelect
 
 A multi-select dropdown: a trigger showing the picked items as chips (collapsing

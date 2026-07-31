@@ -10,9 +10,26 @@ last item is the current page and is never interactive - it carries
 ellipsis so a deep path never overflows the bar. Every color comes from the
 grid's `--sg-*` tokens, so it matches your grid and forms in light and dark.
 
-<div data-docs-demo="332-app-navigation" data-height="440"></div>
+Related: [SvPagination](sv-pagination.md) · [SvStepper](sv-stepper.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvBreadcrumb` starter into your app:
+
+<div data-docs-add="add breadcrumb"></div>
+
+Or install the package and import it directly. `SvBreadcrumb` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvBreadcrumb } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="332-app-navigation" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40,7 +57,7 @@ Pass `href` for a real link, `onClick` for a router push, or neither for static
 text. `icon` is any string (emoji, char, or font-icon glyph) rendered before the
 label.
 
-## Patterns
+## Examples
 
 ### Router navigation without full page loads
 

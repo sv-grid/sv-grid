@@ -9,9 +9,26 @@ active, and upcoming steps so the user always knows where they are.
 the right default for a form you must not skip ahead in. It lays out horizontally
 or vertically and draws all color from the `--sg-*` tokens.
 
-<div data-docs-demo="332-app-navigation" data-height="440"></div>
+Related: [SvBreadcrumb](sv-breadcrumb.md) · [SvPagination](sv-pagination.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvStepper` starter into your app:
+
+<div data-docs-add="add stepper"></div>
+
+Or install the package and import it directly. `SvStepper` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvStepper } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="332-app-navigation" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40,7 +57,7 @@ or vertically and draws all color from the `--sg-*` tokens.
 `description` shows as a secondary line under the label; `optional` appends an
 "(optional)" tag.
 
-## Patterns
+## Examples
 
 ### Wizard navigation
 

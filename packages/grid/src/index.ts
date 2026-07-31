@@ -91,6 +91,7 @@ export {
   resolveEvents,
   eventsOnDay,
   layoutDayEvents,
+  monthWeekSegments,
   agendaGroups,
   rangeForView,
   daysForView,
@@ -101,11 +102,19 @@ export {
   type OverflowMarker,
   type DayLayout,
   type LayoutOptions,
+  type MonthSegment,
   type AgendaGroup,
 } from './scheduler-model'
 export { default as SvGridDropdown } from './SvGridDropdown.svelte'
 export { default as SvCalendar, type CalendarValue, type CalendarPreset, type CalendarAnimation } from './SvCalendar.svelte'
-export { matchesRecurrence, expandRecurrence, type RecurrenceRule, type RecurrenceFreq } from './recurrence'
+export {
+  matchesRecurrence,
+  expandRecurrence,
+  describeRecurrence,
+  type RecurrenceRule,
+  type RecurrenceFreq,
+  type RecurrenceLabels,
+} from './recurrence'
 export { default as SvTimePicker, type TimeValue } from './SvTimePicker.svelte'
 export { default as SvDateTimePicker, type DateTimeValue } from './SvDateTimePicker.svelte'
 export { default as SvDateRangeInput, type DateRangeValue } from './SvDateRangeInput.svelte'
@@ -140,6 +149,23 @@ export {
   type DismissableOptions,
 } from './a11y/dismissable'
 export { announce, type AnnounceOptions } from './a11y/live-region'
+// Dialog-overlay core (SvModal / SvDrawer): open -> focus-trap + scroll-lock +
+// Escape/backdrop dismissal -> restore, on the primitives above.
+export { createOverlay, type Overlay, type OverlayConfig, type DialogProps } from './createOverlay.svelte'
+// Tooltip core (SvTooltip): hover/focus open with a show delay, Escape-to-hide,
+// and aria-describedby / role=tooltip wiring. (Toasts are already headless: see
+// the toastStore / toast() exports below.)
+export { createTooltip, type Tooltip, type TooltipConfig, type TooltipAnchorProps, type TooltipProps } from './createTooltip.svelte'
+// Navigation cores: pager (SvPagination), wizard steps (SvStepper), slideshow
+// (SvCarousel). Pagination + stepper are pure/rune-free; carousel owns autoplay.
+export { createPagination, type Pagination, type PaginationConfig } from './createPagination'
+export { createStepper, type Stepper, type StepperConfig, type StepStatus } from './createStepper'
+export { createCarousel, type Carousel, type CarouselConfig } from './createCarousel.svelte'
+// Command palette core (SvCommand): fuzzy filter + roving + hotkey. Pair with
+// createOverlay for the focus-trap/scroll-lock/dismissal lifecycle.
+export { createCommand, type Command, type CommandConfig } from './createCommand.svelte'
+// Schema-driven form core (SvForm): values/errors/touched + validation + submit.
+export { createForm, type Form, type FormConfig } from './createForm.svelte'
 // UI kit - custom cell-editor registry (register any component as a grid editor)
 export {
   registerCellEditor,
@@ -168,6 +194,14 @@ export {
 // Selection family cores
 export { createCombobox, type Combobox, type ComboboxConfig, type ComboboxValue } from './createCombobox.svelte'
 export { createDropdownList, type DropdownList, type DropdownListConfig, type DropdownValue } from './createDropdownList.svelte'
+// Shared engine behind the anchored-panel selects (SvMultiSelect / SvTreeSelect /
+// SvGridSelect): open/close, positioning, dismissal, roving active index, ARIA.
+export { createPopoverSelect, type PopoverSelect, type PopoverSelectConfig } from './createPopoverSelect.svelte'
+// Menu family core (SvMenu / SvMenuList / SvContextMenu): roving focus, submenus,
+// keyboard. `MenuItem` also re-exported from SvMenuList for back-compat.
+export { createMenu, type Menu, type MenuConfig, type MenuItemProps } from './createMenu.svelte'
+// Pure roving-focus navigation math shared by the cores above.
+export { enabledIndices, wrapMove } from './list-nav'
 export { createAutocomplete, type Autocomplete, type AutocompleteConfig } from './createAutocomplete.svelte'
 export { createTagsInput, type TagsInput, type TagsInputConfig } from './createTagsInput.svelte'
 export { createCountryInput, type CountryInput, type CountryInputConfig } from './createCountryInput.svelte'

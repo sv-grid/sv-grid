@@ -56,6 +56,30 @@ describe('SvMenu', () => {
     } finally { destroy() }
   })
 
+  it('ArrowDown moves the roving tab stop and Enter activates via keyboard', () => {
+    let chosen: MenuItem | undefined
+    const { target, destroy } = mountMenu({ items, onSelect: (i: MenuItem) => (chosen = i) })
+    try {
+      target.querySelector<HTMLElement>('.trigger')!.click()
+      flushSync()
+      const btns = () => [...menu()!.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]
+      const cut = btns().find((b) => b.textContent?.includes('Cut'))!
+      // From nothing focused, ArrowDown lands on the first item, then the next.
+      cut.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+      flushSync()
+      cut.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+      flushSync()
+      const copy = btns().find((b) => b.textContent?.includes('Copy'))!
+      expect(copy.tabIndex).toBe(0)
+      expect(cut.tabIndex).toBe(-1)
+      // Enter on the focused item activates it and closes the menu.
+      copy.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      flushSync()
+      expect(chosen?.label).toBe('Copy')
+      expect(menu()).toBeNull()
+    } finally { destroy() }
+  })
+
   it('opens a submenu on pointer-enter of a parent item', () => {
     const { target, destroy } = mountMenu({ items })
     try {

@@ -10,9 +10,26 @@ kit it carries the shared editor contract (label, hint, validation, `dir`/RTL)
 through [SvField](inputs.md) and emits a hidden input for form submission when
 you give it a `name`.
 
-<div data-docs-demo="308-switch" data-height="420"></div>
+Related: [SvToggleButton](sv-toggle-button.md) · [SvCheckBox](sv-check-box.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSwitchButton` starter into your app:
+
+<div data-docs-add="add switch-button"></div>
+
+Or install the package and import it directly. `SvSwitchButton` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSwitchButton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="308-switch" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -47,7 +64,7 @@ you give it a `name`.
 | `ariaLabel` | `string`                     | -       | Accessible name when there is no visible `label`.           |
 | `id`        | `string`                     | auto    | Root id; label/hint/error ids derive from it.               |
 
-## Patterns
+## Examples
 
 ### Settings row
 

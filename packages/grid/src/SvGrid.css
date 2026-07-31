@@ -1334,6 +1334,22 @@ select.sv-grid-fr-editor {
   width: 100%;
   font-size: 0.8125rem;
 }
+/* The global "Filter all rows" search: a labelled input bar above the grid. Ships
+   styled so it never renders as a bare, unpositioned text label + input. */
+.sv-grid-global-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  color: var(--sg-muted, #64748b);
+}
+.sv-grid-global-filter input {
+  height: 30px;
+  min-width: 220px;
+  font-size: 0.8125rem;
+}
 .sv-grid-column-filter::placeholder,
 .sv-grid-filter-value::placeholder,
 .sv-grid-menu-search::placeholder,
@@ -2535,7 +2551,7 @@ select.sv-grid-fr-editor {
   text-align: left;
   border: 1px dashed var(--sg-border, #e4e7ec);
   border-radius: var(--sg-radius, 8px);
-  background: var(--sg-subtle, #fafafa);
+  background: color-mix(in srgb, var(--sg-fg, #1f2937) 5%, transparent);
   color: color-mix(in srgb, var(--sg-fg, #101828) 70%, transparent);
 }
 .sv-grid-scheduler-upsell strong { font-size: 0.95rem; }

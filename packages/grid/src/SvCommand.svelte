@@ -16,10 +16,8 @@
    */
   import type { CommandItem } from './ui-app.types'
   import { portalToBody, popIn } from './popover'
-  import { createFocusTrap } from './a11y/focus-trap'
-  import { lockScroll } from './a11y/scroll-lock'
-  import { createDismissableLayer } from './a11y/dismissable'
-  import { fuzzyScore } from './fuzzy'
+  import { createOverlay } from './createOverlay.svelte'
+  import { createCommand } from './createCommand.svelte'
 
   type Props = {
     open?: boolean
@@ -42,72 +40,29 @@
     hotkey = 'mod+k',
   }: Props = $props()
 
-  let query = $state('')
-  let active = $state(0)
   let panelEl = $state<HTMLDivElement | null>(null)
   let inputEl = $state<HTMLInputElement | null>(null)
 
-  const results = $derived.by(() => {
-    const q = query.trim()
-    const list = commands.filter((c) => !c.disabled)
-    if (!q) return list
-    return list
-      .map((c) => ({ c, s: fuzzyScore(`${c.label} ${c.keywords ?? ''} ${c.group ?? ''}`, q) }))
-      .filter((x) => x.s !== null)
-      .sort((a, b) => (b.s as number) - (a.s as number))
-      .map((x) => x.c)
-  })
-
   function close() { open = false; onClose?.() }
-  function run(cmd: CommandItem | undefined) {
-    if (!cmd || cmd.disabled) return
-    close()
-    onRun?.(cmd)
-    cmd.onRun?.()
-  }
-  function move(delta: number) {
-    const n = results.length
-    if (!n) return
-    active = (active + delta + n) % n
-    queueMicrotask(() =>
-      panelEl?.querySelector(`[data-idx="${active}"]`)?.scrollIntoView({ block: 'nearest' }),
-    )
-  }
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
-    else if (e.key === 'Enter') { e.preventDefault(); run(results[active]) }
-    // Escape + outside-click are owned by the dismissable layer.
-  }
 
-  // Reset active whenever the query changes.
-  $effect(() => { void query; active = 0 })
-
-  // Focus + scroll lock + Escape/outside dismissal while open.
-  $effect(() => {
-    if (!open || !panelEl) return
-    query = ''
-    active = 0
-    const trap = createFocusTrap(panelEl, { initialFocus: () => inputEl })
-    trap.activate()
-    const unlock = lockScroll()
-    const layer = createDismissableLayer({ element: () => panelEl, onDismiss: () => close() })
-    layer.activate()
-    return () => { layer.release(); unlock(); trap.release() }
+  // Fuzzy filter + roving + run + hotkey live in the command core; the overlay
+  // lifecycle (focus-trap into the input, scroll-lock, Escape/outside dismissal)
+  // is the shared dialog core.
+  const cmd = createCommand({
+    commands: () => commands,
+    open: () => open,
+    onRun,
+    onClose: close,
+    onToggleOpen: () => (open = !open),
+    hotkey: () => hotkey,
+    scrollActiveIntoView: (i) =>
+      queueMicrotask(() => panelEl?.querySelector(`[data-idx="${i}"]`)?.scrollIntoView({ block: 'nearest' })),
   })
-
-  // Global toggle hotkey.
-  $effect(() => {
-    if (!hotkey) return
-    const key = hotkey === 'mod+p' ? 'p' : 'k'
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === key) {
-        e.preventDefault()
-        open = !open
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+  const overlay = createOverlay({
+    open: () => open,
+    getDialog: () => panelEl,
+    onClose: close,
+    initialFocus: () => inputEl,
   })
 </script>
 
@@ -117,11 +72,8 @@
       bind:this={panelEl}
       class="sv-cmd"
       use:popIn={{}}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Command palette"
-      tabindex="-1"
-      onkeydown={onKeydown}
+      {...overlay.dialogProps({ label: 'Command palette' })}
+      onkeydown={cmd.onKeydown}
     >
       <div class="sv-cmd__search">
         <span class="sv-cmd__searchicon" aria-hidden="true">⌕</span>
@@ -129,29 +81,20 @@
           bind:this={inputEl}
           class="sv-cmd__input"
           type="text"
-          role="combobox"
-          aria-expanded="true"
-          aria-controls="sv-cmd-list"
-          aria-activedescendant={results[active] ? `sv-cmd-opt-${active}` : undefined}
+          aria-label="Command palette search"
           {placeholder}
-          value={query}
-          oninput={(e) => (query = e.currentTarget.value)}
+          {...cmd.inputProps()}
         />
       </div>
-      <ul class="sv-cmd__list" id="sv-cmd-list" role="listbox" aria-label="Commands">
-        {#each results as c, i (c.id)}
-          {#if !query.trim() && c.group && c.group !== results[i - 1]?.group}
+      <ul class="sv-cmd__list" aria-label="Commands" {...cmd.listProps()}>
+        {#each cmd.results as c, i (c.id)}
+          {#if !cmd.query.trim() && c.group && c.group !== cmd.results[i - 1]?.group}
             <li class="sv-cmd__group" role="presentation">{c.group}</li>
           {/if}
           <li
-            id={`sv-cmd-opt-${i}`}
-            data-idx={i}
             class="sv-cmd__opt"
-            class:is-active={i === active}
-            role="option"
-            aria-selected={i === active}
-            onpointermove={() => (active = i)}
-            onclick={() => run(c)}
+            class:is-active={cmd.isActive(i)}
+            {...cmd.optionProps(i)}
           >
             {#if c.icon}<span class="sv-cmd__icon" aria-hidden="true">{c.icon}</span>{/if}
             <span class="sv-cmd__label">{c.label}</span>

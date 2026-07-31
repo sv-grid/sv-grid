@@ -10,9 +10,26 @@ uploads, form completion, quota usage. Leave `value` off and set
 grid's `--sg-*` tokens, and every animation respects
 `prefers-reduced-motion`.
 
-<div data-docs-demo="330-progress" data-height="420"></div>
+Related: [SvCircularProgress](sv-circular-progress.md) · [SvSkeleton](sv-skeleton.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvProgress` starter into your app:
+
+<div data-docs-add="add progress"></div>
+
+Or install the package and import it directly. `SvProgress` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvProgress } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="330-progress" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39,7 +56,7 @@ grid's `--sg-*` tokens, and every animation respects
 | `striped`     | `boolean`                                     | `false`  | Animated diagonal candy-stripe overlay on the fill.          |
 | `ariaLabel`   | `string`                                      | -        | Accessible name for the progressbar.                         |
 
-## Patterns
+## Examples
 
 ### Upload with a buffer track
 

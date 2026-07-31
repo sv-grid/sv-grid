@@ -2,6 +2,18 @@
 
 Typed text controls. Each emits a clean value and themes from `--sg-*`.
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add inputs"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvTextInput
 
 The base single-line text editor on the shared editor contract (label / hint /

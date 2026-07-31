@@ -11,9 +11,26 @@ control, and remote `loadOptions` for server-backed search. Selections stay open
 until the user is done, and a `Done` button (plus `onCommit`) marks the batch as
 finished. Colors follow the grid's `--sg-*` tokens.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvListBox](sv-list-box.md) · [SvGridSelect](sv-grid-select.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvMultiSelect` starter into your app:
+
+<div data-docs-add="add multi-select"></div>
+
+Or install the package and import it directly. `SvMultiSelect` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvMultiSelect } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -67,7 +84,7 @@ type MultiSelectOption = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Two-way binding
 

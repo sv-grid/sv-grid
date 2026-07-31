@@ -10,9 +10,26 @@ switcher), `mode="multiple"` for a toggle set (a formatting toolbar), or
 from the headless `createButtonGroup` core, and it carries the shared editor
 contract (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
-<div data-docs-demo="284-button-group" data-height="420"></div>
+Related: [SvToggleButton](sv-toggle-button.md) · [SvRadioGroup](sv-radio-group.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvButtonGroup` starter into your app:
+
+<div data-docs-add="add button-group"></div>
+
+Or install the package and import it directly. `SvButtonGroup` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvButtonGroup } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="284-button-group" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -58,7 +75,7 @@ contract (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
 Helper type: `ButtonGroupItem = { value: string | number; label?: string; disabled?: boolean }`.
 
-## Patterns
+## Examples
 
 ### Single-select switcher
 

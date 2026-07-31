@@ -8,9 +8,26 @@ controlled - drive `checked` (and optionally `indeterminate`) from your state an
 update it in `onChange`. Its label is whatever you pass as children, and it emits
 a hidden input for form submission when you give it a `name`.
 
-<div data-docs-demo="309-checkbox" data-height="420"></div>
+Related: [SvRadioGroup](sv-radio-group.md) · [SvSwitchButton](sv-switch-button.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCheckBox` starter into your app:
+
+<div data-docs-add="add check-box"></div>
+
+Or install the package and import it directly. `SvCheckBox` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCheckBox } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="309-checkbox" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -43,7 +60,7 @@ a hidden input for form submission when you give it a `name`.
 | `id`            | `string`                     | auto    | Root id; hint/error ids derive from it.                         |
 | `children`      | `Snippet`                    | -       | The inline label next to the box.                              |
 
-## Patterns
+## Examples
 
 ### Tri-state select-all
 

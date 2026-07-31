@@ -1,5 +1,17 @@
 # Layout & composite
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add layout"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvTabs
 
 A WAI-ARIA tabs widget with roving tabindex and arrow-key navigation. The active
@@ -104,6 +116,45 @@ hover/focus) and swipe. Slides come from the `slide` snippet.
 Props: `count`, `slide` snippet, `current` (bindable), `autoplay` (ms; 0 = off),
 `loop`, `arrows`, `dots`.
 
+## SvDockLayout
+
+A tiled docking layout: nested resizable split groups and tabbed leaves with
+drag-to-dock. The whole layout is a plain, serializable `DockNode` tree you
+`bind`, and every gesture is a pure, immutable transform - so a workspace saves
+to JSON and restores exactly. The building block for IDE-style workspaces, BI
+dashboards, and trading desks.
+
+```svelte
+<div style="height: 480px">
+  <SvDockLayout bind:layout>
+    {#snippet pane(p)}<div>{p.title}</div>{/snippet}
+  </SvDockLayout>
+</div>
+```
+
+Build the tree with `dockGroup` / `dockTabs` / `dockPane`. Props: `layout`
+(bindable `DockNode`), `pane` snippet, `onLayoutChange`, `minSize`. Full guide:
+[SvDockLayout](./sv-dock-layout.md).
+
+## SvDockManager
+
+The full docking manager on top of SvDockLayout: adds floating / pop-out
+windows, tab reordering, and pinning / auto-hide edges. The whole workspace -
+tiled `main`, `floating` windows, and `autoHide` edges - is one serializable
+`DockManagerState` you `bind`, with an imperative API via `onReady`.
+
+```svelte
+<div style="height: 520px">
+  <SvDockManager bind:workspace onReady={(a) => (api = a)}>
+    {#snippet pane(p)}<div>{p.title}</div>{/snippet}
+  </SvDockManager>
+</div>
+```
+
+Props: `workspace` (bindable `DockManagerState`), `pane` snippet, `onChange`,
+`onEvent`, `onReady`, `reorderEnabled`, `headerPosition`, `keepAlive`. Full
+guide: [SvDockManager](./sv-dock-manager.md).
+
 ## Component guides
 
 Each component has its own full tutorial with props, keyboard behaviour and
@@ -112,6 +163,8 @@ recipes:
 - [SvTabs](./sv-tabs.md) - a WAI-ARIA tabs widget with panels.
 - [SvAccordion](./sv-accordion.md) - collapsible sections, single or multi-expand.
 - [SvSplitter](./sv-splitter.md) - two resizable panes with a draggable gutter.
+- [SvDockLayout](./sv-dock-layout.md) - tiled drag-to-dock splits and tabs.
+- [SvDockManager](./sv-dock-manager.md) - docking with floating windows, reorder and auto-hide.
 - [SvCard](./sv-card.md) - a themed surface with header, body and footer.
 - [SvDivider](./sv-divider.md) - a separator line with an optional label.
 - [SvScrollArea](./sv-scroll-area.md) - a scroll container with themed scrollbars.

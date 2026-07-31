@@ -8,9 +8,26 @@ static status marker, a chip can be clicked to select and dismissed to remove -
 perfect for tag inputs, active-filter rows, and "assigned to" pickers. It draws
 from the grid's `--sg-*` semantic tokens in both soft and solid fills.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvBadge](sv-badge.md) · [SvAvatar](sv-avatar.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvChip` starter into your app:
+
+<div data-docs-add="add chip"></div>
+
+Or install the package and import it directly. `SvChip` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvChip } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -37,7 +54,7 @@ from the grid's `--sg-*` semantic tokens in both soft and solid fills.
 | `children`  | `Snippet`                                                              | -         | The chip label.                                                |
 | `leading`   | `Snippet`                                                              | -         | Leading content such as an avatar or icon.                     |
 
-## Patterns
+## Examples
 
 ### Removable tags
 

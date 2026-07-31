@@ -10,9 +10,26 @@ and back, tracks progress ("2 / 4"), and can be skipped. Arrow keys navigate,
 Escape skips, and everything is portalled to `<body>`. Steps with no target render
 centered, handy for an intro or outro.
 
-<div data-docs-demo="342-carousel-tour" data-height="440"></div>
+Related: [SvCommand](sv-command.md) · [SvStepper](sv-stepper.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTour` starter into your app:
+
+<div data-docs-add="add tour"></div>
+
+Or install the package and import it directly. `SvTour` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTour } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="342-carousel-tour" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -42,7 +59,7 @@ centered, handy for an intro or outro.
 `target` is a CSS selector or the element itself; omit it for a centered,
 target-less step (an intro or outro). `content` is required.
 
-## Patterns
+## Examples
 
 ### Show the tour once
 

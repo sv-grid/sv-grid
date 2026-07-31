@@ -9,9 +9,26 @@ color comes from the grid's `--sg-*` tokens, so it matches the rest of the kit i
 light and dark. The keyboard behaviour, activation mode, and close handling live
 in a headless `createTabs` core; this component is one styled renderer over it.
 
-<div data-docs-demo="320-tabs" data-height="440"></div>
+Related: [SvAccordion](sv-accordion.md) · [SvSplitter](sv-splitter.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTabs` starter into your app:
+
+<div data-docs-add="add tabs"></div>
+
+Or install the package and import it directly. `SvTabs` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTabs } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="320-tabs" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -55,7 +72,7 @@ in a headless `createTabs` core; this component is one styled renderer over it.
 type TabItem = { id: string; label: string; disabled?: boolean; closable?: boolean }
 ```
 
-## Patterns
+## Examples
 
 ### Pill view switcher
 

@@ -9,9 +9,26 @@ the styled renderer over the headless `createTagsInput` core, so add / remove an
 keyboard handling live in one place. Its label / hint / error chrome comes from
 [SvField](sv-field.md).
 
-<div data-docs-demo="316-tags-input" data-height="420"></div>
+Related: [SvTextInput](sv-text-input.md) · [SvColorInput](sv-color-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTagsInput` starter into your app:
+
+<div data-docs-add="add tags-input"></div>
+
+Or install the package and import it directly. `SvTagsInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTagsInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="316-tags-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38,7 +55,7 @@ keyboard handling live in one place. Its label / hint / error chrome comes from
 
 `TagsMessages` is `{ add; remove }`.
 
-## Patterns
+## Examples
 
 ### Cap and de-duplicate
 

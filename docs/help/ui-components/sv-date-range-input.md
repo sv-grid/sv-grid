@@ -4,6 +4,28 @@ A compact start/end field that opens a two-month range calendar with one-click
 presets (Today, Last 7 days, This month, ...). Emits an inclusive `[start, end]`
 tuple or `null`.
 
+Related: [Date & time overview](date-time.md) · [SvCalendar](sv-calendar.md) ·
+[SvDateTimePicker](sv-date-time-picker.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDateRangeInput` starter into your app:
+
+<div data-docs-add="add date-range-input"></div>
+
+Or install the package and import it directly. `SvDateRangeInput` ships free in
+`@svgrid/grid` (no extra date library) and is **part of the grid's editor kit** -
+it carries the same editor contract (label, hint, validation, RTL) SvGrid uses for
+its cell editors, so it drops into a grid edit form as readily as into a page:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDateRangeInput } from '@svgrid/grid'
+```
+
+## Example
+
 `SvDateRangeInput` composes the existing headless range engine: the popover is
 just a `<SvCalendar selectionMode="range">`, so hover-preview, min/max,
 restricted / important dates and keyboard all come for free. It carries the
@@ -11,9 +33,7 @@ shared editor contract (label, hint, error validation, size, RTL, localizable
 `messages`) via `SvField`, exactly like the other field editors, and the popover
 portals to `<body>` so it is never clipped by a scrolling grid.
 
-<div data-docs-demo="283-daterange-input" data-height="460"></div>
-
-## Basic usage
+<div data-docs-demo="283-daterange-input" data-height="460" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -55,7 +75,7 @@ Its own props:
 - `DateRangeValue = [Date, Date] | null` - an inclusive start/end tuple.
 - `CalendarPreset = { label: string; value: Date | number | string | readonly [start, end] | (() => ...) }` - pass a function for "today"-relative shortcuts that resolve at click time.
 
-## Patterns
+## Examples
 
 ### Preset shortcuts
 

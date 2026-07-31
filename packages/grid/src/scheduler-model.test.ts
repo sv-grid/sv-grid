@@ -3,6 +3,7 @@ import {
   resolveEvents,
   eventsOnDay,
   layoutDayEvents,
+  monthWeekSegments,
   agendaGroups,
   rangeForView,
   daysForView,
@@ -72,6 +73,34 @@ describe('resolveEvents', () => {
     expect(out.every((e) => e.end.getTime() - e.start.getTime() === 15 * 60_000)).toBe(true)
     // Distinct instance keys.
     expect(new Set(out.map((e) => e.key)).size).toBe(4)
+  })
+
+  it('does not emit recurring occurrences before the event start date', () => {
+    // 2026-07-15 is a Wednesday; the rule matches Mon-Fri, but the event only
+    // begins on the 15th, so Mon 13 / Tue 14 must NOT appear.
+    const rows: Row[] = [
+      {
+        id: 'e',
+        title: 'Sync',
+        start: '2026-07-15T10:00',
+        end: '2026-07-15T10:30',
+        repeat: { freq: 'weekly', weekdays: [1, 2, 3, 4, 5] },
+      },
+    ]
+    const out = resolveEvents(rows, spec(), at(2026, 7, 13), at(2026, 7, 20))
+    expect(out.map((e) => e.start.getDate()).sort((a, b) => a - b)).toEqual([15, 16, 17])
+  })
+
+  it('carries a secondary color (left-strip accent) when the spec provides one', () => {
+    const rows: Row[] = [{ id: 'a', title: 'Shift', start: '2026-07-15T09:00', end: '2026-07-15T12:00' }]
+    const out = resolveEvents(
+      rows,
+      spec({ getColor: () => '#111', getSecondaryColor: () => '#f80' }),
+      at(2026, 7, 1),
+      at(2026, 8, 1),
+    )
+    expect(out[0]!.color).toBe('#111')
+    expect(out[0]!.color2).toBe('#f80')
   })
 
   it('sorts all-day before timed at the same start', () => {
@@ -198,6 +227,61 @@ describe('layoutDayEvents (stack)', () => {
     // Earliest column is widest; later ones are offset but still wide.
     expect(byCol[0]!.widthPct).toBe(100)
     expect(byCol[2]!.widthPct).toBe(72)
+  })
+})
+
+describe('monthWeekSegments (spanning bars)', () => {
+  const weekStart = at(2026, 7, 13) // Monday (Mon13..Sun19)
+  function segsFor(rows: Row[]) {
+    const evs = resolveEvents(rows, spec(), at(2026, 7, 1), at(2026, 8, 1))
+    return monthWeekSegments(evs, weekStart)
+  }
+
+  it('a single-day event is a 1-column segment in lane 0', () => {
+    const { segments, laneCount } = segsFor([{ id: 'a', title: 'a', start: '2026-07-14T10:00', end: '2026-07-14T11:00' }])
+    expect(segments).toHaveLength(1)
+    expect(segments[0]).toMatchObject({ startCol: 1, endCol: 1, lane: 0, continuesLeft: false, continuesRight: false })
+    expect(laneCount).toBe(1)
+  })
+
+  it('a multi-day event spans multiple columns as one segment', () => {
+    const { segments } = segsFor([{ id: 'a', title: 'a', start: '2026-07-14T09:00', end: '2026-07-16T17:00' }])
+    expect(segments).toHaveLength(1)
+    expect(segments[0]).toMatchObject({ startCol: 1, endCol: 3 })
+  })
+
+  it('an event crossing the week boundary is clipped + flagged continuesRight', () => {
+    const { segments } = segsFor([{ id: 'a', title: 'a', start: '2026-07-18T20:00', end: '2026-07-20T08:00' }])
+    expect(segments).toHaveLength(1)
+    expect(segments[0]).toMatchObject({ startCol: 5, endCol: 6, continuesRight: true, continuesLeft: false })
+  })
+
+  it('an event starting before the week is clipped + flagged continuesLeft', () => {
+    const { segments } = segsFor([{ id: 'a', title: 'a', start: '2026-07-11T09:00', end: '2026-07-14T17:00' }])
+    expect(segments[0]).toMatchObject({ startCol: 0, endCol: 1, continuesLeft: true })
+  })
+
+  it('an end at exact midnight does not spill onto the next day', () => {
+    const { segments } = segsFor([{ id: 'a', title: 'a', start: '2026-07-14T09:00', end: '2026-07-15T00:00' }])
+    expect(segments[0]).toMatchObject({ startCol: 1, endCol: 1 })
+  })
+
+  it('overlapping events stack into separate lanes', () => {
+    const { segments, laneCount } = segsFor([
+      { id: 'a', title: 'a', start: '2026-07-14T09:00', end: '2026-07-16T17:00' },
+      { id: 'b', title: 'b', start: '2026-07-15T09:00', end: '2026-07-17T17:00' },
+    ])
+    expect(laneCount).toBe(2)
+    expect(new Set(segments.map((s) => s.lane))).toEqual(new Set([0, 1]))
+  })
+
+  it('non-overlapping events reuse lane 0', () => {
+    const { segments, laneCount } = segsFor([
+      { id: 'a', title: 'a', start: '2026-07-13T09:00', end: '2026-07-13T17:00' },
+      { id: 'b', title: 'b', start: '2026-07-16T09:00', end: '2026-07-16T17:00' },
+    ])
+    expect(laneCount).toBe(1)
+    expect(segments.every((s) => s.lane === 0)).toBe(true)
   })
 })
 

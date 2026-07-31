@@ -8,9 +8,26 @@ tokens with soft `color-mix` fills, so it reads well on light and dark without
 per-badge color choices. Pick a semantic `variant`, optionally show a leading
 `dot`, and you have a status marker that matches the rest of the kit.
 
-<div data-docs-demo="333-app-feedback" data-height="420"></div>
+Related: [SvChip](sv-chip.md) · [SvAlert](sv-alert.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvBadge` starter into your app:
+
+<div data-docs-add="add badge"></div>
+
+Or install the package and import it directly. `SvBadge` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvBadge } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="333-app-feedback" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -32,7 +49,7 @@ per-badge color choices. Pick a semantic `variant`, optionally show a leading
 | `dot`      | `boolean`                                                              | `false`   | Shows a leading status dot before the content.                   |
 | `children` | `Snippet`                                                              | -         | The badge label. Can be omitted for a dot-only marker.           |
 
-## Patterns
+## Examples
 
 ### Status pills
 

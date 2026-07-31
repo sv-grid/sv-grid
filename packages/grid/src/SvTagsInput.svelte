@@ -27,7 +27,7 @@
   }
 
   let {
-    value = [],
+    value = $bindable<string[]>([]),
     onChange,
     placeholder = 'Add tag…',
     disabled = false,
@@ -51,7 +51,8 @@
 
   const ti = createTagsInput({
     value: () => value,
-    onChange: (t) => onChange?.(t),
+    // Write `value` (so `bind:value` works) AND fire `onChange` (callback users).
+    onChange: (t) => { value = t; onChange?.(t) },
     disabled: () => disabled,
     unique: () => unique,
     max: () => max,

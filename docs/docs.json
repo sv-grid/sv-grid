@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-07-30T17:53:21.282Z",
+  "generatedAt": "2026-07-31T08:31:26.835Z",
   "counts": {
-    "pages": 346,
+    "pages": 348,
     "enterprise": 8,
     "withDemo": 229
   },
@@ -141,6 +141,7 @@
         "help/security.md",
         "help/server-side-data.md",
         "help/shadcn.md",
+        "help/skill.md",
         "help/spreadsheet-formulas.md",
         "help/state-maintenance.md",
         "help/status-bar.md",
@@ -417,6 +418,7 @@
       "pillar": "ui",
       "pages": [
         "help/ui-components/buttons.md",
+        "help/ui-components/cli.md",
         "help/ui-components/date-time.md",
         "help/ui-components/feedback.md",
         "help/ui-components/headless-editors.md",
@@ -1406,8 +1408,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2077,
-      "lastUpdated": "2026-07-29",
+      "words": 2090,
+      "lastUpdated": "2026-07-30",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -2893,8 +2895,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1404,
-      "lastUpdated": "2026-07-30",
+      "words": 2266,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "363-scheduler-intro",
         "364-scheduler-timegrid",
@@ -3107,6 +3109,18 @@
       ]
     },
     {
+      "path": "help/skill.md",
+      "url": "/help/skill",
+      "title": "Agent Skill",
+      "summary": "The SvGrid **Agent Skill** gives AI coding assistants project-aware context for writing correct SvGrid code. It is the always-on counterpart to the MCP server: the skill carries the API surface and house style so your assistant follows SvGrid's conventions without being told, and the MCP server supplies live, version-pinned lookups on demand.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 654,
+      "lastUpdated": "2026-07-30",
+      "demoIds": []
+    },
+    {
       "path": "help/spreadsheet-formulas.md",
       "url": "/help/spreadsheet-formulas",
       "title": "Spreadsheet formulas",
@@ -3224,20 +3238,32 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 335,
-      "lastUpdated": "2026-07-21",
+      "words": 381,
+      "lastUpdated": "2026-07-31",
+      "demoIds": []
+    },
+    {
+      "path": "help/ui-components/cli.md",
+      "url": "/help/ui-components/cli",
+      "title": "Add components with the CLI",
+      "summary": "@svgrid/ui drops a working SvGrid UI component into your app in one command:",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 457,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
       "path": "help/ui-components/date-time.md",
       "url": "/help/ui-components/date-time",
       "title": "Date & time",
-      "summary": "Three date/time controls built on a shared, framework-free date engine (date-core, date-format, date-selection, date-restrict). They are the rich-by-default editors for date, datetime and time grid columns, and work standalone. Parity reference: the Smart UI calendar / date-time / time pickers.",
+      "summary": "Four date/time controls built on a shared, framework-free date engine (date-core, date-format, date-selection, date-restrict). They are the rich-by-default editors for date, datetime and time grid columns, and work standalone.",
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 527,
-      "lastUpdated": "2026-07-21",
+      "words": 620,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -3248,8 +3274,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 632,
-      "lastUpdated": "2026-07-21",
+      "words": 678,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -3260,8 +3286,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 399,
-      "lastUpdated": "2026-07-17",
+      "words": 924,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -3284,8 +3310,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 806,
-      "lastUpdated": "2026-07-21",
+      "words": 837,
+      "lastUpdated": "2026-07-30",
       "demoIds": []
     },
     {
@@ -3296,20 +3322,20 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 683,
-      "lastUpdated": "2026-07-21",
+      "words": 729,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
       "path": "help/ui-components/layout.md",
       "url": "/help/ui-components/layout",
       "title": "Layout & composite",
-      "summary": "A WAI-ARIA tabs widget with roving tabindex and arrow-key navigation. The active panel is rendered through the panel snippet (receives the active id).",
+      "summary": "Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:",
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 540,
-      "lastUpdated": "2026-07-21",
+      "words": 767,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -3320,8 +3346,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 313,
-      "lastUpdated": "2026-07-21",
+      "words": 359,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -3332,20 +3358,20 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 570,
-      "lastUpdated": "2026-07-21",
+      "words": 616,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
       "path": "help/ui-components/range.md",
       "url": "/help/ui-components/range",
       "title": "Range & feedback",
-      "summary": "A single or dual-thumb range slider (ARIA slider) with steps, tick marks, keyboard and pointer drag; horizontal or vertical.",
+      "summary": "Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:",
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 244,
-      "lastUpdated": "2026-07-21",
+      "words": 290,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -3356,8 +3382,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 724,
-      "lastUpdated": "2026-07-21",
+      "words": 770,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -3368,8 +3394,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 588,
-      "lastUpdated": "2026-07-21",
+      "words": 641,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "285-accordion"
       ]
@@ -3382,8 +3408,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 596,
-      "lastUpdated": "2026-07-21",
+      "words": 649,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "339-status-display"
       ]
@@ -3396,8 +3422,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 741,
-      "lastUpdated": "2026-07-21",
+      "words": 792,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "315-autocomplete"
       ]
@@ -3410,8 +3436,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 563,
-      "lastUpdated": "2026-07-21",
+      "words": 616,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "340-command-palette"
       ]
@@ -3424,8 +3450,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 583,
-      "lastUpdated": "2026-07-21",
+      "words": 636,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "333-app-feedback"
       ]
@@ -3438,8 +3464,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 534,
-      "lastUpdated": "2026-07-21",
+      "words": 587,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "333-app-feedback"
       ]
@@ -3452,8 +3478,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 663,
-      "lastUpdated": "2026-07-21",
+      "words": 716,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "332-app-navigation"
       ]
@@ -3466,8 +3492,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 803,
-      "lastUpdated": "2026-07-21",
+      "words": 875,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "284-button-group"
       ]
@@ -3480,8 +3506,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 652,
-      "lastUpdated": "2026-07-21",
+      "words": 709,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "305-button"
       ]
@@ -3494,10 +3520,13 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1064,
-      "lastUpdated": "2026-07-21",
+      "words": 1387,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
-        "250-calendar"
+        "250-calendar",
+        "258-calendar-range",
+        "260-calendar-birthday",
+        "338-event-calendar"
       ]
     },
     {
@@ -3508,8 +3537,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 543,
-      "lastUpdated": "2026-07-21",
+      "words": 596,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "333-app-feedback"
       ]
@@ -3522,8 +3551,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 630,
-      "lastUpdated": "2026-07-21",
+      "words": 683,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "342-carousel-tour"
       ]
@@ -3536,8 +3565,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 654,
-      "lastUpdated": "2026-07-21",
+      "words": 707,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "309-checkbox"
       ]
@@ -3550,8 +3579,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 617,
-      "lastUpdated": "2026-07-21",
+      "words": 670,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "339-status-display"
       ]
@@ -3564,8 +3593,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 522,
-      "lastUpdated": "2026-07-21",
+      "words": 575,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "330-progress"
       ]
@@ -3578,8 +3607,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 488,
-      "lastUpdated": "2026-07-21",
+      "words": 558,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "304-color-input"
       ]
@@ -3592,8 +3621,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 799,
-      "lastUpdated": "2026-07-21",
+      "words": 850,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "313-combobox"
       ]
@@ -3606,8 +3635,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 748,
-      "lastUpdated": "2026-07-21",
+      "words": 801,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "340-command-palette"
       ]
@@ -3620,8 +3649,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 744,
-      "lastUpdated": "2026-07-21",
+      "words": 797,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "331-app-overlays"
       ]
@@ -3634,8 +3663,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 732,
-      "lastUpdated": "2026-07-21",
+      "words": 783,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "317-country-input"
       ]
@@ -3648,8 +3677,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 733,
-      "lastUpdated": "2026-07-21",
+      "words": 828,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "283-daterange-input"
       ]
@@ -3662,10 +3691,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 819,
-      "lastUpdated": "2026-07-21",
+      "words": 916,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
-        "252-datetimepicker"
+        "252-datetimepicker",
+        "259-datetimepicker-forms"
       ]
     },
     {
@@ -3676,8 +3706,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 437,
-      "lastUpdated": "2026-07-21",
+      "words": 488,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "339-status-display"
       ]
@@ -3690,8 +3720,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 700,
-      "lastUpdated": "2026-07-30",
+      "words": 845,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "361-dock-layout"
       ]
@@ -3704,8 +3734,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1379,
-      "lastUpdated": "2026-07-30",
+      "words": 1582,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "362-dock-manager"
       ]
@@ -3718,8 +3748,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 658,
-      "lastUpdated": "2026-07-21",
+      "words": 711,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "331-app-overlays"
       ]
@@ -3732,8 +3762,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1016,
-      "lastUpdated": "2026-07-29",
+      "words": 1067,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "314-dropdownlist"
       ]
@@ -3746,8 +3776,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 531,
-      "lastUpdated": "2026-07-21",
+      "words": 601,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "334-input-editors"
       ]
@@ -3760,8 +3790,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 529,
-      "lastUpdated": "2026-07-21",
+      "words": 582,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "339-status-display"
       ]
@@ -3774,8 +3804,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 597,
-      "lastUpdated": "2026-07-21",
+      "words": 647,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -3786,8 +3816,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 690,
-      "lastUpdated": "2026-07-21",
+      "words": 762,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "287-file-upload"
       ]
@@ -3800,8 +3830,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 756,
-      "lastUpdated": "2026-07-21",
+      "words": 809,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "322-form"
       ]
@@ -3814,8 +3844,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 701,
-      "lastUpdated": "2026-07-21",
+      "words": 754,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "319-gauge"
       ]
@@ -3828,8 +3858,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 782,
-      "lastUpdated": "2026-07-21",
+      "words": 833,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "147-integrated-charts"
       ]
@@ -3842,8 +3872,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 762,
-      "lastUpdated": "2026-07-21",
+      "words": 828,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -3854,8 +3884,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 984,
-      "lastUpdated": "2026-07-21",
+      "words": 1035,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "336-grid-select"
       ]
@@ -3868,8 +3898,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 865,
-      "lastUpdated": "2026-07-21",
+      "words": 916,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "312-listbox"
       ]
@@ -3882,8 +3912,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 542,
-      "lastUpdated": "2026-07-21",
+      "words": 612,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "302-masked-input"
       ]
@@ -3896,8 +3926,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 711,
-      "lastUpdated": "2026-07-21",
+      "words": 773,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "326-menu"
       ]
@@ -3910,8 +3940,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 741,
-      "lastUpdated": "2026-07-21",
+      "words": 794,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "326-menu"
       ]
@@ -3924,8 +3954,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 653,
-      "lastUpdated": "2026-07-21",
+      "words": 706,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "288-overlays"
       ]
@@ -3938,8 +3968,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 875,
-      "lastUpdated": "2026-07-21",
+      "words": 945,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "334-input-editors"
       ]
@@ -3952,8 +3982,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 824,
-      "lastUpdated": "2026-07-21",
+      "words": 877,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "327-navpane"
       ]
@@ -3966,8 +3996,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 582,
-      "lastUpdated": "2026-07-21",
+      "words": 652,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "300-number-input"
       ]
@@ -3980,8 +4010,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 539,
-      "lastUpdated": "2026-07-21",
+      "words": 609,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "334-input-editors"
       ]
@@ -3994,8 +4024,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 672,
-      "lastUpdated": "2026-07-21",
+      "words": 725,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "332-app-navigation"
       ]
@@ -4008,8 +4038,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 507,
-      "lastUpdated": "2026-07-21",
+      "words": 577,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "301-password-input"
       ]
@@ -4022,8 +4052,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 500,
-      "lastUpdated": "2026-07-21",
+      "words": 570,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "303-phone-input"
       ]
@@ -4036,8 +4066,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 618,
-      "lastUpdated": "2026-07-21",
+      "words": 671,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "288-overlays"
       ]
@@ -4050,8 +4080,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 538,
-      "lastUpdated": "2026-07-21",
+      "words": 591,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "330-progress"
       ]
@@ -4064,8 +4094,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 724,
-      "lastUpdated": "2026-07-21",
+      "words": 796,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "310-radio-group"
       ]
@@ -4078,8 +4108,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 698,
-      "lastUpdated": "2026-07-21",
+      "words": 770,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "311-rating"
       ]
@@ -4092,8 +4122,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 535,
-      "lastUpdated": "2026-07-21",
+      "words": 588,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "306-repeat-button"
       ]
@@ -4106,8 +4136,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 664,
-      "lastUpdated": "2026-07-21",
+      "words": 718,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "341-rich-text-editor"
       ]
@@ -4120,8 +4150,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 422,
-      "lastUpdated": "2026-07-21",
+      "words": 475,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "340-command-palette"
       ]
@@ -4134,8 +4164,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 535,
-      "lastUpdated": "2026-07-21",
+      "words": 588,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "333-app-feedback"
       ]
@@ -4148,8 +4178,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 769,
-      "lastUpdated": "2026-07-21",
+      "words": 841,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "318-slider"
       ]
@@ -4162,8 +4192,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 591,
-      "lastUpdated": "2026-07-21",
+      "words": 643,
+      "lastUpdated": "2026-07-31",
       "demoIds": []
     },
     {
@@ -4174,8 +4204,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 612,
-      "lastUpdated": "2026-07-21",
+      "words": 665,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "286-splitter"
       ]
@@ -4188,8 +4218,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 607,
-      "lastUpdated": "2026-07-21",
+      "words": 660,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "339-status-display"
       ]
@@ -4202,8 +4232,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 635,
-      "lastUpdated": "2026-07-21",
+      "words": 688,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "332-app-navigation"
       ]
@@ -4216,8 +4246,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 613,
-      "lastUpdated": "2026-07-21",
+      "words": 685,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "308-switch"
       ]
@@ -4230,8 +4260,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 759,
-      "lastUpdated": "2026-07-21",
+      "words": 812,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "320-tabs"
       ]
@@ -4244,8 +4274,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 514,
-      "lastUpdated": "2026-07-21",
+      "words": 584,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "316-tags-input"
       ]
@@ -4258,8 +4288,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 542,
-      "lastUpdated": "2026-07-21",
+      "words": 612,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "334-input-editors"
       ]
@@ -4272,8 +4302,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 593,
-      "lastUpdated": "2026-07-21",
+      "words": 663,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "334-input-editors"
       ]
@@ -4286,8 +4316,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 644,
-      "lastUpdated": "2026-07-21",
+      "words": 726,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "251-timepicker"
       ]
@@ -4300,8 +4330,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 614,
-      "lastUpdated": "2026-07-21",
+      "words": 667,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "339-status-display"
       ]
@@ -4314,8 +4344,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 634,
-      "lastUpdated": "2026-07-21",
+      "words": 687,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "331-app-overlays"
       ]
@@ -4328,8 +4358,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 558,
-      "lastUpdated": "2026-07-21",
+      "words": 630,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "307-toggle-button"
       ]
@@ -4342,8 +4372,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 488,
-      "lastUpdated": "2026-07-21",
+      "words": 541,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "288-overlays"
       ]
@@ -4356,8 +4386,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 718,
-      "lastUpdated": "2026-07-21",
+      "words": 771,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "342-carousel-tour"
       ]
@@ -4370,8 +4400,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 809,
-      "lastUpdated": "2026-07-21",
+      "words": 860,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "335-tree-select"
       ]
@@ -4384,8 +4414,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 946,
-      "lastUpdated": "2026-07-21",
+      "words": 999,
+      "lastUpdated": "2026-07-31",
       "demoIds": [
         "321-tree"
       ]

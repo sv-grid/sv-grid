@@ -3,6 +3,28 @@
 An analog clock-dial time picker - 12- or 24-hour, minute snapping, and an
 hour-to-minute auto-switch. Drag the hand or click a number.
 
+Related: [Date & time overview](date-time.md) ·
+[SvDateTimePicker](sv-date-time-picker.md) · [SvCalendar](sv-calendar.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTimePicker` starter into your app:
+
+<div data-docs-add="add time-picker"></div>
+
+Or install the package and import it directly. `SvTimePicker` ships free in
+`@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
+edit a `time` cell** - so it is both a standalone control and the grid's built-in
+time editor:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTimePicker } from '@svgrid/grid'
+```
+
+## Example
+
 `SvTimePicker` is a styled renderer over the headless `createTimePicker` core:
 the core owns the value math, dial geometry, keyboard and ARIA, while the
 component keeps the DOM-bound pointer capture and hit-testing. All visuals come
@@ -10,9 +32,7 @@ from the grid's `--sg-*` tokens, so every theme applies for free, in light and
 dark. It is the editor SvGrid mounts for a `time` cell, and it works standalone
 anywhere.
 
-<div data-docs-demo="251-timepicker" data-height="460"></div>
-
-## Basic usage
+<div data-docs-demo="251-timepicker" data-height="460" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -52,7 +72,7 @@ anywhere.
 - `TimeFormat = '12-hour' | '24-hour'`
 - `TimeSelection = 'hour' | 'minute'`
 
-## Patterns
+## Examples
 
 ### Quarter-hour scheduling
 

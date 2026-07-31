@@ -11,13 +11,30 @@ The entire layout is a plain, serializable `DockNode` tree you pass in and
 that produces a new tree, so you can persist a workspace to JSON, restore it, or
 drive it programmatically. The model is unit-tested independently of the DOM.
 
-<div data-docs-demo="361-dock-layout" data-height="520"></div>
+Related: [SvDockManager](sv-dock-manager.md) · [SvSplitter](sv-splitter.md) · [SvTabs](sv-tabs.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDockLayout` starter into your app:
+
+<div data-docs-add="add dock-layout"></div>
+
+Or install the package and import it directly. `SvDockLayout` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDockLayout } from '@svgrid/grid'
+```
+
+## Example
 
 Build a tree with the `dockGroup` / `dockTabs` / `dockPane` helpers, bind it, and
 provide a `pane` snippet that renders each pane's content by id. Give the layout
 a sized container - it fills its parent.
+
+<div data-docs-demo="361-dock-layout" data-height="520" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -109,7 +126,19 @@ const ids = allPaneIds(layout)                                       // every pa
 - Splitters expose `role="separator"` with `aria-orientation`.
 - Content areas are `role="tabpanel"`.
 
+## Headless
+
+`SvDockLayout` is headless-first like the rest of the kit, but in the
+data-model form: the `DockNode` tree **is** the framework-free core, and every
+gesture is a pure transform (`movePane`, `removePane`, `dockInto`,
+`dockSetActive`, `dockSetSizes`, `allPaneIds`) that returns a new tree, tested
+independently of the DOM. Own and `bind` the tree, drive it from the exported
+functions, and render your own chrome around the panes - the component only adds
+the styled tabs, splitters and drop zones. See
+[Headless editors](headless-editors.md#data-model-cores-dock).
+
 ## See also
 
+- [SvDockManager](sv-dock-manager.md) - docking with floating windows, reorder and auto-hide.
 - [SvSplitter](sv-splitter.md) - a single two-pane resizable split.
 - [SvTabs](sv-tabs.md) - a standalone tab strip without docking.

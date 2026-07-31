@@ -3,6 +3,18 @@
 Wayfinding components for admin apps and Studio-generated screens. Pure,
 keyboard-accessible, theme-token driven.
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add navigation"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvBreadcrumb
 
 A navigation trail. Each item is a link (`href`), a button (`onClick`), or plain

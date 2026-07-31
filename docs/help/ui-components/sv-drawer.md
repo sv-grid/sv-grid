@@ -10,9 +10,26 @@ focus, scroll-lock, and Escape/backdrop behaviour is identical to
 mobile bottom-sheet with a grab handle and swipe-down-to-close. Controlled via a
 bindable `open`.
 
-<div data-docs-demo="331-app-overlays" data-height="440"></div>
+Related: [SvModal](sv-modal.md) · [SvToaster](sv-toaster.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDrawer` starter into your app:
+
+<div data-docs-add="add drawer"></div>
+
+Or install the package and import it directly. `SvDrawer` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDrawer } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="331-app-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -45,7 +62,7 @@ bindable `open`.
 | `children`        | `Snippet`                              | -                   | Drawer body.                                               |
 | `footer`          | `Snippet`                              | -                   | Footer content, typically action buttons.                  |
 
-## Patterns
+## Examples
 
 ### Record editor
 

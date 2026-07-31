@@ -10,9 +10,26 @@ readouts in cards, buttons, and dashboards. Leave `value` off and set
 `indeterminate` for a continuous spinner. Colors come from the grid's `--sg-*`
 tokens, and the spin animation respects `prefers-reduced-motion`.
 
-<div data-docs-demo="330-progress" data-height="420"></div>
+Related: [SvProgress](sv-progress.md) · [SvGauge](sv-gauge.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCircularProgress` starter into your app:
+
+<div data-docs-add="add circular-progress"></div>
+
+Or install the package and import it directly. `SvCircularProgress` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCircularProgress } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="330-progress" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38,7 +55,7 @@ tokens, and the spin animation respects `prefers-reduced-motion`.
 | `ariaLabel`     | `string`                                      | -        | Accessible name for the progressbar.                       |
 | `children`      | `Snippet`                                     | -        | Custom center content; overrides `showLabel`.              |
 
-## Patterns
+## Examples
 
 ### Percentage ring
 

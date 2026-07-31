@@ -31,7 +31,7 @@
   }
 
   let {
-    value = null,
+    value = $bindable<number | null>(null),
     onChange,
     min = -Infinity,
     max = Infinity,
@@ -62,7 +62,8 @@
 
   const num = createNumberInput({
     value: () => value,
-    onChange: (v) => onChange?.(v),
+    // Write `value` (so `bind:value` works) AND fire `onChange` (callback users).
+    onChange: (v) => { value = v; onChange?.(v) },
     min: () => min,
     max: () => max,
     step: () => step,
@@ -86,7 +87,7 @@
   <div class="sv-num sv-num--{size}" class:is-disabled={disabled} class:is-invalid={invalid}>
     <input class="sv-num__input" {...num.inputProps()} />
     {#if clearable && value != null && !disabled && !readonly}
-      <button type="button" class="sv-num__clear" aria-label="Clear" tabindex="-1" onclick={() => onChange?.(null)}>
+      <button type="button" class="sv-num__clear" aria-label="Clear" tabindex="-1" onclick={() => { value = null; onChange?.(null) }}>
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
       </button>
     {/if}

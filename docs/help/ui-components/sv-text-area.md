@@ -9,9 +9,26 @@ and dark. As a grid cell editor its interaction differs from single-line fields:
 a bare `Enter` inserts a newline, `Ctrl` / `Cmd` + `Enter` commits, and `Escape`
 cancels.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvTextInput](sv-text-input.md) · [SvOtpInput](sv-otp-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTextArea` starter into your app:
+
+<div data-docs-add="add text-area"></div>
+
+Or install the package and import it directly. `SvTextArea` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTextArea } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -48,7 +65,7 @@ cancels.
 | `showCount`   | `boolean`                  | `false` | Show an "n / max" counter (needs `maxlength`).                |
 | `autofocus`   | `boolean`                  | `false` | Focus + select on mount (used as a cell editor).             |
 
-## Patterns
+## Examples
 
 ### Auto-grow with a counter
 

@@ -11,8 +11,8 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { ActionConfig, Block, ComponentConfig, EntityDataSource, FilterPanelConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
-import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, entityDataSource, flattenBlocks, serializeProject, seedUsers, ON_LOAD, ON_DESTROY } from './project.js'
+import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
+import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, ON_LOAD, ON_DESTROY } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -31,10 +31,32 @@ const accSectionId = (blockId: string, i: number) => `${blockId}-s${i}`
 /** A state var holding a master-detail block's child rows (loaded in full). */
 const mdChildVar = (childName: string) => `md_${childName.replace(/[^a-zA-Z0-9]/g, '_')}_rows`
 
+/** Compile a no-code `ColumnFormat` into the grid's `format` (CellFormatConfig) literal. */
+function columnFormatExpr(fmt: NonNullable<GridColumnConfig['format']>): string {
+  switch (fmt.type) {
+    case 'number': {
+      const d = fmt.decimals
+      return d != null ? `{ type: 'number', options: { minimumFractionDigits: ${d}, maximumFractionDigits: ${d} } }` : `{ type: 'number' }`
+    }
+    case 'currency':
+      return `{ type: 'currency', currency: ${jsStr(fmt.currency || 'USD')} }`
+    case 'percent': {
+      const parts = [`type: 'percent'`]
+      if (fmt.valueIsPercentPoints) parts.push('valueIsPercentPoints: true')
+      if (fmt.decimals != null) parts.push(`options: { minimumFractionDigits: ${fmt.decimals}, maximumFractionDigits: ${fmt.decimals} }`)
+      return `{ ${parts.join(', ')} }`
+    }
+    case 'date':
+    case 'datetime':
+      return fmt.pattern ? `{ type: '${fmt.type}', pattern: ${jsStr(fmt.pattern)} }` : `{ type: '${fmt.type}' }`
+  }
+}
+
 /** The visible grid columns: configured order, per-column header/width/align overrides, editability per mode. */
-function gridColumnsExpr(schemaVar: string, block: Block): string {
+function gridColumnsExpr(schemaVar: string, block: Block, typeName?: string): string {
   if (block.config.kind !== 'grid') return `schemaToColumns(${schemaVar})`
   const cfg = block.config
+  const idSafe = block.id.replace(/-/g, '_')
   const visible = cfg.columns.filter((c) => c.show)
   // Only inline editing keeps cells editable; form / read-only grids are not editable in place.
   const editablePart = cfg.editing === 'inline' ? '' : ', editable: false'
@@ -48,6 +70,13 @@ function gridColumnsExpr(schemaVar: string, block: Block): string {
       if (c.header) parts.push(`header: ${JSON.stringify(c.header)}`)
       if (c.width != null) parts.push(`width: ${c.width}`)
       if (c.align) parts.push(`align: '${c.align}'`)
+      // Roll this column up into the group summary row (only meaningful when grouped).
+      if (c.aggregate) parts.push(`aggregate: '${c.aggregate}'`)
+      // The tree-data label column renders the indented, expandable tree cell.
+      if (cfg.treeData && c.field === cfg.treeData.labelField && typeName) parts.push(`cell: (ctx: CellContext<${typeName}>) => renderSnippet(treeCell_${idSafe}, { value: ctx.getValue(), row: ctx.row.original })`)
+      // A rich cell renderer (badge / progress / link) wins over plain value formatting.
+      else if (c.cellType && typeName) parts.push(`cell: (ctx: CellContext<${typeName}>) => renderSnippet(${cellSnippetName(idSafe, c.field)}, { value: ctx.getValue() })`)
+      else if (c.format) parts.push(`format: ${columnFormatExpr(c.format)}`)
       return parts.length ? `'${c.field}': { ${parts.join(', ')} }` : null
     })
     .filter((x): x is string => !!x)
@@ -95,9 +124,16 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
   const rowsExpr = rowsVar ? `${rowsVar}.rows` : 'allRows'
   switch (cfg.kind) {
     case 'grid': {
-      const colVar = `columns_${block.id.replace(/-/g, '_')}`
+      const idSafe = block.id.replace(/-/g, '_')
+      const colVar = `columns_${idSafe}`
       const emptyMsg = `No ${(entity.label ?? entity.name).toLowerCase()} yet.`
-      const lines = [`data={view.rows}`, `columns={${colVar}}`, `loading={view.loading}`, `loadingOverlay`, `emptyMessage=${JSON.stringify(emptyMsg)}`, `fitColumns`]
+      // Grouped + tree grids both load the full dataset and render client-side (a grouped
+      // grid groups/sorts/paginates every row; a tree grid walks a self-referential parent
+      // field into an expand/collapse hierarchy). Ungrouped/flat grids stay server-driven.
+      const tree = gridHasTree(cfg)
+      const grouped = !!cfg.grouping?.length && !tree
+      const dataExpr = tree ? `tree_${idSafe}.visible` : grouped ? 'allRows' : 'view.rows'
+      const lines = [`data={${dataExpr}}`, `columns={${colVar}}`, `loading={${tree || grouped ? '!allRowsReady' : 'view.loading'}}`, `loadingOverlay`, `emptyMessage=${JSON.stringify(emptyMsg)}`, `fitColumns`]
       lines.push(`enableRowSummaries={${cfg.rowSummaries ? 'true' : 'false'}}`)
       if (cfg.striped) lines.push(`zebraRows`)
       if (cfg.cellSelection) lines.push(`enableCellSelection`)
@@ -109,12 +145,23 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
         lines.push(`initialColumnPinning={{ ${pins} }}`, `columnVirtualization={false}`)
       }
       if (cfg.selectable) lines.push(`showRowSelection`)
-      if (cfg.sortable) lines.push(`sortable`, `externalSort`, `onSortingChange={(s) => controller.setSort(s)}`)
-      if (cfg.filterable) lines.push(`filterable`, `showGlobalFilter`, `externalFilter`, `onFiltersChange={(f) => controller.setFilter({ global: f.global || undefined, columns: Object.fromEntries(f.columns.map((c) => [c.id, { operator: c.operator, value: c.value, valueTo: c.valueTo, selectedValues: c.selectedValues }])) })}`)
+      if (grouped) lines.push(`groupable`)
+      // A tree grid keeps parent-child adjacency: no flat sort/filter/paginate.
+      if (tree) {
+        // Sorting/filtering/paging would break the hierarchy; the tree renders every visible node.
+      } else if (grouped) {
+        // Client-side sort / filter / paginate over the full row set (no controller).
+        if (cfg.sortable) lines.push(`sortable`)
+        if (cfg.filterable) lines.push(`filterable`, `showGlobalFilter`)
+      } else {
+        if (cfg.sortable) lines.push(`sortable`, `externalSort`, `onSortingChange={(s) => controller.setSort(s)}`)
+        if (cfg.filterable) lines.push(`filterable`, `showGlobalFilter`, `externalFilter`, `onFiltersChange={(f) => controller.setFilter({ global: f.global || undefined, columns: Object.fromEntries(f.columns.map((c) => [c.id, { operator: c.operator, value: c.value, valueTo: c.valueTo, selectedValues: c.selectedValues }])) })}`)
+      }
       // RBAC: gate the edit affordances on the update permission (server also enforces).
       const canUpdate = ctx.accessEnabled ? `can($currentRole, 'update')` : 'true'
       if (cfg.editing === 'form') lines.push(ctx.accessEnabled ? `onRowDoubleClick={(e) => { if (${canUpdate}) editing = e.row }}` : `onRowDoubleClick={(e) => (editing = e.row)}`)
-      if (cfg.editing === 'inline') lines.push(`onCellValueChange={(e) => { ${ctx.accessEnabled ? `if (!${canUpdate}) return; ` : ''}const row = view.rows[e.rowIndex]; if (row) controller.updateRow(String((row as Record<string, unknown>)[idField]), { [e.columnId]: e.newValue } as Partial<${typeName}>) }}`)
+      // Inline editing writes through the controller by row id (not offered for tree grids).
+      if (cfg.editing === 'inline' && !tree) lines.push(`onCellValueChange={(e) => { ${ctx.accessEnabled ? `if (!${canUpdate}) return; ` : ''}const row = ${grouped ? 'allRows' : 'view.rows'}[e.rowIndex]; if (row) controller.updateRow(String((row as Record<string, unknown>)[idField]), { [e.columnId]: e.newValue } as Partial<${typeName}>) }}`)
       // Drill-through: a row click navigates to another screen, filtered by the
       // clicked value. Takes precedence over a record-panel selection.
       const linkRoute = cfg.rowLink && ctx.routeById?.get(cfg.rowLink.screen)
@@ -124,8 +171,13 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       } else if (ctx.hasRecord) {
         lines.push(`onRowClick={(e) => (selectedRecord = e.row)}`)
       }
-      if (cfg.paginated !== false) {
-        lines.push(`showPagination`, `externalPagination`, `rowCount={view.total}`, `pageIndex={view.pageIndex}`, `pageSize={view.pageSize}`, `onPaginationChange={({ pageIndex, pageSize }) => (pageSize !== view.pageSize ? controller.setPageSize(pageSize) : controller.setPage(pageIndex))}`)
+      if (cfg.paginated !== false && !tree) {
+        if (grouped) {
+          // Client pagination: the grid slices `data` itself.
+          lines.push(`showPagination`, `pageSize={${cfg.pageSize}}`)
+        } else {
+          lines.push(`showPagination`, `externalPagination`, `rowCount={view.total}`, `pageIndex={view.pageIndex}`, `pageSize={view.pageSize}`, `onPaginationChange={({ pageIndex, pageSize }) => (pageSize !== view.pageSize ? controller.setPageSize(pageSize) : controller.setPage(pageIndex))}`)
+        }
         if (cfg.paginationPosition && cfg.paginationPosition !== 'bottom') lines.push(`paginationPosition="${cfg.paginationPosition}"`)
         const opts = cfg.pageSizeOptions
         if (opts && opts.length && (opts.length !== 4 || opts.join(',') !== '10,25,50,100')) lines.push(`pageSizeOptions={[${opts.join(', ')}]}`)
@@ -133,11 +185,17 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       // No-code conditional formatting -> the grid's rule engine.
       const cf = conditionalFormatsExpr(cfg)
       if (cf) lines.push(`conditionalFormats={${cf}}`)
-      // Code-behind: bind the grid's api so onLoad can reach ctx.grid (SvGridApi).
-      if (ctx.captureApi) lines.push(`onApiReady={(a) => (${ctx.captureApi} = a)}`)
+      // Code-behind captures the api; grouped grids also seed the initial grouping.
+      const apiBody: string[] = []
+      if (ctx.captureApi) apiBody.push(`${ctx.captureApi} = a`)
+      if (grouped) apiBody.push(`a.setGroupBy([${cfg.grouping!.map((f) => jsStr(f)).join(', ')}])`)
+      if (apiBody.length === 1 && ctx.captureApi && !grouped) lines.push(`onApiReady={(a) => (${ctx.captureApi} = a)}`)
+      else if (apiBody.length) lines.push(`onApiReady={(a) => { ${apiBody.join('; ')} }}`)
       lines.push(`containerHeight={${block.height ?? 360}}`)
+      // No-code export toolbar - buttons wired to the grid's own export API.
+      const exportBar = gridHasExport(cfg) && ctx.captureApi ? exportToolbarMarkup(cfg.export!, ctx.captureApi, entity.name) : ''
       return `    <div ${span}${cls}>
-      <SvGrid
+${exportBar}      <SvGrid
         ${lines.join('\n        ')}
       />
     </div>`
@@ -349,7 +407,7 @@ ${panels}
     case 'lookup':
       return `    <div ${span}${cls}><!-- lookup (${cfg.field}): shown in the edit form --></div>`
     case 'component':
-      return componentBlockMarkup(block, cfg, ctx.handleNames?.get(block.id))
+      return componentBlockMarkup(block, cfg, ctx.handleNames?.get(block.id), rowsExpr)
     case 'form':
     default:
       return '' // the form is the edit modal, rendered after the screen grid
@@ -362,7 +420,21 @@ ${panels}
  *  entity-bound screen) and directly from `freestandingScreenPage`. String/select/
  *  color values go through `jsStr` so free-typed text (quotes, braces, HTML) can
  *  never break out of the attribute or the surrounding markup. */
-function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: string): string {
+/** The expression for a bound component prop, computed from the screen's rows.
+ *  `rowsExpr` is the rows variable (e.g. `allRows`); `numeric` picks number vs string. */
+function bindingExpr(binding: ComponentBinding, rowsExpr: string, numeric: boolean): string {
+  if (binding.kind === 'aggregate') {
+    const agg = `reduceValue(${rowsExpr}, { ${binding.field ? `measure: ${jsStr(binding.field)}, ` : ''}reduce: '${binding.reduce}' })`
+    return numeric ? agg : `(${agg}).toLocaleString()`
+  }
+  if (binding.kind === 'field') {
+    const raw = `${rowsExpr}[0]?.[${jsStr(binding.field)}]`
+    return numeric ? `Number(${raw} ?? 0)` : `String(${raw} ?? '')`
+  }
+  return `((rows) => (${binding.code}))(${rowsExpr})` // expr: `rows` is the alias
+}
+
+function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: string, rowsExpr?: string): string {
   const span = wrapperStyle(block)
   const cls = wrapperClass(block)
   const spec = uiComponentSpec(cfg.component)
@@ -376,8 +448,14 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: s
       <${spec.importName} {...${handleName}.props}${inner}
     </div>`
   }
+  // Data bindings: a bound prop's value is a reactive expression over the screen's
+  // rows (rowsExpr) instead of a literal. Only usable where rows exist (entity screen).
+  const bindings = cfg.bindings ?? {}
+  const bound = (key: string): ComponentBinding | undefined => (rowsExpr ? bindings[key] : undefined)
   const attrs: string[] = []
   for (const p of spec.props) {
+    const b = bound(p.key)
+    if (b) { attrs.push(`${p.key}={${bindingExpr(b, rowsExpr!, p.type === 'number')}}`); continue }
     const v = cfg.props[p.key] ?? p.default
     if (v == null || v === '') continue
     if (p.type === 'boolean') { if (v) attrs.push(p.key) }
@@ -387,7 +465,12 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: s
   // Baked-in array/object props (Timeline items, Sparkline data): emitted verbatim.
   for (const f of spec.fixed ?? []) attrs.push(`${f.key}={${f.expr}}`)
   const openTag = `<${spec.importName}${attrs.length ? ' ' + attrs.join(' ') : ''}`
-  const inner = spec.hasContent ? `>{${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}}</${spec.importName}>` : ' />'
+  const contentB = bound('_content')
+  const inner = !spec.hasContent
+    ? ' />'
+    : contentB
+      ? `>{${bindingExpr(contentB, rowsExpr!, false)}}</${spec.importName}>`
+      : `>{${jsStr(String(cfg.props._content ?? spec.contentDefault ?? ''))}}</${spec.importName}>`
   return `    <div id="${block.id}" ${span}${cls}>
       ${openTag}${inner}
     </div>`
@@ -562,6 +645,97 @@ function rowActionsSnippet(idSafe: string, typeName: string, entity: EntitySchem
 /** Sanitize a user action id into a valid JS identifier suffix. */
 const actionIdSafe = (id: string): string => id.replace(/[^a-zA-Z0-9_]/g, '_')
 
+/** A stable identifier suffix for a `<grid>_<field>` cell-renderer snippet. */
+const cellSnippetName = (idSafe: string, field: string): string => `cellRender_${idSafe}_${field.replace(/[^a-zA-Z0-9_]/g, '_')}`
+
+/** Does this grid want an export toolbar (any export affordance enabled)? */
+function gridHasExport(cfg: GridConfig): boolean {
+  const e = cfg.export
+  return !!e && (!!e.csv || !!e.json || !!e.copy)
+}
+
+/** Is this a tree-data grid (self-referential hierarchy)? */
+const gridHasTree = (cfg: GridConfig): boolean => !!cfg.treeData
+
+/** Script for a tree-data grid: expand state + a derived visible-row walk over `allRows`.
+ *  Builds the hierarchy from the self-referential parent field; a row whose parent is
+ *  empty / not in the set is a root. Nodes are expanded by default (toggle to collapse). */
+function treeGridScript(idSafe: string, typeName: string, cfg: GridConfig): string {
+  const parent = jsStr(cfg.treeData!.parentField)
+  const rec = `(r as Record<string, unknown>)`
+  return `let treeExpanded_${idSafe} = $state<Record<string, boolean>>({})
+  function toggleTree_${idSafe}(id: string) { treeExpanded_${idSafe} = { ...treeExpanded_${idSafe}, [id]: !(treeExpanded_${idSafe}[id] ?? true) } }
+  function treeBuild_${idSafe}() {
+    const rows = allRows
+    const idOf = (r: ${typeName}) => String(${rec}[idField] ?? '')
+    const parentOf = (r: ${typeName}) => { const v = ${rec}[${parent}]; return v == null || v === '' ? null : String(v) }
+    const present = new Set(rows.map(idOf))
+    const children = new Map<string | null, ${typeName}[]>()
+    for (const r of rows) { const p = parentOf(r); const key = p != null && present.has(p) ? p : null; const list = children.get(key) ?? []; list.push(r); children.set(key, list) }
+    const info = new Map<string, { depth: number; hasChildren: boolean; expanded: boolean }>()
+    const visible: ${typeName}[] = []
+    const walk = (parentId: string | null, depth: number) => {
+      for (const r of children.get(parentId) ?? []) {
+        const id = idOf(r); const hasChildren = (children.get(id)?.length ?? 0) > 0; const expanded = treeExpanded_${idSafe}[id] ?? true
+        info.set(id, { depth, hasChildren, expanded }); visible.push(r)
+        if (hasChildren && expanded) walk(id, depth + 1)
+      }
+    }
+    walk(null, 0)
+    return { info, visible }
+  }
+  const tree_${idSafe} = $derived(treeBuild_${idSafe}())`
+}
+
+/** The `{#snippet}` for a tree grid's label column: indent by depth + an expand toggle. */
+function treeCellSnippet(idSafe: string, typeName: string): string {
+  const idExpr = `String((row as Record<string, unknown>)[idField] ?? '')`
+  return `{#snippet treeCell_${idSafe}({ value, row }: { value: unknown; row: ${typeName} })}
+  {@const info = tree_${idSafe}.info.get(${idExpr})}
+  <span class="st-treecell" style="padding-left: {(info?.depth ?? 0) * 18}px;">
+    {#if info?.hasChildren}<button type="button" class="st-tree-toggle" aria-label="Toggle" aria-expanded={info.expanded} onclick={() => toggleTree_${idSafe}(${idExpr})}>{info.expanded ? '▾' : '▸'}</button>{:else}<span class="st-tree-spacer"></span>{/if}
+    <span>{String(value ?? '')}</span>
+  </span>
+{/snippet}`
+}
+
+/** The export toolbar markup for a grid: buttons wired to the captured grid API var. */
+function exportToolbarMarkup(e: NonNullable<GridConfig['export']>, apiVar: string, entityName: string): string {
+  const fn = jsStr(entityName)
+  const btns: string[] = []
+  if (e.csv) btns.push(`<button type="button" class="st-rowaction" onclick={() => void ${apiVar}?.exportCsv({ filename: ${fn} })}>Export CSV</button>`)
+  if (e.json) btns.push(`<button type="button" class="st-rowaction" onclick={() => void ${apiVar}?.exportJson({ filename: ${fn} })}>Export JSON</button>`)
+  if (e.copy) btns.push(`<button type="button" class="st-rowaction" onclick={() => void ${apiVar}?.copyToClipboard()}>Copy</button>`)
+  return `      <div class="st-grid-toolbar">\n        ${btns.join('\n        ')}\n      </div>\n`
+}
+
+/** Shared helper: map a status-ish value to a badge intent by common vocabulary.
+ *  Emitted once per page when any column uses the `badge` cell renderer. */
+const BADGE_VARIANT_HELPER = `  function stBadgeVariant(value: unknown): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {
+    const v = String(value ?? '').toLowerCase().trim()
+    if (['active', 'open', 'success', 'done', 'paid', 'approved', 'complete', 'completed', 'won', 'shipped', 'yes', 'true'].includes(v)) return 'success'
+    if (['pending', 'warning', 'in progress', 'processing', 'trial', 'review', 'on hold', 'medium'].includes(v)) return 'warning'
+    if (['closed', 'error', 'failed', 'cancelled', 'canceled', 'overdue', 'rejected', 'lost', 'blocked', 'inactive', 'no', 'false', 'high', 'urgent'].includes(v)) return 'danger'
+    if (['new', 'info', 'draft', 'low'].includes(v)) return 'info'
+    return 'neutral'
+  }`
+
+/** The `{#snippet}` body for one rich cell renderer (badge / progress / link). */
+function cellRendererSnippet(idSafe: string, field: string, cellType: NonNullable<GridColumnConfig['cellType']>): string {
+  const name = cellSnippetName(idSafe, field)
+  const head = `{#snippet ${name}({ value }: { value: unknown })}`
+  if (cellType.kind === 'badge') {
+    return `${head}\n  <SvBadge variant={stBadgeVariant(value)} size="sm" pill>{String(value ?? '')}</SvBadge>\n{/snippet}`
+  }
+  if (cellType.kind === 'progress') {
+    return `${head}\n  <div class="st-cell-progress"><SvProgress value={Number(value ?? 0)} max={${cellType.max ?? 100}} size="sm" color="accent" /></div>\n{/snippet}`
+  }
+  // link: mailto / tel / plain url (new tab)
+  const prefix = cellType.as === 'email' ? "'mailto:' + " : cellType.as === 'tel' ? "'tel:' + " : ''
+  const extra = cellType.as === 'url' || !cellType.as ? ' target="_blank" rel="noreferrer"' : ''
+  return `${head}\n  <a class="st-cell-link" href={${prefix}String(value ?? '')}${extra}>{String(value ?? '')}</a>\n{/snippet}`
+}
+
 /** `let <busy> = $state(false)` + `async function runAction_<id>(payload?)` for one
  *  custom action - POSTs to its generated stub route, tracks a busy flag the button
  *  binds to, surfaces a failure via `alert` (no toast/notification dependency
@@ -678,7 +852,7 @@ ${inner}
 /** Does this screen carry a user-owned code companion (design + your own code)?
  *  Any of: the code flag, a Grid to fill, or an already-written handler body. */
 function screenHasCode(screen: Screen): boolean {
-  return screen.code === true || screen.renderGrid === true || Object.keys(screen.handlerBodies ?? {}).length > 0
+  return screen.code === true || screen.renderGrid === true || Object.keys(screen.handlerBodies ?? {}).length > 0 || Object.keys(screen.handlerSteps ?? {}).length > 0
 }
 
 /** The first grid block's id (the one whose api we bind), if any. */
@@ -719,6 +893,9 @@ export function screenHandles(screen: Screen): BlockHandle[] {
   const components: BlockHandle[] = []
   for (const b of flattenBlocks(screen.blocks)) {
     if (b.config.kind !== 'component') continue
+    // Data-bound components render reactively from the rows (static markup), so they
+    // don't get a code handle - their value comes from the binding, not ctx.<name>.
+    if (componentHasBindings(b.config)) continue
     const name = componentHandleName(b.config)
     taken.add(name)
     components.push({ blockId: b.id, kind: 'component', name, tier: 'component', component: b.config.component })
@@ -1121,8 +1298,8 @@ function screenContextFile(screen: Screen, rowType: string): GeneratedFile {
     else if (h.tier === 'data') members.push(`  /** The ${h.kind} - feed it rows with ${h.name}.setData(rows); ${h.name}.rows reads them. */\n  ${h.name}: DataHandle<${rowType}>`)
     else members.push(`  ${h.name}: ${componentHandleTypeName(h.component!)}`)
   }
-  if (dataset === 'settable') members.push(`  /** This page owns its dataset - replace it with data.setRows(rows). */\n  data: { rows: ${rowType}[]; setRows: (rows: ${rowType}[]) => void }`)
-  else if (dataset === 'reload') members.push(`  /** The grid's current page of rows + a refresh(). */\n  data: { rows: ${rowType}[]; reload: () => void }`)
+  if (dataset === 'settable') members.push(`  /** This page owns its dataset - replace it with data.setRows(rows). */\n  data: { rows: readonly ${rowType}[]; setRows: (rows: ${rowType}[]) => void }`)
+  else if (dataset === 'reload') members.push(`  /** The grid's current page of rows + a refresh(). */\n  data: { rows: readonly ${rowType}[]; reload: () => void }`)
   members.push('  /** Navigate to another route. */\n  goto: (path: string) => void')
   members.push("  /** The page's URL query params. */\n  params: Record<string, string>")
 
@@ -1149,6 +1326,31 @@ ${members.join('\n')}
   }
 }
 
+/** Compile a screen's visual methods (handlerSteps) into onLoad / onDestroy bodies.
+ *  A component's click steps become `ctx.<name>.onclick = async () => { ... }` inside
+ *  onLoad. Returns undefined per slot when there are no steps for it. */
+function compiledMethodBodies(screen: Screen): { onLoadSteps?: string; clicks?: string; onDestroy?: string } {
+  const steps = screen.handlerSteps
+  if (!steps || !Object.keys(steps).length) return {}
+  const names = handleNameMap(screen)
+  const clicks: string[] = []
+  for (const b of flattenBlocks(screen.blocks)) {
+    if (b.config.kind !== 'component') continue
+    const clickSteps = steps[clickSlot(b.id)]
+    if (!clickSteps?.length) continue
+    const name = names.get(b.id)
+    if (!name) continue
+    clicks.push(`ctx.${name}.onclick = async () => {\n${indentBody(compileHandlerSteps(clickSteps))}\n}`)
+  }
+  return {
+    // Legacy visual onLoad steps (the code view now edits onLoad directly).
+    onLoadSteps: steps[ON_LOAD]?.length ? compileHandlerSteps(steps[ON_LOAD]) : undefined,
+    // Component on-click wiring - MERGED with any hand-written onLoad body, never replacing it.
+    clicks: clicks.length ? clicks.join('\n\n') : undefined,
+    onDestroy: steps[ON_DESTROY]?.length ? compileHandlerSteps(steps[ON_DESTROY]) : undefined,
+  }
+}
+
 /** The user-owned `handlers.ts` companion for a screen: design in Studio, write
  *  behavior here. Scaffolded once (userOwned) and never regenerated - the page
  *  imports it, never rewrites it. See HANDLERS-DESIGN.md. */
@@ -1165,9 +1367,14 @@ ${screenElementsManifest(screen)}`
   } else {
     // The two lifecycle slots: onLoad on mount, onDestroy on unmount. Each function
     // shell is generated; its body is the block the developer edits (per slot).
-    const loadRaw = screen.handlerBodies?.[ON_LOAD]?.trim()
+    // Visual "methods" (handlerSteps) COMPILE to the same body and win when present:
+    // onLoad = its own steps + `ctx.<name>.onclick = ...` for each component's click steps.
+    const compiled = compiledMethodBodies(screen)
+    // onLoad = the hand-written body (or legacy visual steps) THEN the component onclick wiring.
+    const loadPieces = [compiled.onLoadSteps ?? screen.handlerBodies?.[ON_LOAD]?.trim(), compiled.clicks].filter(Boolean)
+    const loadRaw = loadPieces.length ? loadPieces.join('\n\n') : undefined
     const loadInner = loadRaw ? indentBody(loadRaw) : '  // Runs when the page mounts. Reach blocks via ctx.<name>, feed data via ctx.data / ctx.<chart>.setData(rows).'
-    const destroyRaw = screen.handlerBodies?.[ON_DESTROY]?.trim()
+    const destroyRaw = compiled.onDestroy ?? screen.handlerBodies?.[ON_DESTROY]?.trim()
     const destroyInner = destroyRaw ? indentBody(destroyRaw) : '  // Runs when the page unmounts. Clean up timers, subscriptions, aborts.'
     body = `import type { PageContext } from './page-context'
 
@@ -1222,7 +1429,7 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
   const handleSpecs = [wiring?.usesHandle ? 'handle' : '', wiring?.usesDataHandle ? 'dataHandle' : ''].filter(Boolean)
   const handleImport = handleSpecs.length ? `import { ${handleSpecs.join(', ')} } from '$lib/handles.svelte'\n  ` : ''
 
-  const codeImport = hasCode ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  ` : ''
+  const codeImport = hasCode ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  import type { PageContext } from './page-context'\n  ` : ''
   const gotoImport = hasCode ? `import { goto } from '$app/navigation'\n  ` : ''
   const pageStoreImport = hasCode ? `import { page } from '$app/stores'\n  ` : ''
   const handleDecls = (wiring?.decls ?? []).join('\n  ')
@@ -1232,7 +1439,14 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
     ? `\n  let rows = $state<RowData[]>([])\n  let gridApi = $state<SvGridApi<any, any> | null>(null)\n  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })\n  const columns = $derived(rows.length ? Object.keys(rows[0]).map((field) => ({ field, header: field })) : [])`
     : ''
   const codeScript = hasCode
-    ? `\n  ${handleDecls ? handleDecls + '\n  ' : ''}${gridScript ? gridScript.trimStart() + '\n  ' : ''}onMount(() => { handlers.${ON_LOAD}(${wiring!.ctxLiteral}); return () => handlers.${ON_DESTROY}(${wiring!.ctxLiteral}) })`
+    ? `\n  ${handleDecls ? handleDecls + '\n  ' : ''}${gridScript ? gridScript.trimStart() + '\n  ' : ''}onMount(() => {
+    // ctx is internal plumbing wired from this screen's blocks; the typed surface your
+    // code uses lives in handlers.ts (PageContext). Component handles are runtime proxies,
+    // so the cast bridges their dynamic shape to the typed context.
+    const ctx = ${wiring!.ctxLiteral} as unknown as PageContext
+    handlers.${ON_LOAD}(ctx)
+    return () => handlers.${ON_DESTROY}(ctx)
+  })`
     : ''
   const gridMarkup = grid ? `  <SvGrid data={rows} columns={columns} features={features} onApiReady={(a) => (gridApi = a)} showRowNumbers />` : ''
 
@@ -1284,6 +1498,9 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // An "Edit" row-action needs the edit modal + state even on a non-form grid.
   const hasEditAction = gridConfigs.some((c) => c.rowActions?.some((a) => a.kind === 'edit'))
   const hasRowActions = gridConfigs.some((c) => (c.rowActions?.length ?? 0) > 0)
+  // Rich cell renderers (badge / progress / link) each emit a `cell` snippet.
+  const cellRenderKinds = new Set(gridConfigs.flatMap((c) => c.columns.filter((col) => col.show && col.cellType).map((col) => col.cellType!.kind)))
+  const hasCellRenderers = cellRenderKinds.size > 0
   const wantsForm = !!formGrid || hasForm || hasEditAction
   // An unpaginated grid loads everything (one big page); else its configured size.
   const gridPageSize = gridConfigs[0] ? (gridConfigs[0].paginated !== false ? gridConfigs[0].pageSize : 1000) : 10
@@ -1317,12 +1534,30 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   }
   const childList = [...mdChildren.values()]
   const hasMD = childList.length > 0
+  // Components with a data binding (aggregate / field) read the whole table too.
+  const boundComponents = allBlocks.filter((b): b is Block & { config: ComponentConfig } => b.config.kind === 'component' && componentHasBindings(b.config))
+  const hasBoundComponent = boundComponents.length > 0
+  const hasAggregateBinding = boundComponents.some((b) => Object.values(b.config.bindings ?? {}).some((bd) => bd.kind === 'aggregate'))
+  // A grouped grid loads every row so groups/aggregates span the whole dataset.
+  const hasGroupedGrid = allBlocks.some((b) => b.config.kind === 'grid' && (b.config.grouping?.length ?? 0) > 0)
+  // A tree grid loads every row to build the hierarchy, and renders a tree cell (renderSnippet).
+  const hasTreeGrid = allBlocks.some((b) => b.config.kind === 'grid' && gridHasTree(b.config))
+  // An export toolbar needs the grid's captured API. The code-behind grid already
+  // captures into `gridApi`; other export grids capture into `gridApi_<blockId>`.
+  const apiVarFor = (b: Block): string | undefined =>
+    codeGrid && b.id === codeGridBlockId ? 'gridApi'
+    : b.config.kind === 'grid' && gridHasExport(b.config) ? `gridApi_${b.id.replace(/-/g, '_')}`
+    : undefined
+  const exportApiVars = blocks.filter((b) => b.config.kind === 'grid' && gridHasExport(b.config) && !(codeGrid && b.id === codeGridBlockId)).map((b) => `gridApi_${b.id.replace(/-/g, '_')}`)
+  const needsGridApiType = codeGrid || exportApiVars.length > 0
   // The pivot reads the whole table (like charts / dashboards).
-  const needsAllRows = hasAgg || hasMD || hasPivot || has(allBlocks, 'board') || has(allBlocks, 'calendar') || has(allBlocks, 'detail')
+  const needsAllRows = hasAgg || hasMD || hasPivot || hasBoundComponent || hasGroupedGrid || hasTreeGrid || has(allBlocks, 'board') || has(allBlocks, 'calendar') || has(allBlocks, 'detail')
 
   // --- imports ---
   const gridSpecs: string[] = []
-  if (needsController) gridSpecs.push('SvGrid', 'createServerDataSource', ...(hasRowActions ? ['renderSnippet', 'type CellContext'] : []), 'type ServerState')
+  if (needsController) gridSpecs.push('SvGrid', 'createServerDataSource', ...(hasRowActions || hasCellRenderers || hasTreeGrid ? ['renderSnippet', 'type CellContext'] : []), 'type ServerState')
+  if (cellRenderKinds.has('badge')) gridSpecs.push('SvBadge')
+  if (cellRenderKinds.has('progress')) gridSpecs.push('SvProgress')
   if (has(allBlocks, 'gauge')) gridSpecs.push('SvGauge')
   if (has(allBlocks, 'tree')) gridSpecs.push('SvTree')
   if (has(blocks, 'tabs')) gridSpecs.push('SvTabs')
@@ -1332,7 +1567,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     const importName = uiComponentSpec(b.config.component)?.importName
     if (importName) gridSpecs.push(importName)
   }
-  if (codeGrid) gridSpecs.push('type SvGridApi')
+  if (needsGridApiType) gridSpecs.push('type SvGridApi')
   const gridImports = gridSpecs.length ? `import { ${[...new Set(gridSpecs)].join(', ')} } from '@svgrid/grid'\n  ` : ''
   const entImports: string[] = []
   if (hasGrid) entImports.push('schemaToColumns')
@@ -1342,7 +1577,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   if (has(allBlocks, 'board')) entImports.push('SvBoard')
   if (has(allBlocks, 'calendar')) entImports.push('SvSchedule')
   if (has(allBlocks, 'detail')) entImports.push('SvRecordDetail')
-  if (has(allBlocks, 'kpi') || has(allBlocks, 'gauge')) entImports.push('reduceValue')
+  if (has(allBlocks, 'kpi') || has(allBlocks, 'gauge') || hasAggregateBinding) entImports.push('reduceValue')
   const kpiCfgs = allBlocks.filter((b) => b.config.kind === 'kpi').map((b) => b.config as KpiConfig)
   if (kpiCfgs.some((c) => c.format && c.format !== 'auto')) entImports.push('formatKpiValue')
   if (kpiCfgs.some((c) => c.trendField)) entImports.push('kpiSeries', 'sparklinePoints', 'seriesDelta')
@@ -1378,6 +1613,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // --- script body ---
   const parts: string[] = []
   if (codeGrid) parts.push('let gridApi = $state<SvGridApi<any, any> | null>(null)')
+  for (const v of exportApiVars) parts.push(`let ${v} = $state<SvGridApi<any, any> | null>(null)`)
   for (const a of screenActions) parts.push(actionHandlerScript(a))
   if (needsController) {
     const urlFilter = applyUrlFilters
@@ -1393,10 +1629,16 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     controller.refresh(); return () => controller.dispose() })`)
   }
   const actionSnippets: string[] = []
+  // Tree-grid scripts reference `allRows`; collected here, appended AFTER its declaration.
+  const treeScripts: string[] = []
+  // A shared badge-intent helper is emitted once if any column uses the badge renderer.
+  if (blocks.some((b) => b.config.kind === 'grid' && b.config.columns.some((c) => c.show && c.cellType?.kind === 'badge'))) {
+    parts.push(BADGE_VARIANT_HELPER)
+  }
   for (const b of blocks) {
     if (b.config.kind === 'grid') {
       const idSafe = b.id.replace(/-/g, '_')
-      const colExpr = gridColumnsExpr(n.schemaVar, b)
+      const colExpr = gridColumnsExpr(n.schemaVar, b, n.type)
       let colValue = i18nEnabled ? `localizeCols(${colExpr}, ${JSON.stringify(schema.name)}, $t)` : colExpr
       // An "edit" action needs the form; drop it if this grid has no edit modal.
       const actions = (b.config.rowActions ?? []).filter((a) => a.kind !== 'edit' || wantsForm)
@@ -1404,6 +1646,15 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
         // A synthetic action column (id, no field, cell renderer) - type-clean.
         colValue = `[...(${colValue}), { id: '__actions', header: 'Actions', sortable: false, cell: (ctx: CellContext<${n.type}>) => renderSnippet(rowActions_${idSafe}, { row: ctx.row.original }) }]`
         actionSnippets.push(rowActionsSnippet(idSafe, n.type, schema, actions, routeById, gatesUi, screen.id))
+      }
+      // Rich cell renderers: one `{#snippet}` per configured column.
+      for (const c of b.config.columns) {
+        if (c.show && c.cellType) actionSnippets.push(cellRendererSnippet(idSafe, c.field, c.cellType))
+      }
+      // Tree-data grid: an indented expand/collapse cell on the label column.
+      if (gridHasTree(b.config)) {
+        treeScripts.push(treeGridScript(idSafe, n.type, b.config))
+        actionSnippets.push(treeCellSnippet(idSafe, n.type))
       }
       const reactive = i18nEnabled || actions.length > 0
       parts.push(`const columns_${idSafe} = ${reactive ? `$derived(${colValue})` : colValue}`)
@@ -1415,6 +1666,8 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   async function loadAll() { allRows = [...(await ${n.sourceVar}.getRows({ startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} })).rows]; allRowsReady = true }
   loadAll()`)
   }
+  // Tree-grid state/derivations - emitted after `allRows` so it's in scope.
+  for (const s of treeScripts) parts.push(s)
   for (const c of childList) {
     const cn = namesFor(c)
     const v = mdChildVar(c.name)
@@ -1477,7 +1730,11 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // data/goto/params). Handle decls come last so they can close over allRows/view.
   if (codeWire) {
     if (codeWire.decls.length) parts.push(codeWire.decls.join('\n  '))
-    parts.push(`onMount(() => { handlers.${ON_LOAD}(${codeWire.ctxLiteral}); return () => handlers.${ON_DESTROY}(${codeWire.ctxLiteral}) })`)
+    parts.push(`onMount(() => {
+    const ctx = ${codeWire.ctxLiteral} as unknown as PageContext
+    handlers.${ON_LOAD}(ctx)
+    return () => handlers.${ON_DESTROY}(ctx)
+  })`)
   }
 
   // --- markup ---
@@ -1487,7 +1744,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const toolbar = (wantsForm || screenActions.length > 0)
     ? `<div class="st__toolbar">\n  ${wantsForm ? (gatesUi ? `{#if can($currentRole, 'create')}${newBtn}{/if}` : newBtn) : ''}${actionButtons ? `\n  ${actionButtons}` : ''}\n</div>\n\n`
     : ''
-  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve, captureApi: codeGrid && b.id === codeGridBlockId ? 'gridApi' : undefined, handleNames: codeEnabled ? handleNames : undefined })).filter(Boolean).join('\n')
+  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve, captureApi: apiVarFor(b), handleNames: codeEnabled ? handleNames : undefined })).filter(Boolean).join('\n')
   const modal = wantsForm
     ? `\n\n{#if editing !== undefined}\n  <SvGridEditPanel schema={${n.schemaVar}} row={editing}${relationFields.length ? ' {lookups}' : ''} presentation="${formPres}" persistKey="${screen.route}" onSubmit={save} onCancel={() => (editing = undefined)} />\n{/if}`
     : ''
@@ -1500,7 +1757,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // Code-behind needs goto (ctx.goto) + the page store (ctx.params) even when no
   // block otherwise navigates; and the handle runtime for its data/component handles.
   const gotoImport = usesGoto || codeEnabled ? `import { goto } from '$app/navigation'\n  ` : ''
-  const codeImport = codeEnabled ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  ` : ''
+  const codeImport = codeEnabled ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  import type { PageContext } from './page-context'\n  ` : ''
   const handleSpecs = [codeWire?.usesHandle ? 'handle' : '', codeWire?.usesDataHandle ? 'dataHandle' : ''].filter(Boolean)
   const handleImport = handleSpecs.length ? `import { ${handleSpecs.join(', ')} } from '$lib/handles.svelte'\n  ` : ''
   const pageImport = applyUrlFilters || has(allBlocks, 'detail') || codeEnabled ? `import { page } from '$app/stores'\n  ` : ''
@@ -3109,6 +3366,14 @@ body { font-family: var(--sg-font, ui-sans-serif, system-ui, -apple-system, "Seg
 .st-rowaction:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 5%, var(--sg-bg, #fff)); }
 .st-rowaction--danger { color: #dc2626; border-color: color-mix(in srgb, #dc2626 40%, var(--sg-border, #e6e8ec)); }
 .st-rowaction--danger:hover { background: color-mix(in srgb, #dc2626 8%, var(--sg-bg, #fff)); }
+.st-cell-link { color: var(--sg-accent, #4f46e5); text-decoration: none; }
+.st-cell-link:hover { text-decoration: underline; }
+.st-cell-progress { display: flex; align-items: center; min-width: 80px; width: 100%; }
+.st-grid-toolbar { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; margin-bottom: 8px; }
+.st-treecell { display: inline-flex; align-items: center; gap: 4px; }
+.st-tree-toggle { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; background: none; color: var(--sg-muted, #94a3b8); font-size: 11px; cursor: pointer; border-radius: 4px; }
+.st-tree-toggle:hover { background: color-mix(in srgb, var(--sg-fg, #0f172a) 8%, transparent); color: var(--sg-fg, inherit); }
+.st-tree-spacer { display: inline-block; width: 18px; }
 `
 
 /**

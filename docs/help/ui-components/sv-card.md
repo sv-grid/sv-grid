@@ -8,9 +8,26 @@ building block for dashboards and Studio-generated app screens.
 footer. Every color and radius comes from the grid's `--sg-*` tokens, so cards
 match the grid, forms, and charts in light and dark without extra styling.
 
-<div data-docs-demo="333-app-feedback" data-height="440"></div>
+Related: [SvDivider](sv-divider.md) · [SvScrollArea](sv-scroll-area.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCard` starter into your app:
+
+<div data-docs-add="add card"></div>
+
+Or install the package and import it directly. `SvCard` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCard } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="333-app-feedback" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -37,7 +54,7 @@ match the grid, forms, and charts in light and dark without extra styling.
 
 The header row renders when any of `header`, `title`, or `subtitle` is set.
 
-## Patterns
+## Examples
 
 ### KPI tile
 

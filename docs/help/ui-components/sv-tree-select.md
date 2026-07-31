@@ -11,9 +11,26 @@ visible nodes for a roving-focus keyboard model where `ArrowRight` / `ArrowLeft`
 expand and collapse branches. The panel portals out of any scroll container and
 colors follow the grid's `--sg-*` tokens.
 
-<div data-docs-demo="335-tree-select" data-height="420"></div>
+Related: [SvDropDownList](sv-drop-down-list.md) · [SvGridSelect](sv-grid-select.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTreeSelect` starter into your app:
+
+<div data-docs-add="add tree-select"></div>
+
+Or install the package and import it directly. `SvTreeSelect` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTreeSelect } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="335-tree-select" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -66,7 +83,7 @@ type TreeSelectNode = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Full-path trigger
 

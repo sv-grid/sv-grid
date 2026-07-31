@@ -3,6 +3,28 @@
 A formatted text input plus a portalled dropdown with DATE / TIME tabs - type a
 masked value or pick it from a calendar and clock.
 
+Related: [Date & time overview](date-time.md) · [SvCalendar](sv-calendar.md) ·
+[SvTimePicker](sv-time-picker.md) · [SvDateRangeInput](sv-date-range-input.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDateTimePicker` starter into your app:
+
+<div data-docs-add="add date-time-picker"></div>
+
+Or install the package and import it directly. `SvDateTimePicker` ships free in
+`@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
+edit a `datetime` cell** - so it is both a standalone control and the grid's
+built-in date-time editor:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDateTimePicker } from '@svgrid/grid'
+```
+
+## Example
+
 `SvDateTimePicker` composes [SvCalendar](sv-calendar.md) and
 [SvTimePicker](sv-time-picker.md) behind tabs, over the headless
 `createDateTimePicker` core (value math, parse/format, clamping, dropdown and tab
@@ -12,9 +34,7 @@ is never clipped by the grid's scroll container. It carries the shared editor
 contract (label, hint, error validation, RTL) via `SvField`, and is the editor
 SvGrid mounts for a `datetime` cell.
 
-<div data-docs-demo="252-datetimepicker" data-height="460"></div>
-
-## Basic usage
+<div data-docs-demo="252-datetimepicker" data-height="460" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -66,12 +86,15 @@ Its own props:
 - `DateTimeValue = Date | string | number | null`
 - `DropDownDisplayMode = 'both' | 'calendar' | 'time'`
 
-## Patterns
+## Examples
 
 ### Date-only or time-only fields
 
 Drop a tab with `dropDownDisplayMode` and match the mask, so one component covers
-`date`, `time`, and `datetime` columns:
+`date`, `time`, and `datetime` columns. This demo shows five field shapes on one
+form:
+
+<div data-docs-demo="259-datetimepicker-forms" data-height="520" data-code></div>
 
 ```svelte
 <SvDateTimePicker dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" />

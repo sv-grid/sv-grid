@@ -15,12 +15,29 @@ edges - is one serializable `DockManagerState` you `bind`. Every gesture is a
 pure transform (from `dock-manager-model`), so a full multi-window workspace
 saves to JSON and restores exactly, and the logic is unit-tested without a browser.
 
-<div data-docs-demo="362-dock-manager" data-height="560"></div>
+Related: [SvDockLayout](sv-dock-layout.md) · [SvSplitter](sv-splitter.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDockManager` starter into your app:
+
+<div data-docs-add="add dock-manager"></div>
+
+Or install the package and import it directly. `SvDockManager` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDockManager } from '@svgrid/grid'
+```
+
+## Example
 
 Build the initial workspace from the base `dockGroup` / `dockTabs` / `dockPane`
 helpers, start with empty `floating` / `autoHide`, and provide a `pane` snippet.
+
+<div data-docs-demo="362-dock-manager" data-height="560" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -192,6 +209,31 @@ Every gesture is built on pointer events with `touch-action: none` on the tabs,
 splitters, window bars and resize handles, so dragging to dock, reorder, resize,
 move windows and pull out fly-outs all work on touch devices without the browser
 hijacking the drag to scroll.
+
+## Accessibility
+
+`SvDockManager` inherits the [SvDockLayout](sv-dock-layout.md#accessibility) tab /
+splitter / panel semantics for every docked area, and adds window-level roles on
+top:
+
+- Tab strips use `role="tablist"` / `role="tab"` with `aria-selected`; the active
+  tab is keyboard-focusable and `Enter` / `Space` activate it.
+- Splitters expose `role="separator"` with `aria-orientation`; content areas are
+  `role="tabpanel"`.
+- Floating windows are labelled dialog-style regions with focusable title bars, so
+  keyboard users can reach and move them; close / pin / auto-hide controls are real
+  buttons with accessible labels.
+
+## Headless
+
+Like [SvDockLayout](sv-dock-layout.md), the manager is headless in the
+data-model form: `DockManagerState` **is** the framework-free core, and every
+surface transform is a pure, immutable function (`floatPane`, `dockPaneOnto`,
+`reorderTab`, `autoHideLeaf`, `pinAutoHidden`, `dockManagerClosePane`,
+`allManagerPaneIds`) unit-tested without a browser. You can compute, migrate, or
+restore an entire multi-window workspace on the server or in a worker and hand
+the finished state to the component to render. See
+[Headless editors](headless-editors.md#data-model-cores-dock).
 
 ## Relationship to SvDockLayout
 

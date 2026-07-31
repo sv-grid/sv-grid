@@ -10,9 +10,26 @@ carries the shared contract - `label`, `hint`, `error`, `required`, `dir` / RTL,
 and localizable `messages` - through [SvField](sv-field.md). It is controlled via
 `files` and `onChange`.
 
-<div data-docs-demo="287-file-upload" data-height="440"></div>
+Related: [SvForm](sv-form.md) · [SvField](sv-field.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvFileUpload` starter into your app:
+
+<div data-docs-add="add file-upload"></div>
+
+Or install the package and import it directly. `SvFileUpload` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvFileUpload } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="287-file-upload" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -57,7 +74,7 @@ type FileRejection = { file: File; reason: FileRejectReason }
 type FileMessages = { prompt: string; browse: string; remove: string; hintTypes: string }
 ```
 
-## Patterns
+## Examples
 
 ### Validate and report rejections
 

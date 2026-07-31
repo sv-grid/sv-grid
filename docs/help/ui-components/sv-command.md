@@ -10,9 +10,26 @@ a11y primitives (portal, focus trap, scroll lock, dismissable layer) and emits
 WAI-ARIA combobox markup with `aria-activedescendant`. By default it binds
 Cmd/Ctrl+K to toggle itself, so you can mount it once at the app root.
 
-<div data-docs-demo="340-command-palette" data-height="440"></div>
+Related: [SvTour](sv-tour.md) · [SvNavPane](sv-nav-pane.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCommand` starter into your app:
+
+<div data-docs-add="add command"></div>
+
+Or install the package and import it directly. `SvCommand` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCommand } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="340-command-palette" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -43,7 +60,7 @@ Cmd/Ctrl+K to toggle itself, so you can mount it once at the app root.
 `shortcut` shows a key hint, `keywords` adds extra searchable terms, and each
 item's own `onRun` fires when it is chosen.
 
-## Patterns
+## Examples
 
 ### Grouping and shortcuts
 

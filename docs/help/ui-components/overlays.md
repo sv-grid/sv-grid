@@ -6,6 +6,18 @@ locking and Escape / outside-click dismissal behave identically everywhere, and
 nested overlays always close top-first. All portal to `<body>` (never clipped),
 animate in, and respect `prefers-reduced-motion`.
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add overlays"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvDrawer
 
 An edge-anchored side sheet (right / left / top / bottom): backdrop, sliding

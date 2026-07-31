@@ -3,17 +3,38 @@
 A themeable, accessible month / year / decade calendar with every selection
 mode - the date surface the whole date/time family is built on.
 
+Related: [Date & time overview](date-time.md) ·
+[SvDateTimePicker](sv-date-time-picker.md) ·
+[SvDateRangeInput](sv-date-range-input.md) ·
+[SvTimePicker](sv-time-picker.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCalendar` starter into your app:
+
+<div data-docs-add="add calendar"></div>
+
+Or install the package and import it directly. `SvCalendar` ships free in
+`@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
+edit a `date` cell** - so it is both a standalone control and the grid's built-in
+date editor:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCalendar } from '@svgrid/grid'
+```
+
+## Example
+
 `SvCalendar` is a thin styled renderer over the headless `createCalendar` core,
 the same split as [SvGrid](../getting-started.md): the core owns reactive state,
 selection, navigation, keyboard and ARIA, while the component keeps render-only
-concerns (the view-change animation, mouse-wheel navigation, DOM refs). Every
-color comes from the grid's `--sg-*` tokens, so it matches your grid and edit
-forms in light and dark. It is the editor SvGrid mounts for a `date` cell, and
-it works standalone anywhere.
+concerns. Every color comes from the grid's `--sg-*` tokens, so it matches your
+grid and edit forms in light and dark. It is the editor SvGrid mounts for a
+`date` cell, and it works standalone anywhere.
 
-<div data-docs-demo="250-calendar" data-height="460"></div>
-
-## Basic usage
+<div data-docs-demo="250-calendar" data-height="460" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -30,6 +51,132 @@ it works standalone anywhere.
   onChange={(dates) => (value = dates)}
 />
 ```
+
+## Anatomy
+
+The component is render-only; the reactive model lives in the headless
+`createCalendar` core. You almost never touch the core directly - `SvCalendar`
+wires it for you - but you can build a fully custom calendar on the same engine
+(see [Headless editors](headless-editors.md)):
+
+```svelte
+<script lang="ts">
+  import { SvCalendar } from '@svgrid/grid'
+  let value = $state<Date[]>([])
+</script>
+
+<SvCalendar {value} onChange={(dates) => (value = dates)} />
+```
+
+## Examples
+
+### Range selection with presets
+
+Set `selectionMode="range"` and pass `presets` for one-click shortcuts. Function
+values resolve relative to today at click time.
+
+<div data-docs-demo="258-calendar-range" data-height="440" data-code></div>
+
+```svelte
+<SvCalendar
+  selectionMode="range"
+  months={2}
+  presets={[
+    { label: 'Last 7 days', value: () => [addDays(new Date(), -6), new Date()] },
+    { label: 'This month', value: () => [startOfMonth(new Date()), new Date()] },
+  ]}
+  onChange={(dates) => (range = dates)}
+/>
+```
+
+### Date of birth
+
+Single selection with `max` clamped to today so future dates are blocked, opening
+on the decade (year) grid for fewer clicks to a birth year.
+
+<div data-docs-demo="260-calendar-birthday" data-height="420" data-code></div>
+
+```svelte
+<SvCalendar
+  {value}
+  selectionMode="one"
+  max={new Date()}
+  displayMode="decade"
+  footer
+  onChange={(dates) => (value = dates)}
+/>
+```
+
+### Rich cells and recurrence (event calendars)
+
+A `day` snippet fills each cell with event chips and switches to a taller grid;
+`recurrence` rules mark repeating days. The pure `matchesRecurrence` /
+`expandRecurrence` helpers generate the events.
+
+A `RecurrenceRule` supports the patterns a real calendar needs - `freq`
+(`daily` / `weekly` / `monthly` / `yearly`), an `interval`, `weekdays`, a
+`day` of the month (negative counts from the end, `-1` = last day), a positional
+`weekOfMonth` (`1`..`4` or `-1`) paired with a single weekday ("the 2nd Tuesday",
+"the last Friday"), a yearly `month`, an anchor `from`, and an end condition -
+an inclusive `until` date or a `count` of occurrences:
+
+```ts
+{ freq: 'monthly', weekdays: [2], weekOfMonth: 1 }              // the first Tuesday
+{ freq: 'monthly', day: -1 }                                   // the last day
+{ freq: 'weekly',  weekdays: [1], count: 8, from: '2026-01-05' } // 8 times, then stop
+```
+
+<div data-docs-demo="338-event-calendar" data-height="520" data-code></div>
+
+```svelte
+<SvCalendar recurrence={rules}>
+  {#snippet day(date, state)}
+    <span class="num">{date.getDate()}</span>
+    {#each eventsOn(date) as ev}
+      <span class="chip">{ev.title}</span>
+    {/each}
+  {/snippet}
+</SvCalendar>
+```
+
+### Restricted and important dates
+
+Block dates with `restrictedDates` (a list or predicate) and flag noteworthy ones
+with `importantDates` - restricted days are unselectable, important days stay
+selectable but carry an indicator:
+
+```svelte
+<SvCalendar
+  restrictedDates={(d) => d.getDay() === 0}
+  importantDates={holidays}
+  min={new Date()}
+/>
+```
+
+### Multi-day availability (many mode)
+
+`selectionMode="many"` toggles any number of individual days - useful for picking
+shift days or blackout dates. Bind your own `$state` and assign the list back in
+`onChange`; `min` blocks past days:
+
+```svelte
+<script lang="ts">
+  import { SvCalendar, type CalendarValue } from '@svgrid/grid'
+  let days = $state<Date[]>([])
+</script>
+
+<SvCalendar
+  value={days as CalendarValue}
+  selectionMode="many"
+  min={new Date()}
+  footer
+  onChange={(picked) => (days = picked)}
+/>
+<p>{days.length} day(s) selected</p>
+```
+
+Tip: `onChange` always receives the complete selected-day array (not just the day
+that changed), in every selection mode - so you can assign it straight to state.
 
 ## Props
 
@@ -72,71 +219,6 @@ it works standalone anywhere.
 - `CalendarAnimation = 'slide' | 'fade' | 'none'`
 - `CalendarPreset = { label: string; value: Date | number | string | readonly [start, end] | (() => ...) }` - pass a function for "today"-relative shortcuts that resolve at click time.
 - `CalendarDayState = { disabled, selected, important, today, outside, focused, preview, recurring }` - the booleans handed to a `day` snippet.
-
-## Patterns
-
-### Range selection with presets
-
-Set `selectionMode="range"` and pass `presets` for one-click shortcuts. Function
-values resolve relative to today at click time:
-
-```svelte
-<SvCalendar
-  selectionMode="range"
-  months={2}
-  presets={[
-    { label: 'Last 7 days', value: () => [addDays(new Date(), -6), new Date()] },
-    { label: 'This month', value: () => [startOfMonth(new Date()), new Date()] },
-  ]}
-  onChange={(dates) => (range = dates)}
-/>
-```
-
-### Restricted and important dates
-
-Block dates with `restrictedDates` (a list or predicate) and flag noteworthy ones
-with `importantDates` - restricted days are unselectable, important days stay
-selectable but carry an indicator:
-
-```svelte
-<SvCalendar
-  restrictedDates={(d) => d.getDay() === 0}
-  importantDates={holidays}
-  min={new Date()}
-/>
-```
-
-### Rich cells and recurrence (event calendars)
-
-A `day` snippet fills each cell with event chips and switches to a taller grid;
-`recurrence` rules mark repeating days. The pure `matchesRecurrence` /
-`expandRecurrence` helpers generate the events. See the
-[Date & time overview](date-time.md).
-
-### Multi-day availability (many mode)
-
-`selectionMode="many"` toggles any number of individual days - useful for picking
-shift days or blackout dates. Bind your own `$state` and assign the list back in
-`onChange`; `min` blocks past days:
-
-```svelte
-<script lang="ts">
-  import { SvCalendar, type CalendarValue } from '@svgrid/grid'
-  let days = $state<Date[]>([])
-</script>
-
-<SvCalendar
-  value={days as CalendarValue}
-  selectionMode="many"
-  min={new Date()}
-  footer
-  onChange={(picked) => (days = picked)}
-/>
-<p>{days.length} day(s) selected</p>
-```
-
-Tip: `onChange` always receives the complete selected-day array (not just the day
-that changed), in every selection mode - so you can assign it straight to state.
 
 ## Accessibility
 

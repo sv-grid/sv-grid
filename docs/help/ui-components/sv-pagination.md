@@ -10,9 +10,26 @@ page, and collapsed gaps) is produced by the pure `paginationRange` helper, so
 the layout math is testable on its own and reusable in a custom pager. Colors
 come from the `--sg-*` tokens.
 
-<div data-docs-demo="332-app-navigation" data-height="440"></div>
+Related: [SvBreadcrumb](sv-breadcrumb.md) · [SvStepper](sv-stepper.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvPagination` starter into your app:
+
+<div data-docs-add="add pagination"></div>
+
+Or install the package and import it directly. `SvPagination` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvPagination } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="332-app-navigation" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -43,7 +60,7 @@ helper (from `@svgrid/grid`) returns the
 `(number | 'ellipsis-left' | 'ellipsis-right')[]` sequence and is exported so you
 can build a custom-styled pager on the same math.
 
-## Patterns
+## Examples
 
 ### Driving the grid
 

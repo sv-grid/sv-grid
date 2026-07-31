@@ -9,9 +9,26 @@ toolbar, a pin, a mute, a "live" toggle. It is controlled: drive `pressed` from
 your state and flip it in `onChange`. It carries the shared editor contract
 (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
-<div data-docs-demo="307-toggle-button" data-height="420"></div>
+Related: [SvSwitchButton](sv-switch-button.md) · [SvButtonGroup](sv-button-group.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvToggleButton` starter into your app:
+
+<div data-docs-add="add toggle-button"></div>
+
+Or install the package and import it directly. `SvToggleButton` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvToggleButton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="307-toggle-button" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40,7 +57,7 @@ your state and flip it in `onChange`. It carries the shared editor contract
 | `id`        | `string`                    | auto    | Root id; label/hint/error ids derive from it.                  |
 | `children`  | `Snippet`                   | -       | The button label.                                              |
 
-## Patterns
+## Examples
 
 ### Formatting toolbar
 

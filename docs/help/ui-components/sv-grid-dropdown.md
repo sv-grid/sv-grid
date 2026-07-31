@@ -12,7 +12,22 @@ selection as removable chips, and portals its panel to `<body>` so it never gets
 clipped by the grid's scroll container. Options may carry a `color` to render as
 pills. Every color comes from the grid's `--sg-*` tokens.
 
-## Basic usage
+Related: [SvDropDownList](sv-drop-down-list.md) · [SvMultiSelect](sv-multi-select.md) · [Selection overview](selection.md)
+
+## Installation
+
+`SvGridDropdown` ships free in `@svgrid/grid` and is **part of the grid's editor
+kit** - the same control SvGrid mounts when you edit a `list` or `chips` cell.
+Most apps use [SvDropDownList](sv-drop-down-list.md) or [SvListBox](sv-list-box.md)
+instead; reach for this when you need the exact surface the grid's cell editors use.
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvGridDropdown } from '@svgrid/grid'
+```
+
+## Example
 
 ```svelte
 <script lang="ts">
@@ -54,7 +69,7 @@ type CellEditorOption = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Standalone form field
 

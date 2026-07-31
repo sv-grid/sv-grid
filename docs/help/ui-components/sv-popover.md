@@ -9,9 +9,26 @@ room below, closes on outside-click and Escape through the shared dismissable
 layer stack, and animates in. Every color comes from the grid's `--sg-*` tokens,
 so it matches the rest of the kit in light and dark.
 
-<div data-docs-demo="288-overlays" data-height="440"></div>
+Related: [SvTooltip](sv-tooltip.md) · [SvMenu](sv-menu.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvPopover` starter into your app:
+
+<div data-docs-add="add popover"></div>
+
+Or install the package and import it directly. `SvPopover` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvPopover } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="288-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38,7 +55,7 @@ so it matches the rest of the kit in light and dark.
 | `anchor`              | `Snippet`                         | -         | The trigger element(s) that open the panel.                        |
 | `children`            | `Snippet`                         | -         | Panel content.                                                     |
 
-## Patterns
+## Examples
 
 ### Hover cards
 

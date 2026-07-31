@@ -10,9 +10,26 @@ the joined string and fires `onComplete` the moment every cell is filled. The
 label / hint / error chrome comes from [SvField](sv-field.md), so it matches the
 rest of the kit.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvPasswordInput](sv-password-input.md) · [SvTextInput](sv-text-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvOtpInput` starter into your app:
+
+<div data-docs-add="add otp-input"></div>
+
+Or install the package and import it directly. `SvOtpInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvOtpInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -43,7 +60,7 @@ rest of the kit.
 | `mask`       | `boolean`                  | `false` | Render as password dots.                           |
 | `autofocus`  | `boolean`                  | `false` | Focus the first cell on mount.                     |
 
-## Patterns
+## Examples
 
 ### Verify on completion
 

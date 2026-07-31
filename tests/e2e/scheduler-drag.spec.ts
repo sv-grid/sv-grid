@@ -91,6 +91,73 @@ test.describe('scheduler drag + resize (real browser)', () => {
   })
 })
 
+test.describe('scheduler all-day row (real browser)', () => {
+  test('a multi-day event renders as an all-day bar, not filling the hourly grid', async ({ page }) => {
+    await page.goto('/sv-grid/#/demos/363-scheduler-intro')
+    await page.locator('.sv-sched').first().waitFor()
+    await page.getByRole('button', { name: 'Week', exact: true }).click()
+    // "Team offsite" is a 3-day event -> one spanning bar in the all-day row.
+    const allDayBar = page.locator('.sv-sched-allday-bars .sv-sched-bar', { hasText: 'Team offsite' })
+    await expect(allDayBar).toHaveCount(1)
+    // ...and NOT rendered as an hourly-grid event (which would fill columns).
+    await expect(page.locator('.sv-sched-event', { hasText: 'Team offsite' })).toHaveCount(0)
+    // The bar spans multiple day columns (wider than a single column).
+    const barW = (await allDayBar.boundingBox())!.width
+    const col = (await page.locator('.sv-sched-col').first().boundingBox())!.width
+    expect(barW).toBeGreaterThan(col * 1.5)
+  })
+})
+
+test.describe('scheduler month drag feedback (real browser)', () => {
+  test('dragging a chip shows a cursor ghost + highlights the target day', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 1180 })
+    await page.goto('/sv-grid/#/demos/363-scheduler-intro')
+    await page.locator('.sv-sched').first().waitFor()
+    await page.getByRole('button', { name: 'Month', exact: true }).click()
+    const chip = page.locator('.sv-sched-bar', { hasText: 'Sprint planning' }).first()
+    await chip.scrollIntoViewIfNeeded()
+    const box = await chip.boundingBox()
+    if (!box) throw new Error('no chip')
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    for (let i = 1; i <= 8; i++) {
+      await page.mouse.move(box.x + box.width / 2 + (200 * i) / 8, box.y + box.height / 2 - (240 * i) / 8)
+    }
+    // Mid-drag: a floating ghost and exactly one highlighted drop-target day.
+    await expect(page.locator('.sv-sched-month-ghost')).toBeVisible()
+    await expect(page.locator('.sv-sched-daycell-drop')).toHaveCount(1)
+    await page.mouse.up()
+    // Feedback clears after drop.
+    await expect(page.locator('.sv-sched-month-ghost')).toHaveCount(0)
+    await expect(page.locator('.sv-sched-daycell-drop')).toHaveCount(0)
+  })
+
+  test('dragging a bar right edge extends the event into one wider spanning bar', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 1180 })
+    await page.goto('/sv-grid/#/demos/363-scheduler-intro')
+    await page.locator('.sv-sched').first().waitFor()
+    await page.getByRole('button', { name: 'Month', exact: true }).click()
+    const bar = () => page.locator('.sv-sched-bar', { hasText: 'Sprint planning' }).first()
+
+    await bar().scrollIntoViewIfNeeded()
+    const before = await bar().boundingBox()
+    if (!before) throw new Error('no bar')
+    // A single-day event is one column wide; extending should NOT clone it.
+    await expect(page.locator('.sv-sched-bar', { hasText: 'Sprint planning' })).toHaveCount(1)
+
+    // Grab the right-edge grip and drag ~2.5 columns right to push the end date out.
+    const y = before.y + before.height / 2
+    await page.mouse.move(before.x + before.width - 3, y)
+    await page.mouse.down()
+    for (let i = 1; i <= 8; i++) await page.mouse.move(before.x + before.width - 3 + (400 * i) / 8, y)
+    await page.mouse.up()
+
+    // Still ONE element, now much wider (spanning multiple day columns).
+    await expect(page.locator('.sv-sched-bar', { hasText: 'Sprint planning' })).toHaveCount(1)
+    await expect.poll(async () => (await bar().boundingBox())?.width ?? 0).toBeGreaterThan(before.width + 40)
+  })
+})
+
 test.describe('scheduler collision modes (real browser)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(DEMO)

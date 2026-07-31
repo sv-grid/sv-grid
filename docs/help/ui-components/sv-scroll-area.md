@@ -9,9 +9,26 @@ the grid and demos without hand-rolling scrollbar CSS.
 adapts to light and dark even when no preset defines the tokens. Overscroll is
 contained, so scrolling a nested area does not chain to the page.
 
-<div data-docs-demo="340-command-palette" data-height="440"></div>
+Related: [SvCard](sv-card.md) · [SvSplitter](sv-splitter.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvScrollArea` starter into your app:
+
+<div data-docs-add="add scroll-area"></div>
+
+Or install the package and import it directly. `SvScrollArea` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvScrollArea } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="340-command-palette" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -32,7 +49,7 @@ contained, so scrolling a nested area does not chain to the page.
 | `horizontal` | `boolean` | `false` | Scroll horizontally instead of vertically.                     |
 | `children`   | `Snippet` | -       | The scrollable content.                                        |
 
-## Patterns
+## Examples
 
 ### Capped list
 

@@ -9,9 +9,26 @@ and every color comes from the grid's `--sg-*` tokens so it matches the rest of
 the kit in light and dark. The expand logic, keyboard handling, and ARIA wiring
 live in a headless `createAccordion` core; this component is one styled renderer.
 
-<div data-docs-demo="285-accordion" data-height="440"></div>
+Related: [SvTabs](sv-tabs.md) · [SvSplitter](sv-splitter.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAccordion` starter into your app:
+
+<div data-docs-add="add accordion"></div>
+
+Or install the package and import it directly. `SvAccordion` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAccordion } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="285-accordion" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -50,7 +67,7 @@ type AccordionItem = { id: string; label: string; disabled?: boolean }
 type AccordionExpandMode = 'single' | 'multiple'
 ```
 
-## Patterns
+## Examples
 
 ### Multiple open sections
 

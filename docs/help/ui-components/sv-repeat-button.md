@@ -10,9 +10,26 @@ release, leave the button, or lift the pointer anywhere on the page. It shares
 [SvButton](sv-button.md)'s visual language (variants and sizes) so it drops into
 a toolbar unchanged.
 
-<div data-docs-demo="306-repeat-button" data-height="420"></div>
+Related: [SvButton](sv-button.md) · [SvButtonGroup](sv-button-group.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvRepeatButton` starter into your app:
+
+<div data-docs-add="add repeat-button"></div>
+
+Or install the package and import it directly. `SvRepeatButton` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvRepeatButton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="306-repeat-button" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38,7 +55,7 @@ a toolbar unchanged.
 | `ariaLabel` | `string`                                          | -             | Accessible name for icon-only or glyph buttons.                  |
 | `children`  | `Snippet`                                         | -             | The button label.                                                |
 
-## Patterns
+## Examples
 
 ### Number stepper
 

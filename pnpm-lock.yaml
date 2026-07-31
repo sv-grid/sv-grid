@@ -201,6 +201,27 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/svgrid-ui:
+    devDependencies:
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^7.0.0
+        version: 7.1.2(svelte@5.55.9)(vite@8.0.14(@types/node@22.19.19)(jiti@2.7.0))
+      '@svgrid/grid':
+        specifier: workspace:*
+        version: link:../grid
+      '@tsconfig/svelte':
+        specifier: ^5.0.8
+        version: 5.0.8
+      svelte:
+        specifier: ^5.55.5
+        version: 5.55.9
+      svelte-check:
+        specifier: ^4.4.6
+        version: 4.4.8(picomatch@4.0.4)(svelte@5.55.9)(typescript@6.0.3)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   website:
     devDependencies:
       '@codemirror/autocomplete':

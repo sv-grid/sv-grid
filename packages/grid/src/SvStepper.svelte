@@ -14,6 +14,7 @@
    * ```
    */
   import type { StepItem } from './ui-app.types'
+  import { createStepper } from './createStepper'
 
   type Props = {
     steps: ReadonlyArray<StepItem>
@@ -27,22 +28,18 @@
 
   let { steps, current, onChange, linear = true, orientation = 'horizontal' }: Props = $props()
 
-  const statusOf = (i: number): 'complete' | 'active' | 'upcoming' =>
-    i < current ? 'complete' : i === current ? 'active' : 'upcoming'
-  const clickable = (i: number) => (linear ? i <= current : true)
-  const go = (i: number) => { if (clickable(i) && i !== current) onChange?.(i) }
+  // Status, clickability and navigation live in the shared headless core.
+  const st = createStepper({ count: () => steps.length, current: () => current, onChange, linear: () => linear })
 </script>
 
 <ol class="sv-step sv-step--{orientation}">
   {#each steps as step, i (i)}
-    {@const status = statusOf(i)}
-    <li class="sv-step__item is-{status}" class:is-clickable={clickable(i)}>
+    {@const status = st.statusOf(i)}
+    <li class="sv-step__item is-{status}" class:is-clickable={st.clickable(i)}>
       <button
         type="button"
         class="sv-step__btn"
-        aria-current={status === 'active' ? 'step' : undefined}
-        disabled={!clickable(i)}
-        onclick={() => go(i)}
+        {...st.stepButtonProps(i)}
       >
         <span class="sv-step__marker" aria-hidden="true">
           {#if status === 'complete'}✓{:else}{i + 1}{/if}

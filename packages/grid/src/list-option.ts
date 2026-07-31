@@ -5,6 +5,8 @@ export type ListOption = {
   disabled?: boolean
   /** Optional group heading this option belongs under. */
   group?: string
+  /** Optional color swatch (any CSS color) shown before the label. */
+  color?: string
 }
 
 /** Case-insensitive substring filter over option labels. */

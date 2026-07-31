@@ -10,9 +10,26 @@ outside any scroll container. Pass `loadOptions` and it turns into a debounced,
 race-safe server search (local filtering switches off and the returned list is
 shown as-is), with `loading` and empty-state text you can localize via `messages`.
 
-<div data-docs-demo="313-combobox" data-height="420"></div>
+Related: [SvDropDownList](sv-drop-down-list.md) · [SvAutoComplete](sv-auto-complete.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvComboBox` starter into your app:
+
+<div data-docs-add="add combo-box"></div>
+
+Or install the package and import it directly. `SvComboBox` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvComboBox } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="313-combobox" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -56,7 +73,7 @@ shown as-is), with `loading` and empty-state text you can localize via `messages
 Options use the shared [ListOption](sv-list-box.md#listoption) shape. `ComboMessages`
 is `{ noResults: string; loading: string; typeMore: string }`.
 
-## Patterns
+## Examples
 
 ### Remote (server) search
 

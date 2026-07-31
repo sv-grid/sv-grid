@@ -8,9 +8,26 @@ plus an optional presence status dot.
 initials on a stable, name-derived color so the same person always gets the same
 tint. Presets cover the common sizes, and a `status` dot marks presence.
 
-<div data-docs-demo="333-app-feedback" data-height="420"></div>
+Related: [SvAvatarGroup](sv-avatar-group.md) · [SvChip](sv-chip.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAvatar` starter into your app:
+
+<div data-docs-add="add avatar"></div>
+
+Or install the package and import it directly. `SvAvatar` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAvatar } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="333-app-feedback" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -44,7 +61,7 @@ avatarInitials('Ada Lovelace') // 'AL'
 avatarColorHue('Ada Lovelace') // stable hue 0-359 for a matching tint
 ```
 
-## Patterns
+## Examples
 
 ### Image with graceful fallback
 

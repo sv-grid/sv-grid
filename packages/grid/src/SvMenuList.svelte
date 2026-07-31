@@ -1,17 +1,8 @@
 <script lang="ts" module>
-  import type { Snippet } from 'svelte'
-  export type MenuItem = {
-    /** Item text. Omit + set `separator` for a divider. */
-    label?: string
-    separator?: boolean
-    icon?: Snippet
-    /** Right-aligned hint, e.g. a keyboard shortcut. */
-    shortcut?: string
-    disabled?: boolean
-    /** Nested submenu items (renders a flyout). */
-    children?: MenuItem[]
-    onSelect?: () => void
-  }
+  // MenuItem lives in a plain `.ts` module (breaks a Vite dev import cycle); it is
+  // re-exported here so existing `import { type MenuItem } from './SvMenuList.svelte'`
+  // sites keep working.
+  export type { MenuItem } from './menu-item'
 </script>
 
 <script lang="ts">
@@ -22,6 +13,8 @@
    */
   import Self from './SvMenuList.svelte'
   import { type EditorDir } from './editor-contract'
+  import type { MenuItem } from './menu-item'
+  import { createMenu } from './createMenu.svelte'
 
   let {
     items,
@@ -46,56 +39,24 @@
     dir?: EditorDir
   } = $props()
 
-  // Indexes of real (non-separator) items, for roving focus.
-  const focusable = $derived(items.map((it, i) => (it.separator || it.disabled ? -1 : i)).filter((i) => i >= 0))
-  let active = $state(-1)
-  let openSub = $state(-1)
   let listEl = $state<HTMLDivElement | null>(null)
 
-  function focusItem(i: number) {
-    active = i
-    queueMicrotask(() => listEl?.querySelector<HTMLElement>(`[data-mi="${i}"]`)?.focus())
-  }
-  function move(delta: number) {
-    if (!focusable.length) return
-    const pos = focusable.indexOf(active)
-    const next = focusable[(pos + delta + focusable.length) % focusable.length]
-    if (next != null) { openSub = -1; focusItem(next) }
-  }
-  function choose(item: MenuItem) {
-    if (item.disabled || item.separator) return
-    if (item.children?.length) { openSub = items.indexOf(item); return }
-    item.onSelect?.()
-    onselect(item)
-    onclose()
-  }
-  function onKeydown(e: KeyboardEvent, i: number) {
-    const item = items[i]
-    const rtl = dir === 'rtl'
-    // Open this item's submenu (opposite key under rtl).
-    const openThis = () => { if (item?.children?.length) { e.preventDefault(); openSub = i } }
-    // Collapse just THIS list back into its parent item (opposite key under
-    // rtl) - `oncollapse` is local to this nesting level, unlike `onclose`.
-    const collapseThis = () => { if (submenu) { e.preventDefault(); oncollapse?.() } }
-    switch (e.key) {
-      case 'ArrowDown': e.preventDefault(); move(1); break
-      case 'ArrowUp': e.preventDefault(); move(-1); break
-      case 'Home': e.preventDefault(); focusItem(focusable[0] ?? 0); break
-      case 'End': e.preventDefault(); focusItem(focusable.at(-1) ?? 0); break
-      case 'ArrowRight': (rtl ? collapseThis : openThis)(); break
-      case 'ArrowLeft': (rtl ? openThis : collapseThis)(); break
-      case 'Enter':
-      case ' ': e.preventDefault(); if (item) choose(item); break
-      case 'Escape': e.preventDefault(); onclose(); break
-      // Tab leaves the menu entirely (WAI-ARIA menu button pattern): close the
-      // whole tree rather than trapping focus inside a portalled panel.
-      case 'Tab': onclose(); break
-    }
-  }
+  // Roving focus, submenu open/collapse and the full keyboard contract live in
+  // the shared headless core; this component only renders + drives real DOM
+  // focus (the core stays DOM-free). See createMenu.svelte.ts.
+  const menu = createMenu({
+    items: () => items,
+    onSelect: (item) => onselect(item),
+    onClose: () => onclose(),
+    submenu: () => submenu,
+    onCollapse: () => oncollapse?.(),
+    dir: () => dir,
+    focusItem: (i) => queueMicrotask(() => listEl?.querySelector<HTMLElement>(`[data-mi="${i}"]`)?.focus()),
+  })
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div bind:this={listEl} class="sv-menu__list" class:is-submenu={submenu} role="menu">
+<div bind:this={listEl} class="sv-menu__list" class:is-submenu={submenu} {...menu.listProps()}>
   {#each items as item, i (i)}
     {#if item.separator}
       <div class="sv-menu__sep" role="separator"></div>
@@ -104,30 +65,21 @@
         <button
           type="button"
           class="sv-menu__item"
-          class:is-active={active === i}
-          data-mi={i}
-          role="menuitem"
-          aria-haspopup={item.children?.length ? 'menu' : undefined}
-          aria-expanded={item.children?.length ? openSub === i : undefined}
-          aria-disabled={item.disabled || undefined}
-          disabled={item.disabled}
-          tabindex={active === i || (active === -1 && i === focusable[0]) ? 0 : -1}
-          onpointerenter={() => { if (!item.disabled) { active = i; openSub = item.children?.length ? i : -1 } }}
-          onkeydown={(e) => onKeydown(e, i)}
-          onclick={() => choose(item)}
+          class:is-active={menu.isActive(i)}
+          {...menu.itemProps(i)}
         >
           <span class="sv-menu__icon">{#if item.icon}{@render item.icon()}{/if}</span>
           <span class="sv-menu__label">{item.label}</span>
           {#if item.shortcut}<span class="sv-menu__shortcut">{item.shortcut}</span>{/if}
           {#if item.children?.length}<svg class="sv-menu__chev" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>{/if}
         </button>
-        {#if item.children?.length && openSub === i}
+        {#if item.children?.length && menu.isSubOpen(i)}
           <div class="sv-menu__flyout">
             <Self
               items={item.children}
               {onclose}
               {onselect}
-              oncollapse={() => { openSub = -1; focusItem(i) }}
+              oncollapse={() => menu.focus(i)}
               {dir}
               submenu
             />

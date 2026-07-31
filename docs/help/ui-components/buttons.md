@@ -3,6 +3,18 @@
 Press and toggle primitives. All take a `size` (`sm` | `md` | `lg`) and theme
 from `--sg-*`.
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add buttons"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvButton
 
 ```svelte

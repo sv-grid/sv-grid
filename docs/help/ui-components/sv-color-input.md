@@ -11,9 +11,26 @@ clips. It emits a normalized hex string and is the styled renderer over the
 headless `createColorInput` core. Its label / hint / error chrome comes from
 [SvField](sv-field.md).
 
-<div data-docs-demo="304-color-input" data-height="420"></div>
+Related: [SvTextInput](sv-text-input.md) · [SvTagsInput](sv-tags-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvColorInput` starter into your app:
+
+<div data-docs-add="add color-input"></div>
+
+Or install the package and import it directly. `SvColorInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvColorInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="304-color-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40,7 +57,7 @@ headless `createColorInput` core. Its label / hint / error chrome comes from
 
 `ColorMessages` is `{ dialog; picker; hex }`.
 
-## Patterns
+## Examples
 
 ### Custom preset palette
 

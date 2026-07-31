@@ -1,9 +1,32 @@
 # Date & time
 
-Three date/time controls built on a shared, framework-free date engine
+Four date/time controls built on a shared, framework-free date engine
 (`date-core`, `date-format`, `date-selection`, `date-restrict`). They are the
 rich-by-default editors for `date`, `datetime` and `time` grid columns, and work
-standalone. Parity reference: the Smart UI calendar / date-time / time pickers.
+standalone.
+
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add date-time"></div>
+
+The controls all ship free in the `@svgrid/grid` package - they are the **same
+components SvGrid mounts to edit `date`, `datetime` and `time` cells**, so you can
+also just install the grid and import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+## The family at a glance
+
+Each component has its own tutorial with a live Preview / Code example, the full
+props table and accessibility notes:
+
+- [SvCalendar](./sv-calendar.md) - a month/year/decade calendar with every selection mode (single, range, week, multi, event cells + recurrence).
+- [SvTimePicker](./sv-time-picker.md) - an analog clock-dial time picker (12/24-hour, minute snapping).
+- [SvDateTimePicker](./sv-date-time-picker.md) - a masked text field with DATE / TIME dropdown tabs.
+- [SvDateRangeInput](./sv-date-range-input.md) - a compact start-to-end range field with preset shortcuts.
 
 ## SvCalendar
 
@@ -38,7 +61,7 @@ week ends, Enter/Space selects, the title button drills up the view.
 
 ### Rich cells + recurrence (event calendars)
 
-Two props turn the picker into a FullCalendar-style scheduler:
+Two props turn the picker into a full event scheduler:
 
 - **`day`** - a snippet rendered inside each day cell, receiving `(date, state)`.
   Providing it switches the month grid to a taller, top-aligned layout with room
@@ -105,12 +128,5 @@ Typed text is parsed on blur/Enter and reverts if it doesn't fit the mask; the
 value is clamped to `min` / `max`. Emits `onChange`, plus `onCommit` / `onCancel`
 for grid editing.
 
-## Component guides
-
-Each component has its own full tutorial with props, keyboard behaviour and
-recipes:
-
-- [SvCalendar](./sv-calendar.md) - a month/year/decade calendar with every selection mode.
-- [SvTimePicker](./sv-time-picker.md) - an analog clock-dial time picker.
-- [SvDateTimePicker](./sv-date-time-picker.md) - a text field with date and time dropdown tabs.
-- [SvDateRangeInput](./sv-date-range-input.md) - a start-to-end date range picker.
+See the [component guides above](#the-family-at-a-glance) for each control's full
+tutorial, live example and props.

@@ -10,9 +10,26 @@ chart re-renders live as the user filters. It ships a unified crosshair tooltip,
 clickable legend, optional zoom / brush, and an `onDrill` hook that hands back the
 source row ids so a click can filter the grid.
 
-<div data-docs-demo="147-integrated-charts" data-height="440"></div>
+Related: [SvCard](sv-card.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvGridChart` starter into your app:
+
+<div data-docs-add="add grid-chart"></div>
+
+Or install the package and import it directly. `SvGridChart` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvGridChart } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="147-integrated-charts" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -74,7 +91,7 @@ type ChartSelection = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Bind to the grid's filtered rows
 

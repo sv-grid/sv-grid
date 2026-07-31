@@ -9,9 +9,26 @@ first pane's share of the container, 0..1) and `onChange`. The clamp, keyboard,
 ARIA, and RTL logic live in a headless `createSplitter` core; the component owns
 only the container measurement. Nest splitters for IDE- or dashboard-style layouts.
 
-<div data-docs-demo="286-splitter" data-height="440"></div>
+Related: [SvTabs](sv-tabs.md) · [SvScrollArea](sv-scroll-area.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSplitter` starter into your app:
+
+<div data-docs-add="add splitter"></div>
+
+Or install the package and import it directly. `SvSplitter` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSplitter } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="286-splitter" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -49,7 +66,7 @@ only the container measurement. Nest splitters for IDE- or dashboard-style layou
 type SplitterOrientation = 'horizontal' | 'vertical'
 ```
 
-## Patterns
+## Examples
 
 ### Bounded sidebar
 

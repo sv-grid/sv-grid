@@ -13,6 +13,9 @@ theme-driven, accessible, and dependency-free (see below). Try them live under t
 **SvGrid Editors** switcher in the examples gallery, or jump straight to any
 component's tutorial in [the catalogue](#the-catalogue).
 
+> **Quick start with the CLI.** `npx @svgrid/ui add calendar` drops a ready-to-edit
+> starter for any component into your app. See [Add components with the CLI](./cli.md).
+
 ![The SvGrid UI suite: nine families of components, each usable standalone and as a grid cell editor.](/docs-media/svgrid-ui-map.svg)
 
 ## Design principles
@@ -83,6 +86,7 @@ group heading is the at-a-glance rollup.
 ### [Layout & composite](./layout.md)
 
 [SvTabs](./sv-tabs.md) · [SvAccordion](./sv-accordion.md) · [SvSplitter](./sv-splitter.md) ·
+[SvDockLayout](./sv-dock-layout.md) · [SvDockManager](./sv-dock-manager.md) ·
 [SvCard](./sv-card.md) · [SvDivider](./sv-divider.md) · [SvScrollArea](./sv-scroll-area.md) ·
 [SvGridChart](./sv-grid-chart.md) · [SvForm](./sv-form.md) · [SvField](./sv-field.md) ·
 [SvFileUpload](./sv-file-upload.md)

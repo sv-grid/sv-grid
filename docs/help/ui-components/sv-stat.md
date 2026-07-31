@@ -10,9 +10,26 @@ error rate or latency. The `icon` and `chart` snippets host a glyph and an
 inline [SvSparkline](sv-sparkline.md). Colors come from the grid's `--sg-*`
 tokens.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvSparkline](sv-sparkline.md) · [SvGauge](sv-gauge.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvStat` starter into your app:
+
+<div data-docs-add="add stat"></div>
+
+Or install the package and import it directly. `SvStat` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvStat } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -36,7 +53,7 @@ tokens.
 | `icon`   | `Snippet`                  | -        | Glyph slot in the card header.                                        |
 | `chart`  | `Snippet`                  | -        | Inline chart slot, aligned to the end of the footer.                 |
 
-## Patterns
+## Examples
 
 ### Trend coloring
 

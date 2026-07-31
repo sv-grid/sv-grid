@@ -1,0 +1,45 @@
+{
+  "name": "@svgrid/ui",
+  "version": "0.1.0",
+  "description": "Add SvGrid UI components to your app in one command: npx @svgrid/ui add calendar",
+  "type": "module",
+  "license": "MIT",
+  "author": "jQWidgets Ltd",
+  "homepage": "https://www.svgrid.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sv-grid/sv-grid.git",
+    "directory": "packages/svgrid-ui"
+  },
+  "keywords": [
+    "svelte",
+    "sveltekit",
+    "svgrid",
+    "sv-grid",
+    "ui",
+    "components",
+    "cli",
+    "scaffold",
+    "add",
+    "recipe"
+  ],
+  "bin": "index.mjs",
+  "files": [
+    "index.mjs",
+    "recipes"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test:types": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "devDependencies": {
+    "@svgrid/grid": "workspace:*",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@tsconfig/svelte": "^5.0.8",
+    "svelte": "^5.55.5",
+    "svelte-check": "^4.4.6",
+    "typescript": "6.0.3"
+  }
+}

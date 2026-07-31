@@ -10,9 +10,26 @@ the number for that country's convention, and `onChange` also hands you the pars
 the styled renderer over the headless `createPhoneInput` core. Its label / hint /
 error chrome comes from [SvField](sv-field.md).
 
-<div data-docs-demo="303-phone-input" data-height="420"></div>
+Related: [SvMaskedInput](sv-masked-input.md) · [SvTextInput](sv-text-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvPhoneInput` starter into your app:
+
+<div data-docs-add="add phone-input"></div>
+
+Or install the package and import it directly. `SvPhoneInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvPhoneInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="303-phone-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40,7 +57,7 @@ error chrome comes from [SvField](sv-field.md).
 `PhoneParts` is `{ country; dial; national; valid; complete }`. `PhoneMessages`
 is `{ country }`.
 
-## Patterns
+## Examples
 
 ### Read the parsed parts
 

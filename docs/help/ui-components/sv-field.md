@@ -10,7 +10,24 @@ match `aria-describedby` conventions. Every editor in the kit (inputs, selects,
 label / hint / error / RTL behave identically everywhere - and you can use it
 directly to give a custom control the same chrome.
 
-## Basic usage
+Related: [SvForm](sv-form.md) · [Layout & composite overview](layout.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvField` starter into your app:
+
+<div data-docs-add="add field"></div>
+
+Or install the package and import it directly. `SvField` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvField } from '@svgrid/grid'
+```
+
+## Example
 
 ```svelte
 <script lang="ts">
@@ -41,7 +58,7 @@ directly to give a custom control the same chrome.
 When both `error` and `hint` are set, the error takes precedence and is the line
 announced to assistive tech.
 
-## Patterns
+## Examples
 
 ### Wrap a custom control
 

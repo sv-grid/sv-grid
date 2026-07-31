@@ -9,9 +9,26 @@ KPI. Its arc and needle geometry plus `role="meter"` ARIA live in the headless
 `bands` to paint red/amber/green zones along the arc, or leave them off for a
 plain accent fill up to the value. Colors come from the grid's `--sg-*` tokens.
 
-<div data-docs-demo="319-gauge" data-height="420"></div>
+Related: [SvSlider](sv-slider.md) · [SvCircularProgress](sv-circular-progress.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvGauge` starter into your app:
+
+<div data-docs-add="add gauge"></div>
+
+Or install the package and import it directly. `SvGauge` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvGauge } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="319-gauge" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -51,7 +68,7 @@ plain accent fill up to the value. Colors come from the grid's `--sg-*` tokens.
 | `ariaLabel`   | `string`                          | -       | Accessible name for the meter.                                  |
 | `dir`         | `ltr` \| `rtl` \| `auto`          | `auto`  | Text direction for the center label / unit.                     |
 
-## Patterns
+## Examples
 
 ### Threshold bands
 

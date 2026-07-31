@@ -12,8 +12,8 @@
    */
   import type { Snippet } from 'svelte'
   import { portalToBody, popIn } from './popover'
-  import { nextEditorId } from './editor-contract'
   import { getFocusable } from './a11y/focus-trap'
+  import { createTooltip } from './createTooltip.svelte'
 
   type Props = {
     text: string
@@ -28,10 +28,12 @@
 
   let anchorEl = $state<HTMLSpanElement | null>(null)
   let tipEl = $state<HTMLDivElement | null>(null)
-  let open = $state(false)
   let pos = $state({ top: 0, left: 0, arrowX: 12 })
-  const tid = nextEditorId('sv-tip')
-  let showTimer: ReturnType<typeof setTimeout> | undefined
+
+  // Open state, show-delay and Escape-to-hide live in the shared headless core;
+  // this component owns only the DOM concerns (positioning + describedby merge).
+  const tip = createTooltip({ text: () => text, disabled: () => disabled, delay: () => delay })
+  const tid = tip.tipId
 
   function place() {
     if (!anchorEl) return
@@ -46,25 +48,16 @@
     pos = { top, left, arrowX }
   }
 
-  function show() {
-    if (disabled || !text) return
-    clearTimeout(showTimer)
-    showTimer = setTimeout(() => { open = true; queueMicrotask(place) }, delay)
-  }
-  function hide() { clearTimeout(showTimer); open = false }
-
+  // Reposition while open (and on scroll/resize). Escape-to-hide is the core's.
   $effect(() => {
-    if (!open) return
-    place()
+    if (!tip.open) return
+    queueMicrotask(place)
     const rp = () => place()
     window.addEventListener('scroll', rp, true)
     window.addEventListener('resize', rp)
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') hide() }
-    document.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('scroll', rp, true)
       window.removeEventListener('resize', rp)
-      document.removeEventListener('keydown', onKey)
     }
   })
 
@@ -75,7 +68,7 @@
   // announced. Mirror the id onto that child too, merging with (and later
   // restoring) any aria-describedby it already carries.
   $effect(() => {
-    if (!open || !anchorEl) return
+    if (!tip.open || !anchorEl) return
     const child = getFocusable(anchorEl)[0]
     if (!child) return
     const before = child.getAttribute('aria-describedby')
@@ -96,16 +89,12 @@
 <span
   bind:this={anchorEl}
   class="sv-tip__anchor"
-  aria-describedby={open ? tid : undefined}
-  onpointerenter={show}
-  onpointerleave={hide}
-  onfocusin={show}
-  onfocusout={hide}
+  {...tip.anchorProps()}
 >
   {@render children?.()}
 </span>
 
-{#if open}
+{#if tip.open}
   <div
     bind:this={tipEl}
     id={tid}

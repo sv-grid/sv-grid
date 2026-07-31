@@ -10,9 +10,26 @@ via `bind:value` and reflects the active formatting state (bold/italic and list
 buttons light up with the caret). It uses `document.execCommand`, the pragmatic
 approach for a component-kit editor. All color comes from the `--sg-*` tokens.
 
-<div data-docs-demo="341-rich-text-editor" data-height="440"></div>
+Related: [Inputs overview](inputs.md) · [SvForm](sv-form.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvRichText` starter into your app:
+
+<div data-docs-add="add rich-text"></div>
+
+Or install the package and import it directly. `SvRichText` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvRichText } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="341-rich-text-editor" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40,7 +57,7 @@ approach for a component-kit editor. All color comes from the `--sg-*` tokens.
 `'bold' | 'italic' | 'underline' | 'strike' | 'h1' | 'h2' | 'h3' | 'p' | 'ul' | 'ol' | 'quote' | 'code' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'link' | 'clear' | 'undo' | 'redo' | '|'`.
 The `'|'` entry draws a visual separator between tool groups.
 
-## Patterns
+## Examples
 
 ### A trimmed toolbar
 

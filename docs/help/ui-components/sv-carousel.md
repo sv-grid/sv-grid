@@ -9,9 +9,26 @@ or onboarding steps. The active slide is bindable, autoplay pauses on hover and
 focus, and dragging past a threshold advances the track. Colors and radius come
 from the grid's `--sg-*` tokens.
 
-<div data-docs-demo="342-carousel-tour" data-height="420"></div>
+Related: [SvSkeleton](sv-skeleton.md) · [SvAvatarGroup](sv-avatar-group.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCarousel` starter into your app:
+
+<div data-docs-add="add carousel"></div>
+
+Or install the package and import it directly. `SvCarousel` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCarousel } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="342-carousel-tour" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -37,7 +54,7 @@ from the grid's `--sg-*` tokens.
 | `dots`      | `boolean`           | `true`       | Shows the dot indicator row.                                   |
 | `ariaLabel` | `string`            | `'Carousel'` | Accessible name for the carousel region.                       |
 
-## Patterns
+## Examples
 
 ### Bind the active slide
 

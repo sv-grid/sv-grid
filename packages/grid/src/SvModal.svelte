@@ -15,9 +15,7 @@
   import type { Snippet } from 'svelte'
   import { portalToBody } from './popover'
   import { nextEditorId } from './editor-contract'
-  import { createFocusTrap } from './a11y/focus-trap'
-  import { lockScroll } from './a11y/scroll-lock'
-  import { createDismissableLayer } from './a11y/dismissable'
+  import { createOverlay } from './createOverlay.svelte'
 
   type Props = {
     open?: boolean
@@ -55,28 +53,16 @@
 
   function close() { open = false; onClose?.() }
 
-  // Reset transient drag/resize each time it opens, then hand focus, scroll-lock
-  // and Escape/backdrop dismissal to the shared a11y primitives (one tested
-  // implementation, and nested overlays close top-first via the layer stack).
-  $effect(() => {
-    if (!open || !dialogEl) return
-    drag = { x: 0, y: 0 }
-    box = null
-    const trap = createFocusTrap(dialogEl)
-    trap.activate()
-    const unlockScroll = lockScroll()
-    const layer = createDismissableLayer({
-      element: () => dialogEl,
-      onDismiss: (reason) => {
-        if (reason === 'escape' ? closeOnEsc : closeOnBackdrop) close()
-      },
-    })
-    layer.activate()
-    return () => {
-      layer.release()
-      unlockScroll()
-      trap.release()
-    }
+  // Focus trap + scroll lock + Escape/backdrop dismissal come from the shared
+  // headless overlay core; this component resets its transient drag/resize on
+  // open and renders the panel. See createOverlay.svelte.ts.
+  const overlay = createOverlay({
+    open: () => open,
+    getDialog: () => dialogEl,
+    onClose: close,
+    closeOnEsc: () => closeOnEsc,
+    closeOnBackdrop: () => closeOnBackdrop,
+    onOpen: () => { drag = { x: 0, y: 0 }; box = null },
   })
 
   // --- Drag (header) ---------------------------------------------------------
@@ -130,10 +116,7 @@
       bind:this={dialogEl}
       class="sv-modal sv-modal--{size}"
       class:is-resized={!!box}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? titleId : undefined}
-      tabindex="-1"
+      {...overlay.dialogProps({ labelledBy: title ? titleId : undefined })}
       style:transform={`translate(calc(-50% + ${drag.x}px), calc(-50% + ${drag.y}px))`}
       style:width={box ? `${box.w}px` : undefined}
       style:height={box ? `${box.h}px` : undefined}

@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-07-30 from 346 pages.
+Generated 2026-07-31 from 348 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -10901,6 +10901,7 @@ Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../refere
 
 - [AI assistant - Enterprise](./ai.md) - the in-grid helpers in full, with response shapes and the license gate
 - [Agents](./agents.md) - build an agent that drives the live grid
+- [Agent Skill](./skill.md) - always-on, project-aware context and house style for coding assistants
 - [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
 - [LLM grounding](./llm-grounding.md) - the static files any model reads
 - [AI generation - Studio](../enterprise/studio/ai-generation.md) - scaffold CRUD data-apps from a schema
@@ -26228,10 +26229,16 @@ Open on a specific date with `initialDate` (defaults to today).
   }} />
 ```
 
-- **Month** - a fixed six-week grid; each day lists its events with a "+N more"
-  overflow, and multi-day events appear on every day they span.
+- **Month** - a fixed six-week grid. Multi-day events render as **one continuous
+  bar** spanning the day columns they cover (split into a fresh segment on each
+  week row they continue into), stacked into lanes so they never overlap; a
+  per-day **"+N more"** collapses events beyond the visible lanes into a popover.
 - **Week / Day** - a time-grid with an hourly band. Overlapping events are laid
-  out by the chosen [collision mode](#colliding-overlapping-events).
+  out by the chosen [collision mode](#colliding-overlapping-events). **All-day
+  and multi-day events** render in a separate **all-day row** at the top (in Week
+  view as continuous spanning bars), never filling the hourly columns. Drag an
+  event between the all-day row and the grid to flip it between all-day and timed,
+  or drag a bar's **left / right edge** to extend or shorten it by whole days.
 - **Agenda** - a chronological list grouped by day. Its span is `agendaDays`
   (default 30).
 
@@ -26286,18 +26293,34 @@ also reassigns the day / resource.
   }} />
 ```
 
+In the **Month** view an editable event can be **moved** (drag the bar to
+another day) and **resized** (hover to reveal left/right grips, then drag an edge
+across days to change its start or end date, keeping the time-of-day) - the bar
+grows/shrinks live as you drag, and the day under the cursor highlights. The
+**all-day spanning bars** in Week / Day view resize the same way: drag a bar's
+left or right edge across day columns to change how many days it covers.
+
 A focused event can also be nudged with the keyboard: **arrow left/right** move
 it a day, **arrow up/down** a slot, and **Enter** opens its editor.
 
 <div data-docs-demo="364-scheduler-timegrid" data-height="620"></div>
 
-## Resources (columns per person / room)
+## Resources (group by person / room)
 
-Point `resourceField` at a field and the **Day** view splits into one column
-per resource - a room- or staff-booking board. Pass an explicit `resources`
-array to fix their order, titles, and colors, or let them derive from the data.
-Dragging an event across columns reports both the new time and the new resource
-(`e.toResource`).
+Point `resourceField` at a field and **every** time-grid view groups by
+resource - the **Day** view shows one column per resource, and the **Week** view
+groups each resource across all seven days (a spanning group-header row sits
+above the columns; the grid scrolls horizontally when there are many). Pass an
+explicit `resources` array to fix their order, titles, and colors, or let them
+derive from the data. Dragging an event across columns reports both the new time
+and the new resource (`e.toResource`).
+
+A **resource legend** appears in *every* view (Month and Agenda included): each
+chip is a colour key that toggles that resource's events on or off.
+
+Set **`groupByDate: true`** to flip the grouping to date-major (each day groups
+the resources) instead of the default resource-major (each resource groups the
+days) - the same choice as Smart's `groupByDate`.
 
 ```svelte
 <SvGrid {data} {columns}
@@ -26308,7 +26331,8 @@ Dragging an event across columns reports both the new time and the new resource
       { id: 'Aurora', title: 'Aurora (12)', color: '#4f46e5' },
       { id: 'Borealis', title: 'Borealis (6)', color: '#0891b2' },
     ],
-    initialView: 'day', editable: true,
+    initialView: 'week', editable: true,
+    // groupByDate: true,   // day -> resources instead of resource -> days
     onEventMove: (e) => { /* e.toResource is the dropped-on room */ },
   }} />
 ```
@@ -26335,29 +26359,99 @@ base row's time-of-day and duration.
   repeat: { freq: 'weekly', weekdays: [1, 2, 3, 4, 5] } }
 ```
 
-Recurring instances are display-only (they are not individually dragged); edit
-the series from the row itself.
+The rule shape covers the patterns an enterprise calendar needs:
+
+```ts
+{ freq: 'daily',   interval: 2 }                              // every other day
+{ freq: 'weekly',  weekdays: [1, 3, 5] }                      // Mon / Wed / Fri
+{ freq: 'monthly', day: 1 }                                   // the 1st
+{ freq: 'monthly', day: -1 }                                  // the last day
+{ freq: 'monthly', weekdays: [2], weekOfMonth: 1 }            // the first Tuesday
+{ freq: 'monthly', weekdays: [5], weekOfMonth: -1 }           // the last Friday
+{ freq: 'yearly',  month: 10, weekdays: [4], weekOfMonth: 4 } // 4th Thursday of Nov
+{ freq: 'weekly',  weekdays: [1], count: 8, from: '2026-01-05' } // 8 times, then stop
+```
+
+- `weekOfMonth` (1..4 or `-1` for last) with a single `weekdays` entry gives a
+  **positional** monthly / yearly rule ("the 2nd Tuesday", "the last Friday").
+- `day` may be **negative** to count from the end (`-1` = the last day).
+- End the series with an inclusive `until` **date** or a `count` of occurrences
+  (counted from `from`, which the editor sets to the event's start).
+
+### Editing patterns
+
+When `recurrenceField` and `drawer` are both set, clicking **any** event opens a
+**recurrence editor** in the drawer - so you can turn a one-off into a recurring
+event whenever you decide. It offers a full, calendar-app-grade set of controls:
+
+- **Repeat** - Does not repeat / Daily / Weekly / Monthly / Yearly, with an
+  **interval** ("every N …").
+- **Weekly** - a weekday chip picker.
+- **Monthly** - *on a day of the month*, *on a weekday of the month* (the
+  first / second / … / last weekday), or *on the last day*.
+- **Yearly** - pick the **month**, then a specific date or a positional weekday.
+- **Ends** - *Never*, *on a date*, or *after N occurrences*.
+
+Use it to **add** a pattern to a one-off event, **change** an existing one, or
+**remove** it (set Repeat to "Does not repeat"). Saving writes the rule back
+through `onEventCommit`.
+
+Recurring events are also **drag- and resize-editable**: moving or resizing an
+occurrence edits the whole **series'** time-of-day and duration (the pattern's
+days are kept), so all occurrences shift together.
+
+### Showing the pattern in a table
+
+The rule stored on a row is a structured object, so in the **Table** view give
+the recurrence field a readable column with **`describeRecurrence`** - it turns a
+rule (or list) into a short summary like *"Weekly on weekdays"*, *"Every 2 weeks
+on Fri"*, or *"Monthly on the last Friday"*:
+
+```svelte
+<script>
+  import { describeRecurrence } from '@svgrid/grid'
+  const tableColumns = [
+    ...columns,
+    { id: 'repeat', header: 'Repeat', fieldFn: (r) => describeRecurrence(r.repeat) || '-' },
+  ]
+</script>
+```
+
+Pass a `RecurrenceLabels` object as the second argument to localize the weekday /
+month / ordinal words (and the empty-rule label).
 
 <div data-docs-demo="366-scheduler-recurring" data-height="620"></div>
 
-## Editing in a drawer
+## Add, edit, delete
 
-Set **`drawer`** (`true`, or a config object) and clicking an event opens a
-detail drawer with an `SvForm` built from your columns - the field types come
-from each column's `editorType`. Saving fires `onEventCommit` with the changed
-values, which you mirror onto your row.
+The scheduler drives full CRUD back onto your `data` through callbacks - it
+never mutates your rows itself:
+
+- **Add** - double-clicking an empty time slot fires
+  `onEventAdd(start, end, resourceId?)`; append a new row in the handler (a
+  toolbar "New event" button that pushes a row works the same way).
+- **Edit** - set **`drawer`** (`true`, or a config object) and clicking an event
+  opens a detail drawer. It always includes a **When** editor - **start** and
+  **end** as full date-and-time pickers, plus an **All day** toggle when
+  `allDayField` is set - followed by an `SvForm` of your other columns. Saving
+  fires `onEventCommit` with the changed values.
+- **Delete** - set **`onEventDelete`** and the drawer shows a **Delete** button;
+  remove the row from your data in the handler.
 
 ```svelte
 <SvGrid {data} {columns}
   scheduler={{
     startField: 'start', endField: 'end',
     drawer: { title: (row) => row.title, size: '420px' },
+    onEventAdd: (start, end) => (rows = [...rows, makeEvent(start, end)]),
     onEventCommit: (e) => Object.assign(e.row, e.values),
+    onEventDelete: (row) => (rows = rows.filter((r) => r !== row)),
   }} />
 ```
 
-Double-clicking an empty time slot fires `onEventAdd(start, end, resourceId?)`
-so you can append a new row.
+Because it is a view of the grid, pairing it with a plain `<SvGrid>` table gives
+you a **Calendar / Table toggle** over the same rows - every scheduler demo ships
+one.
 
 <div data-docs-demo="367-scheduler-agenda" data-height="620"></div>
 
@@ -26374,7 +26468,7 @@ source.
 | --- | --- |
 | `startField` *(required)* | Field holding each event's start. |
 | `endField` | Field holding the end; else `defaultDurationMin` from the start. |
-| `allDayField` | Boolean field marking an all-day event. |
+| `allDayField` | Boolean field marking an all-day event; enables the drawer's All-day toggle. |
 | `titleField` | Event label. Defaults to the first column's field. |
 | `colorField` / `color` | Per-event accent color, or one for all. |
 | `recurrenceField` | Field holding a `RecurrenceRule` (or array). |
@@ -26387,10 +26481,12 @@ source.
 | `collisionMode` | Overlap layout: `split` (default) / `cap` / `stack`. |
 | `maxColumns` | `cap` mode: columns before a `+N more` tile (min 2, default 3). |
 | `agendaDays` | How many days the agenda spans (default 30). |
-| `resourceField` / `resources` | Split the Day view into per-resource columns. |
+| `resourceField` / `resources` | Group time-grid columns by resource + a legend/filter in every view. |
+| `groupByDate` | Group day->resources instead of resource->days (default false). |
 | `editable` | Enable drag-to-move and edge-resize. |
 | `onEventMove` / `onEventResize` | Fired with the new start/end (and resource). |
 | `onEventAdd` | Fired when an empty slot is double-clicked. |
+| `onEventDelete` | Shows a Delete button in the drawer; remove the row here. |
 | `event` | A snippet for a custom event body. |
 | `drawer` / `onEventCommit` | Built-in detail drawer + save callback. |
 | `eventMenu` | Right-click menu items for an event. |
@@ -29644,6 +29740,101 @@ handles the flip.
   dark
 
 <!-- =================================================================
+     /help/skill  (community)
+     ================================================================== -->
+
+# Agent Skill
+
+The SvGrid **Agent Skill** gives AI coding assistants project-aware
+context for writing correct SvGrid code. It is the always-on counterpart
+to the [MCP server](./mcp-server.md): the skill carries the API surface and
+house style so your assistant follows SvGrid's conventions without being
+told, and the MCP server supplies live, version-pinned lookups on demand.
+
+Skills are the [Agent Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills)
+format - a `SKILL.md` file with a short description the client loads
+automatically, plus reference files it reads when it needs detail. Claude
+Code and other skill-aware clients pick it up with no per-prompt setup.
+
+## What it knows
+
+Once installed, the assistant has SvGrid's rules in context whenever you
+work in a project that imports from `@svgrid/*`:
+
+- **Project context** - it reads your `package.json` to see whether you
+  have `@svgrid/grid` alone or `@svgrid/enterprise` too, confirms Svelte 5,
+  and matches your existing theming convention instead of inventing one.
+- **The API surface** - `ColumnDef` (every column needs a stable `id`),
+  the `<SvGrid>` shortcut props (`sortable` / `filterable` / `pageable` /
+  `editable` / `groupable` each inject their feature), the `SvGridApi` from
+  `onApiReady`, and `createServerDataSource` for server-side data.
+- **Theming** - `--sg-*` tokens, dark mode through your app's selector,
+  the shipped design-system presets, and how to bridge to shadcn / Tailwind
+  tokens. Never targeting mangled internal class names.
+- **The package boundary** - enterprise symbols (`installEnterprise`,
+  `setAIProvider`, pivot, export) never leak into a grid-only project.
+- **Correct-vs-incorrect pairs** - the reference files show the wrong way
+  and the right way side by side, so the model corrects itself.
+
+Crucially, for anything version-specific the skill tells the model to
+**look it up rather than guess** - fetching the grounding files or calling
+the MCP tools - so its answers track the version you actually have
+installed.
+
+## Install
+
+With the [`skills`](https://www.npmjs.com/package/skills) CLI, pointed at
+the SvGrid repository:
+
+```bash
+npx skills add sv-grid/sv-grid
+# or
+pnpm dlx skills add sv-grid/sv-grid
+```
+
+That installs the skill into your project. Alternatively, copy the folder
+straight into your project's skills directory:
+
+```bash
+cp -r skills/svgrid your-project/.claude/skills/svgrid
+```
+
+The skill lives at [`skills/svgrid/`](https://github.com/sv-grid/sv-grid/tree/main/skills/svgrid)
+in the repo, so you can also read or fork it directly.
+
+## What's inside
+
+| File | Covers |
+| --- | --- |
+| `SKILL.md` | Entry point: project context, the minimal grid, critical rules, grounding, package boundary, scaffolding |
+| `rules/columns.md` | `ColumnDef`, custom cell snippets, widths, `type`, conditional formatting, editors |
+| `rules/data-and-features.md` | Feature toggles vs. shortcut props, the `SvGridApi`, reactive data, server-side data source |
+| `rules/theming.md` | `--sg-*` tokens, dark mode, design-system presets, the shadcn / Tailwind bridge |
+
+## Skill vs. MCP server vs. grounding files
+
+SvGrid ships three ways to make an assistant write correct code; they
+layer, they don't compete.
+
+| | Agent Skill | [MCP server](./mcp-server.md) | [Grounding files](./llm-grounding.md) |
+| --- | --- | --- | --- |
+| **What it is** | Always-on rules + house style | Callable tools (docs, demos, schemas) | Static `llms.txt` / `docs.json` / schemas |
+| **How it loads** | Auto, when a `@svgrid/*` project is detected | The model calls a tool | You paste or fetch the file |
+| **Best for** | Following SvGrid conventions by default | Version-pinned lookups mid-task | Custom GPTs, rules files, your own agent |
+| **Setup** | `npx skills add sv-grid/sv-grid` | One line of MCP config | Upload / fetch a URL |
+
+A common setup is the skill **and** the MCP server: the skill keeps the
+model on-convention, and the server answers "what's the exact signature of
+`setFilter` in the version I have?" when it matters.
+
+## See also
+
+- [MCP server](./mcp-server.md) - callable tools for Claude Desktop / Cursor / Zed / Claude Code
+- [LLM grounding](./llm-grounding.md) - the static files any model can read
+- [AI Toolkit](./ai-toolkit.md) - the full build-time and runtime AI surface
+- [Agents](./agents.md) - build an agent that drives the live grid
+
+<!-- =================================================================
      /help/spreadsheet-formulas  (community)
      ================================================================== -->
 
@@ -31182,6 +31373,18 @@ them.
 Press and toggle primitives. All take a `size` (`sm` | `md` | `lg`) and theme
 from `--sg-*`.
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add buttons"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvButton
 
 ```svelte
@@ -31274,15 +31477,120 @@ recipes:
 - [SvRating](./sv-rating.md) - a star rating with half steps.
 
 <!-- =================================================================
+     /help/ui-components/cli  (community)
+     ================================================================== -->
+
+# Add components with the CLI
+
+`@svgrid/ui` drops a working SvGrid UI component into your app in one command:
+
+<div data-docs-add="add calendar"></div>
+
+## How it works
+
+`@svgrid/ui` is a **recipe scaffolder**, not a second component library. `add`
+writes a minimal, ready-to-edit `.svelte` starter into your project that imports
+from [`@svgrid/grid`](./index.md), makes sure the package is a dependency, and
+prints the install command.
+
+The distinction matters: the components themselves live in `@svgrid/grid`, so you
+get bug fixes and new features by bumping one version - while the file `add` drops
+in is *yours* to restyle, rename and wire however you like. It is the fast start,
+not a fork.
+
+```
+your-app/
+  src/lib/components/ui/
+    calendar.svelte        <- your copy, imports { SvCalendar } from '@svgrid/grid'
+```
+
+## Commands
+
+```sh
+# add one component
+npx @svgrid/ui add calendar
+
+# add several at once, into a folder you choose
+npx @svgrid/ui add calendar time-picker --dir src/lib/ui
+
+# add a whole family in one go
+npx @svgrid/ui add date-time
+
+# install the dependency for you (default: it just prints the command)
+npx @svgrid/ui add calendar --install
+
+# list everything you can add
+npx @svgrid/ui list
+```
+
+## Options
+
+| Flag           | Description                                                                                          |
+| -------------- | ---------------------------------------------------------------------------------------------------- |
+| `--dir <path>` | Where to write files. Default: `src/lib/components/ui`, or the `componentsDir` in a project `svgrid.json`. |
+| `--force`      | Overwrite files that already exist (otherwise existing files are left untouched).                    |
+| `--install`    | Run your package manager (auto-detected from the lockfile) to install deps.                           |
+
+## Available components
+
+The whole [catalogue](./index.md#the-catalogue) is available - every component id
+maps to its tutorial page. Add them individually (`add calendar`), several at once
+(`add calendar time-picker`), or a full family with its group id:
+
+| Group        | Adds                                                              |
+| ------------ | ---------------------------------------------------------------- |
+| `date-time`  | calendar, time-picker, date-time-picker, date-range-input        |
+| `buttons`    | button, button-group, repeat-button, toggle-button, switch-button, check-box, radio-group, rating |
+| `inputs`     | text-input, text-area, number-input, password-input, masked-input, phone-input, color-input, otp-input, duration-input, tags-input |
+| `selection`  | list-box, drop-down-list, combo-box, auto-complete, multi-select, tree-select, grid-select, country-input |
+| `range`      | slider, gauge, progress, circular-progress, sparkline, stat      |
+| `overlays`   | popover, tooltip, modal, drawer, toaster, context-menu, menu |
+| `layout`     | tabs, accordion, splitter, dock-layout, dock-manager, card, divider, scroll-area, grid-chart, form, field, file-upload |
+| `feedback`   | badge, skeleton, alert, empty-state, chip, timeline, avatar, avatar-group, carousel |
+| `navigation` | breadcrumb, pagination, stepper, nav-pane, tree, command, tour, rich-text |
+
+Run `npx @svgrid/ui list` for the full set with descriptions. Every component is
+also a plain import from `@svgrid/grid` - the CLI is a convenience, never the only
+way in.
+
+## See also
+
+- [SvGrid UI overview](./index.md) - the full component catalogue.
+- [Headless editors](./headless-editors.md) - build fully custom markup on the same cores.
+
+<!-- =================================================================
      /help/ui-components/date-time  (community)
      ================================================================== -->
 
 # Date & time
 
-Three date/time controls built on a shared, framework-free date engine
+Four date/time controls built on a shared, framework-free date engine
 (`date-core`, `date-format`, `date-selection`, `date-restrict`). They are the
 rich-by-default editors for `date`, `datetime` and `time` grid columns, and work
-standalone. Parity reference: the Smart UI calendar / date-time / time pickers.
+standalone.
+
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add date-time"></div>
+
+The controls all ship free in the `@svgrid/grid` package - they are the **same
+components SvGrid mounts to edit `date`, `datetime` and `time` cells**, so you can
+also just install the grid and import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+## The family at a glance
+
+Each component has its own tutorial with a live Preview / Code example, the full
+props table and accessibility notes:
+
+- [SvCalendar](./sv-calendar.md) - a month/year/decade calendar with every selection mode (single, range, week, multi, event cells + recurrence).
+- [SvTimePicker](./sv-time-picker.md) - an analog clock-dial time picker (12/24-hour, minute snapping).
+- [SvDateTimePicker](./sv-date-time-picker.md) - a masked text field with DATE / TIME dropdown tabs.
+- [SvDateRangeInput](./sv-date-range-input.md) - a compact start-to-end range field with preset shortcuts.
 
 ## SvCalendar
 
@@ -31317,7 +31625,7 @@ week ends, Enter/Space selects, the title button drills up the view.
 
 ### Rich cells + recurrence (event calendars)
 
-Two props turn the picker into a FullCalendar-style scheduler:
+Two props turn the picker into a full event scheduler:
 
 - **`day`** - a snippet rendered inside each day cell, receiving `(date, state)`.
   Providing it switches the month grid to a taller, top-aligned layout with room
@@ -31384,15 +31692,8 @@ Typed text is parsed on blur/Enter and reverts if it doesn't fit the mask; the
 value is clamped to `min` / `max`. Emits `onChange`, plus `onCommit` / `onCancel`
 for grid editing.
 
-## Component guides
-
-Each component has its own full tutorial with props, keyboard behaviour and
-recipes:
-
-- [SvCalendar](./sv-calendar.md) - a month/year/decade calendar with every selection mode.
-- [SvTimePicker](./sv-time-picker.md) - an analog clock-dial time picker.
-- [SvDateTimePicker](./sv-date-time-picker.md) - a text field with date and time dropdown tabs.
-- [SvDateRangeInput](./sv-date-range-input.md) - a start-to-end date range picker.
+See the [component guides above](#the-family-at-a-glance) for each control's full
+tutorial, live example and props.
 
 <!-- =================================================================
      /help/ui-components/feedback  (community)
@@ -31403,6 +31704,18 @@ recipes:
 Status, identity, loading and surface primitives for dashboards and detail
 panels. All are theme-token driven (light / dark + presets) and reduced-motion
 aware.
+
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add feedback"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
 
 ## SvBadge
 
@@ -31624,12 +31937,108 @@ Buttons/toggles: `createToggle`, `createSwitch`, `createCheckbox`,
 Date/time: `createCalendar`, `createTimePicker`, `createDateTimePicker`.
 Layout/range: `createTabs`, `createTree`, `createSlider`, `createGauge`,
 `createAccordion`, `createSplitter`, `createFileUpload`.
+Navigation: `createPagination` (pager), `createStepper` (wizard steps),
+`createCarousel` (slideshow with autoplay). `createPagination` and `createStepper`
+are pure - no runes - so you can unit-test and even run them server-side.
+Forms: `createForm` (schema-driven values/errors/touched + validation + submit).
+Command palette: `createCommand` (fuzzy filter + roving + global hotkey) - pair it
+with `createOverlay` for the focus-trap/scroll-lock/dismissal, as `SvCommand` does.
+Overlays/menu: `createMenu` (the roving-focus + submenu state machine behind
+`SvMenu` / `SvMenuList` / `SvContextMenu`), `createOverlay` (the dialog lifecycle
+behind `SvModal` / `SvDrawer`), `createTooltip` (the hover/focus + show-delay +
+Escape state machine behind `SvTooltip`).
 
-Pure helpers are exported too - `filterOptions`, `groupOptions`,
-`nextTypeaheadIndex`, `virtualRange`/`scrollToIndex` (windowing),
-`moveTreeNode`/`sortTreeNodes`, `rules`/`runRules` (validation),
-`phoneDigitsValid` - so you can build entirely custom controls on the same
-foundation.
+**Toasts are already headless.** `SvToaster` is a thin renderer over the exported
+`toastStore` + `toast()` / `dismissToast` / `pauseToast` / `resumeToast` /
+`clearToasts` queue - the state machine (timers, pause-on-hover, live-region
+announcement) lives in the store, so you can drive it from anywhere or render your
+own toaster over the same store.
+
+### Dialog overlays: `createOverlay`
+
+`SvModal` and `SvDrawer` share one lifecycle core, `createOverlay`: when `open`
+flips true it wires a focus trap, a body scroll-lock, and Escape/backdrop
+dismissal (via the shared dismissable-layer stack, so nested overlays close
+top-first), and tears them all down on close. Your component renders the backdrop
+and panel and spreads `dialogProps()` for the ARIA:
+
+```svelte
+<script lang="ts">
+  import { createOverlay } from '@svgrid/grid'
+  let dialogEl = $state<HTMLElement | null>(null)
+  const overlay = createOverlay({
+    open: () => open,
+    getDialog: () => dialogEl,
+    onClose: () => (open = false),
+  })
+</script>
+
+{#if open}
+  <div class="backdrop">
+    <div bind:this={dialogEl} {...overlay.dialogProps({ labelledBy: titleId })}>…</div>
+  </div>
+{/if}
+```
+
+### Anchored-panel selects: `createPopoverSelect`
+
+The dropdown selects that render a panel to `<body>` - `SvMultiSelect`,
+`SvTreeSelect`, `SvGridSelect` - share one engine, `createPopoverSelect`. It owns
+open/close, the `anchoredRect` positioning (reposition on scroll/resize),
+outside/Escape dismissal via the shared layer stack, a roving `active` index, and
+the WAI-ARIA combobox wiring (`aria-expanded` / `aria-controls` /
+`aria-activedescendant`). Your component owns the item rendering and passes in the
+trigger/panel refs as getters:
+
+```svelte
+<script lang="ts">
+  import { createPopoverSelect } from '@svgrid/grid'
+  let trigger = $state<HTMLElement | null>(null)
+  let panel = $state<HTMLElement | null>(null)
+
+  const sel = createPopoverSelect({
+    itemCount: () => options.length,
+    onSelect: (i) => choose(options[i]),
+    getTrigger: () => trigger,
+    getPanel: () => panel,
+  })
+</script>
+
+<button bind:this={trigger} {...sel.triggerProps('listbox')}>Choose</button>
+{#if sel.open}
+  <div bind:this={panel} {...sel.focusOwnerProps('listbox')}>
+    {#each options as opt, i}
+      <div {...sel.itemProps(i)} class:active={sel.isActive(i)}>{opt.label}</div>
+    {/each}
+  </div>
+{/if}
+```
+
+## Data-model cores (dock)
+
+A few composite components are headless in a second sense: instead of a
+`create*` factory with prop-getters, they expose a **plain serializable state
+tree plus pure, immutable transforms**. The state *is* the headless core - you
+own it, `bind` it, persist it, and drive it from the exported functions; the
+`Sv*` component is only the styled renderer.
+
+- **`SvDockLayout`** - state is a `DockNode` tree (`dockGroup` / `dockTabs` /
+  `dockPane`); transforms include `movePane`, `removePane`, `dockInto`,
+  `dockSetActive`, `dockSetSizes`, `allPaneIds`.
+- **`SvDockManager`** - state is a `DockManagerState` (`main` / `floating` /
+  `autoHide`); transforms include `floatPane`, `dockPaneOnto`, `reorderTab`,
+  `autoHideLeaf`, `pinAutoHidden`, `dockManagerClosePane`, `allManagerPaneIds`.
+
+Every transform returns a new tree and is unit-tested independently of the DOM,
+so you can compute or restore a whole workspace on the server or in a worker.
+See [SvDockLayout](./sv-dock-layout.md) and [SvDockManager](./sv-dock-manager.md).
+
+Pure helpers are exported too - `enabledIndices`/`wrapMove` (the roving-focus
+navigation math shared by the listbox, menu and popover-select cores),
+`filterOptions`, `groupOptions`, `nextTypeaheadIndex`,
+`virtualRange`/`scrollToIndex` (windowing), `moveTreeNode`/`sortTreeNodes`,
+`rules`/`runRules` (validation), `phoneDigitsValid` - so you can build entirely
+custom controls on the same foundation.
 
 ## Shared editor contract
 
@@ -31741,6 +32150,9 @@ theme-driven, accessible, and dependency-free (see below). Try them live under t
 **SvGrid Editors** switcher in the examples gallery, or jump straight to any
 component's tutorial in [the catalogue](#the-catalogue).
 
+> **Quick start with the CLI.** `npx @svgrid/ui add calendar` drops a ready-to-edit
+> starter for any component into your app. See [Add components with the CLI](./cli.md).
+
 ![The SvGrid UI suite: nine families of components, each usable standalone and as a grid cell editor.](/docs-media/svgrid-ui-map.svg)
 
 ## Design principles
@@ -31811,6 +32223,7 @@ group heading is the at-a-glance rollup.
 ### [Layout & composite](./layout.md)
 
 [SvTabs](./sv-tabs.md) · [SvAccordion](./sv-accordion.md) · [SvSplitter](./sv-splitter.md) ·
+[SvDockLayout](./sv-dock-layout.md) · [SvDockManager](./sv-dock-manager.md) ·
 [SvCard](./sv-card.md) · [SvDivider](./sv-divider.md) · [SvScrollArea](./sv-scroll-area.md) ·
 [SvGridChart](./sv-grid-chart.md) · [SvForm](./sv-form.md) · [SvField](./sv-field.md) ·
 [SvFileUpload](./sv-file-upload.md)
@@ -31896,6 +32309,18 @@ It's opt-in (so the components tree-shake when unused). Option/structured editor
 # Inputs
 
 Typed text controls. Each emits a clean value and themes from `--sg-*`.
+
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add inputs"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
 
 ## SvTextInput
 
@@ -32052,6 +32477,18 @@ recipes:
 
 # Layout & composite
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add layout"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvTabs
 
 A WAI-ARIA tabs widget with roving tabindex and arrow-key navigation. The active
@@ -32156,6 +32593,45 @@ hover/focus) and swipe. Slides come from the `slide` snippet.
 Props: `count`, `slide` snippet, `current` (bindable), `autoplay` (ms; 0 = off),
 `loop`, `arrows`, `dots`.
 
+## SvDockLayout
+
+A tiled docking layout: nested resizable split groups and tabbed leaves with
+drag-to-dock. The whole layout is a plain, serializable `DockNode` tree you
+`bind`, and every gesture is a pure, immutable transform - so a workspace saves
+to JSON and restores exactly. The building block for IDE-style workspaces, BI
+dashboards, and trading desks.
+
+```svelte
+<div style="height: 480px">
+  <SvDockLayout bind:layout>
+    {#snippet pane(p)}<div>{p.title}</div>{/snippet}
+  </SvDockLayout>
+</div>
+```
+
+Build the tree with `dockGroup` / `dockTabs` / `dockPane`. Props: `layout`
+(bindable `DockNode`), `pane` snippet, `onLayoutChange`, `minSize`. Full guide:
+[SvDockLayout](./sv-dock-layout.md).
+
+## SvDockManager
+
+The full docking manager on top of SvDockLayout: adds floating / pop-out
+windows, tab reordering, and pinning / auto-hide edges. The whole workspace -
+tiled `main`, `floating` windows, and `autoHide` edges - is one serializable
+`DockManagerState` you `bind`, with an imperative API via `onReady`.
+
+```svelte
+<div style="height: 520px">
+  <SvDockManager bind:workspace onReady={(a) => (api = a)}>
+    {#snippet pane(p)}<div>{p.title}</div>{/snippet}
+  </SvDockManager>
+</div>
+```
+
+Props: `workspace` (bindable `DockManagerState`), `pane` snippet, `onChange`,
+`onEvent`, `onReady`, `reorderEnabled`, `headerPosition`, `keepAlive`. Full
+guide: [SvDockManager](./sv-dock-manager.md).
+
 ## Component guides
 
 Each component has its own full tutorial with props, keyboard behaviour and
@@ -32164,6 +32640,8 @@ recipes:
 - [SvTabs](./sv-tabs.md) - a WAI-ARIA tabs widget with panels.
 - [SvAccordion](./sv-accordion.md) - collapsible sections, single or multi-expand.
 - [SvSplitter](./sv-splitter.md) - two resizable panes with a draggable gutter.
+- [SvDockLayout](./sv-dock-layout.md) - tiled drag-to-dock splits and tabs.
+- [SvDockManager](./sv-dock-manager.md) - docking with floating windows, reorder and auto-hide.
 - [SvCard](./sv-card.md) - a themed surface with header, body and footer.
 - [SvDivider](./sv-divider.md) - a separator line with an optional label.
 - [SvScrollArea](./sv-scroll-area.md) - a scroll container with themed scrollbars.
@@ -32180,6 +32658,18 @@ recipes:
 
 Wayfinding components for admin apps and Studio-generated screens. Pure,
 keyboard-accessible, theme-token driven.
+
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add navigation"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
 
 ## SvBreadcrumb
 
@@ -32255,6 +32745,18 @@ App-chrome overlays built on the kit's shared accessibility primitives -
 locking and Escape / outside-click dismissal behave identically everywhere, and
 nested overlays always close top-first. All portal to `<body>` (never clipped),
 animate in, and respect `prefers-reduced-motion`.
+
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add overlays"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
 
 ## SvDrawer
 
@@ -32366,6 +32868,18 @@ recipes:
 
 # Range & feedback
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add range"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvSlider
 
 A single or dual-thumb range slider (ARIA slider) with steps, tick marks,
@@ -32428,6 +32942,18 @@ List and overlay pickers. The overlay controls portal their panel to `<body>`
 ```ts
 type ListOption = { value: string | number; label: string; disabled?: boolean; group?: string }
 ```
+
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add selection"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
 
 ## SvMultiSelect
 
@@ -32589,9 +33115,26 @@ and every color comes from the grid's `--sg-*` tokens so it matches the rest of
 the kit in light and dark. The expand logic, keyboard handling, and ARIA wiring
 live in a headless `createAccordion` core; this component is one styled renderer.
 
-<div data-docs-demo="285-accordion" data-height="440"></div>
+Related: [SvTabs](sv-tabs.md) · [SvSplitter](sv-splitter.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAccordion` starter into your app:
+
+<div data-docs-add="add accordion"></div>
+
+Or install the package and import it directly. `SvAccordion` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAccordion } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="285-accordion" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -32630,7 +33173,7 @@ type AccordionItem = { id: string; label: string; disabled?: boolean }
 type AccordionExpandMode = 'single' | 'multiple'
 ```
 
-## Patterns
+## Examples
 
 ### Multiple open sections
 
@@ -32707,9 +33250,26 @@ validation summaries, banner notices, and "here is what happened" panels. Colors
 come from the grid's `--sg-*` semantic tokens, and the variant sets both the
 accent and the ARIA role so urgent messages announce themselves.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvBadge](sv-badge.md) · [SvEmptyState](sv-empty-state.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAlert` starter into your app:
+
+<div data-docs-add="add alert"></div>
+
+Or install the package and import it directly. `SvAlert` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAlert } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -32738,7 +33298,7 @@ accent and the ARIA role so urgent messages announce themselves.
 | `actions`     | `Snippet`                                                  | -       | Trailing action buttons or links.                                  |
 | `icon`        | `Snippet`                                                  | -       | Custom leading icon, overriding the default glyph.                 |
 
-## Patterns
+## Examples
 
 ### Dismissible banners
 
@@ -32850,9 +33410,26 @@ container, and `minChars` gates when the list appears. Suggestions can be plain
 strings or `{ value, label }` objects, so the shown label and the inserted value
 can differ.
 
-<div data-docs-demo="315-autocomplete" data-height="420"></div>
+Related: [SvComboBox](sv-combo-box.md) · [SvTagsInput](selection.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAutoComplete` starter into your app:
+
+<div data-docs-add="add auto-complete"></div>
+
+Or install the package and import it directly. `SvAutoComplete` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAutoComplete } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="315-autocomplete" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -32889,7 +33466,7 @@ can differ.
 Object suggestions use the shared [ListOption](sv-list-box.md#listoption) shape;
 the `label` is shown and the `value` is inserted.
 
-## Patterns
+## Examples
 
 ### Distinct label and inserted value
 
@@ -32970,9 +33547,26 @@ overlapping stack, capping the count with `max` and rolling the rest into a
 "+N" pill. Each entry is a subset of [SvAvatar](sv-avatar.md) props, so the same
 initials-and-color fallback applies to every face.
 
-<div data-docs-demo="340-command-palette" data-height="420"></div>
+Related: [SvAvatar](sv-avatar.md) · [SvChip](sv-chip.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAvatarGroup` starter into your app:
+
+<div data-docs-add="add avatar-group"></div>
+
+Or install the package and import it directly. `SvAvatarGroup` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAvatarGroup } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="340-command-palette" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -33010,7 +33604,7 @@ type AvatarProps = {
 
 The overlap and the "+N" pill size scale automatically with `size`.
 
-## Patterns
+## Examples
 
 ### Assignees on a card
 
@@ -33097,9 +33691,26 @@ plus an optional presence status dot.
 initials on a stable, name-derived color so the same person always gets the same
 tint. Presets cover the common sizes, and a `status` dot marks presence.
 
-<div data-docs-demo="333-app-feedback" data-height="420"></div>
+Related: [SvAvatarGroup](sv-avatar-group.md) · [SvChip](sv-chip.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAvatar` starter into your app:
+
+<div data-docs-add="add avatar"></div>
+
+Or install the package and import it directly. `SvAvatar` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAvatar } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="333-app-feedback" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -33133,7 +33744,7 @@ avatarInitials('Ada Lovelace') // 'AL'
 avatarColorHue('Ada Lovelace') // stable hue 0-359 for a matching tint
 ```
 
-## Patterns
+## Examples
 
 ### Image with graceful fallback
 
@@ -33216,9 +33827,26 @@ tokens with soft `color-mix` fills, so it reads well on light and dark without
 per-badge color choices. Pick a semantic `variant`, optionally show a leading
 `dot`, and you have a status marker that matches the rest of the kit.
 
-<div data-docs-demo="333-app-feedback" data-height="420"></div>
+Related: [SvChip](sv-chip.md) · [SvAlert](sv-alert.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvBadge` starter into your app:
+
+<div data-docs-add="add badge"></div>
+
+Or install the package and import it directly. `SvBadge` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvBadge } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="333-app-feedback" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -33240,7 +33868,7 @@ per-badge color choices. Pick a semantic `variant`, optionally show a leading
 | `dot`      | `boolean`                                                              | `false`   | Shows a leading status dot before the content.                   |
 | `children` | `Snippet`                                                              | -         | The badge label. Can be omitted for a dot-only marker.           |
 
-## Patterns
+## Examples
 
 ### Status pills
 
@@ -33337,9 +33965,26 @@ last item is the current page and is never interactive - it carries
 ellipsis so a deep path never overflows the bar. Every color comes from the
 grid's `--sg-*` tokens, so it matches your grid and forms in light and dark.
 
-<div data-docs-demo="332-app-navigation" data-height="440"></div>
+Related: [SvPagination](sv-pagination.md) · [SvStepper](sv-stepper.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvBreadcrumb` starter into your app:
+
+<div data-docs-add="add breadcrumb"></div>
+
+Or install the package and import it directly. `SvBreadcrumb` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvBreadcrumb } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="332-app-navigation" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -33367,7 +34012,7 @@ Pass `href` for a real link, `onClick` for a router push, or neither for static
 text. `icon` is any string (emoji, char, or font-icon glyph) rendered before the
 label.
 
-## Patterns
+## Examples
 
 ### Router navigation without full page loads
 
@@ -33464,9 +34109,26 @@ switcher), `mode="multiple"` for a toggle set (a formatting toolbar), or
 from the headless `createButtonGroup` core, and it carries the shared editor
 contract (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
-<div data-docs-demo="284-button-group" data-height="420"></div>
+Related: [SvToggleButton](sv-toggle-button.md) · [SvRadioGroup](sv-radio-group.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvButtonGroup` starter into your app:
+
+<div data-docs-add="add button-group"></div>
+
+Or install the package and import it directly. `SvButtonGroup` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvButtonGroup } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="284-button-group" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -33512,7 +34174,7 @@ contract (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
 Helper type: `ButtonGroupItem = { value: string | number; label?: string; disabled?: boolean }`.
 
-## Patterns
+## Examples
 
 ### Single-select switcher
 
@@ -33606,9 +34268,26 @@ light and dark. It renders a real `<button>` (or an `<a>` when given `href`),
 so keyboard focus, `Enter` / `Space` activation, and screen-reader semantics are
 the platform's, not a re-implementation.
 
-<div data-docs-demo="305-button" data-height="420"></div>
+Related: [SvButtonGroup](sv-button-group.md) · [SvToggleButton](sv-toggle-button.md) · [SvSwitchButton](sv-switch-button.md) · [SvRepeatButton](sv-repeat-button.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvButton` starter into your app:
+
+<div data-docs-add="add button"></div>
+
+Or install the package and import it directly. `SvButton` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvButton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="305-button" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -33625,7 +34304,7 @@ the platform's, not a re-implementation.
 
 | Prop        | Type                                                        | Default     | Description                                                        |
 | ----------- | ----------------------------------------------------------- | ----------- | ------------------------------------------------------------------ |
-| `variant`   | `primary` \| `secondary` \| `outline` \| `ghost` \| `danger` | `secondary` | Visual weight. `danger` uses the destructive accent.               |
+| `variant`   | `primary` \| `secondary` \| `outline` \| `ghost` \| `danger` | `primary`   | Visual weight. `danger` uses the destructive accent.               |
 | `size`      | `sm` \| `md` \| `lg`                                        | `md`        | Padding and font size. Shared with the rest of the kit.            |
 | `type`      | `button` \| `submit` \| `reset`                             | `button`    | Native button type. Use `submit` inside an [SvForm](sv-form.md).   |
 | `disabled`  | `boolean`                                                   | `false`     | Blocks clicks and dims the control.                                |
@@ -33637,7 +34316,7 @@ the platform's, not a re-implementation.
 | `icon`      | `Snippet`                                                   | -           | Leading icon slot, rendered before the label.                      |
 | `children`  | `Snippet`                                                   | -           | The button label.                                                  |
 
-## Patterns
+## Examples
 
 ### Icon buttons
 
@@ -33720,17 +34399,38 @@ touching the component.
 A themeable, accessible month / year / decade calendar with every selection
 mode - the date surface the whole date/time family is built on.
 
+Related: [Date & time overview](date-time.md) ·
+[SvDateTimePicker](sv-date-time-picker.md) ·
+[SvDateRangeInput](sv-date-range-input.md) ·
+[SvTimePicker](sv-time-picker.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCalendar` starter into your app:
+
+<div data-docs-add="add calendar"></div>
+
+Or install the package and import it directly. `SvCalendar` ships free in
+`@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
+edit a `date` cell** - so it is both a standalone control and the grid's built-in
+date editor:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCalendar } from '@svgrid/grid'
+```
+
+## Example
+
 `SvCalendar` is a thin styled renderer over the headless `createCalendar` core,
 the same split as [SvGrid](../getting-started.md): the core owns reactive state,
 selection, navigation, keyboard and ARIA, while the component keeps render-only
-concerns (the view-change animation, mouse-wheel navigation, DOM refs). Every
-color comes from the grid's `--sg-*` tokens, so it matches your grid and edit
-forms in light and dark. It is the editor SvGrid mounts for a `date` cell, and
-it works standalone anywhere.
+concerns. Every color comes from the grid's `--sg-*` tokens, so it matches your
+grid and edit forms in light and dark. It is the editor SvGrid mounts for a
+`date` cell, and it works standalone anywhere.
 
-<div data-docs-demo="250-calendar" data-height="460"></div>
-
-## Basic usage
+<div data-docs-demo="250-calendar" data-height="460" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -33747,6 +34447,132 @@ it works standalone anywhere.
   onChange={(dates) => (value = dates)}
 />
 ```
+
+## Anatomy
+
+The component is render-only; the reactive model lives in the headless
+`createCalendar` core. You almost never touch the core directly - `SvCalendar`
+wires it for you - but you can build a fully custom calendar on the same engine
+(see [Headless editors](headless-editors.md)):
+
+```svelte
+<script lang="ts">
+  import { SvCalendar } from '@svgrid/grid'
+  let value = $state<Date[]>([])
+</script>
+
+<SvCalendar {value} onChange={(dates) => (value = dates)} />
+```
+
+## Examples
+
+### Range selection with presets
+
+Set `selectionMode="range"` and pass `presets` for one-click shortcuts. Function
+values resolve relative to today at click time.
+
+<div data-docs-demo="258-calendar-range" data-height="440" data-code></div>
+
+```svelte
+<SvCalendar
+  selectionMode="range"
+  months={2}
+  presets={[
+    { label: 'Last 7 days', value: () => [addDays(new Date(), -6), new Date()] },
+    { label: 'This month', value: () => [startOfMonth(new Date()), new Date()] },
+  ]}
+  onChange={(dates) => (range = dates)}
+/>
+```
+
+### Date of birth
+
+Single selection with `max` clamped to today so future dates are blocked, opening
+on the decade (year) grid for fewer clicks to a birth year.
+
+<div data-docs-demo="260-calendar-birthday" data-height="420" data-code></div>
+
+```svelte
+<SvCalendar
+  {value}
+  selectionMode="one"
+  max={new Date()}
+  displayMode="decade"
+  footer
+  onChange={(dates) => (value = dates)}
+/>
+```
+
+### Rich cells and recurrence (event calendars)
+
+A `day` snippet fills each cell with event chips and switches to a taller grid;
+`recurrence` rules mark repeating days. The pure `matchesRecurrence` /
+`expandRecurrence` helpers generate the events.
+
+A `RecurrenceRule` supports the patterns a real calendar needs - `freq`
+(`daily` / `weekly` / `monthly` / `yearly`), an `interval`, `weekdays`, a
+`day` of the month (negative counts from the end, `-1` = last day), a positional
+`weekOfMonth` (`1`..`4` or `-1`) paired with a single weekday ("the 2nd Tuesday",
+"the last Friday"), a yearly `month`, an anchor `from`, and an end condition -
+an inclusive `until` date or a `count` of occurrences:
+
+```ts
+{ freq: 'monthly', weekdays: [2], weekOfMonth: 1 }              // the first Tuesday
+{ freq: 'monthly', day: -1 }                                   // the last day
+{ freq: 'weekly',  weekdays: [1], count: 8, from: '2026-01-05' } // 8 times, then stop
+```
+
+<div data-docs-demo="338-event-calendar" data-height="520" data-code></div>
+
+```svelte
+<SvCalendar recurrence={rules}>
+  {#snippet day(date, state)}
+    <span class="num">{date.getDate()}</span>
+    {#each eventsOn(date) as ev}
+      <span class="chip">{ev.title}</span>
+    {/each}
+  {/snippet}
+</SvCalendar>
+```
+
+### Restricted and important dates
+
+Block dates with `restrictedDates` (a list or predicate) and flag noteworthy ones
+with `importantDates` - restricted days are unselectable, important days stay
+selectable but carry an indicator:
+
+```svelte
+<SvCalendar
+  restrictedDates={(d) => d.getDay() === 0}
+  importantDates={holidays}
+  min={new Date()}
+/>
+```
+
+### Multi-day availability (many mode)
+
+`selectionMode="many"` toggles any number of individual days - useful for picking
+shift days or blackout dates. Bind your own `$state` and assign the list back in
+`onChange`; `min` blocks past days:
+
+```svelte
+<script lang="ts">
+  import { SvCalendar, type CalendarValue } from '@svgrid/grid'
+  let days = $state<Date[]>([])
+</script>
+
+<SvCalendar
+  value={days as CalendarValue}
+  selectionMode="many"
+  min={new Date()}
+  footer
+  onChange={(picked) => (days = picked)}
+/>
+<p>{days.length} day(s) selected</p>
+```
+
+Tip: `onChange` always receives the complete selected-day array (not just the day
+that changed), in every selection mode - so you can assign it straight to state.
 
 ## Props
 
@@ -33790,71 +34616,6 @@ it works standalone anywhere.
 - `CalendarPreset = { label: string; value: Date | number | string | readonly [start, end] | (() => ...) }` - pass a function for "today"-relative shortcuts that resolve at click time.
 - `CalendarDayState = { disabled, selected, important, today, outside, focused, preview, recurring }` - the booleans handed to a `day` snippet.
 
-## Patterns
-
-### Range selection with presets
-
-Set `selectionMode="range"` and pass `presets` for one-click shortcuts. Function
-values resolve relative to today at click time:
-
-```svelte
-<SvCalendar
-  selectionMode="range"
-  months={2}
-  presets={[
-    { label: 'Last 7 days', value: () => [addDays(new Date(), -6), new Date()] },
-    { label: 'This month', value: () => [startOfMonth(new Date()), new Date()] },
-  ]}
-  onChange={(dates) => (range = dates)}
-/>
-```
-
-### Restricted and important dates
-
-Block dates with `restrictedDates` (a list or predicate) and flag noteworthy ones
-with `importantDates` - restricted days are unselectable, important days stay
-selectable but carry an indicator:
-
-```svelte
-<SvCalendar
-  restrictedDates={(d) => d.getDay() === 0}
-  importantDates={holidays}
-  min={new Date()}
-/>
-```
-
-### Rich cells and recurrence (event calendars)
-
-A `day` snippet fills each cell with event chips and switches to a taller grid;
-`recurrence` rules mark repeating days. The pure `matchesRecurrence` /
-`expandRecurrence` helpers generate the events. See the
-[Date & time overview](date-time.md).
-
-### Multi-day availability (many mode)
-
-`selectionMode="many"` toggles any number of individual days - useful for picking
-shift days or blackout dates. Bind your own `$state` and assign the list back in
-`onChange`; `min` blocks past days:
-
-```svelte
-<script lang="ts">
-  import { SvCalendar, type CalendarValue } from '@svgrid/grid'
-  let days = $state<Date[]>([])
-</script>
-
-<SvCalendar
-  value={days as CalendarValue}
-  selectionMode="many"
-  min={new Date()}
-  footer
-  onChange={(picked) => (days = picked)}
-/>
-<p>{days.length} day(s) selected</p>
-```
-
-Tip: `onChange` always receives the complete selected-day array (not just the day
-that changed), in every selection mode - so you can assign it straight to state.
-
 ## Accessibility
 
 - Renders a `role="group"` with labelled `role="row"` / `columnheader` /
@@ -33885,9 +34646,26 @@ building block for dashboards and Studio-generated app screens.
 footer. Every color and radius comes from the grid's `--sg-*` tokens, so cards
 match the grid, forms, and charts in light and dark without extra styling.
 
-<div data-docs-demo="333-app-feedback" data-height="440"></div>
+Related: [SvDivider](sv-divider.md) · [SvScrollArea](sv-scroll-area.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCard` starter into your app:
+
+<div data-docs-add="add card"></div>
+
+Or install the package and import it directly. `SvCard` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCard } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="333-app-feedback" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -33914,7 +34692,7 @@ match the grid, forms, and charts in light and dark without extra styling.
 
 The header row renders when any of `header`, `title`, or `subtitle` is set.
 
-## Patterns
+## Examples
 
 ### KPI tile
 
@@ -33997,9 +34775,26 @@ or onboarding steps. The active slide is bindable, autoplay pauses on hover and
 focus, and dragging past a threshold advances the track. Colors and radius come
 from the grid's `--sg-*` tokens.
 
-<div data-docs-demo="342-carousel-tour" data-height="420"></div>
+Related: [SvSkeleton](sv-skeleton.md) · [SvAvatarGroup](sv-avatar-group.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCarousel` starter into your app:
+
+<div data-docs-add="add carousel"></div>
+
+Or install the package and import it directly. `SvCarousel` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCarousel } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="342-carousel-tour" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -34025,7 +34820,7 @@ from the grid's `--sg-*` tokens.
 | `dots`      | `boolean`           | `true`       | Shows the dot indicator row.                                   |
 | `ariaLabel` | `string`            | `'Carousel'` | Accessible name for the carousel region.                       |
 
-## Patterns
+## Examples
 
 ### Bind the active slide
 
@@ -34135,9 +34930,26 @@ controlled - drive `checked` (and optionally `indeterminate`) from your state an
 update it in `onChange`. Its label is whatever you pass as children, and it emits
 a hidden input for form submission when you give it a `name`.
 
-<div data-docs-demo="309-checkbox" data-height="420"></div>
+Related: [SvRadioGroup](sv-radio-group.md) · [SvSwitchButton](sv-switch-button.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCheckBox` starter into your app:
+
+<div data-docs-add="add check-box"></div>
+
+Or install the package and import it directly. `SvCheckBox` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCheckBox } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="309-checkbox" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -34170,7 +34982,7 @@ a hidden input for form submission when you give it a `name`.
 | `id`            | `string`                     | auto    | Root id; hint/error ids derive from it.                         |
 | `children`      | `Snippet`                    | -       | The inline label next to the box.                              |
 
-## Patterns
+## Examples
 
 ### Tri-state select-all
 
@@ -34254,9 +35066,26 @@ static status marker, a chip can be clicked to select and dismissed to remove -
 perfect for tag inputs, active-filter rows, and "assigned to" pickers. It draws
 from the grid's `--sg-*` semantic tokens in both soft and solid fills.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvBadge](sv-badge.md) · [SvAvatar](sv-avatar.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvChip` starter into your app:
+
+<div data-docs-add="add chip"></div>
+
+Or install the package and import it directly. `SvChip` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvChip } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -34283,7 +35112,7 @@ from the grid's `--sg-*` semantic tokens in both soft and solid fills.
 | `children`  | `Snippet`                                                              | -         | The chip label.                                                |
 | `leading`   | `Snippet`                                                              | -         | Leading content such as an avatar or icon.                     |
 
-## Patterns
+## Examples
 
 ### Removable tags
 
@@ -34380,9 +35209,26 @@ readouts in cards, buttons, and dashboards. Leave `value` off and set
 `indeterminate` for a continuous spinner. Colors come from the grid's `--sg-*`
 tokens, and the spin animation respects `prefers-reduced-motion`.
 
-<div data-docs-demo="330-progress" data-height="420"></div>
+Related: [SvProgress](sv-progress.md) · [SvGauge](sv-gauge.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCircularProgress` starter into your app:
+
+<div data-docs-add="add circular-progress"></div>
+
+Or install the package and import it directly. `SvCircularProgress` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCircularProgress } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="330-progress" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -34408,7 +35254,7 @@ tokens, and the spin animation respects `prefers-reduced-motion`.
 | `ariaLabel`     | `string`                                      | -        | Accessible name for the progressbar.                       |
 | `children`      | `Snippet`                                     | -        | Custom center content; overrides `showLabel`.              |
 
-## Patterns
+## Examples
 
 ### Percentage ring
 
@@ -34491,9 +35337,26 @@ clips. It emits a normalized hex string and is the styled renderer over the
 headless `createColorInput` core. Its label / hint / error chrome comes from
 [SvField](sv-field.md).
 
-<div data-docs-demo="304-color-input" data-height="420"></div>
+Related: [SvTextInput](sv-text-input.md) · [SvTagsInput](sv-tags-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvColorInput` starter into your app:
+
+<div data-docs-add="add color-input"></div>
+
+Or install the package and import it directly. `SvColorInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvColorInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="304-color-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -34520,7 +35383,7 @@ headless `createColorInput` core. Its label / hint / error chrome comes from
 
 `ColorMessages` is `{ dialog; picker; hex }`.
 
-## Patterns
+## Examples
 
 ### Custom preset palette
 
@@ -34600,9 +35463,26 @@ outside any scroll container. Pass `loadOptions` and it turns into a debounced,
 race-safe server search (local filtering switches off and the returned list is
 shown as-is), with `loading` and empty-state text you can localize via `messages`.
 
-<div data-docs-demo="313-combobox" data-height="420"></div>
+Related: [SvDropDownList](sv-drop-down-list.md) · [SvAutoComplete](sv-auto-complete.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvComboBox` starter into your app:
+
+<div data-docs-add="add combo-box"></div>
+
+Or install the package and import it directly. `SvComboBox` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvComboBox } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="313-combobox" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -34646,7 +35526,7 @@ shown as-is), with `loading` and empty-state text you can localize via `messages
 Options use the shared [ListOption](sv-list-box.md#listoption) shape. `ComboMessages`
 is `{ noResults: string; loading: string; typeMore: string }`.
 
-## Patterns
+## Examples
 
 ### Remote (server) search
 
@@ -34725,9 +35605,26 @@ a11y primitives (portal, focus trap, scroll lock, dismissable layer) and emits
 WAI-ARIA combobox markup with `aria-activedescendant`. By default it binds
 Cmd/Ctrl+K to toggle itself, so you can mount it once at the app root.
 
-<div data-docs-demo="340-command-palette" data-height="440"></div>
+Related: [SvTour](sv-tour.md) · [SvNavPane](sv-nav-pane.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCommand` starter into your app:
+
+<div data-docs-add="add command"></div>
+
+Or install the package and import it directly. `SvCommand` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCommand } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="340-command-palette" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -34758,7 +35655,7 @@ Cmd/Ctrl+K to toggle itself, so you can mount it once at the app root.
 `shortcut` shows a key hint, `keywords` adds extra searchable terms, and each
 item's own `onRun` fires when it is chosen.
 
-## Patterns
+## Examples
 
 ### Grouping and shortcuts
 
@@ -34850,9 +35747,26 @@ and shortcuts - clamps the menu so it stays on-screen, portals it to `<body>`,
 and closes through the shared dismissable layer stack. You describe the menu with
 a plain `MenuItem[]` array and handle picks in `onSelect`.
 
-<div data-docs-demo="331-app-overlays" data-height="440"></div>
+Related: [SvMenu](sv-menu.md) · [SvMenuList](sv-menu-list.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvContextMenu` starter into your app:
+
+<div data-docs-add="add context-menu"></div>
+
+Or install the package and import it directly. `SvContextMenu` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvContextMenu } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="331-app-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -34892,7 +35806,7 @@ a plain `MenuItem[]` array and handle picks in `onSelect`.
 | `children`  | `MenuItem[]`      | Nested submenu items (renders a flyout).                 |
 | `onSelect`  | `() => void`      | Per-item callback fired when the item is chosen.        |
 
-## Patterns
+## Examples
 
 ### Per-item handlers
 
@@ -34989,9 +35903,26 @@ flag-and-name list; typing filters instantly. It is controlled through `value` +
 with `showDial`), and localizes its search and empty-state strings via `messages`.
 Colors follow the grid's `--sg-*` tokens.
 
-<div data-docs-demo="317-country-input" data-height="420"></div>
+Related: [SvComboBox](sv-combo-box.md) · [SvDropDownList](sv-drop-down-list.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCountryInput` starter into your app:
+
+<div data-docs-add="add country-input"></div>
+
+Or install the package and import it directly. `SvCountryInput` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCountryInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="317-country-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -35025,7 +35956,7 @@ Colors follow the grid's `--sg-*` tokens.
 
 `CountryMessages` is `{ search: string; noResults: string }`.
 
-## Patterns
+## Examples
 
 ### Show dial codes
 
@@ -35104,6 +36035,28 @@ A compact start/end field that opens a two-month range calendar with one-click
 presets (Today, Last 7 days, This month, ...). Emits an inclusive `[start, end]`
 tuple or `null`.
 
+Related: [Date & time overview](date-time.md) · [SvCalendar](sv-calendar.md) ·
+[SvDateTimePicker](sv-date-time-picker.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDateRangeInput` starter into your app:
+
+<div data-docs-add="add date-range-input"></div>
+
+Or install the package and import it directly. `SvDateRangeInput` ships free in
+`@svgrid/grid` (no extra date library) and is **part of the grid's editor kit** -
+it carries the same editor contract (label, hint, validation, RTL) SvGrid uses for
+its cell editors, so it drops into a grid edit form as readily as into a page:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDateRangeInput } from '@svgrid/grid'
+```
+
+## Example
+
 `SvDateRangeInput` composes the existing headless range engine: the popover is
 just a `<SvCalendar selectionMode="range">`, so hover-preview, min/max,
 restricted / important dates and keyboard all come for free. It carries the
@@ -35111,9 +36064,7 @@ shared editor contract (label, hint, error validation, size, RTL, localizable
 `messages`) via `SvField`, exactly like the other field editors, and the popover
 portals to `<body>` so it is never clipped by a scrolling grid.
 
-<div data-docs-demo="283-daterange-input" data-height="460"></div>
-
-## Basic usage
+<div data-docs-demo="283-daterange-input" data-height="460" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -35155,7 +36106,7 @@ Its own props:
 - `DateRangeValue = [Date, Date] | null` - an inclusive start/end tuple.
 - `CalendarPreset = { label: string; value: Date | number | string | readonly [start, end] | (() => ...) }` - pass a function for "today"-relative shortcuts that resolve at click time.
 
-## Patterns
+## Examples
 
 ### Preset shortcuts
 
@@ -35246,6 +36197,28 @@ subtracting the two timestamps gives whole nights without time-of-day drift.
 A formatted text input plus a portalled dropdown with DATE / TIME tabs - type a
 masked value or pick it from a calendar and clock.
 
+Related: [Date & time overview](date-time.md) · [SvCalendar](sv-calendar.md) ·
+[SvTimePicker](sv-time-picker.md) · [SvDateRangeInput](sv-date-range-input.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDateTimePicker` starter into your app:
+
+<div data-docs-add="add date-time-picker"></div>
+
+Or install the package and import it directly. `SvDateTimePicker` ships free in
+`@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
+edit a `datetime` cell** - so it is both a standalone control and the grid's
+built-in date-time editor:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDateTimePicker } from '@svgrid/grid'
+```
+
+## Example
+
 `SvDateTimePicker` composes [SvCalendar](sv-calendar.md) and
 [SvTimePicker](sv-time-picker.md) behind tabs, over the headless
 `createDateTimePicker` core (value math, parse/format, clamping, dropdown and tab
@@ -35255,9 +36228,7 @@ is never clipped by the grid's scroll container. It carries the shared editor
 contract (label, hint, error validation, RTL) via `SvField`, and is the editor
 SvGrid mounts for a `datetime` cell.
 
-<div data-docs-demo="252-datetimepicker" data-height="460"></div>
-
-## Basic usage
+<div data-docs-demo="252-datetimepicker" data-height="460" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -35309,12 +36280,15 @@ Its own props:
 - `DateTimeValue = Date | string | number | null`
 - `DropDownDisplayMode = 'both' | 'calendar' | 'time'`
 
-## Patterns
+## Examples
 
 ### Date-only or time-only fields
 
 Drop a tab with `dropDownDisplayMode` and match the mask, so one component covers
-`date`, `time`, and `datetime` columns:
+`date`, `time`, and `datetime` columns. This demo shows five field shapes on one
+form:
+
+<div data-docs-demo="259-datetimepicker-forms" data-height="520" data-code></div>
 
 ```svelte
 <SvDateTimePicker dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" />
@@ -35396,9 +36370,26 @@ token, so it matches every other surface in light and dark. Give it a `label` (o
 a `children` snippet) and it splits into a captioned rule - handy for "OR"
 dividers between form sections or toolbar groups.
 
-<div data-docs-demo="339-status-display" data-height="440"></div>
+Related: [SvCard](sv-card.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDivider` starter into your app:
+
+<div data-docs-add="add divider"></div>
+
+Or install the package and import it directly. `SvDivider` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDivider } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -35420,7 +36411,7 @@ dividers between form sections or toolbar groups.
 | `dashed`      | `boolean`                        | `false`      | Dashed line instead of solid.                                 |
 | `children`    | `Snippet`                        | -            | Custom label content; overrides `label` when provided.        |
 
-## Patterns
+## Examples
 
 ### Labeled section break
 
@@ -35499,13 +36490,30 @@ The entire layout is a plain, serializable `DockNode` tree you pass in and
 that produces a new tree, so you can persist a workspace to JSON, restore it, or
 drive it programmatically. The model is unit-tested independently of the DOM.
 
-<div data-docs-demo="361-dock-layout" data-height="520"></div>
+Related: [SvDockManager](sv-dock-manager.md) · [SvSplitter](sv-splitter.md) · [SvTabs](sv-tabs.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDockLayout` starter into your app:
+
+<div data-docs-add="add dock-layout"></div>
+
+Or install the package and import it directly. `SvDockLayout` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDockLayout } from '@svgrid/grid'
+```
+
+## Example
 
 Build a tree with the `dockGroup` / `dockTabs` / `dockPane` helpers, bind it, and
 provide a `pane` snippet that renders each pane's content by id. Give the layout
 a sized container - it fills its parent.
+
+<div data-docs-demo="361-dock-layout" data-height="520" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -35597,8 +36605,20 @@ const ids = allPaneIds(layout)                                       // every pa
 - Splitters expose `role="separator"` with `aria-orientation`.
 - Content areas are `role="tabpanel"`.
 
+## Headless
+
+`SvDockLayout` is headless-first like the rest of the kit, but in the
+data-model form: the `DockNode` tree **is** the framework-free core, and every
+gesture is a pure transform (`movePane`, `removePane`, `dockInto`,
+`dockSetActive`, `dockSetSizes`, `allPaneIds`) that returns a new tree, tested
+independently of the DOM. Own and `bind` the tree, drive it from the exported
+functions, and render your own chrome around the panes - the component only adds
+the styled tabs, splitters and drop zones. See
+[Headless editors](headless-editors.md#data-model-cores-dock).
+
 ## See also
 
+- [SvDockManager](sv-dock-manager.md) - docking with floating windows, reorder and auto-hide.
 - [SvSplitter](sv-splitter.md) - a single two-pane resizable split.
 - [SvTabs](sv-tabs.md) - a standalone tab strip without docking.
 
@@ -35623,12 +36643,29 @@ edges - is one serializable `DockManagerState` you `bind`. Every gesture is a
 pure transform (from `dock-manager-model`), so a full multi-window workspace
 saves to JSON and restores exactly, and the logic is unit-tested without a browser.
 
-<div data-docs-demo="362-dock-manager" data-height="560"></div>
+Related: [SvDockLayout](sv-dock-layout.md) · [SvSplitter](sv-splitter.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDockManager` starter into your app:
+
+<div data-docs-add="add dock-manager"></div>
+
+Or install the package and import it directly. `SvDockManager` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDockManager } from '@svgrid/grid'
+```
+
+## Example
 
 Build the initial workspace from the base `dockGroup` / `dockTabs` / `dockPane`
 helpers, start with empty `floating` / `autoHide`, and provide a `pane` snippet.
+
+<div data-docs-demo="362-dock-manager" data-height="560" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -35801,6 +36838,31 @@ splitters, window bars and resize handles, so dragging to dock, reorder, resize,
 move windows and pull out fly-outs all work on touch devices without the browser
 hijacking the drag to scroll.
 
+## Accessibility
+
+`SvDockManager` inherits the [SvDockLayout](sv-dock-layout.md#accessibility) tab /
+splitter / panel semantics for every docked area, and adds window-level roles on
+top:
+
+- Tab strips use `role="tablist"` / `role="tab"` with `aria-selected`; the active
+  tab is keyboard-focusable and `Enter` / `Space` activate it.
+- Splitters expose `role="separator"` with `aria-orientation`; content areas are
+  `role="tabpanel"`.
+- Floating windows are labelled dialog-style regions with focusable title bars, so
+  keyboard users can reach and move them; close / pin / auto-hide controls are real
+  buttons with accessible labels.
+
+## Headless
+
+Like [SvDockLayout](sv-dock-layout.md), the manager is headless in the
+data-model form: `DockManagerState` **is** the framework-free core, and every
+surface transform is a pure, immutable function (`floatPane`, `dockPaneOnto`,
+`reorderTab`, `autoHideLeaf`, `pinAutoHidden`, `dockManagerClosePane`,
+`allManagerPaneIds`) unit-tested without a browser. You can compute, migrate, or
+restore an entire multi-window workspace on the server or in a worker and hand
+the finished state to the component to render. See
+[Headless editors](headless-editors.md#data-model-cores-dock).
+
 ## Relationship to SvDockLayout
 
 `SvDockManager` renders `SvDockLayout` in "manager mode": the tiled area and each
@@ -35831,9 +36893,26 @@ focus, scroll-lock, and Escape/backdrop behaviour is identical to
 mobile bottom-sheet with a grab handle and swipe-down-to-close. Controlled via a
 bindable `open`.
 
-<div data-docs-demo="331-app-overlays" data-height="440"></div>
+Related: [SvModal](sv-modal.md) · [SvToaster](sv-toaster.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDrawer` starter into your app:
+
+<div data-docs-add="add drawer"></div>
+
+Or install the package and import it directly. `SvDrawer` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDrawer } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="331-app-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -35866,7 +36945,7 @@ bindable `open`.
 | `children`        | `Snippet`                              | -                   | Drawer body.                                               |
 | `footer`          | `Snippet`                              | -                   | Footer content, typically action buttons.                  |
 
-## Patterns
+## Examples
 
 ### Record editor
 
@@ -35964,9 +37043,26 @@ escapes any scroll container so it is never clipped.
 long lists. Because the panel is portalled to `<body>` and positioned with
 auto-flip, it stays visible even inside a scrolling toolbar or a dialog.
 
-<div data-docs-demo="314-dropdownlist" data-height="420"></div>
+Related: [SvComboBox](sv-combo-box.md) · [SvListBox](sv-list-box.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDropDownList` starter into your app:
+
+<div data-docs-add="add drop-down-list"></div>
+
+Or install the package and import it directly. `SvDropDownList` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDropDownList } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="314-dropdownlist" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -36008,7 +37104,7 @@ auto-flip, it stays visible even inside a scrolling toolbar or a dialog.
 
 Options use the shared [ListOption](sv-list-box.md#listoption) shape.
 
-## Patterns
+## Examples
 
 ### Grouped options
 
@@ -36120,9 +37216,26 @@ when unfocused. That keeps your model numeric (easy to sum, compare, and store)
 while the UI stays human. Its label / hint / error chrome comes from
 [SvField](sv-field.md). As a grid cell editor: `Enter` commits, `Escape` cancels.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvNumberInput](sv-number-input.md) · [SvMaskedInput](sv-masked-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDurationInput` starter into your app:
+
+<div data-docs-add="add duration-input"></div>
+
+Or install the package and import it directly. `SvDurationInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDurationInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -36150,7 +37263,7 @@ while the UI stays human. Its label / hint / error chrome comes from
 | `placeholder` | `string`                            | `e.g. 1h 30m` | Empty-state hint text.                                 |
 | `autofocus`   | `boolean`                           | `false`       | Focus + select on mount (used as a cell editor).       |
 
-## Patterns
+## Examples
 
 ### Colon vs units display
 
@@ -36218,9 +37331,26 @@ it shows what is missing and offers the button that fixes it - a new record, a
 cleared filter, a first import. It is theme-driven, and a `compact` mode fits it
 inside small panels and empty dropdowns.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvSkeleton](sv-skeleton.md) · [SvAlert](sv-alert.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvEmptyState` starter into your app:
+
+<div data-docs-add="add empty-state"></div>
+
+Or install the package and import it directly. `SvEmptyState` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvEmptyState } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -36242,7 +37372,7 @@ inside small panels and empty dropdowns.
 | `icon`        | `Snippet` | -       | Custom icon or illustration, overriding the default glyph.    |
 | `children`    | `Snippet` | -       | Action buttons or links rendered below the description.       |
 
-## Patterns
+## Examples
 
 ### No results vs no data
 
@@ -36337,7 +37467,24 @@ match `aria-describedby` conventions. Every editor in the kit (inputs, selects,
 label / hint / error / RTL behave identically everywhere - and you can use it
 directly to give a custom control the same chrome.
 
-## Basic usage
+Related: [SvForm](sv-form.md) · [Layout & composite overview](layout.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvField` starter into your app:
+
+<div data-docs-add="add field"></div>
+
+Or install the package and import it directly. `SvField` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvField } from '@svgrid/grid'
+```
+
+## Example
 
 ```svelte
 <script lang="ts">
@@ -36368,7 +37515,7 @@ directly to give a custom control the same chrome.
 When both `error` and `hint` are set, the error takes precedence and is the line
 announced to assistive tech.
 
-## Patterns
+## Examples
 
 ### Wrap a custom control
 
@@ -36451,9 +37598,26 @@ carries the shared contract - `label`, `hint`, `error`, `required`, `dir` / RTL,
 and localizable `messages` - through [SvField](sv-field.md). It is controlled via
 `files` and `onChange`.
 
-<div data-docs-demo="287-file-upload" data-height="440"></div>
+Related: [SvForm](sv-form.md) · [SvField](sv-field.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvFileUpload` starter into your app:
+
+<div data-docs-add="add file-upload"></div>
+
+Or install the package and import it directly. `SvFileUpload` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvFileUpload } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="287-file-upload" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -36498,7 +37662,7 @@ type FileRejection = { file: File; reason: FileRejectReason }
 type FileMessages = { prompt: string; browse: string; remove: string; hintTypes: string }
 ```
 
-## Patterns
+## Examples
 
 ### Validate and report rejections
 
@@ -36594,9 +37758,26 @@ fields all map to the kit's editors. It validates on blur and on submit, emits
 `onSubmit(values)` only when valid, and `onChange(values)` on every edit. Colors
 come from the grid's `--sg-*` tokens, so it matches the rest of the kit.
 
-<div data-docs-demo="322-form" data-height="440"></div>
+Related: [SvField](sv-field.md) · [SvFileUpload](sv-file-upload.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvForm` starter into your app:
+
+<div data-docs-add="add form"></div>
+
+Or install the package and import it directly. `SvForm` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvForm } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="322-form" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -36645,7 +37826,7 @@ type FormField = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Two-column layout with full-width rows
 
@@ -36730,9 +37911,26 @@ KPI. Its arc and needle geometry plus `role="meter"` ARIA live in the headless
 `bands` to paint red/amber/green zones along the arc, or leave them off for a
 plain accent fill up to the value. Colors come from the grid's `--sg-*` tokens.
 
-<div data-docs-demo="319-gauge" data-height="420"></div>
+Related: [SvSlider](sv-slider.md) · [SvCircularProgress](sv-circular-progress.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvGauge` starter into your app:
+
+<div data-docs-add="add gauge"></div>
+
+Or install the package and import it directly. `SvGauge` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvGauge } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="319-gauge" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -36772,7 +37970,7 @@ plain accent fill up to the value. Colors come from the grid's `--sg-*` tokens.
 | `ariaLabel`   | `string`                          | -       | Accessible name for the meter.                                  |
 | `dir`         | `ltr` \| `rtl` \| `auto`          | `auto`  | Text direction for the center label / unit.                     |
 
-## Patterns
+## Examples
 
 ### Threshold bands
 
@@ -36867,9 +38065,26 @@ chart re-renders live as the user filters. It ships a unified crosshair tooltip,
 clickable legend, optional zoom / brush, and an `onDrill` hook that hands back the
 source row ids so a click can filter the grid.
 
-<div data-docs-demo="147-integrated-charts" data-height="440"></div>
+Related: [SvCard](sv-card.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvGridChart` starter into your app:
+
+<div data-docs-add="add grid-chart"></div>
+
+Or install the package and import it directly. `SvGridChart` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvGridChart } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="147-integrated-charts" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -36931,7 +38146,7 @@ type ChartSelection = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Bind to the grid's filtered rows
 
@@ -37019,7 +38234,22 @@ selection as removable chips, and portals its panel to `<body>` so it never gets
 clipped by the grid's scroll container. Options may carry a `color` to render as
 pills. Every color comes from the grid's `--sg-*` tokens.
 
-## Basic usage
+Related: [SvDropDownList](sv-drop-down-list.md) · [SvMultiSelect](sv-multi-select.md) · [Selection overview](selection.md)
+
+## Installation
+
+`SvGridDropdown` ships free in `@svgrid/grid` and is **part of the grid's editor
+kit** - the same control SvGrid mounts when you edit a `list` or `chips` cell.
+Most apps use [SvDropDownList](sv-drop-down-list.md) or [SvListBox](sv-list-box.md)
+instead; reach for this when you need the exact surface the grid's cell editors use.
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvGridDropdown } from '@svgrid/grid'
+```
+
+## Example
 
 ```svelte
 <script lang="ts">
@@ -37061,7 +38291,7 @@ type CellEditorOption = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Standalone form field
 
@@ -37152,9 +38382,26 @@ It supports `bind:value`, an optional `searchable` box that filters across every
 column, and remote `loadOptions`. It builds its own lightweight table (it does not
 embed the full SvGrid) and portals the panel out of any scroll container.
 
-<div data-docs-demo="336-grid-select" data-height="420"></div>
+Related: [SvComboBox](sv-combo-box.md) · [SvTreeSelect](sv-tree-select.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvGridSelect` starter into your app:
+
+<div data-docs-add="add grid-select"></div>
+
+Or install the package and import it directly. `SvGridSelect` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvGridSelect } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="336-grid-select" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -37213,7 +38460,7 @@ type GridSelectColumn = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Custom label column
 
@@ -37301,9 +38548,26 @@ by their `group` heading, and each row can be a custom `itemTemplate`. Turn on
 of options while scroll and type-ahead stay instant. Colors come from the grid's
 `--sg-*` tokens, so it matches the grid and the rest of the kit in light and dark.
 
-<div data-docs-demo="312-listbox" data-height="420"></div>
+Related: [SvDropDownList](sv-drop-down-list.md) · [SvMultiSelect](sv-multi-select.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvListBox` starter into your app:
+
+<div data-docs-add="add list-box"></div>
+
+Or install the package and import it directly. `SvListBox` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvListBox } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="312-listbox" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -37353,7 +38617,7 @@ type ListOption = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Multi-select with a summary
 
@@ -37455,9 +38719,26 @@ you can validate on completeness. It is the styled renderer over the headless
 `createMaskedInput` core. Its label / hint / error chrome comes from
 [SvField](sv-field.md).
 
-<div data-docs-demo="302-masked-input" data-height="420"></div>
+Related: [SvPhoneInput](sv-phone-input.md) · [SvTextInput](sv-text-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvMaskedInput` starter into your app:
+
+<div data-docs-add="add masked-input"></div>
+
+Or install the package and import it directly. `SvMaskedInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvMaskedInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="302-masked-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -37490,7 +38771,7 @@ you can validate on completeness. It is the styled renderer over the headless
 | `prefixIcon`  | `Snippet`                                                  | -       | Leading icon adornment.                        |
 | `suffixIcon`  | `Snippet`                                                  | -       | Trailing icon adornment.                       |
 
-## Patterns
+## Examples
 
 ### Validate on completeness
 
@@ -37575,9 +38856,24 @@ indirectly through `SvMenu` or `SvContextMenu`, which wrap it in a portalled,
 positioned panel; reach for it directly only when you are building your own
 positioned surface.
 
-<div data-docs-demo="326-menu" data-height="440"></div>
+Related: [SvMenu](sv-menu.md) · [SvContextMenu](sv-context-menu.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+`SvMenuList` ships free in `@svgrid/grid` (dependency-free). It is the recursive
+surface behind [SvMenu](sv-menu.md) and [SvContextMenu](sv-context-menu.md) - use
+one of those for a normal menu; reach for `SvMenuList` only when you need to render
+the menu inside your own portalled, positioned panel.
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvMenuList } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="326-menu" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -37614,7 +38910,7 @@ positioned surface.
 | `children`  | `MenuItem[]`      | Nested submenu items (renders a flyout).                 |
 | `onSelect`  | `() => void`      | Per-item callback fired when the item is chosen.        |
 
-## Patterns
+## Examples
 
 ### Prefer the wrappers
 
@@ -37702,9 +38998,26 @@ room), portals it to `<body>` so it escapes any clipping, and delegates the
 surface itself to [SvMenuList](sv-menu-list.md) - so arrows, Enter, Escape, and
 ArrowRight/Left submenus all come for free.
 
-<div data-docs-demo="326-menu" data-height="440"></div>
+Related: [SvContextMenu](sv-context-menu.md) · [SvMenuList](sv-menu-list.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvMenu` starter into your app:
+
+<div data-docs-add="add menu"></div>
+
+Or install the package and import it directly. `SvMenu` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvMenu } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="326-menu" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -37745,7 +39058,7 @@ ArrowRight/Left submenus all come for free.
 | `children`  | `MenuItem[]`      | Nested submenu items (renders a flyout).                 |
 | `onSelect`  | `() => void`      | Per-item callback fired when the item is chosen.        |
 
-## Patterns
+## Examples
 
 ### Icons and shortcuts
 
@@ -37839,9 +39152,26 @@ primitives, so its behaviour matches [SvDrawer](sv-drawer.md) and nested overlay
 close top-first. It can optionally be dragged by its header and resized from the
 bottom-right handle. Controlled via a bindable `open`.
 
-<div data-docs-demo="288-overlays" data-height="440"></div>
+Related: [SvDrawer](sv-drawer.md) · [SvPopover](sv-popover.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvModal` starter into your app:
+
+<div data-docs-add="add modal"></div>
+
+Or install the package and import it directly. `SvModal` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvModal } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="288-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -37873,7 +39203,7 @@ bottom-right handle. Controlled via a bindable `open`.
 | `children`        | `Snippet`            | -       | Dialog body.                                         |
 | `footer`          | `Snippet`            | -       | Footer content, typically the action buttons.        |
 
-## Patterns
+## Examples
 
 ### Draggable and resizable
 
@@ -37965,9 +39295,26 @@ control, and remote `loadOptions` for server-backed search. Selections stay open
 until the user is done, and a `Done` button (plus `onCommit`) marks the batch as
 finished. Colors follow the grid's `--sg-*` tokens.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvListBox](sv-list-box.md) · [SvGridSelect](sv-grid-select.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvMultiSelect` starter into your app:
+
+<div data-docs-add="add multi-select"></div>
+
+Or install the package and import it directly. `SvMultiSelect` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvMultiSelect } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38021,7 +39368,7 @@ type MultiSelectOption = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Two-way binding
 
@@ -38119,9 +39466,26 @@ Outlook's Mail / Calendar / People switch, complete with a drag splitter that
 moves modules between full rows and an icon rail. Colors come from the `--sg-*`
 tokens.
 
-<div data-docs-demo="327-navpane" data-height="440"></div>
+Related: [SvTree](sv-tree.md) · [SvBreadcrumb](sv-breadcrumb.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvNavPane` starter into your app:
+
+<div data-docs-add="add nav-pane"></div>
+
+Or install the package and import it directly. `SvNavPane` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvNavPane } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="327-navpane" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38161,7 +39525,7 @@ Exported helper types:
 - `NavSection`: `{ id, label?, items: NavItem[], collapsible? }`.
 - `NavModule`: `{ id, label, icon?: Snippet, badge?: string | number }`.
 
-## Patterns
+## Examples
 
 ### Icons and badge counts
 
@@ -38261,9 +39625,26 @@ styled renderer over the headless `createNumberInput` core, so parse, format,
 clamp, spinner, and keyboard all come from one place. Its label / hint / error
 chrome comes from [SvField](sv-field.md).
 
-<div data-docs-demo="300-number-input" data-height="420"></div>
+Related: [SvDurationInput](sv-duration-input.md) · [SvMaskedInput](sv-masked-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvNumberInput` starter into your app:
+
+<div data-docs-add="add number-input"></div>
+
+Or install the package and import it directly. `SvNumberInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvNumberInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="300-number-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38303,7 +39684,7 @@ chrome comes from [SvField](sv-field.md).
 | `spinButtons` | `boolean`                           | `true`      | Show the up/down stepper.                          |
 | `clearable`   | `boolean`                           | `false`     | Show a clear (x) button when there is a value.     |
 
-## Patterns
+## Examples
 
 ### Currency and units
 
@@ -38374,9 +39755,26 @@ the joined string and fires `onComplete` the moment every cell is filled. The
 label / hint / error chrome comes from [SvField](sv-field.md), so it matches the
 rest of the kit.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvPasswordInput](sv-password-input.md) · [SvTextInput](sv-text-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvOtpInput` starter into your app:
+
+<div data-docs-add="add otp-input"></div>
+
+Or install the package and import it directly. `SvOtpInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvOtpInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38407,7 +39805,7 @@ rest of the kit.
 | `mask`       | `boolean`                  | `false` | Render as password dots.                           |
 | `autofocus`  | `boolean`                  | `false` | Focus the first cell on mount.                     |
 
-## Patterns
+## Examples
 
 ### Verify on completion
 
@@ -38494,9 +39892,26 @@ page, and collapsed gaps) is produced by the pure `paginationRange` helper, so
 the layout math is testable on its own and reusable in a custom pager. Colors
 come from the `--sg-*` tokens.
 
-<div data-docs-demo="332-app-navigation" data-height="440"></div>
+Related: [SvBreadcrumb](sv-breadcrumb.md) · [SvStepper](sv-stepper.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvPagination` starter into your app:
+
+<div data-docs-add="add pagination"></div>
+
+Or install the package and import it directly. `SvPagination` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvPagination } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="332-app-navigation" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38527,7 +39942,7 @@ helper (from `@svgrid/grid`) returns the
 `(number | 'ellipsis-left' | 'ellipsis-right')[]` sequence and is exported so you
 can build a custom-styled pager on the same math.
 
-## Patterns
+## Examples
 
 ### Driving the grid
 
@@ -38621,9 +40036,26 @@ of its user-facing strings (the toggle labels and the strength words) are
 localizable through `messages`. Its label / hint / error chrome comes from
 [SvField](sv-field.md).
 
-<div data-docs-demo="301-password-input" data-height="420"></div>
+Related: [SvOtpInput](sv-otp-input.md) · [SvTextInput](sv-text-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvPasswordInput` starter into your app:
+
+<div data-docs-add="add password-input"></div>
+
+Or install the package and import it directly. `SvPasswordInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvPasswordInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="301-password-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38657,7 +40089,7 @@ localizable through `messages`. Its label / hint / error chrome comes from
 
 `PasswordMessages` is `{ show; hide; weak; fair; good; strong }`.
 
-## Patterns
+## Examples
 
 ### Sign-up with a strength meter
 
@@ -38745,9 +40177,26 @@ the number for that country's convention, and `onChange` also hands you the pars
 the styled renderer over the headless `createPhoneInput` core. Its label / hint /
 error chrome comes from [SvField](sv-field.md).
 
-<div data-docs-demo="303-phone-input" data-height="420"></div>
+Related: [SvMaskedInput](sv-masked-input.md) · [SvTextInput](sv-text-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvPhoneInput` starter into your app:
+
+<div data-docs-add="add phone-input"></div>
+
+Or install the package and import it directly. `SvPhoneInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvPhoneInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="303-phone-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38775,7 +40224,7 @@ error chrome comes from [SvField](sv-field.md).
 `PhoneParts` is `{ country; dial; national; valid; complete }`. `PhoneMessages`
 is `{ country }`.
 
-## Patterns
+## Examples
 
 ### Read the parsed parts
 
@@ -38856,9 +40305,26 @@ room below, closes on outside-click and Escape through the shared dismissable
 layer stack, and animates in. Every color comes from the grid's `--sg-*` tokens,
 so it matches the rest of the kit in light and dark.
 
-<div data-docs-demo="288-overlays" data-height="440"></div>
+Related: [SvTooltip](sv-tooltip.md) · [SvMenu](sv-menu.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvPopover` starter into your app:
+
+<div data-docs-add="add popover"></div>
+
+Or install the package and import it directly. `SvPopover` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvPopover } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="288-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -38885,7 +40351,7 @@ so it matches the rest of the kit in light and dark.
 | `anchor`              | `Snippet`                         | -         | The trigger element(s) that open the panel.                        |
 | `children`            | `Snippet`                         | -         | Panel content.                                                     |
 
-## Patterns
+## Examples
 
 ### Hover cards
 
@@ -38983,9 +40449,26 @@ uploads, form completion, quota usage. Leave `value` off and set
 grid's `--sg-*` tokens, and every animation respects
 `prefers-reduced-motion`.
 
-<div data-docs-demo="330-progress" data-height="420"></div>
+Related: [SvCircularProgress](sv-circular-progress.md) · [SvSkeleton](sv-skeleton.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvProgress` starter into your app:
+
+<div data-docs-add="add progress"></div>
+
+Or install the package and import it directly. `SvProgress` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvProgress } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="330-progress" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39012,7 +40495,7 @@ grid's `--sg-*` tokens, and every animation respects
 | `striped`     | `boolean`                                     | `false`  | Animated diagonal candy-stripe overlay on the fill.          |
 | `ariaLabel`   | `string`                                      | -        | Accessible name for the progressbar.                         |
 
-## Patterns
+## Examples
 
 ### Upload with a buffer track
 
@@ -39091,9 +40574,26 @@ up the roving focus, arrow keys, and selection for you. It is controlled: drive
 `value` from your state and update it in `onChange`. It carries the shared editor
 contract (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
-<div data-docs-demo="310-radio-group" data-height="420"></div>
+Related: [SvButtonGroup](sv-button-group.md) · [SvCheckBox](sv-check-box.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvRadioGroup` starter into your app:
+
+<div data-docs-add="add radio-group"></div>
+
+Or install the package and import it directly. `SvRadioGroup` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvRadioGroup } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="310-radio-group" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39137,7 +40637,7 @@ contract (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
 Helper type: `RadioOption = { value: string | number; label: string; disabled?: boolean }`.
 
-## Patterns
+## Examples
 
 ### Horizontal layout
 
@@ -39225,9 +40725,26 @@ standalone rating matches the in-grid rating editor, and it carries the shared
 editor contract (label, hint, validation, `dir`/RTL) through
 [SvField](inputs.md). Star aria-labels are localizable via `messages`.
 
-<div data-docs-demo="311-rating" data-height="420"></div>
+Related: [SvSwitchButton](sv-switch-button.md) · [SvRadioGroup](sv-radio-group.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvRating` starter into your app:
+
+<div data-docs-add="add rating"></div>
+
+Or install the package and import it directly. `SvRating` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvRating } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="311-rating" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39263,7 +40780,7 @@ editor contract (label, hint, validation, `dir`/RTL) through
 
 Helper type: `RatingMessages = { label: string; star: string; stars: string }` (defaults `Rating` / `star` / `stars`).
 
-## Patterns
+## Examples
 
 ### Interactive review with a live label
 
@@ -39347,9 +40864,26 @@ release, leave the button, or lift the pointer anywhere on the page. It shares
 [SvButton](sv-button.md)'s visual language (variants and sizes) so it drops into
 a toolbar unchanged.
 
-<div data-docs-demo="306-repeat-button" data-height="420"></div>
+Related: [SvButton](sv-button.md) · [SvButtonGroup](sv-button-group.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvRepeatButton` starter into your app:
+
+<div data-docs-add="add repeat-button"></div>
+
+Or install the package and import it directly. `SvRepeatButton` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvRepeatButton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="306-repeat-button" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39375,7 +40909,7 @@ a toolbar unchanged.
 | `ariaLabel` | `string`                                          | -             | Accessible name for icon-only or glyph buttons.                  |
 | `children`  | `Snippet`                                         | -             | The button label.                                                |
 
-## Patterns
+## Examples
 
 ### Number stepper
 
@@ -39452,9 +40986,26 @@ via `bind:value` and reflects the active formatting state (bold/italic and list
 buttons light up with the caret). It uses `document.execCommand`, the pragmatic
 approach for a component-kit editor. All color comes from the `--sg-*` tokens.
 
-<div data-docs-demo="341-rich-text-editor" data-height="440"></div>
+Related: [Inputs overview](inputs.md) · [SvForm](sv-form.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvRichText` starter into your app:
+
+<div data-docs-add="add rich-text"></div>
+
+Or install the package and import it directly. `SvRichText` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvRichText } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="341-rich-text-editor" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39482,7 +41033,7 @@ approach for a component-kit editor. All color comes from the `--sg-*` tokens.
 `'bold' | 'italic' | 'underline' | 'strike' | 'h1' | 'h2' | 'h3' | 'p' | 'ul' | 'ol' | 'quote' | 'code' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'link' | 'clear' | 'undo' | 'redo' | '|'`.
 The `'|'` entry draws a visual separator between tool groups.
 
-## Patterns
+## Examples
 
 ### A trimmed toolbar
 
@@ -39585,9 +41136,26 @@ the grid and demos without hand-rolling scrollbar CSS.
 adapts to light and dark even when no preset defines the tokens. Overscroll is
 contained, so scrolling a nested area does not chain to the page.
 
-<div data-docs-demo="340-command-palette" data-height="440"></div>
+Related: [SvCard](sv-card.md) · [SvSplitter](sv-splitter.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvScrollArea` starter into your app:
+
+<div data-docs-add="add scroll-area"></div>
+
+Or install the package and import it directly. `SvScrollArea` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvScrollArea } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="340-command-palette" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39608,7 +41176,7 @@ contained, so scrolling a nested area does not chain to the page.
 | `horizontal` | `boolean` | `false` | Scroll horizontally instead of vertically.                     |
 | `children`   | `Snippet` | -       | The scrollable content.                                        |
 
-## Patterns
+## Examples
 
 ### Capped list
 
@@ -39682,9 +41250,26 @@ with a skeleton, then swap in the real content. It shimmers with a token-driven
 gradient and respects `prefers-reduced-motion`, falling back to a static tint
 for users who ask for less motion.
 
-<div data-docs-demo="333-app-feedback" data-height="420"></div>
+Related: [SvEmptyState](sv-empty-state.md) · [SvBadge](sv-badge.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSkeleton` starter into your app:
+
+<div data-docs-add="add skeleton"></div>
+
+Or install the package and import it directly. `SvSkeleton` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSkeleton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="333-app-feedback" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39707,7 +41292,7 @@ for users who ask for less motion.
 | `lines`    | `number`                      | `1`      | Number of lines to render (`variant="text"` only).                |
 | `animated` | `boolean`                     | `true`   | Turns the shimmer on. Reduced-motion users always get a static tint. |
 
-## Patterns
+## Examples
 
 ### Loading swap
 
@@ -39803,9 +41388,26 @@ stepping, drag state, and `role="slider"` ARIA) lives in the headless
 plain number. Every color comes from the grid's `--sg-*` tokens, so it matches
 your grid and forms in light and dark.
 
-<div data-docs-demo="318-slider" data-height="420"></div>
+Related: [SvGauge](sv-gauge.md) · [SvNumberInput](sv-number-input.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSlider` starter into your app:
+
+<div data-docs-add="add slider"></div>
+
+Or install the package and import it directly. `SvSlider` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSlider } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="318-slider" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39854,7 +41456,7 @@ your grid and forms in light and dark.
 | `ariaLabel`   | `string`                                 | -              | Accessible name when there is no visible `label`.                       |
 | `dir`         | `ltr` \| `rtl` \| `auto`                 | `auto`         | Text direction; `rtl` mirrors the track.                                |
 
-## Patterns
+## Examples
 
 ### Range with ticks and formatted readout
 
@@ -39937,7 +41539,24 @@ a number, inside a table cell, or in a [SvStat](sv-stat.md) card. It defaults to
 the grid's `--sg-accent` color and sizes to a compact 88x22 by default. Pass
 `negativeColor` for bar and win/loss charts that split positive from negative.
 
-## Basic usage
+Related: [SvStat](sv-stat.md) · [SvGauge](sv-gauge.md) · [Range & meters overview](range.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSparkline` starter into your app:
+
+<div data-docs-add="add sparkline"></div>
+
+Or install the package and import it directly. `SvSparkline` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSparkline } from '@svgrid/grid'
+```
+
+## Example
 
 ```svelte
 <script lang="ts">
@@ -39964,7 +41583,7 @@ the grid's `--sg-accent` color and sizes to a compact 88x22 by default. Pass
 | `lastPoint`     | `boolean`                                   | `true`   | End-cap dot on the last point (line / area).                  |
 | `ariaLabel`     | `string`                                    | -        | Accessible name; defaults to `"sparkline"`.                   |
 
-## Patterns
+## Examples
 
 ### Chart types
 
@@ -40048,9 +41667,26 @@ first pane's share of the container, 0..1) and `onChange`. The clamp, keyboard,
 ARIA, and RTL logic live in a headless `createSplitter` core; the component owns
 only the container measurement. Nest splitters for IDE- or dashboard-style layouts.
 
-<div data-docs-demo="286-splitter" data-height="440"></div>
+Related: [SvTabs](sv-tabs.md) · [SvScrollArea](sv-scroll-area.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSplitter` starter into your app:
+
+<div data-docs-add="add splitter"></div>
+
+Or install the package and import it directly. `SvSplitter` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSplitter } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="286-splitter" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40088,7 +41724,7 @@ only the container measurement. Nest splitters for IDE- or dashboard-style layou
 type SplitterOrientation = 'horizontal' | 'vertical'
 ```
 
-## Patterns
+## Examples
 
 ### Bounded sidebar
 
@@ -40169,9 +41805,26 @@ error rate or latency. The `icon` and `chart` snippets host a glyph and an
 inline [SvSparkline](sv-sparkline.md). Colors come from the grid's `--sg-*`
 tokens.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvSparkline](sv-sparkline.md) · [SvGauge](sv-gauge.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvStat` starter into your app:
+
+<div data-docs-add="add stat"></div>
+
+Or install the package and import it directly. `SvStat` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvStat } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40195,7 +41848,7 @@ tokens.
 | `icon`   | `Snippet`                  | -        | Glyph slot in the card header.                                        |
 | `chart`  | `Snippet`                  | -        | Inline chart slot, aligned to the end of the footer.                 |
 
-## Patterns
+## Examples
 
 ### Trend coloring
 
@@ -40283,9 +41936,26 @@ active, and upcoming steps so the user always knows where they are.
 the right default for a form you must not skip ahead in. It lays out horizontally
 or vertically and draws all color from the `--sg-*` tokens.
 
-<div data-docs-demo="332-app-navigation" data-height="440"></div>
+Related: [SvBreadcrumb](sv-breadcrumb.md) · [SvPagination](sv-pagination.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvStepper` starter into your app:
+
+<div data-docs-add="add stepper"></div>
+
+Or install the package and import it directly. `SvStepper` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvStepper } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="332-app-navigation" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40314,7 +41984,7 @@ or vertically and draws all color from the `--sg-*` tokens.
 `description` shows as a secondary line under the label; `optional` appends an
 "(optional)" tag.
 
-## Patterns
+## Examples
 
 ### Wizard navigation
 
@@ -40409,9 +42079,26 @@ kit it carries the shared editor contract (label, hint, validation, `dir`/RTL)
 through [SvField](inputs.md) and emits a hidden input for form submission when
 you give it a `name`.
 
-<div data-docs-demo="308-switch" data-height="420"></div>
+Related: [SvToggleButton](sv-toggle-button.md) · [SvCheckBox](sv-check-box.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSwitchButton` starter into your app:
+
+<div data-docs-add="add switch-button"></div>
+
+Or install the package and import it directly. `SvSwitchButton` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSwitchButton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="308-switch" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40446,7 +42133,7 @@ you give it a `name`.
 | `ariaLabel` | `string`                     | -       | Accessible name when there is no visible `label`.           |
 | `id`        | `string`                     | auto    | Root id; label/hint/error ids derive from it.               |
 
-## Patterns
+## Examples
 
 ### Settings row
 
@@ -40528,9 +42215,26 @@ color comes from the grid's `--sg-*` tokens, so it matches the rest of the kit i
 light and dark. The keyboard behaviour, activation mode, and close handling live
 in a headless `createTabs` core; this component is one styled renderer over it.
 
-<div data-docs-demo="320-tabs" data-height="440"></div>
+Related: [SvAccordion](sv-accordion.md) · [SvSplitter](sv-splitter.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTabs` starter into your app:
+
+<div data-docs-add="add tabs"></div>
+
+Or install the package and import it directly. `SvTabs` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTabs } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="320-tabs" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40574,7 +42278,7 @@ in a headless `createTabs` core; this component is one styled renderer over it.
 type TabItem = { id: string; label: string; disabled?: boolean; closable?: boolean }
 ```
 
-## Patterns
+## Examples
 
 ### Pill view switcher
 
@@ -40659,9 +42363,26 @@ the styled renderer over the headless `createTagsInput` core, so add / remove an
 keyboard handling live in one place. Its label / hint / error chrome comes from
 [SvField](sv-field.md).
 
-<div data-docs-demo="316-tags-input" data-height="420"></div>
+Related: [SvTextInput](sv-text-input.md) · [SvColorInput](sv-color-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTagsInput` starter into your app:
+
+<div data-docs-add="add tags-input"></div>
+
+Or install the package and import it directly. `SvTagsInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTagsInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="316-tags-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40688,7 +42409,7 @@ keyboard handling live in one place. Its label / hint / error chrome comes from
 
 `TagsMessages` is `{ add; remove }`.
 
-## Patterns
+## Examples
 
 ### Cap and de-duplicate
 
@@ -40767,9 +42488,26 @@ and dark. As a grid cell editor its interaction differs from single-line fields:
 a bare `Enter` inserts a newline, `Ctrl` / `Cmd` + `Enter` commits, and `Escape`
 cancels.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvTextInput](sv-text-input.md) · [SvOtpInput](sv-otp-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTextArea` starter into your app:
+
+<div data-docs-add="add text-area"></div>
+
+Or install the package and import it directly. `SvTextArea` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTextArea } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40806,7 +42544,7 @@ cancels.
 | `showCount`   | `boolean`                  | `false` | Show an "n / max" counter (needs `maxlength`).                |
 | `autofocus`   | `boolean`                  | `false` | Focus + select on mount (used as a cell editor).             |
 
-## Patterns
+## Examples
 
 ### Auto-grow with a counter
 
@@ -40883,9 +42621,26 @@ grid `--sg-*` token, so it matches your grid and edit forms in light and dark. A
 a grid cell editor it honours the interaction contract: `Enter` commits, `Escape`
 cancels.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvTextArea](sv-text-area.md) · [SvMaskedInput](sv-masked-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTextInput` starter into your app:
+
+<div data-docs-add="add text-input"></div>
+
+Or install the package and import it directly. `SvTextInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTextInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -40921,7 +42676,7 @@ cancels.
 | `autocomplete` | `AutoFill`                                               | -        | Native autocomplete token.                             |
 | `autofocus`    | `boolean`                                                | `false`  | Focus + select on mount (used as a cell editor).       |
 
-## Patterns
+## Examples
 
 ### Typed variants
 
@@ -41005,6 +42760,28 @@ extra keystrokes rather than just flagging them after the fact.
 An analog clock-dial time picker - 12- or 24-hour, minute snapping, and an
 hour-to-minute auto-switch. Drag the hand or click a number.
 
+Related: [Date & time overview](date-time.md) ·
+[SvDateTimePicker](sv-date-time-picker.md) · [SvCalendar](sv-calendar.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTimePicker` starter into your app:
+
+<div data-docs-add="add time-picker"></div>
+
+Or install the package and import it directly. `SvTimePicker` ships free in
+`@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
+edit a `time` cell** - so it is both a standalone control and the grid's built-in
+time editor:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTimePicker } from '@svgrid/grid'
+```
+
+## Example
+
 `SvTimePicker` is a styled renderer over the headless `createTimePicker` core:
 the core owns the value math, dial geometry, keyboard and ARIA, while the
 component keeps the DOM-bound pointer capture and hit-testing. All visuals come
@@ -41012,9 +42789,7 @@ from the grid's `--sg-*` tokens, so every theme applies for free, in light and
 dark. It is the editor SvGrid mounts for a `time` cell, and it works standalone
 anywhere.
 
-<div data-docs-demo="251-timepicker" data-height="460"></div>
-
-## Basic usage
+<div data-docs-demo="251-timepicker" data-height="460" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -41054,7 +42829,7 @@ anywhere.
 - `TimeFormat = '12-hour' | '24-hour'`
 - `TimeSelection = 'hour' | 'minute'`
 
-## Patterns
+## Examples
 
 ### Quarter-hour scheduling
 
@@ -41136,9 +42911,26 @@ markers, and text. Each marker can carry its own color and glyph, and an
 optional `item` snippet lets you replace the default row with custom content for
 richer feeds. Colors default to the grid accent and read from `--sg-*` tokens.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvChip](sv-chip.md) · [SvAvatar](sv-avatar.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTimeline` starter into your app:
+
+<div data-docs-add="add timeline"></div>
+
+Or install the package and import it directly. `SvTimeline` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTimeline } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -41172,7 +42964,7 @@ type TimelineItem = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Colored status markers
 
@@ -41273,9 +43065,26 @@ API (with `.info` / `.success` / `.warning` / `.error` helpers) and the host
 renders them, auto-dismisses them on a timer, pauses on hover or focus, and lets
 users swipe them away. Colors come from the grid's `--sg-*` tokens.
 
-<div data-docs-demo="331-app-overlays" data-height="440"></div>
+Related: [SvModal](sv-modal.md) · [SvDrawer](sv-drawer.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvToaster` starter into your app:
+
+<div data-docs-add="add toaster"></div>
+
+Or install the package and import it directly. `SvToaster` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvToaster } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="331-app-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -41311,7 +43120,7 @@ functions.
 | `dismissible` | `boolean`                                   | `true`  | Show the dismiss (x) button.                      |
 | `title`       | `string`                                    | -       | Optional bold title above the message.            |
 
-## Patterns
+## Examples
 
 ### Variant helpers
 
@@ -41402,9 +43211,26 @@ toolbar, a pin, a mute, a "live" toggle. It is controlled: drive `pressed` from
 your state and flip it in `onChange`. It carries the shared editor contract
 (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
-<div data-docs-demo="307-toggle-button" data-height="420"></div>
+Related: [SvSwitchButton](sv-switch-button.md) · [SvButtonGroup](sv-button-group.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvToggleButton` starter into your app:
+
+<div data-docs-add="add toggle-button"></div>
+
+Or install the package and import it directly. `SvToggleButton` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvToggleButton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="307-toggle-button" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -41433,7 +43259,7 @@ your state and flip it in `onChange`. It carries the shared editor contract
 | `id`        | `string`                    | auto    | Root id; label/hint/error ids derive from it.                  |
 | `children`  | `Snippet`                   | -       | The button label.                                              |
 
-## Patterns
+## Examples
 
 ### Formatting toolbar
 
@@ -41506,9 +43332,26 @@ opens on pointer-enter and on keyboard focus, hides on leave, blur, or Escape,
 and wires itself to the trigger via `aria-describedby` with `role="tooltip"`. It
 reads its colors from the grid's `--sg-*` tokens, so it matches in light and dark.
 
-<div data-docs-demo="288-overlays" data-height="440"></div>
+Related: [SvPopover](sv-popover.md) · [SvButton](sv-button.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTooltip` starter into your app:
+
+<div data-docs-add="add tooltip"></div>
+
+Or install the package and import it directly. `SvTooltip` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTooltip } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="288-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -41530,7 +43373,7 @@ reads its colors from the grid's `--sg-*` tokens, so it matches in light and dar
 | `disabled`  | `boolean`            | `false` | Never show the tooltip while set.                    |
 | `children`  | `Snippet`            | -       | The element the tooltip describes.                   |
 
-## Patterns
+## Examples
 
 ### Icon-only buttons
 
@@ -41609,9 +43452,26 @@ and back, tracks progress ("2 / 4"), and can be skipped. Arrow keys navigate,
 Escape skips, and everything is portalled to `<body>`. Steps with no target render
 centered, handy for an intro or outro.
 
-<div data-docs-demo="342-carousel-tour" data-height="440"></div>
+Related: [SvCommand](sv-command.md) · [SvStepper](sv-stepper.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTour` starter into your app:
+
+<div data-docs-add="add tour"></div>
+
+Or install the package and import it directly. `SvTour` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTour } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="342-carousel-tour" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -41641,7 +43501,7 @@ centered, handy for an intro or outro.
 `target` is a CSS selector or the element itself; omit it for a centered,
 target-less step (an intro or outro). `content` is required.
 
-## Patterns
+## Examples
 
 ### Show the tour once
 
@@ -41740,9 +43600,26 @@ visible nodes for a roving-focus keyboard model where `ArrowRight` / `ArrowLeft`
 expand and collapse branches. The panel portals out of any scroll container and
 colors follow the grid's `--sg-*` tokens.
 
-<div data-docs-demo="335-tree-select" data-height="420"></div>
+Related: [SvDropDownList](sv-drop-down-list.md) · [SvGridSelect](sv-grid-select.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTreeSelect` starter into your app:
+
+<div data-docs-add="add tree-select"></div>
+
+Or install the package and import it directly. `SvTreeSelect` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTreeSelect } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="335-tree-select" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -41795,7 +43672,7 @@ type TreeSelectNode = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Full-path trigger
 
@@ -41877,9 +43754,26 @@ inline rename, drag-drop reorder, and merging lazily-loaded children. Turn on
 `virtual` to scale to tens of thousands of nodes, or `loadChildren` to fetch each
 folder's children on first expand. Colors come from the `--sg-*` tokens.
 
-<div data-docs-demo="321-tree" data-height="440"></div>
+Related: [SvNavPane](sv-nav-pane.md) · [SvTreeSelect](sv-tree-select.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTree` starter into your app:
+
+<div data-docs-add="add tree"></div>
+
+Or install the package and import it directly. `SvTree` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTree } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="321-tree" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -41927,7 +43821,7 @@ folder's children on first expand. Colors come from the `--sg-*` tokens.
 Set `lazy: true` on a node to show an expand arrow before its children exist and
 load them via `loadChildren`.
 
-## Patterns
+## Examples
 
 ### Cascading checkboxes
 

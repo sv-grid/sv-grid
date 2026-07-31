@@ -9,9 +9,26 @@ room), portals it to `<body>` so it escapes any clipping, and delegates the
 surface itself to [SvMenuList](sv-menu-list.md) - so arrows, Enter, Escape, and
 ArrowRight/Left submenus all come for free.
 
-<div data-docs-demo="326-menu" data-height="440"></div>
+Related: [SvContextMenu](sv-context-menu.md) · [SvMenuList](sv-menu-list.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvMenu` starter into your app:
+
+<div data-docs-add="add menu"></div>
+
+Or install the package and import it directly. `SvMenu` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvMenu } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="326-menu" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -52,7 +69,7 @@ ArrowRight/Left submenus all come for free.
 | `children`  | `MenuItem[]`      | Nested submenu items (renders a flyout).                 |
 | `onSelect`  | `() => void`      | Per-item callback fired when the item is chosen.        |
 
-## Patterns
+## Examples
 
 ### Icons and shortcuts
 

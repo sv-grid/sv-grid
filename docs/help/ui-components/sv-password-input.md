@@ -9,9 +9,26 @@ of its user-facing strings (the toggle labels and the strength words) are
 localizable through `messages`. Its label / hint / error chrome comes from
 [SvField](sv-field.md).
 
-<div data-docs-demo="301-password-input" data-height="420"></div>
+Related: [SvOtpInput](sv-otp-input.md) · [SvTextInput](sv-text-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvPasswordInput` starter into your app:
+
+<div data-docs-add="add password-input"></div>
+
+Or install the package and import it directly. `SvPasswordInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvPasswordInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="301-password-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -45,7 +62,7 @@ localizable through `messages`. Its label / hint / error chrome comes from
 
 `PasswordMessages` is `{ show; hide; weak; fair; good; strong }`.
 
-## Patterns
+## Examples
 
 ### Sign-up with a strength meter
 

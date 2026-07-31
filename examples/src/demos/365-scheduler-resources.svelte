@@ -11,6 +11,7 @@
     SvGrid,
     type ColumnDef,
     type SchedulerEventMoveEvent,
+    type SchedulerEventCommitEvent,
     type SchedulerResource,
   } from '@svgrid/grid'
   import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
@@ -57,6 +58,10 @@
 
   const roomColor = (id: string) => rooms.find((r) => r.id === id)?.color ?? '#4f46e5'
 
+  let seq = 100
+  let view = $state<'calendar' | 'table'>('calendar')
+  let groupByDate = $state(false)
+
   function onEventMove(e: SchedulerEventMoveEvent<Booking>) {
     e.row.start = iso(e.start)
     e.row.end = iso(e.end)
@@ -65,36 +70,89 @@
       e.row.color = roomColor(e.toResource)
     }
   }
+  function onEventResize(e: { row: Booking; start: Date; end: Date }) {
+    e.row.start = iso(e.start)
+    e.row.end = iso(e.end)
+  }
+  function onEventCommit(e: SchedulerEventCommitEvent<Booking>) {
+    Object.assign(e.row, e.values)
+    e.row.color = roomColor(e.row.room)
+  }
+  function onEventAdd(start: Date, end: Date, resourceId?: string) {
+    const room = resourceId ?? rooms[0].id
+    rows = [...rows, { id: ++seq, title: 'New booking', start: iso(start), end: iso(end), room, color: roomColor(room) }]
+  }
+  function onEventDelete(row: Booking) {
+    rows = rows.filter((r) => r !== row)
+  }
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
-    The <strong>Day</strong> view is split into one column per <strong>room</strong>
-    (<code>resourceField: 'room'</code>). Drag a booking to another room or time -
-    the move reports both the new time and the new resource.
+  <div class="flex items-center justify-between gap-3 shrink-0">
+    <div class="text-sm text-slate-600 dark:text-slate-300">
+      Set <code>resourceField: 'room'</code> and <strong>every</strong> time-grid view
+      groups by <strong>room</strong> - Day shows one column per room, Week groups each
+      room across all 7 days. The legend toggles a room in any view. Drag a booking to
+      another room / time, double-click to book, click to edit / delete.
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      {#if view === 'calendar'}
+        <label class="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+          <input type="checkbox" bind:checked={groupByDate} /> Group by date
+        </label>
+      {/if}
+      <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
+        <button
+          class="px-3 py-1 {view === 'calendar' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          onclick={() => (view = 'calendar')}>Calendar</button>
+        <button
+          class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          onclick={() => (view = 'table')}>Table</button>
+      </div>
+    </div>
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
-      data={rows}
-      columns={columns}
-      getRowId={(r) => String(r.id)}
-      containerHeight="100%"
-      scheduler={{
-        startField: 'start',
-        endField: 'end',
-        titleField: 'title',
-        colorField: 'color',
-        resourceField: 'room',
-        resources: rooms,
-        views: ['day', 'week'],
-        initialView: 'day',
-        dayStartHour: 8,
-        dayEndHour: 18,
-        slotMinutes: 30,
-        editable: true,
-        onEventMove,
-      }}
-    />
+    {#if view === 'calendar'}
+      <SvGrid
+        data={rows}
+        columns={columns}
+        getRowId={(r) => String(r.id)}
+        containerHeight="100%"
+        scheduler={{
+          startField: 'start',
+          endField: 'end',
+          titleField: 'title',
+          colorField: 'color',
+          resourceField: 'room',
+          resources: rooms,
+          groupByDate,
+          views: ['day', 'week'],
+          initialView: 'day',
+          dayStartHour: 8,
+          dayEndHour: 18,
+          slotMinutes: 30,
+          editable: true,
+          drawer: true,
+          onEventMove,
+          onEventResize,
+          onEventCommit,
+          onEventAdd,
+          onEventDelete,
+        }}
+      />
+    {:else}
+      <SvGrid
+        data={rows}
+        columns={columns}
+        getRowId={(r) => String(r.id)}
+        sortable
+        enableInlineEditing
+        showPagination={false}
+        rowHeight={36}
+        containerHeight="100%"
+        fitColumns
+      />
+    {/if}
   </div>
 </section>

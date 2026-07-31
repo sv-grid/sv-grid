@@ -1,14 +1,23 @@
 <script lang="ts">
   /**
-   * 366. Recurring events
-   * ----------------------
+   * 366. Recurring events (editable patterns)
+   * -----------------------------------------
    * A row can carry a `recurrenceField` (a RecurrenceRule, or array of them)
    * and the scheduler renders one event per matching day in view - reusing the
-   * same pure recurrence engine behind SvCalendar. The base row keeps its
-   * time-of-day and duration; recurring instances are shown but not dragged
-   * (edit the series in the Table view).
+   * same pure recurrence engine behind SvCalendar. Because `drawer` +
+   * `recurrenceField` are set, clicking any event opens a RECURRENCE EDITOR
+   * (add / change / remove the repeat pattern), and dragging / resizing a
+   * recurring event edits the whole series' time + duration.
    */
-  import { SvGrid, type ColumnDef, type RecurrenceRule } from '@svgrid/grid'
+  import {
+    SvGrid,
+    describeRecurrence,
+    type ColumnDef,
+    type RecurrenceRule,
+    type SchedulerEventCommitEvent,
+    type SchedulerEventMoveEvent,
+    type SchedulerEventResizeEvent,
+  } from '@svgrid/grid'
   import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
 
   setLicenseKey('SVENTERPRISE-DEV-LOCAL')
@@ -53,16 +62,45 @@
     { field: 'end', header: 'End', editorType: 'datetime', width: 170 },
   ]
 
+  // The table view adds a read-only "Repeat" column: the recurrence rule is a
+  // structured object, so `describeRecurrence` turns it into a readable summary
+  // ("Weekly on weekdays", "Every 2 weeks on Fri") instead of "[object Object]".
+  const tableColumns: ColumnDef<any, Event>[] = [
+    ...columns,
+    { id: 'repeat', header: 'Repeat', fieldFn: (r) => describeRecurrence(r.repeat) || '-', width: 220 },
+  ]
+
   let view = $state<'calendar' | 'table'>('calendar')
+  let seq = 100
+
+  // Saving the drawer mirrors the edited fields + the recurrence rule back.
+  function onEventCommit(e: SchedulerEventCommitEvent<Event>) {
+    Object.assign(e.row, e.values)
+  }
+  // Dragging / resizing a recurring event edits the whole series' time.
+  function onEventMove(e: SchedulerEventMoveEvent<Event>) {
+    e.row.start = iso(e.start)
+    e.row.end = iso(e.end)
+  }
+  function onEventResize(e: SchedulerEventResizeEvent<Event>) {
+    e.row.start = iso(e.start)
+    e.row.end = iso(e.end)
+  }
+  function onEventAdd(start: Date, end: Date) {
+    rows = [...rows, { id: ++seq, title: 'New event', start: iso(start), end: iso(end), color: '#4f46e5' }]
+  }
+  function onEventDelete(row: Event) {
+    rows = rows.filter((r) => r !== row)
+  }
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
     <div class="text-sm text-slate-600 dark:text-slate-300">
-      Rows with a <code>repeat</code> rule render as repeated events - the daily
-      standup fills every weekday, the 1:1 every Tuesday, the review every other
-      Friday. Recurring instances have a doubled left border. Switch to
-      <strong>Week</strong> or <strong>Month</strong> to see them span.
+      Rows with a <code>repeat</code> rule render as repeated events (doubled left
+      border). <strong>Click</strong> any event to edit its pattern in the drawer
+      (add / change / remove the repeat), or <strong>drag / resize</strong> a
+      recurring event to shift the whole series' time. Double-click a slot to add.
     </div>
     <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
       <button class="px-3 py-1 {view === 'calendar' ? 'bg-slate-800 text-white' : 'bg-transparent'}" onclick={() => (view = 'calendar')}>Calendar</button>
@@ -87,12 +125,19 @@
           weekStartsOn: 1,
           dayStartHour: 8,
           dayEndHour: 18,
+          editable: true,
+          drawer: true,
+          onEventCommit,
+          onEventMove,
+          onEventResize,
+          onEventAdd,
+          onEventDelete,
         }}
       />
     {:else}
       <SvGrid
         data={rows}
-        columns={columns}
+        columns={tableColumns}
         getRowId={(r) => String(r.id)}
         showPagination={false}
         rowHeight={36}

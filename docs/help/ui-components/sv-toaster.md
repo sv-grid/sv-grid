@@ -9,9 +9,26 @@ API (with `.info` / `.success` / `.warning` / `.error` helpers) and the host
 renders them, auto-dismisses them on a timer, pauses on hover or focus, and lets
 users swipe them away. Colors come from the grid's `--sg-*` tokens.
 
-<div data-docs-demo="331-app-overlays" data-height="440"></div>
+Related: [SvModal](sv-modal.md) · [SvDrawer](sv-drawer.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvToaster` starter into your app:
+
+<div data-docs-add="add toaster"></div>
+
+Or install the package and import it directly. `SvToaster` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvToaster } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="331-app-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -47,7 +64,7 @@ functions.
 | `dismissible` | `boolean`                                   | `true`  | Show the dismiss (x) button.                      |
 | `title`       | `string`                                    | -       | Optional bold title above the message.            |
 
-## Patterns
+## Examples
 
 ### Variant helpers
 

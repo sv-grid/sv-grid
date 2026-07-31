@@ -8,9 +8,26 @@ token, so it matches every other surface in light and dark. Give it a `label` (o
 a `children` snippet) and it splits into a captioned rule - handy for "OR"
 dividers between form sections or toolbar groups.
 
-<div data-docs-demo="339-status-display" data-height="440"></div>
+Related: [SvCard](sv-card.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDivider` starter into your app:
+
+<div data-docs-add="add divider"></div>
+
+Or install the package and import it directly. `SvDivider` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDivider } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -32,7 +49,7 @@ dividers between form sections or toolbar groups.
 | `dashed`      | `boolean`                        | `false`      | Dashed line instead of solid.                                 |
 | `children`    | `Snippet`                        | -            | Custom label content; overrides `label` when provided.        |
 
-## Patterns
+## Examples
 
 ### Labeled section break
 

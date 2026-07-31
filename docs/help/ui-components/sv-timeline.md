@@ -8,9 +8,26 @@ markers, and text. Each marker can carry its own color and glyph, and an
 optional `item` snippet lets you replace the default row with custom content for
 richer feeds. Colors default to the grid accent and read from `--sg-*` tokens.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvChip](sv-chip.md) · [SvAvatar](sv-avatar.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTimeline` starter into your app:
+
+<div data-docs-add="add timeline"></div>
+
+Or install the package and import it directly. `SvTimeline` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTimeline } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -44,7 +61,7 @@ type TimelineItem = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Colored status markers
 

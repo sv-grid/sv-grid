@@ -27,7 +27,7 @@
   }
 
   let {
-    value = '',
+    value = $bindable(''),
     onChange,
     country = 'US',
     disabled = false,
@@ -52,7 +52,8 @@
 
   const ph = createPhoneInput({
     value: () => value,
-    onChange: (v, parts) => onChange?.(v, parts),
+    // Write `value` (so `bind:value` works) AND fire `onChange` (callback users).
+    onChange: (v, parts) => { value = v; onChange?.(v, parts) },
     country: () => country,
     disabled: () => disabled,
     readonly: () => readonly,

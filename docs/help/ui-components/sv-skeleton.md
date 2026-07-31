@@ -9,9 +9,26 @@ with a skeleton, then swap in the real content. It shimmers with a token-driven
 gradient and respects `prefers-reduced-motion`, falling back to a static tint
 for users who ask for less motion.
 
-<div data-docs-demo="333-app-feedback" data-height="420"></div>
+Related: [SvEmptyState](sv-empty-state.md) · [SvBadge](sv-badge.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSkeleton` starter into your app:
+
+<div data-docs-add="add skeleton"></div>
+
+Or install the package and import it directly. `SvSkeleton` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSkeleton } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="333-app-feedback" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -34,7 +51,7 @@ for users who ask for less motion.
 | `lines`    | `number`                      | `1`      | Number of lines to render (`variant="text"` only).                |
 | `animated` | `boolean`                     | `true`   | Turns the shimmer on. Reduced-motion users always get a static tint. |
 
-## Patterns
+## Examples
 
 ### Loading swap
 

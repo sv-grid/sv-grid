@@ -9,7 +9,24 @@ a number, inside a table cell, or in a [SvStat](sv-stat.md) card. It defaults to
 the grid's `--sg-accent` color and sizes to a compact 88x22 by default. Pass
 `negativeColor` for bar and win/loss charts that split positive from negative.
 
-## Basic usage
+Related: [SvStat](sv-stat.md) · [SvGauge](sv-gauge.md) · [Range & meters overview](range.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSparkline` starter into your app:
+
+<div data-docs-add="add sparkline"></div>
+
+Or install the package and import it directly. `SvSparkline` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSparkline } from '@svgrid/grid'
+```
+
+## Example
 
 ```svelte
 <script lang="ts">
@@ -36,7 +53,7 @@ the grid's `--sg-accent` color and sizes to a compact 88x22 by default. Pass
 | `lastPoint`     | `boolean`                                   | `true`   | End-cap dot on the last point (line / area).                  |
 | `ariaLabel`     | `string`                                    | -        | Accessible name; defaults to `"sparkline"`.                   |
 
-## Patterns
+## Examples
 
 ### Chart types
 

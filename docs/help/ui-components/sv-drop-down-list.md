@@ -10,9 +10,26 @@ escapes any scroll container so it is never clipped.
 long lists. Because the panel is portalled to `<body>` and positioned with
 auto-flip, it stays visible even inside a scrolling toolbar or a dialog.
 
-<div data-docs-demo="314-dropdownlist" data-height="420"></div>
+Related: [SvComboBox](sv-combo-box.md) · [SvListBox](sv-list-box.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDropDownList` starter into your app:
+
+<div data-docs-add="add drop-down-list"></div>
+
+Or install the package and import it directly. `SvDropDownList` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDropDownList } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="314-dropdownlist" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -54,7 +71,7 @@ auto-flip, it stays visible even inside a scrolling toolbar or a dialog.
 
 Options use the shared [ListOption](sv-list-box.md#listoption) shape.
 
-## Patterns
+## Examples
 
 ### Grouped options
 
@@ -63,6 +80,17 @@ Give options a `group` and the panel renders labeled sections automatically:
 ```svelte
 <SvDropDownList {options} label="Priority" />
 <!-- options: { value, label, group: 'Urgent' | 'Normal' } -->
+```
+
+### Color swatches
+
+Give an option a `color` (any CSS color) and it renders a small swatch before
+the label - in the panel and on the selected trigger. Handy when the value *is*
+a color, like a status, label, or category:
+
+```svelte
+<SvDropDownList {options} label="Role" />
+<!-- options: { value: 'Barista', label: 'Barista', color: '#4f46e5' } -->
 ```
 
 ### Required in a form

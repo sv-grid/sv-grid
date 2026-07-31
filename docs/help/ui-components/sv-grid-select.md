@@ -11,9 +11,26 @@ It supports `bind:value`, an optional `searchable` box that filters across every
 column, and remote `loadOptions`. It builds its own lightweight table (it does not
 embed the full SvGrid) and portals the panel out of any scroll container.
 
-<div data-docs-demo="336-grid-select" data-height="420"></div>
+Related: [SvComboBox](sv-combo-box.md) · [SvTreeSelect](sv-tree-select.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvGridSelect` starter into your app:
+
+<div data-docs-add="add grid-select"></div>
+
+Or install the package and import it directly. `SvGridSelect` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvGridSelect } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="336-grid-select" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -72,7 +89,7 @@ type GridSelectColumn = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Custom label column
 

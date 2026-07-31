@@ -548,6 +548,12 @@ export type SchedulerConfig<
   /** Fallback accent color for every event. */
   color?: string;
   /**
+   * Field holding a SECONDARY accent color, rendered as a strip on the LEFT edge
+   * of the event - distinct from the main `colorField`. Lets an event encode two
+   * dimensions at once (e.g. main color = person, left strip = role).
+   */
+  secondaryColorField?: keyof TData & string;
+  /**
    * Field holding a {@link RecurrenceRule} (or array) - the row renders as one
    * event per matching day in view, keeping its time-of-day + duration.
    */
@@ -580,12 +586,19 @@ export type SchedulerConfig<
   agendaDays?: number;
 
   /**
-   * Field whose value buckets events into per-resource columns (people, rooms).
-   * Applies to the Week / Day time-grid views (like a second axis).
+   * Field whose value groups events by resource (people, rooms, machines). In
+   * the Week / Day time-grid the columns split into resource x day groups; a
+   * resource filter/legend appears in every view. See {@link SchedulerResource}.
    */
   resourceField?: keyof TData & string;
-  /** Explicit, ordered resources. Omit to derive from the distinct field values. */
+  /** Explicit, ordered resources (with colors). Omit to derive from the data. */
   resources?: ReadonlyArray<SchedulerResource>;
+  /**
+   * Time-grid resource grouping order. `false` (default) groups by resource then
+   * day (resource-major); `true` groups by day then resource (date-major), like
+   * Smart's `groupByDate`. Only affects Week / Day when `resourceField` is set.
+   */
+  groupByDate?: boolean;
 
   /** Enable drag-to-move and edge-resize. Without it the calendar is read-only. */
   editable?: boolean;
@@ -595,6 +608,12 @@ export type SchedulerConfig<
   onEventResize?: (event: SchedulerEventResizeEvent<TData>) => void;
   /** Fired when an empty slot is double-clicked (create affordance). */
   onEventAdd?: (start: Date, end: Date, resourceId?: string) => void;
+  /**
+   * Fired when the event's Delete button is used. Setting this shows a Delete
+   * button in the detail drawer (and a `Delete` item is easy to add via
+   * `eventMenu`). Remove the row from your data in the handler.
+   */
+  onEventDelete?: (row: TData) => void;
 
   /** Custom event body. Receives the row. Omit for the built-in default. */
   event?: Snippet<[TData]>;

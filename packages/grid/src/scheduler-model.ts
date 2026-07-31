@@ -41,6 +41,9 @@ export type ResolvedEvent<TData = unknown> = {
   end: Date
   allDay: boolean
   color?: string
+  /** Optional secondary accent (e.g. a category) shown as a left strip, distinct
+   *  from the main `color`. */
+  color2?: string
   resourceId?: string
   /** True when this instance came from expanding a recurrence rule. */
   recurring: boolean
@@ -56,6 +59,8 @@ export type EventSpec<TData> = {
   getAllDay?: (row: TData) => boolean
   getTitle?: (row: TData) => string
   getColor?: (row: TData) => string | undefined
+  /** Optional secondary accent color (rendered as a left strip). */
+  getSecondaryColor?: (row: TData) => string | undefined
   getResource?: (row: TData) => string | undefined
   getRecurrence?: (
     row: TData,
@@ -101,12 +106,17 @@ export function resolveEvents<TData>(
     const title = spec.getTitle?.(row) ?? ''
     const allDay = spec.getAllDay?.(row) ?? false
     const color = spec.getColor?.(row)
+    const color2 = spec.getSecondaryColor?.(row)
     const resourceId = spec.getResource?.(row)
     const rule = spec.getRecurrence?.(row)
 
     if (rule) {
       // One instance per matching day, carrying the base time-of-day + duration.
-      const days = expandRecurrence(rule, rangeStart, rangeEnd)
+      // Recurrence begins at the event's OWN start - never emit an occurrence
+      // before it, so clip the expansion's lower bound to the start date (a rule
+      // like "weekly on Mon-Fri" must not back-fill days before the event began).
+      const from = start.getTime() > rangeStart.getTime() ? start : rangeStart
+      const days = expandRecurrence(rule, from, rangeEnd)
       for (const day of days) {
         const iStart = allDay ? startOfDay(day) : withTime(day, start)
         const iEnd = new Date(iStart.getTime() + durationMs)
@@ -120,6 +130,7 @@ export function resolveEvents<TData>(
           end: iEnd,
           allDay,
           color,
+          color2,
           resourceId,
           recurring: true,
         })
@@ -134,6 +145,7 @@ export function resolveEvents<TData>(
         end,
         allDay,
         color,
+        color2,
         resourceId,
         recurring: false,
       })
@@ -157,6 +169,80 @@ export function eventsOnDay<TData>(
   const dayStart = startOfDay(day)
   const dayEnd = addDays(dayStart, 1)
   return events.filter((e) => rangesOverlap(e.start, e.end, dayStart, dayEnd))
+}
+
+/**
+ * A continuous month-view bar for one event within one week row: the columns it
+ * spans (`startCol`..`endCol`, 0-6) and the `lane` (stack row) it sits in. Events
+ * that cross a week boundary are split into one segment per week (with
+ * `continuesLeft`/`continuesRight` flags so the view can flatten that edge).
+ */
+export type MonthSegment<TData = unknown> = {
+  event: ResolvedEvent<TData>
+  startCol: number
+  endCol: number
+  lane: number
+  continuesLeft: boolean
+  continuesRight: boolean
+}
+
+const MS_DAY = 86_400_000
+
+/**
+ * Lay out one week row of the month grid as continuous spanning bars. `weekStart`
+ * is the local-midnight first day of the 7-day row. Returns each overlapping
+ * event as a {@link MonthSegment} clipped to the week, with greedy lane packing
+ * so bars never overlap, plus the total `laneCount`.
+ */
+export function monthWeekSegments<TData>(
+  events: ReadonlyArray<ResolvedEvent<TData>>,
+  weekStart: Date,
+): { segments: MonthSegment<TData>[]; laneCount: number } {
+  const ws = startOfDay(weekStart)
+  const we = addDays(ws, 7)
+  const colOf = (d: Date) => Math.floor((startOfDay(d).getTime() - ws.getTime()) / MS_DAY)
+
+  const out: MonthSegment<TData>[] = []
+  for (const e of events) {
+    const firstDay = startOfDay(e.start)
+    // Last covered day: the day of (end - 1ms), so an end at exact midnight does
+    // not spill onto the next day. Guard against zero/negative-length events.
+    const lastDay = startOfDay(new Date(Math.max(e.start.getTime(), e.end.getTime() - 1)))
+    if (lastDay.getTime() < ws.getTime() || firstDay.getTime() >= we.getTime()) continue
+    const startCol = Math.max(0, colOf(firstDay))
+    const endCol = Math.min(6, colOf(lastDay))
+    if (endCol < startCol) continue
+    out.push({
+      event: e,
+      startCol,
+      endCol,
+      lane: 0,
+      continuesLeft: firstDay.getTime() < ws.getTime(),
+      continuesRight: lastDay.getTime() >= we.getTime(),
+    })
+  }
+
+  // Order: earliest start, then longest, then all-day before timed, then start time.
+  out.sort(
+    (a, b) =>
+      a.startCol - b.startCol ||
+      b.endCol - b.startCol - (a.endCol - a.startCol) ||
+      (a.event.allDay === b.event.allDay
+        ? a.event.start.getTime() - b.event.start.getTime()
+        : a.event.allDay
+          ? -1
+          : 1),
+  )
+
+  // Greedy lane packing: a lane tracks the last column it is occupied through.
+  const laneEnd: number[] = []
+  for (const seg of out) {
+    let lane = 0
+    for (; lane < laneEnd.length; lane++) if (seg.startCol > (laneEnd[lane] ?? -1)) break
+    laneEnd[lane] = seg.endCol
+    seg.lane = lane
+  }
+  return { segments: out, laneCount: laneEnd.length }
 }
 
 /** A timed event positioned within a time-grid column. `topPct`/`heightPct` are

@@ -9,7 +9,7 @@
    * <SvPagination page={p} pageCount={20} onChange={(n) => (p = n)} />
    * ```
    */
-  import { paginationRange } from './paginate'
+  import { createPagination } from './createPagination'
 
   type Props = {
     /** 1-based current page. */
@@ -38,23 +38,26 @@
     ariaLabel = 'Pagination',
   }: Props = $props()
 
-  const items = $derived(paginationRange({ page, pageCount, siblingCount, boundaryCount }))
-  const go = (p: number) => {
-    if (disabled) return
-    const next = Math.min(Math.max(p, 1), pageCount)
-    if (next !== page) onChange?.(next)
-  }
+  // Page-range math + navigation live in the shared headless core.
+  const pg = createPagination({
+    page: () => page,
+    pageCount: () => pageCount,
+    onChange,
+    siblingCount: () => siblingCount,
+    boundaryCount: () => boundaryCount,
+    disabled: () => disabled,
+  })
 </script>
 
-<nav class="sv-pg sv-pg--{size}" aria-label={ariaLabel}>
+<nav class="sv-pg sv-pg--{size}" {...pg.navProps(ariaLabel)}>
   <ul class="sv-pg__list">
     {#if showFirstLast}
-      <li><button type="button" class="sv-pg__btn" aria-label="First page" onclick={() => go(1)} disabled={disabled || page <= 1}>&laquo;</button></li>
+      <li><button type="button" class="sv-pg__btn" {...pg.firstProps()}>&laquo;</button></li>
     {/if}
     {#if showPrevNext}
-      <li><button type="button" class="sv-pg__btn" aria-label="Previous page" onclick={() => go(page - 1)} disabled={disabled || page <= 1}>&lsaquo;</button></li>
+      <li><button type="button" class="sv-pg__btn" {...pg.prevProps()}>&lsaquo;</button></li>
     {/if}
-    {#each items as it, i (typeof it === 'number' ? `p${it}` : `${it}-${i}`)}
+    {#each pg.items as it, i (typeof it === 'number' ? `p${it}` : `${it}-${i}`)}
       {#if it === 'ellipsis-left' || it === 'ellipsis-right'}
         <li><span class="sv-pg__ellipsis" aria-hidden="true">&hellip;</span></li>
       {:else}
@@ -62,20 +65,17 @@
           <button
             type="button"
             class="sv-pg__btn"
-            class:is-active={it === page}
-            aria-current={it === page ? 'page' : undefined}
-            aria-label={`Page ${it}`}
-            {disabled}
-            onclick={() => go(it)}
+            class:is-active={pg.isActive(it)}
+            {...pg.pageButtonProps(it)}
           >{it}</button>
         </li>
       {/if}
     {/each}
     {#if showPrevNext}
-      <li><button type="button" class="sv-pg__btn" aria-label="Next page" onclick={() => go(page + 1)} disabled={disabled || page >= pageCount}>&rsaquo;</button></li>
+      <li><button type="button" class="sv-pg__btn" {...pg.nextProps()}>&rsaquo;</button></li>
     {/if}
     {#if showFirstLast}
-      <li><button type="button" class="sv-pg__btn" aria-label="Last page" onclick={() => go(pageCount)} disabled={disabled || page >= pageCount}>&raquo;</button></li>
+      <li><button type="button" class="sv-pg__btn" {...pg.lastProps()}>&raquo;</button></li>
     {/if}
   </ul>
 </nav>

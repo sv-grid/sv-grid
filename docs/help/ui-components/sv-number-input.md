@@ -10,9 +10,26 @@ styled renderer over the headless `createNumberInput` core, so parse, format,
 clamp, spinner, and keyboard all come from one place. Its label / hint / error
 chrome comes from [SvField](sv-field.md).
 
-<div data-docs-demo="300-number-input" data-height="420"></div>
+Related: [SvDurationInput](sv-duration-input.md) · [SvMaskedInput](sv-masked-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvNumberInput` starter into your app:
+
+<div data-docs-add="add number-input"></div>
+
+Or install the package and import it directly. `SvNumberInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvNumberInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="300-number-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -52,7 +69,7 @@ chrome comes from [SvField](sv-field.md).
 | `spinButtons` | `boolean`                           | `true`      | Show the up/down stepper.                          |
 | `clearable`   | `boolean`                           | `false`     | Show a clear (x) button when there is a value.     |
 
-## Patterns
+## Examples
 
 ### Currency and units
 

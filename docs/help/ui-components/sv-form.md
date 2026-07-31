@@ -9,9 +9,26 @@ fields all map to the kit's editors. It validates on blur and on submit, emits
 `onSubmit(values)` only when valid, and `onChange(values)` on every edit. Colors
 come from the grid's `--sg-*` tokens, so it matches the rest of the kit.
 
-<div data-docs-demo="322-form" data-height="440"></div>
+Related: [SvField](sv-field.md) · [SvFileUpload](sv-file-upload.md) · [Layout & composite overview](layout.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvForm` starter into your app:
+
+<div data-docs-add="add form"></div>
+
+Or install the package and import it directly. `SvForm` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvForm } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="322-form" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -60,7 +77,7 @@ type FormField = {
 }
 ```
 
-## Patterns
+## Examples
 
 ### Two-column layout with full-width rows
 

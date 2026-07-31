@@ -11,9 +11,24 @@ indirectly through `SvMenu` or `SvContextMenu`, which wrap it in a portalled,
 positioned panel; reach for it directly only when you are building your own
 positioned surface.
 
-<div data-docs-demo="326-menu" data-height="440"></div>
+Related: [SvMenu](sv-menu.md) · [SvContextMenu](sv-context-menu.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+`SvMenuList` ships free in `@svgrid/grid` (dependency-free). It is the recursive
+surface behind [SvMenu](sv-menu.md) and [SvContextMenu](sv-context-menu.md) - use
+one of those for a normal menu; reach for `SvMenuList` only when you need to render
+the menu inside your own portalled, positioned panel.
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvMenuList } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="326-menu" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -50,7 +65,7 @@ positioned surface.
 | `children`  | `MenuItem[]`      | Nested submenu items (renders a flyout).                 |
 | `onSelect`  | `() => void`      | Per-item callback fired when the item is chosen.        |
 
-## Patterns
+## Examples
 
 ### Prefer the wrappers
 

@@ -29,7 +29,7 @@
   }
 
   let {
-    value = '#3b82f6',
+    value = $bindable('#3b82f6'),
     onChange,
     disabled = false,
     readonly = false,
@@ -54,7 +54,8 @@
 
   const col = createColorInput({
     value: () => value,
-    onChange: (hex) => onChange?.(hex),
+    // Write `value` (so `bind:value` works) AND fire `onChange` (callback users).
+    onChange: (hex) => { value = hex; onChange?.(hex) },
     disabled: () => disabled,
     readonly: () => readonly,
     palette: () => palette as string[],

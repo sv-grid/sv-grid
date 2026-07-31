@@ -8,9 +8,26 @@ and shortcuts - clamps the menu so it stays on-screen, portals it to `<body>`,
 and closes through the shared dismissable layer stack. You describe the menu with
 a plain `MenuItem[]` array and handle picks in `onSelect`.
 
-<div data-docs-demo="331-app-overlays" data-height="440"></div>
+Related: [SvMenu](sv-menu.md) · [SvMenuList](sv-menu-list.md) · [Overlays & menus overview](overlays.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvContextMenu` starter into your app:
+
+<div data-docs-add="add context-menu"></div>
+
+Or install the package and import it directly. `SvContextMenu` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvContextMenu } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="331-app-overlays" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -50,7 +67,7 @@ a plain `MenuItem[]` array and handle picks in `onSelect`.
 | `children`  | `MenuItem[]`      | Nested submenu items (renders a flyout).                 |
 | `onSelect`  | `() => void`      | Per-item callback fired when the item is chosen.        |
 
-## Patterns
+## Examples
 
 ### Per-item handlers
 

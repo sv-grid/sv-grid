@@ -11,9 +11,26 @@ container, and `minChars` gates when the list appears. Suggestions can be plain
 strings or `{ value, label }` objects, so the shown label and the inserted value
 can differ.
 
-<div data-docs-demo="315-autocomplete" data-height="420"></div>
+Related: [SvComboBox](sv-combo-box.md) · [SvTagsInput](selection.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAutoComplete` starter into your app:
+
+<div data-docs-add="add auto-complete"></div>
+
+Or install the package and import it directly. `SvAutoComplete` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAutoComplete } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="315-autocomplete" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -50,7 +67,7 @@ can differ.
 Object suggestions use the shared [ListOption](sv-list-box.md#listoption) shape;
 the `label` is shown and the `value` is inserted.
 
-## Patterns
+## Examples
 
 ### Distinct label and inserted value
 

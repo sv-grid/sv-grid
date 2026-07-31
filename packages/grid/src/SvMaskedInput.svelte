@@ -27,7 +27,7 @@
   }
 
   let {
-    value = '',
+    value = $bindable(''),
     onChange,
     mask = '',
     placeholder,
@@ -53,7 +53,8 @@
 
   const mi = createMaskedInput({
     value: () => value,
-    onChange: (m, r, c) => onChange?.(m, r, c),
+    // Write the masked `value` (so `bind:value` works) AND fire `onChange`.
+    onChange: (m, r, c) => { value = m; onChange?.(m, r, c) },
     mask: () => mask,
     placeholder: () => placeholder,
     disabled: () => disabled,
@@ -72,7 +73,7 @@
     {#if prefixIcon}<span class="sv-masked__adorn">{@render prefixIcon()}</span>{/if}
     <input class="sv-masked__input" {...mi.inputProps()} />
     {#if clearable && mi.masked && !disabled && !readonly}
-      <button type="button" class="sv-masked__clear" aria-label="Clear" tabindex="-1" onclick={() => onChange?.('', '', false)}>
+      <button type="button" class="sv-masked__clear" aria-label="Clear" tabindex="-1" onclick={() => { value = ''; onChange?.('', '', false) }}>
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
       </button>
     {/if}

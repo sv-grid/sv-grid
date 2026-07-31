@@ -10,9 +10,26 @@ standalone rating matches the in-grid rating editor, and it carries the shared
 editor contract (label, hint, validation, `dir`/RTL) through
 [SvField](inputs.md). Star aria-labels are localizable via `messages`.
 
-<div data-docs-demo="311-rating" data-height="420"></div>
+Related: [SvSwitchButton](sv-switch-button.md) · [SvRadioGroup](sv-radio-group.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvRating` starter into your app:
+
+<div data-docs-add="add rating"></div>
+
+Or install the package and import it directly. `SvRating` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvRating } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="311-rating" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -48,7 +65,7 @@ editor contract (label, hint, validation, `dir`/RTL) through
 
 Helper type: `RatingMessages = { label: string; star: string; stars: string }` (defaults `Rating` / `star` / `stars`).
 
-## Patterns
+## Examples
 
 ### Interactive review with a live label
 

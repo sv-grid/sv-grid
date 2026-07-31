@@ -11,7 +11,9 @@
    */
   import {
     SvGrid,
+    describeRecurrence,
     type ColumnDef,
+    type RecurrenceRule,
     type SchedulerEventMoveEvent,
     type SchedulerEventResizeEvent,
     type SchedulerEventCommitEvent,
@@ -31,6 +33,8 @@
     kind: 'Meeting' | 'Focus' | 'Review' | 'Personal'
     owner: string
     color: string
+    allDay?: boolean
+    repeat?: RecurrenceRule | RecurrenceRule[] | null
   }
 
   // Build ISO datetimes anchored on the CURRENT week so the demo always shows
@@ -65,6 +69,8 @@
     { id: 6, title: 'Gym', start: at(2, 18, 0), end: at(2, 19, 0), kind: 'Personal', owner: 'Sam', color: KIND_COLOR.Personal },
     { id: 7, title: 'Customer call', start: at(3, 11, 0), end: at(3, 12, 0), kind: 'Meeting', owner: 'Ada', color: KIND_COLOR.Meeting },
     { id: 8, title: 'Retro', start: at(4, 15, 30), end: at(4, 16, 30), kind: 'Review', owner: 'Lee', color: KIND_COLOR.Review },
+    // A multi-day all-day event: renders as one continuous bar in the all-day row.
+    { id: 9, title: 'Team offsite', start: at(1, 0), end: at(4, 0), kind: 'Personal', owner: 'All', color: KIND_COLOR.Personal, allDay: true },
   ])
 
   const columns: ColumnDef<any, Meeting>[] = [
@@ -73,6 +79,14 @@
     { field: 'end', header: 'End', editorType: 'datetime', width: 170 },
     { field: 'kind', header: 'Type', editorType: 'list', editorOptions: ['Meeting', 'Focus', 'Review', 'Personal'], width: 120 },
     { field: 'owner', header: 'Owner', editorType: 'text', width: 110 },
+  ]
+
+  // Table view: a read-only "Repeat" column renders each event's recurrence rule
+  // as a readable summary via `describeRecurrence` (the rule is a structured
+  // object, so a plain field would show "[object Object]").
+  const tableColumns: ColumnDef<any, Meeting>[] = [
+    ...columns,
+    { id: 'repeat', header: 'Repeat', fieldFn: (r) => describeRecurrence(r.repeat) || '-', width: 200 },
   ]
 
   let view = $state<'calendar' | 'table'>('calendar')
@@ -87,31 +101,58 @@
   function onEventMove(e: SchedulerEventMoveEvent<Meeting>) {
     e.row.start = iso(e.start)
     e.row.end = iso(e.end)
+    e.row.allDay = e.allDay // dragging to/from the all-day row flips this
   }
   function onEventResize(e: SchedulerEventResizeEvent<Meeting>) {
+    e.row.start = iso(e.start)
     e.row.end = iso(e.end)
   }
   function onEventCommit(e: SchedulerEventCommitEvent<Meeting>) {
     Object.assign(e.row, e.values)
     e.row.color = KIND_COLOR[e.row.kind] ?? e.row.color
   }
+
+  // --- full CRUD: add, delete, update all flow back to `rows` ---
+  function makeEvent(start: Date, end: Date): Meeting {
+    return { id: ++seq, title: 'New event', start: iso(start), end: iso(end), kind: 'Meeting', owner: 'Me', color: KIND_COLOR.Meeting }
+  }
+  // Double-clicking an empty slot fires onEventAdd with that time.
+  function onEventAdd(start: Date, end: Date) {
+    rows = [...rows, makeEvent(start, end)]
+  }
+  // The drawer's Delete button (shown because onEventDelete is set) fires this.
+  function onEventDelete(row: Meeting) {
+    rows = rows.filter((r) => r !== row)
+  }
+  // Toolbar "Add event" button - drops a 1h event at noon today (always in view).
+  function addEventNow() {
+    const s = new Date()
+    s.setHours(12, 0, 0, 0)
+    rows = [...rows, makeEvent(s, new Date(s.getTime() + 60 * 60000))]
+  }
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
     <div class="text-sm text-slate-600 dark:text-slate-300">
-      The same grid, two views. Switch <strong>Month / Week / Day / Agenda</strong>
-      in the toolbar. <strong>Drag</strong> an event to reschedule it, drag its
-      bottom edge to resize, <strong>click</strong> to edit in a drawer, and
-      search to filter. Toggle Calendar / Table to see it is one grid.
+      The same grid, two views. <strong>Add</strong> (button or double-click an
+      empty slot), <strong>drag</strong> to reschedule, drag an edge to resize,
+      <strong>click</strong> to edit (and make any event <strong>recurring</strong>
+      from the drawer), and <strong>delete</strong> - every change flows back to
+      the rows. Toggle Calendar / Table to see it is one grid.
     </div>
-    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
+    <div class="flex items-center gap-2 shrink-0">
       <button
-        class="px-3 py-1 {view === 'calendar' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
-        onclick={() => (view = 'calendar')}>Calendar</button>
-      <button
-        class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
-        onclick={() => (view = 'table')}>Table</button>
+        class="rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+        onclick={addEventNow}>+ Add event</button>
+      <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
+        <button
+          class="px-3 py-1 {view === 'calendar' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          onclick={() => (view = 'calendar')}>Calendar</button>
+        <button
+          class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          onclick={() => (view = 'table')}>Table</button>
+      </div>
     </div>
   </div>
 
@@ -125,8 +166,10 @@
         scheduler={{
           startField: 'start',
           endField: 'end',
+          allDayField: 'allDay',
           titleField: 'title',
           colorField: 'color',
+          recurrenceField: 'repeat',
           initialView: 'week',
           weekStartsOn: 1,
           dayStartHour: 7,
@@ -136,12 +179,14 @@
           onEventMove,
           onEventResize,
           onEventCommit,
+          onEventAdd,
+          onEventDelete,
         }}
       />
     {:else}
       <SvGrid
         data={rows}
-        columns={columns}
+        columns={tableColumns}
         getRowId={(r) => String(r.id)}
         sortable
         enableInlineEditing

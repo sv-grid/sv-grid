@@ -11,9 +11,26 @@ Outlook's Mail / Calendar / People switch, complete with a drag splitter that
 moves modules between full rows and an icon rail. Colors come from the `--sg-*`
 tokens.
 
-<div data-docs-demo="327-navpane" data-height="440"></div>
+Related: [SvTree](sv-tree.md) · [SvBreadcrumb](sv-breadcrumb.md) · [Navigation & rich overview](navigation.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvNavPane` starter into your app:
+
+<div data-docs-add="add nav-pane"></div>
+
+Or install the package and import it directly. `SvNavPane` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvNavPane } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="327-navpane" data-height="440" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -53,7 +70,7 @@ Exported helper types:
 - `NavSection`: `{ id, label?, items: NavItem[], collapsible? }`.
 - `NavModule`: `{ id, label, icon?: Snippet, badge?: string | number }`.
 
-## Patterns
+## Examples
 
 ### Icons and badge counts
 

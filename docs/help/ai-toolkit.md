@@ -273,6 +273,7 @@ Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../refere
 
 - [AI assistant - Enterprise](./ai.md) - the in-grid helpers in full, with response shapes and the license gate
 - [Agents](./agents.md) - build an agent that drives the live grid
+- [Agent Skill](./skill.md) - always-on, project-aware context and house style for coding assistants
 - [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
 - [LLM grounding](./llm-grounding.md) - the static files any model reads
 - [AI generation - Studio](../enterprise/studio/ai-generation.md) - scaffold CRUD data-apps from a schema

@@ -9,9 +9,26 @@ up the roving focus, arrow keys, and selection for you. It is controlled: drive
 `value` from your state and update it in `onChange`. It carries the shared editor
 contract (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
-<div data-docs-demo="310-radio-group" data-height="420"></div>
+Related: [SvButtonGroup](sv-button-group.md) · [SvCheckBox](sv-check-box.md) · [Buttons & toggles overview](buttons.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvRadioGroup` starter into your app:
+
+<div data-docs-add="add radio-group"></div>
+
+Or install the package and import it directly. `SvRadioGroup` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvRadioGroup } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="310-radio-group" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -55,7 +72,7 @@ contract (label, hint, validation, `dir`/RTL) through [SvField](inputs.md).
 
 Helper type: `RadioOption = { value: string | number; label: string; disabled?: boolean }`.
 
-## Patterns
+## Examples
 
 ### Horizontal layout
 

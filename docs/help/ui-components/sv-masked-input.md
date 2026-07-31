@@ -11,9 +11,26 @@ you can validate on completeness. It is the styled renderer over the headless
 `createMaskedInput` core. Its label / hint / error chrome comes from
 [SvField](sv-field.md).
 
-<div data-docs-demo="302-masked-input" data-height="420"></div>
+Related: [SvPhoneInput](sv-phone-input.md) · [SvTextInput](sv-text-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvMaskedInput` starter into your app:
+
+<div data-docs-add="add masked-input"></div>
+
+Or install the package and import it directly. `SvMaskedInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvMaskedInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="302-masked-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -46,7 +63,7 @@ you can validate on completeness. It is the styled renderer over the headless
 | `prefixIcon`  | `Snippet`                                                  | -       | Leading icon adornment.                        |
 | `suffixIcon`  | `Snippet`                                                  | -       | Trailing icon adornment.                       |
 
-## Patterns
+## Examples
 
 ### Validate on completeness
 

@@ -9,9 +9,26 @@ when unfocused. That keeps your model numeric (easy to sum, compare, and store)
 while the UI stays human. Its label / hint / error chrome comes from
 [SvField](sv-field.md). As a grid cell editor: `Enter` commits, `Escape` cancels.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvNumberInput](sv-number-input.md) · [SvMaskedInput](sv-masked-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvDurationInput` starter into your app:
+
+<div data-docs-add="add duration-input"></div>
+
+Or install the package and import it directly. `SvDurationInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvDurationInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39,7 +56,7 @@ while the UI stays human. Its label / hint / error chrome comes from
 | `placeholder` | `string`                            | `e.g. 1h 30m` | Empty-state hint text.                                 |
 | `autofocus`   | `boolean`                           | `false`       | Focus + select on mount (used as a cell editor).       |
 
-## Patterns
+## Examples
 
 ### Colon vs units display
 

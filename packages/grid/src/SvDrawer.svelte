@@ -17,9 +17,7 @@
   import type { Snippet } from 'svelte'
   import { portalToBody } from './popover'
   import { nextEditorId } from './editor-contract'
-  import { createFocusTrap } from './a11y/focus-trap'
-  import { lockScroll } from './a11y/scroll-lock'
-  import { createDismissableLayer } from './a11y/dismissable'
+  import { createOverlay } from './createOverlay.svelte'
 
   /** Edge the drawer slides from. Kept in sync with the `DrawerSide` export in
    *  index.ts (a bare type-only module script trips the Svelte/Vite parser). */
@@ -93,26 +91,16 @@
     else dragY = 0
   }
 
-  // Focus trap + scroll lock + Escape/backdrop dismissal, all from the shared
-  // primitives - one tested implementation across every dialog-like overlay.
-  $effect(() => {
-    if (!open || !dialogEl) return
-    dragY = 0
-    const trap = createFocusTrap(dialogEl)
-    trap.activate()
-    const unlockScroll = lockScroll()
-    const layer = createDismissableLayer({
-      element: () => dialogEl,
-      onDismiss: (reason) => {
-        if (reason === 'escape' ? closeOnEsc : closeOnBackdrop) close()
-      },
-    })
-    layer.activate()
-    return () => {
-      layer.release()
-      unlockScroll()
-      trap.release()
-    }
+  // Focus trap + scroll lock + Escape/backdrop dismissal come from the shared
+  // headless overlay core - one tested implementation across every dialog-like
+  // overlay, and nested overlays close top-first. See createOverlay.svelte.ts.
+  const overlay = createOverlay({
+    open: () => open,
+    getDialog: () => dialogEl,
+    onClose: close,
+    closeOnEsc: () => closeOnEsc,
+    closeOnBackdrop: () => closeOnBackdrop,
+    onOpen: () => { dragY = 0 },
   })
 </script>
 
@@ -123,11 +111,7 @@
       class="sv-drawer sv-drawer--{effectiveSide}"
       class:is-sheet={sheet}
       class:is-dragging={dragging}
-      role="dialog"
-      aria-modal="true"
-      aria-label={!title ? ariaLabel : undefined}
-      aria-labelledby={title ? titleId : undefined}
-      tabindex="-1"
+      {...overlay.dialogProps({ labelledBy: title ? titleId : undefined, label: !title ? ariaLabel : undefined })}
       style:--sv-drawer-size={sizeVar}
       style:transform={sheet && dragY ? `translateY(${dragY}px)` : undefined}
     >

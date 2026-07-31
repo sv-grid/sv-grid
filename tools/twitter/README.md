@@ -26,10 +26,10 @@
 ## Tweet 2: the product-tip tweet
 
 `daily-tip.yml` runs `TWEET_FORCE=tip`, which selects one tip from
-`PRODUCT_TIPS` in `tools/twitter/tips-data.mjs` (10 SvGrid + 6 UI Components + 6
-Studio tips), rotated one step per day so it cycles across all three areas. Copy
-is deterministic (no model call); it renders a branded card and puts the docs
-link in a first reply. This job needs only the four `X_*` secrets.
+`PRODUCT_TIPS` in `tools/twitter/tips-data.mjs` (18 SvGrid + 13 UI Components + 12
+Studio tips), rotated one step per day so it cycles across all three areas over
+~6 weeks. Copy is deterministic (no model call); it renders a branded card and
+puts the tip's page deep-link in a first reply. Needs only the four `X_*` secrets.
 
 ## The blog tweet: image + info + link
 

@@ -10,9 +10,26 @@ grid `--sg-*` token, so it matches your grid and edit forms in light and dark. A
 a grid cell editor it honours the interaction contract: `Enter` commits, `Escape`
 cancels.
 
-<div data-docs-demo="334-input-editors" data-height="420"></div>
+Related: [SvTextArea](sv-text-area.md) · [SvMaskedInput](sv-masked-input.md) · [Inputs overview](inputs.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvTextInput` starter into your app:
+
+<div data-docs-add="add text-input"></div>
+
+Or install the package and import it directly. `SvTextInput` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTextInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -48,7 +65,7 @@ cancels.
 | `autocomplete` | `AutoFill`                                               | -        | Native autocomplete token.                             |
 | `autofocus`    | `boolean`                                                | `false`  | Focus + select on mount (used as a cell editor).       |
 
-## Patterns
+## Examples
 
 ### Typed variants
 

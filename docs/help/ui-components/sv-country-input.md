@@ -11,9 +11,26 @@ flag-and-name list; typing filters instantly. It is controlled through `value` +
 with `showDial`), and localizes its search and empty-state strings via `messages`.
 Colors follow the grid's `--sg-*` tokens.
 
-<div data-docs-demo="317-country-input" data-height="420"></div>
+Related: [SvComboBox](sv-combo-box.md) · [SvDropDownList](sv-drop-down-list.md) · [Selection overview](selection.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCountryInput` starter into your app:
+
+<div data-docs-add="add country-input"></div>
+
+Or install the package and import it directly. `SvCountryInput` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCountryInput } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="317-country-input" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -47,7 +64,7 @@ Colors follow the grid's `--sg-*` tokens.
 
 `CountryMessages` is `{ search: string; noResults: string }`.
 
-## Patterns
+## Examples
 
 ### Show dial codes
 

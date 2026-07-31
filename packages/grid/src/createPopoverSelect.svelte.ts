@@ -14,6 +14,7 @@
  */
 import { anchoredRect, type AnchoredRect } from './popover'
 import { createDismissableLayer } from './a11y/dismissable'
+import { enabledIndices as enabledIndicesOf, wrapMove } from './list-nav'
 
 let uidSeq = 0
 
@@ -60,10 +61,7 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
   const isDisabled = (i: number) => config.disabled?.(i) ?? false
 
   function enabledIndices(): number[] {
-    const out: number[] = []
-    const n = count()
-    for (let i = 0; i < n; i++) if (!isDisabled(i)) out.push(i)
-    return out
+    return enabledIndicesOf(count(), isDisabled)
   }
   function clampActive(i: number): number {
     const n = count()
@@ -88,10 +86,8 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
   }
 
   function move(delta: number) {
-    const list = enabledIndices()
-    if (!list.length) return
-    const pos = list.indexOf(active)
-    active = list[(pos + delta + list.length) % list.length] ?? list[0]!
+    const next = wrapMove(enabledIndices(), active, delta)
+    if (next >= 0) active = next
   }
   function first() { active = enabledIndices()[0] ?? 0 }
   function last() { active = enabledIndices().at(-1) ?? 0 }

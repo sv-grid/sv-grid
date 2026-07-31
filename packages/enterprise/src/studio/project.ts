@@ -63,7 +63,23 @@ export type EntityDataSource = MemorySource | RestSource | SqlSource | SupabaseS
 export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'accordion' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar' | 'detail' | 'component'
 
 export type GridAlign = 'left' | 'center' | 'right'
-export type GridColumnConfig = { field: string; show: boolean; header?: string; width?: number; align?: GridAlign; pin?: 'left' | 'right' }
+/** No-code per-column value formatting. Compiles to the grid's `format` (CellFormatConfig):
+ *  a raw `1234.5` becomes `$1,234.50` / `42%` / `Jun 27, 2026` without a code renderer. */
+export type ColumnFormat =
+  | { type: 'number'; decimals?: number }
+  | { type: 'currency'; currency?: string }
+  | { type: 'percent'; decimals?: number; /** cell values are 0-100 (42 -> 42%) not 0-1. */ valueIsPercentPoints?: boolean }
+  | { type: 'date'; pattern?: string }
+  | { type: 'datetime'; pattern?: string }
+/** No-code rich cell renderer for a column. Unlike `ColumnFormat` (value formatting),
+ *  these render a component/link: an auto-colored status pill, a progress bar, or a
+ *  clickable link. Compiles to a `cell` snippet on the column. Mutually exclusive with
+ *  `format` (a cell is either formatted text or a rich renderer). */
+export type ColumnCellType =
+  | { kind: 'badge' }
+  | { kind: 'progress'; max?: number }
+  | { kind: 'link'; as?: 'url' | 'email' | 'tel' }
+export type GridColumnConfig = { field: string; show: boolean; header?: string; width?: number; align?: GridAlign; pin?: 'left' | 'right'; /** Aggregate this column into the group summary row when the grid is grouped. */ aggregate?: Reduce; /** No-code display formatting (currency / percent / date / ...). */ format?: ColumnFormat; /** No-code rich cell renderer (badge / progress / link). */ cellType?: ColumnCellType }
 /** How a grid edits its rows: read-only, inline (Excel-style cells), or a popup form. */
 export type GridEditing = 'none' | 'inline' | 'form'
 /** Row height preset. */
@@ -100,7 +116,25 @@ export type GridConfig = {
   /** No-code conditional formatting: color / bold a cell by its value. Compiled to
    *  the grid's `conditionalFormats` rule engine. */
   formatRules?: FormatRule[]
+  /** No-code row grouping: fields to group rows by (outermost first). When set, the
+   *  grid loads the full dataset and groups/sorts/paginates client-side (so groups
+   *  span every row, not just a server page) and shows the grouping controls. Per-column
+   *  `aggregate` values roll up into each group's summary row. */
+  grouping?: string[]
+  /** No-code export toolbar: a button bar above the grid wired to the grid's own
+   *  export API (CSV / JSON / copy-to-clipboard - no extra dependencies). */
+  export?: GridExportConfig
+  /** No-code tree data: render the grid's own rows as an expand/collapse hierarchy
+   *  built from a self-referential parent field. Mutually exclusive with `grouping`. */
+  treeData?: TreeDataConfig
 }
+/** Tree-data grid config: `parentField` is a self-referential FK (a row whose parent is
+ *  empty / not in the set is a root); `labelField` is the column that shows the indented,
+ *  expandable tree cell. */
+export type TreeDataConfig = { parentField: string; labelField: string }
+/** Which export affordances the grid toolbar shows. All go through the grid's built-in
+ *  export API (dependency-free). Empty / all-false = no toolbar. */
+export type GridExportConfig = { csv?: boolean; json?: boolean; copy?: boolean }
 /** A conditional-formatting comparison. */
 export type FormatOp = 'eq' | 'ne' | 'lt' | 'lte' | 'gt' | 'gte' | 'contains' | 'empty' | 'notEmpty'
 /** One no-code format rule: style a `field`'s cell when the comparison holds. */
@@ -207,7 +241,15 @@ export type DetailConfig = { kind: 'detail'; titleField: string; subtitleField?:
  *  entity-bound screen alike. `props` holds its configured "chrome" values, keyed
  *  by the registry entry's prop `key`; a component with `hasContent` also stores
  *  its literal text content under the reserved `_content` key. */
-export type ComponentConfig = { kind: 'component'; component: string; props: Record<string, unknown>; name?: string }
+/** A data binding for one component prop (or `_content`): its value is computed
+ *  from the screen's rows instead of a static literal. `aggregate` reduces a field
+ *  over all rows (a KPI-style number), `field` reads the first row's field, `expr`
+ *  is a raw JS expression over `rows`. Needs an entity screen (rows to bind to). */
+export type ComponentBinding =
+  | { kind: 'aggregate'; field?: string; reduce: Reduce }
+  | { kind: 'field'; field: string }
+  | { kind: 'expr'; code: string }
+export type ComponentConfig = { kind: 'component'; component: string; props: Record<string, unknown>; name?: string; bindings?: Record<string, ComponentBinding> }
 export type BlockConfig =
   | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | AccordionConfig | DashboardConfig | MasterDetailConfig | LookupConfig
   | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig | DetailConfig | ComponentConfig
@@ -321,6 +363,72 @@ export const ON_LOAD = 'onLoad'
 export const ON_DESTROY = 'onDestroy'
 /** Every lifecycle slot the Code view can edit, in display order. */
 export const HANDLER_SLOTS: ReadonlyArray<string> = [ON_LOAD, ON_DESTROY]
+/** The handler-steps key for a component block's click event. */
+export const clickSlot = (blockId: string) => `click:${blockId}`
+
+/** One step in a visual "method" (the Methods panel, Radzen-style). Each compiles
+ *  to a line of typed `ctx` code-behind - so the visual builder and the code editor
+ *  produce identical output. `code` is the raw-TS escape hatch. */
+export type ActionStep =
+  | { type: 'navigate'; to: string }                                       // ctx.goto(to)
+  | { type: 'gridExport'; format?: 'csv' | 'tsv' | 'json' }                 // download the grid
+  | { type: 'gridCopy' }                                                    // ctx.grid.copyToClipboard()
+  | { type: 'gridClear'; what: 'filters' | 'sort' | 'selection' }
+  | { type: 'gridSort'; field: string; dir?: 'asc' | 'desc' }
+  | { type: 'gridFilter'; field: string; value: string }
+  | { type: 'reloadData' }                                                  // ctx.data.reload()
+  | { type: 'setProp'; target: string; prop: string; value: string }       // ctx.<target>.<prop> = <value>
+  | { type: 'setText'; target: string; value: string }                     // ctx.<target>.text = <value>
+  | { type: 'alert'; message: string }
+  | { type: 'apiAction'; actionId: string }                                // POST /api/actions/<id>
+  | { type: 'code'; code: string }
+export type ActionStepType = ActionStep['type']
+
+const q = (s: string) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+/** Emit a value literal: true/false/number bare, else a quoted string. */
+const litValue = (v: string): string => {
+  const t = v.trim()
+  if (t === 'true' || t === 'false') return t
+  if (t !== '' && !Number.isNaN(Number(t))) return t
+  return q(v)
+}
+
+/** Compile one step to a `ctx` statement (a single line, no trailing newline). */
+export function compileStep(step: ActionStep): string {
+  switch (step.type) {
+    case 'navigate': return `ctx.goto(${q(step.to)})`
+    case 'gridExport': {
+      const fmt = step.format ?? 'csv'
+      const fn = fmt === 'tsv' ? 'exportTsv' : fmt === 'json' ? 'exportJson' : 'exportCsv'
+      const mime = fmt === 'json' ? 'application/json' : fmt === 'tsv' ? 'text/tab-separated-values' : 'text/csv'
+      // A scoped block so the locals don't collide when there are two export steps.
+      return [
+        '{',
+        `  const data = await ctx.grid.${fn}()`,
+        "  const link = document.createElement('a')",
+        `  link.href = URL.createObjectURL(new Blob([data], { type: ${q(mime)} }))`,
+        `  link.download = ${q('export.' + fmt)}`,
+        '  link.click()',
+        '  URL.revokeObjectURL(link.href)',
+        '}',
+      ].join('\n')
+    }
+    case 'gridCopy': return `ctx.grid.copyToClipboard()`
+    case 'gridClear': return step.what === 'sort' ? `ctx.grid.clearSort()` : step.what === 'selection' ? `ctx.grid.clearRowSelection()` : `ctx.grid.clearAllFilters()`
+    case 'gridSort': return `ctx.grid.setSort(${q(step.field)}, ${q(step.dir ?? 'asc')})`
+    case 'gridFilter': return `ctx.grid.setFilter(${q(step.field)}, { operator: 'contains', value: ${q(step.value)} })`
+    case 'reloadData': return `await ctx.data.reload()`
+    case 'setProp': return `ctx.${step.target}.${step.prop} = ${litValue(step.value)}`
+    case 'setText': return `ctx.${step.target}.text = ${litValue(step.value)}`
+    case 'alert': return `alert(${q(step.message)})`
+    case 'apiAction': return `await fetch(${q('/api/actions/' + step.actionId)}, { method: 'POST' })`
+    case 'code': return step.code
+  }
+}
+/** Compile a list of steps to a handler body (indented lines). */
+export function compileHandlerSteps(steps: ReadonlyArray<ActionStep>): string {
+  return steps.map((s) => compileStep(s)).join('\n')
+}
 
 /** `entity` is optional: a screen with none is a freestanding page (no data
  *  binding, no blocks - every `BlockKind` is entity-bound) - just a title, an
@@ -330,7 +438,7 @@ export const HANDLER_SLOTS: ReadonlyArray<string> = [ON_LOAD, ON_DESTROY]
  *  `code` opts the screen into a create-once `handlers.ts` companion (user-owned,
  *  never regenerated) whose `onLoad(ctx)` runs on mount; `renderGrid` adds a Grid
  *  fed via `ctx.setRows`. `handlerBodies` holds each handler's body (keyed by name). */
-export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlersSource?: string; className?: string }
+export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlerSteps?: Record<string, ActionStep[]>; handlersSource?: string; className?: string }
 
 /** The generated app's shell (master layout): sidebar, top-nav, or bottom-nav; brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav' | 'bottom-nav'
@@ -755,6 +863,24 @@ export function setComponentName(project: StudioProject, screenId: string, block
   }))
 }
 
+/** True when a component has at least one data-bound prop. */
+export function componentHasBindings(cfg: ComponentConfig): boolean {
+  return !!cfg.bindings && Object.keys(cfg.bindings).length > 0
+}
+/** Bind (or, with `binding: null`, unbind) one component prop to the screen's data. */
+export function setComponentBinding(project: StudioProject, screenId: string, blockId: string, propKey: string, binding: ComponentBinding | null): StudioProject {
+  return mapScreen(project, screenId, (s) => ({
+    ...s,
+    blocks: mapBlockTree(s.blocks, blockId, (b) => {
+      if (b.config.kind !== 'component') return b
+      const bindings = { ...(b.config.bindings ?? {}) }
+      if (binding) bindings[propKey] = binding
+      else delete bindings[propKey]
+      return { ...b, config: { ...b.config, bindings: Object.keys(bindings).length ? bindings : undefined } }
+    }),
+  }))
+}
+
 /** Apply `fn` to the block with `id` anywhere in the tree (top level or nested in a Tabs / Accordion container). */
 function mapBlockTree(blocks: Block[], id: string, fn: (b: Block) => Block): Block[] {
   return blocks.map((b) => {
@@ -968,6 +1094,50 @@ export function setHandlerBody(project: StudioProject, screenId: string, handler
 export function setScreenHandlersSource(project: StudioProject, screenId: string, source: string): StudioProject {
   const trimmed = source.trim()
   return mapScreen(project, screenId, (s) => ({ ...s, code: true, handlersSource: trimmed || undefined }))
+}
+
+// --- visual methods (the Methods panel) ------------------------------------
+/** Replace the steps of one method slot (`onLoad`, `onDestroy`, or `click:<blockId>`).
+ *  An empty list clears the slot. Implies `code: true`. */
+export function setHandlerSteps(project: StudioProject, screenId: string, slot: string, steps: ActionStep[]): StudioProject {
+  return mapScreen(project, screenId, (s) => {
+    const all = { ...(s.handlerSteps ?? {}) }
+    if (steps.length) all[slot] = steps
+    else delete all[slot]
+    return { ...s, code: true, handlerSteps: Object.keys(all).length ? all : undefined }
+  })
+}
+/** Append a step to a method slot. */
+export function addHandlerStep(project: StudioProject, screenId: string, slot: string, step: ActionStep): StudioProject {
+  const s = project.screens.find((x) => x.id === screenId)
+  return setHandlerSteps(project, screenId, slot, [...(s?.handlerSteps?.[slot] ?? []), step])
+}
+/** Replace / remove a step at `index` (null removes it). */
+export function updateHandlerStep(project: StudioProject, screenId: string, slot: string, index: number, step: ActionStep | null): StudioProject {
+  const s = project.screens.find((x) => x.id === screenId)
+  const steps = [...(s?.handlerSteps?.[slot] ?? [])]
+  if (index < 0 || index >= steps.length) return project
+  if (step === null) steps.splice(index, 1)
+  else steps[index] = step
+  return setHandlerSteps(project, screenId, slot, steps)
+}
+/** Move a step within its slot (dir -1 up, +1 down). */
+export function moveHandlerStep(project: StudioProject, screenId: string, slot: string, index: number, dir: -1 | 1): StudioProject {
+  const s = project.screens.find((x) => x.id === screenId)
+  const steps = [...(s?.handlerSteps?.[slot] ?? [])]
+  const j = index + dir
+  if (index < 0 || index >= steps.length || j < 0 || j >= steps.length) return project
+  ;[steps[index], steps[j]] = [steps[j]!, steps[index]!]
+  return setHandlerSteps(project, screenId, slot, steps)
+}
+/** Drop the visual steps for a slot into the raw code editor (compile once), so a
+ *  user can hand-edit from there. Moves `handlerSteps[slot]` -> `handlerBodies[slot]`. */
+export function stepsToCode(project: StudioProject, screenId: string, slot: string): StudioProject {
+  const s = project.screens.find((x) => x.id === screenId)
+  const steps = s?.handlerSteps?.[slot]
+  if (!steps?.length) return project
+  const withBody = setHandlerBody(project, screenId, slot, compileHandlerSteps(steps))
+  return setHandlerSteps(withBody, screenId, slot, [])
 }
 
 /** Deep-clone `block` with fresh ids (recursing into Tabs children). */

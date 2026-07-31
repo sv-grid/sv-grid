@@ -31,7 +31,7 @@
   }
 
   let {
-    value = '',
+    value = $bindable(''),
     onChange,
     placeholder,
     disabled = false,
@@ -58,7 +58,8 @@
 
   const pw = createPasswordInput({
     value: () => value,
-    onChange: (v) => onChange?.(v),
+    // Write `value` (so `bind:value` works) AND fire `onChange` (callback users).
+    onChange: (v) => { value = v; onChange?.(v) },
     placeholder: () => placeholder,
     disabled: () => disabled,
     readonly: () => readonly,

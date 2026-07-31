@@ -8,9 +8,26 @@ validation summaries, banner notices, and "here is what happened" panels. Colors
 come from the grid's `--sg-*` semantic tokens, and the variant sets both the
 accent and the ARIA role so urgent messages announce themselves.
 
-<div data-docs-demo="339-status-display" data-height="420"></div>
+Related: [SvBadge](sv-badge.md) · [SvEmptyState](sv-empty-state.md) · [Feedback & display overview](feedback.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvAlert` starter into your app:
+
+<div data-docs-add="add alert"></div>
+
+Or install the package and import it directly. `SvAlert` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvAlert } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -39,7 +56,7 @@ accent and the ARIA role so urgent messages announce themselves.
 | `actions`     | `Snippet`                                                  | -       | Trailing action buttons or links.                                  |
 | `icon`        | `Snippet`                                                  | -       | Custom leading icon, overriding the default glyph.                 |
 
-## Patterns
+## Examples
 
 ### Dismissible banners
 

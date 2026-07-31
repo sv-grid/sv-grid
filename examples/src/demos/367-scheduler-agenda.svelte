@@ -11,6 +11,8 @@
     SvGrid,
     type ColumnDef,
     type SchedulerEventCommitEvent,
+    type SchedulerEventMoveEvent,
+    type SchedulerEventResizeEvent,
   } from '@svgrid/grid'
   import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
 
@@ -59,37 +61,82 @@
     { field: 'notes', header: 'Notes', editorType: 'textarea' },
   ]
 
+  let seq = 100
+  let view = $state<'calendar' | 'table'>('calendar')
+
   function onEventCommit(e: SchedulerEventCommitEvent<Task>) {
     Object.assign(e.row, e.values)
     e.row.color = PRI_COLOR[e.row.priority] ?? e.row.color
   }
+  function onEventMove(e: SchedulerEventMoveEvent<Task>) {
+    e.row.start = iso(e.start)
+    e.row.end = iso(e.end)
+  }
+  function onEventResize(e: SchedulerEventResizeEvent<Task>) {
+    e.row.start = iso(e.start)
+    e.row.end = iso(e.end)
+  }
+  function onEventAdd(start: Date, end: Date) {
+    rows = [...rows, { id: ++seq, title: 'New task', start: iso(start), end: iso(end), owner: 'Me', priority: 'Medium', notes: '', color: PRI_COLOR.Medium }]
+  }
+  function onEventDelete(row: Task) {
+    rows = rows.filter((r) => r !== row)
+  }
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
-    The <strong>Agenda</strong> view lists events by day. <strong>Click</strong>
-    any event to open the built-in detail drawer and edit its fields - saving
-    mirrors back to the row (and re-colours by priority). Switch to Month for the
-    calendar grid.
+  <div class="flex items-center justify-between gap-3 shrink-0">
+    <div class="text-sm text-slate-600 dark:text-slate-300">
+      The <strong>Agenda</strong> view lists events by day. <strong>Click</strong>
+      any event to open the detail drawer to edit or <strong>delete</strong> it;
+      double-click a Month slot to add. Every change mirrors back to the row.
+    </div>
+    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
+      <button
+        class="px-3 py-1 {view === 'calendar' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        onclick={() => (view = 'calendar')}>Calendar</button>
+      <button
+        class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        onclick={() => (view = 'table')}>Table</button>
+    </div>
   </div>
 
   <div class="flex-1 min-h-0">
-    <SvGrid
-      data={rows}
-      columns={columns}
-      getRowId={(r) => String(r.id)}
-      containerHeight="100%"
-      scheduler={{
-        startField: 'start',
-        endField: 'end',
-        titleField: 'title',
-        colorField: 'color',
-        views: ['agenda', 'month'],
-        initialView: 'agenda',
-        agendaDays: 14,
-        drawer: { title: (r) => r.title, size: '420px' },
-        onEventCommit,
-      }}
-    />
+    {#if view === 'calendar'}
+      <SvGrid
+        data={rows}
+        columns={columns}
+        getRowId={(r) => String(r.id)}
+        containerHeight="100%"
+        scheduler={{
+          startField: 'start',
+          endField: 'end',
+          titleField: 'title',
+          colorField: 'color',
+          views: ['agenda', 'month'],
+          initialView: 'agenda',
+          agendaDays: 14,
+          editable: true,
+          drawer: { title: (r) => r.title, size: '420px' },
+          onEventMove,
+          onEventResize,
+          onEventCommit,
+          onEventAdd,
+          onEventDelete,
+        }}
+      />
+    {:else}
+      <SvGrid
+        data={rows}
+        columns={columns}
+        getRowId={(r) => String(r.id)}
+        sortable
+        enableInlineEditing
+        showPagination={false}
+        rowHeight={36}
+        containerHeight="100%"
+        fitColumns
+      />
+    {/if}
   </div>
 </section>

@@ -1,5 +1,17 @@
 # Range & feedback
 
+## Installation
+
+Add any component with the CLI (drops a ready-to-edit starter into your app) - or
+add the whole family at once:
+
+<div data-docs-add="add range"></div>
+
+They all ship free in the `@svgrid/grid` package, so you can also install it and
+import them directly:
+
+<div data-docs-install="@svgrid/grid"></div>
+
 ## SvSlider
 
 A single or dual-thumb range slider (ARIA slider) with steps, tick marks,

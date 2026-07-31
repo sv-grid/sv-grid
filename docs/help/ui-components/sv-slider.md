@@ -11,9 +11,26 @@ stepping, drag state, and `role="slider"` ARIA) lives in the headless
 plain number. Every color comes from the grid's `--sg-*` tokens, so it matches
 your grid and forms in light and dark.
 
-<div data-docs-demo="318-slider" data-height="420"></div>
+Related: [SvGauge](sv-gauge.md) · [SvNumberInput](sv-number-input.md) · [Range & meters overview](range.md)
 
-## Basic usage
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSlider` starter into your app:
+
+<div data-docs-add="add slider"></div>
+
+Or install the package and import it directly. `SvSlider` ships free in
+`@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSlider } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="318-slider" data-height="420" data-code></div>
 
 ```svelte
 <script lang="ts">
@@ -62,7 +79,7 @@ your grid and forms in light and dark.
 | `ariaLabel`   | `string`                                 | -              | Accessible name when there is no visible `label`.                       |
 | `dir`         | `ltr` \| `rtl` \| `auto`                 | `auto`         | Text direction; `rtl` mirrors the track.                                |
 
-## Patterns
+## Examples
 
 ### Range with ticks and formatted readout
 
