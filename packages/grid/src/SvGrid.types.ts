@@ -652,6 +652,13 @@ export type SchedulerConfig<
   weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   /** Time-grid slot size in minutes (week / day snap granularity). Default 30. */
   slotMinutes?: number;
+  /**
+   * Slot sizes (minutes) offered as a runtime picker in the Week / Day time-grid
+   * ruler, e.g. `[60, 30, 15, 5]`. When set, a size selector appears in the
+   * toolbar and the ruler subdivides accordingly; the active size starts at
+   * `slotMinutes`. Omit to hide the picker (the ruler still uses `slotMinutes`).
+   */
+  slotSizes?: ReadonlyArray<number>;
   /** First / last hour shown in the time-grid band (0-24). Default 0..24. */
   dayStartHour?: number;
   dayEndHour?: number;

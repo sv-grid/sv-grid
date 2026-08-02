@@ -88,7 +88,11 @@
   // --- config with defaults ---
   const views = $derived(scheduler.views ?? (["month", "week", "day", "agenda"] as SchedulerView[]));
   const weekStartsOn = $derived(scheduler.weekStartsOn ?? 0);
-  const slotMinutes = $derived(Math.max(5, scheduler.slotMinutes ?? 30));
+  // Slot size: config default, optionally overridden at runtime by the ruler
+  // slot-size picker (`slotSizes`). Snap granularity + ruler subdivision.
+  let slotOverride = $state<number | null>(null);
+  const slotMinutes = $derived(Math.max(5, slotOverride ?? scheduler.slotMinutes ?? 30));
+  const slotSizes = $derived(scheduler.slotSizes ?? []);
   const dayStartHour = $derived(scheduler.dayStartHour ?? 0);
   const dayEndHour = $derived(scheduler.dayEndHour ?? 24);
   const agendaDays = $derived(scheduler.agendaDays ?? 30);
@@ -423,6 +427,29 @@
   const hasAllDayRow = $derived(view === "week" || view === "day");
   const bandHours = $derived(Math.max(1, dayEndHour - dayStartHour));
   const hourList = $derived(Array.from({ length: bandHours }, (_, i) => dayStartHour + i));
+
+  // Ruler subdivision: `slotMinutes` slots per hour. Each hour grows so the
+  // finest slot stays usably tall (>= MIN_SLOT_PX); event positions are all
+  // percent-based, so scaling the hour height keeps them correct.
+  const MIN_SLOT_PX = 11;
+  const slotsPerHour = $derived(Math.max(1, Math.round(60 / slotMinutes)));
+  const hourPx = $derived(Math.max(HOUR_PX, slotsPerHour * MIN_SLOT_PX));
+  const slotPx = $derived(hourPx / slotsPerHour);
+  const gridSlots = $derived.by(() => {
+    const out: { min: number; startsOnHour: boolean; endsOnHour: boolean }[] = [];
+    const total = bandHours * slotsPerHour;
+    for (let i = 0; i < total; i++) {
+      const min = dayStartHour * 60 + i * slotMinutes;
+      out.push({ min, startsOnHour: min % 60 === 0, endsOnHour: (min + slotMinutes) % 60 === 0 });
+    }
+    return out;
+  });
+  const slotSizeLabel = (m: number) => (m % 60 === 0 ? `${m / 60}h` : `${m}m`);
+  function slotRulerLabel(s: { min: number; startsOnHour: boolean }): string {
+    if (s.startsOnHour) return hourLabel(s.min / 60);
+    if (slotMinutes >= 15) return `:${String(s.min % 60).padStart(2, "0")}`;
+    return "";
+  }
 
   // --- current-time indicator (the "now" line), ticking each minute ---
   // `now` is kept in pseudo-local time (see `tz`) so it positions in the zone.
@@ -1897,7 +1924,7 @@
     }
     if (scrolledForView === v) return;
     scrolledForView = v;
-    const top = Math.max(0, (SCROLL_TO_HOUR - dayStartHour) * HOUR_PX);
+    const top = Math.max(0, (SCROLL_TO_HOUR - dayStartHour) * hourPx);
     requestAnimationFrame(() => {
       if (gridScrollEl) gridScrollEl.scrollTop = top;
     });
@@ -2389,6 +2416,19 @@
     </div>
     <div class="sv-sched-title" aria-live="polite">{titleLabel}</div>
     <div class="sv-sched-views">
+      {#if slotSizes.length && (view === "week" || view === "day")}
+        <div class="sv-sched-slots" role="group" aria-label="Slot size">
+          {#each slotSizes as ms (ms)}
+            <button
+              type="button"
+              class="sv-sched-btn sv-sched-btn-slot"
+              class:sv-sched-btn-active={slotMinutes === ms}
+              aria-pressed={slotMinutes === ms}
+              onclick={() => (slotOverride = ms)}
+            >{slotSizeLabel(ms)}</button>
+          {/each}
+        </div>
+      {/if}
       {#each views as v (v)}
         <button
           type="button"
@@ -2787,17 +2827,17 @@
       {/if}
 
       <div class="sv-sched-gridscroll" bind:this={gridScrollEl}>
-        <div class="sv-sched-gridbody" style={`height:${bandHours * HOUR_PX}px`} bind:this={bodyEl}>
+        <div class="sv-sched-gridbody" style={`height:${bandHours * hourPx}px`} bind:this={bodyEl}>
           {#each secondaryRulers as sr (sr.label)}
             <div class="sv-sched-gutter sv-sched-gutter-secondary">
               {#each sr.rows as lbl, i (i)}
-                <div class="sv-sched-hour" style={`height:${HOUR_PX}px`}><span>{lbl}</span></div>
+                <div class="sv-sched-hour" style={`height:${hourPx}px`}><span>{lbl}</span></div>
               {/each}
             </div>
           {/each}
           <div class="sv-sched-gutter">
-            {#each hourList as h (h)}
-              <div class="sv-sched-hour" style={`height:${HOUR_PX}px`}><span>{hourLabel(h)}</span></div>
+            {#each gridSlots as s (s.min)}
+              <div class="sv-sched-hour" class:sv-sched-hour-minor={!s.startsOnHour} style={`height:${slotPx}px`}><span>{slotRulerLabel(s)}</span></div>
             {/each}
             {#if nowBandPct != null}
               <div class="sv-sched-now-label" style={`top:${nowBandPct}%`}>{fmtTime(now)}</div>
@@ -2815,8 +2855,8 @@
               ondblclick={(e) => onSlotDblClick(col, e)}
               oncontextmenu={openRangeMenu}
             >
-              {#each hourList as h (h)}
-                <div class="sv-sched-slot" style={`height:${HOUR_PX}px`}></div>
+              {#each gridSlots as s (s.min)}
+                <div class="sv-sched-slot" class:sv-sched-slot-hour={s.endsOnHour} style={`height:${slotPx}px`}></div>
               {/each}
               {#if hasBookingShade}
                 {#each columnShadeBands(col) as sb (sb.top)}
@@ -3262,7 +3302,9 @@
   }
   .sv-sched-nav { display: flex; gap: 4px; }
   .sv-sched-title { flex: 1 1 auto; font-weight: 600; font-size: 0.95rem; }
-  .sv-sched-views { display: flex; gap: 4px; }
+  .sv-sched-views { display: flex; gap: 4px; align-items: center; }
+  .sv-sched-slots { display: inline-flex; gap: 2px; margin-right: 8px; padding-right: 8px; border-right: 1px solid var(--sg-border, #e5e7eb); }
+  .sv-sched-btn-slot { min-width: 34px; padding-left: 7px; padding-right: 7px; }
   /* Resource legend / filter (shown in every view when resourceField is set). */
   .sv-sched-reslegend {
     display: flex;
@@ -3704,8 +3746,12 @@
   /* The first hour label has no gridline above it (only the scroll-container
      edge), so straddling would clip it under the all-day row - top-align it. */
   .sv-sched-hour:first-child span { top: 0; }
+  /* Sub-hour ruler labels (e.g. :30, :15) - lighter and smaller than the hour. */
+  .sv-sched-hour-minor span { font-size: 0.6rem; opacity: 0.62; }
   .sv-sched-col { position: relative; border-left: 1px solid var(--sg-border, #e5e7eb); }
-  .sv-sched-slot { border-bottom: 1px solid var(--sg-border, #eef0f2); }
+  /* Sub-hour slot lines are faint; the on-the-hour line is the normal border. */
+  .sv-sched-slot { border-bottom: 1px solid color-mix(in srgb, var(--sg-border, #e5e7eb) 45%, transparent); }
+  .sv-sched-slot-hour { border-bottom-color: var(--sg-border, #eef0f2); }
   .sv-sched-event {
     position: absolute;
     box-sizing: border-box;
