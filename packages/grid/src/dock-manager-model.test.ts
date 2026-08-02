@@ -22,6 +22,8 @@ import {
   locatePane,
   surfaceOfTabs,
   allManagerPaneIds,
+  allManagerIds,
+  dedupeManagerNodeIds,
   setManagerActive,
   type DockManagerState,
 } from './dock-manager-model'
@@ -240,5 +242,34 @@ describe('setManagerActive', () => {
     const leaf = tabs(g, [pane('a', 'A'), pane('b', 'B')], 0)
     const s: DockManagerState = { main: leaf, floating: [], autoHide: [] }
     expect((setManagerActive(s, leaf.id, 1).main as DockTabs).active).toBe(1)
+  })
+})
+
+describe('dedupeManagerNodeIds', () => {
+  it('reassigns duplicate node ids so keyed sibling lists never collide', () => {
+    // A restored workspace where two sibling leaves share a generated id (the id
+    // counter had reset across reloads) - the shape that threw each_key_duplicate.
+    const dup: DockManagerState = {
+      main: {
+        type: 'group', id: 'dm-1000000', direction: 'row', sizes: [0.5, 0.5],
+        children: [
+          { type: 'tabs', id: 'dm-1000000', panes: [pane('rail', 'Pages')], active: 0 },
+          { type: 'tabs', id: 'dm-1000000', panes: [pane('main', 'Canvas')], active: 0 },
+        ],
+      } as DockNode,
+      floating: [], autoHide: [],
+    }
+    const fixed = dedupeManagerNodeIds(dup)
+    const ids = allManagerIds(fixed)
+    // Every node id is now unique...
+    const nodeIds = ids.filter((i) => i.startsWith('dm-'))
+    expect(new Set(nodeIds).size).toBe(nodeIds.length)
+    // ...while pane ids (which key content) are preserved.
+    expect(allManagerPaneIds(fixed).sort()).toEqual(['main', 'rail'])
+  })
+
+  it('is value-equal on an already-unique workspace', () => {
+    const { state } = base()
+    expect(dedupeManagerNodeIds(state)).toBe(state)
   })
 })

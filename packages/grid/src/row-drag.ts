@@ -178,6 +178,16 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     onRowsContainerDrop,
     onRowDragEnd,
     rowDragGridId: gridId,
+    /**
+     * Clear any managed drag this grid currently owns. Call on unmount so an
+     * interrupted drag (route change / `{#if}` toggle mid-drag) doesn't leave a
+     * stale module-level `bus` that fires `removeFromSource` against a destroyed
+     * grid's data on the next grid instance (#68). Guarded by `gridId` so it
+     * never disturbs a concurrent drag owned by another grid.
+     */
+    destroyRowDrag() {
+      if (bus?.gridId === gridId) bus = null;
+    },
   };
 }
 

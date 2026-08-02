@@ -197,11 +197,13 @@ describe('sample apps', () => {
     })
 
     it('calendar apps resolve relation title fields to their display columns', () => {
+      // The calendar block now renders via the scheduler grid view: titleField lives in the
+      // `scheduler={{ ... }}` config (as a resolved display column), not an <SvSchedule> attr.
       const cases: Record<string, string> = { clinic: 'patient', gym: 'class', restaurant: 'table', fleet: 'driver' }
       for (const [id, title] of Object.entries(cases)) {
         const all = emitStudioProject(getSampleApp(id)!.build()).map((f) => f.contents).join('\n')
-        const tag = all.match(/<SvSchedule[\s\S]*?\/>/)![0]
-        expect(tag, `${id}: schedule title not resolved`).toContain(`titleField="${title}"`)
+        const tag = all.match(/scheduler=\{\{[\s\S]*?\}\}/)![0]
+        expect(tag, `${id}: schedule title not resolved`).toContain(`titleField: '${title}'`)
       }
     })
   })

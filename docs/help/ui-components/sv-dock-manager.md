@@ -96,6 +96,8 @@ workspace = JSON.parse(localStorage.getItem('ws')!)   // tiled + floating + hidd
 | `reorderEnabled` | `boolean`                          | `true`  | Allow dragging tabs to reorder within a strip. |
 | `headerPosition` | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'` | Which side of each panel its tab strip sits on (left/right render vertical tabs). |
 | `keepAlive`      | `boolean`                          | `false` | Keep inactive tabs mounted (hidden) so their DOM state (scroll, form input) persists across switches. |
+| `hideSingleTab`  | `boolean`                          | `false` | Hide the tab button on a single-pane leaf (no redundant title bar; the panel actions still show). |
+| `allowPopout`    | `boolean`                          | `false` | Offer the pop-out-to-a-new-window panel action. Off by default; the `popout()` API still works. |
 
 ### Events
 
@@ -129,11 +131,13 @@ it from `api.focus(paneId)` and listen via the `focus` event.
 - **Reorder** - drag a tab along its own strip; an insertion line marks where it
   will land.
 - **Stack header controls** - each tiled panel's strip carries **maximize**
-  (fills the docked area in place; restore returns), **auto-hide**, **float**,
-  and **pop-out** buttons on the right.
-- **Pop-out to a native window** - the pop-out button (`⤡`) opens the panel in a
-  real browser window (styles + theme carried across); closing that window docks
-  the panel back in. Falls back to a floating window if the browser blocks pop-ups.
+  (fills the docked area in place; restore returns), **auto-hide**, and **float**
+  buttons on the right (plus **pop-out** when you opt in with `allowPopout`).
+- **Pop-out to a native window** - set `allowPopout` to add a pop-out button
+  (`⤡`) that opens the panel in a real browser window (styles + theme carried
+  across); closing that window docks the panel back in. Falls back to a floating
+  window if the browser blocks pop-ups. Off by default - most apps only need the
+  in-app floating windows - but the `popout()` API works regardless of the prop.
 - **Auto-hide** - click a tab's auto-hide button (`▽`) to collapse its leaf to
   the **nearest** edge (left / right / top / bottom, inferred from where it
   sits), or drag a tab to any of the four manager borders to auto-hide it there.

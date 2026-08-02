@@ -12,8 +12,18 @@ import type { ConditionalFormat } from "./conditional-formatting";
 import type { MenuItem } from "./SvMenuList.svelte";
 import type { RecurrenceRule } from "./recurrence";
 
-/** The calendar views the scheduler can render. {@link SchedulerConfig}. */
-export type SchedulerView = "month" | "week" | "day" | "agenda";
+/** The calendar views the scheduler can render. {@link SchedulerConfig}. The
+ *  `timeline*` views are horizontal: time runs left→right and resources are
+ *  rows (a single "All" row without `resourceField`). */
+export type SchedulerView =
+  | "month"
+  | "week"
+  | "day"
+  | "agenda"
+  | "timelineDay"
+  | "timelineWeek"
+  | "timelineMonth"
+  | "timelineYear";
 
 /**
  * How overlapping ("colliding") time-grid events are laid out:
@@ -30,6 +40,14 @@ export type SchedulerResource = {
   id: string;
   title?: string;
   color?: string;
+  /**
+   * This resource's own working windows (hours), optionally per weekday - e.g. a
+   * doctor available Mon/Wed/Fri 9-13 and Tue/Thu 14-18. Overrides the global
+   * `businessHours` / `nonWorkingDays` for this resource's columns: time outside
+   * every matching window is shaded, and (with `restrictToBusinessHours`)
+   * non-bookable. A weekday with no matching window is a full day off.
+   */
+  availability?: ReadonlyArray<{ days?: ReadonlyArray<number>; start: number; end: number }>;
 };
 import type {
   ChartType,
@@ -513,6 +531,22 @@ export type SchedulerEventResizeEvent<TData extends RowData = RowData> = {
   end: Date;
 };
 
+/**
+ * A drag-selected range (see `rangeSelectable`). `start`/`end` are a single
+ * CONTINUOUS datetime range - dragging across days makes it a longer span, not a
+ * per-day rectangle. `days` / `resourceIds` list the days / resources the range
+ * touched (for reference); `allDay` is true when the all-day row was dragged.
+ */
+export type SchedulerRangeSelection = {
+  start: Date;
+  end: Date;
+  allDay?: boolean;
+  /** Every day the range touched (one entry for a within-a-day drag). */
+  days: Date[];
+  /** Every resource the range touched (empty without `resourceField`). */
+  resourceIds: string[];
+};
+
 /** Emitted when an event's built-in editor/drawer is saved. */
 export type SchedulerEventCommitEvent<TData extends RowData = RowData> = {
   row: TData;
@@ -520,6 +554,38 @@ export type SchedulerEventCommitEvent<TData extends RowData = RowData> = {
   changes: Record<string, unknown>;
   /** The full set of edited field values. */
   values: Record<string, unknown>;
+};
+
+/**
+ * One override of a single occurrence of a recurring event (stored in the row's
+ * `recurrenceExceptionsField`). `occurrenceStart` identifies the occurrence (its
+ * original start, like an iCal `RECURRENCE-ID`); `deleted` removes just that one,
+ * otherwise the given fields override it. Times are the same ISO / Date shape you
+ * store on the row.
+ */
+export type SchedulerException = {
+  occurrenceStart: string | number | Date;
+  deleted?: boolean;
+  start?: string | number | Date;
+  end?: string | number | Date;
+  title?: string;
+  allDay?: boolean;
+};
+
+/** How a change to a recurring event should apply. */
+export type SchedulerEditScope = "occurrence" | "series";
+
+/**
+ * Fired when a single occurrence of a recurring event is edited or deleted (the
+ * user chose "This event"). Append/merge `exception` into the row's
+ * `recurrenceExceptionsField`; for `deleted` it carries `{ deleted: true }`.
+ */
+export type SchedulerOccurrenceChangeEvent<TData extends RowData = RowData> = {
+  row: TData;
+  /** The occurrence's original start (its identity within the series). */
+  occurrenceStart: Date;
+  /** The override to store (already in real-instant time). */
+  exception: SchedulerException;
 };
 
 /**
@@ -558,6 +624,13 @@ export type SchedulerConfig<
    * event per matching day in view, keeping its time-of-day + duration.
    */
   recurrenceField?: keyof TData & string;
+  /**
+   * Field holding an array of {@link SchedulerException} - per-occurrence
+   * overrides of a recurring event (a moved / edited / deleted single instance).
+   * When set, editing a recurring occurrence offers "This event" vs "All events"
+   * and "This event" fires {@link onOccurrenceChange}.
+   */
+  recurrenceExceptionsField?: keyof TData & string;
   /** Event length in minutes when a row has a start but no `endField`. Default 60. */
   defaultDurationMin?: number;
 
@@ -567,6 +640,14 @@ export type SchedulerConfig<
   initialView?: SchedulerView;
   /** The date the calendar opens on. Defaults to "today". */
   initialDate?: Date | number | string;
+  /**
+   * Controlled anchor date - when this changes the calendar navigates to it (a
+   * mini date-picker or external "go to" can drive the view). Pair with
+   * {@link onNavigate} for two-way sync.
+   */
+  date?: Date | number | string;
+  /** Fired when the visible date changes (prev / next / today). */
+  onNavigate?: (date: Date) => void;
   /** First day of the week, 0-6 (0 = Sunday). Default 0. */
   weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   /** Time-grid slot size in minutes (week / day snap granularity). Default 30. */
@@ -574,6 +655,55 @@ export type SchedulerConfig<
   /** First / last hour shown in the time-grid band (0-24). Default 0..24. */
   dayStartHour?: number;
   dayEndHour?: number;
+
+  // --- booking rules: working hours, non-working days, conflicts -------------
+  /**
+   * Working-hours window (hours, e.g. `{ start: 9, end: 17 }`). Time outside it
+   * is shaded in the Week / Day time-grid. Visual only - see `disableConflicts`
+   * to enforce.
+   */
+  businessHours?: { start: number; end: number };
+  /** Weekday numbers (0 = Sun … 6 = Sat) shaded as non-working (e.g. `[0, 6]`). */
+  nonWorkingDays?: ReadonlyArray<number>;
+  /** Shade elapsed time on today's column (the past is "used up"). */
+  shadeUntilNow?: boolean;
+  /**
+   * Enforce the shaded time: reject a drag / resize / create that lands outside
+   * `businessHours` or on a `nonWorkingDays` day (snap back + flash). Without
+   * this the shading is a visual hint only.
+   */
+  restrictToBusinessHours?: boolean;
+  /**
+   * Prevent double-booking: dragging / resizing / creating an event so it
+   * overlaps another event **on the same resource** is rejected and reverted.
+   */
+  disableConflicts?: boolean;
+  /**
+   * Enable **undo / redo** of drag-move + resize with `Ctrl/Cmd+Z` and
+   * `Ctrl/Cmd+Shift+Z` (or `Ctrl+Y`). The scheduler re-emits the move/resize
+   * callbacks with the reversed values, so your data follows.
+   */
+  history?: boolean;
+  /**
+   * Show the current-time indicator - a line across today's column(s) in the
+   * Week / Day time-grid and the Day timeline, tracking the local time. On by
+   * default; set to `false` to hide it.
+   */
+  nowIndicator?: boolean;
+  /**
+   * IANA time zone (e.g. `'America/New_York'`) the whole calendar is shown in -
+   * the hour ruler, event positions, day boundaries, all-day grouping and the
+   * now-line. Defaults to the browser's local zone. Event `start`/`end` must be
+   * instant-unambiguous (UTC / offset ISO or epoch ms) for this to be correct;
+   * bare local strings are read as wall-clock in this zone.
+   */
+  timeZone?: string;
+  /**
+   * Extra read-only hour rulers for other zones (a "world clock"), shown left of
+   * the primary ruler in the Week / Day time-grid. Each entry's `label` heads its
+   * column (defaults to a short zone abbreviation).
+   */
+  secondaryTimeZones?: ReadonlyArray<{ id: string; label?: string }>;
   /**
    * How overlapping time-grid events are laid out. `split` (default) divides the
    * width evenly per collision; `cap` shows up to `maxColumns` then a clickable
@@ -600,23 +730,87 @@ export type SchedulerConfig<
    */
   groupByDate?: boolean;
 
+  /** Timeline views only: width (px) of the left resource-label gutter. Default 160. */
+  resourceAreaWidth?: number;
+  /** `timelineDay` tick size + move/resize snap, in minutes. Default = `slotMinutes`. */
+  timelineSlotMinutes?: number;
+  /** Timeline views only: height (px) of one event lane inside a resource row. Default 26. */
+  timelineLaneHeight?: number;
+
   /** Enable drag-to-move and edge-resize. Without it the calendar is read-only. */
   editable?: boolean;
   /** Fired when an event is dragged to a new time / resource. */
   onEventMove?: (event: SchedulerEventMoveEvent<TData>) => void;
   /** Fired when an event edge is dragged to resize it. */
   onEventResize?: (event: SchedulerEventResizeEvent<TData>) => void;
-  /** Fired when an empty slot is double-clicked (create affordance). */
-  onEventAdd?: (start: Date, end: Date, resourceId?: string) => void;
+  /**
+   * Fired to create an event - double-clicking an empty slot, or confirming a
+   * pending range when no {@link onRangeSelect} is set. `allDay` is `true` when
+   * the slot / range is an all-day one (the all-day row, a month day cell, or a
+   * multi-day timeline zoom), so the handler can set the `allDayField`.
+   */
+  onEventAdd?: (start: Date, end: Date, resourceId?: string, allDay?: boolean) => void;
   /**
    * Fired when the event's Delete button is used. Setting this shows a Delete
    * button in the detail drawer (and a `Delete` item is easy to add via
    * `eventMenu`). Remove the row from your data in the handler.
    */
   onEventDelete?: (row: TData) => void;
+  /**
+   * Fired when a single occurrence of a recurring event is moved / resized /
+   * deleted with scope "This event". Merge `event.exception` into the row's
+   * `recurrenceExceptionsField` array (keyed by `occurrenceStart`).
+   */
+  onOccurrenceChange?: (event: SchedulerOccurrenceChangeEvent<TData>) => void;
 
-  /** Custom event body. Receives the row. Omit for the built-in default. */
+  /**
+   * Selecting empty cells: click or drag across the time-grid / timeline to mark
+   * a time range (and, across days / resources, a rectangle of cells). Arrow keys
+   * move the selection and `Shift`+arrows extend it. Marking only *marks* the
+   * range - it does NOT create anything. The event is created on an explicit
+   * confirm: press `Enter`, or right-click the selection and choose "Add Event".
+   * Confirming fires {@link onRangeSelect}, or falls back to `onEventAdd` for the
+   * first cell; `Escape` cancels the marker.
+   *
+   * On by default; set to `false` to disable.
+   */
+  rangeSelectable?: boolean;
+  /**
+   * Fired when a pending cell range is confirmed with `Enter` or the "Add Event"
+   * context menu (see {@link rangeSelectable}) - not on drag release.
+   */
+  onRangeSelect?: (selection: SchedulerRangeSelection) => void;
+  /**
+   * Multi-selecting existing events: Ctrl/Cmd-click toggles, Shift-click
+   * range-selects; a plain click clears. Selected events move together when one
+   * is dragged, and `Delete` removes them (via `onEventDelete`).
+   *
+   * On by default; set to `false` to disable.
+   */
+  eventSelectable?: boolean;
+  /** Fired when the set of multi-selected events changes. */
+  onEventSelectionChange?: (rows: TData[]) => void;
+
+  /**
+   * An "unscheduled" backlog list shown beside the Week / Day grid: drag an item
+   * onto the calendar to schedule it. Each item is `{ id, title, durationMin?,
+   * color? }`. Dropping fires {@link onSchedule} with the drop time + resource.
+   */
+  unscheduled?: ReadonlyArray<{ id: string; title: string; durationMin?: number; color?: string }>;
+  /** Optional heading for the unscheduled backlog panel. Default "Unscheduled". */
+  backlogTitle?: string;
+  /** Fired when an unscheduled item is dropped on the grid - create an event from it. */
+  onSchedule?: (item: { id: string; title: string; durationMin?: number; color?: string }, start: Date, resourceId?: string) => void;
+
+  /** Custom event body. Receives the row. Omit for the built-in default (title). */
   event?: Snippet<[TData]>;
+  /**
+   * Hover tooltip for an event. Set a `Snippet<[TData]>` for custom content, or
+   * `true` for the built-in tooltip (title + time + resource). Omit to disable.
+   */
+  tooltip?: boolean | Snippet<[TData]>;
+  /** Delay (ms) before the hover tooltip opens. Default 400. */
+  tooltipDelay?: number;
   /** Built-in detail drawer: `true` for all fields, or a config object. */
   drawer?: boolean | SchedulerDrawerConfig<TData>;
   /** Fired when the drawer / editor is saved. */

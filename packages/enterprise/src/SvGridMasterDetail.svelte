@@ -37,6 +37,13 @@
     /** When set, a parent row click calls this (with the row id) to drill into a
      *  detail page, instead of expanding the inline child grid. */
     onParentClick?: (id: string) => void
+    /** Stretch columns to fill the width, like a standard grid. Default `true` so the
+     *  master + detail cells match a plain `<SvGrid>` instead of using natural widths. */
+    fitColumns?: boolean
+    /** Row height (px) - keep in sync with your other grids. Defaults to the grid's own 30. */
+    rowHeight?: number
+    /** Zebra-stripe the rows (match a striped grid). */
+    zebraRows?: boolean
   }
 
   let {
@@ -47,6 +54,9 @@
     containerHeight = 320,
     detailHeight = 200,
     onParentClick,
+    fitColumns = true,
+    rowHeight,
+    zebraRows = false,
   }: Props = $props()
 
   const parentIdOf = (p: TParent) => String(p[resolveIdField(schema)])
@@ -70,6 +80,9 @@
   data={displayRows}
   {columns}
   {containerHeight}
+  {fitColumns}
+  {rowHeight}
+  {zebraRows}
   virtualization={false}
   isDetailRow={(row) => isDetailRow(row)}
   onRowClick={(e) => handleRowClick(e.row)}
@@ -77,7 +90,7 @@
   {#snippet renderDetailRow({ row })}
     {@const parent = (row as unknown as DetailRow<TParent>).parent}
     <div class="sv-md-detail">
-      <SvGrid data={getChildren(parent)} columns={detailColumns} containerHeight={detailHeight} />
+      <SvGrid data={getChildren(parent)} columns={detailColumns} containerHeight={detailHeight} {fitColumns} {rowHeight} {zebraRows} />
     </div>
   {/snippet}
 </SvGrid>
@@ -87,12 +100,17 @@
      renders inside ITS OWN tree - a scoped rule can get pruned / not match there, which
      left the detail region with no padding / background. Global keeps it reliable. */
   :global(.sv-md-detail) {
-    padding: 10px 12px;
+    /* Sit the detail as a separated, inset card below its master row - the margin
+       spaces it off the surrounding master rows; the radius + border read as a nested block. */
+    margin: 10px 12px;
+    padding: 12px 14px;
     /* Fall back to the themed header surface (not a fixed light grey) so the
        detail region tracks light/dark - `--sg-bg-subtle` is unset by default,
        which used to leave this white on every dark theme. */
     background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
     color: var(--sg-fg, inherit);
+    border: 1px solid var(--sg-border, #e2e8f0);
     border-left: 3px solid var(--sg-accent, #2563eb);
+    border-radius: 8px;
   }
 </style>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
+import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, setScreenLayout, setLayoutOpts, setScreenDock, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
 import { emitStudioProject, emitStudioAppBundle, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
 import { UI_COMPONENT_REGISTRY } from './ui-components'
@@ -1313,6 +1313,22 @@ describe('grid editing (a Grid property) -> codegen', () => {
     expect(page).toContain('controller.setFilter')
   })
 
+  it('filterUi picks the filter surfaces (row / menu / global); default is the global search', () => {
+    // Default (no filterUi) -> global search only.
+    const dflt = pageFor(withGrid({ filterable: true }))
+    expect(dflt).toContain('showGlobalFilter')
+    expect(dflt).not.toContain('showFilterRow')
+    expect(dflt).not.toContain('showFilterMenu')
+    // Explicit row + menu (no global).
+    const rm = pageFor(withGrid({ filterable: true, filterUi: { row: true, menu: true } }))
+    expect(rm).toContain('showFilterRow')
+    expect(rm).toContain('showFilterMenu')
+    expect(rm).not.toContain('showGlobalFilter')
+    // Column filters still flow to the server controller.
+    expect(rm).toContain('externalFilter')
+    expect(rm).toContain('onFiltersChange')
+  })
+
   it('form presentation is honored', () => {
     expect(pageFor(withGrid({ formPresentation: 'drawer' }))).toContain('presentation="drawer"')
   })
@@ -1329,10 +1345,10 @@ describe('grid editing (a Grid property) -> codegen', () => {
     expect(page).toContain('rowHeight={28}')
   })
 
-  it('normal density + defaults emit no rowHeight and totals off', () => {
+  it('normal density emits the standard 30px row height (consistent with master-detail) + totals off', () => {
     const page = pageFor(createProject([customers]))
     expect(page).toContain('enableRowSummaries={false}')
-    expect(page).not.toContain('rowHeight=')
+    expect(page).toContain('rowHeight={30}')
   })
 
   it('per-column header / width / align overrides flow into the columns', () => {
@@ -1507,12 +1523,213 @@ describe('grid editing (a Grid property) -> codegen', () => {
     }
   })
 
+  it('scheduler view renders the grid as a calendar: enableSchedulerView + scheduler prop + write-back, and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    p = updateBlock(p, sid, gid, { config: { scheduler: { startField: 'mrr', titleField: 'name', colorField: 'tier', initialView: 'week', editable: true, drawer: true } } as Partial<import('./project').BlockConfig> })
+    const page = pageFor(p)
+    // Renderer registered once + imported.
+    expect(page).toMatch(/import \{[^}]*enableSchedulerView[^}]*\} from '@svgrid\/enterprise'/)
+    expect(page).toContain('enableSchedulerView()')
+    // Full-client scheduler grid with the mapped config.
+    expect(page).toContain('data={allRows}')
+    expect(page).toContain("scheduler={{ startField: 'mrr'")
+    expect(page).toContain("titleField: 'name'")
+    expect(page).toContain("initialView: 'week'")
+    expect(page).toContain('editable: true')
+    // Optimistic write-back through the controller.
+    expect(page).toContain('onEventMove:')
+    expect(page).toContain('onEventCommit:')
+    expect(page).toContain('controller.updateRow(')
+    expect(page).toContain('async function loadAll()')
+    for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
   it('an ungrouped grid stays server-driven (no groupable, keeps the controller view)', () => {
     const page = pageFor(createProject([customers]))
     expect(page).not.toContain('groupable')
     expect(page).not.toContain('setGroupBy')
     expect(page).toContain('data={view.rows}')
     expect(page).toContain('externalSort')
+  })
+})
+
+describe('dock layout (screen.layout = dock)', () => {
+  it('a dock screen renders SvDockManager with a pane per block + persistence + mobile stack, and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'filter')
+    p = addBlock(p, sid, 'kpi')
+    p = setScreenLayout(p, sid, 'dock')
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    // Imports + workspace state + persistence.
+    expect(page).toMatch(/import \{[^}]*SvDockManager[^}]*\} from '@svgrid\/grid'/)
+    expect(page).toContain('let dockWorkspace = $state<DockManagerState>(')
+    expect(page).toContain("localStorage.getItem('dock:customers')")
+    expect(page).toContain('let dockNarrow = $state(false)')
+    // The manager + a pane per block, wired to persist on change.
+    expect(page).toContain('<SvDockManager bind:workspace={dockWorkspace} onChange={(w) => saveDock(w)}>')
+    expect(page).toContain('{#snippet pane(p)}')
+    for (const b of p.screens[0]!.blocks) expect(page).toContain(`{#if p.id === '${b.id}'}`)
+    // Mobile fallback stacks the plain grid body.
+    expect(page).toContain('{#if dockNarrow}')
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('a canvas-layout screen places blocks on a 12-col grid by cell coords and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'kpi')
+    p = setScreenLayout(p, sid, 'canvas')
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain('<div class="st-canvas">')
+    expect(page).toContain('<div class="st-canvas__cell" style="grid-column:')
+    expect(page).toMatch(/grid-column: \d+ \/ span \d+; grid-row: \d+ \/ span \d+;/)
+    expect(page).not.toContain('SvDockManager')
+    const css = emitStudioAppBundle(p).find((f) => f.path === 'src/app.css')!.contents
+    expect(css).toContain('.st-canvas { display: grid; grid-template-columns: repeat(12, 1fr);')
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('layout settings flow into codegen (dock props, persist off, canvas cols, grid gap)', () => {
+    // Dock with pop-out + bottom tabs + no persistence.
+    let d = createProject([customers])
+    const dsid = d.screens[0]!.id
+    d = addBlock(d, dsid, 'kpi')
+    d = setScreenLayout(d, dsid, 'dock')
+    d = setLayoutOpts(d, dsid, 'dock', { allowPopout: true, headerPosition: 'bottom', persist: false })
+    const dpage = emitStudioProject(d).find((f) => f.path.endsWith('/+page.svelte'))!.contents
+    expect(dpage).toContain('allowPopout')
+    expect(dpage).toContain('headerPosition="bottom"')
+    expect(dpage).not.toContain('onChange={(w) => saveDock(w)}') // persistence off
+    expect(dpage).not.toContain('function saveDock')
+
+    // Canvas with 24 columns + custom row height.
+    let c = createProject([customers])
+    const csid = c.screens[0]!.id
+    c = setScreenLayout(c, csid, 'canvas')
+    c = setLayoutOpts(c, csid, 'canvas', { cols: 24, rowHeight: 32 })
+    const cpage = emitStudioProject(c).find((f) => f.path.endsWith('/+page.svelte'))!.contents
+    expect(cpage).toContain('grid-template-columns: repeat(24, 1fr); grid-auto-rows: 32px;')
+
+    // Grid gap setting scoped into the page style.
+    let g = createProject([customers])
+    const gsid = g.screens[0]!.id
+    g = setLayoutOpts(g, gsid, 'grid', { colGap: 24, rowGap: 8 })
+    const gpage = emitStudioProject(g).find((f) => f.path.endsWith('/+page.svelte'))!.contents
+    expect(gpage).toContain('.st-screen { grid-template-columns: repeat(12, 1fr); gap: 8px 24px;')
+
+    for (const files of [emitStudioProject(d), emitStudioProject(c), emitStudioProject(g)]) {
+      for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+        expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+      }
+    }
+  })
+
+  it('a grid-layout screen (default) emits no dock manager', () => {
+    const page = emitStudioProject(createProject([customers])).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).not.toContain('SvDockManager')
+    expect(page).toContain('<div class="st-screen">')
+  })
+
+  it('a split-layout screen renders a LOCKED SvDockManager (resize-only) and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'filter')
+    p = addBlock(p, sid, 'kpi')
+    p = setScreenLayout(p, sid, 'split')
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    // Same SvDockManager plumbing as dock, but locked.
+    expect(page).toMatch(/import \{[^}]*SvDockManager[^}]*\} from '@svgrid\/grid'/)
+    expect(page).toContain('<SvDockManager bind:workspace={dockWorkspace} onChange={(w) => saveDock(w)} locked>')
+    expect(page).toContain('{#snippet pane(p)}')
+    for (const b of p.screens[0]!.blocks) expect(page).toContain(`{#if p.id === '${b.id}'}`)
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('a stack-layout screen wraps blocks in a single-column flow (.st-stack) and compiles', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'kpi')
+    p = setScreenLayout(p, sid, 'stack')
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain('<div class="st-stack">')
+    expect(page).not.toContain('<div class="st-screen">')
+    expect(page).not.toContain('SvDockManager')
+    // Default stack min-height flows into the page-scoped style so blocks aren't tiny.
+    expect(page).toContain('.st-stack > * { min-height: 160px; }')
+    const css = emitStudioAppBundle(p).find((f) => f.path === 'src/app.css')!.contents
+    expect(css).toContain('.st-stack { display: flex; flex-direction: column;')
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('syncDockPanes adds a pane for a new block + strips a removed one, preserving arrangement', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = setScreenLayout(p, sid, 'dock')
+    const before = p.screens[0]!.dock!
+    const beforeIds = [...dockPaneIds(before)]
+    // Add a block: sync appends its pane, keeps the existing ones + the main node id (arrangement).
+    p = addBlock(p, sid, 'chart')
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? syncDockPanes(s) : s)) }
+    const afterAdd = p.screens[0]!.dock!
+    const addIds = dockPaneIds(afterAdd)
+    for (const id of beforeIds) expect(addIds.has(id)).toBe(true) // existing panes preserved
+    const chartId = p.screens[0]!.blocks.find((b) => b.config.kind === 'chart')!.id
+    expect(addIds.has(chartId)).toBe(true) // new pane added
+    expect(afterAdd.main?.id).toBe(before.main?.id) // main node reused (arrangement not rebuilt)
+    // Remove the chart: its pane is stripped, the rest stay.
+    p = removeBlock(p, sid, chartId)
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? syncDockPanes(s) : s)) }
+    const afterRemove = dockPaneIds(p.screens[0]!.dock!)
+    expect(afterRemove.has(chartId)).toBe(false)
+    for (const id of beforeIds) expect(afterRemove.has(id)).toBe(true)
+  })
+
+  it('setDockPaneTitle renames a pane (tab text) + dockPaneTitleOf reads it back', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = setScreenLayout(p, sid, 'dock')
+    const gridBlock = p.screens[0]!.blocks[0]!
+    expect(dockPaneTitleOf(p.screens[0]!, gridBlock.id)).toBe('Grid') // auto title
+    p = setDockPaneTitle(p, sid, gridBlock.id, 'Customers table')
+    expect(dockPaneTitleOf(p.screens[0]!, gridBlock.id)).toBe('Customers table')
+    // Custom title survives an incremental pane sync (add a block).
+    p = addBlock(p, sid, 'chart')
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? syncDockPanes(s) : s)) }
+    expect(dockPaneTitleOf(p.screens[0]!, gridBlock.id)).toBe('Customers table')
+  })
+
+  it('setScreenLayout(dock) seeds a workspace by role + survives serialize/parse', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'filter')
+    p = setScreenLayout(p, sid, 'dock')
+    const scr = p.screens[0]!
+    expect(scr.layout).toBe('dock')
+    expect(scr.dock).toBeTruthy()
+    // Pane ids equal block ids.
+    const paneIds = dockPaneIds(scr.dock!)
+    for (const b of scr.blocks) expect(paneIds.has(b.id)).toBe(true)
+    // Round-trips through the project (de)serializer.
+    const round = parseProject(serializeProject(p))
+    expect(round.screens[0]!.layout).toBe('dock')
+    expect(round.screens[0]!.dock).toEqual(scr.dock)
   })
 })
 

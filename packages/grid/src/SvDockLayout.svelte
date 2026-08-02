@@ -70,6 +70,12 @@
     focusedLeaf?: string | null
     /** Keep inactive tabs mounted (hidden) so their content state persists. */
     keepAlive?: boolean
+    /** In a single-pane leaf, hide the redundant tab button (auto-hide fly-out). */
+    hideSingleTab?: boolean
+    /** Locked / split mode: tabs cannot be dragged (no reorder / dock / float) and
+     *  panel action buttons are hidden - only splitter resize + tab switching remain.
+     *  Turns the layout into a fixed set of resizable panes. */
+    locked?: boolean
   }
 
   let {
@@ -88,6 +94,8 @@
     headerPosition = 'top',
     focusedLeaf = null,
     keepAlive = false,
+    hideSingleTab = false,
+    locked = false,
   }: Props = $props()
 
   const managed = $derived(!!onBeginDrag)
@@ -129,6 +137,9 @@
 
   function beginDrag(e: PointerEvent, paneId: string, tabsId: string) {
     if (e.button !== 0) return
+    // Locked / split mode: tabs are fixed - a pointerdown still activates the tab
+    // (handled separately), but starts no drag.
+    if (locked) return
     // Manager mode: delegate the whole gesture to the parent.
     if (onBeginDrag) { onBeginDrag(e, paneId, tabsId); return }
     candidate = { paneId, sourceTabsId: tabsId, title: paneTitle(paneId), sx: e.clientX, sy: e.clientY }
@@ -183,7 +194,7 @@
 
   setContext<DockContext>(DOCK_CONTEXT, {
     get pane() { return pane },
-    get leafActions() { return leafActions },
+    get leafActions() { return locked ? undefined : leafActions },
     activate,
     close,
     beginDrag,
@@ -195,6 +206,7 @@
     headerPosition: () => headerPosition,
     focusedLeaf: () => focusedLeaf,
     keepAlive: () => keepAlive,
+    hideSingleTab: () => hideSingleTab,
   })
 </script>
 

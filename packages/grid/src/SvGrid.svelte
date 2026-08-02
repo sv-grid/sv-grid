@@ -179,6 +179,13 @@
   const toggleGroupInPanel = $derived(ctrl.toggleGroupInPanel);
   const virtualizer = $derived(ctrl.virtualizer);
   const rowVirtualizationEnabled = $derived(ctrl.rowVirtualizationEnabled);
+  // The fixed row height, matching what the virtualized path takes from the virtualizer.
+  // The non-virtualized (`virtualization={false}`) body must apply this too, else its rows
+  // fall back to content height and look shorter than a virtualized grid's.
+  const rowSizePx = (i: number): number => {
+    const rh = props.rowHeight;
+    return typeof rh === "function" ? rh(i) : (rh ?? 30);
+  };
   const columnVirtualizationEnabled = $derived(
     ctrl.columnVirtualizationEnabled,
   );
@@ -1146,6 +1153,7 @@
         formatString="yyyy-MM-dd"
         dropDownDisplayMode="calendar"
         autoOpen
+        block
         onChange={(d) => updateEditingCellValue(d)}
         onCommit={() => saveEditingCell()}
         onCancel={() => {
@@ -1159,6 +1167,7 @@
         formatString="yyyy-MM-dd HH:mm"
         dropDownDisplayMode="both"
         autoOpen
+        block
         onChange={(d) => updateEditingCellValue(d)}
         onCommit={() => saveEditingCell()}
         onCancel={() => {
@@ -1174,6 +1183,7 @@
         formatString="HH:mm"
         dropDownDisplayMode="time"
         autoOpen
+        block
         onChange={(d) => updateEditingCellValue(dateToTimeString(d))}
         onCommit={() => saveEditingCell()}
         onCancel={() => {
@@ -2458,6 +2468,7 @@
                     aria-level={row.depth + 1}
                     aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
                     {...getGridRowA11yProps(rowIndex + 1)}
+                    style={`height: ${rowSizePx(rowIndex)}px;`}
                   >
                     <td
                       class="sv-grid-cell sv-grid-group-cell"
@@ -2483,6 +2494,7 @@
                     aria-level={sgAriaLevel(row)}
                     aria-expanded={sgAriaExpanded(row)}
                     {...rowDragAttrs(rowIndex)}
+                    style={`height: ${rowSizePx(rowIndex)}px;`}
                   >
                     {#if showRowNumbersEffective}
                       <td
@@ -2568,6 +2580,7 @@
                         data-svgrid-row={rowIndex}
                         data-svgrid-col={colIndex}
                         data-col-id={rendered.column.id}
+                        data-align={getColumnAlign(rendered.column)}
                         data-pinned={isColumnPinned(rendered.column.id) ??
                           undefined}
                         data-selected-range={rangeEdges ? "true" : undefined}
@@ -2860,6 +2873,8 @@
               event.preventDefault();
               ctrl.findOpen = false;
               ctrl.findQuery = "";
+              // Return focus to the grid instead of letting it fall to <body> (#80).
+              ctrl.gridRootEl?.focus({ preventScroll: true });
             }
           }}
         />
@@ -2906,6 +2921,8 @@
           onclick={() => {
             ctrl.findOpen = false;
             ctrl.findQuery = "";
+            // Return focus to the grid instead of letting it fall to <body> (#80).
+            ctrl.gridRootEl?.focus({ preventScroll: true });
           }}>✕</button
         >
       </div>

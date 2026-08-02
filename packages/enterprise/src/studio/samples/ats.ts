@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, boardScreen, calendarScreen, project, dashScreen, detailScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, boardScreen, schedulerScreen, project, dashScreen, detailScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 const jobs: EntitySchema = {
   name: 'jobs',
@@ -195,7 +195,7 @@ export const ats: SampleApp = {
         formScreen(candidates, { id: 'candidates', title: 'Candidates', order: 6 }, undefined, { format: candidateFormats, summaries: true, rowActions: [{ kind: 'edit' }] }, ['source']),
         // Interview schedule: applications placed on a month calendar by their
         // scheduled interview slot (card title resolves to the candidate name).
-        calendarScreen(applications, { id: 'interviews', title: 'Interviews', order: 7 }, { dateField: 'interviewAt', titleField: 'candidateId', filter: ['stage', 'jobId'] }),
+        schedulerScreen(applications, { id: 'interviews', title: 'Interviews', order: 7 }, { startField: 'interviewAt', titleField: 'candidateId', colorField: 'stage', initialView: 'week' }),
       ],
     })
   },

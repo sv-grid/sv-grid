@@ -80,15 +80,23 @@ export type {
   SchedulerEventMoveEvent,
   SchedulerEventResizeEvent,
   SchedulerEventCommitEvent,
+  SchedulerRangeSelection,
   SchedulerView,
   SchedulerResource,
   SchedulerCollisionMode,
+  SchedulerException,
+  SchedulerEditScope,
+  SchedulerOccurrenceChangeEvent,
 } from './SvGrid.types'
 export { registerSchedulerView, getSchedulerView, hasSchedulerView } from './scheduler-view.svelte'
 // Pure scheduler layout/model helpers (framework-free, like recurrence/date-core).
 // The calendar RENDERER that consumes these ships in @svgrid/enterprise.
 export {
   resolveEvents,
+  hasConflict,
+  workingIntervals,
+  withinWorking,
+  type WorkingWindow,
   eventsOnDay,
   layoutDayEvents,
   monthWeekSegments,
@@ -96,14 +104,22 @@ export {
   rangeForView,
   daysForView,
   navigateAnchor,
+  timelineAxis,
+  timelineGeom,
+  timelineRows,
   type ResolvedEvent,
   type EventSpec,
+  type RecurrenceException,
   type PositionedEvent,
   type OverflowMarker,
   type DayLayout,
   type LayoutOptions,
   type MonthSegment,
   type AgendaGroup,
+  type TimelineTick,
+  type TimelineMajor,
+  type TimelineAxis,
+  type TimelineRow,
 } from './scheduler-model'
 export { default as SvGridDropdown } from './SvGridDropdown.svelte'
 export { default as SvCalendar, type CalendarValue, type CalendarPreset, type CalendarAnimation } from './SvCalendar.svelte'
@@ -333,6 +349,8 @@ export {
   locatePane,
   surfaceOfTabs,
   allManagerPaneIds,
+  allManagerIds,
+  dedupeManagerNodeIds,
   type DockManagerState,
   type FloatWindow,
   type AutoHideEntry,
@@ -390,7 +408,7 @@ export { default as SvNavPane, type NavItem, type NavSection, type NavModule } f
 export { default as SvProgress } from './SvProgress.svelte'
 export { default as SvCircularProgress } from './SvCircularProgress.svelte'
 export { popIn } from './popover'
-export { default as SvForm, type FormField, type FormFieldType } from './SvForm.svelte'
+export { default as SvForm, type FormField, type FormFieldType, type FormSection, type FormEntry } from './SvForm.svelte'
 export { rules, runRules, isEmptyValue, type Validator, type RuleOptions, type CompareOp } from './validators'
 export { anchoredRect, portalToBody, PANEL_THEME_VARS, type AnchoredRect } from './popover'
 export {
@@ -398,6 +416,11 @@ export {
   monthMatrix, weekdayOrder, isoWeek, decadeRange, withTime, snapMinute, type DateLike,
 } from './datetime/date-core'
 export { formatDate, parseDate, tokenizeMask } from './datetime/date-format'
+export { toICS, fromICS, ruleToRRule, rruleToRule, type ICalEvent } from './scheduler-ical'
+export {
+  zoneParts, zoneOffsetMs, toZonedLocal, fromZonedLocal, instantFromWallClock, zoneAbbr, normalizeTimeZone,
+  type ZoneParts,
+} from './datetime/timezone'
 export {
   selectDate, rangeDays, isSelected, isMultiSelectMode, emptySelection,
   type SelectionMode, type SelectionState,

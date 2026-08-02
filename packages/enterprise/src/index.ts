@@ -272,6 +272,7 @@ export {
   sanitizeProject,
   screenFromTemplate,
   addScreenFromTemplate,
+  addFreestandingScreen,
   serializeProject,
   parseProject,
   blockPalette,

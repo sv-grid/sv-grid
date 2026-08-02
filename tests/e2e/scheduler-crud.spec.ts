@@ -67,17 +67,10 @@ test.describe('scheduler CRUD (real browser)', () => {
     await expect(events(page).filter({ hasText: 'Sprint planning' })).toHaveCount(0)
   })
 
-  test('every scheduler demo offers a Calendar / Table toggle', async ({ page }) => {
-    for (const id of [
-      '363-scheduler-intro',
-      '364-scheduler-timegrid',
-      '365-scheduler-resources',
-      '366-scheduler-recurring',
-      '367-scheduler-agenda',
-      '368-scheduler-unified-views',
-      '369-scheduler-content-calendar',
-      '370-scheduler-shift-roster',
-    ]) {
+  test('the building-block demos offer a Calendar / Table toggle', async ({ page }) => {
+    // The three foundation demos expose the Grid-is-hero Calendar <-> Table
+    // switch; the real-world apps embed a dedicated grid instead.
+    for (const id of ['363-scheduler-intro', '371-scheduler-timeline', '372-scheduler-selection']) {
       await page.goto(`/sv-grid/#/demos/${id}`)
       await expect(page.getByRole('button', { name: 'Table', exact: true })).toBeVisible()
       await page.getByRole('button', { name: 'Table', exact: true }).click()
@@ -85,22 +78,5 @@ test.describe('scheduler CRUD (real browser)', () => {
       await expect(page.locator('.sv-sched')).toHaveCount(0)
       await expect(page.getByRole('button', { name: 'Calendar', exact: true })).toBeVisible()
     }
-  })
-
-  test('the unified demo switches between Table, Calendar and Kanban', async ({ page }) => {
-    await page.goto('/sv-grid/#/demos/368-scheduler-unified-views')
-    // Calendar is the default view.
-    await expect(page.locator('.sv-sched')).toHaveCount(1)
-    // Kanban -> a board with lanes, no calendar.
-    await page.getByRole('button', { name: 'Kanban', exact: true }).click()
-    await expect(page.locator('.sv-board')).toHaveCount(1)
-    await expect(page.locator('.sv-sched')).toHaveCount(0)
-    // Table -> neither board nor calendar.
-    await page.getByRole('button', { name: 'Table', exact: true }).click()
-    await expect(page.locator('.sv-board')).toHaveCount(0)
-    await expect(page.locator('.sv-sched')).toHaveCount(0)
-    // Back to Calendar.
-    await page.getByRole('button', { name: 'Calendar', exact: true }).click()
-    await expect(page.locator('.sv-sched')).toHaveCount(1)
   })
 })

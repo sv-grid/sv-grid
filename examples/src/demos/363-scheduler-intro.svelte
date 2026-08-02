@@ -113,12 +113,13 @@
   }
 
   // --- full CRUD: add, delete, update all flow back to `rows` ---
-  function makeEvent(start: Date, end: Date): Meeting {
-    return { id: ++seq, title: 'New event', start: iso(start), end: iso(end), kind: 'Meeting', owner: 'Me', color: KIND_COLOR.Meeting }
+  function makeEvent(start: Date, end: Date, allDay = false): Meeting {
+    return { id: ++seq, title: 'New event', start: iso(start), end: iso(end), allDay, kind: 'Meeting', owner: 'Me', color: KIND_COLOR.Meeting }
   }
-  // Double-clicking an empty slot fires onEventAdd with that time.
-  function onEventAdd(start: Date, end: Date) {
-    rows = [...rows, makeEvent(start, end)]
+  // Fires when a slot is double-clicked or a pending range is confirmed; `allDay`
+  // is true for the all-day row / a whole-day range, so we create an all-day event.
+  function onEventAdd(start: Date, end: Date, _resourceId?: string, allDay = false) {
+    rows = [...rows, makeEvent(start, end, allDay)]
   }
   // The drawer's Delete button (shown because onEventDelete is set) fires this.
   function onEventDelete(row: Meeting) {
@@ -172,8 +173,8 @@
           recurrenceField: 'repeat',
           initialView: 'week',
           weekStartsOn: 1,
-          dayStartHour: 7,
-          dayEndHour: 20,
+          dayStartHour: 0,
+          dayEndHour: 24,
           editable: true,
           drawer: true,
           onEventMove,

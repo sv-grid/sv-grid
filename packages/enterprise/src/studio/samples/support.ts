@@ -1,5 +1,5 @@
 import type { EntitySchema } from '../../schema.js'
-import { screen, formScreen, boardScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, boardScreen, workspaceScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 const customers: EntitySchema = {
   name: 'customers',
@@ -148,6 +148,8 @@ export const support: SampleApp = {
         // priority (rows) x status (columns).
         // Ticket board: tickets as cards in status columns (drag to change status).
         boardScreen(tickets, { id: 'board', title: 'Board', order: 1 }, { groupBy: 'status', titleField: 'subject', subtitleField: 'priority', filter: ['priority', 'channel', 'agentId'] }),
+        // A docking console: filter | ticket queue | selected-ticket panel (drag / float / pin).
+        workspaceScreen(tickets, { id: 'console', title: 'Console', order: 2 }, { filter: ['priority', 'channel', 'agentId'], record: true, grid: { format: [...statusPills(tickets, 'status'), ...statusPills(tickets, 'priority')] } }),
         // Customer 360: account header (plan pill + health tile) with a timeline of
         // the customer's tickets (newest first, colored by status).
         detailScreen(customers, { id: 'customer-360', title: 'Customer 360', order: 2 }, {

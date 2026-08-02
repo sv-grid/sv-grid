@@ -808,7 +808,12 @@ export function createGridApi<
           const sorting = state.sorting.map((s) => ({ id: s.id, desc: s.desc }));
           ctx.grid.store.setState((prev: any) => ({ ...prev, sorting }));
         }
-        if (state.grouping) ctx.grid.setGrouping([...state.grouping]);
+        if (state.grouping) {
+          // Drop grouping by columns that no longer exist (#53) - otherwise a
+          // saved view collapses every row into a group named 'undefined'.
+          const existing = new Set((ctx.grid.getAllColumns() as any[]).map((c) => c.id));
+          ctx.grid.setGrouping(state.grouping.filter((id: string) => existing.has(id)));
+        }
         if (state.pagination) {
           const p = state.pagination;
           ctx.grid.setPagination((prev: any) => ({ ...prev, ...p }));
@@ -821,7 +826,10 @@ export function createGridApi<
           };
         if (state.columnOrder) ctx.setColumnOrderInternal(state.columnOrder);
         if (state.hiddenColumns) {
-          const next: Record<string, boolean> = {};
+          // Seed from columns declared `visible: false` so a partial/empty saved
+          // state never un-hides an app-declared-hidden column (#54); then layer
+          // the saved user-driven hides on top.
+          const next: Record<string, boolean> = { ...ctx.declaredHiddenColumns };
           for (const id of state.hiddenColumns) next[id] = true;
           ctx.hiddenColumns = next;
         }

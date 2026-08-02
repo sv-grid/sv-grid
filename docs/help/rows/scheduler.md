@@ -63,12 +63,16 @@ Open on a specific date with `initialDate` (defaults to today).
   bar** spanning the day columns they cover (split into a fresh segment on each
   week row they continue into), stacked into lanes so they never overlap; a
   per-day **"+N more"** collapses events beyond the visible lanes into a popover.
-- **Week / Day** - a time-grid with an hourly band. Overlapping events are laid
-  out by the chosen [collision mode](#colliding-overlapping-events). **All-day
-  and multi-day events** render in a separate **all-day row** at the top (in Week
-  view as continuous spanning bars), never filling the hourly columns. Drag an
-  event between the all-day row and the grid to flip it between all-day and timed,
-  or drag a bar's **left / right edge** to extend or shorten it by whole days.
+- **Week / Day** - a time-grid with an hourly band spanning `dayStartHour`..
+  `dayEndHour` (default the full `0..24` day; a full-day band opens scrolled to
+  business hours rather than midnight). Overlapping events are laid out by the
+  chosen [collision mode](#colliding-overlapping-events). **All-day and multi-day
+  events** render in a separate **all-day row** at the top (in Week view as
+  continuous spanning bars), never filling the hourly columns. Drag an event
+  between the all-day row and the grid to flip it between all-day and timed, or
+  drag a bar's **left / right edge** to extend or shorten it by whole days. A
+  **current-time line** tracks the local time on today's column (`nowIndicator`,
+  on by default); the timeline draws it as a vertical line at "now".
 - **Agenda** - a chronological list grouped by day. Its span is `agendaDays`
   (default 30).
 
@@ -147,7 +151,7 @@ left or right edge across day columns to change how many days it covers.
 A focused event can also be nudged with the keyboard: **arrow left/right** move
 it a day, **arrow up/down** a slot, and **Enter** opens its editor.
 
-<div data-docs-demo="364-scheduler-timegrid" data-height="620"></div>
+<div data-docs-demo="382-scheduler-app-clinic" data-height="700"></div>
 
 ## Resources (group by person / room)
 
@@ -181,7 +185,53 @@ days) - the same choice as Smart's `groupByDate`.
   }} />
 ```
 
-<div data-docs-demo="365-scheduler-resources" data-height="620"></div>
+<div data-docs-demo="383-scheduler-app-dispatch" data-height="700"></div>
+
+## Timeline views (resources as rows)
+
+The `timeline*` views flip the layout **horizontal**: time runs left→right on a
+scrollable axis and **each resource is a row**, with events as horizontal bars
+lane-packed so overlaps stack. Add any of them to `views` (and pick one with
+`initialView`):
+
+- **`timelineDay`** - hour ticks across one day (clamped to the
+  `dayStartHour..dayEndHour` band).
+- **`timelineWeek`** - day ticks across a week.
+- **`timelineMonth`** - day ticks across a month.
+- **`timelineYear`** - month ticks across a year (grouped into quarters).
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end',
+    resourceField: 'room', resources,
+    views: ['timelineDay', 'timelineWeek', 'timelineMonth', 'timelineYear'],
+    initialView: 'timelineWeek',
+    editable: true,
+    onEventMove: (e) => { /* e.toResource = the row it was dropped on */ },
+  }} />
+```
+
+Without a `resourceField` the timeline shows a single **All** row. When editable,
+drag a bar **sideways** to re-time it, drag it to **another row** to reassign the
+resource, or drag an **edge** to resize (day-granular on the multi-day zooms,
+`timelineSlotMinutes` on the day zoom). Tune the layout with `resourceAreaWidth`
+(left gutter), `timelineLaneHeight`, and `timelineSlotMinutes`.
+
+The same [`rangeSelectable` / `eventSelectable`](#selecting-cells--events) modes
+work in the timeline: **click or drag empty space** to mark a range (a slot in
+Day, whole days in Week/Month, a month in Year), then **arrow keys** move the
+selected cell along the axis (Left/Right) and between resource rows (Up/Down),
+**Shift+arrows** extend it, and **Enter** creates the event (**Esc** cancels).
+**Ctrl/Cmd-click** bars to multi-select, **Delete** to remove.
+
+The `timeline*` views cover any horizon. Short-range planning (Day / Week) and
+the long-range **roadmap** (Month / Year) read best with data scaled to the
+zoom, so the demos split them:
+
+<div data-docs-demo="371-scheduler-timeline" data-height="560"></div>
+
+<div data-docs-demo="384-scheduler-app-roadmap" data-height="700"></div>
 
 ## Recurring events
 
@@ -224,9 +274,11 @@ The rule shape covers the patterns an enterprise calendar needs:
 
 ### Editing patterns
 
-When `recurrenceField` and `drawer` are both set, clicking **any** event opens a
-**recurrence editor** in the drawer - so you can turn a one-off into a recurring
-event whenever you decide. It offers a full, calendar-app-grade set of controls:
+Whenever the **`drawer`** is on, clicking **any** event opens a **recurrence
+editor** in the drawer - so you can turn a one-off into a recurring event (or drop
+its pattern) whenever you decide. You don't need a `recurrenceField`: without one
+the rule is stored on a default `recurrence` field (set `recurrenceField` to name
+your own). It offers a full, calendar-app-grade set of controls:
 
 - **Repeat** - Does not repeat / Daily / Weekly / Monthly / Yearly, with an
   **interval** ("every N …").
@@ -243,6 +295,34 @@ through `onEventCommit`.
 Recurring events are also **drag- and resize-editable**: moving or resizing an
 occurrence edits the whole **series'** time-of-day and duration (the pattern's
 days are kept), so all occurrences shift together.
+
+### This event vs. all events (per-occurrence exceptions)
+
+Set a **`recurrenceExceptionsField`** (an array on the row) and an
+**`onOccurrenceChange`** handler, and moving / resizing / deleting a single
+occurrence asks **This event** or **All events**. "All events" edits the series
+as above; **This event** fires `onOccurrenceChange` with an `exception` to store
+on the row - a moved / retitled / **deleted** single instance that leaves the
+rest of the series untouched (like an iCal `RECURRENCE-ID` / `EXDATE`).
+
+```svelte
+scheduler={{
+  recurrenceField: 'repeat',
+  recurrenceExceptionsField: 'exceptions',
+  onOccurrenceChange: (e) => {
+    // merge e.exception into the row (keyed by e.occurrenceStart)
+    const key = (e.exception.occurrenceStart as Date).getTime()
+    e.row.exceptions = [
+      ...(e.row.exceptions ?? []).filter((x) => new Date(x.occurrenceStart).getTime() !== key),
+      { ...e.exception },
+    ]
+  },
+}}
+```
+
+Each exception is `{ occurrenceStart, deleted? , start?, end?, title? }` where
+`occurrenceStart` identifies the occurrence (its **original** start). Without a
+`recurrenceExceptionsField` the prompt is skipped and edits apply to the series.
 
 ### Showing the pattern in a table
 
@@ -264,7 +344,7 @@ on Fri"*, or *"Monthly on the last Friday"*:
 Pass a `RecurrenceLabels` object as the second argument to localize the weekday /
 month / ordinal words (and the empty-rule label).
 
-<div data-docs-demo="366-scheduler-recurring" data-height="620"></div>
+<div data-docs-demo="381-scheduler-app-calendar" data-height="700"></div>
 
 ## Add, edit, delete
 
@@ -282,6 +362,9 @@ never mutates your rows itself:
   commits and fires `onEventCommit` with the changed values; Cancel discards.
 - **Delete** - set **`onEventDelete`** and the drawer shows a **Delete** button;
   remove the row from your data in the handler.
+- **Right-click an event** for a context menu with **Edit** (opens the drawer) and
+  **Delete** built in (shown when `drawer` / `onEventDelete` are set); any
+  `eventMenu` items you return are appended below them.
 
 ```svelte
 <SvGrid {data} {columns}
@@ -298,7 +381,218 @@ Because it is a view of the grid, pairing it with a plain `<SvGrid>` table gives
 you a **Calendar / Table toggle** over the same rows - every scheduler demo ships
 one.
 
-<div data-docs-demo="367-scheduler-agenda" data-height="620"></div>
+## Booking rules
+
+Enterprise schedulers enforce *when* things can be booked. The scheduler shades
+non-bookable time and can reject double-bookings:
+
+- **`businessHours: { start, end }`** - working-hours window (hours). Time outside
+  it is shaded in the Week / Day grid.
+- **`nonWorkingDays: number[]`** - weekday numbers (0 = Sun … 6 = Sat) shaded as
+  non-working (e.g. `[0, 6]` for weekends), in the time-grid and month.
+- **`shadeUntilNow`** - shade elapsed time on today's column.
+- **`restrictToBusinessHours`** - **enforce** the shading: a drag / resize /
+  create that lands outside `businessHours` or on a `nonWorkingDays` day is
+  rejected and snaps back (without it the shading is a visual hint only).
+- **`disableConflicts`** - **no double-booking**: dragging, resizing or creating
+  an event so it overlaps another **on the same resource** is rejected and snaps
+  back (a brief "already booked" flash). Different resources may overlap freely.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    resourceField: 'room', resources: rooms,
+    businessHours: { start: 9, end: 17 },
+    nonWorkingDays: [0, 6],
+    shadeUntilNow: true,
+    disableConflicts: true,   // enforce no double-booking per room
+  }} />
+```
+
+Shading is purely visual unless `restrictToBusinessHours` is set; `disableConflicts`
+is always enforced. Use the pure [`hasConflict`](../../api) helper to check a
+placement yourself.
+
+### Per-resource availability
+
+`businessHours` / `nonWorkingDays` are global, but each **resource can declare
+its own working windows** via `resource.availability` - and they can vary by
+weekday. Perfect for a clinic where every doctor keeps different hours: each
+resource's columns shade its own off-hours, and `restrictToBusinessHours` blocks
+booking a resource outside *its* window.
+
+```ts
+const doctors = [
+  { id: 'smith', title: 'Dr. Smith', availability: [
+    { days: [1, 3, 5], start: 9, end: 13 },   // Mon/Wed/Fri mornings
+    { days: [2, 4], start: 14, end: 18 },      // Tue/Thu afternoons
+  ] },
+  { id: 'jones', title: 'Dr. Jones', availability: [
+    { days: [1, 2, 3, 4, 5], start: 8, end: 12 },
+    { days: [1, 2, 3, 4, 5], start: 13, end: 16 },
+  ] },
+]
+```
+
+An `availability` window is `{ start, end }` hours with optional `days` (weekday
+0-6; omit for every day). A weekday with no matching window is a full day off. A
+resource without `availability` falls back to the global `businessHours` /
+`nonWorkingDays`.
+
+## Custom event content & tooltips
+
+Render events however you like with the **`event`** snippet (it receives the
+row), and show rich detail on hover with the **`tooltip`** snippet (or
+`tooltip: true` for the built-in title + time + resource). `tooltipDelay` sets
+the open delay (default 400ms).
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{ startField: 'start', endField: 'end', event: eventBody, tooltip: tip }} />
+
+{#snippet eventBody(row)}
+  <span class="badge">{initials(row.owner)}</span> {row.title}
+{/snippet}
+{#snippet tip(row)}
+  <strong>{row.title}</strong><br />{row.owner} · {row.status}
+{/snippet}
+```
+
+The snippet replaces the whole event body (time + title chrome), so you own the
+layout; resize handles and drag still work around it.
+
+## Import / export, undo & clipboard
+
+- **iCal (Outlook / Google)** - the pure `toICS(events)` / `fromICS(text)`
+  helpers round-trip timed, all-day and **recurring (RRULE)** events, plus STATUS,
+  DESCRIPTION and LOCATION. Map your rows to the small `ICalEvent` shape and
+  export to an `.ics` file; parse a pasted `.ics` back with `fromICS`.
+- **Data export** - because the scheduler is a *view of the grid*, its **Table**
+  toggle exports to CSV / Excel with the grid's own export.
+- **Undo / redo** - set **`history: true`** and drag-moves + resizes are undoable
+  with `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` (the scheduler re-emits the callbacks
+  with the reversed values).
+- **Duplicate** - the event context menu gets a **Duplicate** action (when
+  `onEventAdd` is set) that copies the event right after itself.
+
+```svelte
+import { toICS, fromICS } from '@svgrid/grid'
+const ics = toICS(rows.map((r) => ({ title: r.title, start: new Date(r.start), end: new Date(r.end), rrule: r.repeat })))
+const events = fromICS(pastedText) // -> { title, start, end, allDay, rrule, ... }[]
+```
+
+## Unscheduled backlog
+
+Pass **`unscheduled`** (a list of `{ id, title, durationMin?, color? }`) and a
+backlog panel appears beside the Week / Day grid. **Drag a task onto a time
+slot** and **`onSchedule(item, start, resourceId)`** fires - create the event and
+drop the task from your list.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end',
+    unscheduled: tasks,           // [{ id, title, durationMin }]
+    onSchedule: (item, start) => {
+      rows = [...rows, makeEvent(item, start)]
+      tasks = tasks.filter((t) => t.id !== item.id)
+    },
+  }} />
+```
+
+## Time zones
+
+Set `timeZone` (an IANA id like `'America/New_York'`) and the whole calendar -
+hour ruler, event positions, day boundaries, all-day grouping and the now-line -
+is rendered in that zone instead of the browser's. `secondaryTimeZones` adds
+read-only "world clock" rulers to the left of the primary gutter.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end',
+    timeZone: 'America/New_York',
+    secondaryTimeZones: [{ id: 'Europe/London' }, { id: 'Asia/Tokyo' }],
+  }} />
+```
+
+For this to be correct the row `start` / `end` must be **instant-unambiguous** -
+UTC / offset ISO (`'2026-08-01T13:00:00Z'`, `'…+02:00'`) or epoch ms; a bare
+local string (`'2026-08-01T09:00'`) is read as the browser instant then shown in
+the zone. Edits made in the calendar are written back as real instants, so store
+them offset-aware (e.g. `date.toISOString()`); the display zone never mutates the
+stored value - toggle Table on the [time-zones demo](../../examples) to see the
+UTC strings stay put while the calendar shifts. The tz math is DST-aware and uses
+`Intl` only (no date library).
+
+<div data-docs-demo="385-scheduler-app-content" data-height="700"></div>
+
+## Selecting cells & events
+
+Two selection modes work in **every view** - time-grid (week / day), month, and
+timeline. **Both are on by default** - set `rangeSelectable: false` or
+`eventSelectable: false` to turn one off.
+
+**Select a date/time range** (`rangeSelectable`). Click or drag marks a single
+**continuous `[start, end]` datetime range** - dragging across days extends it
+into a multi-day span (the start day fills from the start time down, whole middle
+days, the end day down to the end time), *not* a per-day rectangle. Releasing the
+drag only **marks** the range - it never creates an event on its own. Confirm it
+explicitly to create: press **Enter**, or **right-click the selection** and choose
+**Add Event** (**Esc** cancels the marker). Confirming fires `onRangeSelect` with
+the continuous `start` / `end` (plus the covered `days[]` / `resourceIds[]` for
+reference). Without a handler it falls back to `onEventAdd(start, end, resourceId,
+allDay)` - whose fourth argument is `true` for an all-day selection (the all-day
+row, a month day cell, or a multi-day timeline zoom), so the handler can set the
+`allDayField` and create a true all-day event.
+
+You can also select by **keyboard**: **click** an empty cell to select it, then
+the **arrow keys** move the selected cell and **Shift + arrows** extend the range
+(**Enter** creates, **Esc** clears). What the arrows step by follows the view -
+in the time-grid a slot vertically and a day horizontally, in **month** a day
+horizontally and a week vertically, in the **timeline** one axis cell (slot / day
+/ month) horizontally and a resource row vertically. In the time-grid the
+selection crosses into the **all-day row**: `ArrowUp` from the top timed cell
+moves to the all-day cell, and `ArrowDown` from the all-day row drops back into
+the grid.
+
+Dragging the **all-day row** (or, in **month**, any day cells) selects whole days
+(`selection.allDay` is `true`); create an all-day event spanning `start`..`end`
+the same way.
+
+**Multi-selecting events** (`eventSelectable`) works in every view too, including
+the **agenda** list: Ctrl/Cmd-click to toggle, Shift-click for a range, `Delete`
+to remove.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end',
+    rangeSelectable: true,
+    onRangeSelect: (sel) => {
+      // one continuous event over the whole marked range
+      rows = [...rows, makeEvent(sel.start, sel.end, sel.allDay)]
+    },
+  }} />
+```
+
+**Multi-select existing events** with `eventSelectable`. **Ctrl / Cmd-click**
+toggles an event into the selection, **Shift-click** selects a range, and a plain
+click clears it. Selected events get an outline; **dragging any one of them moves
+the whole set together**, and pressing **Delete** removes them all (through
+`onEventDelete`). `onEventSelectionChange` reports the selected rows.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end', editable: true,
+    eventSelectable: true,
+    onEventSelectionChange: (rows) => (selected = rows),
+    onEventDelete: (row) => (data = data.filter((r) => r !== row)),
+  }} />
+```
+
+<div data-docs-demo="372-scheduler-selection" data-height="560"></div>
 
 ## Search, filter, sort flow through
 
@@ -318,18 +612,33 @@ source.
 | `colorField` / `color` | Per-event accent color (the fill), or one for all. |
 | `secondaryColorField` | A second per-event color, painted as a left-edge strip (encode two dimensions - e.g. fill = person, strip = role). |
 | `recurrenceField` | Field holding a `RecurrenceRule` (or array). |
+| `recurrenceExceptionsField` / `onOccurrenceChange` | Per-occurrence overrides (moved / edited / deleted single instances); enables the "This event vs All events" prompt. |
 | `defaultDurationMin` | Event length when a row has no `endField` (default 60). |
-| `views` / `initialView` | Which views to offer, and the first shown. |
+| `views` / `initialView` | Which views to offer, and the first shown. Includes the horizontal `timelineDay` / `timelineWeek` / `timelineMonth` / `timelineYear`. |
 | `initialDate` | The date the calendar opens on (default today). |
 | `weekStartsOn` | First day of the week, 0-6 (default 0). |
 | `slotMinutes` | Time-grid slot size and move/resize snap (default 30). |
 | `dayStartHour` / `dayEndHour` | Visible time-grid band (default 0..24). |
+| `nowIndicator` | Show the current-time line on today (Week / Day + Day timeline). On by default; `false` to hide. |
+| `businessHours` / `nonWorkingDays` / `shadeUntilNow` | Shade out-of-hours, non-working weekdays and elapsed time. |
+| `restrictToBusinessHours` | Enforce the shading - reject a drop / create outside working hours or on a non-working day. |
+| `disableConflicts` | Reject a drag / resize / create that double-books the same resource. |
+| `event` / `tooltip` / `tooltipDelay` | Custom event-body snippet and a hover-tooltip snippet (or `tooltip: true` for the built-in). |
+| `history` | Enable undo / redo of drag-move + resize (`Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z`). |
+| `unscheduled` / `onSchedule` / `backlogTitle` | A drag-to-schedule backlog panel beside the Week / Day grid. |
+| `timeZone` | IANA zone the calendar is shown in (ruler, positions, day boundaries, now-line). Default: browser local. |
+| `secondaryTimeZones` | Extra read-only hour rulers (`{ id, label? }[]`) shown left of the primary gutter - a world clock. |
 | `collisionMode` | Overlap layout: `split` (default) / `cap` / `stack`. |
 | `maxColumns` | `cap` mode: columns before a `+N more` tile (min 2, default 3). |
 | `agendaDays` | How many days the agenda spans (default 30). |
-| `resourceField` / `resources` | Group time-grid columns by resource + a legend/filter in every view. |
+| `resourceField` / `resources` | Group time-grid columns by resource + a legend/filter in every view; resources become the rows in timeline views. |
 | `groupByDate` | Group day->resources instead of resource->days (default false). |
+| `resourceAreaWidth` | Timeline: width (px) of the left resource-label gutter (default 160). |
+| `timelineSlotMinutes` | Timeline day zoom: tick size + move/resize snap (default `slotMinutes`). |
+| `timelineLaneHeight` | Timeline: height (px) of one event lane in a resource row (default 26). |
 | `editable` | Enable drag-to-move and edge-resize. |
+| `rangeSelectable` / `onRangeSelect` | Click / drag empty slots to mark a continuous date/time range (spans days; arrows move, Shift+arrows extend); confirm with Enter or right-click -> Add Event to create one event. **On by default** (`false` to disable). |
+| `eventSelectable` / `onEventSelectionChange` | Ctrl/Shift-click to multi-select events; drag to move together, Delete to remove. **On by default** (`false` to disable). |
 | `onEventMove` / `onEventResize` | Fired with the new start/end (and resource). |
 | `onEventAdd` | Fired when an empty slot is double-clicked. |
 | `onEventDelete` | Shows a Delete button in the drawer; remove the row here. |

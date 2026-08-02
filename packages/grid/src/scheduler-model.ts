@@ -47,6 +47,22 @@ export type ResolvedEvent<TData = unknown> = {
   resourceId?: string
   /** True when this instance came from expanding a recurrence rule. */
   recurring: boolean
+  /** For a recurring instance, its canonical (pre-override) occurrence start -
+   *  the identity used to key {@link RecurrenceException} overrides. */
+  occurrenceStart?: Date
+  /** True when a recurring instance carries a per-occurrence override. */
+  isException?: boolean
+}
+
+/** A per-occurrence override of a recurring event (the model's shape; the
+ *  component maps the consumer's `SchedulerException` onto this). */
+export type RecurrenceException = {
+  occurrenceStart: DateLike
+  deleted?: boolean
+  start?: DateLike | null
+  end?: DateLike | null
+  title?: string
+  allDay?: boolean
 }
 
 /** Field accessors the model uses to read an event off a row. The component
@@ -65,6 +81,8 @@ export type EventSpec<TData> = {
   getRecurrence?: (
     row: TData,
   ) => RecurrenceRule | ReadonlyArray<RecurrenceRule> | null | undefined
+  /** Per-occurrence overrides for a recurring row (deleted / moved / edited). */
+  getExceptions?: (row: TData) => ReadonlyArray<RecurrenceException> | null | undefined
   /** Fallback event length (minutes) when a row has a start but no end. Default 60. */
   defaultDurationMin?: number
 }
@@ -75,6 +93,71 @@ const MS_MIN = 60_000
  *  only for zero-length events). */
 function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
   return aStart.getTime() < bEnd.getTime() && aEnd.getTime() > bStart.getTime()
+}
+
+/** One working window: `[start, end)` hours, optionally limited to `days`
+ *  (weekday 0 = Sun … 6 = Sat). Omitting `days` applies it to every day. */
+export type WorkingWindow = {
+  days?: ReadonlyArray<number>
+  start: number
+  end: number
+}
+
+/**
+ * The working `[startMin, endMin]` intervals for `weekday`, from `windows`,
+ * clamped to `[bandStartMin, bandEndMin]` and merged. Empty = the whole day is
+ * off. Pure; used for per-resource availability shading + enforcement.
+ */
+export function workingIntervals(
+  weekday: number,
+  windows: ReadonlyArray<WorkingWindow>,
+  bandStartMin: number,
+  bandEndMin: number,
+): Array<[number, number]> {
+  const raw: Array<[number, number]> = []
+  for (const w of windows) {
+    if (w.days && !w.days.includes(weekday)) continue
+    const s = Math.max(bandStartMin, w.start * 60)
+    const e = Math.min(bandEndMin, w.end * 60)
+    if (e > s) raw.push([s, e])
+  }
+  raw.sort((a, b) => a[0] - b[0])
+  const merged: Array<[number, number]> = []
+  for (const iv of raw) {
+    const last = merged[merged.length - 1]
+    if (last && iv[0] <= last[1]) last[1] = Math.max(last[1], iv[1])
+    else merged.push([iv[0], iv[1]])
+  }
+  return merged
+}
+
+/** True when `[startMin, endMin]` lies wholly inside one working interval. */
+export function withinWorking(
+  startMin: number,
+  endMin: number,
+  intervals: ReadonlyArray<readonly [number, number]>,
+): boolean {
+  return intervals.some(([a, b]) => startMin >= a && endMin <= b)
+}
+
+/**
+ * True when placing `[start,end]` on `resourceId` would overlap another event on
+ * the SAME resource (ignoring the event identified by `excludeRowKey`). Used to
+ * enforce `disableConflicts` (no double-booking). All-day/timed both count.
+ */
+export function hasConflict<TData>(
+  start: Date,
+  end: Date,
+  resourceId: string | undefined,
+  events: ReadonlyArray<ResolvedEvent<TData>>,
+  excludeRowKey?: string,
+): boolean {
+  for (const e of events) {
+    if (e.rowKey === excludeRowKey) continue
+    if ((e.resourceId ?? undefined) !== (resourceId ?? undefined)) continue
+    if (rangesOverlap(start, end, e.start, e.end)) return true
+  }
+  return false
 }
 
 /**
@@ -117,22 +200,47 @@ export function resolveEvents<TData>(
       // like "weekly on Mon-Fri" must not back-fill days before the event began).
       const from = start.getTime() > rangeStart.getTime() ? start : rangeStart
       const days = expandRecurrence(rule, from, rangeEnd)
+      // Per-occurrence overrides keyed by the occurrence's canonical start time.
+      const exs = spec.getExceptions?.(row)
+      const exMap = exs?.length
+        ? new Map(exs.map((e) => [toDate(e.occurrenceStart)?.getTime() ?? NaN, e]))
+        : null
       for (const day of days) {
-        const iStart = allDay ? startOfDay(day) : withTime(day, start)
-        const iEnd = new Date(iStart.getTime() + durationMs)
+        const occStart = allDay ? startOfDay(day) : withTime(day, start)
+        const ex = exMap?.get(occStart.getTime())
+        if (ex?.deleted) continue // this occurrence was removed
+        let iStart = occStart
+        let iEnd = new Date(occStart.getTime() + durationMs)
+        let iTitle = title
+        let iAllDay = allDay
+        if (ex) {
+          const exS = toDate(ex.start)
+          const exE = toDate(ex.end)
+          if (exS) {
+            iStart = exS
+            iEnd = exE && exE.getTime() > exS.getTime() ? exE : new Date(exS.getTime() + durationMs)
+          } else if (exE) {
+            iEnd = exE
+          }
+          if (ex.title != null) iTitle = ex.title
+          if (ex.allDay != null) iAllDay = ex.allDay
+        }
         if (!rangesOverlap(iStart, iEnd, rangeStart, rangeEnd)) continue
         out.push({
-          key: `${rowKey}#${iStart.getFullYear()}-${iStart.getMonth() + 1}-${iStart.getDate()}`,
+          // Key on the CANONICAL occurrence start so a moved occurrence keeps its identity.
+          key: `${rowKey}#${occStart.getFullYear()}-${occStart.getMonth() + 1}-${occStart.getDate()}T${occStart.getHours()}:${occStart.getMinutes()}`,
           rowKey,
           row,
-          title,
+          title: iTitle,
           start: iStart,
           end: iEnd,
-          allDay,
+          allDay: iAllDay,
           color,
           color2,
           resourceId,
           recurring: true,
+          occurrenceStart: occStart,
+          isException: !!ex,
         })
       }
     } else if (rangesOverlap(start, end, rangeStart, rangeEnd)) {
@@ -391,8 +499,19 @@ export function layoutDayEvents<TData>(
         })
       }
     } else {
-      // split (and cap when the cluster fits within maxColumns)
+      // split (and cap when the cluster fits within maxColumns): each event
+      // starts in its greedy column, then EXPANDS rightward across any columns
+      // that hold no event overlapping it in time - so an event with free space
+      // beside it fills the gap instead of staying a narrow 1/colCount sliver.
       for (const it of cluster) {
+        let span = 1
+        for (let c = it.col + 1; c < colCount; c++) {
+          const blocked = cluster.some(
+            (o) => o !== it && o.col === c && o.startMin < it.endMin && o.endMin > it.startMin,
+          )
+          if (blocked) break
+          span++
+        }
         events.push({
           event: it.event,
           topPct: topOf(it.startMin),
@@ -400,7 +519,7 @@ export function layoutDayEvents<TData>(
           col: it.col,
           colCount,
           leftPct: (it.col / colCount) * 100,
-          widthPct: 100 / colCount,
+          widthPct: (span / colCount) * 100,
           zIndex: 1,
         })
       }
@@ -466,6 +585,20 @@ export function rangeForView(
       const start = startOfDay(anchor)
       return { start, end: addDays(start, Math.max(1, agendaDays)) }
     }
+    case 'timelineDay':
+      return { start: startOfDay(anchor), end: addDays(startOfDay(anchor), 1) }
+    case 'timelineWeek': {
+      const start = startOfWeek(anchor, weekStartsOn)
+      return { start, end: addDays(start, 7) }
+    }
+    case 'timelineMonth': {
+      const start = startOfMonth(anchor)
+      return { start, end: startOfMonth(addMonths(anchor, 1)) }
+    }
+    case 'timelineYear': {
+      const start = new Date(anchor.getFullYear(), 0, 1)
+      return { start, end: new Date(anchor.getFullYear() + 1, 0, 1) }
+    }
   }
 }
 
@@ -487,5 +620,194 @@ export function navigateAnchor(view: SchedulerView, anchor: Date, dir: number): 
       return addDays(anchor, dir)
     case 'agenda':
       return addDays(anchor, 30 * dir)
+    case 'timelineDay':
+      return addDays(anchor, dir)
+    case 'timelineWeek':
+      return addDays(anchor, 7 * dir)
+    case 'timelineMonth':
+      return addMonths(anchor, dir)
+    case 'timelineYear':
+      return new Date(anchor.getFullYear() + dir, anchor.getMonth(), anchor.getDate())
   }
+}
+
+// --- timeline views (horizontal: time left→right, resources as rows) ----------
+
+const TL_WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const TL_MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const tlHourLabel = (h: number) =>
+  h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`
+
+/** One column of the timeline's minor (tick) header row. */
+export type TimelineTick = {
+  start: Date
+  end: Date
+  leftPct: number
+  widthPct: number
+  label: string
+  today: boolean
+}
+/** One cell of the timeline's major (grouping) header row, spanning several ticks. */
+export type TimelineMajor = { label: string; leftPct: number; widthPct: number }
+/** The horizontal axis: its window [start, end] (the day band for `timelineDay`),
+ *  the minor `ticks`, and the coarser `majors` above them. */
+export type TimelineAxis = {
+  start: Date
+  end: Date
+  totalMs: number
+  ticks: TimelineTick[]
+  majors: TimelineMajor[]
+}
+
+// Group consecutive ticks that share a key into a coarser major cell.
+function groupMajors(
+  ticks: TimelineTick[],
+  keyOf: (t: TimelineTick) => string,
+  labelOf: (t: TimelineTick) => string,
+): TimelineMajor[] {
+  const out: (TimelineMajor & { _k?: string })[] = []
+  for (const t of ticks) {
+    const k = keyOf(t)
+    const last = out[out.length - 1]
+    if (last && last._k === k) last.widthPct += t.widthPct
+    else out.push({ _k: k, label: labelOf(t), leftPct: t.leftPct, widthPct: t.widthPct })
+  }
+  return out.map(({ _k, ...m }) => m)
+}
+
+/**
+ * Build the timeline header axis for `view` over `[rangeStart, rangeEnd]`. For
+ * `timelineDay` the axis is clamped to the `dayStartHour..dayEndHour` band (so
+ * events outside it clip, matching the vertical day view). Ticks are hours (day),
+ * days (week / month) or months (year); majors are the date, the month(s), or
+ * quarters. All geometry is percentage of the axis window.
+ */
+export function timelineAxis(
+  view: SchedulerView,
+  rangeStart: Date,
+  rangeEnd: Date,
+  opts: { dayStartHour?: number; dayEndHour?: number; today?: Date | null } = {},
+): TimelineAxis {
+  const dayStartHour = opts.dayStartHour ?? 0
+  const dayEndHour = opts.dayEndHour ?? 24
+  const today = opts.today ? startOfDay(opts.today) : null
+  const isToday = (d: Date) => (today ? isSameDay(d, today) : false)
+
+  let start = rangeStart
+  let end = rangeEnd
+  if (view === 'timelineDay') {
+    start = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), dayStartHour)
+    end = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), 0, 0, 0, 0)
+    end = new Date(end.getTime() + dayEndHour * 3_600_000)
+  }
+  const total = Math.max(1, end.getTime() - start.getTime())
+  const base = start.getTime()
+  const mk = (s: Date, e: Date, label: string): TimelineTick => ({
+    start: s,
+    end: e,
+    leftPct: ((s.getTime() - base) / total) * 100,
+    widthPct: ((e.getTime() - s.getTime()) / total) * 100,
+    label,
+    today: isToday(s),
+  })
+
+  const ticks: TimelineTick[] = []
+  let majors: TimelineMajor[] = []
+
+  if (view === 'timelineDay') {
+    for (let h = dayStartHour; h < dayEndHour; h++) {
+      const s = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), h)
+      ticks.push(mk(s, new Date(s.getTime() + 3_600_000), tlHourLabel(h)))
+    }
+    majors = [
+      { label: `${TL_WD[rangeStart.getDay()]}, ${TL_MO[rangeStart.getMonth()]} ${rangeStart.getDate()}`, leftPct: 0, widthPct: 100 },
+    ]
+  } else if (view === 'timelineWeek' || view === 'timelineMonth') {
+    let cur = startOfDay(start)
+    while (cur.getTime() < end.getTime()) {
+      const nxt = addDays(cur, 1)
+      const label = view === 'timelineWeek' ? `${TL_WD[cur.getDay()]} ${cur.getDate()}` : `${cur.getDate()}`
+      ticks.push(mk(cur, nxt, label))
+      cur = nxt
+    }
+    majors = groupMajors(
+      ticks,
+      (t) => `${t.start.getFullYear()}-${t.start.getMonth()}`,
+      (t) => `${TL_MO[t.start.getMonth()]} ${t.start.getFullYear()}`,
+    )
+  } else if (view === 'timelineYear') {
+    const y = rangeStart.getFullYear()
+    for (let m = 0; m < 12; m++) {
+      ticks.push(mk(new Date(y, m, 1), new Date(y, m + 1, 1), TL_MO[m]))
+    }
+    majors = groupMajors(
+      ticks,
+      (t) => `${Math.floor(t.start.getMonth() / 3)}`,
+      (t) => `Q${Math.floor(t.start.getMonth() / 3) + 1} ${t.start.getFullYear()}`,
+    )
+  }
+
+  return { start, end, totalMs: total, ticks, majors }
+}
+
+/** An event's horizontal geometry within the axis window, or `null` when it
+ *  falls entirely outside it. `continuesLeft/Right` flag a clipped edge. */
+export function timelineGeom(
+  start: Date,
+  end: Date,
+  axisStart: Date,
+  axisMs: number,
+): { leftPct: number; widthPct: number; continuesLeft: boolean; continuesRight: boolean } | null {
+  const a = axisStart.getTime()
+  const b = a + axisMs
+  const s = Math.max(start.getTime(), a)
+  const e = Math.min(end.getTime(), b)
+  if (e <= a || s >= b || e <= s) return null
+  return {
+    leftPct: ((s - a) / axisMs) * 100,
+    widthPct: ((e - s) / axisMs) * 100,
+    continuesLeft: start.getTime() < a,
+    continuesRight: end.getTime() > b,
+  }
+}
+
+/** One resource's timeline row: its events lane-packed so overlaps stack. */
+export type TimelineRow<TData = unknown> = {
+  resource: SchedulerResource | null
+  laneCount: number
+  items: { event: ResolvedEvent<TData>; lane: number }[]
+}
+
+/**
+ * Bucket `events` by resource into rows (a single `null` row when there are no
+ * resources), then greedily lane-pack each row so overlapping events stack. An
+ * event whose `resourceId` matches no resource is dropped.
+ */
+export function timelineRows<TData>(
+  resources: ReadonlyArray<SchedulerResource> | null | undefined,
+  events: ReadonlyArray<ResolvedEvent<TData>>,
+): TimelineRow<TData>[] {
+  const hasRes = !!(resources && resources.length)
+  const rows = hasRes
+    ? resources!.map((r) => ({ resource: r as SchedulerResource | null, evs: [] as ResolvedEvent<TData>[] }))
+    : [{ resource: null as SchedulerResource | null, evs: [] as ResolvedEvent<TData>[] }]
+  const byId = new Map<string | null, (typeof rows)[number]>()
+  for (const r of rows) byId.set(r.resource?.id ?? null, r)
+
+  for (const ev of events) {
+    const row = hasRes ? byId.get(ev.resourceId ?? '') : rows[0]
+    if (row) row.evs.push(ev)
+  }
+
+  return rows.map((r) => {
+    const sorted = [...r.evs].sort((a, b) => a.start.getTime() - b.start.getTime() || a.end.getTime() - b.end.getTime())
+    const laneEnd: number[] = []
+    const items = sorted.map((event) => {
+      let lane = 0
+      for (; lane < laneEnd.length; lane++) if (event.start.getTime() >= (laneEnd[lane] ?? -Infinity)) break
+      laneEnd[lane] = event.end.getTime()
+      return { event, lane }
+    })
+    return { resource: r.resource, laneCount: Math.max(1, laneEnd.length), items }
+  })
 }

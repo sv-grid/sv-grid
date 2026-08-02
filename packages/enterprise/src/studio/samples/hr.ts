@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, project, dashScreen, detailScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, schedulerScreen, project, dashScreen, detailScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 const departments: EntitySchema = {
   name: 'departments',
@@ -187,6 +187,8 @@ export const hr: SampleApp = {
           { tree: { labelField: 'name', parentField: 'parentId' }, span: 3 },
           { grid: true, summaries: true, span: 3 },
         ]),
+        // Leave calendar: time-off as a per-employee resource scheduler (drag to reschedule).
+        schedulerScreen(timeOff, { id: 'leave-calendar', title: 'Leave calendar', order: 7 }, { startField: 'startDate', endField: 'endDate', titleField: 'type', colorField: 'status', resourceField: 'employeeId', initialView: 'week' }),
       ],
     })
   },

@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import type { EntitySchema } from '../schema'
 import {
   addBlock,
+  applyGridPreset,
+  setScreenLayout,
+  setLayoutOpts,
+  gridOpts,
+  dockOpts,
+  canvasOpts,
+  canvasRectOf,
+  setCanvasRect,
   duplicateBlock,
   blockColumns,
   blockStyleCss,
@@ -304,6 +312,92 @@ describe('block ops', () => {
     expect(blockColumns({ span: 3 })).toBe(12)
     expect(blockColumns({ span: 1, colSpan: 5 })).toBe(5) // colSpan overrides
     expect(blockColumns({ span: 2, colSpan: 99 })).toBe(12) // clamped
+  })
+
+  it('applyGridPreset rewrites block column spans by pattern', () => {
+    let p = addBlock(base, sid, 'kpi') // base already has a grid; now [grid, kpi]
+    p = addBlock(p, sid, 'chart') // [grid, kpi, chart]
+    const spans = (pp: typeof p) => pp.screens[0]!.blocks.map((b) => blockColumns(b))
+    expect(spans(applyGridPreset(p, sid, 'full'))).toEqual([12, 12, 12])
+    expect(spans(applyGridPreset(p, sid, 'two-col'))).toEqual([6, 6, 6])
+    expect(spans(applyGridPreset(p, sid, 'three-col'))).toEqual([4, 4, 4])
+    expect(spans(applyGridPreset(p, sid, 'sidebar'))).toEqual([4, 8, 8]) // first narrow, rest wide
+    expect(spans(applyGridPreset(p, sid, 'kpi-row'))).toEqual([12, 3, 12]) // only the kpi block is a 3-wide strip cell
+  })
+
+  it('setScreenLayout(split/dock) gives every block its OWN leaf, not one tabs stack', () => {
+    // Two "center" blocks (grid + chart) used to collapse into a single tabs leaf,
+    // trapping them as tabs (unresizable when locked). Each must be its own pane.
+    let p = addBlock(base, sid, 'chart') // base has a grid; now [grid, chart] - both center
+    p = setScreenLayout(p, sid, 'split')
+    const dock = p.screens[0]!.dock!
+    const leaves: { panes: number }[] = []
+    const walk = (n: any) => { if (n.type === 'tabs') leaves.push({ panes: n.panes.length }); else n.children.forEach(walk) }
+    walk(dock.main)
+    expect(leaves.length).toBe(2) // grid + chart => two separate leaves
+    expect(leaves.every((l) => l.panes === 1)).toBe(true) // never stacked as tabs
+  })
+
+  it('setScreenLayout re-seeds a fresh pane arrangement when coming from a non-pane layout', () => {
+    let p = addBlock(base, sid, 'chart')
+    p = setScreenLayout(p, sid, 'split')
+    const firstDock = p.screens[0]!.dock
+    // grid -> split -> grid -> split must NOT carry a stale arrangement (fresh seed).
+    p = setScreenLayout(p, sid, 'grid')
+    p = setScreenLayout(p, sid, 'split')
+    expect(p.screens[0]!.dock).not.toBe(firstDock) // re-seeded, not the old object
+    // ...but split <-> dock preserves the arrangement.
+    const beforeToggle = p.screens[0]!.dock
+    p = setScreenLayout(p, sid, 'dock')
+    expect(p.screens[0]!.dock).toBe(beforeToggle)
+  })
+
+  it('setLayoutOpts merges per-mode settings; getters fall back to defaults; round-trips', () => {
+    let p = setLayoutOpts(base, sid, 'grid', { colGap: 24 })
+    p = setLayoutOpts(p, sid, 'grid', { maxWidth: 1200 }) // merges, keeps colGap
+    p = setLayoutOpts(p, sid, 'dock', { allowPopout: true, headerPosition: 'bottom' })
+    const s = p.screens[0]!
+    expect(gridOpts(s).colGap).toBe(24)
+    expect(gridOpts(s).maxWidth).toBe(1200)
+    expect(gridOpts(s).rowGap).toBe(16) // default preserved
+    expect(dockOpts(s).allowPopout).toBe(true)
+    expect(dockOpts(s).headerPosition).toBe('bottom')
+    expect(canvasOpts(s).cols).toBe(12) // untouched mode -> defaults
+    const round = parseProject(serializeProject(p)).screens[0]!
+    expect(gridOpts(round).colGap).toBe(24)
+    expect(dockOpts(round).allowPopout).toBe(true)
+  })
+
+  it('canvas column count clamps stored rects + drives new placements', () => {
+    let p = addBlock(base, sid, 'kpi')
+    p = setScreenLayout(p, sid, 'canvas')
+    const kpi = p.screens[0]!.blocks[1]!
+    p = setCanvasRect(p, sid, kpi.id, { col: 8, colSpan: 4 }) // fits in 12
+    // Shrink the grid to 6 columns: the col-8/span-4 rect must clamp on read.
+    p = setLayoutOpts(p, sid, 'canvas', { cols: 6 })
+    const r = canvasRectOf(p.screens[0]!, kpi.id)
+    expect(r.colSpan).toBeLessThanOrEqual(6)
+    expect(r.col + r.colSpan).toBeLessThanOrEqual(6)
+  })
+
+  it('setScreenLayout(canvas) seeds cell rects; setCanvasRect clamps to the grid + round-trips', () => {
+    let p = addBlock(base, sid, 'kpi') // [grid, kpi]
+    p = setScreenLayout(p, sid, 'canvas')
+    const s = () => p.screens[0]!
+    expect(s().layout).toBe('canvas')
+    // Every block got a rect.
+    for (const b of s().blocks) expect(canvasRectOf(s(), b.id)).toBeTruthy()
+    const kpi = s().blocks[1]!
+    // Move + oversize: col clamps so col + colSpan <= 12; spans clamp to >= 1.
+    p = setCanvasRect(p, sid, kpi.id, { col: 20, row: -5, colSpan: 99, rowSpan: 0 })
+    const r = canvasRectOf(s(), kpi.id)
+    expect(r.colSpan).toBe(12)
+    expect(r.col).toBe(0) // 12-span can only sit at col 0
+    expect(r.row).toBe(0)
+    expect(r.rowSpan).toBe(1)
+    // Survives serialize/parse.
+    const round = parseProject(serializeProject(p))
+    expect(canvasRectOf(round.screens[0]!, kpi.id)).toEqual(r)
   })
 
   it('addBlockAt inserts at the given index (palette drop)', () => {

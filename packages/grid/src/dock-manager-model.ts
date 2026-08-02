@@ -191,6 +191,16 @@ export function setManagerActive(state: DockManagerState, tabsId: string, active
       ),
     }
   }
+  // Auto-hidden leaf: activate a pane so its edge tab / flyout opens on it.
+  const ah = state.autoHide.find((e) => e.leaf.id === tabsId)
+  if (ah) {
+    return {
+      ...state,
+      autoHide: state.autoHide.map((e) =>
+        e.id === ah.id ? { ...e, leaf: { ...e.leaf, active: clamp(active, e.leaf.panes.length) } } : e,
+      ),
+    }
+  }
   return { ...state, main: state.main ? setActiveInTree(state.main, tabsId, active) : state.main }
 }
 
@@ -377,7 +387,9 @@ export function findLeafById(state: DockManagerState, tabsId: string): DockTabs 
   }
   if (state.main) { const m = scan(state.main); if (m) return m }
   const w = state.floating.find((f) => f.leaf.id === tabsId)
-  return w ? w.leaf : null
+  if (w) return w.leaf
+  const e = state.autoHide.find((x) => x.leaf.id === tabsId)
+  return e ? e.leaf : null
 }
 
 /** Toggle a tiled leaf maximized (filling the docked area). Clears if it is gone. */
@@ -470,6 +482,69 @@ export function allManagerPaneIds(state: DockManagerState): string[] {
   for (const w of state.floating) ids.push(...w.leaf.panes.map((p) => p.id))
   for (const e of state.autoHide) ids.push(...e.leaf.panes.map((p) => p.id))
   return ids
+}
+
+/** Every id used anywhere in the workspace: node ids (groups + tabs leaves),
+ *  pane ids, floating-window ids and auto-hide entry ids. Used to keep a freshly
+ *  generated id unique even against a workspace restored from storage - the
+ *  manager's id counter is module-scoped and resets on reload, so without this
+ *  the same `dm-N` can be minted twice and collide (a keyed `{#each}` then throws
+ *  `each_key_duplicate`). */
+export function allManagerIds(state: DockManagerState): string[] {
+  const ids: string[] = []
+  const walk = (n: DockNode) => {
+    ids.push(n.id)
+    if (n.type === 'tabs') for (const p of n.panes) ids.push(p.id)
+    else for (const c of n.children) walk(c)
+  }
+  if (state.main) walk(state.main)
+  for (const w of state.floating) { ids.push(w.id); walk(w.leaf) }
+  for (const e of state.autoHide) { ids.push(e.id); walk(e.leaf) }
+  return ids
+}
+
+/** Reassign any duplicate group / tabs NODE id (and floating-window / auto-hide
+ *  entry id) so no keyed sibling list sees a collision. Pane ids are left alone -
+ *  they key the `pane` snippet to its content, so a rename would blank a panel;
+ *  a restored workspace's repeats are always on the generated node ids anyway.
+ *  Idempotent: a clean workspace is returned value-equal. */
+export function dedupeManagerNodeIds(state: DockManagerState): DockManagerState {
+  const seen = new Set<string>()
+  let n = 1
+  const fresh = (): string => { let id = `dm-d${n++}`; while (seen.has(id)) id = `dm-d${n++}`; return id }
+  const uniq = (id: string): string => {
+    const next = seen.has(id) ? fresh() : id
+    seen.add(next)
+    return next
+  }
+  const walk = (node: DockNode): DockNode => {
+    const id = uniq(node.id)
+    if (node.type === 'tabs') return id === node.id ? node : { ...node, id }
+    const children = node.children.map(walk)
+    const same = id === node.id && children.every((c, i) => c === node.children[i])
+    return same ? node : { ...node, id, children }
+  }
+  const main = state.main ? walk(state.main) : state.main
+  let floatChanged = false
+  const floating = state.floating.map((w) => {
+    const id = uniq(w.id)
+    const leaf = walk(w.leaf) as DockTabs
+    if (id === w.id && leaf === w.leaf) return w
+    floatChanged = true
+    return { ...w, id, leaf }
+  })
+  let hideChanged = false
+  const autoHide = state.autoHide.map((e) => {
+    const id = uniq(e.id)
+    const leaf = walk(e.leaf) as DockTabs
+    if (id === e.id && leaf === e.leaf) return e
+    hideChanged = true
+    return { ...e, id, leaf }
+  })
+  // Preserve identity when nothing was duplicated - keeps the effect that seeds
+  // the manager from re-running and avoids needless re-renders.
+  if (main === state.main && !floatChanged && !hideChanged) return state
+  return { ...state, main, floating: floatChanged ? floating : state.floating, autoHide: hideChanged ? autoHide : state.autoHide }
 }
 
 // ---- small tree helpers scoped to the manager -----------------------------

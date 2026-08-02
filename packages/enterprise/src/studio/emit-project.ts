@@ -11,8 +11,8 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, Screen, StudioProject } from './project.js'
-import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, ON_LOAD, ON_DESTROY } from './project.js'
+import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, SchedulerViewConfig, Screen, StudioProject } from './project.js'
+import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, reconcileDock, ON_LOAD, ON_DESTROY } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -110,12 +110,42 @@ function screenClassSuffix(screen: Screen): string {
   return c ? ` ${c}` : ''
 }
 
+/** Page-scoped CSS for the active layout's settings (gap / max-width / align /
+ *  breakpoint / dividers / canvas grid). Emitted inside the page's own `<style>`,
+ *  so Svelte scopes it to THIS screen - each screen keeps its own layout tuning.
+ *  Returns '' when the mode has no CSS-driven settings (split / dock are props). */
+function screenLayoutStyle(screen: Screen): string {
+  const layout = screenLayoutOf(screen)
+  if (layout === 'grid') {
+    const o = gridOpts(screen)
+    const mw = o.maxWidth ? ` max-width: ${o.maxWidth}px; margin-inline: auto;` : ''
+    return `  .st-screen { grid-template-columns: repeat(12, 1fr); gap: ${o.rowGap}px ${o.colGap}px; align-items: ${o.align};${mw} }\n  @media (max-width: ${o.mobileBreakpoint}px) { .st-screen { grid-template-columns: 1fr; gap: 12px; } }\n`
+  }
+  if (layout === 'stack') {
+    const o = stackOpts(screen)
+    const mw = o.maxWidth ? ` max-width: ${o.maxWidth}px;${o.align === 'center' ? ' margin-inline: auto;' : ''}` : ''
+    const mh = o.minHeight ? `\n  .st-stack > * { min-height: ${o.minHeight}px; }` : ''
+    const div = o.dividers ? `\n  .st-stack > * + * { border-top: 1px solid var(--sg-border, #e2e8f0); padding-top: ${o.gap}px; }` : ''
+    return `  .st-stack { gap: ${o.gap}px;${mw} }${mh}${div}\n`
+  }
+  if (layout === 'canvas') {
+    const o = canvasOpts(screen)
+    const grid = o.showGrid
+      ? `\n  .st-canvas { background-image: linear-gradient(var(--sg-border, #e6e8ec) 1px, transparent 1px), linear-gradient(90deg, var(--sg-border, #e6e8ec) 1px, transparent 1px); background-size: calc((100% - ${o.cols - 1} * ${o.gap}px) / ${o.cols} + ${o.gap}px) calc(${o.rowHeight}px + ${o.gap}px); }`
+      : ''
+    return `  .st-canvas { grid-template-columns: repeat(${o.cols}, 1fr); grid-auto-rows: ${o.rowHeight}px; gap: ${o.gap}px; }${grid}\n`
+  }
+  return ''
+}
+
 /** Markup for one block inside the screen grid. `ctx.hasRecord` tells a grid to
  *  publish its clicked row into `selectedRecord` for a sibling record panel. */
-function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean; rawEntity?: EntitySchema; rawResolve?: (name: string) => EntitySchema | undefined; captureApi?: string; handleNames?: Map<string, string> } = { hasRecord: false }): string {
+function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean; rawEntity?: EntitySchema; rawResolve?: (name: string) => EntitySchema | undefined; captureApi?: string; handleNames?: Map<string, string>; pane?: boolean } = { hasRecord: false }): string {
   // A block's display label: localized via $t('block.<id>', 'literal') when i18n is on.
   const tLabel = (label: string, key: string) => (ctx.i18n ? `{$t('block.${key}', ${JSON.stringify(label)})}` : label)
-  const span = wrapperStyle(block)
+  // In a dock pane the block fills its pane (the pane owns the size); in the 12-col grid it
+  // spans columns. Grid-height blocks read `paneH` so they fill the pane instead of a fixed px.
+  const span = ctx.pane ? 'style="height: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column;"' : wrapperStyle(block)
   const cls = wrapperClass(block)
   const cfg = block.config
   // Code-behind: a data-viz block bound to a DataHandle reads that handle's rows
@@ -127,6 +157,22 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       const idSafe = block.id.replace(/-/g, '_')
       const colVar = `columns_${idSafe}`
       const emptyMsg = `No ${(entity.label ?? entity.name).toLowerCase()} yet.`
+      // Scheduler view: render the grid's rows as a calendar (a view of the grid, like the
+      // board). Full-client over `allRows`; the enterprise renderer is enabled app-wide.
+      if (cfg.scheduler) {
+        const schDisp = relationDisplayFields(ctx.rawEntity ?? entity, resolve)
+        const schAsText = (f: string) => schDisp.get(f) ?? f
+        return `    <div ${span}${cls}>
+      <SvGrid
+        data={allRows}
+        columns={${colVar}}
+        getRowId={(r) => String((r as Record<string, unknown>)[idField])}
+        loading={!allRowsReady}
+        scheduler={${schedulerConfigExpr(cfg.scheduler, typeName, schAsText)}}
+        containerHeight=${ctx.pane ? '"100%"' : `{${block.height ?? 560}}`}
+      />
+    </div>`
+      }
       // Grouped + tree grids both load the full dataset and render client-side (a grouped
       // grid groups/sorts/paginates every row; a tree grid walks a self-referential parent
       // field into an expand/collapse hierarchy). Ungrouped/flat grids stay server-driven.
@@ -137,7 +183,9 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       lines.push(`enableRowSummaries={${cfg.rowSummaries ? 'true' : 'false'}}`)
       if (cfg.striped) lines.push(`zebraRows`)
       if (cfg.cellSelection) lines.push(`enableCellSelection`)
-      if (cfg.density !== 'normal') lines.push(`rowHeight={${cfg.density === 'compact' ? 28 : 46}}`)
+      // Always set a row height (normal = 30) so every grid - incl. master-detail - is
+      // consistent, and the generated app matches the designer preview.
+      lines.push(`rowHeight={${cfg.density === 'compact' ? 28 : cfg.density === 'comfortable' ? 46 : 30}}`)
       const leftPins = cfg.columns.filter((c) => c.show && c.pin === 'left').map((c) => `'${c.field}'`)
       const rightPins = cfg.columns.filter((c) => c.show && c.pin === 'right').map((c) => `'${c.field}'`)
       if (leftPins.length || rightPins.length) {
@@ -152,10 +200,10 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       } else if (grouped) {
         // Client-side sort / filter / paginate over the full row set (no controller).
         if (cfg.sortable) lines.push(`sortable`)
-        if (cfg.filterable) lines.push(`filterable`, `showGlobalFilter`)
+        if (cfg.filterable) lines.push(`filterable`, ...filterSurfaceProps(cfg))
       } else {
         if (cfg.sortable) lines.push(`sortable`, `externalSort`, `onSortingChange={(s) => controller.setSort(s)}`)
-        if (cfg.filterable) lines.push(`filterable`, `showGlobalFilter`, `externalFilter`, `onFiltersChange={(f) => controller.setFilter({ global: f.global || undefined, columns: Object.fromEntries(f.columns.map((c) => [c.id, { operator: c.operator, value: c.value, valueTo: c.valueTo, selectedValues: c.selectedValues }])) })}`)
+        if (cfg.filterable) lines.push(`filterable`, ...filterSurfaceProps(cfg), `externalFilter`, `onFiltersChange={(f) => controller.setFilter({ global: f.global || undefined, columns: Object.fromEntries(f.columns.map((c) => [c.id, { operator: c.operator, value: c.value, valueTo: c.valueTo, selectedValues: c.selectedValues }])) })}`)
       }
       // RBAC: gate the edit affordances on the update permission (server also enforces).
       const canUpdate = ctx.accessEnabled ? `can($currentRole, 'update')` : 'true'
@@ -191,7 +239,7 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       if (grouped) apiBody.push(`a.setGroupBy([${cfg.grouping!.map((f) => jsStr(f)).join(', ')}])`)
       if (apiBody.length === 1 && ctx.captureApi && !grouped) lines.push(`onApiReady={(a) => (${ctx.captureApi} = a)}`)
       else if (apiBody.length) lines.push(`onApiReady={(a) => { ${apiBody.join('; ')} }}`)
-      lines.push(`containerHeight={${block.height ?? 360}}`)
+      lines.push(`containerHeight=${ctx.pane ? '"100%"' : `{${block.height ?? 360}}`}`)
       // No-code export toolbar - buttons wired to the grid's own export API.
       const exportBar = gridHasExport(cfg) && ctx.captureApi ? exportToolbarMarkup(cfg.export!, ctx.captureApi, entity.name) : ''
       return `    <div ${span}${cls}>
@@ -318,7 +366,7 @@ ${panels}
       const mdRoute = cfg.linkScreen ? ctx.routeById?.get(cfg.linkScreen) : undefined
       const onParent = mdRoute ? ` onParentClick={(id) => goto('/${mdRoute}?id=' + encodeURIComponent(id))}` : ''
       return `    <div ${span}${cls}>
-      <SvGridMasterDetail schema={${schemaVar}} data={allRows} detailSchema={${cn.schemaVar}} getChildren={(p) => ${childRows}.filter((c) => String((c as Record<string, unknown>)['${cfg.foreignKey}']) === String((p as Record<string, unknown>)[${schemaVar}.idField ?? 'id']))}${onParent}${block.height ? ` containerHeight={${block.height}}` : ''} />
+      <SvGridMasterDetail schema={${schemaVar}} data={allRows} detailSchema={${cn.schemaVar}} getChildren={(p) => ${childRows}.filter((c) => String((c as Record<string, unknown>)['${cfg.foreignKey}']) === String((p as Record<string, unknown>)[${schemaVar}.idField ?? 'id']))} rowHeight={30}${onParent}${block.height ? ` containerHeight={${block.height}}` : ''} />
     </div>`
     }
     case 'pivot': {
@@ -357,12 +405,12 @@ ${panels}
       // diverge from what withRelationLabels actually put on the rows.
       const disp = relationDisplayFields(ctx.rawEntity ?? entity, resolve)
       const asText = (field: string) => disp.get(field) ?? field
-      const color = cfg.colorField ? ` colorField=${JSON.stringify(cfg.colorField)}` : ''
-      // An event click drills into a detail screen (openScreen), filtered by ?id.
-      const calRoute = cfg.openScreen ? ctx.routeById?.get(cfg.openScreen) : undefined
-      const onSelect = calRoute ? ` onSelect={(id) => goto('/${calRoute}?id=' + encodeURIComponent(id))}` : ''
+      // Upgraded to the enterprise scheduler renderer (Month / Week / Day / Agenda + resources
+      // + recurrence): a richer view of the grid's rows with a detail drawer. `openScreen`
+      // navigation is superseded by the in-place drawer.
+      const sc: SchedulerViewConfig = { startField: cfg.dateField, titleField: cfg.titleField, colorField: cfg.colorField, drawer: true }
       return `    <div ${wrapperStyle(block)}${cls}>
-      <SvSchedule schema={${schemaVar}} rows={allRows} loading={!allRowsReady} dateField=${JSON.stringify(cfg.dateField)} titleField=${JSON.stringify(asText(cfg.titleField))}${color}${onSelect} height={${h}} />
+      <SvGrid data={allRows} columns={schemaToColumns(${schemaVar})} getRowId={(r) => String((r as Record<string, unknown>)[${schemaVar}.idField ?? 'id'])} loading={!allRowsReady} scheduler={${schedulerConfigExpr(sc, typeName, asText)}} containerHeight={${h}} />
     </div>`
     }
     case 'detail': {
@@ -656,6 +704,47 @@ function gridHasExport(cfg: GridConfig): boolean {
 
 /** Is this a tree-data grid (self-referential hierarchy)? */
 const gridHasTree = (cfg: GridConfig): boolean => !!cfg.treeData
+
+/** The `scheduler={{ ... }}` config object for a grid rendered as a calendar/scheduler,
+ *  including optimistic write-back handlers (drag-move / resize / drawer-edit) that update
+ *  `allRows` and persist via the `controller`. Shared by the grid scheduler-view + the
+ *  calendar block. `startField` is required; the rest refine the mapping. */
+function schedulerConfigExpr(sc: SchedulerViewConfig, typeName: string, asText: (f: string) => string = (f) => f): string {
+  const entries: string[] = [`startField: ${jsStr(sc.startField)}`]
+  if (sc.endField) entries.push(`endField: ${jsStr(sc.endField)}`)
+  // Title / color / resource can be relation FKs - point them at the denormalized display column.
+  if (sc.titleField) entries.push(`titleField: ${jsStr(asText(sc.titleField))}`)
+  if (sc.colorField) entries.push(`colorField: ${jsStr(asText(sc.colorField))}`)
+  if (sc.resourceField) entries.push(`resourceField: ${jsStr(asText(sc.resourceField))}`)
+  if (sc.recurrenceField) entries.push(`recurrenceField: ${jsStr(sc.recurrenceField)}`)
+  if (sc.allDayField) entries.push(`allDayField: ${jsStr(sc.allDayField)}`)
+  if (sc.initialView) entries.push(`initialView: ${jsStr(sc.initialView)}`)
+  if (sc.drawer) entries.push(`drawer: true`)
+  if (sc.editable) {
+    entries.push(`editable: true`)
+    // start / (optional) end write-back: optimistic on allRows, then persist.
+    const patch = sc.endField
+      ? `{ [${jsStr(sc.startField)}]: e.start.toISOString(), [${jsStr(sc.endField)}]: e.end.toISOString() }`
+      : `{ [${jsStr(sc.startField)}]: e.start.toISOString() }`
+    const move = `(e) => { const id = String((e.row as Record<string, unknown>)[idField]); const patch = ${patch}; allRows = allRows.map((r) => String((r as Record<string, unknown>)[idField]) === id ? { ...r, ...patch } : r); controller.updateRow(id, patch as Partial<${typeName}>) }`
+    entries.push(`onEventMove: ${move}`)
+    entries.push(`onEventResize: ${move}`)
+    entries.push(`onEventCommit: (e) => { const id = String((e.row as Record<string, unknown>)[idField]); allRows = allRows.map((r) => String((r as Record<string, unknown>)[idField]) === id ? { ...r, ...(e.changes as Partial<${typeName}>) } : r); controller.updateRow(id, e.changes as Partial<${typeName}>) }`)
+  }
+  return `{ ${entries.join(', ')} }`
+}
+
+/** The filter-surface props for a grid: a global search, a per-column filter row, and/or
+ *  the column header filter menu. Undefined `filterUi` = the global search only (back-compat). */
+function filterSurfaceProps(cfg: GridConfig): string[] {
+  const ui = cfg.filterUi
+  const out: string[] = []
+  if (!ui || ui.global) out.push('showGlobalFilter')
+  if (ui?.row) out.push('showFilterRow')
+  if (ui?.menu) out.push('showFilterMenu')
+  // A filterable grid with every surface turned off still needs one; fall back to global.
+  return out.length ? out : ['showGlobalFilter']
+}
 
 /** Script for a tree-data grid: expand state + a derived visible-row walk over `allRows`.
  *  Builds the hierarchy from the self-referential parent field; a row whose parent is
@@ -1482,6 +1571,25 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // flatten so their imports + data loading are detected. Controller-bound kinds
   // (grid/form/filter/record) only live at the top level.
   const allBlocks = flattenBlocks(blocks)
+  // Screen layout: the 12-col grid (default), a single-column stack, or a pane
+  // workspace (SvDockManager) - `split` renders it locked (resize-only), `dock`
+  // gives the full floatable/pinnable manager.
+  const isSplit = screenLayoutOf(screen) === 'split'
+  const isDock = isPaneLayout(screenLayoutOf(screen))
+  const isCanvas = screenLayoutOf(screen) === 'canvas'
+  const dockState = isDock ? (reconcileDock(screen).dock ?? null) : null
+  // Pane-layout settings -> SvDockManager props + whether to persist the arrangement.
+  const splitO = isSplit ? splitOpts(screen) : null
+  const dockO = isDock && !isSplit ? dockOpts(screen) : null
+  const panePersist = isSplit ? splitO!.persist : dockO ? dockO.persist : true
+  const paneAttrs: string[] = []
+  if (isSplit) { paneAttrs.push('locked'); if (splitO!.minPaneSize !== 80) paneAttrs.push(`minSize={${splitO!.minPaneSize}}`) }
+  else if (dockO) {
+    if (dockO.allowPopout) paneAttrs.push('allowPopout')
+    if (dockO.hideSingleTab) paneAttrs.push('hideSingleTab')
+    if (dockO.headerPosition !== 'top') paneAttrs.push(`headerPosition="${dockO.headerPosition}"`)
+  }
+  const paneAttrStr = paneAttrs.length ? ' ' + paneAttrs.join(' ') : ''
   const hasGrid = has(blocks, 'grid')
   // Code-behind: wire onLoad(ctx) and expose the grid's real api as ctx.grid.
   const codeEnabled = screenHasCode(screen)
@@ -1542,6 +1650,10 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const hasGroupedGrid = allBlocks.some((b) => b.config.kind === 'grid' && (b.config.grouping?.length ?? 0) > 0)
   // A tree grid loads every row to build the hierarchy, and renders a tree cell (renderSnippet).
   const hasTreeGrid = allBlocks.some((b) => b.config.kind === 'grid' && gridHasTree(b.config))
+  // A scheduler-view grid renders its rows as a calendar (full dataset, enterprise renderer).
+  const hasSchedulerGrid = allBlocks.some((b) => b.config.kind === 'grid' && !!b.config.scheduler)
+  // The scheduler renderer is also what the (upgraded) calendar block uses.
+  const usesScheduler = hasSchedulerGrid || has(allBlocks, 'calendar')
   // An export toolbar needs the grid's captured API. The code-behind grid already
   // captures into `gridApi`; other export grids capture into `gridApi_<blockId>`.
   const apiVarFor = (b: Block): string | undefined =>
@@ -1551,11 +1663,15 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const exportApiVars = blocks.filter((b) => b.config.kind === 'grid' && gridHasExport(b.config) && !(codeGrid && b.id === codeGridBlockId)).map((b) => `gridApi_${b.id.replace(/-/g, '_')}`)
   const needsGridApiType = codeGrid || exportApiVars.length > 0
   // The pivot reads the whole table (like charts / dashboards).
-  const needsAllRows = hasAgg || hasMD || hasPivot || hasBoundComponent || hasGroupedGrid || hasTreeGrid || has(allBlocks, 'board') || has(allBlocks, 'calendar') || has(allBlocks, 'detail')
+  const needsAllRows = hasAgg || hasMD || hasPivot || hasBoundComponent || hasGroupedGrid || hasTreeGrid || hasSchedulerGrid || has(allBlocks, 'board') || has(allBlocks, 'calendar') || has(allBlocks, 'detail')
 
   // --- imports ---
   const gridSpecs: string[] = []
   if (needsController) gridSpecs.push('SvGrid', 'createServerDataSource', ...(hasRowActions || hasCellRenderers || hasTreeGrid ? ['renderSnippet', 'type CellContext'] : []), 'type ServerState')
+  // A calendar-only screen has no controller but still renders <SvGrid scheduler={...}>.
+  if (usesScheduler) gridSpecs.push('SvGrid')
+  // Dock layout: the workspace shell + its serializable state type.
+  if (isDock) gridSpecs.push('SvDockManager', 'type DockManagerState')
   if (cellRenderKinds.has('badge')) gridSpecs.push('SvBadge')
   if (cellRenderKinds.has('progress')) gridSpecs.push('SvProgress')
   if (has(allBlocks, 'gauge')) gridSpecs.push('SvGauge')
@@ -1575,7 +1691,8 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   if (has(allBlocks, 'chart')) entImports.push('SvSchemaChart')
   if (has(allBlocks, 'dashboard')) entImports.push('SvSchemaDashboard')
   if (has(allBlocks, 'board')) entImports.push('SvBoard')
-  if (has(allBlocks, 'calendar')) entImports.push('SvSchedule')
+  // The calendar block now renders via the scheduler grid view (needs schemaToColumns for its columns).
+  if (has(allBlocks, 'calendar')) entImports.push('schemaToColumns')
   if (has(allBlocks, 'detail')) entImports.push('SvRecordDetail')
   if (has(allBlocks, 'kpi') || has(allBlocks, 'gauge') || hasAggregateBinding) entImports.push('reduceValue')
   const kpiCfgs = allBlocks.filter((b) => b.config.kind === 'kpi').map((b) => b.config as KpiConfig)
@@ -1583,6 +1700,8 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   if (kpiCfgs.some((c) => c.trendField)) entImports.push('kpiSeries', 'sparklinePoints', 'seriesDelta')
   if (hasMD) entImports.push('SvGridMasterDetail')
   if (hasPivot) entImports.push('SvPivotDesigner')
+  // The scheduler renderer (grid scheduler-view + calendar block) is registered app-wide (idempotent).
+  if (usesScheduler) entImports.push('enableSchedulerView')
   // Dedupe: record + form both want SvGridEditPanel.
   const entImport = entImports.length ? `import { ${[...new Set(entImports)].join(', ')} } from '@svgrid/enterprise'\n  ` : ''
   const lookupVars = relationFields.map((f) => lookupVar(schema, f.field))
@@ -1612,6 +1731,8 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
 
   // --- script body ---
   const parts: string[] = []
+  // Register the enterprise scheduler renderer once (idempotent) before any grid renders.
+  if (usesScheduler) parts.push('enableSchedulerView()')
   if (codeGrid) parts.push('let gridApi = $state<SvGridApi<any, any> | null>(null)')
   for (const v of exportApiVars) parts.push(`let ${v} = $state<SvGridApi<any, any> | null>(null)`)
   for (const a of screenActions) parts.push(actionHandlerScript(a))
@@ -1668,6 +1789,23 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   }
   // Tree-grid state/derivations - emitted after `allRows` so it's in scope.
   for (const s of treeScripts) parts.push(s)
+  // Docking workspace: the serializable layout state, restored from localStorage on the
+  // client (after mount, so SSR stays stable) and re-persisted whenever the user rearranges.
+  // Below a breakpoint the screen falls back to a single stacked column.
+  if (isDock) {
+    const dockKey = jsStr('dock:' + screen.route)
+    // Persist the arrangement to localStorage (restored after mount so SSR stays
+    // stable), unless the screen opts out - then the seeded layout is fixed.
+    const persistParts = panePersist
+      ? `
+  function loadDock(): DockManagerState | null { try { const r = localStorage.getItem(${dockKey}); return r ? (JSON.parse(r) as DockManagerState) : null } catch { return null } }
+  function saveDock(ws: DockManagerState) { try { localStorage.setItem(${dockKey}, JSON.stringify(ws)) } catch { /* storage unavailable */ } }
+  $effect(() => { const saved = loadDock(); if (saved) dockWorkspace = saved })`
+      : ''
+    parts.push(`let dockWorkspace = $state<DockManagerState>(${JSON.stringify(dockState ?? { main: null, floating: [], autoHide: [] })})
+  let dockNarrow = $state(false)${persistParts}
+  $effect(() => { const mq = window.matchMedia('(max-width: 720px)'); const sync = () => (dockNarrow = mq.matches); sync(); mq.addEventListener('change', sync); return () => mq.removeEventListener('change', sync) })`)
+  }
   for (const c of childList) {
     const cn = namesFor(c)
     const v = mdChildVar(c.name)
@@ -1744,7 +1882,41 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const toolbar = (wantsForm || screenActions.length > 0)
     ? `<div class="st__toolbar">\n  ${wantsForm ? (gatesUi ? `{#if can($currentRole, 'create')}${newBtn}{/if}` : newBtn) : ''}${actionButtons ? `\n  ${actionButtons}` : ''}\n</div>\n\n`
     : ''
-  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, { hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve, captureApi: apiVarFor(b), handleNames: codeEnabled ? handleNames : undefined })).filter(Boolean).join('\n')
+  const blockCtx = (b: Block, pane: boolean) => ({ hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve, captureApi: apiVarFor(b), handleNames: codeEnabled ? handleNames : undefined, pane })
+  const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, blockCtx(b, false))).filter(Boolean).join('\n')
+  // Dock mode: each block becomes a pane rendered by id; a narrow viewport stacks the grid body.
+  const dockPanes = isDock
+    ? blocks.map((b) => { const m = blockMarkup(schema, n.schemaVar, n.type, b, resolve, blockCtx(b, true)); return m ? `        {#if p.id === ${jsStr(b.id)}}\n${m}\n        {/if}` : '' }).filter(Boolean).join('\n')
+    : ''
+  // Canvas mode: each block is a placed cell on a 12-col grid (pane render = fill the cell).
+  const canvasBody = isCanvas
+    ? blocks.map((b) => {
+        const r = canvasRectOf(screen, b.id)
+        const m = blockMarkup(schema, n.schemaVar, n.type, b, resolve, blockCtx(b, true))
+        return m ? `  <div class="st-canvas__cell" style="grid-column: ${r.col + 1} / span ${r.colSpan}; grid-row: ${r.row + 1} / span ${r.rowSpan};">\n${m}\n  </div>` : ''
+      }).filter(Boolean).join('\n')
+    : ''
+  const screenBody = isDock
+    ? `{#if dockNarrow}
+<div class="st-screen${screenClassSuffix(screen)}">
+${body}
+</div>
+{:else}
+<div class="st-dock">
+  <SvDockManager bind:workspace={dockWorkspace}${panePersist ? ' onChange={(w) => saveDock(w)}' : ''}${paneAttrStr}>
+    {#snippet pane(p)}
+${dockPanes}
+    {/snippet}
+  </SvDockManager>
+</div>
+{/if}`
+    : isCanvas
+    ? `<div class="st-canvas${screenClassSuffix(screen)}">
+${canvasBody}
+</div>`
+    : `<div class="${screenLayoutOf(screen) === 'stack' ? 'st-stack' : 'st-screen'}${screenClassSuffix(screen)}">
+${body}
+</div>`
   const modal = wantsForm
     ? `\n\n{#if editing !== undefined}\n  <SvGridEditPanel schema={${n.schemaVar}} row={editing}${relationFields.length ? ' {lookups}' : ''} presentation="${formPres}" persistKey="${screen.route}" onSubmit={save} onCancel={() => (editing = undefined)} />\n{/if}`
     : ''
@@ -1784,12 +1956,9 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
 
 <h1 class="st__title">${title}</h1>
 ${errorBanner}
-${toolbar}<div class="st-screen${screenClassSuffix(screen)}">
-${body}
-</div>${modal}${actionSnippets.length ? '\n\n' + actionSnippets.join('\n\n') : ''}
-${has(blocks, 'kpi') || has(blocks, 'gauge') || has(blocks, 'tree') ? `
-<style>
-  .kpi { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); overflow: hidden; }
+${toolbar}${screenBody}${modal}${actionSnippets.length ? '\n\n' + actionSnippets.join('\n\n') : ''}
+${(() => {
+  const kpiCss = has(blocks, 'kpi') || has(blocks, 'gauge') || has(blocks, 'tree') ? `  .kpi { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); overflow: hidden; }
   .kpi__head { display: flex; align-items: center; justify-content: space-between; }
   .kpi__label { font-size: 12.5px; font-weight: 600; color: var(--sg-muted, #64748b); text-transform: uppercase; letter-spacing: 0.03em; }
   .kpi__value { font-size: 28px; font-weight: 750; line-height: 1.1; color: var(--sg-fg, #0f172a); }
@@ -1800,8 +1969,10 @@ ${has(blocks, 'kpi') || has(blocks, 'gauge') || has(blocks, 'tree') ? `
   .gaugecard { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
   .gaugecard .kpi__label { align-self: flex-start; }
   .treecard { padding: 12px; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 12px; }
-</style>
-` : ''}`,
+` : ''
+  const css = kpiCss + screenLayoutStyle(screen)
+  return css ? `\n<style>\n${css}</style>\n` : ''
+})()}`,
   }
 }
 
@@ -3360,6 +3531,21 @@ body { font-family: var(--sg-font, ui-sans-serif, system-ui, -apple-system, "Seg
 .st-screen { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: start; }
 /* Mobile: blocks stack full-width (a span-N block clamps to the single column). */
 @media (max-width: 720px) { .st-screen { grid-template-columns: 1fr; gap: 12px; } }
+/* Stack layout: every block full-width in a single flowing column (mobile-first). */
+.st-stack { display: flex; flex-direction: column; gap: 16px; align-items: stretch; }
+.st-stack > * { min-width: 0; width: 100%; }
+@media (max-width: 720px) { .st-stack { gap: 12px; } }
+/* Free-form canvas: blocks placed on a 12-column x fixed-row grid by cell coords. */
+.st-canvas { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: ${CANVAS_ROW_PX}px; gap: ${CANVAS_GAP_PX}px; align-items: stretch; }
+.st-canvas__cell { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.st-canvas__cell > * { flex: 1; min-height: 0; }
+/* Narrow: an absolute canvas can't reflow, so fall back to a single stacked column. */
+@media (max-width: 720px) {
+  .st-canvas { display: flex; flex-direction: column; gap: 12px; }
+  .st-canvas__cell { grid-column: auto !important; grid-row: auto !important; min-height: ${CANVAS_ROW_PX * 4}px; }
+}
+/* Docking workspace: the SvDockManager fills a sized region (it owns its own scrolling). */
+.st-dock { height: min(74vh, 900px); min-height: 420px; }
 @media (max-width: 640px) { .st__title { font-size: 19px; } }
 .st-rowactions { display: inline-flex; gap: 6px; }
 .st-rowaction { padding: 3px 9px; font: inherit; font-size: 12px; font-weight: 550; line-height: 1.4; border: 1px solid var(--sg-border, #e6e8ec); border-radius: 7px; background: var(--sg-bg, #fff); color: var(--sg-fg, inherit); cursor: pointer; }

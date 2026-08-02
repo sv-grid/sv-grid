@@ -374,7 +374,8 @@
     // Tokenise: function names, cell refs, ranges, numbers, strings, operators
     const FN = /([A-Z_][A-Z0-9_]+)(?=\s*\()/g
     const REF = /\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?/g
-    const STR = /"[^"]*"/g
+    // Runs AFTER escape(), so match the escaped quote entity, not a literal " (#60).
+    const STR = /&quot;.*?&quot;/g
     const NUM = /\b\d+(?:\.\d+)?\b/g
     let out = escape(text)
     out = out.replace(STR, (m) => `<span class="fx-str">${m}</span>`)

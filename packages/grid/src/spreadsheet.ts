@@ -265,18 +265,7 @@ function apply(root: HTMLElement, opts: SpreadsheetActionOptions): void {
 export function spreadsheetLayout(node: HTMLElement, opts: SpreadsheetActionOptions) {
   let current = opts
   let frame = 0
-  // The MutationObserver fires for EVERY DOM change inside the grid -
-  // batch them into one rAF so a big virtualization scroll doesn't run
-  // apply() dozens of times in a tick.
-  function schedule() {
-    if (frame) return
-    frame = requestAnimationFrame(() => {
-      frame = 0
-      apply(node, current)
-    })
-  }
-  const observer = new MutationObserver(schedule)
-  observer.observe(node, {
+  const OBSERVE_OPTIONS: MutationObserverInit = {
     childList: true,
     subtree: true,
     attributes: true,
@@ -287,7 +276,26 @@ export function spreadsheetLayout(node: HTMLElement, opts: SpreadsheetActionOpti
       'data-range-top', 'data-range-bottom', 'data-range-left',
       'data-range-right', 'data-selected-range',
     ],
-  })
+  }
+  // The MutationObserver fires for EVERY DOM change inside the grid -
+  // batch them into one rAF so a big virtualization scroll doesn't run
+  // apply() dozens of times in a tick.
+  function schedule() {
+    if (frame) return
+    frame = requestAnimationFrame(() => {
+      frame = 0
+      // Stop observing while apply() mutates the DOM itself (it writes cell
+      // `style.display`/`position` and appends overlay children). Otherwise
+      // those writes re-trigger this observer and loop at 60fps on merged
+      // cells (#50). A full apply() recomputes from the live DOM, so discarding
+      // the queued records here loses nothing.
+      observer.disconnect()
+      apply(node, current)
+      observer.observe(node, OBSERVE_OPTIONS)
+    })
+  }
+  const observer = new MutationObserver(schedule)
+  observer.observe(node, OBSERVE_OPTIONS)
   // First-paint pass: schedule the same way so we don't run before the
   // grid's initial render landed.
   schedule()

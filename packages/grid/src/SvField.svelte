@@ -26,6 +26,8 @@
     dir,
     /** Stretch the field (and its control) to the container width. */
     block = false,
+    /** Busy state - shows a small spinner beside the label. */
+    loading = false,
     children,
   }: {
     id?: string
@@ -35,6 +37,7 @@
     required?: boolean
     dir?: EditorDir
     block?: boolean
+    loading?: boolean
     children: Snippet
   } = $props()
 
@@ -43,10 +46,15 @@
 </script>
 
 <div class="sv-field" class:sv-field--block={block} dir={resolvedDir}>
-  {#if label}
-    <label class="sv-field__label" for={id}>
-      {label}{#if required}<span class="sv-field__req" aria-hidden="true">*</span>{/if}
-    </label>
+  {#if label || loading}
+    <span class="sv-field__labelrow">
+      {#if label}
+        <label class="sv-field__label" for={id}>
+          {label}{#if required}<span class="sv-field__req" aria-hidden="true">*</span>{/if}
+        </label>
+      {/if}
+      {#if loading}<span class="sv-field__spinner" role="status" aria-label="Loading"></span>{/if}
+    </span>
   {/if}
   {@render children()}
   {#if error}
@@ -64,12 +72,21 @@
     text-align: start;
   }
   .sv-field--block { display: flex; width: 100%; }
+  .sv-field__labelrow { display: inline-flex; align-items: center; gap: 6px; }
   .sv-field__label {
     font-size: 12.5px;
     font-weight: 550;
     color: var(--sg-fg, #0f172a);
     line-height: 1.3;
   }
+  .sv-field__spinner {
+    width: 12px; height: 12px; flex: none; border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--sg-accent, #2563eb) 30%, transparent);
+    border-top-color: var(--sg-accent, #2563eb);
+    animation: sv-field-spin 0.6s linear infinite;
+  }
+  @keyframes sv-field-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .sv-field__spinner { animation: none; } }
   .sv-field__req { color: var(--sg-danger, #dc2626); margin-inline-start: 2px; }
   .sv-field__hint {
     font-size: 11.5px;

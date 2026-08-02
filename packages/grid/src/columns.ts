@@ -283,6 +283,11 @@ export function createColumns<
     ctx.resizingColumnId = columnId;
     ctx.resizeStartX = event.clientX;
     ctx.resizeStartWidth = getColumnWidth(columnId);
+    // Capture the pointer so the drag keeps tracking when it leaves the 4px
+    // handle - without this, touch (and fast mouse) drags drop mid-resize (#59).
+    try {
+      (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
+    } catch { /* capture is best-effort */ }
     document.addEventListener("pointermove", onColumnResizeMove);
     document.addEventListener("pointerup", endColumnResize);
     document.addEventListener("pointercancel", endColumnResize);

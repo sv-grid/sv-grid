@@ -39,6 +39,9 @@ export type DockContext = {
   focusedLeaf?: () => string | null
   /** Keep inactive tabs mounted (hidden) so their content state persists. */
   keepAlive?: () => boolean
+  /** For a single-pane leaf, suppress the redundant tab button (e.g. an auto-hide fly-out,
+   *  where the edge strip already names the panel). Leaf actions still render. */
+  hideSingleTab?: () => boolean
 }
 
 export const DOCK_CONTEXT = Symbol('svgrid-dock')

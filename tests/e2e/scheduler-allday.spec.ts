@@ -47,8 +47,8 @@ test.describe('scheduler all-day (real browser)', () => {
   })
 
   test('the all-day row is always visible (even with no all-day events)', async ({ page }) => {
-    // Demo 364 has no all-day events; the row must still be there as a drop target.
-    await page.goto('/sv-grid/#/demos/364-scheduler-timegrid')
+    // The clinic (Day view) has no all-day events; the row must still be there as a drop target.
+    await page.goto('/sv-grid/#/demos/382-scheduler-app-clinic')
     await page.locator('.sv-sched').first().waitFor()
     await expect(page.locator('.sv-sched-allday')).toHaveCount(1)
   })

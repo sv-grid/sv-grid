@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, boardScreen, calendarScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, boardScreen, schedulerScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 const projectsEntity: EntitySchema = {
   name: 'projects',
@@ -183,7 +183,7 @@ export const projectTracker: SampleApp = {
         formScreen(tasks, { id: 'tasks', title: 'Tasks', order: 5 }, undefined, { format: taskFormats, summaries: true, rowActions: [{ kind: 'edit' }] }, ['status', 'priority', 'assigneeId']),
         formScreen(members, { id: 'members', title: 'Members', order: 6 }, undefined, { format: statusPills(members, 'role'), summaries: true }, ['role']),
         // Schedule: tasks placed on a month calendar by due date.
-        calendarScreen(tasks, { id: 'calendar', title: 'Schedule', order: 7 }, { dateField: 'dueDate', titleField: 'title', filter: ['status', 'priority', 'assigneeId'] }),
+        schedulerScreen(tasks, { id: 'calendar', title: 'Schedule', order: 7 }, { startField: 'startedAt', endField: 'dueDate', titleField: 'title', colorField: 'priority', resourceField: 'assigneeId', initialView: 'timelineWeek' }),
       ],
     })
   },

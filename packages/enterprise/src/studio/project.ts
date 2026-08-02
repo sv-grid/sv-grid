@@ -11,7 +11,7 @@
  * module resolvable under node16.
  */
 import type { EntityField, EntityFieldType, EntitySchema } from '../schema.js'
-import type { ChartType } from '@svgrid/grid'
+import type { ChartType, DockManagerState, DockNode, DockPane, DockTabs } from '@svgrid/grid'
 import { uiComponentSpec } from './ui-components.js'
 
 export type Reduce = 'sum' | 'avg' | 'count' | 'min' | 'max'
@@ -93,6 +93,10 @@ export type GridConfig = {
   selectable: boolean
   sortable: boolean
   filterable: boolean
+  /** Which filtering surfaces show when `filterable` is on. Undefined = the global search
+   *  box only (back-compat). Combine a global search, a per-column filter row, and/or the
+   *  column header filter menu. */
+  filterUi?: GridFilterUi
   editing: GridEditing
   /** Presentation of the edit form when `editing === 'form'`. */
   formPresentation: Presentation
@@ -127,6 +131,37 @@ export type GridConfig = {
   /** No-code tree data: render the grid's own rows as an expand/collapse hierarchy
    *  built from a self-referential parent field. Mutually exclusive with `grouping`. */
   treeData?: TreeDataConfig
+  /** Render the grid's rows as a calendar / scheduler (a view of the grid, like the
+   *  Kanban board). Mutually exclusive with grouping / tree. Uses the enterprise
+   *  scheduler renderer (`enableSchedulerView`). */
+  scheduler?: SchedulerViewConfig
+}
+/** Which calendar view the scheduler opens on / offers. */
+export type SchedulerViewMode = 'month' | 'week' | 'day' | 'agenda' | 'timelineDay' | 'timelineWeek' | 'timelineMonth' | 'timelineYear'
+/** No-code scheduler-view config: map the entity's fields onto calendar events. Only
+ *  `startField` is required; the rest are optional refinements. Compiles to SvGrid's
+ *  `scheduler` prop + write-back handlers. */
+export type SchedulerViewConfig = {
+  /** Field holding the event start (Date / epoch / ISO string). Required. */
+  startField: string
+  /** Field holding the event end. Omit to use a default duration from the start. */
+  endField?: string
+  /** Field for the event title. Defaults to the first column. */
+  titleField?: string
+  /** Field holding a per-event accent color. */
+  colorField?: string
+  /** Field that groups events into per-resource columns (people / rooms / machines). */
+  resourceField?: string
+  /** Field holding a recurrence rule (one event per matching day). */
+  recurrenceField?: string
+  /** Boolean field marking an all-day event. */
+  allDayField?: string
+  /** The view shown first. Default 'month'. */
+  initialView?: SchedulerViewMode
+  /** Enable drag-to-move + edge-resize (writes back through the data source). */
+  editable?: boolean
+  /** Show the built-in event detail drawer. */
+  drawer?: boolean
 }
 /** Tree-data grid config: `parentField` is a self-referential FK (a row whose parent is
  *  empty / not in the set is a root); `labelField` is the column that shows the indented,
@@ -135,6 +170,9 @@ export type TreeDataConfig = { parentField: string; labelField: string }
 /** Which export affordances the grid toolbar shows. All go through the grid's built-in
  *  export API (dependency-free). Empty / all-false = no toolbar. */
 export type GridExportConfig = { csv?: boolean; json?: boolean; copy?: boolean }
+/** Which filtering surfaces the grid shows (when `filterable`). `global` = the search-all
+ *  box, `row` = a filter input under each header, `menu` = the column header filter menu. */
+export type GridFilterUi = { global?: boolean; row?: boolean; menu?: boolean }
 /** A conditional-formatting comparison. */
 export type FormatOp = 'eq' | 'ne' | 'lt' | 'lte' | 'gt' | 'gte' | 'contains' | 'empty' | 'notEmpty'
 /** One no-code format rule: style a `field`'s cell when the comparison holds. */
@@ -438,7 +476,55 @@ export function compileHandlerSteps(steps: ReadonlyArray<ActionStep>): string {
  *  `code` opts the screen into a create-once `handlers.ts` companion (user-owned,
  *  never regenerated) whose `onLoad(ctx)` runs on mount; `renderGrid` adds a Grid
  *  fed via `ctx.setRows`. `handlerBodies` holds each handler's body (keyed by name). */
-export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlerSteps?: Record<string, ActionStep[]>; handlersSource?: string; className?: string }
+/** How a screen arranges its blocks: the default 12-column responsive grid, or a
+ *  docking workspace (SvDockManager - drag-to-dock splits/tabs + floating / pinned panes,
+ *  serialized as `dock`). */
+export type ScreenLayout = 'grid' | 'stack' | 'split' | 'dock' | 'canvas'
+
+/** Layouts that arrange blocks as dockable / split panes (both back onto a
+ *  serialized `DockManagerState`; `split` renders it locked = resize-only). */
+export const PANE_LAYOUTS: ReadonlyArray<ScreenLayout> = ['split', 'dock']
+export function isPaneLayout(layout: ScreenLayout): boolean { return PANE_LAYOUTS.includes(layout) }
+
+/** Free-form canvas: a block is placed on a 12-column grid by explicit cell
+ *  coordinates (col/row) + spans, instead of flowing. `row`/`rowSpan` count
+ *  fixed-height rows (see CANVAS_ROW_PX). All values are grid cells, 0-indexed. */
+export type CanvasRect = { col: number; row: number; colSpan: number; rowSpan: number }
+export const CANVAS_COLS = 12
+/** Height of one canvas row in px (grid-auto-rows), shared by designer + codegen. */
+export const CANVAS_ROW_PX = 40
+/** Gap between canvas cells in px. */
+export const CANVAS_GAP_PX = 8
+// --- per-layout settings ----------------------------------------------------
+// Each mode has its own knobs; stored per-mode so switching layouts keeps each
+// mode's settings. All fields optional - absent means the default (below), so
+// existing projects are unchanged.
+export type GridLayoutOpts = { colGap?: number; rowGap?: number; maxWidth?: number; align?: 'start' | 'stretch'; mobileBreakpoint?: number }
+export type StackLayoutOpts = { gap?: number; maxWidth?: number; align?: 'left' | 'center'; dividers?: boolean; minHeight?: number }
+export type SplitLayoutOpts = { orientation?: 'auto' | 'row' | 'column'; minPaneSize?: number; persist?: boolean }
+export type DockLayoutOpts = { allowPopout?: boolean; hideSingleTab?: boolean; headerPosition?: 'top' | 'bottom' | 'left' | 'right'; persist?: boolean }
+export type CanvasLayoutOpts = { cols?: number; rowHeight?: number; gap?: number; showGrid?: boolean }
+export type LayoutOpts = { grid?: GridLayoutOpts; stack?: StackLayoutOpts; split?: SplitLayoutOpts; dock?: DockLayoutOpts; canvas?: CanvasLayoutOpts }
+
+/** `maxWidth: 0` (or absent) means full-bleed. */
+export const GRID_OPT_DEFAULTS: Required<GridLayoutOpts> = { colGap: 16, rowGap: 16, maxWidth: 0, align: 'start', mobileBreakpoint: 720 }
+export const STACK_OPT_DEFAULTS: Required<StackLayoutOpts> = { gap: 16, maxWidth: 0, align: 'left', dividers: false, minHeight: 160 }
+export const SPLIT_OPT_DEFAULTS: Required<SplitLayoutOpts> = { orientation: 'auto', minPaneSize: 80, persist: true }
+export const DOCK_OPT_DEFAULTS: Required<DockLayoutOpts> = { allowPopout: false, hideSingleTab: false, headerPosition: 'top', persist: true }
+export const CANVAS_OPT_DEFAULTS: Required<CanvasLayoutOpts> = { cols: CANVAS_COLS, rowHeight: CANVAS_ROW_PX, gap: CANVAS_GAP_PX, showGrid: false }
+
+export const gridOpts = (s: Screen): Required<GridLayoutOpts> => ({ ...GRID_OPT_DEFAULTS, ...s.layoutOpts?.grid })
+export const stackOpts = (s: Screen): Required<StackLayoutOpts> => ({ ...STACK_OPT_DEFAULTS, ...s.layoutOpts?.stack })
+export const splitOpts = (s: Screen): Required<SplitLayoutOpts> => ({ ...SPLIT_OPT_DEFAULTS, ...s.layoutOpts?.split })
+export const dockOpts = (s: Screen): Required<DockLayoutOpts> => ({ ...DOCK_OPT_DEFAULTS, ...s.layoutOpts?.dock })
+export const canvasOpts = (s: Screen): Required<CanvasLayoutOpts> => ({ ...CANVAS_OPT_DEFAULTS, ...s.layoutOpts?.canvas })
+
+/** Patch one mode's settings (merged over any existing values). */
+export function setLayoutOpts<K extends keyof LayoutOpts>(project: StudioProject, screenId: string, mode: K, patch: Partial<NonNullable<LayoutOpts[K]>>): StudioProject {
+  return mapScreen(project, screenId, (s) => ({ ...s, layoutOpts: { ...s.layoutOpts, [mode]: { ...s.layoutOpts?.[mode], ...patch } } }))
+}
+
+export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlerSteps?: Record<string, ActionStep[]>; handlersSource?: string; className?: string; layout?: ScreenLayout; dock?: DockManagerState; canvas?: Record<string, CanvasRect>; layoutOpts?: LayoutOpts }
 
 /** The generated app's shell (master layout): sidebar, top-nav, or bottom-nav; brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav' | 'bottom-nav'
@@ -1020,6 +1106,305 @@ export function removeScreen(project: StudioProject, screenId: string): StudioPr
 
 export function updateScreen(project: StudioProject, screenId: string, patch: Partial<Pick<Screen, 'title' | 'route' | 'entity' | 'nav' | 'actions' | 'className'>>): StudioProject {
   return mapScreen(project, screenId, (s) => ({ ...s, ...patch }))
+}
+
+// ---- Screen layout: 12-column grid (default) or a docking workspace ----------
+
+/** The screen's layout engine. Defaults to `'grid'` (the 12-column responsive grid). */
+export function screenLayoutOf(screen: Screen): ScreenLayout {
+  return screen.layout ?? 'grid'
+}
+
+/** A short title for a block's dock pane. */
+function dockPaneTitle(block: Block): string {
+  const c = block.config as { kind: string; label?: string; title?: string; name?: string; component?: string }
+  const byKind: Record<string, string> = {
+    grid: 'Grid', form: 'Form', chart: 'Chart', dashboard: 'Dashboard', tree: 'Tree', pivot: 'Pivot',
+    filter: 'Filters', record: 'Record', detail: 'Detail', board: 'Board', calendar: 'Calendar',
+    'master-detail': 'Master / detail', lookup: 'Lookup', tabs: 'Tabs', accordion: 'Accordion',
+    kpi: 'KPI', gauge: 'Gauge', component: 'Component',
+  }
+  return c.label || c.title || c.name || c.component || byKind[c.kind] || 'Panel'
+}
+
+/** Every pane id present anywhere in a dock workspace (main tree + floating + auto-hidden). */
+export function dockPaneIds(state: DockManagerState): Set<string> {
+  const ids = new Set<string>()
+  const walk = (n: DockNode) => { if (n.type === 'tabs') for (const p of n.panes) ids.add(p.id); else for (const c of n.children) walk(c) }
+  if (state.main) walk(state.main)
+  for (const w of state.floating) for (const p of w.leaf.panes) ids.add(p.id)
+  for (const e of state.autoHide) for (const p of e.leaf.panes) ids.add(p.id)
+  return ids
+}
+
+/**
+ * Smart auto-layout: seed a docking workspace from a screen's blocks by role -
+ * filters dock left, record / detail panels dock right, KPIs / gauges strip across
+ * the top, and the main content (grid / board / calendar / chart / ...) fills the
+ * centre. Pane ids equal block ids. Runtime float / pin / pop-out is layered on later.
+ */
+export function buildDockLayout(screen: Screen): DockManagerState {
+  const taken = new Set<string>(screen.blocks.map((b) => b.id))
+  const genId = (p: string) => { const id = uid(p, taken); taken.add(id); return id }
+  const paneFor = (b: Block): DockPane => ({ id: b.id, title: dockPaneTitle(b), closable: true })
+  const roleOf = (b: Block): 'left' | 'center' | 'right' | 'top' => {
+    switch (b.config.kind) {
+      case 'filter': return 'left'
+      case 'record': case 'detail': return 'right'
+      case 'kpi': case 'gauge': return 'top'
+      default: return 'center'
+    }
+  }
+  const groupOf = (direction: 'row' | 'column', children: DockNode[], sizes: number[]): DockNode => ({ type: 'group', id: genId('dg-'), direction, children, sizes })
+  const norm = (ws: number[]): number[] => { const s = ws.reduce((a, b) => a + b, 0) || 1; return ws.map((w) => w / s) }
+  // Each block gets its OWN leaf, so split view can size every block independently
+  // (grouping them into one tabs leaf would trap them as tabs - unresizable when
+  // the manager is locked). Multiple blocks in a bucket stack along the given axis.
+  const oneLeaf = (b: Block): DockTabs => ({ type: 'tabs', id: genId('dt-'), panes: [paneFor(b)], active: 0 })
+  const stackOf = (bs: Block[], direction: 'row' | 'column'): DockNode =>
+    bs.length === 1 ? oneLeaf(bs[0]!) : groupOf(direction, bs.map(oneLeaf), norm(bs.map(() => 1)))
+  // A forced split orientation (split-view setting) ignores roles and lays ALL
+  // blocks out as equal panes in one row / column.
+  const forced = splitOpts(screen).orientation
+  if (forced !== 'auto' && screen.blocks.length) {
+    return { main: stackOf(screen.blocks, forced), floating: [], autoHide: [] }
+  }
+  const buckets: Record<'left' | 'center' | 'right' | 'top', Block[]> = { left: [], center: [], right: [], top: [] }
+  for (const b of screen.blocks) buckets[roleOf(b)].push(b)
+  const rowChildren: DockNode[] = []
+  const rowWeights: number[] = []
+  if (buckets.left.length) { rowChildren.push(stackOf(buckets.left, 'column')); rowWeights.push(1) }
+  if (buckets.center.length) { rowChildren.push(stackOf(buckets.center, 'column')); rowWeights.push(3) }
+  if (buckets.right.length) { rowChildren.push(stackOf(buckets.right, 'column')); rowWeights.push(1) }
+  const row: DockNode | null = rowChildren.length === 0 ? null : rowChildren.length === 1 ? rowChildren[0]! : groupOf('row', rowChildren, norm(rowWeights))
+  let main: DockNode
+  if (buckets.top.length && row) main = groupOf('column', [stackOf(buckets.top, 'row'), row], [0.28, 0.72])
+  else if (buckets.top.length) main = stackOf(buckets.top, 'row')
+  else if (row) main = row
+  else main = { type: 'tabs', id: genId('dt-'), panes: [], active: 0 }
+  return { main, floating: [], autoHide: [] }
+}
+
+/** Every group / tabs node id in a workspace (to keep freshly generated ids unique). */
+function collectDockNodeIds(state: DockManagerState): string[] {
+  const ids: string[] = []
+  const walk = (n: DockNode) => { ids.push(n.id); if (n.type === 'group') for (const c of n.children) walk(c) }
+  if (state.main) walk(state.main)
+  for (const w of state.floating) { ids.push(w.id); walk(w.leaf) }
+  for (const e of state.autoHide) { ids.push(e.id); walk(e.leaf) }
+  return ids
+}
+
+/** Append a pane to the main area's first tabs leaf (creating one if the area is empty). */
+function addDockPaneToMain(state: DockManagerState, p: DockPane, genId: () => string): DockManagerState {
+  const main = state.main
+  if (!main) return { ...state, main: { type: 'tabs', id: genId(), panes: [p], active: 0 } }
+  let added = false
+  const add = (n: DockNode): DockNode => {
+    if (added) return n
+    if (n.type === 'tabs') { added = true; return { ...n, panes: [...n.panes, p], active: n.panes.length } }
+    return { ...n, children: n.children.map(add) }
+  }
+  const nextMain = add(main)
+  if (added) return { ...state, main: nextMain }
+  // No tabs leaf anywhere: put main + a new tabs side by side.
+  return { ...state, main: { type: 'group', id: genId(), direction: 'row', children: [main, { type: 'tabs', id: genId(), panes: [p], active: 0 }], sizes: [0.7, 0.3] } }
+}
+
+/** Remove a pane anywhere in a workspace; collapse emptied tabs + single-child groups. */
+function stripDockPane(state: DockManagerState, paneId: string): DockManagerState {
+  const strip = (n: DockNode): DockNode | null => {
+    if (n.type === 'tabs') { const panes = n.panes.filter((p) => p.id !== paneId); return panes.length ? { ...n, panes, active: Math.min(n.active, panes.length - 1) } : null }
+    const children = n.children.map(strip).filter((c): c is DockNode => c !== null)
+    if (children.length === 0) return null
+    if (children.length === 1) return children[0]!
+    return { ...n, children, sizes: children.map(() => 1 / children.length) }
+  }
+  const main = state.main ? strip(state.main) : null
+  const floating = state.floating.map((w) => ({ ...w, leaf: { ...w.leaf, panes: w.leaf.panes.filter((p) => p.id !== paneId) } })).filter((w) => w.leaf.panes.length > 0)
+  const autoHide = state.autoHide.map((e) => ({ ...e, leaf: { ...e.leaf, panes: e.leaf.panes.filter((p) => p.id !== paneId) } })).filter((e) => e.leaf.panes.length > 0)
+  return { ...state, main, floating, autoHide }
+}
+
+/** Incrementally reconcile a dock workspace to the screen's blocks - add a pane for each new
+ *  block, strip panes for removed blocks - WITHOUT rebuilding, so the user's arrangement
+ *  (splits / floats / pins) is preserved. Seeds a fresh workspace if none exists. */
+export function syncDockPanes(screen: Screen): Screen {
+  if (!isPaneLayout(screenLayoutOf(screen))) return screen
+  if (!screen.dock) return { ...screen, dock: buildDockLayout(screen) }
+  const blockIds = new Set(screen.blocks.map((b) => b.id))
+  const present = dockPaneIds(screen.dock)
+  const missing = screen.blocks.filter((b) => !present.has(b.id))
+  const extra = [...present].filter((id) => !blockIds.has(id))
+  if (missing.length === 0 && extra.length === 0) return screen
+  let dock = screen.dock
+  for (const id of extra) dock = stripDockPane(dock, id)
+  const taken = new Set<string>([...blockIds, ...collectDockNodeIds(dock)])
+  const genId = () => { const id = uid('dt-', taken); taken.add(id); return id }
+  for (const b of missing) dock = addDockPaneToMain(dock, { id: b.id, title: dockPaneTitle(b), closable: true }, genId)
+  return { ...screen, dock }
+}
+
+/** Rebuild the dock workspace if its panes no longer match the screen's blocks (a safety
+ *  net after block add / delete while the visual editor hasn't reconciled incrementally). */
+export function reconcileDock(screen: Screen): Screen {
+  if (!isPaneLayout(screenLayoutOf(screen))) return screen
+  const blockIds = new Set(screen.blocks.map((b) => b.id))
+  const paneIds = screen.dock ? dockPaneIds(screen.dock) : new Set<string>()
+  const same = !!screen.dock && blockIds.size === paneIds.size && [...blockIds].every((id) => paneIds.has(id))
+  return same ? screen : { ...screen, dock: buildDockLayout(screen) }
+}
+
+/** Switch a screen between the 12-column grid and a docking workspace. Switching to
+ *  `'dock'` seeds a workspace (smart auto-layout) if none exists yet. */
+export function setScreenLayout(project: StudioProject, screenId: string, layout: ScreenLayout): StudioProject {
+  // Both pane layouts (split / dock) back onto a DockManagerState; canvas seeds
+  // explicit cell coordinates. Switching split<->dock preserves the existing
+  // arrangement, but coming FROM a non-pane layout (grid / stack / canvas) seeds a
+  // fresh one - so a stale arrangement never carries over into a new workspace.
+  return mapScreen(project, screenId, (s) => {
+    if (isPaneLayout(layout)) {
+      const dock = isPaneLayout(screenLayoutOf(s)) && s.dock ? s.dock : buildDockLayout(s)
+      return { ...s, layout, dock }
+    }
+    if (layout === 'canvas') return { ...s, layout, canvas: s.canvas ?? buildCanvasLayout(s) }
+    return { ...s, layout }
+  })
+}
+
+// --- free-form canvas geometry ----------------------------------------------
+
+const clampInt = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, Math.round(n)))
+
+/** A sensible default row height (in canvas rows) for a block kind - tall for
+ *  data views, short for a single stat. */
+function defaultCanvasRows(block: Block): number {
+  const kind = block.config.kind
+  if (kind === 'kpi' || kind === 'gauge') return 3
+  if (kind === 'filter') return 4
+  if (kind === 'chart' || kind === 'record' || kind === 'detail') return 6
+  return 8 // grid / board / pivot / tree / dashboard / master-detail / form / etc.
+}
+
+/** Seed canvas rects for every block: flow them two-up (half-width each) down the
+ *  page, so switching to canvas gives a reasonable starting arrangement. */
+export function buildCanvasLayout(screen: Screen): Record<string, CanvasRect> {
+  const cols = canvasOpts(screen).cols
+  const out: Record<string, CanvasRect> = {}
+  let row = 0
+  let col = 0
+  let rowMax = 0
+  for (const b of screen.blocks) {
+    const colSpan = Math.max(1, Math.round(cols / 2))
+    const rowSpan = defaultCanvasRows(b)
+    if (col + colSpan > cols) { col = 0; row += rowMax; rowMax = 0 }
+    out[b.id] = { col, row, colSpan, rowSpan }
+    col += colSpan
+    rowMax = Math.max(rowMax, rowSpan)
+  }
+  return out
+}
+
+/** The stored rect for a block, or a computed default (so a block added after the
+ *  layout was seeded still lands somewhere sane). */
+export function canvasRectOf(screen: Screen, blockId: string): CanvasRect {
+  const stored = screen.canvas?.[blockId]
+  const cols = canvasOpts(screen).cols
+  if (stored) {
+    // Clamp a stored rect to the current column count (it may have been placed
+    // when the canvas had more columns).
+    const colSpan = Math.max(1, Math.min(stored.colSpan, cols))
+    return { ...stored, colSpan, col: Math.max(0, Math.min(stored.col, cols - colSpan)) }
+  }
+  return buildCanvasLayout(screen)[blockId] ?? { col: 0, row: 0, colSpan: Math.max(1, Math.round(cols / 2)), rowSpan: 8 }
+}
+
+/** Move / resize a block on the canvas. Values are clamped to the screen's column
+ *  count (col in-grid, colSpan 1..cols; row >= 0, rowSpan >= 1). */
+export function setCanvasRect(project: StudioProject, screenId: string, blockId: string, rect: Partial<CanvasRect>): StudioProject {
+  return mapScreen(project, screenId, (s) => {
+    const cols = canvasOpts(s).cols
+    const cur = canvasRectOf(s, blockId)
+    const colSpan = clampInt(rect.colSpan ?? cur.colSpan, 1, cols)
+    const col = clampInt(rect.col ?? cur.col, 0, cols - colSpan)
+    const rowSpan = Math.max(1, clampInt(rect.rowSpan ?? cur.rowSpan, 1, 999))
+    const row = Math.max(0, clampInt(rect.row ?? cur.row, 0, 999))
+    return { ...s, canvas: { ...s.canvas, [blockId]: { col, row, colSpan, rowSpan } } }
+  })
+}
+
+/** Named starting arrangements for the 12-column grid - a one-click way to set
+ *  every block's column span to a common pattern instead of picking each by hand. */
+export type GridPreset = 'full' | 'two-col' | 'three-col' | 'sidebar' | 'kpi-row'
+
+const GRID_PRESET_LABELS: Record<GridPreset, string> = {
+  full: 'Full width',
+  'two-col': 'Two columns',
+  'three-col': 'Three columns',
+  sidebar: 'Sidebar + main',
+  'kpi-row': 'KPI row + full',
+}
+export function gridPresetLabel(preset: GridPreset): string { return GRID_PRESET_LABELS[preset] }
+export const GRID_PRESETS: ReadonlyArray<GridPreset> = ['full', 'two-col', 'three-col', 'sidebar', 'kpi-row']
+
+/** Small, wide KPI-like blocks that a "KPI row" preset lays out as a strip. */
+const KPI_ROW_KINDS: ReadonlyArray<BlockKind> = ['kpi', 'gauge']
+
+/** Apply a grid preset: rewrite the top-level blocks' `colSpan` to the pattern.
+ *  Only touches the current screen's own blocks (nested container children keep
+ *  their spans). A no-op for a screen with no blocks. */
+export function applyGridPreset(project: StudioProject, screenId: string, preset: GridPreset): StudioProject {
+  return mapScreen(project, screenId, (s) => {
+    if (s.blocks.length === 0) return s
+    const span = (i: number, b: Block): number => {
+      switch (preset) {
+        case 'full': return 12
+        case 'two-col': return 6
+        case 'three-col': return 4
+        // Narrow first block (filters / nav) beside a wide content column.
+        case 'sidebar': return i === 0 ? 4 : 8
+        // KPI-ish blocks form a 4-across strip; everything else spans full.
+        case 'kpi-row': return KPI_ROW_KINDS.includes(b.config.kind) ? 3 : 12
+      }
+    }
+    return { ...s, blocks: s.blocks.map((b, i) => ({ ...b, colSpan: span(i, b) })) }
+  })
+}
+
+/** Persist a new dock workspace (user rearranged panes in the designer). */
+export function setScreenDock(project: StudioProject, screenId: string, dock: DockManagerState): StudioProject {
+  return mapScreen(project, screenId, (s) => ({ ...s, dock }))
+}
+
+/** Rebuild the pane arrangement from scratch (smart auto-layout, honoring the
+ *  current split orientation). Used when a setting invalidates the layout - e.g.
+ *  the user flips split orientation - or as a "reset arrangement" action. */
+export function reseedScreenDock(project: StudioProject, screenId: string): StudioProject {
+  return mapScreen(project, screenId, (s) => ({ ...s, dock: buildDockLayout(s) }))
+}
+
+/** The current title (tab text) of a block's dock pane, if the screen is docked. */
+export function dockPaneTitleOf(screen: Screen, paneId: string): string | undefined {
+  if (!screen.dock) return undefined
+  let found: string | undefined
+  const walk = (n: DockNode) => { if (n.type === 'tabs') { const p = n.panes.find((x) => x.id === paneId); if (p) found = p.title } else for (const c of n.children) walk(c) }
+  if (screen.dock.main) walk(screen.dock.main)
+  for (const w of screen.dock.floating) { const p = w.leaf.panes.find((x) => x.id === paneId); if (p) found = p.title }
+  for (const e of screen.dock.autoHide) { const p = e.leaf.panes.find((x) => x.id === paneId); if (p) found = p.title }
+  return found
+}
+
+/** Rename a block's dock pane (the tab text) anywhere in the workspace. */
+export function setDockPaneTitle(project: StudioProject, screenId: string, paneId: string, title: string): StudioProject {
+  return mapScreen(project, screenId, (s) => {
+    if (!s.dock) return s
+    const relabelPanes = (panes: DockPane[]): DockPane[] => panes.map((p) => (p.id === paneId ? { ...p, title } : p))
+    const relabel = (n: DockNode): DockNode => (n.type === 'tabs' ? { ...n, panes: relabelPanes(n.panes) } : { ...n, children: n.children.map(relabel) })
+    const main = s.dock.main ? relabel(s.dock.main) : null
+    const floating = s.dock.floating.map((w) => ({ ...w, leaf: { ...w.leaf, panes: relabelPanes(w.leaf.panes) } }))
+    const autoHide = s.dock.autoHide.map((e) => ({ ...e, leaf: { ...e.leaf, panes: relabelPanes(e.leaf.panes) } }))
+    return { ...s, dock: { ...s.dock, main, floating, autoHide } }
+  })
 }
 
 /** A freestanding screen: no bound entity, so no blocks/data binding - just a

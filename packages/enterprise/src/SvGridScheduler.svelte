@@ -15,6 +15,7 @@
   //     / `onEventResize` fire purely as notifications for persistence.
   // Themes entirely from the grid's `--sg-*` tokens; the model math lives in
   // ./scheduler-model (pure + unit-tested).
+  import { untrack } from "svelte";
   import type {
     ColumnDef,
     RowData,
@@ -48,6 +49,18 @@
     rangeForView,
     daysForView,
     navigateAnchor,
+    timelineAxis,
+    timelineGeom,
+    timelineRows,
+    hasConflict,
+    workingIntervals,
+    withinWorking,
+    normalizeTimeZone,
+    toZonedLocal,
+    fromZonedLocal,
+    zoneAbbr,
+    zoneParts,
+    instantFromWallClock,
     SvMenuList,
     SvForm,
     SvDrawer,
@@ -87,10 +100,71 @@
 
   // svelte-ignore state_referenced_locally
   let view = $state<SchedulerView>(scheduler.initialView ?? "month");
+
+  // --- time zone -----------------------------------------------------------
+  // The calendar runs in "pseudo-local" time: every absolute instant is shifted
+  // so its LOCAL wall-clock equals its wall-clock in `timeZone`, letting all the
+  // existing local date math position it in that zone. `toZ` does that at the
+  // read boundary (row field -> Date); `fromZ` reverses it when emitting a user
+  // edit back to the consumer (which stores a real instant).
+  const tz = $derived(normalizeTimeZone(scheduler.timeZone));
+  const toZ = (v: unknown): Date | undefined => {
+    const d = toDate(v as never);
+    return d ? toZonedLocal(d, tz) : undefined;
+  };
+  const fromZ = (d: Date): Date => fromZonedLocal(d, tz);
+  // Emit boundary: user edits are computed in pseudo-local time; convert their
+  // start/end back to real instants before handing them to consumer callbacks.
+  type MoveEv = Parameters<NonNullable<typeof scheduler.onEventMove>>[0];
+  type ResizeEv = Parameters<NonNullable<typeof scheduler.onEventResize>>[0];
+  type RangeArg = Parameters<NonNullable<typeof scheduler.onRangeSelect>>[0];
+  function emitMove(e: MoveEv) {
+    scheduler.onEventMove?.({ ...e, start: fromZ(e.start), end: fromZ(e.end) });
+  }
+  function emitResize(e: ResizeEv) {
+    scheduler.onEventResize?.({ ...e, start: fromZ(e.start), end: fromZ(e.end) });
+  }
+  function emitRange(sel: RangeArg) {
+    scheduler.onRangeSelect?.({ ...sel, start: fromZ(sel.start), end: fromZ(sel.end), days: sel.days.map(fromZ) });
+  }
+  function emitAdd(start: Date, end: Date, resourceId?: string, allDay?: boolean) {
+    scheduler.onEventAdd?.(fromZ(start), fromZ(end), resourceId, allDay);
+  }
+
+  // --- recurring-occurrence editing ("This event" vs "All events") ---------
+  // When a recurrenceExceptionsField + onOccurrenceChange are set, editing one
+  // occurrence of a series asks which scope to apply. Otherwise edits fall back
+  // to the whole series (backward compatible).
+  const hasExceptions = $derived(!!scheduler.recurrenceExceptionsField && !!scheduler.onOccurrenceChange);
+  let recurScope = $state<{ x: number; y: number; title: string; kind: "edit" | "delete"; occurrence: () => void; series: () => void } | null>(null);
+  function askRecurScope(x: number, y: number, ev: ResolvedEvent<TData>, kind: "edit" | "delete", occurrence: () => void, series: () => void) {
+    if (!hasExceptions || !ev.occurrenceStart) { series(); return; }
+    // Keep the popover fully on-screen (a drop near the viewport edge would push
+    // its buttons off the bottom / right).
+    const cx = Math.max(6, Math.min(x, window.innerWidth - 184));
+    const cy = Math.max(6, Math.min(y, window.innerHeight - 118));
+    recurScope = { x: cx, y: cy, title: ev.title, kind, occurrence, series };
+  }
+  // Emit a per-occurrence override as a real instant (converts out of pseudo-local).
+  function emitOccurrence(ev: ResolvedEvent<TData>, opts: { start?: Date; end?: Date; deleted?: boolean }) {
+    if (!ev.occurrenceStart) return;
+    const occ = fromZ(ev.occurrenceStart);
+    scheduler.onOccurrenceChange?.({
+      row: ev.row,
+      occurrenceStart: occ,
+      exception: {
+        occurrenceStart: occ,
+        ...(opts.deleted ? { deleted: true } : {}),
+        ...(opts.start ? { start: fromZ(opts.start) } : {}),
+        ...(opts.end ? { end: fromZ(opts.end) } : {}),
+      },
+    });
+  }
+
   // Component context: the arg-less `new Date()` is fine here (runtime), unlike
-  // the pure model. Default the anchor to today, at local midnight.
+  // the pure model. Default the anchor to today, at the zone's midnight.
   // svelte-ignore state_referenced_locally
-  let anchor = $state<Date>(startOfDay(toDate(scheduler.initialDate) ?? new Date()));
+  let anchor = $state<Date>(startOfDay(toZonedLocal(toDate(scheduler.initialDate) ?? new Date(), normalizeTimeZone(scheduler.timeZone))));
 
   // --- value access + stable per-row key (mirrors SvGridBoard) ---
   const indexOf = $derived(new Map<TData, number>(data.map((r, i) => [r, i])));
@@ -130,12 +204,14 @@
   }
 
   // --- build the event spec from config + overlay, then resolve for the window ---
-  const spec = $derived.by<EventSpec<TData>>(() => ({
+  const spec = $derived.by<EventSpec<TData>>(() => {
+    void tz; // re-resolve events (their positions) when the display zone changes
+    return {
     getKey: (r) => key(r),
-    getStart: (r) => startOfE[key(r)] ?? (fieldValue(r, scheduler.startField) as never),
+    getStart: (r) => startOfE[key(r)] ?? (toZ(fieldValue(r, scheduler.startField)) as never),
     getEnd: (r) =>
       endOfE[key(r)] ??
-      (scheduler.endField ? (fieldValue(r, scheduler.endField) as never) : undefined),
+      (scheduler.endField ? (toZ(fieldValue(r, scheduler.endField)) as never) : undefined),
     getAllDay: (r) =>
       allDayOf[key(r)] ?? (scheduler.allDayField ? !!fieldValue(r, scheduler.allDayField) : false),
     getTitle: (r) => (titleField ? String(fieldValue(r, titleField) ?? "") : ""),
@@ -151,9 +227,28 @@
       resourceOfE[key(r)] ??
       (resourceField ? (fieldValue(r, resourceField) as string | undefined) : undefined),
     getRecurrence: (r) =>
-      scheduler.recurrenceField ? (fieldValue(r, scheduler.recurrenceField) as never) : undefined,
+      recurEnabled ? (fieldValue(r, recurField) as never) : undefined,
+    getExceptions: (r) => {
+      const f = scheduler.recurrenceExceptionsField;
+      if (!f) return undefined;
+      const arr = fieldValue(r, f) as ReadonlyArray<{ occurrenceStart: unknown; deleted?: boolean; start?: unknown; end?: unknown; title?: string; allDay?: boolean }> | undefined;
+      return arr?.map((e) => ({
+        occurrenceStart: toZ(e.occurrenceStart) ?? new Date(NaN),
+        deleted: e.deleted,
+        start: e.start != null ? toZ(e.start) : undefined,
+        end: e.end != null ? toZ(e.end) : undefined,
+        title: e.title,
+        allDay: e.allDay,
+      }));
+    },
     defaultDurationMin: scheduler.defaultDurationMin ?? 60,
-  }));
+    };
+  });
+  // Recurrence works when a `recurrenceField` is set OR the drawer is on (so any
+  // event can be made recurring from the drawer). Falls back to a default field
+  // name to store the rule when the consumer didn't name one.
+  const recurEnabled = $derived(!!scheduler.recurrenceField || !!scheduler.drawer);
+  const recurField = $derived(scheduler.recurrenceField ?? "recurrence");
 
   const range = $derived(rangeForView(view, anchor, weekStartsOn, agendaDays));
   const events = $derived(resolveEvents(data, spec, range.start, range.end));
@@ -193,12 +288,47 @@
   const resourcesEnabled = $derived(!!resourceField && (view === "day" || view === "week"));
   const groupByDate = $derived(scheduler.groupByDate === true);
 
+  // --- timeline views (horizontal: time left→right, resources as rows) ---
+  const isTimeline = $derived(view.startsWith("timeline"));
+  const tlLaneH = $derived(scheduler.timelineLaneHeight ?? 26);
+  const tlResW = $derived(scheduler.resourceAreaWidth ?? 160);
+  const tlSlot = $derived(Math.max(1, scheduler.timelineSlotMinutes ?? slotMinutes));
+  const tlAxis = $derived(
+    timelineAxis(view, range.start, range.end, {
+      dayStartHour,
+      dayEndHour,
+      today: startOfDay(toZonedLocal(new Date(), tz)),
+    }),
+  );
+  // One tick is at least this wide; the axis scrolls horizontally past it.
+  const TL_TICK_MIN = $derived(
+    view === "timelineMonth" ? 42 : view === "timelineDay" ? 68 : view === "timelineYear" ? 80 : 96,
+  );
+  // Measured width of the timeline scroller, so the axis can STRETCH to fill it
+  // (week / year) yet still scroll when the ticks genuinely overflow (month).
+  let tlOuterW = $state(0);
+  const tlAxisWidth = $derived(
+    Math.max(tlAxis.ticks.length * TL_TICK_MIN, tlOuterW ? tlOuterW - tlResW : 0, 320),
+  );
+  const tlRows = $derived(timelineRows(resourceField ? resources : null, viewEvents));
+  const VIEW_LABELS: Record<SchedulerView, string> = {
+    month: "Month",
+    week: "Week",
+    day: "Day",
+    agenda: "Agenda",
+    timelineDay: "Timeline · Day",
+    timelineWeek: "Timeline · Week",
+    timelineMonth: "Timeline · Month",
+    timelineYear: "Timeline · Year",
+  };
+  const viewLabel = (v: SchedulerView) => VIEW_LABELS[v] ?? v;
+
   // --- time-grid columns: resource x day when grouped, else one per day. ---
   type GridCol = { key: string; label: string; sub: string; date: Date; resourceId?: string; color?: string; today: boolean };
   type GroupHeader = { key: string; label: string; color?: string; span: number };
   const gridDays = $derived(daysForView(view, anchor, weekStartsOn));
   const gridCols = $derived.by<GridCol[]>(() => {
-    const isToday = (d: Date) => isSameDay(d, startOfDay(new Date()));
+    const isToday = (d: Date) => isSameDay(d, startOfDay(toZonedLocal(new Date(), tz)));
     if (!resourcesEnabled) {
       return gridDays.map((d) => ({
         key: `day:${d.getTime()}`,
@@ -294,6 +424,255 @@
   const bandHours = $derived(Math.max(1, dayEndHour - dayStartHour));
   const hourList = $derived(Array.from({ length: bandHours }, (_, i) => dayStartHour + i));
 
+  // --- current-time indicator (the "now" line), ticking each minute ---
+  // `now` is kept in pseudo-local time (see `tz`) so it positions in the zone.
+  const nowIndicator = $derived(scheduler.nowIndicator !== false);
+  // svelte-ignore state_referenced_locally
+  let now = $state(toZonedLocal(new Date(), normalizeTimeZone(scheduler.timeZone)));
+  $effect(() => {
+    if (!nowIndicator) return;
+    now = toZonedLocal(new Date(), tz);
+    const id = setInterval(() => (now = toZonedLocal(new Date(), tz)), 60_000);
+    return () => clearInterval(id);
+  });
+  const nowMin = $derived(now.getHours() * 60 + now.getMinutes());
+
+  // --- secondary time-zone rulers (a "world clock" left of the primary gutter) ---
+  const primaryZoneLabel = $derived(tz ? zoneAbbr(fromZ(now), tz) : "");
+  const secondaryRulers = $derived.by(() => {
+    const list = scheduler.secondaryTimeZones;
+    if (!list?.length || !hasAllDayRow) return [] as { label: string; rows: string[] }[];
+    // Map each primary-band hour to the wall-clock hour in the other zone, using
+    // the anchor day for the (DST-dependent) offset.
+    return list.map((sz) => {
+      const zid = normalizeTimeZone(sz.id);
+      const rows = hourList.map((h) => {
+        const inst = instantFromWallClock(anchor.getFullYear(), anchor.getMonth() + 1, anchor.getDate(), h, 0, 0, tz);
+        return hourLabel(zid ? zoneParts(inst, zid).hour : h);
+      });
+      const headInst = instantFromWallClock(anchor.getFullYear(), anchor.getMonth() + 1, anchor.getDate(), 12, 0, 0, tz);
+      return { label: sz.label ?? (zid ? zoneAbbr(headInst, zid) : sz.id), rows };
+    });
+  });
+  const gutterCount = $derived(1 + secondaryRulers.length);
+
+  // --- booking rules: working-hours shading + conflict prevention ----------
+  const businessHours = $derived(scheduler.businessHours);
+  const nonWorkingDaySet = $derived(new Set(scheduler.nonWorkingDays ?? []));
+  const shadeUntilNow = $derived(scheduler.shadeUntilNow === true);
+  const disableConflicts = $derived(scheduler.disableConflicts === true);
+  const isNonWorkingDay = (d: Date) => nonWorkingDaySet.has(d.getDay());
+  const resById = $derived(new Map(resources.map((r) => [r.id, r])));
+  const anyAvailability = $derived(resources.some((r) => r.availability?.length));
+  const hasBookingShade = $derived(!!businessHours || shadeUntilNow || nonWorkingDaySet.size > 0 || anyAvailability);
+  // The working [startMin, endMin] intervals for a column: the column's RESOURCE
+  // availability if it has any (per-doctor hours), else the global businessHours /
+  // nonWorkingDays. Empty = the whole day is off.
+  function columnWorkIntervals(col: GridCol): Array<[number, number]> {
+    const bandStart = dayStartHour * 60;
+    const bandEnd = dayEndHour * 60;
+    const res = col.resourceId != null ? resById.get(col.resourceId) : undefined;
+    const wd = col.date.getDay();
+    if (res?.availability?.length) return workingIntervals(wd, res.availability, bandStart, bandEnd);
+    if (nonWorkingDaySet.has(wd)) return [];
+    if (businessHours) return [[Math.max(bandStart, businessHours.start * 60), Math.min(bandEnd, businessHours.end * 60)]];
+    return [[bandStart, bandEnd]]; // fully working (no shade)
+  }
+  // Shaded bands (top% / height%) = the complement of the working intervals.
+  function columnShadeBands(col: GridCol): { top: number; height: number }[] {
+    const bandStart = dayStartHour * 60;
+    const bandEnd = dayEndHour * 60;
+    const total = bandHours * 60;
+    const out: { top: number; height: number }[] = [];
+    let cursor = bandStart;
+    for (const [a, b] of columnWorkIntervals(col)) {
+      if (a > cursor) out.push({ top: ((cursor - bandStart) / total) * 100, height: ((a - cursor) / total) * 100 });
+      cursor = Math.max(cursor, b);
+    }
+    if (cursor < bandEnd) out.push({ top: ((cursor - bandStart) / total) * 100, height: ((bandEnd - cursor) / total) * 100 });
+    return out;
+  }
+  const restrictToBusinessHours = $derived(scheduler.restrictToBusinessHours === true);
+  // A brief flash when a drop/create is rejected (double-book or out-of-hours).
+  let conflictMsg = $state<string | null>(null);
+  let conflictTimer: ReturnType<typeof setTimeout> | undefined;
+  function flashBlocked(msg: string) {
+    conflictMsg = msg;
+    clearTimeout(conflictTimer);
+    conflictTimer = setTimeout(() => (conflictMsg = null), 1500);
+  }
+  // True when [start,end] falls outside the working windows for `resourceId`
+  // (its own availability if set, else the global businessHours / nonWorkingDays).
+  function outsideWorkingTime(start: Date, end: Date, resourceId: string | undefined): boolean {
+    const bandStart = dayStartHour * 60;
+    const bandEnd = dayEndHour * 60;
+    const res = resourceId != null ? resById.get(resourceId) : undefined;
+    const wd = start.getDay();
+    let intervals: Array<[number, number]>;
+    if (res?.availability?.length) intervals = workingIntervals(wd, res.availability, bandStart, bandEnd);
+    else if (nonWorkingDaySet.has(wd)) intervals = [];
+    else if (businessHours) intervals = [[Math.max(bandStart, businessHours.start * 60), Math.min(bandEnd, businessHours.end * 60)]];
+    else return false; // no working-time restriction configured
+    const sMin = start.getHours() * 60 + start.getMinutes();
+    const rawEnd = end.getHours() * 60 + end.getMinutes();
+    const eMin = rawEnd === 0 ? 24 * 60 : rawEnd; // end at midnight = end of day
+    return !withinWorking(sMin, eMin, intervals);
+  }
+  // Returns true (and flashes) when placing [start,end] should be rejected -
+  // out-of-hours (when restricted) or a same-resource double-book. Caller reverts.
+  function bookingBlocked(start: Date, end: Date, resourceId: string | undefined, excludeRowKey: string): boolean {
+    if (restrictToBusinessHours && outsideWorkingTime(start, end, resourceId)) {
+      flashBlocked("Outside working hours");
+      return true;
+    }
+    if (disableConflicts && hasConflict(start, end, resourceId ?? undefined, events, excludeRowKey)) {
+      flashBlocked("Time slot already booked");
+      return true;
+    }
+    return false;
+  }
+
+  // --- undo / redo of drag-move + resize -----------------------------------
+  const historyEnabled = $derived(scheduler.history === true);
+  type EvState = { start: Date; end: Date; resource?: string; allDay?: boolean };
+  type HistCmd = { key: string; row: TData; before: EvState; after: EvState; kind: "move" | "resize" };
+  let undoStack: HistCmd[] = [];
+  let redoStack: HistCmd[] = [];
+  function pushHistory(cmd: HistCmd) {
+    if (!historyEnabled) return;
+    undoStack.push(cmd);
+    if (undoStack.length > 100) undoStack.shift();
+    redoStack = [];
+  }
+  function applyState(cmd: HistCmd, s: EvState) {
+    const k = cmd.key;
+    startOfE[k] = s.start;
+    endOfE[k] = s.end;
+    if (s.allDay !== undefined) allDayOf[k] = s.allDay;
+    if (s.resource !== undefined) resourceOfE[k] = s.resource;
+    if (cmd.kind === "move") emitMove({ row: cmd.row, start: s.start, end: s.end, allDay: s.allDay ?? false, toResource: s.resource });
+    else emitResize({ row: cmd.row, start: s.start, end: s.end });
+  }
+  function undoHistory() {
+    const cmd = undoStack.pop();
+    if (!cmd) return;
+    applyState(cmd, cmd.before);
+    redoStack.push(cmd);
+  }
+  function redoHistory() {
+    const cmd = redoStack.pop();
+    if (!cmd) return;
+    applyState(cmd, cmd.after);
+    undoStack.push(cmd);
+  }
+  $effect(() => {
+    if (!historyEnabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undoHistory();
+      } else if ((key === "z" && e.shiftKey) || key === "y") {
+        e.preventDefault();
+        redoHistory();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  // --- custom event content + hover tooltip --------------------------------
+  const tooltipCfg = $derived(scheduler.tooltip);
+  const hasTooltip = $derived(!!tooltipCfg);
+  const tooltipSnippet = $derived(typeof tooltipCfg === "function" ? tooltipCfg : undefined);
+  let tipEv = $state<ResolvedEvent<TData> | null>(null);
+  let tipPos = $state({ x: 0, y: 0 });
+  let tipTimer: ReturnType<typeof setTimeout> | undefined;
+  function onEventEnter(e: MouseEvent, ev: ResolvedEvent<TData>) {
+    if (!hasTooltip || drag || tlDrag || monthDrag) return;
+    clearTimeout(tipTimer);
+    const target = e.currentTarget as HTMLElement;
+    tipTimer = setTimeout(() => {
+      const r = target.getBoundingClientRect();
+      tipPos = { x: Math.round(r.left + r.width / 2), y: Math.round(r.top) };
+      tipEv = ev;
+    }, scheduler.tooltipDelay ?? 400);
+  }
+  function onEventLeave() {
+    clearTimeout(tipTimer);
+    tipEv = null;
+  }
+  const resourceTitle = (id: string | undefined) => resources.find((r) => r.id === id)?.title ?? id;
+
+  // --- unscheduled backlog: drag an item onto the Week/Day grid to schedule it ---
+  type BacklogItem = { id: string; title: string; durationMin?: number; color?: string };
+  const backlogItems = $derived(scheduler.unscheduled ?? []);
+  const hasBacklog = $derived(backlogItems.length > 0 && view !== "agenda");
+  let backlogDrag = $state<{ item: BacklogItem; x: number; y: number; over: boolean } | null>(null);
+  function startBacklogDrag(item: BacklogItem, e: PointerEvent) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    backlogDrag = { item, x: e.clientX, y: e.clientY, over: false };
+    window.addEventListener("pointermove", onBacklogMove);
+    window.addEventListener("pointerup", onBacklogEnd, { once: true });
+  }
+  function onBacklogMove(e: PointerEvent) {
+    if (!backlogDrag) return;
+    backlogDrag = { ...backlogDrag, x: e.clientX, y: e.clientY, over: pointInEl(e.clientX, e.clientY, gridScrollEl) };
+  }
+  function onBacklogEnd(e: PointerEvent) {
+    window.removeEventListener("pointermove", onBacklogMove);
+    const d = backlogDrag;
+    backlogDrag = null;
+    if (!d) return;
+    const dur = d.item.durationMin ?? scheduler.defaultDurationMin ?? 60;
+    if (view === "month") {
+      // Drop onto a month day cell -> an all-day event on that date.
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const cell = el?.closest?.("[data-day]") as HTMLElement | null;
+      if (!cell) return;
+      const t = Number(cell.getAttribute("data-day"));
+      if (!Number.isFinite(t)) return;
+      scheduler.onSchedule?.(d.item, fromZ(new Date(t)), undefined);
+      return;
+    }
+    if (isTimeline) {
+      // Drop onto the horizontal timeline: x -> time, y -> resource row.
+      if (!pointInEl(e.clientX, e.clientY, tlScrollEl)) return;
+      const start = snapTlStart(tlTimeAtX(e.clientX));
+      const resId = tlResAt(e.clientX, e.clientY);
+      const end = new Date(start.getTime() + dur * 60000);
+      if (bookingBlocked(start, end, resId, "")) return;
+      scheduler.onSchedule?.(d.item, fromZ(start), resId);
+      return;
+    }
+    if (!pointInEl(e.clientX, e.clientY, gridScrollEl)) return;
+    const col = colAt(e.clientX);
+    if (!col) return;
+    const min = snapMinute(minuteAt(e.clientY), slotMinutes);
+    const start = dateAtMinute(col.date, min);
+    const end = new Date(start.getTime() + dur * 60000);
+    if (bookingBlocked(start, end, col.resourceId, "")) return;
+    scheduler.onSchedule?.(d.item, fromZ(start), col.resourceId);
+  }
+  // Fraction (0-1) of the hourly band the current time sits at, or null if the
+  // band doesn't include "now" (e.g. a narrow business-hours band at night).
+  const nowBandPct = $derived(
+    nowIndicator && nowMin >= dayStartHour * 60 && nowMin <= dayEndHour * 60
+      ? ((nowMin - dayStartHour * 60) / (bandHours * 60)) * 100
+      : null,
+  );
+  // Horizontal position (%) of "now" on the timeline axis, or null if off-axis.
+  // (timelineGeom rejects zero-width spans, so position it directly.)
+  const nowTlPct = $derived.by(() => {
+    if (!nowIndicator || !isTimeline) return null;
+    const frac = (now.getTime() - tlAxis.start.getTime()) / tlAxis.totalMs;
+    return frac >= 0 && frac <= 1 ? frac * 100 : null;
+  });
+
   // --- labels / formatting ---
   const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const MONTHS = [
@@ -316,9 +695,10 @@
     return `${h12} ${ap}`;
   }
   const titleLabel = $derived.by(() => {
-    if (view === "month") return `${mon(anchor.getMonth())} ${anchor.getFullYear()}`;
-    if (view === "day") return anchor.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-    // week / agenda: a range
+    if (view === "month" || view === "timelineMonth") return `${mon(anchor.getMonth())} ${anchor.getFullYear()}`;
+    if (view === "timelineYear") return `${anchor.getFullYear()}`;
+    if (view === "day" || view === "timelineDay") return anchor.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    // week / timelineWeek / agenda: a range
     const days = view === "week" ? daysForView("week", anchor, weekStartsOn) : [range.start, addDays(range.end, -1)];
     const a = days[0] ?? anchor;
     const b = days[days.length - 1] ?? anchor;
@@ -327,14 +707,29 @@
   });
 
   function today() {
-    anchor = startOfDay(new Date());
+    clearRangeSelect();
+    anchor = startOfDay(toZonedLocal(new Date(), tz));
+    scheduler.onNavigate?.(anchor);
   }
   function go(dir: number) {
+    clearRangeSelect();
     anchor = navigateAnchor(view, anchor, dir);
+    scheduler.onNavigate?.(anchor);
   }
   function setView(v: SchedulerView) {
+    clearRangeSelect();
     view = v;
   }
+  // Controlled date: when `scheduler.date` changes externally, navigate to it.
+  // `anchor` is read untracked so internal nav (prev/next) is not fought.
+  $effect(() => {
+    const d = scheduler.date;
+    if (d == null) return;
+    const target = startOfDay(toZonedLocal(toDate(d) ?? new Date(), normalizeTimeZone(scheduler.timeZone)));
+    untrack(() => {
+      if (target.getTime() !== anchor.getTime()) anchor = target;
+    });
+  });
 
   // --- drag to move / resize in the time-grid, non-recurring timed events only.
   //   move        - drag the body: shifts start (+ end) and can cross columns
@@ -364,6 +759,25 @@
   let drag = $state<Drag | null>(null);
   let bodyEl = $state<HTMLElement | null>(null);
   let allDayRowEl = $state<HTMLElement | null>(null);
+  let tlLanesEl = $state<HTMLElement | null>(null); // timeline: the axis-width lane track
+  let tlScrollEl = $state<HTMLElement | null>(null); // timeline: the horizontal scroll viewport
+  // The hourly grid scrolls vertically; its scrollbar shaves width off the body,
+  // so the non-scrolling header + all-day rows must reserve the same width to keep
+  // their day columns aligned with the body. `sbw` is that live scrollbar width.
+  let gridScrollEl = $state<HTMLElement | null>(null);
+  let sbw = $state(0);
+  $effect(() => {
+    const el = gridScrollEl;
+    if (!el) return;
+    // Re-measure when the content that drives the scrollbar changes.
+    void bandHours;
+    void gridCols.length;
+    const measure = () => (sbw = el.offsetWidth - el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
   let suppressClick = false;
   const DRAG_THRESHOLD = 4; // px before a press becomes a drag
 
@@ -400,9 +814,11 @@
     col: GridCol,
     mode: DragMode,
   ) {
+    if (e.button !== 0) return; // ignore right/middle button (let the context menu open)
     // Clear any stale suppress from a prior drag whose trailing click never
     // reached openEvent (e.g. a grip resize), so this press decides afresh.
     suppressClick = false;
+    rangeSel = null; // dragging an event dismisses any pending cell selection
     // Recurring events ARE editable, but only when a recurrence editor is wired
     // (drag/resize edits the whole series' time-of-day + duration).
     if (!editable || ev.allDay || (ev.recurring && !recurEditable)) return;
@@ -505,27 +921,34 @@
       endOfE[k] = en;
       const toResource = col.resourceId;
       if (toResource != null) resourceOfE[k] = toResource;
-      scheduler.onEventMove?.({ row: ev.row, start: s, end: en, allDay: true, fromResource: ev.resourceId, toResource });
+      emitMove({ row: ev.row, start: s, end: en, allDay: true, fromResource: ev.resourceId, toResource });
       return;
     }
     if (ev.recurring) {
       // Edit the SERIES: apply the new time-of-day (+ duration) to the base row,
       // keeping the base date, so every occurrence shifts and the pattern holds.
-      const baseStart = toDate(fieldValue(ev.row, scheduler.startField) as never) ?? ev.start;
-      const ns = dayWithTimeOf(baseStart, previewStart);
-      const ne = new Date(ns.getTime() + (previewEnd.getTime() - previewStart.getTime()));
-      startOfE[k] = ns;
-      endOfE[k] = ne;
-      if (mode === "move") scheduler.onEventMove?.({ row: ev.row, start: ns, end: ne, allDay: false });
-      else scheduler.onEventResize?.({ row: ev.row, start: ns, end: ne });
+      const applySeries = () => {
+        const baseStart = toDate(fieldValue(ev.row, scheduler.startField) as never) ?? ev.start;
+        const ns = dayWithTimeOf(baseStart, previewStart);
+        const ne = new Date(ns.getTime() + (previewEnd.getTime() - previewStart.getTime()));
+        startOfE[k] = ns;
+        endOfE[k] = ne;
+        if (mode === "move") emitMove({ row: ev.row, start: ns, end: ne, allDay: false });
+        else emitResize({ row: ev.row, start: ns, end: ne });
+      };
+      // "This event": store an override for just this occurrence.
+      askRecurScope(e.clientX, e.clientY, ev, "edit", () => emitOccurrence(ev, { start: previewStart, end: previewEnd }), applySeries);
       return;
     }
+    // Reject a double-booking (same resource) - snap back, don't apply/emit.
+    const checkRes = mode === "move" ? previewCol.resourceId : ev.resourceId;
+    if (bookingBlocked(previewStart, previewEnd, checkRes, k)) return;
     startOfE[k] = previewStart;
     endOfE[k] = previewEnd;
     if (mode === "move") {
       const toResource = previewCol.resourceId;
       if (toResource != null) resourceOfE[k] = toResource;
-      scheduler.onEventMove?.({
+      emitMove({
         row: ev.row,
         start: previewStart,
         end: previewEnd,
@@ -533,13 +956,21 @@
         fromResource: ev.resourceId,
         toResource,
       } satisfies SchedulerEventMoveEvent<TData>);
+      applyBulkMove(k, previewStart.getTime() - d.origStart.getTime());
     } else {
-      scheduler.onEventResize?.({
+      emitResize({
         row: ev.row,
         start: previewStart,
         end: previewEnd,
       } satisfies SchedulerEventResizeEvent<TData>);
     }
+    pushHistory({
+      key: k,
+      row: ev.row,
+      kind: mode === "move" ? "move" : "resize",
+      before: { start: d.origStart, end: d.origEnd, resource: ev.resourceId, allDay: false },
+      after: { start: previewStart, end: previewEnd, resource: mode === "move" ? previewCol.resourceId : ev.resourceId, allDay: false },
+    });
   }
 
   // --- month drag: shift an event by whole days. `overDay` (the timestamp of
@@ -548,6 +979,7 @@
   let monthOverDay = $state<number | null>(null);
   let monthDragPos = $state({ x: 0, y: 0 });
   function startMonthDrag(e: PointerEvent, ev: ResolvedEvent<TData>) {
+    if (e.button !== 0) return; // ignore right/middle button (let the context menu open)
     suppressClick = false;
     if (!editable || ev.recurring) return;
     e.preventDefault();
@@ -583,7 +1015,7 @@
         const en = addDays(ev.end, dayDelta);
         startOfE[ev.rowKey] = s;
         endOfE[ev.rowKey] = en;
-        scheduler.onEventMove?.({ row: ev.row, start: s, end: en, allDay: ev.allDay });
+        emitMove({ row: ev.row, start: s, end: en, allDay: ev.allDay });
       }
     }
     monthDrag = null;
@@ -594,6 +1026,7 @@
   // event's start / end date (keeping its time-of-day). ---
   let monthResize = $state<{ ev: ResolvedEvent<TData>; edge: "start" | "end"; startX: number; startY: number; moved: boolean } | null>(null);
   function startMonthResize(e: PointerEvent, ev: ResolvedEvent<TData>, edge: "start" | "end") {
+    if (e.button !== 0) return; // ignore right/middle button (let the context menu open)
     suppressClick = false;
     if (!editable || ev.recurring) return;
     e.preventDefault();
@@ -663,15 +1096,83 @@
     suppressClick = true;
     const ev = r.ev;
     const k = ev.rowKey;
-    scheduler.onEventResize?.({ row: ev.row, start: startOfE[k] ?? ev.start, end: endOfE[k] ?? ev.end });
+    emitResize({ row: ev.row, start: startOfE[k] ?? ev.start, end: endOfE[k] ?? ev.end });
   }
 
   // Double-clicking an empty month day adds an event on that day.
   function onMonthSlotAdd(day: Date) {
+    monthRangeSel = null; // a double-click creates directly - drop the click's marker
     if (!scheduler.onEventAdd) return;
     const s = new Date(day);
     s.setHours(9, 0, 0, 0);
-    scheduler.onEventAdd(s, new Date(s.getTime() + (scheduler.defaultDurationMin ?? 60) * 60000));
+    emitAdd(s, new Date(s.getTime() + (scheduler.defaultDurationMin ?? 60) * 60000));
+  }
+
+  // --- month day-cell range selection: click / drag whole days to mark an
+  // all-day date range, then Enter / "Add Event" to create (arrows navigate). ---
+  let monthRangeSel = $state<{ anchor: number; cur: number; moved: boolean; pending?: boolean } | null>(null);
+  let monthRangeDown: { day: number; startX: number; startY: number; dragging: boolean } | null = null;
+  function dayAtPoint(clientX: number, clientY: number): number | null {
+    const el = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-day]");
+    return el?.dataset.day ? Number(el.dataset.day) : null;
+  }
+  function startMonthRangeSelect(day: Date, e: PointerEvent) {
+    if (!rangeSelectable || e.button !== 0) return;
+    e.preventDefault(); // don't let the drag start a native text selection
+    suppressClick = false;
+    monthRangeDown = { day: startOfDay(day).getTime(), startX: e.clientX, startY: e.clientY, dragging: false };
+    window.addEventListener("pointermove", onMonthRangeSelectMove);
+    window.addEventListener("pointerup", onMonthRangeSelectEnd, { once: true });
+  }
+  function onMonthRangeSelectMove(e: PointerEvent) {
+    if (!monthRangeDown) return;
+    if (!monthRangeDown.dragging) {
+      if (Math.abs(e.clientX - monthRangeDown.startX) < DRAG_THRESHOLD && Math.abs(e.clientY - monthRangeDown.startY) < DRAG_THRESHOLD) return;
+      monthRangeDown.dragging = true;
+    }
+    const t = dayAtPoint(e.clientX, e.clientY);
+    monthRangeSel = { anchor: monthRangeDown.day, cur: t ?? monthRangeDown.day, moved: true, pending: true };
+  }
+  function onMonthRangeSelectEnd() {
+    window.removeEventListener("pointermove", onMonthRangeSelectMove);
+    const down = monthRangeDown;
+    monthRangeDown = null;
+    if (!down) return;
+    if (down.dragging) { suppressClick = true; return; } // a drag already marked the range
+    // A plain click marks a single day (keyboard nav starting point).
+    monthRangeSel = { anchor: down.day, cur: down.day, moved: true, pending: true };
+  }
+  const monthRangeDays = $derived.by(() => {
+    if (!monthRangeSel || !monthRangeSel.moved) return null;
+    return { lo: Math.min(monthRangeSel.anchor, monthRangeSel.cur), hi: Math.max(monthRangeSel.anchor, monthRangeSel.cur) };
+  });
+  const isMonthCellSelected = (date: Date) => {
+    if (!monthRangeDays) return false;
+    const t = startOfDay(date).getTime();
+    return t >= monthRangeDays.lo && t <= monthRangeDays.hi;
+  };
+  function commitMonthRangeSelect() {
+    const sel = monthRangeSel;
+    if (!sel || !sel.moved) return;
+    const lo = Math.min(sel.anchor, sel.cur);
+    const hi = Math.max(sel.anchor, sel.cur);
+    const start = new Date(lo);
+    const end = addDays(new Date(hi), 1); // inclusive last day -> next midnight
+    const days: Date[] = [];
+    for (let d = new Date(lo); d.getTime() <= hi; d = addDays(d, 1)) days.push(new Date(d));
+    monthRangeSel = null;
+    if (scheduler.onRangeSelect) emitRange({ start, end, allDay: true, days, resourceIds: [] });
+    else emitAdd(start, end, undefined, true);
+  }
+  function moveMonthRangeSelect(dDays: number, extend: boolean) {
+    const sel = monthRangeSel;
+    if (!sel) return;
+    const first = monthWeeks[0]![0]!.date.getTime();
+    const last = monthWeeks[monthWeeks.length - 1]![6]!.date.getTime();
+    const nextCur = Math.min(last, Math.max(first, addDays(new Date(sel.cur), dDays).getTime()));
+    monthRangeSel = extend
+      ? { anchor: sel.anchor, cur: nextCur, moved: true, pending: true }
+      : { anchor: nextCur, cur: nextCur, moved: true, pending: true };
   }
 
   // --- all-day BAR drag (week time-grid): move across days within the all-day
@@ -685,6 +1186,7 @@
     | null
   >(null);
   function startAllDayDrag(e: PointerEvent, ev: ResolvedEvent<TData>) {
+    if (e.button !== 0) return; // ignore right/middle button (let the context menu open)
     suppressClick = false;
     if (!editable || ev.recurring) return;
     e.preventDefault();
@@ -742,7 +1244,7 @@
       startOfE[k] = s;
       endOfE[k] = en;
       if (col.resourceId != null) resourceOfE[k] = col.resourceId;
-      scheduler.onEventMove?.({ row: ev.row, start: s, end: en, allDay: false, fromResource: ev.resourceId, toResource: col.resourceId });
+      emitMove({ row: ev.row, start: s, end: en, allDay: false, fromResource: ev.resourceId, toResource: col.resourceId });
       return;
     }
     // Otherwise move by whole days within the all-day row (colAt resolves the
@@ -754,7 +1256,7 @@
         const en = addDays(ev.end, dayDelta);
         startOfE[k] = s;
         endOfE[k] = en;
-        scheduler.onEventMove?.({ row: ev.row, start: s, end: en, allDay: true });
+        emitMove({ row: ev.row, start: s, end: en, allDay: true });
       }
     }
   }
@@ -764,6 +1266,7 @@
   // time-of-day), the same day-based edge resize the month bars use. ---
   let allDayResize = $state<{ ev: ResolvedEvent<TData>; edge: "start" | "end"; startX: number; startY: number; moved: boolean } | null>(null);
   function startAllDayResize(e: PointerEvent, ev: ResolvedEvent<TData>, edge: "start" | "end") {
+    if (e.button !== 0) return; // ignore right/middle button (let the context menu open)
     suppressClick = false;
     if (!editable || ev.recurring) return;
     e.preventDefault();
@@ -794,7 +1297,7 @@
     suppressClick = true;
     const ev = r.ev;
     const k = ev.rowKey;
-    scheduler.onEventResize?.({ row: ev.row, start: startOfE[k] ?? ev.start, end: endOfE[k] ?? ev.end });
+    emitResize({ row: ev.row, start: startOfE[k] ?? ev.start, end: endOfE[k] ?? ev.end });
   }
 
   // --- keyboard move (a11y): arrows nudge the focused event ---
@@ -816,7 +1319,7 @@
     const en = new Date(ev.end.getTime() + dDay * 86400000 + dMin * 60000);
     startOfE[ev.rowKey] = s;
     endOfE[ev.rowKey] = en;
-    scheduler.onEventMove?.({ row: ev.row, start: s, end: en, allDay: ev.allDay, toResource: ev.resourceId });
+    emitMove({ row: ev.row, start: s, end: en, allDay: ev.allDay, toResource: ev.resourceId });
   }
 
   // --- context menu (mirrors SvGridBoard's dismissable-layer pattern) ---
@@ -824,10 +1327,30 @@
   let menuItems = $state<MenuItem[]>([]);
   let menuPos = $state({ x: 0, y: 0 });
   let menuPanel = $state<HTMLElement | null>(null);
+  // Clipboard: duplicate an event right after itself (same resource + duration).
+  function duplicateEvent(ev: ResolvedEvent<TData>) {
+    const dur = ev.end.getTime() - ev.start.getTime();
+    emitAdd(new Date(ev.end.getTime()), new Date(ev.end.getTime() + dur), ev.resourceId, ev.allDay);
+  }
   function openMenu(e: MouseEvent, ev: ResolvedEvent<TData>) {
-    const items = scheduler.eventMenu?.(ev.row);
-    if (!items?.length) return;
+    // Default actions (Edit / Duplicate / Delete) + any custom `eventMenu` items.
+    const items: MenuItem[] = [];
+    if (scheduler.drawer) items.push({ label: "Edit", onSelect: () => doOpenEvent(ev) });
+    if (scheduler.onEventAdd) items.push({ label: "Duplicate", onSelect: () => duplicateEvent(ev) });
+    if (scheduler.onEventDelete)
+      items.push({
+        label: "Delete",
+        onSelect: () =>
+          askRecurScope(e.clientX, e.clientY, ev, "delete", () => emitOccurrence(ev, { deleted: true }), () => scheduler.onEventDelete!(ev.row)),
+      });
+    const custom = scheduler.eventMenu?.(ev.row);
+    if (custom?.length) {
+      if (items.length) items.push({ separator: true });
+      items.push(...custom);
+    }
+    if (!items.length) return;
     e.preventDefault();
+    e.stopPropagation();
     menuItems = items;
     menuPos = { x: e.clientX, y: e.clientY };
     menuOpen = true;
@@ -845,6 +1368,18 @@
       layer.release();
       window.removeEventListener("scroll", onScroll, true);
     };
+  });
+
+  // Scope-choice popover for recurring-occurrence edits (dismiss = cancel).
+  let scopePanel = $state<HTMLElement | null>(null);
+  $effect(() => {
+    if (!recurScope) return;
+    const layer = createDismissableLayer({
+      element: () => scopePanel,
+      onDismiss: () => (recurScope = null),
+    });
+    layer.activate();
+    return () => layer.release();
   });
 
   // --- "+N more" popover: a list of the events a cap-overflow tile (or a month
@@ -953,10 +1488,17 @@
     const s = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     return allDay ? s : `${s}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   };
+  // The drawer holds pseudo-local dates (zone wall-clock); serialize back to the
+  // consumer as a real instant in a `timeZone`, else the local ISO shape.
+  const serializeWhen = (d: Date | null | undefined, allDay: boolean) => {
+    if (!d) return "";
+    if (!tz) return isoLocal(d, allDay);
+    return allDay ? isoLocal(d, true) : fromZ(d).toISOString();
+  };
   function loadWhen(row: TData) {
     whenAllDay = scheduler.allDayField ? !!fieldValue(row, scheduler.allDayField) : false;
-    whenStart = toDate(fieldValue(row, scheduler.startField) as never) ?? null;
-    whenEnd = scheduler.endField ? (toDate(fieldValue(row, scheduler.endField) as never) ?? null) : whenStart;
+    whenStart = (toZ(fieldValue(row, scheduler.startField)) ?? null) as Date | null;
+    whenEnd = scheduler.endField ? ((toZ(fieldValue(row, scheduler.endField)) ?? null) as Date | null) : whenStart;
   }
   // Toggling all-day normalizes the two dates (midnight for all-day, else 9/10h).
   function setWhenAllDay(v: boolean) {
@@ -984,7 +1526,7 @@
     { value: "yearly", label: "Yearly" },
   ] as const;
   const WEEKDAYS_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const WEEKDAY_OPTIONS = $derived(headerOrder.map((d) => ({ value: d, label: WEEKDAYS_FULL[d] })));
+  const WEEKDAY_OPTIONS = $derived(headerOrder.map((d) => ({ value: d, label: WEEKDAYS_FULL[d] ?? "" })));
   const MONTH_OPTIONS = MONTHS.map((m, i) => ({ value: i, label: m }));
   const WEEK_OF_MONTH_OPTIONS = [
     { value: 1, label: "first" },
@@ -1007,7 +1549,10 @@
     { value: "until", label: "On a date" },
     { value: "count", label: "After a number of times" },
   ] as const;
-  const recurEditable = $derived(!!scheduler.recurrenceField && !!scheduler.drawer);
+  // The recurrence editor is offered whenever the drawer is on, so any event can
+  // be made recurring (or have its pattern removed) - it never needs an explicit
+  // `recurrenceField` to appear.
+  const recurEditable = $derived(!!scheduler.drawer);
   let recFreq = $state<RecFreq>("");
   let recInterval = $state(1);
   let recWeekdays = $state<Set<number>>(new Set());
@@ -1025,7 +1570,7 @@
     d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` : "";
   function loadRule(row: TData) {
     const anchor = toDate(fieldValue(row, scheduler.startField) as never) ?? new Date();
-    const raw = scheduler.recurrenceField ? fieldValue(row, scheduler.recurrenceField) : null;
+    const raw = fieldValue(row, recurField);
     const rule = (Array.isArray(raw) ? raw[0] : raw) as RecurrenceRule | null | undefined;
     // Sensible defaults seeded from the event's own start date, so turning a
     // one-off into a recurring event pre-fills "this weekday / this date".
@@ -1057,7 +1602,7 @@
         recMonthMode = "weekday";
         recYearMode = "weekday";
         recWeekOfMonth = rule.weekOfMonth;
-        recPosWeekday = rule.weekdays[0];
+        recPosWeekday = rule.weekdays[0]!;
       } else if (rule.day === -1) {
         recMonthMode = "lastday";
       } else if (rule.day != null) {
@@ -1137,6 +1682,12 @@
       suppressClick = false;
       return;
     }
+    doOpenEvent(ev);
+  }
+  function doOpenEvent(ev: ResolvedEvent<TData>) {
+    rangeSel = null; // opening an event dismisses any pending cell selection
+    tlRangeSel = null;
+    monthRangeSel = null;
     if (scheduler.drawer) {
       const row = ev.row;
       const next: Record<string, unknown> = {};
@@ -1151,16 +1702,421 @@
       drawerRow = row;
     }
   }
+
+  // --- multi-select existing events (Ctrl/Cmd-click, Shift range, Delete) ---
+  // On by default; opt out with `eventSelectable: false`.
+  const eventSelectable = $derived(scheduler.eventSelectable !== false);
+  let selectedKeys = $state<Set<string>>(new Set());
+  const isSelected = (ev: ResolvedEvent<TData>) => selectedKeys.has(ev.rowKey);
+  function emitSelection() {
+    const seen = new Set<string>();
+    const rows: TData[] = [];
+    for (const e of events) if (selectedKeys.has(e.rowKey) && !seen.has(e.rowKey)) { seen.add(e.rowKey); rows.push(e.row); }
+    scheduler.onEventSelectionChange?.(rows);
+  }
+  function onEventClick(e: MouseEvent, ev: ResolvedEvent<TData>) {
+    if (suppressClick) { suppressClick = false; return; }
+    if (eventSelectable && (e.ctrlKey || e.metaKey)) {
+      const next = new Set(selectedKeys);
+      if (next.has(ev.rowKey)) next.delete(ev.rowKey);
+      else next.add(ev.rowKey);
+      selectedKeys = next;
+      emitSelection();
+      return;
+    }
+    if (eventSelectable && e.shiftKey && selectedKeys.size) {
+      // Range-select by start order across the resolved events.
+      const ordered = [...events].sort((a, b) => a.start.getTime() - b.start.getTime());
+      const idxs = ordered.map((o, i) => ({ o, i })).filter(({ o }) => selectedKeys.has(o.rowKey) || o.rowKey === ev.rowKey).map(({ i }) => i);
+      const lo = Math.min(...idxs), hi = Math.max(...idxs);
+      const next = new Set(selectedKeys);
+      for (let i = lo; i <= hi; i++) next.add(ordered[i]!.rowKey);
+      selectedKeys = next;
+      emitSelection();
+      return;
+    }
+    if (eventSelectable && selectedKeys.size) { selectedKeys = new Set(); emitSelection(); }
+    doOpenEvent(ev);
+  }
+  // Apply the same time (+resource) delta the dragged event took to every OTHER
+  // selected event, so a multi-selection moves together.
+  function applyBulkMove(draggedKey: string, deltaMs: number) {
+    if (!eventSelectable || selectedKeys.size < 2 || !selectedKeys.has(draggedKey)) return;
+    const seen = new Set<string>([draggedKey]);
+    for (const e of events) {
+      if (!selectedKeys.has(e.rowKey) || seen.has(e.rowKey) || e.recurring) continue;
+      seen.add(e.rowKey);
+      const ns = new Date(e.start.getTime() + deltaMs);
+      const ne = new Date(e.end.getTime() + deltaMs);
+      startOfE[e.rowKey] = ns;
+      endOfE[e.rowKey] = ne;
+      emitMove({ row: e.row, start: ns, end: ne, allDay: e.allDay, fromResource: e.resourceId, toResource: e.resourceId });
+    }
+  }
+  $effect(() => {
+    if (!eventSelectable) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!selectedKeys.size) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (!scheduler.onEventDelete) return;
+        e.preventDefault();
+        const seen = new Set<string>();
+        for (const ev of events) if (selectedKeys.has(ev.rowKey) && !seen.has(ev.rowKey)) { seen.add(ev.rowKey); scheduler.onEventDelete(ev.row); }
+        selectedKeys = new Set();
+        emitSelection();
+      } else if (e.key === "Escape") {
+        selectedKeys = new Set();
+        emitSelection();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  // --- range selection: drag empty cells to mark a time range / rectangle ---
+  // A drag only *marks* the range (`pending`); the event is created on an
+  // explicit confirm - Enter, or the "Add Event" context menu - never on release.
+  // On by default; opt out with `rangeSelectable: false`.
+  const rangeSelectable = $derived(scheduler.rangeSelectable !== false);
+  type RangeSel = { anchorCol: GridCol; anchorMin: number; curCol: GridCol; curMin: number; moved: boolean; pending?: boolean; allDay?: boolean };
+  let rangeSel = $state<RangeSel | null>(null);
+  // The active press. Kept separate so a pointerdown never blanks the current
+  // mirror (which caused a flash on the 2nd click of a double-click); the visible
+  // selection only updates once we know it's a drag (move) or a click (up).
+  let rangeDown: { col: GridCol; min: number; allDay: boolean; startX: number; startY: number; dragging: boolean } | null = null;
+  function startRangeSelect(col: GridCol, e: PointerEvent) {
+    if (!rangeSelectable || e.button !== 0) return;
+    suppressClick = false;
+    e.preventDefault();
+    rangeDown = { col, min: snapMinute(minuteAt(e.clientY), slotMinutes), allDay: false, startX: e.clientX, startY: e.clientY, dragging: false };
+    window.addEventListener("pointermove", onRangeSelectMove);
+    window.addEventListener("pointerup", onRangeSelectEnd, { once: true });
+  }
+  function onRangeSelectMove(e: PointerEvent) {
+    if (!rangeDown) return;
+    if (!rangeDown.dragging) {
+      if (Math.abs(e.clientX - rangeDown.startX) < DRAG_THRESHOLD && Math.abs(e.clientY - rangeDown.startY) < DRAG_THRESHOLD) return;
+      rangeDown.dragging = true;
+    }
+    const col = colAt(e.clientX) ?? rangeDown.col;
+    const min = snapMinute(minuteAt(e.clientY), slotMinutes);
+    rangeSel = { anchorCol: rangeDown.col, anchorMin: rangeDown.min, curCol: col, curMin: min, moved: true, pending: true };
+  }
+  // Drag-select across the ALL-DAY row -> a whole-day range (creates all-day events).
+  function startAllDayRangeSelect(col: GridCol, e: PointerEvent) {
+    if (!rangeSelectable || e.button !== 0) return;
+    suppressClick = false;
+    e.preventDefault();
+    rangeDown = { col, min: 0, allDay: true, startX: e.clientX, startY: e.clientY, dragging: false };
+    window.addEventListener("pointermove", onAllDayRangeMove);
+    window.addEventListener("pointerup", onRangeSelectEnd, { once: true });
+  }
+  function onAllDayRangeMove(e: PointerEvent) {
+    if (!rangeDown) return;
+    if (!rangeDown.dragging) {
+      if (Math.abs(e.clientX - rangeDown.startX) < DRAG_THRESHOLD) return;
+      rangeDown.dragging = true;
+    }
+    rangeSel = { anchorCol: rangeDown.col, anchorMin: 0, curCol: colAt(e.clientX) ?? rangeDown.col, curMin: 0, moved: true, pending: true, allDay: true };
+  }
+  function onRangeSelectEnd() {
+    window.removeEventListener("pointermove", onRangeSelectMove);
+    window.removeEventListener("pointermove", onAllDayRangeMove);
+    const down = rangeDown;
+    rangeDown = null;
+    if (!down) return;
+    if (down.dragging) {
+      suppressClick = true; // a drag happened; keep the marked range (already set)
+      return;
+    }
+    // A plain click selects the single cell at the press position (for keyboard
+    // nav / Enter); a double-click on it creates directly (see onSlotDblClick).
+    rangeSel = { anchorCol: down.col, anchorMin: down.min, curCol: down.col, curMin: down.min, moved: true, pending: true, allDay: down.allDay };
+  }
+  // Move the pending selection by whole days (dDay) / slots (dMin). Without
+  // `extend`, the whole (collapsed) selection moves; with it, only the moving end
+  // moves, growing/shrinking the range (Shift+arrows). Clamped to the day band.
+  function moveRangeSelect(dDay: number, dMin: number, extend: boolean) {
+    const sel = rangeSel;
+    if (!sel) return;
+    const curIdx = gridCols.findIndex((c) => c.key === sel.curCol.key);
+    const nextIdx = Math.min(gridCols.length - 1, Math.max(0, curIdx + dDay));
+    const nextCol = gridCols[nextIdx] ?? sel.curCol;
+    const clampMin = (m: number) => Math.min(dayEndHour * 60 - slotMinutes, Math.max(dayStartHour * 60, m));
+
+    // Vertical crossing between the all-day row and the timed band (navigation
+    // only - Shift-extend keeps the range within its current zone).
+    let nextAllDay = sel.allDay ?? false;
+    let nextMin: number;
+    if (!extend && hasAllDayRow && sel.allDay && dMin > 0) {
+      nextAllDay = false; // Down from the all-day row -> the first timed cell
+      nextMin = dayStartHour * 60;
+    } else if (!extend && hasAllDayRow && !sel.allDay && dMin < 0 && sel.curMin <= dayStartHour * 60) {
+      nextAllDay = true; // Up from the top timed cell -> the all-day row
+      nextMin = 0;
+    } else {
+      nextMin = sel.allDay ? 0 : clampMin(sel.curMin + dMin);
+    }
+
+    if (extend) {
+      sel.curCol = nextCol;
+      sel.curMin = nextMin;
+    } else {
+      sel.allDay = nextAllDay;
+      sel.anchorCol = nextCol;
+      sel.anchorMin = nextMin;
+      sel.curCol = nextCol;
+      sel.curMin = nextMin;
+    }
+    sel.moved = true;
+    sel.pending = true;
+    rangeSel = { ...sel };
+    scrollActiveCellIntoView();
+  }
+  // Keep the moving end of the selection visible in the vertical scroller.
+  function scrollActiveCellIntoView() {
+    if (!rangeSel || rangeSel.allDay || !gridScrollEl || !bodyEl) return;
+    const top = ((rangeSel.curMin - dayStartHour * 60) / (bandHours * 60)) * bodyEl.offsetHeight;
+    const view = gridScrollEl;
+    const pad = 24;
+    if (top < view.scrollTop + pad) view.scrollTop = Math.max(0, top - pad);
+    else if (top > view.scrollTop + view.clientHeight - pad) view.scrollTop = top - view.clientHeight + pad;
+  }
+  // On a full-day ruler the grid would open at midnight (empty). When the
+  // week/day grid mounts (or you switch back to it), scroll past the empty
+  // early hours to a business-hours start. Only affects bands that begin before
+  // then - a grid already starting at/after this hour is left untouched.
+  const SCROLL_TO_HOUR = 7;
+  let scrolledForView = "";
+  $effect(() => {
+    const v = view;
+    const el = gridScrollEl;
+    if (!el || (v !== "week" && v !== "day")) {
+      scrolledForView = "";
+      return;
+    }
+    if (scrolledForView === v) return;
+    scrolledForView = v;
+    const top = Math.max(0, (SCROLL_TO_HOUR - dayStartHour) * HOUR_PX);
+    requestAnimationFrame(() => {
+      if (gridScrollEl) gridScrollEl.scrollTop = top;
+    });
+  });
+  // Turn the pending grid range into event(s) and clear the marker. Fires
+  // `onRangeSelect` (or falls back to `onEventAdd` for the first cell).
+  function commitRangeSelect() {
+    const sel = rangeSel;
+    if (!sel || !sel.moved) return;
+    const ai = gridCols.findIndex((c) => c.key === sel.anchorCol.key);
+    const bi = gridCols.findIndex((c) => c.key === sel.curCol.key);
+    const cols = gridCols.slice(Math.min(ai, bi), Math.max(ai, bi) + 1);
+    const firstCol = cols[0] ?? sel.anchorCol;
+    const days = [...new Set(cols.map((c) => startOfDay(c.date).getTime()))].map((t) => new Date(t));
+    const resourceIds = resourceField ? [...new Set(cols.map((c) => c.resourceId).filter((r): r is string => r != null))] : [];
+    rangeSel = null;
+    if (sel.allDay) {
+      // Whole-day range -> an all-day event spanning the covered days.
+      const lastCol = cols[cols.length - 1] ?? firstCol;
+      const start = startOfDay(firstCol.date);
+      const end = addDays(startOfDay(lastCol.date), 1);
+      if (scheduler.onRangeSelect) emitRange({ start, end, allDay: true, days, resourceIds });
+      else emitAdd(start, end, firstCol.resourceId, true);
+      return;
+    }
+    // A CONTINUOUS date/time range: from the earlier (day, time) to the later
+    // one - not a per-day rectangle. Spanning days just makes it a longer range.
+    const aDT = dateAtMinute(sel.anchorCol.date, sel.anchorMin).getTime();
+    const cDT = dateAtMinute(sel.curCol.date, sel.curMin).getTime();
+    const start = new Date(Math.min(aDT, cDT));
+    const end = new Date(Math.max(aDT, cDT) + slotMinutes * 60000);
+    if (bookingBlocked(start, end, firstCol.resourceId, "")) return;
+    if (scheduler.onRangeSelect) emitRange({ start, end, days, resourceIds });
+    else emitAdd(start, end, firstCol.resourceId, false);
+  }
+  // The continuous datetime range being marked (min..max of the two drag points).
+  const rangeSelSpan = $derived.by(() => {
+    if (!rangeSel || !rangeSel.moved || rangeSel.allDay) return null;
+    const aDT = dateAtMinute(rangeSel.anchorCol.date, rangeSel.anchorMin).getTime();
+    const cDT = dateAtMinute(rangeSel.curCol.date, rangeSel.curMin).getTime();
+    return { start: Math.min(aDT, cDT), end: Math.max(aDT, cDT) + slotMinutes * 60000 };
+  });
+  // Per-column mirror segments: the slice of the continuous range that falls in
+  // each day's visible band (start day: from the start time down; middle days:
+  // full; end day: down to the end time). Keyed by column.
+  const rangeSelSegs = $derived.by(() => {
+    if (!rangeSelSpan || !rangeSel) return null;
+    // When grouped by resource, columns of different resources share a date - the
+    // range belongs to the clicked resource only, so don't bleed into the others.
+    const anchorRes = resourceField ? rangeSel.anchorCol.resourceId : undefined;
+    const bandStartMin = dayStartHour * 60;
+    const bandTotalMin = bandHours * 60;
+    const segs = new Map<string, { top: number; height: number }>();
+    for (const col of gridCols) {
+      if (resourceField && col.resourceId !== anchorRes) continue;
+      const dayLo = dateAtMinute(col.date, bandStartMin).getTime();
+      const dayHi = dateAtMinute(col.date, dayEndHour * 60).getTime();
+      const s = Math.max(rangeSelSpan.start, dayLo);
+      const e = Math.min(rangeSelSpan.end, dayHi);
+      if (e <= s) continue;
+      const topMin = (s - dayLo) / 60000;
+      const hMin = (e - s) / 60000;
+      segs.set(col.key, { top: (topMin / bandTotalMin) * 100, height: (hMin / bandTotalMin) * 100 });
+    }
+    return segs;
+  });
+  // All-day range: just the covered day cells (whole-day, no time band).
+  const rangeSelAllDayKeys = $derived.by(() => {
+    if (!rangeSel || !rangeSel.moved || !rangeSel.allDay) return null;
+    const anchorRes = resourceField ? rangeSel.anchorCol.resourceId : undefined;
+    const ai = gridCols.findIndex((c) => c.key === rangeSel!.anchorCol.key);
+    const bi = gridCols.findIndex((c) => c.key === rangeSel!.curCol.key);
+    return new Set(
+      gridCols
+        .slice(Math.min(ai, bi), Math.max(ai, bi) + 1)
+        .filter((c) => !resourceField || c.resourceId === anchorRes)
+        .map((c) => c.key),
+    );
+  });
+
+  // Range selection in the TIMELINE (horizontal: time span × resource rows).
+  type TlRangeSel = { anchorIdx: number; anchorT: number; curIdx: number; curT: number; moved: boolean; pending?: boolean };
+  let tlRangeSel = $state<TlRangeSel | null>(null);
+  function startTlRangeSelect(rowIdx: number, e: PointerEvent) {
+    if (!rangeSelectable || e.button !== 0) return;
+    suppressClick = false;
+    e.preventDefault();
+    const t = tlTimeAtX(e.clientX).getTime();
+    tlRangeSel = { anchorIdx: rowIdx, anchorT: t, curIdx: rowIdx, curT: t, moved: false };
+    window.addEventListener("pointermove", onTlRangeSelectMove);
+    window.addEventListener("pointerup", onTlRangeSelectEnd, { once: true });
+  }
+  function onTlRangeSelectMove(e: PointerEvent) {
+    if (!tlRangeSel) return;
+    const t = tlTimeAtX(e.clientX).getTime();
+    const resId = tlResAt(e.clientX, e.clientY);
+    const idx = resId != null ? tlRows.findIndex((r) => (r.resource?.id ?? "") === resId) : tlRangeSel.curIdx;
+    if (!tlRangeSel.moved && idx === tlRangeSel.anchorIdx && Math.abs(t - tlRangeSel.anchorT) < tlSlot * TL_MS_MIN) return;
+    tlRangeSel.moved = true;
+    tlRangeSel.curT = t;
+    if (idx >= 0) tlRangeSel.curIdx = idx;
+  }
+  function onTlRangeSelectEnd() {
+    window.removeEventListener("pointermove", onTlRangeSelectMove);
+    const sel = tlRangeSel;
+    if (!sel) return;
+    if (sel.moved) suppressClick = true; // a drag happened; keep the marked span
+    // A drag marks the span; a plain click marks a single cell. Either way the
+    // range is only *pending* - the event is created on Enter / "Add Event", and
+    // arrow keys can now move/extend it (see moveTlRangeSelect).
+    tlRangeSel = { ...sel, moved: true, pending: true };
+  }
+  // Turn the pending timeline span into event(s) and clear the marker.
+  function commitTlRangeSelect() {
+    const sel = tlRangeSel;
+    if (!sel || !sel.moved) return;
+    const start = new Date(tlStepStart(Math.min(sel.anchorT, sel.curT)));
+    const end = new Date(tlStepEnd(Math.max(sel.anchorT, sel.curT)));
+    const rows = tlRows.slice(Math.min(sel.anchorIdx, sel.curIdx), Math.max(sel.anchorIdx, sel.curIdx) + 1);
+    const resourceIds = resourceField ? rows.map((r) => r.resource?.id).filter((r): r is string => r != null) : [];
+    // Days the span touches.
+    const days: Date[] = [];
+    for (let d = startOfDay(start); d.getTime() < end.getTime(); d = addDays(d, 1)) days.push(new Date(d));
+    if (!days.length) days.push(startOfDay(start));
+    tlRangeSel = null;
+    // Only the Day zoom is timed; Week/Month/Year select whole days -> all-day.
+    const allDay = view !== "timelineDay";
+    if (scheduler.onRangeSelect) emitRange({ start, end, allDay, days, resourceIds });
+    else emitAdd(start, end, resourceIds[0], allDay);
+  }
+  // Timeline mirror band: covered rows + horizontal extent. Snapped to whole
+  // cells so a single click still shows a one-cell marker (a slot in Day, a day
+  // in Week/Month, a month in Year).
+  const tlRangeBand = $derived.by(() => {
+    if (!tlRangeSel || !tlRangeSel.moved) return null;
+    const s = tlStepStart(Math.min(tlRangeSel.anchorT, tlRangeSel.curT));
+    const e = tlStepEnd(Math.max(tlRangeSel.anchorT, tlRangeSel.curT));
+    const g = timelineGeom(new Date(s), new Date(e), tlAxis.start, tlAxis.totalMs);
+    if (!g) return null;
+    return { lo: Math.min(tlRangeSel.anchorIdx, tlRangeSel.curIdx), hi: Math.max(tlRangeSel.anchorIdx, tlRangeSel.curIdx), leftPct: g.leftPct, widthPct: g.widthPct };
+  });
+
+  // --- confirm / cancel a PENDING range selection ---------------------------
+  // A drag now only marks the range (grid or timeline); this is where it turns
+  // into event(s): Enter confirms, Escape cancels, and a right-click offers the
+  // same "Add Event" action through the context menu.
+  const hasPendingRange = $derived(!!rangeSel?.pending || !!tlRangeSel?.pending || !!monthRangeSel?.pending);
+  function commitPendingRange() {
+    if (rangeSel?.pending) commitRangeSelect();
+    else if (tlRangeSel?.pending) commitTlRangeSelect();
+    else if (monthRangeSel?.pending) commitMonthRangeSelect();
+  }
+  function clearRangeSelect() {
+    rangeSel = null;
+    tlRangeSel = null;
+    monthRangeSel = null;
+  }
+  $effect(() => {
+    if (!rangeSelectable) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!rangeSel?.pending && !tlRangeSel?.pending && !monthRangeSel?.pending) return;
+      // Don't hijack typing (search box, drawer inputs, etc.).
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commitPendingRange();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        clearRangeSelect();
+      } else if (rangeSel?.pending) {
+        // Arrow keys navigate the selected cell; Shift extends the range.
+        const shift = e.shiftKey;
+        if (e.key === "ArrowUp") { e.preventDefault(); moveRangeSelect(0, -slotMinutes, shift); }
+        else if (e.key === "ArrowDown") { e.preventDefault(); moveRangeSelect(0, slotMinutes, shift); }
+        else if (e.key === "ArrowLeft") { e.preventDefault(); moveRangeSelect(-1, 0, shift); }
+        else if (e.key === "ArrowRight") { e.preventDefault(); moveRangeSelect(1, 0, shift); }
+      } else if (tlRangeSel?.pending) {
+        // Timeline: Left/Right step along the time axis, Up/Down across resource
+        // rows; Shift extends the range from the anchor cell.
+        const shift = e.shiftKey;
+        if (e.key === "ArrowLeft") { e.preventDefault(); moveTlRangeSelect(-1, 0, shift); }
+        else if (e.key === "ArrowRight") { e.preventDefault(); moveTlRangeSelect(1, 0, shift); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); moveTlRangeSelect(0, -1, shift); }
+        else if (e.key === "ArrowDown") { e.preventDefault(); moveTlRangeSelect(0, 1, shift); }
+      } else if (monthRangeSel?.pending) {
+        // Month: Left/Right move one day, Up/Down one week; Shift extends.
+        const shift = e.shiftKey;
+        if (e.key === "ArrowLeft") { e.preventDefault(); moveMonthRangeSelect(-1, shift); }
+        else if (e.key === "ArrowRight") { e.preventDefault(); moveMonthRangeSelect(1, shift); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); moveMonthRangeSelect(-7, shift); }
+        else if (e.key === "ArrowDown") { e.preventDefault(); moveMonthRangeSelect(7, shift); }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+  // Right-clicking a pending range opens an "Add Event" menu (reuses the event
+  // context-menu chrome). Skipped when an event already handled the right-click.
+  function openRangeMenu(e: MouseEvent) {
+    if (e.defaultPrevented) return;
+    if (!rangeSel?.pending && !tlRangeSel?.pending && !monthRangeSel?.pending) return;
+    e.preventDefault();
+    e.stopPropagation();
+    menuItems = [{ label: "Add Event", shortcut: "Enter", onSelect: commitPendingRange }];
+    menuPos = { x: e.clientX, y: e.clientY };
+    menuOpen = true;
+  }
+
   function saveDrawer(values: Record<string, unknown>) {
     const row = drawerRow;
     if (!row) return;
     const k = key(row);
     // Fold the recurrence rule + the "When" fields into the saved values.
-    if (recurEditable && scheduler.recurrenceField) {
-      values = { ...values, [scheduler.recurrenceField]: buildRule(row) };
+    if (recurEditable) {
+      values = { ...values, [recurField]: buildRule(row) };
     }
-    values = { ...values, [scheduler.startField]: isoLocal(whenStart, whenAllDay) };
-    if (scheduler.endField) values = { ...values, [scheduler.endField]: isoLocal(whenEnd, whenAllDay) };
+    values = { ...values, [scheduler.startField]: serializeWhen(whenStart, whenAllDay) };
+    if (scheduler.endField) values = { ...values, [scheduler.endField]: serializeWhen(whenEnd, whenAllDay) };
     if (scheduler.allDayField) values = { ...values, [scheduler.allDayField]: whenAllDay };
 
     const changes: Record<string, unknown> = {};
@@ -1168,7 +2124,7 @@
       const f = col.field as string;
       if (values[f] !== fieldValue(row, f)) changes[f] = values[f];
     }
-    if (recurEditable && scheduler.recurrenceField) changes[scheduler.recurrenceField] = values[scheduler.recurrenceField];
+    if (recurEditable) changes[recurField] = values[recurField];
     changes[scheduler.startField] = values[scheduler.startField];
     if (scheduler.endField) changes[scheduler.endField] = values[scheduler.endField];
     if (scheduler.allDayField) changes[scheduler.allDayField] = values[scheduler.allDayField];
@@ -1205,12 +2161,214 @@
 
   // Add on empty-slot double-click.
   function onSlotDblClick(col: GridCol, e: MouseEvent) {
+    rangeSel = null; // a double-click creates directly - drop the click's marker
     if (!scheduler.onEventAdd) return;
     const min = snapMinute(minuteAt(e.clientY), slotMinutes);
     const s = dateAtMinute(col.date, min);
     const en = new Date(s.getTime() + (scheduler.defaultDurationMin ?? 60) * 60000);
-    scheduler.onEventAdd(s, en, col.resourceId);
+    if (bookingBlocked(s, en, col.resourceId, "")) return;
+    emitAdd(s, en, col.resourceId, false);
   }
+
+  // --- timeline geometry + drag/resize (horizontal) ---
+  const TL_MS_MIN = 60_000;
+  function tlTimeAtX(clientX: number): Date {
+    if (!tlLanesEl) return tlAxis.start;
+    const r = tlLanesEl.getBoundingClientRect();
+    const frac = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+    return new Date(tlAxis.start.getTime() + frac * tlAxis.totalMs);
+  }
+  const snapTlStart = (d: Date): Date =>
+    view === "timelineDay"
+      ? new Date(Math.round(d.getTime() / (tlSlot * TL_MS_MIN)) * (tlSlot * TL_MS_MIN))
+      : startOfDay(d);
+  const snapTlEnd = (d: Date): Date =>
+    view === "timelineDay"
+      ? new Date(Math.round(d.getTime() / (tlSlot * TL_MS_MIN)) * (tlSlot * TL_MS_MIN))
+      : addDays(startOfDay(d), 1); // inclusive day → next midnight
+  function tlResAt(clientX: number, clientY: number): string | undefined {
+    const el = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-tlres]");
+    return el?.dataset.tlres || undefined;
+  }
+  // One navigable "cell" along the axis: a slot in Day, a whole day in
+  // Week/Month, a whole month in Year. Used for the click marker + keyboard nav.
+  function tlStepStart(t: number): number {
+    if (view === "timelineDay") return Math.floor(t / (tlSlot * TL_MS_MIN)) * (tlSlot * TL_MS_MIN);
+    const b = startOfDay(new Date(t));
+    if (view === "timelineYear") return new Date(b.getFullYear(), b.getMonth(), 1).getTime();
+    return b.getTime();
+  }
+  function tlStepEnd(t: number): number {
+    if (view === "timelineDay") return tlStepStart(t) + tlSlot * TL_MS_MIN;
+    const b = new Date(tlStepStart(t));
+    if (view === "timelineYear") return new Date(b.getFullYear(), b.getMonth() + 1, 1).getTime();
+    return addDays(b, 1).getTime();
+  }
+  function tlStepShift(t: number, d: number): number {
+    if (view === "timelineDay") return tlStepStart(t) + d * tlSlot * TL_MS_MIN;
+    const b = new Date(tlStepStart(t));
+    if (view === "timelineYear") return new Date(b.getFullYear(), b.getMonth() + d, 1).getTime();
+    return addDays(b, d).getTime();
+  }
+  // Keyboard navigation for the timeline cell selection. dCol steps along the
+  // time axis, dRow moves between resource rows; `extend` (Shift) grows the range
+  // from the anchor, otherwise the whole selection moves as a single cell.
+  function moveTlRangeSelect(dCol: number, dRow: number, extend: boolean) {
+    const sel = tlRangeSel;
+    if (!sel) return;
+    const nextT = tlStepShift(sel.curT, dCol);
+    const nextIdx = Math.min(tlRows.length - 1, Math.max(0, sel.curIdx + dRow));
+    tlRangeSel = extend
+      ? { ...sel, curT: nextT, curIdx: nextIdx, moved: true, pending: true }
+      : { anchorT: nextT, curT: nextT, anchorIdx: nextIdx, curIdx: nextIdx, moved: true, pending: true };
+    tlScrollActiveIntoView(nextT);
+  }
+  function tlScrollActiveIntoView(t: number) {
+    if (!tlScrollEl) return;
+    const g = timelineGeom(new Date(tlStepStart(t)), new Date(tlStepEnd(t)), tlAxis.start, tlAxis.totalMs);
+    if (!g) return;
+    const cellLeft = tlResW + (g.leftPct / 100) * tlAxisWidth;
+    const cellRight = tlResW + ((g.leftPct + g.widthPct) / 100) * tlAxisWidth;
+    const viewLeft = tlScrollEl.scrollLeft;
+    const viewRight = viewLeft + tlScrollEl.clientWidth;
+    // The resource gutter sticks to the left, so a cell is hidden until it clears it.
+    if (cellLeft < viewLeft + tlResW) tlScrollEl.scrollLeft = Math.max(0, cellLeft - tlResW - 20);
+    else if (cellRight > viewRight) tlScrollEl.scrollLeft = cellRight - tlScrollEl.clientWidth + 20;
+  }
+
+  type TlMode = "move" | "resize-start" | "resize-end";
+  type TlDrag = {
+    ev: ResolvedEvent<TData>;
+    mode: TlMode;
+    startX: number;
+    startY: number;
+    grabOffsetMs: number;
+    durationMs: number;
+    origStart: Date;
+    origEnd: Date;
+    moved: boolean;
+    previewStart: Date;
+    previewEnd: Date;
+    previewRes: string | undefined;
+    x: number;
+    y: number;
+  };
+  let tlDrag = $state<TlDrag | null>(null);
+  function startTlDrag(e: PointerEvent, ev: ResolvedEvent<TData>, mode: TlMode) {
+    if (e.button !== 0) return; // ignore right/middle button (let the context menu open)
+    suppressClick = false;
+    if (!editable || (ev.recurring && !recurEditable)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    tlDrag = {
+      ev,
+      mode,
+      startX: e.clientX,
+      startY: e.clientY,
+      grabOffsetMs: Math.max(0, tlTimeAtX(e.clientX).getTime() - ev.start.getTime()),
+      durationMs: ev.end.getTime() - ev.start.getTime(),
+      origStart: ev.start,
+      origEnd: ev.end,
+      moved: false,
+      previewStart: ev.start,
+      previewEnd: ev.end,
+      previewRes: ev.resourceId,
+      x: e.clientX,
+      y: e.clientY,
+    };
+    window.addEventListener("pointermove", onTlDragMove);
+    window.addEventListener("pointerup", onTlDragEnd, { once: true });
+  }
+  function onTlDragMove(e: PointerEvent) {
+    if (!tlDrag) return;
+    if (!tlDrag.moved) {
+      if (Math.abs(e.clientX - tlDrag.startX) < DRAG_THRESHOLD && Math.abs(e.clientY - tlDrag.startY) < DRAG_THRESHOLD) return;
+      tlDrag.moved = true;
+    }
+    tlDrag.x = e.clientX;
+    tlDrag.y = e.clientY;
+    const t = tlTimeAtX(e.clientX);
+    const minDur = (view === "timelineDay" ? tlSlot : 24 * 60) * TL_MS_MIN;
+    if (tlDrag.mode === "move") {
+      const ns = snapTlStart(new Date(t.getTime() - tlDrag.grabOffsetMs));
+      tlDrag.previewStart = ns;
+      tlDrag.previewEnd = new Date(ns.getTime() + tlDrag.durationMs);
+      // Recurring instances keep their row; others can change resource.
+      tlDrag.previewRes = tlDrag.ev.recurring ? tlDrag.ev.resourceId : tlResAt(e.clientX, e.clientY) ?? tlDrag.previewRes;
+    } else if (tlDrag.mode === "resize-end") {
+      const ne = snapTlEnd(t);
+      tlDrag.previewEnd = new Date(Math.max(ne.getTime(), tlDrag.origStart.getTime() + minDur));
+      tlDrag.previewStart = tlDrag.origStart;
+    } else {
+      const ns = snapTlStart(t);
+      tlDrag.previewStart = new Date(Math.min(ns.getTime(), tlDrag.origEnd.getTime() - minDur));
+      tlDrag.previewEnd = tlDrag.origEnd;
+    }
+  }
+  function onTlDragEnd() {
+    window.removeEventListener("pointermove", onTlDragMove);
+    const d = tlDrag;
+    tlDrag = null;
+    if (!d || !d.moved) return;
+    suppressClick = true;
+    const { ev, previewStart, previewEnd, previewRes, mode } = d;
+    const k = ev.rowKey;
+    if (ev.recurring) {
+      // Series edit: apply the new time-of-day (+ duration) to the base row.
+      const applySeries = () => {
+        const baseStart = toDate(fieldValue(ev.row, scheduler.startField) as never) ?? ev.start;
+        const ns = dayWithTimeOf(baseStart, previewStart);
+        const ne = new Date(ns.getTime() + (previewEnd.getTime() - previewStart.getTime()));
+        startOfE[k] = ns;
+        endOfE[k] = ne;
+        if (mode === "move") emitMove({ row: ev.row, start: ns, end: ne, allDay: ev.allDay });
+        else emitResize({ row: ev.row, start: ns, end: ne });
+      };
+      askRecurScope(d.x, d.y, ev, "edit", () => emitOccurrence(ev, { start: previewStart, end: previewEnd }), applySeries);
+      return;
+    }
+    const checkRes = mode === "move" ? previewRes : ev.resourceId;
+    if (bookingBlocked(previewStart, previewEnd, checkRes, k)) return;
+    startOfE[k] = previewStart;
+    endOfE[k] = previewEnd;
+    if (mode === "move") {
+      if (previewRes != null) resourceOfE[k] = previewRes;
+      emitMove({ row: ev.row, start: previewStart, end: previewEnd, allDay: ev.allDay, fromResource: ev.resourceId, toResource: previewRes });
+      applyBulkMove(k, previewStart.getTime() - d.origStart.getTime());
+    } else {
+      emitResize({ row: ev.row, start: previewStart, end: previewEnd });
+    }
+    pushHistory({
+      key: k,
+      row: ev.row,
+      kind: mode === "move" ? "move" : "resize",
+      before: { start: d.origStart, end: d.origEnd, resource: ev.resourceId, allDay: ev.allDay },
+      after: { start: previewStart, end: previewEnd, resource: mode === "move" ? previewRes : ev.resourceId, allDay: ev.allDay },
+    });
+  }
+  // Double-click an empty spot in a resource row → add there.
+  function onTlSlotDblClick(resourceId: string | undefined, e: MouseEvent) {
+    tlRangeSel = null; // a double-click creates directly - drop the click's marker
+    if (!scheduler.onEventAdd) return;
+    const s = snapTlStart(tlTimeAtX(e.clientX));
+    const durMs = (view === "timelineDay" ? scheduler.defaultDurationMin ?? 60 : 24 * 60) * TL_MS_MIN;
+    emitAdd(s, new Date(s.getTime() + durMs), resourceId, view !== "timelineDay");
+  }
+  // Geometry for one timeline bar. A RESIZE morphs the bar in place (live); a
+  // MOVE leaves the source bar where it is (dimmed) - a separate preview bar in
+  // the destination row shows where it lands (so cross-row drags read clearly).
+  function tlBarGeom(ev: ResolvedEvent<TData>) {
+    const d = tlDrag;
+    const isDrag = d?.ev.key === ev.key && d.moved;
+    if (isDrag && d!.mode !== "move") return timelineGeom(d!.previewStart, d!.previewEnd, tlAxis.start, tlAxis.totalMs);
+    return timelineGeom(ev.start, ev.end, tlAxis.start, tlAxis.totalMs);
+  }
+  // The move-preview geometry (for the destination-row ghost bar).
+  const tlMovePreview = $derived.by(() => {
+    if (!tlDrag || !tlDrag.moved || tlDrag.mode !== "move") return null;
+    const g = timelineGeom(tlDrag.previewStart, tlDrag.previewEnd, tlAxis.start, tlAxis.totalMs);
+    return g ? { g, resId: tlDrag.previewRes ?? "", ev: tlDrag.ev } : null;
+  });
 
   function eventStyle(ev: ResolvedEvent<TData>): string {
     let s = ev.color ? `--sv-sched-accent:${ev.color};` : "";
@@ -1237,7 +2395,7 @@
           class="sv-sched-btn"
           class:sv-sched-btn-active={view === v}
           onclick={() => setView(v)}
-        >{v.charAt(0).toUpperCase() + v.slice(1)}</button>
+        >{viewLabel(v)}</button>
       {/each}
     </div>
   </div>
@@ -1262,6 +2420,19 @@
     </div>
   {/if}
 
+  <div class="sv-sched-workarea">
+   {#if hasBacklog}
+    <aside class="sv-sched-backlog">
+      <div class="sv-sched-backlog-head">{scheduler.backlogTitle ?? "Unscheduled"}</div>
+      {#each backlogItems as item (item.id)}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="sv-sched-backlog-item" style={item.color ? `--sv-sched-accent:${item.color};` : ""} onpointerdown={(e) => startBacklogDrag(item, e)}>
+          <span class="sv-sched-dot"></span><span class="sv-sched-backlog-title">{item.title}</span>
+        </div>
+      {/each}
+    </aside>
+   {/if}
+   <div class="sv-sched-viewwrap">
   {#if view === "month"}
     <div class="sv-sched-month">
       <div class="sv-sched-monthhead">
@@ -1280,10 +2451,14 @@
               <div
                 class="sv-sched-daycell"
                 class:sv-sched-daycell-out={!cell.inMonth}
-                class:sv-sched-today={isSameDay(cell.date, startOfDay(new Date()))}
+                class:sv-sched-daycell-nonworking={isNonWorkingDay(cell.date)}
+                class:sv-sched-today={isSameDay(cell.date, startOfDay(toZonedLocal(new Date(), tz)))}
                 class:sv-sched-daycell-drop={monthOverDay === cell.date.getTime() &&
                   (monthDrag?.moved === true || monthResize?.moved === true)}
+                class:sv-sched-select-cell={isMonthCellSelected(cell.date)}
                 data-day={cell.date.getTime()}
+                onpointerdown={(e) => startMonthRangeSelect(cell.date, e)}
+                oncontextmenu={openRangeMenu}
                 ondblclick={() => onMonthSlotAdd(cell.date)}
               >
                 <div class="sv-sched-daynum">{cell.date.getDate()}</div>
@@ -1292,6 +2467,7 @@
                     type="button"
                     class="sv-sched-more"
                     style={`top:${MONTH_DAYNUM_H + visibleMonthLanes * MONTH_LANE_H}px`}
+                    onpointerdown={(e) => e.stopPropagation()}
                     onclick={(e) => openList(e, eventsOnDay(viewEvents, cell.date), `${mon(cell.date.getMonth())} ${cell.date.getDate()}`)}
                   >+{moreN} more</button>
                 {/if}
@@ -1300,7 +2476,7 @@
             <!-- Continuous spanning event bars, layered over the day cells. -->
             <div
               class="sv-sched-weekbars"
-              class:sv-sched-weekbars-dragging={monthDrag?.moved === true || monthResize?.moved === true}
+              class:sv-sched-weekbars-dragging={monthDrag?.moved === true || monthResize?.moved === true || monthRangeSel?.moved === true}
             >
               {#each seg.segments as s (s.event.key)}
                 {#if s.lane < visibleMonthLanes}
@@ -1311,13 +2487,16 @@
                     class:sv-sched-bar-recurring={s.event.recurring}
                     class:sv-sched-bar-draggable={canEditBar}
                     class:sv-sched-bar-source={monthDrag?.moved && monthDrag.ev.key === s.event.key}
+                    class:sv-sched-bar-selected={isSelected(s.event)}
                     class:sv-sched-bar-cont-left={s.continuesLeft}
                     class:sv-sched-bar-cont-right={s.continuesRight}
                     style={`left:calc(${(s.startCol / 7) * 100}% + 3px); width:calc(${((s.endCol - s.startCol + 1) / 7) * 100}% - 6px); top:${MONTH_DAYNUM_H + s.lane * MONTH_LANE_H}px; height:${MONTH_LANE_H - 3}px; ${eventStyle(s.event)}`}
-                    onclick={() => openEvent(s.event)}
+                    onclick={(e) => onEventClick(e, s.event)}
                     oncontextmenu={(e) => openMenu(e, s.event)}
                     onpointerdown={(e) => startMonthDrag(e, s.event)}
                     onkeydown={(e) => onEventKey(e, s.event)}
+                    onmouseenter={(e) => onEventEnter(e, s.event)}
+                    onmouseleave={onEventLeave}
                     title={s.event.title}
                   >
                     {#if canEditBar && !s.continuesLeft}
@@ -1328,11 +2507,7 @@
                         onpointerdown={(e) => startMonthResize(e, s.event, "start")}
                       ></span>
                     {/if}
-                    {#if !s.event.allDay && !s.continuesLeft}
-                      <span class="sv-sched-dot"></span>
-                      <span class="sv-sched-bar-time">{fmtTime(s.event.start)}</span>
-                    {/if}
-                    <span class="sv-sched-bar-title">{s.event.title}</span>
+                    {#if scheduler.event}{@render scheduler.event(s.event.row)}{:else}{#if !s.event.allDay && !s.continuesLeft}<span class="sv-sched-dot"></span><span class="sv-sched-bar-time">{fmtTime(s.event.start)}</span>{/if}<span class="sv-sched-bar-title">{s.event.title}</span>{/if}
                     {#if canEditBar && !s.continuesRight}
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <span
@@ -1366,21 +2541,140 @@
               <button
                 type="button"
                 class="sv-sched-agenda-row"
+                class:sv-sched-event-selected={isSelected(ev)}
                 style={eventStyle(ev)}
-                onclick={() => openEvent(ev)}
+                onclick={(e) => onEventClick(e, ev)}
                 oncontextmenu={(e) => openMenu(e, ev)}
+                onmouseenter={(e) => onEventEnter(e, ev)}
+                onmouseleave={onEventLeave}
               >
-                <span class="sv-sched-dot"></span>
-                <span class="sv-sched-agenda-time">
-                  {ev.allDay ? "all day" : `${fmtTime(ev.start)} - ${fmtTime(ev.end)}`}
-                </span>
-                <span class="sv-sched-agenda-title">{ev.title}</span>
-                {#if ev.resourceId}<span class="sv-sched-tag">{ev.resourceId}</span>{/if}
+                {#if scheduler.event}{@render scheduler.event(ev.row)}{:else}
+                  <span class="sv-sched-dot"></span>
+                  <span class="sv-sched-agenda-time">
+                    {ev.allDay ? "all day" : `${fmtTime(ev.start)} - ${fmtTime(ev.end)}`}
+                  </span>
+                  <span class="sv-sched-agenda-title">{ev.title}</span>
+                  {#if ev.resourceId}<span class="sv-sched-tag">{ev.resourceId}</span>{/if}
+                {/if}
               </button>
             {/each}
           </div>
         </div>
       {/each}
+    </div>
+  {:else if isTimeline}
+    <!-- timeline: horizontal time axis, resources as rows -->
+    <div class="sv-sched-tl" bind:this={tlScrollEl} bind:clientWidth={tlOuterW} style={`--tl-res-w:${tlResW}px; --tl-axis-w:${tlAxisWidth}px; --tl-lane-h:${tlLaneH}px`}>
+      <!-- header: corner + 2-row axis (majors over ticks) -->
+      <div class="sv-sched-tl-head">
+        <div class="sv-sched-tl-corner"></div>
+        <div class="sv-sched-tl-axis">
+          <div class="sv-sched-tl-majors">
+            {#each tlAxis.majors as m (m.leftPct)}
+              <div class="sv-sched-tl-major" style={`left:${m.leftPct}%; width:${m.widthPct}%`}>{m.label}</div>
+            {/each}
+          </div>
+          <div class="sv-sched-tl-ticks" bind:this={tlLanesEl}>
+            {#each tlAxis.ticks as t (t.start.getTime())}
+              <div class="sv-sched-tl-tick" class:sv-sched-today={t.today} style={`left:${t.leftPct}%; width:${t.widthPct}%`}>
+                <span>{t.label}</span>
+              </div>
+            {/each}
+          </div>
+        </div>
+      </div>
+      <!-- body: resource gutter + lane track, scrolls together -->
+      <div class="sv-sched-tl-body">
+        {#each tlRows as row, ri (row.resource?.id ?? "__all")}
+          {@const rowH = Math.max(1, row.laneCount) * tlLaneH + 6}
+          {@const isDropRow = !!tlMovePreview && tlMovePreview.resId === (row.resource?.id ?? "")}
+          <div class="sv-sched-tl-row" class:sv-sched-tl-row-drop={isDropRow} style={`height:${rowH}px`}>
+            <div class="sv-sched-tl-resgutter">
+              {#if row.resource?.color}<span class="sv-sched-dot" style={`--sv-sched-accent:${row.resource.color}`}></span>{/if}
+              <span class="sv-sched-tl-resname">{row.resource?.title ?? row.resource?.id ?? "All"}</span>
+            </div>
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              class="sv-sched-tl-lanes"
+              data-tlres={row.resource?.id ?? ""}
+              onpointerdown={(e) => startTlRangeSelect(ri, e)}
+              ondblclick={(e) => onTlSlotDblClick(row.resource?.id, e)}
+              oncontextmenu={openRangeMenu}
+            >
+              <!-- vertical tick gridlines -->
+              {#each tlAxis.ticks as t (t.start.getTime())}
+                <div class="sv-sched-tl-gridline" class:sv-sched-today={t.today} style={`left:${t.leftPct}%; width:${t.widthPct}%`}></div>
+              {/each}
+              {#if nowTlPct != null}
+                <div class="sv-sched-tl-nowline" style={`left:${nowTlPct}%`}></div>
+              {/if}
+              {#if tlRangeBand && ri >= tlRangeBand.lo && ri <= tlRangeBand.hi}
+                <div class="sv-sched-select-mirror" style={`left:${tlRangeBand.leftPct}%; width:${tlRangeBand.widthPct}%; top:2px; bottom:2px`}></div>
+              {/if}
+              {#if isDropRow && tlMovePreview}
+                <!-- Move preview: where the dragged bar lands in this row. -->
+                <div
+                  class="sv-sched-drag-preview sv-sched-tl-bar"
+                  style={`left:${tlMovePreview.g.leftPct}%; width:${tlMovePreview.g.widthPct}%; top:3px; height:${tlLaneH - 4}px; ${eventStyle(tlMovePreview.ev)}`}
+                >
+                  <span class="sv-sched-bar-title">{tlMovePreview.ev.title}</span>
+                </div>
+              {/if}
+              {#each row.items as it (it.event.key)}
+                {@const g = tlBarGeom(it.event)}
+                {#if g}
+                  {@const canEdit = editable && (!it.event.recurring || recurEditable)}
+                  {@const wpx = (g.widthPct / 100) * tlAxisWidth}
+                  <button
+                    type="button"
+                    class="sv-sched-bar sv-sched-tl-bar"
+                    class:sv-sched-tl-bar-tiny={wpx < 34}
+                    class:sv-sched-bar-recurring={it.event.recurring}
+                    class:sv-sched-bar-draggable={canEdit}
+                    class:sv-sched-bar-source={tlDrag?.moved && tlDrag.mode === "move" && tlDrag.ev.key === it.event.key}
+                    class:sv-sched-bar-resizing={tlDrag?.moved && tlDrag.mode !== "move" && tlDrag.ev.key === it.event.key}
+                    class:sv-sched-bar-selected={isSelected(it.event)}
+                    class:sv-sched-bar-cont-left={g.continuesLeft}
+                    class:sv-sched-bar-cont-right={g.continuesRight}
+                    style={`left:${g.leftPct}%; width:${g.widthPct}%; top:${it.lane * tlLaneH + 3}px; height:${tlLaneH - 4}px; ${eventStyle(it.event)}`}
+                    onpointerdown={(e) => startTlDrag(e, it.event, "move")}
+                    onclick={(e) => onEventClick(e, it.event)}
+                    oncontextmenu={(e) => openMenu(e, it.event)}
+                    onkeydown={(e) => onEventKey(e, it.event)}
+                    onmouseenter={(e) => onEventEnter(e, it.event)}
+                    onmouseleave={onEventLeave}
+                    title={it.event.title}
+                  >
+                    {#if canEdit && !g.continuesLeft}
+                      <!-- svelte-ignore a11y_no_static_element_interactions -->
+                      <span class="sv-sched-chip-resize sv-sched-chip-resize-start" aria-hidden="true" onpointerdown={(e) => startTlDrag(e, it.event, "resize-start")}></span>
+                    {/if}
+                    {#if wpx >= 34}
+                      {#if scheduler.event}{@render scheduler.event(it.event.row)}{:else}{#if view === "timelineDay" && !it.event.allDay && !g.continuesLeft}<span class="sv-sched-bar-time">{fmtTime(it.event.start)}</span>{/if}<span class="sv-sched-bar-title">{it.event.title}</span>{/if}
+                    {/if}
+                    {#if canEdit && !g.continuesRight}
+                      <!-- svelte-ignore a11y_no_static_element_interactions -->
+                      <span class="sv-sched-chip-resize sv-sched-chip-resize-end" aria-hidden="true" onpointerdown={(e) => startTlDrag(e, it.event, "resize-end")}></span>
+                    {/if}
+                  </button>
+                {/if}
+              {/each}
+            </div>
+          </div>
+        {/each}
+        <!-- filler row so the axis gridlines fill the remaining height -->
+        <div class="sv-sched-tl-row sv-sched-tl-filler">
+          <div class="sv-sched-tl-resgutter"></div>
+          <div class="sv-sched-tl-lanes">
+            {#each tlAxis.ticks as t (t.start.getTime())}
+              <div class="sv-sched-tl-gridline" class:sv-sched-today={t.today} style={`left:${t.leftPct}%; width:${t.widthPct}%`}></div>
+            {/each}
+            {#if nowTlPct != null}
+              <div class="sv-sched-tl-nowline" style={`left:${nowTlPct}%`}></div>
+            {/if}
+          </div>
+        </div>
+      </div>
     </div>
   {:else}
     <!-- week / day time-grid -->
@@ -1388,7 +2682,7 @@
      <div class="sv-sched-xscroll">
       <div
         class="sv-sched-xinner"
-        style={`--cols:${gridCols.length};${gridMinWidth ? ` min-width:${gridMinWidth}px;` : ""}`}
+        style={`--cols:${gridCols.length};--sbw:${sbw}px;--gutn:${gutterCount};--gutw:${gutterCount * 56}px;${gridMinWidth ? ` min-width:${gridMinWidth}px;` : ""}`}
       >
        {#if groupHeaders.length}
         <div class="sv-sched-grouphead">
@@ -1402,7 +2696,10 @@
         </div>
        {/if}
        <div class="sv-sched-gridhead">
-        <div class="sv-sched-gutter-head"></div>
+        <div class="sv-sched-gutter-head sv-sched-zonehead">
+          {#each secondaryRulers as sr (sr.label)}<span class="sv-sched-zonelabel">{sr.label}</span>{/each}
+          {#if primaryZoneLabel}<span class="sv-sched-zonelabel sv-sched-zonelabel-primary">{primaryZoneLabel}</span>{/if}
+        </div>
         {#each gridCols as col (col.key)}
           <div class="sv-sched-colhead" class:sv-sched-today={col.today}>
             {#if col.color && groupByDate}<span class="sv-sched-dot" style={`--sv-sched-accent:${col.color};`}></span>{/if}
@@ -1419,10 +2716,14 @@
             <!-- Per-day background cells keep the column separator lines continuous
                  with the header + hourly grid; the bars overlay spans them. -->
             {#each gridCols as col (col.key)}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
               <div
                 class="sv-sched-allday-colbg"
                 class:sv-sched-daycell-drop={(allDayPreview?.kind === "allday" && allDayPreview.colKey === col.key) ||
                   drag?.overAllDay?.key === col.key}
+                class:sv-sched-select-cell={rangeSelAllDayKeys?.has(col.key)}
+                onpointerdown={(e) => startAllDayRangeSelect(col, e)}
+                oncontextmenu={openRangeMenu}
               ></div>
             {/each}
             <!-- Multi-day / all-day events as continuous spanning bars, lane-stacked. -->
@@ -1441,6 +2742,8 @@
                   onpointerdown={(e) => startAllDayDrag(e, s.event)}
                   onclick={() => openEvent(s.event)}
                   oncontextmenu={(e) => openMenu(e, s.event)}
+                  onmouseenter={(e) => onEventEnter(e, s.event)}
+                  onmouseleave={onEventLeave}
                   title={s.event.title}
                 >
                   {#if canEditBar && !s.continuesLeft}
@@ -1451,7 +2754,7 @@
                       onpointerdown={(e) => startAllDayResize(e, s.event, "start")}
                     ></span>
                   {/if}
-                  <span class="sv-sched-bar-title">{s.event.title}</span>
+                  {#if scheduler.event}{@render scheduler.event(s.event.row)}{:else}<span class="sv-sched-bar-title">{s.event.title}</span>{/if}
                   {#if canEditBar && !s.continuesRight}
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <span
@@ -1465,7 +2768,13 @@
             </div>
           {:else}
             {#each gridCols as col (col.key)}
-              <div class="sv-sched-allday-cell">
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div
+                class="sv-sched-allday-cell"
+                class:sv-sched-select-cell={rangeSelAllDayKeys?.has(col.key)}
+                onpointerdown={(e) => startAllDayRangeSelect(col, e)}
+                oncontextmenu={openRangeMenu}
+              >
                 {#each colAllDay(col) as ev (ev.key)}
                   <button type="button" class="sv-sched-chip" style={eventStyle(ev)} onclick={() => openEvent(ev)} oncontextmenu={(e) => openMenu(e, ev)}>
                     <span class="sv-sched-chip-title">{ev.title}</span>
@@ -1477,12 +2786,22 @@
         </div>
       {/if}
 
-      <div class="sv-sched-gridscroll">
+      <div class="sv-sched-gridscroll" bind:this={gridScrollEl}>
         <div class="sv-sched-gridbody" style={`height:${bandHours * HOUR_PX}px`} bind:this={bodyEl}>
+          {#each secondaryRulers as sr (sr.label)}
+            <div class="sv-sched-gutter sv-sched-gutter-secondary">
+              {#each sr.rows as lbl, i (i)}
+                <div class="sv-sched-hour" style={`height:${HOUR_PX}px`}><span>{lbl}</span></div>
+              {/each}
+            </div>
+          {/each}
           <div class="sv-sched-gutter">
             {#each hourList as h (h)}
               <div class="sv-sched-hour" style={`height:${HOUR_PX}px`}><span>{hourLabel(h)}</span></div>
             {/each}
+            {#if nowBandPct != null}
+              <div class="sv-sched-now-label" style={`top:${nowBandPct}%`}>{fmtTime(now)}</div>
+            {/if}
           </div>
           {#each gridCols as col (col.key)}
             {@const layout = colLayout(col)}
@@ -1492,11 +2811,28 @@
               class="sv-sched-col"
               class:sv-sched-col-drop={isDropCol}
               data-col-key={col.key}
+              onpointerdown={(e) => startRangeSelect(col, e)}
               ondblclick={(e) => onSlotDblClick(col, e)}
+              oncontextmenu={openRangeMenu}
             >
               {#each hourList as h (h)}
                 <div class="sv-sched-slot" style={`height:${HOUR_PX}px`}></div>
               {/each}
+              {#if hasBookingShade}
+                {#each columnShadeBands(col) as sb (sb.top)}
+                  <div class="sv-sched-shade" style={`top:${sb.top}%;height:${sb.height}%`}></div>
+                {/each}
+                {#if shadeUntilNow && col.today && nowBandPct != null}
+                  <div class="sv-sched-shade" style={`top:0;height:${nowBandPct}%`}></div>
+                {/if}
+              {/if}
+              {#if nowBandPct != null && col.today}
+                <div class="sv-sched-nowline" style={`top:${nowBandPct}%`}><span class="sv-sched-now-dot"></span></div>
+              {/if}
+              {#if rangeSelSegs?.has(col.key)}
+                {@const seg = rangeSelSegs.get(col.key)!}
+                <div class="sv-sched-select-mirror" style={`top:${seg.top}%; height:${seg.height}%; left:2px; right:2px`}></div>
+              {/if}
               {#each layout.events as p (p.event.key)}
                 {@const isDrag = drag?.ev.key === p.event.key && drag?.moved === true}
                 {@const isResize = isDrag && drag!.mode !== "move"}
@@ -1512,11 +2848,14 @@
                   class:sv-sched-event-dragging={isResize}
                   class:sv-sched-event-source={isSource}
                   class:sv-sched-event-stacked={collisionMode === "stack" && p.zIndex > 1}
+                  class:sv-sched-event-selected={isSelected(p.event)}
                   style={`top:${top}%; height:${height}%; left:calc(${p.leftPct}% + 2px); width:calc(${p.widthPct}% - 4px); --z:${p.zIndex}; ${eventStyle(p.event)}`}
                   onpointerdown={(e) => startTimeDrag(e, p.event, col, "move")}
-                  onclick={() => openEvent(p.event)}
+                  onclick={(e) => onEventClick(e, p.event)}
                   oncontextmenu={(e) => openMenu(e, p.event)}
                   onkeydown={(e) => onEventKey(e, p.event)}
+                  onmouseenter={(e) => onEventEnter(e, p.event)}
+                  onmouseleave={onEventLeave}
                 >
                   {#if canEdit}
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1526,7 +2865,7 @@
                       onpointerdown={(e) => startTimeDrag(e, p.event, col, "resize-start")}
                     ></span>
                   {/if}
-                  <span class="sv-sched-event-time">{fmtTime(isResize ? drag!.previewStart : p.event.start)}{isResize ? ` - ${fmtTime(drag!.previewEnd)}` : ""}</span><span class="sv-sched-event-title">{p.event.title}</span>
+                  {#if scheduler.event}{@render scheduler.event(p.event.row)}{:else}<span class="sv-sched-event-time">{fmtTime(isResize ? drag!.previewStart : p.event.start)}{isResize ? ` - ${fmtTime(drag!.previewEnd)}` : ""}</span><span class="sv-sched-event-title">{p.event.title}</span>{/if}
                   {#if canEdit}
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <span
@@ -1576,7 +2915,15 @@
      </div>
     </div>
   {/if}
+   </div>
+  </div>
 </div>
+
+{#if backlogDrag}
+  <div class="sv-sched-backlog-ghost" use:portalToBody style:position="fixed" style:left={`${backlogDrag.x + 12}px`} style:top={`${backlogDrag.y + 12}px`} class:sv-sched-backlog-ghost-over={backlogDrag.over}>
+    {backlogDrag.item.title}
+  </div>
+{/if}
 
 {#if menuOpen}
   <div
@@ -1590,6 +2937,47 @@
     aria-label="Event actions"
   >
     <SvMenuList items={menuItems} onclose={() => (menuOpen = false)} onselect={() => (menuOpen = false)} />
+  </div>
+{/if}
+
+{#if conflictMsg}
+  <div class="sv-sched-conflict" use:portalToBody role="status">{conflictMsg}</div>
+{/if}
+
+{#if tipEv}
+  <div
+    class="sv-sched-tooltip"
+    use:portalToBody
+    role="tooltip"
+    style:position="fixed"
+    style:left={`${tipPos.x}px`}
+    style:top={`${tipPos.y}px`}
+  >
+    {#if tooltipSnippet}
+      {@render tooltipSnippet(tipEv.row)}
+    {:else}
+      <div class="sv-sched-tooltip-title">{tipEv.title}</div>
+      <div class="sv-sched-tooltip-meta">{tipEv.allDay ? "All day" : `${fmtTime(tipEv.start)} - ${fmtTime(tipEv.end)}`}</div>
+      {#if tipEv.resourceId}<div class="sv-sched-tooltip-meta">{resourceTitle(tipEv.resourceId)}</div>{/if}
+    {/if}
+  </div>
+{/if}
+
+{#if recurScope}
+  <div
+    bind:this={scopePanel}
+    class="sv-sched-scope"
+    use:portalToBody
+    use:popIn={{}}
+    style:position="fixed"
+    style:top={`${recurScope.y}px`}
+    style:left={`${recurScope.x}px`}
+    role="dialog"
+    aria-label={recurScope.kind === "delete" ? "Delete recurring event" : "Edit recurring event"}
+  >
+    <div class="sv-sched-scope-title">{recurScope.kind === "delete" ? "Delete recurring event" : "Edit recurring event"}</div>
+    <button type="button" class="sv-sched-scope-btn" onclick={() => { recurScope?.occurrence(); recurScope = null; }}>This event</button>
+    <button type="button" class="sv-sched-scope-btn" onclick={() => { recurScope?.series(); recurScope = null; }}>All events</button>
   </div>
 {/if}
 
@@ -1856,6 +3244,11 @@
     border: 1px solid var(--sg-border, #e5e7eb);
     border-radius: var(--sg-radius, 8px);
     overflow: hidden;
+    /* Dragging to select cells must not sweep-select the calendar's text
+       (day numbers, event titles). Editors/menus are portalled out, so this
+       does not affect the drawer inputs. */
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   /* toolbar */
@@ -2091,9 +3484,13 @@
   .sv-sched-xinner { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
   .sv-sched-grouphead, .sv-sched-gridhead, .sv-sched-allday {
     display: grid;
-    grid-template-columns: 56px repeat(var(--cols, 7), 1fr);
+    grid-template-columns: var(--gutw, 56px) repeat(var(--cols, 7), 1fr);
     flex: 0 0 auto;
     border-bottom: 1px solid var(--sg-border, #e5e7eb);
+    /* The hourly body scrolls vertically; reserve its scrollbar width here so the
+       day columns of these non-scrolling rows line up with the body columns. */
+    box-sizing: border-box;
+    padding-right: var(--sbw, 0px);
   }
   /* Resource / date group header row (spanning cells above the columns). */
   .sv-sched-groupcell {
@@ -2128,16 +3525,169 @@
   .sv-sched-allday { position: relative; min-height: 28px; }
   /* Background cells that carry the day column separator lines under the bars. */
   .sv-sched-allday-colbg { border-left: 1px solid var(--sg-border, #e5e7eb); min-width: 0; }
-  /* Bars overlay: sits over the day columns (after the 56px gutter). */
-  .sv-sched-allday-bars { position: absolute; left: 56px; top: 0; right: 0; bottom: 0; }
+  /* Bars overlay: sits over the day columns (after the 56px gutter). Its right
+     edge matches the padded track area so bars align with the scrolled body. */
+  /* pointer-events:none lets a drag on empty all-day area reach the colbg cells
+     underneath (for range-select); the bars themselves stay interactive. */
+  .sv-sched-allday-bars { position: absolute; left: var(--gutw, 56px); top: 0; right: var(--sbw, 0px); bottom: 0; pointer-events: none; }
+  .sv-sched-allday-colbg, .sv-sched-allday-cell { cursor: default; }
+  .sv-sched-select-cell { background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 22%, transparent) !important; }
 
   .sv-sched-gridscroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
   .sv-sched-gridbody {
     display: grid;
-    grid-template-columns: 56px repeat(var(--cols, 7), 1fr);
+    grid-template-columns: repeat(var(--gutn, 1), 56px) repeat(var(--cols, 7), 1fr);
     position: relative;
   }
-  .sv-sched-gutter { display: flex; flex-direction: column; }
+  .sv-sched-gutter { display: flex; flex-direction: column; position: relative; }
+  .sv-sched-gutter-secondary { opacity: 0.72; }
+  .sv-sched-gutter-secondary .sv-sched-hour span { color: var(--sg-muted, #9ca3af); }
+  /* Zone-abbreviation labels in the head corner, aligned over each gutter column. */
+  .sv-sched-zonehead { display: flex; align-items: flex-end; padding-bottom: 3px; }
+  .sv-sched-zonelabel {
+    width: 56px;
+    flex: 0 0 56px;
+    text-align: right;
+    padding-right: 6px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--sg-muted, #9ca3af);
+    box-sizing: border-box;
+  }
+  .sv-sched-zonelabel-primary { color: var(--sg-fg, #1f2937); }
+
+  /* ---- current-time ("now") indicator ---- */
+  .sv-sched-nowline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: 2px solid var(--sv-sched-now, #ef4444);
+    z-index: 6;
+    pointer-events: none;
+  }
+  .sv-sched-now-dot {
+    position: absolute;
+    left: -3px;
+    top: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sv-sched-now, #ef4444);
+  }
+  .sv-sched-now-label {
+    position: absolute;
+    right: 3px;
+    transform: translateY(-50%);
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #fff;
+    background: var(--sv-sched-now, #ef4444);
+    white-space: nowrap;
+    z-index: 7;
+    pointer-events: none;
+  }
+  .sv-sched-tl-nowline {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    border-left: 2px solid var(--sv-sched-now, #ef4444);
+    z-index: 6;
+    pointer-events: none;
+  }
+
+  /* ---- booking rules: non-working / out-of-hours shading + conflict flash ---- */
+  .sv-sched-shade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--sg-fg, #1f2937) 6%, transparent),
+      color-mix(in srgb, var(--sg-fg, #1f2937) 6%, transparent) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+  .sv-sched-daycell-nonworking { background: color-mix(in srgb, var(--sg-fg, #1f2937) 5%, transparent); }
+  .sv-sched-conflict {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    z-index: 2147483002;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #fff;
+    background: #ef4444;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+  }
+  .sv-sched-tooltip {
+    z-index: 2147483002;
+    transform: translate(-50%, calc(-100% - 8px));
+    max-width: 260px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: var(--sg-bg, #fff);
+    background: color-mix(in srgb, var(--sg-fg, #1f2937) 92%, transparent);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+  }
+  .sv-sched-tooltip-title { font-weight: 600; }
+  .sv-sched-tooltip-meta { opacity: 0.85; font-variant-numeric: tabular-nums; }
+
+  /* ---- unscheduled backlog panel ---- */
+  .sv-sched-workarea { display: flex; flex: 1 1 auto; min-height: 0; }
+  .sv-sched-viewwrap { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; min-width: 0; }
+  .sv-sched-backlog {
+    flex: 0 0 auto;
+    width: 186px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px;
+    border-right: 1px solid var(--sg-border, #e5e7eb);
+    overflow-y: auto;
+  }
+  .sv-sched-backlog-head { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; color: var(--sg-muted, #9ca3af); padding: 2px 4px 4px; }
+  .sv-sched-backlog-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 9px;
+    border-radius: 6px;
+    cursor: grab;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 10%, transparent);
+    font-size: 0.82rem;
+    touch-action: none;
+  }
+  .sv-sched-backlog-item:hover { background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 18%, transparent); }
+  .sv-sched-backlog-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sv-sched-backlog-ghost {
+    z-index: 2147483003;
+    pointer-events: none;
+    padding: 5px 9px;
+    border-radius: 6px;
+    background: var(--sv-sched-accent, #4f46e5);
+    color: #fff;
+    font-size: 0.8rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    opacity: 0.9;
+  }
+  .sv-sched-backlog-ghost-over { outline: 2px solid #fff; outline-offset: 1px; }
   .sv-sched-hour {
     position: relative;
     border-bottom: 1px solid transparent;
@@ -2313,12 +3863,44 @@
   }
 
   .sv-sched-menu {
+    z-index: 2147483000; /* above the calendar content (portalled to body) */
     background: var(--sg-bg, #fff);
     border: 1px solid var(--sg-border, #e5e7eb);
     border-radius: 8px;
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
     overflow: hidden;
   }
+
+  /* Recurring-edit scope chooser (This event / All events). */
+  .sv-sched-scope {
+    z-index: 2147483001;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    min-width: 168px;
+    background: var(--sg-bg, #fff);
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  }
+  .sv-sched-scope-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--sg-muted, #6b7280);
+    padding: 2px 8px 4px;
+  }
+  .sv-sched-scope-btn {
+    text-align: left;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .sv-sched-scope-btn:hover { background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 14%, transparent); }
 
   /* "+N more" event-list popover (cap overflow + month day cell). */
   .sv-sched-listpop {
@@ -2429,5 +4011,113 @@
     background: var(--sv-sched-accent);
     border-color: var(--sv-sched-accent);
     color: #fff;
+  }
+
+  /* ---- timeline views (horizontal: time left→right, resources = rows) ---- */
+  .sv-sched-tl {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-x: auto; /* horizontal scroll: header + body share one width */
+    overflow-y: hidden;
+  }
+  .sv-sched-tl-head {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--sg-bg, #fff);
+    border-bottom: 1px solid var(--sg-border, #e5e7eb);
+    width: calc(var(--tl-res-w) + var(--tl-axis-w));
+  }
+  .sv-sched-tl-corner {
+    flex: 0 0 var(--tl-res-w);
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--sg-bg, #fff);
+    border-right: 1px solid var(--sg-border, #e5e7eb);
+  }
+  .sv-sched-tl-axis { flex: 0 0 var(--tl-axis-w); position: relative; }
+  .sv-sched-tl-majors { position: relative; height: 22px; border-bottom: 1px solid var(--sg-border, #e5e7eb); }
+  .sv-sched-tl-major {
+    position: absolute; top: 0; height: 22px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 600; box-sizing: border-box; border-left: 1px solid var(--sg-border, #e5e7eb);
+    overflow: hidden; white-space: nowrap;
+  }
+  .sv-sched-tl-ticks { position: relative; height: 26px; }
+  .sv-sched-tl-tick {
+    position: absolute; top: 0; height: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; color: var(--sg-muted, #6b7280); box-sizing: border-box;
+    border-left: 1px solid var(--sg-border, #e5e7eb); overflow: hidden; white-space: nowrap;
+  }
+  .sv-sched-tl-tick.sv-sched-today { color: var(--sv-sched-accent); font-weight: 700; }
+  .sv-sched-tl-tick span { padding: 0 4px; }
+
+  /* Body fills the remaining height; a trailing filler row extends the axis
+     gridlines to the bottom so the timeline uses the full component space. */
+  .sv-sched-tl-body {
+    width: calc(var(--tl-res-w) + var(--tl-axis-w));
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* vertical scroll lives here so the filler can fill height */
+  }
+  .sv-sched-tl-row { display: flex; border-bottom: 1px solid var(--sg-border, #e5e7eb); flex: 0 0 auto; }
+  .sv-sched-tl-row.sv-sched-tl-filler { flex: 1 1 auto; min-height: 0; border-bottom: none; }
+  .sv-sched-tl-filler .sv-sched-tl-resgutter { border-right: 1px solid var(--sg-border, #e5e7eb); }
+  .sv-sched-tl-resgutter {
+    flex: 0 0 var(--tl-res-w);
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    display: flex; align-items: center; gap: 6px; padding: 0 10px;
+    background: var(--sg-bg, #fff);
+    border-right: 1px solid var(--sg-border, #e5e7eb);
+    font-size: 0.82rem; font-weight: 500;
+  }
+  .sv-sched-tl-resname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sv-sched-tl-lanes { flex: 0 0 var(--tl-axis-w); position: relative; }
+  .sv-sched-tl-gridline {
+    position: absolute; top: 0; bottom: 0;
+    border-left: 1px solid color-mix(in srgb, var(--sg-fg, #1f2937) 6%, transparent);
+  }
+  .sv-sched-tl-gridline.sv-sched-today { background: color-mix(in srgb, var(--sv-sched-accent) 7%, transparent); }
+  /* Destination row while dragging a bar to another resource. */
+  .sv-sched-tl-row-drop .sv-sched-tl-lanes { background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 9%, transparent); }
+  .sv-sched-tl-row-drop .sv-sched-tl-resgutter { background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 12%, var(--sg-bg, #fff)); }
+  .sv-sched-tl-bar {
+    /* a horizontal event bar; inherits the shared .sv-sched-bar look */
+    min-width: 6px; /* keep very short events visible + clickable */
+    overflow: hidden;
+  }
+  .sv-sched-tl-bar .sv-sched-bar-time { flex: none; }
+  /* Too narrow to read: a clean colored tick (no clipped text, no grips). */
+  .sv-sched-tl-bar-tiny { padding: 0; }
+  .sv-sched-tl-bar-tiny .sv-sched-chip-resize { display: none; }
+  /* Actively resizing: keep it fully opaque + emphasized so the live grow/shrink
+     reads clearly (never dimmed like a move source). */
+  .sv-sched-bar-resizing {
+    opacity: 1;
+    z-index: 7;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 55%, transparent), 0 4px 14px -4px rgba(0, 0, 0, 0.45);
+  }
+
+  /* ---- selection: drag-select mirror + multi-selected events ---- */
+  .sv-sched-select-mirror {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 22%, transparent);
+    border: 1px solid color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 55%, transparent);
+  }
+  .sv-sched-event-selected,
+  .sv-sched-bar-selected {
+    outline: 2px solid var(--sv-sched-accent, #4f46e5);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 30%, transparent);
   }
 </style>

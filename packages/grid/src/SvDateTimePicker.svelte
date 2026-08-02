@@ -54,6 +54,9 @@
     stepMinutes?: number
     /** Open the dropdown as soon as the field is focused (grid in-cell editing). */
     autoOpen?: boolean
+    /** Stretch the field to fill its container (100% width) instead of the fixed
+     *  default width - used when mounted as a grid cell editor. */
+    block?: boolean
     /** Animate the calendar's month/drill navigation (honors reduced-motion). */
     animate?: boolean | 'slide' | 'fade'
     /** Override the built-in strings (tabs, dialog, clear/open aria-labels). */
@@ -82,6 +85,7 @@
     spinButtons = false,
     stepMinutes = 1,
     autoOpen = false,
+    block = false,
     animate = false,
     ariaLabel,
     invalid = false,
@@ -171,8 +175,8 @@
   }
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
-<div class="sv-dtp" class:sv-dtp--disabled={disabled} dir={resolvedDir} onfocusout={onRootFocusOut}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
+<div class="sv-dtp" class:sv-dtp--disabled={disabled} class:sv-dtp--block={block} dir={resolvedDir} onfocusout={onRootFocusOut}>
   <div class="sv-dtp__field" class:is-invalid={invalid} bind:this={triggerEl}>
     {#if spinButtons}
       <div class="sv-dtp__spin">
@@ -256,6 +260,8 @@
     --_radius: var(--sg-radius, 8px);
     display: inline-block; position: relative; width: 240px; color: var(--_fg);
   }
+  /* Fill the container (grid cell editor) instead of the fixed default width. */
+  .sv-dtp--block { display: block; width: 100%; }
   .sv-dtp--disabled { opacity: 0.6; }
   .sv-dtp__field {
     display: flex; align-items: center; gap: 2px;

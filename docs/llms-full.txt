@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-07-31 from 348 pages.
+Generated 2026-08-02 from 350 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -3758,6 +3758,86 @@ mark fields hidden, add validation) before generating - AI drafts, you approve.
 - [Edit forms & validation](./edit-forms.md) · [Code generation](./code-generation.md)
 
 <!-- =================================================================
+     /enterprise/studio/dock-layout  (community)
+     ================================================================== -->
+
+# Docking layout
+
+By default a screen arranges its blocks in a responsive **12-column grid**. For
+dashboards, consoles, and analyst tools you can switch a screen to a **docking
+workspace** instead: the same blocks become **dockable, floatable, pinnable
+panes** (an [`SvDockManager`](#/demos/362-dock-manager)). Drag a tab to split a
+region, pull it out into a floating window, or pin it to an edge - and the
+arrangement is saved per user.
+
+It is a per-screen choice: a data-heavy console can dock while your simple CRUD
+screens stay on the grid.
+
+## Turn it on
+
+In the [visual designer](./app-designer.md), select a screen (click empty
+canvas), open the inspector, and set **Layout** to **Docking manager**. The
+screen's blocks are laid out automatically by role:
+
+- **Filters** dock to the **left**.
+- **Record / detail** panels dock to the **right**.
+- **KPIs / gauges** form a strip across the **top**.
+- The main content (grid, board, calendar, chart, ...) fills the **centre**.
+
+From there, drag pane tabs to rearrange, split, float, or pin them. Rename a
+pane's tab in the inspector under **Dock pane -> Tab title**. Closing a pane's
+tab removes that block from the screen.
+
+The live [preview](./app-designer.md) renders the real docking manager too, so
+what you arrange is exactly how the app runs.
+
+## What it generates
+
+The screen body becomes an `<SvDockManager>` whose workspace is your serialized
+layout; each block is a pane rendered by id. The rest of the screen - data
+source, editing, actions - is unchanged, so a grid in a pane keeps all its
+features (sorting, editing, its own data):
+
+```svelte
+<script lang="ts">
+  import { SvDockManager, type DockManagerState } from '@svgrid/grid'
+  let dockWorkspace = $state<DockManagerState>(/* your saved layout */)
+  // ... controller / rows / editing, exactly as a grid-layout screen ...
+</script>
+
+{#if dockNarrow}
+  <div class="st-screen"> … blocks stacked … </div>   <!-- mobile fall-back -->
+{:else}
+  <SvDockManager bind:workspace={dockWorkspace} onChange={saveLayout}>
+    {#snippet pane(p)}
+      {#if p.id === 'grid-1'}<SvGrid … containerHeight="100%" />{/if}
+      {#if p.id === 'filter-1'}…{/if}
+    {/snippet}
+  </SvDockManager>
+{/if}
+```
+
+- **Persistence** - the layout is restored from `localStorage` per screen and
+  re-saved whenever the user rearranges panes.
+- **Mobile** - below a narrow breakpoint the workspace falls back to a single
+  stacked column (floating / tiling is impractical on a phone).
+
+## When to use it
+
+- **Use docking** for consoles and workbenches: a support queue beside the
+  selected ticket and its history; an analyst view with a grid, a chart, and a
+  pivot the user tears off into their own windows.
+- **Stay on the grid** for straightforward list / form / detail screens, and
+  anything that should read top-to-bottom on mobile.
+
+## Related
+
+- [App designer](./app-designer.md) - the block palette and inspector.
+- [Scheduler / calendar view](./scheduler.md) and the Kanban board - other ways
+  the same grid data can be presented.
+- The underlying component: [docking layout demo](#/demos/362-dock-manager).
+
+<!-- =================================================================
      /enterprise/studio/drizzle  (community)
      ================================================================== -->
 
@@ -6334,6 +6414,104 @@ connection stays on your machine.
 - [Launch the designer](./launch.md) - `npx @svgrid/studio designer` (+ `--template`)
 - [Visual app designer](./app-designer.md) - the canvas, blocks, and grid editor
 - [Databases](./databases.md) - the per-dialect connection details
+
+<!-- =================================================================
+     /enterprise/studio/scheduler  (community)
+     ================================================================== -->
+
+# Scheduler / calendar view
+
+Any grid whose rows carry a date can render as a **calendar** instead of a table -
+a Month / Week / Day / Agenda (and Timeline) view where each row becomes an event
+placed by time. It is a **view of the grid**, exactly like the [Kanban board](./app-designer.md):
+same rows, same data source, same edit form - only the presentation changes. Drag
+an event to reschedule it and the new time is written back through the data source.
+
+The calendar renderer ships in `@svgrid/enterprise`; the generated app registers it
+once with `enableSchedulerView()` and then renders `<SvGrid scheduler={...}>`.
+
+## Turn it on
+
+In the [visual designer](./app-designer.md), select a grid block and expand
+**Scheduler / calendar** in the inspector. Tick **Render rows as a calendar /
+scheduler** and map the fields:
+
+- **Start (date) field** - required; the event's start (a `date` / `datetime` field).
+- **End field** - optional; omit and each event uses a default duration.
+- **Title** - the event label (defaults to the first column).
+- **Color** - a field whose value tints the event (e.g. a status or priority enum).
+- **Resource** - optional; splits the Week / Day grid into one column per value
+  (per person, room, or machine) - a resource scheduler.
+- **Opens on** - Month, Week, Day, Agenda, or a Timeline view.
+- **Drag to move / resize** - turns on drag-to-reschedule and edge-resize, writing
+  the new start / end back through the data source (optimistic, then persisted).
+- **Event detail drawer** - a built-in panel to view / edit an event's fields.
+
+The canvas preview switches to the live calendar as soon as you map a start field,
+so you can try Month / Week / Day and drag events right in the designer.
+
+> The scheduler is a **render mode**: it is mutually exclusive with row **grouping**
+> and **tree data** on the same grid. Pick one.
+
+## What it generates
+
+The block compiles to the grid's own `scheduler` prop plus write-back handlers -
+real, typed Svelte, not a black box:
+
+```svelte
+<script lang="ts">
+  import { enableSchedulerView } from '@svgrid/enterprise'
+  enableSchedulerView()
+  // ... load allRows ...
+</script>
+
+<SvGrid
+  data={allRows}
+  columns={columns}
+  getRowId={(r) => String(r.id)}
+  scheduler={{
+    startField: 'startedAt',
+    endField: 'dueDate',
+    titleField: 'title',
+    colorField: 'priority',
+    resourceField: 'assignee',
+    initialView: 'week',
+    editable: true,
+    drawer: true,
+    onEventMove: (e) => { /* patch start/end on the row, persist */ },
+    onEventCommit: (e) => { /* save the drawer's edits */ },
+  }}
+/>
+```
+
+A resource / title / color field that points at a relation is resolved to its
+display column automatically (e.g. `assigneeId` renders as the assignee's name).
+
+## The calendar block
+
+The standalone **calendar** block (a dedicated "Schedule" screen) uses the same
+renderer - a Month calendar with a detail drawer, read-first. Use it for a simple
+"events on a month grid" screen; use the grid **Scheduler view** above when you
+want Week / Day time-grids, per-resource columns, timelines, or drag-to-reschedule.
+
+## In the sample apps
+
+Several starter apps ship a scheduler so you can see it end to end:
+
+- **Projects** - a task **timeline** (start -> due) with one row per assignee, tinted by priority.
+- **People Ops (HR)** - a **leave calendar**: time-off as a per-employee resource scheduler.
+- **HireDesk (ATS)** - interviews on a **Week** grid, colored by pipeline stage.
+- **Evently**, **HealthClinic**, **FitClub**, and the restaurant app - month event calendars.
+
+## Related
+
+- The underlying grid feature and its live demos: [Scheduler / calendar mode](#/demos/363-scheduler-intro),
+  [timeline views](#/demos/371-scheduler-timeline), and the real-world apps built on it -
+  [Horizon calendar client](#/demos/381-scheduler-app-calendar), [Meridian Clinic](#/demos/382-scheduler-app-clinic),
+  [Dispatch board](#/demos/383-scheduler-app-dispatch), [Portfolio roadmap](#/demos/384-scheduler-app-roadmap),
+  and [Broadcast content calendar](#/demos/385-scheduler-app-content).
+- [App designer](./app-designer.md) - the block palette and inspector.
+- [Kanban board](./app-designer.md) - the other "view of the grid".
 
 <!-- =================================================================
      /enterprise/studio/schema  (community)
@@ -26233,12 +26411,16 @@ Open on a specific date with `initialDate` (defaults to today).
   bar** spanning the day columns they cover (split into a fresh segment on each
   week row they continue into), stacked into lanes so they never overlap; a
   per-day **"+N more"** collapses events beyond the visible lanes into a popover.
-- **Week / Day** - a time-grid with an hourly band. Overlapping events are laid
-  out by the chosen [collision mode](#colliding-overlapping-events). **All-day
-  and multi-day events** render in a separate **all-day row** at the top (in Week
-  view as continuous spanning bars), never filling the hourly columns. Drag an
-  event between the all-day row and the grid to flip it between all-day and timed,
-  or drag a bar's **left / right edge** to extend or shorten it by whole days.
+- **Week / Day** - a time-grid with an hourly band spanning `dayStartHour`..
+  `dayEndHour` (default the full `0..24` day; a full-day band opens scrolled to
+  business hours rather than midnight). Overlapping events are laid out by the
+  chosen [collision mode](#colliding-overlapping-events). **All-day and multi-day
+  events** render in a separate **all-day row** at the top (in Week view as
+  continuous spanning bars), never filling the hourly columns. Drag an event
+  between the all-day row and the grid to flip it between all-day and timed, or
+  drag a bar's **left / right edge** to extend or shorten it by whole days. A
+  **current-time line** tracks the local time on today's column (`nowIndicator`,
+  on by default); the timeline draws it as a vertical line at "now".
 - **Agenda** - a chronological list grouped by day. Its span is `agendaDays`
   (default 30).
 
@@ -26273,6 +26455,20 @@ color (any CSS color), or set one `color` for all of them.
   scheduler={{ startField: 'start', endField: 'end', titleField: 'title', colorField: 'color' }} />
 ```
 
+Add **`secondaryColorField`** to encode a *second* dimension: it paints a strip
+on the **left edge** of each event, distinct from the main fill. A shift roster,
+for instance, can fill each event with the **person**'s color (matching the
+resource legend) while the left strip shows the **role**:
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end',
+    colorField: 'staffColor',       // fill = person
+    secondaryColorField: 'roleColor', // left strip = role
+  }} />
+```
+
 ## Drag to move, resize
 
 Set **`editable`** to turn on drag-and-drop and resizing in the time-grid (and
@@ -26303,7 +26499,7 @@ left or right edge across day columns to change how many days it covers.
 A focused event can also be nudged with the keyboard: **arrow left/right** move
 it a day, **arrow up/down** a slot, and **Enter** opens its editor.
 
-<div data-docs-demo="364-scheduler-timegrid" data-height="620"></div>
+<div data-docs-demo="382-scheduler-app-clinic" data-height="700"></div>
 
 ## Resources (group by person / room)
 
@@ -26337,7 +26533,53 @@ days) - the same choice as Smart's `groupByDate`.
   }} />
 ```
 
-<div data-docs-demo="365-scheduler-resources" data-height="620"></div>
+<div data-docs-demo="383-scheduler-app-dispatch" data-height="700"></div>
+
+## Timeline views (resources as rows)
+
+The `timeline*` views flip the layout **horizontal**: time runs left→right on a
+scrollable axis and **each resource is a row**, with events as horizontal bars
+lane-packed so overlaps stack. Add any of them to `views` (and pick one with
+`initialView`):
+
+- **`timelineDay`** - hour ticks across one day (clamped to the
+  `dayStartHour..dayEndHour` band).
+- **`timelineWeek`** - day ticks across a week.
+- **`timelineMonth`** - day ticks across a month.
+- **`timelineYear`** - month ticks across a year (grouped into quarters).
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end',
+    resourceField: 'room', resources,
+    views: ['timelineDay', 'timelineWeek', 'timelineMonth', 'timelineYear'],
+    initialView: 'timelineWeek',
+    editable: true,
+    onEventMove: (e) => { /* e.toResource = the row it was dropped on */ },
+  }} />
+```
+
+Without a `resourceField` the timeline shows a single **All** row. When editable,
+drag a bar **sideways** to re-time it, drag it to **another row** to reassign the
+resource, or drag an **edge** to resize (day-granular on the multi-day zooms,
+`timelineSlotMinutes` on the day zoom). Tune the layout with `resourceAreaWidth`
+(left gutter), `timelineLaneHeight`, and `timelineSlotMinutes`.
+
+The same [`rangeSelectable` / `eventSelectable`](#selecting-cells--events) modes
+work in the timeline: **click or drag empty space** to mark a range (a slot in
+Day, whole days in Week/Month, a month in Year), then **arrow keys** move the
+selected cell along the axis (Left/Right) and between resource rows (Up/Down),
+**Shift+arrows** extend it, and **Enter** creates the event (**Esc** cancels).
+**Ctrl/Cmd-click** bars to multi-select, **Delete** to remove.
+
+The `timeline*` views cover any horizon. Short-range planning (Day / Week) and
+the long-range **roadmap** (Month / Year) read best with data scaled to the
+zoom, so the demos split them:
+
+<div data-docs-demo="371-scheduler-timeline" data-height="560"></div>
+
+<div data-docs-demo="384-scheduler-app-roadmap" data-height="700"></div>
 
 ## Recurring events
 
@@ -26380,9 +26622,11 @@ The rule shape covers the patterns an enterprise calendar needs:
 
 ### Editing patterns
 
-When `recurrenceField` and `drawer` are both set, clicking **any** event opens a
-**recurrence editor** in the drawer - so you can turn a one-off into a recurring
-event whenever you decide. It offers a full, calendar-app-grade set of controls:
+Whenever the **`drawer`** is on, clicking **any** event opens a **recurrence
+editor** in the drawer - so you can turn a one-off into a recurring event (or drop
+its pattern) whenever you decide. You don't need a `recurrenceField`: without one
+the rule is stored on a default `recurrence` field (set `recurrenceField` to name
+your own). It offers a full, calendar-app-grade set of controls:
 
 - **Repeat** - Does not repeat / Daily / Weekly / Monthly / Yearly, with an
   **interval** ("every N …").
@@ -26399,6 +26643,34 @@ through `onEventCommit`.
 Recurring events are also **drag- and resize-editable**: moving or resizing an
 occurrence edits the whole **series'** time-of-day and duration (the pattern's
 days are kept), so all occurrences shift together.
+
+### This event vs. all events (per-occurrence exceptions)
+
+Set a **`recurrenceExceptionsField`** (an array on the row) and an
+**`onOccurrenceChange`** handler, and moving / resizing / deleting a single
+occurrence asks **This event** or **All events**. "All events" edits the series
+as above; **This event** fires `onOccurrenceChange` with an `exception` to store
+on the row - a moved / retitled / **deleted** single instance that leaves the
+rest of the series untouched (like an iCal `RECURRENCE-ID` / `EXDATE`).
+
+```svelte
+scheduler={{
+  recurrenceField: 'repeat',
+  recurrenceExceptionsField: 'exceptions',
+  onOccurrenceChange: (e) => {
+    // merge e.exception into the row (keyed by e.occurrenceStart)
+    const key = (e.exception.occurrenceStart as Date).getTime()
+    e.row.exceptions = [
+      ...(e.row.exceptions ?? []).filter((x) => new Date(x.occurrenceStart).getTime() !== key),
+      { ...e.exception },
+    ]
+  },
+}}
+```
+
+Each exception is `{ occurrenceStart, deleted? , start?, end?, title? }` where
+`occurrenceStart` identifies the occurrence (its **original** start). Without a
+`recurrenceExceptionsField` the prompt is skipped and edits apply to the series.
 
 ### Showing the pattern in a table
 
@@ -26420,7 +26692,7 @@ on Fri"*, or *"Monthly on the last Friday"*:
 Pass a `RecurrenceLabels` object as the second argument to localize the weekday /
 month / ordinal words (and the empty-rule label).
 
-<div data-docs-demo="366-scheduler-recurring" data-height="620"></div>
+<div data-docs-demo="381-scheduler-app-calendar" data-height="700"></div>
 
 ## Add, edit, delete
 
@@ -26433,10 +26705,14 @@ never mutates your rows itself:
 - **Edit** - set **`drawer`** (`true`, or a config object) and clicking an event
   opens a detail drawer. It always includes a **When** editor - **start** and
   **end** as full date-and-time pickers, plus an **All day** toggle when
-  `allDayField` is set - followed by an `SvForm` of your other columns. Saving
-  fires `onEventCommit` with the changed values.
+  `allDayField` is set - followed by an `SvForm` of your other columns. The
+  footer has **Save** and **Cancel**: Save (or **clicking outside** the drawer)
+  commits and fires `onEventCommit` with the changed values; Cancel discards.
 - **Delete** - set **`onEventDelete`** and the drawer shows a **Delete** button;
   remove the row from your data in the handler.
+- **Right-click an event** for a context menu with **Edit** (opens the drawer) and
+  **Delete** built in (shown when `drawer` / `onEventDelete` are set); any
+  `eventMenu` items you return are appended below them.
 
 ```svelte
 <SvGrid {data} {columns}
@@ -26453,7 +26729,218 @@ Because it is a view of the grid, pairing it with a plain `<SvGrid>` table gives
 you a **Calendar / Table toggle** over the same rows - every scheduler demo ships
 one.
 
-<div data-docs-demo="367-scheduler-agenda" data-height="620"></div>
+## Booking rules
+
+Enterprise schedulers enforce *when* things can be booked. The scheduler shades
+non-bookable time and can reject double-bookings:
+
+- **`businessHours: { start, end }`** - working-hours window (hours). Time outside
+  it is shaded in the Week / Day grid.
+- **`nonWorkingDays: number[]`** - weekday numbers (0 = Sun … 6 = Sat) shaded as
+  non-working (e.g. `[0, 6]` for weekends), in the time-grid and month.
+- **`shadeUntilNow`** - shade elapsed time on today's column.
+- **`restrictToBusinessHours`** - **enforce** the shading: a drag / resize /
+  create that lands outside `businessHours` or on a `nonWorkingDays` day is
+  rejected and snaps back (without it the shading is a visual hint only).
+- **`disableConflicts`** - **no double-booking**: dragging, resizing or creating
+  an event so it overlaps another **on the same resource** is rejected and snaps
+  back (a brief "already booked" flash). Different resources may overlap freely.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    resourceField: 'room', resources: rooms,
+    businessHours: { start: 9, end: 17 },
+    nonWorkingDays: [0, 6],
+    shadeUntilNow: true,
+    disableConflicts: true,   // enforce no double-booking per room
+  }} />
+```
+
+Shading is purely visual unless `restrictToBusinessHours` is set; `disableConflicts`
+is always enforced. Use the pure [`hasConflict`](../../api) helper to check a
+placement yourself.
+
+### Per-resource availability
+
+`businessHours` / `nonWorkingDays` are global, but each **resource can declare
+its own working windows** via `resource.availability` - and they can vary by
+weekday. Perfect for a clinic where every doctor keeps different hours: each
+resource's columns shade its own off-hours, and `restrictToBusinessHours` blocks
+booking a resource outside *its* window.
+
+```ts
+const doctors = [
+  { id: 'smith', title: 'Dr. Smith', availability: [
+    { days: [1, 3, 5], start: 9, end: 13 },   // Mon/Wed/Fri mornings
+    { days: [2, 4], start: 14, end: 18 },      // Tue/Thu afternoons
+  ] },
+  { id: 'jones', title: 'Dr. Jones', availability: [
+    { days: [1, 2, 3, 4, 5], start: 8, end: 12 },
+    { days: [1, 2, 3, 4, 5], start: 13, end: 16 },
+  ] },
+]
+```
+
+An `availability` window is `{ start, end }` hours with optional `days` (weekday
+0-6; omit for every day). A weekday with no matching window is a full day off. A
+resource without `availability` falls back to the global `businessHours` /
+`nonWorkingDays`.
+
+## Custom event content & tooltips
+
+Render events however you like with the **`event`** snippet (it receives the
+row), and show rich detail on hover with the **`tooltip`** snippet (or
+`tooltip: true` for the built-in title + time + resource). `tooltipDelay` sets
+the open delay (default 400ms).
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{ startField: 'start', endField: 'end', event: eventBody, tooltip: tip }} />
+
+{#snippet eventBody(row)}
+  <span class="badge">{initials(row.owner)}</span> {row.title}
+{/snippet}
+{#snippet tip(row)}
+  <strong>{row.title}</strong><br />{row.owner} · {row.status}
+{/snippet}
+```
+
+The snippet replaces the whole event body (time + title chrome), so you own the
+layout; resize handles and drag still work around it.
+
+## Import / export, undo & clipboard
+
+- **iCal (Outlook / Google)** - the pure `toICS(events)` / `fromICS(text)`
+  helpers round-trip timed, all-day and **recurring (RRULE)** events, plus STATUS,
+  DESCRIPTION and LOCATION. Map your rows to the small `ICalEvent` shape and
+  export to an `.ics` file; parse a pasted `.ics` back with `fromICS`.
+- **Data export** - because the scheduler is a *view of the grid*, its **Table**
+  toggle exports to CSV / Excel with the grid's own export.
+- **Undo / redo** - set **`history: true`** and drag-moves + resizes are undoable
+  with `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` (the scheduler re-emits the callbacks
+  with the reversed values).
+- **Duplicate** - the event context menu gets a **Duplicate** action (when
+  `onEventAdd` is set) that copies the event right after itself.
+
+```svelte
+import { toICS, fromICS } from '@svgrid/grid'
+const ics = toICS(rows.map((r) => ({ title: r.title, start: new Date(r.start), end: new Date(r.end), rrule: r.repeat })))
+const events = fromICS(pastedText) // -> { title, start, end, allDay, rrule, ... }[]
+```
+
+## Unscheduled backlog
+
+Pass **`unscheduled`** (a list of `{ id, title, durationMin?, color? }`) and a
+backlog panel appears beside the Week / Day grid. **Drag a task onto a time
+slot** and **`onSchedule(item, start, resourceId)`** fires - create the event and
+drop the task from your list.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end',
+    unscheduled: tasks,           // [{ id, title, durationMin }]
+    onSchedule: (item, start) => {
+      rows = [...rows, makeEvent(item, start)]
+      tasks = tasks.filter((t) => t.id !== item.id)
+    },
+  }} />
+```
+
+## Time zones
+
+Set `timeZone` (an IANA id like `'America/New_York'`) and the whole calendar -
+hour ruler, event positions, day boundaries, all-day grouping and the now-line -
+is rendered in that zone instead of the browser's. `secondaryTimeZones` adds
+read-only "world clock" rulers to the left of the primary gutter.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end',
+    timeZone: 'America/New_York',
+    secondaryTimeZones: [{ id: 'Europe/London' }, { id: 'Asia/Tokyo' }],
+  }} />
+```
+
+For this to be correct the row `start` / `end` must be **instant-unambiguous** -
+UTC / offset ISO (`'2026-08-01T13:00:00Z'`, `'…+02:00'`) or epoch ms; a bare
+local string (`'2026-08-01T09:00'`) is read as the browser instant then shown in
+the zone. Edits made in the calendar are written back as real instants, so store
+them offset-aware (e.g. `date.toISOString()`); the display zone never mutates the
+stored value - toggle Table on the [time-zones demo](../../examples) to see the
+UTC strings stay put while the calendar shifts. The tz math is DST-aware and uses
+`Intl` only (no date library).
+
+<div data-docs-demo="385-scheduler-app-content" data-height="700"></div>
+
+## Selecting cells & events
+
+Two selection modes work in **every view** - time-grid (week / day), month, and
+timeline. **Both are on by default** - set `rangeSelectable: false` or
+`eventSelectable: false` to turn one off.
+
+**Select a date/time range** (`rangeSelectable`). Click or drag marks a single
+**continuous `[start, end]` datetime range** - dragging across days extends it
+into a multi-day span (the start day fills from the start time down, whole middle
+days, the end day down to the end time), *not* a per-day rectangle. Releasing the
+drag only **marks** the range - it never creates an event on its own. Confirm it
+explicitly to create: press **Enter**, or **right-click the selection** and choose
+**Add Event** (**Esc** cancels the marker). Confirming fires `onRangeSelect` with
+the continuous `start` / `end` (plus the covered `days[]` / `resourceIds[]` for
+reference). Without a handler it falls back to `onEventAdd(start, end, resourceId,
+allDay)` - whose fourth argument is `true` for an all-day selection (the all-day
+row, a month day cell, or a multi-day timeline zoom), so the handler can set the
+`allDayField` and create a true all-day event.
+
+You can also select by **keyboard**: **click** an empty cell to select it, then
+the **arrow keys** move the selected cell and **Shift + arrows** extend the range
+(**Enter** creates, **Esc** clears). What the arrows step by follows the view -
+in the time-grid a slot vertically and a day horizontally, in **month** a day
+horizontally and a week vertically, in the **timeline** one axis cell (slot / day
+/ month) horizontally and a resource row vertically. In the time-grid the
+selection crosses into the **all-day row**: `ArrowUp` from the top timed cell
+moves to the all-day cell, and `ArrowDown` from the all-day row drops back into
+the grid.
+
+Dragging the **all-day row** (or, in **month**, any day cells) selects whole days
+(`selection.allDay` is `true`); create an all-day event spanning `start`..`end`
+the same way.
+
+**Multi-selecting events** (`eventSelectable`) works in every view too, including
+the **agenda** list: Ctrl/Cmd-click to toggle, Shift-click for a range, `Delete`
+to remove.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end',
+    rangeSelectable: true,
+    onRangeSelect: (sel) => {
+      // one continuous event over the whole marked range
+      rows = [...rows, makeEvent(sel.start, sel.end, sel.allDay)]
+    },
+  }} />
+```
+
+**Multi-select existing events** with `eventSelectable`. **Ctrl / Cmd-click**
+toggles an event into the selection, **Shift-click** selects a range, and a plain
+click clears it. Selected events get an outline; **dragging any one of them moves
+the whole set together**, and pressing **Delete** removes them all (through
+`onEventDelete`). `onEventSelectionChange` reports the selected rows.
+
+```svelte
+<SvGrid {data} {columns}
+  scheduler={{
+    startField: 'start', endField: 'end', editable: true,
+    eventSelectable: true,
+    onEventSelectionChange: (rows) => (selected = rows),
+    onEventDelete: (row) => (data = data.filter((r) => r !== row)),
+  }} />
+```
+
+<div data-docs-demo="372-scheduler-selection" data-height="560"></div>
 
 ## Search, filter, sort flow through
 
@@ -26470,20 +26957,36 @@ source.
 | `endField` | Field holding the end; else `defaultDurationMin` from the start. |
 | `allDayField` | Boolean field marking an all-day event; enables the drawer's All-day toggle. |
 | `titleField` | Event label. Defaults to the first column's field. |
-| `colorField` / `color` | Per-event accent color, or one for all. |
+| `colorField` / `color` | Per-event accent color (the fill), or one for all. |
+| `secondaryColorField` | A second per-event color, painted as a left-edge strip (encode two dimensions - e.g. fill = person, strip = role). |
 | `recurrenceField` | Field holding a `RecurrenceRule` (or array). |
+| `recurrenceExceptionsField` / `onOccurrenceChange` | Per-occurrence overrides (moved / edited / deleted single instances); enables the "This event vs All events" prompt. |
 | `defaultDurationMin` | Event length when a row has no `endField` (default 60). |
-| `views` / `initialView` | Which views to offer, and the first shown. |
+| `views` / `initialView` | Which views to offer, and the first shown. Includes the horizontal `timelineDay` / `timelineWeek` / `timelineMonth` / `timelineYear`. |
 | `initialDate` | The date the calendar opens on (default today). |
 | `weekStartsOn` | First day of the week, 0-6 (default 0). |
 | `slotMinutes` | Time-grid slot size and move/resize snap (default 30). |
 | `dayStartHour` / `dayEndHour` | Visible time-grid band (default 0..24). |
+| `nowIndicator` | Show the current-time line on today (Week / Day + Day timeline). On by default; `false` to hide. |
+| `businessHours` / `nonWorkingDays` / `shadeUntilNow` | Shade out-of-hours, non-working weekdays and elapsed time. |
+| `restrictToBusinessHours` | Enforce the shading - reject a drop / create outside working hours or on a non-working day. |
+| `disableConflicts` | Reject a drag / resize / create that double-books the same resource. |
+| `event` / `tooltip` / `tooltipDelay` | Custom event-body snippet and a hover-tooltip snippet (or `tooltip: true` for the built-in). |
+| `history` | Enable undo / redo of drag-move + resize (`Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z`). |
+| `unscheduled` / `onSchedule` / `backlogTitle` | A drag-to-schedule backlog panel beside the Week / Day grid. |
+| `timeZone` | IANA zone the calendar is shown in (ruler, positions, day boundaries, now-line). Default: browser local. |
+| `secondaryTimeZones` | Extra read-only hour rulers (`{ id, label? }[]`) shown left of the primary gutter - a world clock. |
 | `collisionMode` | Overlap layout: `split` (default) / `cap` / `stack`. |
 | `maxColumns` | `cap` mode: columns before a `+N more` tile (min 2, default 3). |
 | `agendaDays` | How many days the agenda spans (default 30). |
-| `resourceField` / `resources` | Group time-grid columns by resource + a legend/filter in every view. |
+| `resourceField` / `resources` | Group time-grid columns by resource + a legend/filter in every view; resources become the rows in timeline views. |
 | `groupByDate` | Group day->resources instead of resource->days (default false). |
+| `resourceAreaWidth` | Timeline: width (px) of the left resource-label gutter (default 160). |
+| `timelineSlotMinutes` | Timeline day zoom: tick size + move/resize snap (default `slotMinutes`). |
+| `timelineLaneHeight` | Timeline: height (px) of one event lane in a resource row (default 26). |
 | `editable` | Enable drag-to-move and edge-resize. |
+| `rangeSelectable` / `onRangeSelect` | Click / drag empty slots to mark a continuous date/time range (spans days; arrows move, Shift+arrows extend); confirm with Enter or right-click -> Add Event to create one event. **On by default** (`false` to disable). |
+| `eventSelectable` / `onEventSelectionChange` | Ctrl/Shift-click to multi-select events; drag to move together, Delete to remove. **On by default** (`false` to disable). |
 | `onEventMove` / `onEventResize` | Fired with the new start/end (and resource). |
 | `onEventAdd` | Fired when an empty slot is double-clicked. |
 | `onEventDelete` | Shows a Delete button in the drawer; remove the row here. |
@@ -36724,6 +37227,8 @@ workspace = JSON.parse(localStorage.getItem('ws')!)   // tiled + floating + hidd
 | `reorderEnabled` | `boolean`                          | `true`  | Allow dragging tabs to reorder within a strip. |
 | `headerPosition` | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'` | Which side of each panel its tab strip sits on (left/right render vertical tabs). |
 | `keepAlive`      | `boolean`                          | `false` | Keep inactive tabs mounted (hidden) so their DOM state (scroll, form input) persists across switches. |
+| `hideSingleTab`  | `boolean`                          | `false` | Hide the tab button on a single-pane leaf (no redundant title bar; the panel actions still show). |
+| `allowPopout`    | `boolean`                          | `false` | Offer the pop-out-to-a-new-window panel action. Off by default; the `popout()` API still works. |
 
 ### Events
 
@@ -36757,11 +37262,13 @@ it from `api.focus(paneId)` and listen via the `focus` event.
 - **Reorder** - drag a tab along its own strip; an insertion line marks where it
   will land.
 - **Stack header controls** - each tiled panel's strip carries **maximize**
-  (fills the docked area in place; restore returns), **auto-hide**, **float**,
-  and **pop-out** buttons on the right.
-- **Pop-out to a native window** - the pop-out button (`⤡`) opens the panel in a
-  real browser window (styles + theme carried across); closing that window docks
-  the panel back in. Falls back to a floating window if the browser blocks pop-ups.
+  (fills the docked area in place; restore returns), **auto-hide**, and **float**
+  buttons on the right (plus **pop-out** when you opt in with `allowPopout`).
+- **Pop-out to a native window** - set `allowPopout` to add a pop-out button
+  (`⤡`) that opens the panel in a real browser window (styles + theme carried
+  across); closing that window docks the panel back in. Falls back to a floating
+  window if the browser blocks pop-ups. Off by default - most apps only need the
+  in-app floating windows - but the `popout()` API works regardless of the prop.
 - **Auto-hide** - click a tab's auto-hide button (`▽`) to collapse its leaf to
   the **nearest** edge (left / right / top / bottom, inferred from where it
   sits), or drag a tab to any of the four manager borders to auto-hide it there.
@@ -37113,6 +37620,17 @@ Give options a `group` and the panel renders labeled sections automatically:
 ```svelte
 <SvDropDownList {options} label="Priority" />
 <!-- options: { value, label, group: 'Urgent' | 'Normal' } -->
+```
+
+### Color swatches
+
+Give an option a `color` (any CSS color) and it renders a small swatch before
+the label - in the panel and on the selected trigger. Handy when the value *is*
+a color, like a status, label, or category:
+
+```svelte
+<SvDropDownList {options} label="Role" />
+<!-- options: { value: 'Barista', label: 'Barista', color: '#4f46e5' } -->
 ```
 
 ### Required in a form
@@ -37798,12 +38316,17 @@ import { SvForm } from '@svgrid/grid'
 
 | Prop          | Type                                          | Default    | Description                                                  |
 | ------------- | --------------------------------------------- | ---------- | ----------------------------------------------------------- |
-| `fields`      | `ReadonlyArray<FormField>`                    | -          | The form schema. See [FormField](#formfield).               |
+| `fields`      | `ReadonlyArray<FormField \| FormSection>`     | -          | The form schema - flat fields and/or titled [sections](#formsection). See [FormField](#formfield). |
 | `initial`     | `Record<string, any>`                         | `{}`       | Initial values, seeded once on mount.                       |
-| `onSubmit`    | `(values: Record<string, any>) => void`       | -          | Fired with the values when the form is valid.               |
+| `onSubmit`    | `(values) => void \| Promise<void>`           | -          | Fired with the (visible-field) values when valid. If it returns a promise, the submit button shows a loading state until it settles. |
 | `onChange`    | `(values: Record<string, any>) => void`       | -          | Fired on every field edit.                                  |
+| `onCancel`    | `() => void`                                   | -          | When set, renders a secondary Cancel button.                |
 | `submitLabel` | `string`                                       | `Submit`   | Label for the submit button.                                |
-| `columns`     | `number`                                       | `1`        | Columns in the responsive field grid.                       |
+| `cancelLabel` | `string`                                       | `Cancel`   | Label for the Cancel button.                                |
+| `showReset`   | `boolean`                                       | `false`    | Render a Reset button that restores the initial values.     |
+| `resetLabel`  | `string`                                       | `Reset`    | Label for the Reset button.                                 |
+| `stepper`     | `boolean`                                       | `false`    | Render titled sections as a validated multi-step wizard (Back / Next, per-step gating). |
+| `columns`     | `number`                                       | `1`        | Columns in the responsive field grid (a section can override its own). |
 | `disabled`    | `boolean`                                       | `false`    | Disable every field and the submit button.                  |
 
 ### FormField
@@ -37812,6 +38335,7 @@ import { SvForm } from '@svgrid/grid'
 type FormFieldType =
   | 'text' | 'email' | 'tel' | 'textarea' | 'number' | 'password'
   | 'select' | 'checkbox' | 'switch' | 'date' | 'color' | 'rating'
+  | 'array'   // a repeatable group - see itemFields
 
 type FormField = {
   name: string
@@ -37822,11 +38346,136 @@ type FormField = {
   options?: Array<{ value: string | number; label: string }>  // for 'select'
   rules?: ReadonlyArray<Validator>     // declarative rules (email/pattern/min/compare...)
   validate?: (value: any, values: Record<string, any>) => string | null | undefined
+  asyncValidate?: (value, values) => Promise<string | null | undefined>  // debounced, stale-guarded
+  asyncDebounce?: number               // ms before asyncValidate runs on edit (default 300)
   full?: boolean                       // span the full width in the grid
+  visible?: boolean | ((values) => boolean)   // show only when true; hidden = not validated, not submitted
+  disabled?: boolean | ((values) => boolean)  // disable, statically or derived from other values
+  // For type: 'array' (a repeatable group):
+  itemFields?: ReadonlyArray<FormField>        // the fields of each row
+  addLabel?: string                            // "add" button label (default "+ Add")
+  minItems?: number                            // min / max row count
+  maxItems?: number
+}
+```
+
+### FormSection
+
+Group fields under a heading. A section renders as a titled fieldset, and with
+`<SvForm stepper>` each section becomes one validated step of a wizard. The schema
+may freely mix flat fields and sections.
+
+```ts
+type FormSection = {
+  section: string                    // heading (and step label)
+  description?: string
+  fields: ReadonlyArray<FormField>
+  columns?: number                   // this section's grid columns (defaults to the form's)
 }
 ```
 
 ## Examples
+
+### Conditional (dynamic) fields
+
+`visible` and `disabled` take a value or a `(values) => boolean`, so a field can
+appear, hide or disable based on the rest of the form. A **hidden** field is
+skipped in validation and left out of the submitted payload - so a conditionally
+required field never blocks submit while it's hidden.
+
+<div data-docs-demo="323-form-dynamic" data-height="520" data-code></div>
+
+```ts
+const fields: FormField[] = [
+  { name: 'contact', label: 'Preferred contact', type: 'select', required: true, options: [
+    { value: 'email', label: 'Email' }, { value: 'phone', label: 'Phone' }, { value: 'none', label: 'Do not contact me' },
+  ] },
+  { name: 'email', label: 'Email address', type: 'email', required: true,
+    rules: [rules.email()], visible: (v) => v.contact === 'email' },
+  { name: 'notes', label: 'Notes', type: 'textarea',
+    disabled: (v) => v.contact === 'none' },
+]
+```
+
+### Sections and wizard steps
+
+Group fields into `FormSection`s and they render as titled fieldsets. Add `stepper`
+and each section becomes a validated step - **Next** only advances when the current
+step is valid, and the last step submits:
+
+<div data-docs-demo="324-form-wizard" data-height="560" data-code></div>
+
+```ts
+const schema: FormEntry[] = [
+  { section: 'Account', fields: [
+    { name: 'email', label: 'Email', type: 'email', required: true, rules: [rules.email()] },
+  ] },
+  { section: 'Profile', columns: 2, fields: [
+    { name: 'first', label: 'First name', required: true },
+    { name: 'last', label: 'Last name', required: true },
+  ] },
+]
+```
+
+```svelte
+<SvForm fields={schema} stepper columns={2} onSubmit={save} />
+```
+
+### Field arrays (repeatable groups)
+
+A `type: 'array'` field with `itemFields` renders add / remove rows. Its value is
+an array of item objects; each row validates against **itself** (so within-row
+rules work), and `required` / `minItems` / `maxItems` gate the row count:
+
+<div data-docs-demo="325-form-array" data-height="520" data-code></div>
+
+```ts
+const schema: FormEntry[] = [
+  { name: 'items', label: 'Line items', type: 'array', required: true, minItems: 1, itemFields: [
+    { name: 'desc', label: 'Description', required: true },
+    { name: 'qty', label: 'Qty', type: 'number', required: true, rules: [rules.min(1)] },
+  ] },
+]
+// value: { items: [{ desc: 'Widget', qty: 3 }, ...] }
+```
+
+Driving `createForm` directly, arrays expose `arrayItems(name)`, `itemValue`,
+`itemError`, `addItem(name, item?)`, `removeItem(name, i)`, `moveItem`,
+`setItemValue`, and `handleItemBlur`.
+
+### Async validation
+
+`asyncValidate` runs after the sync checks pass - debounced (`asyncDebounce`,
+default 300ms) and stale-guarded so only the latest response wins. While it runs
+the field shows a checking indicator (`form.isValidating(name)`), and submit waits
+for every async validator before it fires:
+
+```ts
+{ name: 'username', label: 'Username', required: true,
+  asyncValidate: async (v) => (await isTaken(v)) ? 'That username is taken' : null }
+```
+
+### Async submit, reset, and server errors
+
+`onSubmit` may return a promise - the submit button shows a loading state until it
+settles. Set `showReset` for a Reset button that restores the initial values. For
+server-side validation, drive the form from the headless `createForm` core and
+call `setErrors` after the request:
+
+```svelte
+<script lang="ts">
+  import { createForm } from '@svgrid/grid'
+  const form = createForm({ fields: () => fields, initial, onSubmit: save })
+  async function submit() {
+    if (!(await form.submit())) return
+    const res = await api.save(form.values)
+    if (!res.ok) form.setErrors(res.fieldErrors)   // { email: 'Already taken' }
+  }
+</script>
+```
+
+`createForm` also exposes `submitting`, `isDirty`, `isFieldDirty(name)`,
+`isVisible(name)`, `isDisabled(name)`, and `reset(next?)`.
 
 ### Two-column layout with full-width rows
 

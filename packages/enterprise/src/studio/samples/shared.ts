@@ -10,7 +10,7 @@
 import type { EntitySchema } from '../../schema.js'
 import type { ChartType } from '@svgrid/grid'
 import { generateValue } from '../sample-data.js'
-import { defaultBlockConfig, sanitizeProject, screenFromTemplate, type Block, type BlockConfig, type DetailRelated, type FormatRule, type GridConfig, type GridDensity, type KpiFormat, type Reduce, type RowAction, type RowLink, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle } from '../project.js'
+import { defaultBlockConfig, sanitizeProject, screenFromTemplate, buildDockLayout, type Block, type BlockConfig, type DetailRelated, type FormatRule, type GridConfig, type GridDensity, type KpiFormat, type Reduce, type RowAction, type RowLink, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle, type SchedulerViewConfig, type SchedulerViewMode } from '../project.js'
 
 type Row = Record<string, unknown>
 
@@ -229,6 +229,45 @@ export function calendarScreen(
     ...(opts.openScreen ? { openScreen: opts.openScreen } : {}),
   } })
   return { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order } }
+}
+
+/** A scheduler screen: the grid rendered as a Week / Day / Timeline calendar with optional
+ *  per-resource columns and drag-to-reschedule. Richer than calendarScreen (start + end,
+ *  resources, editable write-back) - showcases the grid's scheduler view. */
+export function schedulerScreen(
+  entity: EntitySchema,
+  meta: { id: string; title: string; order: number },
+  opts: { startField: string; endField?: string; titleField?: string; colorField?: string; resourceField?: string; initialView?: SchedulerViewMode; editable?: boolean },
+): Screen {
+  const grid = gridConfig(entity, {}) as GridConfig
+  const scheduler: SchedulerViewConfig = {
+    startField: opts.startField,
+    ...(opts.endField ? { endField: opts.endField } : {}),
+    ...(opts.titleField ? { titleField: opts.titleField } : {}),
+    ...(opts.colorField ? { colorField: opts.colorField } : {}),
+    ...(opts.resourceField ? { resourceField: opts.resourceField } : {}),
+    initialView: opts.initialView ?? 'week',
+    editable: opts.editable ?? true,
+    drawer: true,
+  }
+  const block: Block = { id: 'grid-1', span: 3, config: { ...grid, scheduler } }
+  return { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks: [block], nav: { show: true, label: meta.title, order: meta.order } }
+}
+
+/** A docking-workspace screen: a filter + grid + record panel arranged as a dockable
+ *  console (SvDockManager). The smart auto-layout puts filters left, the grid centre, the
+ *  record panel right; the user can float / pin / rearrange. Showcases screen `layout: 'dock'`. */
+export function workspaceScreen(
+  entity: EntitySchema,
+  meta: { id: string; title: string; order: number },
+  opts: { filter?: string[]; record?: boolean; grid?: GridOpts } = {},
+): Screen {
+  const blocks: Block[] = []
+  if (opts.filter?.length) blocks.push({ id: 'filter-1', span: 3, config: { kind: 'filter', fields: opts.filter } })
+  blocks.push({ id: 'grid-1', span: 3, config: gridConfig(entity, opts.grid ?? {}) })
+  if (opts.record !== false) blocks.push({ id: 'record-1', span: 3, config: { kind: 'record', editable: true } })
+  const base: Screen = { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order }, layout: 'dock' }
+  return { ...base, dock: buildDockLayout(base) }
 }
 
 /** A record detail-page screen: a full record view (header + status pill + metric

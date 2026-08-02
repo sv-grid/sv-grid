@@ -87,8 +87,12 @@
   {@const reorder = ctx.reorderTarget?.() ?? null}
   {@const reorderHere = reorder && reorder.tabsId === node.id ? reorder.index : -1}
   {@const hp = ctx.headerPosition?.() ?? 'top'}
+  <!-- A single-pane leaf in an auto-hide fly-out drops its (redundant with the edge strip)
+       tab button, leaving just the leaf actions (pin). -->
+  {@const bareSingle = !!ctx.hideSingleTab?.() && node.panes.length === 1}
   <div class="sv-dock__leaf sv-dock__leaf--h-{hp}" class:is-focused={ctx.focusedLeaf?.() === node.id} data-dock-tabs={node.id}>
-    <div class="sv-dock__tabstrip" role="tablist">
+    <div class="sv-dock__tabstrip" class:is-bare={bareSingle} role="tablist">
+      {#if !bareSingle}
       {#each node.panes as p, i (p.id)}
         {#if reorderHere === i}<div class="sv-dock__ins" aria-hidden="true"></div>{/if}
         <div
@@ -120,6 +124,7 @@
         </div>
       {/each}
       {#if reorderHere === node.panes.length}<div class="sv-dock__ins" aria-hidden="true"></div>{/if}
+      {/if}
       {#if ctx.leafActions}
         <div class="sv-dock__leafctl">{@render ctx.leafActions(node)}</div>
       {/if}

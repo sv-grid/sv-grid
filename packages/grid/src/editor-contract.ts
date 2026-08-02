@@ -44,6 +44,8 @@ export type SvEditorProps = {
   id?: string
   /** Accessible name when there is no visible `label`. */
   ariaLabel?: string
+  /** Busy state - shows a spinner (e.g. while an async value/validation resolves). */
+  loading?: boolean
 }
 
 /**

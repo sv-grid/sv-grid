@@ -35,7 +35,7 @@
   </header>
 
   <div class="stage">
-    <SvDockManager bind:workspace>
+    <SvDockManager bind:workspace allowPopout>
       {#snippet pane(p)}
         {#if p.id === 'explorer'}
           <ul class="explorer">{#each files as f (f)}<li>{f}</li>{/each}</ul>

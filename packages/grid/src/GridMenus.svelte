@@ -142,6 +142,22 @@
   }
   const isColumnFiltered = $derived(ctrl.isColumnFiltered);
   const closeMenus = $derived(ctrl.closeMenus);
+
+  // Column/filter/operator menus are position:fixed and anchored to their
+  // trigger by a one-time measurement taken when they open. On scroll they'd
+  // otherwise detach and float over the wrong place (#88), so close them on any
+  // scroll (capture phase, to catch inner scroll containers) or resize.
+  $effect(() => {
+    if (!(columnMenuFor || filterMenuFor || operatorMenuFor || chooseColumnsPos)) return;
+    const close = () => closeMenus();
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  });
+
   const autosizeColumn = $derived(ctrl.autosizeColumn);
   const autosizeAllColumns = $derived(ctrl.autosizeAllColumns);
   const resetColumns = $derived(ctrl.resetColumns);

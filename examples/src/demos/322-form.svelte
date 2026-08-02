@@ -39,7 +39,7 @@
   <div class="card">
     <SvForm {fields} columns={2} submitLabel="Create account"
       initial={{ role: 'dev', experience: 3 }}
-      onSubmit={(v) => (result = JSON.stringify(v, null, 2))} />
+      onSubmit={(v) => { result = JSON.stringify(v, null, 2) }} />
   </div>
 
   {#if result}

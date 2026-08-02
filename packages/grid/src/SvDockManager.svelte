@@ -49,6 +49,7 @@
     setAutoHideSize,
     toggleMaximizeLeaf,
     findLeafById,
+    allManagerIds,
     type DockManagerState,
     type DockSide,
     type AutoHideEntry,
@@ -97,6 +98,18 @@
     /** Keep inactive tabs mounted (hidden) so their content state persists.
      *  Default `false` (only the active tab renders). */
     keepAlive?: boolean
+    /** Hide the tab button on a single-pane leaf (no redundant title bar; the panel
+     *  actions still show). Applies to the docked area, floating windows, and fly-outs. */
+    hideSingleTab?: boolean
+    /** Offer the "pop out to a new browser window" panel action. Default `false` -
+     *  most apps only need in-app floating windows, so the OS pop-out stays hidden
+     *  unless you opt in. The `popout()` API still works regardless. */
+    allowPopout?: boolean
+    /** Locked / split mode: a fixed set of resizable panes. Tabs can't be dragged
+     *  (no reorder / float / dock) and the panel action buttons are hidden - only
+     *  splitter resize + tab switching remain. Turns the manager into a plain
+     *  split-view workspace. Default `false`. */
+    locked?: boolean
     /** Receive the imperative API once, on mount. */
     onReady?: (api: DockManagerApi) => void
   }
@@ -110,6 +123,9 @@
     reorderEnabled = true,
     headerPosition = 'top',
     keepAlive = false,
+    hideSingleTab = false,
+    allowPopout = false,
+    locked = false,
     onReady,
   }: Props = $props()
   const emit = (e: DockEvent) => onEvent?.(e)
@@ -118,7 +134,16 @@
   // Runtime-only: OS window handles for popped-out panes (not serializable).
   const popouts = new Map<string, Popout>()
   let nextId = mgrBase()
-  const genId = () => `dm-${nextId++}`
+  // Never mint an id that already lives in the workspace. The base counter is
+  // module-scoped and resets on reload, so a workspace restored from storage can
+  // already hold the `dm-N` we're about to generate - skip past any collision so
+  // keyed lists never see a duplicate.
+  const genId = (): string => {
+    const used = new Set(allManagerIds(workspace))
+    let id = `dm-${nextId++}`
+    while (used.has(id)) id = `dm-${nextId++}`
+    return id
+  }
   function commit(next: DockManagerState) { workspace = next; onChange?.(next) }
 
   // Focus tracking (which pane the user last engaged) for the active-panel ring.
@@ -145,6 +170,13 @@
     const paneId = findLeafById(workspace, tabsId)?.panes[i]?.id
     commit(setManagerActive(workspace, tabsId, i))
     if (paneId) { setFocus(paneId); emit({ type: 'activePane', tabsId, paneId }) }
+  }
+  // Reveal an auto-hidden leaf's flyout on a specific pane (clicked from the
+  // edge rail). Toggles closed when the already-open pane is clicked again.
+  function revealAutoHidePane(e: AutoHideEntry, pi: number) {
+    if (revealed === e.id && e.leaf.active === pi) { revealed = null; return }
+    if (e.leaf.active !== pi) onActivate(e.leaf.id, pi)
+    revealed = e.id
   }
   const onClose = (paneId: string) => { commit(closePane(workspace, paneId)); emit({ type: 'close', paneId }) }
   const onResize = (groupId: string, sizes: number[]) => commit(resizeGroup(workspace, groupId, sizes))
@@ -563,15 +595,18 @@
         style:bottom={side === 'left' || side === 'right' ? `${mainPad.bottom}px` : undefined}
       >
         {#each entries as e (e.id)}
-          {@const label = e.leaf.panes[e.leaf.active]?.title ?? e.leaf.panes[0]?.title ?? 'Panel'}
-          {@const extra = e.leaf.panes.length - 1}
-          <button
-            type="button"
-            class="sv-dockmgr__stab"
-            class:is-open={revealed === e.id}
-            title={e.leaf.panes.map((p) => p.title).join(', ')}
-            onclick={() => (revealed = revealed === e.id ? null : e.id)}
-          >{label}{#if extra > 0}<span class="sv-dockmgr__stab-more">+{extra}</span>{/if}</button>
+          <!-- Auto-hide applies to the whole leaf, so surface one edge tab per
+               pane (not one per entry). Clicking a pane's tab reveals the flyout
+               with that pane active. -->
+          {#each e.leaf.panes as p, pi (p.id)}
+            <button
+              type="button"
+              class="sv-dockmgr__stab"
+              class:is-open={revealed === e.id && e.leaf.active === pi}
+              title={p.title}
+              onclick={() => revealAutoHidePane(e, pi)}
+            >{p.title}</button>
+          {/each}
         {/each}
       </div>
     {/if}
@@ -590,6 +625,8 @@
         {headerPosition}
         focusedLeaf={focusedLeafId}
         {keepAlive}
+        {hideSingleTab}
+        {locked}
         surface="main"
         onBeginDrag={beginTabDrag}
         externalDrop={guideGlobal}
@@ -607,6 +644,8 @@
         {headerPosition}
         focusedLeaf={focusedLeafId}
         {keepAlive}
+        {hideSingleTab}
+        {locked}
         surface="main"
         onBeginDrag={beginTabDrag}
         externalDrop={guideGlobal}
@@ -637,6 +676,7 @@
         {headerPosition}
         focusedLeaf={focusedLeafId}
         {keepAlive}
+          hideSingleTab
           surface={e.id}
           onBeginDrag={beginTabDrag}
           externalDrop={guideGlobal}
@@ -696,6 +736,7 @@
         {headerPosition}
         focusedLeaf={focusedLeafId}
         {keepAlive}
+            {hideSingleTab}
             surface={w.id}
             onBeginDrag={beginTabDrag}
             externalDrop={guideGlobal}
@@ -732,8 +773,10 @@
   {#if active}
     <button type="button" class="sv-dockmgr__pact" title="Float" aria-label="Float {active.title}"
       onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); floatOne(active.id) }}>&#9634;</button>
-    <button type="button" class="sv-dockmgr__pact" title="Pop out to a new window" aria-label="Pop out {active.title}"
-      onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); popoutPane(active.id) }}>&#10697;</button>
+    {#if allowPopout}
+      <button type="button" class="sv-dockmgr__pact" title="Pop out to a new window" aria-label="Pop out {active.title}"
+        onpointerdown={(e) => e.stopPropagation()} onclick={(e) => { e.stopPropagation(); popoutPane(active.id) }}>&#10697;</button>
+    {/if}
   {/if}
 {/snippet}
 
@@ -779,7 +822,6 @@
   .sv-dockmgr__strip--left .sv-dockmgr__stab, .sv-dockmgr__strip--right .sv-dockmgr__stab { writing-mode: vertical-rl; padding: 8px 3px; max-height: 60%; overflow: hidden; }
   .sv-dockmgr__strip--top .sv-dockmgr__stab, .sv-dockmgr__strip--bottom .sv-dockmgr__stab { max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
   .sv-dockmgr__stab:hover, .sv-dockmgr__stab.is-open { color: var(--sg-accent, #2563eb); border-color: var(--sg-accent, #2563eb); }
-  .sv-dockmgr__stab-more { opacity: 0.7; margin-inline-start: 4px; font-size: 10px; }
 
   /* Auto-hide fly-out. Capped so revealing never covers the whole workspace. */
   .sv-dockmgr__flyout {

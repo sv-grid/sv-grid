@@ -144,9 +144,12 @@ const MAX_DOM_SCROLL_HEIGHT_FALLBACK = 8_000_000;
  * matters because mobile WebKit/Blink can report a generous `offsetHeight` yet
  * expose a smaller scrollable range - trusting the layout height alone is what
  * stranded the last rows on phones. Using a real scroll container also folds in
- * DPR clamping for free. Cached for the page lifetime; constant per browser.
+ * DPR clamping for free. Cached, but re-probed when the device pixel ratio
+ * changes (browser zoom) since the physical-pixel cap moves with it (#85).
  */
 let detectedMaxDomHeight: number | null = null;
+let detectedAtDpr = 0;
+const currentDpr = () => (typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
 /**
  * Seed the `hiddenColumns` map from any column def marked `visible: false`.
  * Walks groups so a hidden group hides all of its leaf columns. Keyed by the
@@ -191,7 +194,7 @@ function getMaxDomScrollHeight(): number {
       return forced;
     }
   }
-  if (detectedMaxDomHeight != null) return detectedMaxDomHeight;
+  if (detectedMaxDomHeight != null && detectedAtDpr === currentDpr()) return detectedMaxDomHeight;
   if (typeof document === "undefined" || !document.body) {
     return MAX_DOM_SCROLL_HEIGHT_FALLBACK;
   }
@@ -219,6 +222,7 @@ function getMaxDomScrollHeight(): number {
   } catch {
     detectedMaxDomHeight = MAX_DOM_SCROLL_HEIGHT_FALLBACK;
   }
+  detectedAtDpr = currentDpr();
   return detectedMaxDomHeight;
 }
 
@@ -570,6 +574,10 @@ export function createSvGridController<
   let hiddenColumns = $state<Record<string, boolean>>(
     initialHiddenColumns(props.columns),
   );
+  // The columns declared `visible: false` in the ColumnDefs. Kept separately so
+  // applying a saved view (setState) can re-seed from these and never un-hide a
+  // column the app declared hidden (#54).
+  const declaredHiddenColumns = $derived(initialHiddenColumns(props.columns));
 
   // Collapsible column groups (columnGroupShow). Meta is derived from the tree;
   // `collapsedColumnGroups` is the live set of collapsed group ids, seeded once
@@ -947,6 +955,10 @@ export function createSvGridController<
     const left: Record<string, number> = {};
     let leftAcc = rowNumberWidth + selectionWidth;
     for (const id of effectivePinning.left) {
+      // Hidden pinned columns don't render, so they must contribute neither an
+      // offset entry nor width - otherwise the next visible pinned column is
+      // pushed out by a phantom gap (#75).
+      if (hiddenColumns[id] || hiddenByGroupCollapse[id]) continue;
       left[id] = leftAcc;
       leftAcc += getColumnWidth(id);
     }
@@ -955,6 +967,7 @@ export function createSvGridController<
     for (let i = effectivePinning.right.length - 1; i >= 0; i -= 1) {
       const id = effectivePinning.right[i];
       if (!id) continue;
+      if (hiddenColumns[id] || hiddenByGroupCollapse[id]) continue;
       right[id] = rightAcc;
       rightAcc += getColumnWidth(id);
     }
@@ -1214,10 +1227,13 @@ export function createSvGridController<
     lastSelectionSerialized = serialized;
     const callback = props.onRowSelectionChange;
     if (!callback) return;
-    const data = internalData;
+    // Resolve selected rows by row id (not numeric index) so this is correct
+    // with a custom getRowId and after sorting (#45). Iterate the full filtered
+    // model - not the paginated slice - so selections on other pages are kept.
     const selectedRows: TData[] = [];
-    for (let i = 0; i < data.length; i++) {
-      if (rowSelectionState[String(i)]) selectedRows.push(data[i] as TData);
+    for (const row of allRowsBeforePagination) {
+      if (isGroupRow(row)) continue;
+      if (rowSelectionState[row.id]) selectedRows.push(row.original as TData);
     }
     callback(rowSelectionState, selectedRows);
   });
@@ -2265,7 +2281,9 @@ export function createSvGridController<
     viewportVersion;
     // Narrow responsive mode pans instead of scaling, so skip fit scaling.
     if (!props.fitColumns || isNarrowResponsive) return null;
-    const cols = grid.getAllColumns().filter((c) => !hiddenColumns[c.id]);
+    // Exclude columns hidden by a collapsed group too (#57) - otherwise their
+    // widths stay in the fit distribution and leave a blank gap at the edge.
+    const cols = grid.getAllColumns().filter((c) => !hiddenColumns[c.id] && !hiddenByGroupCollapse[c.id]);
     if (!cols.length) return null;
     const rowNumberWidth = showRowNumbersEffective ? rowNumberColumnWidth : 0;
     const selectionWidth = showRowSelectionEffective ? selectionColumnWidth : 0;
@@ -2710,6 +2728,7 @@ export function createSvGridController<
     set internalColumns(v) { internalColumns = v as never; },
     get hiddenColumns() { return hiddenColumns; },
     set hiddenColumns(v) { hiddenColumns = v as never; },
+    get declaredHiddenColumns() { return declaredHiddenColumns; },
     get toggleColumnGroup() { return toggleColumnGroup; },
     get isColumnGroupCollapsed() { return isColumnGroupCollapsed; },
     get externalSortEnabled() { return externalSortEnabled; },
@@ -3105,7 +3124,7 @@ export function createSvGridController<
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, startColumnResize, onColumnResizeMove, endColumnResize, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
-  const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd } = createRowDrag<TFeatures, TData>(ctx);
+  const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
   const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
@@ -3121,6 +3140,18 @@ export function createSvGridController<
     // Track columnWidths reactively, then broadcast to aligned peers.
     void columnWidths;
     broadcastAlignedWidths();
+  });
+
+  // Unmount teardown. Reads no reactive state, so the cleanup runs once on
+  // destroy - tearing down an in-flight column resize (its document pointer
+  // listeners, #58), a pending tooltip timer (#64), and any managed row drag
+  // this grid still owns (#68). Each of these is a no-op when idle.
+  $effect(() => {
+    return () => {
+      endColumnResize();
+      hideTooltip();
+      destroyRowDrag();
+    };
   });
 
   return ctx;
