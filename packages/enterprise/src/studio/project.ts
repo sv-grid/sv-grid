@@ -1353,15 +1353,15 @@ function addDockPaneToMain(state: DockManagerState, p: DockPane, genId: () => st
 /** Remove a pane anywhere in a workspace; collapse emptied tabs + single-child groups. */
 function stripDockPane(state: DockManagerState, paneId: string): DockManagerState {
   const strip = (n: DockNode): DockNode | null => {
-    if (n.type === 'tabs') { const panes = n.panes.filter((p) => p.id !== paneId); return panes.length ? { ...n, panes, active: Math.min(n.active, panes.length - 1) } : null }
-    const children = n.children.map(strip).filter((c): c is DockNode => c !== null)
+    if (n.type === 'tabs') { const panes = n.panes.filter((p: DockPane) => p.id !== paneId); return panes.length ? { ...n, panes, active: Math.min(n.active, panes.length - 1) } : null }
+    const children = n.children.map(strip).filter((c: DockNode | null): c is DockNode => c !== null)
     if (children.length === 0) return null
     if (children.length === 1) return children[0]!
     return { ...n, children, sizes: children.map(() => 1 / children.length) }
   }
   const main = state.main ? strip(state.main) : null
-  const floating = state.floating.map((w) => ({ ...w, leaf: { ...w.leaf, panes: w.leaf.panes.filter((p) => p.id !== paneId) } })).filter((w) => w.leaf.panes.length > 0)
-  const autoHide = state.autoHide.map((e) => ({ ...e, leaf: { ...e.leaf, panes: e.leaf.panes.filter((p) => p.id !== paneId) } })).filter((e) => e.leaf.panes.length > 0)
+  const floating = state.floating.map((w: DockManagerState['floating'][number]) => ({ ...w, leaf: { ...w.leaf, panes: w.leaf.panes.filter((p: DockPane) => p.id !== paneId) } })).filter((w: DockManagerState['floating'][number]) => w.leaf.panes.length > 0)
+  const autoHide = state.autoHide.map((e: DockManagerState['autoHide'][number]) => ({ ...e, leaf: { ...e.leaf, panes: e.leaf.panes.filter((p: DockPane) => p.id !== paneId) } })).filter((e: DockManagerState['autoHide'][number]) => e.leaf.panes.length > 0)
   return { ...state, main, floating, autoHide }
 }
 
@@ -1559,10 +1559,10 @@ export function reseedScreenDock(project: StudioProject, screenId: string): Stud
 export function dockPaneTitleOf(screen: Screen, paneId: string): string | undefined {
   if (!screen.dock) return undefined
   let found: string | undefined
-  const walk = (n: DockNode) => { if (n.type === 'tabs') { const p = n.panes.find((x) => x.id === paneId); if (p) found = p.title } else for (const c of n.children) walk(c) }
+  const walk = (n: DockNode) => { if (n.type === 'tabs') { const p = n.panes.find((x: DockPane) => x.id === paneId); if (p) found = p.title } else for (const c of n.children) walk(c) }
   if (screen.dock.main) walk(screen.dock.main)
-  for (const w of screen.dock.floating) { const p = w.leaf.panes.find((x) => x.id === paneId); if (p) found = p.title }
-  for (const e of screen.dock.autoHide) { const p = e.leaf.panes.find((x) => x.id === paneId); if (p) found = p.title }
+  for (const w of screen.dock.floating) { const p = w.leaf.panes.find((x: DockPane) => x.id === paneId); if (p) found = p.title }
+  for (const e of screen.dock.autoHide) { const p = e.leaf.panes.find((x: DockPane) => x.id === paneId); if (p) found = p.title }
   return found
 }
 
@@ -1573,8 +1573,8 @@ export function setDockPaneTitle(project: StudioProject, screenId: string, paneI
     const relabelPanes = (panes: DockPane[]): DockPane[] => panes.map((p) => (p.id === paneId ? { ...p, title } : p))
     const relabel = (n: DockNode): DockNode => (n.type === 'tabs' ? { ...n, panes: relabelPanes(n.panes) } : { ...n, children: n.children.map(relabel) })
     const main = s.dock.main ? relabel(s.dock.main) : null
-    const floating = s.dock.floating.map((w) => ({ ...w, leaf: { ...w.leaf, panes: relabelPanes(w.leaf.panes) } }))
-    const autoHide = s.dock.autoHide.map((e) => ({ ...e, leaf: { ...e.leaf, panes: relabelPanes(e.leaf.panes) } }))
+    const floating = s.dock.floating.map((w: DockManagerState['floating'][number]) => ({ ...w, leaf: { ...w.leaf, panes: relabelPanes(w.leaf.panes) } }))
+    const autoHide = s.dock.autoHide.map((e: DockManagerState['autoHide'][number]) => ({ ...e, leaf: { ...e.leaf, panes: relabelPanes(e.leaf.panes) } }))
     return { ...s, dock: { ...s.dock, main, floating, autoHide } }
   })
 }
