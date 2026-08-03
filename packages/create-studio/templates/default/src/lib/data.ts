@@ -10,7 +10,7 @@ import {
   createRelationLookup,
   type ServerDataSource,
 } from '@svgrid/enterprise'
-import { customerSchema, orderSchema, type Customer, type Order } from './schemas'
+import { customerSchema, orderSchema, productSchema, type Customer, type Order, type Product } from './schemas'
 
 const customerSeed: Customer[] = [
   { id: 'c1', name: 'Ada Lovelace', email: 'ada@analytic.io', tier: 'enterprise', mrr: 1200, active: true },
@@ -27,7 +27,16 @@ const orderSeed: Order[] = [
   { id: 'o4', ref: 'INV-1004', customerId: 'c3', amount: 980, status: 'refunded' },
 ]
 
+const productSeed: Product[] = [
+  { id: 'p1', name: 'Analytics Seat', sku: 'SW-ANL-01', category: 'software', price: 49, inStock: true },
+  { id: 'p2', name: 'Edge Gateway', sku: 'HW-EGW-02', category: 'hardware', price: 899, inStock: true },
+  { id: 'p3', name: 'Onboarding', sku: 'SV-ONB-03', category: 'service', price: 1500, inStock: true },
+  { id: 'p4', name: 'Sensor Kit', sku: 'HW-SNS-04', category: 'hardware', price: 249, inStock: false },
+]
+
 export const customersSource = createInMemoryDataSource(customerSeed, customerSchema)
+
+export const productsSource = createInMemoryDataSource(productSeed, productSchema)
 
 // Orders reference a customer. Enrich every method's rows with the customer
 // NAME so the grid shows it (the form stores the id via the lookup below).

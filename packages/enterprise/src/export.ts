@@ -1172,7 +1172,13 @@ async function exportXlsxNative<
         : cols.map((_, i) => i)
     for (const ci of targetIdxs) {
       if (f.type === 'dataBar') condFormats.push({ kind: 'dataBar', colIdx: ci, color: f.color })
-      else condFormats.push({ kind: 'colorScale', colIdx: ci, colors: f.mid ? [f.min, f.mid, f.max] : [f.min, f.max] })
+      else {
+        // min/mid/max are optional on the format; fall back to the same defaults
+        // the on-screen renderer uses (#ffffff -> #000000) so the export matches.
+        const min = f.min ?? '#ffffff'
+        const max = f.max ?? '#000000'
+        condFormats.push({ kind: 'colorScale', colIdx: ci, colors: f.mid ? [min, f.mid, max] : [min, max] })
+      }
     }
   }
 

@@ -2,6 +2,7 @@
   const entities = [
     { href: '/customers', label: 'Customers', desc: 'Tiers, MRR, and status. Sort, filter, edit inline in a modal.' },
     { href: '/orders', label: 'Orders', desc: 'Linked to a customer via a searchable lookup field.' },
+    { href: '/products', label: 'Products', desc: 'SKU, category, price, and stock. A standalone catalog screen.' },
   ]
 </script>
 

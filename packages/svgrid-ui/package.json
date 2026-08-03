@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Add SvGrid UI components to your app in one command: npx @svgrid/ui add calendar",
   "type": "module",
   "license": "MIT",

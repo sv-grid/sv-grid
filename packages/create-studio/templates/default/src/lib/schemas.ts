@@ -23,6 +23,15 @@ export type Order = {
   status: string
 }
 
+export type Product = {
+  id: string
+  name: string
+  sku: string
+  category: string
+  price: number
+  inStock: boolean
+}
+
 export const customerSchema: EntitySchema<Customer> = {
   name: 'customers',
   label: 'Customer',
@@ -57,5 +66,23 @@ export const orderSchema: EntitySchema<Order> = {
       { value: 'paid', label: 'Paid' },
       { value: 'refunded', label: 'Refunded' },
     ] },
+  ],
+}
+
+export const productSchema: EntitySchema<Product> = {
+  name: 'products',
+  label: 'Product',
+  idField: 'id',
+  fields: [
+    { field: 'id', type: 'text', primaryKey: true, readonly: true, hidden: { form: true } },
+    { field: 'name', type: 'text', required: true, minLength: 2 },
+    { field: 'sku', type: 'text', label: 'SKU', required: true },
+    { field: 'category', type: 'enum', options: [
+      { value: 'hardware', label: 'Hardware' },
+      { value: 'software', label: 'Software' },
+      { value: 'service', label: 'Service' },
+    ] },
+    { field: 'price', type: 'number', label: 'Price ($)', min: 0 },
+    { field: 'inStock', type: 'boolean', label: 'In stock' },
   ],
 }

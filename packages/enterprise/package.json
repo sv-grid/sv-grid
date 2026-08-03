@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Pro feature pack for sv-grid: data export (Excel, PDF, CSV, TSV, HTML), import (xlsx, CSV, TSV, JSON), pivot table + designer, AI assistant (BYO model), and printing. Requires a paid license key.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "jQWidgets <sales@jqwidgets.com>",

@@ -12,6 +12,7 @@
  *   npx @svgrid/mcp
  */
 
+import { createRequire } from 'node:module'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
@@ -59,10 +60,21 @@ function withDocs(text: string) {
   return { content: [{ type: 'text', text: text + DOCS_FOOTER }] }
 }
 
+// Report the real package version to MCP clients (read from package.json, which
+// ships in the tarball at ../package.json relative to the built dist/index.js),
+// so serverInfo.version never drifts from the published version.
+const pkgVersion = (() => {
+  try {
+    return (createRequire(import.meta.url)('../package.json') as { version: string }).version
+  } catch {
+    return '0.0.0'
+  }
+})()
+
 const server = new Server(
   {
     name: '@svgrid/mcp',
-    version: '0.1.0',
+    version: pkgVersion,
   },
   {
     capabilities: {

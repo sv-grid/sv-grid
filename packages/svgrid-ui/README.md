@@ -1,25 +1,43 @@
 # @svgrid/ui
 
 Add [SvGrid UI](https://www.svgrid.com/docs/help/ui-components) components to your
-app in one command:
+app - and see them - in one command:
 
 ```sh
-npx @svgrid/ui add calendar
+npx @svgrid/ui try calendar     # open it in a throwaway sandbox, no project needed
+npx @svgrid/ui add calendar     # write the recipe into your app + install the dep
 ```
 
 ## How it works
 
 `@svgrid/ui` is a **recipe scaffolder**, not a component library. `add` writes a
 minimal, ready-to-edit `.svelte` starter into your project that imports from
-[`@svgrid/grid`](https://www.npmjs.com/package/@svgrid/grid), then makes sure the
-package is a dependency and prints the install command. The components themselves
-live in `@svgrid/grid` - you get bug fixes and new features by bumping the package,
-while the file `add` drops in is yours to style and wire however you like.
+[`@svgrid/grid`](https://www.npmjs.com/package/@svgrid/grid), and installs the
+package for you. The components themselves live in `@svgrid/grid` - you get bug
+fixes and new features by bumping the package, while the file `add` drops in is
+yours to style and wire however you like. Each recipe is a self-contained demo, so
+`try` and `--preview` can render it immediately.
+
+## See it immediately
+
+```sh
+# zero setup: spins up a sandbox and opens the component in your browser
+npx @svgrid/ui try button
+
+# in your own SvelteKit app: also writes a /preview/button route
+npx @svgrid/ui add button --preview
+#   -> start your dev server, open http://localhost:5173/preview/button
+```
+
+`try` needs no project - it caches a tiny Vite + Svelte sandbox under your temp
+dir (so repeat runs are instant) and opens the browser. `--preview` drops a
+`src/routes/preview/<id>` page (plus a `/preview` index) into an existing
+SvelteKit app so it renders in your running dev server.
 
 ## Usage
 
 ```sh
-# add one component
+# add one component (installs @svgrid/grid)
 npx @svgrid/ui add calendar
 
 # add several, into a custom folder
@@ -28,8 +46,8 @@ npx @svgrid/ui add calendar time-picker --dir src/lib/ui
 # add a whole family
 npx @svgrid/ui add date-time
 
-# install the dependency automatically (default: just prints the command)
-npx @svgrid/ui add calendar --install
+# just write files, don't run the package manager
+npx @svgrid/ui add calendar --no-install
 
 # see what you can add
 npx @svgrid/ui list
@@ -39,9 +57,10 @@ npx @svgrid/ui list
 
 | Flag             | Description                                                              |
 | ---------------- | ------------------------------------------------------------------------ |
+| `--preview`, `-p`| (with `add`) Also write a `src/routes/preview/<id>` route so you can see it in your dev server. SvelteKit apps only. |
 | `--dir <path>`   | Where to write files. Default: `src/lib/components/ui` (or `componentsDir` in a project `svgrid.json`). |
 | `--force`        | Overwrite files that already exist.                                      |
-| `--install`      | Run your package manager to install deps instead of just printing it.    |
+| `--no-install`   | Skip installing the dependency; just print the install command.          |
 
 ## Components
 

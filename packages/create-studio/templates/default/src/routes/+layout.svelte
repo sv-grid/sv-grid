@@ -8,6 +8,7 @@
     { href: '/', label: 'Home' },
     { href: '/customers', label: 'Customers' },
     { href: '/orders', label: 'Orders' },
+    { href: '/products', label: 'Products' },
   ]
 </script>
 
