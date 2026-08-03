@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, calendarScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, schedulerScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 const drivers: EntitySchema = {
   name: 'drivers',
@@ -168,7 +168,9 @@ export const fleet: SampleApp = {
           { filter: ['status', 'vehicleId', 'driverId'], span: 3 },
           { grid: true, format: tripFormats, summaries: true, rowActions: [{ kind: 'edit' }], span: 3 },
         ]),
-        calendarScreen(trips, { id: 'dispatch', title: 'Dispatch', order: 2 }, { dateField: 'startAt', titleField: 'driverId', colorField: 'status', filter: ['status', 'vehicleId'] }),
+        // Resource scheduler: a column per vehicle, trips placed by time + tinted by status,
+        // drag-to-reassign a vehicle + a detail drawer (week view). Was a month calendar.
+        schedulerScreen(trips, { id: 'dispatch', title: 'Dispatch', order: 2 }, { startField: 'startAt', titleField: 'driverId', colorField: 'status', resourceField: 'vehicleId', initialView: 'week' }),
         // Vehicle detail: asset header (status pill) + mileage / fuel tiles with a
         // trip-history timeline (each trip titled by its driver, colored by status).
         detailScreen(vehicles, { id: 'vehicle-detail', title: 'Vehicle detail', order: 3 }, {

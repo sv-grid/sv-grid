@@ -98,6 +98,7 @@ workspace = JSON.parse(localStorage.getItem('ws')!)   // tiled + floating + hidd
 | `keepAlive`      | `boolean`                          | `false` | Keep inactive tabs mounted (hidden) so their DOM state (scroll, form input) persists across switches. |
 | `hideSingleTab`  | `boolean`                          | `false` | Hide the tab button on a single-pane leaf (no redundant title bar; the panel actions still show). |
 | `allowPopout`    | `boolean`                          | `false` | Offer the pop-out-to-a-new-window panel action. Off by default; the `popout()` API still works. |
+| `locked`         | `boolean`                          | `false` | Locked / split mode: a fixed set of resizable panes. Tabs can't be dragged (no reorder / float / dock) and the panel action buttons are hidden - only splitter resize + tab switching remain. |
 
 ### Events
 

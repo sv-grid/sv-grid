@@ -93,17 +93,18 @@
   let msr = $state('')
   let red = $state<AggregateReduce>('sum')
   let ctype = $state<ChartType>('bar')
-  let seeded = false
 
-  // Seed once from the props, then keep the dimension/measure valid for the schema.
+  // Follow the props reactively, so a controlled parent (e.g. the Studio preview,
+  // which hides the dropdowns) updates the chart whenever its dimension / measure /
+  // reduce / type change. One effect per prop so a change to one doesn't reset the
+  // others; the built-in dropdowns still write to this state and persist, because a
+  // dropdown change doesn't feed back into the props (so these effects don't re-run).
+  $effect(() => { if (type !== undefined) ctype = type })
+  $effect(() => { if (dimension !== undefined) dim = dimension })
+  $effect(() => { if (measure !== undefined) msr = measure })
+  $effect(() => { if (reduce !== undefined) red = reduce })
+  // Keep the dimension / measure valid for the schema.
   $effect(() => {
-    if (!seeded) {
-      seeded = true
-      if (dimension) dim = dimension
-      if (measure) msr = measure
-      if (reduce) red = reduce
-      if (type) ctype = type
-    }
     if (!dim || !fields.dimensions.includes(dim)) dim = fields.defaultDimension ?? fields.dimensions[0] ?? ''
     if ((!msr || !fields.measures.includes(msr)) && fields.measures.length) msr = fields.defaultMeasure ?? fields.measures[0] ?? ''
   })

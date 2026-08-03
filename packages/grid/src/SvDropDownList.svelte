@@ -7,7 +7,6 @@
    * One styled renderer over the headless `createDropdownList` core (state +
    * keyboard + ARIA); only portal/measure/scroll render concerns live here.
    */
-  import { flushSync } from 'svelte'
   import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
   import { startPanelResize } from './panel-resize'
   import { createDismissableLayer } from './a11y/dismissable'
@@ -162,13 +161,14 @@
 </SvField>
 
 {#if ddl.open}
-  <div bind:this={panelEl} class="sv-ddl__panel" class:is-virtual={useVirtual} class:is-resizable={showGrip} use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} style:max-height={`${panelMaxH}px`} style:height={resizable && userHeight != null ? `${panelMaxH}px` : undefined} onscroll={(e) => { scrollTop = e.currentTarget.scrollTop; if (useVirtual) flushSync() }} bind:clientHeight={viewportH} {...ddl.listboxProps()}>
+  <div bind:this={panelEl} class="sv-ddl__panel" class:is-virtual={useVirtual} class:is-resizable={showGrip} use:portalToBody use:popIn={{ up: rect.openUpward }} style:--sv-row-h={`${rowHeight}px`} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} style:max-height={`${panelMaxH}px`} style:height={resizable && userHeight != null ? `${panelMaxH}px` : undefined} onscroll={(e) => (scrollTop = e.currentTarget.scrollTop)} bind:clientHeight={viewportH} {...ddl.listboxProps()}>
     {#if useVirtual}
-      <div class="sv-ddl__sizer" aria-hidden="true" style:height={`${vr.totalHeight}px`}></div>
+      <div class="sv-ddl__spacer" aria-hidden="true" style:height={`${vr.padTop}px`}></div>
       {#each windowed as opt (opt.value)}
         <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-        <div class="sv-ddl__opt sv-ddl__opt--abs" style:height={`${rowHeight}px`} style:transform={`translateY(${opt.index * rowHeight}px)`} class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
+        <div class="sv-ddl__opt" style:height={`${rowHeight}px`} class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
       {/each}
+      <div class="sv-ddl__spacer" aria-hidden="true" style:height={`${vr.padBottom}px`}></div>
     {:else}
     {#each groupOptions(options) as g (g.group ?? '')}
       {#if g.group != null}
@@ -217,7 +217,7 @@
   .sv-ddl__chev { color: var(--sg-muted, #64748b); flex: none; }
 
   :global(.sv-ddl__panel) {
-    z-index: 2147483647; max-height: 288px; overflow-y: auto; padding: 4px;
+    box-sizing: border-box; z-index: 2147483647; max-height: 288px; overflow-y: auto; padding: 4px;
     background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a);
     border: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px; box-shadow: 0 16px 48px -12px rgba(15,23,42,0.35);
   }
@@ -244,9 +244,23 @@
     background-size: 6px 4px; background-position: center; background-repeat: repeat-x;
   }
   :global(.sv-ddl__grip:hover .sv-ddl__grip-dots) { opacity: 1; }
-  :global(.sv-ddl__panel.is-virtual) { position: fixed; will-change: scroll-position; }
-  :global(.sv-ddl__sizer) { padding: 0; margin: 0; pointer-events: none; }
-  :global(.sv-ddl__opt--abs) { position: absolute; inset-inline: 4px; top: 4px; }
+  /* Faint per-row skeleton so a fast scrollbar-thumb drag reveals placeholder
+     rows in this off-screen padding instead of blank, until JS re-windows. */
+  :global(.sv-ddl__spacer) {
+    padding: 0; margin: 0; flex: none; pointer-events: none;
+    background-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((var(--sv-row-h, 34px) - 10px) / 2),
+      var(--sg-skeleton, color-mix(in srgb, currentColor 9%, transparent)) calc((var(--sv-row-h, 34px) - 10px) / 2),
+      var(--sg-skeleton, color-mix(in srgb, currentColor 9%, transparent)) calc((var(--sv-row-h, 34px) + 10px) / 2),
+      transparent calc((var(--sv-row-h, 34px) + 10px) / 2),
+      transparent var(--sv-row-h, 34px)
+    );
+    background-size: 62% var(--sv-row-h, 34px);
+    background-repeat: repeat-y;
+    background-position: 12px 0;
+  }
   :global(.sv-ddl__opt.is-active) { background: var(--sg-row-hover-bg, #f1f5f9); }
   :global(.sv-ddl__opt.is-selected) { color: var(--sg-accent, #2563eb); font-weight: 600; }
   :global(.sv-ddl__opt.is-disabled) { opacity: 0.4; cursor: not-allowed; }

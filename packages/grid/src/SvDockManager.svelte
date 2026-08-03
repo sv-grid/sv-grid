@@ -357,8 +357,26 @@
     // sees the main leaf underneath (for redock), not the window itself.
     draggingWindow = windowId
     let redock: { tabsId: string; zone: DockZone } | null = null
+    let autoHide: DockSide | null = null
     const move = (ev: PointerEvent) => {
       commit(moveWindow(workspace, windowId, ev.clientX - ox, ev.clientY - oy))
+      // Near the manager's outer border -> auto-hide to that edge, mirroring the
+      // tab-drag path (computeTarget). Checked BEFORE redock so an edge wins over
+      // a guide chip that sits near the same border; `target` drives the edge hint.
+      const rr = rootEl?.getBoundingClientRect()
+      if (rr) {
+        const dl = ev.clientX - rr.left, dr = rr.right - ev.clientX, dt = ev.clientY - rr.top, db = rr.bottom - ev.clientY
+        const mn = Math.min(dl, dr, dt, db)
+        if (mn >= 0 && mn <= EDGE_BAND) {
+          autoHide = mn === dl ? 'left' : mn === dr ? 'right' : mn === dt ? 'top' : 'bottom'
+          target = { kind: 'autohide', side: autoHide }
+          hoverLeaf = null
+          redock = null
+          return
+        }
+      }
+      autoHide = null
+      target = null
       // Over a main leaf's guide chip -> arm a redock (else the window floats).
       const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null
       const leafEl = el?.closest('[data-dock-tabs]') as HTMLElement | null
@@ -375,7 +393,12 @@
     const up = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
-      if (redock) commit(dockWindowOnto(workspace, windowId, redock.tabsId, redock.zone, genId))
+      if (autoHide) {
+        const size = autoHide === 'left' || autoHide === 'right' ? w.width : w.height
+        commit(autoHideWindow(workspace, windowId, autoHide, genId, Math.round(size)))
+      } else if (redock) {
+        commit(dockWindowOnto(workspace, windowId, redock.tabsId, redock.zone, genId))
+      }
       draggingWindow = null
       target = null
       hoverLeaf = null
@@ -676,7 +699,7 @@
         {headerPosition}
         focusedLeaf={focusedLeafId}
         {keepAlive}
-          hideSingleTab
+          hideSingleTab={true}
           surface={e.id}
           onBeginDrag={beginTabDrag}
           externalDrop={guideGlobal}

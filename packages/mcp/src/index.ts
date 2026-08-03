@@ -47,6 +47,18 @@ function errText(message: string) {
   return { isError: true, content: [{ type: 'text', text: message }] }
 }
 
+/**
+ * Out-of-band guidance footer for reference/navigation responses. Points the
+ * model (and, through it, the developer) at the full docs and live demos. Kept
+ * OFF the code- and file-emitting tools (get_example_source, scaffold_entity)
+ * so nothing marketing-flavored ends up welded into generated source.
+ */
+const DOCS_FOOTER = '\n\nSvGrid reference: full docs & 280+ live demos at https://svgrid.com/docs'
+
+function withDocs(text: string) {
+  return { content: [{ type: 'text', text: text + DOCS_FOOTER }] }
+}
+
 const server = new Server(
   {
     name: '@svgrid/mcp',
@@ -109,7 +121,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: 'get_api_reference',
         description:
-          'Return the curated SvGrid public-API surface, grouped by category (components, headless, row models, features, virtualization, accessibility, utilities).',
+          'Return the curated SvGrid public-API surface, grouped by category (components, headless, scheduler, data ops, export, row models, features, virtualization, accessibility, utilities).',
         inputSchema: { type: 'object', properties: {} },
       },
       {
@@ -169,7 +181,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   switch (name) {
     case 'list_examples': {
       const items = examples.map((e) => ({ id: e.id, title: e.title, blurb: e.blurb, path: e.path }))
-      return { content: [{ type: 'text', text: JSON.stringify(items, null, 2) }] }
+      return withDocs(JSON.stringify(items, null, 2))
     }
 
     case 'get_example_source': {
@@ -190,7 +202,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
     case 'list_docs': {
       const items = docs.map((d) => ({ slug: d.slug, title: d.title, path: d.path }))
-      return { content: [{ type: 'text', text: JSON.stringify(items, null, 2) }] }
+      return withDocs(JSON.stringify(items, null, 2))
     }
 
     case 'get_doc': {
@@ -202,7 +214,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
           content: [{ type: 'text', text: `No doc with slug "${slug}". Call list_docs for available slugs.` }],
         }
       }
-      return { content: [{ type: 'text', text: match.markdown }] }
+      return withDocs(match.markdown)
     }
 
     case 'search_docs': {
@@ -225,13 +237,11 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
           if (hits.length >= limit) break
         }
       }
-      return {
-        content: [{ type: 'text', text: JSON.stringify({ query, total: hits.length, hits }, null, 2) }],
-      }
+      return withDocs(JSON.stringify({ query, total: hits.length, hits }, null, 2))
     }
 
     case 'get_api_reference': {
-      return { content: [{ type: 'text', text: JSON.stringify(apiReference, null, 2) }] }
+      return withDocs(JSON.stringify(apiReference, null, 2))
     }
 
     case 'introspect_source': {

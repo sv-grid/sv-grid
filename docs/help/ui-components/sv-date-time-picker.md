@@ -56,7 +56,7 @@ SvGrid mounts for a `datetime` cell.
 ## Props
 
 `SvDateTimePicker` extends `SvEditorProps` (`disabled`, `readonly`, `required`,
-`invalid`, `error`, `label`, `hint`, `size`, `dir`, `name`, `id`, `ariaLabel`).
+`invalid`, `error`, `label`, `hint`, `dir`, `name`, `id`, `ariaLabel`).
 Its own props:
 
 | Prop                  | Type                                     | Default              | Description                                                        |
@@ -78,6 +78,7 @@ Its own props:
 | `spinButtons`         | `boolean`                                | `false`              | Up/down buttons that bump the value by `stepMinutes`.           |
 | `stepMinutes`         | `number`                                 | `1`                  | Increment for the spin buttons.                                 |
 | `autoOpen`            | `boolean`                                | `false`              | Open the dropdown as soon as the field is focused.             |
+| `block`               | `boolean`                                | `false`              | Stretch the field to fill its container (100% width); grid cell editor. |
 | `animate`             | `boolean` \| `slide` \| `fade`           | `false`              | Animate the calendar's month / drill navigation.               |
 | `messages`            | `Partial<DateTimeMessages>`              | -                    | Override the tab / dialog / aria strings.                       |
 

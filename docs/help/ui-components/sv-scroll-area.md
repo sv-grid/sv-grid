@@ -47,6 +47,7 @@ import { SvScrollArea } from '@svgrid/grid'
 | `maxHeight`  | `string`  | -       | Any CSS length; the area scrolls once content exceeds it.      |
 | `height`     | `string`  | -       | Fixed height (the area always fills and scrolls within it).    |
 | `horizontal` | `boolean` | `false` | Scroll horizontally instead of vertically.                     |
+| `ariaLabel`  | `string`  | `'Scrollable content'` | Accessible name for the scrollable region.        |
 | `children`   | `Snippet` | -       | The scrollable content.                                        |
 
 ## Examples

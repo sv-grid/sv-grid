@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, calendarScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, schedulerScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 const menuItems: EntitySchema = {
   name: 'menuItems',
@@ -173,7 +173,9 @@ export const restaurant: SampleApp = {
           { filter: ['category', 'available'], span: 3 },
           { grid: true, format: menuFormats, summaries: true, rowActions: [{ kind: 'edit' }], span: 3 },
         ]),
-        calendarScreen(orders, { id: 'reservations', title: 'Reservations', order: 2 }, { dateField: 'reservationTime', titleField: 'tableId', colorField: 'status', filter: ['status', 'tableId'] }),
+        // Resource scheduler: a column per table, reservations placed by time + tinted by
+        // status, drag-to-reassign a table + a detail drawer (day view). Was a month calendar.
+        schedulerScreen(orders, { id: 'reservations', title: 'Reservations', order: 2 }, { startField: 'reservationTime', titleField: 'name', colorField: 'status', resourceField: 'tableId', initialView: 'day' }),
         detailScreen(tables, { id: 'table-detail', title: 'Table detail', order: 3 }, {
           titleField: 'name', statusField: 'section', metricFields: ['seats'],
           related: [{ entity: 'orders', foreignKey: 'tableId', label: 'Orders', titleField: 'customerPhone', subtitleField: 'total', dateField: 'reservationTime', statusField: 'status' }],

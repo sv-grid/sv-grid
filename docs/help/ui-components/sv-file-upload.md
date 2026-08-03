@@ -50,6 +50,10 @@ import { SvFileUpload } from '@svgrid/grid'
 
 ## Props
 
+`SvFileUpload` extends the shared `SvEditorProps` (`disabled`, `readonly`,
+`required`, `invalid`, `error`, `label`, `hint`, `dir`, `id`, `ariaLabel`) and
+adds:
+
 | Prop        | Type                                    | Default | Description                                                       |
 | ----------- | --------------------------------------- | ------- | ---------------------------------------------------------------- |
 | `files`     | `File[]`                                | `[]`    | Selected files (bindable). Controlled via `onChange`.            |
@@ -60,9 +64,6 @@ import { SvFileUpload } from '@svgrid/grid'
 | `maxSize`   | `number`                                | -       | Max size per file, in bytes.                                     |
 | `maxFiles`  | `number`                                | -       | Maximum number of files.                                         |
 | `messages`  | `Partial<FileMessages>`                 | -       | Override the prompt / browse / remove / accepted-types strings.  |
-
-Plus the shared editor-contract props: `disabled`, `readonly`, `required`,
-`invalid`, `error`, `label`, `hint`, `dir`, `id`, `ariaLabel`.
 
 ### FileRejection
 

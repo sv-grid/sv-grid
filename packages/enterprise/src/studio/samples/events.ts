@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, calendarScreen, project, dashScreen, detailScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, schedulerScreen, project, dashScreen, detailScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 const eventsEntity: EntitySchema = {
   name: 'events',
@@ -183,7 +183,9 @@ export const events: SampleApp = {
         ]),
         // Schedule: a month calendar placing every event on its start date, tinted
         // by category. The signature "real app" scheduling view.
-        calendarScreen(eventsEntity, { id: 'schedule', title: 'Schedule', order: 2 }, { dateField: 'startAt', titleField: 'name', colorField: 'category', filter: ['category', 'status'] }),
+        // Scheduler: events laid out on a week/day timeline by start time + tinted by
+        // category, with drag-to-reschedule + a detail drawer. Was a month calendar.
+        schedulerScreen(eventsEntity, { id: 'schedule', title: 'Schedule', order: 2 }, { startField: 'startAt', titleField: 'name', colorField: 'category', initialView: 'week' }),
         // Event 360: a full record page for one event - header with status pill and
         // capacity / price tiles, a tabbed overview, and a registrations timeline.
         detailScreen(eventsEntity, { id: 'event-detail', title: 'Event detail', order: 3 }, {

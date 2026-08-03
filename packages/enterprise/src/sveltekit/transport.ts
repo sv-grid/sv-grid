@@ -139,6 +139,28 @@ export type KitHandlerOptions<TData extends RowData> = {
    * logged, so an audit-sink hiccup never fails the underlying write.
    */
   audit?: (entry: KitAuditEntry<TData>) => void | Promise<void>
+  /**
+   * Business-logic lifecycle hooks, run server-side around each mutation (the
+   * Studio generator compiles a screen's visual "triggers" into these). A
+   * `before*` hook may transform the payload (return a new object) or throw to
+   * reject the write (-> `422 { error }`), so a rule enforced here holds even if
+   * the client skips it. `after*` hooks run once the write succeeds (cascades,
+   * notifications) - a throw there fails the request (`500`).
+   */
+  hooks?: KitHooks<TData>
+}
+
+/** The SvelteKit event slice handed to every hook (read `locals` for the actor). */
+export type KitEvent = { request: Request; locals?: Record<string, unknown> }
+
+/** Server-side mutation lifecycle hooks (see `KitHandlerOptions.hooks`). */
+export type KitHooks<TData extends RowData> = {
+  beforeCreate?: (ctx: { values: Partial<TData>; event: KitEvent }) => Partial<TData> | void | Promise<Partial<TData> | void>
+  afterCreate?: (ctx: { row: TData; event: KitEvent }) => void | Promise<void>
+  beforeUpdate?: (ctx: { id: string; patch: Partial<TData>; event: KitEvent }) => Partial<TData> | void | Promise<Partial<TData> | void>
+  afterUpdate?: (ctx: { id: string; row: TData; event: KitEvent }) => void | Promise<void>
+  beforeDelete?: (ctx: { id: string; event: KitEvent }) => void | Promise<void>
+  afterDelete?: (ctx: { id: string; event: KitEvent }) => void | Promise<void>
 }
 
 /** The change details handed to the `audit` hook after a successful mutation. */
@@ -166,7 +188,7 @@ const actionOf = <TData extends RowData>(msg: KitMessage<TData>): KitAction =>
 export function createKitHandlers<TData extends RowData>(
   options: KitHandlerOptions<TData>,
 ): KitHandlers {
-  const { source, authorize, validate, audit } = options
+  const { source, authorize, validate, audit, hooks } = options
   const idField = options.schema.idField ?? options.schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
   const rowId = (row: unknown): string | null => {
     const v = (row as Record<string, unknown> | null)?.[idField]
@@ -222,21 +244,44 @@ export function createKitHandlers<TData extends RowData>(
       }
       if (msg.kind === 'mutate') {
         const evt = { request, locals: event?.locals }
+        // A `before*` hook throwing is a business-rule rejection -> 422 (not a 500).
+        const runBefore = async <R>(fn: () => Promise<R>): Promise<R | Response> => {
+          try { return await fn() } catch (err) { return jsonResponse({ error: err instanceof Error ? err.message : 'rejected' }, 422) }
+        }
         if (msg.op === 'create') {
           if (!source.createRow) return jsonResponse({ error: 'create not supported' }, 405)
-          const row = await source.createRow(msg.input)
-          await fireAudit({ action: 'create', id: rowId(row), values: msg.input, result: row, event: evt })
+          let input = msg.input
+          if (hooks?.beforeCreate) {
+            const r = await runBefore(() => Promise.resolve(hooks.beforeCreate!({ values: input, event: evt })))
+            if (r instanceof Response) return r
+            if (r) input = r as Partial<TData>
+          }
+          const row = await source.createRow(input)
+          if (hooks?.afterCreate) await hooks.afterCreate({ row, event: evt })
+          await fireAudit({ action: 'create', id: rowId(row), values: input, result: row, event: evt })
           return jsonResponse(row)
         }
         if (msg.op === 'update') {
           if (!source.updateRow) return jsonResponse({ error: 'update not supported' }, 405)
-          const row = await source.updateRow(msg.id, msg.patch)
-          await fireAudit({ action: 'update', id: msg.id, values: msg.patch, result: row, event: evt })
+          let patch = msg.patch
+          if (hooks?.beforeUpdate) {
+            const r = await runBefore(() => Promise.resolve(hooks.beforeUpdate!({ id: msg.id, patch, event: evt })))
+            if (r instanceof Response) return r
+            if (r) patch = r as Partial<TData>
+          }
+          const row = await source.updateRow(msg.id, patch)
+          if (hooks?.afterUpdate) await hooks.afterUpdate({ id: msg.id, row, event: evt })
+          await fireAudit({ action: 'update', id: msg.id, values: patch, result: row, event: evt })
           return jsonResponse(row)
         }
         if (msg.op === 'delete') {
           if (!source.deleteRow) return jsonResponse({ error: 'delete not supported' }, 405)
+          if (hooks?.beforeDelete) {
+            const r = await runBefore(() => Promise.resolve(hooks.beforeDelete!({ id: msg.id, event: evt })))
+            if (r instanceof Response) return r
+          }
           await source.deleteRow(msg.id)
+          if (hooks?.afterDelete) await hooks.afterDelete({ id: msg.id, event: evt })
           await fireAudit({ action: 'delete', id: msg.id, event: evt })
           return jsonResponse({ ok: true })
         }

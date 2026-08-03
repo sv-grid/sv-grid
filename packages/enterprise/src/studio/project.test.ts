@@ -3,6 +3,14 @@ import type { EntitySchema } from '../schema'
 import {
   addBlock,
   applyGridPreset,
+  addStateVar,
+  updateStateVar,
+  removeStateVar,
+  stateInitExpr,
+  compileStep,
+  setTrigger,
+  triggersOf,
+  compileTriggerSteps,
   setScreenLayout,
   setLayoutOpts,
   gridOpts,
@@ -378,6 +386,52 @@ describe('block ops', () => {
     const r = canvasRectOf(p.screens[0]!, kpi.id)
     expect(r.colSpan).toBeLessThanOrEqual(6)
     expect(r.col + r.colSpan).toBeLessThanOrEqual(6)
+  })
+
+  it('state variables: add / update / remove keep names valid + unique', () => {
+    let p = addStateVar(base, sid, { name: 'count', type: 'number', initial: '5' })
+    p = addStateVar(p, sid, { name: 'count' }) // dup -> count2
+    p = addStateVar(p, sid, { name: '2bad name!' }) // sanitized
+    const names = p.screens[0]!.state!.map((v) => v.name)
+    expect(names).toEqual(['count', 'count2', '_2bad_name_'])
+    expect(stateInitExpr(p.screens[0]!.state![0]!)).toBe('5')
+    p = updateStateVar(p, sid, 'count', { type: 'boolean', initial: 'true' })
+    expect(stateInitExpr(p.screens[0]!.state![0]!)).toBe('true')
+    p = removeStateVar(p, sid, 'count2')
+    expect(p.screens[0]!.state!.map((v) => v.name)).toEqual(['count', '_2bad_name_'])
+    // round-trips
+    expect(parseProject(serializeProject(p)).screens[0]!.state).toEqual(p.screens[0]!.state)
+  })
+
+  it('entity triggers: setTrigger / triggersOf + compile to server code (payload = v)', () => {
+    let p = createProject([customers])
+    p = setTrigger(p, 'customers', 'beforeCreate', [
+      { type: 'requireField', field: 'name' },
+      { type: 'setField', field: 'name', value: { kind: 'field', name: 'name' } },
+      { type: 'reject', condition: { left: { kind: 'field', name: 'age' }, op: 'lt', right: { kind: 'literal', value: '0' } }, message: 'age must be >= 0' },
+    ])
+    expect(triggersOf(p, 'customers').beforeCreate).toHaveLength(3)
+    const body = compileTriggerSteps(triggersOf(p, 'customers').beforeCreate!)
+    expect(body).toContain("if (v['name'] == null || v['name'] === '') throw new Error('name is required')")
+    expect(body).toContain("v['name'] = v?.['name']")
+    expect(body).toContain("if (Number(v?.['age']) < Number(0)) throw new Error('age must be >= 0')")
+    // clearing an event with null drops it (and the entity when empty)
+    p = setTrigger(p, 'customers', 'beforeCreate', null)
+    expect(p.triggers).toBeUndefined()
+    // round-trip
+    p = setTrigger(p, 'customers', 'afterCreate', [{ type: 'code', code: 'console.log(v)' }])
+    expect(parseProject(serializeProject(p)).triggers).toEqual(p.triggers)
+  })
+
+  it('logic-core step verbs compile to ctx code', () => {
+    expect(compileStep({ type: 'setVar', name: 'q', value: { kind: 'literal', value: 'hi' } })).toBe("ctx.state.q = 'hi'")
+    expect(compileStep({ type: 'setVar', name: 'sel', value: { kind: 'state', name: 'row' } })).toBe('ctx.state.sel = ctx.state.row')
+    expect(compileStep({ type: 'createRecord', values: [{ field: 'name', value: { kind: 'param', name: 'q' } }] })).toBe("await ctx.data.create({ name: ctx.params['q'] })")
+    expect(compileStep({ type: 'updateRecord', id: { kind: 'field', name: 'id' }, values: [{ field: 'done', value: { kind: 'literal', value: 'true' } }] })).toBe("await ctx.data.update(row?.['id'], { done: true })")
+    expect(compileStep({ type: 'deleteRecord', id: { kind: 'state', name: 'selId' } })).toBe('await ctx.data.delete(ctx.state.selId)')
+    // branch nests + indents its body
+    const br = compileStep({ type: 'branch', condition: { left: { kind: 'state', name: 'n' }, op: 'gt', right: { kind: 'literal', value: '3' } }, then: [{ type: 'alert', message: 'big' }], else: [{ type: 'alert', message: 'small' }] })
+    expect(br).toBe("if (Number(ctx.state.n) > Number(3)) {\n  alert('big')\n} else {\n  alert('small')\n}")
   })
 
   it('setScreenLayout(canvas) seeds cell rects; setCanvasRect clamps to the grid + round-trips', () => {

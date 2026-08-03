@@ -612,17 +612,27 @@ source.
 | `colorField` / `color` | Per-event accent color (the fill), or one for all. |
 | `secondaryColorField` | A second per-event color, painted as a left-edge strip (encode two dimensions - e.g. fill = person, strip = role). |
 | `recurrenceField` | Field holding a `RecurrenceRule` (or array). |
-| `recurrenceExceptionsField` / `onOccurrenceChange` | Per-occurrence overrides (moved / edited / deleted single instances); enables the "This event vs All events" prompt. |
+| `recurrenceExceptionsField` / `onOccurrenceChange` | Per-occurrence overrides (moved / edited / deleted single instances); the prompt offers **This event**, **This and following**, and **All events**. `onOccurrenceChange` carries a `scope` - handle `'following'` by splitting the series (see below); it also fires from a drag, delete, and a drawer save on a recurring occurrence. |
 | `defaultDurationMin` | Event length when a row has no `endField` (default 60). |
 | `views` / `initialView` | Which views to offer, and the first shown. Includes the horizontal `timelineDay` / `timelineWeek` / `timelineMonth` / `timelineYear`. |
 | `initialDate` | The date the calendar opens on (default today). |
 | `weekStartsOn` | First day of the week, 0-6 (default 0). |
-| `slotMinutes` | Time-grid slot size and move/resize snap (default 30). |
+| `slotMinutes` | Time-grid slot size and move/resize snap (default 30). Each slot renders 30px tall, so the hour grows with the granularity (1h = 30px rows, 30m = 60px, 15m = 120px). |
+| `slotSizes` | Slot sizes (minutes) offered as a runtime ruler picker in Week / Day, e.g. `[60, 30, 15, 5]`. Shows a size selector in the toolbar; omit to hide it (the ruler still uses `slotMinutes`). |
 | `dayStartHour` / `dayEndHour` | Visible time-grid band (default 0..24). |
 | `nowIndicator` | Show the current-time line on today (Week / Day + Day timeline). On by default; `false` to hide. |
 | `businessHours` / `nonWorkingDays` / `shadeUntilNow` | Shade out-of-hours, non-working weekdays and elapsed time. |
 | `restrictToBusinessHours` | Enforce the shading - reject a drop / create outside working hours or on a non-working day. |
 | `disableConflicts` | Reject a drag / resize / create that double-books the same resource. |
+| `restrictedHours` | Hard-blocked hour bands (e.g. a lunch window `[{ start: 12, end: 13 }]`) - always non-bookable, rendered as a distinct red hatch. |
+| `restrictedDates` | Specific dates that are fully closed (no bookings). |
+| `specialDates` | Highlighted dates (holidays / launches) - a coloured strip + label on the column; decorative, does not block. |
+| `minDate` / `maxDate` | Earliest / latest navigable + bookable date (prev / next nav stop at the bounds). |
+| `maxEventsPerSlot` | Cap concurrent events per resource - reject a move / create that exceeds N overlapping events. |
+| `SchedulerResource.dateOverrides` | Per-date exceptions to a resource's weekly `availability` - a day off (`off: true`) or custom `windows` for one date. |
+| `statusField` | Free/busy status (`busy` / `free` / `tentative` / `oof`) driving an Outlook-style visual (solid / outline / hatched / tinted). Ties to iCal `STATUS`. |
+| `reminderField` / `onReminder` | Minutes-before-start for a reminder; fires `onReminder` (and a built-in toast) once as the lead time is crossed. Ties to iCal `VALARM`. |
+| `onUnschedule` | Drag an event onto the backlog panel to remove it from the schedule (typically push it back to `unscheduled`). |
 | `event` / `tooltip` / `tooltipDelay` | Custom event-body snippet and a hover-tooltip snippet (or `tooltip: true` for the built-in). |
 | `history` | Enable undo / redo of drag-move + resize (`Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z`). |
 | `unscheduled` / `onSchedule` / `backlogTitle` | A drag-to-schedule backlog panel beside the Week / Day grid. |

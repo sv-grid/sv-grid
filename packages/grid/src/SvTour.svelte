@@ -98,14 +98,34 @@
   })
 
   const POP_W = 300
+  // Measured popover height, so placement can keep the WHOLE popover on-screen
+  // (long content + tall targets used to push it off the top).
+  let popH = $state(200)
   const pop = $derived.by(() => {
     if (typeof window === 'undefined' || !rect) {
       return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)', place: 'center' as const }
     }
-    const left = Math.max(12, Math.min(rect.left, window.innerWidth - POP_W - 12))
-    const below = window.innerHeight - rect.bottom
-    if (below > 190) return { top: `${rect.bottom + 10}px`, left: `${left}px`, transform: 'none', place: 'bottom' as const }
-    return { top: `${rect.top - 10}px`, left: `${left}px`, transform: 'translateY(-100%)', place: 'top' as const }
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const gap = 12
+    const h = popH || 200
+    const clampTop = (t: number) => Math.max(gap, Math.min(t, vh - h - gap))
+    const clampLeft = (l: number) => Math.max(gap, Math.min(l, vw - POP_W - gap))
+    // Prefer directly below the target, then directly above - but only when the
+    // target is short enough to leave room for the whole popover.
+    if (vh - rect.bottom >= h + gap) {
+      return { top: `${rect.bottom + 10}px`, left: `${clampLeft(rect.left)}px`, transform: 'none', place: 'bottom' as const }
+    }
+    if (rect.top >= h + gap) {
+      return { top: `${clampTop(rect.top - 10 - h)}px`, left: `${clampLeft(rect.left)}px`, transform: 'none', place: 'top' as const }
+    }
+    // Tall target (a full-height rail / canvas / inspector): sit BESIDE it,
+    // vertically centred on the target, on whichever side has room.
+    const top = clampTop(rect.top + rect.height / 2 - h / 2)
+    if (vw - rect.right >= POP_W + gap) return { top: `${top}px`, left: `${rect.right + 10}px`, transform: 'none', place: 'center' as const }
+    if (rect.left >= POP_W + gap) return { top: `${top}px`, left: `${rect.left - POP_W - 10}px`, transform: 'none', place: 'center' as const }
+    // No side room either - centre horizontally (still fully visible).
+    return { top: `${top}px`, left: `${clampLeft((vw - POP_W) / 2)}px`, transform: 'none', place: 'center' as const }
   })
 </script>
 
@@ -125,6 +145,7 @@
 
     <div
       bind:this={popEl}
+      bind:clientHeight={popH}
       class="sv-tour__pop sv-tour__pop--{pop.place}"
       style:top={pop.top}
       style:left={pop.left}
@@ -133,6 +154,11 @@
       aria-modal="true"
       aria-label={step.title ?? 'Tour step'}
     >
+      {#if step.image}
+        <div class="sv-tour__media">
+          {#if /^(https?:|data:|\/)/.test(step.image)}<img class="sv-tour__img" src={step.image} alt="" />{:else}{@html step.image}{/if}
+        </div>
+      {/if}
       {#if step.title}<div class="sv-tour__title">{step.title}</div>{/if}
       <div class="sv-tour__body">{step.content}</div>
       <div class="sv-tour__foot">
@@ -163,6 +189,8 @@
   }
   @keyframes sv-tour-in { from { opacity: 0; transform: translateY(4px) } }
   :global(.sv-tour__pop--top) { animation: none; }
+  :global(.sv-tour__media) { margin: -2px -4px 12px; border-radius: 9px; overflow: hidden; line-height: 0; }
+  :global(.sv-tour__media svg), :global(.sv-tour__img) { display: block; width: 100%; height: auto; }
   :global(.sv-tour__title) { font-size: 14.5px; font-weight: 650; margin-bottom: 4px; }
   :global(.sv-tour__body) { font-size: 13px; line-height: 1.55; color: var(--sg-fg, #334155); }
   :global(.sv-tour__foot) { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }

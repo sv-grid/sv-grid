@@ -48,6 +48,17 @@ export type SchedulerResource = {
    * non-bookable. A weekday with no matching window is a full day off.
    */
   availability?: ReadonlyArray<{ days?: ReadonlyArray<number>; start: number; end: number }>;
+  /**
+   * Per-date overrides to this resource's weekly `availability` - a specific day
+   * off (`off: true`, e.g. vacation) or custom hours (`windows`) for that one
+   * date. Matched by calendar date; takes precedence over `availability` for the
+   * matching day.
+   */
+  dateOverrides?: ReadonlyArray<{
+    date: Date | number | string;
+    off?: boolean;
+    windows?: ReadonlyArray<{ start: number; end: number }>;
+  }>;
 };
 import type {
   ChartType,
@@ -573,7 +584,7 @@ export type SchedulerException = {
 };
 
 /** How a change to a recurring event should apply. */
-export type SchedulerEditScope = "occurrence" | "series";
+export type SchedulerEditScope = "occurrence" | "following" | "series";
 
 /**
  * Fired when a single occurrence of a recurring event is edited or deleted (the
@@ -586,6 +597,14 @@ export type SchedulerOccurrenceChangeEvent<TData extends RowData = RowData> = {
   occurrenceStart: Date;
   /** The override to store (already in real-instant time). */
   exception: SchedulerException;
+  /**
+   * Which scope the user chose. `'occurrence'` (default): merge `exception` into
+   * the row. `'following'` ("this and all following"): split the series - stop
+   * the original series before `occurrenceStart` and start a NEW series at it
+   * carrying `exception`'s start/end/deleted. `'series'` never reaches here (it
+   * edits the base row directly). Handle `'following'` in your own data.
+   */
+  scope: SchedulerEditScope;
 };
 
 /**
@@ -619,6 +638,21 @@ export type SchedulerConfig<
    * dimensions at once (e.g. main color = person, left strip = role).
    */
   secondaryColorField?: keyof TData & string;
+  /**
+   * Field holding a free/busy status that drives a distinct visual treatment
+   * (Outlook-style): `'busy'` (default solid), `'free'` (hollow / outline),
+   * `'tentative'` (hatched), `'oof'` / `'outOfOffice'` (distinct tint). Ties to
+   * iCal `STATUS`. Unrecognised values render as busy.
+   */
+  statusField?: keyof TData & string;
+  /**
+   * Field holding minutes-before-start for a reminder. When set (and the event
+   * is upcoming) the scheduler fires `onReminder` once as that lead time is
+   * crossed - pair it with a toast. Ties to iCal `VALARM`.
+   */
+  reminderField?: keyof TData & string;
+  /** Fired once when an event's reminder lead time is crossed (see `reminderField`). */
+  onReminder?: (row: TData, minutesUntil: number) => void;
   /**
    * Field holding a {@link RecurrenceRule} (or array) - the row renders as one
    * event per matching day in view, keeping its time-of-day + duration.
@@ -685,6 +719,28 @@ export type SchedulerConfig<
    * overlaps another event **on the same resource** is rejected and reverted.
    */
   disableConflicts?: boolean;
+  /**
+   * Hard-blocked hour bands (e.g. a daily maintenance window `[{ start: 12, end: 13 }]`).
+   * Unlike `businessHours` these are ALWAYS non-bookable (drop / create rejected,
+   * no opt-in needed) and rendered as a distinct restricted (hatched) band.
+   */
+  restrictedHours?: ReadonlyArray<{ start: number; end: number }>;
+  /** Specific calendar dates that are fully blocked (no bookings) - e.g. closures. */
+  restrictedDates?: ReadonlyArray<Date | number | string>;
+  /**
+   * Highlighted dates (holidays, launches …) - a coloured strip + optional label
+   * on that day's column / month cell. Decorative; does not block booking.
+   */
+  specialDates?: ReadonlyArray<{ date: Date | number | string; label?: string; color?: string }>;
+  /** Earliest navigable / bookable date. Prev-nav stops here and creates are blocked before it. */
+  minDate?: Date | number | string;
+  /** Latest navigable / bookable date. Next-nav stops here and creates are blocked after it. */
+  maxDate?: Date | number | string;
+  /**
+   * Cap concurrent events per resource at any moment: a drag / resize / create
+   * that would make more than N events overlap on the same resource is rejected.
+   */
+  maxEventsPerSlot?: number;
   /**
    * Enable **undo / redo** of drag-move + resize with `Ctrl/Cmd+Z` and
    * `Ctrl/Cmd+Shift+Z` (or `Ctrl+Y`). The scheduler re-emits the move/resize
@@ -808,6 +864,12 @@ export type SchedulerConfig<
   backlogTitle?: string;
   /** Fired when an unscheduled item is dropped on the grid - create an event from it. */
   onSchedule?: (item: { id: string; title: string; durationMin?: number; color?: string }, start: Date, resourceId?: string) => void;
+  /**
+   * Fired when an event is dragged OFF the calendar onto the backlog panel -
+   * remove it from the schedule (and typically push it back to `unscheduled`).
+   * Requires the backlog panel (an `unscheduled` list) to be visible.
+   */
+  onUnschedule?: (row: TData) => void;
 
   /** Custom event body. Receives the row. Omit for the built-in default (title). */
   event?: Snippet<[TData]>;

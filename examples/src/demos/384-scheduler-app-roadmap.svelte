@@ -1,17 +1,20 @@
 <script lang="ts">
   /**
-   * 384. Portfolio roadmap - product portfolio planning (real app)
-   * -------------------------------------------------------------
-   * A working roadmap tool, not a feature demo:
-   *  - a live sidebar: search, a squad roster (avatar + lead + active initiative
-   *    count) you can show/hide to filter the roadmap, a "delivery on-track"
-   *    gauge, and a status legend,
-   *  - a KPI strip (initiatives / in progress / at risk / shipped),
-   *  - the scheduler as a timeline grouped by squad - initiatives as multi-week
-   *    bars, milestones as amber flags. Zoom Month / Year; drag a bar to
-   *    reschedule or hand it to another squad; drop an idea from the backlog,
-   *  - a progress-aware initiative card + a companion "all initiatives" table -
-   *    the same rows as a grid.
+   * 384. Portfolio roadmap - a product portfolio planner (real app)
+   * ---------------------------------------------------------------
+   * Dashboard-forward, not a feature demo. The signature is a live
+   * PORTFOLIO-HEALTH strip sitting on top of a Gantt timeline:
+   *  - a left rail: brand, a squad roster (lead avatar + active-initiative
+   *    count) you can show/hide to filter the roadmap, and a status legend,
+   *  - a PORTFOLIO-HEALTH band - four mini charts, all DERIVED from the data
+   *    and pure CSS / SvSparkline: a status-mix stacked bar, capacity-by-squad
+   *    bars, a delivered-effort burn-up sparkline, and an on-track gauge,
+   *  - a compact KPI strip (initiatives / in progress / at risk / shipped),
+   *  - the scheduler as a timeline grouped by squad: initiatives are multi-week
+   *    bars carrying a progress meter, milestones are amber flags. Zoom
+   *    Month / Year; drag a bar to reschedule or hand it to another squad;
+   *    drop an idea from the backlog. A companion table holds the same rows.
+   * Every chart recomputes as the roadmap changes - schedule, reassign, edit.
    */
   import {
     SvGrid,
@@ -21,7 +24,7 @@
     SvStat,
     SvGauge,
     SvProgress,
-    SvTextInput,
+    SvSparkline,
     SvCheckBox,
     type ColumnDef,
     type SchedulerResource,
@@ -42,6 +45,7 @@
   type Idea = { id: string; title: string; durationMin?: number; color?: string }
 
   const MILESTONE = '#f59e0b'
+  const STATUS_ORDER: Status[] = ['Planned', 'In progress', 'At risk', 'Shipped']
   const STATUS: Record<Status, { color: string; variant: 'neutral' | 'info' | 'success' | 'warning' | 'danger' }> = {
     Planned: { color: '#6366f1', variant: 'info' },
     'In progress': { color: '#0891b2', variant: 'info' },
@@ -63,6 +67,7 @@
   first.setDate(1)
   first.setHours(0, 0, 0, 0)
   const dm = (dayOffset: number) => { const d = new Date(first); d.setDate(first.getDate() + dayOffset); return isoDay(d) }
+  const dayOff = (s: string) => Math.round((new Date(`${s}T00:00`).getTime() - first.getTime()) / 86400000)
 
   const DAY = 24 * 60
   const mk = (i: Omit<Init, 'color'>): Init => ({ ...i, color: i.owner === '-' ? MILESTONE : STATUS[i.status].color })
@@ -98,23 +103,60 @@
 
   const isMilestone = (r: Init) => r.owner === '-'
 
-  // --- Interactive filters ---------------------------------------------------
-  let query = $state('')
+  // --- Interactive filters (roster show/hide) --------------------------------
   let hidden = $state<Record<string, boolean>>({})
+  // Only mount the companion table while its <details> is open, so a collapsed
+  // table never renders a stray (horizontally-scrolling) grid off-screen.
+  let tableOpen = $state(false)
   const shownSquads = $derived(squads.filter((s) => !hidden[s.id]))
-  const q = $derived(query.trim().toLowerCase())
-  const filtered = $derived(
-    rows.filter((r) => !hidden[r.squad] && (q === '' || r.title.toLowerCase().includes(q) || r.owner.toLowerCase().includes(q))),
-  )
+  const filtered = $derived(rows.filter((r) => !hidden[r.squad]))
   const activeCount = (id: string) => rows.filter((r) => r.squad === id && !isMilestone(r)).length
 
-  // --- KPIs -------------------------------------------------------------------
+  // --- Portfolio metrics (all derived - the whole dashboard reacts) ----------
   const initiatives = $derived(rows.filter((r) => !isMilestone(r)))
   const inProgress = $derived(initiatives.filter((r) => r.status === 'In progress').length)
   const atRisk = $derived(initiatives.filter((r) => r.status === 'At risk').length)
   const shipped = $derived(initiatives.filter((r) => r.status === 'Shipped').length)
   // delivery on-track = share of initiatives not flagged at risk (higher is better)
   const onTrack = $derived(initiatives.length ? Math.round(((initiatives.length - atRisk) / initiatives.length) * 100) : 0)
+
+  // Chart 1: status mix -> horizontal stacked bar segments
+  const statusMix = $derived(
+    STATUS_ORDER.map((s) => {
+      const count = initiatives.filter((r) => r.status === s).length
+      return { label: s, count, color: STATUS[s].color, pct: initiatives.length ? (count / initiatives.length) * 100 : 0 }
+    }),
+  )
+  // Chart 2: capacity by squad -> summed effort (story points) per squad
+  const capacity = $derived(
+    squads.map((sq) => ({
+      id: sq.id,
+      initials: sq.initials,
+      color: sq.color,
+      effort: initiatives.filter((r) => r.squad === sq.id).reduce((sum, r) => sum + r.effort, 0),
+    })),
+  )
+  const capMax = $derived(Math.max(1, ...capacity.map((c) => c.effort)))
+  const capTotal = $derived(capacity.reduce((s, c) => s + c.effort, 0))
+  // Chart 3: delivered-effort burn-up over the planning window (progress-weighted)
+  const deliveryTrend = $derived.by(() => {
+    const span = 56
+    const buckets = 9
+    const out: number[] = []
+    for (let b = 1; b <= buckets; b++) {
+      const cutoff = (b / buckets) * span
+      let total = 0
+      for (const r of initiatives) {
+        const s = dayOff(r.start)
+        const e = dayOff(r.end)
+        if (s > cutoff) continue
+        const frac = e <= s ? 1 : Math.max(0, Math.min(1, (cutoff - s) / (e - s)))
+        total += r.effort * (r.progress / 100) * frac
+      }
+      out.push(Math.round(total))
+    }
+    return out
+  })
 
   const columns: ColumnDef<any, Init>[] = [
     { field: 'title', header: 'Initiative', editorType: 'text', width: 190 },
@@ -161,25 +203,19 @@
   <aside class="rm-nav">
     <header class="rm-brand"><span class="rm-brand-mark">🗺</span><span><span class="rm-brand-name">Roadmap</span><span class="rm-brand-sub">Portfolio planning</span></span></header>
 
-    <div class="rm-search">
-      <SvTextInput bind:value={query} placeholder="Search initiatives / owners" clearable />
-    </div>
-
     <div class="rm-roster">
       <div class="rm-sec-head">Squads <span class="rm-sec-count">{shownSquads.length}/{squads.length}</span></div>
       {#each squads as s (s.id)}
         <label class="rm-squad" class:rm-squad-off={hidden[s.id]}>
           <SvCheckBox checked={!hidden[s.id]} onChange={(v) => (hidden = { ...hidden, [s.id]: !v })} ariaLabel={`Show ${s.title}`} />
           <SvAvatar name={s.lead} color={s.color} size="sm" />
-          <span class="rm-squad-txt"><span class="rm-squad-name">{s.title}</span><span class="rm-squad-lead">{s.lead}</span></span>
+          <span class="rm-squad-txt">
+            <span class="rm-squad-name">{s.title}</span>
+            <span class="rm-squad-lead">{s.lead}</span>
+          </span>
           <SvBadge variant="neutral" size="sm">{activeCount(s.id)}</SvBadge>
         </label>
       {/each}
-    </div>
-
-    <div class="rm-gaugewrap">
-      <SvGauge value={onTrack} min={0} max={100} unit="%" label="Delivery on-track" size={130} thickness={12}
-        bands={[{ from: 0, to: 40, color: '#dc2626' }, { from: 40, to: 70, color: '#d97706' }, { from: 70, to: 100, color: '#16a34a' }]} />
     </div>
 
     <div class="rm-legend">
@@ -187,11 +223,63 @@
       {#each Object.entries(STATUS) as [s, v] (s)}
         <div class="rm-legend-row"><span class="rm-dot" style:background={v.color}></span>{s}</div>
       {/each}
-      <div class="rm-legend-row"><span class="rm-dot" style:background={MILESTONE}></span>Milestone</div>
+      <div class="rm-legend-row"><span class="rm-dot rm-dot-flag" style:background={MILESTONE}></span>Milestone</div>
     </div>
   </aside>
 
   <div class="rm-main">
+    <header class="rm-head">
+      <div class="rm-head-l"><span class="rm-title">Portfolio health</span><span class="rm-sub">Live signals across {initiatives.length} initiatives - recomputed as you plan</span></div>
+      <SvButton variant="primary" size="sm" onclick={newInitiative}>+ New initiative</SvButton>
+    </header>
+
+    <!-- PORTFOLIO-HEALTH strip: four mini charts, all derived, pure CSS / SvSparkline -->
+    <div class="rm-health">
+      <div class="rm-hcard">
+        <div class="rm-hcard-title">Status mix</div>
+        <div class="rm-stack" role="img" aria-label="Initiative count by status">
+          {#each statusMix as seg (seg.label)}
+            {#if seg.count > 0}
+              <div class="rm-stack-seg" style:width={`${seg.pct}%`} style:background={seg.color} title={`${seg.label}: ${seg.count}`}></div>
+            {/if}
+          {/each}
+        </div>
+        <div class="rm-stack-legend">
+          {#each statusMix as seg (seg.label)}
+            <span class="rm-mini-leg"><span class="rm-dot" style:background={seg.color}></span>{seg.label}<b>{seg.count}</b></span>
+          {/each}
+        </div>
+      </div>
+
+      <div class="rm-hcard">
+        <div class="rm-hcard-title">Capacity by squad <span class="rm-hcard-note">{capTotal} pts</span></div>
+        <div class="rm-bars">
+          {#each capacity as c (c.id)}
+            <div class="rm-bar-col" class:rm-bar-off={hidden[c.id]} title={`${c.effort} story points`}>
+              <span class="rm-bar-val">{c.effort}</span>
+              <span class="rm-bar-track"><span class="rm-bar-fill" style:height={`${Math.max(4, (c.effort / capMax) * 100)}%`} style:background={c.color}></span></span>
+              <span class="rm-bar-label">{c.initials}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <div class="rm-hcard">
+        <div class="rm-hcard-title">Delivery trend</div>
+        <div class="rm-spark">
+          <SvSparkline data={deliveryTrend} type="area" width={200} height={46} color={STATUS.Shipped.color} />
+        </div>
+        <div class="rm-hcard-cap">Delivered effort, cumulative</div>
+      </div>
+
+      <div class="rm-hcard rm-hcard-gauge">
+        <div class="rm-hcard-title">On-track</div>
+        <SvGauge value={onTrack} min={0} max={100} unit="%" size={96} thickness={10}
+          bands={[{ from: 0, to: 40, color: '#dc2626' }, { from: 40, to: 70, color: '#d97706' }, { from: 70, to: 100, color: '#16a34a' }]} />
+        <div class="rm-hcard-cap">{initiatives.length - atRisk} of {initiatives.length} not at risk</div>
+      </div>
+    </div>
+
     <div class="rm-kpis">
       <SvStat label="Initiatives" value={initiatives.length} hint="on the roadmap" />
       <SvStat label="In progress" value={inProgress} hint="active now" />
@@ -200,8 +288,8 @@
     </div>
 
     <div class="rm-toolbar">
-      <div class="rm-toolbar-l"><span class="rm-title">Portfolio roadmap</span><span class="rm-sub">Drag a bar to reschedule or reassign; drop an idea from the backlog; zoom Month / Year</span></div>
-      <SvButton variant="primary" size="sm" onclick={newInitiative}>+ New initiative</SvButton>
+      <span class="rm-tb-title">Timeline</span>
+      <span class="rm-tb-sub">Drag a bar to reschedule or reassign, drop an idea from the backlog, zoom Month / Year</span>
     </div>
 
     <div class="rm-cal">
@@ -222,46 +310,92 @@
       />
     </div>
 
-    <details class="rm-table">
+    <details class="rm-table" bind:open={tableOpen}>
       <summary>All initiatives ({rows.length})</summary>
-      <div class="rm-table-grid">
-        <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="260px" />
-      </div>
+      {#if tableOpen}
+        <div class="rm-table-grid">
+          <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="260px" fitColumns />
+        </div>
+      {/if}
     </details>
   </div>
 </section>
 
 <style>
   .rm { display: flex; flex: 1 1 auto; min-height: 0; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 12px; overflow: hidden; background: var(--sg-bg, #fff); }
-  .rm-nav { flex: 0 0 250px; display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--sg-border, #e5e7eb); background: color-mix(in srgb, var(--sg-fg, #1f2937) 3%, transparent); }
+
+  /* Left rail */
+  .rm-nav { flex: 0 0 230px; display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--sg-border, #e5e7eb); background: color-mix(in srgb, var(--sg-fg, #1f2937) 3%, transparent); }
   .rm-brand { display: flex; align-items: center; gap: 10px; padding: 14px; border-bottom: 1px solid var(--sg-border, #e5e7eb); }
   .rm-brand-mark { font-size: 20px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: color-mix(in srgb, var(--sg-accent, #4f46e5) 16%, transparent); }
   .rm-brand-name { display: block; font-weight: 700; }
   .rm-brand-sub { display: block; font-size: 0.72rem; color: var(--sg-muted, #6b7280); }
-  .rm-search { padding: 10px 12px 4px; }
   .rm-sec-head { display: flex; align-items: center; justify-content: space-between; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sg-muted, #9ca3af); padding: 8px 4px 6px; }
   .rm-sec-count { font-weight: 600; }
-  .rm-roster { padding: 4px 12px; overflow-y: auto; flex: 1 1 auto; min-height: 60px; }
-  .rm-squad { display: flex; align-items: center; gap: 9px; padding: 6px 6px; border-radius: 8px; cursor: pointer; }
+  .rm-roster { padding: 8px 12px; overflow-y: auto; flex: 1 1 auto; min-height: 60px; }
+  .rm-squad { display: flex; align-items: center; gap: 9px; padding: 7px 6px; border-radius: 8px; cursor: pointer; }
   .rm-squad:hover { background: color-mix(in srgb, var(--sg-fg, #1f2937) 6%, transparent); }
   .rm-squad-off { opacity: 0.5; }
   .rm-squad-txt { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
   .rm-squad-name { font-size: 0.85rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rm-squad-lead { font-size: 0.7rem; color: var(--sg-muted, #6b7280); }
-  .rm-gaugewrap { display: grid; place-items: center; padding: 6px 12px 12px; border-top: 1px solid var(--sg-border, #e5e7eb); }
-  .rm-legend { padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--sg-border, #e5e7eb); }
+  .rm-legend { padding: 8px 14px 14px; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--sg-border, #e5e7eb); }
   .rm-legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
   .rm-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .rm-dot-flag { border-radius: 2px; }
+
+  /* Main column */
   .rm-main { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  .rm-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 12px 14px 4px; }
-  .rm-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; }
-  .rm-toolbar-l { display: flex; flex-direction: column; }
-  .rm-title { font-weight: 600; }
+  .rm-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px 6px; }
+  .rm-head-l { display: flex; flex-direction: column; }
+  .rm-title { font-weight: 700; font-size: 0.98rem; }
   .rm-sub { font-size: 0.76rem; color: var(--sg-muted, #6b7280); }
-  .rm-cal { flex: 1 1 auto; min-height: 0; padding: 0 8px; }
+
+  /* Portfolio-health strip */
+  .rm-health { display: grid; grid-template-columns: 1.25fr 1.1fr 1.2fr 0.85fr; gap: 10px; padding: 4px 14px 8px; }
+  .rm-hcard { display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 12px; background: var(--sg-bg, #fff); min-width: 0; }
+  .rm-hcard-title { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sg-muted, #94a3b8); }
+  .rm-hcard-note { font-weight: 700; color: var(--sg-fg, #334155); letter-spacing: 0; text-transform: none; font-size: 0.7rem; }
+  .rm-hcard-cap { font-size: 0.7rem; color: var(--sg-muted, #6b7280); text-align: center; }
+  .rm-hcard-gauge { align-items: center; }
+
+  /* Chart 1: status-mix stacked bar */
+  .rm-stack { display: flex; width: 100%; height: 16px; border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--sg-fg, #1f2937) 6%, transparent); }
+  .rm-stack-seg { height: 100%; min-width: 3px; transition: width 0.3s ease; }
+  .rm-stack-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: auto; }
+  .rm-mini-leg { display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; color: var(--sg-muted, #6b7280); }
+  .rm-mini-leg b { color: var(--sg-fg, #334155); font-variant-numeric: tabular-nums; }
+
+  /* Chart 2: capacity bars */
+  .rm-bars { display: flex; align-items: stretch; gap: 8px; height: 58px; }
+  .rm-bar-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .rm-bar-off { opacity: 0.45; }
+  .rm-bar-val { font-size: 0.62rem; font-weight: 700; color: var(--sg-fg, #334155); font-variant-numeric: tabular-nums; }
+  .rm-bar-track { flex: 1 1 auto; width: 100%; max-width: 26px; display: flex; align-items: flex-end; }
+  .rm-bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.3s ease; }
+  .rm-bar-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.02em; color: var(--sg-muted, #6b7280); }
+
+  /* Chart 3: sparkline */
+  .rm-spark { flex: 1 1 auto; display: grid; place-items: center; }
+  .rm-spark :global(svg) { width: 100%; }
+
+  /* KPI strip */
+  .rm-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 2px 14px 6px; }
+  .rm-kpis :global(.sv-stat) { padding: 7px 12px !important; gap: 2px !important; border-radius: 9px !important; }
+  .rm-kpis :global(.sv-stat__value) { font-size: 18px !important; }
+  .rm-kpis :global(.sv-stat__label) { font-size: 11px !important; }
+  .rm-kpis :global(.sv-stat__foot) { font-size: 11px !important; }
+
+  /* Toolbar + timeline */
+  .rm-toolbar { display: flex; align-items: baseline; gap: 10px; padding: 6px 14px 4px; }
+  .rm-tb-title { font-weight: 700; font-size: 0.9rem; }
+  .rm-tb-sub { font-size: 0.76rem; color: var(--sg-muted, #6b7280); }
+  .rm-cal { flex: 1 1 auto; min-height: 220px; padding: 0 8px; }
   .rm-table { padding: 8px 14px 14px; }
   .rm-table summary { cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--sg-muted, #4b5563); padding: 4px 0; }
   .rm-table-grid { margin-top: 8px; }
+
+  /* Event bar body */
   .rm-ev { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; gap: 2px; }
   .rm-ev-top { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
   .rm-ev-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

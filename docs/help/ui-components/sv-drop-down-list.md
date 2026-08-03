@@ -111,6 +111,10 @@ For hundreds of flat options, add `virtual` so only the visible rows render:
 <SvDropDownList {options} virtual rowHeight={34} />
 ```
 
+> Note: a fast scrollbar-thumb drag can outrun windowing for a frame; the panel
+> fills the off-screen area with faint placeholder rows (a skeleton) instead of
+> flashing blank, so it stays visually filled at any scroll speed.
+
 ### Bounds detection (auto flip up/down)
 
 The panel measures the room around its trigger every time it opens and on

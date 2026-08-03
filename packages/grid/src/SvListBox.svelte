@@ -5,7 +5,7 @@
    * via `value` (scalar or array) + `onChange`. Scales to huge option sets with
    * `virtual` (fixed-row windowing), and each row can be an `itemTemplate`.
    */
-  import { flushSync, type Snippet } from 'svelte'
+  import { type Snippet } from 'svelte'
   import { groupOptions, hasGroups, type ListOption } from './list-option'
   import { virtualRange, scrollToIndex } from './virtual'
   import { createListbox } from './createListbox.svelte'
@@ -101,17 +101,25 @@
     class:is-invalid={invalid}
     class:is-virtual={useVirtual}
     style:--sv-rows={rows}
-    onscroll={(e) => { scrollTop = e.currentTarget.scrollTop; if (useVirtual) flushSync() }}
+    style:--sv-row-h={`${rowHeight}px`}
+    onscroll={(e) => (scrollTop = e.currentTarget.scrollTop)}
     bind:clientHeight={viewportH}
     {...lb.rootProps()}
   >
     {#if useVirtual}
-      <!-- Fixed-height sizer establishes the scroll range; rows are absolutely
-           positioned by transform so scrolling never reflows (no flash). -->
-      <li class="sv-listbox__sizer" aria-hidden="true" style:height={`${vr.totalHeight}px`}></li>
+      <!-- Windowing by top/bottom spacers with the visible rows IN FLOW between
+           them (padTop + rows + padBottom always sum to the full height). Plain
+           flow rows (no absolute positioning, no will-change) keep the scroller
+           off its own compositor layer, so a fast jump repaints in step with the
+           scroll instead of showing the blank frame a promoted layer would. The
+           window updates from `scrollTop` state, which Svelte flushes before the
+           next paint - no flushSync (it over-flushes app-wide and, on a fling,
+           starves the very handler that has to keep up with the scroll). -->
+      <li class="sv-listbox__spacer" aria-hidden="true" style:height={`${vr.padTop}px`}></li>
       {#each windowed as opt (opt.value)}
         {@render optionLi(opt, opt.index)}
       {/each}
+      <li class="sv-listbox__spacer" aria-hidden="true" style:height={`${vr.padBottom}px`}></li>
     {:else}
       {#each groupOptions(options) as g (g.group ?? ' ')}
         {#if g.group != null}<li class="sv-listbox__group" role="presentation">{g.group}</li>{/if}
@@ -132,7 +140,6 @@
     class:is-active={lb.isActive(index)}
     class:is-disabled={opt.disabled}
     style:height={`${rowHeight}px`}
-    style:transform={useVirtual ? `translateY(${index * rowHeight}px)` : undefined}
     {...lb.optionProps(index)}
   >
     {#if multiple}<span class="sv-listbox__check" aria-hidden="true">{isSel(opt) ? '✓' : ''}</span>{/if}
@@ -144,7 +151,7 @@
   .sv-listbox {
     --_accent: var(--sg-accent, #2563eb);
     margin: 0; padding: 4px; list-style: none;
-    max-height: calc(var(--sv-rows, 7) * 32px + 8px); overflow-y: auto;
+    max-height: calc(var(--sv-rows, 7) * var(--sv-row-h, 32px) + 8px); overflow-y: auto;
     background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a);
     border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1)); border-radius: var(--sg-radius, 8px);
     width: 220px; outline: none;
@@ -152,15 +159,30 @@
   .sv-listbox:focus-visible { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
   .sv-listbox.is-invalid { border-color: var(--sg-danger, #dc2626); }
   .sv-listbox.is-invalid:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
-  /* Pre-promote the scrolling-contents layer at mount so the FIRST scroll
-     doesn't trigger a one-time layer promotion + repaint (the initial flash). */
-  .sv-listbox.is-virtual { position: relative; will-change: scroll-position; }
-  .sv-listbox__sizer { padding: 0; margin: 0; pointer-events: none; }
-  .sv-listbox.is-virtual .sv-listbox__opt {
-    position: absolute; inset-inline: 4px; top: 4px;
+  /* Spacers reserve the off-screen height above/below the windowed rows. They
+     also paint faint per-row skeleton bars: on a fast scrollbar-thumb drag the
+     compositor can reveal this padding before JS re-windows (a drag jumps many
+     rows in one frame - overscan can't cover it), so the user would see blank.
+     The skeleton fills that gap with placeholder rows that the real rows paint
+     over a frame later. Bars are one per `--sv-row-h` band, aligned to the row
+     grid (padTop/padBottom are exact multiples of the row height). */
+  .sv-listbox__spacer {
+    padding: 0; margin: 0; flex: none; pointer-events: none; list-style: none;
+    background-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc((var(--sv-row-h, 32px) - 10px) / 2),
+      var(--sg-skeleton, color-mix(in srgb, currentColor 9%, transparent)) calc((var(--sv-row-h, 32px) - 10px) / 2),
+      var(--sg-skeleton, color-mix(in srgb, currentColor 9%, transparent)) calc((var(--sv-row-h, 32px) + 10px) / 2),
+      transparent calc((var(--sv-row-h, 32px) + 10px) / 2),
+      transparent var(--sv-row-h, 32px)
+    );
+    background-size: 62% var(--sv-row-h, 32px);
+    background-repeat: repeat-y;
+    background-position: 12px 0;
   }
   .sv-listbox__opt {
-    display: flex; align-items: center; gap: 8px; box-sizing: border-box; padding: 0 10px;
+    display: flex; align-items: center; gap: 8px; box-sizing: border-box; flex: none; padding: 0 10px;
     border-radius: 6px; cursor: pointer; font-size: 13px;
   }
   .sv-listbox__opt.is-active { background: var(--sg-row-hover-bg, #f1f5f9); }

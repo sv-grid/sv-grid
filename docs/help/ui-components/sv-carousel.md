@@ -53,6 +53,7 @@ import { SvCarousel } from '@svgrid/grid'
 | `arrows`    | `boolean`           | `true`       | Shows prev/next arrows (hidden when there is one slide).       |
 | `dots`      | `boolean`           | `true`       | Shows the dot indicator row.                                   |
 | `ariaLabel` | `string`            | `'Carousel'` | Accessible name for the carousel region.                       |
+| `dir`       | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -          | Text direction; `rtl` mirrors the arrows and slide direction.  |
 
 ## Examples
 

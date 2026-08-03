@@ -35,7 +35,7 @@ test.describe('scheduler selection (real browser)', () => {
 
   test('double-clicking an empty slot creates an event', async ({ page }) => {
     const before = await events(page).count()
-    const vp = (await page.locator('.sv-sched-gridscroll').boundingBox())!
+    const _hw = (await page.locator('.sv-sched-headwrap').boundingBox())!; const vp = { y: _hw.y + _hw.height }
     const c5 = (await page.locator('.sv-sched-col').nth(5).boundingBox())! // Sat (empty)
     await page.mouse.dblclick(c5.x + c5.width / 2, vp.y + 90)
     await expect.poll(() => events(page).count()).toBe(before + 1)
@@ -69,7 +69,7 @@ test.describe('scheduler selection (real browser)', () => {
   test('dragging empty slots marks a range; Enter creates the event', async ({ page }) => {
     const before = await events(page).count()
     // Use the visible scroll viewport for Y (the grid body is taller than it).
-    const vp = (await page.locator('.sv-sched-gridscroll').boundingBox())!
+    const _hw = (await page.locator('.sv-sched-headwrap').boundingBox())!; const vp = { y: _hw.y + _hw.height }
     const col = (await page.locator('.sv-sched-col').first().boundingBox())!
     const x = col.x + col.width / 2
     await page.mouse.move(x, vp.y + 40)
@@ -86,7 +86,7 @@ test.describe('scheduler selection (real browser)', () => {
 
   test('Escape cancels a pending range without creating anything', async ({ page }) => {
     const before = await events(page).count()
-    const vp = (await page.locator('.sv-sched-gridscroll').boundingBox())!
+    const _hw = (await page.locator('.sv-sched-headwrap').boundingBox())!; const vp = { y: _hw.y + _hw.height }
     const col = (await page.locator('.sv-sched-col').first().boundingBox())!
     const x = col.x + col.width / 2
     await page.mouse.move(x, vp.y + 40)
@@ -101,7 +101,7 @@ test.describe('scheduler selection (real browser)', () => {
 
   test('right-click -> Add Event creates from a pending range', async ({ page }) => {
     const before = await events(page).count()
-    const vp = (await page.locator('.sv-sched-gridscroll').boundingBox())!
+    const _hw = (await page.locator('.sv-sched-headwrap').boundingBox())!; const vp = { y: _hw.y + _hw.height }
     const col = (await page.locator('.sv-sched-col').first().boundingBox())!
     const x = col.x + col.width / 2
     await page.mouse.move(x, vp.y + 40)
@@ -117,7 +117,7 @@ test.describe('scheduler selection (real browser)', () => {
 
   test('a drag across days is a continuous range -> one multi-day event', async ({ page }) => {
     const before = await events(page).count()
-    const vp = (await page.locator('.sv-sched-gridscroll').boundingBox())!
+    const _hw = (await page.locator('.sv-sched-headwrap').boundingBox())!; const vp = { y: _hw.y + _hw.height }
     const cols = await page.locator('.sv-sched-col').all()
     const c0 = (await cols[0]!.boundingBox())!
     const c2 = (await cols[2]!.boundingBox())!
@@ -137,7 +137,7 @@ test.describe('scheduler selection (real browser)', () => {
   })
 
   test('clicking a cell then keyboard-navigating + Shift-extending selects a range', async ({ page }) => {
-    const vp = (await page.locator('.sv-sched-gridscroll').boundingBox())!
+    const _hw = (await page.locator('.sv-sched-headwrap').boundingBox())!; const vp = { y: _hw.y + _hw.height }
     const c4 = (await page.locator('.sv-sched-col').nth(4).boundingBox())! // Fri (empty)
     const mirror = page.locator('.sv-sched-select-mirror')
     const h = () => mirror.first().evaluate((el) => parseFloat((el as HTMLElement).style.height))

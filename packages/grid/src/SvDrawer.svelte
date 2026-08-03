@@ -15,6 +15,7 @@
    * ```
    */
   import type { Snippet } from 'svelte'
+  import { untrack } from 'svelte'
   import { portalToBody } from './popover'
   import { nextEditorId } from './editor-contract'
   import { createOverlay } from './createOverlay.svelte'
@@ -41,6 +42,10 @@
     sheet?: boolean
     /** Accessible name when there is no visible `title`. */
     ariaLabel?: string
+    /** Fired after the close (exit) animation has finished and the drawer has
+     *  left the DOM. Use it to clear the data the drawer was showing so the
+     *  content stays put while it slides out. */
+    onClosed?: () => void
     children?: Snippet
     footer?: Snippet
   }
@@ -56,6 +61,7 @@
     hideClose = false,
     sheet = false,
     ariaLabel,
+    onClosed,
     children,
     footer,
   }: Props = $props()
@@ -69,6 +75,31 @@
   const sizeVar = $derived(size ?? (horizontal ? 'min(400px, 92vw)' : 'min(360px, 85vh)'))
 
   function close() { open = false; onClose?.() }
+
+  // Enter/exit animation via CSS @keyframes (the pattern SvModal uses - keyframes
+  // play on a `use:portalToBody` element; the Svelte `transition:` directive does
+  // NOT). `show` keeps the panel mounted; the enter keyframe fires on mount, and
+  // on close we add `is-leaving` (exit keyframe) and unmount + fire `onClosed`
+  // after the duration. Honors reduced-motion by dropping the hold to 0ms.
+  const reduceMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  const EXIT_MS = 260
+  let show = $state(false)
+  let leaving = $state(false)
+  let leaveTimer: ReturnType<typeof setTimeout> | undefined
+  $effect(() => {
+    if (open) {
+      clearTimeout(leaveTimer)
+      leaving = false
+      show = true
+      return
+    }
+    // Only run the leave sequence if the drawer was actually shown (skips the
+    // initial closed mount, which must not fire onClosed).
+    if (untrack(() => show)) {
+      leaving = true
+      leaveTimer = setTimeout(() => { show = false; leaving = false; onClosed?.() }, reduceMotion ? 0 : EXIT_MS)
+    }
+  })
 
   // Swipe-down-to-close for the sheet grab handle.
   let dragY = $state(0)
@@ -104,11 +135,12 @@
   })
 </script>
 
-{#if open}
-  <div class="sv-drawer__backdrop" use:portalToBody>
+{#if show}
+  <div class="sv-drawer__backdrop" class:is-leaving={leaving} use:portalToBody>
     <div
       bind:this={dialogEl}
       class="sv-drawer sv-drawer--{effectiveSide}"
+      class:is-leaving={leaving}
       class:is-sheet={sheet}
       class:is-dragging={dragging}
       {...overlay.dialogProps({ labelledBy: title ? titleId : undefined, label: !title ? ariaLabel : undefined })}
@@ -144,9 +176,11 @@
   :global(.sv-drawer__backdrop) {
     position: fixed; inset: 0; z-index: 2147483000;
     background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(1.5px);
-    animation: sv-drawer-fade 0.16s ease both;
+    animation: sv-drawer-bd-in 0.2s ease backwards;
   }
-  @keyframes sv-drawer-fade { from { opacity: 0 } to { opacity: 1 } }
+  :global(.sv-drawer__backdrop.is-leaving) { animation: sv-drawer-bd-out 0.2s ease forwards; }
+  @keyframes sv-drawer-bd-in { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes sv-drawer-bd-out { from { opacity: 1 } to { opacity: 0 } }
 
   :global(.sv-drawer) {
     position: fixed;
@@ -154,44 +188,48 @@
     background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a);
     box-shadow: 0 24px 64px -16px rgba(15, 23, 42, 0.5);
     overflow: hidden;
+    /* Slide in on mount; `backwards` fill shows the off-screen start frame with no
+       flash, and does NOT hold the end frame - so the sheet drag transform wins. */
+    animation: sv-drawer-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
-  /* Left / right: full height, fixed width, slide along X. `side` is a stated
-     physical edge (like SvToaster's position prop), not a text-flow-relative
+  /* Exit keyframe; `forwards` fill holds the off-screen frame until we unmount. */
+  :global(.sv-drawer.is-leaving) { animation: sv-drawer-out 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  /* Off-screen vector per edge - the enter/exit keyframes read `--sv-off`. `side`
+     is a stated physical edge (like SvToaster's position prop), not a text-flow
      "start/end" - so it stays physical left/right regardless of page dir. */
   :global(.sv-drawer--right), :global(.sv-drawer--left) {
     top: 0; bottom: 0; width: var(--sv-drawer-size); max-width: 100vw;
   }
-  :global(.sv-drawer--right) { right: 0; border-left: 1px solid var(--sg-border, #e2e8f0); animation: sv-drawer-in-right 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  :global(.sv-drawer--left) { left: 0; border-right: 1px solid var(--sg-border, #e2e8f0); animation: sv-drawer-in-left 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  :global(.sv-drawer--right) { right: 0; border-left: 1px solid var(--sg-border, #e2e8f0); --sv-off: translateX(100%); }
+  :global(.sv-drawer--left) { left: 0; border-right: 1px solid var(--sg-border, #e2e8f0); --sv-off: translateX(-100%); }
   /* Top / bottom: full width, fixed height, slide along Y. */
   :global(.sv-drawer--top), :global(.sv-drawer--bottom) {
     left: 0; right: 0; height: var(--sv-drawer-size); max-height: 100vh;
   }
-  :global(.sv-drawer--top) { top: 0; border-bottom: 1px solid var(--sg-border, #e2e8f0); animation: sv-drawer-in-top 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  :global(.sv-drawer--bottom) { bottom: 0; border-top: 1px solid var(--sg-border, #e2e8f0); animation: sv-drawer-in-bottom 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  :global(.sv-drawer--top) { top: 0; border-bottom: 1px solid var(--sg-border, #e2e8f0); --sv-off: translateY(-100%); }
+  :global(.sv-drawer--bottom) { bottom: 0; border-top: 1px solid var(--sg-border, #e2e8f0); --sv-off: translateY(100%); }
+  @keyframes sv-drawer-in { from { transform: var(--sv-off) } to { transform: none } }
+  @keyframes sv-drawer-out { from { transform: none } to { transform: var(--sv-off) } }
 
-  /* Mobile bottom-sheet: centered, fixed width, rounded top, grab handle. */
+  /* Mobile bottom-sheet: centered, fixed width, rounded top, grab handle. Slides
+     along Y like a bottom drawer (enter/exit keyframes read --sv-off from --bottom). */
   :global(.sv-drawer.is-sheet) {
     left: 0; right: 0; margin: 0 auto; top: auto;
     width: min(560px, 100vw); height: auto; max-height: 85vh;
     border: 1px solid var(--sg-border, #e2e8f0); border-bottom: 0;
     border-radius: 16px 16px 0 0;
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  :global(.sv-drawer.is-sheet.is-dragging) { transition: none; }
+  /* No transition while the user is dragging the grab handle - follow the finger. */
+  :global(.sv-drawer.is-dragging) { transition: none; }
   :global(.sv-drawer__grab) {
     flex: none; display: grid; place-items: center; padding: 8px 0 2px; cursor: grab; touch-action: none;
   }
   :global(.sv-drawer__grab span) {
     display: block; width: 40px; height: 4px; border-radius: 999px; background: var(--sg-border, #cbd5e1);
   }
-
-  @keyframes sv-drawer-in-right { from { transform: translateX(100%) } to { transform: translateX(0) } }
-  @keyframes sv-drawer-in-left { from { transform: translateX(-100%) } to { transform: translateX(0) } }
-  @keyframes sv-drawer-in-top { from { transform: translateY(-100%) } to { transform: translateY(0) } }
-  @keyframes sv-drawer-in-bottom { from { transform: translateY(100%) } to { transform: translateY(0) } }
   @media (prefers-reduced-motion: reduce) {
-    :global(.sv-drawer__backdrop), :global(.sv-drawer) { animation: none }
+    :global(.sv-drawer__backdrop), :global(.sv-drawer__backdrop.is-leaving),
+    :global(.sv-drawer), :global(.sv-drawer.is-leaving) { animation: none; }
   }
 
   :global(.sv-drawer__header) {

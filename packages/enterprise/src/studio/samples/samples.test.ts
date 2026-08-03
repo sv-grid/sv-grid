@@ -196,14 +196,20 @@ describe('sample apps', () => {
       }
     })
 
-    it('calendar apps resolve relation title fields to their display columns', () => {
-      // The calendar block now renders via the scheduler grid view: titleField lives in the
-      // `scheduler={{ ... }}` config (as a resolved display column), not an <SvSchedule> attr.
-      const cases: Record<string, string> = { clinic: 'patient', gym: 'class', restaurant: 'table', fleet: 'driver' }
-      for (const [id, title] of Object.entries(cases)) {
+    it('scheduler apps resolve relation title + resource fields to their display columns', () => {
+      // The scheduler grid view carries titleField + resourceField in the `scheduler={{ ... }}`
+      // config; relation FKs resolve to their display columns (classId -> class, etc.).
+      const cases: Record<string, { title: string; resource?: string }> = {
+        clinic: { title: 'patient', resource: 'doctor' },
+        gym: { title: 'member', resource: 'class' },
+        restaurant: { title: 'name', resource: 'table' }, // title is a plain text field
+        fleet: { title: 'driver', resource: 'vehicle' },
+      }
+      for (const [id, { title, resource }] of Object.entries(cases)) {
         const all = emitStudioProject(getSampleApp(id)!.build()).map((f) => f.contents).join('\n')
         const tag = all.match(/scheduler=\{\{[\s\S]*?\}\}/)![0]
         expect(tag, `${id}: schedule title not resolved`).toContain(`titleField: '${title}'`)
+        if (resource) expect(tag, `${id}: resource not resolved`).toContain(`resourceField: '${resource}'`)
       }
     })
   })

@@ -54,6 +54,7 @@ import { SvTour } from '@svgrid/grid'
 | `onFinish` | `() => void`                | -         | Fires when the user reaches Done.                              |
 | `onSkip`   | `() => void`                | -         | Fires when the user skips or presses Escape.                   |
 | `onStep`   | `(index: number) => void`   | -         | Fires whenever the active step changes.                        |
+| `dir`      | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -         | Text direction; under `rtl` the Left / Right navigation keys swap. |
 
 `TourStep` (exported): `{ target?: string | HTMLElement; title?: string; content: string }`.
 `target` is a CSS selector or the element itself; omit it for a centered,

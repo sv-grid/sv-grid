@@ -126,6 +126,32 @@ describe('createKitHandlers server-enforced validation', () => {
     const res = await post(handlers, { kind: 'mutate', op: 'create', input: { id: '9', age: 999 } })
     expect(res.status).toBe(200)
   })
+
+  it('business-rule hooks transform the payload, reject writes, and fire after-effects', async () => {
+    const audited: string[] = []
+    const handlers = createKitHandlers({
+      schema: vSchema,
+      source: createInMemoryDataSource<Customer>([], vSchema),
+      hooks: {
+        beforeCreate: ({ values }) => {
+          const v = values as Record<string, unknown>
+          if (v['name'] == null || v['name'] === '') throw new Error('name required')
+          if (v['tier'] == null) v['tier'] = 'free' // default a field server-side
+        },
+        afterCreate: ({ row }) => { audited.push(String((row as Record<string, unknown>).id)) },
+      },
+    })
+    // transform: tier defaulted to 'free', afterCreate fired
+    const ok = await post(handlers, { kind: 'mutate', op: 'create', input: { id: '1', name: 'Ada' } })
+    expect(ok.status).toBe(200)
+    expect((await ok.json()).tier).toBe('free')
+    expect(audited).toEqual(['1'])
+    // reject: a thrown before-hook -> 422 with the message, no after-effect
+    const bad = await post(handlers, { kind: 'mutate', op: 'create', input: { id: '2' } })
+    expect(bad.status).toBe(422)
+    expect((await bad.json()).error).toBe('name required')
+    expect(audited).toEqual(['1']) // unchanged - the write never happened
+  })
 })
 
 describe('createKitHandlers audit hook', () => {

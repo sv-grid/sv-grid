@@ -44,6 +44,8 @@ export type ResolvedEvent<TData = unknown> = {
   /** Optional secondary accent (e.g. a category) shown as a left strip, distinct
    *  from the main `color`. */
   color2?: string
+  /** Free/busy status (busy | free | tentative | oof) for a distinct visual. */
+  status?: string
   resourceId?: string
   /** True when this instance came from expanding a recurrence rule. */
   recurring: boolean
@@ -77,6 +79,8 @@ export type EventSpec<TData> = {
   getColor?: (row: TData) => string | undefined
   /** Optional secondary accent color (rendered as a left strip). */
   getSecondaryColor?: (row: TData) => string | undefined
+  /** Optional free/busy status. */
+  getStatus?: (row: TData) => string | undefined
   getResource?: (row: TData) => string | undefined
   getRecurrence?: (
     row: TData,
@@ -161,6 +165,39 @@ export function hasConflict<TData>(
 }
 
 /**
+ * How many events on the SAME resource overlap `[start,end]` (excluding
+ * `excludeRowKey`). Used to enforce `maxEventsPerSlot` (resource capacity): a
+ * move/create is blocked when this count would reach the cap.
+ */
+export function overlapCount<TData>(
+  start: Date,
+  end: Date,
+  resourceId: string | undefined,
+  events: ReadonlyArray<ResolvedEvent<TData>>,
+  excludeRowKey?: string,
+): number {
+  let n = 0
+  for (const e of events) {
+    if (e.rowKey === excludeRowKey) continue
+    if ((e.resourceId ?? undefined) !== (resourceId ?? undefined)) continue
+    if (rangesOverlap(start, end, e.start, e.end)) n++
+  }
+  return n
+}
+
+/** True when the minute range `[sMin,eMin)` overlaps any of the given hour bands. */
+export function overlapsBands(
+  sMin: number,
+  eMin: number,
+  bands: ReadonlyArray<{ start: number; end: number }>,
+): boolean {
+  for (const b of bands) {
+    if (sMin < b.end * 60 && eMin > b.start * 60) return true
+  }
+  return false
+}
+
+/**
  * Resolve `rows` into the event instances visible in `[rangeStart, rangeEnd]`.
  * Recurring rows are expanded to one instance per matching day (keeping the base
  * event's time-of-day and duration); single rows are included when they overlap
@@ -190,6 +227,7 @@ export function resolveEvents<TData>(
     const allDay = spec.getAllDay?.(row) ?? false
     const color = spec.getColor?.(row)
     const color2 = spec.getSecondaryColor?.(row)
+    const status = spec.getStatus?.(row)
     const resourceId = spec.getResource?.(row)
     const rule = spec.getRecurrence?.(row)
 
@@ -237,6 +275,7 @@ export function resolveEvents<TData>(
           allDay: iAllDay,
           color,
           color2,
+          status,
           resourceId,
           recurring: true,
           occurrenceStart: occStart,
@@ -254,6 +293,7 @@ export function resolveEvents<TData>(
         allDay,
         color,
         color2,
+        status,
         resourceId,
         recurring: false,
       })

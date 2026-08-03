@@ -52,6 +52,8 @@ import { SvMenuList } from '@svgrid/grid'
 | `onclose`  | `() => void`                  | -       | Close the whole menu (a leaf was chosen or Escape at root). |
 | `onselect` | `(item: MenuItem) => void`    | -       | Report the chosen leaf item.                               |
 | `submenu`  | `boolean`                     | `false` | Marks a nested list, so ArrowLeft closes back to the parent. |
+| `oncollapse` | `() => void`                | -       | Collapse just this submenu level and refocus its opener (submenu only). |
+| `dir`      | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -       | Text direction; under `rtl` the ArrowRight / ArrowLeft submenu keys swap. |
 
 ### MenuItem
 

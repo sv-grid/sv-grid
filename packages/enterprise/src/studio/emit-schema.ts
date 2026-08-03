@@ -12,8 +12,31 @@
  */
 import { resolveIdField, titleCase, type EntityField, type EntityFieldType, type EntitySchema, type ValidationRuleSpec } from '../schema.js'
 import type { GeneratedFile } from './scaffold.js'
-import type { EntityDataSource, RestSource, ShellConfig, ShellStyle, SqlDialectKind } from './project.js'
-import { sanitizeClassName } from './project.js'
+import type { EntityDataSource, RestSource, ShellConfig, ShellStyle, SqlDialectKind, EntityTriggers, TriggerEvent } from './project.js'
+import { sanitizeClassName, compileTriggerSteps, TRIGGER_EVENTS } from './project.js'
+
+/** Build the createKitHandlers `hooks: {...}` option from an entity's triggers.
+ *  before-hooks alias the mutable payload as `v`; after-hooks alias the saved row. */
+function triggerHooksOpt(triggers: EntityTriggers | undefined): string | null {
+  if (!triggers) return null
+  const SHAPE: Record<TriggerEvent, { param: string; alias: string }> = {
+    beforeCreate: { param: '{ values }', alias: 'const v = values as Record<string, unknown>' },
+    beforeUpdate: { param: '{ patch }', alias: 'const v = patch as Record<string, unknown>' },
+    beforeDelete: { param: '{ id }', alias: 'const v = { id } as Record<string, unknown>' },
+    afterCreate: { param: '{ row }', alias: 'const v = row as Record<string, unknown>' },
+    afterUpdate: { param: '{ row }', alias: 'const v = row as Record<string, unknown>' },
+    afterDelete: { param: '{ id }', alias: 'const v = { id } as Record<string, unknown>' },
+  }
+  const entries: string[] = []
+  for (const ev of TRIGGER_EVENTS) {
+    const steps = triggers[ev]
+    if (!steps?.length) continue
+    const { param, alias } = SHAPE[ev]
+    const body = compileTriggerSteps(steps).split('\n').map((l) => (l ? '      ' + l : l)).join('\n')
+    entries.push(`    ${ev}: async (${param}) => {\n      ${alias}\n${body}\n    }`)
+  }
+  return entries.length ? `hooks: {\n${entries.join(',\n')},\n  }` : null
+}
 import { generateValue } from './sample-data.js'
 
 const pascal = (name: string): string =>
@@ -312,7 +335,7 @@ const SQL_DRIVERS: Record<'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso', {
  *  the route imports the shared access policy and rejects unauthorized writes -
  *  server-enforced, so a tampered client can't bypass it. When audit is on, every
  *  successful write is recorded. */
-function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean; screenIds?: string[] } = {}): GeneratedFile {
+function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean; screenIds?: string[]; triggers?: EntityTriggers } = {}): GeneratedFile {
   const n = namesFor(schema)
   const key = (dialect === 'supabase' ? 'postgres' : (dialect ?? 'postgres')) as 'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso'
   const driver = SQL_DRIVERS[key]
@@ -324,6 +347,9 @@ function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectK
   const opts = [`schema: ${n.schemaVar}`, `source`, `validate: true`]
   if (feat.access) opts.push(`// Server-enforced RBAC: the caller's role comes from the session (event.locals). Reads\n  // are allowed only if the role can open one of this entity's own screens.\n  authorize: ({ action, event }) => authorizeAction(getServerRole(event), action, ${JSON.stringify(feat.screenIds ?? [])})`)
   if (feat.audit) opts.push(`// Record every successful write to the audit trail.\n  audit: (e) => recordAudit({ entity: ${JSON.stringify(schema.name)}, action: e.action, recordId: e.id, values: e.values as Record<string, unknown> | undefined, actor: String(e.event.locals?.role ?? e.event.locals?.user ?? 'system') })`)
+  // Server-enforced business rules: the entity's triggers compiled to lifecycle hooks.
+  const hooks = triggerHooksOpt(feat.triggers)
+  if (hooks) opts.push(`// Business rules, enforced server-side (a client that skips them still can't write bad data).\n  ${hooks}`)
   const handlers = `export const { POST } = createKitHandlers({\n  ${opts.join(',\n  ')},\n})`
   return {
     path: `src/routes/api/${n.route}/+server.ts`,
@@ -985,13 +1011,13 @@ export function prepareEntities(schemas: EntitySchema[]): { entries: Prepared[];
 /** Emit the shared entity modules: `src/lib/schemas.ts` + `src/lib/data.ts` (+ `connections.ts`). */
 export function emitEntityModules(
   schemas: EntitySchema[],
-  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean; screensByEntity?: Map<string, string[]> } = {},
+  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean; screensByEntity?: Map<string, string[]>; triggers?: Record<string, EntityTriggers> } = {},
 ): { files: GeneratedFile[]; prepared: EntitySchema[] } {
   const { entries, seed } = prepareEntities(schemas)
   const { file: data, needs } = dataModule(entries, seed, opts.sources)
   const files: GeneratedFile[] = [schemasModule(entries), data]
   if (needs.supabase) files.push(connectionsModule(needs))
-  for (const r of needs.sqlRoutes) files.push(sqlRouteFile(r.schema, r.table, r.dialect, { access: opts.accessEnabled, audit: opts.auditEnabled, screenIds: opts.screensByEntity?.get(r.schema.name) ?? [] }))
+  for (const r of needs.sqlRoutes) files.push(sqlRouteFile(r.schema, r.table, r.dialect, { access: opts.accessEnabled, audit: opts.auditEnabled, screenIds: opts.screensByEntity?.get(r.schema.name) ?? [], triggers: opts.triggers?.[r.schema.name] }))
   return { files, prepared: entries.map((e) => e.schema) }
 }
 

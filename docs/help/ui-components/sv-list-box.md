@@ -76,6 +76,7 @@ type ListOption = {
   label: string
   disabled?: boolean
   group?: string   // optional section heading
+  color?: string   // optional CSS color swatch shown before the label
 }
 ```
 
@@ -117,6 +118,11 @@ CSS). Only the visible rows hit the DOM, so scrolling never reflows:
 ```svelte
 <SvListBox {options} virtual rowHeight={32} />
 ```
+
+> Note: on a very fast scrollbar-thumb drag the viewport can outrun windowing by
+> many rows in a single frame. Rather than flash blank, the off-screen area shows
+> faint placeholder rows (a skeleton) that the real rows paint over a frame later,
+> so the list stays visually filled at any scroll speed.
 
 > Tip: `virtual` only takes effect on a flat list - giving options a `group`
 > turns windowing off (grouped rows are variable-height), so keep large

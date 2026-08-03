@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-02 from 350 pages.
+Generated 2026-08-03 from 350 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -26960,17 +26960,27 @@ source.
 | `colorField` / `color` | Per-event accent color (the fill), or one for all. |
 | `secondaryColorField` | A second per-event color, painted as a left-edge strip (encode two dimensions - e.g. fill = person, strip = role). |
 | `recurrenceField` | Field holding a `RecurrenceRule` (or array). |
-| `recurrenceExceptionsField` / `onOccurrenceChange` | Per-occurrence overrides (moved / edited / deleted single instances); enables the "This event vs All events" prompt. |
+| `recurrenceExceptionsField` / `onOccurrenceChange` | Per-occurrence overrides (moved / edited / deleted single instances); the prompt offers **This event**, **This and following**, and **All events**. `onOccurrenceChange` carries a `scope` - handle `'following'` by splitting the series (see below); it also fires from a drag, delete, and a drawer save on a recurring occurrence. |
 | `defaultDurationMin` | Event length when a row has no `endField` (default 60). |
 | `views` / `initialView` | Which views to offer, and the first shown. Includes the horizontal `timelineDay` / `timelineWeek` / `timelineMonth` / `timelineYear`. |
 | `initialDate` | The date the calendar opens on (default today). |
 | `weekStartsOn` | First day of the week, 0-6 (default 0). |
-| `slotMinutes` | Time-grid slot size and move/resize snap (default 30). |
+| `slotMinutes` | Time-grid slot size and move/resize snap (default 30). Each slot renders 30px tall, so the hour grows with the granularity (1h = 30px rows, 30m = 60px, 15m = 120px). |
+| `slotSizes` | Slot sizes (minutes) offered as a runtime ruler picker in Week / Day, e.g. `[60, 30, 15, 5]`. Shows a size selector in the toolbar; omit to hide it (the ruler still uses `slotMinutes`). |
 | `dayStartHour` / `dayEndHour` | Visible time-grid band (default 0..24). |
 | `nowIndicator` | Show the current-time line on today (Week / Day + Day timeline). On by default; `false` to hide. |
 | `businessHours` / `nonWorkingDays` / `shadeUntilNow` | Shade out-of-hours, non-working weekdays and elapsed time. |
 | `restrictToBusinessHours` | Enforce the shading - reject a drop / create outside working hours or on a non-working day. |
 | `disableConflicts` | Reject a drag / resize / create that double-books the same resource. |
+| `restrictedHours` | Hard-blocked hour bands (e.g. a lunch window `[{ start: 12, end: 13 }]`) - always non-bookable, rendered as a distinct red hatch. |
+| `restrictedDates` | Specific dates that are fully closed (no bookings). |
+| `specialDates` | Highlighted dates (holidays / launches) - a coloured strip + label on the column; decorative, does not block. |
+| `minDate` / `maxDate` | Earliest / latest navigable + bookable date (prev / next nav stop at the bounds). |
+| `maxEventsPerSlot` | Cap concurrent events per resource - reject a move / create that exceeds N overlapping events. |
+| `SchedulerResource.dateOverrides` | Per-date exceptions to a resource's weekly `availability` - a day off (`off: true`) or custom `windows` for one date. |
+| `statusField` | Free/busy status (`busy` / `free` / `tentative` / `oof`) driving an Outlook-style visual (solid / outline / hatched / tinted). Ties to iCal `STATUS`. |
+| `reminderField` / `onReminder` | Minutes-before-start for a reminder; fires `onReminder` (and a built-in toast) once as the lead time is crossed. Ties to iCal `VALARM`. |
+| `onUnschedule` | Drag an event onto the backlog panel to remove it from the schedule (typically push it back to `unscheduled`). |
 | `event` / `tooltip` / `tooltipDelay` | Custom event-body snippet and a hover-tooltip snippet (or `tooltip: true` for the built-in). |
 | `history` | Enable undo / redo of drag-move + resize (`Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z`). |
 | `unscheduled` / `onSchedule` / `backlogTitle` | A drag-to-schedule backlog panel beside the Week / Day grid. |
@@ -35322,6 +35332,7 @@ import { SvCarousel } from '@svgrid/grid'
 | `arrows`    | `boolean`           | `true`       | Shows prev/next arrows (hidden when there is one slide).       |
 | `dots`      | `boolean`           | `true`       | Shows the dot indicator row.                                   |
 | `ariaLabel` | `string`            | `'Carousel'` | Accessible name for the carousel region.                       |
+| `dir`       | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -          | Text direction; `rtl` mirrors the arrows and slide direction.  |
 
 ## Examples
 
@@ -36753,7 +36764,7 @@ SvGrid mounts for a `datetime` cell.
 ## Props
 
 `SvDateTimePicker` extends `SvEditorProps` (`disabled`, `readonly`, `required`,
-`invalid`, `error`, `label`, `hint`, `size`, `dir`, `name`, `id`, `ariaLabel`).
+`invalid`, `error`, `label`, `hint`, `dir`, `name`, `id`, `ariaLabel`).
 Its own props:
 
 | Prop                  | Type                                     | Default              | Description                                                        |
@@ -36775,6 +36786,7 @@ Its own props:
 | `spinButtons`         | `boolean`                                | `false`              | Up/down buttons that bump the value by `stepMinutes`.           |
 | `stepMinutes`         | `number`                                 | `1`                  | Increment for the spin buttons.                                 |
 | `autoOpen`            | `boolean`                                | `false`              | Open the dropdown as soon as the field is focused.             |
+| `block`               | `boolean`                                | `false`              | Stretch the field to fill its container (100% width); grid cell editor. |
 | `animate`             | `boolean` \| `slide` \| `fade`           | `false`              | Animate the calendar's month / drill navigation.               |
 | `messages`            | `Partial<DateTimeMessages>`              | -                    | Override the tab / dialog / aria strings.                       |
 
@@ -37065,10 +37077,23 @@ layout = JSON.parse(localStorage.getItem('workspace')!)   // fully restores
 
 | Prop             | Type                          | Default | Description                                             |
 | ---------------- | ----------------------------- | ------- | ------------------------------------------------------- |
-| `layout`         | `DockNode`                    | -       | The layout tree. **Bindable** - every edit writes a new tree. |
-| `pane`           | `Snippet<[DockPane]>`         | -       | Renders each pane's content, keyed off the `DockPane`.  |
-| `onLayoutChange` | `(layout: DockNode) => void`  | -       | Notified after any structural change (dock / resize / close). |
-| `minSize`        | `number`                      | `80`    | Minimum pane size in px along the split axis.           |
+| `layout`          | `DockNode`                    | -       | The layout tree. **Bindable** - every edit writes a new tree. |
+| `pane`            | `Snippet<[DockPane]>`         | -       | Renders each pane's content, keyed off the `DockPane`.  |
+| `onLayoutChange`  | `(layout: DockNode) => void`  | -       | Notified after any structural change (dock / resize / close). |
+| `minSize`         | `number`                      | `80`    | Minimum pane size in px along the split axis.           |
+| `surface`         | `string`                      | `'main'` | Surface id stamped on the root (`data-dock-surface`), used by `SvDockManager` to hit-test which layout a drag is over. |
+| `onBeginDrag`     | `(event: PointerEvent, paneId: string, tabsId: string) => void` | - | Manager mode: hand off the tab-drag gesture to the parent instead of running the built-in drag-to-dock. |
+| `externalDrop`    | `{ tabsId: string; zone: DockZone \| null; centerOnly?: boolean } \| null` | `null` | Manager mode: the externally-computed dock guide/highlight to paint. |
+| `externalReorder` | `{ tabsId: string; index: number } \| null` | `null` | Manager mode: the externally-computed tab-reorder insertion indicator. |
+| `leafActions`     | `Snippet<[DockTabs]>`         | -       | Stack-header controls for a leaf (maximize / float / pop-out), rendered once per leaf at the right of its tab strip. |
+| `onActivate`      | `(tabsId: string, index: number) => void` | - | Manager mode: route tab activation to the parent (controlled). |
+| `onClose`         | `(paneId: string) => void`    | -       | Manager mode: route pane close to the parent (controlled). |
+| `onResize`        | `(groupId: string, sizes: number[]) => void` | - | Manager mode: route splitter resize to the parent (controlled). |
+| `headerPosition`  | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'` | Which side of each leaf the tab strip sits on (left/right render vertical tabs). |
+| `focusedLeaf`     | `string \| null`              | `null`  | Manager mode: id of the focused leaf, for the active-panel highlight. |
+| `keepAlive`       | `boolean`                     | `false` | Keep inactive tabs mounted (hidden) so their content state persists across switches. |
+| `hideSingleTab`   | `boolean`                     | `false` | In a single-pane leaf, hide the redundant tab button. |
+| `locked`          | `boolean`                     | `false` | Locked / split mode: tabs cannot be dragged (no reorder / dock / float) and panel action buttons are hidden - only splitter resize + tab switching remain. |
 
 ## How docking works
 
@@ -37229,6 +37254,7 @@ workspace = JSON.parse(localStorage.getItem('ws')!)   // tiled + floating + hidd
 | `keepAlive`      | `boolean`                          | `false` | Keep inactive tabs mounted (hidden) so their DOM state (scroll, form input) persists across switches. |
 | `hideSingleTab`  | `boolean`                          | `false` | Hide the tab button on a single-pane leaf (no redundant title bar; the panel actions still show). |
 | `allowPopout`    | `boolean`                          | `false` | Offer the pop-out-to-a-new-window panel action. Off by default; the `popout()` API still works. |
+| `locked`         | `boolean`                          | `false` | Locked / split mode: a fixed set of resizable panes. Tabs can't be dragged (no reorder / float / dock) and the panel action buttons are hidden - only splitter resize + tab switching remain. |
 
 ### Events
 
@@ -37441,6 +37467,7 @@ import { SvDrawer } from '@svgrid/grid'
 | ----------------- | -------------------------------------- | ------------------- | ---------------------------------------------------------- |
 | `open`            | `boolean`                              | `false`             | Controlled, bindable open state.                           |
 | `onClose`         | `() => void`                           | -                   | Called whenever the drawer closes.                         |
+| `onClosed`        | `() => void`                           | -                   | Fired after the exit animation ends and the drawer leaves the DOM. |
 | `side`            | `right` \| `left` \| `top` \| `bottom` | `right`             | Edge the drawer slides from.                               |
 | `size`            | `string`                               | per-axis default    | Panel size along its axis; any CSS length.                 |
 | `title`           | `string`                               | -                   | Header heading; also names the drawer for a11y.            |
@@ -37650,6 +37677,10 @@ For hundreds of flat options, add `virtual` so only the visible rows render:
 ```svelte
 <SvDropDownList {options} virtual rowHeight={34} />
 ```
+
+> Note: a fast scrollbar-thumb drag can outrun windowing for a frame; the panel
+> fills the off-screen area with faint placeholder rows (a skeleton) instead of
+> flashing blank, so it stays visually filled at any scroll speed.
 
 ### Bounds detection (auto flip up/down)
 
@@ -38028,6 +38059,7 @@ import { SvField } from '@svgrid/grid'
 | `required` | `boolean`                               | `false` | Adds a required marker to the label.                                |
 | `dir`      | `EditorDir` (`ltr` \| `rtl` \| `auto`)  | -       | Text direction. `rtl` mirrors alignment; `auto` inherits the page.  |
 | `block`    | `boolean`                               | `false` | Stretch the field and its control to the container width.           |
+| `loading`  | `boolean`                               | `false` | Busy state; shows a small spinner beside the label.                 |
 | `children` | `Snippet`                               | -       | The control to wrap (required).                                     |
 
 When both `error` and `hint` are set, the error takes precedence and is the line
@@ -38156,6 +38188,10 @@ import { SvFileUpload } from '@svgrid/grid'
 
 ## Props
 
+`SvFileUpload` extends the shared `SvEditorProps` (`disabled`, `readonly`,
+`required`, `invalid`, `error`, `label`, `hint`, `dir`, `id`, `ariaLabel`) and
+adds:
+
 | Prop        | Type                                    | Default | Description                                                       |
 | ----------- | --------------------------------------- | ------- | ---------------------------------------------------------------- |
 | `files`     | `File[]`                                | `[]`    | Selected files (bindable). Controlled via `onChange`.            |
@@ -38166,9 +38202,6 @@ import { SvFileUpload } from '@svgrid/grid'
 | `maxSize`   | `number`                                | -       | Max size per file, in bytes.                                     |
 | `maxFiles`  | `number`                                | -       | Maximum number of files.                                         |
 | `messages`  | `Partial<FileMessages>`                 | -       | Override the prompt / browse / remove / accepted-types strings.  |
-
-Plus the shared editor-contract props: `disabled`, `readonly`, `required`,
-`invalid`, `error`, `label`, `hint`, `dir`, `id`, `ariaLabel`.
 
 ### FileRejection
 
@@ -38767,6 +38800,8 @@ import { SvGridChart } from '@svgrid/grid'
 | `brush`       | `boolean`                               | `false`            | Show a compact brush / mini-map with a draggable window.             |
 | `brushHeight` | `number`                                | `88`               | Height of the brush strip in pixels.                                 |
 | `toolbar`     | `boolean`                               | `zoomable \|\| onDrill` | Show the reset-zoom + PNG / SVG / copy toolbar. Set `false` to hide. |
+| `width`       | `number`                                | -                  | Explicit chart width in pixels; the chart lays out to fit exactly.    |
+| `height`      | `number`                                | -                  | Explicit chart height in pixels; the chart lays out to fit exactly.   |
 
 ### ChartSpec and ChartSelection
 
@@ -39263,6 +39298,7 @@ type ListOption = {
   label: string
   disabled?: boolean
   group?: string   // optional section heading
+  color?: string   // optional CSS color swatch shown before the label
 }
 ```
 
@@ -39304,6 +39340,11 @@ CSS). Only the visible rows hit the DOM, so scrolling never reflows:
 ```svelte
 <SvListBox {options} virtual rowHeight={32} />
 ```
+
+> Note: on a very fast scrollbar-thumb drag the viewport can outrun windowing by
+> many rows in a single frame. Rather than flash blank, the off-screen area shows
+> faint placeholder rows (a skeleton) that the real rows paint over a frame later,
+> so the list stays visually filled at any scroll speed.
 
 > Tip: `virtual` only takes effect on a flat list - giving options a `group`
 > turns windowing off (grouped rows are variable-height), so keep large
@@ -39546,6 +39587,8 @@ import { SvMenuList } from '@svgrid/grid'
 | `onclose`  | `() => void`                  | -       | Close the whole menu (a leaf was chosen or Escape at root). |
 | `onselect` | `(item: MenuItem) => void`    | -       | Report the chosen leaf item.                               |
 | `submenu`  | `boolean`                     | `false` | Marks a nested list, so ArrowLeft closes back to the parent. |
+| `oncollapse` | `() => void`                | -       | Collapse just this submenu level and refocus its opener (submenu only). |
+| `dir`      | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -       | Text direction; under `rtl` the ArrowRight / ArrowLeft submenu keys swap. |
 
 ### MenuItem
 
@@ -39694,6 +39737,7 @@ import { SvMenu } from '@svgrid/grid'
 | `onSelect`     | `(item: MenuItem) => void`    | -       | Fires when a leaf item is chosen.                |
 | `ariaLabel`    | `string`                      | -       | Accessible name for the menu surface.            |
 | `anchor`       | `Snippet`                     | -       | The trigger that toggles the menu.               |
+| `dir`          | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -       | Text direction; `rtl` mirrors the submenu chevron and flips ArrowLeft / Right. |
 
 ### MenuItem
 
@@ -41823,6 +41867,7 @@ import { SvScrollArea } from '@svgrid/grid'
 | `maxHeight`  | `string`  | -       | Any CSS length; the area scrolls once content exceeds it.      |
 | `height`     | `string`  | -       | Fixed height (the area always fills and scrolls within it).    |
 | `horizontal` | `boolean` | `false` | Scroll horizontally instead of vertically.                     |
+| `ariaLabel`  | `string`  | `'Scrollable content'` | Accessible name for the scrollable region.        |
 | `children`   | `Snippet` | -       | The scrollable content.                                        |
 
 ## Examples
@@ -42101,9 +42146,11 @@ import { SvSlider } from '@svgrid/grid'
 | `hint`        | `string`                                 | -              | Helper text under the control.                                          |
 | `error`       | `string`                                 | -              | Error message; announced and shown when set.                            |
 | `required`    | `boolean`                                | `false`        | Marks the field required for validation.                                |
+| `invalid`     | `boolean`                                | `false`        | Marks the field invalid; sets `aria-invalid` on the control.            |
 | `name`        | `string`                                 | -              | Emits a hidden input (`lo,hi` in range mode) for form posts.            |
 | `ariaLabel`   | `string`                                 | -              | Accessible name when there is no visible `label`.                       |
 | `dir`         | `ltr` \| `rtl` \| `auto`                 | `auto`         | Text direction; `rtl` mirrors the track.                                |
+| `id`          | `string`                                 | -              | Control id; auto-generated when omitted.                                |
 
 ## Examples
 
@@ -44145,6 +44192,7 @@ import { SvTour } from '@svgrid/grid'
 | `onFinish` | `() => void`                | -         | Fires when the user reaches Done.                              |
 | `onSkip`   | `() => void`                | -         | Fires when the user skips or presses Escape.                   |
 | `onStep`   | `(index: number) => void`   | -         | Fires whenever the active step changes.                        |
+| `dir`      | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -         | Text direction; under `rtl` the Left / Right navigation keys swap. |
 
 `TourStep` (exported): `{ target?: string | HTMLElement; title?: string; content: string }`.
 `target` is a CSS selector or the element itself; omit it for a centered,

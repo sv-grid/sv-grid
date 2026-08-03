@@ -63,6 +63,8 @@ import { SvGridChart } from '@svgrid/grid'
 | `brush`       | `boolean`                               | `false`            | Show a compact brush / mini-map with a draggable window.             |
 | `brushHeight` | `number`                                | `88`               | Height of the brush strip in pixels.                                 |
 | `toolbar`     | `boolean`                               | `zoomable \|\| onDrill` | Show the reset-zoom + PNG / SVG / copy toolbar. Set `false` to hide. |
+| `width`       | `number`                                | -                  | Explicit chart width in pixels; the chart lays out to fit exactly.    |
+| `height`      | `number`                                | -                  | Explicit chart height in pixels; the chart lays out to fit exactly.   |
 
 ### ChartSpec and ChartSelection
 

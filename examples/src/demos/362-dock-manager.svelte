@@ -1,10 +1,11 @@
 <script lang="ts">
   /**
    * SvDockManager - a full docking workspace on top of SvDockLayout. Beyond
-   * tiling + drag-to-dock it adds: floating / pop-out windows (the box button on
-   * a tab, or drag a tab into open space), tab reordering (drag a tab along its
-   * strip) and pinning / auto-hide (the triangle button collapses a panel to an
-   * edge; hover the edge tab to fly it out, then Pin to re-dock).
+   * tiling + drag-to-dock it adds: floating windows (the box button on a tab, or
+   * drag a tab into open space), tab reordering (drag a tab along its strip) and
+   * pinning / auto-hide (the triangle button collapses a panel to an edge; hover
+   * the edge tab to fly it out, then Pin to re-dock). Popping a panel out to a
+   * real OS window is opt-in (`allowPopout`, off by default) - see the pop-out demo.
    */
   import { SvDockManager, dockGroup, dockTabs, dockPane, type DockManagerState } from '@svgrid/grid'
 
@@ -35,13 +36,13 @@
   </header>
 
   <div class="stage">
-    <SvDockManager bind:workspace allowPopout>
+    <SvDockManager bind:workspace>
       {#snippet pane(p)}
         {#if p.id === 'explorer'}
           <ul class="explorer">{#each files as f (f)}<li>{f}</li>{/each}</ul>
         {:else if p.id === 'editor'}
           <pre class="code">export function dock() {'{'}
-  return 'pop me out'
+  return 'float me'
 {'}'}</pre>
         {:else if p.id === 'readme'}
           <div class="doc"><h3>README</h3><p>Float, reorder, and auto-hide panels.</p></div>

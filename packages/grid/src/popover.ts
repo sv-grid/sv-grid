@@ -84,6 +84,14 @@ export type AnchoredRect = {
    * viewport margin). The hard ceiling a user resize must clamp to.
    */
   availHeight: number
+  /**
+   * For an upward-flipped panel: distance from the viewport bottom to where the
+   * panel's bottom edge sits (just above the trigger). Bottom-anchoring an
+   * upward panel with `style:bottom` lets it grow to its natural content height
+   * instead of being positioned from a (possibly wrong) height estimate.
+   * Undefined until `anchoredRect` computes it.
+   */
+  bottom?: number
 }
 
 export type AnchorOptions = {
@@ -136,5 +144,8 @@ export function anchoredRect(triggerRect: DOMRect, opts: AnchorOptions): Anchore
     openUpward,
     maxHeight,
     availHeight,
+    // Bottom-anchor value for upward panels: viewport bottom -> panel bottom
+    // edge (which sits `gap` above the trigger top).
+    bottom: Math.round(window.innerHeight - triggerRect.top + gap),
   }
 }

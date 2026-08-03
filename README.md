@@ -75,7 +75,7 @@ The MIT community core has zero feature gating, no license key, no watermark, no
 | Package | License | What it adds |
 |---|---|---|
 | [`@svgrid/grid`](packages/grid/) | **MIT** | The full data grid **+ a Svelte 5 UI component suite**, free for commercial use |
-| [`@svgrid/enterprise`](packages/enterprise/) | Commercial | Export to Excel / PDF / CSV / TSV / HTML, paginated print, pivot tables with drag-and-drop Designer + drill-through, AI helpers, and the SvGrid Studio codegen |
+| [`@svgrid/enterprise`](packages/enterprise/) | Commercial | Export + import (Excel / PDF / CSV / TSV / HTML / JSON), paginated print, pivot tables with drag-and-drop Designer + drill-through, scheduler / calendar view, an AI toolkit, and the SvGrid Studio codegen |
 | [`@svgrid/studio`](packages/studio/) | Commercial (preview) | Grid-powered CRUD screens - a CLI + visual designer that generates a runnable SvelteKit app from your schema, over PGlite / Supabase / REST |
 | [`@svgrid/mcp`](packages/mcp/) | Commercial | MCP server for Claude / Cursor / Zed |
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, setScreenLayout, setLayoutOpts, setScreenDock, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
+import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setScreenDock, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
 import { emitStudioProject, emitStudioAppBundle, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
 import { UI_COMPONENT_REGISTRY } from './ui-components'
@@ -1635,6 +1635,106 @@ describe('dock layout (screen.layout = dock)', () => {
     }
   })
 
+  it('state variables + logic-core steps emit reactive state, ctx.state, and compiled code', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addStateVar(p, sid, { name: 'query', type: 'string', initial: 'hi' })
+    p = addStateVar(p, sid, { name: 'count', type: 'number', initial: '0' })
+    // A click handler that sets a var, then branches on it.
+    p = addComponentBlock(p, sid, 'button', {})
+    const btn = flattenBlocks(p.screens[0]!.blocks).find((b) => b.config.kind === 'component')!
+    p = setHandlerSteps(p, sid, `click:${btn.id}`, [
+      { type: 'setVar', name: 'count', value: { kind: 'literal', value: '3' } },
+      { type: 'branch', condition: { left: { kind: 'state', name: 'count' }, op: 'gt', right: { kind: 'literal', value: '2' } }, then: [{ type: 'alert', message: 'big' }] },
+    ])
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path.endsWith('/+page.svelte'))!.contents
+    expect(page).toContain("let query = $state<string>('hi')")
+    expect(page).toContain('let count = $state<number>(0)')
+    expect(page).toContain('state: { get query() { return query }, set query(x) { query = x }, get count() { return count }, set count(x) { count = x } }')
+    // The compiled step code lives in the handlers.ts companion (onLoad wires the onclick).
+    const handlers = files.find((f) => f.path.endsWith('/handlers.ts'))!.contents
+    expect(handlers).toContain('ctx.state.count = 3')
+    expect(handlers).toContain('if (Number(ctx.state.count) > Number(2)) {')
+    const pctx = files.find((f) => f.path.endsWith('/page-context.ts'))!.contents
+    expect(pctx).toContain('state: { query: string; count: number }')
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('grid row-select event slot wires onRowClick to compiled steps (cross-block state)', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addStateVar(p, sid, { name: 'selName', type: 'string' })
+    const gridBlock = flattenBlocks(p.screens[0]!.blocks).find((b) => b.config.kind === 'grid')!
+    // On row select: copy the clicked row's name into state (drives sibling blocks).
+    p = setHandlerSteps(p, sid, `rowSelect:${gridBlock.id}`, [
+      { type: 'setVar', name: 'selName', value: { kind: 'field', name: 'name' } },
+    ])
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path.endsWith('/+page.svelte'))!.contents
+    expect(page).toContain('onRowClick={async (e) => {')
+    expect(page).toContain('const row = e.row')
+    expect(page).toContain("ctx.state.selName = row?.['name']")
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('component on-change event slot wires ctx.<name>.onchange + the wrapper fires change', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addStateVar(p, sid, { name: 'touched', type: 'boolean' })
+    p = addComponentBlock(p, sid, 'button', {})
+    const cmp = flattenBlocks(p.screens[0]!.blocks).find((b) => b.config.kind === 'component')!
+    p = setHandlerSteps(p, sid, `change:${cmp.id}`, [{ type: 'setVar', name: 'touched', value: { kind: 'literal', value: 'true' } }])
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path.endsWith('/+page.svelte'))!.contents
+    const handlers = files.find((f) => f.path.endsWith('/handlers.ts'))!.contents
+    expect(page).toContain(".fire('change', e)")
+    expect(handlers).toMatch(/ctx\.\w+\.onchange = async \(\) => \{/)
+    expect(handlers).toContain('ctx.state.touched = true')
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('on-record-saved (formSubmit) steps run inside save() with the submitted row + ctx', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    // Default CRUD screen edits via a popup form (editing = 'form').
+    p = setHandlerSteps(p, sid, 'formSubmit', [
+      { type: 'navigate', to: '/customers' },
+    ])
+    const page = emitStudioProject(p).find((f) => f.path.endsWith('/+page.svelte'))!.contents
+    expect(page).toContain('async function save({ mode, id, values }')
+    expect(page).toContain('const row = values')
+    expect(page).toContain('const ctx = { grid: gridApi!,')
+    expect(page).toContain("ctx.goto('/customers')")
+    for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('entity triggers compile into the SQL route as createKitHandlers hooks (server-enforced)', () => {
+    let p = setEntityDataSource(createProject([customers]), 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    p = setTrigger(p, 'customers', 'beforeCreate', [
+      { type: 'requireField', field: 'name', message: 'Name required' },
+      { type: 'setField', field: 'tier', value: { kind: 'literal', value: 'free' } },
+    ])
+    p = setTrigger(p, 'customers', 'afterUpdate', [{ type: 'code', code: 'console.log("updated", row)' }])
+    const route = emitStudioProject(p).find((f) => f.path === 'src/routes/api/customers/+server.ts')!.contents
+    expect(route).toContain('hooks: {')
+    expect(route).toContain('beforeCreate: async ({ values }) => {')
+    expect(route).toContain('const v = values as Record<string, unknown>')
+    expect(route).toContain("if (v['name'] == null || v['name'] === '') throw new Error('Name required')")
+    expect(route).toContain("v['tier'] = 'free'")
+    expect(route).toContain('afterUpdate: async ({ row }) => {')
+    // The route uses createKitHandlers - hooks are a valid option on it.
+    expect(route).toContain('createKitHandlers({')
+  })
+
   it('a grid-layout screen (default) emits no dock manager', () => {
     const page = emitStudioProject(createProject([customers])).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
     expect(page).not.toContain('SvDockManager')
@@ -2077,7 +2177,7 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('let gridApi = $state<SvGridApi<any, any> | null>(null)')
     expect(page.contents).toContain('onApiReady={(a) => (gridApi = a)}')
     // Full ctx on mount + cleanup on unmount; the grid exposes reload(), not setRows.
-    expect(page.contents).toContain('const ctx = { grid: gridApi!, data: { get rows() { return view.rows }, reload: () => controller.refresh() }, goto, params: Object.fromEntries($page.url.searchParams) } as unknown as PageContext')
+    expect(page.contents).toContain('const ctx = { grid: gridApi!, data: { get rows() { return view.rows }, reload: () => controller.refresh(), create: (v) => controller.createRow(v), update: (id, v) => controller.updateRow(id, v), delete: (id) => controller.deleteRow(id) }, goto, params: Object.fromEntries($page.url.searchParams) } as unknown as PageContext')
     expect(page.contents).toContain('handlers.onLoad(ctx)')
     expect(page.contents).toContain('return () => handlers.onDestroy(ctx)')
     // The grid api is typed to the entity's row (Customers), not any.

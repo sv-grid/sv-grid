@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, boardScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, boardScreen, schedulerScreen, workspaceScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 // A fixed sales-rep pool, shared by deals + activities so leaderboards, pivots
 // and owner pills stay clean (padded rows cycle these instead of random names).
@@ -195,10 +195,14 @@ export const crm: SampleApp = {
         // Pipeline board: deals as draggable cards in stage columns (drag a card to
         // change its stage). The signature "real app" view.
         boardScreen(deals, { id: 'pipeline', title: 'Pipeline', order: 1 }, { groupBy: 'stage', titleField: 'title', badgeField: 'value', subtitleField: 'owner', filter: ['owner', 'companyId'], openScreen: 'deal-360' }),
+        // Deal desk: a docking-manager console (split panes) - filter deals on the
+        // left, the pipeline grid centre, and the selected deal's record on the right.
+        // Resize the panes; click a row to load it. Showcases screen layout: 'split'.
+        workspaceScreen(deals, { id: 'deal-desk', title: 'Deal desk', order: 2 }, { filter: ['stage', 'owner'], mode: 'split' }),
         // Deal 360: a full record page - header (title + company + stage pill), value /
         // probability metric tiles, an Overview of deal + account fields, and an
         // Activities timeline of the tasks logged against the deal.
-        detailScreen(deals, { id: 'deal-360', title: 'Deal 360', order: 2 }, {
+        detailScreen(deals, { id: 'deal-360', title: 'Deal 360', order: 3 }, {
           titleField: 'title', subtitleField: 'companyId', statusField: 'stage',
           metricFields: ['value', 'probability'],
           sections: [
@@ -209,7 +213,7 @@ export const crm: SampleApp = {
         }),
         // Forecast: value KPIs, a value-over-time area trend, and a pivot of value by
         // owner (rows) x stage (columns).
-        dashScreen(deals, { id: 'forecast', title: 'Forecast', order: 3 }, [
+        dashScreen(deals, { id: 'forecast', title: 'Forecast', order: 4 }, [
           { kpi: 'Pipeline value', measure: 'value', reduce: 'sum', format: 'currency', span: 1 },
           { kpi: 'Avg deal size', measure: 'value', reduce: 'avg', format: 'currency', span: 1 },
           { kpi: 'Largest deal', measure: 'value', reduce: 'max', format: 'currency', span: 1 },
@@ -219,7 +223,7 @@ export const crm: SampleApp = {
         // Accounts dashboard: headcount KPIs (compact-formatted), an account-health
         // gauge (avg rating 0-5), industry breakdowns, and a company grid that drills
         // into the account's deals.
-        dashScreen(companies, { id: 'accounts', title: 'Accounts', order: 4 }, [
+        dashScreen(companies, { id: 'accounts', title: 'Accounts', order: 5 }, [
           { kpi: 'Companies', reduce: 'count', span: 1 },
           { kpi: 'Total headcount', measure: 'employees', reduce: 'sum', format: 'compact', span: 1 },
           { kpi: 'Avg headcount', measure: 'employees', reduce: 'avg', span: 1 },
@@ -231,7 +235,7 @@ export const crm: SampleApp = {
         ]),
         // Activity board: task KPIs, a duration gauge, type/owner breakdowns, a filter,
         // and a grid with type + priority pills and inline edit actions.
-        dashScreen(activities, { id: 'activities', title: 'Activities', order: 5 }, [
+        dashScreen(activities, { id: 'activities', title: 'Activities', order: 6 }, [
           { kpi: 'Activities', reduce: 'count', span: 1 },
           { kpi: 'Logged minutes', measure: 'durationMins', reduce: 'sum', format: 'compact', span: 1 },
           { kpi: 'Avg duration', measure: 'durationMins', reduce: 'avg', span: 1 },
@@ -241,9 +245,13 @@ export const crm: SampleApp = {
           { filter: ['type', 'priority', 'owner', 'completed'], span: 3 },
           { grid: true, format: [...statusPills(activities, 'type'), ...statusPills(activities, 'priority'), ...statusPills(activities, 'owner')], summaries: true, rowActions: [{ kind: 'edit' }], span: 3 },
         ]),
-        screen(companies, 'master-detail', { id: 'companies', title: 'Companies', order: 6, child: contacts, foreignKey: 'companyId' }),
-        formScreen(contacts, { id: 'contacts', title: 'Contacts', order: 7 }, undefined, {}, ['companyId', 'tags', 'active']),
-        formScreen(deals, { id: 'deals', title: 'Deals', order: 8 }, undefined, { format: dealFormats, summaries: true, rowActions: [{ kind: 'edit' }], rowLink: { screen: 'deal-360', sourceField: 'id', targetField: 'id' } }, ['stage', 'owner', 'companyId']),
+        // Activity schedule: the activities grid rendered as a resource scheduler -
+        // a column per owner (rep), tasks placed by due date and tinted by type, with
+        // drag-to-reschedule + a detail drawer. Showcases the grid's scheduler view.
+        schedulerScreen(activities, { id: 'activity-cal', title: 'Schedule', order: 7 }, { startField: 'dueDate', titleField: 'subject', colorField: 'type', resourceField: 'owner', initialView: 'week' }),
+        screen(companies, 'master-detail', { id: 'companies', title: 'Companies', order: 8, child: contacts, foreignKey: 'companyId' }),
+        formScreen(contacts, { id: 'contacts', title: 'Contacts', order: 9 }, undefined, {}, ['companyId', 'tags', 'active']),
+        formScreen(deals, { id: 'deals', title: 'Deals', order: 10 }, undefined, { format: dealFormats, summaries: true, rowActions: [{ kind: 'edit' }], rowLink: { screen: 'deal-360', sourceField: 'id', targetField: 'id' } }, ['stage', 'owner', 'companyId']),
       ],
     })
   },

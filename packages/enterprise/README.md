@@ -14,14 +14,19 @@
 
 ---
 
-`@svgrid/enterprise` layers production export, printing, and analytics on top of the MIT [`@svgrid/grid`](https://www.npmjs.com/package/@svgrid/grid) core. It attaches to the grid's public API without changing it - the same `api` object you already hold simply gains new methods.
+`@svgrid/enterprise` layers production export, printing, analytics, extra grid views, and a full data-app layer on top of the MIT [`@svgrid/grid`](https://www.npmjs.com/package/@svgrid/grid) core. It attaches to the grid's public API without changing it - the same `api` object you already hold simply gains new methods.
 
 ## What it adds
 
 - **Data export** - Excel (`.xlsx`), PDF, CSV, TSV, and HTML, with theme-matched styling, headers/footers, and image support.
+- **Data import** - read Excel / CSV / TSV / JSON into typed rows with column auto-mapping, type inference, and per-row validation, plus a ready-made `SvImportDialog`.
 - **Paginated print** - opens a clean, paginated, printable view of the grid with title and page breaks.
-- **Pivot tables** - drag-and-drop pivot Designer with row/column/value fields, aggregation, and drill-through to source rows.
-- **AI helpers** - utilities for wiring the grid into LLM-driven workflows.
+- **Pivot tables** - drag-and-drop pivot Designer with row/column/value fields, aggregation, drill-through to source rows, and pivot-to-chart.
+- **Scheduler / calendar view** - a Month/Week/Day/Agenda calendar rendered as a view of the grid: `enableSchedulerView()` lets `<SvGrid scheduler={...}>` show events with resources, recurrence, and drag/resize.
+- **Staged editing** - collect edits into a reviewable change set before committing.
+- **Scheduling automation** - a client-side cron / one-off scheduler (`createScheduler`, `parseCron`, `CRON_PRESETS`) to drive recurring exports and alerts with no backend.
+- **AI toolkit** - natural-language filter, "chart this", smart-fill, summarize, classify, anomaly detection, and NL export. Every call routes through a provider you register with `setAIProvider()`; no model client is bundled.
+- **SvGrid Studio** - a schema-driven data-app layer: `EntitySchema`, memory / SQL / Supabase / REST data sources, a SvelteKit adapter, edit panels, master/detail, schema charts + KPI dashboards, and the project model + codegen behind the visual designer. See [`@svgrid/studio`](https://www.npmjs.com/package/@svgrid/studio).
 
 ## Install
 
@@ -32,8 +37,8 @@ npm install @svgrid/enterprise
 Format engines are optional peer dependencies - install only the ones you use:
 
 ```bash
-npm install jszip      # Excel (.xlsx)
-npm install pdfmake    # PDF
+npm install jszip      # Excel (.xlsx) export + import
+npm install pdfmake    # PDF export
 ```
 
 ## Usage
@@ -46,11 +51,18 @@ setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX') // your Enterprise key
 // Inside <SvGrid onApiReady={(api) => { ... }}>:
 const pro = installEnterprise(api)
 
+// Export / print
 await pro.exportData({ format: 'xlsx', filename: 'orders' })
 pro.print({ title: 'Q2 Orders' })
+
+// Import
+const result = await pro.importData({ file, format: 'xlsx' })
+
+// AI (needs setAIProvider())
+await pro.ai.filter('EU orders over $1k from last quarter')
 ```
 
-`installEnterprise` returns the same grid API with the enterprise methods added on top, so the rest of your integration is unchanged.
+`installEnterprise` returns the same grid API with the enterprise methods (`exportData`, `copyExport`, `print`, `importData`, `ai.*`, `pivot.*`) added on top, so the rest of your integration is unchanged. It also registers the scheduler / calendar view, so `<SvGrid scheduler={...}>` works.
 
 ## Licensing
 

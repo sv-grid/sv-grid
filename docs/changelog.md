@@ -19,6 +19,91 @@ dated heading on publish via `pnpm changeset version` (see
 For machine-readable releases, fetch
 [`/changelog.json`](/changelog.json) - same content, parseable shape.
 
+## [Unreleased]
+
+### @svgrid/grid
+
+#### Added
+
+- **Form layer depth in `SvForm` / `createForm`.** Schema-driven forms gained:
+  conditional / dependent fields (`visible` and `disabled` accept a
+  `(values) => boolean` predicate; hidden fields drop out of validation and the
+  submit payload), grouped **sections** and a multi-step **wizard** (`stepper`,
+  with per-step validation gating), repeatable **field arrays**
+  (`type: 'array'` with `itemFields`, plus `addItem` / `removeItem` / `moveItem`),
+  **async validation** (debounced, stale-response-guarded, per-field
+  `validating` state), **dirty tracking + `reset()`**, and **submit states**
+  (`isSubmitting`, an async `onSubmit`, and `setErrors()` for server-side field
+  errors). New demos: dynamic form, wizard, and field array.
+- **Public headless cores for the menu / select family** (`createMenu`,
+  `createPopoverSelect`, shared `list-nav`), so the popup pickers can be driven
+  headlessly and composed into custom UI.
+- **`color` on `ListOption`** - render a small color swatch before the label in
+  `SvListBox` and `SvDropDownList`.
+- **`block` on `SvDateTimePicker`** - stretch the field to fill its container
+  (100% width), so it fills a grid cell when used as an editor.
+- **`onClosed` on `SvDrawer`** - fires after the exit animation ends and the
+  drawer leaves the DOM.
+- **`loading` on `SvField`**, and **`locked`** on `SvDockLayout` /
+  `SvDockManager`.
+
+#### Changed
+
+- **Popup editors keep themselves on screen.** `SvAutoComplete`, `SvComboBox`,
+  `SvDropDownList` and the date pickers now measure the space to the viewport
+  edge: the panel flips up when there is not enough room below and clamps its
+  `max-height` to the available height, so a picker opened near the bottom of the
+  window no longer spills off screen.
+- **Dock manager pop-out to a new window is now off by default**
+  (`allowPopout={false}`); opt in explicitly. Added a dedicated pop-out demo.
+
+#### Fixed
+
+- **Virtualized lists no longer flash blank on a fast scrollbar-thumb drag.**
+  A fast drag can move the viewport into the windowed list's off-screen padding
+  faster than JS can re-render the rows there; the padding now paints faint row
+  skeletons, so `SvListBox` / `SvDropDownList` stay visually filled at any scroll
+  speed. Also removed an app-wide `flushSync` from the scroll handler that could
+  stall the very first scroll.
+- **Dock manager auto-hide now shows every tab of a multi-tab leaf.** Sending a
+  leaf with two or more tabs to auto-hide created a single edge tab; it now
+  creates one edge tab per pane.
+
+### @svgrid/enterprise
+
+#### Added
+
+- **Scheduler booking rules and conflict detection.** New model helpers
+  (`overlapCount` for per-resource overlaps, `overlapsBands` for working-hours
+  bands) back resource double-booking checks and business-hours enforcement.
+  New demos: booking rules, financial trading hours, and HR shift coverage.
+
+#### Fixed
+
+- **Scheduler column alignment.** The all-day lane, day/time-grid header, and
+  body columns now reserve the scrollbar width consistently, so the columns line
+  up instead of drifting by the scrollbar's width.
+
+### Tooling & docs
+
+#### Added
+
+- **`@svgrid/ui` recipe scaffolder** - `npx @svgrid/ui add <component>` drops a
+  ready-to-edit starter (e.g. `add calendar`) into your app, complementing the
+  shadcn-style component pages (Preview / Code, install tabs) across the UI kit.
+- **AI coding Skill** (`skills/svgrid`, installable with
+  `npx skills add sv-grid/sv-grid`) - an always-on house-style guidance layer
+  that complements `@svgrid/mcp`.
+
+#### Fixed
+
+- **API-docs accuracy pass across all 74 UI-component pages.** Corrected the
+  `SvDockLayout`, `SvDockManager`, and `SvDateTimePicker` prop tables (added 13
+  missing dock-layout props; removed a `size` prop `SvDateTimePicker` never had),
+  and filled scattered gaps (`loading`, `onClosed`, `min` / `max`, `dir`,
+  `width` / `height`, `ariaLabel`, and the shared field-contract on
+  `SvFileUpload`).
+
 ## [1.0.0] - 2026-06-16
 
 Initial public release - the Svelte 5-native data grid: `@svgrid/grid`

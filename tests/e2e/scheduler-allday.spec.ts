@@ -12,6 +12,10 @@ const hourly = (page: Page, title: string) => page.locator('.sv-sched-event', { 
 const allDayBar = (page: Page, title: string) => page.locator('.sv-sched-allday-bars .sv-sched-bar', { hasText: title })
 
 async function toWeek(page: Page) {
+  // The time-grid uses 30px slots (60px/hour at the default 30m), so give the
+  // viewport enough height that the all-day row and a mid-morning event are both
+  // on-screen for the cross-zone drag tests.
+  await page.setViewportSize({ width: 1400, height: 1040 })
   await page.goto(DEMO)
   await page.locator('.sv-sched').first().waitFor()
   await page.getByRole('button', { name: 'Week', exact: true }).click()

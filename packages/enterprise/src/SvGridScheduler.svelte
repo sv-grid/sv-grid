@@ -53,6 +53,8 @@
     timelineGeom,
     timelineRows,
     hasConflict,
+    overlapCount,
+    overlapsBands,
     workingIntervals,
     withinWorking,
     normalizeTimeZone,
@@ -100,7 +102,6 @@
   const resourceField = $derived(scheduler.resourceField);
   const collisionMode = $derived(scheduler.collisionMode ?? "split");
   const maxColumns = $derived(scheduler.maxColumns ?? 3);
-  const HOUR_PX = 48;
 
   // svelte-ignore state_referenced_locally
   let view = $state<SchedulerView>(scheduler.initialView ?? "month");
@@ -140,27 +141,31 @@
   // occurrence of a series asks which scope to apply. Otherwise edits fall back
   // to the whole series (backward compatible).
   const hasExceptions = $derived(!!scheduler.recurrenceExceptionsField && !!scheduler.onOccurrenceChange);
-  let recurScope = $state<{ x: number; y: number; title: string; kind: "edit" | "delete"; occurrence: () => void; series: () => void } | null>(null);
-  function askRecurScope(x: number, y: number, ev: ResolvedEvent<TData>, kind: "edit" | "delete", occurrence: () => void, series: () => void) {
+  let recurScope = $state<{ x: number; y: number; title: string; kind: "edit" | "delete"; occurrence: () => void; following?: () => void; series: () => void } | null>(null);
+  function askRecurScope(x: number, y: number, ev: ResolvedEvent<TData>, kind: "edit" | "delete", occurrence: () => void, series: () => void, following?: () => void) {
     if (!hasExceptions || !ev.occurrenceStart) { series(); return; }
     // Keep the popover fully on-screen (a drop near the viewport edge would push
     // its buttons off the bottom / right).
     const cx = Math.max(6, Math.min(x, window.innerWidth - 184));
-    const cy = Math.max(6, Math.min(y, window.innerHeight - 118));
-    recurScope = { x: cx, y: cy, title: ev.title, kind, occurrence, series };
+    const cy = Math.max(6, Math.min(y, window.innerHeight - (following ? 146 : 118)));
+    recurScope = { x: cx, y: cy, title: ev.title, kind, occurrence, following, series };
   }
   // Emit a per-occurrence override as a real instant (converts out of pseudo-local).
-  function emitOccurrence(ev: ResolvedEvent<TData>, opts: { start?: Date; end?: Date; deleted?: boolean }) {
+  // `scope` = 'occurrence' (merge into the row) or 'following' (split the series).
+  function emitOccurrence(ev: ResolvedEvent<TData>, opts: { start?: Date; end?: Date; deleted?: boolean; title?: string; allDay?: boolean }, scope: "occurrence" | "following" = "occurrence") {
     if (!ev.occurrenceStart) return;
     const occ = fromZ(ev.occurrenceStart);
     scheduler.onOccurrenceChange?.({
       row: ev.row,
       occurrenceStart: occ,
+      scope,
       exception: {
         occurrenceStart: occ,
         ...(opts.deleted ? { deleted: true } : {}),
         ...(opts.start ? { start: fromZ(opts.start) } : {}),
         ...(opts.end ? { end: fromZ(opts.end) } : {}),
+        ...(opts.title != null ? { title: opts.title } : {}),
+        ...(opts.allDay != null ? { allDay: opts.allDay } : {}),
       },
     });
   }
@@ -226,6 +231,10 @@
     getSecondaryColor: (r) =>
       scheduler.secondaryColorField
         ? (fieldValue(r, scheduler.secondaryColorField) as string | undefined)
+        : undefined,
+    getStatus: (r) =>
+      scheduler.statusField
+        ? (fieldValue(r, scheduler.statusField) as string | undefined)
         : undefined,
     getResource: (r) =>
       resourceOfE[key(r)] ??
@@ -428,13 +437,13 @@
   const bandHours = $derived(Math.max(1, dayEndHour - dayStartHour));
   const hourList = $derived(Array.from({ length: bandHours }, (_, i) => dayStartHour + i));
 
-  // Ruler subdivision: `slotMinutes` slots per hour. Each hour grows so the
-  // finest slot stays usably tall (>= MIN_SLOT_PX); event positions are all
-  // percent-based, so scaling the hour height keeps them correct.
-  const MIN_SLOT_PX = 11;
+  // Ruler subdivision: every slot is a fixed SLOT_PX tall, so the hour grows
+  // with the granularity (1h -> 30px rows, 30m -> 2x30px = 60px/hour, 15m ->
+  // 4x30, 5m -> 12x30). Event positions are percent-based, so this stays correct.
+  const SLOT_PX = 30;
   const slotsPerHour = $derived(Math.max(1, Math.round(60 / slotMinutes)));
-  const hourPx = $derived(Math.max(HOUR_PX, slotsPerHour * MIN_SLOT_PX));
-  const slotPx = $derived(hourPx / slotsPerHour);
+  const slotPx = SLOT_PX;
+  const hourPx = $derived(slotsPerHour * SLOT_PX);
   const gridSlots = $derived.by(() => {
     const out: { min: number; startsOnHour: boolean; endsOnHour: boolean }[] = [];
     const total = bandHours * slotsPerHour;
@@ -457,12 +466,39 @@
   // svelte-ignore state_referenced_locally
   let now = $state(toZonedLocal(new Date(), normalizeTimeZone(scheduler.timeZone)));
   $effect(() => {
-    if (!nowIndicator) return;
+    if (!nowIndicator && !scheduler.reminderField) return; // tick for the now-line OR reminders
     now = toZonedLocal(new Date(), tz);
     const id = setInterval(() => (now = toZonedLocal(new Date(), tz)), 60_000);
     return () => clearInterval(id);
   });
   const nowMin = $derived(now.getHours() * 60 + now.getMinutes());
+
+  // --- reminders: fire once as an event's lead time is crossed ---------------
+  const firedReminders = new Set<string>();
+  let reminders = $state<{ id: number; text: string }[]>([]);
+  let reminderSeq = 0;
+  $effect(() => {
+    const field = scheduler.reminderField;
+    if (!field) return;
+    const nowMs = now.getTime();
+    for (const ev of events) {
+      const lead = Number(fieldValue(ev.row, field));
+      if (!Number.isFinite(lead) || lead < 0) continue;
+      const untilMin = (ev.start.getTime() - nowMs) / 60000;
+      // Just entered the lead window and not yet started (allow a 1-min slack).
+      if (untilMin > lead || untilMin < -1) continue;
+      const key = `${ev.rowKey}#${ev.start.getTime()}`;
+      if (firedReminders.has(key)) continue;
+      firedReminders.add(key);
+      const mins = Math.max(0, Math.round(untilMin));
+      untrack(() => {
+        scheduler.onReminder?.(ev.row, mins);
+        const id = ++reminderSeq;
+        reminders = [...reminders, { id, text: `${ev.title || "Event"} ${mins <= 0 ? "is starting" : `in ${mins} min`}` }];
+        setTimeout(() => (reminders = reminders.filter((r) => r.id !== id)), 6000);
+      });
+    }
+  });
 
   // --- secondary time-zone rulers (a "world clock" left of the primary gutter) ---
   const primaryZoneLabel = $derived(tz ? zoneAbbr(fromZ(now), tz) : "");
@@ -491,7 +527,33 @@
   const isNonWorkingDay = (d: Date) => nonWorkingDaySet.has(d.getDay());
   const resById = $derived(new Map(resources.map((r) => [r.id, r])));
   const anyAvailability = $derived(resources.some((r) => r.availability?.length));
-  const hasBookingShade = $derived(!!businessHours || shadeUntilNow || nonWorkingDaySet.size > 0 || anyAvailability);
+  // Hard booking bounds + highlights (Wave B follow-ups).
+  const restrictedHours = $derived(scheduler.restrictedHours ?? []);
+  const dayKey = (d: Date) => startOfDay(d).getTime();
+  const zDayKey = (v: unknown) => dayKey(toZonedLocal(toDate(v as never) ?? new Date(), tz));
+  const restrictedDateSet = $derived(new Set((scheduler.restrictedDates ?? []).map(zDayKey)));
+  const specialByDay = $derived(
+    new Map((scheduler.specialDates ?? []).map((s) => [zDayKey(s.date), s])),
+  );
+  const minDate = $derived(scheduler.minDate != null ? startOfDay(toZonedLocal(toDate(scheduler.minDate as never)!, tz)) : null);
+  const maxDate = $derived(scheduler.maxDate != null ? startOfDay(toZonedLocal(toDate(scheduler.maxDate as never)!, tz)) : null);
+  const maxEventsPerSlot = $derived(scheduler.maxEventsPerSlot);
+  const anyDateOverrides = $derived(resources.some((r) => r.dateOverrides?.length));
+  const isRestrictedDate = (d: Date) => restrictedDateSet.has(dayKey(d));
+  const hasBookingShade = $derived(
+    !!businessHours || shadeUntilNow || nonWorkingDaySet.size > 0 || anyAvailability ||
+      restrictedHours.length > 0 || restrictedDateSet.size > 0 || anyDateOverrides,
+  );
+  // A resource's explicit windows for ONE specific date via `dateOverrides`
+  // (off -> [], custom windows -> those). Returns null when no override matches.
+  function resourceDateWindows(res: SchedulerResource | undefined, date: Date): Array<[number, number]> | null {
+    const ov = res?.dateOverrides?.find((o) => isSameDay(toZonedLocal(toDate(o.date as never) ?? new Date(), tz), date));
+    if (!ov) return null;
+    if (ov.off) return [];
+    const bandStart = dayStartHour * 60;
+    const bandEnd = dayEndHour * 60;
+    return (ov.windows ?? []).map((w) => [Math.max(bandStart, w.start * 60), Math.min(bandEnd, w.end * 60)] as [number, number]).filter(([a, b]) => b > a);
+  }
   // The working [startMin, endMin] intervals for a column: the column's RESOURCE
   // availability if it has any (per-doctor hours), else the global businessHours /
   // nonWorkingDays. Empty = the whole day is off.
@@ -500,6 +562,8 @@
     const bandEnd = dayEndHour * 60;
     const res = col.resourceId != null ? resById.get(col.resourceId) : undefined;
     const wd = col.date.getDay();
+    const override = resourceDateWindows(res, col.date);
+    if (override) return override;
     if (res?.availability?.length) return workingIntervals(wd, res.availability, bandStart, bandEnd);
     if (nonWorkingDaySet.has(wd)) return [];
     if (businessHours) return [[Math.max(bandStart, businessHours.start * 60), Math.min(bandEnd, businessHours.end * 60)]];
@@ -519,6 +583,21 @@
     if (cursor < bandEnd) out.push({ top: ((cursor - bandStart) / total) * 100, height: ((bandEnd - cursor) / total) * 100 });
     return out;
   }
+  // Hard-restricted bands (distinct hatch) = the whole day when the date is
+  // blocked, else each `restrictedHours` band clamped to the visible band.
+  function columnRestrictedBands(col: GridCol): { top: number; height: number }[] {
+    const bandStart = dayStartHour * 60;
+    const bandEnd = dayEndHour * 60;
+    const total = bandHours * 60;
+    if (isRestrictedDate(col.date)) return [{ top: 0, height: 100 }];
+    const out: { top: number; height: number }[] = [];
+    for (const b of restrictedHours) {
+      const a = Math.max(bandStart, b.start * 60);
+      const z = Math.min(bandEnd, b.end * 60);
+      if (z > a) out.push({ top: ((a - bandStart) / total) * 100, height: ((z - a) / total) * 100 });
+    }
+    return out;
+  }
   const restrictToBusinessHours = $derived(scheduler.restrictToBusinessHours === true);
   // A brief flash when a drop/create is rejected (double-book or out-of-hours).
   let conflictMsg = $state<string | null>(null);
@@ -535,8 +614,10 @@
     const bandEnd = dayEndHour * 60;
     const res = resourceId != null ? resById.get(resourceId) : undefined;
     const wd = start.getDay();
+    const override = resourceDateWindows(res, start);
     let intervals: Array<[number, number]>;
-    if (res?.availability?.length) intervals = workingIntervals(wd, res.availability, bandStart, bandEnd);
+    if (override) intervals = override;
+    else if (res?.availability?.length) intervals = workingIntervals(wd, res.availability, bandStart, bandEnd);
     else if (nonWorkingDaySet.has(wd)) intervals = [];
     else if (businessHours) intervals = [[Math.max(bandStart, businessHours.start * 60), Math.min(bandEnd, businessHours.end * 60)]];
     else return false; // no working-time restriction configured
@@ -548,12 +629,26 @@
   // Returns true (and flashes) when placing [start,end] should be rejected -
   // out-of-hours (when restricted) or a same-resource double-book. Caller reverts.
   function bookingBlocked(start: Date, end: Date, resourceId: string | undefined, excludeRowKey: string): boolean {
+    // Hard bounds first (always enforced, no opt-in).
+    if (minDate && startOfDay(start).getTime() < minDate.getTime()) { flashBlocked("Before the allowed range"); return true; }
+    if (maxDate && startOfDay(start).getTime() > maxDate.getTime()) { flashBlocked("After the allowed range"); return true; }
+    if (isRestrictedDate(start)) { flashBlocked("Date is blocked"); return true; }
+    if (restrictedHours.length) {
+      const sMin = start.getHours() * 60 + start.getMinutes();
+      const rawEnd = end.getHours() * 60 + end.getMinutes();
+      const eMin = rawEnd === 0 ? 24 * 60 : rawEnd;
+      if (overlapsBands(sMin, eMin, restrictedHours)) { flashBlocked("Restricted time"); return true; }
+    }
     if (restrictToBusinessHours && outsideWorkingTime(start, end, resourceId)) {
       flashBlocked("Outside working hours");
       return true;
     }
     if (disableConflicts && hasConflict(start, end, resourceId ?? undefined, events, excludeRowKey)) {
       flashBlocked("Time slot already booked");
+      return true;
+    }
+    if (maxEventsPerSlot != null && overlapCount(start, end, resourceId ?? undefined, events, excludeRowKey) >= maxEventsPerSlot) {
+      flashBlocked(`Limit of ${maxEventsPerSlot} per slot reached`);
       return true;
     }
     return false;
@@ -740,9 +835,16 @@
   }
   function go(dir: number) {
     clearRangeSelect();
-    anchor = navigateAnchor(view, anchor, dir);
+    const next = navigateAnchor(view, anchor, dir);
+    // Respect min/max navigation bounds.
+    if (minDate && next.getTime() < minDate.getTime()) return;
+    if (maxDate && next.getTime() > maxDate.getTime()) return;
+    anchor = next;
     scheduler.onNavigate?.(anchor);
   }
+  // Disable prev/next when the next step would cross a bound.
+  const canGoPrev = $derived(!minDate || navigateAnchor(view, anchor, -1).getTime() >= minDate.getTime());
+  const canGoNext = $derived(!maxDate || navigateAnchor(view, anchor, 1).getTime() <= maxDate.getTime());
   function setView(v: SchedulerView) {
     clearRangeSelect();
     view = v;
@@ -786,25 +888,15 @@
   let drag = $state<Drag | null>(null);
   let bodyEl = $state<HTMLElement | null>(null);
   let allDayRowEl = $state<HTMLElement | null>(null);
+  let backlogEl = $state<HTMLElement | null>(null);
+  // True while an event drag hovers the backlog panel (drop = unschedule).
+  let dragOverBacklog = $state(false);
   let tlLanesEl = $state<HTMLElement | null>(null); // timeline: the axis-width lane track
   let tlScrollEl = $state<HTMLElement | null>(null); // timeline: the horizontal scroll viewport
-  // The hourly grid scrolls vertically; its scrollbar shaves width off the body,
-  // so the non-scrolling header + all-day rows must reserve the same width to keep
-  // their day columns aligned with the body. `sbw` is that live scrollbar width.
+  // The single scroller (.sv-sched-xscroll) owns both scroll axes; the header and
+  // gutter stay in place via position:sticky, so no scrollbar-width reservation is
+  // needed to keep columns aligned.
   let gridScrollEl = $state<HTMLElement | null>(null);
-  let sbw = $state(0);
-  $effect(() => {
-    const el = gridScrollEl;
-    if (!el) return;
-    // Re-measure when the content that drives the scrollbar changes.
-    void bandHours;
-    void gridCols.length;
-    const measure = () => (sbw = el.offsetWidth - el.clientWidth);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  });
   let suppressClick = false;
   const DRAG_THRESHOLD = 4; // px before a press becomes a drag
 
@@ -882,6 +974,7 @@
         return;
       drag.moved = true;
     }
+    dragOverBacklog = drag.mode === "move" && !!scheduler.onUnschedule && !!backlogEl && pointInEl(e.clientX, e.clientY, backlogEl);
     drag.x = e.clientX;
     drag.y = e.clientY;
     const rawMin = minuteAt(e.clientY);
@@ -936,8 +1029,14 @@
     drag = null;
     if (!d || !d.moved) return;
     suppressClick = true; // this drag's trailing click must not open the event
+    dragOverBacklog = false;
     const { ev, previewStart, previewEnd, previewCol, mode } = d;
     const k = ev.rowKey;
+    // Dropped onto the backlog panel -> unschedule the event.
+    if (mode === "move" && scheduler.onUnschedule && backlogEl && pointInEl(e.clientX, e.clientY, backlogEl)) {
+      scheduler.onUnschedule(ev.row);
+      return;
+    }
     // Dropped in the all-day row -> convert a timed event to an all-day event.
     if (mode === "move" && !ev.recurring && pointInEl(e.clientX, e.clientY, allDayRowEl)) {
       const col = colAt(e.clientX) ?? previewCol;
@@ -964,7 +1063,7 @@
         else emitResize({ row: ev.row, start: ns, end: ne });
       };
       // "This event": store an override for just this occurrence.
-      askRecurScope(e.clientX, e.clientY, ev, "edit", () => emitOccurrence(ev, { start: previewStart, end: previewEnd }), applySeries);
+      askRecurScope(e.clientX, e.clientY, ev, "edit", () => emitOccurrence(ev, { start: previewStart, end: previewEnd }), applySeries, () => emitOccurrence(ev, { start: previewStart, end: previewEnd }, "following"));
       return;
     }
     // Reject a double-booking (same resource) - snap back, don't apply/emit.
@@ -1368,7 +1467,7 @@
       items.push({
         label: "Delete",
         onSelect: () =>
-          askRecurScope(e.clientX, e.clientY, ev, "delete", () => emitOccurrence(ev, { deleted: true }), () => scheduler.onEventDelete!(ev.row)),
+          askRecurScope(e.clientX, e.clientY, ev, "delete", () => emitOccurrence(ev, { deleted: true }), () => scheduler.onEventDelete!(ev.row), () => emitOccurrence(ev, { deleted: true }, "following")),
       });
     const custom = scheduler.eventMenu?.(ev.row);
     if (custom?.length) {
@@ -1449,6 +1548,14 @@
 
   // --- detail drawer / editor (mirrors SvGridBoard) ---
   let drawerRow = $state.raw<TData | null>(null);
+  // The resolved event the drawer was opened on (carries recurring/occurrenceStart
+  // so a recurring-occurrence edit can ask This / Following / All on save).
+  let drawerEv = $state.raw<ResolvedEvent<TData> | null>(null);
+  // `drawerOpen` drives the SvDrawer open/close animation independently of
+  // `drawerRow`: on close we flip it false so the panel slides out, and clear
+  // `drawerRow` only once the exit finishes (SvDrawer.onClosed) so the content
+  // stays rendered while it animates away.
+  let drawerOpen = $state(false);
   const drawerCfg = $derived(
     scheduler.drawer && typeof scheduler.drawer === "object" ? scheduler.drawer : null,
   );
@@ -1727,6 +1834,8 @@
       if (recurEditable) loadRule(row);
       loadWhen(row);
       drawerRow = row;
+      drawerEv = ev;
+      drawerOpen = true;
     }
   }
 
@@ -1900,14 +2009,24 @@
     rangeSel = { ...sel };
     scrollActiveCellIntoView();
   }
+  // Distance from the scroller's top to the hourly body's top - i.e. the height
+  // of the sticky header block, which now lives inside the single (both-axis)
+  // scroller. Vertical-scroll targets are body-relative, so they add this base.
+  function gridBodyTopInScroller(): number {
+    if (!bodyEl || !gridScrollEl) return 0;
+    return bodyEl.getBoundingClientRect().top - gridScrollEl.getBoundingClientRect().top + gridScrollEl.scrollTop;
+  }
   // Keep the moving end of the selection visible in the vertical scroller.
   function scrollActiveCellIntoView() {
     if (!rangeSel || rangeSel.allDay || !gridScrollEl || !bodyEl) return;
     const top = ((rangeSel.curMin - dayStartHour * 60) / (bandHours * 60)) * bodyEl.offsetHeight;
     const view = gridScrollEl;
+    // The sticky header overlays the top of the scroller, so the usable body
+    // viewport is clientHeight minus the header height.
+    const usable = view.clientHeight - gridBodyTopInScroller();
     const pad = 24;
     if (top < view.scrollTop + pad) view.scrollTop = Math.max(0, top - pad);
-    else if (top > view.scrollTop + view.clientHeight - pad) view.scrollTop = top - view.clientHeight + pad;
+    else if (top > view.scrollTop + usable - pad) view.scrollTop = top - usable + pad;
   }
   // On a full-day ruler the grid would open at midnight (empty). When the
   // week/day grid mounts (or you switch back to it), scroll past the empty
@@ -1924,9 +2043,10 @@
     }
     if (scrolledForView === v) return;
     scrolledForView = v;
-    const top = Math.max(0, (SCROLL_TO_HOUR - dayStartHour) * hourPx);
     requestAnimationFrame(() => {
-      if (gridScrollEl) gridScrollEl.scrollTop = top;
+      // scrollTop maps directly to body-local position (a sticky header does not
+      // consume scroll offset), so no header term is needed here.
+      if (gridScrollEl) gridScrollEl.scrollTop = Math.max(0, (SCROLL_TO_HOUR - dayStartHour) * hourPx);
     });
   });
   // Turn the pending grid range into event(s) and clear the marker. Fires
@@ -2138,6 +2258,28 @@
     const row = drawerRow;
     if (!row) return;
     const k = key(row);
+    // Editing a recurring OCCURRENCE via the drawer: ask This / Following / All.
+    const ev = drawerEv;
+    if (hasExceptions && ev?.recurring && ev.occurrenceStart) {
+      const newTitle = scheduler.titleField ? (values[scheduler.titleField] as string | undefined) : undefined;
+      const startChanged = !!whenStart && whenStart.getTime() !== ev.start.getTime();
+      const endChanged = !!whenEnd && !!ev.end && whenEnd.getTime() !== ev.end.getTime();
+      const titleChanged = newTitle != null && newTitle !== ev.title;
+      if (!startChanged && !endChanged && !titleChanged) { drawerOpen = false; return; }
+      const occOpts = { start: whenStart ?? undefined, end: whenEnd ?? undefined, allDay: whenAllDay, title: titleChanged ? newTitle : undefined };
+      drawerOpen = false;
+      askRecurScope(
+        Math.round(window.innerWidth / 2 - 90), Math.round(window.innerHeight / 2 - 70),
+        ev, "edit",
+        () => emitOccurrence(ev, occOpts, "occurrence"),
+        () => applyDrawerToSeries(row, k, { ...values }),
+        () => emitOccurrence(ev, occOpts, "following"),
+      );
+      return;
+    }
+    applyDrawerToSeries(row, k, values);
+  }
+  function applyDrawerToSeries(row: TData, k: string, values: Record<string, unknown>) {
     // Fold the recurrence rule + the "When" fields into the saved values.
     if (recurEditable) {
       values = { ...values, [recurField]: buildRule(row) };
@@ -2161,17 +2303,17 @@
     if (whenEnd) endOfE[k] = whenEnd;
     if (scheduler.allDayField) allDayOf[k] = whenAllDay;
     scheduler.onEventCommit?.({ row, changes, values: { ...values } });
-    drawerRow = null;
+    drawerOpen = false;
   }
   function deleteDrawer() {
     const row = drawerRow;
     if (!row) return;
-    drawerRow = null;
+    drawerOpen = false;
     scheduler.onEventDelete?.(row);
   }
   // Explicit discard: close without committing (bypasses the save-on-dismiss).
   function cancelDrawer() {
-    drawerRow = null;
+    drawerOpen = false;
   }
   // Dismissing the drawer (click-outside / Escape) commits the current edits.
   function commitDrawer() {
@@ -2314,6 +2456,7 @@
     }
     tlDrag.x = e.clientX;
     tlDrag.y = e.clientY;
+    dragOverBacklog = tlDrag.mode === "move" && !!scheduler.onUnschedule && !!backlogEl && pointInEl(e.clientX, e.clientY, backlogEl);
     const t = tlTimeAtX(e.clientX);
     const minDur = (view === "timelineDay" ? tlSlot : 24 * 60) * TL_MS_MIN;
     if (tlDrag.mode === "move") {
@@ -2338,8 +2481,14 @@
     tlDrag = null;
     if (!d || !d.moved) return;
     suppressClick = true;
+    dragOverBacklog = false;
     const { ev, previewStart, previewEnd, previewRes, mode } = d;
     const k = ev.rowKey;
+    // Dropped onto the backlog panel -> unschedule.
+    if (mode === "move" && scheduler.onUnschedule && backlogEl && pointInEl(d.x, d.y, backlogEl)) {
+      scheduler.onUnschedule(ev.row);
+      return;
+    }
     if (ev.recurring) {
       // Series edit: apply the new time-of-day (+ duration) to the base row.
       const applySeries = () => {
@@ -2351,7 +2500,7 @@
         if (mode === "move") emitMove({ row: ev.row, start: ns, end: ne, allDay: ev.allDay });
         else emitResize({ row: ev.row, start: ns, end: ne });
       };
-      askRecurScope(d.x, d.y, ev, "edit", () => emitOccurrence(ev, { start: previewStart, end: previewEnd }), applySeries);
+      askRecurScope(d.x, d.y, ev, "edit", () => emitOccurrence(ev, { start: previewStart, end: previewEnd }), applySeries, () => emitOccurrence(ev, { start: previewStart, end: previewEnd }, "following"));
       return;
     }
     const checkRes = mode === "move" ? previewRes : ev.resourceId;
@@ -2404,15 +2553,24 @@
     if (ev.color2) s += `--sv-sched-accent2:${ev.color2};`;
     return s;
   }
+  // Normalize a free/busy status to a modifier ('free'|'tentative'|'oof') or
+  // undefined (busy/default). Applied as `data-status` on event elements.
+  function evStatus(ev: ResolvedEvent<TData>): string | undefined {
+    const s = (ev.status ?? "").toString().toLowerCase().replace(/[\s_-]/g, "");
+    if (s === "free") return "free";
+    if (s === "tentative") return "tentative";
+    if (s === "oof" || s === "outofoffice") return "oof";
+    return undefined;
+  }
 </script>
 
 <div class="sv-sched" role="group" aria-roledescription="calendar">
   <!-- toolbar -->
   <div class="sv-sched-toolbar">
     <div class="sv-sched-nav">
-      <button type="button" class="sv-sched-btn" onclick={() => go(-1)} aria-label="Previous">‹</button>
+      <button type="button" class="sv-sched-btn" onclick={() => go(-1)} disabled={!canGoPrev} aria-label="Previous">‹</button>
       <button type="button" class="sv-sched-btn" onclick={today}>Today</button>
-      <button type="button" class="sv-sched-btn" onclick={() => go(1)} aria-label="Next">›</button>
+      <button type="button" class="sv-sched-btn" onclick={() => go(1)} disabled={!canGoNext} aria-label="Next">›</button>
     </div>
     <div class="sv-sched-title" aria-live="polite">{titleLabel}</div>
     <div class="sv-sched-views">
@@ -2462,7 +2620,7 @@
 
   <div class="sv-sched-workarea">
    {#if hasBacklog}
-    <aside class="sv-sched-backlog">
+    <aside class="sv-sched-backlog" class:sv-sched-backlog-drop={dragOverBacklog} bind:this={backlogEl}>
       <div class="sv-sched-backlog-head">{scheduler.backlogTitle ?? "Unscheduled"}</div>
       {#each backlogItems as item (item.id)}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -2524,6 +2682,7 @@
                   <button
                     type="button"
                     class="sv-sched-bar"
+                    data-status={evStatus(s.event)}
                     class:sv-sched-bar-recurring={s.event.recurring}
                     class:sv-sched-bar-draggable={canEditBar}
                     class:sv-sched-bar-source={monthDrag?.moved && monthDrag.ev.key === s.event.key}
@@ -2581,6 +2740,7 @@
               <button
                 type="button"
                 class="sv-sched-agenda-row"
+                data-status={evStatus(ev)}
                 class:sv-sched-event-selected={isSelected(ev)}
                 style={eventStyle(ev)}
                 onclick={(e) => onEventClick(e, ev)}
@@ -2668,6 +2828,7 @@
                   <button
                     type="button"
                     class="sv-sched-bar sv-sched-tl-bar"
+                    data-status={evStatus(it.event)}
                     class:sv-sched-tl-bar-tiny={wpx < 34}
                     class:sv-sched-bar-recurring={it.event.recurring}
                     class:sv-sched-bar-draggable={canEdit}
@@ -2719,11 +2880,15 @@
   {:else}
     <!-- week / day time-grid -->
     <div class="sv-sched-grid">
-     <div class="sv-sched-xscroll">
+     <div class="sv-sched-xscroll" bind:this={gridScrollEl}>
       <div
         class="sv-sched-xinner"
-        style={`--cols:${gridCols.length};--sbw:${sbw}px;--gutn:${gutterCount};--gutw:${gutterCount * 56}px;${gridMinWidth ? ` min-width:${gridMinWidth}px;` : ""}`}
+        style={`--cols:${gridCols.length};--gutn:${gutterCount};--gutw:${gutterCount * 56}px;${gridMinWidth ? ` min-width:${gridMinWidth}px;` : ""}`}
       >
+       <!-- Sticky header block: stays pinned to the top of the single (both-axis)
+            scroller while the body scrolls vertically, and scrolls horizontally
+            with the columns. -->
+       <div class="sv-sched-headwrap">
        {#if groupHeaders.length}
         <div class="sv-sched-grouphead">
           <div class="sv-sched-gutter-head"></div>
@@ -2741,10 +2906,12 @@
           {#if primaryZoneLabel}<span class="sv-sched-zonelabel sv-sched-zonelabel-primary">{primaryZoneLabel}</span>{/if}
         </div>
         {#each gridCols as col (col.key)}
-          <div class="sv-sched-colhead" class:sv-sched-today={col.today}>
+          {@const special = specialByDay.get(dayKey(col.date))}
+          <div class="sv-sched-colhead" class:sv-sched-today={col.today} class:sv-sched-colhead-special={!!special}>
             {#if col.color && groupByDate}<span class="sv-sched-dot" style={`--sv-sched-accent:${col.color};`}></span>{/if}
             <span class="sv-sched-colhead-label">{col.label}</span>
             {#if col.sub}<span class="sv-sched-colhead-sub">{col.sub}</span>{/if}
+            {#if special}<span class="sv-sched-special-tag" style={special.color ? `--sv-sched-special:${special.color};` : ""} title={special.label ?? "Special date"}>{special.label ?? "•"}</span>{/if}
           </div>
         {/each}
        </div>
@@ -2825,17 +2992,18 @@
           {/if}
         </div>
       {/if}
+       </div>
 
-      <div class="sv-sched-gridscroll" bind:this={gridScrollEl}>
+      <div class="sv-sched-gridscroll">
         <div class="sv-sched-gridbody" style={`height:${bandHours * hourPx}px`} bind:this={bodyEl}>
-          {#each secondaryRulers as sr (sr.label)}
-            <div class="sv-sched-gutter sv-sched-gutter-secondary">
+          {#each secondaryRulers as sr, srIdx (sr.label)}
+            <div class="sv-sched-gutter sv-sched-gutter-secondary" style={`left:${srIdx * 56}px`}>
               {#each sr.rows as lbl, i (i)}
                 <div class="sv-sched-hour" style={`height:${hourPx}px`}><span>{lbl}</span></div>
               {/each}
             </div>
           {/each}
-          <div class="sv-sched-gutter">
+          <div class="sv-sched-gutter" style={`left:${secondaryRulers.length * 56}px`}>
             {#each gridSlots as s (s.min)}
               <div class="sv-sched-hour" class:sv-sched-hour-minor={!s.startsOnHour} style={`height:${slotPx}px`}><span>{slotRulerLabel(s)}</span></div>
             {/each}
@@ -2862,6 +3030,9 @@
                 {#each columnShadeBands(col) as sb (sb.top)}
                   <div class="sv-sched-shade" style={`top:${sb.top}%;height:${sb.height}%`}></div>
                 {/each}
+                {#each columnRestrictedBands(col) as rb (rb.top)}
+                  <div class="sv-sched-shade sv-sched-shade-restricted" style={`top:${rb.top}%;height:${rb.height}%`}></div>
+                {/each}
                 {#if shadeUntilNow && col.today && nowBandPct != null}
                   <div class="sv-sched-shade" style={`top:0;height:${nowBandPct}%`}></div>
                 {/if}
@@ -2883,6 +3054,7 @@
                 <button
                   type="button"
                   class="sv-sched-event"
+                  data-status={evStatus(p.event)}
                   class:sv-sched-event-recurring={p.event.recurring}
                   class:sv-sched-event-draggable={canEdit}
                   class:sv-sched-event-dragging={isResize}
@@ -2983,6 +3155,13 @@
 {#if conflictMsg}
   <div class="sv-sched-conflict" use:portalToBody role="status">{conflictMsg}</div>
 {/if}
+{#if reminders.length}
+  <div class="sv-sched-reminders" use:portalToBody role="status" aria-live="polite">
+    {#each reminders as r (r.id)}
+      <div class="sv-sched-reminder"><span class="sv-sched-reminder-bell" aria-hidden="true">🔔</span>{r.text}</div>
+    {/each}
+  </div>
+{/if}
 
 {#if tipEv}
   <div
@@ -3017,6 +3196,9 @@
   >
     <div class="sv-sched-scope-title">{recurScope.kind === "delete" ? "Delete recurring event" : "Edit recurring event"}</div>
     <button type="button" class="sv-sched-scope-btn" onclick={() => { recurScope?.occurrence(); recurScope = null; }}>This event</button>
+    {#if recurScope.following}
+      <button type="button" class="sv-sched-scope-btn" onclick={() => { recurScope?.following?.(); recurScope = null; }}>This and following</button>
+    {/if}
     <button type="button" class="sv-sched-scope-btn" onclick={() => { recurScope?.series(); recurScope = null; }}>All events</button>
   </div>
 {/if}
@@ -3095,14 +3277,14 @@
   </div>
 {/if}
 
-{#if drawerRow}
-  <SvDrawer
-    open
+<SvDrawer
+    bind:open={drawerOpen}
     title={drawerTitle}
     side={drawerCfg?.side ?? "right"}
     size={drawerCfg?.size ?? "380px"}
     hideClose
     onClose={commitDrawer}
+    onClosed={() => (drawerRow = null)}
   >
     <div class="sv-sched-when">
       {#if whenHasAllDay}
@@ -3269,7 +3451,6 @@
       </button>
     {/if}
   </SvDrawer>
-{/if}
 
 <style>
   .sv-sched {
@@ -3520,20 +3701,25 @@
 
   /* time-grid */
   .sv-sched-grid { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-  /* Horizontal scroll wrapper: when resources add many columns, head + body
-     scroll together; the vertical scroll stays inside .sv-sched-gridscroll. */
-  .sv-sched-xscroll { flex: 1 1 auto; min-height: 0; overflow-x: auto; overflow-y: hidden; }
-  .sv-sched-xinner { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
+  /* Single scroll viewport for BOTH axes. Being viewport-width, its vertical
+     scrollbar sits at the viewport's right edge (always reachable) and the
+     horizontal one at the bottom - instead of the vertical bar being stranded at
+     the far-right edge of the wide, horizontally-scrolled column area. The header
+     stays put via position:sticky (top) and the time gutter via sticky (left). */
+  .sv-sched-xscroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  .sv-sched-xinner { display: flex; flex-direction: column; width: 100%; }
+  /* Header block pinned to the top of the scroller; scrolls horizontally with the
+     columns, stays put vertically. */
+  .sv-sched-headwrap { position: sticky; top: 0; z-index: 56; background: var(--sg-bg, #fff); }
   .sv-sched-grouphead, .sv-sched-gridhead, .sv-sched-allday {
     display: grid;
     grid-template-columns: var(--gutw, 56px) repeat(var(--cols, 7), 1fr);
     flex: 0 0 auto;
     border-bottom: 1px solid var(--sg-border, #e5e7eb);
-    /* The hourly body scrolls vertically; reserve its scrollbar width here so the
-       day columns of these non-scrolling rows line up with the body columns. */
     box-sizing: border-box;
-    padding-right: var(--sbw, 0px);
   }
+  /* Corner cell(s): pinned both ways (inside the sticky header, sticky to the left). */
+  .sv-sched-gutter-head { position: sticky; left: 0; z-index: 1; background: var(--sg-bg, #fff); }
   /* Resource / date group header row (spanning cells above the columns). */
   .sv-sched-groupcell {
     display: flex;
@@ -3571,17 +3757,23 @@
      edge matches the padded track area so bars align with the scrolled body. */
   /* pointer-events:none lets a drag on empty all-day area reach the colbg cells
      underneath (for range-select); the bars themselves stay interactive. */
-  .sv-sched-allday-bars { position: absolute; left: var(--gutw, 56px); top: 0; right: var(--sbw, 0px); bottom: 0; pointer-events: none; }
+  .sv-sched-allday-bars { position: absolute; left: var(--gutw, 56px); top: 0; right: 0; bottom: 0; pointer-events: none; }
   .sv-sched-allday-colbg, .sv-sched-allday-cell { cursor: default; }
   .sv-sched-select-cell { background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 22%, transparent) !important; }
 
-  .sv-sched-gridscroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+  /* No longer a scroll container - both axes scroll on .sv-sched-xscroll; this is
+     just the body wrapper (the gridbody carries its own explicit height). */
+  .sv-sched-gridscroll { min-height: 0; }
   .sv-sched-gridbody {
     display: grid;
     grid-template-columns: repeat(var(--gutn, 1), 56px) repeat(var(--cols, 7), 1fr);
     position: relative;
   }
-  .sv-sched-gutter { display: flex; flex-direction: column; position: relative; }
+  /* Time gutter pinned to the left of the scroller (its `left` offset is set
+     inline so stacked secondary rulers step across). z-index above the events so
+     day columns scroll cleanly underneath; sticky still forms a containing block
+     for the absolute now-label. */
+  .sv-sched-gutter { display: flex; flex-direction: column; position: sticky; z-index: 55; background: var(--sg-bg, #fff); }
   .sv-sched-gutter-secondary { opacity: 0.72; }
   .sv-sched-gutter-secondary .sv-sched-hour span { color: var(--sg-muted, #9ca3af); }
   /* Zone-abbreviation labels in the head corner, aligned over each gutter column. */
@@ -3658,6 +3850,38 @@
     pointer-events: none;
     z-index: 0;
   }
+  /* Hard-restricted bands read stronger (red-tinted hatch) than plain off-hours. */
+  .sv-sched-shade-restricted {
+    background: repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--sv-sched-now, #ef4444) 16%, transparent),
+      color-mix(in srgb, var(--sv-sched-now, #ef4444) 16%, transparent) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+  }
+  .sv-sched-colhead-special { box-shadow: inset 0 -2px 0 0 var(--sv-sched-special, var(--sg-accent, #4f46e5)); }
+  .sv-sched-special-tag {
+    display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 0.62rem; font-weight: 600; line-height: 1.3; padding: 0 5px; border-radius: 999px;
+    color: var(--sv-sched-special, var(--sg-accent, #4f46e5));
+    background: color-mix(in srgb, var(--sv-sched-special, var(--sg-accent, #4f46e5)) 16%, transparent);
+  }
+  .sv-sched-btn:disabled { opacity: 0.4; cursor: default; }
+  /* Free/busy status treatments (Outlook-style). [data-status] beats the base. */
+  .sv-sched-event[data-status="free"], .sv-sched-bar[data-status="free"], .sv-sched-agenda-row[data-status="free"] {
+    background: transparent; color: var(--sv-sched-accent); border-style: dashed;
+  }
+  .sv-sched-event[data-status="tentative"], .sv-sched-bar[data-status="tentative"], .sv-sched-agenda-row[data-status="tentative"] {
+    background-image: repeating-linear-gradient(-45deg,
+      color-mix(in srgb, var(--sv-sched-accent) 42%, transparent),
+      color-mix(in srgb, var(--sv-sched-accent) 42%, transparent) 3px,
+      transparent 3px, transparent 7px);
+  }
+  .sv-sched-event[data-status="oof"], .sv-sched-bar[data-status="oof"], .sv-sched-agenda-row[data-status="oof"] {
+    border-left-width: 5px; border-left-color: #7c3aed;
+    background: color-mix(in srgb, #7c3aed 16%, var(--sg-bg, #fff));
+  }
   .sv-sched-daycell-nonworking { background: color-mix(in srgb, var(--sg-fg, #1f2937) 5%, transparent); }
   .sv-sched-conflict {
     position: fixed;
@@ -3674,6 +3898,17 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     pointer-events: none;
   }
+  .sv-sched-reminders {
+    position: fixed; right: 20px; top: 20px; z-index: 2147483002;
+    display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+  }
+  .sv-sched-reminder {
+    display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-radius: 9px;
+    font-size: 0.82rem; font-weight: 600; color: var(--sg-fg, #1f2937);
+    background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e5e7eb);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); border-left: 4px solid var(--sg-accent, #4f46e5);
+  }
+  .sv-sched-reminder-bell { font-size: 0.9rem; }
   .sv-sched-tooltip {
     z-index: 2147483002;
     transform: translate(-50%, calc(-100% - 8px));
@@ -3704,6 +3939,7 @@
     overflow-y: auto;
   }
   .sv-sched-backlog-head { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; color: var(--sg-muted, #9ca3af); padding: 2px 4px 4px; }
+  .sv-sched-backlog-drop { outline: 2px dashed var(--sg-accent, #4f46e5); outline-offset: -3px; background: color-mix(in srgb, var(--sg-accent, #4f46e5) 10%, transparent); }
   .sv-sched-backlog-item {
     display: flex;
     align-items: center;
@@ -4065,8 +4301,10 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow-x: auto; /* horizontal scroll: header + body share one width */
-    overflow-y: hidden;
+    /* Single scroll container: horizontal (header + body share one width) AND
+       vertical - so the vertical scrollbar sits at the VIEWPORT's right edge, not
+       at the far-right of the wide content. The sticky head handles the vertical. */
+    overflow: auto;
   }
   .sv-sched-tl-head {
     display: flex;
@@ -4109,7 +4347,10 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* vertical scroll lives here so the filler can fill height */
+    /* No own scroll: vertical scrolling belongs to the outer .sv-sched-tl (so its
+       scrollbar pins to the viewport, not the content's far right). flex:1 keeps
+       the filler row filling the height when there are few resource rows. */
+    overflow: visible;
   }
   .sv-sched-tl-row { display: flex; border-bottom: 1px solid var(--sg-border, #e5e7eb); flex: 0 0 auto; }
   .sv-sched-tl-row.sv-sched-tl-filler { flex: 1 1 auto; min-height: 0; border-bottom: none; }

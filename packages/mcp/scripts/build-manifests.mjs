@@ -67,8 +67,11 @@ const docs = readAll(docsDir, '.md')
   })
 
 const apiReference = {
-  components: ['SvGrid', 'FlexRender', 'renderComponent', 'renderSnippet'],
+  components: ['SvGrid', 'SvGridBoard', 'FlexRender', 'renderComponent', 'renderSnippet'],
   headless: ['createSvGrid', 'createGrid', 'createGridState', 'subscribeGrid', 'createTable'],
+  scheduler: ['registerSchedulerView', 'getSchedulerView', 'hasSchedulerView', 'resolveEvents', 'layoutDayEvents'],
+  dataOps: ['applyGroupAggregate', 'filterFns', 'sortFns'],
+  export: ['serializeDelimited', 'serializeJson', 'serializeHtml', 'serializeMarkdown', 'downloadTextFile', 'copyTextToClipboard'],
   rowModels: [
     'createCoreRowModel',
     'createFilteredRowModel',

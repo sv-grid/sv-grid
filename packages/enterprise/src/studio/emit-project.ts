@@ -12,7 +12,7 @@
  */
 import type { GeneratedFile } from './scaffold.js'
 import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, SchedulerViewConfig, Screen, StudioProject } from './project.js'
-import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, reconcileDock, ON_LOAD, ON_DESTROY } from './project.js'
+import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, FORM_SUBMIT, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -97,6 +97,14 @@ function wrapperStyle(block: Block, extra?: string): string {
   return `style="${parts.join('; ')}"`
 }
 
+/** A chart's accent color as a safe attribute value (hex / rgb / css var), or the
+ *  theme accent when unset. Sanitized so it can't break out of the attribute. */
+const chartColorExpr = (c?: string): string => {
+  if (!c) return 'var(--sg-accent)'
+  const safe = c.replace(/[^#a-zA-Z0-9(),.%\s_-]/g, '').slice(0, 40)
+  return safe || 'var(--sg-accent)'
+}
+
 /** The wrapper `class="..."` attribute for a block: any built-in base class(es) plus
  *  the user's custom className. Returns '' (no attribute) when there are none. */
 function wrapperClass(block: Block, base?: string): string {
@@ -140,7 +148,7 @@ function screenLayoutStyle(screen: Screen): string {
 
 /** Markup for one block inside the screen grid. `ctx.hasRecord` tells a grid to
  *  publish its clicked row into `selectedRecord` for a sibling record panel. */
-function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean; rawEntity?: EntitySchema; rawResolve?: (name: string) => EntitySchema | undefined; captureApi?: string; handleNames?: Map<string, string>; pane?: boolean } = { hasRecord: false }): string {
+function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, block: Block, resolve: (name: string) => EntitySchema | undefined, ctx: { hasRecord: boolean; accessEnabled?: boolean; routeById?: Map<string, string>; i18n?: boolean; rawEntity?: EntitySchema; rawResolve?: (name: string) => EntitySchema | undefined; captureApi?: string; handleNames?: Map<string, string>; pane?: boolean; rowSelectSteps?: string; ctxLiteral?: string } = { hasRecord: false }): string {
   // A block's display label: localized via $t('block.<id>', 'literal') when i18n is on.
   const tLabel = (label: string, key: string) => (ctx.i18n ? `{$t('block.${key}', ${JSON.stringify(label)})}` : label)
   // In a dock pane the block fills its pane (the pane owns the size); in the 12-col grid it
@@ -169,7 +177,7 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
         getRowId={(r) => String((r as Record<string, unknown>)[idField])}
         loading={!allRowsReady}
         scheduler={${schedulerConfigExpr(cfg.scheduler, typeName, schAsText)}}
-        containerHeight=${ctx.pane ? '"100%"' : `{${block.height ?? 560}}`}
+        containerHeight=${ctx.pane ? '"100%"' : `{${block.height ?? 640}}`}
       />
     </div>`
       }
@@ -210,12 +218,20 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       if (cfg.editing === 'form') lines.push(ctx.accessEnabled ? `onRowDoubleClick={(e) => { if (${canUpdate}) editing = e.row }}` : `onRowDoubleClick={(e) => (editing = e.row)}`)
       // Inline editing writes through the controller by row id (not offered for tree grids).
       if (cfg.editing === 'inline' && !tree) lines.push(`onCellValueChange={(e) => { ${ctx.accessEnabled ? `if (!${canUpdate}) return; ` : ''}const row = ${grouped ? 'allRows' : 'view.rows'}[e.rowIndex]; if (row) controller.updateRow(String((row as Record<string, unknown>)[idField]), { [e.columnId]: e.newValue } as Partial<${typeName}>) }}`)
-      // Drill-through: a row click navigates to another screen, filtered by the
-      // clicked value. Takes precedence over a record-panel selection.
+      // Row click: drill-through (highest precedence), a record-panel selection,
+      // and/or the user's "On row select" method steps (row-scoped ctx). When steps
+      // are present they merge with the built-in action into one async handler.
       const linkRoute = cfg.rowLink && ctx.routeById?.get(cfg.rowLink.screen)
-      if (cfg.rowLink && linkRoute) {
-        const src = cfg.rowLink.sourceField ?? entity.idField ?? entity.fields.find((f) => f.primaryKey)?.field ?? 'id'
-        lines.push(`onRowClick={(e) => goto('/${linkRoute}?${cfg.rowLink.targetField}=' + encodeURIComponent(String((e.row as Record<string, unknown>)[${jsStr(src)}] ?? '')))}`)
+      const rowLinkStmt = cfg.rowLink && linkRoute
+        ? `goto('/${linkRoute}?${cfg.rowLink.targetField}=' + encodeURIComponent(String((e.row as Record<string, unknown>)[${jsStr(cfg.rowLink.sourceField ?? entity.idField ?? entity.fields.find((f) => f.primaryKey)?.field ?? 'id')}] ?? '')))`
+        : ''
+      const primaryStmt = rowLinkStmt || (ctx.hasRecord ? 'selectedRecord = e.row' : '')
+      if (ctx.rowSelectSteps) {
+        const pre = primaryStmt ? `\n        ${primaryStmt}` : ''
+        const stepBody = ctx.rowSelectSteps.split('\n').map((l) => (l ? '        ' + l : l)).join('\n')
+        lines.push(`onRowClick={async (e) => {${pre}\n        const row = e.row\n        const ctx = ${ctx.ctxLiteral} as unknown as PageContext\n${stepBody}\n      }}`)
+      } else if (rowLinkStmt) {
+        lines.push(`onRowClick={(e) => ${rowLinkStmt}}`)
       } else if (ctx.hasRecord) {
         lines.push(`onRowClick={(e) => (selectedRecord = e.row)}`)
       }
@@ -252,7 +268,7 @@ ${exportBar}      <SvGrid
       const drillRoute = cfg.drillScreen && ctx.routeById?.get(cfg.drillScreen)
       const onDrill = drillRoute ? ` onDrill={(cat) => goto('/${drillRoute}?${cfg.dimension}=' + encodeURIComponent(String(cat)))}` : ''
       return `    <div ${span}${cls}>
-      <SvSchemaChart schema={${schemaVar}} rows={${rowsExpr}} dimension="${cfg.dimension}"${cfg.measure ? ` measure="${cfg.measure}"` : ''} reduce="${cfg.reduce}" type="${cfg.type}"${block.height ? ` height={${block.height}}` : ''} controls={false} accent="var(--sg-accent)"${onDrill} />
+      <SvSchemaChart schema={${schemaVar}} rows={${rowsExpr}} dimension="${cfg.dimension}"${cfg.measure ? ` measure="${cfg.measure}"` : ''} reduce="${cfg.reduce}" type="${cfg.type}"${block.height ? ` height={${block.height}}` : ''} controls={false} accent="${chartColorExpr(cfg.color)}"${cfg.dataLabels === false ? ' dataLabels={false}' : ''}${onDrill} />
     </div>`
     }
     case 'dashboard':
@@ -491,8 +507,10 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: s
     // Handle mode (code page): props + content come from the reactive handle, and
     // clicks fire on it - so button1.setVariant(...) / button1.onclick = fn work.
     const inner = spec.hasContent ? `>{${handleName}.text}</${spec.importName}>` : ' />'
+    // `change` bubbles up from any inner input, so the wrapper catches it too - that
+    // powers the "On change" method slot without knowing the component's shape.
     return `    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-    <div id="${block.id}" onclick={(e) => ${handleName}.fire('click', e)} ${span}${cls}>
+    <div id="${block.id}" onclick={(e) => ${handleName}.fire('click', e)} onchange={(e) => ${handleName}.fire('change', e)} ${span}${cls}>
       <${spec.importName} {...${handleName}.props}${inner}
     </div>`
   }
@@ -941,7 +959,7 @@ ${inner}
 /** Does this screen carry a user-owned code companion (design + your own code)?
  *  Any of: the code flag, a Grid to fill, or an already-written handler body. */
 function screenHasCode(screen: Screen): boolean {
-  return screen.code === true || screen.renderGrid === true || Object.keys(screen.handlerBodies ?? {}).length > 0 || Object.keys(screen.handlerSteps ?? {}).length > 0
+  return screen.code === true || screen.renderGrid === true || (screen.state?.length ?? 0) > 0 || Object.keys(screen.handlerBodies ?? {}).length > 0 || Object.keys(screen.handlerSteps ?? {}).length > 0
 }
 
 /** The first grid block's id (the one whose api we bind), if any. */
@@ -1362,11 +1380,14 @@ function codeWiring(screen: Screen, rowType: string, datasetRowsVar: string | un
     if (b && b.config.kind === 'component') decls.push(`const ${h.name} = handle(${handleInit(b.config)})`)
     ctxParts.push(h.name)
   }
+  // Screen state variables -> reactive `$state` + a get/set proxy on ctx.state.
+  for (const v of screen.state ?? []) decls.push(`let ${v.name} = $state<${stateTsType(v)}>(${stateInitExpr(v)})`)
   const dataset = screenDataset(screen)
   if (dataset === 'settable' && datasetRowsVar) ctxParts.push(`data: { get rows() { return ${datasetRowsVar} }, setRows: (r) => (${datasetRowsVar} = r) }`)
-  else if (dataset === 'reload') ctxParts.push('data: { get rows() { return view.rows }, reload: () => controller.refresh() }')
+  else if (dataset === 'reload') ctxParts.push('data: { get rows() { return view.rows }, reload: () => controller.refresh(), create: (v) => controller.createRow(v), update: (id, v) => controller.updateRow(id, v), delete: (id) => controller.deleteRow(id) }')
   ctxParts.push('goto')
   ctxParts.push('params: Object.fromEntries($page.url.searchParams)')
+  if (screen.state?.length) ctxParts.push(`state: { ${screen.state.map((v) => `get ${v.name}() { return ${v.name} }, set ${v.name}(x) { ${v.name} = x }`).join(', ')} }`)
   return { decls, ctxLiteral: `{ ${ctxParts.join(', ')} }`, usesHandle, usesDataHandle }
 }
 
@@ -1388,9 +1409,10 @@ function screenContextFile(screen: Screen, rowType: string): GeneratedFile {
     else members.push(`  ${h.name}: ${componentHandleTypeName(h.component!)}`)
   }
   if (dataset === 'settable') members.push(`  /** This page owns its dataset - replace it with data.setRows(rows). */\n  data: { rows: readonly ${rowType}[]; setRows: (rows: ${rowType}[]) => void }`)
-  else if (dataset === 'reload') members.push(`  /** The grid's current page of rows + a refresh(). */\n  data: { rows: readonly ${rowType}[]; reload: () => void }`)
+  else if (dataset === 'reload') members.push(`  /** The grid's current page of rows + refresh / create / update / delete. */\n  data: { rows: readonly ${rowType}[]; reload: () => void; create: (values: Partial<${rowType}>) => Promise<${rowType}>; update: (id: string, values: Partial<${rowType}>) => Promise<${rowType}>; delete: (id: string) => Promise<void> }`)
   members.push('  /** Navigate to another route. */\n  goto: (path: string) => void')
   members.push("  /** The page's URL query params. */\n  params: Record<string, string>")
+  if (screen.state?.length) members.push(`  /** This screen's reactive state variables. */\n  state: { ${screen.state.map((v) => `${v.name}: ${stateTsType(v)}`).join('; ')} }`)
 
   const usesRowType = hasGrid || hasData || dataset !== 'none'
   const handleTypes = [hasData ? 'DataHandle' : '', componentKeys.length ? 'Handle' : ''].filter(Boolean)
@@ -1430,6 +1452,15 @@ function compiledMethodBodies(screen: Screen): { onLoadSteps?: string; clicks?: 
     const name = names.get(b.id)
     if (!name) continue
     clicks.push(`ctx.${name}.onclick = async () => {\n${indentBody(compileHandlerSteps(clickSteps))}\n}`)
+  }
+  // Component value-change wiring (`ctx.<name>.onchange = ...`), same shape as clicks.
+  for (const b of flattenBlocks(screen.blocks)) {
+    if (b.config.kind !== 'component') continue
+    const changeSteps = steps[changeSlot(b.id)]
+    if (!changeSteps?.length) continue
+    const name = names.get(b.id)
+    if (!name) continue
+    clicks.push(`ctx.${name}.onchange = async () => {\n${indentBody(compileHandlerSteps(changeSteps))}\n}`)
   }
   return {
     // Legacy visual onLoad steps (the code view now edits onLoad directly).
@@ -1813,6 +1844,12 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   async function load_${v}() { ${v} = [...(await ${cn.sourceVar}.getRows({ startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} })).rows] }
   load_${v}()`)
   }
+  // "On record saved" (formSubmit) steps run at the end of a save, with the
+  // submitted `values` as `row` and a local ctx (state / data / goto).
+  const submitSteps = screen.handlerSteps?.[FORM_SUBMIT]
+  const submitBody = submitSteps?.length && codeWire
+    ? `\n    const row = values\n    const ctx = ${codeWire.ctxLiteral} as unknown as PageContext\n${compileHandlerSteps(submitSteps).split('\n').map((l) => (l ? '    ' + l : l)).join('\n')}`
+    : ''
   if (wantsForm) {
     const lookupsProp = relationFields.length
       ? `\n  const lookups = { ${relationFields.map((f, i) => `${f.field}: ${lookupVars[i]}`).join(', ')} }`
@@ -1820,7 +1857,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     parts.push(`let editing = $state<${n.type} | null | undefined>(undefined)${lookupsProp}
   async function save({ mode, id, values }: { mode: 'create' | 'edit'; id: string | null; values: Partial<${n.type}> }) {
     if (mode === 'create') { await controller.createRow({ [idField]: nextId('${n.idPrefix}'), ...values } as Partial<${n.type}>); controller.setPage(view.pageCount - 1) }
-    else if (id) { await controller.updateRow(id, values) }
+    else if (id) { await controller.updateRow(id, values) }${submitBody}
     editing = undefined${needsAllRows ? '\n    await loadAll()' : ''}
   }`)
   }
@@ -1828,7 +1865,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   if (hasRecord) {
     parts.push(`let selectedRecord = $state<${n.type} | null>(null)${recordEditable ? `
   async function saveRecord({ id, values }: { mode: 'create' | 'edit'; id: string | null; values: Partial<${n.type}> }) {
-    if (id) { await controller.updateRow(id, values) }
+    if (id) { await controller.updateRow(id, values) }${submitBody}
     selectedRecord = null${needsAllRows ? '\n    await loadAll()' : ''}
   }` : ''}`)
   }
@@ -1882,7 +1919,13 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const toolbar = (wantsForm || screenActions.length > 0)
     ? `<div class="st__toolbar">\n  ${wantsForm ? (gatesUi ? `{#if can($currentRole, 'create')}${newBtn}{/if}` : newBtn) : ''}${actionButtons ? `\n  ${actionButtons}` : ''}\n</div>\n\n`
     : ''
-  const blockCtx = (b: Block, pane: boolean) => ({ hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve, captureApi: apiVarFor(b), handleNames: codeEnabled ? handleNames : undefined, pane })
+  // A grid block's "On row select" method steps -> a row-scoped handler merged
+  // into onRowClick (a local ctx is built inside the handler so ctx.state/data work).
+  const rowSelectFor = (b: Block): string | undefined => {
+    const steps = b.config.kind === 'grid' ? screen.handlerSteps?.[rowSelectSlot(b.id)] : undefined
+    return steps?.length ? compileHandlerSteps(steps) : undefined
+  }
+  const blockCtx = (b: Block, pane: boolean) => ({ hasRecord, accessEnabled: gatesUi, routeById, i18n: i18nEnabled, rawEntity: rawSchema, rawResolve, captureApi: apiVarFor(b), handleNames: codeEnabled ? handleNames : undefined, pane, rowSelectSteps: rowSelectFor(b), ctxLiteral: codeWire?.ctxLiteral })
   const body = blocks.map((b) => blockMarkup(schema, n.schemaVar, n.type, b, resolve, blockCtx(b, false))).filter(Boolean).join('\n')
   // Dock mode: each block becomes a pane rendered by id; a narrow viewport stacks the grid body.
   const dockPanes = isDock
@@ -1996,7 +2039,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     if (s.entity === undefined) continue // freestanding screen - gates no entity route
     screensByEntity.set(s.entity, [...(screensByEntity.get(s.entity) ?? []), s.id])
   }
-  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled, screensByEntity })
+  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled, screensByEntity, triggers: project.triggers })
   const byName = new Map(prepared.map((s) => [s.name, s]))
   // Raw (unprepared) entities keep their original field set - needed to derive
   // relation display-field names that match withRelationLabels (the prepared

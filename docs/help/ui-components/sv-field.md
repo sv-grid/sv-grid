@@ -53,6 +53,7 @@ import { SvField } from '@svgrid/grid'
 | `required` | `boolean`                               | `false` | Adds a required marker to the label.                                |
 | `dir`      | `EditorDir` (`ltr` \| `rtl` \| `auto`)  | -       | Text direction. `rtl` mirrors alignment; `auto` inherits the page.  |
 | `block`    | `boolean`                               | `false` | Stretch the field and its control to the container width.           |
+| `loading`  | `boolean`                               | `false` | Busy state; shows a small spinner beside the label.                 |
 | `children` | `Snippet`                               | -       | The control to wrap (required).                                     |
 
 When both `error` and `hint` are set, the error takes precedence and is the line

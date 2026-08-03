@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, calendarScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, schedulerScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 const doctors: EntitySchema = {
   name: 'doctors',
@@ -161,7 +161,9 @@ export const clinic: SampleApp = {
           { filter: ['specialty'], span: 3 },
           { grid: true, format: statusPills(doctors, 'specialty'), summaries: true, span: 3 },
         ]),
-        calendarScreen(appointments, { id: 'schedule', title: 'Schedule', order: 2 }, { dateField: 'scheduledAt', titleField: 'patientId', colorField: 'status', filter: ['status', 'doctorId'] }),
+        // Resource scheduler: a column per doctor, appointments placed by time + tinted
+        // by status, drag-to-reschedule + a detail drawer (day view). Was a month calendar.
+        schedulerScreen(appointments, { id: 'schedule', title: 'Schedule', order: 2 }, { startField: 'scheduledAt', titleField: 'patientId', colorField: 'status', resourceField: 'doctorId', initialView: 'day' }),
         // Patient 360: chart header (blood-type pill) with a visit-history timeline -
         // each appointment titled by its doctor (relation resolved), colored by status.
         detailScreen(patients, { id: 'patient-360', title: 'Patient 360', order: 3 }, {

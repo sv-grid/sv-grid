@@ -118,9 +118,16 @@ Compatibility aliases are provided for the framework-neutral names: `createGrid`
 
 SvGrid publishes an [MCP server](https://www.npmjs.com/package/@svgrid/mcp) and `llms.txt` / `llms-full.txt`, so Claude, Cursor, and Zed answer with accurate, version-pinned APIs and all 280+ demo sources as context - not hallucinated methods.
 
-## Enterprise
+## Enterprise features
 
-The MIT core is free for any use, including commercial. The optional [`@svgrid/enterprise`](https://www.npmjs.com/package/@svgrid/enterprise) pack adds Excel / PDF / CSV / TSV / HTML export, paginated print, pivot tables with a drag-and-drop Designer, and AI helpers. OSS projects receive an Enterprise key free. See [Pricing](https://svgrid.com/pricing).
+The MIT core is free for any use, including commercial, with **no feature gating** - sorting, filtering, editing, virtualization, and the **server-side row model** (sort / filter / group pushdown) all ship in the free package. The optional [`@svgrid/enterprise`](https://www.npmjs.com/package/@svgrid/enterprise) pack layers on the export- and analytics-heavy features teams tend to need last:
+
+- **Excel / PDF / CSV / TSV / HTML export** plus paginated print.
+- **Pivot tables** with a drag-and-drop pivot Designer.
+- **Scheduler / calendar view** and Kanban roll-ups for larger deployments.
+- **AI helpers** and SvGrid Studio for data-app scaffolding.
+
+OSS projects receive an Enterprise key free. See the [Enterprise docs](https://svgrid.com/docs) and [Pricing](https://svgrid.com/pricing).
 
 ## Documentation
 

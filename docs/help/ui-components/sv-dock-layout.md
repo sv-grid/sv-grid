@@ -83,10 +83,23 @@ layout = JSON.parse(localStorage.getItem('workspace')!)   // fully restores
 
 | Prop             | Type                          | Default | Description                                             |
 | ---------------- | ----------------------------- | ------- | ------------------------------------------------------- |
-| `layout`         | `DockNode`                    | -       | The layout tree. **Bindable** - every edit writes a new tree. |
-| `pane`           | `Snippet<[DockPane]>`         | -       | Renders each pane's content, keyed off the `DockPane`.  |
-| `onLayoutChange` | `(layout: DockNode) => void`  | -       | Notified after any structural change (dock / resize / close). |
-| `minSize`        | `number`                      | `80`    | Minimum pane size in px along the split axis.           |
+| `layout`          | `DockNode`                    | -       | The layout tree. **Bindable** - every edit writes a new tree. |
+| `pane`            | `Snippet<[DockPane]>`         | -       | Renders each pane's content, keyed off the `DockPane`.  |
+| `onLayoutChange`  | `(layout: DockNode) => void`  | -       | Notified after any structural change (dock / resize / close). |
+| `minSize`         | `number`                      | `80`    | Minimum pane size in px along the split axis.           |
+| `surface`         | `string`                      | `'main'` | Surface id stamped on the root (`data-dock-surface`), used by `SvDockManager` to hit-test which layout a drag is over. |
+| `onBeginDrag`     | `(event: PointerEvent, paneId: string, tabsId: string) => void` | - | Manager mode: hand off the tab-drag gesture to the parent instead of running the built-in drag-to-dock. |
+| `externalDrop`    | `{ tabsId: string; zone: DockZone \| null; centerOnly?: boolean } \| null` | `null` | Manager mode: the externally-computed dock guide/highlight to paint. |
+| `externalReorder` | `{ tabsId: string; index: number } \| null` | `null` | Manager mode: the externally-computed tab-reorder insertion indicator. |
+| `leafActions`     | `Snippet<[DockTabs]>`         | -       | Stack-header controls for a leaf (maximize / float / pop-out), rendered once per leaf at the right of its tab strip. |
+| `onActivate`      | `(tabsId: string, index: number) => void` | - | Manager mode: route tab activation to the parent (controlled). |
+| `onClose`         | `(paneId: string) => void`    | -       | Manager mode: route pane close to the parent (controlled). |
+| `onResize`        | `(groupId: string, sizes: number[]) => void` | - | Manager mode: route splitter resize to the parent (controlled). |
+| `headerPosition`  | `'top' \| 'bottom' \| 'left' \| 'right'` | `'top'` | Which side of each leaf the tab strip sits on (left/right render vertical tabs). |
+| `focusedLeaf`     | `string \| null`              | `null`  | Manager mode: id of the focused leaf, for the active-panel highlight. |
+| `keepAlive`       | `boolean`                     | `false` | Keep inactive tabs mounted (hidden) so their content state persists across switches. |
+| `hideSingleTab`   | `boolean`                     | `false` | In a single-pane leaf, hide the redundant tab button. |
+| `locked`          | `boolean`                     | `false` | Locked / split mode: tabs cannot be dragged (no reorder / dock / float) and panel action buttons are hidden - only splitter resize + tab switching remain. |
 
 ## How docking works
 

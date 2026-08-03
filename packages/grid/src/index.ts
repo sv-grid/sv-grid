@@ -94,6 +94,8 @@ export { registerSchedulerView, getSchedulerView, hasSchedulerView } from './sch
 export {
   resolveEvents,
   hasConflict,
+  overlapCount,
+  overlapsBands,
   workingIntervals,
   withinWorking,
   type WorkingWindow,

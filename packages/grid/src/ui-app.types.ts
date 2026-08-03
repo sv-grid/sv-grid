@@ -72,6 +72,9 @@ export type TourStep = {
   target?: string | HTMLElement
   title?: string
   content: string
+  /** Optional illustration shown as a banner above the title. A URL / data-URI
+   *  (rendered as an `<img>`) or inline SVG/HTML markup (author-controlled). */
+  image?: string
 }
 
 /** One entry in a timeline. */

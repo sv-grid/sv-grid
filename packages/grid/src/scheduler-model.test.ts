@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   resolveEvents,
   hasConflict,
+  overlapCount,
+  overlapsBands,
   workingIntervals,
   withinWorking,
   eventsOnDay,
@@ -177,6 +179,34 @@ describe('hasConflict', () => {
   })
   it('is false when there is a clear gap', () => {
     expect(hasConflict(at(2026, 7, 15, 10, 0), at(2026, 7, 15, 11, 0), 'room1', events)).toBe(false)
+  })
+})
+
+describe('overlapCount (capacity)', () => {
+  const rows: Row[] = [
+    { id: 'a', title: 'A', start: '2026-07-15T09:00', end: '2026-07-15T10:00', who: 'room1' },
+    { id: 'b', title: 'B', start: '2026-07-15T09:30', end: '2026-07-15T10:30', who: 'room1' },
+    { id: 'c', title: 'C', start: '2026-07-15T09:15', end: '2026-07-15T09:45', who: 'room2' },
+  ]
+  const events = resolveEvents(rows, spec(), at(2026, 7, 1), at(2026, 8, 1))
+  it('counts overlapping events on the same resource', () => {
+    expect(overlapCount(at(2026, 7, 15, 9, 20), at(2026, 7, 15, 9, 40), 'room1', events)).toBe(2)
+  })
+  it('excludes the moved event and other resources', () => {
+    expect(overlapCount(at(2026, 7, 15, 9, 20), at(2026, 7, 15, 9, 40), 'room1', events, 'a')).toBe(1)
+    expect(overlapCount(at(2026, 7, 15, 9, 20), at(2026, 7, 15, 9, 40), 'room2', events)).toBe(1)
+  })
+})
+
+describe('overlapsBands (restricted hours)', () => {
+  const lunch = [{ start: 12, end: 13 }]
+  it('is true when the range overlaps a band', () => {
+    expect(overlapsBands(12 * 60 + 30, 13 * 60 + 30, lunch)).toBe(true)
+    expect(overlapsBands(11 * 60, 12 * 60 + 15, lunch)).toBe(true)
+  })
+  it('is false when the range is clear of every band', () => {
+    expect(overlapsBands(13 * 60, 14 * 60, lunch)).toBe(false)
+    expect(overlapsBands(10 * 60, 12 * 60, lunch)).toBe(false) // ends exactly at 12
   })
 })
 

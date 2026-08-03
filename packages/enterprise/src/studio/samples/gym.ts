@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, calendarScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, schedulerScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
 const classes: EntitySchema = {
   name: 'classes',
@@ -198,7 +198,9 @@ export const gym: SampleApp = {
           { filter: ['status'], span: 3 },
           { grid: true, format: bookingFormats, summaries: true, rowActions: [{ kind: 'edit' }], span: 3 },
         ]),
-        calendarScreen(bookings, { id: 'schedule-cal', title: 'Schedule', order: 3 }, { dateField: 'bookedAt', titleField: 'classId', colorField: 'status', filter: ['status', 'classId'] }),
+        // Resource scheduler: a column per class, bookings placed by time (who's in each
+        // class), tinted by status, with drag-to-reschedule (week view). Was a month calendar.
+        schedulerScreen(bookings, { id: 'schedule-cal', title: 'Schedule', order: 3 }, { startField: 'bookedAt', titleField: 'memberId', colorField: 'status', resourceField: 'classId', initialView: 'week' }),
         detailScreen(members, { id: 'member-360', title: 'Member 360', order: 4 }, {
           titleField: 'name', subtitleField: 'email', statusField: 'status',
           metricFields: ['monthlyFee'],

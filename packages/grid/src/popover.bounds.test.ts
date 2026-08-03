@@ -66,6 +66,23 @@ describe('anchoredRect - height bounds', () => {
   })
 })
 
+describe('anchoredRect - bottom anchor (natural-height upward panels)', () => {
+  it('returns a bottom offset that pins the panel just above the trigger', () => {
+    // Trigger top at 500, gap 2 -> panel bottom edge at 498 -> bottom offset
+    // from the viewport bottom = 800 - 500 + 2 = 302. Independent of any height
+    // estimate, so a bottom-anchored panel grows to its real content height.
+    const r = anchoredRect(rect(500, 32), { estimatedHeight: 999 })
+    expect(r.bottom).toBe(VIEWPORT_H - 500 + 2)
+  })
+
+  it('bottom offset does not depend on the (possibly wrong) height estimate', () => {
+    const trigger = rect(600, 30)
+    const a = anchoredRect(trigger, { estimatedHeight: 40 })
+    const b = anchoredRect(trigger, { estimatedHeight: 500 })
+    expect(a.bottom).toBe(b.bottom)
+  })
+})
+
 describe('anchoredRect - horizontal', () => {
   it('clamps a wide panel within the viewport', () => {
     const r = anchoredRect(rect(100, 32, VIEWPORT_W - 50, 40), { estimatedHeight: 100, minWidth: 300 })

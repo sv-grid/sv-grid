@@ -89,7 +89,7 @@
   let seq = 100
   let rows = $state<Ev[]>([
     // Recurring weekday standup (keeps recurrence + exceptions)
-    { id: 1, title: 'Daily standup', start: at(0, 9, 0), end: at(0, 9, 15), cal: 'work', color: CAL_COLOR.work, who: 'Team', attendees: ['Jordan Lee', 'Sam Ortiz', 'Priya Nair', 'Owen Bradley'], repeat: { freq: 'weekly', weekdays: [1, 2, 3, 4, 5] }, exceptions: [] },
+    { id: 1, title: 'Daily standup', start: at(0, 9, 0), end: at(0, 9, 30), cal: 'work', color: CAL_COLOR.work, who: 'Team', attendees: ['Jordan Lee', 'Sam Ortiz', 'Priya Nair', 'Owen Bradley'], repeat: { freq: 'weekly', weekdays: [1, 2, 3, 4, 5] }, exceptions: [] },
     // Monday
     { id: 2, title: 'Focus: roadmap draft', start: at(0, 10, 0), end: at(0, 12, 0), cal: 'work', color: CAL_COLOR.work, focus: true, who: 'You' },
     { id: 3, title: '1:1 with Sam', start: at(0, 14, 0), end: at(0, 14, 30), cal: 'work', color: CAL_COLOR.work, attendees: ['Sam Ortiz'] },
@@ -194,12 +194,16 @@
   // The Calendar module's content is a dockable workspace: the calendar fills the
   // main area, with Upcoming + Inbox collapsed to an auto-hide strip at the bottom
   // (a fly-out reveals them). Drag / float / re-dock; serialized to localStorage.
-  const LAYOUT_KEY = 'svgrid-horizon-layout-v2'
+  const LAYOUT_KEY = 'svgrid-horizon-layout-v3'
   const defaultWorkspace = (): DockManagerState => ({
     main: dockTabs([dockPane('calendar', 'Calendar', { closable: false, minSize: 260 })]),
     floating: [],
+    // One single-pane entry per pane, so the bottom edge shows an "Upcoming" and
+    // an "Inbox" tab and each fly-out carries only its own content (no duplicated
+    // tab strip). See `hideSingleTab` on SvDockManager below.
     autoHide: [
-      { id: 'ah-bottom', side: 'bottom', size: 260, leaf: dockTabs([dockPane('upcoming', 'Upcoming'), dockPane('inbox', 'Inbox')]) },
+      { id: 'ah-upcoming', side: 'bottom', size: 260, leaf: dockTabs([dockPane('upcoming', 'Upcoming')]) },
+      { id: 'ah-inbox', side: 'bottom', size: 260, leaf: dockTabs([dockPane('inbox', 'Inbox')]) },
     ],
   })
   function loadWorkspace(): DockManagerState {
@@ -434,7 +438,11 @@
   .hz-legend-chip { width: 18px; text-align: center; color: var(--sg-fg, #374151); }
   .hz-navpane { margin-top: auto; min-height: 0; }
   .hz-main { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  .hz-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 12px 14px 4px; }
+  .hz-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px 14px 4px; }
+  .hz-kpis :global(.sv-stat) { padding: 7px 12px !important; gap: 2px !important; border-radius: 9px !important; }
+  .hz-kpis :global(.sv-stat__value) { font-size: 18px !important; }
+  .hz-kpis :global(.sv-stat__label) { font-size: 11px !important; }
+  .hz-kpis :global(.sv-stat__foot) { font-size: 11px !important; }
   .hz-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--sg-border, #e5e7eb); }
   .hz-title { font-weight: 600; display: flex; align-items: baseline; gap: 8px; }
   .hz-title-sub { font-size: 0.75rem; font-weight: 400; color: var(--sg-muted, #6b7280); }

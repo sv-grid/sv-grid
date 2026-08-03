@@ -51,6 +51,7 @@ import { SvDrawer } from '@svgrid/grid'
 | ----------------- | -------------------------------------- | ------------------- | ---------------------------------------------------------- |
 | `open`            | `boolean`                              | `false`             | Controlled, bindable open state.                           |
 | `onClose`         | `() => void`                           | -                   | Called whenever the drawer closes.                         |
+| `onClosed`        | `() => void`                           | -                   | Fired after the exit animation ends and the drawer leaves the DOM. |
 | `side`            | `right` \| `left` \| `top` \| `bottom` | `right`             | Edge the drawer slides from.                               |
 | `size`            | `string`                               | per-axis default    | Panel size along its axis; any CSS length.                 |
 | `title`           | `string`                               | -                   | Header heading; also names the drawer for a11y.            |

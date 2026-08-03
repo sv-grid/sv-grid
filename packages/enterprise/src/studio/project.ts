@@ -210,7 +210,7 @@ export type ActionConfig = { id: string; label: string; icon?: string; confirm?:
  *  `studio.config.json` files still parse. Not offered in the palette. */
 export type FormConfig = { kind: 'form'; presentation: Presentation }
 /** A chart, optionally drilling into `drillScreen` (filtered by the clicked category). */
-export type ChartConfig = { kind: 'chart'; dimension: string; measure?: string; reduce: Reduce; type: ChartType; drillScreen?: string }
+export type ChartConfig = { kind: 'chart'; dimension: string; measure?: string; reduce: Reduce; type: ChartType; drillScreen?: string; dataLabels?: boolean; color?: string }
 /** Number format for a KPI value. `auto` keeps the legacy behavior ($ when the
  *  measure's label carries `$`, else grouped number). */
 export type KpiFormat = 'auto' | 'number' | 'currency' | 'percent' | 'compact'
@@ -403,6 +403,75 @@ export const ON_DESTROY = 'onDestroy'
 export const HANDLER_SLOTS: ReadonlyArray<string> = [ON_LOAD, ON_DESTROY]
 /** The handler-steps key for a component block's click event. */
 export const clickSlot = (blockId: string) => `click:${blockId}`
+/** The handler-steps key for a grid block's row-select (row click) event. The
+ *  compiled steps get the clicked `row` in scope (use row-field values). */
+export const rowSelectSlot = (blockId: string) => `rowSelect:${blockId}`
+/** The handler-steps key for a component block's change (value change) event. */
+export const changeSlot = (blockId: string) => `change:${blockId}`
+/** The handler-steps key for the screen's form-submit (record saved) event. The
+ *  compiled steps get the submitted `row` (values) in scope. */
+export const FORM_SUBMIT = 'formSubmit'
+
+// --- logic core: screen state + a small expression engine --------------------
+
+/** A screen-scoped reactive variable (`ctx.state.<name>`). Emitted as `$state`. */
+export type StateVarType = 'string' | 'number' | 'boolean' | 'json'
+export type StateVar = { name: string; type: StateVarType; initial?: string }
+
+const identSafe = (s: string): string => (s || '').replace(/[^a-zA-Z0-9_$]/g, '_').replace(/^([0-9])/, '_$1') || 'v'
+
+/** The `$state(...)` initializer for a variable's declared type. */
+export function stateInitExpr(v: StateVar): string {
+  const raw = (v.initial ?? '').trim()
+  switch (v.type) {
+    case 'number': return raw === '' || Number.isNaN(Number(raw)) ? '0' : raw
+    case 'boolean': return raw === 'true' ? 'true' : 'false'
+    case 'json': return raw || 'null'
+    case 'string': return q(v.initial ?? '')
+  }
+}
+/** The TS type annotation for a variable. */
+export function stateTsType(v: StateVar): string {
+  return v.type === 'number' ? 'number' : v.type === 'boolean' ? 'boolean' : v.type === 'json' ? 'unknown' : 'string'
+}
+
+/** A value expression usable in steps / conditions: a literal, a state var, a URL
+ *  param, or the current row (for row-scoped handlers). Compiles to a `ctx` expr. */
+export type LogicValue =
+  | { kind: 'literal'; value: string }
+  | { kind: 'state'; name: string }
+  | { kind: 'param'; name: string }
+  | { kind: 'field'; name: string } // the current row's field (row-scoped slots)
+export function compileValue(v: LogicValue, rowExpr = 'row'): string {
+  switch (v.kind) {
+    case 'state': return `ctx.state.${identSafe(v.name)}`
+    case 'param': return `ctx.params[${q(v.name)}]`
+    case 'field': return `${rowExpr}?.[${q(v.name)}]`
+    case 'literal': return litValue(v.value)
+  }
+}
+
+export type LogicOp = 'eq' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'contains' | 'truthy' | 'falsy'
+export type Condition = { left: LogicValue; op: LogicOp; right?: LogicValue }
+export function compileCondition(c: Condition, rowExpr = 'row'): string {
+  const L = compileValue(c.left, rowExpr)
+  const R = c.right ? compileValue(c.right, rowExpr) : "''"
+  switch (c.op) {
+    case 'eq': return `${L} === ${R}`
+    case 'neq': return `${L} !== ${R}`
+    case 'gt': return `Number(${L}) > Number(${R})`
+    case 'lt': return `Number(${L}) < Number(${R})`
+    case 'gte': return `Number(${L}) >= Number(${R})`
+    case 'lte': return `Number(${L}) <= Number(${R})`
+    case 'contains': return `String(${L}).includes(String(${R}))`
+    case 'truthy': return `Boolean(${L})`
+    case 'falsy': return `!(${L})`
+  }
+}
+
+/** A field assignment used by create / update record steps. */
+export type FieldValue = { field: string; value: LogicValue }
+const compileFields = (fs: ReadonlyArray<FieldValue>): string => `{ ${fs.map((f) => `${identSafe(f.field)}: ${compileValue(f.value)}`).join(', ')} }`
 
 /** One step in a visual "method" (the Methods panel, Radzen-style). Each compiles
  *  to a line of typed `ctx` code-behind - so the visual builder and the code editor
@@ -419,6 +488,11 @@ export type ActionStep =
   | { type: 'setText'; target: string; value: string }                     // ctx.<target>.text = <value>
   | { type: 'alert'; message: string }
   | { type: 'apiAction'; actionId: string }                                // POST /api/actions/<id>
+  | { type: 'setVar'; name: string; value: LogicValue }                    // ctx.state.<name> = <value>
+  | { type: 'createRecord'; values: FieldValue[] }                         // await ctx.data.create({...})
+  | { type: 'updateRecord'; id: LogicValue; values: FieldValue[] }         // await ctx.data.update(id, {...})
+  | { type: 'deleteRecord'; id: LogicValue }                               // await ctx.data.delete(id)
+  | { type: 'branch'; condition: Condition; then: ActionStep[]; else?: ActionStep[] } // if / else
   | { type: 'code'; code: string }
 export type ActionStepType = ActionStep['type']
 
@@ -460,12 +534,58 @@ export function compileStep(step: ActionStep): string {
     case 'setText': return `ctx.${step.target}.text = ${litValue(step.value)}`
     case 'alert': return `alert(${q(step.message)})`
     case 'apiAction': return `await fetch(${q('/api/actions/' + step.actionId)}, { method: 'POST' })`
+    case 'setVar': return `ctx.state.${identSafe(step.name)} = ${compileValue(step.value)}`
+    case 'createRecord': return `await ctx.data.create(${compileFields(step.values)})`
+    case 'updateRecord': return `await ctx.data.update(${compileValue(step.id)}, ${compileFields(step.values)})`
+    case 'deleteRecord': return `await ctx.data.delete(${compileValue(step.id)})`
+    case 'branch': {
+      const body = indentLines(compileHandlerSteps(step.then))
+      const elseB = step.else?.length ? ` else {\n${indentLines(compileHandlerSteps(step.else))}\n}` : ''
+      return `if (${compileCondition(step.condition)}) {\n${body}\n}${elseB}`
+    }
     case 'code': return step.code
   }
 }
+/** Indent every line by 2 spaces (nested branch bodies). */
+const indentLines = (s: string): string => s.split('\n').map((l) => (l ? '  ' + l : l)).join('\n')
 /** Compile a list of steps to a handler body (indented lines). */
 export function compileHandlerSteps(steps: ReadonlyArray<ActionStep>): string {
   return steps.map((s) => compileStep(s)).join('\n')
+}
+
+// --- entity triggers: server-side business rules -----------------------------
+// Compiled into the SQL route's createKitHandlers `hooks`, so they run + are
+// ENFORCED on the server (a client that skips its checks still can't write bad
+// data). The payload is a mutable record `v`; `field`-kind values read `v[...]`.
+
+/** One step in an entity trigger (a server-side rule). */
+export type TriggerStep =
+  | { type: 'setField'; field: string; value: LogicValue }                       // v[field] = value (transform)
+  | { type: 'requireField'; field: string; message?: string }                    // reject if empty
+  | { type: 'reject'; condition: Condition; message: string }                    // reject when the condition holds
+  | { type: 'branch'; condition: Condition; then: TriggerStep[]; else?: TriggerStep[] }
+  | { type: 'code'; code: string }
+export type TriggerEvent = 'beforeCreate' | 'afterCreate' | 'beforeUpdate' | 'afterUpdate' | 'beforeDelete' | 'afterDelete'
+/** All trigger events, in display order; before-hooks transform/validate, after-hooks are side effects. */
+export const TRIGGER_EVENTS: ReadonlyArray<TriggerEvent> = ['beforeCreate', 'afterCreate', 'beforeUpdate', 'afterUpdate', 'beforeDelete', 'afterDelete']
+export type EntityTriggers = Partial<Record<TriggerEvent, TriggerStep[]>>
+
+/** Compile one trigger step against the payload variable `rowExpr` (default `v`). */
+export function compileTriggerStep(step: TriggerStep, rowExpr = 'v'): string {
+  switch (step.type) {
+    case 'setField': return `${rowExpr}[${q(step.field)}] = ${compileValue(step.value, rowExpr)}`
+    case 'requireField': return `if (${rowExpr}[${q(step.field)}] == null || ${rowExpr}[${q(step.field)}] === '') throw new Error(${q(step.message || step.field + ' is required')})`
+    case 'reject': return `if (${compileCondition(step.condition, rowExpr)}) throw new Error(${q(step.message)})`
+    case 'branch': {
+      const body = indentLines(compileTriggerSteps(step.then, rowExpr))
+      const elseB = step.else?.length ? ` else {\n${indentLines(compileTriggerSteps(step.else, rowExpr))}\n}` : ''
+      return `if (${compileCondition(step.condition, rowExpr)}) {\n${body}\n}${elseB}`
+    }
+    case 'code': return step.code
+  }
+}
+export function compileTriggerSteps(steps: ReadonlyArray<TriggerStep>, rowExpr = 'v'): string {
+  return steps.map((s) => compileTriggerStep(s, rowExpr)).join('\n')
 }
 
 /** `entity` is optional: a screen with none is a freestanding page (no data
@@ -524,7 +644,7 @@ export function setLayoutOpts<K extends keyof LayoutOpts>(project: StudioProject
   return mapScreen(project, screenId, (s) => ({ ...s, layoutOpts: { ...s.layoutOpts, [mode]: { ...s.layoutOpts?.[mode], ...patch } } }))
 }
 
-export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlerSteps?: Record<string, ActionStep[]>; handlersSource?: string; className?: string; layout?: ScreenLayout; dock?: DockManagerState; canvas?: Record<string, CanvasRect>; layoutOpts?: LayoutOpts }
+export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlerSteps?: Record<string, ActionStep[]>; handlersSource?: string; className?: string; layout?: ScreenLayout; dock?: DockManagerState; canvas?: Record<string, CanvasRect>; layoutOpts?: LayoutOpts; state?: StateVar[] }
 
 /** The generated app's shell (master layout): sidebar, top-nav, or bottom-nav; brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav' | 'bottom-nav'
@@ -608,6 +728,25 @@ export type StudioProject = {
   /** Deploy target: picks the SvelteKit adapter + provider config the bundle emits.
    *  Defaults to `auto` (@sveltejs/adapter-auto, which detects Vercel/Netlify/Cloudflare). */
   deploy?: DeployTarget
+  /** Server-side business-rule triggers, keyed by entity name. Enforced on the
+   *  SQL route (compiled into createKitHandlers `hooks`). */
+  triggers?: Record<string, EntityTriggers>
+}
+
+/** The triggers configured for an entity (or an empty object). */
+export function triggersOf(project: StudioProject, entity: string): EntityTriggers {
+  return project.triggers?.[entity] ?? {}
+}
+/** Set (or clear, with `null`) an entity's steps for one trigger event. */
+export function setTrigger(project: StudioProject, entity: string, event: TriggerEvent, steps: TriggerStep[] | null): StudioProject {
+  const cur = project.triggers?.[entity] ?? {}
+  const nextEnt: EntityTriggers = { ...cur }
+  if (steps && steps.length) nextEnt[event] = steps
+  else delete nextEnt[event]
+  const triggers = { ...project.triggers }
+  if (Object.keys(nextEnt).length) triggers[entity] = nextEnt
+  else delete triggers[entity]
+  return { ...project, triggers: Object.keys(triggers).length ? triggers : undefined }
 }
 
 /** Where the generated app deploys. Drives the emitted SvelteKit adapter + config. */
@@ -1376,6 +1515,39 @@ export function setScreenDock(project: StudioProject, screenId: string, dock: Do
   return mapScreen(project, screenId, (s) => ({ ...s, dock }))
 }
 
+// --- screen state variables --------------------------------------------------
+
+/** Add a state variable (unique name; `state_N` if the name is taken / empty). */
+export function addStateVar(project: StudioProject, screenId: string, v: Partial<StateVar> = {}): StudioProject {
+  return mapScreen(project, screenId, (s) => {
+    const taken = new Set((s.state ?? []).map((x) => x.name))
+    let name = identSafe(v.name || 'value')
+    if (taken.has(name)) { let i = 2; while (taken.has(`${name}${i}`)) i++; name = `${name}${i}` }
+    const next: StateVar = { name, type: v.type ?? 'string', initial: v.initial }
+    return { ...s, state: [...(s.state ?? []), next] }
+  })
+}
+/** Patch a state variable by (old) name. Renames keep the identifier valid + unique. */
+export function updateStateVar(project: StudioProject, screenId: string, name: string, patch: Partial<StateVar>): StudioProject {
+  return mapScreen(project, screenId, (s) => {
+    const cur = s.state ?? []
+    const taken = new Set(cur.filter((x) => x.name !== name).map((x) => x.name))
+    return {
+      ...s,
+      state: cur.map((x) => {
+        if (x.name !== name) return x
+        let nm = patch.name !== undefined ? identSafe(patch.name) : x.name
+        if (nm !== x.name && taken.has(nm)) { let i = 2; while (taken.has(`${nm}${i}`)) i++; nm = `${nm}${i}` }
+        return { ...x, ...patch, name: nm }
+      }),
+    }
+  })
+}
+/** Remove a state variable by name. */
+export function removeStateVar(project: StudioProject, screenId: string, name: string): StudioProject {
+  return mapScreen(project, screenId, (s) => ({ ...s, state: (s.state ?? []).filter((x) => x.name !== name) }))
+}
+
 /** Rebuild the pane arrangement from scratch (smart auto-layout, honoring the
  *  current split orientation). Used when a setting invalidates the layout - e.g.
  *  the user flips split orientation - or as a "reset arrangement" action. */
@@ -1807,6 +1979,7 @@ export function parseProject(json: string): StudioProject {
     ...(typeof p.audit === 'boolean' ? { audit: p.audit } : {}),
     ...(p.i18n && typeof p.i18n === 'object' ? { i18n: p.i18n as I18nConfig } : {}),
     ...(typeof p.deploy === 'string' && p.deploy !== 'auto' ? { deploy: p.deploy as DeployTarget } : {}),
+    ...(p.triggers && typeof p.triggers === 'object' ? { triggers: p.triggers as Record<string, EntityTriggers> } : {}),
   })
 }
 

@@ -66,7 +66,9 @@
 
   function updatePos() {
     if (!fieldEl) return
-    rect = anchoredRect(fieldEl.getBoundingClientRect(), { estimatedHeight: Math.min(ac.filtered.length, 8) * 34 + 8 })
+    // estimatedHeight only picks the flip direction; real max-height is availHeight
+    // below, so the panel takes its natural content height. See SvComboBox.
+    rect = anchoredRect(fieldEl.getBoundingClientRect(), { estimatedHeight: Math.min(ac.filtered.length, 8) * 34 + 12 })
   }
 
   $effect(() => {
@@ -92,7 +94,7 @@
 </SvField>
 
 {#if ac.open}
-  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} style:max-height={`${rect.maxHeight}px`} {...ac.listboxProps()}>
+  <div bind:this={panelEl} class="sv-ddl__panel" use:portalToBody use:popIn={{ up: rect.openUpward }} style:position="fixed" style:top={rect.openUpward ? undefined : `${rect.top}px`} style:bottom={rect.openUpward ? `${rect.bottom}px` : undefined} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} style:max-height={`${Math.min(rect.availHeight, 288)}px`} {...ac.listboxProps()}>
     {#each ac.filtered as opt, i (opt.value)}
       <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
       <div class="sv-ddl__opt" class:is-active={ac.isActive(i)} {...ac.optionProps(i)}>{opt.label}</div>

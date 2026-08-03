@@ -75,9 +75,11 @@ import { SvSlider } from '@svgrid/grid'
 | `hint`        | `string`                                 | -              | Helper text under the control.                                          |
 | `error`       | `string`                                 | -              | Error message; announced and shown when set.                            |
 | `required`    | `boolean`                                | `false`        | Marks the field required for validation.                                |
+| `invalid`     | `boolean`                                | `false`        | Marks the field invalid; sets `aria-invalid` on the control.            |
 | `name`        | `string`                                 | -              | Emits a hidden input (`lo,hi` in range mode) for form posts.            |
 | `ariaLabel`   | `string`                                 | -              | Accessible name when there is no visible `label`.                       |
 | `dir`         | `ltr` \| `rtl` \| `auto`                 | `auto`         | Text direction; `rtl` mirrors the track.                                |
+| `id`          | `string`                                 | -              | Control id; auto-generated when omitted.                                |
 
 ## Examples
 

@@ -260,13 +260,15 @@ export function schedulerScreen(
 export function workspaceScreen(
   entity: EntitySchema,
   meta: { id: string; title: string; order: number },
-  opts: { filter?: string[]; record?: boolean; grid?: GridOpts } = {},
+  opts: { filter?: string[]; record?: boolean; grid?: GridOpts; mode?: 'dock' | 'split' } = {},
 ): Screen {
   const blocks: Block[] = []
   if (opts.filter?.length) blocks.push({ id: 'filter-1', span: 3, config: { kind: 'filter', fields: opts.filter } })
   blocks.push({ id: 'grid-1', span: 3, config: gridConfig(entity, opts.grid ?? {}) })
   if (opts.record !== false) blocks.push({ id: 'record-1', span: 3, config: { kind: 'record', editable: true } })
-  const base: Screen = { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order }, layout: 'dock' }
+  // `split` = fixed resizable panes (a console); `dock` = the full floatable manager.
+  const layout = opts.mode ?? 'dock'
+  const base: Screen = { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order }, layout }
   return { ...base, dock: buildDockLayout(base) }
 }
 

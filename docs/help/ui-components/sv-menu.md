@@ -56,6 +56,7 @@ import { SvMenu } from '@svgrid/grid'
 | `onSelect`     | `(item: MenuItem) => void`    | -       | Fires when a leaf item is chosen.                |
 | `ariaLabel`    | `string`                      | -       | Accessible name for the menu surface.            |
 | `anchor`       | `Snippet`                     | -       | The trigger that toggles the menu.               |
+| `dir`          | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -       | Text direction; `rtl` mirrors the submenu chevron and flips ArrowLeft / Right. |
 
 ### MenuItem
 
