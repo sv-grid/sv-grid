@@ -24,6 +24,10 @@ yours to style and wire however you like. Each recipe is a self-contained demo, 
 # zero setup: spins up a sandbox and opens the component in your browser
 npx @svgrid/ui try button
 
+# try several at once (or a whole family) - they share one sandbox
+npx @svgrid/ui try button calendar slider
+npx @svgrid/ui try inputs
+
 # in your own SvelteKit app: also writes a /preview/button route
 npx @svgrid/ui add button --preview
 #   -> start your dev server, open http://localhost:5173/preview/button
@@ -32,9 +36,10 @@ npx @svgrid/ui add button --preview
 `try` needs no project - it caches a tiny Vite + Svelte sandbox under your temp
 dir (so repeat runs are instant) and opens the browser, with a **theme picker
 (all 19 presets) and a light/dark toggle** so you can see the component in your
-target theme. `--preview` drops a `src/routes/preview/<id>` page (plus a
-`/preview` index) into an existing SvelteKit app so it renders in your running
-dev server.
+target theme. Pass **several component ids** (or a group id) to render them
+together in the same sandbox. `--preview` drops a `src/routes/preview/<id>` page
+(plus a `/preview` index) into an existing SvelteKit app so it renders in your
+running dev server.
 
 ## Usage
 

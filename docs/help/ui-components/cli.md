@@ -42,6 +42,12 @@ Two ways to render a component, not just drop its file in:
 # zero setup: cached Vite + Svelte sandbox, opens http://localhost:5173
 npx @svgrid/ui try button
 
+# try several at once - they all render in the one sandbox
+npx @svgrid/ui try button calendar slider
+
+# or a whole family by its group id
+npx @svgrid/ui try inputs
+
 # inside a SvelteKit app: also writes a /preview/button route (+ a /preview index)
 npx @svgrid/ui add button --preview
 #   -> start your dev server, open http://localhost:5173/preview/button
@@ -49,10 +55,12 @@ npx @svgrid/ui add button --preview
 
 `try` needs no project - it caches a tiny sandbox under your temp dir (so repeat
 runs are instant) and opens the browser, with a theme picker (all 19 presets) and
-a light/dark toggle so you can preview the component in your target theme.
-`--preview` drops a `src/routes/preview/<id>` page into an existing SvelteKit app
-so it renders in your running dev server. `add` also prints the exact `try` command for whatever
-you just added, so the "see it" step is always one copy-paste away.
+a light/dark toggle so you can preview the component in your target theme. Pass
+**several component ids** (or a group id) and they all render together in the same
+sandbox - handy for comparing a set side by side. `--preview` drops a
+`src/routes/preview/<id>` page into an existing SvelteKit app so it renders in your
+running dev server. `add` also prints the exact `try` command for whatever you just
+added, so the "see it" step is always one copy-paste away.
 
 ## Commands
 
@@ -72,8 +80,10 @@ npx @svgrid/ui add calendar --preview
 # just write the file, don't run the package manager
 npx @svgrid/ui add calendar --no-install
 
-# see it with zero setup
+# see it with zero setup (one component, several, or a whole family)
 npx @svgrid/ui try calendar
+npx @svgrid/ui try calendar time-picker date-range-input
+npx @svgrid/ui try date-time
 
 # list everything you can add
 npx @svgrid/ui list
