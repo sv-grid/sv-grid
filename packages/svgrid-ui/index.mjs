@@ -471,23 +471,58 @@ async function cmdTry(registry, tokens) {
   await writeFile(
     join(src, 'App.svelte'),
     `<script lang="ts">
+  import { themePresets, resolveThemeTokens } from '@svgrid/grid/themes'
 ${imports.join('\n')}
+
+  let themeId = $state(themePresets[0].id)
+  let mode = $state<'light' | 'dark'>('light')
+  const preset = $derived(themePresets.find((p) => p.id === themeId) ?? themePresets[0])
+
+  // Apply the chosen preset + light/dark as --sg-* tokens on :root, the same way
+  // the shipped themes/<id>.css files do (light in :root, dark under data-theme),
+  // so both the components and this page follow the picker.
+  $effect(() => {
+    const tokens = resolveThemeTokens(preset, mode)
+    const root = document.documentElement
+    for (const [k, v] of Object.entries(tokens)) root.style.setProperty(k, v)
+    root.setAttribute('data-theme', mode)
+    root.style.colorScheme = mode
+  })
 </script>
 
+<header class="svui-try__bar">
+  <strong class="svui-try__brand">@svgrid/ui preview</strong>
+  <div class="svui-try__controls">
+    <label class="svui-try__field">
+      Theme
+      <select bind:value={themeId}>
+        {#each themePresets as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
+      </select>
+    </label>
+    <button type="button" class="svui-try__toggle" onclick={() => (mode = mode === 'light' ? 'dark' : 'light')}>
+      {mode === 'light' ? 'Dark' : 'Light'} mode
+    </button>
+  </div>
+</header>
+
 <main class="svui-try">
-  <header class="svui-try__head">
-    <strong>@svgrid/ui preview</strong>
-    <span>${esc(items.map((i) => i.id).join(', '))}</span>
-  </header>
+  <p class="svui-try__sub">${esc(items.map((i) => i.id).join(', '))}</p>
 ${sections.join('\n')}
 </main>
 
 <style>
-  :global(body) { margin: 0; background: #f8fafc; }
-  .svui-try { max-width: 960px; margin: 0 auto; padding: 32px 24px; font-family: system-ui, sans-serif; }
-  .svui-try__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; color: #64748b; }
-  .svui-try__item { padding: 28px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; margin-bottom: 16px; }
-  .svui-try__item h2 { margin: 0 0 16px; font-size: 15px; color: #334155; }
+  :global(body) { margin: 0; background: var(--sg-bg, #f8fafc); color: var(--sg-fg, #0f172a); transition: background 0.15s, color 0.15s; }
+  .svui-try__bar { position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 24px; background: var(--sg-header-bg, #fff); border-bottom: 1px solid var(--sg-border, #e2e8f0); }
+  .svui-try__brand { font-size: 13px; color: var(--sg-muted, #64748b); }
+  .svui-try__controls { display: flex; align-items: center; gap: 12px; }
+  .svui-try__field { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sg-muted, #64748b); }
+  .svui-try__field select { font: inherit; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); }
+  .svui-try__toggle { font: inherit; font-size: 12px; padding: 6px 12px; border-radius: 8px; cursor: pointer; border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); }
+  .svui-try__toggle:hover { border-color: var(--sg-accent, #6366f1); }
+  .svui-try { max-width: 960px; margin: 0 auto; padding: 24px; font-family: system-ui, sans-serif; }
+  .svui-try__sub { margin: 0 0 20px; font-size: 12px; color: var(--sg-muted, #64748b); }
+  .svui-try__item { padding: 28px; border: 1px solid var(--sg-border, #e2e8f0); border-radius: 12px; background: var(--sg-bg, #fff); margin-bottom: 16px; }
+  .svui-try__item h2 { margin: 0 0 16px; font-size: 15px; color: var(--sg-muted, #334155); }
 </style>
 `,
   )

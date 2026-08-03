@@ -30,9 +30,11 @@ npx @svgrid/ui add button --preview
 ```
 
 `try` needs no project - it caches a tiny Vite + Svelte sandbox under your temp
-dir (so repeat runs are instant) and opens the browser. `--preview` drops a
-`src/routes/preview/<id>` page (plus a `/preview` index) into an existing
-SvelteKit app so it renders in your running dev server.
+dir (so repeat runs are instant) and opens the browser, with a **theme picker
+(all 19 presets) and a light/dark toggle** so you can see the component in your
+target theme. `--preview` drops a `src/routes/preview/<id>` page (plus a
+`/preview` index) into an existing SvelteKit app so it renders in your running
+dev server.
 
 ## Usage
 
