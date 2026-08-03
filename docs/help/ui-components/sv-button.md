@@ -19,6 +19,8 @@ Add it with the CLI - this drops a ready-to-edit `SvButton` starter into your ap
 
 <div data-docs-add="add button"></div>
 
+Prefer to see it first? `npx @svgrid/ui try button` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvButton` ships free in
 `@svgrid/grid` (dependency-free):
 

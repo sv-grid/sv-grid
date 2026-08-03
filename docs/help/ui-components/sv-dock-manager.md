@@ -23,6 +23,8 @@ Add it with the CLI - this drops a ready-to-edit `SvDockManager` starter into yo
 
 <div data-docs-add="add dock-manager"></div>
 
+Prefer to see it first? `npx @svgrid/ui try dock-manager` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvDockManager` ships free in
 `@svgrid/grid` (dependency-free):
 

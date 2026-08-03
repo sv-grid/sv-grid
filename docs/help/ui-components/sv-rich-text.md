@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvRichText` starter into your 
 
 <div data-docs-add="add rich-text"></div>
 
+Prefer to see it first? `npx @svgrid/ui try rich-text` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvRichText` ships free in
 `@svgrid/grid` (dependency-free):
 

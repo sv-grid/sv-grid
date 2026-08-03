@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvTextInput` starter into your
 
 <div data-docs-add="add text-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try text-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvTextInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 

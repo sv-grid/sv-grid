@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvTour` starter into your app:
 
 <div data-docs-add="add tour"></div>
 
+Prefer to see it first? `npx @svgrid/ui try tour` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvTour` ships free in
 `@svgrid/grid` (dependency-free):
 

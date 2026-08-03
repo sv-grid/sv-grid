@@ -33782,6 +33782,8 @@ Add it with the CLI - this drops a ready-to-edit `SvAccordion` starter into your
 
 <div data-docs-add="add accordion"></div>
 
+Prefer to see it first? `npx @svgrid/ui try accordion` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvAccordion` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -33916,6 +33918,8 @@ Related: [SvBadge](sv-badge.md) · [SvEmptyState](sv-empty-state.md) · [Feedbac
 Add it with the CLI - this drops a ready-to-edit `SvAlert` starter into your app:
 
 <div data-docs-add="add alert"></div>
+
+Prefer to see it first? `npx @svgrid/ui try alert` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvAlert` ships free in
 `@svgrid/grid` (dependency-free):
@@ -34077,6 +34081,8 @@ Add it with the CLI - this drops a ready-to-edit `SvAutoComplete` starter into y
 
 <div data-docs-add="add auto-complete"></div>
 
+Prefer to see it first? `npx @svgrid/ui try auto-complete` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvAutoComplete` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -34213,6 +34219,8 @@ Related: [SvAvatar](sv-avatar.md) · [SvChip](sv-chip.md) · [Feedback & display
 Add it with the CLI - this drops a ready-to-edit `SvAvatarGroup` starter into your app:
 
 <div data-docs-add="add avatar-group"></div>
+
+Prefer to see it first? `npx @svgrid/ui try avatar-group` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvAvatarGroup` ships free in
 `@svgrid/grid` (dependency-free):
@@ -34358,6 +34366,8 @@ Add it with the CLI - this drops a ready-to-edit `SvAvatar` starter into your ap
 
 <div data-docs-add="add avatar"></div>
 
+Prefer to see it first? `npx @svgrid/ui try avatar` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvAvatar` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -34493,6 +34503,8 @@ Related: [SvChip](sv-chip.md) · [SvAlert](sv-alert.md) · [Feedback & display o
 Add it with the CLI - this drops a ready-to-edit `SvBadge` starter into your app:
 
 <div data-docs-add="add badge"></div>
+
+Prefer to see it first? `npx @svgrid/ui try badge` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvBadge` ships free in
 `@svgrid/grid` (dependency-free):
@@ -34631,6 +34643,8 @@ Related: [SvPagination](sv-pagination.md) · [SvStepper](sv-stepper.md) · [Navi
 Add it with the CLI - this drops a ready-to-edit `SvBreadcrumb` starter into your app:
 
 <div data-docs-add="add breadcrumb"></div>
+
+Prefer to see it first? `npx @svgrid/ui try breadcrumb` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvBreadcrumb` ships free in
 `@svgrid/grid` (dependency-free):
@@ -34775,6 +34789,8 @@ Related: [SvToggleButton](sv-toggle-button.md) · [SvRadioGroup](sv-radio-group.
 Add it with the CLI - this drops a ready-to-edit `SvButtonGroup` starter into your app:
 
 <div data-docs-add="add button-group"></div>
+
+Prefer to see it first? `npx @svgrid/ui try button-group` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvButtonGroup` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
@@ -34935,6 +34951,8 @@ Add it with the CLI - this drops a ready-to-edit `SvButton` starter into your ap
 
 <div data-docs-add="add button"></div>
 
+Prefer to see it first? `npx @svgrid/ui try button` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvButton` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -35068,6 +35086,8 @@ Related: [Date & time overview](date-time.md) ·
 Add it with the CLI - this drops a ready-to-edit `SvCalendar` starter into your app:
 
 <div data-docs-add="add calendar"></div>
+
+Prefer to see it first? `npx @svgrid/ui try calendar` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvCalendar` ships free in
 `@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
@@ -35313,6 +35333,8 @@ Add it with the CLI - this drops a ready-to-edit `SvCard` starter into your app:
 
 <div data-docs-add="add card"></div>
 
+Prefer to see it first? `npx @svgrid/ui try card` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvCard` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -35441,6 +35463,8 @@ Related: [SvSkeleton](sv-skeleton.md) · [SvAvatarGroup](sv-avatar-group.md) · 
 Add it with the CLI - this drops a ready-to-edit `SvCarousel` starter into your app:
 
 <div data-docs-add="add carousel"></div>
+
+Prefer to see it first? `npx @svgrid/ui try carousel` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvCarousel` ships free in
 `@svgrid/grid` (dependency-free):
@@ -35598,6 +35622,8 @@ Add it with the CLI - this drops a ready-to-edit `SvCheckBox` starter into your 
 
 <div data-docs-add="add check-box"></div>
 
+Prefer to see it first? `npx @svgrid/ui try check-box` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvCheckBox` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -35733,6 +35759,8 @@ Related: [SvBadge](sv-badge.md) · [SvAvatar](sv-avatar.md) · [Feedback & displ
 Add it with the CLI - this drops a ready-to-edit `SvChip` starter into your app:
 
 <div data-docs-add="add chip"></div>
+
+Prefer to see it first? `npx @svgrid/ui try chip` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvChip` ships free in
 `@svgrid/grid` (dependency-free):
@@ -35877,6 +35905,8 @@ Add it with the CLI - this drops a ready-to-edit `SvCircularProgress` starter in
 
 <div data-docs-add="add circular-progress"></div>
 
+Prefer to see it first? `npx @svgrid/ui try circular-progress` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvCircularProgress` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -36005,6 +36035,8 @@ Add it with the CLI - this drops a ready-to-edit `SvColorInput` starter into you
 
 <div data-docs-add="add color-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try color-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvColorInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 
@@ -36130,6 +36162,8 @@ Related: [SvDropDownList](sv-drop-down-list.md) · [SvAutoComplete](sv-auto-comp
 Add it with the CLI - this drops a ready-to-edit `SvComboBox` starter into your app:
 
 <div data-docs-add="add combo-box"></div>
+
+Prefer to see it first? `npx @svgrid/ui try combo-box` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvComboBox` ships free in
 `@svgrid/grid` (dependency-free):
@@ -36273,6 +36307,8 @@ Add it with the CLI - this drops a ready-to-edit `SvCommand` starter into your a
 
 <div data-docs-add="add command"></div>
 
+Prefer to see it first? `npx @svgrid/ui try command` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvCommand` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -36414,6 +36450,8 @@ Related: [SvMenu](sv-menu.md) · [SvMenuList](sv-menu-list.md) · [Overlays & me
 Add it with the CLI - this drops a ready-to-edit `SvContextMenu` starter into your app:
 
 <div data-docs-add="add context-menu"></div>
+
+Prefer to see it first? `npx @svgrid/ui try context-menu` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvContextMenu` ships free in
 `@svgrid/grid` (dependency-free):
@@ -36571,6 +36609,8 @@ Add it with the CLI - this drops a ready-to-edit `SvCountryInput` starter into y
 
 <div data-docs-add="add country-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try country-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvCountryInput` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -36703,6 +36743,8 @@ Related: [Date & time overview](date-time.md) · [SvCalendar](sv-calendar.md) ·
 Add it with the CLI - this drops a ready-to-edit `SvDateRangeInput` starter into your app:
 
 <div data-docs-add="add date-range-input"></div>
+
+Prefer to see it first? `npx @svgrid/ui try date-range-input` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvDateRangeInput` ships free in
 `@svgrid/grid` (no extra date library) and is **part of the grid's editor kit** -
@@ -36865,6 +36907,8 @@ Related: [Date & time overview](date-time.md) · [SvCalendar](sv-calendar.md) ·
 Add it with the CLI - this drops a ready-to-edit `SvDateTimePicker` starter into your app:
 
 <div data-docs-add="add date-time-picker"></div>
+
+Prefer to see it first? `npx @svgrid/ui try date-time-picker` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvDateTimePicker` ships free in
 `@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
@@ -37039,6 +37083,8 @@ Add it with the CLI - this drops a ready-to-edit `SvDivider` starter into your a
 
 <div data-docs-add="add divider"></div>
 
+Prefer to see it first? `npx @svgrid/ui try divider` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvDivider` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -37158,6 +37204,8 @@ Related: [SvDockManager](sv-dock-manager.md) · [SvSplitter](sv-splitter.md) · 
 Add it with the CLI - this drops a ready-to-edit `SvDockLayout` starter into your app:
 
 <div data-docs-add="add dock-layout"></div>
+
+Prefer to see it first? `npx @svgrid/ui try dock-layout` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvDockLayout` ships free in
 `@svgrid/grid` (dependency-free):
@@ -37324,6 +37372,8 @@ Related: [SvDockLayout](sv-dock-layout.md) · [SvSplitter](sv-splitter.md) · [L
 Add it with the CLI - this drops a ready-to-edit `SvDockManager` starter into your app:
 
 <div data-docs-add="add dock-manager"></div>
+
+Prefer to see it first? `npx @svgrid/ui try dock-manager` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvDockManager` ships free in
 `@svgrid/grid` (dependency-free):
@@ -37580,6 +37630,8 @@ Add it with the CLI - this drops a ready-to-edit `SvDrawer` starter into your ap
 
 <div data-docs-add="add drawer"></div>
 
+Prefer to see it first? `npx @svgrid/ui try drawer` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvDrawer` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -37730,6 +37782,8 @@ Related: [SvComboBox](sv-combo-box.md) · [SvListBox](sv-list-box.md) · [Select
 Add it with the CLI - this drops a ready-to-edit `SvDropDownList` starter into your app:
 
 <div data-docs-add="add drop-down-list"></div>
+
+Prefer to see it first? `npx @svgrid/ui try drop-down-list` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvDropDownList` ships free in
 `@svgrid/grid` (dependency-free):
@@ -37919,6 +37973,8 @@ Add it with the CLI - this drops a ready-to-edit `SvDurationInput` starter into 
 
 <div data-docs-add="add duration-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try duration-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvDurationInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 
@@ -38033,6 +38089,8 @@ Related: [SvSkeleton](sv-skeleton.md) · [SvAlert](sv-alert.md) · [Feedback & d
 Add it with the CLI - this drops a ready-to-edit `SvEmptyState` starter into your app:
 
 <div data-docs-add="add empty-state"></div>
+
+Prefer to see it first? `npx @svgrid/ui try empty-state` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvEmptyState` ships free in
 `@svgrid/grid` (dependency-free):
@@ -38170,6 +38228,8 @@ Add it with the CLI - this drops a ready-to-edit `SvField` starter into your app
 
 <div data-docs-add="add field"></div>
 
+Prefer to see it first? `npx @svgrid/ui try field` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvField` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -38301,6 +38361,8 @@ Related: [SvForm](sv-form.md) · [SvField](sv-field.md) · [Layout & composite o
 Add it with the CLI - this drops a ready-to-edit `SvFileUpload` starter into your app:
 
 <div data-docs-add="add file-upload"></div>
+
+Prefer to see it first? `npx @svgrid/ui try file-upload` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvFileUpload` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
@@ -38462,6 +38524,8 @@ Related: [SvField](sv-field.md) · [SvFileUpload](sv-file-upload.md) · [Layout 
 Add it with the CLI - this drops a ready-to-edit `SvForm` starter into your app:
 
 <div data-docs-add="add form"></div>
+
+Prefer to see it first? `npx @svgrid/ui try form` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvForm` ships free in
 `@svgrid/grid` (dependency-free):
@@ -38747,6 +38811,8 @@ Add it with the CLI - this drops a ready-to-edit `SvGauge` starter into your app
 
 <div data-docs-add="add gauge"></div>
 
+Prefer to see it first? `npx @svgrid/ui try gauge` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvGauge` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -38900,6 +38966,8 @@ Related: [SvCard](sv-card.md) · [Layout & composite overview](layout.md)
 Add it with the CLI - this drops a ready-to-edit `SvGridChart` starter into your app:
 
 <div data-docs-add="add grid-chart"></div>
+
+Prefer to see it first? `npx @svgrid/ui try grid-chart` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvGridChart` ships free in
 `@svgrid/grid` (dependency-free):
@@ -39220,6 +39288,8 @@ Add it with the CLI - this drops a ready-to-edit `SvGridSelect` starter into you
 
 <div data-docs-add="add grid-select"></div>
 
+Prefer to see it first? `npx @svgrid/ui try grid-select` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvGridSelect` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -39385,6 +39455,8 @@ Related: [SvDropDownList](sv-drop-down-list.md) · [SvMultiSelect](sv-multi-sele
 Add it with the CLI - this drops a ready-to-edit `SvListBox` starter into your app:
 
 <div data-docs-add="add list-box"></div>
+
+Prefer to see it first? `npx @svgrid/ui try list-box` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvListBox` ships free in
 `@svgrid/grid` (dependency-free):
@@ -39562,6 +39634,8 @@ Related: [SvPhoneInput](sv-phone-input.md) · [SvTextInput](sv-text-input.md) ·
 Add it with the CLI - this drops a ready-to-edit `SvMaskedInput` starter into your app:
 
 <div data-docs-add="add masked-input"></div>
+
+Prefer to see it first? `npx @svgrid/ui try masked-input` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvMaskedInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
@@ -39844,6 +39918,8 @@ Add it with the CLI - this drops a ready-to-edit `SvMenu` starter into your app:
 
 <div data-docs-add="add menu"></div>
 
+Prefer to see it first? `npx @svgrid/ui try menu` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvMenu` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -39999,6 +40075,8 @@ Add it with the CLI - this drops a ready-to-edit `SvModal` starter into your app
 
 <div data-docs-add="add modal"></div>
 
+Prefer to see it first? `npx @svgrid/ui try modal` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvModal` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -40141,6 +40219,8 @@ Related: [SvListBox](sv-list-box.md) · [SvGridSelect](sv-grid-select.md) · [Se
 Add it with the CLI - this drops a ready-to-edit `SvMultiSelect` starter into your app:
 
 <div data-docs-add="add multi-select"></div>
+
+Prefer to see it first? `npx @svgrid/ui try multi-select` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvMultiSelect` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
@@ -40313,6 +40393,8 @@ Add it with the CLI - this drops a ready-to-edit `SvNavPane` starter into your a
 
 <div data-docs-add="add nav-pane"></div>
 
+Prefer to see it first? `npx @svgrid/ui try nav-pane` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvNavPane` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -40472,6 +40554,8 @@ Add it with the CLI - this drops a ready-to-edit `SvNumberInput` starter into yo
 
 <div data-docs-add="add number-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try number-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvNumberInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 
@@ -40601,6 +40685,8 @@ Related: [SvPasswordInput](sv-password-input.md) · [SvTextInput](sv-text-input.
 Add it with the CLI - this drops a ready-to-edit `SvOtpInput` starter into your app:
 
 <div data-docs-add="add otp-input"></div>
+
+Prefer to see it first? `npx @svgrid/ui try otp-input` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvOtpInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
@@ -40738,6 +40824,8 @@ Related: [SvBreadcrumb](sv-breadcrumb.md) · [SvStepper](sv-stepper.md) · [Navi
 Add it with the CLI - this drops a ready-to-edit `SvPagination` starter into your app:
 
 <div data-docs-add="add pagination"></div>
+
+Prefer to see it first? `npx @svgrid/ui try pagination` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvPagination` ships free in
 `@svgrid/grid` (dependency-free):
@@ -40883,6 +40971,8 @@ Add it with the CLI - this drops a ready-to-edit `SvPasswordInput` starter into 
 
 <div data-docs-add="add password-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try password-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvPasswordInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 
@@ -41024,6 +41114,8 @@ Add it with the CLI - this drops a ready-to-edit `SvPhoneInput` starter into you
 
 <div data-docs-add="add phone-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try phone-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvPhoneInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 
@@ -41151,6 +41243,8 @@ Related: [SvTooltip](sv-tooltip.md) · [SvMenu](sv-menu.md) · [Overlays & menus
 Add it with the CLI - this drops a ready-to-edit `SvPopover` starter into your app:
 
 <div data-docs-add="add popover"></div>
+
+Prefer to see it first? `npx @svgrid/ui try popover` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvPopover` ships free in
 `@svgrid/grid` (dependency-free):
@@ -41296,6 +41390,8 @@ Add it with the CLI - this drops a ready-to-edit `SvProgress` starter into your 
 
 <div data-docs-add="add progress"></div>
 
+Prefer to see it first? `npx @svgrid/ui try progress` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvProgress` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -41420,6 +41516,8 @@ Related: [SvButtonGroup](sv-button-group.md) · [SvCheckBox](sv-check-box.md) ·
 Add it with the CLI - this drops a ready-to-edit `SvRadioGroup` starter into your app:
 
 <div data-docs-add="add radio-group"></div>
+
+Prefer to see it first? `npx @svgrid/ui try radio-group` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvRadioGroup` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
@@ -41572,6 +41670,8 @@ Add it with the CLI - this drops a ready-to-edit `SvRating` starter into your ap
 
 <div data-docs-add="add rating"></div>
 
+Prefer to see it first? `npx @svgrid/ui try rating` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvRating` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 
@@ -41711,6 +41811,8 @@ Add it with the CLI - this drops a ready-to-edit `SvRepeatButton` starter into y
 
 <div data-docs-add="add repeat-button"></div>
 
+Prefer to see it first? `npx @svgrid/ui try repeat-button` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvRepeatButton` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -41832,6 +41934,8 @@ Related: [Inputs overview](inputs.md) · [SvForm](sv-form.md) · [Navigation & r
 Add it with the CLI - this drops a ready-to-edit `SvRichText` starter into your app:
 
 <div data-docs-add="add rich-text"></div>
+
+Prefer to see it first? `npx @svgrid/ui try rich-text` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvRichText` ships free in
 `@svgrid/grid` (dependency-free):
@@ -41983,6 +42087,8 @@ Add it with the CLI - this drops a ready-to-edit `SvScrollArea` starter into you
 
 <div data-docs-add="add scroll-area"></div>
 
+Prefer to see it first? `npx @svgrid/ui try scroll-area` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvScrollArea` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -42097,6 +42203,8 @@ Related: [SvEmptyState](sv-empty-state.md) · [SvBadge](sv-badge.md) · [Feedbac
 Add it with the CLI - this drops a ready-to-edit `SvSkeleton` starter into your app:
 
 <div data-docs-add="add skeleton"></div>
+
+Prefer to see it first? `npx @svgrid/ui try skeleton` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvSkeleton` ships free in
 `@svgrid/grid` (dependency-free):
@@ -42235,6 +42343,8 @@ Related: [SvGauge](sv-gauge.md) · [SvNumberInput](sv-number-input.md) · [Range
 Add it with the CLI - this drops a ready-to-edit `SvSlider` starter into your app:
 
 <div data-docs-add="add slider"></div>
+
+Prefer to see it first? `npx @svgrid/ui try slider` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvSlider` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
@@ -42389,6 +42499,8 @@ Add it with the CLI - this drops a ready-to-edit `SvSparkline` starter into your
 
 <div data-docs-add="add sparkline"></div>
 
+Prefer to see it first? `npx @svgrid/ui try sparkline` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvSparkline` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -42516,6 +42628,8 @@ Related: [SvTabs](sv-tabs.md) · [SvScrollArea](sv-scroll-area.md) · [Layout & 
 Add it with the CLI - this drops a ready-to-edit `SvSplitter` starter into your app:
 
 <div data-docs-add="add splitter"></div>
+
+Prefer to see it first? `npx @svgrid/ui try splitter` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvSplitter` ships free in
 `@svgrid/grid` (dependency-free):
@@ -42655,6 +42769,8 @@ Add it with the CLI - this drops a ready-to-edit `SvStat` starter into your app:
 
 <div data-docs-add="add stat"></div>
 
+Prefer to see it first? `npx @svgrid/ui try stat` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvStat` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -42785,6 +42901,8 @@ Related: [SvBreadcrumb](sv-breadcrumb.md) · [SvPagination](sv-pagination.md) ·
 Add it with the CLI - this drops a ready-to-edit `SvStepper` starter into your app:
 
 <div data-docs-add="add stepper"></div>
+
+Prefer to see it first? `npx @svgrid/ui try stepper` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvStepper` ships free in
 `@svgrid/grid` (dependency-free):
@@ -42929,6 +43047,8 @@ Add it with the CLI - this drops a ready-to-edit `SvSwitchButton` starter into y
 
 <div data-docs-add="add switch-button"></div>
 
+Prefer to see it first? `npx @svgrid/ui try switch-button` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvSwitchButton` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 
@@ -43064,6 +43184,8 @@ Related: [SvAccordion](sv-accordion.md) · [SvSplitter](sv-splitter.md) · [Layo
 Add it with the CLI - this drops a ready-to-edit `SvTabs` starter into your app:
 
 <div data-docs-add="add tabs"></div>
+
+Prefer to see it first? `npx @svgrid/ui try tabs` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvTabs` ships free in
 `@svgrid/grid` (dependency-free):
@@ -43213,6 +43335,8 @@ Add it with the CLI - this drops a ready-to-edit `SvTagsInput` starter into your
 
 <div data-docs-add="add tags-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try tags-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvTagsInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 
@@ -43337,6 +43461,8 @@ Related: [SvTextInput](sv-text-input.md) · [SvOtpInput](sv-otp-input.md) · [In
 Add it with the CLI - this drops a ready-to-edit `SvTextArea` starter into your app:
 
 <div data-docs-add="add text-area"></div>
+
+Prefer to see it first? `npx @svgrid/ui try text-area` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvTextArea` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
@@ -43470,6 +43596,8 @@ Related: [SvTextArea](sv-text-area.md) · [SvMaskedInput](sv-masked-input.md) ·
 Add it with the CLI - this drops a ready-to-edit `SvTextInput` starter into your app:
 
 <div data-docs-add="add text-input"></div>
+
+Prefer to see it first? `npx @svgrid/ui try text-input` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvTextInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
@@ -43610,6 +43738,8 @@ Related: [Date & time overview](date-time.md) ·
 Add it with the CLI - this drops a ready-to-edit `SvTimePicker` starter into your app:
 
 <div data-docs-add="add time-picker"></div>
+
+Prefer to see it first? `npx @svgrid/ui try time-picker` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvTimePicker` ships free in
 `@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
@@ -43760,6 +43890,8 @@ Related: [SvChip](sv-chip.md) · [SvAvatar](sv-avatar.md) · [Feedback & display
 Add it with the CLI - this drops a ready-to-edit `SvTimeline` starter into your app:
 
 <div data-docs-add="add timeline"></div>
+
+Prefer to see it first? `npx @svgrid/ui try timeline` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvTimeline` ships free in
 `@svgrid/grid` (dependency-free):
@@ -43915,6 +44047,8 @@ Add it with the CLI - this drops a ready-to-edit `SvToaster` starter into your a
 
 <div data-docs-add="add toaster"></div>
 
+Prefer to see it first? `npx @svgrid/ui try toaster` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvToaster` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -44061,6 +44195,8 @@ Add it with the CLI - this drops a ready-to-edit `SvToggleButton` starter into y
 
 <div data-docs-add="add toggle-button"></div>
 
+Prefer to see it first? `npx @svgrid/ui try toggle-button` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvToggleButton` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 
@@ -44182,6 +44318,8 @@ Add it with the CLI - this drops a ready-to-edit `SvTooltip` starter into your a
 
 <div data-docs-add="add tooltip"></div>
 
+Prefer to see it first? `npx @svgrid/ui try tooltip` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvTooltip` ships free in
 `@svgrid/grid` (dependency-free):
 
@@ -44301,6 +44439,8 @@ Related: [SvCommand](sv-command.md) · [SvStepper](sv-stepper.md) · [Navigation
 Add it with the CLI - this drops a ready-to-edit `SvTour` starter into your app:
 
 <div data-docs-add="add tour"></div>
+
+Prefer to see it first? `npx @svgrid/ui try tour` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvTour` ships free in
 `@svgrid/grid` (dependency-free):
@@ -44450,6 +44590,8 @@ Related: [SvDropDownList](sv-drop-down-list.md) · [SvGridSelect](sv-grid-select
 Add it with the CLI - this drops a ready-to-edit `SvTreeSelect` starter into your app:
 
 <div data-docs-add="add tree-select"></div>
+
+Prefer to see it first? `npx @svgrid/ui try tree-select` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvTreeSelect` ships free in
 `@svgrid/grid` (dependency-free):
@@ -44604,6 +44746,8 @@ Related: [SvNavPane](sv-nav-pane.md) · [SvTreeSelect](sv-tree-select.md) · [Na
 Add it with the CLI - this drops a ready-to-edit `SvTree` starter into your app:
 
 <div data-docs-add="add tree"></div>
+
+Prefer to see it first? `npx @svgrid/ui try tree` opens it in a throwaway sandbox - no project needed.
 
 Or install the package and import it directly. `SvTree` ships free in
 `@svgrid/grid` (dependency-free):

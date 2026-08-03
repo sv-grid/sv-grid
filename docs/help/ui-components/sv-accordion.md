@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvAccordion` starter into your
 
 <div data-docs-add="add accordion"></div>
 
+Prefer to see it first? `npx @svgrid/ui try accordion` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvAccordion` ships free in
 `@svgrid/grid` (dependency-free):
 

@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvCarousel` starter into your 
 
 <div data-docs-add="add carousel"></div>
 
+Prefer to see it first? `npx @svgrid/ui try carousel` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvCarousel` ships free in
 `@svgrid/grid` (dependency-free):
 

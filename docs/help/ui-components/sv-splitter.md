@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvSplitter` starter into your 
 
 <div data-docs-add="add splitter"></div>
 
+Prefer to see it first? `npx @svgrid/ui try splitter` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvSplitter` ships free in
 `@svgrid/grid` (dependency-free):
 

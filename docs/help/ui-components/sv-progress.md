@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvProgress` starter into your 
 
 <div data-docs-add="add progress"></div>
 
+Prefer to see it first? `npx @svgrid/ui try progress` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvProgress` ships free in
 `@svgrid/grid` (dependency-free):
 

@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvStepper` starter into your a
 
 <div data-docs-add="add stepper"></div>
 
+Prefer to see it first? `npx @svgrid/ui try stepper` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvStepper` ships free in
 `@svgrid/grid` (dependency-free):
 

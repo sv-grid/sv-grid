@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvGauge` starter into your app
 
 <div data-docs-add="add gauge"></div>
 
+Prefer to see it first? `npx @svgrid/ui try gauge` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvGauge` ships free in
 `@svgrid/grid` (dependency-free):
 

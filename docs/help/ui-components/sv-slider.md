@@ -19,6 +19,8 @@ Add it with the CLI - this drops a ready-to-edit `SvSlider` starter into your ap
 
 <div data-docs-add="add slider"></div>
 
+Prefer to see it first? `npx @svgrid/ui try slider` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvSlider` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 

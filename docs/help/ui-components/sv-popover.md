@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvPopover` starter into your a
 
 <div data-docs-add="add popover"></div>
 
+Prefer to see it first? `npx @svgrid/ui try popover` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvPopover` ships free in
 `@svgrid/grid` (dependency-free):
 

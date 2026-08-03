@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvScrollArea` starter into you
 
 <div data-docs-add="add scroll-area"></div>
 
+Prefer to see it first? `npx @svgrid/ui try scroll-area` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvScrollArea` ships free in
 `@svgrid/grid` (dependency-free):
 

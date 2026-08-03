@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvRepeatButton` starter into y
 
 <div data-docs-add="add repeat-button"></div>
 
+Prefer to see it first? `npx @svgrid/ui try repeat-button` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvRepeatButton` ships free in
 `@svgrid/grid` (dependency-free):
 

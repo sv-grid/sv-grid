@@ -19,6 +19,8 @@ Add it with the CLI - this drops a ready-to-edit `SvGridSelect` starter into you
 
 <div data-docs-add="add grid-select"></div>
 
+Prefer to see it first? `npx @svgrid/ui try grid-select` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvGridSelect` ships free in
 `@svgrid/grid` (dependency-free):
 

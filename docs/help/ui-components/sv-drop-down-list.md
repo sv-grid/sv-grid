@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvDropDownList` starter into y
 
 <div data-docs-add="add drop-down-list"></div>
 
+Prefer to see it first? `npx @svgrid/ui try drop-down-list` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvDropDownList` ships free in
 `@svgrid/grid` (dependency-free):
 

@@ -19,6 +19,8 @@ Add it with the CLI - this drops a ready-to-edit `SvAutoComplete` starter into y
 
 <div data-docs-add="add auto-complete"></div>
 
+Prefer to see it first? `npx @svgrid/ui try auto-complete` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvAutoComplete` ships free in
 `@svgrid/grid` (dependency-free):
 

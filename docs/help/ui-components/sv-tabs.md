@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvTabs` starter into your app:
 
 <div data-docs-add="add tabs"></div>
 
+Prefer to see it first? `npx @svgrid/ui try tabs` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvTabs` ships free in
 `@svgrid/grid` (dependency-free):
 

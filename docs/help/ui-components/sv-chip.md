@@ -16,6 +16,8 @@ Add it with the CLI - this drops a ready-to-edit `SvChip` starter into your app:
 
 <div data-docs-add="add chip"></div>
 
+Prefer to see it first? `npx @svgrid/ui try chip` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvChip` ships free in
 `@svgrid/grid` (dependency-free):
 

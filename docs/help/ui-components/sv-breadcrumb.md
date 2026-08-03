@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvBreadcrumb` starter into you
 
 <div data-docs-add="add breadcrumb"></div>
 
+Prefer to see it first? `npx @svgrid/ui try breadcrumb` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvBreadcrumb` ships free in
 `@svgrid/grid` (dependency-free):
 

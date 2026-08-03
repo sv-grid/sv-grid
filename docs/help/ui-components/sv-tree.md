@@ -19,6 +19,8 @@ Add it with the CLI - this drops a ready-to-edit `SvTree` starter into your app:
 
 <div data-docs-add="add tree"></div>
 
+Prefer to see it first? `npx @svgrid/ui try tree` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvTree` ships free in
 `@svgrid/grid` (dependency-free):
 

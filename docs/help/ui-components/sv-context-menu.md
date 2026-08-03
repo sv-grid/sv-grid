@@ -16,6 +16,8 @@ Add it with the CLI - this drops a ready-to-edit `SvContextMenu` starter into yo
 
 <div data-docs-add="add context-menu"></div>
 
+Prefer to see it first? `npx @svgrid/ui try context-menu` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvContextMenu` ships free in
 `@svgrid/grid` (dependency-free):
 

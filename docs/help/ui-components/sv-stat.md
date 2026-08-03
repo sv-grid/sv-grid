@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvStat` starter into your app:
 
 <div data-docs-add="add stat"></div>
 
+Prefer to see it first? `npx @svgrid/ui try stat` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvStat` ships free in
 `@svgrid/grid` (dependency-free):
 

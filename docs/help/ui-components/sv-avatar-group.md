@@ -16,6 +16,8 @@ Add it with the CLI - this drops a ready-to-edit `SvAvatarGroup` starter into yo
 
 <div data-docs-add="add avatar-group"></div>
 
+Prefer to see it first? `npx @svgrid/ui try avatar-group` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvAvatarGroup` ships free in
 `@svgrid/grid` (dependency-free):
 

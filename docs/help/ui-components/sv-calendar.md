@@ -14,6 +14,8 @@ Add it with the CLI - this drops a ready-to-edit `SvCalendar` starter into your 
 
 <div data-docs-add="add calendar"></div>
 
+Prefer to see it first? `npx @svgrid/ui try calendar` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvCalendar` ships free in
 `@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
 edit a `date` cell** - so it is both a standalone control and the grid's built-in

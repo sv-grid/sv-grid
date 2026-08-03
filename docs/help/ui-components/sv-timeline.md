@@ -16,6 +16,8 @@ Add it with the CLI - this drops a ready-to-edit `SvTimeline` starter into your 
 
 <div data-docs-add="add timeline"></div>
 
+Prefer to see it first? `npx @svgrid/ui try timeline` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvTimeline` ships free in
 `@svgrid/grid` (dependency-free):
 

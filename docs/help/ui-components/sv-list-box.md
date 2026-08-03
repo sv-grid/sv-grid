@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvListBox` starter into your a
 
 <div data-docs-add="add list-box"></div>
 
+Prefer to see it first? `npx @svgrid/ui try list-box` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvListBox` ships free in
 `@svgrid/grid` (dependency-free):
 

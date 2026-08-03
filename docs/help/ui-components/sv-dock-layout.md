@@ -19,6 +19,8 @@ Add it with the CLI - this drops a ready-to-edit `SvDockLayout` starter into you
 
 <div data-docs-add="add dock-layout"></div>
 
+Prefer to see it first? `npx @svgrid/ui try dock-layout` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvDockLayout` ships free in
 `@svgrid/grid` (dependency-free):
 

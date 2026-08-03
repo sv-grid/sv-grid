@@ -16,6 +16,8 @@ Add it with the CLI - this drops a ready-to-edit `SvEmptyState` starter into you
 
 <div data-docs-add="add empty-state"></div>
 
+Prefer to see it first? `npx @svgrid/ui try empty-state` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvEmptyState` ships free in
 `@svgrid/grid` (dependency-free):
 

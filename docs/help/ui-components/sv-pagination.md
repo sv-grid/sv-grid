@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvPagination` starter into you
 
 <div data-docs-add="add pagination"></div>
 
+Prefer to see it first? `npx @svgrid/ui try pagination` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvPagination` ships free in
 `@svgrid/grid` (dependency-free):
 

@@ -13,6 +13,8 @@ Add it with the CLI - this drops a ready-to-edit `SvDateRangeInput` starter into
 
 <div data-docs-add="add date-range-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try date-range-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvDateRangeInput` ships free in
 `@svgrid/grid` (no extra date library) and is **part of the grid's editor kit** -
 it carries the same editor contract (label, hint, validation, RTL) SvGrid uses for

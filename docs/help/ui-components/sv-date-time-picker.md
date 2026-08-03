@@ -12,6 +12,8 @@ Add it with the CLI - this drops a ready-to-edit `SvDateTimePicker` starter into
 
 <div data-docs-add="add date-time-picker"></div>
 
+Prefer to see it first? `npx @svgrid/ui try date-time-picker` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvDateTimePicker` ships free in
 `@svgrid/grid` (no extra date library) and is the **same component SvGrid mounts to
 edit a `datetime` cell** - so it is both a standalone control and the grid's

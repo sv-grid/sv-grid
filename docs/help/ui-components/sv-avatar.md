@@ -16,6 +16,8 @@ Add it with the CLI - this drops a ready-to-edit `SvAvatar` starter into your ap
 
 <div data-docs-add="add avatar"></div>
 
+Prefer to see it first? `npx @svgrid/ui try avatar` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvAvatar` ships free in
 `@svgrid/grid` (dependency-free):
 

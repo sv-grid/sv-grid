@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvCircularProgress` starter in
 
 <div data-docs-add="add circular-progress"></div>
 
+Prefer to see it first? `npx @svgrid/ui try circular-progress` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvCircularProgress` ships free in
 `@svgrid/grid` (dependency-free):
 

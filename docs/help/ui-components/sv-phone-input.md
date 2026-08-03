@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvPhoneInput` starter into you
 
 <div data-docs-add="add phone-input"></div>
 
+Prefer to see it first? `npx @svgrid/ui try phone-input` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvPhoneInput` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 

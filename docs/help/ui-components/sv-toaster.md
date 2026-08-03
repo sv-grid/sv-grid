@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvToaster` starter into your a
 
 <div data-docs-add="add toaster"></div>
 
+Prefer to see it first? `npx @svgrid/ui try toaster` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvToaster` ships free in
 `@svgrid/grid` (dependency-free):
 

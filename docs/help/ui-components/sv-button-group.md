@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvButtonGroup` starter into yo
 
 <div data-docs-add="add button-group"></div>
 
+Prefer to see it first? `npx @svgrid/ui try button-group` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvButtonGroup` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 

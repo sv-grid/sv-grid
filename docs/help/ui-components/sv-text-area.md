@@ -17,6 +17,8 @@ Add it with the CLI - this drops a ready-to-edit `SvTextArea` starter into your 
 
 <div data-docs-add="add text-area"></div>
 
+Prefer to see it first? `npx @svgrid/ui try text-area` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvTextArea` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 

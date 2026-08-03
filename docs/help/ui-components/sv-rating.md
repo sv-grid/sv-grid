@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvRating` starter into your ap
 
 <div data-docs-add="add rating"></div>
 
+Prefer to see it first? `npx @svgrid/ui try rating` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvRating` ships free in
 `@svgrid/grid` and is **part of the grid's editor kit** - the same control SvGrid mounts when you edit a matching cell:
 

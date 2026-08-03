@@ -16,6 +16,8 @@ Add it with the CLI - this drops a ready-to-edit `SvAlert` starter into your app
 
 <div data-docs-add="add alert"></div>
 
+Prefer to see it first? `npx @svgrid/ui try alert` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvAlert` ships free in
 `@svgrid/grid` (dependency-free):
 

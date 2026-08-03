@@ -18,6 +18,8 @@ Add it with the CLI - this drops a ready-to-edit `SvCommand` starter into your a
 
 <div data-docs-add="add command"></div>
 
+Prefer to see it first? `npx @svgrid/ui try command` opens it in a throwaway sandbox - no project needed.
+
 Or install the package and import it directly. `SvCommand` ships free in
 `@svgrid/grid` (dependency-free):
 
