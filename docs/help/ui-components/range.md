@@ -7,6 +7,8 @@ add the whole family at once:
 
 <div data-docs-add="add range"></div>
 
+Prefer to see them first? `npx @svgrid/ui try range` opens the whole family in a sandbox - no project needed.
+
 They all ship free in the `@svgrid/grid` package, so you can also install it and
 import them directly:
 

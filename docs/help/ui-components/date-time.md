@@ -12,6 +12,8 @@ add the whole family at once:
 
 <div data-docs-add="add date-time"></div>
 
+Prefer to see them first? `npx @svgrid/ui try date-time` opens the whole family in a sandbox - no project needed.
+
 The controls all ship free in the `@svgrid/grid` package - they are the **same
 components SvGrid mounts to edit `date`, `datetime` and `time` cells**, so you can
 also just install the grid and import them directly:

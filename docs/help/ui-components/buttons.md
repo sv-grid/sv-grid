@@ -10,6 +10,8 @@ add the whole family at once:
 
 <div data-docs-add="add buttons"></div>
 
+Prefer to see them first? `npx @svgrid/ui try buttons` opens the whole family in a sandbox - no project needed.
+
 They all ship free in the `@svgrid/grid` package, so you can also install it and
 import them directly:
 
