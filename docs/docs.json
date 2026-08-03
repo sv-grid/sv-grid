@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-03T10:45:47.770Z",
+  "generatedAt": "2026-08-03T23:14:19.404Z",
   "counts": {
     "pages": 350,
     "enterprise": 8,
@@ -582,8 +582,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 853,
-      "lastUpdated": "2026-07-25",
+      "words": 1411,
+      "lastUpdated": "2026-08-03",
       "demoIds": []
     },
     {
@@ -3285,12 +3285,12 @@
       "path": "help/ui-components/cli.md",
       "url": "/help/ui-components/cli",
       "title": "Add components with the CLI",
-      "summary": "@svgrid/ui drops a working SvGrid UI component into your app in one command:",
+      "summary": "@svgrid/ui gets a SvGrid UI component into your app - and lets you *see* it - in one command.",
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 457,
-      "lastUpdated": "2026-07-31",
+      "words": 724,
+      "lastUpdated": "2026-08-03",
       "demoIds": []
     },
     {
@@ -3349,8 +3349,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 837,
-      "lastUpdated": "2026-07-30",
+      "words": 852,
+      "lastUpdated": "2026-08-03",
       "demoIds": []
     },
     {

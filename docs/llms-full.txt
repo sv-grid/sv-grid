@@ -173,6 +173,91 @@ dated heading on publish via `pnpm changeset version` (see
 For machine-readable releases, fetch
 [`/changelog.json`](/changelog.json) - same content, parseable shape.
 
+## [Unreleased]
+
+### @svgrid/grid
+
+#### Added
+
+- **Form layer depth in `SvForm` / `createForm`.** Schema-driven forms gained:
+  conditional / dependent fields (`visible` and `disabled` accept a
+  `(values) => boolean` predicate; hidden fields drop out of validation and the
+  submit payload), grouped **sections** and a multi-step **wizard** (`stepper`,
+  with per-step validation gating), repeatable **field arrays**
+  (`type: 'array'` with `itemFields`, plus `addItem` / `removeItem` / `moveItem`),
+  **async validation** (debounced, stale-response-guarded, per-field
+  `validating` state), **dirty tracking + `reset()`**, and **submit states**
+  (`isSubmitting`, an async `onSubmit`, and `setErrors()` for server-side field
+  errors). New demos: dynamic form, wizard, and field array.
+- **Public headless cores for the menu / select family** (`createMenu`,
+  `createPopoverSelect`, shared `list-nav`), so the popup pickers can be driven
+  headlessly and composed into custom UI.
+- **`color` on `ListOption`** - render a small color swatch before the label in
+  `SvListBox` and `SvDropDownList`.
+- **`block` on `SvDateTimePicker`** - stretch the field to fill its container
+  (100% width), so it fills a grid cell when used as an editor.
+- **`onClosed` on `SvDrawer`** - fires after the exit animation ends and the
+  drawer leaves the DOM.
+- **`loading` on `SvField`**, and **`locked`** on `SvDockLayout` /
+  `SvDockManager`.
+
+#### Changed
+
+- **Popup editors keep themselves on screen.** `SvAutoComplete`, `SvComboBox`,
+  `SvDropDownList` and the date pickers now measure the space to the viewport
+  edge: the panel flips up when there is not enough room below and clamps its
+  `max-height` to the available height, so a picker opened near the bottom of the
+  window no longer spills off screen.
+- **Dock manager pop-out to a new window is now off by default**
+  (`allowPopout={false}`); opt in explicitly. Added a dedicated pop-out demo.
+
+#### Fixed
+
+- **Virtualized lists no longer flash blank on a fast scrollbar-thumb drag.**
+  A fast drag can move the viewport into the windowed list's off-screen padding
+  faster than JS can re-render the rows there; the padding now paints faint row
+  skeletons, so `SvListBox` / `SvDropDownList` stay visually filled at any scroll
+  speed. Also removed an app-wide `flushSync` from the scroll handler that could
+  stall the very first scroll.
+- **Dock manager auto-hide now shows every tab of a multi-tab leaf.** Sending a
+  leaf with two or more tabs to auto-hide created a single edge tab; it now
+  creates one edge tab per pane.
+
+### @svgrid/enterprise
+
+#### Added
+
+- **Scheduler booking rules and conflict detection.** New model helpers
+  (`overlapCount` for per-resource overlaps, `overlapsBands` for working-hours
+  bands) back resource double-booking checks and business-hours enforcement.
+  New demos: booking rules, financial trading hours, and HR shift coverage.
+
+#### Fixed
+
+- **Scheduler column alignment.** The all-day lane, day/time-grid header, and
+  body columns now reserve the scrollbar width consistently, so the columns line
+  up instead of drifting by the scrollbar's width.
+
+### Tooling & docs
+
+#### Added
+
+- **`@svgrid/ui` recipe scaffolder** - `npx @svgrid/ui add <component>` drops a
+  ready-to-edit starter (e.g. `add calendar`) into your app, complementing the
+  shadcn-style component pages (Preview / Code, install tabs) across the UI kit.
+- **AI coding Skill** (`skills/svgrid`, installable with
+  `npx skills add sv-grid/sv-grid`) - an always-on house-style guidance layer
+  that complements `@svgrid/mcp`.
+
+#### Fixed
+
+- **API-docs accuracy pass across all 74 UI-component pages.** Corrected the
+  `SvDockLayout`, `SvDockManager`, and `SvDateTimePicker` prop tables (added 13
+  missing dock-layout props; removed a `size` prop `SvDateTimePicker` never had),
+  and filled scattered gaps (`loading`, `onClosed`, `min` / `max`, `dir`,
+  `width` / `height`, `ariaLabel`, and the shared field-contract on
+  `SvFileUpload`).
+
 ## [1.0.0] - 2026-06-16
 
 Initial public release - the Svelte 5-native data grid: `@svgrid/grid`
@@ -31995,21 +32080,33 @@ recipes:
 
 # Add components with the CLI
 
-`@svgrid/ui` drops a working SvGrid UI component into your app in one command:
+`@svgrid/ui` gets a SvGrid UI component into your app - and lets you *see* it -
+in one command.
+
+**See it first, no project needed:**
+
+```sh
+npx @svgrid/ui try calendar     # spins up a sandbox and opens it in your browser
+```
+
+**Put it in your app:**
 
 <div data-docs-add="add calendar"></div>
+
+`add` writes the component and installs `@svgrid/grid` for you. Want to preview it
+inside your own app? Add `--preview` (SvelteKit) - see [See it](#see-it) below.
 
 ## How it works
 
 `@svgrid/ui` is a **recipe scaffolder**, not a second component library. `add`
 writes a minimal, ready-to-edit `.svelte` starter into your project that imports
-from [`@svgrid/grid`](./index.md), makes sure the package is a dependency, and
-prints the install command.
+from [`@svgrid/grid`](./index.md), and installs the package for you.
 
 The distinction matters: the components themselves live in `@svgrid/grid`, so you
 get bug fixes and new features by bumping one version - while the file `add` drops
 in is *yours* to restyle, rename and wire however you like. It is the fast start,
-not a fork.
+not a fork. Because each recipe is a self-contained demo, `try` and `--preview`
+can render it immediately.
 
 ```
 your-app/
@@ -32017,10 +32114,29 @@ your-app/
     calendar.svelte        <- your copy, imports { SvCalendar } from '@svgrid/grid'
 ```
 
+## See it
+
+Two ways to render a component, not just drop its file in:
+
+```sh
+# zero setup: cached Vite + Svelte sandbox, opens http://localhost:5173
+npx @svgrid/ui try button
+
+# inside a SvelteKit app: also writes a /preview/button route (+ a /preview index)
+npx @svgrid/ui add button --preview
+#   -> start your dev server, open http://localhost:5173/preview/button
+```
+
+`try` needs no project - it caches a tiny sandbox under your temp dir (so repeat
+runs are instant) and opens the browser. `--preview` drops a
+`src/routes/preview/<id>` page into an existing SvelteKit app so it renders in
+your running dev server. `add` also prints the exact `try` command for whatever
+you just added, so the "see it" step is always one copy-paste away.
+
 ## Commands
 
 ```sh
-# add one component
+# add one component (installs @svgrid/grid for you)
 npx @svgrid/ui add calendar
 
 # add several at once, into a folder you choose
@@ -32029,20 +32145,30 @@ npx @svgrid/ui add calendar time-picker --dir src/lib/ui
 # add a whole family in one go
 npx @svgrid/ui add date-time
 
-# install the dependency for you (default: it just prints the command)
-npx @svgrid/ui add calendar --install
+# add + a /preview route you can open in your dev server (SvelteKit)
+npx @svgrid/ui add calendar --preview
+
+# just write the file, don't run the package manager
+npx @svgrid/ui add calendar --no-install
+
+# see it with zero setup
+npx @svgrid/ui try calendar
 
 # list everything you can add
 npx @svgrid/ui list
 ```
 
+> Running an older CLI? `npx` caches by name - pin the latest with
+> `npx @svgrid/ui@latest ...` (the `try` command and `--preview` flag arrived in 0.3.0).
+
 ## Options
 
-| Flag           | Description                                                                                          |
-| -------------- | ---------------------------------------------------------------------------------------------------- |
-| `--dir <path>` | Where to write files. Default: `src/lib/components/ui`, or the `componentsDir` in a project `svgrid.json`. |
-| `--force`      | Overwrite files that already exist (otherwise existing files are left untouched).                    |
-| `--install`    | Run your package manager (auto-detected from the lockfile) to install deps.                           |
+| Flag             | Description                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| `--preview`, `-p`| (with `add`) Also write a `src/routes/preview/<id>` route so you can see it in your dev server. SvelteKit apps only. |
+| `--dir <path>`   | Where to write files. Default: `src/lib/components/ui`, or the `componentsDir` in a project `svgrid.json`. |
+| `--force`        | Overwrite files that already exist (otherwise existing files are left untouched).                    |
+| `--no-install`   | Skip installing the dependency; just print the install command.                                      |
 
 ## Available components
 
@@ -32663,8 +32789,9 @@ theme-driven, accessible, and dependency-free (see below). Try them live under t
 **SvGrid Editors** switcher in the examples gallery, or jump straight to any
 component's tutorial in [the catalogue](#the-catalogue).
 
-> **Quick start with the CLI.** `npx @svgrid/ui add calendar` drops a ready-to-edit
-> starter for any component into your app. See [Add components with the CLI](./cli.md).
+> **Quick start with the CLI.** `npx @svgrid/ui try calendar` opens any component
+> in a sandbox in your browser; `npx @svgrid/ui add calendar` drops a ready-to-edit
+> starter into your app (and installs the dep). See [Add components with the CLI](./cli.md).
 
 ![The SvGrid UI suite: nine families of components, each usable standalone and as a grid cell editor.](/docs-media/svgrid-ui-map.svg)
 

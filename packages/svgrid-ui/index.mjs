@@ -378,11 +378,19 @@ async function cmdAdd(registry, tokens, args) {
     }
   }
 
-  // Usage hint.
+  // Next steps: how to USE it (code) and how to SEE it (try / --preview).
   const first = items[0]
   stdout.write(`\n${color('green', '✔')} Added ${written.length} file(s). They're yours - edit away.\n`)
   if (first) {
-    stdout.write(`  ${color('dim', 'Use it:')} import { ${exportName(first.id)} } from '@svgrid/grid'\n`)
+    stdout.write(`  ${color('dim', 'Use it:')}  import { ${exportName(first.id)} } from '@svgrid/grid'\n`)
+    // "See it" - skip when we already wrote preview routes just above.
+    if (!(args.preview && isSvelteKit(projectRoot))) {
+      const ids = items.map((it) => it.id).join(' ')
+      stdout.write(`  ${color('dim', 'See it:')}  ${color('cyan', `npx @svgrid/ui try ${ids}`)} ${color('dim', '(opens in your browser)')}\n`)
+      if (isSvelteKit(projectRoot)) {
+        stdout.write(`  ${color('dim', 'In app:')}  re-run with ${color('cyan', '--preview')} to add a /preview/${first.id} route\n`)
+      }
+    }
   }
   stdout.write(`\n${color('dim', 'Docs:')} https://www.svgrid.com/docs/help/ui-components\n\n`)
 }

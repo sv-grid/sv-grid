@@ -13,8 +13,9 @@ theme-driven, accessible, and dependency-free (see below). Try them live under t
 **SvGrid Editors** switcher in the examples gallery, or jump straight to any
 component's tutorial in [the catalogue](#the-catalogue).
 
-> **Quick start with the CLI.** `npx @svgrid/ui add calendar` drops a ready-to-edit
-> starter for any component into your app. See [Add components with the CLI](./cli.md).
+> **Quick start with the CLI.** `npx @svgrid/ui try calendar` opens any component
+> in a sandbox in your browser; `npx @svgrid/ui add calendar` drops a ready-to-edit
+> starter into your app (and installs the dep). See [Add components with the CLI](./cli.md).
 
 ![The SvGrid UI suite: nine families of components, each usable standalone and as a grid cell editor.](/docs-media/svgrid-ui-map.svg)
 

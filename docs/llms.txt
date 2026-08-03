@@ -312,7 +312,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 ### UI components
 
 - [Buttons & toggles](https://svgrid.com/help/ui-components/buttons): Press and toggle primitives. All take a size (sm | md | lg) and theme from --sg-*.
-- [Add components with the CLI](https://svgrid.com/help/ui-components/cli): @svgrid/ui drops a working SvGrid UI component into your app in one command:
+- [Add components with the CLI](https://svgrid.com/help/ui-components/cli): @svgrid/ui gets a SvGrid UI component into your app - and lets you *see* it - in one command.
 - [Date & time](https://svgrid.com/help/ui-components/date-time): Four date/time controls built on a shared, framework-free date engine (date-core, date-format, date-selection, date-restrict). They are the rich-by-default editors for date, datetime and time grid …
 - [Feedback & display](https://svgrid.com/help/ui-components/feedback): Status, identity, loading and surface primitives for dashboards and detail panels. All are theme-token driven (light / dark + presets) and reduced-motion aware.
 - [Headless editors](https://svgrid.com/help/ui-components/headless-editors): Every editor is **headless-first**, exactly like the grid (createSvGrid / <SvGrid>). Each Sv* component is a thin styled renderer over a framework-free runes core named create<Editor>. Import the c…

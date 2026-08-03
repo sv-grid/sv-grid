@@ -1,20 +1,32 @@
 # Add components with the CLI
 
-`@svgrid/ui` drops a working SvGrid UI component into your app in one command:
+`@svgrid/ui` gets a SvGrid UI component into your app - and lets you *see* it -
+in one command.
+
+**See it first, no project needed:**
+
+```sh
+npx @svgrid/ui try calendar     # spins up a sandbox and opens it in your browser
+```
+
+**Put it in your app:**
 
 <div data-docs-add="add calendar"></div>
+
+`add` writes the component and installs `@svgrid/grid` for you. Want to preview it
+inside your own app? Add `--preview` (SvelteKit) - see [See it](#see-it) below.
 
 ## How it works
 
 `@svgrid/ui` is a **recipe scaffolder**, not a second component library. `add`
 writes a minimal, ready-to-edit `.svelte` starter into your project that imports
-from [`@svgrid/grid`](./index.md), makes sure the package is a dependency, and
-prints the install command.
+from [`@svgrid/grid`](./index.md), and installs the package for you.
 
 The distinction matters: the components themselves live in `@svgrid/grid`, so you
 get bug fixes and new features by bumping one version - while the file `add` drops
 in is *yours* to restyle, rename and wire however you like. It is the fast start,
-not a fork.
+not a fork. Because each recipe is a self-contained demo, `try` and `--preview`
+can render it immediately.
 
 ```
 your-app/
@@ -22,10 +34,29 @@ your-app/
     calendar.svelte        <- your copy, imports { SvCalendar } from '@svgrid/grid'
 ```
 
+## See it
+
+Two ways to render a component, not just drop its file in:
+
+```sh
+# zero setup: cached Vite + Svelte sandbox, opens http://localhost:5173
+npx @svgrid/ui try button
+
+# inside a SvelteKit app: also writes a /preview/button route (+ a /preview index)
+npx @svgrid/ui add button --preview
+#   -> start your dev server, open http://localhost:5173/preview/button
+```
+
+`try` needs no project - it caches a tiny sandbox under your temp dir (so repeat
+runs are instant) and opens the browser. `--preview` drops a
+`src/routes/preview/<id>` page into an existing SvelteKit app so it renders in
+your running dev server. `add` also prints the exact `try` command for whatever
+you just added, so the "see it" step is always one copy-paste away.
+
 ## Commands
 
 ```sh
-# add one component
+# add one component (installs @svgrid/grid for you)
 npx @svgrid/ui add calendar
 
 # add several at once, into a folder you choose
@@ -34,20 +65,30 @@ npx @svgrid/ui add calendar time-picker --dir src/lib/ui
 # add a whole family in one go
 npx @svgrid/ui add date-time
 
-# install the dependency for you (default: it just prints the command)
-npx @svgrid/ui add calendar --install
+# add + a /preview route you can open in your dev server (SvelteKit)
+npx @svgrid/ui add calendar --preview
+
+# just write the file, don't run the package manager
+npx @svgrid/ui add calendar --no-install
+
+# see it with zero setup
+npx @svgrid/ui try calendar
 
 # list everything you can add
 npx @svgrid/ui list
 ```
 
+> Running an older CLI? `npx` caches by name - pin the latest with
+> `npx @svgrid/ui@latest ...` (the `try` command and `--preview` flag arrived in 0.3.0).
+
 ## Options
 
-| Flag           | Description                                                                                          |
-| -------------- | ---------------------------------------------------------------------------------------------------- |
-| `--dir <path>` | Where to write files. Default: `src/lib/components/ui`, or the `componentsDir` in a project `svgrid.json`. |
-| `--force`      | Overwrite files that already exist (otherwise existing files are left untouched).                    |
-| `--install`    | Run your package manager (auto-detected from the lockfile) to install deps.                           |
+| Flag             | Description                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| `--preview`, `-p`| (with `add`) Also write a `src/routes/preview/<id>` route so you can see it in your dev server. SvelteKit apps only. |
+| `--dir <path>`   | Where to write files. Default: `src/lib/components/ui`, or the `componentsDir` in a project `svgrid.json`. |
+| `--force`        | Overwrite files that already exist (otherwise existing files are left untouched).                    |
+| `--no-install`   | Skip installing the dependency; just print the install command.                                      |
 
 ## Available components
 
