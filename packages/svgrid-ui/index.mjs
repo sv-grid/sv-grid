@@ -345,26 +345,30 @@ async function cmdAdd(registry, tokens, args) {
     return
   }
 
-  // Ensure deps + install (on by default; --no-install just prints the command).
-  const added = await ensureDeps(projectRoot, [...deps])
-  const pm = detectPm(projectRoot)
-  if (added.length) {
-    if (args.install && projectRoot) {
-      stdout.write(`\n${color('dim', `Installing with ${pm.id}...`)}\n`)
-      // Single shell string (not bin + args[]) so Node doesn't warn DEP0190
-      // under shell:true; the tokens here are fixed pm commands + npm package ids.
-      const res = spawnSync(`${pm.add} ${added.join(' ')}`, { cwd: projectRoot, stdio: 'inherit', shell: true })
-      if (res.status !== 0) {
-        stdout.write(`${color('yellow', '!')} Install failed - run it yourself: ${color('cyan', `${pm.add} ${added.join(' ')}`)}\n`)
+  // Install the dependency - only meaningful inside a project (on by default;
+  // --no-install just prints the command). `add` writes into an EXISTING app;
+  // a no-project run is handled in the next-steps block below.
+  if (projectRoot) {
+    const pm = detectPm(projectRoot)
+    const added = await ensureDeps(projectRoot, [...deps])
+    if (added.length) {
+      if (args.install) {
+        stdout.write(`\n${color('dim', `Installing with ${pm.id}...`)}\n`)
+        // Single shell string (not bin + args[]) so Node doesn't warn DEP0190
+        // under shell:true; the tokens here are fixed pm commands + npm package ids.
+        const res = spawnSync(`${pm.add} ${added.join(' ')}`, { cwd: projectRoot, stdio: 'inherit', shell: true })
+        if (res.status !== 0) {
+          stdout.write(`${color('yellow', '!')} Install failed - run it yourself: ${color('cyan', `${pm.add} ${added.join(' ')}`)}\n`)
+        }
+      } else {
+        stdout.write(`\n${color('bold', 'Install the dependency')}\n  ${color('cyan', `${pm.add} ${added.join(' ')}`)}\n`)
       }
-    } else {
-      stdout.write(`\n${color('bold', 'Install the dependency')}\n  ${color('cyan', `${pm.add} ${added.join(' ')}`)}\n`)
+    } else if ([...deps].length) {
+      stdout.write(`\n${color('dim', `${[...deps].join(', ')} already in package.json.`)}\n`)
     }
-  } else if ([...deps].length) {
-    stdout.write(`\n${color('dim', `${[...deps].join(', ')} already in package.json.`)}\n`)
   }
 
-  // Optional preview route(s).
+  // Optional preview route(s) - needs a SvelteKit project.
   if (args.preview) {
     if (isSvelteKit(projectRoot)) {
       const urls = await writePreviewRoutes(projectRoot, dest, items, args.force)
@@ -378,14 +382,22 @@ async function cmdAdd(registry, tokens, args) {
     }
   }
 
-  // Next steps: how to USE it (code) and how to SEE it (try / --preview).
+  // Next steps.
   const first = items[0]
+  const ids = items.map((it) => it.id).join(' ')
   stdout.write(`\n${color('green', '✔')} Added ${written.length} file(s). They're yours - edit away.\n`)
-  if (first) {
+  if (!projectRoot) {
+    // A lone component file with no app to run it - `add` targets an existing
+    // project. Point at the two real paths instead of leaving a stranded file.
+    stdout.write(
+      `  ${color('yellow', 'Heads up:')} no package.json here, so there's nothing to run this in yet.\n` +
+        `  ${color('dim', 'See it now:')}   ${color('cyan', `npx @svgrid/ui try ${ids}`)} ${color('dim', '(no project needed)')}\n` +
+        `  ${color('dim', 'Start an app:')} ${color('cyan', 'npm create @svgrid@latest')} ${color('dim', '(then run add inside it)')}\n`,
+    )
+  } else {
     stdout.write(`  ${color('dim', 'Use it:')}  import { ${exportName(first.id)} } from '@svgrid/grid'\n`)
     // "See it" - skip when we already wrote preview routes just above.
     if (!(args.preview && isSvelteKit(projectRoot))) {
-      const ids = items.map((it) => it.id).join(' ')
       stdout.write(`  ${color('dim', 'See it:')}  ${color('cyan', `npx @svgrid/ui try ${ids}`)} ${color('dim', '(opens in your browser)')}\n`)
       if (isSvelteKit(projectRoot)) {
         stdout.write(`  ${color('dim', 'In app:')}  re-run with ${color('cyan', '--preview')} to add a /preview/${first.id} route\n`)
