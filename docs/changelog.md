@@ -83,6 +83,12 @@ For machine-readable releases, fetch
 - **Scheduler column alignment.** The all-day lane, day/time-grid header, and
   body columns now reserve the scrollbar width consistently, so the columns line
   up instead of drifting by the scrollbar's width.
+- **Excel export color-scale conditional formatting.** A color scale's `min` /
+  `mid` / `max` are optional, so the export could build an `(string | undefined)[]`
+  where a `string[]` was expected; it now falls back to the same `#ffffff` /
+  `#000000` defaults the grid renders with. Because `@svgrid/enterprise` ships its
+  `src`, this had surfaced as a stray `svelte-check` error in consuming apps - a
+  clean app now type-checks with zero errors.
 
 ### Tooling & docs
 
@@ -91,12 +97,25 @@ For machine-readable releases, fetch
 - **`@svgrid/ui` recipe scaffolder** - `npx @svgrid/ui add <component>` drops a
   ready-to-edit starter (e.g. `add calendar`) into your app, complementing the
   shadcn-style component pages (Preview / Code, install tabs) across the UI kit.
+- **See a component before you wire it in** (`@svgrid/ui` 0.3.x).
+  `npx @svgrid/ui try <component>` spins up a zero-setup Vite + Svelte sandbox and
+  opens the component in your browser; `add --preview` writes a
+  `src/routes/preview/<id>` route (plus a `/preview` index) in a SvelteKit app.
+  `add` now installs `@svgrid/grid` by default (`--no-install` to opt out) and
+  prints the exact `try` command for whatever you just added, so the "see it"
+  step is never a dead end.
 - **AI coding Skill** (`skills/svgrid`, installable with
   `npx skills add sv-grid/sv-grid`) - an always-on house-style guidance layer
   that complements `@svgrid/mcp`.
 
 #### Fixed
 
+- **`@svgrid/mcp` reports its real version.** The MCP server's
+  `serverInfo.version` was hardcoded to `0.1.0`; it now reads the package version.
+- **`@svgrid/create-studio` scaffold builds out of the box.** The generated app
+  shipped an orphaned `/products` route referencing an entity that was never
+  defined; the `Product` schema, seed, data source, nav, and home card are now
+  complete, so `npm run build` succeeds on a fresh scaffold.
 - **API-docs accuracy pass across all 74 UI-component pages.** Corrected the
   `SvDockLayout`, `SvDockManager`, and `SvDateTimePicker` prop tables (added 13
   missing dock-layout props; removed a `size` prop `SvDateTimePicker` never had),
