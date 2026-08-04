@@ -721,7 +721,10 @@ async function main() {
   // 3. Prerender each doc page.
   let written = 0
   for (const doc of docs) {
-    const url = `${CANON}/docs/${doc.slug}`
+    // Trailing slash: GitHub Pages serves dir/index.html at the "/" URL and
+    // 301s the slash-less form to it, so the slash form is the real 200 - make
+    // canonical + og:url + sitemap agree to avoid indexing both.
+    const url = `${CANON}/docs/${doc.slug}/`
     const title = `${doc.title} - SvGrid Docs`
     const description = doc.summary || `${doc.title} - documentation for SvGrid, the Svelte 5 data grid.`
     const sectionLabel = SECTION_LABEL[doc.section] ?? 'Docs'
@@ -782,7 +785,7 @@ async function main() {
     ['community', 'Community - SvGrid Discussions, Q&A, and Ideas', 'Ask questions, share what you built, propose features, and follow announcements. The SvGrid community runs on GitHub Discussions.'],
   ]
   for (const [route, title, description] of STATIC_ROUTES) {
-    const url = `${CANON}/${route}`
+    const url = `${CANON}/${route}/`
     const ogImg = OG_SECTIONS[route] ? `${CANON}/og/${route}.svg` : undefined
     let html = applyHead(template, { title, description, canonical: url, ogType: 'website', image: ogImg, imageAlt: title })
 
@@ -828,7 +831,7 @@ async function main() {
 
   // 4b. Prerender each demo page (per-example SEO + crawlable blurb).
   for (const d of demos) {
-    const url = `${CANON}/demos/${d.id}`
+    const url = `${CANON}/demos/${d.id}/`
     const title = `${d.title} - SvGrid Svelte Data Grid Example`
     const description = d.blurb
     let html = applyHead(template, { title, description, canonical: url, ogType: 'article', image: `${CANON}/og/demos.svg`, imageAlt: `${d.title} - SvGrid demo` })
@@ -861,7 +864,7 @@ async function main() {
 
   // 4c. Prerender each comparison page (SvGrid vs X - high commercial intent).
   for (const c of comparisons) {
-    const url = `${CANON}/compare/${c.slug}`
+    const url = `${CANON}/compare/${c.slug}/`
     const title = `SvGrid vs ${c.competitor} - Svelte Data Grid Comparison`
     const description = (c.oneLineVerdict || c.tagline).slice(0, 200)
     let html = applyHead(template, { title, description, canonical: url, ogType: 'article', image: `${CANON}/og/compare.svg`, imageAlt: `SvGrid vs ${c.competitor}` })
@@ -919,7 +922,7 @@ async function main() {
     },
   })
   for (const p of blogPosts) {
-    const url = `${CANON}/blog/${p.slug}`
+    const url = `${CANON}/blog/${p.slug}/`
     const title = `${p.title} - SvGrid Blog`
     const description = p.description
     const heroImg = `${CANON}/og/blog/${p.slug}.${blogImgExt.get(p.slug) || 'svg'}`
@@ -968,7 +971,10 @@ async function main() {
   // 5. Sitemap with every real URL.
   const today = new Date().toISOString().slice(0, 10)
   const urls = []
-  const push = (loc, priority, lastmod) => urls.push({ loc, priority, lastmod })
+  // Normalize to the trailing-slash form GitHub Pages serves as 200 (see the
+  // per-page canonicals above), so the sitemap never lists a URL that 301s.
+  const push = (loc, priority, lastmod) =>
+    urls.push({ loc: loc.endsWith('/') ? loc : loc + '/', priority, lastmod })
   push(`${CANON}/`, '1.0', today)
   for (const [route] of STATIC_ROUTES) push(`${CANON}/${route}`, '0.8', today)
   for (const c of comparisons) push(`${CANON}/compare/${c.slug}`, '0.7', today)
