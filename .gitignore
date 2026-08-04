@@ -14,6 +14,10 @@ node_modules/
 dist/
 build/
 
+# Internal go-to-market / SEO strategy docs + GSC exports + analysis tooling.
+# NEVER commit to the public repo (launch copy, backlink plans, traffic data).
+marketing/
+
 # Automated tweet scratch output (rendered card + preview)
 .tweet-out/
 .svelte-kit/
