@@ -38,10 +38,13 @@ const RELATED_COUNT = 5
 const TODAY = new Date().toISOString().slice(0, 10)
 
 function parseFrontmatter(raw) {
-  const m = raw.match(/^---\n([\s\S]*?)\n---/)
+  // Tolerate a leading UTF-8 BOM and CRLF line endings (Windows checkouts add
+  // both; without this the ^--- anchor fails and every field parses as empty).
+  const text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw
+  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/)
   const meta = {}
   if (m) {
-    for (const line of m[1].split('\n')) {
+    for (const line of m[1].split(/\r?\n/)) {
       const i = line.indexOf(':')
       if (i > 0) meta[line.slice(0, i).trim()] = line.slice(i + 1).trim().replace(/^['"]|['"]$/g, '')
     }
