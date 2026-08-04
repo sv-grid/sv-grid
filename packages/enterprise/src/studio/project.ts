@@ -644,7 +644,7 @@ export function setLayoutOpts<K extends keyof LayoutOpts>(project: StudioProject
   return mapScreen(project, screenId, (s) => ({ ...s, layoutOpts: { ...s.layoutOpts, [mode]: { ...s.layoutOpts?.[mode], ...patch } } }))
 }
 
-export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlerSteps?: Record<string, ActionStep[]>; handlersSource?: string; className?: string; layout?: ScreenLayout; dock?: DockManagerState; canvas?: Record<string, CanvasRect>; layoutOpts?: LayoutOpts; state?: StateVar[] }
+export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlerSteps?: Record<string, ActionStep[]>; handlersSource?: string; className?: string; layout?: ScreenLayout; dock?: DockManagerState; canvas?: Record<string, CanvasRect>; layoutOpts?: LayoutOpts; state?: StateVar[]; renderMode?: 'ssr' | 'spa' }
 
 /** The generated app's shell (master layout): sidebar, top-nav, or bottom-nav; brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav' | 'bottom-nav'
@@ -731,6 +731,31 @@ export type StudioProject = {
   /** Server-side business-rule triggers, keyed by entity name. Enforced on the
    *  SQL route (compiled into createKitHandlers `hooks`). */
   triggers?: Record<string, EntityTriggers>
+}
+
+/** The render mode for a screen. `'ssr'` emits idiomatic SvelteKit (`+page.server.ts`
+ *  with a `load` + form `actions`, SSR + progressive enhancement); `'spa'` (the
+ *  default) emits the client data-source-controller page. Opt-in for now. */
+export function screenRenderMode(_project: StudioProject, screen: Screen): 'ssr' | 'spa' {
+  return screen.renderMode === 'ssr' ? 'ssr' : 'spa'
+}
+
+/** Whether a screen can be emitted as SSR-native today. Slice 1: a single grid
+ *  block (no tree / scheduler), bound to a server-runnable in-memory source, and
+ *  no code-behind. Anything else falls back to the SPA path. */
+export function ssrEligible(project: StudioProject, screen: Screen): boolean {
+  if (!screen.entity || screen.code) return false
+  const blocks = screen.blocks ?? []
+  if (blocks.length !== 1 || blocks[0]!.config.kind !== 'grid') return false
+  const g = blocks[0]!.config as GridConfig
+  if (g.treeData || g.scheduler) return false
+  const kind = project.dataSources?.[screen.entity]?.kind ?? project.dataSource
+  return kind === 'memory'
+}
+
+/** True when the screen should actually emit as SSR (mode is 'ssr' AND eligible). */
+export function isSsrScreen(project: StudioProject, screen: Screen): boolean {
+  return screenRenderMode(project, screen) === 'ssr' && ssrEligible(project, screen)
 }
 
 /** The triggers configured for an entity (or an empty object). */

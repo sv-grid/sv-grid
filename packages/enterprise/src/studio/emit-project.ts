@@ -12,7 +12,7 @@
  */
 import type { GeneratedFile } from './scaffold.js'
 import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, SchedulerViewConfig, Screen, StudioProject } from './project.js'
-import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, FORM_SUBMIT, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY } from './project.js'
+import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, FORM_SUBMIT, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -2019,6 +2019,255 @@ ${(() => {
   }
 }
 
+// ---------------------------------------------------------------------------
+// SSR-native output (opt-in per screen via `renderMode: 'ssr'`).
+//
+// Instead of the client data-source-controller page, an SSR screen emits idiomatic
+// SvelteKit: a `+page.server.ts` with a `load` (SSR first paint, sort/filter/page
+// read from the URL so it's shareable and works with no JS) and form `actions` for
+// create / update / delete (progressive enhancement via `use:enhance`), plus an
+// SSR `+page.svelte` that renders the server rows and drives the grid's external
+// sort/pagination back into the URL. Server-side validation runs in the actions.
+// ---------------------------------------------------------------------------
+
+/** URL search params -> a data-source request. Shared by every SSR route's load. */
+const SSR_QUERY_HELPER = `// Turn a page URL's search params into a data-source request (sort / filter /
+// page / size). The grid drives these params via goto(), so the server re-runs
+// load() - which makes every list view bookmarkable and functional with no JS.
+import type { ServerRequest } from '@svgrid/grid'
+
+export function planFromSearchParams(url: URL, defaultPageSize = 25): ServerRequest {
+  const sp = url.searchParams
+  const pageIndex = Math.max(0, Number.parseInt(sp.get('page') ?? '', 10) || 0)
+  const pageSize = Math.min(200, Math.max(1, Number.parseInt(sp.get('size') ?? '', 10) || defaultPageSize))
+  const sortModel = (sp.get('sort') ?? '')
+    .split(',')
+    .filter(Boolean)
+    .map((token) => {
+      const [id, dir] = token.split(':')
+      return { id: id!, desc: dir === 'desc' }
+    })
+  const columns: Record<string, { operator: 'contains'; value: string }> = {}
+  for (const [k, v] of sp) if (k.startsWith('f_') && v) columns[k.slice(2)] = { operator: 'contains', value: v }
+  const global = sp.get('q') ?? ''
+  return {
+    startRow: pageIndex * pageSize,
+    endRow: pageIndex * pageSize + pageSize,
+    pageIndex,
+    pageSize,
+    sortModel,
+    filterModel: { ...(global ? { global } : {}), columns },
+  }
+}
+`
+
+function ssrQueryHelperFile(): GeneratedFile {
+  return { path: 'src/lib/server/query.ts', description: 'SSR: URL search params -> data-source request (sort/filter/page).', contents: SSR_QUERY_HELPER }
+}
+
+const htmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** The `+page.server.ts` + SSR `+page.svelte` for a single-grid CRUD screen. */
+function emitSsrGridScreen(schema: EntitySchema, screen: Screen): GeneratedFile[] {
+  const n = namesFor(schema)
+  const grid = screen.blocks[0]!.config as GridConfig
+  const pageSize = grid.pageSize && grid.pageSize > 0 ? grid.pageSize : 25
+  const idField = schema.idField ?? schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
+  const isFormHidden = (f: EntityField) => f.hidden === true || (typeof f.hidden === 'object' && !!f.hidden.form)
+  const formFields = schema.fields.filter(
+    (f) => f.field !== idField && !f.primaryKey && !f.readonly && !f.computed && !f.formula && !isFormHidden(f),
+  )
+  const normType = (t: string): 'text' | 'number' | 'boolean' => (t === 'number' ? 'number' : t === 'boolean' ? 'boolean' : 'text')
+  const fieldTypesLit = `{ ${formFields.map((f) => `${jsStr(f.field)}: ${jsStr(normType(f.type))}`).join(', ')} }`
+
+  const server = `import type { Actions, PageServerLoad } from './$types'
+import { fail } from '@sveltejs/kit'
+import { validateAll } from '@svgrid/enterprise'
+import { ${n.sourceVar}, nextId } from '$lib/data'
+import { ${n.schemaVar} } from '$lib/schemas'
+import { planFromSearchParams } from '$lib/server/query'
+
+const ID_FIELD = ${jsStr(idField)}
+const FIELD_TYPES: Record<string, 'text' | 'number' | 'boolean'> = ${fieldTypesLit}
+
+/** Read a submitted form into a typed partial row. Booleans come from checkbox
+ *  presence; numbers are coerced; empty values are dropped so they don't clobber. */
+function formToValues(fd: FormData): Record<string, unknown> {
+  const values: Record<string, unknown> = {}
+  for (const [field, type] of Object.entries(FIELD_TYPES)) {
+    if (type === 'boolean') { values[field] = fd.get(field) != null; continue }
+    const raw = fd.get(field)
+    if (raw == null || raw === '') continue
+    values[field] = type === 'number' ? Number(raw) : String(raw)
+  }
+  return values
+}
+
+export const load: PageServerLoad = async ({ url }) => {
+  const plan = planFromSearchParams(url, ${pageSize})
+  const { rows, rowCount } = await ${n.sourceVar}.getRows(plan)
+  return { rows, total: rowCount, page: plan.pageIndex, size: plan.pageSize }
+}
+
+export const actions: Actions = {
+  create: async ({ request }) => {
+    const values = formToValues(await request.formData())
+    const errors = await validateAll(${n.schemaVar}, values)
+    if (Object.keys(errors).length) return fail(422, { errors, values })
+    await ${n.sourceVar}.createRow({ [ID_FIELD]: nextId(${jsStr(n.idPrefix)}), ...values })
+    return { ok: true }
+  },
+  update: async ({ request }) => {
+    const fd = await request.formData()
+    const id = String(fd.get('__id') ?? '')
+    const values = formToValues(fd)
+    const errors = await validateAll(${n.schemaVar}, values)
+    if (Object.keys(errors).length) return fail(422, { errors, values })
+    await ${n.sourceVar}.updateRow(id, values)
+    return { ok: true }
+  },
+  delete: async ({ request }) => {
+    const fd = await request.formData()
+    await ${n.sourceVar}.deleteRow(String(fd.get('__id') ?? ''))
+    return { ok: true }
+  },
+}
+`
+
+  const row = `(editing as Record<string, unknown>)`
+  const fieldBlocks = formFields
+    .map((f) => {
+      const key = jsStr(f.field)
+      const req = f.required ? ' required' : ''
+      let input: string
+      if (normType(f.type) === 'boolean') {
+        input = `<input type="checkbox" name=${key} checked={!isCreate && !!${row}[${key}]} />`
+      } else if (f.options && f.options.length) {
+        const opts = f.options
+          .map((o) => `<option value=${jsStr(String(o.value))} selected={!isCreate && ${row}[${key}] === ${jsStr(String(o.value))}}>${htmlEsc(o.label ?? String(o.value))}</option>`)
+          .join('')
+        input = `<select name=${key}${req}>${opts}</select>`
+      } else {
+        const t = normType(f.type) === 'number' ? 'number' : f.type === 'date' || f.type === 'dateString' ? 'date' : 'text'
+        input = `<input type="${t}" name=${key} value={isCreate ? '' : (${row}[${key}] ?? '')}${req} />`
+      }
+      return `        <label class="sk-field">
+          <span>${htmlEsc(f.label ?? f.field)}${f.required ? ' *' : ''}</span>
+          ${input}
+          {#if form?.errors?.[${key}]}<em class="sk-err">{form.errors[${key}]}</em>{/if}
+        </label>`
+    })
+    .join('\n')
+
+  const page = `<script lang="ts">
+  import { SvGrid, renderSnippet, type ColumnDef, type CellContext } from '@svgrid/grid'
+  import { schemaToColumns } from '@svgrid/enterprise'
+  import { goto } from '$app/navigation'
+  import { page } from '$app/state'
+  import { enhance } from '$app/forms'
+  import type { SubmitFunction } from '@sveltejs/kit'
+  import { ${n.schemaVar}, type ${n.type} } from '$lib/schemas'
+  import type { PageProps } from './$types'
+
+  let { data, form }: PageProps = $props()
+
+  const ID_FIELD = ${jsStr(idField)}
+  const TITLE = ${jsStr(screen.title)}
+  const NEW_LABEL = ${jsStr('New ' + n.label)}
+
+  // Grid columns from the schema + a row-actions column (Edit / Delete).
+  const columns: ColumnDef<Record<string, never>, ${n.type}>[] = [
+    ...(schemaToColumns(${n.schemaVar}) as ColumnDef<Record<string, never>, ${n.type}>[]),
+    { id: '__actions', header: '', sortable: false, cell: (ctx: CellContext<${n.type}>) => renderSnippet(rowActions, { row: ctx.row.original }) },
+  ]
+
+  // null = no editor; 'create' = new row; a row = editing that row.
+  let editing = $state<'create' | ${n.type} | null>(null)
+  const isCreate = $derived(editing === 'create')
+
+  // Sort / paginate by writing to the URL - load() re-runs on the server.
+  function setParams(patch: Record<string, string | null>) {
+    const sp = new URLSearchParams(page.url.searchParams)
+    for (const [k, v] of Object.entries(patch)) { if (v == null) sp.delete(k); else sp.set(k, v) }
+    const q = sp.toString()
+    void goto(q ? \`?\${q}\` : page.url.pathname, { keepFocus: true, noScroll: true })
+  }
+
+  // Progressive enhancement: post to the action, keep typed values on error,
+  // close the editor on success (load re-runs automatically, refreshing the grid).
+  const onSubmit: SubmitFunction = () => async ({ result, update }) => {
+    await update({ reset: false })
+    if (result.type === 'success') editing = null
+  }
+</script>
+
+{#snippet rowActions({ row }: { row: ${n.type} })}
+  <div class="sk-rowact">
+    <button type="button" class="sk-link" onclick={() => (editing = row)}>Edit</button>
+    <form method="POST" action="?/delete" use:enhance={onSubmit} style="display:contents">
+      <input type="hidden" name="__id" value={(row as Record<string, unknown>)[ID_FIELD] as string} />
+      <button type="submit" class="sk-link sk-danger">Delete</button>
+    </form>
+  </div>
+{/snippet}
+
+<header class="sk-head">
+  <h1>{TITLE}</h1>
+  <button type="button" class="sk-btn sk-btn--primary" onclick={() => (editing = 'create')}>{NEW_LABEL}</button>
+</header>
+
+<SvGrid
+  data={data.rows}
+  {columns}
+  externalSort
+  externalPagination
+  rowCount={data.total}
+  pageIndex={data.page}
+  pageSize={data.size}
+  onSortingChange={(s) => setParams({ sort: s.map((x) => \`\${x.id}:\${x.desc ? 'desc' : 'asc'}\`).join(',') || null, page: null })}
+  onPaginationChange={(p) => setParams({ page: String(p.pageIndex), size: String(p.pageSize) })}
+/>
+
+{#if editing}
+  <div class="sk-overlay">
+    <form method="POST" action={isCreate ? '?/create' : '?/update'} class="sk-form" use:enhance={onSubmit}>
+      <h2>{isCreate ? NEW_LABEL : 'Edit ${htmlEsc(n.label)}'}</h2>
+      {#if !isCreate}<input type="hidden" name="__id" value={${row}[ID_FIELD] as string} />{/if}
+${fieldBlocks}
+      <div class="sk-form__actions">
+        <button type="button" class="sk-btn" onclick={() => (editing = null)}>Cancel</button>
+        <button type="submit" class="sk-btn sk-btn--primary">Save</button>
+      </div>
+    </form>
+  </div>
+{/if}
+
+<style>
+  .sk-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .sk-head h1 { margin: 0; font-size: 20px; }
+  .sk-btn { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); cursor: pointer; }
+  .sk-btn--primary { background: var(--sg-accent, #4f46e5); border-color: var(--sg-accent, #4f46e5); color: #fff; }
+  .sk-rowact { display: flex; gap: 10px; }
+  .sk-link { background: none; border: none; padding: 0; font: inherit; color: var(--sg-accent, #4f46e5); cursor: pointer; }
+  .sk-danger { color: #dc2626; }
+  .sk-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); display: grid; place-items: center; z-index: 50; }
+  .sk-form { width: min(480px, 92vw); max-height: 90vh; overflow: auto; background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 24px 60px -20px rgba(15, 23, 42, 0.5); }
+  .sk-form h2 { margin: 0 0 4px; font-size: 16px; }
+  .sk-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .sk-field span { color: var(--sg-muted, #64748b); }
+  .sk-field input, .sk-field select { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); }
+  .sk-field input[type='checkbox'] { align-self: flex-start; width: auto; }
+  .sk-err { color: #dc2626; font-size: 12px; font-style: normal; }
+  .sk-form__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+</style>
+`
+
+  return [
+    { path: `src/routes/${screen.route}/+page.server.ts`, description: `SSR load + CRUD form actions for ${n.label}.`, contents: server },
+    { path: `src/routes/${screen.route}/+page.svelte`, description: `${n.label} screen (SSR + progressive enhancement).`, contents: page },
+  ]
+}
+
 export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   if (project.entities.length === 0) throw new Error('emitStudioProject: no entities to emit')
   if (project.screens.length === 0) throw new Error('emitStudioProject: no screens to emit')
@@ -2083,8 +2332,15 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     }
     const schema = byName.get(screen.entity)
     if (!schema) throw new Error(`emitStudioProject: screen "${screen.title}" references missing entity "${screen.entity}"`)
+    // SSR-native path (opt-in): idiomatic +page.server.ts load + form actions.
+    if (isSsrScreen(project, screen)) {
+      pages.push(...emitSsrGridScreen(schema, screen))
+      continue
+    }
     pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled))
   }
+  // Any SSR screen needs the shared URL-params -> query helper (server-only).
+  const ssrHelpers = project.screens.some((s) => isSsrScreen(project, s)) ? [ssrQueryHelperFile()] : []
   const actionRouteFiles = [...actionsById.values()].map(({ action, screenId }) => actionRouteFile(action, screenId, accessEnabled))
 
   // Nav: only screens flagged into the menu, ordered, with an optional custom label.
@@ -2113,7 +2369,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   if (authUserAdmin) navExtras = [...navExtras, { href: '/users', label: 'Users', id: '__users__' }]
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
   const handleFiles = project.screens.some(screenHasCode) ? [handlesModuleFile()] : []
-  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
+  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...ssrHelpers, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the

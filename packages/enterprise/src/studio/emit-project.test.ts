@@ -48,6 +48,59 @@ const orders: EntitySchema = {
   ],
 }
 
+describe('SSR-native screens (renderMode: ssr)', () => {
+  const ssrProject = (): StudioProject => {
+    const p = createProject([customers])
+    return { ...p, screens: p.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })) }
+  }
+
+  it('emits +page.server.ts with a load + CRUD form actions + server validation', () => {
+    const server = emitStudioProject(ssrProject()).find((f) => f.path === 'src/routes/customers/+page.server.ts')
+    expect(server, 'an SSR screen should emit a +page.server.ts').toBeTruthy()
+    const c = server!.contents
+    expect(c).toMatch(/export const load: PageServerLoad/)
+    expect(c).toMatch(/export const actions: Actions/)
+    expect(c).toMatch(/create:\s*async/)
+    expect(c).toMatch(/update:\s*async/)
+    expect(c).toMatch(/delete:\s*async/)
+    expect(c).toMatch(/await validateAll\(customersSchema, values\)/) // server-side validation
+    expect(c).toMatch(/return fail\(422/)
+    expect(c).toMatch(/planFromSearchParams\(url/)
+    expect(c).toMatch(/await customersSource\.getRows\(plan\)/)
+  })
+
+  it('emits an SSR +page.svelte: server rows, URL-driven sort/page, form-action editing', () => {
+    const page = emitStudioProject(ssrProject()).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/import type \{ PageProps \} from '\.\/\$types'/)
+    expect(page).toMatch(/data=\{data\.rows\}/) // renders SSR'd rows
+    expect(page).toMatch(/externalSort/)
+    expect(page).toMatch(/externalPagination/)
+    expect(page).toMatch(/onSortingChange=/)
+    expect(page).toMatch(/use:enhance=\{onSubmit\}/) // progressive enhancement
+    expect(page).toMatch(/action=\{isCreate \? '\?\/create' : '\?\/update'\}/)
+    // It must NOT fall back to the client data-source controller.
+    expect(page).not.toMatch(/createServerDataSource/)
+    // Valid Svelte 5.
+    expect(() => compile(page, { generate: 'client' })).not.toThrow()
+  })
+
+  it('emits the shared server query helper once', () => {
+    const files = emitStudioProject(ssrProject())
+    const helpers = files.filter((f) => f.path === 'src/lib/server/query.ts')
+    expect(helpers).toHaveLength(1)
+    expect(helpers[0]!.contents).toMatch(/export function planFromSearchParams/)
+  })
+
+  it('leaves spa screens on the client-controller path', () => {
+    const p = createProject([customers]) // default renderMode is spa
+    const files = emitStudioProject(p)
+    expect(files.find((f) => f.path === 'src/routes/customers/+page.server.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/lib/server/query.ts')).toBeUndefined()
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/createServerDataSource/)
+  })
+})
+
 describe('emitStudioProject (per-block screens)', () => {
   const project = createProject([customers, orders])
   const files = emitStudioProject(project)
