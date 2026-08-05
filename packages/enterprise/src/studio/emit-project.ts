@@ -2068,9 +2068,11 @@ function ssrQueryHelperFile(): GeneratedFile {
 const htmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /** The `+page.server.ts` + SSR `+page.svelte` for a single-grid CRUD screen. */
-function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'memory' | 'sql', accessEnabled: boolean, screenIds: string[]): GeneratedFile[] {
+function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'memory' | 'sql', accessEnabled: boolean, screenIds: string[], byName: Map<string, EntitySchema>): GeneratedFile[] {
   const n = namesFor(schema)
   const isSql = sourceKind === 'sql'
+  const relSchemaOf = (f: EntityField) => byName.get(f.relation!.entity)!
+  const relIdOf = (rs: EntitySchema) => rs.idField ?? rs.fields.find((x) => x.primaryKey)?.field ?? 'id'
   const grid = screen.blocks[0]!.config as GridConfig
   const pageSize = grid.pageSize && grid.pageSize > 0 ? grid.pageSize : 25
   const idField = schema.idField ?? schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
@@ -2081,6 +2083,21 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'me
   const normType = (t: string): 'text' | 'number' | 'boolean' => (t === 'number' ? 'number' : t === 'boolean' ? 'boolean' : 'text')
   const fieldTypesLit = `{ ${formFields.map((f) => `${jsStr(f.field)}: ${jsStr(normType(f.type))}`).join(', ')} }`
 
+  // Relation fields render as a native <select> whose options are prefetched in load
+  // (memory path only for now; sql relation fields stay a text FK - follow-up).
+  const isRel = (f: EntityField) => !isSql && f.type === 'relation' && !!f.relation && byName.has(f.relation.entity)
+  const relFields = formFields.filter(isRel)
+  const relSourceVars = [...new Set(relFields.map((f) => namesFor(relSchemaOf(f)).sourceVar))]
+  const relPrefetch = relFields
+    .map((f) => {
+      const rs = relSchemaOf(f)
+      const relId = relIdOf(rs)
+      const labelF = f.relation!.labelField ?? relId
+      return `  const ${f.field}Options = (await ${namesFor(rs).sourceVar}.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rows.map((r: Record<string, unknown>) => ({ value: String(r[${jsStr(relId)}] ?? ''), label: String(r[${jsStr(labelF)}] ?? '') }))`
+    })
+    .join('\n')
+  const relReturn = relFields.map((f) => `, ${f.field}Options`).join('')
+
   // Source acquisition differs by kind:
   //  - memory: import the in-process source from $lib/data and call it directly.
   //  - sql: build a same-origin client over the connected /api/<entity> route with
@@ -2089,7 +2106,7 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'me
   const src = isSql ? 'source(fetch)' : n.sourceVar
   const fetchArg = isSql ? ', fetch' : ''
   const enterpriseImports = isSql ? 'validateAll, createKitDataSource' : 'validateAll'
-  const sourceImport = isSql ? '' : `import { ${n.sourceVar}, nextId } from '$lib/data'\n`
+  const sourceImport = isSql ? '' : `import { ${[...new Set([n.sourceVar, ...relSourceVars]), 'nextId'].join(', ')} } from '$lib/data'\n`
   const schemaImport = `import { ${n.schemaVar}${isSql ? `, type ${n.type}` : ''} } from '$lib/schemas'`
   const idConst = isSql ? '' : `\nconst ID_FIELD = ${jsStr(idField)}`
   const srcHelper = isSql
@@ -2130,7 +2147,7 @@ function formToValues(fd: FormData): Record<string, unknown> {
 export const load: PageServerLoad = async ({ url${fetchArg}${localsArg} }) => {
 ${readGuard}  const plan = planFromSearchParams(url, ${pageSize})
   const { rows, rowCount } = await ${src}.getRows(plan)
-  return { rows, total: rowCount, page: plan.pageIndex, size: plan.pageSize }
+${relPrefetch ? relPrefetch + '\n' : ''}  return { rows, total: rowCount, page: plan.pageIndex, size: plan.pageSize${relReturn} }
 }
 
 export const actions: Actions = {
@@ -2171,6 +2188,9 @@ ${writeGuard('delete')}    const fd = await request.formData()
           .map((o) => `<option value=${jsStr(String(o.value))} selected={!isCreate && ${row}[${key}] === ${jsStr(String(o.value))}}>${htmlEsc(o.label ?? String(o.value))}</option>`)
           .join('')
         input = `<select name=${key}${req}>${opts}</select>`
+      } else if (isRel(f)) {
+        // Relation: options prefetched in load (data.<field>Options), current FK selected.
+        input = `<select name=${key}${req}>\n            <option value="">-</option>\n            {#each data.${f.field}Options as o (o.value)}<option value={o.value} selected={!isCreate && String(${row}[${key}] ?? '') === o.value}>{o.label}</option>{/each}\n          </select>`
       } else {
         const t = normType(f.type) === 'number' ? 'number' : f.type === 'date' || f.type === 'dateString' ? 'date' : 'text'
         input = `<input type="${t}" name=${key} value={isCreate ? '' : (${row}[${key}] ?? '')}${req} />`
@@ -2359,7 +2379,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     // SSR-native path (opt-in): idiomatic +page.server.ts load + form actions.
     if (isSsrScreen(project, screen)) {
       const srcKind = sources[screen.entity]?.kind === 'sql' ? 'sql' : 'memory'
-      pages.push(...emitSsrGridScreen(schema, screen, srcKind, accessEnabled, screensByEntity.get(screen.entity) ?? []))
+      pages.push(...emitSsrGridScreen(schema, screen, srcKind, accessEnabled, screensByEntity.get(screen.entity) ?? [], byName))
       continue
     }
     pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled))

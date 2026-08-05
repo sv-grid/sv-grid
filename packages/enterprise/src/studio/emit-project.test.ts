@@ -127,6 +127,21 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'delete', SCREEN_IDS\)/)
   })
 
+  it('memory SSR + relation field: prefetches options in load and renders a <select>', () => {
+    const p0 = createProject([customers, orders])
+    const p: StudioProject = { ...p0, screens: p0.screens.map((s) => (s.entity === 'orders' ? { ...s, renderMode: 'ssr' as const } : s)) }
+    const files = emitStudioProject(p)
+    const server = files.find((f) => f.path === 'src/routes/orders/+page.server.ts')!.contents
+    expect(server).toMatch(/import \{ ordersSource, customersSource, nextId \} from '\$lib\/data'/)
+    expect(server).toMatch(/const customer_idOptions = \(await customersSource\.getRows\(/)
+    expect(server).toMatch(/label: String\(r\['name'\]/) // uses the relation's labelField
+    expect(server).toMatch(/size: plan\.pageSize, customer_idOptions \}/) // options returned from load
+    const page = files.find((f) => f.path === 'src/routes/orders/+page.svelte')!.contents
+    expect(page).toMatch(/<select name='customer_id'/)
+    expect(page).toMatch(/#each data\.customer_idOptions as o/)
+    expect(() => compile(page, { generate: 'client' })).not.toThrow()
+  })
+
   it('leaves spa screens on the client-controller path', () => {
     const p = createProject([customers]) // default renderMode is spa
     const files = emitStudioProject(p)
