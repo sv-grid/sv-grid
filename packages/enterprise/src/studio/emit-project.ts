@@ -1647,7 +1647,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const hasCellRenderers = cellRenderKinds.size > 0
   const wantsForm = !!formGrid || hasForm || hasEditAction
   // An unpaginated grid loads everything (one big page); else its configured size.
-  const gridPageSize = gridConfigs[0] ? (gridConfigs[0].paginated !== false ? gridConfigs[0].pageSize : 1000) : 10
+  const gridPageSize = gridConfigs[0] ? (gridConfigs[0].paginated !== false ? (gridConfigs[0].pageSize ?? 10) : 1000) : 10
   const formPres = formGrid?.formPresentation ?? 'modal'
   const hasPivot = has(allBlocks, 'pivot')
   const hasFilter = has(blocks, 'filter')
