@@ -15,6 +15,7 @@ import { createReadStream, existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, normalize, resolve, extname } from 'node:path'
 import { createRequire } from 'node:module'
+import { createHash } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import {
   createProject,
@@ -133,8 +134,23 @@ function serveStatic(res: ServerResponse, dir: string, urlPath: string): void {
   createReadStream(filePath).pipe(res)
 }
 
-/** Write the generated app bundle to disk and add any runtime deps it imports. */
-async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<number> {
+/** Write the generated app bundle to disk and add any runtime deps it imports.
+ *
+ *  Clobber guard: `.studio/manifest.json` records the hash of every file Studio
+ *  last wrote. On regenerate, a file the USER has since edited (disk differs from
+ *  the manifest) gets the new version written as `<file>.new` + reported as a
+ *  conflict, instead of silently overwriting their work. Files Studio wrote and
+ *  nobody touched are overwritten as before. */
+export async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<{ written: number; conflicts: string[] }> {
+  const manifestPath = join(outDir, '.studio', 'manifest.json')
+  let manifest: Record<string, string> = {}
+  try {
+    manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, string>
+  } catch {
+    /* first generate (or pre-manifest project) - guard activates from now on */
+  }
+  const sha = (s: string) => createHash('sha256').update(s).digest('hex')
+  const conflicts: string[] = []
   let written = 0
   for (const f of files) {
     const full = join(outDir, f.path)
@@ -142,10 +158,30 @@ async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<numb
     // developer's forever: never overwrite one that already exists on disk. This is
     // the make-or-break round-trip guarantee. See HANDLERS-DESIGN.md.
     if (skipUserOwned(f, existsSync(full))) continue
+    const newHash = sha(f.contents)
+    if (existsSync(full)) {
+      const onDisk = await readFile(full, 'utf8').catch(() => null)
+      const diskHash = onDisk == null ? null : sha(onDisk)
+      if (diskHash === newHash) {
+        manifest[f.path] = newHash // already identical - nothing to write
+        continue
+      }
+      const lastGenerated = manifest[f.path]
+      if (lastGenerated !== undefined && diskHash !== null && diskHash !== lastGenerated) {
+        // Locally modified since the last generate AND the regenerated content
+        // differs: park it next to the user's version instead of clobbering.
+        await writeFile(full + '.new', f.contents)
+        conflicts.push(f.path)
+        continue
+      }
+    }
     await mkdir(dirname(full), { recursive: true })
     await writeFile(full, f.contents)
+    manifest[f.path] = newHash
     written++
   }
+  await mkdir(dirname(manifestPath), { recursive: true })
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
   const allSource = files.map((f) => f.contents).join('\n')
   const pkgPath = join(outDir, 'package.json')
   if (existsSync(pkgPath)) {
@@ -163,7 +199,7 @@ async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<numb
       // leave package.json untouched if it isn't valid JSON
     }
   }
-  return written
+  return { written, conflicts }
 }
 
 /** Best-effort open the default browser (no dependency). */
@@ -220,9 +256,14 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
         send(res, 400, JSON.stringify({ error: 'no files to write' }))
         return
       }
-      const count = await writeBundle(outDir, files)
-      log(`  generated ${count} files -> ${outDir}`)
-      send(res, 200, JSON.stringify({ ok: true, count, outDir }))
+      const { written, conflicts } = await writeBundle(outDir, files)
+      log(`  generated ${written} files -> ${outDir}`)
+      if (conflicts.length) {
+        log(`  ! ${conflicts.length} file(s) were edited by hand since the last generate - the new`)
+        log(`    version was written NEXT TO yours as "<file>.new" (merge or replace, then delete it):`)
+        for (const c of conflicts) log(`    - ${c}  ->  ${c}.new`)
+      }
+      send(res, 200, JSON.stringify({ ok: true, count: written, conflicts, outDir }))
       return
     }
 
