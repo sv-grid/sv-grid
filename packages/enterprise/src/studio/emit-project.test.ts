@@ -84,6 +84,27 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(() => compile(page, { generate: 'client' })).not.toThrow()
   })
 
+  it('SSR grid honors filterable: URL-driven filter (q + f_<col>) via applyFilters; off when not filterable', () => {
+    const p0 = createProject([customers])
+    const withFilter: StudioProject = {
+      ...p0,
+      screens: p0.screens.map((s) => ({
+        ...s,
+        renderMode: 'ssr' as const,
+        blocks: s.blocks.map((b) => (b.config.kind === 'grid' ? { ...b, config: { ...b.config, filterable: true } } : b)),
+      })),
+    }
+    const page = emitStudioProject(withFilter).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/externalFilter/)
+    expect(page).toMatch(/onFiltersChange=\{applyFilters\}/)
+    expect(page).toMatch(/function applyFilters/)
+    expect(page).toMatch(/sp\.set\('f_' \+ c\.id, c\.value\)/) // per-column f_ params
+    // The default grid (filterable: false) omits the whole filter surface.
+    const off = emitStudioProject(ssrProject()).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(off).not.toMatch(/externalFilter/)
+    expect(off).not.toMatch(/function applyFilters/)
+  })
+
   it('emits the shared server query helper once', () => {
     const files = emitStudioProject(ssrProject())
     const helpers = files.filter((f) => f.path === 'src/lib/server/query.ts')

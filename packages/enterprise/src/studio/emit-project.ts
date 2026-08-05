@@ -2080,6 +2080,7 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'me
   const relIdOf = (rs: EntitySchema) => rs.idField ?? rs.fields.find((x) => x.primaryKey)?.field ?? 'id'
   const grid = screen.blocks[0]!.config as GridConfig
   const pageSize = grid.pageSize && grid.pageSize > 0 ? grid.pageSize : 25
+  const wantsFilter = grid.filterable !== false
   const idField = schema.idField ?? schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
   const isFormHidden = (f: EntityField) => f.hidden === true || (typeof f.hidden === 'object' && !!f.hidden.form)
   const formFields = schema.fields.filter(
@@ -2247,7 +2248,19 @@ ${writeGuard('delete')}    const fd = await request.formData()
     const q = sp.toString()
     void goto(q ? \`?\${q}\` : page.url.pathname, { keepFocus: true, noScroll: true })
   }
-
+${wantsFilter ? `
+  // Filter via the URL (q = global search, f_<col> = per-column). The server's
+  // planFromSearchParams reads these, so load() re-filters; reset to the first page.
+  function applyFilters(f: { global: string; columns: Array<{ id: string; value: string }> }) {
+    const sp = new URLSearchParams(page.url.searchParams)
+    for (const k of [...sp.keys()]) if (k === 'q' || k.startsWith('f_')) sp.delete(k)
+    if (f.global) sp.set('q', f.global)
+    for (const c of f.columns) if (c.value) sp.set('f_' + c.id, c.value)
+    sp.delete('page')
+    const q = sp.toString()
+    void goto(q ? \`?\${q}\` : page.url.pathname, { keepFocus: true, noScroll: true })
+  }
+` : ''}
   // Progressive enhancement: post to the action, keep typed values on error,
   // close the editor on success (load re-runs automatically, refreshing the grid).
   const onSubmit: SubmitFunction = () => async ({ result, update }) => {
@@ -2275,7 +2288,7 @@ ${writeGuard('delete')}    const fd = await request.formData()
   data={data.rows}
   {columns}
   externalSort
-  externalPagination
+  externalPagination${wantsFilter ? '\n  filterable\n  externalFilter\n  onFiltersChange={applyFilters}' : ''}
   rowCount={data.total}
   pageIndex={data.page}
   pageSize={data.size}
