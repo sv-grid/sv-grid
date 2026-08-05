@@ -1178,6 +1178,13 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   onSortingChange?: (sorting: Array<{ id: string; desc: boolean }>) => void;
   /**
+   * The sort state to start in - `{ id, desc }` entries. Use with `externalSort`
+   * when the initial ordering is decided server-side (e.g. a URL `?sort=` param
+   * read in a SvelteKit `load`), so the header sort indicators match the already-
+   * sorted data on first render. Applied once at mount; user sorting takes over.
+   */
+  initialSorting?: Array<{ id: string; desc: boolean }>;
+  /**
    * When `true`, the grid still records column-filter / global-filter /
    * facet state (so the menu UI works and indicators light up) but does
    * NOT actually filter the rows. The consumer is expected to fetch / sort

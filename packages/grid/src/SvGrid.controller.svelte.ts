@@ -670,7 +670,8 @@ export function createSvGridController<
     state: {
       columnFilters: [],
       grouping: [],
-      sorting: [],
+      // svelte-ignore state_referenced_locally
+      sorting: props.initialSorting ?? [],
       // svelte-ignore state_referenced_locally
       pagination: { pageIndex: 0, pageSize: props.pageSize ?? 10 },
       rowSelection: {},

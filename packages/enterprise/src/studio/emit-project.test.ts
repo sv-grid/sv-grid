@@ -74,6 +74,7 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(page).toMatch(/import type \{ PageProps \} from '\.\/\$types'/)
     expect(page).toMatch(/data=\{data\.rows\}/) // renders SSR'd rows
     expect(page).toMatch(/externalSort/)
+    expect(page).toMatch(/initialSorting=\{data\.sort\}/) // header indicator matches the URL sort on hard reload
     expect(page).toMatch(/externalPagination/)
     expect(page).toMatch(/onSortingChange=/)
     expect(page).toMatch(/use:enhance=\{onSubmit\}/) // progressive enhancement
@@ -143,7 +144,7 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     }
     const server = emitStudioProject(p).find((f) => f.path === 'src/routes/orders/+page.server.ts')!.contents
     expect(server).toMatch(/const customer_idOptions = \(await createKitDataSource<Record<string, unknown>>\(\{ endpoint: '\/api\/customers', fetch \}\)\.getRows\(/)
-    expect(server).toMatch(/size: plan\.pageSize, customer_idOptions \}/)
+    expect(server).toMatch(/, customer_idOptions \}/)
     expect(server).not.toMatch(/from '\$lib\/data'/) // sql uses the /api route, not the in-process source
     const page = emitStudioProject(p).find((f) => f.path === 'src/routes/orders/+page.svelte')!.contents
     expect(page).toMatch(/<select name='customer_id'/)
@@ -173,7 +174,7 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(server).toMatch(/import \{ ordersSource, customersSource, nextId \} from '\$lib\/data'/)
     expect(server).toMatch(/const customer_idOptions = \(await customersSource\.getRows\(/)
     expect(server).toMatch(/label: String\(r\['name'\]/) // uses the relation's labelField
-    expect(server).toMatch(/size: plan\.pageSize, customer_idOptions \}/) // options returned from load
+    expect(server).toMatch(/, customer_idOptions \}/) // options returned from load
     const page = files.find((f) => f.path === 'src/routes/orders/+page.svelte')!.contents
     expect(page).toMatch(/<select name='customer_id'/)
     expect(page).toMatch(/#each data\.customer_idOptions as o/)

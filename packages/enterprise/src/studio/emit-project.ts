@@ -2159,7 +2159,7 @@ function formToValues(fd: FormData): Record<string, unknown> {
 export const load: PageServerLoad = async ({ url${fetchArg}${localsArg} }) => {
 ${readGuard}  const plan = planFromSearchParams(url, ${pageSize})
   const { rows, rowCount } = await ${src}.getRows(plan)
-${relPrefetch ? relPrefetch + '\n' : ''}  return { rows, total: rowCount, page: plan.pageIndex, size: plan.pageSize${relReturn} }
+${relPrefetch ? relPrefetch + '\n' : ''}  return { rows, total: rowCount, page: plan.pageIndex, size: plan.pageSize, sort: plan.sortModel${relReturn} }
 }
 
 export const actions: Actions = {
@@ -2288,6 +2288,7 @@ ${wantsFilter ? `
   data={data.rows}
   {columns}
   externalSort
+  initialSorting={data.sort}
   externalPagination${wantsFilter ? '\n  filterable\n  externalFilter\n  onFiltersChange={applyFilters}' : ''}
   rowCount={data.total}
   pageIndex={data.page}
