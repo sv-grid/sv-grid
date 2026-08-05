@@ -187,6 +187,9 @@ async function applyProject(destDir, projectPath) {
   const files = studio.emitStudioAppBundle(project)
   for (const f of files) {
     const full = join(destDir, f.path)
+    // User-owned companions (handlers.ts) are write-once: never overwrite an
+    // existing one on regeneration - same contract as the designer server.
+    if (typeof studio.skipUserOwned === 'function' && studio.skipUserOwned(f, existsSync(full))) continue
     await mkdir(dirname(full), { recursive: true })
     await writeFile(full, f.contents)
   }
