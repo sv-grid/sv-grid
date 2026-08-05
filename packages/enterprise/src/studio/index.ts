@@ -293,6 +293,14 @@ export {
   type UiComponentSpec,
 } from './ui-components.js'
 export {
+  resolveDeployTarget,
+  deployCommands,
+  missingEnvKeys,
+  type DeployProvider,
+  type DeployResolution,
+  type DeployPlanCommands,
+} from './deploy-cli.js'
+export {
   runStudioAdd,
   runStudioAddApp,
   resolveSchema,

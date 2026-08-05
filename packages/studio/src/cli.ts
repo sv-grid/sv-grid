@@ -11,12 +11,16 @@
  * the node:fs wiring.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
 import { dirname } from 'node:path'
 import {
   buildStudioBugReport,
+  deployCommands,
   introspectDatabase,
   listDatabaseTables,
+  missingEnvKeys,
   parseProject,
+  resolveDeployTarget,
   resolveSchemas,
   runStudioAdd,
   runStudioAddApp,
@@ -60,6 +64,8 @@ type Parsed = {
   port?: number
   noOpen?: boolean
   template?: string
+  target?: string
+  dryRun?: boolean
 }
 
 function parse(args: string[]): Parsed {
@@ -80,6 +86,8 @@ function parse(args: string[]): Parsed {
     else if (a === '--port') out.port = Number(args[++i])
     else if (a === '--template') out.template = args[++i]
     else if (a === '--no-open') out.noOpen = true
+    else if (a === '--target') out.target = args[++i]
+    else if (a === '--dry-run') out.dryRun = true
     else if (a === '-h' || a === '--help') out.help = true
     else if (!a.startsWith('-')) positional.push(a)
   }
@@ -97,6 +105,12 @@ Usage:
   svgrid-studio add --all   --from <schema>         # every table/model, linked
   svgrid-studio add <name> --db <dialect> --url <conn>   # one table from a live database
   svgrid-studio add --all   --db <dialect> --url <conn>  # every table from a live database
+  svgrid-studio deploy [--target <provider>] [--dry-run]  # build + deploy via the provider CLI
+
+Deploy (build first, then the provider CLI; target from --target, else
+studio.config.json, else the adapter in svelte.config.js):
+  --target <p>     vercel | netlify | cloudflare | node
+  --dry-run        print the resolved commands without running anything
 
 Designer (visual app builder, auto-saves to studio.config.json):
   --template <id>  open a ready-made sample app (crm | ecommerce | projects | support)
@@ -149,6 +163,42 @@ async function main(): Promise<void> {
       template: opts.template,
     })
     // Keep the process alive; the server holds the event loop until Ctrl+C.
+    return
+  }
+
+  // --- deploy --------------------------------------------------------------
+  if (cmd === 'deploy' && !opts.help) {
+    const read = (p: string) => io.readFile(p)
+    const resolution = resolveDeployTarget({
+      flag: opts.target,
+      configJson: await read('studio.config.json'),
+      svelteConfig: (await read('svelte.config.js')) ?? (await read('svelte.config.ts')),
+    })
+    if (!resolution.ok) {
+      process.stderr.write(`deploy: ${resolution.reason}\n`)
+      process.exit(1)
+    }
+    const plan = deployCommands(resolution.provider)
+    process.stdout.write(`Deploying to ${plan.provider} (from ${resolution.source === 'flag' ? '--target' : resolution.source === 'config' ? 'studio.config.json' : 'svelte.config.js adapter'}).\n`)
+    // Preflight: env keys the app declares but the local .env doesn't set.
+    const missing = missingEnvKeys(await read('.env.example'), await read('.env'))
+    if (missing.length) process.stdout.write(`! Unset env keys (set them on the host too): ${missing.join(', ')}\n`)
+    for (const note of plan.notes) process.stdout.write(`  ${note}\n`)
+    const commands = [plan.build, ...(plan.deploy ? [plan.deploy] : [])]
+    if (opts.dryRun) {
+      process.stdout.write(commands.map((c) => `> ${c}\n`).join(''))
+      return
+    }
+    for (const command of commands) {
+      process.stdout.write(`\n> ${command}\n`)
+      const res = spawnSync(command, { stdio: 'inherit', shell: true })
+      if (res.status !== 0) {
+        if (command !== plan.build) {
+          process.stderr.write(`deploy: "${command}" failed. If the provider CLI isn't set up yet, log in first (see the note above) and re-run.\n`)
+        }
+        process.exit(res.status ?? 1)
+      }
+    }
     return
   }
 
