@@ -349,6 +349,9 @@ async function ensureGlobals(format: ExportFormat): Promise<void> {
   if (format === 'xlsx' && g.JSZip == null) {
     let mod: unknown
     try {
+      // Optional peer, loaded on demand. The `@ts-ignore` keeps a consumer's
+      // type-check clean when jszip isn't installed (no-op when it is).
+      // @ts-ignore - "jszip" is an optional peerDependency
       mod = await import('jszip')
     } catch {
       throw new Error(
@@ -362,7 +365,10 @@ async function ensureGlobals(format: ExportFormat): Promise<void> {
     let pdfMakeMod: unknown
     let vfsMod: unknown
     try {
+      // Optional peer, loaded on demand (keeps consumer type-checks clean when absent).
+      // @ts-ignore - "pdfmake" is an optional peerDependency
       pdfMakeMod = await import('pdfmake/build/pdfmake')
+      // @ts-ignore - "pdfmake" is an optional peerDependency
       vfsMod = await import('pdfmake/build/vfs_fonts')
     } catch {
       throw new Error(
