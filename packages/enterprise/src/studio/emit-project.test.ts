@@ -112,6 +112,21 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(() => compile(page, { generate: 'client' })).not.toThrow()
   })
 
+  it('memory SSR + RBAC: load/actions enforce authz inline (sql inherits from /api)', () => {
+    const p0 = createProject([customers])
+    const p: StudioProject = {
+      ...p0,
+      access: { enabled: true, defaultRole: 'viewer', roles: [{ role: 'admin', screens: '*', actions: '*' }, { role: 'viewer', screens: p0.screens.map((s) => s.id), actions: [] }] },
+      screens: p0.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })),
+    }
+    const server = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).toMatch(/import \{ fail, error \} from '@sveltejs\/kit'/)
+    expect(server).toMatch(/import \{ authorizeAction, getServerRole \} from '\$lib\/access'/)
+    expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'read', SCREEN_IDS\)/)
+    expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'create', SCREEN_IDS\)/)
+    expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'delete', SCREEN_IDS\)/)
+  })
+
   it('leaves spa screens on the client-controller path', () => {
     const p = createProject([customers]) // default renderMode is spa
     const files = emitStudioProject(p)

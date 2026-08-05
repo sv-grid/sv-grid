@@ -2068,7 +2068,7 @@ function ssrQueryHelperFile(): GeneratedFile {
 const htmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /** The `+page.server.ts` + SSR `+page.svelte` for a single-grid CRUD screen. */
-function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'memory' | 'sql'): GeneratedFile[] {
+function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'memory' | 'sql', accessEnabled: boolean, screenIds: string[]): GeneratedFile[] {
   const n = namesFor(schema)
   const isSql = sourceKind === 'sql'
   const grid = screen.blocks[0]!.config as GridConfig
@@ -2099,12 +2099,19 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'me
     ? `await ${src}.createRow(values)`
     : `await ${n.sourceVar}.createRow({ [ID_FIELD]: nextId(${jsStr(n.idPrefix)}), ...values })`
 
+  // RBAC only needs inline enforcement for the memory path; sql inherits it from the
+  // connected /api route (createKitHandlers authorize), reached via event.fetch.
+  const rbac = accessEnabled && !isSql
+  const localsArg = rbac ? ', locals' : ''
+  const readGuard = rbac ? `    if (!authorizeAction(getServerRole({ locals }), 'read', SCREEN_IDS)) throw error(403, 'Not allowed')\n` : ''
+  const writeGuard = (action: string) => (rbac ? `    if (!authorizeAction(getServerRole({ locals }), '${action}', SCREEN_IDS)) return fail(403, { error: 'Not allowed' })\n` : '')
+
   const server = `import type { Actions, PageServerLoad } from './$types'
-import { fail } from '@sveltejs/kit'
+import { fail${rbac ? ', error' : ''} } from '@sveltejs/kit'
 import { ${enterpriseImports} } from '@svgrid/enterprise'
-${sourceImport}${schemaImport}
+${rbac ? "import { authorizeAction, getServerRole } from '$lib/access'\n" : ''}${sourceImport}${schemaImport}
 import { planFromSearchParams } from '$lib/server/query'
-${idConst}
+${idConst}${rbac ? `\nconst SCREEN_IDS = ${JSON.stringify(screenIds)}` : ''}
 const FIELD_TYPES: Record<string, 'text' | 'number' | 'boolean'> = ${fieldTypesLit}
 ${srcHelper}
 /** Read a submitted form into a typed partial row. Booleans come from checkbox
@@ -2120,31 +2127,31 @@ function formToValues(fd: FormData): Record<string, unknown> {
   return values
 }
 
-export const load: PageServerLoad = async ({ url${fetchArg} }) => {
-  const plan = planFromSearchParams(url, ${pageSize})
+export const load: PageServerLoad = async ({ url${fetchArg}${localsArg} }) => {
+${readGuard}  const plan = planFromSearchParams(url, ${pageSize})
   const { rows, rowCount } = await ${src}.getRows(plan)
   return { rows, total: rowCount, page: plan.pageIndex, size: plan.pageSize }
 }
 
 export const actions: Actions = {
-  create: async ({ request${fetchArg} }) => {
-    const values = formToValues(await request.formData())
+  create: async ({ request${fetchArg}${localsArg} }) => {
+${writeGuard('create')}    const values = formToValues(await request.formData())
     const errors = await validateAll(${n.schemaVar}, values)
     if (Object.keys(errors).length) return fail(422, { errors, values })
     ${createCall}
     return { ok: true }
   },
-  update: async ({ request${fetchArg} }) => {
+  update: async ({ request${fetchArg}${localsArg} }) => {
     const fd = await request.formData()
-    const id = String(fd.get('__id') ?? '')
+${writeGuard('update')}    const id = String(fd.get('__id') ?? '')
     const values = formToValues(fd)
     const errors = await validateAll(${n.schemaVar}, values)
     if (Object.keys(errors).length) return fail(422, { errors, values })
     await ${src}.updateRow(id, values)
     return { ok: true }
   },
-  delete: async ({ request${fetchArg} }) => {
-    const fd = await request.formData()
+  delete: async ({ request${fetchArg}${localsArg} }) => {
+${writeGuard('delete')}    const fd = await request.formData()
     await ${src}.deleteRow(String(fd.get('__id') ?? ''))
     return { ok: true }
   },
@@ -2352,7 +2359,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     // SSR-native path (opt-in): idiomatic +page.server.ts load + form actions.
     if (isSsrScreen(project, screen)) {
       const srcKind = sources[screen.entity]?.kind === 'sql' ? 'sql' : 'memory'
-      pages.push(...emitSsrGridScreen(schema, screen, srcKind))
+      pages.push(...emitSsrGridScreen(schema, screen, srcKind, accessEnabled, screensByEntity.get(screen.entity) ?? []))
       continue
     }
     pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled))
