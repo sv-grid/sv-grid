@@ -122,6 +122,29 @@ describe('SSR-native screens (renderMode: ssr)', () => {
   })
 })
 
+describe('secure-by-default auth', () => {
+  const authApp = () => emitStudioAppBundle(setAuth(createProject([customers]), { enabled: true, protect: true }))
+
+  it('ships a git-ignored .env with a real random SESSION_SECRET (not the hardcoded fallback)', () => {
+    const env = authApp().find((f) => f.path === '.env')
+    expect(env, 'an auth app should ship a .env with a real secret').toBeTruthy()
+    expect(env!.contents).toMatch(/SESSION_SECRET=[0-9a-f]{64}/)
+    expect(env!.contents).not.toMatch(/change-me-to-a-long-random-string/)
+  })
+
+  it('hashes demo users - no plaintext store or plaintext login compare', () => {
+    const files = authApp()
+    const users = files.find((f) => f.path === 'src/lib/server/users.ts')!.contents
+    expect(users).toMatch(/passwordHash: await hashPassword/)
+    // The stored user type carries only the hash (the SEED keeps plaintext defaults,
+    // which are hashed at module load).
+    expect(users).toMatch(/AppUser = \{ email: string; name: string; role: string; passwordHash: string \}/)
+    const login = files.find((f) => f.path === 'src/routes/login/+page.server.ts')!.contents
+    expect(login).toMatch(/await verifyPassword\(password, user\.passwordHash\)/)
+    expect(login).not.toMatch(/user\.password !== password/)
+  })
+})
+
 describe('emitStudioProject (per-block screens)', () => {
   const project = createProject([customers, orders])
   const files = emitStudioProject(project)
