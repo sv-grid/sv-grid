@@ -636,14 +636,16 @@ function filterPanelState(entity: EntitySchema, block: Block, cfg: FilterPanelCo
   const { state, apply } = facetNames(block)
   const assigns = filterFieldsOf(entity, cfg).map((f) => {
     const key = jsStr(f.field)
-    if (f.type === 'boolean') return `    if (v[${key}] === 'true' || v[${key}] === 'false') c[${key}] = { operator: 'equals', value: v[${key}] === 'true' }`
+    // The server filter model takes string values; the matcher string-coerces both
+    // sides, so a boolean column matches fine against 'true' / 'false'.
+    if (f.type === 'boolean') return `    if (v[${key}] === 'true' || v[${key}] === 'false') c[${key}] = { operator: 'equals', value: v[${key}] }`
     if (f.type === 'enum') return `    if (v[${key}]) c[${key}] = { operator: 'equals', value: v[${key}] }`
     return `    if (v[${key}]) c[${key}] = { operator: 'contains', value: v[${key}] }`
   }).join('\n')
   return `let ${state} = $state<Record<string, string>>({})
   function ${apply}() {
     const v = ${state}
-    const c: Record<string, { operator: 'equals' | 'contains'; value: unknown }> = {}
+    const c: Record<string, { operator: 'equals' | 'contains'; value: string }> = {}
 ${assigns}
     controller.setFilter({ columns: c })
   }`
