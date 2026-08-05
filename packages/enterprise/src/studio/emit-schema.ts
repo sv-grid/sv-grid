@@ -82,8 +82,10 @@ export function namesFor(schema: EntitySchema): Names {
 export const lookupVar = (schema: EntitySchema, field: string) => `${camel(schema.name)}${pascal(field)}Lookup`
 
 function rowType(schema: EntitySchema, derived: Set<string>): string {
-  // Derived columns (relation labels) are filled at runtime, so they're optional.
-  const lines = schema.fields.map((f) => `  ${f.field}${derived.has(f.field) ? '?' : ''}: ${tsType(f.type)}`)
+  // Runtime-filled columns are optional in the row type: relation labels (`derived`)
+  // and computed / no-code-formula fields (not present on seed rows / inserts).
+  const optional = (f: EntityField) => derived.has(f.field) || !!f.formula || !!f.computed
+  const lines = schema.fields.map((f) => `  ${f.field}${optional(f) ? '?' : ''}: ${tsType(f.type)}`)
   return `export type ${pascal(schema.name)} = {\n${lines.join('\n')}\n}`
 }
 
