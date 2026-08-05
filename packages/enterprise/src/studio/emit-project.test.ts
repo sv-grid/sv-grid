@@ -91,6 +91,27 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(helpers[0]!.contents).toMatch(/export function planFromSearchParams/)
   })
 
+  it('sql SSR screen: load/actions proxy to the connected /api route via createKitDataSource', () => {
+    const p0 = createProject([customers])
+    const p: StudioProject = {
+      ...p0,
+      dataSource: 'sql',
+      dataSources: { customers: { kind: 'sql', dialect: 'postgres', table: 'customers' } },
+      screens: p0.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })),
+    }
+    const files = emitStudioProject(p)
+    const server = files.find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).toMatch(/import \{ validateAll, createKitDataSource \} from '@svgrid\/enterprise'/)
+    expect(server).toMatch(/createKitDataSource<Customers>\(\{ endpoint: '\/api\/customers', fetch \}\)/)
+    expect(server).toMatch(/load: PageServerLoad = async \(\{ url, fetch \}\)/) // load gets event.fetch
+    expect(server).not.toMatch(/from '\$lib\/data'/) // no in-process source import for sql
+    // The connected /api route is still emitted - enforcement (validate/RBAC/triggers/audit) lives there.
+    expect(files.find((f) => f.path === 'src/routes/api/customers/+server.ts')).toBeTruthy()
+    // Page still compiles.
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(() => compile(page, { generate: 'client' })).not.toThrow()
+  })
+
   it('leaves spa screens on the client-controller path', () => {
     const p = createProject([customers]) // default renderMode is spa
     const files = emitStudioProject(p)

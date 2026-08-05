@@ -750,7 +750,9 @@ export function ssrEligible(project: StudioProject, screen: Screen): boolean {
   const g = blocks[0]!.config as GridConfig
   if (g.treeData || g.scheduler) return false
   const kind = project.dataSources?.[screen.entity]?.kind ?? project.dataSource
-  return kind === 'memory'
+  // memory runs the source in-process; sql reuses the connected /api route via
+  // event.fetch. (rest/supabase/pglite stay SPA for now.)
+  return kind === 'memory' || kind === 'sql'
 }
 
 /** True when the screen should actually emit as SSR (mode is 'ssr' AND eligible). */

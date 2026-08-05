@@ -2068,8 +2068,9 @@ function ssrQueryHelperFile(): GeneratedFile {
 const htmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /** The `+page.server.ts` + SSR `+page.svelte` for a single-grid CRUD screen. */
-function emitSsrGridScreen(schema: EntitySchema, screen: Screen): GeneratedFile[] {
+function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'memory' | 'sql'): GeneratedFile[] {
   const n = namesFor(schema)
+  const isSql = sourceKind === 'sql'
   const grid = screen.blocks[0]!.config as GridConfig
   const pageSize = grid.pageSize && grid.pageSize > 0 ? grid.pageSize : 25
   const idField = schema.idField ?? schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
@@ -2080,16 +2081,32 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen): GeneratedFile[
   const normType = (t: string): 'text' | 'number' | 'boolean' => (t === 'number' ? 'number' : t === 'boolean' ? 'boolean' : 'text')
   const fieldTypesLit = `{ ${formFields.map((f) => `${jsStr(f.field)}: ${jsStr(normType(f.type))}`).join(', ')} }`
 
+  // Source acquisition differs by kind:
+  //  - memory: import the in-process source from $lib/data and call it directly.
+  //  - sql: build a same-origin client over the connected /api/<entity> route with
+  //    SvelteKit's event.fetch, so validation / RBAC / triggers / audit stay enforced
+  //    once, in that route's createKitHandlers - not duplicated here.
+  const src = isSql ? 'source(fetch)' : n.sourceVar
+  const fetchArg = isSql ? ', fetch' : ''
+  const enterpriseImports = isSql ? 'validateAll, createKitDataSource' : 'validateAll'
+  const sourceImport = isSql ? '' : `import { ${n.sourceVar}, nextId } from '$lib/data'\n`
+  const schemaImport = `import { ${n.schemaVar}${isSql ? `, type ${n.type}` : ''} } from '$lib/schemas'`
+  const idConst = isSql ? '' : `\nconst ID_FIELD = ${jsStr(idField)}`
+  const srcHelper = isSql
+    ? `\n// Same-origin client over the connected /api/${n.route} route (that route runs\n// validation, RBAC, triggers + audit via createKitHandlers).\nconst source = (fetch: typeof globalThis.fetch) => createKitDataSource<${n.type}>({ endpoint: ${jsStr('/api/' + n.route)}, fetch })\n`
+    : ''
+  const createCall = isSql
+    ? `await ${src}.createRow(values)`
+    : `await ${n.sourceVar}.createRow({ [ID_FIELD]: nextId(${jsStr(n.idPrefix)}), ...values })`
+
   const server = `import type { Actions, PageServerLoad } from './$types'
 import { fail } from '@sveltejs/kit'
-import { validateAll } from '@svgrid/enterprise'
-import { ${n.sourceVar}, nextId } from '$lib/data'
-import { ${n.schemaVar} } from '$lib/schemas'
+import { ${enterpriseImports} } from '@svgrid/enterprise'
+${sourceImport}${schemaImport}
 import { planFromSearchParams } from '$lib/server/query'
-
-const ID_FIELD = ${jsStr(idField)}
+${idConst}
 const FIELD_TYPES: Record<string, 'text' | 'number' | 'boolean'> = ${fieldTypesLit}
-
+${srcHelper}
 /** Read a submitted form into a typed partial row. Booleans come from checkbox
  *  presence; numbers are coerced; empty values are dropped so they don't clobber. */
 function formToValues(fd: FormData): Record<string, unknown> {
@@ -2103,32 +2120,32 @@ function formToValues(fd: FormData): Record<string, unknown> {
   return values
 }
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url${fetchArg} }) => {
   const plan = planFromSearchParams(url, ${pageSize})
-  const { rows, rowCount } = await ${n.sourceVar}.getRows(plan)
+  const { rows, rowCount } = await ${src}.getRows(plan)
   return { rows, total: rowCount, page: plan.pageIndex, size: plan.pageSize }
 }
 
 export const actions: Actions = {
-  create: async ({ request }) => {
+  create: async ({ request${fetchArg} }) => {
     const values = formToValues(await request.formData())
     const errors = await validateAll(${n.schemaVar}, values)
     if (Object.keys(errors).length) return fail(422, { errors, values })
-    await ${n.sourceVar}.createRow({ [ID_FIELD]: nextId(${jsStr(n.idPrefix)}), ...values })
+    ${createCall}
     return { ok: true }
   },
-  update: async ({ request }) => {
+  update: async ({ request${fetchArg} }) => {
     const fd = await request.formData()
     const id = String(fd.get('__id') ?? '')
     const values = formToValues(fd)
     const errors = await validateAll(${n.schemaVar}, values)
     if (Object.keys(errors).length) return fail(422, { errors, values })
-    await ${n.sourceVar}.updateRow(id, values)
+    await ${src}.updateRow(id, values)
     return { ok: true }
   },
-  delete: async ({ request }) => {
+  delete: async ({ request${fetchArg} }) => {
     const fd = await request.formData()
-    await ${n.sourceVar}.deleteRow(String(fd.get('__id') ?? ''))
+    await ${src}.deleteRow(String(fd.get('__id') ?? ''))
     return { ok: true }
   },
 }
@@ -2334,7 +2351,8 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     if (!schema) throw new Error(`emitStudioProject: screen "${screen.title}" references missing entity "${screen.entity}"`)
     // SSR-native path (opt-in): idiomatic +page.server.ts load + form actions.
     if (isSsrScreen(project, screen)) {
-      pages.push(...emitSsrGridScreen(schema, screen))
+      const srcKind = sources[screen.entity]?.kind === 'sql' ? 'sql' : 'memory'
+      pages.push(...emitSsrGridScreen(schema, screen, srcKind))
       continue
     }
     pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled))
