@@ -2090,15 +2090,21 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'me
 
   // Relation fields render as a native <select> whose options are prefetched in load
   // (memory path only for now; sql relation fields stay a text FK - follow-up).
-  const isRel = (f: EntityField) => !isSql && f.type === 'relation' && !!f.relation && byName.has(f.relation.entity)
+  const isRel = (f: EntityField) => f.type === 'relation' && !!f.relation && byName.has(f.relation!.entity)
   const relFields = formFields.filter(isRel)
-  const relSourceVars = [...new Set(relFields.map((f) => namesFor(relSchemaOf(f)).sourceVar))]
+  // The $lib/data import only needs the related sources on the memory path; on sql
+  // the related options come from the related entity's /api route (via event.fetch).
+  const relSourceVars = isSql ? [] : [...new Set(relFields.map((f) => namesFor(relSchemaOf(f)).sourceVar))]
   const relPrefetch = relFields
     .map((f) => {
       const rs = relSchemaOf(f)
+      const rel = namesFor(rs)
       const relId = relIdOf(rs)
       const labelF = f.relation!.labelField ?? relId
-      return `  const ${f.field}Options = (await ${namesFor(rs).sourceVar}.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rows.map((r: Record<string, unknown>) => ({ value: String(r[${jsStr(relId)}] ?? ''), label: String(r[${jsStr(labelF)}] ?? '') }))`
+      const relSource = isSql
+        ? `createKitDataSource<Record<string, unknown>>({ endpoint: ${jsStr('/api/' + rel.route)}, fetch })`
+        : rel.sourceVar
+      return `  const ${f.field}Options = (await ${relSource}.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rows.map((r: Record<string, unknown>) => ({ value: String(r[${jsStr(relId)}] ?? ''), label: String(r[${jsStr(labelF)}] ?? '') }))`
     })
     .join('\n')
   const relReturn = relFields.map((f) => `, ${f.field}Options`).join('')

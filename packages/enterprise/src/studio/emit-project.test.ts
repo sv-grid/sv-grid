@@ -112,6 +112,23 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(() => compile(page, { generate: 'client' })).not.toThrow()
   })
 
+  it('sql SSR + relation field: prefetches options via the related /api route', () => {
+    const p0 = createProject([customers, orders])
+    const p: StudioProject = {
+      ...p0,
+      dataSource: 'sql',
+      dataSources: { customers: { kind: 'sql', dialect: 'postgres', table: 'customers' }, orders: { kind: 'sql', dialect: 'postgres', table: 'orders' } },
+      screens: p0.screens.map((s) => (s.entity === 'orders' ? { ...s, renderMode: 'ssr' as const } : s)),
+    }
+    const server = emitStudioProject(p).find((f) => f.path === 'src/routes/orders/+page.server.ts')!.contents
+    expect(server).toMatch(/const customer_idOptions = \(await createKitDataSource<Record<string, unknown>>\(\{ endpoint: '\/api\/customers', fetch \}\)\.getRows\(/)
+    expect(server).toMatch(/size: plan\.pageSize, customer_idOptions \}/)
+    expect(server).not.toMatch(/from '\$lib\/data'/) // sql uses the /api route, not the in-process source
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/orders/+page.svelte')!.contents
+    expect(page).toMatch(/<select name='customer_id'/)
+    expect(page).toMatch(/#each data\.customer_idOptions as o/)
+  })
+
   it('memory SSR + RBAC: load/actions enforce authz inline (sql inherits from /api)', () => {
     const p0 = createProject([customers])
     const p: StudioProject = {
