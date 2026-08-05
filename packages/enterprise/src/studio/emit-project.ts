@@ -296,10 +296,13 @@ ${exportBar}      <SvGrid
       if (cfg.trendField) {
         const tReduce = cfg.trendReduce ?? cfg.reduce
         const seriesExpr = `kpiSeries(${rowsExpr}, { trendField: '${cfg.trendField}', ${measurePart}reduce: '${tReduce}' })`
+        // The first-to-last delta chip - only when there's no target chip already
+        // (avoids a dead `&& false` branch that left `_d` null-unsafe under svelte-check).
+        const deltaChip = cfg.target == null
+          ? `\n        {@const _d = seriesDelta(_s)}\n        {#if _d != null}<span class="kpi__delta" class:is-up={_d >= 0} class:is-down={_d < 0}>{_d >= 0 ? '▲' : '▼'} {Math.abs(_d).toFixed(0)}%</span>{/if}`
+          : ''
         rows.push(`      {#if ${seriesExpr}.length > 1}
-        {@const _s = ${seriesExpr}}
-        {@const _d = seriesDelta(_s)}
-        {#if _d != null && ${cfg.target == null}}<span class="kpi__delta" class:is-up={_d >= 0} class:is-down={_d < 0}>{_d >= 0 ? '▲' : '▼'} {Math.abs(_d).toFixed(0)}%</span>{/if}
+        {@const _s = ${seriesExpr}}${deltaChip}
         <svg class="kpi__spark" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"><polyline points={sparklinePoints(_s)} fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" /></svg>
       {/if}`)
       }
