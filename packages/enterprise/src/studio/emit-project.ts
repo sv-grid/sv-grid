@@ -16,7 +16,7 @@ import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, compone
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
-import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, relationDisplayFields, type NavItem } from './emit-schema.js'
+import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, prepareEntities, relationDisplayFields, sqlDdlFiles, type NavItem } from './emit-schema.js'
 
 const has = (blocks: Block[], kind: Block['config']['kind']) => blocks.some((b) => b.config.kind === kind)
 
@@ -2430,6 +2430,9 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   const authUserAdmin = dbBackedAuth && accessEnabled && project.auth?.userAdmin === true
   const authTwoFactor = dbBackedAuth && project.auth?.twoFactor === true
   const dataLayerList = project.dataLayer === 'drizzle' && sqlEntities.length > 0 ? dataLayerFiles(project, sqlEntities, sources, dbBackedAuth, authTwoFactor) : []
+  // Without the Drizzle layer (or on MSSQL, which it can't cover), ship plain SQL the
+  // user runs once against their database - otherwise the tables must pre-exist.
+  const ddlFiles = sqlEntities.length > 0 && !dataLayerActive ? sqlDdlFiles(project.entities, sources) : []
   const authFileList = authEnabled ? authFiles(project, dbBackedAuth, accessEnabled) : []
   const auditFiles = auditEnabled ? [auditModule(), auditRouteFile(), auditViewerPage()] : []
   // Routes that render bare (no shell) + skip the login guard.
@@ -2439,7 +2442,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   if (authUserAdmin) navExtras = [...navExtras, { href: '/users', label: 'Users', id: '__users__' }]
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
   const handleFiles = project.screens.some(screenHasCode) ? [handlesModuleFile()] : []
-  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...ssrHelpers, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
+  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...ddlFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...ssrHelpers, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the
@@ -3848,11 +3851,66 @@ export default defineConfig({
 })
 `
 
+  // db/seed.ts - inserts the sample rows into EMPTY tables after `db:migrate`, so a
+  // freshly-migrated production database doesn't open onto blank grids. Lives outside
+  // src/ (like drizzle.config.ts) and builds its own client from process.env, because
+  // the app's client imports $env/dynamic/private which only exists under Vite.
+  const { seed: seedMap } = prepareEntities(sqlEntities)
+  const nameSet = new Set(sqlEntities.map((e) => e.name))
+  // Parents before children so FK values resolve (simple repeated-pass ordering).
+  const ordered: typeof meta = []
+  const pending = [...meta]
+  while (pending.length) {
+    const next = pending.findIndex(({ e }) =>
+      e.fields.every((f) => f.type !== 'relation' || !f.relation || !nameSet.has(f.relation.entity) || f.relation.entity === e.name || ordered.some((o) => o.e.name === f.relation!.entity)),
+    )
+    ordered.push(...pending.splice(next === -1 ? 0 : next, 1))
+  }
+  const pkNumberByName = new Map(meta.map((m) => [m.e.name, m.pkNumber]))
+  const seedBlocks = ordered
+    .map(({ e, tableVar, pkKey, pkNumber }) => {
+      const rows = (seedMap.get(e.name) ?? []).map((row, i) => {
+        const out: Record<string, unknown> = { ...row }
+        if (pkNumber) out[pkKey] = i + 1
+        for (const f of e.fields) {
+          if (f.type === 'relation' && f.relation && pkNumberByName.get(f.relation.entity)) {
+            const relCount = seedMap.get(f.relation.entity)?.length ?? 1
+            out[f.field] = (i % Math.max(1, relCount)) + 1
+          }
+        }
+        return out
+      })
+      if (!rows.length) return null
+      return `  {
+    const existing = await db.select().from(schema.${tableVar}).limit(1)
+    if (existing.length === 0) {
+      await db.insert(schema.${tableVar}).values(${JSON.stringify(rows)} as (typeof schema.${tableVar}.$inferInsert)[])
+      console.log('seeded ${e.name} (${rows.length} rows)')
+    } else console.log('${e.name} already has rows - skipped')
+  }`
+    })
+    .filter((b): b is string => b !== null)
+  const seedTs = `// Regenerated by SvGrid Studio. studio:db-seed
+// Inserts sample rows into EMPTY tables - a table that already has rows is skipped,
+// so this is safe to run repeatedly. Run AFTER migrations: npm run db:seed
+${cfg.client}
+import * as schema from '../src/lib/server/db/schema'
+
+${cfg.setup.replaceAll('env.', 'process.env.').replace('export const db', 'const db')}
+
+async function main() {
+${seedBlocks.join('\n')}
+}
+
+main().then(() => process.exit(0)).catch((err) => { console.error(err); process.exit(1) })
+`
+
   return [
     { path: 'src/lib/server/db/schema.ts', description: 'Drizzle schema (migration source of truth).', contents: schemaTs },
     { path: 'src/lib/server/db/index.ts', description: 'Drizzle client.', contents: indexTs },
     ...repoFiles,
     { path: 'drizzle.config.ts', description: 'drizzle-kit config (migrations).', contents: configTs },
+    ...(seedBlocks.length ? [{ path: 'db/seed.ts', description: 'Sample-row seeder (run after db:migrate: npm run db:seed).', contents: seedTs }] : []),
   ]
 }
 
@@ -4104,12 +4162,15 @@ export function studioDeployInfo(project: StudioProject): { label: string; cli: 
 }
 
 /** DEPLOY.md - the runbook: required env vars, then Git-integration / CI / CLI paths. */
-function deployDocs(project: StudioProject, plan: DeployPlan, envKeys: string[], hasMigrations: boolean): string {
+function deployDocs(project: StudioProject, plan: DeployPlan, envKeys: string[], hasMigrations: boolean, opts: { hasDdl?: boolean; hasSeedScript?: boolean } = {}): string {
   const envBlock = envKeys.length
-    ? `## Environment variables\n\nSet these on your host (and locally in \`.env\` - copy \`.env.example\`):\n\n${envKeys.map((k) => `- \`${k}\``).join('\n')}\n\n`
+    ? `## Environment variables\n\nSet these on your host (and locally in \`.env\` - copy \`.env.example\`):\n\n${envKeys.map((k) => `- \`${k}\``).join('\n')}\n\nOptional: \`VITE_SVPRO_KEY\` (your SvGrid license key) removes the unlicensed watermark - call \`setLicenseKey(import.meta.env.VITE_SVPRO_KEY)\` once at startup (see the docs).\n\n`
     : ''
   const migrations = hasMigrations
-    ? `## Database migrations\n\nThis app has a typed Drizzle schema (\`src/lib/server/db/schema.ts\`). Create + apply the tables:\n\n\`\`\`bash\nnpm run db:generate   # SQL migrations from the schema\nnpm run db:migrate    # apply them to DATABASE_URL\n\`\`\`\n\n(Run these against your production database as part of your release step.)\n\n`
+    ? `## Database migrations\n\nThis app has a typed Drizzle schema (\`src/lib/server/db/schema.ts\`). Create + apply the tables:\n\n\`\`\`bash\nnpm run db:generate   # SQL migrations from the schema\nnpm run db:migrate    # apply them to DATABASE_URL\n${opts.hasSeedScript ? 'npm run db:seed       # optional: insert the sample rows\n' : ''}\`\`\`\n\n(Run these against your production database as part of your release step.)\n\n`
+    : ''
+  const ddl = opts.hasDdl
+    ? `## Database tables\n\nThis app's SQL entities expect their tables to exist. Run \`db/schema.sql\` against the database your \`DATABASE_URL\` points at (psql / mysql / sqlite3 / sqlcmd, or your provider's SQL console) before first use - and optionally \`db/seed.sql\` for sample rows. Tip: enable the Drizzle data layer in Studio for real, versioned migrations instead.\n\n`
     : ''
   const gitIntegration = plan.dashboard
     ? `## Option A - Git integration (simplest, no secrets)\n\n1. Push this repo to GitHub.\n2. Import it at <${plan.dashboard}> - the SvelteKit build is auto-detected.\n3. Add the environment variables above in the host's dashboard.\n\nEvery push to \`main\` then redeploys automatically.\n\n`
@@ -4121,7 +4182,7 @@ function deployDocs(project: StudioProject, plan: DeployPlan, envKeys: string[],
     ? `## Container\n\nA \`Dockerfile\` is included:\n\n\`\`\`bash\ndocker build -t ${appSlug(project.title)} .\ndocker run -p 3000:3000 --env-file .env ${appSlug(project.title)}\n\`\`\`\n\nThe server listens on \`PORT\` (default 3000).\n\n`
     : ''
   const cli = `## Option C - Deploy from your machine\n\n\`\`\`bash\nnpm run deploy\n\`\`\`\n\n(runs \`${plan.deployScript}\`)\n`
-  return `# Deploying ${project.title}\n\nConfigured for **${plan.label}** (SvelteKit \`${plan.adapterModule}\`). A CI workflow (\`.github/workflows/ci.yml\`) builds + tests every push.\n\n${envBlock}${migrations}${gitIntegration}${ci}${dockerNote}${cli}`
+  return `# Deploying ${project.title}\n\nConfigured for **${plan.label}** (SvelteKit \`${plan.adapterModule}\`). A CI workflow (\`.github/workflows/ci.yml\`) builds + tests every push.\n\n${envBlock}${ddl}${migrations}${gitIntegration}${ci}${dockerNote}${cli}`
 }
 
 /** The env-var keys the generated app reads (for DEPLOY.md). */
@@ -4130,6 +4191,14 @@ function envKeysUsed(allSource: string): string[] {
   if (allSource.includes('env.DATABASE_URL')) keys.push('DATABASE_URL')
   if (allSource.includes('env.DATABASE_AUTH_TOKEN')) keys.push('DATABASE_AUTH_TOKEN')
   if (allSource.includes('SESSION_SECRET')) keys.push('SESSION_SECRET')
+  // Feature keys - same detection as envExample, so DEPLOY.md's checklist matches
+  // .env.example instead of silently omitting the auth/email vars.
+  if (allSource.includes("from '$lib/server/email'")) keys.push('EMAIL_FROM', 'RESEND_API_KEY or SMTP_HOST/PORT/USER/PASS')
+  if (allSource.includes("from '$lib/server/oauth'")) {
+    if (allSource.includes("'github'") || allSource.includes('"github"')) keys.push('GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET')
+    if (allSource.includes("'google'") || allSource.includes('"google"')) keys.push('GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET')
+    if (allSource.includes("'oidc'") || allSource.includes('"oidc"')) keys.push('OIDC_ISSUER', 'OIDC_CLIENT_ID', 'OIDC_CLIENT_SECRET')
+  }
   return keys
 }
 
@@ -4224,6 +4293,7 @@ function packageJson(project: StudioProject, allSource: string): string {
     scripts['db:migrate'] = 'drizzle-kit migrate'
     scripts['db:push'] = 'drizzle-kit push'
     scripts['db:studio'] = 'drizzle-kit studio'
+    if (allSource.includes('studio:db-seed')) scripts['db:seed'] = 'tsx db/seed.ts'
   }
   const pkg = {
     name: appSlug(project.title),
@@ -4250,6 +4320,7 @@ function packageJson(project: StudioProject, allSource: string): string {
       ...(dependencies['better-sqlite3'] ? { '@types/better-sqlite3': '^7.6.0' } : {}),
       ...(usesNodemailer ? { '@types/nodemailer': '^6.4.0' } : {}),
       ...(drizzle ? { 'drizzle-kit': '^0.31.0' } : {}),
+      ...(drizzle && allSource.includes('studio:db-seed') ? { tsx: '^4.19.0' } : {}),
     },
   }
   return JSON.stringify(pkg, null, 2) + '\n'
@@ -4342,7 +4413,7 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     // has one, and a DEPLOY.md runbook.
     { path: '.github/workflows/ci.yml', description: 'CI: build + test on push / PR.', contents: CI_WORKFLOW },
     ...(plan.deployWorkflow ? [{ path: '.github/workflows/deploy.yml', description: `Deploy to ${plan.label} on push to main.`, contents: plan.deployWorkflow }] : []),
-    { path: 'DEPLOY.md', description: 'Deploy runbook (env vars, Git integration, CI, CLI).', contents: deployDocs(project, plan, envKeysUsed(allSource), generated.some((f) => f.path === 'drizzle.config.ts')) },
+    { path: 'DEPLOY.md', description: 'Deploy runbook (env vars, Git integration, CI, CLI).', contents: deployDocs(project, plan, envKeysUsed(allSource), generated.some((f) => f.path === 'drizzle.config.ts'), { hasDdl: generated.some((f) => f.path === 'db/schema.sql'), hasSeedScript: generated.some((f) => f.path === 'db/seed.ts') }) },
   ]
   return [...scaffold, ...generated]
 }

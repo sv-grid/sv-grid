@@ -191,6 +191,70 @@ describe('SSR-native screens (renderMode: ssr)', () => {
   })
 })
 
+describe('db/schema.sql + db/seed.sql + drizzle db:seed (real-DB last mile)', () => {
+  const sqlProject = (dialect: 'postgres' | 'mysql' | 'sqlite' | 'mssql' | 'turso'): StudioProject => {
+    let p = createProject([customers, orders])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect })
+    p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect })
+    return p
+  }
+
+  it('emits db/schema.sql + db/seed.sql for SQL entities without the Drizzle layer', () => {
+    const files = emitStudioProject(sqlProject('postgres'))
+    const ddl = files.find((f) => f.path === 'db/schema.sql')!.contents
+    expect(ddl).toMatch(/CREATE TABLE IF NOT EXISTS "customers" \(/)
+    expect(ddl).toMatch(/"id" text PRIMARY KEY/)
+    expect(ddl).toMatch(/"mrr" double precision/)
+    // Relation display fields are runtime labels, not columns.
+    const seedSql = files.find((f) => f.path === 'db/seed.sql')!.contents
+    expect(seedSql).toMatch(/INSERT INTO "customers" \(/)
+    expect(seedSql).toMatch(/INSERT INTO "orders" \(/)
+  })
+
+  it('mssql gets a guarded CREATE TABLE (no Drizzle possible) with N-literals', () => {
+    const files = emitStudioProject(sqlProject('mssql'))
+    const ddl = files.find((f) => f.path === 'db/schema.sql')!.contents
+    expect(ddl).toMatch(/IF OBJECT_ID\(N'customers', N'U'\) IS NULL/)
+    expect(ddl).toMatch(/"mrr" float/)
+    const seedSql = files.find((f) => f.path === 'db/seed.sql')!.contents
+    expect(seedSql).toMatch(/N'/)
+    // Even WITH the drizzle toggle, mssql still ships plain SQL (dzDialect is null).
+    const withLayer = emitStudioProject(setDataLayer(sqlProject('mssql'), true))
+    expect(withLayer.some((f) => f.path === 'db/schema.sql')).toBe(true)
+  })
+
+  it('mysql uses backticks; sqlite/turso use sqlite types', () => {
+    const my = emitStudioProject(sqlProject('mysql')).find((f) => f.path === 'db/schema.sql')!.contents
+    expect(my).toMatch(/CREATE TABLE IF NOT EXISTS `customers` \(/)
+    expect(my).toMatch(/`mrr` double/)
+    const tu = emitStudioProject(sqlProject('turso')).find((f) => f.path === 'db/schema.sql')!.contents
+    expect(tu).toMatch(/"mrr" real/)
+  })
+
+  it('the Drizzle layer replaces plain DDL with migrations + a db:seed script', () => {
+    const p = setDataLayer(sqlProject('postgres'), true)
+    const files = emitStudioAppBundle(p)
+    expect(files.some((f) => f.path === 'db/schema.sql')).toBe(false) // migrations own DDL
+    const seedTs = files.find((f) => f.path === 'db/seed.ts')!.contents
+    expect(seedTs).toMatch(/studio:db-seed/)
+    expect(seedTs).toMatch(/process\.env\.DATABASE_URL/) // own client - no \$env import
+    expect(seedTs).not.toMatch(/\$env\/dynamic\/private/)
+    expect(seedTs).toMatch(/db\.insert\(schema\.customers\)/)
+    expect(seedTs).toMatch(/existing\.length === 0/) // idempotent
+    const pkg = JSON.parse(files.find((f) => f.path === 'package.json')!.contents)
+    expect(pkg.scripts['db:seed']).toBe('tsx db/seed.ts')
+    expect(pkg.devDependencies.tsx).toBeTruthy()
+    const deploy = files.find((f) => f.path === 'DEPLOY.md')!.contents
+    expect(deploy).toMatch(/npm run db:seed/)
+  })
+
+  it('DEPLOY.md points at db/schema.sql on the non-Drizzle path', () => {
+    const deploy = emitStudioAppBundle(sqlProject('postgres')).find((f) => f.path === 'DEPLOY.md')!.contents
+    expect(deploy).toMatch(/db\/schema\.sql/)
+    expect(deploy).toMatch(/VITE_SVPRO_KEY/)
+  })
+})
+
 describe('secure-by-default auth', () => {
   const authApp = () => emitStudioAppBundle(setAuth(createProject([customers]), { enabled: true, protect: true }))
 

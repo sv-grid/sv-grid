@@ -4,6 +4,8 @@ import {
   addBlock,
   applyGridPreset,
   addStateVar,
+  setDataLayer,
+  setDeployTarget,
   updateStateVar,
   removeStateVar,
   stateInitExpr,
@@ -616,6 +618,33 @@ describe('validateProject', () => {
 
     const broken = { ...p, screens: [{ ...p.screens[0]!, entity: 'ghosts' }] }
     expect(validateProject(broken).some((i) => /missing entity/.test(i.message))).toBe(true)
+  })
+
+  it('warns when SQL entities have no Drizzle data layer (tables must pre-exist)', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    const warn = validateProject(p).find((i) => /tables must already exist/.test(i.message))
+    expect(warn?.level).toBe('warning')
+    // Enabling the Drizzle layer clears it.
+    expect(validateProject(setDataLayer(p, true)).some((i) => /tables must already exist/.test(i.message))).toBe(false)
+  })
+
+  it('warns on cloudflare deploy + a socket Postgres driver', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    p = setDeployTarget(p, 'cloudflare')
+    expect(validateProject(p).some((i) => /Cloudflare Workers cannot run the socket/.test(i.message))).toBe(true)
+    // sqlite on cloudflare doesn't trip the pg warning.
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'sqlite' })
+    expect(validateProject(p).some((i) => /Cloudflare Workers cannot run the socket/.test(i.message))).toBe(false)
+  })
+
+  it('warns when a supabase source has no url/key (stub client)', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
+    expect(validateProject(p).some((i) => /has no URL\/key/.test(i.message))).toBe(true)
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers', url: 'https://x.supabase.co', key: 'anon' })
+    expect(validateProject(p).some((i) => /has no URL\/key/.test(i.message))).toBe(false)
   })
 
   it('the palette lists every block kind', () => {

@@ -2055,6 +2055,34 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
       }
     }
   }
+
+  // Project-level deployment footguns (all advisory - the app still generates).
+  const sources = Object.values(project.dataSources ?? {})
+  const sqlSources = sources.filter((s): s is Extract<EntityDataSource, { kind: 'sql' }> => s.kind === 'sql')
+  if (sqlSources.length > 0 && project.dataLayer !== 'drizzle') {
+    issues.push({
+      level: 'warning',
+      message:
+        'SQL entities have no migrations - their tables must already exist in the database. ' +
+        'Enable the Drizzle data layer for typed migrations, or run the generated db/schema.sql against your database first.',
+    })
+  }
+  if (project.deploy === 'cloudflare' && sqlSources.some((s) => s.dialect === 'postgres' || s.dialect === 'supabase')) {
+    issues.push({
+      level: 'warning',
+      message:
+        'Cloudflare Workers cannot run the socket "pg" Postgres driver. Swap the generated route to an HTTP driver ' +
+        '(e.g. Neon serverless) or choose another deploy target.',
+    })
+  }
+  for (const [name, src] of Object.entries(project.dataSources ?? {})) {
+    if (src.kind === 'supabase' && (!src.url || !src.key)) {
+      issues.push({
+        level: 'warning',
+        message: `Supabase entity "${name}" has no URL/key - the generated client is a stub that throws until you fill in src/lib/connections.ts.`,
+      })
+    }
+  }
   return issues
 }
 
