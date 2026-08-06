@@ -408,6 +408,10 @@ export const clickSlot = (blockId: string) => `click:${blockId}`
 export const rowSelectSlot = (blockId: string) => `rowSelect:${blockId}`
 /** The handler-steps key for a component block's change (value change) event. */
 export const changeSlot = (blockId: string) => `change:${blockId}`
+/** Generic event slot - `click`/`change` produce the same keys as clickSlot/changeSlot,
+ *  so existing projects keep their wiring; any other declared component event
+ *  (focus, select, toggle, ...) gets its own `<event>:<blockId>` slot. */
+export const eventSlot = (event: string, blockId: string) => `${event}:${blockId}`
 /** The handler-steps key for the screen's form-submit (record saved) event. The
  *  compiled steps get the submitted `row` (values) in scope. */
 export const FORM_SUBMIT = 'formSubmit'

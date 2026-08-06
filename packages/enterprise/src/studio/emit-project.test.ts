@@ -1274,7 +1274,10 @@ describe('Component blocks', () => {
     const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
     const importLine = page.split('\n').find((l) => l.includes("from '@svgrid/grid'"))!
     expect(importLine).toContain('SvButton') // merged into the screen's one @svgrid/grid import
-    expect(page).toContain("<SvButton variant={'primary'} size={'md'} block>{'Click me'}</SvButton>")
+    // Full extracted surface: curated attrs first, then the rest of the component's
+    // real props (e.g. type={'button'}); content children last.
+    expect(page).toContain("<SvButton variant={'primary'} size={'md'} block")
+    expect(page).toContain(">{'Click me'}</SvButton>")
 
     for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
@@ -1290,8 +1293,10 @@ describe('Component blocks', () => {
 
     const page = files.find((f) => f.path === 'src/routes/reports/+page.svelte')!.contents
     expect(page).toContain("import { SvBadge, SvButton } from '@svgrid/grid'") // sorted, deduped
-    expect(page).toContain("<SvButton variant={'secondary'} size={'md'}>{'Click me'}</SvButton>")
-    expect(page).toContain("<SvBadge variant={'success'} size={'md'} pill>{'Badge'}</SvBadge>")
+    expect(page).toContain("<SvButton variant={'secondary'} size={'md'}")
+    expect(page).toContain(">{'Click me'}</SvButton>")
+    expect(page).toContain("<SvBadge variant={'success'} size={'md'} pill")
+    expect(page).toContain(">{'Badge'}</SvBadge>")
     expect(page).not.toContain('Add your own content here')
 
     for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
@@ -2304,7 +2309,9 @@ describe('code companion (design + your own code)', () => {
     const companion = files.find((f) => f.path === 'src/routes/report/handlers.ts')!
     // Named handle (button1) created + wired into the component markup.
     expect(page.contents).toContain('const button1 = handle(')
-    expect(page.contents).toContain('<SvButton {...button1.props}>{button1.text}</SvButton>')
+    // Click is wired through the component's own onclick callback prop (exact
+    // semantics), not a bubbling wrapper listener.
+    expect(page.contents).toContain("<SvButton {...button1.props} onclick={(e) => button1.fire('click', e)}>{button1.text}</SvButton>")
     expect(page.contents).toContain("import { handle } from '$lib/handles.svelte'")
     expect(page.contents).toContain('button1.fire(\'click\', e)')
     expect(page.contents).toContain('const ctx = { grid: gridApi!, button1, data:')

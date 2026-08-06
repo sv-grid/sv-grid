@@ -12,7 +12,7 @@
  */
 import type { GeneratedFile } from './scaffold.js'
 import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, SchedulerViewConfig, Screen, StudioProject } from './project.js'
-import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, FORM_SUBMIT, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen } from './project.js'
+import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, eventSlot, FORM_SUBMIT, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -508,13 +508,22 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: s
   if (!spec) return `    <div ${span}${cls}><!-- unknown component "${cfg.component}" --></div>`
   if (handleName) {
     // Handle mode (code page): props + content come from the reactive handle, and
-    // clicks fire on it - so button1.setVariant(...) / button1.onclick = fn work.
+    // events fire on it - so button1.setVariant(...) / button1.onclick = fn work.
     const inner = spec.hasContent ? `>{${handleName}.text}</${spec.importName}>` : ' />'
-    // `change` bubbles up from any inner input, so the wrapper catches it too - that
-    // powers the "On change" method slot without knowing the component's shape.
+    // Events with a component callback prop are wired THROUGH that prop (exact
+    // semantics, works for non-bubbling callbacks like a picker's onChange); the
+    // wrapper's DOM listeners remain only as the catch-all for click/change on
+    // components without a matching callback prop - and are skipped when a prop
+    // covers the same key, so an event never fires twice.
+    const propWired = (spec.events ?? []).filter((e) => e.prop)
+    const eventAttrs = propWired.map((e) => ` ${e.prop}={(e) => ${handleName}.fire(${jsStr(e.key)}, e)}`).join('')
+    const wrapper = ['click', 'change']
+      .filter((k) => !propWired.some((e) => e.key === k))
+      .map((k) => ` on${k}={(e) => ${handleName}.fire('${k}', e)}`)
+      .join('')
     return `    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-    <div id="${block.id}" onclick={(e) => ${handleName}.fire('click', e)} onchange={(e) => ${handleName}.fire('change', e)} ${span}${cls}>
-      <${spec.importName} {...${handleName}.props}${inner}
+    <div id="${block.id}"${wrapper} ${span}${cls}>
+      <${spec.importName} {...${handleName}.props}${eventAttrs}${inner}
     </div>`
   }
   // Data bindings: a bound prop's value is a reactive expression over the screen's
@@ -528,8 +537,7 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: s
     const v = cfg.props[p.key] ?? p.default
     if (v == null || v === '') continue
     if (p.type === 'boolean') { if (v) attrs.push(p.key) }
-    else if (p.type === 'number') attrs.push(`${p.key}={${Number(v)}}`)
-    else attrs.push(`${p.key}={${jsStr(String(v))}}`)
+    else attrs.push(`${p.key}={${propValueExpr(p, v)}}`)
   }
   // Baked-in array/object props (Timeline items, Sparkline data): emitted verbatim.
   for (const f of spec.fixed ?? []) attrs.push(`${f.key}={${f.expr}}`)
@@ -545,6 +553,15 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: s
     </div>`
 }
 
+/** A JS expression for a component prop's configured value, by panel type. */
+function propValueExpr(p: { type: string }, v: unknown): string {
+  if (p.type === 'number') return String(Number(v))
+  if (p.type === 'boolean') return String(!!v)
+  if (p.type === 'json') return JSON.stringify(v)
+  if (p.type === 'date') return `new Date(${jsStr(String(v))})`
+  return jsStr(String(v))
+}
+
 /** The `{ props, text }` init literal for a component's reactive handle. */
 function handleInit(cfg: ComponentConfig): string {
   const spec = uiComponentSpec(cfg.component)
@@ -552,7 +569,7 @@ function handleInit(cfg: ComponentConfig): string {
   for (const p of spec?.props ?? []) {
     const v = cfg.props[p.key] ?? p.default
     if (v == null || v === '') continue
-    props.push(`${p.key}: ${p.type === 'number' ? Number(v) : p.type === 'boolean' ? !!v : jsStr(String(v))}`)
+    props.push(`${p.key}: ${propValueExpr(p, v)}`)
   }
   for (const f of spec?.fixed ?? []) props.push(`${f.key}: ${f.expr}`)
   const parts = [`props: { ${props.join(', ')} }`]
@@ -1450,22 +1467,20 @@ function compiledMethodBodies(screen: Screen): { onLoadSteps?: string; clicks?: 
   if (!steps || !Object.keys(steps).length) return {}
   const names = handleNameMap(screen)
   const clicks: string[] = []
+  // Every event the block's component declares gets a wireable method slot
+  // (`ctx.<name>.on<event> = ...` - the handle Proxy maps any on<key> assignment
+  // to onEvent). click/change remain the fallback for spec-less components.
   for (const b of flattenBlocks(screen.blocks)) {
     if (b.config.kind !== 'component') continue
-    const clickSteps = steps[clickSlot(b.id)]
-    if (!clickSteps?.length) continue
     const name = names.get(b.id)
     if (!name) continue
-    clicks.push(`ctx.${name}.onclick = async () => {\n${indentBody(compileHandlerSteps(clickSteps))}\n}`)
-  }
-  // Component value-change wiring (`ctx.<name>.onchange = ...`), same shape as clicks.
-  for (const b of flattenBlocks(screen.blocks)) {
-    if (b.config.kind !== 'component') continue
-    const changeSteps = steps[changeSlot(b.id)]
-    if (!changeSteps?.length) continue
-    const name = names.get(b.id)
-    if (!name) continue
-    clicks.push(`ctx.${name}.onchange = async () => {\n${indentBody(compileHandlerSteps(changeSteps))}\n}`)
+    const spec = uiComponentSpec(b.config.component)
+    const eventKeys = spec?.events?.length ? spec.events.map((e) => e.key) : ['click', 'change']
+    for (const key of [...new Set([...eventKeys, 'click', 'change'])]) {
+      const eventSteps = steps[eventSlot(key, b.id)]
+      if (!eventSteps?.length) continue
+      clicks.push(`ctx.${name}.on${key} = async () => {\n${indentBody(compileHandlerSteps(eventSteps))}\n}`)
+    }
   }
   return {
     // Legacy visual onLoad steps (the code view now edits onLoad directly).

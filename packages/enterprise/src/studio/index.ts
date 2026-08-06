@@ -133,6 +133,7 @@ export {
   type TriggerEvent,
   type EntityTriggers,
   clickSlot,
+  eventSlot,
   rowSelectSlot,
   changeSlot,
   FORM_SUBMIT,
@@ -289,6 +290,8 @@ export {
   UI_COMPONENT_REGISTRY,
   uiComponentSpec,
   type UiPropType,
+  type UiPropGroup,
+  type UiComponentEvent,
   type UiComponentProp,
   type UiComponentSpec,
 } from './ui-components.js'
