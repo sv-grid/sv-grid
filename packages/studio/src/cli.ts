@@ -66,6 +66,7 @@ type Parsed = {
   template?: string
   target?: string
   dryRun?: boolean
+  ai?: boolean
 }
 
 function parse(args: string[]): Parsed {
@@ -88,6 +89,7 @@ function parse(args: string[]): Parsed {
     else if (a === '--no-open') out.noOpen = true
     else if (a === '--target') out.target = args[++i]
     else if (a === '--dry-run') out.dryRun = true
+    else if (a === '--ai') out.ai = true
     else if (a === '-h' || a === '--help') out.help = true
     else if (!a.startsWith('-')) positional.push(a)
   }
@@ -118,6 +120,7 @@ Designer (visual app builder, auto-saves to studio.config.json):
   --out <dir>      folder to write the generated app into (default: .)
   --port <n>       port to serve on (default: 4321)
   --no-open        don't open the browser
+  --ai             enable the AI copilot (needs ANTHROPIC_API_KEY in the environment)
 
 Schema files: a Drizzle schema.ts or a Prisma schema.prisma (auto-detected).
   Foreign keys become searchable relation lookups; enums become select fields.
@@ -161,6 +164,7 @@ async function main(): Promise<void> {
       port: Number.isFinite(opts.port) ? (opts.port as number) : 4321,
       open: !opts.noOpen,
       template: opts.template,
+      ai: !!opts.ai,
     })
     // Keep the process alive; the server holds the event loop until Ctrl+C.
     return

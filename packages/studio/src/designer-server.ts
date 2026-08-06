@@ -35,6 +35,7 @@ import {
   type StudioProject,
 } from '@svgrid/enterprise/studio'
 import { connect } from './db-connect.js'
+import { runCopilot } from './copilot.js'
 import { DRIVER_FOR, installDriver, isDriverInstalled } from './driver-install.js'
 
 export type DesignerServerOptions = {
@@ -48,6 +49,8 @@ export type DesignerServerOptions = {
   open: boolean
   /** Sample-app id to seed a fresh session with (`--template <id>`). */
   template?: string
+  /** Enable the AI copilot endpoint (`--ai`); requires ANTHROPIC_API_KEY. */
+  ai?: boolean
   /** Log lines (defaults to process.stdout). */
   log?: (line: string) => void
 }
@@ -226,9 +229,36 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
     })
   })
 
+  // Copilot is live only when BOTH the flag and the key are present; the SPA
+  // probes /api/capabilities and only then wires (and shows) the Copilot button.
+  const copilotKey = process.env.ANTHROPIC_API_KEY
+  const copilotOn = !!opts.ai && !!copilotKey
+
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = req.url ?? '/'
     const path = url.split('?')[0]!
+
+    if (path === '/api/capabilities' && req.method === 'GET') {
+      send(res, 200, JSON.stringify({ copilot: copilotOn }))
+      return
+    }
+
+    if (path === '/api/copilot' && req.method === 'POST') {
+      if (!copilotOn) {
+        send(res, 404, JSON.stringify({ error: 'Copilot is not enabled. Start with --ai and set ANTHROPIC_API_KEY.' }))
+        return
+      }
+      const body = await readBody(req)
+      const { prompt, project } = JSON.parse(body) as { prompt?: string; project?: string }
+      if (!prompt || !project) {
+        send(res, 400, JSON.stringify({ error: 'prompt and project are required' }))
+        return
+      }
+      log(`  copilot: ${prompt.slice(0, 80)}`)
+      const updated = await runCopilot(prompt, project, { apiKey: copilotKey! })
+      send(res, 200, updated)
+      return
+    }
 
     if (path === '/api/project' && req.method === 'GET') {
       const json = existsSync(configPath) ? await readFile(configPath, 'utf8') : null
@@ -386,6 +416,8 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
   log(`\n  SvGrid Studio designer running at ${url}`)
   log(`  config:  ${configPath}`)
   log(`  output:  ${outDir}`)
+  if (copilotOn) log(`  copilot: ON (Anthropic)`)
+  else if (opts.ai) log(`  copilot: OFF - --ai was passed but ANTHROPIC_API_KEY is not set`)
   log(`  (edits auto-save; "Save to folder" writes the app. Ctrl+C to stop.)\n`)
   if (opts.open) openBrowser(url)
 

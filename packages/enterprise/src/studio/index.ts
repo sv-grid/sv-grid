@@ -295,6 +295,7 @@ export {
   type UiComponentProp,
   type UiComponentSpec,
 } from './ui-components.js'
+export { buildCopilotMessages, projectFromModelText, type CopilotMessages } from './copilot-core.js'
 export {
   resolveDeployTarget,
   deployCommands,
