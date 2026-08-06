@@ -12,7 +12,7 @@
  */
 import type { GeneratedFile } from './scaffold.js'
 import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, SchedulerViewConfig, Screen, StudioProject } from './project.js'
-import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, eventSlot, FORM_SUBMIT, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen } from './project.js'
+import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, eventSlot, FORM_SUBMIT, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen, ssrScreenShape } from './project.js'
 import { uiComponentSpec } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
@@ -1614,7 +1614,7 @@ ${content}
 /** A self-contained screen page composing the screen's blocks. When `accessEnabled`
  *  the page gates create / update affordances by the current role (server still
  *  enforces via the route's `authorize`). */
-function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Screen, resolve: (name: string) => EntitySchema | undefined, rawResolve: (name: string) => EntitySchema | undefined, accessEnabled = false, i18nEnabled = false, routeById: Map<string, string> = new Map(), drillEnabled = false): GeneratedFile {
+function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Screen, resolve: (name: string) => EntitySchema | undefined, rawResolve: (name: string) => EntitySchema | undefined, accessEnabled = false, i18nEnabled = false, routeById: Map<string, string> = new Map(), drillEnabled = false, ssrData = false): GeneratedFile {
   const n = namesFor(schema)
   const label = schema.label ?? n.label
   const blocks = screen.blocks
@@ -1677,21 +1677,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // Distinct, resolvable child entities referenced by master-detail blocks, and by
   // a detail page's related child collections (both load the child table into a
   // `md_<name>_rows` state var + filter it by the foreign key at render time).
-  const mdChildren = new Map<string, EntitySchema>()
-  for (const b of blocks) {
-    if (b.config.kind === 'master-detail' && b.config.childEntity && b.config.foreignKey) {
-      const c = resolve(b.config.childEntity)
-      if (c) mdChildren.set(c.name, c)
-    }
-    if (b.config.kind === 'detail') {
-      for (const rel of b.config.related ?? []) {
-        if (!rel.entity || !rel.foreignKey) continue
-        const c = resolve(rel.entity)
-        if (c) mdChildren.set(c.name, c)
-      }
-    }
-  }
-  const childList = [...mdChildren.values()]
+  const childList = screenChildEntities(blocks, resolve)
   const hasMD = childList.length > 0
   // Components with a data binding (aggregate / field) read the whole table too.
   const boundComponents = allBlocks.filter((b): b is Block & { config: ComponentConfig } => b.config.kind === 'component' && componentHasBindings(b.config))
@@ -1763,7 +1749,8 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // (childEntity === this entity) doesn't emit a duplicate import specifier.
   const schemaVarImports = [...new Set([n.schemaVar, ...childSchemaVars])]
   const typeImports = [...new Set([n.type, ...childTypes])]
-  const dataImports = [...new Set([n.sourceVar, ...childSourceVars, ...(wantsForm ? [...lookupVars, 'nextId'] : [])])].filter(Boolean)
+  // SSR read pages get every dataset from the server load - no client source use.
+  const dataImports = ssrData ? [] : [...new Set([n.sourceVar, ...childSourceVars, ...(wantsForm ? [...lookupVars, 'nextId'] : [])])].filter(Boolean)
 
   // Drill-through: this screen navigates out (goto) and/or is a drill target that
   // reads URL query params matching its fields into an initial filter.
@@ -1833,10 +1820,17 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     }
   }
   if (needsAllRows) {
-    parts.push(`let allRows = $state<${n.type}[]>([])
+    // SSR read screens get their rows from the server load (real SSR HTML);
+    // the SPA path fetches client-side after mount.
+    parts.push(
+      ssrData
+        ? `const allRows = $derived(data.rows as ${n.type}[])
+  const allRowsReady = true`
+        : `let allRows = $state<${n.type}[]>([])
   let allRowsReady = $state(false)
   async function loadAll() { allRows = [...(await ${n.sourceVar}.getRows({ startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} })).rows]; allRowsReady = true }
-  loadAll()`)
+  loadAll()`,
+    )
   }
   // Tree-grid state/derivations - emitted after `allRows` so it's in scope.
   for (const s of treeScripts) parts.push(s)
@@ -1860,6 +1854,10 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   for (const c of childList) {
     const cn = namesFor(c)
     const v = mdChildVar(c.name)
+    if (ssrData) {
+      parts.push(`const ${v} = $derived(data.${v} as ${cn.type}[])`)
+      continue
+    }
     parts.push(`let ${v} = $state<${cn.type}[]>([])
   async function load_${v}() { ${v} = [...(await ${cn.sourceVar}.getRows({ startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} })).rows] }
   load_${v}()`)
@@ -2011,10 +2009,9 @@ ${body}
     path: `src/routes/${screen.route}/+page.svelte`,
     description: `${screen.title} screen (${blocks.map((b) => b.config.kind).join(', ') || 'empty'}).`,
     contents: `<script lang="ts">
-  ${gridImports}${entImport}${handleImport}${accessImport}${i18nImport}${gotoImport}${codeImport}${pageImport}import { ${schemaVarImports.join(', ')}, ${typeImports.map((t) => `type ${t}`).join(', ')} } from '$lib/schemas'
-  import { ${dataImports.join(', ')} } from '$lib/data'
-
-  ${parts.join('\n\n  ')}
+  ${gridImports}${entImport}${handleImport}${accessImport}${i18nImport}${gotoImport}${codeImport}${pageImport}${ssrData ? "import type { PageProps } from './$types'\n  " : ''}import { ${schemaVarImports.join(', ')}, ${typeImports.map((t) => `type ${t}`).join(', ')} } from '$lib/schemas'
+${dataImports.length ? `  import { ${dataImports.join(', ')} } from '$lib/data'\n` : ''}
+  ${ssrData ? 'let { data }: PageProps = $props()\n\n  ' : ''}${parts.join('\n\n  ')}
 </script>
 
 <h1 class="st__title">${title}</h1>
@@ -2036,6 +2033,59 @@ ${(() => {
   const css = kpiCss + screenLayoutStyle(screen)
   return css ? `\n<style>\n${css}</style>\n` : ''
 })()}`,
+  }
+}
+
+/** Distinct, resolvable child entities a screen's master-detail / detail blocks
+ *  reference - shared by the SPA loader, the SSR read `load`, and the page's
+ *  `md_<name>_rows` derivations so the three can never drift. */
+function screenChildEntities(blocks: Block[], resolve: (name: string) => EntitySchema | undefined): EntitySchema[] {
+  const out = new Map<string, EntitySchema>()
+  for (const b of blocks) {
+    if (b.config.kind === 'master-detail' && b.config.childEntity && b.config.foreignKey) {
+      const c = resolve(b.config.childEntity)
+      if (c) out.set(c.name, c)
+    }
+    if (b.config.kind === 'detail') {
+      for (const rel of b.config.related ?? []) {
+        if (!rel.entity || !rel.foreignKey) continue
+        const c = resolve(rel.entity)
+        if (c) out.set(c.name, c)
+      }
+    }
+  }
+  return [...out.values()]
+}
+
+/** `+page.server.ts` for a read-only SSR screen (data-viz / detail / master-
+ *  detail): a `load` that returns the full dataset (+ each child collection) -
+ *  the page renders real SSR HTML from `data.*`. No actions (read-only). */
+function ssrReadServerFile(schema: EntitySchema, screen: Screen, sourceKind: 'memory' | 'sql', accessEnabled: boolean, screenIds: string[], resolve: (name: string) => EntitySchema | undefined): GeneratedFile {
+  const n = namesFor(schema)
+  const isSql = sourceKind === 'sql'
+  const children = screenChildEntities(screen.blocks, resolve)
+  const rbac = accessEnabled && !isSql // sql: the /api route already enforces authz
+  const srcExpr = (s: EntitySchema) =>
+    isSql ? `createKitDataSource<Record<string, unknown>>({ endpoint: ${jsStr('/api/' + namesFor(s).route)}, fetch })` : namesFor(s).sourceVar
+  const memImports = isSql ? [] : [...new Set([n.sourceVar, ...children.map((c) => namesFor(c).sourceVar)])]
+  const childLoads = children.map((c) => `  const ${mdChildVar(c.name)} = (await ${srcExpr(c)}.getRows(PAGE)).rows`).join('\n')
+  return {
+    path: `src/routes/${screen.route}/+page.server.ts`,
+    description: `${screen.title} - SSR load (full dataset${children.length ? ' + child collections' : ''}).`,
+    contents: `import type { PageServerLoad } from './$types'
+import type { ServerRequest } from '@svgrid/grid'
+${isSql ? "import { createKitDataSource } from '@svgrid/enterprise'\n" : ''}${rbac ? "import { error } from '@sveltejs/kit'\nimport { authorizeAction, getServerRole } from '$lib/access'\n" : ''}${memImports.length ? `import { ${memImports.join(', ')} } from '$lib/data'\n` : ''}
+// The app shell is a client SPA (+layout.ts ssr=false); this screen opts back
+// INTO server rendering - real SSR HTML, not just a server-side load.
+export const ssr = true
+${rbac ? `\nconst SCREEN_IDS = ${JSON.stringify(screenIds)}\n` : ''}
+const PAGE: ServerRequest = { startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} }
+
+export const load: PageServerLoad = async (${isSql || rbac ? `{ ${[isSql ? 'fetch' : '', rbac ? 'locals' : ''].filter(Boolean).join(', ')} }` : ''}) => {
+${rbac ? `  if (!authorizeAction(getServerRole({ locals }), 'read', SCREEN_IDS)) throw error(403, 'Not allowed')\n` : ''}  const rows = (await ${srcExpr(schema)}.getRows(PAGE)).rows
+${childLoads ? childLoads + '\n' : ''}  return { rows${children.map((c) => `, ${mdChildVar(c.name)}`).join('')} }
+}
+`,
   }
 }
 
@@ -2420,10 +2470,19 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     }
     const schema = byName.get(screen.entity)
     if (!schema) throw new Error(`emitStudioProject: screen "${screen.title}" references missing entity "${screen.entity}"`)
-    // SSR-native path (opt-in): idiomatic +page.server.ts load + form actions.
+    // SSR-native path (opt-in): a grid screen gets load + form actions + URL-
+    // driven sort/filter/page; a read-only screen (data-viz / detail) gets a
+    // load-only server file, and the SAME page markup renders from data.*.
     if (isSsrScreen(project, screen)) {
       const srcKind = sources[screen.entity]?.kind === 'sql' ? 'sql' : 'memory'
-      pages.push(...emitSsrGridScreen(schema, screen, srcKind, accessEnabled, screensByEntity.get(screen.entity) ?? [], byName))
+      if (ssrScreenShape(project, screen) === 'grid') {
+        pages.push(...emitSsrGridScreen(schema, screen, srcKind, accessEnabled, screensByEntity.get(screen.entity) ?? [], byName))
+      } else {
+        pages.push(
+          ssrReadServerFile(schema, screen, srcKind, accessEnabled, screensByEntity.get(screen.entity) ?? [], resolve),
+          screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled, true),
+        )
+      }
       continue
     }
     pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled))

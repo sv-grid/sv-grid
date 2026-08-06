@@ -135,6 +135,61 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(() => compile(page, { generate: 'client' })).not.toThrow()
   })
 
+  it('read-only SSR screens (dashboard/kpi): load-only server file + page renders from data.*', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? { ...s, blocks: [], renderMode: 'ssr' as const } : s)) }
+    p = addBlock(p, sid, 'kpi')
+    p = addBlock(p, sid, 'chart')
+    const files = emitStudioProject(p)
+    const server = files.find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).toMatch(/export const ssr = true/)
+    expect(server).toMatch(/export const load: PageServerLoad/)
+    expect(server).toMatch(/const rows = \(await customersSource\.getRows\(PAGE\)\)\.rows/)
+    expect(server).not.toMatch(/export const actions/) // read-only
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/let \{ data \}: PageProps = \$props\(\)/)
+    expect(page).toMatch(/const allRows = \$derived\(data\.rows as Customers\[\]\)/)
+    expect(page).not.toMatch(/loadAll\(\)/)
+    expect(page).not.toMatch(/from '\$lib\/data'/) // all data comes from the server load
+    expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('read-only SSR + master-detail: child collections load server-side too (sql via /api)', () => {
+    const p0 = createProject([customers, orders])
+    let p: StudioProject = {
+      ...p0,
+      dataSource: 'sql',
+      dataSources: {
+        customers: { kind: 'sql', table: 'customers', dialect: 'postgres' },
+        orders: { kind: 'sql', table: 'orders', dialect: 'postgres' },
+      },
+    }
+    const sid = p.screens[0]!.id
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? { ...s, blocks: [], renderMode: 'ssr' as const } : s)) }
+    p = addBlock(p, sid, 'master-detail')
+    const mdId = p.screens[0]!.blocks.at(-1)!.id
+    p = updateBlock(p, sid, mdId, { config: { childEntity: 'orders', foreignKey: 'customer_id' } as Partial<MasterDetailConfig> })
+    const files = emitStudioProject(p)
+    const server = files.find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).toMatch(/createKitDataSource<Record<string, unknown>>\(\{ endpoint: '\/api\/customers', fetch \}\)/)
+    expect(server).toMatch(/const md_orders_rows = \(await createKitDataSource.*'\/api\/orders'/)
+    expect(server).toMatch(/return \{ rows, md_orders_rows \}/)
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/const md_orders_rows = \$derived\(data\.md_orders_rows as Orders\[\]\)/)
+    expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('a board screen stays SPA even with renderMode ssr (client-only interaction)', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? { ...s, blocks: [], renderMode: 'ssr' as const } : s)) }
+    p = addBlock(p, sid, 'board')
+    const files = emitStudioProject(p)
+    expect(files.find((f) => f.path === 'src/routes/customers/+page.server.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents).toMatch(/loadAll\(\)/)
+  })
+
   it('sql SSR + relation field: prefetches options via the related /api route', () => {
     const p0 = createProject([customers, orders])
     const p: StudioProject = {

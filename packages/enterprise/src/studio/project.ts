@@ -360,7 +360,9 @@ export function blockClassName(block: Pick<Block, 'className'>): string {
 }
 /** The number of columns (1-12) a block occupies in the 12-col layout. */
 export const blockColumns = (b: Pick<Block, 'span' | 'colSpan'>): number =>
-  Math.max(1, Math.min(12, Math.round(b.colSpan ?? b.span * 4)))
+  // Default to full width when a block sets neither colSpan nor span (Copilot /
+  // hand-authored configs may omit both) - never emit `span NaN` into the HTML.
+  Math.max(1, Math.min(12, Math.round(b.colSpan ?? (b.span != null ? b.span * 4 : 12))))
 
 /** Restrict a user-typed color to a safe subset so it can't break out of an inline
  *  `style="..."` attribute (hex, rgb()/hsl(), named colors, css vars). */
@@ -744,19 +746,41 @@ export function screenRenderMode(_project: StudioProject, screen: Screen): 'ssr'
   return screen.renderMode === 'ssr' ? 'ssr' : 'spa'
 }
 
-/** Whether a screen can be emitted as SSR-native today. Slice 1: a single grid
- *  block (no tree / scheduler), bound to a server-runnable in-memory source, and
- *  no code-behind. Anything else falls back to the SPA path. */
-export function ssrEligible(project: StudioProject, screen: Screen): boolean {
-  if (!screen.entity || screen.code) return false
-  const blocks = screen.blocks ?? []
-  if (blocks.length !== 1 || blocks[0]!.config.kind !== 'grid') return false
-  const g = blocks[0]!.config as GridConfig
-  if (g.treeData || g.scheduler) return false
+/** Block kinds a read-only SSR screen can host: pure renders over server-loaded
+ *  rows. Board/calendar/scheduler (client interaction runtimes), components
+ *  (client bindings), grids-with-extras, and containers stay SPA. */
+const SSR_READ_KINDS = new Set<BlockKind>(['chart', 'pivot', 'dashboard', 'kpi', 'gauge', 'tree', 'detail', 'master-detail'])
+
+/** How a screen would emit under SSR: 'grid' (single grid -> load + form actions,
+ *  URL-driven sort/filter/page), 'read' (data-viz/detail blocks -> load only), or
+ *  null when it must stay SPA. */
+export function ssrScreenShape(project: StudioProject, screen: Screen): 'grid' | 'read' | null {
+  if (!screen.entity || screen.code) return null
   const kind = project.dataSources?.[screen.entity]?.kind ?? project.dataSource
   // memory runs the source in-process; sql reuses the connected /api route via
   // event.fetch. (rest/supabase/pglite stay SPA for now.)
-  return kind === 'memory' || kind === 'sql'
+  if (kind !== 'memory' && kind !== 'sql') return null
+  const blocks = screen.blocks ?? []
+  if (blocks.length === 1 && blocks[0]!.config.kind === 'grid') {
+    const g = blocks[0]!.config as GridConfig
+    if (g.treeData || g.scheduler) return null
+    return 'grid'
+  }
+  if (blocks.length >= 1 && blocks.every((b) => SSR_READ_KINDS.has(b.config.kind))) return 'read'
+  return null
+}
+
+/** Whether a screen can be emitted as SSR-native (any supported shape). */
+export function ssrEligible(project: StudioProject, screen: Screen): boolean {
+  return ssrScreenShape(project, screen) !== null
+}
+
+/** Set a screen's render mode ('spa' clears back to the default). */
+export function setScreenRenderMode(project: StudioProject, screenId: string, mode: 'ssr' | 'spa'): StudioProject {
+  return {
+    ...project,
+    screens: project.screens.map((s) => (s.id === screenId ? { ...s, renderMode: mode === 'ssr' ? 'ssr' : undefined } : s)),
+  }
 }
 
 /** True when the screen should actually emit as SSR (mode is 'ssr' AND eligible). */
