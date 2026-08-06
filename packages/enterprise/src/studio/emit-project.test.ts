@@ -58,6 +58,7 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     const server = emitStudioProject(ssrProject()).find((f) => f.path === 'src/routes/customers/+page.server.ts')
     expect(server, 'an SSR screen should emit a +page.server.ts').toBeTruthy()
     const c = server!.contents
+    expect(c).toMatch(/export const ssr = true/) // opts back into SSR over the SPA layout's ssr=false
     expect(c).toMatch(/export const load: PageServerLoad/)
     expect(c).toMatch(/export const actions: Actions/)
     expect(c).toMatch(/create:\s*async/)

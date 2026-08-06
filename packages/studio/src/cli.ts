@@ -12,7 +12,7 @@
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
-import { dirname } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import {
   buildStudioBugReport,
   deployCommands,
@@ -33,6 +33,7 @@ import {
 import { connect } from './db-connect.js'
 import { DRIVER_FOR, installDriver, isDriverInstalled } from './driver-install.js'
 import { startDesignerServer } from './designer-server.js'
+import { ensureApp, startAppServer, type AppServer } from './dev.js'
 
 const io: StudioIO = {
   readFile: async (path) => {
@@ -67,6 +68,7 @@ type Parsed = {
   target?: string
   dryRun?: boolean
   ai?: boolean
+  appPort?: number
 }
 
 function parse(args: string[]): Parsed {
@@ -90,6 +92,7 @@ function parse(args: string[]): Parsed {
     else if (a === '--target') out.target = args[++i]
     else if (a === '--dry-run') out.dryRun = true
     else if (a === '--ai') out.ai = true
+    else if (a === '--app-port') out.appPort = Number(args[++i])
     else if (a === '-h' || a === '--help') out.help = true
     else if (!a.startsWith('-')) positional.push(a)
   }
@@ -107,6 +110,7 @@ Usage:
   svgrid-studio add --all   --from <schema>         # every table/model, linked
   svgrid-studio add <name> --db <dialect> --url <conn>   # one table from a live database
   svgrid-studio add --all   --db <dialect> --url <conn>  # every table from a live database
+  svgrid-studio dev                                 # designer + the RUNNING app, side by side (HMR)
   svgrid-studio deploy [--target <provider>] [--dry-run]  # build + deploy via the provider CLI
 
 Deploy (build first, then the provider CLI; target from --target, else
@@ -121,6 +125,7 @@ Designer (visual app builder, auto-saves to studio.config.json):
   --port <n>       port to serve on (default: 4321)
   --no-open        don't open the browser
   --ai             enable the AI copilot (needs ANTHROPIC_API_KEY in the environment)
+  --app-port <n>   dev: port for the generated app's dev server (default: designer port + 1)
 
 Schema files: a Drizzle schema.ts or a Prisma schema.prisma (auto-detected).
   Foreign keys become searchable relation lookups; enums become select fields.
@@ -155,6 +160,45 @@ function report(name: string, written: string[], verifyLine: string): void {
 async function main(): Promise<void> {
   const [cmd, ...rest] = process.argv.slice(2)
   const opts = parse(rest)
+
+  // --- live dev loop: designer + the real app, side by side ----------------
+  if (cmd === 'dev' && !opts.help) {
+    const configPath = opts.config ?? 'studio.config.json'
+    const outDir = opts.outDir ?? '.'
+    const port = Number.isFinite(opts.port) ? (opts.port as number) : 4321
+    const appPort = Number.isFinite(opts.appPort) ? (opts.appPort as number) : port + 1
+    const log = (l: string) => process.stdout.write(l + '\n')
+
+    const hasApp = await ensureApp(resolve(outDir), resolve(configPath), log)
+    let app: AppServer | null = null
+    if (hasApp) {
+      app = await startAppServer({ outDir, port: appPort, log })
+      log(`\n  app:      ${app.url} (Vite dev server - designer saves hot-reload it)`)
+    } else {
+      log(`\n  No app here yet - design something and hit "Save to folder"; the app server starts on the first save.`)
+    }
+    process.on('SIGINT', () => {
+      app?.stop()
+      process.exit(0)
+    })
+    await startDesignerServer({
+      configPath,
+      outDir,
+      port,
+      open: !opts.noOpen,
+      template: opts.template,
+      ai: !!opts.ai,
+      appUrl: app?.url,
+      onGenerated: async () => {
+        if (app) await app.syncDeps()
+        else {
+          app = await startAppServer({ outDir, port: appPort, log })
+          log(`  app:      ${app.url} (started after first save)`)
+        }
+      },
+    })
+    return
+  }
 
   // --- visual designer -----------------------------------------------------
   if (cmd === 'designer' && !opts.help) {

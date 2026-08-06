@@ -51,6 +51,10 @@ export type DesignerServerOptions = {
   template?: string
   /** Enable the AI copilot endpoint (`--ai`); requires ANTHROPIC_API_KEY. */
   ai?: boolean
+  /** `studio dev`: the running generated app's URL, advertised to the SPA. */
+  appUrl?: string
+  /** `studio dev`: called after each successful Save-to-folder (dep sync). */
+  onGenerated?: () => void | Promise<void>
   /** Log lines (defaults to process.stdout). */
   log?: (line: string) => void
 }
@@ -239,7 +243,7 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
     const path = url.split('?')[0]!
 
     if (path === '/api/capabilities' && req.method === 'GET') {
-      send(res, 200, JSON.stringify({ copilot: copilotOn }))
+      send(res, 200, JSON.stringify({ copilot: copilotOn, ...(opts.appUrl ? { appUrl: opts.appUrl } : {}) }))
       return
     }
 
@@ -293,6 +297,9 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
         log(`    version was written NEXT TO yours as "<file>.new" (merge or replace, then delete it):`)
         for (const c of conflicts) log(`    - ${c}  ->  ${c}.new`)
       }
+      // `studio dev`: give the app-server loop a chance to install newly added
+      // deps + restart; plain file rewrites are picked up by Vite's HMR.
+      await opts.onGenerated?.()
       send(res, 200, JSON.stringify({ ok: true, count: written, conflicts, outDir }))
       return
     }

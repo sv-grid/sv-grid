@@ -2155,6 +2155,10 @@ import { fail${rbac ? ', error' : ''} } from '@sveltejs/kit'
 import { ${enterpriseImports} } from '@svgrid/enterprise'
 ${rbac ? "import { authorizeAction, getServerRole } from '$lib/access'\n" : ''}${sourceImport}${schemaImport}
 import { planFromSearchParams } from '$lib/server/query'
+
+// The app shell is a client SPA (+layout.ts ssr=false); this screen opts back
+// INTO server rendering - real SSR HTML, not just a server-side load.
+export const ssr = true
 ${idConst}${rbac ? `\nconst SCREEN_IDS = ${JSON.stringify(screenIds)}` : ''}
 const FIELD_TYPES: Record<string, 'text' | 'number' | 'boolean'> = ${fieldTypesLit}
 ${srcHelper}
@@ -3936,7 +3940,10 @@ const appSlug = (title: string): string =>
 
 /** The static SvelteKit + Vite scaffolding around the generated screens. */
 const SCAFFOLD_STATIC: ReadonlyArray<GeneratedFile> = [
-  { path: 'vite.config.ts', description: 'Vite config.', contents: `import { sveltekit } from '@sveltejs/kit/vite'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({ plugins: [sveltekit()] })\n` },
+  // watch.ignored: `studio dev` runs this app's Vite next to the designer, which
+  // auto-saves studio.config.json + a .studio/ manifest into the same folder -
+  // neither should trigger a reload of the app.
+  { path: 'vite.config.ts', description: 'Vite config.', contents: `import { sveltekit } from '@sveltejs/kit/vite'\nimport { defineConfig } from 'vite'\n\nexport default defineConfig({\n  plugins: [sveltekit()],\n  server: { watch: { ignored: ['**/.studio/**', '**/studio.config.json'] } },\n})\n` },
   { path: 'tsconfig.json', description: 'TypeScript config.', contents: `{\n  "extends": "./.svelte-kit/tsconfig.json",\n  "compilerOptions": {\n    "allowJs": true,\n    "checkJs": true,\n    "esModuleInterop": true,\n    "forceConsistentCasingInFileNames": true,\n    "resolveJsonModule": true,\n    "skipLibCheck": true,\n    "sourceMap": true,\n    "strict": true,\n    "moduleResolution": "bundler"\n  }\n}\n` },
   { path: 'src/app.html', description: 'HTML shell.', contents: `<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    %sveltekit.head%\n  </head>\n  <body data-sveltekit-preload-data="hover">\n    <div style="display: contents">%sveltekit.body%</div>\n  </body>\n</html>\n` },
   { path: 'src/app.d.ts', description: 'SvelteKit app types.', contents: `declare global {\n  namespace App {}\n}\n\nexport {}\n` },
