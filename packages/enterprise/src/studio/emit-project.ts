@@ -562,6 +562,19 @@ function propValueExpr(p: { type: string }, v: unknown): string {
   return jsStr(String(v))
 }
 
+/** Extra SvGridEditPanel props for a grid's optional form-layout depth. Returns a
+ *  leading-space attribute string (or '' when nothing is configured). */
+function editPanelLayoutProps(grid?: GridConfig): string {
+  if (!grid) return ''
+  const attrs: string[] = []
+  if (grid.formColumns && grid.formColumns !== 2) attrs.push(`columns={${grid.formColumns}}`)
+  if (grid.formFields?.length) attrs.push(`formFields={${JSON.stringify(grid.formFields)}}`)
+  if (grid.formSections?.length) attrs.push(`sections={${JSON.stringify(grid.formSections)}}`)
+  if (grid.formTitle) attrs.push(`title={${jsStr(grid.formTitle)}}`)
+  if (grid.formSize && grid.formSize !== 'md') attrs.push(`formSize=${jsStr(grid.formSize)}`)
+  return attrs.length ? ' ' + attrs.join(' ') : ''
+}
+
 /** The `{ props, text }` init literal for a component's reactive handle. */
 function handleInit(cfg: ComponentConfig): string {
   const spec = uiComponentSpec(cfg.component)
@@ -1664,6 +1677,9 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // An unpaginated grid loads everything (one big page); else its configured size.
   const gridPageSize = gridConfigs[0] ? (gridConfigs[0].paginated !== false ? (gridConfigs[0].pageSize ?? 10) : 1000) : 10
   const formPres = formGrid?.formPresentation ?? 'modal'
+  // Optional form-layout depth (columns / field selection+order / titled sections /
+  // dialog title+size) -> extra SvGridEditPanel props. Emitted only when configured.
+  const formLayoutProps = editPanelLayoutProps(formGrid)
   const hasPivot = has(allBlocks, 'pivot')
   const hasFilter = has(blocks, 'filter')
   const hasRecord = has(blocks, 'record')
@@ -1979,7 +1995,7 @@ ${canvasBody}
 ${body}
 </div>`
   const modal = wantsForm
-    ? `\n\n{#if editing !== undefined}\n  <SvGridEditPanel schema={${n.schemaVar}} row={editing}${relationFields.length ? ' {lookups}' : ''} presentation="${formPres}" persistKey="${screen.route}" onSubmit={save} onCancel={() => (editing = undefined)} />\n{/if}`
+    ? `\n\n{#if editing !== undefined}\n  <SvGridEditPanel schema={${n.schemaVar}} row={editing}${relationFields.length ? ' {lookups}' : ''} presentation="${formPres}"${formLayoutProps} persistKey="${screen.route}" onSubmit={save} onCancel={() => (editing = undefined)} />\n{/if}`
     : ''
   // currentRole is needed for either a create/update UI gate or an action's
   // screen-access gate; `can`/`canScreen` are pulled in only where actually used.

@@ -100,6 +100,15 @@ export type GridConfig = {
   editing: GridEditing
   /** Presentation of the edit form when `editing === 'form'`. */
   formPresentation: Presentation
+  /** Form layout depth (all optional; default = the auto 2-column form of all fields). */
+  formColumns?: 1 | 2 | 3
+  /** Restrict + order the form's fields (field names). */
+  formFields?: string[]
+  /** Group fields into titled fieldsets. */
+  formSections?: Array<{ title?: string; fields: string[] }>
+  /** Dialog title override + width for the modal/drawer form. */
+  formTitle?: string
+  formSize?: 'sm' | 'md' | 'lg'
   density: GridDensity
   striped: boolean
   /** Excel-style cell/range selection. */

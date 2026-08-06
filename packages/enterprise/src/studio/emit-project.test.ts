@@ -1320,6 +1320,49 @@ describe('Custom actions', () => {
   })
 })
 
+describe('form/dialog layout depth', () => {
+  const gridScreen = (extra: Partial<GridConfig>) => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    p = updateBlock(p, sid, gid, { config: { editing: 'form', ...extra } as Partial<GridConfig> })
+    return emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+  }
+
+  const panelLine = (page: string) => page.split('\n').find((l) => l.includes('<SvGridEditPanel schema='))!
+
+  it('emits nothing extra for a default form', () => {
+    const line = panelLine(gridScreen({}))
+    expect(line).toMatch(/<SvGridEditPanel schema=\{customersSchema\} row=\{editing\}/)
+    expect(line).not.toMatch(/columns=\{/)
+    expect(line).not.toMatch(/sections=\{/)
+  })
+
+  it('passes columns / field selection+order / sections / title / size to the panel', () => {
+    const page = gridScreen({
+      formColumns: 3,
+      formFields: ['name', 'email'],
+      formSections: [{ title: 'Contact', fields: ['name', 'email'] }],
+      formTitle: 'Edit customer',
+      formSize: 'lg',
+    })
+    const line = panelLine(page)
+    expect(line).toMatch(/columns=\{3\}/)
+    expect(line).toMatch(/formFields=\{\["name","email"\]\}/)
+    expect(line).toMatch(/sections=\{\[\{"title":"Contact","fields":\["name","email"\]\}\]\}/)
+    expect(line).toMatch(/title=\{'Edit customer'\}/)
+    expect(line).toMatch(/formSize='lg'/)
+    expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('omits default-valued knobs (columns 2, size md)', () => {
+    const line = panelLine(gridScreen({ formColumns: 2, formSize: 'md', formFields: ['name'] }))
+    expect(line).not.toMatch(/columns=\{/)
+    expect(line).not.toMatch(/formSize=/)
+    expect(line).toMatch(/formFields=\{\["name"\]\}/)
+  })
+})
+
 describe('Component blocks', () => {
   it('a component block mixed onto an entity-bound screen emits the import + literal markup, and compiles', () => {
     let p = createProject([customers])
