@@ -48,7 +48,11 @@ const camel = (name: string): string => {
 }
 
 /** Entity field type -> a TS property type for the generated row type. */
-function tsType(type: EntityFieldType): string {
+function tsType(field: EntityField): string {
+  // A chips/tags editor stores multiple values (string[]) - its seed rows + form
+  // value are arrays, so the row type must be string[] even on a `text` field.
+  if (field.input?.editorType === 'chips') return 'string[]'
+  const type = field.type
   if (type === 'number') return 'number'
   if (type === 'boolean') return 'boolean'
   if (type === 'json') return 'unknown'
@@ -85,7 +89,7 @@ function rowType(schema: EntitySchema, derived: Set<string>): string {
   // Runtime-filled columns are optional in the row type: relation labels (`derived`)
   // and computed / no-code-formula fields (not present on seed rows / inserts).
   const optional = (f: EntityField) => derived.has(f.field) || !!f.formula || !!f.computed
-  const lines = schema.fields.map((f) => `  ${f.field}${optional(f) ? '?' : ''}: ${tsType(f.type)}`)
+  const lines = schema.fields.map((f) => `  ${f.field}${optional(f) ? '?' : ''}: ${tsType(f)}`)
   return `export type ${pascal(schema.name)} = {\n${lines.join('\n')}\n}`
 }
 

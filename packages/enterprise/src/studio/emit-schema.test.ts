@@ -91,4 +91,21 @@ describe('emitStudioApp', () => {
   it('throws on an empty entity set', () => {
     expect(() => emitStudioApp([])).toThrow(/no schemas/)
   })
+
+  it('types a chips/tags field as string[] (it holds + seeds an array)', () => {
+    const files = emitStudioApp([
+      {
+        name: 'contacts',
+        label: 'Contact',
+        idField: 'id',
+        fields: [
+          { field: 'id', type: 'text', primaryKey: true },
+          { field: 'tags', type: 'text', input: { editorType: 'chips' } },
+        ],
+      },
+    ])
+    const schemas = files.find((f) => f.path === 'src/lib/schemas.ts')!.contents
+    expect(schemas).toMatch(/tags: string\[\]/)
+    expect(schemas).not.toMatch(/tags: string(?!\[)/) // not the scalar `string`
+  })
 })
