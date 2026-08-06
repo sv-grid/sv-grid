@@ -40,7 +40,7 @@ export {
 } from './scaffold.js'
 export { scaffoldApp, type ScaffoldAppOptions } from './scaffold-app.js'
 export { emitStudioApp, emitEntityModules, entityScreenPage, prepareEntities } from './emit-schema.js'
-export { emitStudioProject, emitStudioAppBundle, studioDeployInfo, screenHandles, screenDataset, ctxCompletions, componentHandleMembers, ctxAmbientDts, GRID_API_MEMBERS, type BlockHandle, type HandleTier } from './emit-project.js'
+export { emitStudioProject, emitStudioAppBundle, emitStudioFragment, runtimeDeps, studioDeployInfo, screenHandles, screenDataset, ctxCompletions, componentHandleMembers, ctxAmbientDts, GRID_API_MEMBERS, type BlockHandle, type HandleTier } from './emit-project.js'
 export { sampleApps, getSampleApp, type SampleApp } from './samples/index.js'
 export { liveDataSamples, getLiveDataSample } from './samples/live-data.js'
 export {

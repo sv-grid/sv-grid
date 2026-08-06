@@ -3,7 +3,7 @@ import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
 import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setScreenDock, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
-import { emitStudioProject, emitStudioAppBundle, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
+import { emitStudioProject, emitStudioAppBundle, emitStudioFragment, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
 import { UI_COMPONENT_REGISTRY } from './ui-components'
 
 /** Type-check a handler BODY against a generated ambient ctx `.d.ts` using the real
@@ -244,6 +244,34 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(files.find((f) => f.path === 'src/lib/server/query.ts')).toBeUndefined()
     const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
     expect(page).toMatch(/createServerDataSource/)
+  })
+})
+
+describe('emitStudioFragment (drop into an existing app)', () => {
+  it('emits app content minus the shell, plus app.css + FRAGMENT.md', () => {
+    const files = emitStudioFragment(createProject([customers]))
+    const paths = files.map((f) => f.path)
+    // No whole-app scaffolding.
+    expect(paths).not.toContain('package.json')
+    expect(paths).not.toContain('svelte.config.js')
+    expect(paths).not.toContain('src/routes/+layout.svelte') // the nav shell
+    expect(paths).not.toContain('src/routes/+page.svelte') // the home redirect
+    // The screens + lib + the lifted styles + the readme ARE present.
+    expect(paths).toContain('src/routes/customers/+page.svelte')
+    expect(paths).toContain('src/lib/schemas.ts')
+    expect(paths).toContain('src/lib/data.ts')
+    expect(paths).toContain('src/app.css')
+    expect(paths).toContain('FRAGMENT.md')
+  })
+
+  it('FRAGMENT.md reports the runtime deps + host requirements', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    const md = emitStudioFragment(p).find((f) => f.path === 'FRAGMENT.md')!.contents
+    expect(md).toMatch(/npm install .*\bpg\b/) // the sql driver the fragment imports
+    expect(md).toMatch(/DATABASE_URL/) // env the host must set
+    expect(md).toMatch(/Import `src\/app\.css`/)
+    expect(md).toMatch(/nav shell.*NOT here/s)
   })
 })
 

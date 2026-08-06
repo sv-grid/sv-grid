@@ -4364,7 +4364,9 @@ function svelteConfig(plan: DeployPlan): string {
   return `import adapter from '${plan.adapterModule}'\nimport { vitePreprocess } from '@sveltejs/vite-plugin-svelte'\n\n/** @type {import('@sveltejs/kit').Config} */\nconst config = {\n  preprocess: vitePreprocess(),\n  kit: { adapter: adapter() },\n}\n\nexport default config\n`
 }
 
-function packageJson(project: StudioProject, allSource: string): string {
+/** The runtime npm deps the generated source imports, keyed by package -> range.
+ *  One source of truth for package.json AND the fragment-mode dependency report. */
+export function runtimeDeps(project: StudioProject, allSource: string): Record<string, string> {
   const dependencies: Record<string, string> = { '@svgrid/grid': 'latest', '@svgrid/enterprise': 'latest' }
   if (allSource.includes("from '@supabase/supabase-js'")) dependencies['@supabase/supabase-js'] = '^2.45.0'
   if (allSource.includes("import pg from 'pg'")) dependencies['pg'] = '^8.11.0'
@@ -4379,11 +4381,14 @@ function packageJson(project: StudioProject, allSource: string): string {
   if (/from ['"]jszip['"]/.test(allSource)) dependencies['jszip'] = '^3.10.1'
   if (/from ['"]pdfmake(?:\/[^'"]*)?['"]/.test(allSource)) dependencies['pdfmake'] = '^0.2.10'
   // nodemailer is dynamically imported by the email layer only on the SMTP branch.
-  const usesNodemailer = /import\(['"]nodemailer['"]\)/.test(allSource)
-  if (usesNodemailer) dependencies['nodemailer'] = '^6.9.0'
-  // Typed data layer: drizzle-orm at runtime, drizzle-kit (dev) for migrations + scripts.
-  const drizzle = project.dataLayer === 'drizzle' && /from ['"]drizzle-orm(?:\/[^'"]*)?['"]/.test(allSource)
-  if (drizzle) dependencies['drizzle-orm'] = '^0.44.0'
+  if (/import\(['"]nodemailer['"]\)/.test(allSource)) dependencies['nodemailer'] = '^6.9.0'
+  if (project.dataLayer === 'drizzle' && /from ['"]drizzle-orm(?:\/[^'"]*)?['"]/.test(allSource)) dependencies['drizzle-orm'] = '^0.44.0'
+  return dependencies
+}
+
+function packageJson(project: StudioProject, allSource: string): string {
+  const dependencies = runtimeDeps(project, allSource)
+  const drizzle = !!dependencies['drizzle-orm']
   const scripts: Record<string, string> = { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json', test: 'vitest run', deploy: deployPlan(project).deployScript }
   if (drizzle) {
     scripts['db:generate'] = 'drizzle-kit generate'
@@ -4415,7 +4420,7 @@ function packageJson(project: StudioProject, allSource: string): string {
       // Driver typings so the connected route + data layer type-check cleanly.
       ...(dependencies['pg'] ? { '@types/pg': '^8.11.0' } : {}),
       ...(dependencies['better-sqlite3'] ? { '@types/better-sqlite3': '^7.6.0' } : {}),
-      ...(usesNodemailer ? { '@types/nodemailer': '^6.4.0' } : {}),
+      ...(dependencies['nodemailer'] ? { '@types/nodemailer': '^6.4.0' } : {}),
       ...(drizzle ? { 'drizzle-kit': '^0.31.0' } : {}),
       ...(drizzle && allSource.includes('studio:db-seed') ? { tsx: '^4.19.0' } : {}),
     },
@@ -4513,4 +4518,62 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     { path: 'DEPLOY.md', description: 'Deploy runbook (env vars, Git integration, CI, CLI).', contents: deployDocs(project, plan, envKeysUsed(allSource), generated.some((f) => f.path === 'drizzle.config.ts'), { hasDdl: generated.some((f) => f.path === 'db/schema.sql'), hasSeedScript: generated.some((f) => f.path === 'db/seed.ts') }) },
   ]
   return [...scaffold, ...generated]
+}
+
+/**
+ * Emit ONLY the app content (`src/routes` + `src/lib` + `db`) to drop into an
+ * EXISTING SvelteKit app - not a whole new app. Everything emitStudioProject
+ * produces MINUS the nav shell (`+layout.svelte`) and the home redirect (home
+ * `+page.svelte`), PLUS `src/app.css` (the `.st-*` page styles + `--sg-*` tokens,
+ * which otherwise live only in the full bundle) and a FRAGMENT.md that lists the
+ * deps to install and what the host app must provide.
+ */
+export function emitStudioFragment(project: StudioProject): GeneratedFile[] {
+  const generated = emitStudioProject(project)
+  const allSource = generated.map((f) => f.contents).join('\n')
+  // Drop the two files that assume ownership of the whole app.
+  const content = generated.filter((f) => f.path !== 'src/routes/+layout.svelte' && f.path !== 'src/routes/+page.svelte')
+
+  const deps = runtimeDeps(project, allSource)
+  const depList = Object.entries(deps).map(([name, v]) => `  ${name}@${v}`).join('\n')
+  const envKeys = envKeysUsed(allSource)
+  const libFiles = content.filter((f) => f.path.startsWith('src/lib/')).map((f) => `- \`${f.path}\``)
+  const fragmentMd = `# Studio fragment - drop into your SvelteKit app
+
+This folder holds ONLY app content - routes under \`src/routes\` and modules under
+\`src/lib\` (plus \`db/\` if present). It has no package.json, config, or app shell,
+so it drops into your existing SvelteKit app.
+
+## 1. Copy the files
+Merge \`src/routes/*\` and \`src/lib/*\` into your app's \`src/\`. \`$lib\` is a stock
+SvelteKit alias, so imports resolve with no config. Watch for filename collisions
+with your own \`src/lib\` (e.g. \`schemas.ts\`, \`data.ts\`) - rename if needed.
+
+## 2. Install dependencies
+\`\`\`bash
+npm install ${Object.keys(deps).filter((d) => d !== '@svgrid/grid' && d !== '@svgrid/enterprise').join(' ') || '@svgrid/grid @svgrid/enterprise'}
+\`\`\`
+Full list this fragment imports:
+\`\`\`
+${depList}
+\`\`\`
+
+## 3. Styles
+Import \`src/app.css\` once (e.g. in your root \`+layout.svelte\`) - it carries the
+\`.st-*\` page styles the screens use and the \`--sg-*\` design tokens.
+
+## 4. What your app must provide
+The full-app nav shell, home redirect, auth guard, RBAC bootstrap, i18n provider,
+and theme toggle live in the bundle's \`+layout.svelte\` - NOT here. Wire nav to the
+generated routes from your own layout.${envKeys.length ? `\n\n## Environment\nSet these where your app reads env:\n${envKeys.map((k) => `- \`${k}\``).join('\n')}` : ''}
+
+## Files included
+${libFiles.join('\n')}
+`
+
+  return [
+    ...content,
+    { path: 'src/app.css', description: 'Page styles (.st-*) + design tokens - import once in your layout.', contents: APP_CSS },
+    { path: 'FRAGMENT.md', description: 'How to drop this fragment into an existing SvelteKit app.', contents: fragmentMd },
+  ]
 }

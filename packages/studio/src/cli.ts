@@ -17,8 +17,11 @@ import {
   buildStudioBugReport,
   createProject,
   deployCommands,
+  emitStudioAppBundle,
+  emitStudioFragment,
   introspectDatabase,
   introspectOpenApi,
+  runtimeDeps,
   listDatabaseTables,
   missingEnvKeys,
   parseProject,
@@ -73,6 +76,7 @@ type Parsed = {
   dryRun?: boolean
   ai?: boolean
   appPort?: number
+  fragment?: boolean
 }
 
 function parse(args: string[]): Parsed {
@@ -97,6 +101,7 @@ function parse(args: string[]): Parsed {
     else if (a === '--dry-run') out.dryRun = true
     else if (a === '--ai') out.ai = true
     else if (a === '--app-port') out.appPort = Number(args[++i])
+    else if (a === '--fragment') out.fragment = true
     else if (a === '-h' || a === '--help') out.help = true
     else if (!a.startsWith('-')) positional.push(a)
   }
@@ -115,6 +120,7 @@ Usage:
   svgrid-studio add <name> --db <dialect> --url <conn>   # one table from a live database
   svgrid-studio add --all   --db <dialect> --url <conn>  # every table from a live database
   svgrid-studio openapi <file|url>                   # import an OpenAPI (JSON) spec -> studio.config.json
+  svgrid-studio eject [--fragment]                  # write the app (or a drop-in fragment) from studio.config.json
   svgrid-studio dev                                 # designer + the RUNNING app, side by side (HMR)
   svgrid-studio deploy [--target <provider>] [--dry-run]  # build + deploy via the provider CLI
 
@@ -165,6 +171,31 @@ function report(name: string, written: string[], verifyLine: string): void {
 async function main(): Promise<void> {
   const [cmd, ...rest] = process.argv.slice(2)
   const opts = parse(rest)
+
+  // --- eject: write the app (or a fragment) from studio.config.json ---------
+  if (cmd === 'eject' && !opts.help) {
+    const configPath = opts.config ?? 'studio.config.json'
+    const json = await io.readFile(configPath)
+    if (json == null) {
+      process.stderr.write(`eject: ${configPath} not found - run \`svgrid-studio designer\` first, or pass --config.\n`)
+      process.exit(1)
+    }
+    const project = parseProject(json)
+    const outDir = opts.outDir ?? '.'
+    const files = opts.fragment ? emitStudioFragment(project) : emitStudioAppBundle(project)
+    for (const f of files) {
+      const full = resolve(outDir, f.path)
+      await mkdir(dirname(full), { recursive: true })
+      await writeFile(full, f.contents)
+    }
+    process.stdout.write(`Wrote ${files.length} ${opts.fragment ? 'fragment' : 'app'} file(s) -> ${resolve(outDir)}\n`)
+    if (opts.fragment) {
+      const deps = runtimeDeps(project, files.map((f) => f.contents).join('\n'))
+      const install = Object.keys(deps).filter((d) => d !== '@svgrid/grid' && d !== '@svgrid/enterprise')
+      process.stdout.write(`Fragment: merge src/routes + src/lib into your app, import src/app.css, then:\n  npm install ${install.join(' ') || '@svgrid/grid @svgrid/enterprise'}\nSee FRAGMENT.md for the full runbook.\n`)
+    }
+    return
+  }
 
   // --- import an OpenAPI spec into a studio.config.json ---------------------
   if (cmd === 'openapi' && !opts.help) {
