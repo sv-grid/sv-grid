@@ -15,8 +15,10 @@ import { spawnSync } from 'node:child_process'
 import { dirname, resolve } from 'node:path'
 import {
   buildStudioBugReport,
+  createProject,
   deployCommands,
   introspectDatabase,
+  introspectOpenApi,
   listDatabaseTables,
   missingEnvKeys,
   parseProject,
@@ -24,6 +26,8 @@ import {
   resolveSchemas,
   runStudioAdd,
   runStudioAddApp,
+  serializeProject,
+  setEntityDataSource,
   summarizeVerify,
   type EntitySchema,
   type SqlDialectName,
@@ -110,6 +114,7 @@ Usage:
   svgrid-studio add --all   --from <schema>         # every table/model, linked
   svgrid-studio add <name> --db <dialect> --url <conn>   # one table from a live database
   svgrid-studio add --all   --db <dialect> --url <conn>  # every table from a live database
+  svgrid-studio openapi <file|url>                   # import an OpenAPI (JSON) spec -> studio.config.json
   svgrid-studio dev                                 # designer + the RUNNING app, side by side (HMR)
   svgrid-studio deploy [--target <provider>] [--dry-run]  # build + deploy via the provider CLI
 
@@ -160,6 +165,25 @@ function report(name: string, written: string[], verifyLine: string): void {
 async function main(): Promise<void> {
   const [cmd, ...rest] = process.argv.slice(2)
   const opts = parse(rest)
+
+  // --- import an OpenAPI spec into a studio.config.json ---------------------
+  if (cmd === 'openapi' && !opts.help) {
+    const src = opts.from ?? rest.find((a) => !a.startsWith('-'))
+    if (!src) {
+      process.stderr.write('openapi: pass a spec - `svgrid-studio openapi ./openapi.json` (or a URL)\n')
+      process.exit(1)
+    }
+    const text = /^https?:\/\//.test(src) ? await (await fetch(src)).text() : await readFile(src, 'utf8')
+    const { entities, sources, warnings } = introspectOpenApi(text)
+    let project = createProject(entities, { title: 'API app' })
+    for (const [name, source] of Object.entries(sources)) project = setEntityDataSource(project, name, source)
+    const outPath = opts.config ?? 'studio.config.json'
+    await writeFile(outPath, serializeProject(project))
+    process.stdout.write(`Imported ${entities.length} REST resource(s) -> ${outPath}\n`)
+    for (const w of warnings) process.stdout.write(`  ! ${w}\n`)
+    process.stdout.write(`Next: svgrid-studio designer   (open it visually)  or  svgrid-studio dev\n`)
+    return
+  }
 
   // --- live dev loop: designer + the real app, side by side ----------------
   if (cmd === 'dev' && !opts.help) {

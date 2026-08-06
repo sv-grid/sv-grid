@@ -8,6 +8,7 @@ export { inferType, introspectJson, introspectDrizzle, introspectDrizzleAll } fr
 export { refineField, refineFields } from '../sources/field-inference.js'
 export { parseCsv, detectDelimiter, csvToEntity, type CsvEntity } from './csv.js'
 export { introspectPrisma, introspectPrismaAll } from './introspect-prisma.js'
+export { introspectOpenApi, type OpenApiImport } from './introspect-openapi.js'
 export {
   introspectDatabase,
   listDatabaseTables,
