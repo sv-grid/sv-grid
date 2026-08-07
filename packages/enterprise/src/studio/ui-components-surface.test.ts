@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import { GENERATED_UI_SURFACE } from './ui-components.generated'
 import { UI_COMPONENT_REGISTRY, uiComponentSpec } from './ui-components'
-import { addComponentBlock, addFreestandingScreen, createProject, eventSlot, setHandlerSteps } from './project'
+import { addComponentBlock, addFreestandingScreen, createProject, eventSlot, setHandlerBody, setHandlerSteps } from './project'
 import { emitStudioProject } from './emit-project'
 import type { EntitySchema } from '../schema'
 
@@ -75,6 +75,22 @@ describe('full component surface (extractor-driven)', () => {
     expect(handlers).toMatch(/\.onkeydown = async \(\) => \{/)
     expect(handlers).toMatch(/\.onfocus = async \(\) => \{/)
     expect(() => compile(page, { filename: 'e.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('the handle proxy honors a camelCase on<Event> assignment (ctx.x.onKeyDown = fn)', () => {
+    // Double-click inserts `ctx.list_box1.onKeyDown = (e) => {}` into onLoad; the wrapper
+    // fires the lowercase DOM key ('keydown'), so the proxy must normalize casing.
+    let p = addFreestandingScreen(createProject([customers]), { title: 'K', route: 'k' })
+    const sid = p.screens.find((s) => s.title === 'K')!.id
+    p = addComponentBlock(p, sid, 'list-box')
+    // Double-clicking an event writes `ctx.list_box1.onKeyDown = (e) => {}` into onLoad (code mode).
+    p = setHandlerBody(p, sid, 'onLoad', 'ctx.list_box1.onKeyDown = (e) => {}')
+    const handles = emitStudioProject(p).find((f) => f.path === 'src/lib/handles.svelte.ts')!.contents
+    // onEvent + fire both lowercase, so onKeyDown, onkeydown and fire('keydown') all agree.
+    expect(handles).toContain('[name.toLowerCase()]: fn')
+    expect(handles).toContain('this.on[name.toLowerCase()]?.(e)')
+    // The set trap accepts any on<Event> casing (onKeyDown = fn), not just lowercase.
+    expect(handles).toContain('/^on[A-Za-z]/.test(k)) { t.onEvent(k.slice(2), v')
   })
 
   it('declared events wire through the component callback prop + a method slot each', () => {

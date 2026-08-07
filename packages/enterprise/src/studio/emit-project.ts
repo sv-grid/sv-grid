@@ -1304,9 +1304,9 @@ export class ComponentHandle {
   get(name: string): unknown { return this.props[name] }
   setText(value: string): this { this.text = value; return this }
   setLabel(value: string): this { this.text = value; return this }
-  onEvent(name: string, fn: (e: Event) => void): this { this.on = { ...this.on, [name]: fn }; return this }
+  onEvent(name: string, fn: (e: Event) => void): this { this.on = { ...this.on, [name.toLowerCase()]: fn }; return this }
   onClick(fn: (e: Event) => void): this { return this.onEvent('click', fn) }
-  fire(name: string, e: Event): void { this.on[name]?.(e) }
+  fire(name: string, e: Event): void { this.on[name.toLowerCase()]?.(e) }
 }
 
 /** An imperative, reactive handle over a data-bound block (chart, KPI, gauge,
@@ -1337,11 +1337,13 @@ export function handle(init: { props?: Record<string, unknown>; text?: string })
     get(t, k) {
       if (Reflect.has(t, k)) { const v = (t as unknown as Record<string, unknown>)[k as string]; return typeof v === 'function' ? v.bind(t) : v }
       if (typeof k === 'string' && /^set[A-Z]/.test(k)) { const p = k[3]!.toLowerCase() + k.slice(4); return (v: unknown) => t.set(p, v) }
-      if (typeof k === 'string' && /^on[A-Z]/.test(k)) { const e = k[2]!.toLowerCase() + k.slice(3); return (fn: (ev: Event) => void) => t.onEvent(e, fn) }
+      // onEvent(fn) call form. onEvent lowercases, so onKeyDown maps to the 'keydown' the wrapper fires.
+      if (typeof k === 'string' && /^on[A-Z]/.test(k)) { const e = k.slice(2); return (fn: (ev: Event) => void) => t.onEvent(e, fn) }
       return typeof k === 'string' ? t.props[k] : undefined
     },
     set(t, k, v) {
-      if (typeof k === 'string' && /^on[a-z]/.test(k)) { t.onEvent(k.slice(2), v as (e: Event) => void); return true }
+      // el.onKeyDown = fn / el.onclick = fn -> subscribe (onEvent lowercases the key).
+      if (typeof k === 'string' && /^on[A-Za-z]/.test(k)) { t.onEvent(k.slice(2), v as (e: Event) => void); return true }
       if (k === 'text') { t.text = v as string; return true }              // content, not a prop
       if (typeof k === 'string') t.set(k, v)                                 // checkbox1.checked = true
       return true
@@ -1483,15 +1485,14 @@ function compiledMethodBodies(screen: Screen): { onLoadSteps?: string; clicks?: 
   if (!steps || !Object.keys(steps).length) return {}
   const names = handleNameMap(screen)
   const clicks: string[] = []
-  // Every event the block's component declares gets a wireable method slot
-  // (`ctx.<name>.on<event> = ...` - the handle Proxy maps any on<key> assignment
-  // to onEvent). click/change remain the fallback for spec-less components.
+  // Legacy visual event steps compile to `ctx.<name>.on<event> = async () => { ... }`
+  // inside onLoad. New event handlers are written as raw code directly in the onLoad
+  // body (double-click an event -> Studio inserts `ctx.<name>.on<Event> = (e) => {}`).
   for (const b of flattenBlocks(screen.blocks)) {
     if (b.config.kind !== 'component') continue
     const name = names.get(b.id)
     if (!name) continue
     const spec = uiComponentSpec(b.config.component)
-    // Every declared component callback + the standard DOM event surface is wireable.
     const eventKeys = [...(spec?.events ?? []).map((e) => e.key), ...STANDARD_UI_EVENTS.map((e) => e.key)]
     for (const key of [...new Set(eventKeys)]) {
       const eventSteps = steps[eventSlot(key, b.id)]
@@ -1502,7 +1503,7 @@ function compiledMethodBodies(screen: Screen): { onLoadSteps?: string; clicks?: 
   return {
     // Legacy visual onLoad steps (the code view now edits onLoad directly).
     onLoadSteps: steps[ON_LOAD]?.length ? compileHandlerSteps(steps[ON_LOAD]) : undefined,
-    // Component on-click wiring - MERGED with any hand-written onLoad body, never replacing it.
+    // Component on-event wiring - MERGED with any hand-written onLoad body, never replacing it.
     clicks: clicks.length ? clicks.join('\n\n') : undefined,
     onDestroy: steps[ON_DESTROY]?.length ? compileHandlerSteps(steps[ON_DESTROY]) : undefined,
   }
