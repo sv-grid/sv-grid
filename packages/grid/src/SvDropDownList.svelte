@@ -10,7 +10,7 @@
   import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
   import { startPanelResize } from './panel-resize'
   import { createDismissableLayer } from './a11y/dismissable'
-  import { groupOptions, hasGroups, type ListOption } from './list-option'
+  import { groupOptions, hasGroups, normalizeOptions, type ListOption } from './list-option'
   import { virtualRange, scrollToIndex } from './virtual'
   import SvField from './SvField.svelte'
   import { nextEditorId, type SvEditorProps } from './editor-contract'
@@ -56,12 +56,15 @@
   const autoId = nextEditorId('sv-ddl')
   const uid = $derived(id ?? autoId)
 
+  // Tolerate primitive / partial options - normalize so labels render + keys are stable.
+  const norm = $derived(normalizeOptions(options))
+
   // Virtualization applies to a flat (ungrouped) list.
-  const useVirtual = $derived(virtual && !hasGroups(options))
+  const useVirtual = $derived(virtual && !hasGroups(norm))
   let scrollTop = $state(0)
   let viewportH = $state(0)
-  const vr = $derived(virtualRange({ scrollTop, viewportHeight: viewportH, rowHeight, count: options.length, overscan: 10 }))
-  const windowed = $derived(useVirtual ? options.slice(vr.start, vr.end).map((o, i) => ({ ...o, index: vr.start + i })) : [])
+  const vr = $derived(virtualRange({ scrollTop, viewportHeight: viewportH, rowHeight, count: norm.length, overscan: 10 }))
+  const windowed = $derived(useVirtual ? norm.slice(vr.start, vr.end).map((o, i) => ({ ...o, index: vr.start + i })) : [])
 
   let triggerEl = $state<HTMLButtonElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
@@ -76,7 +79,7 @@
   const showGrip = $derived(resizable && !rect.openUpward)
 
   const ddl = createDropdownList({
-    options: () => options,
+    options: () => norm,
     value: () => value,
     onChange: (v) => onChange?.(v),
     disabled: () => disabled,
@@ -96,7 +99,7 @@
     // When the user has resized, anchor to THAT height so the flip decision and
     // upward top stay correct; otherwise estimate from the option count.
     const estimatedHeight =
-      resizable && userHeight != null ? userHeight : Math.min(options.length, 8) * 34 + 8
+      resizable && userHeight != null ? userHeight : Math.min(norm.length, 8) * 34 + 8
     rect = anchoredRect(triggerEl.getBoundingClientRect(), { estimatedHeight })
   }
 
@@ -164,23 +167,23 @@
   <div bind:this={panelEl} class="sv-ddl__panel" class:is-virtual={useVirtual} class:is-resizable={showGrip} use:portalToBody use:popIn={{ up: rect.openUpward }} style:--sv-row-h={`${rowHeight}px`} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} style:max-height={`${panelMaxH}px`} style:height={resizable && userHeight != null ? `${panelMaxH}px` : undefined} onscroll={(e) => (scrollTop = e.currentTarget.scrollTop)} bind:clientHeight={viewportH} {...ddl.listboxProps()}>
     {#if useVirtual}
       <div class="sv-ddl__spacer" aria-hidden="true" style:height={`${vr.padTop}px`}></div>
-      {#each windowed as opt (opt.value)}
+      {#each windowed as opt (opt.index)}
         <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
         <div class="sv-ddl__opt" style:height={`${rowHeight}px`} class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
       {/each}
       <div class="sv-ddl__spacer" aria-hidden="true" style:height={`${vr.padBottom}px`}></div>
     {:else}
-    {#each groupOptions(options) as g (g.group ?? '')}
+    {#each groupOptions(norm) as g (g.group ?? '')}
       {#if g.group != null}
         <div class="sv-ddl__group" role="group" aria-label={g.group}>
           <div class="sv-ddl__group-label" aria-hidden="true">{g.group}</div>
-          {#each g.options as opt (opt.value)}
+          {#each g.options as opt (opt.index)}
             <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
             <div class="sv-ddl__opt" class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
           {/each}
         </div>
       {:else}
-        {#each g.options as opt (opt.value)}
+        {#each g.options as opt (opt.index)}
           <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
           <div class="sv-ddl__opt" class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
         {/each}

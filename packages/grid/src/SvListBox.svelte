@@ -6,7 +6,7 @@
    * `virtual` (fixed-row windowing), and each row can be an `itemTemplate`.
    */
   import { type Snippet } from 'svelte'
-  import { groupOptions, hasGroups, type ListOption } from './list-option'
+  import { groupOptions, hasGroups, normalizeOptions, type ListOption } from './list-option'
   import { virtualRange, scrollToIndex } from './virtual'
   import { createListbox } from './createListbox.svelte'
   import SvField from './SvField.svelte'
@@ -52,9 +52,13 @@
   const autoId = nextEditorId('sv-lb')
   const uid = $derived(id ?? autoId)
 
+  // Tolerate primitive / partial options (e.g. setOptions([1, 2, 3])): normalize
+  // to { value, label } so labels render and keys are never undefined.
+  const norm = $derived(normalizeOptions(options))
+
   // The styled listbox is just a renderer over the headless core.
   const lb = createListbox({
-    options: () => options,
+    options: () => norm,
     value: () => value,
     onChange: (v) => onChange?.(v),
     multiple: () => multiple,
@@ -69,15 +73,15 @@
   const isSel = (o: ListOption) => lb.isSelected(o.value)
 
   // Virtualization only applies to a flat (ungrouped) list.
-  const useVirtual = $derived(virtual && !hasGroups(options))
+  const useVirtual = $derived(virtual && !hasGroups(norm))
   let listEl = $state<HTMLUListElement | null>(null)
   let scrollTop = $state(0)
   let viewportH = $state(0)
   const vr = $derived(
-    virtualRange({ scrollTop, viewportHeight: viewportH, rowHeight, count: options.length, overscan: 10 }),
+    virtualRange({ scrollTop, viewportHeight: viewportH, rowHeight, count: norm.length, overscan: 10 }),
   )
   const windowed = $derived(
-    useVirtual ? options.slice(vr.start, vr.end).map((o, i) => ({ ...o, index: vr.start + i })) : [],
+    useVirtual ? norm.slice(vr.start, vr.end).map((o, i) => ({ ...o, index: vr.start + i })) : [],
   )
 
   // Keep the active option in view. Virtual mode drives scrollTop directly (the
@@ -116,14 +120,14 @@
            next paint - no flushSync (it over-flushes app-wide and, on a fling,
            starves the very handler that has to keep up with the scroll). -->
       <li class="sv-listbox__spacer" aria-hidden="true" style:height={`${vr.padTop}px`}></li>
-      {#each windowed as opt (opt.value)}
+      {#each windowed as opt (opt.index)}
         {@render optionLi(opt, opt.index)}
       {/each}
       <li class="sv-listbox__spacer" aria-hidden="true" style:height={`${vr.padBottom}px`}></li>
     {:else}
-      {#each groupOptions(options) as g (g.group ?? ' ')}
+      {#each groupOptions(norm) as g (g.group ?? ' ')}
         {#if g.group != null}<li class="sv-listbox__group" role="presentation">{g.group}</li>{/if}
-        {#each g.options as opt (opt.value)}
+        {#each g.options as opt (opt.index)}
           {@render optionLi(opt, opt.index)}
         {/each}
       {/each}

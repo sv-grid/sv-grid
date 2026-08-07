@@ -147,7 +147,7 @@
         <span class="sv-ms__placeholder">{placeholder}</span>
       {:else}
         <span class="sv-ms__chips">
-          {#each selectedOptions.slice(0, maxTagCount) as opt (opt.value)}
+          {#each selectedOptions.slice(0, maxTagCount) as opt, i (i)}
             <span class="sv-ms__chip">{opt.label}</span>
           {/each}
           {#if selectedOptions.length > maxTagCount}
@@ -206,7 +206,7 @@
       aria-activedescendant={searchable ? undefined : ms.activeDescendant()}
       tabindex={searchable ? -1 : 0}
     >
-      {#each filtered as opt, i (opt.value)}
+      {#each filtered as opt, i (i)}
         <li
           class="sv-ms__opt"
           class:is-active={ms.isActive(i)}

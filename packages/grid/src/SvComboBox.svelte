@@ -9,7 +9,7 @@
    */
   import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
   import { createDismissableLayer } from './a11y/dismissable'
-  import { groupOptions, type ListOption } from './list-option'
+  import { groupOptions, normalizeOptions, type ListOption } from './list-option'
   import SvField from './SvField.svelte'
   import { nextEditorId, resolveMessages, type SvEditorProps } from './editor-contract'
   import { createCombobox } from './createCombobox.svelte'
@@ -73,7 +73,7 @@
   let searched = $state(false)
   let debTimer: ReturnType<typeof setTimeout> | undefined
   let reqSeq = 0
-  const effectiveOptions = $derived(loadOptions ? remoteOptions : options)
+  const effectiveOptions = $derived(normalizeOptions(loadOptions ? remoteOptions : options))
 
   const combo = createCombobox({
     options: () => effectiveOptions,
@@ -162,7 +162,7 @@
     {:else if combo.filtered.length}
       {#each groupOptions(combo.filtered) as g (g.group ?? ' ')}
         {#if g.group != null}<div class="sv-ddl__group-label" aria-hidden="true">{g.group}</div>{/if}
-        {#each g.options as opt (opt.value)}
+        {#each g.options as opt (opt.index)}
           <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
           <div class="sv-ddl__opt" class:is-active={combo.isActive(opt.index)} class:is-selected={combo.isSelected(opt)} class:is-disabled={opt.disabled} {...combo.optionProps(opt.index)}>{opt.label}</div>
         {/each}

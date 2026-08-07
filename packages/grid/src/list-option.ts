@@ -9,6 +9,25 @@ export type ListOption = {
   color?: string
 }
 
+/**
+ * Coerce a raw options array into well-formed ListOptions. A primitive item
+ * (`1`, `'a'`) becomes `{ value, label: String(value) }`; an object missing a
+ * `label` or `value` gets the other filled in. This makes a caller who passes
+ * e.g. `[1, 2, 3]` or `['a', 'b']` render sensibly instead of crashing a keyed
+ * `#each` on `undefined`/duplicate `value`s.
+ */
+export function normalizeOptions(raw: ReadonlyArray<ListOption | string | number> | null | undefined): ListOption[] {
+  if (!raw) return []
+  return raw.map((o) => {
+    if (o != null && typeof o === 'object') {
+      const opt = o as Partial<ListOption>
+      const value = opt.value ?? opt.label ?? ''
+      return { ...(opt as ListOption), value, label: opt.label ?? String(value) }
+    }
+    return { value: o, label: String(o) }
+  })
+}
+
 /** Case-insensitive substring filter over option labels. */
 export function filterOptions(options: ReadonlyArray<ListOption>, query: string): ListOption[] {
   const q = query.trim().toLowerCase()
