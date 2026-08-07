@@ -293,6 +293,7 @@ export {
 export {
   UI_COMPONENT_REGISTRY,
   uiComponentSpec,
+  STANDARD_UI_EVENTS,
   type UiPropType,
   type UiPropGroup,
   type UiComponentEvent,

@@ -15,6 +15,8 @@ export type GeneratedUiProp = {
   default?: unknown
   description?: string
   group?: 'common' | 'appearance' | 'behavior' | 'advanced'
+  /** A function / code-only prop (e.g. loadChildren): listed read-only, set in code. */
+  code?: boolean
 }
 
 export type GeneratedUiEvent = { key: string; label: string; prop: string; description?: string }
@@ -271,6 +273,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "formatLabel",
+        "label": "Format Label",
+        "type": "json",
+        "description": "Format the label (default: rounded percent).",
+        "code": true,
+        "group": "advanced"
+      },
+      {
         "key": "striped",
         "label": "Striped",
         "type": "boolean",
@@ -386,7 +396,12 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
       {
         "key": "size",
         "label": "Size",
-        "type": "number",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
         "default": "md",
         "description": "Preset (sm 28 / md 36 / lg 48) or an explicit pixel size.",
         "group": "appearance"
@@ -2054,6 +2069,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         ],
         "default": "horizontal",
         "group": "appearance"
+      },
+      {
+        "key": "formatValue",
+        "label": "Format Value",
+        "type": "json",
+        "code": true,
+        "group": "advanced"
       }
     ],
     "events": [
@@ -2176,6 +2198,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "default": false,
         "description": "Show a percentage label in the center.",
         "group": "common"
+      },
+      {
+        "key": "formatLabel",
+        "label": "Format Label",
+        "type": "json",
+        "code": true,
+        "group": "advanced"
       },
       {
         "key": "ariaLabel",
@@ -2437,7 +2466,12 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
       {
         "key": "size",
         "label": "Size",
-        "type": "number",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
         "default": "md",
         "group": "appearance"
       }
@@ -3953,6 +3987,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "loadOptions",
+        "label": "Load Options",
+        "type": "json",
+        "description": "Load options from a server as the user types (debounced). Disables local filtering; the returned list is shown as-is.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
         "key": "minLength",
         "label": "Min Length",
         "type": "number",
@@ -4168,6 +4210,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "type": "boolean",
         "default": true,
         "group": "behavior"
+      },
+      {
+        "key": "loadOptions",
+        "label": "Load Options",
+        "type": "json",
+        "description": "Async/remote options: called (debounced) with the search query; its result replaces the list. When set, `options` is only the initial list.",
+        "code": true,
+        "group": "advanced"
       },
       {
         "key": "debounceMs",
@@ -4406,6 +4456,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "loadChildren",
+        "label": "Load Children",
+        "type": "json",
+        "description": "Load a lazy node's children on first expand (node has `lazy: true`).",
+        "code": true,
+        "group": "advanced"
+      },
+      {
         "key": "filter",
         "label": "Filter",
         "type": "string",
@@ -4425,6 +4483,17 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Search Placeholder",
         "type": "string",
         "default": "Search...",
+        "group": "common"
+      },
+      {
+        "key": "sort",
+        "label": "Sort",
+        "type": "select",
+        "options": [
+          "asc",
+          "desc"
+        ],
+        "description": "Sort siblings by label ('asc'/'desc') or a custom comparator.",
         "group": "common"
       },
       {

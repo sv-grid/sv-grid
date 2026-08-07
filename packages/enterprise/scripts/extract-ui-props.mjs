@@ -91,20 +91,38 @@ function literalUnion(node, aliases) {
   return walk(node) && literals.length ? literals : null
 }
 
-/** Classify a prop's type node -> { kind: UiPropType | 'event' | 'skip', options? } */
+/** The string-literal members of a union (ignoring any non-literal members), so a
+ *  mixed union like `'asc' | 'desc' | ((a,b)=>number)` still yields ['asc','desc']. */
+function literalMembers(node, aliases) {
+  if (!ts.isUnionTypeNode(node)) return []
+  const out = []
+  for (const t of node.types) {
+    if (ts.isLiteralTypeNode(t) && ts.isStringLiteral(t.literal)) out.push(t.literal.text)
+    else if (ts.isTypeReferenceNode(t)) { const a = aliases.get(t.typeName.getText()); if (a) out.push(...literalMembers(a, aliases)) }
+  }
+  return out
+}
+
+/** Classify a prop's type node -> { kind: UiPropType | 'event' | 'code', options? }.
+ *  A real prop is NEVER dropped: unclassifiable types fall back to 'json', and a
+ *  non-`on*` function prop (e.g. loadChildren) is listed read-only as 'code'. Only
+ *  a `Snippet` content slot is skipped (it's content, not a property). */
 function classify(name, node, aliases) {
-  if (!node) return { kind: 'skip' }
+  if (!node) return { kind: 'json' }
   if (ts.isParenthesizedTypeNode(node)) return classify(name, node.type, aliases)
-  if (ts.isFunctionTypeNode(node)) return /^on[a-zA-Z]/.test(name) ? { kind: 'event' } : { kind: 'skip' }
+  if (ts.isFunctionTypeNode(node)) return /^on[a-zA-Z]/.test(name) ? { kind: 'event' } : { kind: 'code' }
   if (ts.isUnionTypeNode(node)) {
     const options = literalUnion(node, aliases)
     if (options) return { kind: 'select', options }
-    // union of non-literals: try the first useful member (e.g. `string | number`)
+    // Mixed union: offer the literal options as a select (the rest is code-only).
+    const lits = literalMembers(node, aliases)
+    if (lits.length) return { kind: 'select', options: lits }
+    // else: first classifiable member (e.g. `string | number`), else JSON.
     for (const t of node.types) {
       const c = classify(name, t, aliases)
-      if (c.kind !== 'skip') return c
+      if (c.kind !== 'code') return c
     }
-    return { kind: 'skip' }
+    return { kind: 'json' }
   }
   switch (node.kind) {
     case ts.SyntaxKind.StringKeyword:
@@ -117,14 +135,14 @@ function classify(name, node, aliases) {
   if (ts.isArrayTypeNode(node) || ts.isTypeLiteralNode(node) || ts.isTupleTypeNode(node)) return { kind: 'json' }
   if (ts.isTypeReferenceNode(node)) {
     const ref = node.typeName.getText()
-    if (ref === 'Snippet') return { kind: 'skip' }
+    if (ref === 'Snippet') return { kind: 'skip' } // a content slot, not a property
     if (ref === 'Date') return { kind: 'date' }
     if (/^(Partial|Record|Array|ReadonlyArray|Map|Set)$/.test(ref)) return { kind: 'json' }
     const target = aliases.get(ref)
     if (target) return classify(name, target, aliases)
     return { kind: 'json' } // unknown named object type - editable as JSON
   }
-  return { kind: 'skip' }
+  return { kind: 'json' } // never drop a real prop - list it as JSON-editable
 }
 
 // --- Props resolution --------------------------------------------------------
@@ -246,14 +264,18 @@ for (const name of COMPONENTS) {
       events.push({ key: eventKey(m.name), label: titleCase(eventKey(m.name)), prop: m.name, ...(m.doc ? { description: m.doc } : {}) })
       continue
     }
+    // 'code' = a function / code-only prop (e.g. loadChildren): listed read-only,
+    // set via ctx.<handle> in code. Everything else is an editable prop.
+    const isCode = c.kind === 'code'
     props.push({
       key: m.name,
       label: titleCase(m.name),
-      type: c.kind,
+      type: isCode ? 'json' : c.kind,
       ...(c.options ? { options: c.options } : {}),
       ...(defaults.has(m.name) ? { default: defaults.get(m.name) } : {}),
       ...(m.doc ? { description: m.doc } : {}),
-      group: groupFor(m.name),
+      ...(isCode ? { code: true } : {}),
+      group: isCode ? 'advanced' : groupFor(m.name),
     })
   }
   result[name] = { props, events }
@@ -281,6 +303,8 @@ export type GeneratedUiProp = {
   default?: unknown
   description?: string
   group?: 'common' | 'appearance' | 'behavior' | 'advanced'
+  /** A function / code-only prop (e.g. loadChildren): listed read-only, set in code. */
+  code?: boolean
 }
 
 export type GeneratedUiEvent = { key: string; label: string; prop: string; description?: string }

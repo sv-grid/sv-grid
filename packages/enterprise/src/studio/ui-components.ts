@@ -31,11 +31,30 @@ export type UiComponentProp = {
   description?: string
   /** Property-panel grouping (defaults to 'common'). */
   group?: UiPropGroup
+  /** A function / code-only prop (e.g. loadChildren) - listed read-only, set in code. */
+  code?: boolean
 }
 
 /** A wireable component event: `key` is the handle event name (`ctx.x.on<key>`),
  *  `prop` the component callback prop that fires it (e.g. `onChange`). */
 export type UiComponentEvent = { key: string; label: string; prop?: string; description?: string }
+
+/** Standard DOM / interaction events EVERY component block can wire (VS-style full
+ *  event surface) - forwarded by the generated wrapper to the block's handle. `dom`
+ *  is the DOM event the wrapper listens for; `key` is the handle event name. */
+export const STANDARD_UI_EVENTS: ReadonlyArray<{ key: string; label: string; dom: string; description: string }> = [
+  { key: 'click', label: 'Click', dom: 'click', description: 'The component (or a child) was clicked.' },
+  { key: 'dblclick', label: 'Double click', dom: 'dblclick', description: 'The component was double-clicked.' },
+  { key: 'change', label: 'Change', dom: 'change', description: 'A committed value change (fires on blur for inputs).' },
+  { key: 'input', label: 'Input', dom: 'input', description: 'Fires on every keystroke / immediate value edit.' },
+  { key: 'focus', label: 'Focus', dom: 'focusin', description: 'The component (or a child) gained focus.' },
+  { key: 'blur', label: 'Blur', dom: 'focusout', description: 'The component (or a child) lost focus.' },
+  { key: 'keydown', label: 'Key down', dom: 'keydown', description: 'A key was pressed while focused.' },
+  { key: 'keyup', label: 'Key up', dom: 'keyup', description: 'A key was released while focused.' },
+  { key: 'contextmenu', label: 'Context menu', dom: 'contextmenu', description: 'Right-click / context-menu request.' },
+  { key: 'mouseenter', label: 'Mouse enter', dom: 'mouseenter', description: 'The pointer entered the component.' },
+  { key: 'mouseleave', label: 'Mouse leave', dom: 'mouseleave', description: 'The pointer left the component.' },
+]
 
 export type UiComponentSpec = {
   /** Registry key - stored as `ComponentConfig.component`. */

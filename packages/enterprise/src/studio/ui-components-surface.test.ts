@@ -57,6 +57,26 @@ describe('full component surface (extractor-driven)', () => {
     expect(page).toMatch(/options=\{\[\{"value":"a","label":"Option A"\}/)
   })
 
+  it('every component exposes the full standard DOM event surface (wired + wireable)', () => {
+    let p = addFreestandingScreen(createProject([customers]), { title: 'E', route: 'e' })
+    const sid = p.screens.find((s) => s.title === 'E')!.id
+    p = addComponentBlock(p, sid, 'button')
+    const block = p.screens.find((s) => s.id === sid)!.blocks.at(-1)!
+    // The wrapper forwards focus/blur (focusin/focusout), keydown, contextmenu, ...
+    p = setHandlerSteps(p, sid, eventSlot('keydown', block.id), [{ type: 'alert', message: 'k' }])
+    p = setHandlerSteps(p, sid, eventSlot('focus', block.id), [{ type: 'alert', message: 'f' }])
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path === 'src/routes/e/+page.svelte')!.contents
+    expect(page).toMatch(/onkeydown=\{\(e\) => \w+\.fire\('keydown', e\)\}/)
+    expect(page).toMatch(/onfocusin=\{\(e\) => \w+\.fire\('focus', e\)\}/) // focus via focusin
+    expect(page).toMatch(/onfocusout=\{\(e\) => \w+\.fire\('blur', e\)\}/)
+    expect(page).toMatch(/oncontextmenu=\{\(e\) => \w+\.fire\('contextmenu', e\)\}/)
+    const handlers = files.find((f) => f.path === 'src/routes/e/handlers.ts')!.contents
+    expect(handlers).toMatch(/\.onkeydown = async \(\) => \{/)
+    expect(handlers).toMatch(/\.onfocus = async \(\) => \{/)
+    expect(() => compile(page, { filename: 'e.svelte', generate: 'client' })).not.toThrow()
+  })
+
   it('declared events wire through the component callback prop + a method slot each', () => {
     const spec = uiComponentSpec('tree')!
     expect(spec.events!.map((e) => e.key)).toEqual(expect.arrayContaining(['select', 'toggle', 'check']))

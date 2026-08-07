@@ -13,7 +13,7 @@
 import type { GeneratedFile } from './scaffold.js'
 import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, SchedulerViewConfig, Screen, StudioProject } from './project.js'
 import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, eventSlot, FORM_SUBMIT, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen, ssrScreenShape } from './project.js'
-import { uiComponentSpec } from './ui-components.js'
+import { uiComponentSpec, STANDARD_UI_EVENTS } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
 import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, prepareEntities, relationDisplayFields, sqlDdlFiles, type NavItem } from './emit-schema.js'
@@ -517,9 +517,10 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: s
     // covers the same key, so an event never fires twice.
     const propWired = (spec.events ?? []).filter((e) => e.prop)
     const eventAttrs = propWired.map((e) => ` ${e.prop}={(e) => ${handleName}.fire(${jsStr(e.key)}, e)}`).join('')
-    const wrapper = ['click', 'change']
-      .filter((k) => !propWired.some((e) => e.key === k))
-      .map((k) => ` on${k}={(e) => ${handleName}.fire('${k}', e)}`)
+    // The wrapper forwards the full standard DOM event surface to the handle (VS-style
+    // events), skipping any a component callback prop already covers (no double-fire).
+    const wrapper = STANDARD_UI_EVENTS.filter((se) => !propWired.some((e) => e.key === se.key))
+      .map((se) => ` on${se.dom}={(e) => ${handleName}.fire('${se.key}', e)}`)
       .join('')
     return `    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
     <div id="${block.id}"${wrapper} ${span}${cls}>
@@ -532,6 +533,7 @@ function componentBlockMarkup(block: Block, cfg: ComponentConfig, handleName?: s
   const bound = (key: string): ComponentBinding | undefined => (rowsExpr ? bindings[key] : undefined)
   const attrs: string[] = []
   for (const p of spec.props) {
+    if (p.code) continue // code-only props (functions) are set via the handle, not literals
     const b = bound(p.key)
     if (b) { attrs.push(`${p.key}={${bindingExpr(b, rowsExpr!, p.type === 'number')}}`); continue }
     const v = cfg.props[p.key] ?? p.default
@@ -580,6 +582,7 @@ function handleInit(cfg: ComponentConfig): string {
   const spec = uiComponentSpec(cfg.component)
   const props: string[] = []
   for (const p of spec?.props ?? []) {
+    if (p.code) continue // code-only props are set via the handle in code, not seeded
     const v = cfg.props[p.key] ?? p.default
     if (v == null || v === '') continue
     props.push(`${p.key}: ${propValueExpr(p, v)}`)
@@ -1488,8 +1491,9 @@ function compiledMethodBodies(screen: Screen): { onLoadSteps?: string; clicks?: 
     const name = names.get(b.id)
     if (!name) continue
     const spec = uiComponentSpec(b.config.component)
-    const eventKeys = spec?.events?.length ? spec.events.map((e) => e.key) : ['click', 'change']
-    for (const key of [...new Set([...eventKeys, 'click', 'change'])]) {
+    // Every declared component callback + the standard DOM event surface is wireable.
+    const eventKeys = [...(spec?.events ?? []).map((e) => e.key), ...STANDARD_UI_EVENTS.map((e) => e.key)]
+    for (const key of [...new Set(eventKeys)]) {
       const eventSteps = steps[eventSlot(key, b.id)]
       if (!eventSteps?.length) continue
       clicks.push(`ctx.${name}.on${key} = async () => {\n${indentBody(compileHandlerSteps(eventSteps))}\n}`)
