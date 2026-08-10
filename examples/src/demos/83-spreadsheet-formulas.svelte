@@ -660,7 +660,7 @@
   }
   .ss-formula-input::placeholder { color: var(--sg-muted, #94a3b8); font-family: inherit; }
   .ss-commit {
-    border: 0; background: var(--sg-accent, #2563eb); color: #fff;
+    border: 0; background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff);
     border-radius: 6px; padding: 6px 14px;
     font-size: 12.5px; font-weight: 600;
     cursor: pointer;

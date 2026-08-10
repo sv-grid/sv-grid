@@ -142,6 +142,11 @@ closes the menu first and leaves the dialog up.
   focused on open.
 - Full keyboard: Up/Down move, Home/End jump, Enter or Space activate, Escape
   closes, and ArrowRight/Left open and close submenus.
+- Type-ahead: pressing printable keys jumps to the next item whose label starts
+  with what you typed (characters accumulate briefly, then reset).
+- Submenu flyouts are placed by the shared positioning engine, so they flip to the
+  other side and clamp vertically when there is no room, instead of running off
+  the screen edge.
 - The menu portals to `<body>` and outside-click dismissal runs through the shared
   layer stack, while Escape stays owned by the list's keyboard handling.
 

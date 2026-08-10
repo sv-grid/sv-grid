@@ -516,7 +516,7 @@
   .sm-btn-primary {
     background: var(--sg-accent, #2563eb);
     border-color: transparent;
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     font-weight: 600;
   }
   .sm-btn-primary:hover:not(:disabled) { filter: brightness(0.95); background: var(--sg-accent, #2563eb); }
@@ -647,7 +647,7 @@
   .sm-hist {
     border-radius: 5px;
   }
-  .sm-hist-active { background: var(--sg-accent, #2563eb); color: #fff; }
+  .sm-hist-active { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); }
   .sm-hist-active .sm-hist-time, .sm-hist-active .sm-hist-index { color: rgba(255,255,255,.85); }
   .sm-hist-row {
     width: 100%;

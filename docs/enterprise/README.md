@@ -1,10 +1,11 @@
 # Enterprise feature pack
 
 `@svgrid/enterprise` is a paid add-on for `@svgrid/grid`. It bolts onto
-the same `<SvGrid>` you already have and adds four feature areas: data
-export, data import, an AI assistant, and pivot tables.
+the same `<SvGrid>` you already have and adds three feature areas: data
+export, data import, and pivot tables. (The AI helpers are built in and
+**free** in `@svgrid/grid` - see [AI assistant](../help/ai.md).)
 
-![The @svgrid/enterprise pack bolts data export, data import, an AI assistant, and pivot tables onto the same SvGrid you already have.](/docs-media/enterprise-pack.svg)
+![The @svgrid/enterprise pack bolts data export, data import, and pivot tables onto the same SvGrid you already have.](/docs-media/enterprise-pack.svg)
 
 ```bash
 pnpm add @svgrid/enterprise
@@ -51,21 +52,15 @@ You decide whether to commit the rows into the grid or preview first.
 
 Demo: [53 Excel import](../../examples/src/demos/53-excel-import.svelte).
 
-### [AI assistant](../help/ai.md)
+### AI assistant - now built-in + free
 
-Four model-agnostic helpers on `pro.ai`:
-
-- `filter(query)` - natural-language filter + sort plan ("show me last
-  quarter's churn over $10k, sorted by date").
-- `smartFill(opts)` - propose values for empty cells from a few worked
-  examples.
-- `summarize(opts)` - one-paragraph + bullets summary of a row,
-  selection, group, or the whole view.
-- `classify(opts)` - classify free-text cells into one of a known set
-  of labels.
-
-You register a provider via `setAIProvider(yourAdapter)`. No model
-client is bundled - you bring OpenAI / Anthropic / Ollama / local.
+The natural-language filter, smart-fill, summarise, classify, chart-this,
+find-anomalies and natural-language-export helpers moved into the free
+`@svgrid/grid` package. Import them from `@svgrid/grid` and register a provider
+with `setAIProvider(yourAdapter)` (no model client is bundled - you bring
+OpenAI / Anthropic / Ollama / local). See [AI assistant](../help/ai.md). The
+only enterprise touch-point is `aiExport`'s write step, which uses this pack's
+export engine for xlsx / pdf.
 
 Demo: [51 AI assistant](../../examples/src/demos/51-ai-assistant.svelte).
 
@@ -133,8 +128,8 @@ Each Enterprise module is a separate subpath export:
 ```ts
 import { exportGrid }     from '@svgrid/enterprise/export'    // export only
 import { importData }     from '@svgrid/enterprise/import'    // import only
-import { aiFilter }       from '@svgrid/enterprise/ai'        // AI only
 import { createPivotModel } from '@svgrid/enterprise/pivot'   // pivot only
+// AI helpers are free + built in: import { aiFilter } from '@svgrid/grid'
 ```
 
 If you only need export, the AI provider plumbing, pivot engine, and

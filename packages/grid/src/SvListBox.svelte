@@ -24,6 +24,8 @@
     /** Fixed row height in px (must match the CSS row height). Default 32. */
     rowHeight?: number
     /** Custom per-option content. Receives the option. */
+    item?: Snippet<[ListOption]>
+    /** @deprecated Use `item`. */
     itemTemplate?: Snippet<[ListOption]>
   }
 
@@ -33,9 +35,11 @@
     onChange,
     multiple = false,
     disabled = false,
+    size = 'md',
     rows = 7,
     virtual = false,
     rowHeight = 32,
+    item,
     itemTemplate,
     ariaLabel,
     name,
@@ -101,7 +105,7 @@
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
   <ul
     bind:this={listEl}
-    class="sv-listbox"
+    class="sv-listbox sv-listbox--{size}"
     class:is-invalid={invalid}
     class:is-virtual={useVirtual}
     style:--sv-rows={rows}
@@ -147,7 +151,7 @@
     {...lb.optionProps(index)}
   >
     {#if multiple}<span class="sv-listbox__check" aria-hidden="true">{isSel(opt) ? '✓' : ''}</span>{/if}
-    {#if itemTemplate}{@render itemTemplate(opt)}{:else}<span class="sv-listbox__label">{opt.label}</span>{/if}
+    {#if item ?? itemTemplate}{@render (item ?? itemTemplate)!(opt)}{:else}<span class="sv-listbox__label">{opt.label}</span>{/if}
   </li>
 {/snippet}
 
@@ -158,8 +162,10 @@
     max-height: calc(var(--sv-rows, 7) * var(--sv-row-h, 32px) + 8px); overflow-y: auto;
     background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a);
     border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1)); border-radius: var(--sg-radius, 8px);
-    width: 220px; outline: none;
+    width: 220px; outline: none; --_fs: 13px;
   }
+  .sv-listbox--sm { --_fs: 12px; }
+  .sv-listbox--lg { --_fs: 15px; }
   .sv-listbox:focus-visible { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
   .sv-listbox.is-invalid { border-color: var(--sg-danger, #dc2626); }
   .sv-listbox.is-invalid:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
@@ -187,7 +193,7 @@
   }
   .sv-listbox__opt {
     display: flex; align-items: center; gap: 8px; box-sizing: border-box; flex: none; padding: 0 10px;
-    border-radius: 6px; cursor: pointer; font-size: 13px;
+    border-radius: 6px; cursor: pointer; font-size: var(--_fs, 13px);
   }
   .sv-listbox__opt.is-active { background: var(--sg-row-hover-bg, #f1f5f9); }
   .sv-listbox__opt.is-selected { background: color-mix(in srgb, var(--_accent) 14%, transparent); color: var(--_accent); font-weight: 600; }

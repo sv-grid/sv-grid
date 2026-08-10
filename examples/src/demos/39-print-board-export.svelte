@@ -627,7 +627,7 @@ ${coverHtml}
   .pb-btn-primary {
     border-color: transparent;
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
   .pb-btn-primary:hover { filter: brightness(1.05); }
 

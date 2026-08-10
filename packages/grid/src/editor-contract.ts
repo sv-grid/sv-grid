@@ -12,6 +12,22 @@
 
 export type EditorSize = 'sm' | 'md' | 'lg'
 
+/**
+ * A small action button rendered inside a framed field (via `SvField`'s
+ * `actions`) - the generalized form of the clear / reveal buttons, for a lookup,
+ * a generate, a copy, etc. `icon` is a Svelte snippet; when absent the `label`
+ * text is shown. (Type-only Svelte import, so this module stays runtime-free.)
+ */
+export type EditorAction = {
+  /** Accessible name + tooltip for the button. */
+  label: string
+  /** Invoked when the button is pressed. */
+  onClick: () => void
+  /** Optional icon snippet; falls back to the `label` text. */
+  icon?: import('svelte').Snippet
+  disabled?: boolean
+}
+
 /** Text direction. `'auto'` defers to the surrounding document/CSS. */
 export type EditorDir = 'ltr' | 'rtl' | 'auto'
 

@@ -123,3 +123,6 @@ recipes:
 - [SvContextMenu](./sv-context-menu.md) - a right-click menu on any region.
 - [SvMenu](./sv-menu.md) - a trigger-anchored dropdown actions menu.
 - [SvMenuList](./sv-menu-list.md) - the recursive menu surface behind the menus.
+- [SvMenubar](./sv-menubar.md) - an app-style row of dropdown menus.
+- [SvHoverCard](./sv-hover-card.md) - a rich preview card that opens on hover.
+- [SvPopconfirm](./sv-popconfirm.md) - a quick confirm step in a popover.

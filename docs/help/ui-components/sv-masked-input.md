@@ -62,8 +62,17 @@ import { SvMaskedInput } from '@svgrid/grid'
 | `mask`        | `string`                                                   | `''`    | Pattern: `#` digit, `A` letter, `*` alnum.     |
 | `placeholder` | `string`                                                   | -       | Empty-state hint text.                         |
 | `clearable`   | `boolean`                                                  | `false` | Show a clear (x) button when there is a value. |
-| `prefixIcon`  | `Snippet`                                                  | -       | Leading icon adornment.                        |
-| `suffixIcon`  | `Snippet`                                                  | -       | Trailing icon adornment.                       |
+| `leading`     | `Snippet`                                                  | -       | Leading adornment (icon/button) inside the field. |
+| `trailing`    | `Snippet`                                                  | -       | Trailing adornment (icon/button) inside the field. |
+| `prefix`      | `string`                                                   | -       | Plain-text affix at the start.                 |
+| `suffix`      | `string`                                                   | -       | Plain-text affix at the end.                   |
+| `block`       | `boolean`                                                  | `false` | Stretch to the container width.                |
+| `width`       | `number`                                                   | `200`   | Control width in px (ignored when `block`).    |
+| `prefixIcon`  | `Snippet`                                                  | -       | Deprecated alias for `leading`.                |
+| `suffixIcon`  | `Snippet`                                                  | -       | Deprecated alias for `trailing`.               |
+
+The box, size, invalid state, clear button and adornments are owned by
+[SvField](sv-field.md)'s shared `frame` chrome.
 
 ## Examples
 
@@ -82,11 +91,12 @@ filled, and keep the raw value for storage:
 
 ### Icon adornments
 
-Pass `prefixIcon` / `suffixIcon` snippets to frame the field:
+Pass a `leading` / `trailing` snippet to frame the field (`prefixIcon` /
+`suffixIcon` are kept as deprecated aliases):
 
 ```svelte
 <SvMaskedInput mask="(###) ###-####" bind:value={phone}>
-  {#snippet prefixIcon()}<PhoneIcon />{/snippet}
+  {#snippet leading()}<PhoneIcon />{/snippet}
 </SvMaskedInput>
 ```
 

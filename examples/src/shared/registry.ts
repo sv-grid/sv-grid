@@ -4,6 +4,10 @@ import TimePicker251 from '../demos/251-timepicker.svelte'
 import DateTimePicker252 from '../demos/252-datetimepicker.svelte'
 import DateRangeInput283 from '../demos/283-daterange-input.svelte'
 import ButtonsToggles253 from '../demos/253-buttons-toggles.svelte'
+import Segmented408 from '../demos/408-segmented.svelte'
+import LayoutFeedback409 from '../demos/409-layout-feedback.svelte'
+import TypographyDisplay410 from '../demos/410-typography-display.svelte'
+import ResizableDropdowns411 from '../demos/411-resizable-dropdowns.svelte'
 import ButtonGroup284 from '../demos/284-button-group.svelte'
 import ButtonDemo305 from '../demos/305-button.svelte'
 import RepeatButton306 from '../demos/306-repeat-button.svelte'
@@ -13,6 +17,7 @@ import CheckBox309 from '../demos/309-checkbox.svelte'
 import RadioGroup310 from '../demos/310-radio-group.svelte'
 import Rating311 from '../demos/311-rating.svelte'
 import TextInputs254 from '../demos/254-text-inputs.svelte'
+import InputAdornments290 from '../demos/290-input-adornments.svelte'
 import NumberInput300 from '../demos/300-number-input.svelte'
 import PasswordInput301 from '../demos/301-password-input.svelte'
 import MaskedInput302 from '../demos/302-masked-input.svelte'
@@ -50,6 +55,7 @@ import Accordion285 from '../demos/285-accordion.svelte'
 import Splitter286 from '../demos/286-splitter.svelte'
 import FileUpload287 from '../demos/287-file-upload.svelte'
 import Overlays288 from '../demos/288-overlays.svelte'
+import HoverMenubar289 from '../demos/289-overlays-hovercard-menubar.svelte'
 import AppOverlays331 from '../demos/331-app-overlays.svelte'
 import AppNavigation332 from '../demos/332-app-navigation.svelte'
 import CommandPalette340 from '../demos/340-command-palette.svelte'
@@ -76,9 +82,31 @@ import SchedulerAppContent385 from '../demos/385-scheduler-app-content.svelte'
 import SchedulerRules386 from '../demos/386-scheduler-rules.svelte'
 import SchedulerFinancial387 from '../demos/387-scheduler-financial.svelte'
 import SchedulerHr388 from '../demos/388-scheduler-hr.svelte'
+import SchedulerDependencies389 from '../demos/389-scheduler-dependencies.svelte'
+import SchedulerCapacity390 from '../demos/390-scheduler-capacity.svelte'
+import SchedulerZoom391 from '../demos/391-scheduler-zoom.svelte'
+import SchedulerResourceTree392 from '../demos/392-scheduler-resource-tree.svelte'
+import SchedulerEligibility393 from '../demos/393-scheduler-eligibility.svelte'
+import SchedulerHeatmap394 from '../demos/394-scheduler-heatmap.svelte'
+import SchedulerBookingRules395 from '../demos/395-scheduler-booking-rules.svelte'
+import SchedulerBookableSlots396 from '../demos/396-scheduler-bookable-slots.svelte'
+import SchedulerMultiCalendar397 from '../demos/397-scheduler-multi-calendar.svelte'
+import SchedulerFindATime398 from '../demos/398-scheduler-find-a-time.svelte'
+import SchedulerClinicConsole399 from '../demos/399-scheduler-clinic-console.svelte'
+import AlertRulesEngine399 from '../demos/399-alert-rules-engine.svelte'
+import AlertStylingRules400 from '../demos/400-alert-styling-rules.svelte'
+import AlertAggregateKpi401 from '../demos/401-alert-aggregate-kpi.svelte'
+import AlertValidationGuardrails402 from '../demos/402-alert-validation-guardrails.svelte'
+import AlertConsoleNavPane403 from '../demos/403-alert-console-navpane.svelte'
+import ChartContextMenu406 from '../demos/406-chart-context-menu.svelte'
 import AppFeedback333 from '../demos/333-app-feedback.svelte'
 import StatusDisplay339 from '../demos/339-status-display.svelte'
 import InputEditors334 from '../demos/334-input-editors.svelte'
+import AccountSettings337 from '../demos/337-account-settings-console.svelte'
+import InvoiceBuilder343 from '../demos/343-invoice-builder.svelte'
+import OpsDashboard345 from '../demos/345-ops-dashboard.svelte'
+import FormRichFields404 from '../demos/404-form-rich-fields.svelte'
+import FormCascading405 from '../demos/405-form-cascading.svelte'
 import TreeSelect335 from '../demos/335-tree-select.svelte'
 import GridSelect336 from '../demos/336-grid-select.svelte'
 import CheckoutForm334Recipe from '../demos/334-checkout-form.svelte'
@@ -376,6 +404,7 @@ export type DemoCategory =
   | 'Pivot Grid'
   | 'Studio'
   | 'AI'
+  | 'Alerts'
   // SvGrid Editors product lanes (@svgrid/grid UI components). A separate
   // product in the switcher so they don't bloat the main grid gallery.
   | 'Date & Time'
@@ -395,6 +424,7 @@ export const ENTERPRISE_CATEGORIES = new Set<DemoCategory>([
   'Pivot Grid',
   'Studio',
   'AI',
+  'Alerts',
 ])
 
 export function isEnterpriseCategory(category: DemoCategory): boolean {
@@ -446,6 +476,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Pivot Grid',
   'Studio',
   'AI',
+  'Alerts',
   // SvGrid Editors product
   'Date & Time',
   'Buttons & Toggles',
@@ -491,6 +522,9 @@ export const demos: Demo[] = [
   demo('259-datetimepicker-forms',  'Date-time picker - form fields','SvDateTimePicker in five real shapes on one form: date-only, time-only, date+time, 12-hour with spin buttons, and a min/max-constrained field. Masked inputs (type or pick), portalled dropdowns, animated calendars. The SvGrid datetime cell editor, standalone.', 'Date & Time', DateTimePickerForms259),
   demo('338-event-calendar',        'Event calendar (rich cells + recurrence)', 'SvCalendar extended into a FullCalendar-style scheduler: the `day` snippet fills each cell with event chips, and `recurrence` repeat patterns (weekly standups, every-other-week sprint, monthly invoices) mark repeating days and generate their events via matchesRecurrence. Navigation, keyboard, selection and theming stay the component\'s. Pick a day for its agenda.', 'Date & Time', EventCalendar338),
   demo('253-buttons-toggles',       'Buttons & toggles',           'The UI kit press/toggle primitives: SvButton (variants/sizes/loading), SvRepeatButton (hold-to-repeat), SvToggleButton, SvSwitchButton, SvCheckBox (+ indeterminate), SvRadioGroup (arrow-key nav) and SvRating (half stars). Theme-driven, standalone or as grid cell controls.', 'Buttons & Toggles', ButtonsToggles253),
+  demo('408-segmented',             'Segmented control',           'SvSegmented: mutually-exclusive options in a shared track (a view switcher, a range picker). Single-select, keyboard-accessible (arrow keys + Space/Enter via the radio-group core), with sizes, full-width, icons and disabled states. Themed from the --sg-* tokens.', 'Buttons & Toggles', Segmented408),
+  demo('409-layout-feedback',       'Layout & feedback primitives', 'The structural + status kit: SvStack / SvGroup / SvSimpleGrid layout primitives, SvCollapsible show/hide sections, SvSpinner + SvLoadingOverlay for async states, and SvResult for a full outcome page. All themed from the --sg-* tokens.', 'Layout', LayoutFeedback409),
+  demo('410-typography-display',     'Typography & display primitives', 'The prose + display kit: SvTitle / SvText / SvAnchor / SvBlockquote / SvMark / SvList for text, plus SvKbd, SvCode, SvAspectRatio and SvVisuallyHidden for the small display bits. Size decoupled from heading level, text tones, line clamping - all themed from the --sg-* tokens.', 'Layout', TypographyDisplay410),
   demo('284-button-group',          'Button group',                'SvButtonGroup: a segmented button bar - single-select (radio semantics, a view switcher), multi-select (a toggle set / formatting toolbar) or plain actions. Roving tabindex + arrow keys, and the shared editor contract (label, validation, dir/RTL).', 'Buttons & Toggles', ButtonGroup284),
   demo('305-button',                'Button',                      'SvButton in production: a toolbar (variants primary/secondary/outline/ghost/danger), sizes, icon slots, a loading state and a full-width CTA. Copy-paste-ready blocks.', 'Buttons & Toggles', ButtonDemo305),
   demo('306-repeat-button',         'Repeat button',               'SvRepeatButton: hold-to-repeat with acceleration - a quantity stepper and a volume control block.', 'Buttons & Toggles', RepeatButton306),
@@ -500,6 +534,7 @@ export const demos: Demo[] = [
   demo('310-radio-group',           'Radio group',                'SvRadioGroup: a plan picker and a shipping selector with a disabled option, roving arrow-key focus and label + validation.', 'Buttons & Toggles', RadioGroup310),
   demo('311-rating',                'Rating',                      'SvRating: an interactive review widget with a live label, plus a read-only half-star aggregate with a distribution breakdown.', 'Buttons & Toggles', Rating311),
   demo('254-text-inputs',           'Text inputs',                 'Typed text controls: SvNumberInput (min/max/step, grouping, precision, spinners), SvPasswordInput (reveal + strength), SvMaskedInput (pattern mask), SvPhoneInput (country dial code + national mask) and SvColorInput (swatch + palette popover). Each a SvGrid cell editor, standalone too.', 'Inputs', TextInputs254),
+  demo('290-input-adornments',      'Input adornments',            'Leading/trailing icon snippets and prefix/suffix text affixes on SvTextInput, plus the shared clear button, sizes and invalid/readonly/disabled states - all owned by SvField\'s frame chrome so the whole text-input family behaves identically.', 'Inputs', InputAdornments290),
   demo('300-number-input',          'Number input',                'SvNumberInput on its own: min/max/step, thousands grouping, precision, prefix/suffix, spinner buttons and the shared field contract (label, hint, required/error validation).', 'Inputs', NumberInput300),
   demo('301-password-input',        'Password input',              'SvPasswordInput on its own: a reveal toggle and an optional 4-level strength meter, with localizable strings and the shared field contract.', 'Inputs', PasswordInput301),
   demo('302-masked-input',          'Masked input',                'SvMaskedInput on its own: a fixed-pattern mask (# digit, A letter, * alphanumeric; other chars literal) emitting the masked + raw value and a complete flag.', 'Inputs', MaskedInput302),
@@ -511,6 +546,7 @@ export const demos: Demo[] = [
   demo('313-combobox',              'Combo box',                   'SvComboBox: a form field - type to filter a grouped, portalled list; the value must come from the list. With label + required validation.', 'Selection', ComboBox313),
   demo('314-dropdownlist',          'Drop-down list',              'SvDropDownList: a status / priority toolbar with grouped options, type-ahead and animated portalled panels driving a live issue list.', 'Selection', DropDownList314),
   demo('315-autocomplete',          'Autocomplete',                'SvAutoComplete: a free-text search field with live suggestion shortcuts (any value accepted) - city search and a filter-syntax helper.', 'Selection', AutoComplete315),
+  demo('411-resizable-dropdowns',   'Resizable dropdowns',         'Built-in browser bounds detection - every picker panel (SvDropDownList / SvComboBox / SvAutoComplete) opens downward when there is room and flips upward automatically near the window edge. Plus a `resizable` prop that adds a bottom drag grip to the open panel (drag to grow/shrink; height sticks for the session; grip hides on an upward flip). A switch compares fixed-height vs resizable. Theme-aware (light/dark).', 'Selection', ResizableDropdowns411),
   demo('316-tags-input',            'Tags input',                  'SvTagsInput: a token editor (Enter / comma to add, Backspace / x to remove) with unique + max enforced - skills and email recipients with validation.', 'Selection', TagsInput316),
   demo('317-country-input',         'Country input',               'SvCountryInput: a searchable checkout country picker (flag + name + dial code) emitting the ISO code, with label + required validation.', 'Selection', CountryInput317),
   demo('323-list-virtualization',   'Virtualized list',            'SvListBox scaling to 50,000 options via fixed-row windowing (only visible rows in the DOM) - scroll + type-ahead stay instant. Plus a custom itemTemplate row (avatar + role). Just add virtual.', 'Selection', ListVirtualization323),
@@ -560,6 +596,7 @@ export const demos: Demo[] = [
   demo('365-dock-dashboard',         'Docking: analytics workspace','SvDockManager as a BI workspace: per-pane minSize stops splitters crushing panels, and Save / Load persist the whole (tiled + floating + auto-hidden) layout to localStorage.', 'Layout', DockDashboard365),
   demo('366-dock-keepalive',         'Docking: keep-alive tabs',    'SvDockManager keepAlive: keep inactive tabs mounted (hidden) so their DOM state - scroll position, unsaved form input - survives a tab switch instead of being unmounted.', 'Layout', DockKeepAlive366),
   demo('288-overlays',              'Overlays: popover, tooltip, modal', 'SvPopover (anchored floating panel, click/hover/manual), SvTooltip (delayed hover/focus tip, aria-describedby) and SvModal (focus-trapped dialog, Escape / backdrop close, optionally draggable + resizable). All portal to <body>, animate in, and respect reduced-motion.', 'Layout', Overlays288),
+  demo('289-overlays-hovercard-menubar', 'HoverCard, Popconfirm, Menubar', 'SvHoverCard (rich hover preview), SvPopconfirm (quick confirm-in-popover for low-stakes destructive actions) and SvMenubar (app-style row of dropdown menus with roving focus, ArrowLeft/Right to switch, ArrowDown to open). All built on the shared positioning engine - flip, shift, arrow, autoUpdate.', 'Layout', HoverMenubar289),
   demo('331-app-overlays',          'App overlays: drawer, context menu, toasts', 'SvDrawer (edge side-sheet), SvContextMenu (right-click menu) and the toast() API + SvToaster - all built on the shared focus-trap, scroll-lock and dismissable-layer primitives, so nested overlays close top-first and every toast is announced to screen readers.', 'Layout', AppOverlays331),
   demo('332-app-navigation',        'Navigation: breadcrumb, pager, stepper', 'SvBreadcrumb (collapsing trail), SvPagination (page-range with ellipsis, first/last, prev/next) and SvStepper (linear wizard with completed/active/upcoming states). Pure, keyboard-accessible, theme-token driven.', 'Layout', AppNavigation332),
   demo('340-command-palette',       'Command palette (⌘K) + sparklines, avatars, scroll', 'SvCommand: a ⌘K fuzzy command palette built on the shared focus-trap / scroll-lock / dismissable primitives (arrow-key nav, groups, shortcuts, global hotkey). Plus SvSparkline (inline line/area/bar/win-loss charts), SvAvatarGroup (stacked members + overflow) and SvScrollArea (themed scrollbars).', 'Layout', CommandPalette340),
@@ -567,6 +604,11 @@ export const demos: Demo[] = [
   demo('333-app-feedback',          'Feedback & display: badge, avatar, skeleton, card', 'SvBadge (status pills), SvAvatar (image + initials/colour-hash fallback + presence dot), SvSkeleton (shimmer loaders) and SvCard (surface) - the display layer for dashboards and detail panels. Toggle loading to swap content for skeletons.', 'Range & Feedback', AppFeedback333),
   demo('339-status-display',        'Status & display: alert, stat, timeline, chip, divider, empty', 'SvAlert (inline info/success/warning/danger messages with actions), SvStat (KPI cards with auto-coloured up/down deltas, invertible), SvTimeline (activity feed), SvChip (removable/clickable pills with avatars), SvDivider (labeled + vertical) and SvEmptyState. The status + display layer for dashboards and detail screens.', 'Range & Feedback', StatusDisplay339),
   demo('334-input-editors',         'Input editors: text, textarea, OTP, duration, multi-select', 'The Tier-1 editors on the shared contract: SvTextInput, SvTextArea (auto-grow + counter), SvOtpInput (segmented code, paste-distribute), SvDurationInput ("1h 30m" <-> minutes) and SvMultiSelect (portalled checkbox dropdown with search + chips). Standalone or as grid cell editors (Enter commits, Escape cancels).', 'Inputs', InputEditors334),
+  demo('337-account-settings-console', 'Account & security settings console', 'A real SaaS settings surface composed from the UI kit: SvMenubar app bar, promise + Undo-action toasts on save, SvPopconfirm on destructive rows, SvHoverCard teammate previews, and frame input adornments (leading icons, prefix affixes, masked API key). Profile / Team / Security tabs over SvCard + SvStat.', 'Layout', AccountSettings337),
+  demo('343-invoice-builder',       'Invoice builder', 'An adornment-heavy money form: currency prefixes, % suffixes, masked tax IDs (frame adornments), line items with SvPopconfirm delete + Undo action toasts, live SvStat totals, an SvHoverCard tax hint, and a promise toast on Send. Pure UI-kit composition.', 'Layout', InvoiceBuilder343),
+  demo('345-ops-dashboard',         'Operations KPI dashboard', 'A KPI console: SvStat + SvSparkline tiles, an SvGauge SLA dial, SvHoverCard drill-down previews per service, an SvMenubar toolbar (View / Range / Actions) and a promise toast on Refresh. Pure UI-kit composition, no grid dependency.', 'Layout', OpsDashboard345),
+  demo('404-form-rich-fields',      'Form: rich field types', 'SvForm reaching the whole input suite from one schema - phone, country, mask, combobox, radio, slider, tags, datetime and file - plus per-field help text, a readonly field, column span, and a promise toast on submit.', 'Layout', FormRichFields404),
+  demo('405-form-cascading',        'Form: cascading fields', 'SvForm dependent selects - a child list derives from the parent value via a function `options`, and `dependsOn` clears the child when the parent changes so a stale selection never lingers. Country -> State -> City.', 'Layout', FormCascading405),
   demo('341-rich-text-editor',      'Rich text editor (WYSIWYG)', 'SvRichText: a lightweight WYSIWYG over a contentEditable region - bold/italic/underline/strike, headings, lists, quote, code block, alignment, links, undo/redo - emitting HTML via bind:value, with a configurable toolbar. Parity: Smart editor.', 'Inputs', RichTextEditor341),
   demo('335-tree-select',           'Tree select', 'SvTreeSelect: a single-select dropdown showing a collapsible tree in its portalled panel (the tree-select / cascader pattern). Arrow keys navigate, Right/Left expand/collapse, Enter selects; optional full-path label in the trigger.', 'Selection', TreeSelect335),
   demo('336-grid-select',           'Grid select (multi-column)', 'SvGridSelect: a "grid in a dropdown" single-select - the panel shows options as a compact multi-column table with a header row and search, so you pick by more than a label. Built on its own panel (no embedded SvGrid); standalone or as a cell editor.', 'Selection', GridSelect336),
@@ -595,9 +637,26 @@ export const demos: Demo[] = [
   demo('386-scheduler-rules', 'Scheduling rules & policies', 'Every booking policy the scheduler can enforce: business hours + a hard-blocked lunch band, a closed date, a highlighted holiday, min/max navigable dates, room capacity, a per-doctor day off, free/busy statuses, per-event reminders, drag-to-unschedule, and This / This-and-following / All recurrence edits.', 'Scheduler', SchedulerRules386, { pro: true }),
   demo('387-scheduler-financial', 'Meridian Capital - research & earnings desk', 'One dataset, four synced views in a dockable workspace (SvDockManager): the same research events as a Scheduler, a Grid, a Kanban pipeline (by workflow stage), and a stacked exposure Chart. Edit in any view - it writes back to one array.', 'Scheduler', SchedulerFinancial387, { pro: true }),
   demo('388-scheduler-hr', 'Northwind People - recruiting pipeline', 'One dataset, four synced views in a dockable workspace (SvDockManager): the same candidates as an interview Scheduler, a Grid, a Kanban hiring pipeline (Applied to Hired), and a stacked hiring-funnel Chart. Edit in any view - it writes back to one array.', 'Scheduler', SchedulerHr388, { pro: true }),
+  demo('389-scheduler-dependencies', 'Sequenced bookings', 'A service centre where a job flows through stations in order - a booking can only start once the one it depends on finishes. Drag or resize a booking and the steps that follow slide forward (opening-hours aware). Dependencies are an optional convenience for ordered bookings. Toggle to the Table - same grid rows, just a view.', 'Scheduler', SchedulerDependencies389, { pro: true }),
+  demo('390-scheduler-capacity', 'Staffing board - assignments & utilization', 'A weekly staffing timeline where one shift can cover several people (it appears under each). A per-person utilization histogram sits under each row (red where over-booked) and a sticky summary strip totals shifts per day. Drag a shift onto another person to reassign.', 'Scheduler', SchedulerCapacity390, { pro: true }),
+  demo('391-scheduler-zoom', 'Operations timeline - collapse & zoom', 'A shop-floor timeline that collapses non-working time: nights fold to a thin gap and weekends to a marker, so working hours fill the width. A zoom stepper scales the axis from hourly detail out to weekly; bars, drag and the now-line all map through the compressed axis.', 'Scheduler', SchedulerZoom391, { pro: true }),
+  demo('392-scheduler-resource-tree', 'Grouped resources', 'A clinic day where providers are organised into a collapsible tree in the gutter - buildings to departments to providers/rooms. Click a group to collapse it (persisted); appointments schedule onto the leaf providers. Toggle to the Table - the groups just read the same grid rows.', 'Scheduler', SchedulerResourceTree392, { pro: true }),
+  demo('393-scheduler-eligibility', 'Skill-based eligibility', 'A dispatch board where each job needs a skill and each technician has a set. A job only drops on a qualified technician - drag one to someone who lacks the skill and it snaps back with a "Not eligible" flash; ineligible rows hatch while you drag.', 'Scheduler', SchedulerEligibility393, { pro: true }),
+  demo('394-scheduler-heatmap', 'Utilization heatmap', 'A support centre where each queue has a capacity and calls overlap through the day. The row background is tinted by how loaded the queue is each hour - light when quiet, hot near capacity, red when over. A glance shows where the pressure is.', 'Scheduler', SchedulerHeatmap394, { pro: true }),
+  demo('395-scheduler-booking-rules', 'Booking rules - buffers & lead time', 'A salon day where every appointment needs a 15-minute cleanup buffer around it, must be booked an hour ahead, and runs 30-90 minutes. Drag two back-to-back and it snaps back with the reason; the rules gate create and resize too.', 'Scheduler', SchedulerBookingRules395, { pro: true }),
+  demo('396-scheduler-bookable-slots', 'Bookable slots - find a time', 'A Calendly-style booking page: pick a service (which sets the duration) and every open slot lights up on each provider - the free time after existing appointments, provider hours and a cleanup buffer. Click a slot to book it.', 'Scheduler', SchedulerBookableSlots396, { pro: true }),
+  demo('397-scheduler-multi-calendar', 'Multi-calendar overlay', 'Several calendars overlaid on one week - Work, Personal, Family, Holidays - each colour-coded from a legend you can toggle. Turning a calendar off hides its events across every view; an event takes its calendar colour.', 'Scheduler', SchedulerMultiCalendar397, { pro: true }),
+  demo('398-scheduler-find-a-time', 'Free/busy - find a time', 'Schedule a meeting across attendees: each person busy time (their events plus an external free/busy feed shown as a hatch) is combined, and find-a-time surfaces the windows when everyone is free for the chosen length. Click a suggestion to book it for all.', 'Scheduler', SchedulerFindATime398, { pro: true }),
+  demo('399-scheduler-clinic-console', 'Clinic operations console', 'A whole clinic on the Scheduler: a NavPane switches modules; Schedule is a dockable workspace (SvDockManager) with the day scheduler as the hero over a live load chart and an Upcoming grid, providers grouped by department, every open slot bookable. Insights is a charting dashboard; Patients a records grid. Live KPIs.', 'Scheduler', SchedulerClinicConsole399, { pro: true }),
+  demo('399-alert-rules-engine', 'Alert Rules engine', 'A live trading desk where end users define alert rules at runtime - no code - that watch the data and react: raise a toast, tint the row, flash the cell, or log it. A visual condition builder (or free-text expression) reuses the grid own filter operators; rules persist to localStorage and export as shareable JSON. The bell opens the fired-alert log. Engine: @svgrid/enterprise.', 'Alerts', AlertRulesEngine399, { pro: true }),
+  demo('400-alert-styling-rules', 'Styling rules', 'Alert rules are not just notifications: a highlight or badge action becomes live conditional formatting, painted through the grid own format pipeline. A server fleet lights up by rule - hot CPU turns amber, near-full disks turn red via a cross-column rule (used / total > 0.9). Randomise the load and the colours follow. Add your own styling rule in the visual builder.', 'Alerts', AlertStylingRules400, { pro: true }),
+  demo('401-alert-aggregate-kpi', 'KPI & aggregate alerts', 'Alerts that watch a whole-table total, not just a row. An aggregate-scope rule fires once when SUM(revenue) crosses the company target; a row rule flags any region trailing its own target. Close a few deals and watch the aggregate alert fire the moment the total clears the line. Aggregate rules use the expression language SUM / AVG / COUNT reducers.', 'Alerts', AlertAggregateKpi401, { pro: true }),
+  demo('402-alert-validation-guardrails', 'Validation guardrails', 'A validation-trigger alert is evaluated on edit and can veto the change. A budget sheet is editable, and two guardrail rules block bad edits: a negative amount, or an amount over that line budget. The pure engine is wired into the grid per-column validate hook - the blessed integration point for prevent-edit. Toggle a guardrail off to allow the edit through.', 'Alerts', AlertValidationGuardrails402, { pro: true }),
+  demo('403-alert-console-navpane', 'Alerts operations console', 'A full monitoring app: an Outlook-style navigation pane (SvNavPane) on the left - a module rail (Monitor / Rules / Reports) plus badged folders (Critical / Warnings / Healthy and per-region) - filtering a live fleet grid on the right. Alert rules watch every host regardless of the folder you are viewing, paint the rows, and feed the bell and the fired-alert panel. Module buttons open the rule manager and the report panel.', 'Alerts', AlertConsoleNavPane403, { pro: true }),
+  demo('406-chart-context-menu', 'Chart a selection (context menu)', 'With integrated charting enabled, the right-click menu gains a Chart selected range item: select a block of cells, right-click, and the chart panel opens scoped to that range - the Excel chart-this gesture, built in. The item appears only when charting is on and is appended to the default context menu automatically.', 'Charts', ChartContextMenu406),
 
   // ----- Getting Started (the first stop for every evaluator)
-  demo('00-trading-desk',           'Trading desk - live',         '10,000 securities ticking on a 500 ms feed. Pinned Symbol + P&L, sparklines, sector chips, KPI strip. The hero.', 'Getting Started', TradingDesk),
+  demo('00-trading-desk',           'Trading desk - live',         '10,000 securities ticking on a 500 ms feed. Pinned Symbol + P&L, per-company logo marks, direction-coloured sparklines, sector chips, a KPI strip, and a notifications bell that flags standout movers. The hero.', 'Getting Started', TradingDesk),
   demo('01-quick-start',            'Quick start',                 'A realistic 25-row × 9-column grid with sort, filter, selection, inline editing, and column resize all enabled.', 'Getting Started', QuickStart),
   demo('135-shortcut-config',       'Shortcut config',             'Capabilities are off by default - opt into sort / filter / edit / group / paging with one boolean shortcut each. No `features` array, no fine-grained props. Toggle the switches to build the config live.', 'Getting Started', ShortcutConfig),
   demo('22-admin-template',         'Admin template',              'Self-contained admin app: sidebar + three pages (Dashboard, Orders w/ Pro export bar, Customers w/ inline edit). Read end-to-end in one file.', 'Getting Started', AdminTemplate),

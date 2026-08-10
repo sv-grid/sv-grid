@@ -65,11 +65,25 @@ import { SvNumberInput } from '@svgrid/grid'
 | `step`        | `number`                            | `1`         | Spinner and arrow-key increment.                   |
 | `precision`   | `number`                            | -           | Decimal places to round to.                        |
 | `grouping`    | `boolean`                           | `false`     | Group thousands (1,234) on display.                |
-| `prefix`      | `string`                            | `''`        | Leading text (for example `$`).                    |
-| `suffix`      | `string`                            | `''`        | Trailing text (for example `kg`).                  |
+| `prefix`      | `string`                            | `''`        | Text formatted before the number (e.g. `$`); it travels with the right-aligned value. |
+| `suffix`      | `string`                            | `''`        | Text formatted after the number (e.g. `kg`); it travels with the value. |
 | `placeholder` | `string`                            | -           | Empty-state hint text.                             |
 | `spinButtons` | `boolean`                           | `true`      | Show the up/down stepper.                          |
 | `clearable`   | `boolean`                           | `false`     | Show a clear (x) button when there is a value.     |
+| `selectOnFocus` | `boolean`                         | `false`     | Select the whole value when the field is focused.  |
+| `wheelStep`   | `boolean`                           | `false`     | Step the value with the mouse wheel while focused.  |
+| `leading`     | `Snippet`                           | -           | Leading adornment (icon) inside the field.         |
+| `block`       | `boolean`                           | `false`     | Stretch to the container width.                    |
+| `width`       | `number`                            | `150`       | Control width in px (ignored when `block`).        |
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome. Unlike [SvTextInput](sv-text-input.md), the `prefix`/`suffix`
+here are formatted into the value (so the symbol stays next to the right-aligned
+number) rather than rendered as separate affixes.
+
+The field shows a formatted value when blurred (e.g. `$1,234.50` with `prefix`,
+`grouping` and `precision`) and the bare number while focused for easy editing -
+the display/edit duality is built in.
 
 ## Examples
 

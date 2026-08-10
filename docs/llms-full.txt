@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-03 from 350 pages.
+Generated 2026-08-10 from 363 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -1260,10 +1260,11 @@ support uses the ID you give us, not anything we phoned home for.
 # Enterprise feature pack
 
 `@svgrid/enterprise` is a paid add-on for `@svgrid/grid`. It bolts onto
-the same `<SvGrid>` you already have and adds four feature areas: data
-export, data import, an AI assistant, and pivot tables.
+the same `<SvGrid>` you already have and adds three feature areas: data
+export, data import, and pivot tables. (The AI helpers are built in and
+**free** in `@svgrid/grid` - see [AI assistant](../help/ai.md).)
 
-![The @svgrid/enterprise pack bolts data export, data import, an AI assistant, and pivot tables onto the same SvGrid you already have.](/docs-media/enterprise-pack.svg)
+![The @svgrid/enterprise pack bolts data export, data import, and pivot tables onto the same SvGrid you already have.](/docs-media/enterprise-pack.svg)
 
 ```bash
 pnpm add @svgrid/enterprise
@@ -1310,21 +1311,15 @@ You decide whether to commit the rows into the grid or preview first.
 
 Demo: [53 Excel import](../../examples/src/demos/53-excel-import.svelte).
 
-### [AI assistant](../help/ai.md)
+### AI assistant - now built-in + free
 
-Four model-agnostic helpers on `pro.ai`:
-
-- `filter(query)` - natural-language filter + sort plan ("show me last
-  quarter's churn over $10k, sorted by date").
-- `smartFill(opts)` - propose values for empty cells from a few worked
-  examples.
-- `summarize(opts)` - one-paragraph + bullets summary of a row,
-  selection, group, or the whole view.
-- `classify(opts)` - classify free-text cells into one of a known set
-  of labels.
-
-You register a provider via `setAIProvider(yourAdapter)`. No model
-client is bundled - you bring OpenAI / Anthropic / Ollama / local.
+The natural-language filter, smart-fill, summarise, classify, chart-this,
+find-anomalies and natural-language-export helpers moved into the free
+`@svgrid/grid` package. Import them from `@svgrid/grid` and register a provider
+with `setAIProvider(yourAdapter)` (no model client is bundled - you bring
+OpenAI / Anthropic / Ollama / local). See [AI assistant](../help/ai.md). The
+only enterprise touch-point is `aiExport`'s write step, which uses this pack's
+export engine for xlsx / pdf.
 
 Demo: [51 AI assistant](../../examples/src/demos/51-ai-assistant.svelte).
 
@@ -1392,8 +1387,8 @@ Each Enterprise module is a separate subpath export:
 ```ts
 import { exportGrid }     from '@svgrid/enterprise/export'    // export only
 import { importData }     from '@svgrid/enterprise/import'    // import only
-import { aiFilter }       from '@svgrid/enterprise/ai'        // AI only
 import { createPivotModel } from '@svgrid/enterprise/pivot'   // pivot only
+// AI helpers are free + built in: import { aiFilter } from '@svgrid/grid'
 ```
 
 If you only need export, the AI provider plumbing, pivot engine, and
@@ -5804,7 +5799,7 @@ createSupabaseRealtime({ client, table: 'deals', filter: 'stage=eq.open', onChan
   effect cleanup) so channels don't leak.
 - **RLS is enforced** on the stream: clients only receive events for rows their
   policies allow. Realtime is not a way around Row-Level Security.
-- **Refetch vs. patch:** refetching on change is the robust default because the
+- **Refetch vs. patch:** refetching on change is the safe default because the
   server owns ordering and paging. Patching rows in place locally is possible for
   a visible `UPDATE`, but an `INSERT` may or may not belong on the current page -
   so let `refresh()` decide.
@@ -10901,7 +10896,7 @@ model.
 ## See also
 
 - [Demo 75 - AI Smart Paste](../../examples/src/demos/75-ai-smart-paste.svelte) - the full parser, 5 sample tiles, preview panel, per-row insert/update/skip control, commit through `api.setCellValue`
-- [AI assistant - Enterprise](./ai.md) - the `api.ai.filter`, `api.ai.smartFill`, `api.ai.summarize`, `api.ai.classify` helpers
+- [AI assistant](./ai.md) - the `api.ai.filter`, `api.ai.smartFill`, `api.ai.summarize`, `api.ai.classify` helpers
 - [Import](./import.md) - file picker for xlsx / csv / tsv / json
 
 <!-- =================================================================
@@ -10957,7 +10952,7 @@ const provider: AIProvider = async ({ prompt, responseFormat, signal, task }) =>
 setAIProvider(provider)
 ```
 
-Three design choices make this robust:
+Three design choices keep bad model output from becoming a silent wrong answer:
 
 - **Structured JSON, validated.** Helpers request `responseFormat: 'json'`
   and the grid `JSON.parse`s the reply. It strips a single markdown code
@@ -11219,16 +11214,18 @@ server is the turnkey path for desktop AI clients; for a custom in-app
 agent you call `SvGridApi` directly.
 
 <!-- =================================================================
-     /help/ai  (enterprise)
+     /help/ai  (community)
      ================================================================== -->
 
-# AI assistant - Enterprise
+# AI assistant
 
-Bring a language model into your grid with four helpers that stay
-strictly model-agnostic: **natural-language filter**, **smart fill**,
-**summarise**, and **classify**. Ships in the paid
-**[@svgrid/enterprise](https://www.npmjs.com/package/@svgrid/enterprise)** add-on; the
-Community build does not include these features.
+Bring a language model into your grid with helpers that stay strictly
+model-agnostic: **natural-language filter**, **smart fill**, **summarise**,
+**classify**, **chart-this**, **find anomalies**, and **natural-language
+export**. Built in and **free** in
+**[@svgrid/grid](https://www.npmjs.com/package/@svgrid/grid)** - no license key,
+no separate package. They ship no model client and do nothing until you
+register a provider, so they add nothing to your bundle unless you import them.
 
 ![Four model-agnostic helpers sit between your grid and a language model you bring through one model adapter.](/docs-media/grid-ai-assistant.svg)
 
@@ -11240,21 +11237,29 @@ deterministic `mockAIProvider`, so no keys required:
 
 ## What it is
 
-`installEnterprise(api)` (the same call you use for export and print) augments
-your `SvGridApi` with an `ai` namespace:
+Import the helpers from `@svgrid/grid` and call them with your grid `api`
+(the one you get from `onApiReady`):
 
 ```ts
-api.ai.filter(query, opts?)        // NL query -> filter + sort plan
-api.ai.smartFill(opts)             // examples -> proposed column values
-api.ai.summarize(opts)             // row / selection / group / all -> text + bullets
-api.ai.classify(opts)              // free-text cells -> bucketed labels
-api.ai.export(query, opts?)        // NL query -> filter + group + format, then export
-api.ai.findAnomalies(opts?)        // scan a slice for outliers / bad values
+import {
+  aiFilter, aiSmartFill, aiSummarize, aiClassify, aiExport, aiFindAnomalies,
+} from '@svgrid/grid'
+
+aiFilter(api, query, opts?)        // NL query -> filter + sort plan
+aiSmartFill(api, opts)             // examples -> proposed column values
+aiSummarize(api, opts)             // row / selection / group / all -> text + bullets
+aiClassify(api, opts)              // free-text cells -> bucketed labels
+aiExport(api, query, opts?)        // NL query -> filter + group + format, then export*
+aiFindAnomalies(api, opts?)        // scan a slice for outliers / bad values
 ```
 
 Every call routes through one `AIProvider` you register at app boot.
 The grid never bundles a model client - you keep full control of model
 choice, routing, and data handling.
+
+> \* `aiExport` plans the export for free; **writing** the enterprise formats
+> (xlsx / pdf) uses the `@svgrid/enterprise` export engine when it is installed,
+> otherwise it returns the plan without downloading a file.
 
 ## When to use it
 
@@ -11267,8 +11272,8 @@ choice, routing, and data handling.
 - **Classify** is for triage workflows where free-text rows need a
   consistent bucket label before downstream automation runs.
 
-If you don't need natural-language anywhere, skip this module entirely -
-the rest of `@svgrid/enterprise` doesn't depend on it.
+If you don't need natural-language anywhere, just don't import these
+helpers - they tree-shake away and cost nothing.
 
 ## Setting up the provider
 
@@ -11276,7 +11281,7 @@ The grid talks to your model through a single async function. Wire it
 once at app startup:
 
 ```ts
-import { setAIProvider, type AIProvider } from '@svgrid/enterprise'
+import { setAIProvider, type AIProvider } from '@svgrid/grid'
 
 const myProvider: AIProvider = async ({ prompt, responseFormat, signal, task, maxOutputTokens }) => {
   const r = await fetch('/api/ai', {
@@ -11312,7 +11317,7 @@ For testing or for demo purposes, the package ships a deterministic
 in development:
 
 ```ts
-import { setAIProvider, mockAIProvider } from '@svgrid/enterprise'
+import { setAIProvider, mockAIProvider } from '@svgrid/grid'
 setAIProvider(mockAIProvider)
 ```
 
@@ -11324,7 +11329,7 @@ values) in the prompt so the model picks real field names rather than
 hallucinating.
 
 ```ts
-const plan = await api.ai.filter('accounts losing momentum in EMEA, by NPS')
+const plan = await aiFilter(api, 'accounts losing momentum in EMEA, by NPS')
 // {
 //   filters: [
 //     { field: 'region', operator: 'equals', value: 'EMEA' },
@@ -11340,7 +11345,7 @@ grid - that lets you show a preview ("here's what I'd do, accept?")
 before committing. Pass `{ apply: true }` to apply directly:
 
 ```ts
-await api.ai.filter('big EMEA deals', { apply: true })
+await aiFilter(api, 'big EMEA deals', { apply: true })
 ```
 
 ### Hallucination guard
@@ -11356,7 +11361,7 @@ User provides one or two worked examples for a column; the grid asks
 the model to propose values for the remaining empty cells.
 
 ```ts
-const result = await api.ai.smartFill({
+const result = await aiSmartFill(api, {
   field: 'tier',
   examples: [
     { input: { company: 'Northwind' }, output: 'enterprise' },
@@ -11380,10 +11385,10 @@ Drop a slice of the grid into the model and ask for a one-paragraph +
 bulleted summary. Four target modes:
 
 ```ts
-await api.ai.summarize({ target: { kind: 'all' } })
-await api.ai.summarize({ target: { kind: 'row', rowIndex: 5 } })
-await api.ai.summarize({ target: { kind: 'selection', rowIndices: [1,2,3] } })
-await api.ai.summarize({ target: { kind: 'group', field: 'region', value: 'EMEA' } })
+await aiSummarize(api, { target: { kind: 'all' } })
+await aiSummarize(api, { target: { kind: 'row', rowIndex: 5 } })
+await aiSummarize(api, { target: { kind: 'selection', rowIndices: [1,2,3] } })
+await aiSummarize(api, { target: { kind: 'group', field: 'region', value: 'EMEA' } })
 ```
 
 For large slices the grid samples rows uniformly so the prompt stays
@@ -11405,7 +11410,7 @@ that answer the question.
 Bucket free-text cells into one of a known set of labels:
 
 ```ts
-const r = await api.ai.classify({
+const r = await aiClassify(api, {
   inputField: 'notes',
   outputField: 'sentiment',
   classes: ['at-risk', 'expanding', 'steady'],
@@ -11427,7 +11432,7 @@ Describe an export in plain English; the model returns a
 handed to `exportData`:
 
 ```ts
-const plan = await api.ai.export('export EU orders from Q2 as a grouped PDF by country')
+const plan = await aiExport(api, 'export EU orders from Q2 as a grouped PDF by country')
 // -> { format: 'pdf', filters: [...], groupBy: ['country'], rationale: '...' }
 ```
 
@@ -11450,7 +11455,7 @@ you pass `apply: true`. It reuses the same hallucination guard as `filter`
 Scan a slice (all / selection / group) for outliers and inconsistent values:
 
 ```ts
-const { anomalies, summary } = await api.ai.findAnomalies({ target: { kind: 'all' } })
+const { anomalies, summary } = await aiFindAnomalies(api, { target: { kind: 'all' } })
 // anomalies: [{ rowIndex?, field?, value?, reason, severity: 'low'|'medium'|'high' }]
 ```
 
@@ -11467,7 +11472,7 @@ itself instead:**
 
 ```ts
 async function runClassify() {
-  const result = await api.ai.classify({ /* ... */ })
+  const result = await aiClassify(api, { /* ... */ })
   const byIdx = new Map(result.predictions.map((p) => [p.rowIndex, p]))
   // Re-assign the data array - Svelte 5 reactivity picks this up and the
   // grid re-renders every visible cell.
@@ -11481,23 +11486,19 @@ async function runClassify() {
 Then your cell snippet reads `props.row.proposedSentiment` and re-renders
 exactly when expected.
 
-## License gate
+## No license gate
 
-Every AI call routes through the same polite license gate as `exportData`
-and `print`:
-
-- **No key set** → call still runs, the grid shows an "unlicensed"
-  watermark and the console logs a one-time nudge directing the user to
-  pricing. This is intentional for demos and evaluation.
-- **`SVENTERPRISE-DEV-...` / `SVENTERPRISE-EVAL-...`** → call runs, a one-time
-  `console.info` notes that the key is not for production.
-- **Other valid `SVENTERPRISE-` key** → call runs silently.
-- **Malformed prefix or revoked key** → call throws.
+The AI helpers are built into the free `@svgrid/grid` and are **never** gated -
+no key, no watermark, no nudge. The only license interaction is `aiExport`'s
+final write step: emitting an enterprise format (xlsx / pdf) goes through
+`@svgrid/enterprise`'s export engine, which carries the usual enterprise
+watermark until a `SVENTERPRISE-` key is set. Planning the export, and every
+other AI helper, is unconditionally free.
 
 ## See also
 
-- [Demo 21 - Export + Print](../../examples/src/demos/21-export-and-print.svelte) - the other Enterprise
-  surface, installed by the same `installEnterprise(api)` call.
+- [Demo 21 - Export + Print](../../examples/src/demos/21-export-and-print.svelte) - the
+  Enterprise export engine that `aiExport` writes through when it is installed.
 - [Demo 51 - AI assistant](../../examples/src/demos/51-ai-assistant.svelte) - the full demo this
   page documents, with all four helpers wired to the mock provider.
 
@@ -11505,9 +11506,10 @@ and `print`:
 
 ### What AI features does SvGrid have?
 
-The `@svgrid/enterprise` AI assistant ships four model-agnostic helpers:
-natural-language filter, smart fill, summarise, and classify. They run through a
-bring-your-own-model adapter, so you wire in your own LLM endpoint.
+The `@svgrid/grid` package ships built-in, free, model-agnostic AI helpers:
+natural-language filter, smart fill, summarise, classify, chart-this, find
+anomalies, and natural-language export. They run through a bring-your-own-model
+adapter, so you wire in your own LLM endpoint.
 
 ### Which LLM does SvGrid use?
 
@@ -11520,6 +11522,247 @@ provider so you can evaluate the flow without an API key.
 Only if you wire one up and invoke a helper. SvGrid itself makes no network
 calls; the AI helpers send exactly the prompt you construct to the adapter you
 configure, so you control what leaves the browser.
+
+<!-- =================================================================
+     /help/alerts  (enterprise)
+     ================================================================== -->
+
+# Alerts - Enterprise
+
+Alert rules let your users say "tell me when the data does X" - and then act on
+it automatically: raise a toast, tint the row, flash the cell, block the edit,
+or just log it. Rules are authored at runtime in a no-code builder, persisted,
+and shareable as JSON. No redeploy to add an alert.
+
+Alerts ship in the paid `@svgrid/enterprise` package. They build on the grid's
+own engines: predicates reuse the same operators as the filter row
+(`applyExcelFilter`), styling paints through the conditional-format pipeline,
+and notifications go through the grid's toast store.
+
+<div data-docs-demo="399-alert-rules-engine" data-height="440"></div>
+
+## Setup
+
+Mount `<SvGridAlerts>` next to your grid and spread its `formats` output into the
+grid's `conditionalFormats`. The overlay watches your data reactively, runs the
+rule engine on every change, and paints matches back through the grid. It diffs
+snapshots of the data rather than listening to a single edit event, so it reacts
+to streaming feeds and programmatic updates as well as in-grid edits (the grid's
+own `onCellValueChange` callback covers only the latter).
+
+Evaluation never runs inside the grid's render frame: a data change schedules one
+pass on the next animation frame (post-paint), so the grid always paints first.
+On very large or fast-moving datasets, drive it in [push mode](#performance-and-large--live-datasets)
+so each pass costs only the rows that actually changed.
+
+```svelte
+<script lang="ts">
+  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+  import type { ConditionalFormat } from '@svgrid/grid/format'
+  import { SvGridAlerts, enableAlerts, setLicenseKey, type ExprColumn } from '@svgrid/enterprise'
+
+  setLicenseKey('YOUR-KEY')
+  enableAlerts()
+
+  let rows = $state.raw(data)
+  let alertFormats = $state<ConditionalFormat<Row>[]>([])
+
+  // Columns the rule/expression editors offer.
+  const exprColumns: ExprColumn[] = [
+    { id: 'price', name: 'Price', type: 'number' },
+    { id: 'region', name: 'Region', type: 'text' },
+  ]
+</script>
+
+<SvGridAlerts
+  data={rows}
+  columns={exprColumns}
+  getRowId={(r) => r.id}
+  storageKey="app:alerts"
+  bind:formats={alertFormats} />
+
+<SvGrid data={rows} {columns} getRowId={(r) => r.id}
+        conditionalFormats={alertFormats} />
+```
+
+`<SvGridAlerts>` renders a small control group: a bell (opens the fired-alert
+log) and an **Alerts** button (opens the rule manager). Set `controls={false}`
+to hide them and drive the panels yourself with `bind:panelOpen` /
+`bind:managerOpen`.
+
+## The rule model
+
+An `AlertRule` has four moving parts:
+
+| Part | What it is |
+| --- | --- |
+| **predicate** | A boolean [expression](./expressions-query.md) - when it holds, the rule matches. |
+| **trigger** | *When* the rule is checked (see below). |
+| **scope** | `row`, `cell`, or `aggregate`. |
+| **actions** | What happens when it fires. |
+
+### Triggers
+
+- **`dataChange`** - fires on the true edge: when a row *newly* satisfies the
+  predicate after an edit or feed update. It will not re-fire while the row keeps
+  matching; it re-arms once the row stops matching.
+- **`relativeChange`** - fires when a value *moves*: an absolute delta, a percent
+  change, or crossing a threshold. Uses the previous snapshot of the row.
+- **`validation`** - evaluated on edit; with a `preventEdit` action it can veto
+  the change.
+- **`scheduled`** - re-checked on a cron schedule (reuses the enterprise
+  scheduler), surfacing rows that currently match.
+
+### Actions
+
+| Kind | Effect |
+| --- | --- |
+| `toast` | A toast in the rule's severity colour. |
+| `highlight` | Tints matching rows/cells (persists while they match). |
+| `badge` | Colours the targeted cells. |
+| `cellFlash` | A brief flash on the cell that fired. |
+| `preventEdit` | Vetoes the edit (validation trigger). |
+| `log` | Records the firing in the alert log only. |
+
+Every firing is recorded in the log regardless of action, so the bell badge and
+the [alerts panel](#the-fired-alert-log) always reflect activity.
+
+Messages are templates: `{value}`, `{column}`, `{rule}`, `{severity}`, and
+`{field}` / `{row.field}` for any row field.
+
+```ts
+const rule: AlertRule = {
+  id: 'price-spike',
+  name: 'Price over 700',
+  enabled: true,
+  severity: 'warning',
+  scope: 'row',
+  predicate: { kind: 'cmp', column: 'price', op: 'greaterThan', value: 700 },
+  trigger: { type: 'dataChange' },
+  actions: [
+    { kind: 'toast', message: '{name} crossed 700 -> {value}' },
+    { kind: 'highlight', style: { background: '#fef3c7', color: '#92400e' } },
+  ],
+  createdAt: Date.now(),
+}
+```
+
+Seed rules with the `rules` prop (used only when storage is empty), or let users
+build them in the manager.
+
+## Persistence and sharing
+
+Pass `storageKey` to persist rules in `localStorage`; omit it for in-memory
+rules. The manager's **Export** / **Import** buttons round-trip the whole rule
+set as JSON, so a team lead can hand a set of alerts to colleagues. Under the
+hood this is the same pluggable-storage shape as
+[saved views](../recipes/saved-views.md):
+
+```ts
+import { createAlertRules, localStorageAlertRules } from '@svgrid/enterprise'
+
+const rules = createAlertRules(localStorageAlertRules('app:alerts'))
+rules.save(rule)
+const json = rules.export()   // share
+rules.import(json)            // load
+```
+
+## Headless usage
+
+Not on Svelte, or want to run the engine yourself? `attachAlertEngine` observes
+a data source and routes fired events to their side effects, returning the
+conditional formats + flash targets to apply:
+
+```ts
+import { attachAlertEngine, localStorageAlertRules } from '@svgrid/enterprise'
+
+const attach = attachAlertEngine({
+  rules,
+  getRowId: (r) => r.id,
+  getData: () => currentRows,
+  applyFormats: (formats) => setGridFormats(formats),
+})
+// later
+attach.detach()
+```
+
+The pure `createAlertEngine` (no DOM, no timers) is exported too if you want full
+control over evaluation.
+
+## Performance and large / live datasets
+
+Alerts are built to stay out of the grid's way. Two things make that true:
+
+- **Off-frame evaluation.** Every pass is deferred to a post-paint animation
+  frame and coalesced, so a burst of updates costs one pass and the grid never
+  waits on alerts to render.
+- **Change-scoped work.** Prev-value snapshots are only kept when a rule actually
+  needs them (a `relativeChange` trigger). A rule set of pure `dataChange` /
+  `aggregate` rules keeps none.
+
+### Watch mode (default)
+
+By default the overlay reactively scans `data` when it changes, diffing the new
+array against the previous one to find the changed rows. Because Svelte replaces
+changed rows immutably (unchanged rows keep their reference), the diff evaluates
+only the rows that moved. This is the zero-config path and is fine for most grids.
+
+### Push mode (streaming / 100k+ rows)
+
+When your app already knows which rows changed - a streaming feed, a transaction,
+a tick loop - hand that set straight to the overlay and skip the scan entirely.
+Set `watch={false}`, capture the handle with `onReady` (or `bind:this`), and call
+`pushChanged` with just the changed rows. Cost is then O(rows that changed),
+independent of total row count.
+
+```svelte
+<script lang="ts">
+  let rows = $state.raw(data)
+  let alerts: { pushChanged: (rows: readonly Row[]) => void } | null = null
+
+  function onTick(changed: Row[]) {
+    rows = applyChanges(rows, changed) // your immutable update
+    alerts?.pushChanged(changed)       // evaluate only these, next frame
+  }
+</script>
+
+<SvGridAlerts
+  data={rows}
+  columns={exprColumns}
+  getRowId={(r) => r.id}
+  watch={false}
+  onReady={(h) => (alerts = h)}
+  bind:formats={alertFormats} />
+```
+
+The handle also exposes `reseed(allRows)` (silently re-arm edges after a full data
+reset) and `flush()` (run any pending pass immediately). For big live feeds, prefer
+`dataChange` rules (fire once when a row crosses the line) over `relativeChange`
+(fires on every move), and keep actions toast-only to avoid conditional-format
+churn.
+
+On a busy feed many rows can cross a threshold every second. Evaluation stays cheap,
+but a nonstop stream of toasts is disruptive and repaints constantly. Set
+`toastCooldownMs` to rate-limit toasts to at most one per rule per interval - every
+event is still logged (the bell badge stays accurate), only the visible toast is
+throttled:
+
+```svelte
+<SvGridAlerts ... watch={false} onReady={(h) => (alerts = h)} toastCooldownMs={6000} />
+```
+
+## The fired-alert log
+
+The bell badge shows the unacknowledged count. Clicking it opens
+`SvAlertsPanel` - a drawer listing fired alerts newest-first, filterable by
+severity, with **Acknowledge**, **Clear**, and **Go to row** (wire `onJump` to
+scroll/select the row).
+
+## See also
+
+- [Expression query language](./expressions-query.md) - the predicate language rules are built on.
+- [Highlighting changes](./cells/highlighting-changes.md) - the `cellFlash` primitive alerts build on.
+- [Conditional formatting](./cells/conditional-formatting.md) - the styling pipeline alerts paint through.
 
 <!-- =================================================================
      /help/api-stability  (community)
@@ -15050,9 +15293,8 @@ relative to themselves.
 
 # Comparison: SvGrid vs AG Grid vs TanStack Table
 
-This is the page enterprise evaluators land on first. It is honest. The
-three projects solve overlapping problems and the right choice depends
-on your stack, your budget, and which constraints bite hardest.
+The three projects solve overlapping problems, and the right choice
+depends on the framework you ship on and your budget.
 
 ## TL;DR
 
@@ -15199,7 +15441,7 @@ TanStack Table is MIT.
 ### What is the best data grid for Svelte 5?
 
 For a Svelte-5-native grid with a batteries-included render component, SvGrid is
-purpose-built for runes and snippets. TanStack Table is a strong headless-only
+built around runes and snippets. TanStack Table is a strong headless-only
 choice if you want to build the DOM layer yourself across frameworks. AG Grid is
 the most feature-complete but lives in React/Angular/Vue first and is heavy to
 bridge into Svelte 5.
@@ -17257,6 +17499,110 @@ editing, virtualization) but not export/print/pivot/import.
 
 No. The ~50 KB exporter is lazy-loaded on the first export call, so users who
 never export never download it.
+
+<!-- =================================================================
+     /help/expressions-query  (enterprise)
+     ================================================================== -->
+
+# Expression query language - Enterprise
+
+The expression language is a small, dependency-free query language your users
+author through the UI. It is the connective tissue behind [alerts](./alerts.md)
+(and, in time, styled and calculated columns): one model for predicates, scalar
+maths, and change detection, evaluated the same way everywhere.
+
+It ships in `@svgrid/enterprise`. Leaf comparisons delegate to the grid's own
+`applyExcelFilter`, so an expression's operators mean exactly what the column
+filter menu means.
+
+## The editor
+
+`<SvExpressionEditor>` offers two modes over the same value:
+
+- **Builder** (default) - a list of conditions (column + operator + value)
+  combined with *all* (AND) or *any* (OR), just like the filter row. Set
+  operators show a token input; `between` shows two fields; blank operators show
+  none.
+- **Text** - a free-text box for power users, with live validation and column
+  maths.
+
+Both show a live "matches N of M" count against a sample `rows` array.
+
+```svelte
+<script lang="ts">
+  import { SvExpressionEditor, type ExprColumn, type PredicateExpr } from '@svgrid/enterprise'
+
+  const columns: ExprColumn[] = [
+    { id: 'price', name: 'Price', type: 'number' },
+    { id: 'region', name: 'Region', type: 'text' },
+  ]
+  let expr = $state<PredicateExpr>({ kind: 'const', value: true })
+</script>
+
+<SvExpressionEditor {columns} bind:value={expr} rows={sample} />
+```
+
+## Text syntax
+
+Column references are a bare id (`price`) or a bracketed label (`[Unit Price]`)
+when the name has spaces.
+
+```
+price > 100 AND region IN ("EU", "US")
+name CONTAINS "widget" OR name STARTSWITH "gadget"
+price BETWEEN 10 AND 20
+name ISBLANK
+price / qty >= 40           -- cross-column maths
+SUM(amount) > 10000         -- aggregate over the rows in scope
+```
+
+- Logic: `AND`, `OR`, `NOT`, parentheses.
+- Text/set/range operators: `CONTAINS`, `STARTSWITH`, `ENDSWITH`, `MATCHES`
+  (regex), `IN (…)`, `BETWEEN … AND …`, `ISBLANK`, `ISNOTBLANK`.
+- Symbolic comparators: `=`, `!=`, `>`, `<`, `>=`, `<=` (these also drive
+  cross-column maths).
+- Arithmetic: `+`, `-`, `*`, `/`, `%`, unary `-`.
+- Aggregates: `SUM(col)`, `AVG(col)`, `COUNT(col)`.
+- Functions: `ABS`, `ROUND`, `FLOOR`, `CEIL`, `MIN`, `MAX`, `IF`, `COALESCE`,
+  `CONCAT`, `LOWER`, `UPPER`, `LEN`.
+
+A `column = literal` comparison parses to a grid-filter `cmp` node (so it folds
+accents/case like the filter row); general comparisons and maths parse to a
+`scalarCmp`.
+
+## The model
+
+The canonical form is a JSON AST - no parser is needed at runtime. Three
+families:
+
+- **`PredicateExpr`** - boolean: `and` / `or` / `not` / `cmp` (a filter-operator
+  test) / `scalarCmp` (compare two scalar expressions) / `const`.
+- **`ScalarExpr`** - a single value: `col` / `lit` / `bin` (arithmetic) / `agg` /
+  `func`.
+- **`ChangeExpr`** - `changed` / `delta` / `percentChange` / `crossed`, for the
+  "relative change" alert trigger.
+
+## Evaluating expressions
+
+```ts
+import { evaluatePredicate, parsePredicate, validateExpression } from '@svgrid/enterprise'
+
+const expr = parsePredicate('price > 100 AND region = "EU"', columns)
+validateExpression(expr, columns)                 // [] when sound
+evaluatePredicate(expr, { row: { price: 120, region: 'EU' } })  // true
+```
+
+`evaluateScalar` and `evaluateChange` cover the other two families. All three are
+pure functions - safe to unit-test and to run in a Web Worker.
+
+Advanced scalar functions can be injected per evaluation via the context's
+`functions` map (for example, to delegate a formula to HyperFormula) without
+making it a hard dependency.
+
+## See also
+
+- [Alerts](./alerts.md) - the flagship consumer of this language.
+- [Filtering](./filtering/overview.md) - the column filter operators the `cmp` nodes reuse.
 
 <!-- =================================================================
      /help/filtering/applying-filters  (community)
@@ -20316,6 +20662,8 @@ real-world scale:
 - [**AI Toolkit**](./ai-toolkit.md) - the hub for every AI feature: in-grid helpers, agents, MCP server, and LLM grounding, all model-agnostic
 - [AI assistant - Enterprise](./ai.md) - natural-language filter, smart fill, summarise, classify; bring-your-own model adapter
 - [Pivot tables - Enterprise](./pivot.md) - `createPivotModel` + nested column headers; designer UI is a separate demo
+- [Alerts - Enterprise](./alerts.md) - no-code alert rules: toast / highlight / flash / prevent-edit when the data crosses a line; persisted + shareable
+- [Expression query language - Enterprise](./expressions-query.md) - the predicate / scalar / change language behind alerts (and styled + calculated columns)
 - **Migrating to SvGrid** - column / API translation guides from other grids:
   [AG Grid](./migrating-from-ag-grid.md) ·
   [TanStack Table](./migrating-from-tanstack-table.md) ·
@@ -20886,9 +21234,9 @@ We tell you when **not** to switch at the bottom.
 | **Print view** | ❌ | ❌ | ❌ | ✅ |
 | **Set filter / Excel-style filter menu** | ❌ Enterprise | ✅ | ✅ (free) | (in Community) |
 
-The headline: **SvGrid Community gives you most of AG Grid Enterprise's
-features for free**, and `@svgrid/enterprise` adds the export + print pack for
-~40% less than AG Grid Enterprise. The catch is Svelte-only and a much
+**SvGrid Community gives you most of AG Grid Enterprise's features for
+free**, and `@svgrid/enterprise` adds the export + print pack for ~40%
+less than AG Grid Enterprise. The trade-offs are Svelte-only and a much
 smaller ecosystem.
 
 ## Mental model - what changes
@@ -21356,7 +21704,7 @@ printable view.
 
 Glide Data Grid is the canvas-rendered, ultra-high-performance choice
 for very wide datasets (100k+ rows, 100+ columns). Sv-grid renders to
-DOM with virtualization, which trades the absolute peak FPS for
+DOM with virtualization, which trades peak FPS for
 accessibility + standards-compliant HTML.
 
 > Estimated effort: **3-6 hours** per grid. Glide's getCellContent /
@@ -21765,7 +22113,7 @@ function onCellValueChange(e) {
 
 This is the only piece where the swap isn't 1:1. Most teams find
 sv-grid's shipped subset covers 80% of real-world formula usage; if
-yours is in the 20%, HyperFormula plugs in cleanly.
+yours is in the 20%, HyperFormula plugs in with the pattern above.
 
 ## Trial → license
 
@@ -21887,8 +22235,8 @@ engineering lineage is shared.
 
 ## A note on family
 
-This is not "switching vendors" - it is moving to the team's Svelte-5
-grid. The Enterprise tier and support come from the same people behind jqxGrid.
+Moving to SvGrid keeps you with the same team's Svelte-5 grid rather
+than switching vendors. The Enterprise tier and support come from the same people behind jqxGrid.
 If your app is still on jQuery / Angular / React / Vue, jqxGrid remains
 the right tool; reach for SvGrid when the codebase is Svelte 5.
 
@@ -22585,8 +22933,8 @@ you need pivot, advanced export, or a support SLA, that is Enterprise on SvGrid.
 Capability and architecture, not licensing (both are MIT). SvGrid adds row
 grouping with aggregation, master-detail, Excel-style cell-range selection,
 integrated charts, and pivot, and it ships a headless engine plus an MCP server
-alongside the component. Both are genuinely Svelte-native, so the core grid
-behaviour is comparable; SvGrid simply reaches further.
+alongside the component. Both are Svelte-native, so the core grid
+behaviour is comparable; SvGrid covers more ground.
 
 ### Is the migration a rewrite?
 
@@ -22900,8 +23248,8 @@ Yes. `@svgrid/grid` is MIT-licensed like Tabulator. The optional
 
 ### Can I keep Tabulator's custom formatters?
 
-You re-create them as Svelte snippets via `renderSnippet`, which is more
-powerful than HTML-string formatters - any component or markup works.
+You re-create them as Svelte snippets via `renderSnippet`. Any Svelte
+component or markup works, not just an HTML string.
 
 <!-- =================================================================
      /help/migrating-from-tanstack-table  (community)
@@ -27053,6 +27401,240 @@ box (`searchable`, on by default) and any column filters or sort applied
 elsewhere all narrow the events shown - the calendar is never a separate data
 source.
 
+## Scheduler Pro
+
+The Enterprise renderer adds a set of advanced capabilities on top of the base
+scheduler. They are read from the same `scheduler` prop; type your config as
+`SchedulerProConfig` (from `@svgrid/enterprise`) to get the extra fields typed.
+
+> **Scheduler, not a Gantt.** SvGrid's Scheduler is a resource / booking / calendar
+> view of the grid - for appointments, staff and asset scheduling, and calendar
+> apps. It is deliberately *not* a project planner: there is no critical path,
+> percent-done, baselines, or work-breakdown structure, and none are planned. The
+> **dependencies** below are an optional convenience for *ordered bookings* (a job
+> that must move through stations in sequence); they are fully opt-in - with no
+> dependency config the timeline draws no arrows and does no cascading.
+
+### Dependencies & auto-reschedule (optional, for ordered bookings)
+
+Link events with predecessor -> successor **dependencies** and the timeline draws
+an arrow between them. When a predecessor is dragged or resized, its successors
+**auto-reschedule** forward just enough to keep every link legal - preserving each
+event's duration. Four link types are supported (`FS` finish-to-start, the default;
+`SS`, `FF`, `SF`) plus an optional `lag` in minutes (negative for a lead).
+
+```svelte
+<script lang="ts">
+  import { SvGrid } from '@svgrid/grid'
+  import { enableSchedulerView, type SchedulerProConfig, type SchedulerDependency } from '@svgrid/enterprise'
+  enableSchedulerView()
+
+  const dependencies: SchedulerDependency[] = [
+    { id: 'd1', from: 't1', to: 't2', type: 'FS' },      // t2 starts when t1 finishes
+    { id: 'd2', from: 't1', to: 't3', type: 'FS', lag: 60 }, // + 1h lag
+    { id: 'd3', from: 't2', to: 't4' },                  // FS (default)
+  ]
+
+  const cfg: SchedulerProConfig<any, Task> = {
+    startField: 'start', endField: 'end',
+    resourceField: 'team', resources: teams,
+    initialView: 'timelineWeek', editable: true,
+    businessHours: { start: 9, end: 17 },
+    dependencies,
+    autoReschedule: true,                 // default true when any dependency is set
+    dependencyRespectWorkingTime: true,   // cascade skips outside business hours
+    onDependenciesChange: (moves) => {    // persist the cascaded shifts
+      for (const m of moves) {
+        const row = rows.find((r) => r.id === m.id)
+        if (row) { row.start = iso(m.start); row.end = iso(m.end) }
+      }
+    },
+  }
+</script>
+```
+
+`from` / `to` are **row ids** (your `getRowId`). Provide the links as a flat
+`dependencies` array, or per-row via `dependencyField` (an array of
+`SchedulerDependency` or successor-id strings on each row). A dependency that is
+not currently satisfied (a successor sitting too early) is drawn as a dashed red
+arrow; cyclic links are ignored so a cascade can never loop. Cascading only ever
+pushes successors **forward** - it never pulls an event earlier.
+
+Arrows render in the timeline views (`timelineDay` / `timelineWeek` /
+`timelineMonth` / `timelineYear`), where events are laid out as horizontal bars.
+
+### Multi-assignment, histogram & summaries
+
+By default one event sits on one resource (`resourceField`). With **assignments**
+a single event can be assigned to SEVERAL resources - it then renders under each
+of them in the timeline. Provide a flat `assignments` list, or a per-row
+`assignmentField` holding an array of resource ids.
+
+```svelte
+const cfg: SchedulerProConfig<any, Shift> = {
+  startField: 'start', endField: 'end',
+  resourceField: 'assignees', resources: people,
+  initialView: 'timelineWeek', editable: true,
+  assignmentField: 'assignees',            // each row: resourceId[]
+  resourceHistogram: { height: 22 },       // utilization bars under each row
+  columnSummary: { label: 'Shifts', reducer: 'count' },  // sticky per-column totals
+  onAssignmentChange: ({ eventId, from, to }) => {       // drag across rows to reassign
+    const row = rows.find((r) => r.id === eventId)
+    if (row && to) row.assignees = [...row.assignees.filter((a) => a !== from), to]
+  },
+}
+```
+
+- **`resourceHistogram`** draws a small bar per axis tick under each resource row,
+  showing that resource's load; bars turn red where the load exceeds capacity
+  (`{ capacityField }` on the resource, default 1). Set `true` or
+  `{ capacityField?, height? }`.
+- **`columnSummary`** renders a sticky bottom strip aligned to the axis, one cell
+  per time column. `reducer` is `'count'`, `{ sum: 'field' }`, or a function
+  receiving the column-clipped events - e.g. `(items) => items.length`.
+- Dragging an assigned event onto a different resource row fires
+  **`onAssignmentChange`** (a reassign) instead of a plain move.
+
+### Non-working-time collapse & zoom
+
+Dense timelines waste width on hours nobody works. Turn on **collapse** and the
+axis folds non-working time out: nights (outside `businessHours`) and whole
+non-working days (`nonWorkingDays`, e.g. weekends) shrink to a thin gap, so the
+working hours fill the view. A **zoom** preset scales the tick size + pixel
+density from minutes out to months (a superset of `slotSizes`).
+
+```svelte
+const cfg: SchedulerProConfig<any, Job> = {
+  startField: 'start', endField: 'end',
+  resourceField: 'machine', resources: machines,
+  initialView: 'timelineWeek',
+  businessHours: { start: 8, end: 18 }, nonWorkingDays: [0, 6],
+  collapseNonWorking: true,   // fold nights to a gap
+  collapseWeekends: true,     // fold weekends to a gap
+  collapsedGapPx: 14,         // width of the gap marker (0 = omit entirely)
+  zoom: 3,                    // ladder index: 0 = 5-min .. 7 = monthly
+  onZoomChange: (level) => console.log(level.id),
+}
+```
+
+The compressed axis is fully consistent - event bars, drag/resize snapping, the
+now-line and dependency arrows all map through it. A `- <label> +` stepper appears
+in the toolbar when `zoom` is set; supply your own ladder via `zoomLevels`. These
+apply to the timeline views only.
+
+### Grouped / tree resources
+
+Organise the timeline's resource rows into a **collapsible tree** in the gutter -
+buildings to departments to providers/rooms. Define the group nodes with
+`resourceGroups` (nest via `parentId`) and map each resource to its group with
+`resourceGroupOf`. Click a group header to collapse its rows; the state persists
+via `groupPersistKey`.
+
+```svelte
+const cfg: SchedulerProConfig<any, Appt> = {
+  startField: 'start', endField: 'end',
+  resourceField: 'provider', resources: providers, // flat resources
+  resourceGroups: [
+    { id: 'bldg-a', title: 'Main building' },
+    { id: 'cardio', title: 'Cardiology', parentId: 'bldg-a' },
+    { id: 'derm', title: 'Dermatology', parentId: 'bldg-a' },
+  ],
+  resourceGroupOf: (r) => r.dept,          // resource -> group id
+  collapsibleGroups: true,
+  groupPersistKey: 'clinic-groups',
+  initialView: 'timelineDay',
+}
+```
+
+Resources whose group is unknown / unset trail in an ungrouped section. Each group
+header shows a count of the leaf resources beneath it. (To group the timeline by
+an **event field** instead of a resource - e.g. by status or type - simply set
+`resourceField` to that field; the rows then bucket by its values.)
+
+### Skill-based eligibility
+
+Restrict which events may be scheduled onto which resources (provider matching,
+room type, technician skills). Supply `eligible(event, resource)` - return `false`
+and a drag / resize / create onto that resource is rejected with a "Not eligible"
+flash, and ineligible rows hatch while you drag. Or use the declarative
+`requiresField` shortcut: an event's required tag(s) must all be in the resource's
+skills.
+
+```svelte
+// Flexible predicate:
+eligible: (job, tech) => tech.skills.includes(job.skill),
+
+// or declarative - a `skills` array on each resource:
+requiresField: 'skill',   // event field holding the required tag(s)
+// resourceSkillsOf: (r) => r.skills,  // default reads r.skills
+```
+
+### Utilization heatmap
+
+Tint each resource row's **background** by how loaded it is per time-bucket - light
+when quiet, hot near capacity, red when over. Distinct from the histogram (a bar
+strip); the heatmap colours the whole lane so a glance shows the pressure.
+
+```svelte
+resourceHistogram: false,
+utilizationHeatmap: { capacityField: 'cap' },  // over `cap` = a red cell
+```
+
+### Booking rules - buffers, lead time, duration, travel
+
+Beyond conflicts and working hours, gate bookings on real-world rules. A move /
+resize / create that breaks one snaps back with the reason.
+
+```svelte
+bufferBeforeMin: 15, bufferAfterMin: 15,   // clear gap around every booking
+minLeadMin: 60,                             // no bookings within an hour of now
+minDurationMin: 30, maxDurationMin: 90,
+travelTimeOf: (a, b) => distanceMin(a.location, b.location), // widens the gap
+```
+
+### Bookable slots / find-a-time
+
+Turn the Day timeline into a booking surface: set `bookable` and every OPEN slot of
+`durationMin` lights up per resource - the free time left after existing bookings,
+each resource's own hours (`availability`), buffers and lead time. Clicking a slot
+books it.
+
+```svelte
+bookable: { durationMin: 60, stepMin: 30 },
+onSlotPick: (start, end, resourceId) => book(resourceId, start, end),
+```
+
+The slot math is also a pure export - `availableSlots({ working, busy, durationMin,
+stepMin, bufferBeforeMin, bufferAfterMin, minStart })` from `@svgrid/enterprise`.
+
+### Multi-calendar overlay
+
+Overlay several calendars, each colour-coded and toggleable from a legend. Hiding a
+calendar filters its events out of every view; an event's colour comes from its
+calendar unless `colorField` overrides.
+
+```svelte
+calendars: [
+  { id: 'work', title: 'Work', color: '#4f46e5' },
+  { id: 'personal', title: 'Personal', color: '#16a34a' },
+  { id: 'holidays', title: 'Holidays', color: '#d97706', hidden: true },
+],
+calendarField: 'cal',
+```
+
+### Free/busy + find-a-time
+
+Shade a resource's external busy time (from another calendar) with `freeBusyOf`, and
+find a slot that works for everyone with the pure `commonFree(busyByPerson, dayStart,
+dayEnd, durationMin)` export - the windows when all attendees are free.
+
+```svelte
+freeBusyOf: (resource) => externalBusy[resource.id] ?? [],
+// then, to suggest meeting times:
+import { commonFree } from '@svgrid/enterprise'
+const windows = commonFree(attendees.map(busyOf), day8, day18, 60)
+```
+
 ## Config reference
 
 | Option | Purpose |
@@ -27108,6 +27690,33 @@ source.
 | `drawer` / `onEventCommit` | Built-in detail drawer + save callback. |
 | `eventMenu` | Right-click menu items for an event. |
 | `searchable` / `searchPlaceholder` | The toolbar search box. |
+
+### Scheduler Pro options (`SchedulerProConfig`)
+
+| Option | Purpose |
+| --- | --- |
+| `dependencies` / `dependencyField` | Predecessor -> successor links (`{ id, from, to, type?, lag? }`), as a flat list or per-row. Drawn as timeline arrows. |
+| `autoReschedule` | Cascade successors forward on move / resize to keep links legal (default `true` when dependencies are set). |
+| `dependencyRespectWorkingTime` | Cascade skips outside `businessHours` (a shifted successor lands at the next opening). |
+| `onDependenciesChange` | Fired with the cascaded `{ id, start, end }` shifts - persist them here. |
+| `onDependencyAdd` / `onDependencyRemove` | User draws / removes a link. |
+| `assignments` / `assignmentField` | Many-to-many event <-> resource assignments; an event renders under every assigned resource. |
+| `resourceHistogram` | Per-resource utilization bars under each timeline row (`true` or `{ capacityField?, height? }`); over-capacity bars turn red. |
+| `columnSummary` | Sticky per-time-column summary strip: `{ reducer: 'count' \| { sum } \| fn, label?, position? }`. |
+| `onAssignmentChange` | Fired when an event is dragged from one resource row to another (reassign). |
+| `collapseNonWorking` / `collapseWeekends` | Fold nights / non-working days out of the timeline axis. |
+| `collapsedGapPx` | Width (px) of a collapsed-gap marker (default 12; `0` omits it). |
+| `zoom` / `zoomLevels` / `onZoomChange` | Continuous zoom preset (minutes -> months) with a toolbar stepper; supersedes `slotSizes`. |
+| `resourceGroups` / `resourceGroupOf` | Group timeline resource rows into a collapsible tree (`{ id, title, parentId? }[]` + a resource -> group-id map). |
+| `collapsibleGroups` / `groupPersistKey` | Allow collapsing groups (default on) and persist the collapsed set to localStorage. |
+| `eligible` / `requiresField` / `resourceSkillsOf` | Skill / eligibility rule - which events may drop on which resources; rejected drops flash "Not eligible". |
+| `utilizationHeatmap` | Tint each resource row's background by load per bucket (`true` or `{ capacityField }`); over capacity = red. |
+| `bufferBeforeMin` / `bufferAfterMin` | Required clear minutes around each booking (number or `(event) => number`). |
+| `minLeadMin` / `minDurationMin` / `maxDurationMin` | Minimum notice, and min / max booking duration in minutes. |
+| `travelTimeOf` | Travel minutes required between two consecutive bookings on a resource (widens the buffer). |
+| `bookable` / `onSlotPick` | Show open bookable slots of a duration on the Day timeline (`{ durationMin, stepMin? }`); click to book. |
+| `calendars` / `calendarField` | Overlay several colour-coded calendars with a toggleable legend; map events via `calendarField`. |
+| `freeBusyOf` | External busy intervals to shade on a resource row (for find-a-time). Pair with the `commonFree` export. |
 
 <!-- =================================================================
      /help/rows/styling-rows  (community)
@@ -32902,13 +33511,17 @@ group heading is the at-a-glance rollup.
 [SvDockLayout](./sv-dock-layout.md) · [SvDockManager](./sv-dock-manager.md) ·
 [SvCard](./sv-card.md) · [SvDivider](./sv-divider.md) · [SvScrollArea](./sv-scroll-area.md) ·
 [SvGridChart](./sv-grid-chart.md) · [SvForm](./sv-form.md) · [SvField](./sv-field.md) ·
-[SvFileUpload](./sv-file-upload.md)
+[SvFileUpload](./sv-file-upload.md) · [SvCollapsible](./sv-collapsible.md) ·
+[Layout primitives](./sv-layout-primitives.md) (SvStack · SvGroup · SvSimpleGrid) ·
+[Typography](./sv-typography.md) (SvTitle · SvText · SvAnchor · SvBlockquote · SvMark · SvList) ·
+[Display primitives](./sv-display-primitives.md) (SvKbd · SvCode · SvAspectRatio · SvVisuallyHidden)
 
 ### [Feedback & display](./feedback.md)
 
 [SvBadge](./sv-badge.md) · [SvSkeleton](./sv-skeleton.md) · [SvAlert](./sv-alert.md) ·
 [SvEmptyState](./sv-empty-state.md) · [SvChip](./sv-chip.md) · [SvTimeline](./sv-timeline.md) ·
-[SvAvatar](./sv-avatar.md) · [SvAvatarGroup](./sv-avatar-group.md) · [SvCarousel](./sv-carousel.md)
+[SvAvatar](./sv-avatar.md) · [SvAvatarGroup](./sv-avatar-group.md) · [SvCarousel](./sv-carousel.md) ·
+[SvSpinner](./sv-spinner.md) · [SvLoadingOverlay](./sv-loading-overlay.md) · [SvResult](./sv-result.md)
 
 ### [Navigation & rich](./navigation.md)
 
@@ -33545,6 +34158,9 @@ recipes:
 - [SvContextMenu](./sv-context-menu.md) - a right-click menu on any region.
 - [SvMenu](./sv-menu.md) - a trigger-anchored dropdown actions menu.
 - [SvMenuList](./sv-menu-list.md) - the recursive menu surface behind the menus.
+- [SvMenubar](./sv-menubar.md) - an app-style row of dropdown menus.
+- [SvHoverCard](./sv-hover-card.md) - a rich preview card that opens on hover.
+- [SvPopconfirm](./sv-popconfirm.md) - a quick confirm step in a popover.
 
 <!-- =================================================================
      /help/ui-components/range  (community)
@@ -34145,6 +34761,7 @@ import { SvAutoComplete } from '@svgrid/grid'
 | `suggestions` | `ReadonlyArray<string \| ListOption>`   | `[]`    | Suggestion shortcuts - strings or `{ value, label }`.              |
 | `minChars`    | `number`                                | `1`     | Chars typed before suggestions appear.                             |
 | `placeholder` | `string`                                | -       | Input placeholder.                                                 |
+| `resizable`   | `boolean`                               | `false` | Add a bottom drag grip so the user can resize the open suggestion panel (hidden on an upward flip). |
 | `size`        | `sm \| md \| lg`                        | `md`    | Control height and font size.                                      |
 | `disabled`    | `boolean`                               | `false` | Blocks interaction.                                                |
 | `label`       | `string`                                | -       | Visible field label, wired to the control.                         |
@@ -34211,6 +34828,19 @@ still type anything:
 > Tip: `onChange` fires the raw text on every keystroke, so debounce any expensive
 > side effect (a fetch, a route change) you drive from it rather than running it
 > inline.
+
+### Resizable panel
+
+Set `resizable` to give the open suggestion panel a bottom drag grip; drag it to
+grow or shrink the list, and the height sticks for the session. The grip hides on
+an upward flip. The same prop is on [SvComboBox](sv-combo-box.md) and
+[SvDropDownList](sv-drop-down-list.md).
+
+```svelte
+<SvAutoComplete resizable {suggestions} label="City" />
+```
+
+<div data-docs-demo="411-resizable-dropdowns" data-height="440"></div>
 
 ## Accessibility
 
@@ -35284,6 +35914,11 @@ that changed), in every selection mode - so you can assign it straight to state.
 
 ## Props
 
+Pass any of `label` / `hint` / `error` (plus `required` / `invalid` / `id`) to
+wrap the calendar in [SvField](sv-field.md) chrome (a label + hint/error line)
+when using it as a standalone form control; omit them and it renders bare, as it
+does inside [SvDateTimePicker](sv-date-time-picker.md)'s popover.
+
 | Prop                 | Type                                                                                                 | Default       | Description                                                          |
 | -------------------- | ---------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------- |
 | `value`              | `CalendarValue`                                                                                      | `null`        | Selected value(s): a `Date` for single modes, an array for multi.   |
@@ -36040,6 +36675,86 @@ in the snippet and leave `showLabel` off.
 - [SvGauge](sv-gauge.md) - a radial dial for a measured value.
 
 <!-- =================================================================
+     /help/ui-components/sv-collapsible  (community)
+     ================================================================== -->
+
+# SvCollapsible
+
+A single show/hide section: a header that toggles one region of content open and
+closed, with a smooth height animation. The standalone building block behind an
+accordion.
+
+`SvCollapsible` is one disclosure - use it for an "Advanced options" panel, a
+details drawer, or a filter section. It animates height with a
+`grid-template-rows` transition, sets `inert` on the closed region so hidden
+content is skipped by tab order and assistive tech, and wires
+`aria-expanded`/`aria-controls` for you. For several linked sections with
+single-open behaviour, reach for [SvAccordion](sv-accordion.md).
+
+Related: [SvAccordion](sv-accordion.md) · [SvTabs](sv-tabs.md) · [SvCard](sv-card.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvCollapsible` starter into your app:
+
+<div data-docs-add="add collapsible"></div>
+
+Prefer to see it first? `npx @svgrid/ui try collapsible` opens it in a throwaway sandbox - no project needed.
+
+Or install the package and import it directly. `SvCollapsible` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvCollapsible } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="409-layout-feedback" data-height="440" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvCollapsible } from '@svgrid/grid'
+  let advanced = $state(false)
+</script>
+
+<SvCollapsible title="Shipping details" open>
+  <p>Standard delivery, 3-5 business days.</p>
+</SvCollapsible>
+
+<SvCollapsible title="Advanced options" bind:open={advanced}>
+  <!-- fields -->
+</SvCollapsible>
+```
+
+## Props
+
+| Prop           | Type                        | Default | Description                                                    |
+| -------------- | --------------------------- | ------- | ------------------------------------------------------------- |
+| `title`        | `string`                    | -       | Header text. Omit and use the `header` snippet for custom.    |
+| `open`         | `boolean` (bindable)        | `false` | Whether the region is expanded.                               |
+| `onOpenChange` | `(open: boolean) => void`   | -       | Fires when the open state toggles.                            |
+| `disabled`     | `boolean`                   | `false` | Disable the trigger; the region stays as-is.                  |
+| `header`       | `Snippet`                   | -       | Custom header content in place of `title`.                    |
+| `children`     | `Snippet`                   | -       | The collapsible region content.                               |
+
+## Accessibility
+
+- The header is a `<button>` with `aria-expanded` reflecting the state and
+  `aria-controls` pointing at the region.
+- The closed region is `inert`, so its contents are removed from tab order and
+  the accessibility tree until it opens.
+- Toggling is via Space/Enter (native button); `disabled` blocks the toggle.
+- The height animation is skipped under `prefers-reduced-motion: reduce`.
+
+## See also
+
+- [SvAccordion](sv-accordion.md) - several sections with single- or multi-open behaviour.
+- [SvTabs](sv-tabs.md) - when sections are peers shown one at a time.
+
+<!-- =================================================================
      /help/ui-components/sv-color-input  (community)
      ================================================================== -->
 
@@ -36101,6 +36816,10 @@ import { SvColorInput } from '@svgrid/grid'
 | `palette`   | `string[]`                 | -           | Preset swatches shown in the popover.             |
 | `autoOpen`  | `boolean`                  | `false`     | Focus the trigger and open on mount.              |
 | `messages`  | `Partial<ColorMessages>`   | -           | Override the built-in popover strings.            |
+| `block`     | `boolean`                  | `false`     | Stretch to the container width (else hugs its content). |
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome.
 
 `ColorMessages` is `{ dialog; picker; hex }`.
 
@@ -36230,6 +36949,12 @@ import { SvComboBox } from '@svgrid/grid'
 | `onChange`    | `(value: string \| number \| null) => void`     | -          | Fires with the newly picked value (or `null` when cleared).        |
 | `placeholder` | `string`                                        | `'Select…'`| Input placeholder when empty.                                      |
 | `autoOpen`    | `boolean`                                        | `false`    | Focus the input on mount.                                          |
+| `clearable`   | `boolean`                                        | `false`    | Show a clear (x) button when a value is selected.                  |
+| `resizable`   | `boolean`                                        | `false`    | Add a bottom drag grip so the user can resize the open panel's height (hidden on an upward flip). See [Resizable dropdowns](#resizable-panel). |
+| `readonly`    | `boolean`                                        | `false`    | Value shown; input not editable and the panel will not open.       |
+| `item`        | `Snippet<[ListOption]>`                          | -          | Custom render for each option.                                     |
+| `header` / `footer` | `Snippet`                                  | -          | Content pinned above / below the option list.                      |
+| `noData`      | `Snippet`                                        | -          | Shown when the (non-loading) list is empty.                        |
 | `loadOptions` | `(query: string) => Promise<ListOption[]>`      | -          | Remote, debounced search. Disables local filtering.                |
 | `minLength`   | `number`                                         | `1`        | Min chars before a remote search fires.                            |
 | `debounce`    | `number`                                         | `250`      | Debounce (ms) before a remote search fires.                        |
@@ -36296,6 +37021,20 @@ here cities are searched within the chosen country:
 Because `loadOptions` re-reads `countryId` on each call, switching the country
 just scopes the next search - and the combobox keeps only the latest response, so
 an in-flight request for the old country can never win.
+
+### Resizable panel
+
+Set `resizable` and the open panel grows a bottom drag grip ("····"); drag it to
+grow or shrink the list, and the chosen height sticks for the session. The grip
+hides automatically when the panel flips upward (there is no room to grow below).
+The same prop works on [SvDropDownList](sv-drop-down-list.md) and
+[SvAutoComplete](sv-auto-complete.md).
+
+```svelte
+<SvComboBox resizable {options} label="Timezone" />
+```
+
+<div data-docs-demo="411-resizable-dropdowns" data-height="440"></div>
 
 ## Accessibility
 
@@ -37091,6 +37830,110 @@ on `onChange`.
 - [SvDateRangeInput](sv-date-range-input.md) - the range sibling.
 
 <!-- =================================================================
+     /help/ui-components/sv-display-primitives  (community)
+     ================================================================== -->
+
+# Display primitives - SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden
+
+The small display helpers you reach for constantly in docs, command palettes, and
+media layouts - each themed from the shared `--sg-*` tokens and dependency-free.
+
+- **SvKbd** - a keyboard-key hint (single key or a combo).
+- **SvCode** - monospace code, inline or as a scrolling block.
+- **SvAspectRatio** - hold a fixed width:height ratio to prevent layout shift.
+- **SvVisuallyHidden** - screen-reader-only content (the "sr-only" pattern).
+
+Related: [SvCommand](sv-command.md) · [SvCode in docs](sv-rich-text.md) · [Tokens](../tokens.md)
+
+## Installation
+
+Add them with the CLI:
+
+<div data-docs-add="add display"></div>
+
+Or install the package and import them directly. They ship free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="410-typography-display" data-height="520" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden } from '@svgrid/grid'
+</script>
+
+<SvKbd keys={['Ctrl', 'K']} /> opens the palette.
+
+<SvCode>npm i @svgrid/grid</SvCode>
+
+<SvAspectRatio ratio={16 / 9}>
+  <img src="/cover.jpg" alt="" />
+</SvAspectRatio>
+
+<button>★<SvVisuallyHidden>Add to favourites</SvVisuallyHidden></button>
+```
+
+## SvKbd
+
+Pass `keys` for a combo (rendered as separate caps joined by `separator`), or a
+single `children` label.
+
+| Prop        | Type       | Default | Description                          |
+| ----------- | ---------- | ------- | ------------------------------------ |
+| `keys`      | `string[]` | -       | Key sequence, rendered as caps.      |
+| `separator` | `string`   | `+`     | Separator shown between keys.        |
+| `size`      | `sm` \| `md` | `md`  | Cap size.                            |
+
+## SvCode
+
+Inline by default; set `block` for a padded, horizontally-scrolling block. Pass
+`code` as a string or use the `children` snippet. No syntax highlighting - bring
+your own if you need it.
+
+| Prop    | Type      | Default | Description                          |
+| ------- | --------- | ------- | ------------------------------------ |
+| `block` | `boolean` | `false` | Render a padded block, not inline.   |
+| `code`  | `string`  | -       | Code as a string (skip the snippet). |
+
+## SvAspectRatio
+
+Holds the ratio for its content (media, embeds, maps, skeletons); the single
+child fills the box (`object-fit: cover`).
+
+| Prop    | Type     | Default   | Description                                  |
+| ------- | -------- | --------- | -------------------------------------------- |
+| `ratio` | `number` | `16 / 9`  | Width / height ratio (e.g. `1`, `4 / 3`).    |
+
+## SvVisuallyHidden
+
+| Prop        | Type      | Default | Description                                                   |
+| ----------- | --------- | ------- | ------------------------------------------------------------ |
+| `focusable` | `boolean` | `false` | Reveal on focus (for skip links).                            |
+| `as`        | `string`  | `span`  | Element/tag to render.                                       |
+
+## Accessibility
+
+- **SvVisuallyHidden** keeps content in the accessibility tree while hiding it
+  visually - ideal for naming icon-only controls and for skip links (set
+  `focusable` so the link appears when tabbed to).
+- **SvKbd** uses semantic `<kbd>` elements; the separator between keys is
+  `aria-hidden` so screen readers announce the keys, not the "+".
+- **SvAspectRatio** is presentational - always give the media inside it a real
+  `alt` (or `aria-hidden` when decorative).
+
+## See also
+
+- [Typography](sv-typography.md) - SvTitle / SvText / SvAnchor / SvBlockquote / SvMark / SvList.
+- [SvCommand](sv-command.md) - the command palette where `SvKbd` shortcuts live.
+
+<!-- =================================================================
      /help/ui-components/sv-divider  (community)
      ================================================================== -->
 
@@ -37852,7 +38695,12 @@ import { SvDropDownList } from '@svgrid/grid'
 | `autoOpen`    | `boolean`                           | `false`    | Focus the trigger and open the panel on mount.               |
 | `virtual`     | `boolean`                           | `false`    | Window the option list for large sets. Flat lists only.      |
 | `rowHeight`   | `number`                            | `34`       | Fixed option height in px; must match the CSS.               |
+| `maxRows`     | `number`                            | `8`        | Options shown before the panel scrolls (native-select behaviour). |
 | `resizable`   | `boolean`                           | `false`    | Show a bottom drag grip so users can resize the open panel.  |
+| `readonly`    | `boolean`                           | `false`    | Value shown; the panel will not open.                        |
+| `item`        | `Snippet<[ListOption]>`             | -          | Custom render for each option.                               |
+| `header` / `footer` | `Snippet`                     | -          | Content pinned above / below the option list.                |
+| `noData`      | `Snippet`                           | -          | Shown when there are no options.                             |
 | `size`        | `sm \| md \| lg`                    | `md`       | Control height and font size.                                |
 | `disabled`    | `boolean`                           | `false`    | Blocks interaction and dims the trigger.                     |
 | `label`       | `string`                            | -          | Visible field label, wired to the control.                   |
@@ -37933,6 +38781,11 @@ hidden.
 ```svelte
 <SvDropDownList {options} resizable />
 ```
+
+The same `resizable` prop works on [SvComboBox](sv-combo-box.md) and
+[SvAutoComplete](sv-auto-complete.md):
+
+<div data-docs-demo="411-resizable-dropdowns" data-height="440"></div>
 
 ### Cascading selects
 
@@ -38042,6 +38895,14 @@ import { SvDurationInput } from '@svgrid/grid'
 | `style`       | `colon` \| `units`                  | `colon`       | Display when unfocused: `1:30` vs `1h 30m`.            |
 | `placeholder` | `string`                            | `e.g. 1h 30m` | Empty-state hint text.                                 |
 | `autofocus`   | `boolean`                           | `false`       | Focus + select on mount (used as a cell editor).       |
+| `clearable`   | `boolean`                           | `false`       | Show a clear (x) button when there is a value.         |
+| `leading`     | `Snippet`                           | -             | Leading adornment (icon) inside the field.             |
+| `trailing`    | `Snippet`                           | -             | Trailing adornment (icon) inside the field.            |
+| `block`       | `boolean`                           | `false`       | Stretch to the container width.                        |
+| `width`       | `number`                            | `160`         | Control width in px (ignored when `block`).            |
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome.
 
 ## Examples
 
@@ -38299,6 +39160,27 @@ import { SvField } from '@svgrid/grid'
 
 When both `error` and `hint` are set, the error takes precedence and is the line
 announced to assistive tech.
+
+### Framed mode (shared control chrome)
+
+Pass `frame` and `SvField` owns the bordered control box - the border, focus ring,
+`invalid` state, `size` (`sm` / `md` / `lg`), a shared clear button, adornments and
+floating label - so editors stop re-implementing them. The whole text-input family
+uses this; you only need it directly when building a custom framed control.
+
+| Prop         | Type                       | Default  | Description                                                        |
+| ------------ | -------------------------- | -------- | ----------------------------------------------------------------- |
+| `frame`      | `boolean`                  | `false`  | Own the bordered control box (opt-in).                            |
+| `invalid`    | `boolean`                  | `false`  | Error styling on the box + border.                                |
+| `size`       | `sm` \| `md` \| `lg`       | `md`     | Control height / density.                                         |
+| `disabled` / `readonly` | `boolean`       | `false`  | Dim / read-only box styling.                                      |
+| `leading` / `trailing`  | `Snippet`       | -        | Icon/button adornment at the start / end of the box.             |
+| `prefix` / `suffix`     | `string`        | -        | Plain-text affix at the start / end (units).                     |
+| `clearable` + `showClear` + `onclear` | -  | -        | Render the shared clear (x) button and handle the clear.         |
+| `actions`    | `EditorAction[]`           | -        | Compact in-field action buttons - the general form of clear/reveal (lookup, generate, copy). `EditorAction` is `{ label; onClick; icon?; disabled? }`. |
+| `width`      | `number` \| `string`       | `220`    | Control width (`block` overrides to 100%).                       |
+| `labelMode`  | `static` \| `floating`     | `static` | `floating` rests the label in the box and animates it up on focus/value. |
+| `filled`     | `boolean`                  | `false`  | Floating mode: whether the control holds a value (keeps the label up). |
 
 ## Examples
 
@@ -38598,15 +39480,24 @@ import { SvForm } from '@svgrid/grid'
 | `showReset`   | `boolean`                                       | `false`    | Render a Reset button that restores the initial values.     |
 | `resetLabel`  | `string`                                       | `Reset`    | Label for the Reset button.                                 |
 | `stepper`     | `boolean`                                       | `false`    | Render titled sections as a validated multi-step wizard (Back / Next, per-step gating). |
+| `tabs`        | `boolean`                                       | `false`    | Render titled sections as tabs (one panel at a time; a failed submit jumps to the erroring tab). Ignored with `stepper`. |
 | `columns`     | `number`                                       | `1`        | Columns in the responsive field grid (a section can override its own). |
 | `disabled`    | `boolean`                                       | `false`    | Disable every field and the submit button.                  |
+| `serverErrors` | `Record<string, string>`                       | -          | Inject server-side errors (`{ field: message }`), applied reactively. |
+| `formError`   | `string`                                        | -          | A form-level message shown in a banner above the fields.    |
+| `errorSummary` | `boolean`                                      | `false`    | Show a summary of field errors (with focus links) above the form after a failed submit. |
+| `reinitialize` | `off` \| `always` \| `ifPristine`              | `off`      | Re-seed when the `initial` identity changes (e.g. editing a different record). `ifPristine` re-seeds only when there are no unsaved edits. |
+| `dir`         | `ltr` \| `rtl` \| `auto`                        | -          | Text direction; `rtl` mirrors the form layout.              |
+| `messages`    | `Partial<FormMessages>`                         | -          | Override the built-in generated strings (`required(label)`, `minItems`, `maxItems`, `checking`). |
 
 ### FormField
 
 ```ts
 type FormFieldType =
   | 'text' | 'email' | 'tel' | 'textarea' | 'number' | 'password'
-  | 'select' | 'checkbox' | 'switch' | 'date' | 'color' | 'rating'
+  | 'select' | 'multiselect' | 'combobox' | 'checkbox' | 'switch' | 'radio'
+  | 'date' | 'datetime' | 'color' | 'rating' | 'slider' | 'tags'
+  | 'phone' | 'country' | 'mask' | 'file'
   | 'array'   // a repeatable group - see itemFields
 
 type FormField = {
@@ -38614,13 +39505,23 @@ type FormField = {
   label: string
   type?: FormFieldType                 // defaults to 'text'
   required?: boolean
+  readonly?: boolean                   // shown but not editable (still submitted, unlike hidden)
+  help?: string                        // helper text under the control (distinct from an error)
   placeholder?: string
-  options?: Array<{ value: string | number; label: string }>  // for 'select'
+  options?: Array<{ value; label }> | ((values) => Array<{ value; label }>)  // a function CASCADES (list derived from other values)
+  dependsOn?: string | string[]        // clear this field when a parent changes (cascading selects)
+  mask?: string                        // for type: 'mask' (#=digit, A=letter, *=alnum)
+  min?: number; max?: number; step?: number; precision?: number  // number / slider
+  prefix?: string; suffix?: string     // number affixes ($ / %)
+  loadOptions?: (query: string) => Promise<Array<{ value; label }>>  // remote combobox
+  accept?: string; multiple?: boolean  // for type: 'file'
+  computed?: (values) => any           // derive a read-only value from other fields (included in the payload)
   rules?: ReadonlyArray<Validator>     // declarative rules (email/pattern/min/compare...)
   validate?: (value: any, values: Record<string, any>) => string | null | undefined
   asyncValidate?: (value, values) => Promise<string | null | undefined>  // debounced, stale-guarded
   asyncDebounce?: number               // ms before asyncValidate runs on edit (default 300)
   full?: boolean                       // span the full width in the grid
+  span?: number                        // columns to span (generalizes full)
   visible?: boolean | ((values) => boolean)   // show only when true; hidden = not validated, not submitted
   disabled?: boolean | ((values) => boolean)  // disable, statically or derived from other values
   // For type: 'array' (a repeatable group):
@@ -38629,6 +39530,32 @@ type FormField = {
   minItems?: number                            // min / max row count
   maxItems?: number
 }
+```
+
+Beyond the basics, `SvForm` maps each rich `type` to the matching kit editor:
+`radio`, `slider`, `tags`, `phone`, `country`, `mask`, `datetime`, `combobox`
+(with remote `loadOptions`) and `file`. See the
+[rich field types demo](../../examples).
+
+**Cascading fields:** give a child a function `options` (derived from the current
+`values`) and a `dependsOn` naming its parent(s). When the parent changes, the
+child's list re-derives and its value is cleared so a stale selection never
+lingers - for example Country -> State -> City:
+
+```ts
+{ name: 'country', label: 'Country', type: 'select', options: countries }
+{ name: 'state', label: 'State', type: 'select', dependsOn: 'country',
+  options: (v) => statesByCountry[v.country] ?? [] }
+```
+
+**Computed fields:** `computed: (values) => ...` derives a read-only value from
+the other fields; it recomputes reactively, is never user-validated, and its
+value is included in the submitted payload - a live total, for instance:
+
+```ts
+{ name: 'qty', label: 'Qty', type: 'number' }
+{ name: 'price', label: 'Unit price', type: 'number' }
+{ name: 'total', label: 'Total', computed: (v) => (v.qty ?? 0) * (v.price ?? 0) }
 ```
 
 ### FormSection
@@ -38673,7 +39600,9 @@ const fields: FormField[] = [
 
 Group fields into `FormSection`s and they render as titled fieldsets. Add `stepper`
 and each section becomes a validated step - **Next** only advances when the current
-step is valid, and the last step submits:
+step is valid, and the last step submits. Or add `tabs` to render the sections as
+tabs instead (one panel at a time; a failed submit jumps to the first tab that has
+an error, which is also marked):
 
 <div data-docs-demo="324-form-wizard" data-height="560" data-code></div>
 
@@ -38695,9 +39624,10 @@ const schema: FormEntry[] = [
 
 ### Field arrays (repeatable groups)
 
-A `type: 'array'` field with `itemFields` renders add / remove rows. Its value is
-an array of item objects; each row validates against **itself** (so within-row
-rules work), and `required` / `minItems` / `maxItems` gate the row count:
+A `type: 'array'` field with `itemFields` renders add / remove rows (and up / down
+reorder buttons once there is more than one row). Its value is an array of item
+objects; each row validates against **itself** (so within-row rules work), and
+`required` / `minItems` / `maxItems` gate the row count:
 
 <div data-docs-demo="325-form-array" data-height="520" data-code></div>
 
@@ -38807,9 +39737,12 @@ must also be present.
 
 - Every field renders a `<label>` wired to its control; required fields add a
   visible marker and validation blocks submit.
-- Errors render with `role="alert"` so they are announced when they appear.
+- Errors render with `role="alert"` so they are announced when they appear, and
+  each control is wired to its message with `aria-invalid` + `aria-describedby`.
 - The form sets `novalidate` and runs its own validation, so messages are
   consistent across browsers.
+- `dir="rtl"` mirrors the layout, and every generated string is overridable via
+  `messages` for localization.
 
 ## See also
 
@@ -39462,6 +40395,218 @@ fields the moment a record is chosen:
 - [SvTreeSelect](sv-tree-select.md) - pick from a hierarchy instead of a table.
 
 <!-- =================================================================
+     /help/ui-components/sv-hover-card  (community)
+     ================================================================== -->
+
+# SvHoverCard
+
+A rich preview card that opens when the pointer rests on its anchor and closes
+shortly after it leaves.
+
+`SvHoverCard` is the hover-triggered sibling of [SvPopover](sv-popover.md): wrap a
+chip, a link, or an avatar and reveal a small card previewing what it points to.
+It is built on the shared positioning engine, so it takes any `placement`, flips
+and shifts to stay in view, and the card itself is hoverable - the pointer can
+travel onto it without it closing. Colors come from the grid's `--sg-*` tokens.
+
+A hover card is a pointer affordance. For keyboard and touch users, pair the same
+content with a click-triggered [SvPopover](sv-popover.md).
+
+Related: [SvPopover](sv-popover.md) · [SvTooltip](sv-tooltip.md) · [Overlays & menus overview](overlays.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvHoverCard` starter into your app:
+
+<div data-docs-add="add hover-card"></div>
+
+Prefer to see it first? `npx @svgrid/ui try hover-card` opens it in a throwaway sandbox - no project needed.
+
+Or install the package and import it directly. `SvHoverCard` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvHoverCard } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="289-overlays-hovercard-menubar" data-height="440" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvHoverCard, SvAvatar } from '@svgrid/grid'
+</script>
+
+<SvHoverCard>
+  {#snippet anchor()}<a href="/u/ada">@ada</a>{/snippet}
+  <div style="display:flex; gap:12px; align-items:center">
+    <SvAvatar name="Ada Lovelace" />
+    <div>
+      <strong>Ada Lovelace</strong>
+      <div>Analyst - first programmer</div>
+    </div>
+  </div>
+</SvHoverCard>
+```
+
+## Props
+
+| Prop           | Type                      | Default        | Description                                                        |
+| -------------- | ------------------------- | -------------- | ----------------------------------------------------------------- |
+| `open`         | `boolean`                 | `false`        | Controlled, bindable open state.                                  |
+| `onOpenChange` | `(open: boolean) => void` | -              | Fires whenever the open state changes.                            |
+| `placement`    | `Placement`               | `bottom-start` | Preferred side + alignment; flips when there is no room.           |
+| `openDelay`    | `number`                  | `250`          | Delay (ms) before the card opens on hover.                        |
+| `closeDelay`   | `number`                  | `180`          | Delay (ms) before it closes after the pointer leaves.             |
+| `arrow`        | `boolean`                 | `false`        | Show a pointer arrow toward the anchor.                           |
+| `minWidth`     | `number`                  | `240`          | Force a minimum card width.                                       |
+| `ariaLabel`    | `string`                  | -              | Accessible name for the card.                                     |
+| `anchor`       | `Snippet`                 | -              | The element the card previews.                                    |
+| `children`     | `Snippet`                 | -              | Card content.                                                     |
+
+## Examples
+
+### Tune the timing
+
+Slow the open a touch so a quick pass does not flash the card, and keep it open
+long enough to move onto it:
+
+```svelte
+<SvHoverCard openDelay={350} closeDelay={220} placement="top">
+  {#snippet anchor()}<button class="chip">#design</button>{/snippet}
+  <p>42 open issues in <strong>Design</strong>.</p>
+</SvHoverCard>
+```
+
+### Controlled open
+
+Bind `open` to drive the card yourself or react to it:
+
+```svelte
+<SvHoverCard bind:open onOpenChange={(o) => (previewing = o)}>
+  {#snippet anchor()}<a href={url}>{url}</a>{/snippet}
+  <LinkPreview {url} />
+</SvHoverCard>
+```
+
+## Accessibility
+
+- The card is a pointer affordance; it opens on hover and stays open while the
+  pointer is over the card. Provide the same information through a keyboard- and
+  touch-reachable path (a click [SvPopover](sv-popover.md), or the linked page).
+- Escape and outside-pointer dismissal run through the shared layer stack, so a
+  card nested inside another overlay closes top-first.
+
+## See also
+
+- [SvPopover](sv-popover.md) - the click/manual anchored panel this builds on.
+- [SvTooltip](sv-tooltip.md) - a smaller text-only hint on the same engine.
+- [Overlays overview](overlays.md) - the whole floating-surface family.
+
+<!-- =================================================================
+     /help/ui-components/sv-layout-primitives  (community)
+     ================================================================== -->
+
+# Layout primitives - SvStack, SvGroup, SvSimpleGrid
+
+Three tiny flex/grid wrappers that cover the layouts you reach for constantly, so
+you stop hand-writing `display: flex; gap: …` on every wrapper `div`. They carry
+no visual styling - just structure - and take a numeric `gap` (pixels) or any CSS
+length.
+
+- **SvStack** - a vertical column.
+- **SvGroup** - a horizontal row (with optional wrap and equal-grow).
+- **SvSimpleGrid** - a responsive grid: fixed `cols`, or auto-fit by
+  `minChildWidth`.
+
+Related: [SvCard](sv-card.md) · [SvSplitter](sv-splitter.md) · [SvDockLayout](sv-dock-layout.md)
+
+## Installation
+
+Add them with the CLI:
+
+<div data-docs-add="add layout"></div>
+
+Or install the package and import them directly. They ship free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvStack, SvGroup, SvSimpleGrid } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="409-layout-feedback" data-height="440" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvStack, SvGroup, SvSimpleGrid } from '@svgrid/grid'
+</script>
+
+<SvStack gap={16}>
+  <SvGroup gap={8} justify="between">
+    <strong>Team</strong>
+    <button>Invite</button>
+  </SvGroup>
+
+  <SvSimpleGrid minChildWidth={180} gap={12}>
+    <Card /><Card /><Card />
+  </SvSimpleGrid>
+</SvStack>
+```
+
+## SvStack
+
+A vertical flex column.
+
+| Prop      | Type                                              | Default   | Description                              |
+| --------- | ------------------------------------------------- | --------- | ---------------------------------------- |
+| `gap`     | `number \| string`                                | `12`      | Space between children (number = px).    |
+| `align`   | `start` \| `center` \| `end` \| `stretch`         | `stretch` | Cross-axis alignment (`align-items`).    |
+| `justify` | `start` \| `center` \| `end` \| `between` \| `around` | `start` | Main-axis distribution (`justify-content`). |
+| `as`      | `string`                                          | `div`     | Element/tag to render.                   |
+
+## SvGroup
+
+A horizontal flex row.
+
+| Prop      | Type                                                        | Default  | Description                                  |
+| --------- | ---------------------------------------------------------- | -------- | -------------------------------------------- |
+| `gap`     | `number \| string`                                         | `8`      | Space between children (number = px).        |
+| `align`   | `start` \| `center` \| `end` \| `stretch` \| `baseline`    | `center` | Cross-axis alignment.                        |
+| `justify` | `start` \| `center` \| `end` \| `between` \| `around`      | `start`  | Main-axis distribution.                      |
+| `wrap`    | `boolean`                                                  | `false`  | Allow children to wrap onto new lines.       |
+| `grow`    | `boolean`                                                  | `false`  | Give every child `flex: 1` (equal widths).   |
+| `as`      | `string`                                                   | `div`    | Element/tag to render.                       |
+
+## SvSimpleGrid
+
+A responsive CSS grid. Set `cols` for a fixed column count, or leave it unset to
+auto-fit as many `minChildWidth`-wide columns as fit.
+
+| Prop            | Type               | Default | Description                                                            |
+| --------------- | ------------------ | ------- | --------------------------------------------------------------------- |
+| `cols`          | `number`           | -       | Fixed number of equal columns. Overrides `minChildWidth`.             |
+| `minChildWidth` | `number`           | `200`   | Auto-fit: minimum child width (px) before wrapping to a new column.   |
+| `gap`           | `number \| string` | `12`    | Grid gap (number = px).                                               |
+
+## Accessibility
+
+These are presentational containers - they add no roles and do not affect focus
+order (children keep their natural DOM order). Choose a semantic `as` (e.g.
+`as="ul"` / `as="section"`) when the grouping is meaningful.
+
+## See also
+
+- [SvCard](sv-card.md) - the boxed surface these primitives usually arrange.
+- [SvSplitter](sv-splitter.md) / [SvDockLayout](sv-dock-layout.md) - for resizable, user-driven layouts.
+
+<!-- =================================================================
      /help/ui-components/sv-list-box  (community)
      ================================================================== -->
 
@@ -39640,6 +40785,83 @@ changes so a stale value never lingers:
 - [SvMultiSelect](sv-multi-select.md) - a multi-select collapsed into a chip trigger.
 
 <!-- =================================================================
+     /help/ui-components/sv-loading-overlay  (community)
+     ================================================================== -->
+
+# SvLoadingOverlay
+
+A cover-a-container loading scrim: a translucent overlay with a centred spinner
+that sits on top of any positioned parent while its content loads or saves.
+
+`SvLoadingOverlay` fills its nearest positioned ancestor (`position: absolute;
+inset: 0`) with a scrim + [SvSpinner](sv-spinner.md) and an optional label. Drop
+it inside a `position: relative` wrapper so the content stays visible (optionally
+blurred) underneath while an async action is in flight - a save, a fetch, a
+recalculation.
+
+Related: [SvSpinner](sv-spinner.md) · [SvSkeleton](sv-skeleton.md) · [SvResult](sv-result.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvLoadingOverlay` starter into your app:
+
+<div data-docs-add="add loading-overlay"></div>
+
+Prefer to see it first? `npx @svgrid/ui try loading-overlay` opens it in a throwaway sandbox - no project needed.
+
+Or install the package and import it directly. `SvLoadingOverlay` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvLoadingOverlay } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="409-layout-feedback" data-height="440" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvLoadingOverlay } from '@svgrid/grid'
+  let loading = $state(false)
+</script>
+
+<div style="position: relative">
+  <SvLoadingOverlay visible={loading} label="Saving…" />
+  <!-- panel content -->
+</div>
+```
+
+The wrapper **must** be positioned (`relative` / `absolute`) - the overlay pins
+itself to that box with `inset: 0`.
+
+## Props
+
+| Prop          | Type                              | Default | Description                                                          |
+| ------------- | --------------------------------- | ------- | -------------------------------------------------------------------- |
+| `visible`     | `boolean`                         | `false` | Show the overlay. Nothing renders when `false`.                      |
+| `label`       | `string`                          | -       | Text under the spinner and the overlay's accessible name.           |
+| `spinnerSize` | `sm` \| `md` \| `lg` \| `number`  | `lg`    | Size passed through to the inner [SvSpinner](sv-spinner.md).         |
+| `blur`        | `boolean`                         | `false` | Blur the content behind the scrim.                                   |
+| `children`    | `Snippet`                         | -       | Custom overlay content in place of the default spinner + label.      |
+
+## Accessibility
+
+- The overlay is `role="status"` with `aria-live="polite"` and an `aria-label`
+  (falls back to `"Loading"`), so its appearance is announced without stealing
+  focus.
+- It does not trap focus. If the underlying content must be non-interactive while
+  loading, disable those controls or set `inert` on the wrapper yourself.
+
+## See also
+
+- [SvSpinner](sv-spinner.md) - the inline indicator used inside this overlay.
+- [SvSkeleton](sv-skeleton.md) - placeholder shapes for first-load content.
+- [SvResult](sv-result.md) - the terminal state once the async action finishes.
+
+<!-- =================================================================
      /help/ui-components/sv-masked-input  (community)
      ================================================================== -->
 
@@ -39707,8 +40929,17 @@ import { SvMaskedInput } from '@svgrid/grid'
 | `mask`        | `string`                                                   | `''`    | Pattern: `#` digit, `A` letter, `*` alnum.     |
 | `placeholder` | `string`                                                   | -       | Empty-state hint text.                         |
 | `clearable`   | `boolean`                                                  | `false` | Show a clear (x) button when there is a value. |
-| `prefixIcon`  | `Snippet`                                                  | -       | Leading icon adornment.                        |
-| `suffixIcon`  | `Snippet`                                                  | -       | Trailing icon adornment.                       |
+| `leading`     | `Snippet`                                                  | -       | Leading adornment (icon/button) inside the field. |
+| `trailing`    | `Snippet`                                                  | -       | Trailing adornment (icon/button) inside the field. |
+| `prefix`      | `string`                                                   | -       | Plain-text affix at the start.                 |
+| `suffix`      | `string`                                                   | -       | Plain-text affix at the end.                   |
+| `block`       | `boolean`                                                  | `false` | Stretch to the container width.                |
+| `width`       | `number`                                                   | `200`   | Control width in px (ignored when `block`).    |
+| `prefixIcon`  | `Snippet`                                                  | -       | Deprecated alias for `leading`.                |
+| `suffixIcon`  | `Snippet`                                                  | -       | Deprecated alias for `trailing`.               |
+
+The box, size, invalid state, clear button and adornments are owned by
+[SvField](sv-field.md)'s shared `frame` chrome.
 
 ## Examples
 
@@ -39727,11 +40958,12 @@ filled, and keep the raw value for storage:
 
 ### Icon adornments
 
-Pass `prefixIcon` / `suffixIcon` snippets to frame the field:
+Pass a `leading` / `trailing` snippet to frame the field (`prefixIcon` /
+`suffixIcon` are kept as deprecated aliases):
 
 ```svelte
 <SvMaskedInput mask="(###) ###-####" bind:value={phone}>
-  {#snippet prefixIcon()}<PhoneIcon />{/snippet}
+  {#snippet leading()}<PhoneIcon />{/snippet}
 </SvMaskedInput>
 ```
 
@@ -39915,8 +41147,11 @@ to the parent only from within a nested list.
   separators are `role="separator"` and disabled items are skipped.
 - Keyboard: Up/Down move, Home/End jump, Enter or Space activate, Escape closes,
   ArrowRight opens a submenu, and ArrowLeft (in a submenu) returns to the parent.
+- Type-ahead: printable keys jump to the next item whose label starts with the
+  typed characters (they accumulate briefly, then reset).
 - Submenu triggers carry `aria-haspopup="menu"` and `aria-expanded`, and focus
-  moves into the flyout as it opens.
+  moves into the flyout as it opens. Flyouts are positioned by the shared engine,
+  so they flip side and clamp vertically near a screen edge.
 
 ## See also
 
@@ -40072,6 +41307,11 @@ closes the menu first and leaves the dialog up.
   focused on open.
 - Full keyboard: Up/Down move, Home/End jump, Enter or Space activate, Escape
   closes, and ArrowRight/Left open and close submenus.
+- Type-ahead: pressing printable keys jumps to the next item whose label starts
+  with what you typed (characters accumulate briefly, then reset).
+- Submenu flyouts are placed by the shared positioning engine, so they flip to the
+  other side and clamp vertically when there is no room, instead of running off
+  the screen edge.
 - The menu portals to `<body>` and outside-click dismissal runs through the shared
   layer stack, while Escape stays owned by the list's keyboard handling.
 
@@ -40080,6 +41320,127 @@ closes the menu first and leaves the dialog up.
 - [Overlays overview](overlays.md) - the whole floating-surface family.
 - [SvContextMenu](sv-context-menu.md) - the same menu opened on right-click.
 - [SvMenuList](sv-menu-list.md) - the recursive surface both share.
+
+<!-- =================================================================
+     /help/ui-components/sv-menubar  (community)
+     ================================================================== -->
+
+# SvMenubar
+
+An application menu bar: a horizontal row of menu buttons (File / Edit / View ...)
+that each open a dropdown.
+
+`SvMenubar` renders a `role="menubar"` of triggers and opens each one's dropdown
+with [SvMenuList](sv-menu-list.md), so submenus, separators, icons, shortcuts and
+type-ahead all come along. It manages roving focus across the bar, switches the
+open menu as you move, and positions each dropdown with the shared engine (flip +
+shift + `autoUpdate`). Colors come from the grid's `--sg-*` tokens.
+
+Related: [SvMenu](sv-menu.md) · [SvMenuList](sv-menu-list.md) · [Overlays & menus overview](overlays.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvMenubar` starter into your app:
+
+<div data-docs-add="add menubar"></div>
+
+Prefer to see it first? `npx @svgrid/ui try menubar` opens it in a throwaway sandbox - no project needed.
+
+Or install the package and import it directly. `SvMenubar` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvMenubar } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="289-overlays-hovercard-menubar" data-height="440" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvMenubar, type MenubarMenu, type MenuItem } from '@svgrid/grid'
+
+  const menus: MenubarMenu[] = [
+    { label: 'File', items: [
+      { label: 'New', shortcut: 'Ctrl+N', onSelect: () => {} },
+      { label: 'Open...', shortcut: 'Ctrl+O', onSelect: () => {} },
+      { separator: true },
+      { label: 'Export', children: [
+        { label: 'CSV', onSelect: () => {} },
+        { label: 'PDF', onSelect: () => {} },
+      ] },
+    ] },
+    { label: 'Edit', items: [
+      { label: 'Undo', shortcut: 'Ctrl+Z', onSelect: () => {} },
+      { label: 'Redo', shortcut: 'Ctrl+Y', onSelect: () => {} },
+    ] },
+  ]
+
+  function onSelect(item: MenuItem) {
+    console.log('chose', item.label)
+  }
+</script>
+
+<SvMenubar {menus} {onSelect} />
+```
+
+## Props
+
+| Prop        | Type                                   | Default    | Description                                              |
+| ----------- | -------------------------------------- | ---------- | ------------------------------------------------------- |
+| `menus`     | `MenubarMenu[]`                        | -          | The top-level menus; each opens a dropdown of `items`.  |
+| `onSelect`  | `(item: MenuItem) => void`             | -          | Fires when a leaf item is chosen in any menu.           |
+| `ariaLabel` | `string`                               | `Menu bar` | Accessible name for the `role="menubar"`.               |
+| `dir`       | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -          | Text direction; under `rtl` the arrow keys mirror.      |
+
+Each `MenubarMenu` is `{ label: string; items: MenuItem[]; disabled?: boolean }`.
+`MenuItem` is the same shape used by [SvMenu](sv-menu.md) (labels, `separator`,
+`icon`, `shortcut`, `disabled`, nested `children`, `onSelect`).
+
+## Examples
+
+### Disabled menus
+
+Mark a top-level menu `disabled` to skip it in the bar and its roving focus:
+
+```svelte
+<SvMenubar menus={[
+  { label: 'File', items: fileItems },
+  { label: 'Edit', items: editItems, disabled: !canEdit },
+  { label: 'View', items: viewItems },
+]} />
+```
+
+### Right-to-left
+
+Pass `dir="rtl"` so the bar lays out right-to-left and ArrowLeft/Right swap to
+match the reading direction:
+
+```svelte
+<SvMenubar {menus} dir="rtl" />
+```
+
+## Accessibility
+
+- The bar is a `role="menubar"` with a single tab stop and roving `tabindex`;
+  each trigger is a `menuitem` with `aria-haspopup="menu"` and `aria-expanded`.
+- Keyboard: ArrowLeft/Right move between menus, Home/End jump to the first/last,
+  ArrowDown or Enter opens the active menu, and Escape closes it and returns focus
+  to its trigger. While a menu is open, ArrowLeft/Right switch to the adjacent
+  menu (a submenu still opens with ArrowRight and collapses with ArrowLeft).
+- Hovering another trigger while a menu is open switches to it, matching native
+  application menu bars.
+- Each dropdown is drawn by [SvMenuList](sv-menu-list.md), so it inherits its full
+  keyboard contract and type-ahead, and is positioned to flip and stay on screen.
+
+## See also
+
+- [SvMenu](sv-menu.md) - a single trigger-opened dropdown.
+- [SvMenuList](sv-menu-list.md) - the recursive surface each dropdown uses.
+- [Overlays overview](overlays.md) - the whole floating-surface family.
 
 <!-- =================================================================
      /help/ui-components/sv-modal  (community)
@@ -40630,11 +41991,25 @@ import { SvNumberInput } from '@svgrid/grid'
 | `step`        | `number`                            | `1`         | Spinner and arrow-key increment.                   |
 | `precision`   | `number`                            | -           | Decimal places to round to.                        |
 | `grouping`    | `boolean`                           | `false`     | Group thousands (1,234) on display.                |
-| `prefix`      | `string`                            | `''`        | Leading text (for example `$`).                    |
-| `suffix`      | `string`                            | `''`        | Trailing text (for example `kg`).                  |
+| `prefix`      | `string`                            | `''`        | Text formatted before the number (e.g. `$`); it travels with the right-aligned value. |
+| `suffix`      | `string`                            | `''`        | Text formatted after the number (e.g. `kg`); it travels with the value. |
 | `placeholder` | `string`                            | -           | Empty-state hint text.                             |
 | `spinButtons` | `boolean`                           | `true`      | Show the up/down stepper.                          |
 | `clearable`   | `boolean`                           | `false`     | Show a clear (x) button when there is a value.     |
+| `selectOnFocus` | `boolean`                         | `false`     | Select the whole value when the field is focused.  |
+| `wheelStep`   | `boolean`                           | `false`     | Step the value with the mouse wheel while focused.  |
+| `leading`     | `Snippet`                           | -           | Leading adornment (icon) inside the field.         |
+| `block`       | `boolean`                           | `false`     | Stretch to the container width.                    |
+| `width`       | `number`                            | `150`       | Control width in px (ignored when `block`).        |
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome. Unlike [SvTextInput](sv-text-input.md), the `prefix`/`suffix`
+here are formatted into the value (so the symbol stays next to the right-aligned
+number) rather than rendered as separate affixes.
+
+The field shows a formatted value when blurred (e.g. `$1,234.50` with `prefix`,
+`grouping` and `precision`) and the bare number while focused for easy editing -
+the display/edit duality is built in.
 
 ## Examples
 
@@ -41044,8 +42419,15 @@ import { SvPasswordInput } from '@svgrid/grid'
 | `showStrength` | `boolean`                       | `false`              | Show a 4-level strength meter.                    |
 | `autocomplete` | `string`                        | `current-password`   | Native autocomplete token.                        |
 | `messages`     | `Partial<PasswordMessages>`     | -                    | Override the built-in strings (see below).        |
+| `leading`      | `Snippet`                       | -                    | Leading adornment (icon) inside the field.        |
+| `block`        | `boolean`                       | `false`              | Stretch to the container width.                   |
+| `width`        | `number`                        | `220`                | Control width in px (ignored when `block`).       |
 
 `PasswordMessages` is `{ show; hide; weak; fair; good; strong }`.
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome; the reveal eye sits in the trailing slot and the strength
+meter renders below the field.
 
 ## Examples
 
@@ -41180,9 +42562,15 @@ import { SvPhoneInput } from '@svgrid/grid'
 | `country`     | `string`                                          | `US`             | Default country ISO code.                    |
 | `placeholder` | `string`                                          | `Phone number`   | National-field placeholder.                  |
 | `messages`    | `Partial<PhoneMessages>`                          | -                | Override the country selector label.         |
+| `block`       | `boolean`                                         | `false`          | Stretch to the container width.              |
+| `width`       | `number`                                          | `250`            | Control width in px (ignored when `block`).  |
 
 `PhoneParts` is `{ country; dial; national; valid; complete }`. `PhoneMessages`
 is `{ country }`.
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome; the country selector is a compact flag + dial-code chip in
+the field's leading slot.
 
 ## Examples
 
@@ -41251,6 +42639,125 @@ can store the pieces separately without re-parsing the combined string yourself.
 - [SvTextInput](sv-text-input.md) - the base single-line field.
 
 <!-- =================================================================
+     /help/ui-components/sv-popconfirm  (community)
+     ================================================================== -->
+
+# SvPopconfirm
+
+A quick confirm step in a popover anchored to its trigger, for a low-stakes
+destructive action where a full modal dialog would be too heavy.
+
+`SvPopconfirm` wraps a trigger (a Delete button, a menu action) and, on click,
+reveals a short prompt with Cancel and Confirm buttons right next to it.
+Confirming runs `onConfirm` and closes; cancelling or dismissing runs `onCancel`.
+It is built on [SvPopover](sv-popover.md), so it is portalled, positioned by the
+shared engine, and closes on Escape or outside-click. For high-stakes or
+multi-field confirmations, reach for [SvModal](sv-modal.md) instead.
+
+Related: [SvPopover](sv-popover.md) · [SvModal](sv-modal.md) · [Overlays & menus overview](overlays.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvPopconfirm` starter into your app:
+
+<div data-docs-add="add popconfirm"></div>
+
+Prefer to see it first? `npx @svgrid/ui try popconfirm` opens it in a throwaway sandbox - no project needed.
+
+Or install the package and import it directly. `SvPopconfirm` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvPopconfirm } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="289-overlays-hovercard-menubar" data-height="440" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvPopconfirm, SvButton } from '@svgrid/grid'
+</script>
+
+<SvPopconfirm
+  title="Delete this row?"
+  description="This cannot be undone."
+  confirmLabel="Delete"
+  confirmVariant="danger"
+  onConfirm={() => remove(row)}
+>
+  {#snippet anchor()}<SvButton size="sm" variant="danger">Delete</SvButton>{/snippet}
+</SvPopconfirm>
+```
+
+## Props
+
+| Prop             | Type                                                         | Default   | Description                                              |
+| ---------------- | ------------------------------------------------------------ | --------- | ------------------------------------------------------- |
+| `open`           | `boolean`                                                    | `false`   | Controlled, bindable open state.                        |
+| `onOpenChange`   | `(open: boolean) => void`                                    | -         | Fires whenever the open state changes.                  |
+| `title`          | `string`                                                     | -         | Bold prompt, e.g. "Delete this row?".                   |
+| `description`    | `string`                                                     | -         | Optional longer explanation under the title.            |
+| `confirmLabel`   | `string`                                                     | `Confirm` | Confirm button text.                                    |
+| `cancelLabel`    | `string`                                                     | `Cancel`  | Cancel button text.                                     |
+| `confirmVariant` | `primary` \| `secondary` \| `outline` \| `ghost` \| `danger` | `primary` | Confirm button variant; use `danger` for destructive.   |
+| `onConfirm`      | `() => void`                                                 | -         | Runs when confirmed; the popover then closes.           |
+| `onCancel`       | `() => void`                                                 | -         | Runs when cancelled or dismissed; the popover closes.   |
+| `placement`      | `Placement`                                                  | `top`     | Preferred side + alignment; flips when there is no room. |
+| `ariaLabel`      | `string`                                                     | -         | Accessible name (defaults to `title`).                  |
+| `anchor`         | `Snippet`                                                    | -         | The trigger that opens the confirm.                     |
+
+## Examples
+
+### Destructive confirm
+
+Use `confirmVariant="danger"` and a clear consequence so the choice is obvious:
+
+```svelte
+<SvPopconfirm title="Remove member?" description="They lose access immediately."
+              confirmLabel="Remove" confirmVariant="danger" onConfirm={() => kick(user)}>
+  {#snippet anchor()}<SvButton size="sm" variant="ghost">Remove</SvButton>{/snippet}
+</SvPopconfirm>
+```
+
+### Controlled, with async work
+
+Bind `open` so you can keep the confirm up while the action runs, then close it
+yourself once settled:
+
+```svelte
+<script lang="ts">
+  let open = $state(false)
+  async function archive() {
+    await api.archive(id)
+    open = false
+  }
+</script>
+
+<SvPopconfirm bind:open title="Archive?" confirmLabel="Archive" onConfirm={archive}>
+  {#snippet anchor()}<SvButton size="sm">Archive</SvButton>{/snippet}
+</SvPopconfirm>
+```
+
+## Accessibility
+
+- The confirm content lives in a `role="dialog"` popover labelled by its title;
+  focus is placed inside on open and returns to the trigger on close.
+- Escape and outside-click cancel and dismiss through the shared layer stack, so
+  a confirm nested in a dialog closes top-first.
+- For an action that truly must not be missed (irreversible, bulk, billing), use
+  a full [SvModal](sv-modal.md) instead - a popconfirm is for low-stakes steps.
+
+## See also
+
+- [SvPopover](sv-popover.md) - the anchored panel this is built on.
+- [SvModal](sv-modal.md) - the heavier, focus-trapped confirmation dialog.
+- [Overlays overview](overlays.md) - the whole floating-surface family.
+
+<!-- =================================================================
      /help/ui-components/sv-popover  (community)
      ================================================================== -->
 
@@ -41260,10 +42767,14 @@ A floating panel anchored to a trigger, portalled to `<body>` so it escapes any
 `overflow:hidden` ancestor.
 
 `SvPopover` wraps an anchor snippet and reveals a panel next to it on click,
-hover, or under your own control. It flips above the trigger when there is no
-room below, closes on outside-click and Escape through the shared dismissable
-layer stack, and animates in. Every color comes from the grid's `--sg-*` tokens,
-so it matches the rest of the kit in light and dark.
+hover, or under your own control. It is positioned by the shared engine, so you
+get the full placement matrix (`top` / `bottom` / `left` / `right`, each with an
+optional `-start` / `-end` alignment), automatic flip when there is no room on
+the chosen side, shift-to-stay-in-view, and an optional pointer arrow - all kept
+in sync as the page scrolls or resizes. It closes on outside-click and Escape
+through the shared dismissable layer stack, and animates in. Every color comes
+from the grid's `--sg-*` tokens, so it matches the rest of the kit in light and
+dark.
 
 Related: [SvTooltip](sv-tooltip.md) · [SvMenu](sv-menu.md) · [Overlays & menus overview](overlays.md)
 
@@ -41306,7 +42817,12 @@ import { SvPopover } from '@svgrid/grid'
 | `open`                | `boolean`                         | `false`   | Controlled, bindable open state.                                     |
 | `onOpenChange`        | `(open: boolean) => void`         | -         | Fires whenever the open state changes.                              |
 | `trigger`             | `click` \| `hover` \| `manual`    | `click`   | How the anchor opens the panel. `manual` = only `open` drives it.   |
-| `estimatedHeight`     | `number`                          | `220`     | Estimated panel height used for the flip-above decision.            |
+| `placement`           | `Placement`                       | `bottom-start` | Preferred side + alignment; flips to the opposite side when there is no room. |
+| `offset`              | `number`                          | `8`       | Main-axis gap between trigger and panel (leaves room for the arrow). |
+| `arrow`               | `boolean`                         | `true`    | Render a pointer arrow toward the trigger.                          |
+| `openDelay`           | `number`                          | `0`       | Hover trigger: delay (ms) before opening.                          |
+| `closeDelay`          | `number`                          | `120`     | Hover trigger: delay (ms) before closing after leave.              |
+| `estimatedHeight`     | `number`                          | `220`     | Panel height estimate used before the panel has been measured.      |
 | `minWidth`            | `number`                          | -         | Force a minimum panel width; otherwise it hugs its content.        |
 | `closeOnOutsideClick` | `boolean`                         | `true`    | Close when a click lands outside the anchor and panel.             |
 | `ariaLabel`           | `string`                          | -         | Accessible name for the `role="dialog"` panel.                     |
@@ -41315,13 +42831,33 @@ import { SvPopover } from '@svgrid/grid'
 
 ## Examples
 
-### Hover cards
+### Placement and arrow
 
-Set `trigger="hover"` to reveal the panel on pointer-enter with a short close
-delay, so moving between the anchor and panel keeps it open:
+Pick any side and alignment with `placement`; the engine flips to the opposite
+side when there is no room and shifts along the cross axis to stay in view. The
+arrow points at the trigger and is clamped inside the panel:
 
 ```svelte
-<SvPopover trigger="hover">
+<SvPopover placement="right-start">
+  {#snippet anchor()}<SvButton>Details</SvButton>{/snippet}
+  <p>Anchored to the right, aligned to the trigger's top edge.</p>
+</SvPopover>
+
+<!-- turn the arrow off for a flush panel -->
+<SvPopover placement="top" arrow={false}>
+  {#snippet anchor()}<SvButton>No arrow</SvButton>{/snippet}
+  <p>Centered above the trigger.</p>
+</SvPopover>
+```
+
+### Hover cards
+
+Set `trigger="hover"` to reveal the panel on pointer-enter. Tune `openDelay` and
+`closeDelay` so a quick pass does not flash it open and moving between the anchor
+and panel keeps it open (the panel is hoverable):
+
+```svelte
+<SvPopover trigger="hover" openDelay={120} closeDelay={160}>
   {#snippet anchor()}<a href="/u/ada">@ada</a>{/snippet}
   <strong>Ada Lovelace</strong>
   <p>Analyst, first programmer.</p>
@@ -41941,6 +43477,84 @@ long hold stops cleanly at the limits instead of running past them:
 - [Buttons & toggles overview](buttons.md) - the whole family at a glance.
 
 <!-- =================================================================
+     /help/ui-components/sv-result  (community)
+     ================================================================== -->
+
+# SvResult
+
+A full result page: a centred icon, title, description, and actions for the
+outcome of a flow - success, error, warning, info, or not-found. The
+whole-screen counterpart to a toast.
+
+`SvResult` gives a route or panel a clear terminal state: "Payment complete",
+"Something went wrong", "404 - page not found". It ships a built-in icon per
+status (overridable) and slots for actions and extra content, and themes from the
+shared `--sg-*` tokens.
+
+Related: [SvEmptyState](sv-empty-state.md) · [SvAlert](sv-alert.md) · [SvLoadingOverlay](sv-loading-overlay.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvResult` starter into your app:
+
+<div data-docs-add="add result"></div>
+
+Prefer to see it first? `npx @svgrid/ui try result` opens it in a throwaway sandbox - no project needed.
+
+Or install the package and import it directly. `SvResult` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvResult } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="409-layout-feedback" data-height="440" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvResult, SvButton } from '@svgrid/grid'
+</script>
+
+<SvResult
+  status="success"
+  title="Payment complete"
+  description="Your receipt is on its way to ada@example.com."
+>
+  {#snippet actions()}
+    <SvButton variant="primary">Back to dashboard</SvButton>
+    <SvButton variant="ghost">View receipt</SvButton>
+  {/snippet}
+</SvResult>
+```
+
+## Props
+
+| Prop          | Type                                                        | Default | Description                                              |
+| ------------- | ---------------------------------------------------------- | ------- | ------------------------------------------------------- |
+| `status`      | `success` \| `error` \| `warning` \| `info` \| `notfound`  | `info`  | Picks the built-in icon and accent colour.              |
+| `title`       | `string`                                                   | -       | The headline (required).                                |
+| `description` | `string`                                                   | -       | Supporting line under the title.                        |
+| `icon`        | `Snippet`                                                  | -       | Replace the built-in status icon.                       |
+| `actions`     | `Snippet`                                                  | -       | Buttons row under the description (call to action).     |
+| `children`    | `Snippet`                                                  | -       | Extra content below the actions (details, links).       |
+
+## Accessibility
+
+- The container is `role="status"` so the outcome is announced when it renders.
+- The status icon is `aria-hidden` - the meaning comes from the `title` /
+  `description` text, not colour or icon alone.
+
+## See also
+
+- [SvEmptyState](sv-empty-state.md) - for "nothing here yet" rather than an outcome.
+- [SvAlert](sv-alert.md) - an inline status banner within a page.
+- [SvToaster](sv-toaster.md) - transient, non-blocking status messages.
+
+<!-- =================================================================
      /help/ui-components/sv-rich-text  (community)
      ================================================================== -->
 
@@ -42211,6 +43825,114 @@ scrolling the page behind it - nested scroll areas stay independent.
 - [Layout overview](layout.md) - the whole layout family at a glance.
 
 <!-- =================================================================
+     /help/ui-components/sv-segmented  (community)
+     ================================================================== -->
+
+# SvSegmented
+
+A segmented control: a compact row of mutually-exclusive options in a shared
+track - the modern alternative to a small radio group or a tab strip for a
+setting.
+
+`SvSegmented` renders single-select options as pill buttons in one track. It
+reuses the radio-group core, so it is a proper `role="radiogroup"` with arrow-key
+roaming and Space/Enter selection, and it themes from the shared `--sg-*` tokens.
+Reach for it for view switchers, range pickers, and small enum settings.
+
+Related: [SvRadioGroup](sv-radio-group.md) · [SvButtonGroup](sv-button-group.md) · [SvTabs](sv-tabs.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSegmented` starter into your app:
+
+<div data-docs-add="add segmented"></div>
+
+Prefer to see it first? `npx @svgrid/ui try segmented` opens it in a throwaway sandbox - no project needed.
+
+Or install the package and import it directly. `SvSegmented` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSegmented } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="408-segmented" data-height="440" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvSegmented } from '@svgrid/grid'
+  let view = $state('board')
+</script>
+
+<SvSegmented
+  bind:value={view}
+  options={[
+    { value: 'board', label: 'Board' },
+    { value: 'table', label: 'Table' },
+    { value: 'calendar', label: 'Calendar' },
+  ]}
+/>
+```
+
+## Props
+
+| Prop        | Type                                   | Default | Description                                                    |
+| ----------- | -------------------------------------- | ------- | ------------------------------------------------------------- |
+| `options`   | `SegmentedOption[]`                    | -       | The choices: `{ value; label; disabled?; icon? }`.            |
+| `value`     | `string \| number \| null`             | `null`  | Selected value (bindable).                                    |
+| `onChange`  | `(value) => void`                      | -       | Fires when the selection changes.                             |
+| `size`      | `sm` \| `md` \| `lg`                   | `md`    | Control height and font size.                                 |
+| `block`     | `boolean`                              | `false` | Stretch full width and split options evenly.                  |
+| `disabled`  | `boolean`                              | `false` | Disable the whole control.                                    |
+| `label` / `hint` / `error` / `required` | -                  | -       | Optional [SvField](sv-field.md) chrome around the control.    |
+| `dir`       | `EditorDir` (`ltr` \| `rtl` \| `auto`) | -       | Text direction.                                               |
+| `name`      | `string`                               | -       | Emit a hidden input carrying the value for form posts.        |
+
+`SegmentedOption` is `{ value; label; disabled?; icon?: Snippet }`.
+
+## Examples
+
+### Full width with icons
+
+Set `block` to split the track evenly, and give options an `icon` snippet:
+
+```svelte
+<SvSegmented block bind:value={align} options={[
+  { value: 'left', label: 'Left', icon: leftIcon },
+  { value: 'center', label: 'Center', icon: centerIcon },
+  { value: 'right', label: 'Right', icon: rightIcon },
+]} />
+```
+
+### As a field
+
+Pass `label` / `hint` / `error` to wrap it in the shared field chrome:
+
+```svelte
+<SvSegmented label="Billing period" bind:value={period} required
+  error={period ? undefined : 'Pick a period'}
+  options={[{ value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }]} />
+```
+
+## Accessibility
+
+- The control is a `role="radiogroup"` and each option a `role="radio"` with a
+  single tab stop and roving `tabindex`.
+- Keyboard: Left/Right (and Up/Down) move between options and select them; Space
+  or Enter selects the focused option; disabled options are skipped.
+- Give it a `label` (or `ariaLabel`) so the group is named for assistive tech.
+
+## See also
+
+- [SvRadioGroup](sv-radio-group.md) - the classic radio list on the same core.
+- [SvTabs](sv-tabs.md) - when each option reveals a whole panel of content.
+- [SvButtonGroup](sv-button-group.md) - a segmented cluster of action buttons.
+
+<!-- =================================================================
      /help/ui-components/sv-skeleton  (community)
      ================================================================== -->
 
@@ -42285,7 +44007,7 @@ Show skeletons while `loading`, then render the real content once it arrives:
 
 ### Avatar plus text row
 
-Compose primitives to mirror a list item so the swap is seamless:
+Compose primitives to mirror a list item so the layout doesn't shift when real content loads:
 
 ```svelte
 <div style="display:flex; gap:12px; align-items:center;">
@@ -42634,6 +44356,76 @@ rescaling every time a new high or low arrives.
 - [Feedback overview](feedback.md) - the status and display family at a glance.
 - [SvStat](sv-stat.md) - the KPI card that hosts a sparkline.
 - [SvGauge](sv-gauge.md) - a radial display for a single value.
+
+<!-- =================================================================
+     /help/ui-components/sv-spinner  (community)
+     ================================================================== -->
+
+# SvSpinner
+
+An indeterminate spinner: a small spinning ring for "something is happening" when
+you cannot show real progress.
+
+`SvSpinner` is a tiny, dependency-free ring that inherits its colour from the
+current text colour (so it themes for free) and respects
+`prefers-reduced-motion`. Use it inline next to a label, inside a button, or as
+the indicator for [SvLoadingOverlay](sv-loading-overlay.md). When you can report
+a percentage, prefer [SvProgress](sv-progress.md) or
+[SvCircularProgress](sv-circular-progress.md) instead.
+
+Related: [SvLoadingOverlay](sv-loading-overlay.md) · [SvProgress](sv-progress.md) · [SvSkeleton](sv-skeleton.md)
+
+## Installation
+
+Add it with the CLI - this drops a ready-to-edit `SvSpinner` starter into your app:
+
+<div data-docs-add="add spinner"></div>
+
+Prefer to see it first? `npx @svgrid/ui try spinner` opens it in a throwaway sandbox - no project needed.
+
+Or install the package and import it directly. `SvSpinner` ships free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvSpinner } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="409-layout-feedback" data-height="440" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvSpinner } from '@svgrid/grid'
+</script>
+
+<SvSpinner size="sm" />
+<SvSpinner />
+<SvSpinner size="lg" label="Loading results" />
+```
+
+## Props
+
+| Prop    | Type                              | Default | Description                                                                 |
+| ------- | --------------------------------- | ------- | --------------------------------------------------------------------------- |
+| `size`  | `sm` \| `md` \| `lg` \| `number`  | `md`    | Diameter. `sm` = 15px, `md` = 20px, `lg` = 28px, or an exact pixel number.  |
+| `color` | `string`                          | -       | Override the ring colour (defaults to the inherited/accent colour).         |
+| `label` | `string`                          | -       | Accessible name. When set, the spinner is announced as a `status` region.   |
+
+## Accessibility
+
+- With a `label`, the spinner is `role="status"` with `aria-label` set, so screen
+  readers announce it. Without a `label` it is `aria-hidden` (decorative) - use
+  this when a nearby visible element already conveys the loading state.
+- The animation is disabled under `prefers-reduced-motion: reduce`.
+
+## See also
+
+- [SvLoadingOverlay](sv-loading-overlay.md) - cover a container while it loads.
+- [SvProgress](sv-progress.md) / [SvCircularProgress](sv-circular-progress.md) - when you can show a percentage.
+- [SvSkeleton](sv-skeleton.md) - placeholder shapes for content that is loading.
 
 <!-- =================================================================
      /help/ui-components/sv-splitter  (community)
@@ -43674,8 +45466,36 @@ import { SvTextInput } from '@svgrid/grid'
 | `clearable`    | `boolean`                                                | `false`  | Show an inline clear (x) button when non-empty.        |
 | `autocomplete` | `AutoFill`                                               | -        | Native autocomplete token.                             |
 | `autofocus`    | `boolean`                                                | `false`  | Focus + select on mount (used as a cell editor).       |
+| `leading`      | `Snippet`                                                | -        | Adornment (icon/button) at the start of the field.     |
+| `trailing`     | `Snippet`                                                | -        | Adornment (icon/button) at the end of the field.       |
+| `prefix`       | `string`                                                 | -        | Plain-text affix at the start (e.g. `https://`).       |
+| `suffix`       | `string`                                                 | -        | Plain-text affix at the end (e.g. a unit).             |
+| `labelMode`    | `static` \| `floating`                                   | `static` | `floating` rests the label in the field and animates it up on focus/value. |
+| `selectOnFocus` | `boolean`                                               | `false`  | Select the whole value whenever the field is focused.  |
+| `actions`      | `EditorAction[]`                                         | -        | Compact in-field action buttons (lookup / generate / copy). |
+| `block`        | `boolean`                                                | `false`  | Stretch the field to the container width.              |
+
+The control box, size, invalid state, clear button and adornments are all owned
+by [SvField](sv-field.md)'s shared `frame` chrome, so they look and behave
+identically across the text-input family.
 
 ## Examples
+
+### Adornments and affixes
+
+Pass a `leading` / `trailing` snippet for an icon or button, or `prefix` /
+`suffix` strings for plain-text affixes like a protocol or a unit:
+
+```svelte
+<SvTextInput bind:value={query} type="search" clearable label="Search">
+  {#snippet leading()}<SearchIcon />{/snippet}
+</SvTextInput>
+
+<SvTextInput bind:value={price} label="Price" prefix="$" suffix="USD" />
+```
+
+See the [Input adornments demo](../../examples) for the full matrix of icons,
+affixes, sizes and states.
 
 ### Typed variants
 
@@ -43808,6 +45628,11 @@ anywhere.
 ```
 
 ## Props
+
+Pass any of `label` / `hint` / `error` (plus `required` / `invalid` / `id`) to
+wrap the dial in [SvField](sv-field.md) chrome (a label + hint/error line) when
+using it as a standalone form control; omit them and it renders bare, as it does
+inside [SvDateTimePicker](sv-date-time-picker.md)'s popover.
 
 | Prop                  | Type                       | Default     | Description                                                       |
 | --------------------- | -------------------------- | ----------- | ---------------------------------------------------------------- |
@@ -44124,6 +45949,13 @@ functions.
 | `duration`    | `number`                                    | `4000`  | Auto-dismiss after N ms; `0` = sticky.            |
 | `dismissible` | `boolean`                                   | `true`  | Show the dismiss (x) button.                      |
 | `title`       | `string`                                    | -       | Optional bold title above the message.            |
+| `action`      | `{ label, onClick?, keepOpen? }`            | -       | Primary action button; dismisses on click unless `keepOpen`. |
+| `cancel`      | `{ label, onClick?, keepOpen? }`            | -       | Secondary (cancel) action button.                 |
+| `render`      | `Snippet<[Toast]>`                          | -       | Render a fully custom toast body.                 |
+
+Companion functions on `toast`: `toast.promise(...)`, `toast.update(id, patch)`,
+`toast.custom(render, options)`, and `toast.dismiss(id)` (also exported as
+`updateToast` / `dismissToast` / `clearToasts`).
 
 ## Examples
 
@@ -44146,6 +45978,62 @@ errors that need action:
 const id = toast.error('Sync failed', { duration: 0 })
 // later, once resolved
 dismissToast(id)
+```
+
+### Promise toasts
+
+`toast.promise` shows a sticky loading toast, then updates that SAME toast in
+place to success or error when the promise settles - one line for the whole
+lifecycle. It returns the original promise, so you can still await it:
+
+```ts
+await toast.promise(api.save(row), {
+  loading: 'Saving...',
+  success: (saved) => `Saved "${saved.name}"`,
+  error: (err) => `Could not save: ${err.message}`,
+})
+```
+
+### Action buttons
+
+Give a toast an `action` (and optionally a `cancel`) - the classic "Undo" flow.
+The button dismisses the toast when clicked unless you set `keepOpen`:
+
+```ts
+const removed = deleteRow(row)
+toast('Row deleted', {
+  action: { label: 'Undo', onClick: () => restore(removed) },
+  cancel: { label: 'Dismiss' },
+})
+```
+
+### Update in place
+
+Hold the id and patch a toast as work progresses, without stacking new ones:
+
+```ts
+const id = toast.info('Uploading... 0%', { duration: 0 })
+onProgress((pct) => toast.update(id, { message: `Uploading... ${pct}%` }))
+onDone(() => toast.update(id, { message: 'Uploaded', variant: 'success', duration: 3000 }))
+```
+
+### Custom body
+
+For a richer toast (an avatar, inline controls), pass a `render` snippet - it
+receives the `Toast` and replaces the default icon/title/message:
+
+```svelte
+<script lang="ts">
+  import { toast } from '@svgrid/grid'
+  function notify() {
+    toast.custom(mention, { duration: 6000 })
+  }
+</script>
+
+{#snippet mention(t)}
+  <img class="avatar" src={user.avatar} alt="" />
+  <div><strong>{user.name}</strong> mentioned you</div>
+{/snippet}
 ```
 
 ### Position and cap
@@ -44334,10 +46222,15 @@ only" filter - the button stays lit while the filter is active:
 A small hover and focus tooltip anchored to its child, portalled to `<body>` so
 it is never clipped by a scroll container.
 
-`SvTooltip` wraps any element and shows a short label after a brief delay. It
-opens on pointer-enter and on keyboard focus, hides on leave, blur, or Escape,
-and wires itself to the trigger via `aria-describedby` with `role="tooltip"`. It
-reads its colors from the grid's `--sg-*` tokens, so it matches in light and dark.
+`SvTooltip` wraps any element and shows a short label after a brief delay. It is
+positioned by the shared engine, so it takes any `placement` (`top` / `bottom` /
+`left` / `right`, each with an optional `-start` / `-end`), flips when there is no
+room, and keeps its arrow on the anchor. It opens on pointer-enter and on keyboard
+focus, hides on leave, blur, or Escape, and wires itself to the trigger via
+`aria-describedby` with `role="tooltip"`. Give several tooltips the same `group`
+so scanning between them skips the re-delay, or set `interactive` for a hoverable
+tip. It reads its colors from the grid's `--sg-*` tokens, so it matches in light
+and dark.
 
 Related: [SvPopover](sv-popover.md) · [SvButton](sv-button.md) · [Overlays & menus overview](overlays.md)
 
@@ -44376,11 +46269,14 @@ import { SvTooltip } from '@svgrid/grid'
 
 | Prop        | Type                 | Default | Description                                            |
 | ----------- | -------------------- | ------- | ---------------------------------------------------- |
-| `text`      | `string`             | -       | Tooltip label. An empty string suppresses the tip.   |
-| `placement` | `top` \| `bottom`    | `top`   | Side of the anchor the tip and its arrow sit on.     |
-| `delay`     | `number`             | `300`   | Show delay in milliseconds after pointer-enter/focus. |
-| `disabled`  | `boolean`            | `false` | Never show the tooltip while set.                    |
-| `children`  | `Snippet`            | -       | The element the tooltip describes.                   |
+| `text`        | `string`    | -       | Tooltip label. An empty string suppresses the tip.   |
+| `placement`   | `Placement` | `top`   | Preferred side + alignment; flips when there is no room. |
+| `delay`       | `number`    | `300`   | Show delay in milliseconds after pointer-enter/focus. |
+| `closeDelay`  | `number`    | `0`     | Hide delay after leave/blur (interactive tips default to `120`). |
+| `group`       | `string`    | -       | Delay-group id; grouped tooltips open instantly while the group is warm. |
+| `interactive` | `boolean`   | `false` | Let the pointer move onto the tip without closing it. |
+| `disabled`    | `boolean`   | `false` | Never show the tooltip while set.                    |
+| `children`    | `Snippet`   | -       | The element the tooltip describes.                   |
 
 ## Examples
 
@@ -44404,6 +46300,29 @@ toolbars where hover intent is obvious:
 ```svelte
 <SvTooltip text="Filter" placement="bottom" delay={120}>
   <SvButton ariaLabel="Filter">⧩</SvButton>
+</SvTooltip>
+```
+
+### Delay groups for toolbars
+
+Give every tooltip in a cluster the same `group`. The first one waits the normal
+`delay`; while the group stays warm (a member is open, or one just closed) the
+rest open instantly, so scanning a row of icon buttons feels immediate:
+
+```svelte
+<SvTooltip text="Bold" group="format"><SvButton ariaLabel="Bold">B</SvButton></SvTooltip>
+<SvTooltip text="Italic" group="format"><SvButton ariaLabel="Italic">I</SvButton></SvTooltip>
+<SvTooltip text="Underline" group="format"><SvButton ariaLabel="Underline">U</SvButton></SvTooltip>
+```
+
+### Interactive tips
+
+When the tip holds something to click (a link, a shortcut), set `interactive` so
+the pointer can travel onto it without it closing (it gets a short `closeDelay`):
+
+```svelte
+<SvTooltip interactive placement="right" text="Opens the full report">
+  <SvButton ariaLabel="Report">📊</SvButton>
 </SvTooltip>
 ```
 
@@ -44436,8 +46355,9 @@ handy when the value is not actually truncated.
 - The tip is a `role="tooltip"` linked to its anchor through `aria-describedby`,
   so screen readers announce it as a description of the control.
 - It opens on `focusin` as well as hover, so keyboard users get the same hint.
-- The panel is `pointer-events: none`, so it never intercepts clicks; Escape
-  dismisses it immediately.
+- The panel is `pointer-events: none` by default, so it never intercepts clicks;
+  Escape dismisses it immediately. `interactive` tips opt into pointer events so
+  their content can be hovered and clicked.
 
 ## See also
 
@@ -44929,6 +46849,131 @@ thousands of rows.
 - [Navigation overview](navigation.md) - the wayfinding family at a glance.
 - [SvNavPane](sv-nav-pane.md) - a flatter app-shell sidebar.
 - [SvTreeSelect](sv-tree-select.md) - a tree inside a select dropdown.
+
+<!-- =================================================================
+     /help/ui-components/sv-typography  (community)
+     ================================================================== -->
+
+# Typography - SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList
+
+A small set of prose primitives so headings, body copy, links, quotes,
+highlights, and lists all pull from one type scale and the shared `--sg-*` tokens
+- instead of scattering ad-hoc font sizes and colours across your app.
+
+- **SvTitle** - headings (`h1`-`h6`) with size decoupled from semantic level.
+- **SvText** - body / inline text with size, weight, tone, truncation, line-clamp.
+- **SvAnchor** - a themed link with safe external handling.
+- **SvBlockquote** - a quotation with an accent rule and optional citation.
+- **SvMark** - highlighted inline text (a themed `<mark>`).
+- **SvList** - ordered / unordered / unstyled lists.
+
+Related: [SvText as cell content](../../help/ui-components/sv-card.md) · [Tokens](../tokens.md)
+
+## Installation
+
+Add them with the CLI:
+
+<div data-docs-add="add typography"></div>
+
+Or install the package and import them directly. They ship free in
+`@svgrid/grid` (dependency-free):
+
+<div data-docs-install="@svgrid/grid"></div>
+
+```ts
+import { SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList } from '@svgrid/grid'
+```
+
+## Example
+
+<div data-docs-demo="410-typography-display" data-height="520" data-code></div>
+
+```svelte
+<script lang="ts">
+  import { SvTitle, SvText, SvMark, SvAnchor } from '@svgrid/grid'
+</script>
+
+<SvTitle order={1}>Dashboard</SvTitle>
+<SvText tone="muted">Last synced 2 minutes ago.</SvText>
+<SvText>
+  A <SvMark>highlighted</SvMark> phrase and an
+  <SvAnchor href="https://svelte.dev" external>external link</SvAnchor>.
+</SvText>
+```
+
+## SvTitle
+
+`order` sets the semantic level (`h1`-`h6`) and, by default, the visual size.
+Pass `size` to make an `h3` look like an `h5` while staying semantically correct.
+
+| Prop       | Type                              | Default | Description                                  |
+| ---------- | --------------------------------- | ------- | -------------------------------------------- |
+| `order`    | `1`-`6`                           | `2`     | Semantic heading level (`h1`-`h6`).          |
+| `size`     | `1`-`6`                           | `order` | Visual size step, decoupled from `order`.    |
+| `align`    | `start` \| `center` \| `end`      | -       | Text alignment.                              |
+| `truncate` | `boolean`                         | `false` | Single-line ellipsis.                        |
+
+## SvText
+
+| Prop       | Type                                                              | Default   | Description                                 |
+| ---------- | ---------------------------------------------------------------- | --------- | ------------------------------------------- |
+| `size`     | `xs` \| `sm` \| `md` \| `lg` \| `xl`                             | `md`      | Font size step.                             |
+| `weight`   | `normal` \| `medium` \| `semibold` \| `bold`                     | `normal`  | Font weight.                                |
+| `tone`     | `default` \| `muted` \| `accent` \| `success` \| `warning` \| `error` | `default` | Semantic colour.                       |
+| `align`    | `start` \| `center` \| `end`                                     | -         | Text alignment.                             |
+| `truncate` | `boolean`                                                        | `false`   | Single-line ellipsis.                       |
+| `clamp`    | `number`                                                         | -         | Clamp to N lines (overrides `truncate`).    |
+| `inline`   | `boolean`                                                        | `false`   | Render a `span` instead of a `p`.           |
+| `as`       | `string`                                                         | -         | Override the element/tag.                   |
+
+## SvAnchor
+
+| Prop        | Type                              | Default  | Description                                          |
+| ----------- | --------------------------------- | -------- | --------------------------------------------------- |
+| `href`      | `string`                          | -        | Link target.                                        |
+| `external`  | `boolean`                         | `false`  | Open in a new tab with `rel="noopener noreferrer"` + an offscreen "opens in a new tab" hint. |
+| `underline` | `hover` \| `always` \| `none`     | `hover`  | Underline behaviour.                                |
+| `tone`      | `accent` \| `default` \| `muted`  | `accent` | Colour.                                             |
+| `size`      | `sm` \| `md` \| `lg`              | `md`     | Font size step.                                     |
+
+## SvBlockquote
+
+| Prop   | Type                                                    | Default  | Description                       |
+| ------ | ------------------------------------------------------- | -------- | --------------------------------- |
+| `cite` | `string`                                                | -        | Attribution shown under the quote.|
+| `tone` | `accent` \| `muted` \| `success` \| `warning` \| `error`| `accent` | Colour of the accent rule.        |
+
+## SvMark
+
+| Prop   | Type                                                     | Default  | Description   |
+| ------ | -------------------------------------------------------- | -------- | ------------- |
+| `tone` | `yellow` \| `accent` \| `success` \| `warning` \| `error`| `yellow` | Highlight tint.|
+
+## SvList
+
+Pass `items` for the simple case, or a `children` snippet of `<li>` elements for
+full control.
+
+| Prop      | Type                                  | Default      | Description                             |
+| --------- | ------------------------------------- | ------------ | --------------------------------------- |
+| `type`    | `unordered` \| `ordered` \| `none`    | `unordered`  | Marker style (`none` drops indentation).|
+| `items`   | `string[]`                            | -            | Simple string items.                    |
+| `spacing` | `sm` \| `md` \| `lg`                  | `md`         | Vertical gap between items.             |
+| `size`    | `sm` \| `md` \| `lg`                  | `md`         | Font size step.                         |
+
+## Accessibility
+
+- **SvTitle** renders a real heading element - keep the document outline logical
+  (do not skip levels for looks; use `size` to adjust appearance instead).
+- **SvAnchor** with `external` includes an offscreen "opens in a new tab" note so
+  the behaviour is announced, and shows a focus ring on keyboard focus.
+- **SvMark** conveys emphasis visually; do not rely on the highlight colour alone
+  to carry meaning.
+
+## See also
+
+- [Display primitives](sv-display-primitives.md) - SvKbd / SvCode / SvAspectRatio / SvVisuallyHidden.
+- [Tokens](../tokens.md) - the `--sg-*` colours and font these components read.
 
 <!-- =================================================================
      /help/versioning  (community)

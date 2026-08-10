@@ -10,7 +10,7 @@
    * ```
    */
   import SvField from './SvField.svelte'
-  import { nextEditorId, type SvEditorProps } from './editor-contract'
+  import { editorAria, nextEditorId, type SvEditorProps } from './editor-contract'
   import { sanitizeOtp, otpCells, isOtpComplete } from './otp'
 
   type Props = Pick<
@@ -118,7 +118,7 @@
     class:is-disabled={disabled}
     class:is-invalid={invalid}
     role="group"
-    aria-label={label ?? 'One-time code'}
+    {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel: label ?? 'One-time code' })}
   >
     {#each cells as cell, i (i)}
       <input

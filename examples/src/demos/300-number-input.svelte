@@ -26,7 +26,7 @@
     </label>
 
     <label class="cell">Price (grouped, 2dp, prefix)
-      <SvNumberInput value={price} min={0} precision={2} grouping prefix="$" step={0.5} onChange={(v) => (price = v)} />
+      <SvNumberInput value={price} min={0} precision={2} grouping prefix="$" step={0.5} selectOnFocus wheelStep onChange={(v) => (price = v)} />
       <span class="val">{price}</span>
     </label>
 

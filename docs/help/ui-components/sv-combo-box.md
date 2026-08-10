@@ -56,6 +56,12 @@ import { SvComboBox } from '@svgrid/grid'
 | `onChange`    | `(value: string \| number \| null) => void`     | -          | Fires with the newly picked value (or `null` when cleared).        |
 | `placeholder` | `string`                                        | `'Select…'`| Input placeholder when empty.                                      |
 | `autoOpen`    | `boolean`                                        | `false`    | Focus the input on mount.                                          |
+| `clearable`   | `boolean`                                        | `false`    | Show a clear (x) button when a value is selected.                  |
+| `resizable`   | `boolean`                                        | `false`    | Add a bottom drag grip so the user can resize the open panel's height (hidden on an upward flip). See [Resizable dropdowns](#resizable-panel). |
+| `readonly`    | `boolean`                                        | `false`    | Value shown; input not editable and the panel will not open.       |
+| `item`        | `Snippet<[ListOption]>`                          | -          | Custom render for each option.                                     |
+| `header` / `footer` | `Snippet`                                  | -          | Content pinned above / below the option list.                      |
+| `noData`      | `Snippet`                                        | -          | Shown when the (non-loading) list is empty.                        |
 | `loadOptions` | `(query: string) => Promise<ListOption[]>`      | -          | Remote, debounced search. Disables local filtering.                |
 | `minLength`   | `number`                                         | `1`        | Min chars before a remote search fires.                            |
 | `debounce`    | `number`                                         | `250`      | Debounce (ms) before a remote search fires.                        |
@@ -122,6 +128,20 @@ here cities are searched within the chosen country:
 Because `loadOptions` re-reads `countryId` on each call, switching the country
 just scopes the next search - and the combobox keeps only the latest response, so
 an in-flight request for the old country can never win.
+
+### Resizable panel
+
+Set `resizable` and the open panel grows a bottom drag grip ("····"); drag it to
+grow or shrink the list, and the chosen height sticks for the session. The grip
+hides automatically when the panel flips upward (there is no room to grow below).
+The same prop works on [SvDropDownList](sv-drop-down-list.md) and
+[SvAutoComplete](sv-auto-complete.md).
+
+```svelte
+<SvComboBox resizable {options} label="Timezone" />
+```
+
+<div data-docs-demo="411-resizable-dropdowns" data-height="440"></div>
 
 ## Accessibility
 

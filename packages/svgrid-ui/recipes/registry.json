@@ -20,7 +20,8 @@
         "switch-button",
         "check-box",
         "radio-group",
-        "rating"
+        "rating",
+        "segmented"
       ]
     },
     "inputs": {
@@ -71,7 +72,10 @@
         "drawer",
         "toaster",
         "context-menu",
-        "menu"
+        "menu",
+        "hover-card",
+        "popconfirm",
+        "menubar"
       ]
     },
     "layout": {
@@ -88,7 +92,11 @@
         "grid-chart",
         "form",
         "field",
-        "file-upload"
+        "file-upload",
+        "collapsible",
+        "layout",
+        "typography",
+        "display"
       ]
     },
     "feedback": {
@@ -102,7 +110,10 @@
         "timeline",
         "avatar",
         "avatar-group",
-        "carousel"
+        "carousel",
+        "spinner",
+        "loading-overlay",
+        "result"
       ]
     },
     "navigation": {
@@ -928,6 +939,60 @@
       "group": "overlays"
     },
     {
+      "id": "hover-card",
+      "title": "Hover card",
+      "description": "A rich preview card that opens on hover, positioned by the shared engine.",
+      "aliases": [
+        "svhovercard"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "hover-card.svelte",
+          "from": "overlays/hover-card.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
+      "id": "popconfirm",
+      "title": "Popconfirm",
+      "description": "A quick confirm step in a popover for low-stakes destructive actions.",
+      "aliases": [
+        "svpopconfirm"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "popconfirm.svelte",
+          "from": "overlays/popconfirm.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
+      "id": "menubar",
+      "title": "Menubar",
+      "description": "An app-style row of dropdown menus with roving focus and full keyboard support.",
+      "aliases": [
+        "svmenubar"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "menubar.svelte",
+          "from": "overlays/menubar.svelte"
+        }
+      ],
+      "group": "overlays"
+    },
+    {
       "id": "tabs",
       "title": "Tabs",
       "description": "WAI-ARIA tab strip with roving arrow-key navigation, four positions, and optional closable tabs.",
@@ -1149,6 +1214,99 @@
       "group": "layout"
     },
     {
+      "id": "collapsible",
+      "title": "Collapsible",
+      "description": "Single animated show/hide section with accessible trigger and inert closed region.",
+      "aliases": [
+        "svcollapsible",
+        "disclosure"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "collapsible.svelte",
+          "from": "layout/collapsible.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "layout",
+      "title": "Layout primitives",
+      "description": "SvStack (column), SvGroup (row), and SvSimpleGrid (responsive grid) - gap-based flex/grid wrappers.",
+      "aliases": [
+        "svstack",
+        "svgroup",
+        "svsimplegrid",
+        "stack",
+        "group",
+        "simple-grid"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "layout.svelte",
+          "from": "layout/layout.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "typography",
+      "title": "Typography",
+      "description": "Prose primitives - SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList - on one type scale.",
+      "aliases": [
+        "svtitle",
+        "svtext",
+        "svanchor",
+        "svblockquote",
+        "svmark",
+        "svlist",
+        "title",
+        "text",
+        "prose"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "typography.svelte",
+          "from": "layout/typography.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
+      "id": "display",
+      "title": "Display primitives",
+      "description": "Small display helpers - SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden.",
+      "aliases": [
+        "svkbd",
+        "svcode",
+        "svaspectratio",
+        "svvisuallyhidden",
+        "kbd",
+        "code",
+        "aspect-ratio",
+        "visually-hidden"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "display.svelte",
+          "from": "layout/display.svelte"
+        }
+      ],
+      "group": "layout"
+    },
+    {
       "id": "badge",
       "title": "Badge",
       "description": "Small status pill or count label tinted from the grid's semantic tokens.",
@@ -1162,6 +1320,81 @@
         {
           "write": "badge.svelte",
           "from": "feedback/badge.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "segmented",
+      "title": "Segmented",
+      "description": "Compact single-select track for view switchers and small enum settings, on the radio-group core.",
+      "aliases": [
+        "svsegmented",
+        "segmented-control"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "segmented.svelte",
+          "from": "buttons/segmented.svelte"
+        }
+      ],
+      "group": "buttons"
+    },
+    {
+      "id": "spinner",
+      "title": "Spinner",
+      "description": "Indeterminate loading ring that inherits text colour and respects reduced-motion.",
+      "aliases": [
+        "svspinner",
+        "loader"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "spinner.svelte",
+          "from": "feedback/spinner.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "loading-overlay",
+      "title": "Loading overlay",
+      "description": "Cover-a-container scrim with a centred spinner while content loads or saves.",
+      "aliases": [
+        "svloadingoverlay",
+        "loadingoverlay"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "loading-overlay.svelte",
+          "from": "feedback/loading-overlay.svelte"
+        }
+      ],
+      "group": "feedback"
+    },
+    {
+      "id": "result",
+      "title": "Result",
+      "description": "Full result page (success / error / warning / info / not-found) with icon, title, and actions.",
+      "aliases": [
+        "svresult"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "result.svelte",
+          "from": "feedback/result.svelte"
         }
       ],
       "group": "feedback"

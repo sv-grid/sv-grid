@@ -504,6 +504,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "readonly",
         "label": "Readonly",
         "type": "boolean",
+        "default": false,
         "description": "Read-only: the value is shown but not editable.",
         "group": "behavior"
       },
@@ -627,6 +628,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "readonly",
         "label": "Readonly",
         "type": "boolean",
+        "default": false,
         "description": "Read-only: the value is shown but not editable.",
         "group": "behavior"
       },
@@ -854,6 +856,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "loading",
         "label": "Loading",
         "type": "boolean",
+        "default": false,
         "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
         "group": "behavior"
       },
@@ -910,6 +913,55 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "default": false,
         "description": "Autofocus + select on mount (used when mounted as a cell editor).",
         "group": "common"
+      },
+      {
+        "key": "selectOnFocus",
+        "label": "Select On Focus",
+        "type": "boolean",
+        "default": false,
+        "description": "Select the whole value whenever the field is focused.",
+        "group": "common"
+      },
+      {
+        "key": "prefix",
+        "label": "Prefix",
+        "type": "string",
+        "description": "Plain-text affix at the start (e.g. a `$` or protocol).",
+        "group": "common"
+      },
+      {
+        "key": "suffix",
+        "label": "Suffix",
+        "type": "string",
+        "description": "Plain-text affix at the end (e.g. a unit).",
+        "group": "common"
+      },
+      {
+        "key": "labelMode",
+        "label": "Label Mode",
+        "type": "select",
+        "options": [
+          "static",
+          "floating"
+        ],
+        "default": "static",
+        "description": "`floating` animates the label up on focus/value. Default `static`.",
+        "group": "common"
+      },
+      {
+        "key": "actions",
+        "label": "Actions",
+        "type": "json",
+        "description": "Compact in-field action buttons (lookup/generate/copy...).",
+        "group": "common"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch to the container width.",
+        "group": "appearance"
       }
     ],
     "events": [
@@ -1212,6 +1264,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "loading",
         "label": "Loading",
         "type": "boolean",
+        "default": false,
         "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
         "group": "behavior"
       },
@@ -1259,6 +1312,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Prefix",
         "type": "string",
         "default": "",
+        "description": "Text formatted before the number (e.g. `$`); travels with the value.",
         "group": "common"
       },
       {
@@ -1266,6 +1320,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Suffix",
         "type": "string",
         "default": "",
+        "description": "Text formatted after the number (e.g. `%`); travels with the value.",
         "group": "common"
       },
       {
@@ -1288,6 +1343,38 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "default": false,
         "description": "Show a clear (x) button when there is a value.",
         "group": "behavior"
+      },
+      {
+        "key": "selectOnFocus",
+        "label": "Select On Focus",
+        "type": "boolean",
+        "default": false,
+        "description": "Select the whole value when the field is focused.",
+        "group": "common"
+      },
+      {
+        "key": "wheelStep",
+        "label": "Wheel Step",
+        "type": "boolean",
+        "default": false,
+        "description": "Step the value with the mouse wheel while the field is focused.",
+        "group": "common"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch to the container width.",
+        "group": "appearance"
+      },
+      {
+        "key": "width",
+        "label": "Width",
+        "type": "number",
+        "default": 150,
+        "description": "Control width in px (ignored when `block`). Default 150.",
+        "group": "common"
       }
     ],
     "events": [
@@ -1403,6 +1490,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "loading",
         "label": "Loading",
         "type": "boolean",
+        "default": false,
         "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
         "group": "behavior"
       },
@@ -1446,6 +1534,22 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Messages",
         "type": "json",
         "description": "Override the built-in strings (reveal toggle + strength labels).",
+        "group": "common"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch to the container width.",
+        "group": "appearance"
+      },
+      {
+        "key": "width",
+        "label": "Width",
+        "type": "number",
+        "default": 220,
+        "description": "Control width in px (ignored when `block`). Default 220.",
         "group": "common"
       }
     ],
@@ -1562,6 +1666,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "loading",
         "label": "Loading",
         "type": "boolean",
+        "default": false,
         "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
         "group": "behavior"
       },
@@ -1591,6 +1696,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "type": "json",
         "description": "Override the built-in popover strings.",
         "group": "common"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch to the container width (otherwise hugs its content).",
+        "group": "appearance"
       }
     ],
     "events": [
@@ -1615,6 +1728,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "readonly",
         "label": "Readonly",
         "type": "boolean",
+        "default": false,
         "description": "Read-only: the value is shown but not editable.",
         "group": "behavior"
       },
@@ -1904,6 +2018,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "readonly",
         "label": "Readonly",
         "type": "boolean",
+        "default": false,
         "description": "Read-only: the value is shown but not editable.",
         "group": "behavior"
       },
@@ -1953,6 +2068,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
           "md",
           "lg"
         ],
+        "default": "md",
         "description": "Control size / density.",
         "group": "appearance"
       },
@@ -2737,6 +2853,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "loading",
         "label": "Loading",
         "type": "boolean",
+        "default": false,
         "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
         "group": "behavior"
       },
@@ -2766,6 +2883,36 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "default": false,
         "description": "Show a clear (x) button when there is a value.",
         "group": "behavior"
+      },
+      {
+        "key": "prefix",
+        "label": "Prefix",
+        "type": "string",
+        "description": "Plain-text affix at the start.",
+        "group": "common"
+      },
+      {
+        "key": "suffix",
+        "label": "Suffix",
+        "type": "string",
+        "description": "Plain-text affix at the end.",
+        "group": "common"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch to the container width.",
+        "group": "appearance"
+      },
+      {
+        "key": "width",
+        "label": "Width",
+        "type": "number",
+        "default": 200,
+        "description": "Control width in px (ignored when `block`). Default 200.",
+        "group": "common"
       }
     ],
     "events": [
@@ -2882,6 +3029,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "loading",
         "label": "Loading",
         "type": "boolean",
+        "default": false,
         "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
         "group": "behavior"
       },
@@ -2911,6 +3059,22 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Messages",
         "type": "json",
         "description": "Override the built-in strings (e.g. the country selector aria-label).",
+        "group": "common"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch to the container width.",
+        "group": "appearance"
+      },
+      {
+        "key": "width",
+        "label": "Width",
+        "type": "number",
+        "default": 250,
+        "description": "Control width in px (ignored when `block`). Default 250.",
         "group": "common"
       }
     ],
@@ -2985,6 +3149,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
           "md",
           "lg"
         ],
+        "default": "md",
         "description": "Control size / density.",
         "group": "appearance"
       },
@@ -3176,6 +3341,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "loading",
         "label": "Loading",
         "type": "boolean",
+        "default": false,
         "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
         "group": "behavior"
       },
@@ -3211,6 +3377,30 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "type": "boolean",
         "default": false,
         "group": "common"
+      },
+      {
+        "key": "clearable",
+        "label": "Clearable",
+        "type": "boolean",
+        "default": false,
+        "description": "Show a clear (x) button when there is a value.",
+        "group": "behavior"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch to the container width.",
+        "group": "appearance"
+      },
+      {
+        "key": "width",
+        "label": "Width",
+        "type": "number",
+        "default": 160,
+        "description": "Control width in px (ignored when `block`). Default 160.",
+        "group": "common"
       }
     ],
     "events": [
@@ -3245,6 +3435,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "readonly",
         "label": "Readonly",
         "type": "boolean",
+        "default": false,
         "description": "Read-only: the value is shown but not editable.",
         "group": "behavior"
       },
@@ -3592,6 +3783,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
           "md",
           "lg"
         ],
+        "default": "md",
         "description": "Control size / density.",
         "group": "appearance"
       },
@@ -3701,6 +3893,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "readonly",
         "label": "Readonly",
         "type": "boolean",
+        "default": false,
         "description": "Read-only: the value is shown but not editable.",
         "group": "behavior"
       },
@@ -3867,6 +4060,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "readonly",
         "label": "Readonly",
         "type": "boolean",
+        "default": false,
         "description": "Read-only: the value is shown but not editable.",
         "group": "behavior"
       },
@@ -3985,6 +4179,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "type": "boolean",
         "default": false,
         "group": "common"
+      },
+      {
+        "key": "clearable",
+        "label": "Clearable",
+        "type": "boolean",
+        "default": false,
+        "description": "Show a clear (x) button when a value is selected.",
+        "group": "behavior"
       },
       {
         "key": "loadOptions",
@@ -4130,6 +4332,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "loading",
         "label": "Loading",
         "type": "boolean",
+        "default": false,
         "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
         "group": "behavior"
       },
@@ -4137,7 +4340,6 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "value",
         "label": "Value",
         "type": "string",
-        "default": "",
         "group": "common"
       },
       {
@@ -4682,6 +4884,693 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "change",
         "label": "Change",
         "prop": "onChange"
+      }
+    ]
+  },
+  "SvGrid": {
+    "props": [
+      {
+        "key": "data",
+        "label": "Data",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "columns",
+        "label": "Columns",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "board",
+        "label": "Board",
+        "type": "json",
+        "description": "Kanban board mode. When set, the grid renders its rows as cards in horizontal lanes (bucketed by `board.groupBy`) instead of a table. See .",
+        "group": "common"
+      },
+      {
+        "key": "scheduler",
+        "label": "Scheduler",
+        "type": "json",
+        "description": "Scheduler / calendar mode. When set, the grid renders its rows as events on a Month / Week / Day / Agenda calendar instead of a table. See .",
+        "group": "common"
+      },
+      {
+        "key": "pivot",
+        "label": "Pivot",
+        "type": "json",
+        "description": "Pivot mode. When set (and `pivotMode` is on), the grid renders its rows as a pivot table in place - the same grid, aggregated across `pivot.rows` / `pivot.cols` with nested column headers - instead of the flat table. The pivot ENGINE ships in `@svgrid/enterprise`; call `enablePivot()` (or `installEnterprise(api)`) to register it, otherwise an upsell note shows. See .",
+        "group": "common"
+      },
+      {
+        "key": "pivotMode",
+        "label": "Pivot Mode",
+        "type": "boolean",
+        "description": "Whether pivot mode is currently active. Defaults to `true` when `pivot` is set. Bindable so a toolbar toggle can flip between the pivot and the flat table over the same data.",
+        "group": "common"
+      },
+      {
+        "key": "contextMenu",
+        "label": "Context Menu",
+        "type": "boolean",
+        "description": "Right-click context menu. `true` shows the default item set (copy, cut, paste, clear, insert row above/below, remove row, remove column). Pass an array to customize: strings are built-in keys, `\"separator\"` is a divider, and objects are custom items. Omitted/`false` disables the menu (native browser menu shows instead).",
+        "group": "common"
+      },
+      {
+        "key": "features",
+        "label": "Features",
+        "type": "json",
+        "description": "The feature set built with `tableFeatures({ ... })`. Optional - the `sortable` / `filterable` / `groupable` shortcuts below inject the matching feature for you, so a grid can be configured entirely from the boolean shortcuts without importing the feature constants.",
+        "group": "common"
+      },
+      {
+        "key": "sortable",
+        "label": "Sortable",
+        "type": "boolean",
+        "description": "Convenience shortcuts to switch a whole capability on without wiring `features` or the finer-grained props by hand. Every capability is OFF by default - a bare grid is a plain read-only table - so set the shortcut `true` to opt in. (`false` / omitted both leave it off; the shortcut is mainly there to turn things ON.) `sortable` - column sorting (injects `rowSortingFeature`) `filterable` - column filtering (injects `columnFilteringFeature`) `editable` - inline cell editing (alias of `enableInlineEditing`) `groupable` - row grouping controls(alias of `showGroupingControls`, also injects `columnGroupingFeature`) `pageable` - pagination footer (alias of `showPagination`) Fine-grained props (`enableInlineEditing`, `showPagination`, ...) still work; the shortcut wins only when it is explicitly set.",
+        "group": "common"
+      },
+      {
+        "key": "filterable",
+        "label": "Filterable",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "editable",
+        "label": "Editable",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "groupable",
+        "label": "Groupable",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "pageable",
+        "label": "Pageable",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "loading",
+        "label": "Loading",
+        "type": "boolean",
+        "group": "behavior"
+      },
+      {
+        "key": "loadingOverlay",
+        "label": "Loading Overlay",
+        "type": "boolean",
+        "description": "Render `loading` as a non-blocking overlay instead of replacing the whole grid: the current rows stay visible (dimmed, with a top progress bar) during a refetch, and the first load shows shimmer skeleton rows. Ideal for server-paged grids so paging/sorting doesn't flash. Defaults to `false` (the classic full \"Loading...\" replacement).",
+        "group": "common"
+      },
+      {
+        "key": "loadingSkeletonRows",
+        "label": "Loading Skeleton Rows",
+        "type": "number",
+        "description": "Skeleton placeholder rows to show on first load. Defaults to 8.",
+        "group": "common"
+      },
+      {
+        "key": "error",
+        "label": "Error",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "emptyMessage",
+        "label": "Empty Message",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "localization",
+        "label": "Localization",
+        "type": "json",
+        "description": "The single place to localize the grid. One object with two fields: - `locale` - BCP-47 tag(s) for the DATA: accent/case-insensitive filter matching AND every column's number / currency / percent / date formatting (when the column's own `format.locales` is unset). The default for `filterLocale` and per-column format locales. - `text` - overrides for the grid's own UI STRINGS (empty state, tool panel, pager, status bar, filter operator labels, context-menu items, upsell notes). Any subset overrides the English defaults; unset keys stay English. ```svelte <SvGrid localization={{ locale: 'fr-FR', text: { noRows: 'Aucune ligne' } }} /> ``` Omitting it (or any field) is a no-op. See .",
+        "group": "common"
+      },
+      {
+        "key": "showGlobalFilter",
+        "label": "Show Global Filter",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "showColumnFilters",
+        "label": "Show Column Filters",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "filterMode",
+        "label": "Filter Mode",
+        "type": "select",
+        "options": [
+          "row",
+          "menu",
+          "global",
+          "none"
+        ],
+        "description": "Quick way to pick a single filtering UI. When set it controls which of the three filter surfaces appears (and is overridden per-surface by the `showGlobalFilter` / `showColumnFilters` / `showFilterRow` props). Defaults to `'menu'` (only the column menu's filter section is shown).",
+        "group": "common"
+      },
+      {
+        "key": "showGroupingControls",
+        "label": "Show Grouping Controls",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "showRowSelection",
+        "label": "Show Row Selection",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "showPagination",
+        "label": "Show Pagination",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "pageSize",
+        "label": "Page Size",
+        "type": "number",
+        "description": "Initial page size when pagination is enabled. Defaults to 10.",
+        "group": "common"
+      },
+      {
+        "key": "pageSizeOptions",
+        "label": "Page Size Options",
+        "type": "json",
+        "description": "Page-size choices shown in the footer's selector. Defaults to `[10, 25, 50, 100]`.",
+        "group": "common"
+      },
+      {
+        "key": "paginationPosition",
+        "label": "Pagination Position",
+        "type": "select",
+        "options": [
+          "top",
+          "bottom",
+          "both"
+        ],
+        "description": "Where the pagination footer sits: `'bottom'` (default), `'top'`, or `'both'`. The status bar (when enabled) always stays at the bottom.",
+        "group": "common"
+      },
+      {
+        "key": "externalPagination",
+        "label": "External Pagination",
+        "type": "boolean",
+        "description": "Server-side pagination. When `true`, the grid renders its native pagination footer from the `rowCount` / `pageIndex` you provide (rather than counting the local rows), does NOT slice `data` (the rows you pass are treated as the current page), and emits `onPaginationChange` when the user pages or changes page size. Pair with `externalSort` / `externalFilter` and a server data source. Requires `showPagination` / `pageable` to show the footer. Controlled: you own `pageIndex` + `pageSize` + `rowCount`.",
+        "group": "common"
+      },
+      {
+        "key": "rowCount",
+        "label": "Row Count",
+        "type": "number",
+        "description": "Total rows on the server, for the footer's range + page count. Used with `externalPagination`.",
+        "group": "common"
+      },
+      {
+        "key": "pageIndex",
+        "label": "Page Index",
+        "type": "number",
+        "description": "Current 0-based page index. Used with `externalPagination` (controlled).",
+        "group": "common"
+      },
+      {
+        "key": "virtualization",
+        "label": "Virtualization",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "rowHeight",
+        "label": "Row Height",
+        "type": "number",
+        "description": "Row height in pixels. Pass a function `(rowIndex) => px` for per-row variable heights (e.g. an interactive row-resize feature). Defaults to 30.",
+        "group": "common"
+      },
+      {
+        "key": "headerHeight",
+        "label": "Header Height",
+        "type": "number",
+        "description": "Height (px) of a single column-header level row. With multi-level (grouped) headers the total header height is `levels * headerHeight`, since each level renders as its own row. When omitted, header rows size to their content (the default). Does not affect the filter row.",
+        "group": "common"
+      },
+      {
+        "key": "overscan",
+        "label": "Overscan",
+        "type": "number",
+        "group": "common"
+      },
+      {
+        "key": "containerHeight",
+        "label": "Container Height",
+        "type": "number",
+        "description": "Height of the grid's scrollable shell. A number is treated as pixels; a string is used as-is, so callers can pass `'100%'` or `'auto'` to make the grid fill its parent. Defaults to 520 px.",
+        "group": "common"
+      },
+      {
+        "key": "columnVirtualization",
+        "label": "Column Virtualization",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "columnOverscan",
+        "label": "Column Overscan",
+        "type": "number",
+        "group": "common"
+      },
+      {
+        "key": "columnWidth",
+        "label": "Column Width",
+        "type": "number",
+        "group": "common"
+      },
+      {
+        "key": "initialColumnPinning",
+        "label": "Initial Column Pinning",
+        "type": "json",
+        "description": "Columns pinned to the left/right edge on mount. Each entry is a column id (matches `ColumnDef.field` when no explicit id is set). The internal pinning state is seeded once at mount; user-driven pinning via the column menu still works and overrides this default. Requires `columnVirtualization={false}` to be visible in the menu UI (sticky positioning can't co-exist with column virtualization since the virtualizer recycles DOM nodes).",
+        "group": "common"
+      },
+      {
+        "key": "fitColumns",
+        "label": "Fit Columns",
+        "type": "boolean",
+        "description": "When `true`, columns are scaled proportionally so their total width fills the viewport (no empty space on the right). Disabled by default - explicit `width` values are used as-is. User resizes still win once they happen.",
+        "group": "common"
+      },
+      {
+        "key": "responsive",
+        "label": "Responsive",
+        "type": "boolean",
+        "description": "Make the grid usable on narrow screens. When the grid's own width drops below the breakpoint (default `640`px), pinned columns are un-pinned so the whole grid pans, `fitColumns` scaling is suspended (columns keep their natural widths and scroll), touch panning is smoothed, and columns whose `hideBelow` exceeds the width are hidden. `true` uses the default breakpoint; pass `{ breakpoint }` to change it. Off by default.",
+        "group": "common"
+      },
+      {
+        "key": "showFilterMenu",
+        "label": "Show Filter Menu",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "showFilterRow",
+        "label": "Show Filter Row",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "enableCellSelection",
+        "label": "Enable Cell Selection",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "enableRowHover",
+        "label": "Enable Row Hover",
+        "type": "boolean",
+        "description": "Highlight the row under the pointer. Default **false** - the hover tint can compete with the cell selection / fill marquee. Set `true` to opt in; when on, the hover no longer paints over selected cells so the selection stays visible.",
+        "group": "common"
+      },
+      {
+        "key": "copyHeadersToClipboard",
+        "label": "Copy Headers To Clipboard",
+        "type": "boolean",
+        "description": "Prepend a header row (the column labels) to copied cell ranges, so pasting into Excel / Sheets includes the headers. Applies per copied range.",
+        "group": "common"
+      },
+      {
+        "key": "processCellForClipboard",
+        "label": "Process Cell For Clipboard",
+        "type": "json",
+        "description": "Transform each cell value on its way to the clipboard - e.g. strip currency symbols, expand codes to labels, or redact. Receives the display value plus the row/column context; return the string (or value) to copy.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
+        "key": "enableInlineEditing",
+        "label": "Enable Inline Editing",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "fullRowEditing",
+        "label": "Full Row Editing",
+        "type": "boolean",
+        "description": "Full-row editing. When `true`, starting an edit puts the WHOLE row into edit mode - every editable cell shows an inline editor at once - and a single Enter (or focus leaving the row) commits all of them; Esc cancels the whole row. Requires `enableInlineEditing`. The full-row editor covers text / number / date / datetime / checkbox / list-select editor types.",
+        "group": "common"
+      },
+      {
+        "key": "enableRowSummaries",
+        "label": "Enable Row Summaries",
+        "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "statusBar",
+        "label": "Status Bar",
+        "type": "boolean",
+        "description": "Excel-style status bar under the grid showing live aggregates of the selected cell range (count, numeric count, sum, average, min, max). `true` shows the default set; pass `{ aggregates: [...] }` to choose which. Requires `enableCellSelection`.",
+        "group": "common"
+      },
+      {
+        "key": "toolPanel",
+        "label": "Tool Panel",
+        "type": "boolean",
+        "description": "Show the docked tool panel - the enterprise sidebar with Columns and Filters tabs. A \"Columns & Filters\" button appears in a toolbar above the grid; the panel docks on the right edge.",
+        "group": "common"
+      },
+      {
+        "key": "charting",
+        "label": "Charting",
+        "type": "boolean",
+        "description": "Integrated charting: `true` for the zero-config docked chart panel, or a object to author defaults + advanced options.",
+        "group": "common"
+      },
+      {
+        "key": "columnMenuTabs",
+        "label": "Column Menu Tabs",
+        "type": "boolean",
+        "description": "Render the header column menu (⋮) as a tabbed popover - **General**, **Filter**, and **Columns** tabs (the AG-Grid layout). Defaults to `false`, which keeps the flat menu (actions list + \"Choose columns\" submenu).",
+        "group": "common"
+      },
+      {
+        "key": "toolPanelDefaultOpen",
+        "label": "Tool Panel Default Open",
+        "type": "boolean",
+        "description": "Open the tool panel on first render (instead of collapsed).",
+        "group": "common"
+      },
+      {
+        "key": "toolPanelDefaultTab",
+        "label": "Tool Panel Default Tab",
+        "type": "select",
+        "options": [
+          "columns",
+          "filters"
+        ],
+        "description": "Which tab the tool panel starts on. Defaults to `'columns'`.",
+        "group": "common"
+      },
+      {
+        "key": "selectionMode",
+        "label": "Selection Mode",
+        "type": "select",
+        "options": [
+          "row",
+          "cell",
+          "both",
+          "none"
+        ],
+        "description": "Quick way to pick which selection surfaces are active. `'row'` shows the selection checkbox column only, `'cell'` allows rectangle/range cell selection only, `'both'` (default) enables both, `'none'` disables both. Overridden per-surface by `showRowSelection` / `enableCellSelection`.",
+        "group": "common"
+      },
+      {
+        "key": "showRowNumbers",
+        "label": "Show Row Numbers",
+        "type": "boolean",
+        "description": "Render a leading row-number column (1-based) before any selection column. Useful as a permanent anchor when scrolling wide grids.",
+        "group": "common"
+      },
+      {
+        "key": "zebraRows",
+        "label": "Zebra Rows",
+        "type": "boolean",
+        "description": "Paint alternating data rows with the `--sg-row-alt-bg` color (zebra striping). Only data rows stripe - pinned, group, detail, and summary rows keep their single background. Defaults to `false`.",
+        "group": "common"
+      },
+      {
+        "key": "rowNumberWidth",
+        "label": "Row Number Width",
+        "type": "number",
+        "description": "Width (px) of the row-number column. Defaults to 56, which fits up to \"99,999\"; bump this when the dataset crosses six digits so the largest row number stays fully visible at the bottom of a scroll.",
+        "group": "common"
+      },
+      {
+        "key": "externalSort",
+        "label": "External Sort",
+        "type": "boolean",
+        "description": "When `true`, the grid records sort state (and renders sort indicators + cycling on headers) but does NOT actually re-order the rows. The consumer is expected to sort `data` themselves - typically via `onSortingChange`. Use this for tree/hierarchical data, where a flat global sort would break parent-child adjacency. Defaults to `false`.",
+        "group": "common"
+      },
+      {
+        "key": "initialSorting",
+        "label": "Initial Sorting",
+        "type": "json",
+        "description": "The sort state to start in - `{ id, desc }` entries. Use with `externalSort` when the initial ordering is decided server-side (e.g. a URL `?sort=` param read in a SvelteKit `load`), so the header sort indicators match the already- sorted data on first render. Applied once at mount; user sorting takes over.",
+        "group": "common"
+      },
+      {
+        "key": "externalFilter",
+        "label": "External Filter",
+        "type": "boolean",
+        "description": "When `true`, the grid still records column-filter / global-filter / facet state (so the menu UI works and indicators light up) but does NOT actually filter the rows. The consumer is expected to fetch / sort / filter the data themselves - typically via `onFiltersChange`. Used by server-side data sources. Defaults to `false`.",
+        "group": "common"
+      },
+      {
+        "key": "getRowId",
+        "label": "Get Row Id",
+        "type": "json",
+        "description": "Resolve a stable id per row. Drives selection, expansion, edit, and active-cell state. When omitted, the row's array index is used - fine for read-only views but the wrong choice if `data` gets reordered or filtered outside the grid (selection would follow positions, not actual rows). Use a database PK, a UUID, or any stable string.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
+        "key": "rowClass",
+        "label": "Row Class",
+        "type": "json",
+        "description": "Conditional class(es) added to every `<tr>` body row. Receives the row's `original` data + its data-array index. Return a string, an array of strings, or an object mapping class names to booleans. Useful for \"highlight overdue rows\", \"tint cancelled orders\", and similar row-level state mappings.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
+        "key": "notes",
+        "label": "Notes",
+        "type": "json",
+        "description": "Per-cell notes - longer free-form comments shown as a corner indicator + tooltip on hover. Keyed by row id then column id; empty / missing entries mean \"no note\". The grid owns rendering; you own storage (write your own callbacks to add / edit notes).",
+        "group": "common"
+      },
+      {
+        "key": "editableComments",
+        "label": "Editable Comments",
+        "type": "boolean",
+        "description": "Allow editing per-cell notes/comments through the UI: the context menu gains an \"Edit comment\" item that opens a popover editor. Edits are applied to an internal overlay for immediate feedback and emitted via `onNoteChange` so you can persist them back into `notes`.",
+        "group": "common"
+      },
+      {
+        "key": "conditionalFormats",
+        "label": "Conditional Formats",
+        "type": "json",
+        "description": "Excel-style conditional formatting. A list of value-driven rules that color cells: `colorScale` (gradient across the column range), `dataBar` (in-cell proportional bar), `iconSet` (arrows / traffic / triangles by threshold), and `rule` (apply a style when a predicate matches). Scope a format to specific columns with `columns: [...]`, or omit it to apply to every column. Later entries win on conflict.",
+        "group": "common"
+      },
+      {
+        "key": "conditionalStatScope",
+        "label": "Conditional Stat Scope",
+        "type": "select",
+        "options": [
+          "visible",
+          "all"
+        ],
+        "description": "Which rows feed the min/max range that `colorScale` / `dataBar` formats scale against. `visible` (default): the currently displayed rows (after filtering + paging), so the heat map adapts to what's on screen. `all`: the full unfiltered dataset, for a scale that stays put as you filter.",
+        "group": "common"
+      },
+      {
+        "key": "isDetailRow",
+        "label": "Is Detail Row",
+        "type": "json",
+        "description": "Marks a row as an expandable \"detail row\". When this returns true the grid renders that row as a SINGLE full-width cell (colspan across every column) using `renderDetailRow`, instead of the normal per-column cells - the canonical Stripe / GitHub \"expand a rich panel beneath the row\" pattern. Insert the detail rows into `data` yourself (typically right after the row they belong to) and toggle them with your own expanded state. Pair with `virtualization={false}` so the variable-height detail isn't clipped by the fixed-row-height virtualizer.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
+        "key": "serverGroup",
+        "label": "Server Group",
+        "type": "json",
+        "description": "Server-side group / tree keyboard + accessibility, built into the grid. When set, the grid uses the treegrid role and marks matching rows with `aria-level` / `aria-expanded`, and ArrowRight / ArrowLeft expand / collapse the focused group row (no app-level key handling). Pair with `serverGroupRows` + `SvGroupCell` for the visual expander. Every accessor receives the row data.",
+        "group": "common"
+      },
+      {
+        "key": "serverFilterValues",
+        "label": "Server Filter Values",
+        "type": "json",
+        "description": "Server-side set-filter values. When set, a column's filter checklist is populated by fetching the distinct values from the server (once per column, cached) instead of deriving them from the loaded page - so the checklist shows every value, not just those on screen. Return the distinct string values for the column id.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
+        "key": "pinnedTopRows",
+        "label": "Pinned Top Rows",
+        "type": "json",
+        "description": "Rows to pin to the TOP of the grid - rendered above the regular rows and sticky-positioned so they stay visible while the user scrolls. Typical use: a \"totals\" or \"headline\" row that should always be in view. Rows are read-only (no inline editing, no row-selection checkbox). They share the column schema with the main grid; field/format/cell/cellClass all apply.",
+        "group": "common"
+      },
+      {
+        "key": "pinnedBottomRows",
+        "label": "Pinned Bottom Rows",
+        "type": "json",
+        "description": "Rows to pin to the BOTTOM of the grid - rendered below the regular rows and sticky-positioned (sticks to the bottom of the viewport while the user scrolls). Typical use: a \"page totals\" or \"grand total\" row computed from `getDisplayedRows()`.",
+        "group": "common"
+      },
+      {
+        "key": "enableColumnReorder",
+        "label": "Enable Column Reorder",
+        "type": "boolean",
+        "description": "Enables drag-to-reorder on the grid's column headers. When `true`, every header gets `draggable=true` and a drop indicator paints between headers during a drag. On drop the grid mutates its internal column order and fires `onColumnOrderChange` with the new order. Defaults to `false`.",
+        "group": "common"
+      },
+      {
+        "key": "columnOrder",
+        "label": "Column Order",
+        "type": "json",
+        "description": "Initial column order, by `id` (falls back to `field`). When the user reorders columns, this is the starting state. After mount, the grid owns the order internally and emits `onColumnOrderChange` on every change - persist that to `localStorage` to restore.",
+        "group": "common"
+      },
+      {
+        "key": "inferColumnTypes",
+        "label": "Infer Column Types",
+        "type": "boolean",
+        "description": "Infer each column's data type (number / boolean / date / ISO date-string / text) from the first data row, for columns that declare neither an explicit `editorType` nor a `cellDataType`. Sets the matching editor, alignment, date format, and filter operators automatically. Explicit column config always wins. Defaults to `false`.",
+        "group": "common"
+      },
+      {
+        "key": "rowDragManaged",
+        "label": "Row Drag Managed",
+        "type": "boolean",
+        "description": "Enables managed row dragging. When `true`, every row becomes a drag source (grab cursor + a grip in the row-number cell) and a drop indicator paints between rows during a drag. On drop the grid mutates its own internal data - reordering within the grid, or moving the row across grids that share the same . Defaults to `false`.",
+        "group": "common"
+      },
+      {
+        "key": "rowDragGroup",
+        "label": "Row Drag Group",
+        "type": "string",
+        "description": "Connection group for cross-grid row dragging. Grids that share the same non-empty `rowDragGroup` string (and have `rowDragManaged` on) can exchange rows: dragging a row out of one and dropping it into another removes it from the source and inserts it into the target. Omit to keep dragging confined to reordering within a single grid.",
+        "group": "common"
+      },
+      {
+        "key": "alignedGridGroup",
+        "label": "Aligned Grid Group",
+        "type": "string",
+        "description": "Align this grid with others that share the same non-empty `alignedGridGroup` string: horizontal scroll and column-resize widths are kept in lockstep across every grid in the group. Use for a totals/header grid above a body grid, or side-by-side comparison grids that must line up. The grids should declare the same columns (matched by id) for widths to map.",
+        "group": "common"
+      },
+      {
+        "key": "filterLocale",
+        "label": "Filter Locale",
+        "type": "string",
+        "description": "BCP-47 locale tag (or array of fallbacks) used for accent- and case-insensitive text filtering / sorting / search. Powered by `Intl.Collator` with `sensitivity: 'base'`, so \"cafe\", \"Café\" and \"CAFÉ\" all match \"cafe\" without strain. Defaults to the browser's locale.",
+        "group": "common"
+      }
+    ],
+    "events": [
+      {
+        "key": "pivotModeChange",
+        "label": "Pivot Mode Change",
+        "prop": "onPivotModeChange",
+        "description": "Fired when the in-grid Pivot toggle flips `pivotMode`."
+      },
+      {
+        "key": "paginationChange",
+        "label": "Pagination Change",
+        "prop": "onPaginationChange",
+        "description": "Fires when the user changes page or page size while `externalPagination` is on. Fetch that page and update `data` / `rowCount` / `pageIndex`."
+      },
+      {
+        "key": "apiReady",
+        "label": "Api Ready",
+        "prop": "onApiReady",
+        "description": "Receives the imperative grid API once the component has mounted."
+      },
+      {
+        "key": "rowSelectionChange",
+        "label": "Row Selection Change",
+        "prop": "onRowSelectionChange",
+        "description": "Fires whenever the row-selection state changes. The first argument is the new selection record `{ [rowId]: true }`; the second is the array of selected `TData` rows."
+      },
+      {
+        "key": "cellSelectionChange",
+        "label": "Cell Selection Change",
+        "prop": "onCellSelectionChange",
+        "description": "Fires whenever the cell-selection rectangle changes (mouse, keyboard, or `api.selectCells()`). `ranges` matches `api.getSelected()` - `[rowStart, colStart, rowEnd, colEnd]` rectangles in grid coords. Empty array when the user clears the selection."
+      },
+      {
+        "key": "sortingChange",
+        "label": "Sorting Change",
+        "prop": "onSortingChange",
+        "description": "Fires whenever the sort clauses change. Receives the new array of `{ id, desc }` entries. Pair with `externalSort={true}` when the consumer wants to own the row ordering."
+      },
+      {
+        "key": "filtersChange",
+        "label": "Filters Change",
+        "prop": "onFiltersChange",
+        "description": "Fires whenever any of the in-grid filter state changes - global search, per-column operator filters, or facet (value-checklist) filters. Pair with `externalFilter={true}` when the consumer wants to push the query to the server."
+      },
+      {
+        "key": "noteChange",
+        "label": "Note Change",
+        "prop": "onNoteChange",
+        "description": "Fires when a comment is saved or removed (removed = empty `note`)."
+      },
+      {
+        "key": "cellValueChange",
+        "label": "Cell Value Change",
+        "prop": "onCellValueChange"
+      },
+      {
+        "key": "activeCellChange",
+        "label": "Active Cell Change",
+        "prop": "onActiveCellChange",
+        "description": "Fires whenever the active cell changes - click, keyboard move, tab, page-up/down, etc. Consumers (toolbars, ribbon UIs) use this to stay synced with the grid's selection without polling the DOM."
+      },
+      {
+        "key": "cellClick",
+        "label": "Cell Click",
+        "prop": "onCellClick",
+        "description": "Fires when a data cell (and therefore a row) is single-clicked. Group-header rows are excluded. `value` is the displayed cell value."
+      },
+      {
+        "key": "rowClick",
+        "label": "Row Click",
+        "prop": "onRowClick",
+        "description": "Fires when a data row is single-clicked (any cell). Group rows excluded."
+      },
+      {
+        "key": "cellDoubleClick",
+        "label": "Cell Double Click",
+        "prop": "onCellDoubleClick",
+        "description": "Fires when a data cell is double-clicked - independent of whether the cell is editable, so it fires even on read-only grids. Group rows excluded."
+      },
+      {
+        "key": "rowDoubleClick",
+        "label": "Row Double Click",
+        "prop": "onRowDoubleClick",
+        "description": "Fires when a data row is double-clicked (any cell). Group rows excluded."
+      },
+      {
+        "key": "scrollBottomReached",
+        "label": "Scroll Bottom Reached",
+        "prop": "onScrollBottomReached",
+        "description": "Fires once each time the body is scrolled to (within ~32px of) the bottom. Re-arms after the user scrolls back up. The canonical hook for infinite / lazy loading - append more rows to `data` when it fires."
+      },
+      {
+        "key": "columnOrderChange",
+        "label": "Column Order Change",
+        "prop": "onColumnOrderChange",
+        "description": "Fires every time the column order changes (drag or `api.setColumnOrder`)."
+      },
+      {
+        "key": "rowDragEnd",
+        "label": "Row Drag End",
+        "prop": "onRowDragEnd",
+        "description": "Fires on the TARGET grid after a managed row drag settles, with the moved row, its landing index, whether it stayed in the same grid, and the source / target grid ids. Use it to mirror the move into your own state (persistence, server sync). The grid has already applied the change to its internal data by the time this fires."
       }
     ]
   }

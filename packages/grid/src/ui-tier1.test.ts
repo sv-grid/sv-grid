@@ -46,7 +46,7 @@ describe('SvTextInput', () => {
     const onChange = vi.fn()
     const { target, destroy } = mountOn(SvTextInput, { value: 'x', clearable: true, onChange })
     try {
-      const clear = target.querySelector<HTMLButtonElement>('.sv-text__clear')!
+      const clear = target.querySelector<HTMLButtonElement>('.sv-field__clear')!
       expect(clear).not.toBeNull()
       clear.click()
       expect(onChange).toHaveBeenCalledWith('')

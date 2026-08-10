@@ -29,7 +29,7 @@
   }
 
   let {
-    value = null,
+    value = $bindable<string | null>(null),
     onChange,
     showDial = false,
     placeholder = 'Select country…',
@@ -58,7 +58,7 @@
 
   const ci = createCountryInput({
     value: () => value,
-    onChange: (c) => onChange?.(c),
+    onChange: (c) => { value = c; onChange?.(c) },
     disabled: () => disabled,
     ariaLabel: () => ariaLabel,
     searchLabel: () => M.search,

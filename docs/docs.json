@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-03T23:59:42.225Z",
+  "generatedAt": "2026-08-10T18:45:51.197Z",
   "counts": {
-    "pages": 350,
-    "enterprise": 8,
-    "withDemo": 231
+    "pages": 363,
+    "enterprise": 9,
+    "withDemo": 243
   },
   "pillars": [
     {
@@ -93,6 +93,7 @@
         "help/ai-smart-paste.md",
         "help/ai-toolkit.md",
         "help/ai.md",
+        "help/alerts.md",
         "help/api-stability.md",
         "help/architecture.md",
         "help/benchmarks.md",
@@ -104,6 +105,7 @@
         "help/conditional-form-schema.md",
         "help/errors.md",
         "help/export.md",
+        "help/expressions-query.md",
         "help/glossary.md",
         "help/grouping-aggregation.md",
         "help/i18n-rtl.md",
@@ -447,6 +449,7 @@
         "help/ui-components/sv-check-box.md",
         "help/ui-components/sv-chip.md",
         "help/ui-components/sv-circular-progress.md",
+        "help/ui-components/sv-collapsible.md",
         "help/ui-components/sv-color-input.md",
         "help/ui-components/sv-combo-box.md",
         "help/ui-components/sv-command.md",
@@ -454,6 +457,7 @@
         "help/ui-components/sv-country-input.md",
         "help/ui-components/sv-date-range-input.md",
         "help/ui-components/sv-date-time-picker.md",
+        "help/ui-components/sv-display-primitives.md",
         "help/ui-components/sv-divider.md",
         "help/ui-components/sv-dock-layout.md",
         "help/ui-components/sv-dock-manager.md",
@@ -468,10 +472,14 @@
         "help/ui-components/sv-grid-chart.md",
         "help/ui-components/sv-grid-dropdown.md",
         "help/ui-components/sv-grid-select.md",
+        "help/ui-components/sv-hover-card.md",
+        "help/ui-components/sv-layout-primitives.md",
         "help/ui-components/sv-list-box.md",
+        "help/ui-components/sv-loading-overlay.md",
         "help/ui-components/sv-masked-input.md",
         "help/ui-components/sv-menu-list.md",
         "help/ui-components/sv-menu.md",
+        "help/ui-components/sv-menubar.md",
         "help/ui-components/sv-modal.md",
         "help/ui-components/sv-multi-select.md",
         "help/ui-components/sv-nav-pane.md",
@@ -480,16 +488,20 @@
         "help/ui-components/sv-pagination.md",
         "help/ui-components/sv-password-input.md",
         "help/ui-components/sv-phone-input.md",
+        "help/ui-components/sv-popconfirm.md",
         "help/ui-components/sv-popover.md",
         "help/ui-components/sv-progress.md",
         "help/ui-components/sv-radio-group.md",
         "help/ui-components/sv-rating.md",
         "help/ui-components/sv-repeat-button.md",
+        "help/ui-components/sv-result.md",
         "help/ui-components/sv-rich-text.md",
         "help/ui-components/sv-scroll-area.md",
+        "help/ui-components/sv-segmented.md",
         "help/ui-components/sv-skeleton.md",
         "help/ui-components/sv-slider.md",
         "help/ui-components/sv-sparkline.md",
+        "help/ui-components/sv-spinner.md",
         "help/ui-components/sv-splitter.md",
         "help/ui-components/sv-stat.md",
         "help/ui-components/sv-stepper.md",
@@ -505,7 +517,8 @@
         "help/ui-components/sv-tooltip.md",
         "help/ui-components/sv-tour.md",
         "help/ui-components/sv-tree-select.md",
-        "help/ui-components/sv-tree.md"
+        "help/ui-components/sv-tree.md",
+        "help/ui-components/sv-typography.md"
       ]
     },
     {
@@ -679,12 +692,12 @@
       "path": "enterprise/README.md",
       "url": "/enterprise/README",
       "title": "Enterprise feature pack",
-      "summary": "@svgrid/enterprise is a paid add-on for @svgrid/grid. It bolts onto the same <SvGrid> you already have and adds four feature areas: data export, data import, an AI assistant, and pivot tables.",
+      "summary": "@svgrid/enterprise is a paid add-on for @svgrid/grid. It bolts onto the same <SvGrid> you already have and adds three feature areas: data export, data import, and pivot tables. (The AI helpers are built in and **free** in @svgrid/grid - see AI assistant.)",
       "section": "enterprise",
       "pillar": "company",
       "tier": "enterprise",
-      "words": 793,
-      "lastUpdated": "2026-07-22",
+      "words": 787,
+      "lastUpdated": "2026-08-10",
       "demoIds": []
     },
     {
@@ -1072,7 +1085,7 @@
       "pillar": "studio",
       "tier": "community",
       "words": 676,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "194-studio-supabase"
       ]
@@ -1430,8 +1443,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1249,
-      "lastUpdated": "2026-07-22",
+      "words": 1247,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "75-ai-smart-paste"
       ]
@@ -1444,8 +1457,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2090,
-      "lastUpdated": "2026-07-30",
+      "words": 2097,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -1453,15 +1466,29 @@
     {
       "path": "help/ai.md",
       "url": "/help/ai",
-      "title": "AI assistant - Enterprise",
-      "summary": "Bring a language model into your grid with four helpers that stay strictly model-agnostic: **natural-language filter**, **smart fill**, **summarise**, and **classify**. Ships in the paid **@svgrid/enterprise** add-on; the Community build does not include these features.",
+      "title": "AI assistant",
+      "summary": "Bring a language model into your grid with helpers that stay strictly model-agnostic: **natural-language filter**, **smart fill**, **summarise**, **classify**, **chart-this**, **find anomalies**, and **natural-language export**. Built in and **free** in **@svgrid/grid** - no license key, no separate package. They ship no model client and do nothing until you register a provider, so they add nothing to your bundle unless you import them.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1784,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "51-ai-assistant"
+      ]
+    },
+    {
+      "path": "help/alerts.md",
+      "url": "/help/alerts",
+      "title": "Alerts - Enterprise",
+      "summary": "Alert rules let your users say \"tell me when the data does X\" - and then act on it automatically: raise a toast, tint the row, flash the cell, block the edit, or just log it. Rules are authored at runtime in a no-code builder, persisted, and shareable as JSON. No redeploy to add an alert.",
       "section": "help",
       "pillar": "grid",
       "tier": "enterprise",
-      "words": 1706,
-      "lastUpdated": "2026-07-22",
+      "words": 1302,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
-        "51-ai-assistant"
+        "399-alert-rules-engine"
       ]
     },
     {
@@ -1906,12 +1933,12 @@
       "path": "help/comparison.md",
       "url": "/help/comparison",
       "title": "Comparison: SvGrid vs AG Grid vs TanStack Table",
-      "summary": "This is the page enterprise evaluators land on first. It is honest. The three projects solve overlapping problems and the right choice depends on your stack, your budget, and which constraints bite hardest.",
+      "summary": "The three projects solve overlapping problems, and the right choice depends on the framework you ship on and your budget.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1480,
-      "lastUpdated": "2026-06-28",
+      "words": 1467,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2081,6 +2108,18 @@
       "demoIds": [
         "21-export-and-print"
       ]
+    },
+    {
+      "path": "help/expressions-query.md",
+      "url": "/help/expressions-query",
+      "title": "Expression query language - Enterprise",
+      "summary": "The expression language is a small, dependency-free query language your users author through the UI. It is the connective tissue behind alerts (and, in time, styled and calculated columns): one model for predicates, scalar maths, and change detection, evaluated the same way everywhere.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "enterprise",
+      "words": 546,
+      "lastUpdated": "2026-08-08",
+      "demoIds": []
     },
     {
       "path": "help/filtering/applying-filters.md",
@@ -2400,8 +2439,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1287,
-      "lastUpdated": "2026-07-29",
+      "words": 1332,
+      "lastUpdated": "2026-08-08",
       "demoIds": [
         "00-trading-desk"
       ]
@@ -2438,8 +2477,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2129,
-      "lastUpdated": "2026-07-02",
+      "words": 2127,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "08-tree-and-master-detail",
         "09-server-side"
@@ -2461,12 +2500,12 @@
       "path": "help/migrating-from-glide.md",
       "url": "/help/migrating-from-glide",
       "title": "Migrating from Glide Data Grid",
-      "summary": "Glide Data Grid is the canvas-rendered, ultra-high-performance choice for very wide datasets (100k+ rows, 100+ columns). Sv-grid renders to DOM with virtualization, which trades the absolute peak FPS for accessibility + standards-compliant HTML.",
+      "summary": "Glide Data Grid is the canvas-rendered, ultra-high-performance choice for very wide datasets (100k+ rows, 100+ columns). Sv-grid renders to DOM with virtualization, which trades peak FPS for accessibility + standards-compliant HTML.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 939,
-      "lastUpdated": "2026-06-12",
+      "words": 937,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2489,8 +2528,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 967,
-      "lastUpdated": "2026-06-16",
+      "words": 970,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "27-spreadsheet-ribbon"
       ]
@@ -2503,8 +2542,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 573,
-      "lastUpdated": "2026-06-16",
+      "words": 574,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2577,8 +2616,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 733,
-      "lastUpdated": "2026-06-16",
+      "words": 732,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2613,8 +2652,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 484,
-      "lastUpdated": "2026-06-16",
+      "words": 482,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2931,8 +2970,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 4870,
-      "lastUpdated": "2026-08-03",
+      "words": 6784,
+      "lastUpdated": "2026-08-08",
       "demoIds": [
         "363-scheduler-intro",
         "382-scheduler-app-clinic",
@@ -3349,8 +3388,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 852,
-      "lastUpdated": "2026-08-03",
+      "words": 891,
+      "lastUpdated": "2026-08-10",
       "demoIds": []
     },
     {
@@ -3397,8 +3436,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 636,
-      "lastUpdated": "2026-08-03",
+      "words": 666,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -3461,10 +3500,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 811,
-      "lastUpdated": "2026-08-03",
+      "words": 893,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
-        "315-autocomplete"
+        "315-autocomplete",
+        "411-resizable-dropdowns"
       ]
     },
     {
@@ -3559,8 +3599,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1406,
-      "lastUpdated": "2026-08-03",
+      "words": 1452,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "250-calendar",
         "258-calendar-range",
@@ -3639,6 +3679,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-collapsible.md",
+      "url": "/help/ui-components/sv-collapsible",
+      "title": "SvCollapsible",
+      "summary": "A single show/hide section: a header that toggles one region of content open and closed, with a smooth height animation. The standalone building block behind an accordion.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 391,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-color-input.md",
       "url": "/help/ui-components/sv-color-input",
       "title": "SvColorInput",
@@ -3646,8 +3700,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 577,
-      "lastUpdated": "2026-08-03",
+      "words": 609,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "304-color-input"
       ]
@@ -3660,10 +3714,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 869,
-      "lastUpdated": "2026-08-03",
+      "words": 1047,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
-        "313-combobox"
+        "313-combobox",
+        "411-resizable-dropdowns"
       ]
     },
     {
@@ -3738,6 +3793,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-display-primitives.md",
+      "url": "/help/ui-components/sv-display-primitives",
+      "title": "Display primitives - SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden",
+      "summary": "The small display helpers you reach for constantly in docs, command palettes, and media layouts - each themed from the shared --sg-* tokens and dependency-free.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 517,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "410-typography-display"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-divider.md",
       "url": "/help/ui-components/sv-divider",
       "title": "SvDivider",
@@ -3801,10 +3870,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1184,
-      "lastUpdated": "2026-08-03",
+      "words": 1272,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
-        "314-dropdownlist"
+        "314-dropdownlist",
+        "411-resizable-dropdowns"
       ]
     },
     {
@@ -3815,8 +3885,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 620,
-      "lastUpdated": "2026-08-03",
+      "words": 709,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "334-input-editors"
       ]
@@ -3843,8 +3913,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 683,
-      "lastUpdated": "2026-08-03",
+      "words": 968,
+      "lastUpdated": "2026-08-10",
       "demoIds": []
     },
     {
@@ -3869,8 +3939,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1631,
-      "lastUpdated": "2026-08-03",
+      "words": 2175,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "322-form",
         "323-form-dynamic",
@@ -3933,6 +4003,34 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-hover-card.md",
+      "url": "/help/ui-components/sv-hover-card",
+      "title": "SvHoverCard",
+      "summary": "A rich preview card that opens when the pointer rests on its anchor and closes shortly after it leaves.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 552,
+      "lastUpdated": "2026-08-09",
+      "demoIds": [
+        "289-overlays-hovercard-menubar"
+      ]
+    },
+    {
+      "path": "help/ui-components/sv-layout-primitives.md",
+      "url": "/help/ui-components/sv-layout-primitives",
+      "title": "Layout primitives - SvStack, SvGroup, SvSimpleGrid",
+      "summary": "Three tiny flex/grid wrappers that cover the layouts you reach for constantly, so you stop hand-writing display: flex; gap: … on every wrapper div. They carry no visual styling - just structure - and take a numeric gap (pixels) or any CSS length.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 511,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-list-box.md",
       "url": "/help/ui-components/sv-list-box",
       "title": "SvListBox",
@@ -3947,6 +4045,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-loading-overlay.md",
+      "url": "/help/ui-components/sv-loading-overlay",
+      "title": "SvLoadingOverlay",
+      "summary": "A cover-a-container loading scrim: a translucent overlay with a centred spinner that sits on top of any positioned parent while its content loads or saves.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 383,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-masked-input.md",
       "url": "/help/ui-components/sv-masked-input",
       "title": "SvMaskedInput",
@@ -3954,8 +4066,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 631,
-      "lastUpdated": "2026-08-03",
+      "words": 740,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "302-masked-input"
       ]
@@ -3968,8 +4080,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 818,
-      "lastUpdated": "2026-08-03",
+      "words": 857,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "326-menu"
       ]
@@ -3982,10 +4094,24 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 838,
-      "lastUpdated": "2026-08-03",
+      "words": 892,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "326-menu"
+      ]
+    },
+    {
+      "path": "help/ui-components/sv-menubar.md",
+      "url": "/help/ui-components/sv-menubar",
+      "title": "SvMenubar",
+      "summary": "An application menu bar: a horizontal row of menu buttons (File / Edit / View ...) that each open a dropdown.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 604,
+      "lastUpdated": "2026-08-09",
+      "demoIds": [
+        "289-overlays-hovercard-menubar"
       ]
     },
     {
@@ -4038,8 +4164,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 671,
-      "lastUpdated": "2026-08-03",
+      "words": 833,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "300-number-input"
       ]
@@ -4080,8 +4206,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 596,
-      "lastUpdated": "2026-08-03",
+      "words": 669,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "301-password-input"
       ]
@@ -4094,10 +4220,24 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 589,
-      "lastUpdated": "2026-08-03",
+      "words": 647,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "303-phone-input"
+      ]
+    },
+    {
+      "path": "help/ui-components/sv-popconfirm.md",
+      "url": "/help/ui-components/sv-popconfirm",
+      "title": "SvPopconfirm",
+      "summary": "A quick confirm step in a popover anchored to its trigger, for a low-stakes destructive action where a full modal dialog would be too heavy.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 593,
+      "lastUpdated": "2026-08-09",
+      "demoIds": [
+        "289-overlays-hovercard-menubar"
       ]
     },
     {
@@ -4108,8 +4248,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 690,
-      "lastUpdated": "2026-08-03",
+      "words": 922,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "288-overlays"
       ]
@@ -4171,6 +4311,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-result.md",
+      "url": "/help/ui-components/sv-result",
+      "title": "SvResult",
+      "summary": "A full result page: a centred icon, title, description, and actions for the outcome of a flow - success, error, warning, info, or not-found. The whole-screen counterpart to a toast.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 363,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-rich-text.md",
       "url": "/help/ui-components/sv-rich-text",
       "title": "SvRichText",
@@ -4199,6 +4353,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-segmented.md",
+      "url": "/help/ui-components/sv-segmented",
+      "title": "SvSegmented",
+      "summary": "A segmented control: a compact row of mutually-exclusive options in a shared track - the modern alternative to a small radio group or a tab strip for a setting.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 553,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "408-segmented"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-skeleton.md",
       "url": "/help/ui-components/sv-skeleton",
       "title": "SvSkeleton",
@@ -4206,8 +4374,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 607,
-      "lastUpdated": "2026-08-03",
+      "words": 611,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "333-app-feedback"
       ]
@@ -4237,6 +4405,20 @@
       "words": 662,
       "lastUpdated": "2026-08-03",
       "demoIds": []
+    },
+    {
+      "path": "help/ui-components/sv-spinner.md",
+      "url": "/help/ui-components/sv-spinner",
+      "title": "SvSpinner",
+      "summary": "An indeterminate spinner: a small spinning ring for \"something is happening\" when you cannot show real progress.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 330,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
     },
     {
       "path": "help/ui-components/sv-splitter.md",
@@ -4344,8 +4526,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 682,
-      "lastUpdated": "2026-08-03",
+      "words": 906,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "334-input-editors"
       ]
@@ -4358,8 +4540,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 745,
-      "lastUpdated": "2026-08-03",
+      "words": 791,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "251-timepicker"
       ]
@@ -4386,8 +4568,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 706,
-      "lastUpdated": "2026-08-03",
+      "words": 993,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "331-app-overlays"
       ]
@@ -4414,8 +4596,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 560,
-      "lastUpdated": "2026-08-03",
+      "words": 790,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "288-overlays"
       ]
@@ -4460,6 +4642,20 @@
       "lastUpdated": "2026-08-03",
       "demoIds": [
         "321-tree"
+      ]
+    },
+    {
+      "path": "help/ui-components/sv-typography.md",
+      "url": "/help/ui-components/sv-typography",
+      "title": "Typography - SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList",
+      "summary": "A small set of prose primitives so headings, body copy, links, quotes, highlights, and lists all pull from one type scale and the shared --sg-* tokens - instead of scattering ad-hoc font sizes and colours across your app.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 804,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "410-typography-display"
       ]
     },
     {

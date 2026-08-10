@@ -34,6 +34,21 @@ describe('SvCalendar render', () => {
     }
   })
 
+  it('renders bare by default, but wraps in SvField chrome when label/error given', () => {
+    const bare = mountCal({ value: new Date(2026, 5, 15) })
+    try {
+      expect(bare.target.querySelector('.sv-field')).toBeNull() // bare
+      expect(bare.target.querySelector('.sv-cal')).not.toBeNull()
+    } finally { bare.destroy() }
+    const chrome = mountCal({ value: new Date(2026, 5, 15), label: 'Start date', error: 'Required', required: true })
+    try {
+      expect(chrome.target.querySelector('.sv-field')).not.toBeNull()
+      expect(chrome.target.querySelector('.sv-field__label')?.textContent).toContain('Start date')
+      expect(chrome.target.querySelector('.sv-field__error')?.textContent).toContain('Required')
+      expect(chrome.target.querySelector('.sv-cal.sv-cal--invalid')).toBeNull() // invalid not set
+    } finally { chrome.destroy() }
+  })
+
   it('marks the selected day', () => {
     const { target, destroy } = mountCal({ value: new Date(2026, 5, 15) })
     try {

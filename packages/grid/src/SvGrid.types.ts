@@ -9,6 +9,8 @@ import type {
   TableFeatures,
 } from "./index";
 import type { ConditionalFormat } from "./conditional-formatting";
+import type { GridMessages } from "./grid-messages";
+import type { GridPivotConfig } from "./pivot-view.svelte";
 import type { MenuItem } from "./SvMenuList.svelte";
 import type { RecurrenceRule } from "./recurrence";
 
@@ -196,7 +198,9 @@ export type ContextMenuTarget<TData extends RowData = RowData> = {
 /**
  * A context-menu entry. Either a built-in action key, the `"separator"`
  * divider, or a custom item. Built-in keys: `"copy" | "cut" | "paste" |
- * "clear" | "row_above" | "row_below" | "remove_row" | "remove_col"`.
+ * "clear" | "row_above" | "row_below" | "remove_row" | "remove_col" |
+ * "chart"`. The `"chart"` item (chart the selected range) is only shown when
+ * `charting` is enabled; it is appended to the default menu automatically.
  */
 export type ContextMenuItem<TData extends RowData = RowData> =
   | string
@@ -581,6 +585,12 @@ export type SchedulerException = {
   end?: string | number | Date;
   title?: string;
   allDay?: boolean;
+  /**
+   * Per-occurrence overrides for ANY other field (e.g. attendees, calendar,
+   * color, resource). Merged over the row for just this occurrence, so "This
+   * event" can change fields beyond start / end / title / all-day.
+   */
+  fields?: Record<string, unknown>;
 };
 
 /** How a change to a recurring event should apply. */
@@ -908,6 +918,23 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   scheduler?: SchedulerConfig<TFeatures, TData>;
   /**
+   * Pivot mode. When set (and `pivotMode` is on), the grid renders its rows as a
+   * pivot table in place - the same grid, aggregated across `pivot.rows` /
+   * `pivot.cols` with nested column headers - instead of the flat table. The
+   * pivot ENGINE ships in `@svgrid/enterprise`; call `enablePivot()` (or
+   * `installEnterprise(api)`) to register it, otherwise an upsell note shows.
+   * See {@link GridPivotConfig}.
+   */
+  pivot?: GridPivotConfig<TData>;
+  /**
+   * Whether pivot mode is currently active. Defaults to `true` when `pivot` is
+   * set. Bindable so a toolbar toggle can flip between the pivot and the flat
+   * table over the same data.
+   */
+  pivotMode?: boolean;
+  /** Fired when the in-grid Pivot toggle flips `pivotMode`. */
+  onPivotModeChange?: (on: boolean) => void;
+  /**
    * Right-click context menu. `true` shows the default item set (copy, cut,
    * paste, clear, insert row above/below, remove row, remove column). Pass an
    * array to customize: strings are built-in keys, `"separator"` is a divider,
@@ -957,6 +984,24 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   loadingSkeletonRows?: number;
   error?: string | null;
   emptyMessage?: string;
+  /**
+   * The single place to localize the grid. One object with two fields:
+   *
+   * - `locale` - BCP-47 tag(s) for the DATA: accent/case-insensitive filter
+   *   matching AND every column's number / currency / percent / date formatting
+   *   (when the column's own `format.locales` is unset). The default for
+   *   `filterLocale` and per-column format locales.
+   * - `text` - overrides for the grid's own UI STRINGS (empty state, tool panel,
+   *   pager, status bar, filter operator labels, context-menu items, upsell
+   *   notes). Any subset overrides the English defaults; unset keys stay English.
+   *
+   * ```svelte
+   * <SvGrid localization={{ locale: 'fr-FR', text: { noRows: 'Aucune ligne' } }} />
+   * ```
+   *
+   * Omitting it (or any field) is a no-op. See {@link GridMessages}.
+   */
+  localization?: GridLocalization;
   showGlobalFilter?: boolean;
   showColumnFilters?: boolean;
   /**
@@ -1460,6 +1505,18 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * browser's locale.
    */
   filterLocale?: string | ReadonlyArray<string>;
+};
+
+/**
+ * The grid's single localization surface (see {@link Props.localization}):
+ * `locale` handles the data (filter matching + number/date formatting) and
+ * `text` handles the UI strings.
+ */
+export type GridLocalization = {
+  /** BCP-47 tag(s) for filter matching + number / date formatting. */
+  locale?: string | ReadonlyArray<string>;
+  /** Overrides for the grid's own UI strings. */
+  text?: Partial<GridMessages>;
 };
 
 export type SelectionPoint = { rowIndex: number; colIndex: number };

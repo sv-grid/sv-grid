@@ -90,13 +90,17 @@ group heading is the at-a-glance rollup.
 [SvDockLayout](./sv-dock-layout.md) · [SvDockManager](./sv-dock-manager.md) ·
 [SvCard](./sv-card.md) · [SvDivider](./sv-divider.md) · [SvScrollArea](./sv-scroll-area.md) ·
 [SvGridChart](./sv-grid-chart.md) · [SvForm](./sv-form.md) · [SvField](./sv-field.md) ·
-[SvFileUpload](./sv-file-upload.md)
+[SvFileUpload](./sv-file-upload.md) · [SvCollapsible](./sv-collapsible.md) ·
+[Layout primitives](./sv-layout-primitives.md) (SvStack · SvGroup · SvSimpleGrid) ·
+[Typography](./sv-typography.md) (SvTitle · SvText · SvAnchor · SvBlockquote · SvMark · SvList) ·
+[Display primitives](./sv-display-primitives.md) (SvKbd · SvCode · SvAspectRatio · SvVisuallyHidden)
 
 ### [Feedback & display](./feedback.md)
 
 [SvBadge](./sv-badge.md) · [SvSkeleton](./sv-skeleton.md) · [SvAlert](./sv-alert.md) ·
 [SvEmptyState](./sv-empty-state.md) · [SvChip](./sv-chip.md) · [SvTimeline](./sv-timeline.md) ·
-[SvAvatar](./sv-avatar.md) · [SvAvatarGroup](./sv-avatar-group.md) · [SvCarousel](./sv-carousel.md)
+[SvAvatar](./sv-avatar.md) · [SvAvatarGroup](./sv-avatar-group.md) · [SvCarousel](./sv-carousel.md) ·
+[SvSpinner](./sv-spinner.md) · [SvLoadingOverlay](./sv-loading-overlay.md) · [SvResult](./sv-result.md)
 
 ### [Navigation & rich](./navigation.md)
 

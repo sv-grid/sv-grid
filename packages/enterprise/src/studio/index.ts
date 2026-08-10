@@ -42,6 +42,7 @@ export { scaffoldApp, type ScaffoldAppOptions } from './scaffold-app.js'
 export { emitStudioApp, emitEntityModules, entityScreenPage, prepareEntities } from './emit-schema.js'
 export { emitStudioProject, emitStudioAppBundle, emitStudioFragment, runtimeDeps, studioDeployInfo, screenHandles, screenDataset, ctxCompletions, componentHandleMembers, ctxAmbientDts, GRID_API_MEMBERS, type BlockHandle, type HandleTier } from './emit-project.js'
 export { sampleApps, getSampleApp, type SampleApp } from './samples/index.js'
+export { starterProject } from './samples/starter.js'
 export { liveDataSamples, getLiveDataSample } from './samples/live-data.js'
 export {
   sanitizeStudioProject,
@@ -141,6 +142,8 @@ export {
   rowSelectSlot,
   changeSlot,
   FORM_SUBMIT,
+  GRID_EVENTS,
+  type GridEventDef,
   addStateVar,
   updateStateVar,
   removeStateVar,
@@ -293,6 +296,9 @@ export {
 export {
   UI_COMPONENT_REGISTRY,
   uiComponentSpec,
+  gridPropSurface,
+  gridApiSettableProps,
+  GRID_CURATED_PROPS,
   STANDARD_UI_EVENTS,
   type UiPropType,
   type UiPropGroup,

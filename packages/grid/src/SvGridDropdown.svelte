@@ -64,6 +64,13 @@
     return index >= 0 && index < visibleOptions.length ? `${instanceId}-opt-${index}` : undefined
   }
 
+  // Options that carry a `color` render as full pills (see the option list
+  // below), which are taller than a plain text row. The panel-sizing math must
+  // reserve that height, otherwise the panel is capped to the plain-row estimate
+  // and clips the last option (e.g. a 3-item coloured list). ~40px per chip row
+  // vs ~32px for plain text.
+  const optionRowHeight = $derived(options.some((o) => o.color) ? 40 : 32)
+
   let searchQuery = $state('')
   const visibleOptions = $derived(
     !searchable || !searchQuery.trim()
@@ -153,7 +160,7 @@
     // Use the smaller of (option count, 10) for the upward-flip math so
     // a 3-option list doesn't think it needs 320px of headroom.
     const visibleCount = Math.min(options.length, 10)
-    const estimatedHeight = visibleCount * 32 + (multiple ? 40 : 0) + 8
+    const estimatedHeight = visibleCount * optionRowHeight + (multiple ? 40 : 0) + 8
     panelRect = anchoredRect(triggerEl.getBoundingClientRect(), {
       estimatedHeight,
       // Preserve the original behavior: anchor to the trigger, no clamping.
@@ -381,7 +388,7 @@
     <!-- Cap to the comfortable 10-row height AND the room the viewport allows,
          so a panel near the bottom edge scrolls instead of overflowing. -->
     {@const panelMax = Math.min(
-      needsScroll ? 10 * 32 + (multiple ? 40 : 0) + 8 : Number.POSITIVE_INFINITY,
+      needsScroll ? 10 * optionRowHeight + (multiple ? 40 : 0) + 8 : Number.POSITIVE_INFINITY,
       panelRect.maxHeight,
     )}
     <div

@@ -85,5 +85,5 @@ Yes. `@svgrid/grid` is MIT-licensed like Tabulator. The optional
 
 ### Can I keep Tabulator's custom formatters?
 
-You re-create them as Svelte snippets via `renderSnippet`, which is more
-powerful than HTML-string formatters - any component or markup works.
+You re-create them as Svelte snippets via `renderSnippet`. Any Svelte
+component or markup works, not just an HTML string.

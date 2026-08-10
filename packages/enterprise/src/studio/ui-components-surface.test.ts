@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import { GENERATED_UI_SURFACE } from './ui-components.generated'
-import { UI_COMPONENT_REGISTRY, uiComponentSpec } from './ui-components'
-import { addComponentBlock, addFreestandingScreen, createProject, eventSlot, setHandlerBody, setHandlerSteps } from './project'
+import { UI_COMPONENT_REGISTRY, uiComponentSpec, gridPropSurface } from './ui-components'
+import { addComponentBlock, addFreestandingScreen, createProject, eventSlot, setHandlerBody, setHandlerSteps, updateBlock, type GridConfig } from './project'
 import { emitStudioProject } from './emit-project'
 import type { EntitySchema } from '../schema'
 
@@ -91,6 +91,78 @@ describe('full component surface (extractor-driven)', () => {
     expect(handles).toContain('this.on[name.toLowerCase()]?.(e)')
     // The set trap accepts any on<Event> casing (onKeyDown = fn), not just lowercase.
     expect(handles).toContain('/^on[A-Za-z]/.test(k)) { t.onEvent(k.slice(2), v')
+  })
+
+  it('the Grid exposes its full event surface as ctx.grid subscriptions', () => {
+    // An entity screen's grid, made code-enabled by an onLoad body that subscribes.
+    let p = createProject([customers])
+    const sid = p.screens[0].id
+    p = setHandlerBody(p, sid, 'onLoad', 'ctx.grid.onCellClick = (e) => { console.log(e.row) }')
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path.endsWith('+page.svelte'))!.contents
+    const ctxFile = files.find((f) => f.path.endsWith('page-context.ts'))!.contents
+    // ctx.grid is the real SvGridApi PLUS typed event setters (so ctx.grid.onCellClick type-checks).
+    expect(ctxFile).toContain('grid: SvGridApi<any, Customers> &')
+    expect(ctxFile).toContain('onCellClick?:')
+    expect(ctxFile).toContain('onRowSelectionChange?:')
+    // A grid handle wraps the api; free events fire into it, built-in props compose the fire.
+    expect(page).toContain('const gridCtx = gridHandle(() => gridApi)')
+    expect(page).toContain("onCellClick={(...a) => gridCtx.fire('cellClick', ...a)}")
+    expect(page).toContain("onSortingChange={(s) => { controller.setSort(s); gridCtx.fire('sortingChange', s) }}")
+    // Data events (row added/updated/deleted) fire from the wrapped controller, not a grid prop.
+    expect(ctxFile).toContain('onRowAdded?:')
+    expect(ctxFile).toContain('onRowDeleted?:')
+    expect(page).toContain("const r = await __ctl.createRow(i); gridCtx.fire('rowAdded', r)")
+    expect(page).toContain("await __ctl.deleteRow(id); gridCtx.fire('rowDeleted', id)")
+    expect(page).not.toContain('onRowAdded={') // never a grid markup prop
+    expect(() => compile(page, { filename: 'g.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('ctx.grid exposes runtime-settable props (ctx.grid.sortable = true) with types + wiring', () => {
+    // An entity screen's grid, made code-enabled by an onLoad body that sets a prop.
+    let p = createProject([customers])
+    const sid = p.screens[0].id
+    p = setHandlerBody(p, sid, 'onLoad', 'ctx.grid.sortable = true\n  ctx.grid.zebraRows = true\n  if (ctx.grid.sortable) ctx.grid.rowHeight = 40')
+    const files = emitStudioProject(p)
+    const page = files.find((f) => f.path.endsWith('+page.svelte'))!.contents
+    const ctxFile = files.find((f) => f.path.endsWith('page-context.ts'))!.contents
+    const handles = files.find((f) => f.path === 'src/lib/handles.svelte.ts')!.contents
+    // Type: ctx.grid gains the settable prop surface, so `ctx.grid.sortable = true`
+    // type-checks (intellisense in the code view) - alongside the api + event setters.
+    expect(ctxFile).toContain('grid: SvGridApi<any, Customers> &')
+    expect(ctxFile).toContain('sortable?: boolean')
+    expect(ctxFile).toContain('zebraRows?: boolean')
+    expect(ctxFile).toContain('rowHeight?: number')
+    expect(ctxFile).not.toContain('data?:') // structural prop excluded
+    // Runtime: the gridHandle set trap routes a prop assignment to the reactive
+    // setOption channel; reads route to getOption.
+    expect(handles).toContain("typeof api.setOption === 'function'")
+    expect(handles).toContain('(api.setOption as (key: unknown, value: unknown) => void)(k, val)')
+    expect(handles).toContain('(api.getOption as (key: unknown) => unknown)(k)')
+    // The generated page compiles with the assignments in onLoad.
+    expect(() => compile(page, { filename: 'gp.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('the grid exposes its full SvGrid prop surface as "All properties" overrides', () => {
+    // Uncurated surface = every extracted SvGrid prop the curated controls don't manage.
+    const surf = gridPropSurface()
+    expect(surf.length).toBeGreaterThan(20)
+    const keys = new Set(surf.map((p) => p.key))
+    expect(keys.has('virtualization')).toBe(true)
+    expect(keys.has('rowNumberWidth')).toBe(true)
+    expect(keys.has('sortable')).toBe(false) // curated -> not offered again here
+    expect(keys.has('data')).toBe(false)
+    // Overrides pass straight through to <SvGrid>, deduped against curated props.
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const blk = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'grid')!
+    p = updateBlock(p, sid, blk.id, { config: { props: { virtualization: false, rowNumberWidth: 44, sortable: false } } as Partial<GridConfig> })
+    const page = emitStudioProject(p).find((f) => f.path.endsWith('+page.svelte'))!.contents
+    expect(page).toContain('virtualization={false}')
+    expect(page).toContain('rowNumberWidth={44}')
+    // `sortable` is curated (emitted once) - the raw override must NOT duplicate it.
+    expect((page.match(/\bsortable\b/g) ?? []).length).toBe(1)
+    expect(() => compile(page, { filename: 'g2.svelte', generate: 'client' })).not.toThrow()
   })
 
   it('declared events wire through the component callback prop + a method slot each', () => {

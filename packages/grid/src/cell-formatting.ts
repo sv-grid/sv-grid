@@ -60,7 +60,7 @@ export function resolveDatePattern(
 
 type NumericFormatInput = {
   type: 'number' | 'currency' | 'percent'
-  locales?: string | string[]
+  locales?: string | readonly string[]
   currency?: string
   /** When type is percent: treat value as 0–100 instead of Intl’s 0–1 fraction */
   valueIsPercentPoints?: boolean
@@ -75,7 +75,7 @@ type NumericFormatInput = {
  */
 const numberFormatterCache = new Map<string, Intl.NumberFormat>()
 function getNumberFormatter(
-  locales: string | string[] | undefined,
+  locales: string | readonly string[] | undefined,
   options: Intl.NumberFormatOptions,
 ): Intl.NumberFormat {
   // Stable key - for normal column configs the options object is reused
@@ -98,7 +98,7 @@ function getNumberFormatter(
     (options.notation ?? '')
   let fmt = numberFormatterCache.get(key)
   if (!fmt) {
-    fmt = new Intl.NumberFormat(locales, options)
+    fmt = new Intl.NumberFormat(locales as string | string[] | undefined, options)
     numberFormatterCache.set(key, fmt)
   }
   return fmt
@@ -107,7 +107,7 @@ function getNumberFormatter(
 /** Cache of `Intl.DateTimeFormat` by `(locale, options)` signature. */
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>()
 export function getDateFormatter(
-  locales: string | string[] | undefined,
+  locales: string | readonly string[] | undefined,
   options: Intl.DateTimeFormatOptions,
 ): Intl.DateTimeFormat {
   const key =
@@ -134,7 +134,7 @@ export function getDateFormatter(
     (options.hour12 ?? '')
   let fmt = dateFormatterCache.get(key)
   if (!fmt) {
-    fmt = new Intl.DateTimeFormat(locales, options)
+    fmt = new Intl.DateTimeFormat(locales as string | string[] | undefined, options)
     dateFormatterCache.set(key, fmt)
   }
   return fmt

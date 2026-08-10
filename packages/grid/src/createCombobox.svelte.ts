@@ -30,6 +30,8 @@ export type ComboboxConfig = {
   value: () => ComboboxValue
   onChange?: (value: ComboboxValue) => void
   disabled?: () => boolean
+  /** Read-only: value shown, input focusable, but not editable and the panel will not open. */
+  readonly?: () => boolean
   ariaLabel?: () => string | undefined
   /** Filter the options locally by the query. Set false for server-side search. */
   localFilter?: () => boolean
@@ -51,6 +53,7 @@ export function createCombobox(config: ComboboxConfig) {
   const listId = `${id}-list`
   const opts = () => config.options()
   const disabled = () => config.disabled?.() ?? false
+  const readonly = () => config.readonly?.() ?? false
 
   let open = $state(false)
   let query = $state('')
@@ -76,25 +79,31 @@ export function createCombobox(config: ComboboxConfig) {
     ariaLabel: config.ariaLabel?.(),
   })
 
-  function openPanel() { if (disabled() || open) return; open = true; active = 0 }
+  function openPanel() { if (disabled() || readonly() || open) return; open = true; active = 0 }
   function close(revert = true) {
     open = false; editing = false
     if (revert) query = selected?.label ?? ''
   }
   function toggle() { if (open) { close() } else { config.focusInput?.(); openPanel() } }
   function pick(o: ListOption | undefined) {
-    if (!o || o.disabled) return
+    if (readonly() || !o || o.disabled) return
     config.onChange?.(o.value); query = o.label; editing = false; open = false; config.blurInput?.()
+  }
+  /** Clear the selection (value -> null) and reset the shown text. */
+  function clear() {
+    if (readonly() || disabled()) return
+    config.onChange?.(null); query = ''; editing = false; open = false
   }
   function setActive(i: number) { const o = filtered[i]; if (o && !o.disabled) active = i }
   function onInput(e: Event) {
+    if (readonly()) return
     query = (e.currentTarget as HTMLInputElement).value
     editing = true; active = 0
     if (!open) openPanel()
   }
-  function onFocus() { editing = true; query = selected?.label ?? ''; openPanel() }
+  function onFocus() { if (readonly()) return; editing = true; query = selected?.label ?? ''; openPanel() }
   function onKeydown(e: KeyboardEvent) {
-    if (disabled()) return
+    if (disabled() || readonly()) return
     if (!open && e.key === 'ArrowDown') { e.preventDefault(); editing = true; openPanel(); return }
     if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, filtered.length - 1) }
     else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0) }
@@ -128,6 +137,7 @@ export function createCombobox(config: ComboboxConfig) {
     close,
     toggle,
     pick,
+    clear,
     onInput,
     onFocus,
     onKeydown,
@@ -140,8 +150,10 @@ export function createCombobox(config: ComboboxConfig) {
       'aria-autocomplete': 'list' as const,
       'aria-activedescendant': open && filtered[active] ? optionId(active) : undefined,
       ...editorAria(ariaState()),
+      'aria-readonly': readonly() || undefined,
       value: shownText,
       disabled: disabled(),
+      readonly: readonly() || undefined,
       oninput: onInput,
       onfocus: onFocus,
       onkeydown: onKeydown,
@@ -151,7 +163,7 @@ export function createCombobox(config: ComboboxConfig) {
       type: 'button' as const,
       tabindex: -1,
       'aria-label': 'Toggle',
-      disabled: disabled(),
+      disabled: disabled() || readonly(),
       onclick: toggle,
     }),
     /** Spread onto the listbox container. */

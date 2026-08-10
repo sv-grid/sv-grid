@@ -132,12 +132,15 @@
   // demo, so deep-linking scopes correctly.
   type Product = 'grid' | 'studio' | 'editors'
   const STUDIO_CATEGORY = 'Studio'
+  // The Studio lane also carries the grid-powered CRUD app showcases (the
+  // "Industry Templates"), which are exactly "grid-powered CRUD screens".
+  const STUDIO_CATEGORIES = new Set(['Studio', 'Industry Templates'])
   // Land on the Studio overview (not the visual designer, which auto-fullscreens
   // and would hide the sidebar the switcher lives in).
   const STUDIO_LANDING = '192-data-app-studio'
   const EDITORS_LANDING = '250-calendar'
   const productOf = (cat: string): Product =>
-    cat === STUDIO_CATEGORY ? 'studio' : isEditorCategory(cat as never) ? 'editors' : 'grid'
+    STUDIO_CATEGORIES.has(cat) ? 'studio' : isEditorCategory(cat as never) ? 'editors' : 'grid'
   const product = $derived<Product>(productOf(current.category))
   const inProduct = (cat: string) => productOf(cat) === product
   const visibleGroups = $derived(demoGroups.filter((g) => inProduct(g.category)))

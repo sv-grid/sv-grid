@@ -589,3 +589,53 @@ export const UI_COMPONENT_REGISTRY: ReadonlyArray<UiComponentSpec> = BASE_REGIST
 export function uiComponentSpec(key: string): UiComponentSpec | undefined {
   return UI_COMPONENT_REGISTRY.find((s) => s.key === key)
 }
+
+// --- Grid: the "All properties" surface ------------------------------------
+// The grid block has rich CURATED controls (column/form builders, grouping, paging,
+// ...). These are the SvGrid props those controls already drive - excluded from the
+// grid's "All properties" panel so nothing shows twice. Everything else in the
+// extracted SvGrid surface is offered as a raw, editable override (config.props).
+export const GRID_CURATED_PROPS: ReadonlySet<string> = new Set<string>([
+  'data', 'columns', 'board', 'scheduler', 'loading', 'loadingOverlay', 'emptyMessage',
+  'fitColumns', 'sortable', 'externalSort', 'filterable', 'externalFilter', 'filterMode',
+  'showGlobalFilter', 'showColumnFilters', 'showFilterRow', 'showFilterMenu', 'showGroupingControls',
+  'groupable', 'showRowSelection', 'selectionMode', 'enableCellSelection', 'enableRowSummaries',
+  'zebraRows', 'showPagination', 'pageable', 'externalPagination', 'rowCount', 'pageIndex',
+  'pageSize', 'pageSizeOptions', 'paginationPosition', 'rowHeight', 'containerHeight',
+  'columnVirtualization', 'initialColumnPinning', 'conditionalFormats', 'features', 'editable',
+  'enableInlineEditing',
+])
+
+/** The Grid's raw prop surface for the "All properties" panel: every extracted SvGrid
+ *  prop the curated controls do NOT already manage. Sorted by group then label. */
+export function gridPropSurface(): UiComponentProp[] {
+  const g = GENERATED_UI_SURFACE['SvGrid']
+  if (!g) return []
+  const order: Record<string, number> = { common: 0, appearance: 1, behavior: 2, advanced: 3 }
+  return g.props
+    .filter((p) => !GRID_CURATED_PROPS.has(p.key))
+    .map((p) => ({ ...p }) as UiComponentProp)
+    .sort((a, b) => (order[a.group ?? 'common']! - order[b.group ?? 'common']!) || a.label.localeCompare(b.label))
+}
+
+// Props NOT offered on `ctx.grid` as runtime-settable options: structural data,
+// controller-owned plumbing, and seed-once `initial*` props (the grid reads those at
+// mount, so `setOption` on them is a no-op - excluding them keeps intellisense honest).
+const GRID_API_UNSETTABLE: ReadonlySet<string> = new Set<string>([
+  'data', 'columns', 'features', 'loading', 'onApiReady',
+  'externalSort', 'externalFilter', 'externalPagination', 'rowCount', 'pageIndex',
+  'initialSorting', 'initialColumnPinning', 'initialHiddenColumns', 'columnOrder',
+])
+
+/** The Grid props settable at runtime through `ctx.grid.<prop> = value` (backed by
+ *  `api.setOption`): the full extracted SvGrid surface minus controller-owned /
+ *  seed-once props and function/snippet props. Drives the `ctx.grid` type + the code
+ *  view autocomplete. Sorted alphabetically. */
+export function gridApiSettableProps(): UiComponentProp[] {
+  const g = GENERATED_UI_SURFACE['SvGrid']
+  if (!g) return []
+  return g.props
+    .filter((p) => !GRID_API_UNSETTABLE.has(p.key) && !p.code && !/^on[A-Z]/.test(p.key))
+    .map((p) => ({ ...p }) as UiComponentProp)
+    .sort((a, b) => a.key.localeCompare(b.key))
+}

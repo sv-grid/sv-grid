@@ -30,10 +30,11 @@
     type BoardCardMoveEvent,
     type BoardCardCommitEvent,
   } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+  import { enableSchedulerView, enableBoardView, setLicenseKey } from '@svgrid/enterprise'
 
   setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
+  enableBoardView()
 
   type Channel = 'blog' | 'email' | 'social' | 'video'
   type Status = 'Idea' | 'Draft' | 'In review' | 'Scheduled' | 'Published'
@@ -348,7 +349,7 @@
   .ct-seg { display: inline-flex; border: 1px solid var(--sg-border, #d1d5db); border-radius: 8px; overflow: hidden; background: var(--sg-bg, #fff); }
   .ct-seg-btn { appearance: none; border: 0; background: transparent; padding: 5px 14px; font-size: 0.82rem; font-weight: 600; cursor: pointer; color: var(--sg-muted, #6b7280); }
   .ct-seg-btn + .ct-seg-btn { border-left: 1px solid var(--sg-border, #d1d5db); }
-  .ct-seg-on { background: var(--sg-accent, #4f46e5); color: #fff; }
+  .ct-seg-on { background: var(--sg-accent, #4f46e5); color: var(--sg-on-accent, #fff); }
   .ct-stage { flex: 1 1 auto; min-height: 0; padding: 0 8px 8px; }
   .ct-ev { display: flex; align-items: center; gap: 6px; min-width: 0; line-height: 1.2; }
   .ct-ev-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }

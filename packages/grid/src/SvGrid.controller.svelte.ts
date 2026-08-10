@@ -10,7 +10,6 @@ import {
     createSortedRowModel,
     createSvGrid,
     getGridCellDomId,
-    rowsToChartSpec,
     sortFns,
     tableFeatures,
     rowSortingFeature,
@@ -94,6 +93,8 @@ import {
 import {
     createClipboard,
   } from "./clipboard";
+import { resolveGridMessages } from "./grid-messages";
+import { getPivotEngine, hasPivotEngine } from "./pivot-view.svelte";
 import {
     filterOperatorOptions,
     fallbackOperatorOption,
@@ -269,7 +270,28 @@ export type SvGridController<
 export function createSvGridController<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
->(props: Props<TFeatures, TData>) {
+>(rawProps: Props<TFeatures, TData>) {
+
+  // Runtime option overrides set via the imperative api (`api.setOption(key, value)`).
+  // Every controller read of a prop goes through the `props` proxy below (and the view
+  // reads controller-resolved gates like `_features` / `editingEnabled`, not the raw
+  // prop), so an override wins over the incoming prop and re-renders reactively -
+  // identical to the parent flipping that prop. A get-only Proxy (not a fresh spread)
+  // preserves reference identity for non-overridden keys, which the columns-identity
+  // column cache and the `data`/`columns` sync effects rely on.
+  let optionOverrides = $state<Record<string, unknown>>({});
+  const props = new Proxy(rawProps, {
+    // Read the override as a PROPERTY (tracked by `$state`), not via `in` (the `has`
+    // trap is not tracked) - so a reactive read of `props.X` re-runs when an override
+    // is set. `undefined` means "no override" and falls back to the incoming prop;
+    // `setOption(key, undefined)` clears by removing the key, which lands here as
+    // undefined too. Whole-object reassignment on write makes the signal fire.
+    get: (t, k) => {
+      const v =
+        typeof k === "string" ? optionOverrides[k] : undefined;
+      return v !== undefined ? v : Reflect.get(t, k);
+    },
+  }) as Props<TFeatures, TData>;
 
   // Resolved capability gates. Capabilities are OFF by default - a bare
   // grid is a plain read-only table, and each power feature is opted into
@@ -1093,12 +1115,12 @@ export function createSvGridController<
 
     let rows = rawRows;
     if (globalFilter.trim()) {
-      const needle = normalizeForFilter(globalFilter, props.filterLocale);
+      const needle = normalizeForFilter(globalFilter, (props.filterLocale ?? props.localization?.locale));
       rows = rows.filter((row) =>
         row
           .getAllCells()
           .some((cell) =>
-            normalizeForFilter(String(cell.getValue() ?? ""), props.filterLocale)
+            normalizeForFilter(String(cell.getValue() ?? ""), (props.filterLocale ?? props.localization?.locale))
               .includes(needle),
           ),
       );
@@ -1120,7 +1142,7 @@ export function createSvGridController<
       applyExcelFilter(
         cellValue,
         { id: columnId, operator: op, value, valueTo: op === "between" ? valueTo : undefined },
-        { locale: props.filterLocale },
+        { locale: (props.filterLocale ?? props.localization?.locale) },
       );
     // A column filter is active if either of its (up to two) conditions is.
     const menuFilters = Object.entries(filterMenuValues).filter(([_, f]) => {
@@ -1349,6 +1371,39 @@ export function createSvGridController<
     return c === true ? ({} as ChartingConfig<TData>) : (c as ChartingConfig<TData>);
   });
   const chartingEnabled = $derived(!!chartCfg);
+  // Resolved chrome messages (English defaults merged with `localeText`). One
+  // map every consumer (SvGrid.svelte, GridFooter, menus, filter labels) reads.
+  const gridMessages = $derived(resolveGridMessages(props.localization?.text));
+
+  // ---- In-grid pivot mode ----
+  // The pivot ENGINE ships in @svgrid/enterprise (registered via the pivot-view
+  // seam). When `pivot` is set and the engine is present, the grid runs it over
+  // the already filtered + sorted leaf rows and renders the pivot result in
+  // place. `pivotModeOn` is uncontrolled (seeded from the prop) so a toolbar
+  // toggle can flip between the pivot and the flat table over the same data.
+  const pivotConfig = $derived(props.pivot ?? null);
+  // Controlled when `pivotMode` prop is provided; otherwise internal state
+  // (seeded to on when `pivot` is set) drives it, flipped by the toolbar toggle.
+  let pivotModeInternal = $state(props.pivotMode ?? (props.pivot != null));
+  const pivotModeOn = $derived(props.pivotMode ?? pivotModeInternal);
+  function togglePivotMode(): void {
+    const next = !pivotModeOn;
+    pivotModeInternal = next;
+    props.onPivotModeChange?.(next);
+  }
+  const pivotActive = $derived(!!pivotConfig && pivotModeOn && hasPivotEngine());
+  const pivotResult = $derived.by(() => {
+    if (!pivotActive || !pivotConfig) return null;
+    const engine = getPivotEngine();
+    if (!engine) return null;
+    // Feed the pivot the filtered + sorted LEAF rows (drop any group rows); its
+    // output must not be re-run through the column-filter pipeline.
+    const leaves = allRowsBeforePagination
+      .filter((r) => !r.subRows)
+      .map((r) => r.original);
+    return engine(leaves, pivotConfig as never);
+  });
+
   const chartIsCustom = $derived(typeof chartCfg?.buildSpec === "function");
   const chartingConfig = $derived(
     chartCfg
@@ -1610,6 +1665,18 @@ export function createSvGridController<
     };
   };
 
+  // The chart derivation engine (rowsToChartSpec) is loaded lazily the first time
+  // charting is enabled, keeping chart.ts (~11 KB gzip) out of the base <SvGrid>
+  // bundle - it rides in the same lazy chunk as the chart panel. `chartSpec` stays
+  // null until it resolves, a tick after the panel itself starts loading (which it
+  // already does). The `getAggregate` server path uses the local bucketsToSpec and
+  // does not need the engine.
+  let chartEngine = $state<typeof import("./chart").rowsToChartSpec | null>(null);
+  $effect(() => {
+    if (chartingEnabled && !chartEngine)
+      import("./chart").then((m) => (chartEngine = m.rowsToChartSpec));
+  });
+
   const chartSpec = $derived.by<ChartSpec | null>(() => {
     if (!chartingEnabled || !chartCfg) return null;
     if (chartCfg.getAggregate) {
@@ -1628,9 +1695,11 @@ export function createSvGridController<
     const category = fieldOf(effectiveChartDimensionId);
     const values = effectiveChartMeasureIds.map((id) => fieldOf(id)).filter((f): f is string => !!f);
     if (!category || !values.length) return null;
+    // Engine not loaded yet (lazy): render nothing until it resolves.
+    if (!chartEngine) return null;
     const seriesField = fieldOf(effectiveChartSeriesId);
 
-    const spec = rowsToChartSpec<Record<string, unknown>>(chartRows as Array<Record<string, unknown>>, {
+    const spec = chartEngine<Record<string, unknown>>(chartRows as Array<Record<string, unknown>>, {
       type: chartType,
       category: category as string,
       value: values.length === 1 ? values[0]! : values,
@@ -2577,6 +2646,8 @@ export function createSvGridController<
 
   const ctx = {
     get props() { return props; },
+    get optionOverrides() { return optionOverrides; },
+    set optionOverrides(v) { optionOverrides = v as never; },
     get editingEnabled() { return editingEnabled; },
     get paginationEnabled() { return paginationEnabled; },
     get groupingControlsEnabled() { return groupingControlsEnabled; },
@@ -2814,6 +2885,15 @@ export function createSvGridController<
     get toolPanelHeaderLabel() { return toolPanelHeaderLabel; },
     get toggleColumnVisibleInPanel() { return toggleColumnVisibleInPanel; },
     get moveColumnInPanel() { return moveColumnInPanel; },
+    // ---- Localized chrome strings ----
+    get messages() { return gridMessages; },
+    // ---- In-grid pivot mode ----
+    get pivotConfig() { return pivotConfig; },
+    get pivotActive() { return pivotActive; },
+    get pivotResult() { return pivotResult; },
+    get pivotModeOn() { return pivotModeOn; },
+    get hasPivotEngine() { return hasPivotEngine(); },
+    togglePivotMode,
     // ---- Integrated charting ----
     get chartingEnabled() { return chartingEnabled; },
     get chartingConfig() { return chartingConfig; },

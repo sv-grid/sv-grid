@@ -10,11 +10,12 @@
   import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
   import { startPanelResize } from './panel-resize'
   import { createDismissableLayer } from './a11y/dismissable'
-  import { groupOptions, hasGroups, normalizeOptions, type ListOption } from './list-option'
+  import { groupOptions, hasGroups, normalizeOptions, type ListOption, type IndexedOption } from './list-option'
   import { virtualRange, scrollToIndex } from './virtual'
   import SvField from './SvField.svelte'
   import { nextEditorId, type SvEditorProps } from './editor-contract'
   import { createDropdownList } from './createDropdownList.svelte'
+  import type { Snippet } from 'svelte'
 
   type Props = SvEditorProps & {
     options: ReadonlyArray<ListOption>
@@ -26,9 +27,19 @@
     virtual?: boolean
     /** Fixed option height in px (must match the CSS). Default 34. */
     rowHeight?: number
+    /** Max options shown before the panel scrolls (native-select behaviour). Default 8. */
+    maxRows?: number
     /** Show a bottom drag grip so the user can resize the open panel's height
      *  (only while it opens downward). Off by default. */
     resizable?: boolean
+    /** Custom render for each option (receives the ListOption). */
+    item?: Snippet<[ListOption]>
+    /** Content pinned above the option list. */
+    header?: Snippet
+    /** Content pinned below the option list. */
+    footer?: Snippet
+    /** Shown when there are no options. */
+    noData?: Snippet
   }
 
   let {
@@ -37,6 +48,7 @@
     onChange,
     placeholder = 'Select…',
     disabled = false,
+    readonly = false,
     name,
     size = 'md',
     ariaLabel,
@@ -50,7 +62,12 @@
     autoOpen = false,
     virtual = false,
     rowHeight = 34,
+    maxRows = 8,
     resizable = false,
+    item,
+    header,
+    footer,
+    noData,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-ddl')
@@ -83,6 +100,7 @@
     value: () => value,
     onChange: (v) => onChange?.(v),
     disabled: () => disabled,
+    readonly: () => readonly,
     ariaLabel: () => ariaLabel,
     focusTrigger: () => triggerEl?.focus(),
     id: () => uid,
@@ -97,9 +115,13 @@
   function updatePos() {
     if (!triggerEl) return
     // When the user has resized, anchor to THAT height so the flip decision and
-    // upward top stay correct; otherwise estimate from the option count.
+    // upward top stay correct; otherwise size to the content up to `maxRows` items
+    // (native-select behaviour: no scrollbar until the list exceeds the cap). The
+    // +PANEL_CHROME budgets the panel's own padding (8) + border (2) so a list
+    // that exactly fills `maxRows` is not clipped by the border-box max-height.
+    const PANEL_CHROME = 10
     const estimatedHeight =
-      resizable && userHeight != null ? userHeight : Math.min(norm.length, 8) * 34 + 8
+      resizable && userHeight != null ? userHeight : Math.min(norm.length, maxRows) * rowHeight + PANEL_CHROME
     rect = anchoredRect(triggerEl.getBoundingClientRect(), { estimatedHeight })
   }
 
@@ -163,13 +185,22 @@
   </button>
 </SvField>
 
+{#snippet optRow(opt: IndexedOption, fixedH: boolean)}
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
+  <div class="sv-ddl__opt" style:height={fixedH ? `${rowHeight}px` : undefined} class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>
+    {#if item}{@render item(opt)}{:else}{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}{/if}
+  </div>
+{/snippet}
+
 {#if ddl.open}
   <div bind:this={panelEl} class="sv-ddl__panel" class:is-virtual={useVirtual} class:is-resizable={showGrip} use:portalToBody use:popIn={{ up: rect.openUpward }} style:--sv-row-h={`${rowHeight}px`} style:position="fixed" style:top={`${rect.top}px`} style:left={`${rect.left}px`} style:min-width={`${rect.width}px`} style:max-height={`${panelMaxH}px`} style:height={resizable && userHeight != null ? `${panelMaxH}px` : undefined} onscroll={(e) => (scrollTop = e.currentTarget.scrollTop)} bind:clientHeight={viewportH} {...ddl.listboxProps()}>
-    {#if useVirtual}
+    {#if header}<div class="sv-ddl__header">{@render header()}</div>{/if}
+    {#if !norm.length}
+      {#if noData}{@render noData()}{:else}<div class="sv-ddl__empty">No options</div>{/if}
+    {:else if useVirtual}
       <div class="sv-ddl__spacer" aria-hidden="true" style:height={`${vr.padTop}px`}></div>
       {#each windowed as opt (opt.index)}
-        <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-        <div class="sv-ddl__opt" style:height={`${rowHeight}px`} class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
+        {@render optRow(opt, true)}
       {/each}
       <div class="sv-ddl__spacer" aria-hidden="true" style:height={`${vr.padBottom}px`}></div>
     {:else}
@@ -178,18 +209,17 @@
         <div class="sv-ddl__group" role="group" aria-label={g.group}>
           <div class="sv-ddl__group-label" aria-hidden="true">{g.group}</div>
           {#each g.options as opt (opt.index)}
-            <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-            <div class="sv-ddl__opt" class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
+            {@render optRow(opt, false)}
           {/each}
         </div>
       {:else}
         {#each g.options as opt (opt.index)}
-          <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-          <div class="sv-ddl__opt" class:is-active={ddl.isActive(opt.index)} class:is-selected={ddl.isSelected(opt)} class:is-disabled={opt.disabled} {...ddl.optionProps(opt.index)}>{#if opt.color}<span class="sv-ddl__swatch" style:background={opt.color}></span>{/if}{opt.label}</div>
+          {@render optRow(opt, false)}
         {/each}
       {/if}
     {/each}
     {/if}
+    {#if footer}<div class="sv-ddl__footer">{@render footer()}</div>{/if}
     {#if showGrip}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="sv-ddl__grip" onpointerdown={startResize} title="Drag to resize" aria-hidden="true">
@@ -271,4 +301,7 @@
     padding: 8px 10px 3px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
     color: var(--sg-muted, #94a3b8);
   }
+  :global(.sv-ddl__empty) { padding: 12px 12px; font-size: 13px; color: var(--sg-muted, #64748b); text-align: center; }
+  :global(.sv-ddl__header) { padding: 8px 10px; border-bottom: 1px solid var(--sg-border, #e2e8f0); font-size: 12.5px; color: var(--sg-muted, #64748b); }
+  :global(.sv-ddl__footer) { padding: 8px 10px; border-top: 1px solid var(--sg-border, #e2e8f0); font-size: 12.5px; }
 </style>

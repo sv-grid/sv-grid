@@ -1,8 +1,7 @@
 # Comparison: SvGrid vs AG Grid vs TanStack Table
 
-This is the page enterprise evaluators land on first. It is honest. The
-three projects solve overlapping problems and the right choice depends
-on your stack, your budget, and which constraints bite hardest.
+The three projects solve overlapping problems, and the right choice
+depends on the framework you ship on and your budget.
 
 ## TL;DR
 
@@ -149,7 +148,7 @@ TanStack Table is MIT.
 ### What is the best data grid for Svelte 5?
 
 For a Svelte-5-native grid with a batteries-included render component, SvGrid is
-purpose-built for runes and snippets. TanStack Table is a strong headless-only
+built around runes and snippets. TanStack Table is a strong headless-only
 choice if you want to build the DOM layer yourself across frameworks. AG Grid is
 the most feature-complete but lives in React/Angular/Vue first and is heavy to
 bridge into Svelte 5.

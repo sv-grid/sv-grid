@@ -73,11 +73,15 @@ function mountGrid(overrides: Record<string, unknown> = {}): Promise<MountResult
   })
 }
 
-const tick = () => Promise.resolve()
+// A macrotask boundary: drains all pending microtasks (Svelte effects, the chart
+// panel's lazy import() + its .then, and the follow-up flush) so the docked panel
+// is mounted before assertions. The panel is loaded lazily as its own chunk.
+const tick = () => new Promise((r) => setTimeout(r))
 
 describe('SvGrid built-in charting', () => {
   it('derives a chart spec from all displayed rows (default dimension + measure)', async () => {
     const { api, destroy } = await mountGrid({ charting: true })
+    await tick() // the chart engine loads lazily; ready a tick after mount
     try {
       const spec = api.getChartSpec()
       expect(spec).not.toBeNull()
@@ -398,6 +402,7 @@ describe('SvGrid built-in charting', () => {
 
   it('splits into one series per distinct value of the `series` field', async () => {
     const { api, destroy } = await mountGrid({ charting: { dimension: 'team', series: 'name', measures: 'age' } })
+    await tick() // the chart engine loads lazily; ready a tick after mount
     try {
       const spec = api.getChartSpec()
       // categories = distinct teams (4); one series per distinct name (6).
@@ -409,6 +414,7 @@ describe('SvGrid built-in charting', () => {
 
   it('plots one series per measure with `measures[]`', async () => {
     const { api, destroy } = await mountGrid({ charting: { dimension: 'team', measures: ['age', 'salary'] } })
+    await tick() // the chart engine loads lazily; ready a tick after mount
     try {
       const spec = api.getChartSpec()
       expect(spec!.series.length).toBe(2)
@@ -419,6 +425,7 @@ describe('SvGrid built-in charting', () => {
 
   it('marks the spec stacked when config.stacked is set', async () => {
     const { api, destroy } = await mountGrid({ charting: { dimension: 'team', series: 'name', measures: 'age', stacked: true } })
+    await tick() // the chart engine loads lazily; ready a tick after mount
     try {
       expect(api.getChartSpec()!.stacked).toBe(true)
     } finally {

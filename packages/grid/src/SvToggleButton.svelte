@@ -18,6 +18,7 @@
     pressed = false,
     onChange,
     disabled = false,
+    readonly = false,
     size = 'md',
     ariaLabel,
     invalid = false,
@@ -36,7 +37,7 @@
   // The styled toggle is just a renderer over the headless core.
   const t = createToggle({
     pressed: () => pressed,
-    onChange: (v) => onChange?.(v),
+    onChange: (v) => { if (readonly) return; onChange?.(v) },
     disabled: () => disabled,
     ariaLabel: () => ariaLabel,
     id: () => uid,
@@ -52,6 +53,7 @@
     class="sv-toggle sv-toggle--{size}"
     class:is-pressed={pressed}
     class:is-invalid={invalid}
+    class:is-readonly={readonly}
     {...t.buttonProps()}
   >
     {#if children}{@render children()}{/if}
@@ -77,6 +79,7 @@
     background: var(--_accent); color: var(--sg-on-accent, #fff); border-color: var(--_accent);
   }
   .sv-toggle[disabled] { opacity: 0.55; cursor: not-allowed; }
+  .sv-toggle.is-readonly { cursor: default; }
   .sv-toggle.is-invalid { border-color: var(--sg-danger, #dc2626); }
   .sv-toggle:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--_accent)); outline-offset: 2px; }
 </style>

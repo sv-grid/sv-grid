@@ -20,7 +20,7 @@
 
   type Props = Pick<
     SvEditorProps,
-    'disabled' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel'
+    'disabled' | 'readonly' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel' | 'loading'
   > & {
     nodes: ReadonlyArray<TreeSelectNode>
     value?: string | number | null
@@ -42,6 +42,7 @@
     showPath = false,
     expandedIds = [],
     disabled = false,
+    readonly = false,
     label,
     hint,
     error,
@@ -52,6 +53,7 @@
     name,
     dir,
     ariaLabel,
+    loading = false,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-ts')
@@ -94,6 +96,7 @@
   const ts = createPopoverSelect({
     itemCount: () => rows.length,
     disabled: (i) => !!rows[i]?.node.disabled,
+    readonly: () => readonly,
     onSelect: (i) => { const row = rows[i]; if (row) onRowClick(row) },
     getTrigger: () => triggerEl,
     getPanel: () => panelEl,
@@ -127,7 +130,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {loading}>
   <div class="sv-ts sv-ts--{size}" class:is-disabled={disabled}>
     <button
       bind:this={triggerEl}

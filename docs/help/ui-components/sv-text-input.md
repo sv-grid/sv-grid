@@ -66,8 +66,36 @@ import { SvTextInput } from '@svgrid/grid'
 | `clearable`    | `boolean`                                                | `false`  | Show an inline clear (x) button when non-empty.        |
 | `autocomplete` | `AutoFill`                                               | -        | Native autocomplete token.                             |
 | `autofocus`    | `boolean`                                                | `false`  | Focus + select on mount (used as a cell editor).       |
+| `leading`      | `Snippet`                                                | -        | Adornment (icon/button) at the start of the field.     |
+| `trailing`     | `Snippet`                                                | -        | Adornment (icon/button) at the end of the field.       |
+| `prefix`       | `string`                                                 | -        | Plain-text affix at the start (e.g. `https://`).       |
+| `suffix`       | `string`                                                 | -        | Plain-text affix at the end (e.g. a unit).             |
+| `labelMode`    | `static` \| `floating`                                   | `static` | `floating` rests the label in the field and animates it up on focus/value. |
+| `selectOnFocus` | `boolean`                                               | `false`  | Select the whole value whenever the field is focused.  |
+| `actions`      | `EditorAction[]`                                         | -        | Compact in-field action buttons (lookup / generate / copy). |
+| `block`        | `boolean`                                                | `false`  | Stretch the field to the container width.              |
+
+The control box, size, invalid state, clear button and adornments are all owned
+by [SvField](sv-field.md)'s shared `frame` chrome, so they look and behave
+identically across the text-input family.
 
 ## Examples
+
+### Adornments and affixes
+
+Pass a `leading` / `trailing` snippet for an icon or button, or `prefix` /
+`suffix` strings for plain-text affixes like a protocol or a unit:
+
+```svelte
+<SvTextInput bind:value={query} type="search" clearable label="Search">
+  {#snippet leading()}<SearchIcon />{/snippet}
+</SvTextInput>
+
+<SvTextInput bind:value={price} label="Price" prefix="$" suffix="USD" />
+```
+
+See the [Input adornments demo](../../examples) for the full matrix of icons,
+affixes, sizes and states.
 
 ### Typed variants
 

@@ -4,10 +4,15 @@
    * ------------------------------
    * Row + column virtualization make a wide grid scroll smoothly.
    *
-   * The user can scale the dataset up at runtime. The default is 10,000 rows
-   * × 50 columns - a realistic enterprise size that mounts in well under a
-   * second. The 100,000-row option pushes the grid hard; expect a brief
-   * pause on mount, then smooth scrolling once the virtualizer is live.
+   * The data is a sales team where each rep carries a rolling monthly ledger -
+   * Revenue / Units / Margin per month going back a couple of years. That's a
+   * genuinely wide real-world shape (not placeholder "Metric N" columns), so
+   * scrolling both axes exercises the virtualizer on data that means something.
+   *
+   * The user can scale it up at runtime. The default is 10,000 rows × 55
+   * columns - a realistic enterprise size that mounts in well under a second.
+   * The 100,000-row option pushes the grid hard; expect a brief pause on
+   * mount, then smooth scrolling once the virtualizer is live.
    */
   import {
     SvGrid,
@@ -16,18 +21,22 @@
     columnFilteringFeature,
     type ColumnDef,
   } from '@svgrid/grid'
-  import { makeWidePeople, type WidePerson } from '../shared/seed'
+  import { makeWidePeople, metricKind, type WidePerson } from '../shared/seed'
 
   const features = tableFeatures({
     rowSortingFeature,
     columnFilteringFeature,
   })
 
+  // `cols` is the number of monthly-KPI columns; the label counts the 5 fixed
+  // identity columns too. The smaller tiers keep cols a multiple of 3 so months
+  // group cleanly; the top tier fills to a round 100 columns (the last month is
+  // partial, which the KPI-cycling handles fine).
   type Size = { rows: number; cols: number; label: string }
   const sizes: Size[] = [
-    { rows: 1_000,   cols: 25, label: '1k × 25' },
-    { rows: 10_000,  cols: 50, label: '10k × 50' },
-    { rows: 50_000,  cols: 75, label: '50k × 75' },
+    { rows: 1_000,   cols: 24, label: '1k × 29' },
+    { rows: 10_000,  cols: 48, label: '10k × 53' },
+    { rows: 50_000,  cols: 72, label: '50k × 77' },
     { rows: 100_000, cols: 95, label: '100k × 100' },
   ]
 
@@ -37,26 +46,46 @@
   let columns = $state.raw<ColumnDef<typeof features, WidePerson>[]>([])
   let mountedAt = $state(0)
 
+  // Month labels for the rolling ledger, newest first: "Aug '26", "Jul '26"…
+  // One label per calendar month back from today.
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  function monthLabel(back: number): string {
+    const now = new Date()
+    const d = new Date(now.getFullYear(), now.getMonth() - back, 1)
+    return `${MONTHS[d.getMonth()]} '${String(d.getFullYear()).slice(-2)}`
+  }
+
+  // Each wide column is one month of one KPI, cycling Revenue / Units / Margin.
+  // The header and number format follow the KPI, so the grid reads like a real
+  // performance ledger rather than "Metric 0 … Metric 94".
+  const KPI = [
+    { name: 'Revenue', format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },
+    { name: 'Units',   format: { type: 'number', options: { maximumFractionDigits: 0 } } },
+    { name: 'Margin',  format: { type: 'percent', valueIsPercentPoints: true, options: { maximumFractionDigits: 1 } } },
+  ] as const
+
   function buildColumns(metrics: number): ColumnDef<typeof features, WidePerson>[] {
-    const W = 180
     const base: ColumnDef<typeof features, WidePerson>[] = [
-      { field: 'firstName',  header: 'First name', editorType: 'text', width: W },
-      { field: 'lastName',   header: 'Last name',  editorType: 'text', width: W },
-      { field: 'department', header: 'Department', editorType: 'text', width: W },
-      { field: 'country',    header: 'Country',    editorType: 'text', width: W },
-      { field: 'status',     header: 'Status',     editorType: 'text', width: W },
+      { field: 'firstName',  header: 'First name', editorType: 'text', width: 140 },
+      { field: 'lastName',   header: 'Last name',  editorType: 'text', width: 140 },
+      { field: 'department', header: 'Team',       editorType: 'text', width: 130 },
+      { field: 'country',    header: 'Region',     editorType: 'text', width: 100 },
+      { field: 'status',     header: 'Status',     editorType: 'text', width: 110 },
     ]
-    const metric: ColumnDef<typeof features, WidePerson>[] = []
+    const ledger: ColumnDef<typeof features, WidePerson>[] = []
     for (let i = 0; i < metrics; i++) {
-      metric.push({
+      const kpi = KPI[metricKind(i)]!
+      // Three KPIs share each month, so month N advances every 3 columns.
+      const month = monthLabel(Math.floor(i / 3))
+      ledger.push({
         field: `metric_${i}` as `metric_${number}`,
-        header: `Metric ${i}`,
+        header: `${month} · ${kpi.name}`,
         editorType: 'number',
-        format: { type: 'number', options: { maximumFractionDigits: 2 } },
-        width: W,
+        format: kpi.format,
+        width: 150,
       })
     }
-    return [...base, ...metric]
+    return [...base, ...ledger]
   }
 
   async function load(next: Size) {
@@ -120,7 +149,7 @@
         rowHeight={32}
         overscan={8}
         columnOverscan={3}
-        columnWidth={180}
+        columnWidth={150}
         containerHeight="100%"
       />
     </div>

@@ -1,10 +1,12 @@
-# AI assistant - Enterprise
+# AI assistant
 
-Bring a language model into your grid with four helpers that stay
-strictly model-agnostic: **natural-language filter**, **smart fill**,
-**summarise**, and **classify**. Ships in the paid
-**[@svgrid/enterprise](https://www.npmjs.com/package/@svgrid/enterprise)** add-on; the
-Community build does not include these features.
+Bring a language model into your grid with helpers that stay strictly
+model-agnostic: **natural-language filter**, **smart fill**, **summarise**,
+**classify**, **chart-this**, **find anomalies**, and **natural-language
+export**. Built in and **free** in
+**[@svgrid/grid](https://www.npmjs.com/package/@svgrid/grid)** - no license key,
+no separate package. They ship no model client and do nothing until you
+register a provider, so they add nothing to your bundle unless you import them.
 
 ![Four model-agnostic helpers sit between your grid and a language model you bring through one model adapter.](/docs-media/grid-ai-assistant.svg)
 
@@ -16,21 +18,29 @@ deterministic `mockAIProvider`, so no keys required:
 
 ## What it is
 
-`installEnterprise(api)` (the same call you use for export and print) augments
-your `SvGridApi` with an `ai` namespace:
+Import the helpers from `@svgrid/grid` and call them with your grid `api`
+(the one you get from `onApiReady`):
 
 ```ts
-api.ai.filter(query, opts?)        // NL query -> filter + sort plan
-api.ai.smartFill(opts)             // examples -> proposed column values
-api.ai.summarize(opts)             // row / selection / group / all -> text + bullets
-api.ai.classify(opts)              // free-text cells -> bucketed labels
-api.ai.export(query, opts?)        // NL query -> filter + group + format, then export
-api.ai.findAnomalies(opts?)        // scan a slice for outliers / bad values
+import {
+  aiFilter, aiSmartFill, aiSummarize, aiClassify, aiExport, aiFindAnomalies,
+} from '@svgrid/grid'
+
+aiFilter(api, query, opts?)        // NL query -> filter + sort plan
+aiSmartFill(api, opts)             // examples -> proposed column values
+aiSummarize(api, opts)             // row / selection / group / all -> text + bullets
+aiClassify(api, opts)              // free-text cells -> bucketed labels
+aiExport(api, query, opts?)        // NL query -> filter + group + format, then export*
+aiFindAnomalies(api, opts?)        // scan a slice for outliers / bad values
 ```
 
 Every call routes through one `AIProvider` you register at app boot.
 The grid never bundles a model client - you keep full control of model
 choice, routing, and data handling.
+
+> \* `aiExport` plans the export for free; **writing** the enterprise formats
+> (xlsx / pdf) uses the `@svgrid/enterprise` export engine when it is installed,
+> otherwise it returns the plan without downloading a file.
 
 ## When to use it
 
@@ -43,8 +53,8 @@ choice, routing, and data handling.
 - **Classify** is for triage workflows where free-text rows need a
   consistent bucket label before downstream automation runs.
 
-If you don't need natural-language anywhere, skip this module entirely -
-the rest of `@svgrid/enterprise` doesn't depend on it.
+If you don't need natural-language anywhere, just don't import these
+helpers - they tree-shake away and cost nothing.
 
 ## Setting up the provider
 
@@ -52,7 +62,7 @@ The grid talks to your model through a single async function. Wire it
 once at app startup:
 
 ```ts
-import { setAIProvider, type AIProvider } from '@svgrid/enterprise'
+import { setAIProvider, type AIProvider } from '@svgrid/grid'
 
 const myProvider: AIProvider = async ({ prompt, responseFormat, signal, task, maxOutputTokens }) => {
   const r = await fetch('/api/ai', {
@@ -88,7 +98,7 @@ For testing or for demo purposes, the package ships a deterministic
 in development:
 
 ```ts
-import { setAIProvider, mockAIProvider } from '@svgrid/enterprise'
+import { setAIProvider, mockAIProvider } from '@svgrid/grid'
 setAIProvider(mockAIProvider)
 ```
 
@@ -100,7 +110,7 @@ values) in the prompt so the model picks real field names rather than
 hallucinating.
 
 ```ts
-const plan = await api.ai.filter('accounts losing momentum in EMEA, by NPS')
+const plan = await aiFilter(api, 'accounts losing momentum in EMEA, by NPS')
 // {
 //   filters: [
 //     { field: 'region', operator: 'equals', value: 'EMEA' },
@@ -116,7 +126,7 @@ grid - that lets you show a preview ("here's what I'd do, accept?")
 before committing. Pass `{ apply: true }` to apply directly:
 
 ```ts
-await api.ai.filter('big EMEA deals', { apply: true })
+await aiFilter(api, 'big EMEA deals', { apply: true })
 ```
 
 ### Hallucination guard
@@ -132,7 +142,7 @@ User provides one or two worked examples for a column; the grid asks
 the model to propose values for the remaining empty cells.
 
 ```ts
-const result = await api.ai.smartFill({
+const result = await aiSmartFill(api, {
   field: 'tier',
   examples: [
     { input: { company: 'Northwind' }, output: 'enterprise' },
@@ -156,10 +166,10 @@ Drop a slice of the grid into the model and ask for a one-paragraph +
 bulleted summary. Four target modes:
 
 ```ts
-await api.ai.summarize({ target: { kind: 'all' } })
-await api.ai.summarize({ target: { kind: 'row', rowIndex: 5 } })
-await api.ai.summarize({ target: { kind: 'selection', rowIndices: [1,2,3] } })
-await api.ai.summarize({ target: { kind: 'group', field: 'region', value: 'EMEA' } })
+await aiSummarize(api, { target: { kind: 'all' } })
+await aiSummarize(api, { target: { kind: 'row', rowIndex: 5 } })
+await aiSummarize(api, { target: { kind: 'selection', rowIndices: [1,2,3] } })
+await aiSummarize(api, { target: { kind: 'group', field: 'region', value: 'EMEA' } })
 ```
 
 For large slices the grid samples rows uniformly so the prompt stays
@@ -181,7 +191,7 @@ that answer the question.
 Bucket free-text cells into one of a known set of labels:
 
 ```ts
-const r = await api.ai.classify({
+const r = await aiClassify(api, {
   inputField: 'notes',
   outputField: 'sentiment',
   classes: ['at-risk', 'expanding', 'steady'],
@@ -203,7 +213,7 @@ Describe an export in plain English; the model returns a
 handed to `exportData`:
 
 ```ts
-const plan = await api.ai.export('export EU orders from Q2 as a grouped PDF by country')
+const plan = await aiExport(api, 'export EU orders from Q2 as a grouped PDF by country')
 // -> { format: 'pdf', filters: [...], groupBy: ['country'], rationale: '...' }
 ```
 
@@ -226,7 +236,7 @@ you pass `apply: true`. It reuses the same hallucination guard as `filter`
 Scan a slice (all / selection / group) for outliers and inconsistent values:
 
 ```ts
-const { anomalies, summary } = await api.ai.findAnomalies({ target: { kind: 'all' } })
+const { anomalies, summary } = await aiFindAnomalies(api, { target: { kind: 'all' } })
 // anomalies: [{ rowIndex?, field?, value?, reason, severity: 'low'|'medium'|'high' }]
 ```
 
@@ -243,7 +253,7 @@ itself instead:**
 
 ```ts
 async function runClassify() {
-  const result = await api.ai.classify({ /* ... */ })
+  const result = await aiClassify(api, { /* ... */ })
   const byIdx = new Map(result.predictions.map((p) => [p.rowIndex, p]))
   // Re-assign the data array - Svelte 5 reactivity picks this up and the
   // grid re-renders every visible cell.
@@ -257,23 +267,19 @@ async function runClassify() {
 Then your cell snippet reads `props.row.proposedSentiment` and re-renders
 exactly when expected.
 
-## License gate
+## No license gate
 
-Every AI call routes through the same polite license gate as `exportData`
-and `print`:
-
-- **No key set** → call still runs, the grid shows an "unlicensed"
-  watermark and the console logs a one-time nudge directing the user to
-  pricing. This is intentional for demos and evaluation.
-- **`SVENTERPRISE-DEV-...` / `SVENTERPRISE-EVAL-...`** → call runs, a one-time
-  `console.info` notes that the key is not for production.
-- **Other valid `SVENTERPRISE-` key** → call runs silently.
-- **Malformed prefix or revoked key** → call throws.
+The AI helpers are built into the free `@svgrid/grid` and are **never** gated -
+no key, no watermark, no nudge. The only license interaction is `aiExport`'s
+final write step: emitting an enterprise format (xlsx / pdf) goes through
+`@svgrid/enterprise`'s export engine, which carries the usual enterprise
+watermark until a `SVENTERPRISE-` key is set. Planning the export, and every
+other AI helper, is unconditionally free.
 
 ## See also
 
-- [Demo 21 - Export + Print](../../examples/src/demos/21-export-and-print.svelte) - the other Enterprise
-  surface, installed by the same `installEnterprise(api)` call.
+- [Demo 21 - Export + Print](../../examples/src/demos/21-export-and-print.svelte) - the
+  Enterprise export engine that `aiExport` writes through when it is installed.
 - [Demo 51 - AI assistant](../../examples/src/demos/51-ai-assistant.svelte) - the full demo this
   page documents, with all four helpers wired to the mock provider.
 
@@ -281,9 +287,10 @@ and `print`:
 
 ### What AI features does SvGrid have?
 
-The `@svgrid/enterprise` AI assistant ships four model-agnostic helpers:
-natural-language filter, smart fill, summarise, and classify. They run through a
-bring-your-own-model adapter, so you wire in your own LLM endpoint.
+The `@svgrid/grid` package ships built-in, free, model-agnostic AI helpers:
+natural-language filter, smart fill, summarise, classify, chart-this, find
+anomalies, and natural-language export. They run through a bring-your-own-model
+adapter, so you wire in your own LLM endpoint.
 
 ### Which LLM does SvGrid use?
 

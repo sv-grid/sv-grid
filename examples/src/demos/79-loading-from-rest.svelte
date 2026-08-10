@@ -250,7 +250,7 @@
   .rest-btn-primary {
     border-color: transparent;
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
   .rest-btn-primary:hover { filter: brightness(1.06); }
 

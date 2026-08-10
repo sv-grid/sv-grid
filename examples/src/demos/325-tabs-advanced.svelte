@@ -108,7 +108,7 @@
   .tabbody.empty { color: var(--sg-muted, #94a3b8); padding: 16px 2px; }
   .posbar { display: flex; gap: 6px; margin-bottom: 12px; }
   .chip { font: inherit; font-size: 12px; font-weight: 600; text-transform: capitalize; padding: 5px 12px; border: 1px solid var(--sg-border, #cbd5e1); border-radius: 999px; background: var(--sg-input-bg, #fff); color: var(--sg-muted, #64748b); cursor: pointer; }
-  .chip.on { background: var(--sg-accent, #2563eb); border-color: var(--sg-accent, #2563eb); color: #fff; }
+  .chip.on { background: var(--sg-accent, #2563eb); border-color: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); }
   .posframe { border: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px; padding: 10px; min-height: 150px; }
   .narrowframe { max-width: 420px; border: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px; padding: 8px 10px 12px; }
 </style>

@@ -331,7 +331,7 @@
   .vs-btn:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.10)); }
   .vs-btn-on {
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     border-color: transparent;
     font-weight: 600;
   }

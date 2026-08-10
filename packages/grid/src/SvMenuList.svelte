@@ -15,6 +15,7 @@
   import { type EditorDir } from './editor-contract'
   import type { MenuItem } from './menu-item'
   import { createMenu } from './createMenu.svelte'
+  import { computePosition, autoUpdate, type Placement } from './positioning'
 
   let {
     items,
@@ -53,6 +54,32 @@
     dir: () => dir,
     focusItem: (i) => queueMicrotask(() => listEl?.querySelector<HTMLElement>(`[data-mi="${i}"]`)?.focus()),
   })
+
+  // Position an open submenu flyout with the shared engine: prefer opening to the
+  // side away from the reading direction, flip to the opposite side when there is
+  // no room, and clamp vertically to stay in view. Kept absolute (relative to the
+  // itemwrap) so a nested flyout is never clipped by a scroll container.
+  const startSide: Placement = dir === 'rtl' ? 'left-start' : 'right-start'
+  function flyout(node: HTMLElement) {
+    const wrap = node.parentElement // .sv-menu__itemwrap
+    const btn = wrap?.querySelector<HTMLElement>(':scope > .sv-menu__item') ?? null
+    const update = () => {
+      if (!btn || !wrap) return
+      const r = btn.getBoundingClientRect()
+      const w = wrap.getBoundingClientRect()
+      const f = { width: node.offsetWidth || 200, height: node.offsetHeight || 120 }
+      const p = computePosition(
+        { x: r.left, y: r.top, width: r.width, height: r.height },
+        f,
+        { placement: startSide, offset: 2, padding: 8 },
+      )
+      node.style.left = `${p.x - w.left}px`
+      node.style.top = `${p.y - w.top}px`
+    }
+    if (!btn) { update(); return {} }
+    const stop = autoUpdate(btn, node, update)
+    return { destroy() { stop() } }
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -74,7 +101,7 @@
           {#if item.children?.length}<svg class="sv-menu__chev" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>{/if}
         </button>
         {#if item.children?.length && menu.isSubOpen(i)}
-          <div class="sv-menu__flyout">
+          <div class="sv-menu__flyout" use:flyout>
             <Self
               items={item.children}
               {onclose}
@@ -109,9 +136,11 @@
   .sv-menu__shortcut { color: var(--sg-muted, #94a3b8); font-size: 11.5px; margin-inline-start: 12px; }
   .sv-menu__chev { color: var(--sg-muted, #94a3b8); flex: none; }
   .sv-menu[dir='rtl'] .sv-menu__chev, .sv-menu__list.is-submenu .sv-menu__chev { transform: scaleX(-1); }
+  /* top/left are the pre-JS fallback (open to the right); the `flyout` action
+     overrides them with engine-computed offsets (flip + vertical clamp). */
   .sv-menu__flyout {
-    position: absolute; top: -5px; inset-inline-start: 100%; z-index: 1;
+    position: absolute; top: -5px; left: 100%; z-index: 1;
     background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 10px; box-shadow: 0 16px 40px -12px rgba(15,23,42,0.32); margin-inline-start: 2px;
+    border-radius: 10px; box-shadow: 0 16px 40px -12px rgba(15,23,42,0.32);
   }
 </style>

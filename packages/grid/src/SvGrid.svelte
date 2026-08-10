@@ -23,8 +23,10 @@
     RenderComponentConfig,
   } from "./render-component";
   import { buildSparkline, toSparklineValues } from "./sparkline";
-  import SvGridDropdown from "./SvGridDropdown.svelte";
-  import SvDateTimePicker from "./SvDateTimePicker.svelte";
+  import { localizeOperatorLabel } from "./filter-operators";
+  // SvGridDropdown (list/chips cell editor) and SvDateTimePicker (date/time cell
+  // editors) are lazy-loaded below - they only mount while a cell of that type is
+  // actively being edited, so they stay out of the base <SvGrid> bundle.
   import {
     hasCellEditor,
     getCellEditor,
@@ -57,19 +59,92 @@
     joinInTokens,
   } from "./filtering/excel-filters";
   import { createSvGridController } from "./SvGrid.controller.svelte";
-  import GridMenus from "./GridMenus.svelte";
-  import SvGridChartPanel from "./SvGridChartPanel.svelte";
+  // GridMenus hosts tooltips + all column/filter/context menu overlays - none of
+  // which exist until the user hovers or opens a menu, so it too is lazy-loaded.
   import GridFooter from "./GridFooter.svelte";
-  import SvGridBoard from "./SvGridBoard.svelte";
+  // SvGridChartPanel (charting) and SvGridBoard (Kanban) are heavy, prop-gated
+  // views - lazy-loaded below so they stay out of the base <SvGrid> bundle.
   import { getSchedulerView } from "./scheduler-view.svelte";
+  import { getBoardView } from "./board-view.svelte";
   let props: Props<TFeatures, TData> = $props();
   const ctrl = createSvGridController(props);
+  // Effective props: the controller's `override ?? prop` proxy that backs
+  // `api.setOption(...)`. Reading `opt.X` (instead of `props.X`) makes a view-direct
+  // prop honor a runtime override. Svelte binds template `props.X` reads to the prop
+  // signal (so reassigning `props` would not reroute them); `opt` is a separate
+  // binding the template reads by name. Behavioral props (sortable/filterable/...) are
+  // already resolved through the controller, so they honor overrides without `opt`.
+  const opt = ctrl.props as Props<TFeatures, TData>;
+  // Localized chrome strings (English defaults merged with `localeText`).
+  const messages = $derived(ctrl.messages);
   // Kanban board mode: when `board` is set the grid renders lanes of cards
   // instead of the table (see SvGridBoard). Narrowed derived so the template
   // branch can pass it non-null.
-  const boardConfig = $derived(props.board);
+  const boardConfig = $derived(opt.board);
   // Scheduler / calendar mode: same "view of the grid" seam as the board.
-  const schedulerConfig = $derived(props.scheduler);
+  const schedulerConfig = $derived(opt.scheduler);
+  // Lazy views + editors: charting (SvGridChart engine), the Kanban board, the
+  // list/date cell editors and the menu/tooltip overlay host are all large and
+  // only used behind a prop or an interaction, so each loads as its own chunk the
+  // first time its feature is actually reached - keeping them out of the base
+  // <SvGrid> bundle. Held in $state and mounted as dynamic components once
+  // resolved (client-only, mirroring the scheduler-view seam above).
+  // Holder types use type-only `import(...)` so each keeps full prop inference
+  // (callback param types) while the *runtime* import stays lazy - the type
+  // import is erased by the compiler and adds nothing to the bundle.
+  // The Kanban board renderer ships in @svgrid/enterprise and plugs in through
+  // the `board-view` seam (getBoardView) - same model as the scheduler view.
+  let ChartPanelView = $state<typeof import("./SvGridChartPanel.svelte").default | null>(null);
+  let DropdownEditor = $state<typeof import("./SvGridDropdown.svelte").default | null>(null);
+  let DateEditor = $state<typeof import("./SvDateTimePicker.svelte").default | null>(null);
+  let MenusOverlay = $state<typeof import("./GridMenus.svelte").default | null>(null);
+  $effect(() => {
+    if (ctrl.chartingEnabled && ctrl.chartPanelOpen && !ChartPanelView)
+      import("./SvGridChartPanel.svelte").then((m) => (ChartPanelView = m.default));
+  });
+
+  // When the chart panel is docked (not floating), reserve space on the root so
+  // the panel sits in a gutter beside/below the grid instead of overlaying the
+  // data rows. The panel is absolutely positioned, and absolute offsets are
+  // measured from the padding box - so padding on the root pushes the grid
+  // content (toolbar + shell + footer) inward and leaves exactly `size` px of
+  // gutter for the panel to fill. Mirrors the panel's own position/size logic.
+  const chartDockReserveStyle = $derived.by(() => {
+    if (!ctrl.chartingEnabled || !ctrl.chartPanelOpen || ctrl.chartFloating)
+      return "";
+    const cfg = ctrl.chartingConfig;
+    const pos = cfg?.position ?? "right";
+    const size =
+      ctrl.chartSize ??
+      (pos === "right" ? (cfg?.width ?? 460) : (cfg?.height ?? 300));
+    const edge = pos === "right" ? "padding-right" : "padding-bottom";
+    return `${edge}:${size}px; transition:${edge} 180ms cubic-bezier(0.33,1,0.68,1);`;
+  });
+  $effect(() => {
+    const t = ctrl.editingCell?.editorType;
+    if (
+      (t === "list" || t === "chips" || t === "select" || t === "rich-select") &&
+      !DropdownEditor
+    )
+      import("./SvGridDropdown.svelte").then((m) => (DropdownEditor = m.default));
+    if ((t === "date" || t === "datetime" || t === "time") && !DateEditor)
+      import("./SvDateTimePicker.svelte").then((m) => (DateEditor = m.default));
+  });
+  $effect(() => {
+    const menuOpen =
+      ctrl.tooltip ||
+      ctrl.columnMenuFor ||
+      ctrl.contextMenuFor ||
+      ctrl.filterMenuFor ||
+      ctrl.operatorMenuFor ||
+      ctrl.chooseColumnsPos;
+    if (menuOpen && !MenusOverlay)
+      import("./GridMenus.svelte").then((m) => (MenusOverlay = m.default));
+  });
+  // In-grid pivot mode: when active, the grid renders the pivot result (over its
+  // filtered + sorted rows) as a nested grid in place of the flat table.
+  const pivotViewOn = $derived(!!ctrl.pivotConfig && ctrl.pivotModeOn);
+  const pivotResult = $derived(ctrl.pivotResult);
   // The board / scheduler render the grid's FILTERED + SORTED rows (not raw
   // data), so the search box / column filters / sort all flow through to them.
   const boardData = $derived(
@@ -120,7 +195,7 @@
   const onColumnHeaderDrop = $derived(ctrl.onColumnHeaderDrop);
   const onColumnHeaderDragEnd = $derived(ctrl.onColumnHeaderDragEnd);
   // Managed row dragging
-  const rowDragManagedEffective = $derived(props.rowDragManaged === true);
+  const rowDragManagedEffective = $derived(opt.rowDragManaged === true);
   const rowDropIndex = $derived(ctrl.rowDropIndex);
   const rowDropSide = $derived(ctrl.rowDropSide);
   const onRowDragStart = $derived(ctrl.onRowDragStart);
@@ -155,7 +230,7 @@
   const isGroupRow = $derived(ctrl.isGroupRow);
   // Server-side group / tree a11y: aria-level on every tree row, aria-expanded
   // on the expandable ones. Undefined (attribute omitted) when serverGroup is off.
-  const serverGroup = $derived(props.serverGroup);
+  const serverGroup = $derived(opt.serverGroup);
   function sgAriaLevel(row: Row<TData>): number | undefined {
     return serverGroup ? serverGroup.level(row.original as TData) + 1 : undefined;
   }
@@ -183,7 +258,7 @@
   // The non-virtualized (`virtualization={false}`) body must apply this too, else its rows
   // fall back to content height and look shorter than a virtualized grid's.
   const rowSizePx = (i: number): number => {
-    const rh = props.rowHeight;
+    const rh = opt.rowHeight;
     return typeof rh === "function" ? rh(i) : (rh ?? 30);
   };
   const columnVirtualizationEnabled = $derived(
@@ -532,27 +607,27 @@
   onpointermove={onWindowPointerMove}
 />
 
-{#if props.loading && !props.loadingOverlay && !hasMeasured}
+{#if opt.loading && !opt.loadingOverlay && !hasMeasured}
   <!-- Full-screen loading state only on the *initial* load, before the grid
        has ever rendered. Once measured, a `loading` flip (from a server-mode
        sort / filter / page refetch) keeps the table mounted so header inputs
        and focus survive - the empty-row message + optional `loadingOverlay`
        cover the in-place refresh. -->
   <div class="sv-grid-state sv-grid-state-loading" role="status">
-    Loading grid data...
+    {messages.loading}
   </div>
-{:else if props.error}
+{:else if opt.error}
   <div class="sv-grid-state sv-grid-state-error" role="alert">
-    {props.error}
+    {opt.error}
   </div>
 {:else if boardConfig}
   <div
     class="sv-grid-root sv-grid-board-root"
-    class:sv-grid-root-fill={props.containerHeight === "100%"}
+    class:sv-grid-root-fill={opt.containerHeight === "100%"}
     style={`height: ${
-      typeof props.containerHeight === "string"
-        ? props.containerHeight
-        : `${props.containerHeight ?? 520}px`
+      typeof opt.containerHeight === "string"
+        ? opt.containerHeight
+        : `${opt.containerHeight ?? 520}px`
     }; display: flex; flex-direction: column;`}
   >
     {#if boardConfig.searchable !== false}
@@ -570,22 +645,36 @@
       </label>
     {/if}
     <div style="flex: 1 1 auto; min-height: 0;">
-      <SvGridBoard
-        data={boardData}
-        columns={props.columns}
-        board={boardConfig}
-        getRowId={props.getRowId}
-      />
+      {#if getBoardView()}
+        {@const BoardView = getBoardView()}
+        <BoardView
+          data={boardData}
+          columns={opt.columns}
+          board={boardConfig}
+          getRowId={opt.getRowId}
+        />
+      {:else}
+        <!-- The Kanban board renderer ships in @svgrid/enterprise. Call
+             `enableBoardView()` (or `installEnterprise(api)`) to register it. -->
+        <div class="sv-grid-scheduler-upsell" role="note">
+          <strong>Kanban board view</strong>
+          <p>
+            The Kanban board view is an Enterprise feature. Install
+            <code>@svgrid/enterprise</code> and call <code>enableBoardView()</code>
+            to render it.
+          </p>
+        </div>
+      {/if}
     </div>
   </div>
 {:else if schedulerConfig}
   <div
     class="sv-grid-root sv-grid-scheduler-root"
-    class:sv-grid-root-fill={props.containerHeight === "100%"}
+    class:sv-grid-root-fill={opt.containerHeight === "100%"}
     style={`height: ${
-      typeof props.containerHeight === "string"
-        ? props.containerHeight
-        : `${props.containerHeight ?? 520}px`
+      typeof opt.containerHeight === "string"
+        ? opt.containerHeight
+        : `${opt.containerHeight ?? 520}px`
     }; display: flex; flex-direction: column;`}
   >
     {#if schedulerConfig.searchable !== false}
@@ -607,9 +696,9 @@
         {@const SchedulerView = getSchedulerView()}
         <SchedulerView
           data={boardData}
-          columns={props.columns}
+          columns={opt.columns}
           scheduler={schedulerConfig}
-          getRowId={props.getRowId}
+          getRowId={opt.getRowId}
         />
       {:else}
         <!-- The scheduler renderer ships in @svgrid/enterprise. Call
@@ -621,6 +710,42 @@
             <code>@svgrid/enterprise</code> and call <code>enableSchedulerView()</code>
             to render it.
           </p>
+        </div>
+      {/if}
+    </div>
+  </div>
+{:else if pivotViewOn}
+  <div
+    class="sv-grid-root sv-grid-pivot-root"
+    class:sv-grid-root-fill={opt.containerHeight === "100%"}
+    style={`height: ${
+      typeof opt.containerHeight === "string"
+        ? opt.containerHeight
+        : `${opt.containerHeight ?? 520}px`
+    }; display: flex; flex-direction: column;`}
+  >
+    <div class="sv-grid-pivot-bar">
+      <span class="sv-grid-pivot-badge">{messages.group}</span>
+      <button
+        type="button"
+        class="sv-grid-pivot-toggle"
+        aria-pressed="true"
+        onclick={() => ctrl.togglePivotMode()}
+      >{messages.pivotUpsellTitle}</button>
+    </div>
+    <div style="flex: 1 1 auto; min-height: 0;">
+      {#if pivotResult}
+        <svelte:self
+          data={pivotResult.rows}
+          columns={pivotResult.columns}
+          containerHeight="100%"
+        />
+      {:else}
+        <!-- The pivot engine ships in @svgrid/enterprise. Call `enablePivot()`
+             (or `installEnterprise(api)`) to register it. -->
+        <div class="sv-grid-scheduler-upsell sv-grid-pivot-upsell" role="note">
+          <strong>{messages.pivotUpsellTitle}</strong>
+          <p>{messages.pivotUpsellBody}</p>
         </div>
       {/if}
     </div>
@@ -966,22 +1091,24 @@
     {:else if ctrl.editingCell?.editorType === "list"}
       {@const opts = getColumnEditorOptions(column, row)}
       {@const multi = column.columnDef.editorMultiple === true}
-      <SvGridDropdown
-        options={opts}
-        value={ctrl.editingCell?.value}
-        multiple={multi}
-        placeholder="Select…"
-        onChange={(next) => {
-          ctrl.editingCell = ctrl.editingCell
-            ? { ...ctrl.editingCell, value: next }
-            : ctrl.editingCell;
-        }}
-        onCommit={() => saveEditingCell()}
-        onCancel={() => {
-          ctrl.editingCell = null;
-          ctrl.gridRootEl?.focus({ preventScroll: true });
-        }}
-      />
+      {#if DropdownEditor}
+        <DropdownEditor
+          options={opts}
+          value={ctrl.editingCell?.value}
+          multiple={multi}
+          placeholder="Select…"
+          onChange={(next) => {
+            ctrl.editingCell = ctrl.editingCell
+              ? { ...ctrl.editingCell, value: next }
+              : ctrl.editingCell;
+          }}
+          onCommit={() => saveEditingCell()}
+          onCancel={() => {
+            ctrl.editingCell = null;
+            ctrl.gridRootEl?.focus({ preventScroll: true });
+          }}
+        />
+      {/if}
     {:else if ctrl.editingCell?.editorType === "chips"}
       {@const opts = getColumnEditorOptions(column, row)}
       {@const multi = column.columnDef.editorMultiple === true}
@@ -1029,43 +1156,47 @@
       <!-- Custom dropdown: opens a themed popover identical in feel to
            the existing 'list' editor (single-select, no typeahead). -->
       {@const selectOpts = getColumnEditorOptions(column, row)}
-      <SvGridDropdown
-        options={selectOpts}
-        value={ctrl.editingCell?.value}
-        multiple={false}
-        placeholder="Select…"
-        onChange={(next) => {
-          ctrl.editingCell = ctrl.editingCell
-            ? { ...ctrl.editingCell, value: next }
-            : ctrl.editingCell;
-        }}
-        onCommit={() => saveEditingCell()}
-        onCancel={() => {
-          ctrl.editingCell = null;
-          ctrl.gridRootEl?.focus({ preventScroll: true });
-        }}
-      />
+      {#if DropdownEditor}
+        <DropdownEditor
+          options={selectOpts}
+          value={ctrl.editingCell?.value}
+          multiple={false}
+          placeholder="Select…"
+          onChange={(next) => {
+            ctrl.editingCell = ctrl.editingCell
+              ? { ...ctrl.editingCell, value: next }
+              : ctrl.editingCell;
+          }}
+          onCommit={() => saveEditingCell()}
+          onCancel={() => {
+            ctrl.editingCell = null;
+            ctrl.gridRootEl?.focus({ preventScroll: true });
+          }}
+        />
+      {/if}
     {:else if ctrl.editingCell?.editorType === "rich-select"}
       <!-- Searchable combobox: same popover as 'select' with a
            typeahead filter input baked in at the top. -->
       {@const richOpts = getColumnEditorOptions(column, row)}
-      <SvGridDropdown
-        options={richOpts}
-        value={ctrl.editingCell?.value}
-        multiple={false}
-        searchable={true}
-        placeholder="Search…"
-        onChange={(next) => {
-          ctrl.editingCell = ctrl.editingCell
-            ? { ...ctrl.editingCell, value: next }
-            : ctrl.editingCell;
-        }}
-        onCommit={() => saveEditingCell()}
-        onCancel={() => {
-          ctrl.editingCell = null;
-          ctrl.gridRootEl?.focus({ preventScroll: true });
-        }}
-      />
+      {#if DropdownEditor}
+        <DropdownEditor
+          options={richOpts}
+          value={ctrl.editingCell?.value}
+          multiple={false}
+          searchable={true}
+          placeholder="Search…"
+          onChange={(next) => {
+            ctrl.editingCell = ctrl.editingCell
+              ? { ...ctrl.editingCell, value: next }
+              : ctrl.editingCell;
+          }}
+          onCommit={() => saveEditingCell()}
+          onCancel={() => {
+            ctrl.editingCell = null;
+            ctrl.gridRootEl?.focus({ preventScroll: true });
+          }}
+        />
+      {/if}
     {:else if ctrl.editingCell?.editorType === "textarea"}
       <!-- Multi-line editor. Commits on Tab, Ctrl/Cmd+Enter, or blur.
            Plain Enter inserts a newline (the whole point of textarea).
@@ -1148,49 +1279,55 @@
     {:else if ctrl.editingCell?.editorType === "date"}
       <!-- Rich date editor: SvCalendar popover over a formatted input. Opts
            out to the native <input type="date"> via editorType 'date-native'. -->
-      <SvDateTimePicker
-        value={ctrl.editingCell?.value as string | number | Date | null}
-        formatString="yyyy-MM-dd"
-        dropDownDisplayMode="calendar"
-        autoOpen
-        block
-        onChange={(d) => updateEditingCellValue(d)}
-        onCommit={() => saveEditingCell()}
-        onCancel={() => {
-          ctrl.editingCell = null;
-          ctrl.gridRootEl?.focus({ preventScroll: true });
-        }}
-      />
+      {#if DateEditor}
+        <DateEditor
+          value={ctrl.editingCell?.value as string | number | Date | null}
+          formatString="yyyy-MM-dd"
+          dropDownDisplayMode="calendar"
+          autoOpen
+          block
+          onChange={(d) => updateEditingCellValue(d)}
+          onCommit={() => saveEditingCell()}
+          onCancel={() => {
+            ctrl.editingCell = null;
+            ctrl.gridRootEl?.focus({ preventScroll: true });
+          }}
+        />
+      {/if}
     {:else if ctrl.editingCell?.editorType === "datetime"}
-      <SvDateTimePicker
-        value={ctrl.editingCell?.value as string | number | Date | null}
-        formatString="yyyy-MM-dd HH:mm"
-        dropDownDisplayMode="both"
-        autoOpen
-        block
-        onChange={(d) => updateEditingCellValue(d)}
-        onCommit={() => saveEditingCell()}
-        onCancel={() => {
-          ctrl.editingCell = null;
-          ctrl.gridRootEl?.focus({ preventScroll: true });
-        }}
-      />
+      {#if DateEditor}
+        <DateEditor
+          value={ctrl.editingCell?.value as string | number | Date | null}
+          formatString="yyyy-MM-dd HH:mm"
+          dropDownDisplayMode="both"
+          autoOpen
+          block
+          onChange={(d) => updateEditingCellValue(d)}
+          onCommit={() => saveEditingCell()}
+          onCancel={() => {
+            ctrl.editingCell = null;
+            ctrl.gridRootEl?.focus({ preventScroll: true });
+          }}
+        />
+      {/if}
     {:else if ctrl.editingCell?.editorType === "time"}
       <!-- Rich time editor: SvTimePicker dial. Stores the 'HH:MM' string the
            `time` parser expects; opts out via editorType 'time-native'. -->
-      <SvDateTimePicker
-        value={timeStringToDate(ctrl.editingCell?.value)}
-        formatString="HH:mm"
-        dropDownDisplayMode="time"
-        autoOpen
-        block
-        onChange={(d) => updateEditingCellValue(dateToTimeString(d))}
-        onCommit={() => saveEditingCell()}
-        onCancel={() => {
-          ctrl.editingCell = null;
-          ctrl.gridRootEl?.focus({ preventScroll: true });
-        }}
-      />
+      {#if DateEditor}
+        <DateEditor
+          value={timeStringToDate(ctrl.editingCell?.value)}
+          formatString="HH:mm"
+          dropDownDisplayMode="time"
+          autoOpen
+          block
+          onChange={(d) => updateEditingCellValue(dateToTimeString(d))}
+          onCommit={() => saveEditingCell()}
+          onCancel={() => {
+            ctrl.editingCell = null;
+            ctrl.gridRootEl?.focus({ preventScroll: true });
+          }}
+        />
+      {/if}
     {:else if ctrl.editingCell?.editorType === "color"}
       <!-- Native <input type="color"> opens its picker in a separate OS
            overlay; once the picker closes, focus stays on the input so
@@ -1307,23 +1444,25 @@
            which renders the selected values as chips in its trigger and
            pops out a styled listbox. Identical UX to the list editor
            with renderChipsInTrigger flipped on. -->
-      <SvGridDropdown
-        options={opts}
-        value={ctrl.editingCell?.value}
-        multiple={multi}
-        placeholder="Pick…"
-        renderChipsInTrigger={true}
-        onChange={(next) => {
-          ctrl.editingCell = ctrl.editingCell
-            ? { ...ctrl.editingCell, value: next }
-            : ctrl.editingCell;
-        }}
-        onCommit={() => saveEditingCell()}
-        onCancel={() => {
-          ctrl.editingCell = null;
-          ctrl.gridRootEl?.focus({ preventScroll: true });
-        }}
-      />
+      {#if DropdownEditor}
+        <DropdownEditor
+          options={opts}
+          value={ctrl.editingCell?.value}
+          multiple={multi}
+          placeholder="Pick…"
+          renderChipsInTrigger={true}
+          onChange={(next) => {
+            ctrl.editingCell = ctrl.editingCell
+              ? { ...ctrl.editingCell, value: next }
+              : ctrl.editingCell;
+          }}
+          onCommit={() => saveEditingCell()}
+          onCancel={() => {
+            ctrl.editingCell = null;
+            ctrl.gridRootEl?.focus({ preventScroll: true });
+          }}
+        />
+      {/if}
     {:else}
       <!-- Free-form chips: typed tags. Enter / comma commits a chip,
            Backspace on empty input removes the last chip, blur saves. -->
@@ -1467,8 +1606,8 @@
           (showRowNumbersEffective ? 1 : 0) +
           (showRowSelectionEffective ? 1 : 0)}
       >
-        {#if props.renderDetailRow}
-          {@render props.renderDetailRow({
+        {#if opt.renderDetailRow}
+          {@render opt.renderDetailRow({
             row: detailRow.original as TData,
             rowIndex: detailRowIndex,
           })}
@@ -1537,7 +1676,8 @@
 
   <div
     class="sv-grid-root"
-    class:sv-grid-root-fill={props.containerHeight === "100%"}
+    class:sv-grid-root-fill={opt.containerHeight === "100%"}
+    style={chartDockReserveStyle}
   >
     {#if showGlobalFilterEffective}
       <label class="sv-grid-global-filter">
@@ -1595,17 +1735,17 @@
       </div>
     {/if}
 
-    {#if hasMeasured && (props.paginationPosition === "top" || props.paginationPosition === "both")}
-      <GridFooter {ctrl} showStatus={false} top pager pageSizeOptions={props.pageSizeOptions} />
+    {#if hasMeasured && (opt.paginationPosition === "top" || opt.paginationPosition === "both")}
+      <GridFooter {ctrl} showStatus={false} top pager pageSizeOptions={opt.pageSizeOptions} />
     {/if}
 
     <div
       class="sv-grid-shell"
       style={`height: ${
-        typeof props.containerHeight === "string"
-          ? props.containerHeight
-          : `${props.containerHeight ?? 520}px`
-      }; --sg-thead-h: ${headerHeight}px; --sg-pinned-row-h: ${typeof props.rowHeight === "number" ? props.rowHeight : 30}px;`}
+        typeof opt.containerHeight === "string"
+          ? opt.containerHeight
+          : `${opt.containerHeight ?? 520}px`
+      }; --sg-thead-h: ${headerHeight}px; --sg-pinned-row-h: ${typeof opt.rowHeight === "number" ? opt.rowHeight : 30}px;`}
     >
       <div
         class="sv-grid-container sv-grid-container-custom-scrollbars"
@@ -1619,12 +1759,12 @@
         <table
           bind:this={ctrl.gridRootEl}
           class="sv-grid-table"
-          class:sv-grid-no-row-hover={props.enableRowHover !== true}
+          class:sv-grid-no-row-hover={opt.enableRowHover !== true}
           {...getGridRootA11yProps({
             activeDescendantId,
             rowCount: allRows.length,
             colCount: allColumns.length,
-            treegrid: !!props.serverGroup,
+            treegrid: !!opt.serverGroup,
           })}
           onkeydown={onGridKeyDown}
           onpaste={onGridPaste}
@@ -1640,8 +1780,8 @@
               <tr
                 class="sv-grid-row sv-grid-header-row sv-grid-group-header-row"
                 {...getGridRowA11yProps()}
-                style={props.headerHeight
-                  ? `height: ${props.headerHeight}px;`
+                style={opt.headerHeight
+                  ? `height: ${opt.headerHeight}px;`
                   : undefined}
               >
                 {#if showRowNumbersEffective}
@@ -1726,8 +1866,8 @@
               <tr
                 class="sv-grid-row sv-grid-header-row"
                 {...getGridRowA11yProps()}
-                style={props.headerHeight
-                  ? `height: ${props.headerHeight}px;`
+                style={opt.headerHeight
+                  ? `height: ${opt.headerHeight}px;`
                   : undefined}
               >
                 {#if showRowNumbersEffective}
@@ -1786,23 +1926,23 @@
                       data-align={getColumnAlign(rendered.column)}
                       data-pinned={isColumnPinned(rendered.column.id) ??
                         undefined}
-                      draggable={(props.enableColumnReorder ?? false)
+                      draggable={(opt.enableColumnReorder ?? false)
                         ? true
                         : undefined}
                       ondragstart={(e) =>
-                        (props.enableColumnReorder ?? false) &&
+                        (opt.enableColumnReorder ?? false) &&
                         onColumnHeaderDragStart(e, header.column.id)}
                       ondragover={(e) =>
-                        (props.enableColumnReorder ?? false) &&
+                        (opt.enableColumnReorder ?? false) &&
                         onColumnHeaderDragOver(e, header.column.id)}
                       ondragleave={() =>
-                        (props.enableColumnReorder ?? false) &&
+                        (opt.enableColumnReorder ?? false) &&
                         onColumnHeaderDragLeave(header.column.id)}
                       ondrop={(e) =>
-                        (props.enableColumnReorder ?? false) &&
+                        (opt.enableColumnReorder ?? false) &&
                         onColumnHeaderDrop(e, header.column.id)}
                       ondragend={() =>
-                        (props.enableColumnReorder ?? false) &&
+                        (opt.enableColumnReorder ?? false) &&
                         onColumnHeaderDragEnd()}
                       style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
                       {...getGridHeaderA11yProps({
@@ -2032,8 +2172,8 @@
                           type="button"
                           class="sv-grid-filter-operator-btn"
                           class:is-open={operatorMenuFor === rendered.column.id}
-                          title={`Condition: ${operatorOption(activeOperator).label}`}
-                          aria-label={`Filter condition: ${operatorOption(activeOperator).label}`}
+                          title={`Condition: ${localizeOperatorLabel(operatorOption(activeOperator), rendered.column, messages)}`}
+                          aria-label={`Filter condition: ${localizeOperatorLabel(operatorOption(activeOperator), rendered.column, messages)}`}
                           onclick={(event) =>
                             openOperatorMenu(event, rendered.column.id)}
                         >
@@ -2160,13 +2300,13 @@
               {/if}
             {/each}
           </thead>
-          {#if props.pinnedTopRows && props.pinnedTopRows.length > 0}
+          {#if opt.pinnedTopRows && opt.pinnedTopRows.length > 0}
             <!-- svelte-ignore a11y_no_redundant_roles -->
             <tbody
               class="sv-grid-pinned sv-grid-pinned-top-body"
               role="rowgroup"
             >
-              {#each props.pinnedTopRows as r, i (i)}
+              {#each opt.pinnedTopRows as r, i (i)}
                 {@render pinnedRowBody(r, "top", i)}
               {/each}
             </tbody>
@@ -2180,7 +2320,7 @@
               : undefined}
             ondrop={rowDragManagedEffective ? onRowsContainerDrop : undefined}
           >
-            {#if !allRows.length && !(props.loading && props.loadingOverlay)}
+            {#if !allRows.length && !(opt.loading && opt.loadingOverlay)}
               <tr class="sv-grid-row sv-grid-empty-row">
                 <td
                   class="sv-grid-cell sv-grid-empty-cell"
@@ -2188,7 +2328,7 @@
                     (showRowNumbersEffective ? 1 : 0) +
                     (showRowSelectionEffective ? 1 : 0)}
                 >
-                  {props.emptyMessage ?? "No rows to display."}
+                  {opt.emptyMessage ?? messages.noRows}
                 </td>
               </tr>
             {:else if rowVirtualizationEnabled}
@@ -2207,7 +2347,7 @@
                 {@const rowIndex = rowItem.index}
                 {@const row = allRows[rowIndex]}
                 {#if row}
-                  {#if props.isDetailRow?.(row.original as TData, rowIndex)}
+                  {#if opt.isDetailRow?.(row.original as TData, rowIndex)}
                     {@render detailRowMarkup(row, rowIndex)}
                   {:else if isGroupRow(row)}
                     <tr
@@ -2235,7 +2375,7 @@
                     <tr
                       class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
                       class:sv-grid-row-selected={isRowSelected(row.id)}
-                      class:sv-grid-row-alt={props.zebraRows &&
+                      class:sv-grid-row-alt={opt.zebraRows &&
                         rowIndex % 2 === 1}
                       class:sv-grid-row-draggable={rowDragManagedEffective}
                       {...getGridRowA11yProps(rowIndex + 1)}
@@ -2459,7 +2599,7 @@
               {/if}
             {:else}
               {#each allRows as row, rowIndex (row.id)}
-                {#if props.isDetailRow?.(row.original as TData, rowIndex)}
+                {#if opt.isDetailRow?.(row.original as TData, rowIndex)}
                   {@render detailRowMarkup(row, rowIndex)}
                 {:else if isGroupRow(row)}
                   <tr
@@ -2487,7 +2627,7 @@
                   <tr
                     class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
                     class:sv-grid-row-selected={isRowSelected(row.id)}
-                    class:sv-grid-row-alt={props.zebraRows &&
+                    class:sv-grid-row-alt={opt.zebraRows &&
                       rowIndex % 2 === 1}
                     class:sv-grid-row-draggable={rowDragManagedEffective}
                     {...getGridRowA11yProps(rowIndex + 1)}
@@ -2688,18 +2828,18 @@
               {/each}
             {/if}
           </tbody>
-          {#if props.pinnedBottomRows && props.pinnedBottomRows.length > 0}
+          {#if opt.pinnedBottomRows && opt.pinnedBottomRows.length > 0}
             <!-- svelte-ignore a11y_no_redundant_roles -->
             <tbody
               class="sv-grid-pinned sv-grid-pinned-bottom-body"
               role="rowgroup"
             >
-              {#each props.pinnedBottomRows as r, i (i)}
+              {#each opt.pinnedBottomRows as r, i (i)}
                 {@render pinnedRowBody(r, "bottom", i)}
               {/each}
             </tbody>
           {/if}
-          {#if props.enableRowSummaries ?? true}
+          {#if opt.enableRowSummaries ?? true}
             <!-- svelte-ignore a11y_no_redundant_roles -->
             <tfoot class="sv-grid-foot" role="rowgroup">
               <tr
@@ -2795,7 +2935,7 @@
           content-size={scrollMetrics.scrollHeight ||
             rowDomTotalSize + headerHeight}
           value={scrollMetrics.scrollTop}
-          step={typeof props.rowHeight === "number" ? props.rowHeight : 30}
+          step={typeof opt.rowHeight === "number" ? opt.rowHeight : 30}
           style={`top: ${headerHeight}px; height: calc(100% - ${headerHeight + (hasHorizontalOverflow ? 16 : 0)}px);`}
         ></sv-grid-scrollbar>
       {/if}
@@ -2811,7 +2951,7 @@
           viewport-size={viewportWidth}
           content-size={scrollMetrics.scrollWidth || horizontalContentSize}
           value={scrollMetrics.scrollLeft}
-          step={props.columnWidth ?? 140}
+          step={opt.columnWidth ?? 140}
           style={`width: calc(100% - ${hasVerticalOverflow ? 16 : 0}px);`}
         ></sv-grid-scrollbar>
       {/if}
@@ -2820,7 +2960,7 @@
       {/if}
     </div>
 
-    <GridFooter {ctrl} pager={(props.paginationPosition ?? "bottom") !== "top"} pageSizeOptions={props.pageSizeOptions} />
+    <GridFooter {ctrl} pager={(opt.paginationPosition ?? "bottom") !== "top"} pageSizeOptions={opt.pageSizeOptions} />
 
     {#if ctrl.findOpen}
       <!-- Find-in-grid overlay. Anchored to the TOP of the grid root so
@@ -2928,12 +3068,12 @@
       </div>
     {/if}
 
-    {#if props.loading && props.loadingOverlay}
+    {#if opt.loading && opt.loadingOverlay}
       <div class="sv-grid-loading-overlay" role="status" aria-live="polite">
         <div class="sv-grid-loading-bar"></div>
         {#if allRows.length === 0}
           <div class="sv-grid-skeleton" aria-hidden="true">
-            {#each Array(props.loadingSkeletonRows ?? 8) as _, r (r)}
+            {#each Array(opt.loadingSkeletonRows ?? 8) as _, r (r)}
               <div class="sv-grid-skeleton-row">
                 {#each allColumns as col (col.id)}
                   <div
@@ -2971,7 +3111,7 @@
               class:is-active={panelTab === "columns"}
               role="tab"
               aria-selected={panelTab === "columns"}
-              onclick={() => (ctrl.toolPanelTab = "columns")}>Columns</button
+              onclick={() => (ctrl.toolPanelTab = "columns")}>{messages.columns}</button
             >
             <button
               type="button"
@@ -2979,7 +3119,7 @@
               class:is-active={panelTab === "filters"}
               role="tab"
               aria-selected={panelTab === "filters"}
-              onclick={() => (ctrl.toolPanelTab = "filters")}>Filters</button
+              onclick={() => (ctrl.toolPanelTab = "filters")}>{messages.filters}</button
             >
           </div>
           {#if panelTab === "columns"}
@@ -3050,7 +3190,7 @@
                           type="button"
                           class="sv-grid-tp-filter-clear"
                           aria-label={`Clear ${toolPanelHeaderLabel(column)} filter`}
-                          title="Clear filter"
+                          title={messages.clearFilter}
                           onclick={() => clearColumnFilter(column.id)}>✕</button
                         >
                       {/if}
@@ -3067,7 +3207,7 @@
                     >
                       {#each operatorsForColumn(column) as option (option.value)}
                         <option value={option.value}
-                          >{operatorOption(option.value).label}</option
+                          >{localizeOperatorLabel(operatorOption(option.value), column, messages)}</option
                         >
                       {/each}
                     </select>
@@ -3121,11 +3261,13 @@
       {/if}
     {/if}
 
-    {#if ctrl.chartingEnabled && ctrl.chartPanelOpen}
-      <SvGridChartPanel {ctrl} />
+    {#if ctrl.chartingEnabled && ctrl.chartPanelOpen && ChartPanelView}
+      <ChartPanelView {ctrl} />
     {/if}
   </div>
   <!-- /.sv-grid-root -->
 
-  <GridMenus {ctrl} {icon} />
+  {#if MenusOverlay}
+    <MenusOverlay {ctrl} {icon} />
+  {/if}
 {/if}

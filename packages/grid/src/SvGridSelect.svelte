@@ -21,7 +21,7 @@
 
   type Props = Pick<
     SvEditorProps,
-    'disabled' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel'
+    'disabled' | 'readonly' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel' | 'loading'
   > & {
     columns: ReadonlyArray<GridSelectColumn>
     options: ReadonlyArray<Row>
@@ -55,6 +55,7 @@
     debounceMs = 250,
     loadingText = 'Loading…',
     disabled = false,
+    readonly = false,
     label,
     hint,
     error,
@@ -65,6 +66,7 @@
     name,
     dir,
     ariaLabel,
+    loading: loadingProp = false,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-gs')
@@ -106,6 +108,7 @@
 
   const gs = createPopoverSelect({
     itemCount: () => filtered.length,
+    readonly: () => readonly,
     onSelect: (i) => {
       const r = filtered[i]
       if (r) { value = r[idField] as string | number; onChange?.(r[idField] as string | number, r) }
@@ -122,7 +125,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} loading={loadingProp || loading}>
   <div class="sv-gs sv-gs--{size}" class:is-disabled={disabled}>
     <button
       bind:this={triggerEl}

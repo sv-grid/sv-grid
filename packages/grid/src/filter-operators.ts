@@ -118,3 +118,40 @@ export function operatorLabelFor<TData extends RowData>(
   }
   return option.label;
 }
+
+/** GridMessages key for each operator's label (see grid-messages.ts). */
+const OPERATOR_MESSAGE_KEY: Record<FilterOperator, string> = {
+  contains: "opContains",
+  notContains: "opNotContains",
+  equals: "opEquals",
+  notEquals: "opNotEquals",
+  startsWith: "opStartsWith",
+  endsWith: "opEndsWith",
+  regex: "opRegex",
+  in: "opIn",
+  notIn: "opNotIn",
+  greaterThan: "opGreaterThan",
+  lessThan: "opLessThan",
+  between: "opBetween",
+  isBlank: "opIsBlank",
+  isNotBlank: "opIsNotBlank",
+};
+
+/**
+ * Localized operator label: honors date `Before`/`After` relabels, then the
+ * `localeText` override for the operator, falling back to the English
+ * `option.label`. `messages` is a loose string map to avoid a type cycle.
+ */
+export function localizeOperatorLabel<TData extends RowData>(
+  option: FilterOption,
+  column: Column<TData> | undefined,
+  messages?: Record<string, string> | null,
+): string {
+  const editorType = column?.columnDef.editorType;
+  if (editorType === "date" || editorType === "datetime") {
+    if (option.value === "lessThan") return messages?.opBefore || "Before";
+    if (option.value === "greaterThan") return messages?.opAfter || "After";
+  }
+  const key = OPERATOR_MESSAGE_KEY[option.value];
+  return (key && messages?.[key]) || option.label;
+}

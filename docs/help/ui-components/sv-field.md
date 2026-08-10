@@ -61,6 +61,27 @@ import { SvField } from '@svgrid/grid'
 When both `error` and `hint` are set, the error takes precedence and is the line
 announced to assistive tech.
 
+### Framed mode (shared control chrome)
+
+Pass `frame` and `SvField` owns the bordered control box - the border, focus ring,
+`invalid` state, `size` (`sm` / `md` / `lg`), a shared clear button, adornments and
+floating label - so editors stop re-implementing them. The whole text-input family
+uses this; you only need it directly when building a custom framed control.
+
+| Prop         | Type                       | Default  | Description                                                        |
+| ------------ | -------------------------- | -------- | ----------------------------------------------------------------- |
+| `frame`      | `boolean`                  | `false`  | Own the bordered control box (opt-in).                            |
+| `invalid`    | `boolean`                  | `false`  | Error styling on the box + border.                                |
+| `size`       | `sm` \| `md` \| `lg`       | `md`     | Control height / density.                                         |
+| `disabled` / `readonly` | `boolean`       | `false`  | Dim / read-only box styling.                                      |
+| `leading` / `trailing`  | `Snippet`       | -        | Icon/button adornment at the start / end of the box.             |
+| `prefix` / `suffix`     | `string`        | -        | Plain-text affix at the start / end (units).                     |
+| `clearable` + `showClear` + `onclear` | -  | -        | Render the shared clear (x) button and handle the clear.         |
+| `actions`    | `EditorAction[]`           | -        | Compact in-field action buttons - the general form of clear/reveal (lookup, generate, copy). `EditorAction` is `{ label; onClick; icon?; disabled? }`. |
+| `width`      | `number` \| `string`       | `220`    | Control width (`block` overrides to 100%).                       |
+| `labelMode`  | `static` \| `floating`     | `static` | `floating` rests the label in the box and animates it up on focus/value. |
+| `filled`     | `boolean`                  | `false`  | Floating mode: whether the control holds a value (keeps the label up). |
+
 ## Examples
 
 ### Wrap a custom control

@@ -38,6 +38,15 @@ describe('SvSlider', () => {
       expect(got).toEqual([30, 80])
     } finally { destroy() }
   })
+  it('wires validation ARIA onto the thumb (aria-invalid + describedby)', () => {
+    const { target, destroy } = mnt(SvSlider, { value: 50, invalid: true, error: 'Out of range', id: 'vol', required: true })
+    try {
+      const thumb = target.querySelector<HTMLElement>('[role="slider"]')!
+      expect(thumb.getAttribute('aria-invalid')).toBe('true')
+      expect(thumb.getAttribute('aria-required')).toBe('true')
+      expect(thumb.getAttribute('aria-describedby')).toContain('vol__error')
+    } finally { destroy() }
+  })
 })
 
 describe('SvGauge', () => {

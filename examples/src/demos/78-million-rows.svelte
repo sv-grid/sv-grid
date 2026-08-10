@@ -287,7 +287,9 @@
   .mr-btn:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.10)); }
   .mr-btn-on {
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    /* Pair the accent bg with its contrast token, not a hardcoded white - themes
+       like shadcn use a light accent in dark mode, where #fff would be invisible. */
+    color: var(--sg-on-accent, #fff);
     border-color: transparent;
     font-weight: 600;
   }

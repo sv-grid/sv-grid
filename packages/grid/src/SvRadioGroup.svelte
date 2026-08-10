@@ -25,6 +25,7 @@
     onChange,
     name,
     disabled = false,
+    readonly = false,
     orientation = 'vertical',
     size = 'md',
     ariaLabel,
@@ -44,7 +45,7 @@
   const rg = createRadioGroup({
     options: () => options,
     value: () => value,
-    onChange: (v) => onChange?.(v),
+    onChange: (v) => { if (readonly) return; onChange?.(v) },
     disabled: () => disabled,
     // A visible field `label` also names the group for assistive tech.
     ariaLabel: () => ariaLabel ?? label,
@@ -60,7 +61,9 @@
   <div
     class="sv-radiogroup sv-radiogroup--{orientation} sv-radiogroup--{size}"
     class:is-invalid={invalid}
+    class:is-readonly={readonly}
     {...rg.groupProps()}
+    aria-readonly={readonly ? 'true' : undefined}
   >
     {#each options as opt (opt.value)}
       <button
@@ -88,6 +91,7 @@
   .sv-radiogroup--md .sv-radio { font-size: 13px; }
   .sv-radiogroup--lg .sv-radio { font-size: 15px; }
   .sv-radio[disabled] { opacity: 0.5; cursor: not-allowed; }
+  .sv-radiogroup.is-readonly .sv-radio { cursor: default; }
   .sv-radio__dot {
     width: 17px; height: 17px; flex: none; border-radius: 50%;
     border: 1.5px solid var(--sg-border, #cbd5e1); background: var(--sg-input-bg, #fff);

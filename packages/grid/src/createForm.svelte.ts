@@ -22,6 +22,22 @@
 import { flattenFields, type FormField, type FormEntry } from './form-field'
 import { runRules } from './validators'
 
+/** Localizable strings the form generates itself (override via `messages`). */
+export type FormMessages = {
+  required: (label: string) => string
+  minItems: (label: string, n: number) => string
+  maxItems: (label: string, n: number) => string
+  /** Shown by SvForm while an async validator runs. */
+  checking: string
+}
+
+const DEFAULT_FORM_MESSAGES: FormMessages = {
+  required: (l) => `${l} is required`,
+  minItems: (_l, n) => `Add at least ${n} item(s)`,
+  maxItems: (_l, n) => `At most ${n} item(s)`,
+  checking: 'Checking…',
+}
+
 export type FormConfig = {
   /** The schema - a mix of flat fields and titled sections. */
   fields: () => ReadonlyArray<FormEntry>
@@ -31,6 +47,8 @@ export type FormConfig = {
    *  `submitting` stays true until the returned promise settles. */
   onSubmit?: (values: Record<string, any>) => void | Promise<void>
   onChange?: (values: Record<string, any>) => void
+  /** Override the built-in generated strings (required / min-max items / checking). */
+  messages?: Partial<FormMessages>
 }
 
 /** Deep-ish equality for dirty tracking: identity for primitives, structural
@@ -54,6 +72,7 @@ function resolveFlag(
 }
 
 export function createForm(config: FormConfig) {
+  const M: FormMessages = { ...DEFAULT_FORM_MESSAGES, ...(config.messages ?? {}) }
   let values = $state<Record<string, any>>({ ...(config.initial ?? {}) })
   let errors = $state<Record<string, string>>({})
   let touched = $state<Record<string, boolean>>({})
@@ -85,7 +104,7 @@ export function createForm(config: FormConfig) {
    *  rows (so within-row cross-field rules work). */
   function syncError(field: FormField, v: any, ctx: Record<string, any> = values): string | null {
     if (field.required && (v == null || v === '' || (Array.isArray(v) && !v.length)))
-      return `${field.label} is required`
+      return M.required(field.label)
     if (field.rules) { const e = runRules(v, field.rules, ctx); if (e) return e }
     if (field.validate) { const e = field.validate(v, ctx); if (e) return e }
     return null
@@ -128,6 +147,8 @@ export function createForm(config: FormConfig) {
   function validateField(name: string): boolean {
     const field = fieldOf(name)
     if (!field) return true
+    // Computed fields are derived + read-only - never validated, never block submit.
+    if (field.computed) { setError(name, null); return true }
     // Hidden fields never block submit; clear any stale error + pending check.
     if (!isVisible(name)) { setError(name, null); cancelAsync(name); return true }
     if (field.type === 'array') return validateArray(field)
@@ -196,9 +217,9 @@ export function createForm(config: FormConfig) {
     const name = field.name
     const items = arrayItems(name)
     let arrErr: string | null = null
-    if (field.required && items.length === 0) arrErr = `${field.label} is required`
-    else if (field.minItems != null && items.length < field.minItems) arrErr = `Add at least ${field.minItems} item(s)`
-    else if (field.maxItems != null && items.length > field.maxItems) arrErr = `At most ${field.maxItems} item(s)`
+    if (field.required && items.length === 0) arrErr = M.required(field.label)
+    else if (field.minItems != null && items.length < field.minItems) arrErr = M.minItems(field.label, field.minItems)
+    else if (field.maxItems != null && items.length > field.maxItems) arrErr = M.maxItems(field.label, field.maxItems)
     setError(name, arrErr)
     let ok = !arrErr
     clearNamespacedErrors(name) // rebuild fresh per-item errors
@@ -208,8 +229,23 @@ export function createForm(config: FormConfig) {
     return ok
   }
 
+  /** True when `field` depends on `name` (cascading). */
+  function dependsOnName(field: FormField, name: string): boolean {
+    const dep = field.dependsOn
+    return dep == null ? false : Array.isArray(dep) ? dep.includes(name) : dep === name
+  }
+
   function setValue(name: string, v: any) {
-    values = { ...values, [name]: v }
+    let next = { ...values, [name]: v }
+    // Cascading: clear any fields that depend on this one so a stale child
+    // selection (e.g. a city under the old country) does not linger.
+    for (const f of flat()) {
+      if (dependsOnName(f, name) && next[f.name] != null) {
+        next = { ...next, [f.name]: null }
+        setError(f.name, null)
+      }
+    }
+    values = next
     config.onChange?.(values)
     // Re-validate live once the field has been blurred at least once.
     if (touched[name]) validateField(name)
@@ -240,6 +276,8 @@ export function createForm(config: FormConfig) {
     // Exclude hidden fields from the submitted payload; keep any non-field keys.
     const payload = { ...values }
     for (const f of flat()) if (!isVisible(f.name)) delete payload[f.name]
+    // Inject computed (derived) values so the payload carries them.
+    for (const f of flat()) if (f.computed && isVisible(f.name)) payload[f.name] = f.computed(values)
     submitting = true
     try {
       await config.onSubmit?.(payload)
@@ -294,6 +332,17 @@ export function createForm(config: FormConfig) {
 
   const isFieldDirty = (name: string) => !eq(values[name], baseline[name])
 
+  /** Top-level field errors (visible fields only), for a form-level summary. */
+  function errorList(): { name: string; label: string; message: string }[] {
+    const out: { name: string; label: string; message: string }[] = []
+    for (const f of flat()) {
+      const m = errors[f.name]
+      if (m && isVisible(f.name)) out.push({ name: f.name, label: f.label, message: m })
+    }
+    return out
+  }
+  const firstErrorField = (): string | undefined => errorList()[0]?.name
+
   return {
     get values() { return values },
     get submitting() { return submitting },
@@ -302,7 +351,7 @@ export function createForm(config: FormConfig) {
       for (const k of keys) if (!eq(values[k], baseline[k])) return true
       return false
     },
-    value: (name: string) => values[name],
+    value: (name: string) => { const f = fieldOf(name); return f?.computed ? f.computed(values) : values[name] },
     error: (name: string): string | undefined => errors[name],
     isTouched: (name: string) => !!touched[name],
     hasError: (name: string) => !!errors[name],
@@ -327,6 +376,10 @@ export function createForm(config: FormConfig) {
     submit,
     reset,
     setErrors,
+    errorList,
+    firstErrorField,
+    /** The resolved message strings (defaults merged with `config.messages`). */
+    messages: M,
   }
 }
 

@@ -39,6 +39,8 @@
     labels = 'none',
     showValue = false,
     disabled = false,
+    readonly = false,
+    size = 'md',
     orientation = 'horizontal',
     name,
     ariaLabel,
@@ -60,7 +62,7 @@
   // in the headless `createSlider` core; the component keeps the DOM measuring.
   const slider = createSlider({
     value: () => value,
-    onChange: (v) => onChange?.(v),
+    onChange: (v) => { if (readonly) return; onChange?.(v) },
     min: () => min,
     max: () => max,
     step: () => step,
@@ -69,6 +71,11 @@
     disabled: () => disabled,
     ariaLabel: () => ariaLabel ?? label,
     rtl: () => resolvedDir === 'rtl',
+    id: () => uid,
+    invalid: () => invalid,
+    required: () => required,
+    error: () => error,
+    hint: () => hint,
   })
   const lo = $derived(slider.lo)
   const hi = $derived(slider.hi)
@@ -87,7 +94,7 @@
   // The rect is measured here (a DOM concern) and passed INTO the core.
   let trackEl: HTMLDivElement | null = null
   function onTrackDown(e: PointerEvent) {
-    if (disabled) return
+    if (disabled || readonly) return
     slider.pointerDown({ x: e.clientX, y: e.clientY }, trackEl!.getBoundingClientRect())
     trackEl?.setPointerCapture(e.pointerId)
   }
@@ -102,8 +109,9 @@
 
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
 <div
-  class="sv-slider sv-slider--{orientation}"
+  class="sv-slider sv-slider--{orientation} sv-slider--{size}"
   class:is-disabled={disabled}
+  class:is-readonly={readonly}
   dir={resolvedDir}
 >
   <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -126,14 +134,14 @@
     {/each}
 
     {#if range}
-      <div class="sv-slider__thumb" style:--p={`${pct(lo)}%`} {...slider.thumbProps(0)}>
+      <div class="sv-slider__thumb" style:--p={`${pct(lo)}%`} {...slider.thumbProps(0)} aria-readonly={readonly ? 'true' : undefined}>
         {#if showValue}<span class="sv-slider__bubble">{fmt(lo)}</span>{/if}
       </div>
-      <div class="sv-slider__thumb" style:--p={`${pct(hi)}%`} {...slider.thumbProps(1)}>
+      <div class="sv-slider__thumb" style:--p={`${pct(hi)}%`} {...slider.thumbProps(1)} aria-readonly={readonly ? 'true' : undefined}>
         {#if showValue}<span class="sv-slider__bubble">{fmt(hi)}</span>{/if}
       </div>
     {:else}
-      <div class="sv-slider__thumb" style:--p={`${pct(hi)}%`} {...slider.thumbProps(0)}>
+      <div class="sv-slider__thumb" style:--p={`${pct(hi)}%`} {...slider.thumbProps(0)} aria-readonly={readonly ? 'true' : undefined}>
         {#if showValue}<span class="sv-slider__bubble">{fmt(hi)}</span>{/if}
       </div>
     {/if}
@@ -152,15 +160,20 @@
 </SvField>
 
 <style>
-  .sv-slider { --_accent: var(--sg-accent, #2563eb); --_track: var(--sg-border, #e2e8f0); padding: 10px; }
+  .sv-slider { --_accent: var(--sg-accent, #2563eb); --_track: var(--sg-border, #e2e8f0); --_th: 16px; --_trk: 6px; padding: 10px; }
+  .sv-slider--sm { --_th: 13px; --_trk: 4px; }
+  .sv-slider--lg { --_th: 20px; --_trk: 8px; }
   .sv-slider--horizontal { width: 240px; }
+  .sv-slider--horizontal.sv-slider--sm { width: 180px; }
+  .sv-slider--horizontal.sv-slider--lg { width: 300px; }
   .sv-slider--vertical { height: 200px; width: 40px; }
   .sv-slider.is-disabled { opacity: 0.5; pointer-events: none; }
+  .sv-slider.is-readonly .sv-slider__track, .sv-slider.is-readonly .sv-slider__thumb { cursor: default; }
   .sv-slider__track {
     position: relative; background: var(--_track); border-radius: 999px; cursor: pointer; touch-action: none;
   }
-  .sv-slider--horizontal .sv-slider__track { height: 6px; }
-  .sv-slider--vertical .sv-slider__track { width: 6px; height: 100%; margin: 0 auto; }
+  .sv-slider--horizontal .sv-slider__track { height: var(--_trk); }
+  .sv-slider--vertical .sv-slider__track { width: var(--_trk); height: 100%; margin: 0 auto; }
   .sv-slider__scale { position: relative; height: 15px; margin-top: 8px; font-size: 11px; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; }
   .sv-slider__scale--ends { display: flex; justify-content: space-between; }
   .sv-slider__scale-lbl { position: absolute; inset-inline-start: var(--p); transform: translateX(-50%); white-space: nowrap; }
@@ -168,7 +181,7 @@
   .sv-slider--horizontal .sv-slider__fill { inset-inline-start: var(--a); inset-inline-end: calc(100% - var(--b)); top: 0; bottom: 0; }
   .sv-slider--vertical .sv-slider__fill { bottom: var(--a); top: calc(100% - var(--b)); left: 0; right: 0; }
   .sv-slider__thumb {
-    position: absolute; width: 16px; height: 16px; border-radius: 50%;
+    position: absolute; width: var(--_th); height: var(--_th); border-radius: 50%;
     background: #fff; border: 2px solid var(--_accent); box-shadow: 0 1px 3px rgba(0,0,0,0.25);
     cursor: grab; touch-action: none;
   }

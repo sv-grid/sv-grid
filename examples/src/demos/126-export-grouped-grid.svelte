@@ -337,7 +337,7 @@
   .ex-chip.on {
     background: var(--sg-accent, #2563eb);
     border-color: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
   .ex-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .ex-opt { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer; }

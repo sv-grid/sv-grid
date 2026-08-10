@@ -52,5 +52,5 @@
   .parent { padding-bottom: 8px; border-bottom: 1px solid var(--sg-border, #e2e8f0); font-weight: 600; }
   .children { display: flex; flex-direction: column; gap: 8px; padding: 10px 0 0 18px; }
   .submit { margin-top: 12px; }
-  .btn { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 16px; border: 0; border-radius: 8px; background: var(--sg-accent, #2563eb); color: #fff; cursor: pointer; }
+  .btn { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 16px; border: 0; border-radius: 8px; background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); cursor: pointer; }
 </style>

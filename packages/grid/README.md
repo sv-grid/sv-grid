@@ -75,7 +75,7 @@ That is a real, accessible grid. Sorting, filtering, virtualization, cell select
 - **UI components** - a Svelte 5 component suite ships in the package (inputs, selection, date/time, overlays, layout, feedback) - standalone or as grid cell editors.
 - **Accessibility** - WAI-ARIA grid roles, full keyboard navigation, RTL, high-contrast theme.
 - **Engineered for production** - first-class TypeScript types, CSP / Trusted-Types safe rendering, SSR-friendly, themeable via `--sg-*` CSS tokens.
-- **Lean** - ~7.5 KB gzipped headless core, ~42 KB gzipped full render component; Svelte stays a peer dependency.
+- **Lean** - ~2 KB gzipped headless core, ~77 KB gzipped full grid (+ ~9 KB CSS); charts, cell editors and export load on demand as their own chunks, and the Kanban board + scheduler are Enterprise views. Svelte stays a peer dependency.
 
 ## Headless or render-ready
 

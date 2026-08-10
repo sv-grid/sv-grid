@@ -61,8 +61,15 @@ import { SvPasswordInput } from '@svgrid/grid'
 | `showStrength` | `boolean`                       | `false`              | Show a 4-level strength meter.                    |
 | `autocomplete` | `string`                        | `current-password`   | Native autocomplete token.                        |
 | `messages`     | `Partial<PasswordMessages>`     | -                    | Override the built-in strings (see below).        |
+| `leading`      | `Snippet`                       | -                    | Leading adornment (icon) inside the field.        |
+| `block`        | `boolean`                       | `false`              | Stretch to the container width.                   |
+| `width`        | `number`                        | `220`                | Control width in px (ignored when `block`).       |
 
 `PasswordMessages` is `{ show; hide; weak; fair; good; strong }`.
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome; the reveal eye sits in the trailing slot and the strength
+meter renders below the field.
 
 ## Examples
 

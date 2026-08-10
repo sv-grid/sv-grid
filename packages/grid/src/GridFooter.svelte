@@ -77,6 +77,7 @@
   const changePage = $derived(ctrl.changePage);
   const goToPage = $derived(ctrl.goToPage);
   const setPageSize = $derived(ctrl.setPageSize);
+  const messages = $derived(ctrl.messages);
 </script>
 
     {#if showStatus && statusBarEnabled && statusBarStats}
@@ -85,7 +86,7 @@
         {#each statusBarAggregates as agg (agg)}
           {#if agg === "count"}
             <span class="sv-grid-status-item"
-              ><span class="sv-grid-status-label">Count</span>{fmtStat(s.count)}</span
+              ><span class="sv-grid-status-label">{messages.statCount}</span>{fmtStat(s.count)}</span
             >
           {:else if agg === "numericCount"}
             <span class="sv-grid-status-item"
@@ -93,19 +94,19 @@
             >
           {:else if s.numericCount > 0 && agg === "sum"}
             <span class="sv-grid-status-item"
-              ><span class="sv-grid-status-label">Sum</span>{fmtStat(s.sum)}</span
+              ><span class="sv-grid-status-label">{messages.statSum}</span>{fmtStat(s.sum)}</span
             >
           {:else if s.numericCount > 0 && agg === "avg"}
             <span class="sv-grid-status-item"
-              ><span class="sv-grid-status-label">Avg</span>{fmtStat(s.avg)}</span
+              ><span class="sv-grid-status-label">{messages.statAvg}</span>{fmtStat(s.avg)}</span
             >
           {:else if s.numericCount > 0 && agg === "min"}
             <span class="sv-grid-status-item"
-              ><span class="sv-grid-status-label">Min</span>{fmtStat(s.min)}</span
+              ><span class="sv-grid-status-label">{messages.statMin}</span>{fmtStat(s.min)}</span
             >
           {:else if s.numericCount > 0 && agg === "max"}
             <span class="sv-grid-status-item"
-              ><span class="sv-grid-status-label">Max</span>{fmtStat(s.max)}</span
+              ><span class="sv-grid-status-label">{messages.statMax}</span>{fmtStat(s.max)}</span
             >
           {/if}
         {/each}
@@ -125,7 +126,7 @@
       {@const sizes = pageSizeOptions && pageSizeOptions.length ? pageSizeOptions : [10, 25, 50, 100]}
       <div class="sv-grid-pagination" class:sv-grid-pagination-top={top} role="navigation" aria-label="Pagination">
         <div class="sv-grid-pagination-pagesize">
-          <span>Page Size:</span>
+          <span>{messages.pageSize}</span>
           <div class="sv-grid-pagination-pagesize-dd">
             <SvGridDropdown
               options={sizes.map((n) => ({ value: n, label: String(n) }))}
@@ -146,17 +147,17 @@
             class="sv-grid-pagination-btn"
             disabled={onFirst}
             onclick={() => goToPage(0)}
-            aria-label="First page">⇤</button
+            aria-label={messages.firstPage}>⇤</button
           >
           <button
             type="button"
             class="sv-grid-pagination-btn"
             disabled={onFirst}
             onclick={() => changePage(-1)}
-            aria-label="Previous page">‹</button
+            aria-label={messages.prevPage}>‹</button
           >
           <span class="sv-grid-pagination-label">
-            Page <strong>{currentPage.toLocaleString()}</strong> of
+            {messages.page} <strong>{currentPage.toLocaleString()}</strong> {messages.of}
             <strong>{pageCount.toLocaleString()}</strong>
           </span>
           <button
@@ -164,14 +165,14 @@
             class="sv-grid-pagination-btn"
             disabled={onLast}
             onclick={() => changePage(1)}
-            aria-label="Next page">›</button
+            aria-label={messages.nextPage}>›</button
           >
           <button
             type="button"
             class="sv-grid-pagination-btn"
             disabled={onLast}
             onclick={() => goToPage(pageCount - 1)}
-            aria-label="Last page">⇥</button
+            aria-label={messages.lastPage}>⇥</button
           >
         </div>
       </div>

@@ -413,7 +413,7 @@
   .mb-view-switch button:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.10)); }
   .mb-view-on {
     background: var(--sg-accent, #2563eb) !important;
-    color: #fff !important; font-weight: 600;
+    color: var(--sg-on-accent, #fff) !important; font-weight: 600;
   }
   .mb-hint { color: var(--sg-muted, #64748b); font-size: 12px; }
 
@@ -485,7 +485,7 @@
   }
   .mb-edit-toggle.is-open {
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
 
   .mb-card-title {
@@ -685,7 +685,7 @@
   }
   .mb-collapse {
     border: 0;
-    background: var(--sg-accent, #2563eb); color: #fff;
+    background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff);
     border-radius: 6px; padding: 8px 18px;
     font-weight: 600; font-size: 13px;
     cursor: pointer;

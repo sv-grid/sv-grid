@@ -67,6 +67,31 @@ describe('SvDropDownList', () => {
       expect(document.querySelector('.sv-ddl__panel')).toBeNull() // closed
     } finally { destroy() }
   })
+  it('readonly does not open the panel and marks aria-readonly', () => {
+    let got: any
+    const { target, destroy } = mnt(SvDropDownList, { options: OPTS, value: 'a', readonly: true, onChange: (v: any) => (got = v) })
+    try {
+      const trigger = target.querySelector<HTMLButtonElement>('.sv-ddl')!
+      expect(trigger.getAttribute('aria-readonly')).toBe('true')
+      expect(trigger.hasAttribute('disabled')).toBe(false) // still focusable
+      trigger.click(); flushSync()
+      expect(document.querySelector('.sv-ddl__panel')).toBeNull() // stayed closed
+      expect(got).toBeUndefined()
+    } finally { destroy() }
+  })
+  it('renders a resize grip only when resizable and the panel opens downward', () => {
+    const off = mnt(SvDropDownList, { options: OPTS, value: null })
+    try {
+      off.target.querySelector<HTMLButtonElement>('.sv-ddl')!.click(); flushSync()
+      expect(document.querySelector('.sv-ddl__grip')).toBeNull() // no grip by default
+    } finally { off.destroy() }
+    const on = mnt(SvDropDownList, { options: OPTS, value: null, resizable: true })
+    try {
+      on.target.querySelector<HTMLButtonElement>('.sv-ddl')!.click(); flushSync()
+      expect(document.querySelector('.sv-ddl__panel.is-resizable')).not.toBeNull()
+      expect(document.querySelector('.sv-ddl__grip')).not.toBeNull()
+    } finally { on.destroy() }
+  })
 })
 
 describe('SvComboBox', () => {
@@ -82,6 +107,17 @@ describe('SvComboBox', () => {
       expect(opts.length).toBe(1)
       opts[0]!.click(); flushSync()
       expect(got).toBe('b')
+    } finally { destroy() }
+  })
+  it('shows a resize grip on the open panel when resizable', () => {
+    const { target, destroy } = mnt(SvComboBox, { options: OPTS, value: null, resizable: true })
+    try {
+      const input = target.querySelector<HTMLInputElement>('.sv-combo__input')!
+      input.dispatchEvent(new FocusEvent('focus')); flushSync()
+      input.value = 'b'
+      input.dispatchEvent(new Event('input', { bubbles: true })); flushSync()
+      expect(document.querySelector('.sv-ddl__panel.is-resizable')).not.toBeNull()
+      expect(document.querySelector('.sv-ddl__grip')).not.toBeNull()
     } finally { destroy() }
   })
 })

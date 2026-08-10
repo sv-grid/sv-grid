@@ -2072,7 +2072,7 @@ describe('dock layout (screen.layout = dock)', () => {
     const page = emitStudioProject(p).find((f) => f.path.endsWith('/+page.svelte'))!.contents
     expect(page).toContain('async function save({ mode, id, values }')
     expect(page).toContain('const row = values')
-    expect(page).toContain('const ctx = { grid: gridApi!,')
+    expect(page).toContain('const ctx = { grid: gridCtx,')
     expect(page).toContain("ctx.goto('/customers')")
     for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
@@ -2405,7 +2405,7 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain("import * as handlers from './handlers'")
     // onLoad runs on mount and onDestroy on unmount, both with the full ctx (grid +
     // the settable data battery, since this freestanding page owns its rows).
-    expect(page.contents).toContain('const ctx = { grid: gridApi!, data: { get rows() { return rows }, setRows: (r) => (rows = r) }')
+    expect(page.contents).toContain('const ctx = { grid: gridCtx, data: { get rows() { return rows }, setRows: (r) => (rows = r) }')
     expect(page.contents).toContain('as PageContext')
     expect(page.contents).toContain('handlers.onLoad(ctx)')
     expect(page.contents).toContain('return () => handlers.onDestroy(ctx)')
@@ -2439,9 +2439,9 @@ describe('code companion (design + your own code)', () => {
     // Click is wired through the component's own onclick callback prop (exact
     // semantics), not a bubbling wrapper listener.
     expect(page.contents).toContain("<SvButton {...button1.props} onclick={(e) => button1.fire('click', e)}>{button1.text}</SvButton>")
-    expect(page.contents).toContain("import { handle } from '$lib/handles.svelte'")
+    expect(page.contents).toContain("import { handle, gridHandle } from '$lib/handles.svelte'")
     expect(page.contents).toContain('button1.fire(\'click\', e)')
-    expect(page.contents).toContain('const ctx = { grid: gridApi!, button1, data:')
+    expect(page.contents).toContain('const ctx = { grid: gridCtx, button1, data:')
     expect(page.contents).toContain('handlers.onLoad(ctx)')
     // Typed handle: ButtonHandle intersects Handle with the button's real setters.
     expect(ctx.contents).toContain('button1: ButtonHandle')
@@ -2541,7 +2541,7 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('let gridApi = $state<SvGridApi<any, any> | null>(null)')
     expect(page.contents).toContain('onApiReady={(a) => (gridApi = a)}')
     // Full ctx on mount + cleanup on unmount; the grid exposes reload(), not setRows.
-    expect(page.contents).toContain('const ctx = { grid: gridApi!, data: { get rows() { return view.rows }, reload: () => controller.refresh(), create: (v) => controller.createRow(v), update: (id, v) => controller.updateRow(id, v), delete: (id) => controller.deleteRow(id) }, goto, params: Object.fromEntries($page.url.searchParams) } as unknown as PageContext')
+    expect(page.contents).toContain('const ctx = { grid: gridCtx, data: { get rows() { return view.rows }, reload: () => controller.refresh(), create: (v) => controller.createRow(v), update: (id, v) => controller.updateRow(id, v), delete: (id) => controller.deleteRow(id) }, goto, params: Object.fromEntries($page.url.searchParams) } as unknown as PageContext')
     expect(page.contents).toContain('handlers.onLoad(ctx)')
     expect(page.contents).toContain('return () => handlers.onDestroy(ctx)')
     // The grid api is typed to the entity's row (Customers), not any.
@@ -2567,7 +2567,7 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('const chart1 = dataHandle<Customers>(() => allRows)')
     expect(page.contents).toContain('const kpi1 = dataHandle<Customers>(() => allRows)')
     expect(page.contents).toContain('rows={chart1.rows}')
-    expect(page.contents).toContain("import { handle, dataHandle } from '$lib/handles.svelte'")
+    expect(page.contents).toContain("import { handle, dataHandle, gridHandle } from '$lib/handles.svelte'")
     // ctx carries the data handles + the entity component handle + batteries.
     expect(ctx.contents).toContain('chart1: DataHandle<Customers>')
     expect(ctx.contents).toContain('kpi1: DataHandle<Customers>')

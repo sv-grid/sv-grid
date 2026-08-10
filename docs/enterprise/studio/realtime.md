@@ -118,7 +118,7 @@ createSupabaseRealtime({ client, table: 'deals', filter: 'stage=eq.open', onChan
   effect cleanup) so channels don't leak.
 - **RLS is enforced** on the stream: clients only receive events for rows their
   policies allow. Realtime is not a way around Row-Level Security.
-- **Refetch vs. patch:** refetching on change is the robust default because the
+- **Refetch vs. patch:** refetching on change is the safe default because the
   server owns ordering and paging. Patching rows in place locally is possible for
   a visible `UPDATE`, but an `INSERT` may or may not belong on the current page -
   so let `refresh()` decide.

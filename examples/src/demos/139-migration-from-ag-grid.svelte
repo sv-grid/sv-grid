@@ -277,7 +277,7 @@ $: filtered = deals.filter(d =>
     padding: 5px 10px; font-size: 11.5px;
     cursor: pointer; color: var(--sg-fg, #1e293b);
   }
-  .mg-seg button.active { background: var(--sg-accent, #2563eb); color: #fff; font-weight: 700; }
+  .mg-seg button.active { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); font-weight: 700; }
   .mg-meta { margin-left: auto; font-size: 11.5px; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; }
 
   .mg-split {

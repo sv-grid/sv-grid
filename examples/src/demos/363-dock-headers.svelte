@@ -55,7 +55,7 @@
   .lbl { color: var(--sg-muted, #64748b); font-weight: 600; }
   .seg { font: inherit; font-size: 12.5px; font-weight: 600; padding: 4px 12px; text-transform: capitalize; cursor: pointer;
     color: var(--sg-fg, #0f172a); background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e2e8f0); border-radius: 7px; }
-  .seg.on { color: #fff; background: var(--sg-accent, #2563eb); border-color: var(--sg-accent, #2563eb); }
+  .seg.on { color: var(--sg-on-accent, #fff); background: var(--sg-accent, #2563eb); border-color: var(--sg-accent, #2563eb); }
   .chk { display: inline-flex; align-items: center; gap: 5px; margin-inline-start: 8px; color: var(--sg-muted, #64748b); font-weight: 600; }
   .stage { flex: 1; min-height: 440px; }
   .panel { padding: 16px; font-size: 13px; }

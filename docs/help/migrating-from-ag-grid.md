@@ -24,9 +24,9 @@ We tell you when **not** to switch at the bottom.
 | **Print view** | ❌ | ❌ | ❌ | ✅ |
 | **Set filter / Excel-style filter menu** | ❌ Enterprise | ✅ | ✅ (free) | (in Community) |
 
-The headline: **SvGrid Community gives you most of AG Grid Enterprise's
-features for free**, and `@svgrid/enterprise` adds the export + print pack for
-~40% less than AG Grid Enterprise. The catch is Svelte-only and a much
+**SvGrid Community gives you most of AG Grid Enterprise's features for
+free**, and `@svgrid/enterprise` adds the export + print pack for ~40%
+less than AG Grid Enterprise. The trade-offs are Svelte-only and a much
 smaller ecosystem.
 
 ## Mental model - what changes

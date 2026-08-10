@@ -236,25 +236,8 @@ const eventKey = (propName) => {
   return stripped.charAt(0).toLowerCase() + stripped.slice(1)
 }
 
-const result = {}
-const problems = []
-for (const name of COMPONENTS) {
-  let source
-  try {
-    source = readFileSync(join(GRID_SRC, `${name}.svelte`), 'utf8')
-  } catch {
-    problems.push(`${name}: component file not found`)
-    continue
-  }
-  const script = scriptOf(source)
-  const sf = ts.createSourceFile(`${name}.ts`, script, ts.ScriptTarget.Latest, true)
-  const aliases = collectAliases(sf, new Map(sharedAliases))
-  const propsType = aliases.get('Props')
-  if (!propsType) {
-    problems.push(`${name}: no \`type Props\` found`)
-    continue
-  }
-  const defaults = defaultsOf(sf)
+/** Build the { props, events } surface from a resolved `Props` type node. */
+function buildSurface(propsType, aliases, defaults) {
   const props = []
   const events = []
   for (const m of membersOf(propsType, aliases)) {
@@ -278,7 +261,41 @@ for (const name of COMPONENTS) {
       group: isCode ? 'advanced' : groupFor(m.name),
     })
   }
-  result[name] = { props, events }
+  return { props, events }
+}
+
+const result = {}
+const problems = []
+for (const name of COMPONENTS) {
+  let source
+  try {
+    source = readFileSync(join(GRID_SRC, `${name}.svelte`), 'utf8')
+  } catch {
+    problems.push(`${name}: component file not found`)
+    continue
+  }
+  const script = scriptOf(source)
+  const sf = ts.createSourceFile(`${name}.ts`, script, ts.ScriptTarget.Latest, true)
+  const aliases = collectAliases(sf, new Map(sharedAliases))
+  const propsType = aliases.get('Props')
+  if (!propsType) {
+    problems.push(`${name}: no \`type Props\` found`)
+    continue
+  }
+  result[name] = buildSurface(propsType, aliases, defaultsOf(sf))
+}
+
+// The Grid itself: its full prop + event surface lives in SvGrid.types.ts as
+// `export type Props<TFeatures, TData> = { ... }` (not a .svelte component), so the
+// grid block's "All properties" panel matches the real grid instead of a curated subset.
+try {
+  const sf = ts.createSourceFile('SvGrid.types.ts', readFileSync(join(GRID_SRC, 'SvGrid.types.ts'), 'utf8'), ts.ScriptTarget.Latest, true)
+  const aliases = collectAliases(sf, new Map(sharedAliases))
+  const propsType = aliases.get('Props')
+  if (!propsType) problems.push('SvGrid: no `type Props` in SvGrid.types.ts')
+  else result['SvGrid'] = buildSurface(propsType, aliases, new Map())
+} catch (e) {
+  problems.push('SvGrid: ' + (e?.message ?? e))
 }
 
 if (problems.length) {

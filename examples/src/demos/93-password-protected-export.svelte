@@ -410,7 +410,7 @@
     border-right: 1px solid var(--sg-border, #cbd5e1);
   }
   .pe-format button:last-child { border-right: 0; }
-  .pe-format button.on { background: var(--sg-accent, #2563eb); color: #fff; font-weight: 600; }
+  .pe-format button.on { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); font-weight: 600; }
 
   .pe-strength {
     height: 5px; border-radius: 999px;

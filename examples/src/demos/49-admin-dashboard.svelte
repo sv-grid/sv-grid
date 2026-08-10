@@ -666,7 +666,7 @@
     align-items: center;
     padding: 8px 12px;
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     border-radius: 8px;
   }
   .ad-bulk-bar .ad-btn {
@@ -707,7 +707,7 @@
   .ad-btn-primary {
     border-color: transparent;
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
   .ad-btn-primary:hover { filter: brightness(0.92); background: var(--sg-accent, #2563eb); }
   .ad-btn-danger {

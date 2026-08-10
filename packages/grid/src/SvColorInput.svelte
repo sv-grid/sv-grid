@@ -26,6 +26,8 @@
     autoOpen?: boolean
     /** Override the built-in popover strings. */
     messages?: Partial<ColorMessages>
+    /** Stretch to the container width (otherwise hugs its content). */
+    block?: boolean
   }
 
   let {
@@ -44,8 +46,10 @@
     hint,
     dir,
     id,
+    loading = false,
     autoOpen = false,
     messages,
+    block = false,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-color')
@@ -100,12 +104,11 @@
   }
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField frame id={uid} {label} {hint} {error} {required} {dir} {size} {invalid} {disabled} {readonly} {loading} {block} width={block ? undefined : 'fit-content'}>
   <button
     bind:this={triggerEl}
-    class="sv-color sv-color--{size}"
+    class="sv-color__trigger"
     class:is-disabled={disabled}
-    class:is-invalid={invalid}
     {...col.swatchProps()}
     use:focusOpen
   >
@@ -153,22 +156,13 @@
 {#if name}<input type="hidden" {name} value={col.normalized} />{/if}
 
 <style>
-  .sv-color {
-    --_accent: var(--sg-accent, #2563eb);
-    display: inline-flex; align-items: center; gap: 8px;
-    background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a);
-    border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1)); border-radius: var(--sg-radius, 8px);
-    padding: 0 10px; cursor: pointer; font: inherit;
+  .sv-color__trigger {
+    display: flex; align-items: center; gap: 8px; width: 100%; height: 100%;
+    background: none; border: 0; padding: 0 10px; cursor: pointer; font: inherit; color: inherit;
   }
-  .sv-color--sm { height: 28px; font-size: 12px; }
-  .sv-color--md { height: 34px; font-size: 13px; }
-  .sv-color--lg { height: 40px; font-size: 15px; }
-  .sv-color.is-disabled { opacity: 0.6; cursor: not-allowed; }
-  .sv-color.is-invalid { border-color: var(--sg-danger, #dc2626); }
-  .sv-color.is-invalid:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
-  .sv-color:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--_accent)); outline-offset: 2px; }
+  .sv-color__trigger.is-disabled { cursor: not-allowed; }
   .sv-color__swatch { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15); flex: none; }
-  .sv-color__hex { font-variant-numeric: tabular-nums; text-transform: lowercase; }
+  .sv-color__hex { font-variant-numeric: tabular-nums; text-transform: lowercase; white-space: nowrap; }
 
   :global(.sv-color__panel) {
     z-index: 2147483647; width: 208px; padding: 12px;

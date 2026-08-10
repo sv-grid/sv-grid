@@ -11,7 +11,8 @@
    * and ARIA; this component keeps the DOM-bound pointer capture + hit-testing.
    * All visuals come from `--sg-*` tokens so every theme applies for free.
    */
-  import { resolveMessages, type EditorDir } from './editor-contract'
+  import SvField from './SvField.svelte'
+  import { nextEditorId, resolveMessages, type EditorDir, type EditorSize } from './editor-contract'
   import { createTimePicker, type TimeValue, type TimeFormat, type TimeSelection } from './createTimePicker.svelte'
 
   /** User-facing strings (localizable via `messages`). */
@@ -38,6 +39,16 @@
     dir?: EditorDir
     /** Override the built-in strings (group label + AM/PM/Now). */
     messages?: Partial<TimeMessages>
+    // Optional field chrome: when any of label/hint/error is set, the dial is
+    // wrapped in <SvField> so it gains a label/hint/error line; otherwise it
+    // renders bare (as embedded inside SvDateTimePicker's popover).
+    label?: string
+    hint?: string
+    error?: string
+    required?: boolean
+    invalid?: boolean
+    size?: EditorSize
+    id?: string
   }
 
   let {
@@ -53,7 +64,17 @@
     selection = 'hour',
     dir,
     messages,
+    label,
+    hint,
+    error,
+    required = false,
+    invalid = false,
+    id,
   }: Props = $props()
+
+  const autoId = nextEditorId('sv-tp')
+  const uid = $derived(id ?? autoId)
+  const hasChrome = $derived(!!(label || hint || error))
 
   const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
   const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
@@ -107,7 +128,8 @@
   }
 </script>
 
-<div class="sv-tp" class:sv-tp--disabled={disabled} role="group" aria-label={M.label} dir={resolvedDir}>
+{#snippet dialBody()}
+<div class="sv-tp" class:sv-tp--disabled={disabled} class:sv-tp--invalid={invalid} id={uid} role="group" aria-label={label ?? M.label} dir={resolvedDir}>
   <div class="sv-tp__head">
     <button class="sv-tp__seg" class:is-active={tp.selection === 'hour'} {...tp.segProps('hour')}>
       {String(tp.displayHour).padStart(2, '0')}
@@ -159,6 +181,13 @@
 
   {#if name}<input type="hidden" {name} value={`${String(tp.hours).padStart(2, '0')}:${tp.mm}`} />{/if}
 </div>
+{/snippet}
+
+{#if hasChrome}
+  <SvField id={uid} {label} {hint} {error} {required} {dir}>{@render dialBody()}</SvField>
+{:else}
+  {@render dialBody()}
+{/if}
 
 <style>
   .sv-tp {
@@ -175,6 +204,7 @@
     border: 1px solid var(--_border); border-radius: calc(var(--_radius) + 4px);
     user-select: none;
   }
+  .sv-tp--invalid { border-color: var(--sg-danger, #dc2626); }
   .sv-tp--disabled { opacity: 0.55; pointer-events: none; }
 
   .sv-tp__head { display: flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums; }

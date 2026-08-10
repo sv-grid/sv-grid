@@ -144,6 +144,10 @@ export type GridConfig = {
    *  Kanban board). Mutually exclusive with grouping / tree. Uses the enterprise
    *  scheduler renderer (`enableSchedulerView`). */
   scheduler?: SchedulerViewConfig
+  /** Raw SvGrid prop overrides from the block's "All properties" panel - every grid
+   *  prop the curated controls don't manage. Passed straight through to `<SvGrid>`
+   *  (deduped against the curated props at codegen time). */
+  props?: Record<string, unknown>
 }
 /** Which calendar view the scheduler opens on / offers. */
 export type SchedulerViewMode = 'month' | 'week' | 'day' | 'agenda' | 'timelineDay' | 'timelineWeek' | 'timelineMonth' | 'timelineYear'
@@ -426,6 +430,41 @@ export const eventSlot = (event: string, blockId: string) => `${event}:${blockId
 /** The handler-steps key for the screen's form-submit (record saved) event. The
  *  compiled steps get the submitted `row` (values) in scope. */
 export const FORM_SUBMIT = 'formSubmit'
+
+/** One event on the Grid, exposed to code-behind as `ctx.grid.<method> = (e) => {}`.
+ *  `prop` is the SvGrid callback it wires to (empty for `dataEvent`s, which fire from
+ *  Studio's data controller on create/update/delete rather than from the grid markup). */
+export type GridEventDef = { key: string; method: string; prop: string; params: string; builtin: boolean; desc: string; dataEvent?: boolean }
+/** The Grid's real event surface (mirrors SvGrid's `on*` callbacks). Studio wires
+ *  every one into `ctx.grid` so page code can subscribe with `ctx.grid.onCellClick =
+ *  (e) => {}`. `params` is the handler's parameter list, with `Row` as the row-type
+ *  placeholder (substituted per screen). `builtin` marks events a Studio feature may
+ *  already use (sort/filter/paginate/edit/row-click) - codegen COMPOSES the user's
+ *  handler onto the built-in rather than emitting a duplicate prop. Signatures are
+ *  transcribed from packages/grid/src/SvGrid.types.ts. */
+export const GRID_EVENTS: readonly GridEventDef[] = [
+  { key: 'rowClick', method: 'onRowClick', prop: 'onRowClick', builtin: true, desc: 'A data row is single-clicked.', params: 'e: { rowIndex: number; columnId: string; row: Row }' },
+  { key: 'rowDoubleClick', method: 'onRowDoubleClick', prop: 'onRowDoubleClick', builtin: true, desc: 'A data row is double-clicked.', params: 'e: { rowIndex: number; columnId: string; row: Row }' },
+  { key: 'cellClick', method: 'onCellClick', prop: 'onCellClick', builtin: false, desc: 'A data cell is single-clicked.', params: 'e: { rowIndex: number; colIndex: number; columnId: string; value: unknown; row: Row }' },
+  { key: 'cellDoubleClick', method: 'onCellDoubleClick', prop: 'onCellDoubleClick', builtin: false, desc: 'A data cell is double-clicked.', params: 'e: { rowIndex: number; colIndex: number; columnId: string; value: unknown; row: Row }' },
+  { key: 'rowSelectionChange', method: 'onRowSelectionChange', prop: 'onRowSelectionChange', builtin: false, desc: 'The row selection changes.', params: 'selection: Record<string, boolean>, rows: Row[]' },
+  { key: 'cellSelectionChange', method: 'onCellSelectionChange', prop: 'onCellSelectionChange', builtin: false, desc: 'The cell-selection rectangle changes.', params: 'ranges: Array<[number, number, number, number]>' },
+  { key: 'activeCellChange', method: 'onActiveCellChange', prop: 'onActiveCellChange', builtin: false, desc: 'The active cell changes.', params: 'cell: { rowIndex: number; colIndex: number; columnId: string }' },
+  { key: 'cellValueChange', method: 'onCellValueChange', prop: 'onCellValueChange', builtin: true, desc: 'An inline cell edit is committed.', params: 'e: { rowIndex: number; columnId: string; oldValue: unknown; newValue: unknown; row: Row }' },
+  { key: 'sortingChange', method: 'onSortingChange', prop: 'onSortingChange', builtin: true, desc: 'The sort clauses change.', params: 'sorting: Array<{ id: string; desc: boolean }>' },
+  { key: 'filtersChange', method: 'onFiltersChange', prop: 'onFiltersChange', builtin: true, desc: 'Any in-grid filter changes.', params: 'filters: { global: string; columns: Array<{ id: string; operator: string; value: string; valueTo?: string; selectedValues?: string[] }> }' },
+  { key: 'paginationChange', method: 'onPaginationChange', prop: 'onPaginationChange', builtin: true, desc: 'The page or page size changes.', params: 'pagination: { pageIndex: number; pageSize: number }' },
+  { key: 'columnOrderChange', method: 'onColumnOrderChange', prop: 'onColumnOrderChange', builtin: false, desc: 'The column order changes.', params: 'order: ReadonlyArray<string>' },
+  { key: 'scrollBottomReached', method: 'onScrollBottomReached', prop: 'onScrollBottomReached', builtin: false, desc: 'The body scrolls near the bottom (lazy-load hook).', params: 'e: { scrollTop: number; scrollHeight: number; clientHeight: number }' },
+  { key: 'noteChange', method: 'onNoteChange', prop: 'onNoteChange', builtin: false, desc: 'A cell note/comment is saved or removed (needs editable comments).', params: 'e: { rowId: string; columnId: string; note: string }' },
+  { key: 'rowDragEnd', method: 'onRowDragEnd', prop: 'onRowDragEnd', builtin: false, desc: 'A managed row drag settles (needs row dragging enabled).', params: 'e: { row: Row; toIndex: number; sameGrid: boolean; fromGridId: number; toGridId: number }' },
+  // Data-layer events - fired by the screen's data controller after a write settles
+  // (form save, inline edit, delete action, or ctx.data.create/update/delete), not by
+  // the grid markup. Only fire on entity screens (which have a data source).
+  { key: 'rowAdded', method: 'onRowAdded', prop: '', builtin: false, dataEvent: true, desc: 'A row was created (form / ctx.data.create).', params: 'row: Row' },
+  { key: 'rowUpdated', method: 'onRowUpdated', prop: '', builtin: false, dataEvent: true, desc: 'A row was updated (form / inline edit / ctx.data.update).', params: 'row: Row' },
+  { key: 'rowDeleted', method: 'onRowDeleted', prop: '', builtin: false, dataEvent: true, desc: 'A row was deleted (delete action / ctx.data.delete).', params: 'id: string' },
+]
 
 // --- logic core: screen state + a small expression engine --------------------
 

@@ -307,7 +307,7 @@ ${dark}
   .theme-chip { transition: background 120ms ease; }
   .theme-chip-active {
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     font-weight: 600;
   }
   .theme-swatch {

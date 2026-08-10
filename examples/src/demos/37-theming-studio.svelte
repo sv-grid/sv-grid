@@ -656,7 +656,7 @@
   .ts-copy-btn {
     border: 0;
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     border-radius: 5px;
     padding: 3px 12px;
     font-size: 11px;

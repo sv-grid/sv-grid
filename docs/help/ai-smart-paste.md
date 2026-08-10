@@ -262,5 +262,5 @@ model.
 ## See also
 
 - [Demo 75 - AI Smart Paste](../../examples/src/demos/75-ai-smart-paste.svelte) - the full parser, 5 sample tiles, preview panel, per-row insert/update/skip control, commit through `api.setCellValue`
-- [AI assistant - Enterprise](./ai.md) - the `api.ai.filter`, `api.ai.smartFill`, `api.ai.summarize`, `api.ai.classify` helpers
+- [AI assistant](./ai.md) - the `api.ai.filter`, `api.ai.smartFill`, `api.ai.summarize`, `api.ai.classify` helpers
 - [Import](./import.md) - file picker for xlsx / csv / tsv / json

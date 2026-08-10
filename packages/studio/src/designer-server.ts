@@ -18,7 +18,6 @@ import { createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import {
-  createProject,
   parseProject,
   serializeProject,
   introspectDatabase,
@@ -27,6 +26,7 @@ import {
   linkRelationLabels,
   buildConnectionString,
   getSampleApp,
+  starterProject as buildStarterProject,
   skipUserOwned,
   type EntitySchema,
   type GeneratedFile,
@@ -95,25 +95,15 @@ function resolveDesignerDir(): string {
   return dir
 }
 
-/** The project a fresh session opens with: a chosen sample app (`--template`), or
- *  a minimal tasks starter. */
+/** The project a fresh session opens with: a chosen sample app (`--template`), or the
+ *  default enterprise-ready Customers CRUD showcase (rich grid + export + popup form,
+ *  seeded) - so the first screen is a complete, generate-and-copy-ready SvGrid app. */
 function starterProject(templateId?: string): StudioProject {
   if (templateId) {
     const app = getSampleApp(templateId)
     if (app) return app.build()
   }
-  const tasks: EntitySchema = {
-    name: 'tasks',
-    label: 'Task',
-    idField: 'id',
-    fields: [
-      { field: 'id', type: 'number', primaryKey: true, readonly: true },
-      { field: 'title', type: 'text', required: true },
-      { field: 'status', type: 'enum', options: [{ value: 'todo', label: 'To do' }, { value: 'doing', label: 'Doing' }, { value: 'done', label: 'Done' }] },
-      { field: 'due', type: 'date' },
-    ],
-  }
-  return createProject([tasks], { title: 'My App' })
+  return buildStarterProject()
 }
 
 function send(res: ServerResponse, status: number, body: string, type = 'application/json; charset=utf-8'): void {

@@ -47,7 +47,7 @@ const provider: AIProvider = async ({ prompt, responseFormat, signal, task }) =>
 setAIProvider(provider)
 ```
 
-Three design choices make this robust:
+Three design choices keep bad model output from becoming a silent wrong answer:
 
 - **Structured JSON, validated.** Helpers request `responseFormat: 'json'`
   and the grid `JSON.parse`s the reply. It strips a single markdown code

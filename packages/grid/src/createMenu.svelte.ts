@@ -31,6 +31,7 @@
 import type { MenuItem } from './menu-item'
 import type { EditorDir } from './editor-contract'
 import { enabledIndices, wrapMove } from './list-nav'
+import { createTypeaheadBuffer, isTypeaheadKey } from './list-option'
 
 /** Reactive inputs are getters so the core tracks live prop changes (the same
  *  controlled pattern as `createListbox`). */
@@ -75,6 +76,22 @@ export function createMenu(config: MenuConfig) {
   // -1 = nothing focused yet (the first enabled item is the tab stop).
   let active = $state(-1)
   let openSub = $state(-1)
+
+  // Type-ahead: printable keys jump to the next item whose label starts with the
+  // accumulated buffer (WAI-ARIA menu behavior), wrapping past the active item.
+  const typeahead = createTypeaheadBuffer()
+  function typeaheadMatch(buffer: string): number {
+    const b = buffer.trim().toLowerCase()
+    if (!b) return -1
+    const its = items()
+    const n = its.length
+    for (let k = 1; k <= n; k++) {
+      const i = (active + k + n) % n
+      const it = its[i]
+      if (it && !it.disabled && !it.separator && (it.label ?? '').toLowerCase().startsWith(b)) return i
+    }
+    return -1
+  }
 
   // Real (non-separator, non-disabled) item indices, for roving focus.
   const focusables = $derived(
@@ -153,6 +170,12 @@ export function createMenu(config: MenuConfig) {
       // Tab leaves the menu entirely (WAI-ARIA menu-button pattern): close the
       // whole tree rather than trapping focus inside a portalled panel.
       case 'Tab': config.onClose(); break
+      default:
+        // Type-ahead: a bare printable key jumps to the matching item.
+        if (isTypeaheadKey(e)) {
+          const idx = typeaheadMatch(typeahead.push(e.key))
+          if (idx >= 0) { e.preventDefault(); focus(idx) }
+        }
     }
   }
 

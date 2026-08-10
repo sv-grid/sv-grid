@@ -69,8 +69,24 @@ export { createGrid, createSvGrid, type SvelteGrid } from './createGrid.svelte'
 export { createGridState, createSvGridState } from './createGridState.svelte'
 export { subscribeGrid, subscribeSvGrid } from './subscribe'
 export { default as SvGrid } from './SvGrid.svelte'
-export { default as SvGridBoard } from './SvGridBoard.svelte'
+// Kanban board view. The `board` prop + its config types live in the free grid,
+// but the RENDERER (SvGridBoard) ships in @svgrid/enterprise and registers itself
+// through this seam (see board-view.svelte.ts). Mirrors the scheduler-view seam.
 export type { BoardConfig, BoardLane, BoardCardMoveEvent, BoardCardCommitEvent, BoardLayout, BoardSubtask, BoardComment, BoardMenuContext, BoardLaneMenuContext, BoardDrawerConfig } from './SvGrid.types'
+export { registerBoardView, getBoardView, hasBoardView } from './board-view.svelte'
+// Built-in AI helpers (free): natural-language filter, smart-fill, summarize,
+// classify, anomaly detection, chart-this and export planning. They ship no
+// model client and no-op until you register one with `setAIProvider(...)`, so
+// they tree-shake out of the base bundle unless you actually import them. The
+// export-provider seam lets @svgrid/enterprise register its Excel/PDF engine so
+// AI-planned exports can WRITE those formats.
+export * from './ai'
+export {
+  registerExportProvider,
+  getExportProvider,
+  type GridExportProvider,
+  type GridExportRunOptions,
+} from './export-provider'
 // Scheduler / calendar view. The `scheduler` prop + its config types live in
 // the free grid, but the RENDERER ships in @svgrid/enterprise and registers
 // itself through this seam (see scheduler-view.svelte.ts). Mirrors editor-registry.
@@ -89,6 +105,15 @@ export type {
   SchedulerOccurrenceChangeEvent,
 } from './SvGrid.types'
 export { registerSchedulerView, getSchedulerView, hasSchedulerView } from './scheduler-view.svelte'
+export {
+  registerPivotEngine,
+  getPivotEngine,
+  hasPivotEngine,
+  type PivotEngine,
+  type GridPivotConfig,
+  type GridPivotValue,
+  type GridPivotRow,
+} from './pivot-view.svelte'
 // Pure scheduler layout/model helpers (framework-free, like recurrence/date-core).
 // The calendar RENDERER that consumes these ships in @svgrid/enterprise.
 export {
@@ -147,6 +172,7 @@ export {
   type SvEditorProps,
   type EditorSize,
   type EditorDir,
+  type EditorAction,
   type EditorAriaState,
 } from './editor-contract'
 // UI kit - editor interaction surface (commit/cancel/close for grid-cell use)
@@ -183,7 +209,26 @@ export { createCarousel, type Carousel, type CarouselConfig } from './createCaro
 // createOverlay for the focus-trap/scroll-lock/dismissal lifecycle.
 export { createCommand, type Command, type CommandConfig } from './createCommand.svelte'
 // Schema-driven form core (SvForm): values/errors/touched + validation + submit.
-export { createForm, type Form, type FormConfig } from './createForm.svelte'
+export { createForm, type Form, type FormConfig, type FormMessages } from './createForm.svelte'
+export { default as SvSegmented, type SegmentedOption } from './SvSegmented.svelte'
+export { default as SvSpinner } from './SvSpinner.svelte'
+export { default as SvLoadingOverlay } from './SvLoadingOverlay.svelte'
+export { default as SvResult } from './SvResult.svelte'
+export { default as SvCollapsible } from './SvCollapsible.svelte'
+export { default as SvStack } from './SvStack.svelte'
+export { default as SvGroup } from './SvGroup.svelte'
+export { default as SvSimpleGrid } from './SvSimpleGrid.svelte'
+// UI kit - typography + display primitives (Pillar C2)
+export { default as SvText } from './SvText.svelte'
+export { default as SvTitle } from './SvTitle.svelte'
+export { default as SvAnchor } from './SvAnchor.svelte'
+export { default as SvBlockquote } from './SvBlockquote.svelte'
+export { default as SvMark } from './SvMark.svelte'
+export { default as SvList } from './SvList.svelte'
+export { default as SvKbd } from './SvKbd.svelte'
+export { default as SvCode } from './SvCode.svelte'
+export { default as SvVisuallyHidden } from './SvVisuallyHidden.svelte'
+export { default as SvAspectRatio } from './SvAspectRatio.svelte'
 // UI kit - custom cell-editor registry (register any component as a grid editor)
 export {
   registerCellEditor,
@@ -395,6 +440,7 @@ export { default as SvContextMenu } from './SvContextMenu.svelte'
 export {
   toast,
   dismissToast,
+  updateToast,
   clearToasts,
   pauseToast,
   resumeToast,
@@ -403,9 +449,15 @@ export {
   type ToastVariant,
   type ToastOptions,
   type ToastFn,
+  type ToastAction,
+  type UpdateToast,
+  type PromiseMessages,
 } from './toast-store.svelte'
 export { default as SvMenu, type MenuItem } from './SvMenu.svelte'
 export { default as SvMenuList } from './SvMenuList.svelte'
+export { default as SvMenubar, type MenubarMenu } from './SvMenubar.svelte'
+export { default as SvHoverCard } from './SvHoverCard.svelte'
+export { default as SvPopconfirm } from './SvPopconfirm.svelte'
 export { default as SvNavPane, type NavItem, type NavSection, type NavModule } from './SvNavPane.svelte'
 export { default as SvProgress } from './SvProgress.svelte'
 export { default as SvCircularProgress } from './SvCircularProgress.svelte'
@@ -413,6 +465,18 @@ export { popIn } from './popover'
 export { default as SvForm, type FormField, type FormFieldType, type FormSection, type FormEntry } from './SvForm.svelte'
 export { rules, runRules, isEmptyValue, type Validator, type RuleOptions, type CompareOp } from './validators'
 export { anchoredRect, portalToBody, PANEL_THEME_VARS, type AnchoredRect } from './popover'
+export {
+  computePosition,
+  autoUpdate,
+  parsePlacement,
+  type Placement,
+  type Side,
+  type Align,
+  type Rect,
+  type Viewport,
+  type ComputePositionOptions,
+  type ComputePositionResult,
+} from './positioning'
 export {
   toDate, startOfDay, startOfWeek, startOfMonth, addDays, addMonths, addYears, clampDate, isSameDay,
   monthMatrix, weekdayOrder, isoWeek, decadeRange, withTime, snapMinute, type DateLike,
@@ -435,6 +499,7 @@ export { renderComponent, renderSnippet } from './render-component'
 export { default as SvGridChart } from './SvGridChart.svelte'
 export { default as SvGridChartPanel } from './SvGridChartPanel.svelte'
 export type { ChartingConfig, ChartAggregateRequest, ChartAggregateBucket } from './SvGrid.types'
+export type { GridLocalization } from './SvGrid.types'
 export {
   buildChart,
   formatChartValue,
@@ -585,6 +650,19 @@ export {
   type RuleFormat,
   type ResolvedCellFormat,
 } from './conditional-formatting'
+export {
+  defaultGridMessages,
+  resolveGridMessages,
+  type GridMessages,
+} from './grid-messages'
+export {
+  insertGroupFooters,
+  buildAutoGroupColumns,
+  type GroupDisplayType,
+  type GroupFooterOptions,
+  type AutoGroupColumnSpec,
+  type AutoGroupResult,
+} from './group-display'
 export { getKeyboardIntent, getNextActiveCell, type GridKeyboardIntent } from './keyboard'
 export { createVirtualizer } from './virtualization/virtualizer'
 export { createSvelteVirtualizer } from './virtualization/svelte-virtualizer.svelte'

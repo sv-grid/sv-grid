@@ -332,7 +332,7 @@ export function createCellRender<
     ) {
       return formatNumericWithConfig(value, {
         type: formatConfig.type,
-        locales: formatConfig.locales,
+        locales: (formatConfig.locales ?? ctx.props.localization?.locale),
         currency:
           formatConfig.type === "currency"
             ? (formatConfig.currency ?? "USD")
@@ -365,7 +365,7 @@ export function createCellRender<
                   minute: "2-digit",
                 };
 
-        return getDateFormatter(formatConfig.locales, merged).format(
+        return getDateFormatter((formatConfig.locales ?? ctx.props.localization?.locale), merged).format(
           parsedDate,
         );
       }
@@ -406,7 +406,7 @@ export function createCellRender<
     ) {
       return formatNumericWithConfig(value, {
         type: formatConfig.type,
-        locales: formatConfig.locales,
+        locales: (formatConfig.locales ?? ctx.props.localization?.locale),
         currency:
           formatConfig.type === "currency"
             ? (formatConfig.currency ?? "USD")
@@ -428,7 +428,7 @@ export function createCellRender<
             : formatConfig.type === "date"
               ? { year: "numeric", month: "2-digit", day: "2-digit" }
               : { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" };
-        return getDateFormatter(formatConfig.locales, merged).format(parsedDate);
+        return getDateFormatter((formatConfig.locales ?? ctx.props.localization?.locale), merged).format(parsedDate);
       }
     }
     return String(value ?? "");

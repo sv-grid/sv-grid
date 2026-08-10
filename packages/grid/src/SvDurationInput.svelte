@@ -3,8 +3,10 @@
    * SvDurationInput - a duration editor whose value is a number of MINUTES but
    * which accepts the human forms people type ("1h 30m", "1:30", "90"). It shows
    * a formatted value when unfocused and re-parses on blur / Enter. As a grid
-   * cell editor: Enter commits, Escape cancels.
+   * cell editor: Enter commits, Escape cancels. The box, size and invalid state
+   * are owned by SvField's `frame` chrome.
    */
+  import type { Snippet } from 'svelte'
   import SvField from './SvField.svelte'
   import { editorAria, nextEditorId, type SvEditorProps } from './editor-contract'
   import { parseDuration, formatDuration } from './duration'
@@ -19,6 +21,16 @@
     style?: 'colon' | 'units'
     placeholder?: string
     autofocus?: boolean
+    /** Show a clear (x) button when there is a value. */
+    clearable?: boolean
+    /** Leading adornment (icon) inside the field. */
+    leading?: Snippet
+    /** Trailing adornment (icon) inside the field. */
+    trailing?: Snippet
+    /** Stretch to the container width. */
+    block?: boolean
+    /** Control width in px (ignored when `block`). Default 160. */
+    width?: number
   }
 
   let {
@@ -40,7 +52,13 @@
     hint,
     dir,
     id,
+    loading = false,
     autofocus = false,
+    clearable = false,
+    leading,
+    trailing,
+    block = false,
+    width = 160,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-dur')
@@ -65,44 +83,44 @@
   }
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
-  <div class="sv-dur sv-dur--{size}" class:is-disabled={disabled}>
-    <div class="sv-dur__field" class:is-invalid={invalid}>
-      <input
-        use:mountFocus
-        class="sv-dur__input"
-        type="text"
-        inputmode="numeric"
-        value={text}
-        {placeholder}
-        {disabled}
-        {readonly}
-        oninput={(e) => (text = e.currentTarget.value)}
-        onfocus={() => (focused = true)}
-        onblur={() => { focused = false; commit() }}
-        onkeydown={(e) => {
-          if (e.key === 'Enter') { onCommit?.(commit()) }
-          else if (e.key === 'Escape') onCancel?.()
-        }}
-        {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
-      />
-    </div>
-    {#if name}<input type="hidden" {name} value={value ?? ''} />{/if}
-  </div>
+<SvField
+  frame
+  id={uid}
+  {label}
+  {hint}
+  {error}
+  {required}
+  {dir}
+  {size}
+  {invalid}
+  {disabled}
+  {readonly}
+  {loading}
+  {block}
+  {width}
+  {leading}
+  {trailing}
+  clearable={clearable}
+  showClear={value != null}
+  onclear={() => { value = null; text = ''; onChange?.(null) }}
+>
+  <input
+    use:mountFocus
+    class="sv-dur__input"
+    type="text"
+    inputmode="numeric"
+    value={text}
+    {placeholder}
+    {disabled}
+    {readonly}
+    oninput={(e) => (text = e.currentTarget.value)}
+    onfocus={() => (focused = true)}
+    onblur={() => { focused = false; commit() }}
+    onkeydown={(e) => {
+      if (e.key === 'Enter') { onCommit?.(commit()) }
+      else if (e.key === 'Escape') onCancel?.()
+    }}
+    {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
+  />
+  {#if name}<input type="hidden" {name} value={value ?? ''} />{/if}
 </SvField>
-
-<style>
-  .sv-dur { --_accent: var(--sg-accent, #2563eb); display: inline-flex; flex-direction: column; width: 160px; }
-  .sv-dur.is-disabled { opacity: 0.6; }
-  .sv-dur__field {
-    display: flex; align-items: center;
-    background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a);
-    border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1)); border-radius: var(--sg-radius, 8px);
-  }
-  .sv-dur__field:focus-within { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
-  .sv-dur__field.is-invalid { border-color: var(--sg-danger, #dc2626); }
-  .sv-dur__input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: inherit; font: inherit; padding: 0 10px; }
-  .sv-dur--sm .sv-dur__field { height: 28px; font-size: 12px; }
-  .sv-dur--md .sv-dur__field { height: 34px; font-size: 13px; }
-  .sv-dur--lg .sv-dur__field { height: 40px; font-size: 15px; }
-</style>
