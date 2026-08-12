@@ -1,99 +1,97 @@
 /* ============================================================
- * EMBER - SvGrid's own signature theme. A warm-neutral palette
- * (warm off-white ground + warm ink in light; a warm near-black
- * in dark) with Svelte orange as the single accent: selection,
- * focus and the active-cell ring all glow orange. System font.
- * Unlike the other presets this one mimics no external design
- * system - it is the SvGrid house look from the marketing site.
+ * EMBER - SvGrid's own signature theme. Shaped like the shadcn/ui
+ * preset (white ground, 6px rounding, a medium-weight muted header
+ * row, no zebra, system font) with SvGrid's orange standing in for
+ * shadcn's near-black primary. The neutrals are stone rather than
+ * zinc so they sit next to orange without going cold - the same
+ * pairing shadcn's own orange base color makes.
  * The chrome stays quiet so the orange only ever means "you did
- * this": the header sits a hair off the page ground and separates
- * with a line plus small tracked caps, and frozen columns are a
- * warm neutral instead of the accent tint the grid derives by
- * default (which landed on top of the selection color).
+ * this": selection, focus and the active-cell ring are the only
+ * places it appears, and the frozen columns name a neutral instead
+ * of the accent tint the grid derives by default (which landed on
+ * top of the selection color).
  * ============================================================ */
 html[data-preset='ember'] .demo-page,
 html[data-preset='ember'] .page-warm {
-  --sg-bg: #fdfbf8;
-  --sg-fg: #1b1613;
-  --sg-muted: #6b625a;
-  --sg-border: #e7e1d8;
-  --sg-header-bg: #fbf9f5;
-  --sg-header-fg: #1b1613;
-  --sg-header-border: #ddd4c8;
-  --sg-bg-subtle: #f4f0ea;
-  --sg-pinned-bg: #faf7f2;
-  --sg-pinned-header-bg: #f6f2ec;
-  --sg-pinned-divider: #d8cfc2;
-  --sg-pinned-border: #d8cfc2;
-  --sg-pinned-shadow-color: rgba(94, 72, 52, 0.18);
-  --sg-row-alt-bg: #faf7f2;
-  --sg-row-hover-bg: #f3ede4;
-  --sg-selection-bg: #ffe3d6;        /* warm peach - Svelte orange at low tint */
-  --sg-accent: #ff3e00;              /* Svelte orange */
+  --sg-bg: #ffffff;
+  --sg-fg: #1c1917;
+  --sg-muted: #78716c;
+  --sg-border: #e7e5e4;
+  --sg-header-bg: #fafaf9;
+  --sg-header-fg: #1c1917;
+  --sg-bg-subtle: #fafaf9;
+  --sg-pinned-bg: #fafaf9;
+  --sg-pinned-header-bg: #f5f5f4;
+  --sg-pinned-divider: #e7e5e4;
+  --sg-pinned-border: #e7e5e4;
+  --sg-pinned-shadow-color: rgba(28, 25, 23, 0.10);
+  --sg-row-alt-bg: #ffffff;
+  --sg-row-hover-bg: #f5f5f4;
+  --sg-selection-bg: #ffece3;        /* accent surface - orange at a low tint */
+  --sg-accent: #ff3e00;              /* primary (Svelte orange) */
   --sg-focus-ring: 0 0 0 2px #ff3e00;
   --sg-input-bg: #ffffff;
-  --sg-input-border: #d3c9bb;
-  --sg-pill-active: #e9f7ec;
-  --sg-pill-active-fg: #15803d;
-  --sg-pill-pending: #fdf0d9;
+  --sg-input-border: #e7e5e4;
+  --sg-pill-active: #ecfdf5;
+  --sg-pill-active-fg: #047857;
+  --sg-pill-pending: #fffbeb;
   --sg-pill-pending-fg: #b45309;
-  --sg-pill-inactive: #fbe4de;
+  --sg-pill-inactive: #fef2f2;
   --sg-pill-inactive-fg: #b91c1c;
-  --sg-radius: 8px;
+  --sg-radius: 6px;
   --sg-cell-px: 12px;
-  --sg-header-weight: 600; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 44px;
-  --sg-header-size: 11.5px; --sg-header-transform: uppercase; --sg-header-tracking: 0.05em;
-  background: #fbf9f6;
-  color: #1b1613;
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  /* Scrollbar - warm neutrals, no accent on drag */
-  --sg-scrollbar-bg: #f4f0ea; --sg-scrollbar-border: #e7e1d8;
-  --sg-scrollbar-thumb: #d6cab8; --sg-scrollbar-thumb-hover: #c3b6a2; --sg-scrollbar-thumb-active: #a89e93;
-  --sg-scrollbar-arrow: #6b625a; --sg-scrollbar-arrow-hover: #1b1613; --sg-scrollbar-arrow-hover-bg: #f3ede4;
-  --sg-scrollbar-arrow-active: #1b1613; --sg-scrollbar-arrow-active-bg: #e7e1d8; --sg-scrollbar-arrow-disabled: #d6cab8;
+  /* Header: shadcn TableHead - medium weight, muted label */
+  --sg-header-weight: 500; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 48px;
+  background: #ffffff;
+  color: #1c1917;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Scrollbar - stone neutrals, no accent on drag */
+  --sg-scrollbar-bg: #fafaf9; --sg-scrollbar-border: #e7e5e4;
+  --sg-scrollbar-thumb: #d6d3d1; --sg-scrollbar-thumb-hover: #a8a29e; --sg-scrollbar-thumb-active: #78716c;
+  --sg-scrollbar-arrow: #78716c; --sg-scrollbar-arrow-hover: #1c1917; --sg-scrollbar-arrow-hover-bg: #f5f5f4;
+  --sg-scrollbar-arrow-active: #1c1917; --sg-scrollbar-arrow-active-bg: #e7e5e4; --sg-scrollbar-arrow-disabled: #d6d3d1;
 }
 html[data-preset='ember'] .demo-page .demo-aside {
-  background: #f4f0ea;
-  border-color: #e7e1d8 !important;
+  background: #fafaf9;
+  border-color: #e7e5e4 !important;
 }
 html[data-preset='ember'][data-theme='dark'] .demo-page,
 html[data-preset='ember'][data-theme='dark'] .page-warm {
-  --sg-bg: #1a1512;
-  --sg-fg: #f4efe8;
-  --sg-muted: #a89e93;
-  --sg-border: #2c2520;
-  --sg-header-bg: #1c1713;
-  --sg-header-fg: #f4efe8;
-  --sg-header-border: #352c25;
-  --sg-bg-subtle: #211b16;
-  --sg-pinned-bg: #1e1814;
-  --sg-pinned-header-bg: #211b16;
-  --sg-pinned-divider: #3a312a;
-  --sg-pinned-border: #3a312a;
-  --sg-pinned-shadow-color: rgba(10, 6, 3, 0.55);
-  --sg-row-alt-bg: #171310;
-  --sg-row-hover-bg: #241d18;
+  --sg-bg: #0c0a09;
+  --sg-fg: #fafaf9;
+  --sg-muted: #a8a29e;
+  --sg-border: #292524;
+  --sg-header-bg: #1c1917;
+  --sg-header-fg: #fafaf9;
+  --sg-bg-subtle: #1c1917;
+  --sg-pinned-bg: #151312;
+  --sg-pinned-header-bg: #1c1917;
+  --sg-pinned-divider: #292524;
+  --sg-pinned-border: #292524;
+  --sg-pinned-shadow-color: rgba(0, 0, 0, 0.5);
+  --sg-row-alt-bg: #0c0a09;
+  --sg-row-hover-bg: #1c1917;
   --sg-selection-bg: #3a2318;        /* warm ember glow under the selection */
   --sg-accent: #ff5a1f;              /* brighter Svelte orange on dark */
   --sg-on-accent: #ffffff;
   --sg-focus-ring: 0 0 0 2px #ff7a45;
-  --sg-input-bg: #221b16;
-  --sg-input-border: #3d332a;
-  --sg-pill-active: #0f3d2a;
+  --sg-input-bg: #1c1917;
+  --sg-input-border: #292524;
+  --sg-pill-active: #064e3b;
   --sg-pill-active-fg: #6ee7b7;
-  --sg-pill-pending: #4a2f10;
+  --sg-pill-pending: #78350f;
   --sg-pill-pending-fg: #fde68a;
-  --sg-pill-inactive: #4a1d18;
+  --sg-pill-inactive: #7f1d1d;
   --sg-pill-inactive-fg: #fecaca;
-  background: #100d0b;
-  color: #f4efe8;
-  /* Scrollbar - warm near-black */
-  --sg-scrollbar-bg: #17120e; --sg-scrollbar-border: rgba(168, 158, 147, 0.08);
-  --sg-scrollbar-thumb: #4a3f35; --sg-scrollbar-thumb-hover: #5f5347; --sg-scrollbar-thumb-active: #a89e93;
-  --sg-scrollbar-arrow: #a89e93; --sg-scrollbar-arrow-hover: #f4efe8; --sg-scrollbar-arrow-hover-bg: #2a221c;
-  --sg-scrollbar-arrow-active: #f4efe8; --sg-scrollbar-arrow-active-bg: #3a3128; --sg-scrollbar-arrow-disabled: #5f5347;
+  background: #0c0a09;
+  color: #fafaf9;
+  /* Scrollbar - stone dark (neutral, no accent on drag) */
+  --sg-scrollbar-bg: #1c1917; --sg-scrollbar-border: #292524;
+  --sg-scrollbar-thumb: #44403c; --sg-scrollbar-thumb-hover: #57534e; --sg-scrollbar-thumb-active: #78716c;
+  --sg-scrollbar-arrow: #a8a29e; --sg-scrollbar-arrow-hover: #fafaf9; --sg-scrollbar-arrow-hover-bg: #292524;
+  --sg-scrollbar-arrow-active: #fafaf9; --sg-scrollbar-arrow-active-bg: #44403c; --sg-scrollbar-arrow-disabled: #44403c;
 }
 html[data-preset='ember'][data-theme='dark'] .demo-page .demo-aside {
-  background: #17120e;
-  border-color: #2c2520 !important;
+  background: #1c1917;
+  border-color: #292524 !important;
 }
