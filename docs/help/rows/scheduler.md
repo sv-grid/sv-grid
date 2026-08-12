@@ -601,6 +601,240 @@ box (`searchable`, on by default) and any column filters or sort applied
 elsewhere all narrow the events shown - the calendar is never a separate data
 source.
 
+## Scheduler Pro
+
+The Enterprise renderer adds a set of advanced capabilities on top of the base
+scheduler. They are read from the same `scheduler` prop; type your config as
+`SchedulerProConfig` (from `@svgrid/enterprise`) to get the extra fields typed.
+
+> **Scheduler, not a Gantt.** SvGrid's Scheduler is a resource / booking / calendar
+> view of the grid - for appointments, staff and asset scheduling, and calendar
+> apps. It is deliberately *not* a project planner: there is no critical path,
+> percent-done, baselines, or work-breakdown structure, and none are planned. The
+> **dependencies** below are an optional convenience for *ordered bookings* (a job
+> that must move through stations in sequence); they are fully opt-in - with no
+> dependency config the timeline draws no arrows and does no cascading.
+
+### Dependencies & auto-reschedule (optional, for ordered bookings)
+
+Link events with predecessor -> successor **dependencies** and the timeline draws
+an arrow between them. When a predecessor is dragged or resized, its successors
+**auto-reschedule** forward just enough to keep every link legal - preserving each
+event's duration. Four link types are supported (`FS` finish-to-start, the default;
+`SS`, `FF`, `SF`) plus an optional `lag` in minutes (negative for a lead).
+
+```svelte
+<script lang="ts">
+  import { SvGrid } from '@svgrid/grid'
+  import { enableSchedulerView, type SchedulerProConfig, type SchedulerDependency } from '@svgrid/enterprise'
+  enableSchedulerView()
+
+  const dependencies: SchedulerDependency[] = [
+    { id: 'd1', from: 't1', to: 't2', type: 'FS' },      // t2 starts when t1 finishes
+    { id: 'd2', from: 't1', to: 't3', type: 'FS', lag: 60 }, // + 1h lag
+    { id: 'd3', from: 't2', to: 't4' },                  // FS (default)
+  ]
+
+  const cfg: SchedulerProConfig<any, Task> = {
+    startField: 'start', endField: 'end',
+    resourceField: 'team', resources: teams,
+    initialView: 'timelineWeek', editable: true,
+    businessHours: { start: 9, end: 17 },
+    dependencies,
+    autoReschedule: true,                 // default true when any dependency is set
+    dependencyRespectWorkingTime: true,   // cascade skips outside business hours
+    onDependenciesChange: (moves) => {    // persist the cascaded shifts
+      for (const m of moves) {
+        const row = rows.find((r) => r.id === m.id)
+        if (row) { row.start = iso(m.start); row.end = iso(m.end) }
+      }
+    },
+  }
+</script>
+```
+
+`from` / `to` are **row ids** (your `getRowId`). Provide the links as a flat
+`dependencies` array, or per-row via `dependencyField` (an array of
+`SchedulerDependency` or successor-id strings on each row). A dependency that is
+not currently satisfied (a successor sitting too early) is drawn as a dashed red
+arrow; cyclic links are ignored so a cascade can never loop. Cascading only ever
+pushes successors **forward** - it never pulls an event earlier.
+
+Arrows render in the timeline views (`timelineDay` / `timelineWeek` /
+`timelineMonth` / `timelineYear`), where events are laid out as horizontal bars.
+
+### Multi-assignment, histogram & summaries
+
+By default one event sits on one resource (`resourceField`). With **assignments**
+a single event can be assigned to SEVERAL resources - it then renders under each
+of them in the timeline. Provide a flat `assignments` list, or a per-row
+`assignmentField` holding an array of resource ids.
+
+```svelte
+const cfg: SchedulerProConfig<any, Shift> = {
+  startField: 'start', endField: 'end',
+  resourceField: 'assignees', resources: people,
+  initialView: 'timelineWeek', editable: true,
+  assignmentField: 'assignees',            // each row: resourceId[]
+  resourceHistogram: { height: 22 },       // utilization bars under each row
+  columnSummary: { label: 'Shifts', reducer: 'count' },  // sticky per-column totals
+  onAssignmentChange: ({ eventId, from, to }) => {       // drag across rows to reassign
+    const row = rows.find((r) => r.id === eventId)
+    if (row && to) row.assignees = [...row.assignees.filter((a) => a !== from), to]
+  },
+}
+```
+
+- **`resourceHistogram`** draws a small bar per axis tick under each resource row,
+  showing that resource's load; bars turn red where the load exceeds capacity
+  (`{ capacityField }` on the resource, default 1). Set `true` or
+  `{ capacityField?, height? }`.
+- **`columnSummary`** renders a sticky bottom strip aligned to the axis, one cell
+  per time column. `reducer` is `'count'`, `{ sum: 'field' }`, or a function
+  receiving the column-clipped events - e.g. `(items) => items.length`.
+- Dragging an assigned event onto a different resource row fires
+  **`onAssignmentChange`** (a reassign) instead of a plain move.
+
+### Non-working-time collapse & zoom
+
+Dense timelines waste width on hours nobody works. Turn on **collapse** and the
+axis folds non-working time out: nights (outside `businessHours`) and whole
+non-working days (`nonWorkingDays`, e.g. weekends) shrink to a thin gap, so the
+working hours fill the view. A **zoom** preset scales the tick size + pixel
+density from minutes out to months (a superset of `slotSizes`).
+
+```svelte
+const cfg: SchedulerProConfig<any, Job> = {
+  startField: 'start', endField: 'end',
+  resourceField: 'machine', resources: machines,
+  initialView: 'timelineWeek',
+  businessHours: { start: 8, end: 18 }, nonWorkingDays: [0, 6],
+  collapseNonWorking: true,   // fold nights to a gap
+  collapseWeekends: true,     // fold weekends to a gap
+  collapsedGapPx: 14,         // width of the gap marker (0 = omit entirely)
+  zoom: 3,                    // ladder index: 0 = 5-min .. 7 = monthly
+  onZoomChange: (level) => console.log(level.id),
+}
+```
+
+The compressed axis is fully consistent - event bars, drag/resize snapping, the
+now-line and dependency arrows all map through it. A `- <label> +` stepper appears
+in the toolbar when `zoom` is set; supply your own ladder via `zoomLevels`. These
+apply to the timeline views only.
+
+### Grouped / tree resources
+
+Organise the timeline's resource rows into a **collapsible tree** in the gutter -
+buildings to departments to providers/rooms. Define the group nodes with
+`resourceGroups` (nest via `parentId`) and map each resource to its group with
+`resourceGroupOf`. Click a group header to collapse its rows; the state persists
+via `groupPersistKey`.
+
+```svelte
+const cfg: SchedulerProConfig<any, Appt> = {
+  startField: 'start', endField: 'end',
+  resourceField: 'provider', resources: providers, // flat resources
+  resourceGroups: [
+    { id: 'bldg-a', title: 'Main building' },
+    { id: 'cardio', title: 'Cardiology', parentId: 'bldg-a' },
+    { id: 'derm', title: 'Dermatology', parentId: 'bldg-a' },
+  ],
+  resourceGroupOf: (r) => r.dept,          // resource -> group id
+  collapsibleGroups: true,
+  groupPersistKey: 'clinic-groups',
+  initialView: 'timelineDay',
+}
+```
+
+Resources whose group is unknown / unset trail in an ungrouped section. Each group
+header shows a count of the leaf resources beneath it. (To group the timeline by
+an **event field** instead of a resource - e.g. by status or type - simply set
+`resourceField` to that field; the rows then bucket by its values.)
+
+### Skill-based eligibility
+
+Restrict which events may be scheduled onto which resources (provider matching,
+room type, technician skills). Supply `eligible(event, resource)` - return `false`
+and a drag / resize / create onto that resource is rejected with a "Not eligible"
+flash, and ineligible rows hatch while you drag. Or use the declarative
+`requiresField` shortcut: an event's required tag(s) must all be in the resource's
+skills.
+
+```svelte
+// Flexible predicate:
+eligible: (job, tech) => tech.skills.includes(job.skill),
+
+// or declarative - a `skills` array on each resource:
+requiresField: 'skill',   // event field holding the required tag(s)
+// resourceSkillsOf: (r) => r.skills,  // default reads r.skills
+```
+
+### Utilization heatmap
+
+Tint each resource row's **background** by how loaded it is per time-bucket - light
+when quiet, hot near capacity, red when over. Distinct from the histogram (a bar
+strip); the heatmap colours the whole lane so a glance shows the pressure.
+
+```svelte
+resourceHistogram: false,
+utilizationHeatmap: { capacityField: 'cap' },  // over `cap` = a red cell
+```
+
+### Booking rules - buffers, lead time, duration, travel
+
+Beyond conflicts and working hours, gate bookings on real-world rules. A move /
+resize / create that breaks one snaps back with the reason.
+
+```svelte
+bufferBeforeMin: 15, bufferAfterMin: 15,   // clear gap around every booking
+minLeadMin: 60,                             // no bookings within an hour of now
+minDurationMin: 30, maxDurationMin: 90,
+travelTimeOf: (a, b) => distanceMin(a.location, b.location), // widens the gap
+```
+
+### Bookable slots / find-a-time
+
+Turn the Day timeline into a booking surface: set `bookable` and every OPEN slot of
+`durationMin` lights up per resource - the free time left after existing bookings,
+each resource's own hours (`availability`), buffers and lead time. Clicking a slot
+books it.
+
+```svelte
+bookable: { durationMin: 60, stepMin: 30 },
+onSlotPick: (start, end, resourceId) => book(resourceId, start, end),
+```
+
+The slot math is also a pure export - `availableSlots({ working, busy, durationMin,
+stepMin, bufferBeforeMin, bufferAfterMin, minStart })` from `@svgrid/enterprise`.
+
+### Multi-calendar overlay
+
+Overlay several calendars, each colour-coded and toggleable from a legend. Hiding a
+calendar filters its events out of every view; an event's colour comes from its
+calendar unless `colorField` overrides.
+
+```svelte
+calendars: [
+  { id: 'work', title: 'Work', color: '#4f46e5' },
+  { id: 'personal', title: 'Personal', color: '#16a34a' },
+  { id: 'holidays', title: 'Holidays', color: '#d97706', hidden: true },
+],
+calendarField: 'cal',
+```
+
+### Free/busy + find-a-time
+
+Shade a resource's external busy time (from another calendar) with `freeBusyOf`, and
+find a slot that works for everyone with the pure `commonFree(busyByPerson, dayStart,
+dayEnd, durationMin)` export - the windows when all attendees are free.
+
+```svelte
+freeBusyOf: (resource) => externalBusy[resource.id] ?? [],
+// then, to suggest meeting times:
+import { commonFree } from '@svgrid/enterprise'
+const windows = commonFree(attendees.map(busyOf), day8, day18, 60)
+```
+
 ## Config reference
 
 | Option | Purpose |
@@ -656,3 +890,30 @@ source.
 | `drawer` / `onEventCommit` | Built-in detail drawer + save callback. |
 | `eventMenu` | Right-click menu items for an event. |
 | `searchable` / `searchPlaceholder` | The toolbar search box. |
+
+### Scheduler Pro options (`SchedulerProConfig`)
+
+| Option | Purpose |
+| --- | --- |
+| `dependencies` / `dependencyField` | Predecessor -> successor links (`{ id, from, to, type?, lag? }`), as a flat list or per-row. Drawn as timeline arrows. |
+| `autoReschedule` | Cascade successors forward on move / resize to keep links legal (default `true` when dependencies are set). |
+| `dependencyRespectWorkingTime` | Cascade skips outside `businessHours` (a shifted successor lands at the next opening). |
+| `onDependenciesChange` | Fired with the cascaded `{ id, start, end }` shifts - persist them here. |
+| `onDependencyAdd` / `onDependencyRemove` | User draws / removes a link. |
+| `assignments` / `assignmentField` | Many-to-many event <-> resource assignments; an event renders under every assigned resource. |
+| `resourceHistogram` | Per-resource utilization bars under each timeline row (`true` or `{ capacityField?, height? }`); over-capacity bars turn red. |
+| `columnSummary` | Sticky per-time-column summary strip: `{ reducer: 'count' \| { sum } \| fn, label?, position? }`. |
+| `onAssignmentChange` | Fired when an event is dragged from one resource row to another (reassign). |
+| `collapseNonWorking` / `collapseWeekends` | Fold nights / non-working days out of the timeline axis. |
+| `collapsedGapPx` | Width (px) of a collapsed-gap marker (default 12; `0` omits it). |
+| `zoom` / `zoomLevels` / `onZoomChange` | Continuous zoom preset (minutes -> months) with a toolbar stepper; supersedes `slotSizes`. |
+| `resourceGroups` / `resourceGroupOf` | Group timeline resource rows into a collapsible tree (`{ id, title, parentId? }[]` + a resource -> group-id map). |
+| `collapsibleGroups` / `groupPersistKey` | Allow collapsing groups (default on) and persist the collapsed set to localStorage. |
+| `eligible` / `requiresField` / `resourceSkillsOf` | Skill / eligibility rule - which events may drop on which resources; rejected drops flash "Not eligible". |
+| `utilizationHeatmap` | Tint each resource row's background by load per bucket (`true` or `{ capacityField }`); over capacity = red. |
+| `bufferBeforeMin` / `bufferAfterMin` | Required clear minutes around each booking (number or `(event) => number`). |
+| `minLeadMin` / `minDurationMin` / `maxDurationMin` | Minimum notice, and min / max booking duration in minutes. |
+| `travelTimeOf` | Travel minutes required between two consecutive bookings on a resource (widens the buffer). |
+| `bookable` / `onSlotPick` | Show open bookable slots of a duration on the Day timeline (`{ durationMin, stepMin? }`); click to book. |
+| `calendars` / `calendarField` | Overlay several colour-coded calendars with a toggleable legend; map events via `calendarField`. |
+| `freeBusyOf` | External busy intervals to shade on a resource row (for find-a-time). Pair with the `commonFree` export. |

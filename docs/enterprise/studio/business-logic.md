@@ -139,6 +139,27 @@ validate: ({ action, values, event }) =>
 > server-validated out of the box. This pairs with [RBAC](./access-control.md),
 > which adds the `authorize` guard on the same route.
 
+## No-code triggers in the designer
+
+Everything above is code you write. The designer offers the same power as
+**Triggers** on an entity - no-code server-side rules that compile into the
+generated route's hooks. Six events, matching the hook points:
+`beforeCreate`, `afterCreate`, `beforeUpdate`, `afterUpdate`, `beforeDelete`,
+`afterDelete`. Each event holds a list of steps:
+
+| Step | What it does |
+| --- | --- |
+| **Set field** | Assign a value (a literal, another field, or an expression) - a transform before the write. |
+| **Require field** | Reject the write when a field is empty, with your message. |
+| **Reject when** | Reject the write when a condition holds - a cross-field guard. |
+| **Branch** | If / else over a condition, each side its own step list. |
+| **Code** | Escape hatch: a snippet for anything the steps cannot say. |
+
+Before-hooks transform and validate; after-hooks are for side effects. The
+steps are stored in the project model and enforced **on the server route** of
+SQL-bound entities - the same place `validate: true` runs - so they hold even
+against direct API calls.
+
 ## A worked example
 
 Computed `subtotal` / `tax` / `total`, a cross-field guard, and a delete veto -

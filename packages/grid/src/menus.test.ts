@@ -666,3 +666,35 @@ describe('createMenus - comments', () => {
     expect(ctx.commentEditFor).toBeNull()
   })
 })
+
+describe('createMenus - chart context-menu item', () => {
+  const target = { rowIndex: 0, colIndex: 0, columnId: 'a', rowId: '0', row: {} }
+
+  it('appends "Chart selected range" to the default menu when charting is enabled', () => {
+    const ctx = makeCtx({ props: { contextMenu: true }, chartingEnabled: true, contextMenuFor: target })
+    const items = createMenus(ctx).contextMenuItems()
+    expect(items.map((i) => i.label)).toContain('Chart selected range')
+  })
+
+  it('omits the chart item when charting is disabled', () => {
+    const ctx = makeCtx({ props: { contextMenu: true }, chartingEnabled: false, contextMenuFor: target })
+    const items = createMenus(ctx).contextMenuItems()
+    expect(items.map((i) => i.label)).not.toContain('Chart selected range')
+  })
+
+  it('clicking the chart item opens the chart panel', () => {
+    const ctx = makeCtx({ props: { contextMenu: true }, chartingEnabled: true, chartPanelOpen: false, contextMenuFor: target })
+    const item = createMenus(ctx).contextMenuItems().find((i) => i.label === 'Chart selected range')
+    item?.run?.()
+    expect(ctx.chartPanelOpen).toBe(true)
+  })
+
+  it('localizes the chart item label via ctx.messages', () => {
+    const ctx = makeCtx({
+      props: { contextMenu: true }, chartingEnabled: true, contextMenuFor: target,
+      messages: { chartRange: 'Graphique de la selection' },
+    })
+    const items = createMenus(ctx).contextMenuItems()
+    expect(items.map((i) => i.label)).toContain('Graphique de la selection')
+  })
+})

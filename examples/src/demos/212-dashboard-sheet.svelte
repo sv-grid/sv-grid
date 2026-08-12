@@ -200,7 +200,7 @@
   .sheet :global(.sv-grid-cell.db-h1) { background: color-mix(in srgb, var(--sg-accent, #6366f1) 18%, transparent) !important; }
   .sheet :global(.sv-grid-cell.db-h2) { background: color-mix(in srgb, var(--sg-accent, #6366f1) 32%, transparent) !important; }
   .sheet :global(.sv-grid-cell.db-h3) { background: color-mix(in srgb, var(--sg-accent, #6366f1) 48%, transparent) !important; }
-  .sheet :global(.sv-grid-cell.db-h4) { background: color-mix(in srgb, var(--sg-accent, #6366f1) 66%, transparent) !important; color: #fff !important; }
+  .sheet :global(.sv-grid-cell.db-h4) { background: color-mix(in srgb, var(--sg-accent, #6366f1) 66%, transparent) !important; color: var(--sg-on-accent, #fff) !important; }
   .db-spark { width: 90px; height: 22px; display: inline-block; vertical-align: middle; overflow: visible; }
   .db-spark-line { fill: none; stroke: var(--sg-accent, #4f46e5); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
   .db-spark-area { fill: color-mix(in srgb, var(--sg-accent, #4f46e5) 14%, transparent); stroke: none; }

@@ -19,6 +19,8 @@
  * </div>
  * ```
  */
+import { editorAria } from './editor-contract'
+
 export type SliderValue = number | [number, number]
 export type SliderOrientation = 'horizontal' | 'vertical'
 export type SliderThumb = 'single' | 'lo' | 'hi'
@@ -37,6 +39,12 @@ export type SliderConfig = {
   ariaLabel?: () => string | undefined
   /** Right-to-left: mirrors horizontal pointer + Left/Right key direction. */
   rtl?: () => boolean
+  // Editor contract (validation ARIA) - folded into thumbProps.
+  id?: () => string | undefined
+  invalid?: () => boolean | undefined
+  required?: () => boolean | undefined
+  error?: () => string | undefined
+  hint?: () => string | undefined
 }
 
 export function createSlider(config: SliderConfig) {
@@ -153,6 +161,15 @@ export function createSlider(config: SliderConfig) {
       const vmin = which === 'hi' ? lo : min()
       const vmax = which === 'lo' ? hi : max()
       const label = which === 'lo' ? 'Minimum' : which === 'hi' ? 'Maximum' : (config.ariaLabel?.() ?? 'Value')
+      // Validation ARIA (invalid / required / describedby) from the editor
+      // contract; keep the thumb's own value-oriented aria-label.
+      const va = editorAria({
+        id: config.id?.(),
+        invalid: config.invalid?.(),
+        required: config.required?.(),
+        error: config.error?.(),
+        hint: config.hint?.(),
+      })
       return {
         role: 'slider' as const,
         tabindex: disabled() ? -1 : 0,
@@ -162,6 +179,9 @@ export function createSlider(config: SliderConfig) {
         'aria-label': label,
         'aria-orientation': (isVert() ? 'vertical' : 'horizontal') as SliderOrientation,
         'aria-disabled': disabled() || undefined,
+        'aria-invalid': va['aria-invalid'],
+        'aria-required': va['aria-required'],
+        'aria-describedby': va['aria-describedby'],
         onkeydown: (e: KeyboardEvent) => onThumbKey(e, which),
       }
     },

@@ -715,7 +715,7 @@
     height: 22px;
     border-radius: 999px;
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.02em;

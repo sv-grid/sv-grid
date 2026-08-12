@@ -78,6 +78,79 @@ describe('SvForm', () => {
       expect(onChange.mock.calls.at(-1)![0]).toMatchObject({ name: 'A' })
     } finally { destroy() }
   })
+
+  it('renders an error summary after a failed submit', () => {
+    const { target, destroy } = mountForm({ fields, errorSummary: true })
+    try {
+      submitForm(target)
+      const summary = target.querySelector('.sv-form__summary[role="alert"]')
+      expect(summary).not.toBeNull()
+      const links = target.querySelectorAll('.sv-form__summary-link')
+      expect(links.length).toBeGreaterThan(0)
+      expect(links[0]!.textContent).toContain('is required')
+    } finally { destroy() }
+  })
+
+  it('applies serverErrors reactively', () => {
+    const { target, destroy } = mountForm({ fields, serverErrors: { name: 'Name already taken' } })
+    try {
+      expect([...target.querySelectorAll('.sv-form__error')].some((e) => e.textContent?.includes('already taken'))).toBe(true)
+    } finally { destroy() }
+  })
+
+  it('overrides the built-in required message and links the error via aria-describedby', () => {
+    const { target, destroy } = mountForm({ fields, messages: { required: (l: string) => `${l} manquant` } })
+    try {
+      submitForm(target)
+      const err = target.querySelector('#f-name__error')
+      expect(err?.textContent).toBe('Name manquant')
+      // aria wiring: the input points at the error id
+      expect(target.querySelector('#f-name')?.getAttribute('aria-describedby')).toBe('f-name__error')
+      expect(target.querySelector('#f-name')?.getAttribute('aria-invalid')).toBe('true')
+    } finally { destroy() }
+  })
+
+  it('mirrors dir onto the form element', () => {
+    const { target, destroy } = mountForm({ fields, dir: 'rtl' })
+    try {
+      expect(target.querySelector('form.sv-form')?.getAttribute('dir')).toBe('rtl')
+    } finally { destroy() }
+  })
+
+  it('computed fields derive their value, render read-only, and are in the payload', async () => {
+    const onSubmit = vi.fn()
+    const cf = [
+      { name: 'qty', label: 'Qty', type: 'number' as const },
+      { name: 'price', label: 'Price', type: 'number' as const },
+      { name: 'total', label: 'Total', type: 'text' as const, computed: (v: any) => (v.qty ?? 0) * (v.price ?? 0) },
+    ]
+    const { target, destroy } = mountForm({ fields: cf, initial: { qty: 3, price: 4 }, onSubmit })
+    try {
+      const totalInput = target.querySelector<HTMLInputElement>('#f-total')!
+      expect(totalInput.value).toBe('12')     // derived
+      expect(totalInput.readOnly).toBe(true)  // read-only
+      submitForm(target); await tick()
+      expect(onSubmit).toHaveBeenCalledTimes(1)
+      expect(onSubmit.mock.calls[0]![0].total).toBe(12) // computed value in payload
+    } finally { destroy() }
+  })
+
+  it('cascading: changing a parent clears fields that dependOn it (onChange payload)', () => {
+    const onChange = vi.fn()
+    const cf = [
+      { name: 'country', label: 'Country', options: [{ value: 'us', label: 'US' }, { value: 'ca', label: 'CA' }] },
+      { name: 'state', label: 'State', dependsOn: 'country', options: (v: any) => (v.country === 'us' ? [{ value: 'ny', label: 'NY' }] : []) },
+    ]
+    // country + state are plain text inputs here (default type) so we can drive them via the DOM.
+    const { target, destroy } = mountForm({ fields: cf, initial: { country: 'us', state: 'ny' }, onChange })
+    try {
+      setInput(target, 'f-country', 'ca')
+      // The last onChange payload has the parent updated AND the child cleared.
+      const last = onChange.mock.calls.at(-1)![0]
+      expect(last.country).toBe('ca')
+      expect(last.state).toBeNull()
+    } finally { destroy() }
+  })
 })
 
 describe('SvForm - conditional fields', () => {
@@ -251,6 +324,33 @@ describe('SvForm - stepper wizard', () => {
   })
 })
 
+describe('SvForm - tabs layout', () => {
+  const schema = [
+    { section: 'Profile', fields: [{ name: 'user', label: 'User', required: true }] },
+    { section: 'Bio', fields: [{ name: 'bio', label: 'Bio' }] },
+  ]
+
+  it('renders sections as tabs, one panel at a time; failed submit jumps to the erroring tab', async () => {
+    const onSubmit = vi.fn()
+    const { target, destroy } = mountForm({ fields: schema, tabs: true, onSubmit })
+    try {
+      const tabEls = target.querySelectorAll('[role="tab"]')
+      expect(tabEls.length).toBe(2)
+      // First tab active -> only its field is in the DOM
+      expect(target.querySelector('#f-user')).not.toBeNull()
+      expect(target.querySelector('#f-bio')).toBeNull()
+      // Switch to the Bio tab
+      ;[...target.querySelectorAll<HTMLElement>('[role="tab"]')].find((t) => t.textContent?.includes('Bio'))!.click()
+      flushSync()
+      expect(target.querySelector('#f-bio')).not.toBeNull()
+      // Submit with the required User empty -> blocked and jumps back to Profile
+      submitForm(target); await tick()
+      expect(onSubmit).not.toHaveBeenCalled()
+      expect(target.querySelector('#f-user')).not.toBeNull() // Profile tab is active again
+    } finally { destroy() }
+  })
+})
+
 describe('SvForm - field arrays', () => {
   const schema = [
     { name: 'contacts', label: 'Contacts', type: 'array' as const, required: true, itemFields: [
@@ -294,6 +394,18 @@ describe('SvForm - field arrays', () => {
       submitForm(target); await tick()
       expect(onSubmit).not.toHaveBeenCalled()
       expect([...target.querySelectorAll('.sv-form__error')].some((e) => e.textContent?.includes('Contacts is required'))).toBe(true)
+    } finally { destroy() }
+  })
+
+  it('reorder buttons move an item up/down', () => {
+    const { target, destroy } = mountForm({ fields: schema, initial: { contacts: [{ name: 'A', email: '' }, { name: 'B', email: '' }] } })
+    try {
+      const nameVals = () => [...target.querySelectorAll<HTMLInputElement>('.sv-form__array [id$="-name"]')].map((i) => i.value)
+      expect(nameVals()).toEqual(['A', 'B'])
+      ;(target.querySelectorAll<HTMLButtonElement>('button[aria-label="Move down"]')[0]!).click(); flushSync()
+      expect(nameVals()).toEqual(['B', 'A'])
+      ;(target.querySelectorAll<HTMLButtonElement>('button[aria-label="Move up"]')[1]!).click(); flushSync()
+      expect(nameVals()).toEqual(['A', 'B'])
     } finally { destroy() }
   })
 })

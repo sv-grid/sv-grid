@@ -55,9 +55,15 @@ import { SvPhoneInput } from '@svgrid/grid'
 | `country`     | `string`                                          | `US`             | Default country ISO code.                    |
 | `placeholder` | `string`                                          | `Phone number`   | National-field placeholder.                  |
 | `messages`    | `Partial<PhoneMessages>`                          | -                | Override the country selector label.         |
+| `block`       | `boolean`                                         | `false`          | Stretch to the container width.              |
+| `width`       | `number`                                          | `250`            | Control width in px (ignored when `block`).  |
 
 `PhoneParts` is `{ country; dial; national; valid; complete }`. `PhoneMessages`
 is `{ country }`.
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome; the country selector is a compact flag + dial-code chip in
+the field's leading slot.
 
 ## Examples
 

@@ -19,7 +19,9 @@
   type Section = { label: string; fields: string[] }
   type Related = {
     label: string
-    schema: EntitySchema
+    // Accept any specialized EntitySchema<T> (the type param is invariant); this is
+    // pure presentation over the schema's field metadata + plain record rows.
+    schema: EntitySchema<any>
     rows?: ReadonlyArray<Row>
     /** The child field pointing back at this record. */
     foreignKey: string
@@ -46,7 +48,9 @@
     loading = false,
     height,
   }: {
-    schema: EntitySchema
+    // Accept any specialized EntitySchema<T> (the type param is invariant); this is
+    // pure presentation over the schema's field metadata + plain record rows.
+    schema: EntitySchema<any>
     rows?: ReadonlyArray<Row>
     /** The specific record to show. Omit to self-drive off `rows`. */
     row?: Row

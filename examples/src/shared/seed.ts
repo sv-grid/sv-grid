@@ -162,21 +162,46 @@ export function makeOrders(count: number, seed = 7): Order[] {
   return out
 }
 
-/** Used by the large-dataset demo: people-like rows + 95 numeric metric columns. */
+/**
+ * Used by the large-dataset demo: sales-rep rows + a rolling monthly KPI
+ * ledger. The wide block is not filler - each column is one month, cycling
+ * Revenue / Units sold / Margin, so a 90-column grid reads as ~30 months of
+ * real performance history per rep. `metricKind(i)` tells the demo which
+ * format + header a given `metric_i` column should use.
+ */
 export type WidePerson = Person & Record<`metric_${number}`, number>
 
-export function makeWidePeople(count: number, metricCount = 95, seed = 1337): WidePerson[] {
+/** revenue | units | margin - the three KPIs the wide columns cycle through. */
+export type MetricKind = 0 | 1 | 2
+export function metricKind(i: number): MetricKind {
+  return (i % 3) as MetricKind
+}
+
+export function makeWidePeople(count: number, metricCount = 90, seed = 1337): WidePerson[] {
   const rand = rng(seed)
   const base = makePeople(count, seed)
   // Pre-allocate the metric key strings once - without this we'd allocate
-  // `count * metricCount` template strings (9.5M for 100k × 95) just to
-  // index into each row's object. Hot loop.
+  // `count * metricCount` template strings (9M for 100k × 90) just to index
+  // into each row's object. Hot loop.
   const metricKeys = new Array<string>(metricCount)
   for (let m = 0; m < metricCount; m++) metricKeys[m] = 'metric_' + m
   for (let i = 0; i < count; i++) {
     const row = base[i] as unknown as Record<string, number>
+    // Give each rep a stable "size" so their months trend together instead of
+    // being pure noise - a big account bills big every month.
+    const scale = 0.35 + rand() * 1.3
     for (let m = 0; m < metricCount; m++) {
-      row[metricKeys[m]!] = Math.round(rand() * 10_000) / 100
+      const r = rand()
+      switch (metricKind(m)) {
+        case 0: // Revenue, whole dollars
+          row[metricKeys[m]!] = Math.round((6_000 + r * 78_000) * scale)
+          break
+        case 1: // Units sold, integer
+          row[metricKeys[m]!] = Math.round((30 + r * 1_200) * scale)
+          break
+        default: // Gross margin, percent points (one decimal)
+          row[metricKeys[m]!] = Math.round((14 + r * 46) * 10) / 10
+      }
     }
   }
   return base as WidePerson[]

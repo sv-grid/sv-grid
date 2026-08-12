@@ -25,6 +25,8 @@
    */
   import {
     SvGrid,
+    SvToaster,
+    toast,
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
@@ -82,6 +84,34 @@
     return Math.round(n * m) / m;
   }
 
+  // Give every symbol its OWN brand colour + emblem (deterministic from the
+  // ticker), so the logo tiles read like distinct real company marks instead of
+  // ten repeated sector tints. A curated palette of vivid brand colours (not raw
+  // HSL, which turns muddy at low lightness) keeps them crisp and varied.
+  const EXCHANGES = ["NASDAQ", "NYSE", "LSE", "TSX", "XETRA", "HKEX"] as const;
+  // Vivid, visually distinct base colours - the kind real logos use.
+  const BRAND_COLORS = [
+    "#4f46e5", "#2563eb", "#0ea5e9", "#0891b2", "#0d9488", "#059669",
+    "#16a34a", "#ca8a04", "#ea580c", "#dc2626", "#e11d48", "#db2777",
+    "#c026d3", "#9333ea", "#7c3aed", "#0284c7", "#334155",
+  ] as const;
+  function symbolHash(sym: string): number {
+    let h = 2166136261;
+    for (let i = 0; i < sym.length; i++) {
+      h ^= sym.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+  function brandColor(sym: string): string {
+    return BRAND_COLORS[symbolHash(sym) % BRAND_COLORS.length]!;
+  }
+  function companyInitials(name: string, fallback: string): string {
+    const parts = name.split(/\s+/).filter(Boolean);
+    const ini = parts.slice(0, 2).map((w) => w[0] ?? "").join("");
+    return (ini || fallback.slice(0, 2)).toUpperCase();
+  }
+
   const SECTORS: readonly Sector[] = [
     "Technology",
     "Financials",
@@ -95,78 +125,135 @@
     "Real Estate",
   ];
 
-  // Three-letter ticker pool - combined with two-letter suffixes to
-  // generate 10k unique tickers without repeats.
-  const TICKER_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-  const COMPANY_PREFIXES = [
-    "Nordic",
-    "Pacific",
-    "Atlas",
-    "Vertex",
-    "Quantum",
-    "Helios",
-    "Stellar",
-    "Apex",
-    "Crescent",
-    "Sigma",
-    "Pioneer",
-    "Aurora",
-    "Granite",
-    "Cobalt",
-    "Hyperion",
-    "Meridian",
-    "Polaris",
-    "Sentinel",
-    "Tessera",
-    "Vanguard",
-    "Cascade",
-    "Frontier",
-    "Lumen",
-    "Beacon",
-    "Citadel",
-    "Orion",
-    "Solstice",
-  ];
-  const COMPANY_SUFFIXES = [
-    "Holdings",
-    "Industries",
-    "Group",
-    "Capital",
-    "Partners",
-    "Systems",
-    "Dynamics",
-    "Resources",
-    "Networks",
-    "Logistics",
-    "Technologies",
-    "Bio",
-    "Mining",
-    "Energy",
-    "Labs",
-    "Materials",
-    "Solutions",
-    "Trust",
+  // Per-sector accent, matching the inline chip palette. Fed to the list editor
+  // as `editorOptions` so the dropdown paints each choice as a coloured pill.
+  const SECTOR_COLORS: Record<Sector, string> = {
+    Technology: "#2563eb",
+    Financials: "#16a34a",
+    Healthcare: "#db2777",
+    Energy: "#d97706",
+    Consumer: "#7c3aed",
+    Industrials: "#475569",
+    Materials: "#dc2626",
+    Utilities: "#0d9488",
+    Communication: "#4f46e5",
+    "Real Estate": "#ea580c",
+  };
+  const SECTOR_OPTIONS = SECTORS.map((s) => ({
+    value: s,
+    label: s,
+    color: SECTOR_COLORS[s],
+  }));
+  const RISK_OPTIONS = [
+    { value: "Low", label: "Low", color: "#16a34a" },
+    { value: "Med", label: "Med", color: "#d97706" },
+    { value: "High", label: "High", color: "#dc2626" },
   ];
 
-  function makeRow(i: number): Security {
-    // Tickers: AAA, AAB ... ZZZ ~ 17k combos. Tracking the cursor lets us
-    // emit unique tickers up to 10k+ without collisions.
-    const a = Math.floor(i / (26 * 26)) % 26;
-    const b = Math.floor(i / 26) % 26;
-    const c = i % 26;
-    const symbol = `${TICKER_LETTERS[a]}${TICKER_LETTERS[b]}${TICKER_LETTERS[c]}`;
+  // Fictional but real-sounding companies. A large first x descriptor x type
+  // space so 10,000 rows rarely repeat a name, and the ticker is an abbreviation
+  // of that name (deduped to stay unique) the way a real listing symbol is - so
+  // you get BEAC / VRTX / NRDC, not AAA / AAB / AAC.
+  const FIRST_WORDS = [
+    "Nordic", "Pacific", "Atlas", "Vertex", "Quantum", "Helios", "Stellar", "Apex",
+    "Crescent", "Sigma", "Pioneer", "Aurora", "Granite", "Cobalt", "Hyperion", "Meridian",
+    "Polaris", "Sentinel", "Tessera", "Vantage", "Cascade", "Frontier", "Lumen", "Beacon",
+    "Cardinal", "Orion", "Solstice", "Summit", "Ironwood", "Redwood", "Silverline", "Keystone",
+    "Northwind", "Brightwater", "Copper", "Everest", "Halcyon", "Kestrel", "Nimbus", "Onyx",
+    "Pinnacle", "Rampart", "Seabright", "Thornton", "Vega", "Westford", "Ashford", "Belmont",
+    "Corvus", "Delphi", "Ember", "Fairmont", "Grayson", "Harborview", "Ridgeline", "Sable",
+    "Trident", "Ridgewood", "Wexford", "Auric", "Blackpine", "Clearwater", "Dunmore", "Larkspur",
+  ];
+  const DESCRIPTORS = [
+    "Bio", "Energy", "Materials", "Logistics", "Dynamics", "Robotics", "Analytics",
+    "Semiconductor", "Pharma", "Mining", "Aerospace", "Digital", "Capital", "Metals",
+    "Renewables", "Health", "Foods", "Grid", "Cloud", "Data", "Motors", "Chemical",
+    "Petroleum", "Software", "Devices", "Textiles", "Beverage", "Freight", "Payments", "Media",
+    "Security", "Instruments", "Optics", "Marine", "Storage", "Gaming", "Networks", "Systems",
+  ];
+  const CORP_TYPES = [
+    "Holdings", "Group", "Partners", "Corp", "Inc", "Industries", "Technologies", "Labs",
+    "Ventures", "Trust", "Global", "Enterprises", "Solutions", "Company", "International", "Resources",
+  ];
+
+  /** A mostly-unique, real-sounding company name as its component words. */
+  function makeName(usedNames: Set<string>): string[] {
+    for (let t = 0; t < 12; t++) {
+      const first = pick(FIRST_WORDS);
+      const roll = rand();
+      const words =
+        roll < 0.45
+          ? [first, pick(DESCRIPTORS), pick(CORP_TYPES)]
+          : roll < 0.75
+            ? [first, pick(DESCRIPTORS)]
+            : [first, pick(CORP_TYPES)];
+      const key = words.join(" ");
+      if (!usedNames.has(key)) {
+        usedNames.add(key);
+        return words;
+      }
+    }
+    const words = [pick(FIRST_WORDS), pick(DESCRIPTORS), pick(CORP_TYPES)];
+    usedNames.add(words.join(" "));
+    return words;
+  }
+
+  /** An abbreviation-style ticker for a name, unique across the seed. */
+  function makeTicker(words: string[], used: Set<string>): string {
+    const parts = words.map((w) => w.toUpperCase().replace(/[^A-Z]/g, ""));
+    const f = parts[0] ?? "CO";
+    const s = parts[1] ?? "";
+    const th = parts[2] ?? "";
+    const candidates = [
+      f.slice(0, 4),
+      f.slice(0, 3),
+      f.slice(0, 2) + s.slice(0, 2),
+      f.slice(0, 3) + s.slice(0, 1),
+      f.slice(0, 1) + s.slice(0, 1) + th.slice(0, 1),
+      f.slice(0, 2) + s.slice(0, 1) + th.slice(0, 1),
+    ];
+    for (const c of candidates) {
+      if (c.length >= 3 && c.length <= 4 && !used.has(c)) {
+        used.add(c);
+        return c;
+      }
+    }
+    const base = f.slice(0, 3) || "COR";
+    for (let k = 0; k < 26; k++) {
+      const c = base + String.fromCharCode(65 + k);
+      if (!used.has(c)) {
+        used.add(c);
+        return c;
+      }
+    }
+    let n = 1;
+    while (used.has(`X${n}`)) n++;
+    used.add(`X${n}`);
+    return `X${n}`;
+  }
+
+  function makeRow(
+    i: number,
+    usedNames: Set<string>,
+    usedTickers: Set<string>,
+  ): Security {
+    const words = makeName(usedNames);
+    const name = words.join(" ");
+    const symbol = makeTicker(words, usedTickers);
     const sector = SECTORS[i % SECTORS.length]!;
-    const name = `${pick(COMPANY_PREFIXES)} ${pick(COMPANY_SUFFIXES)}`;
     // Price range tuned so big-cap-ish names live near the top of the seed.
     const basePrice = round(8 + rand() * 990, 2);
     const open = basePrice;
-    // Pre-seed the trail with a small random walk so sparklines render
-    // immediately, not after 30 ticks.
+    // Pre-seed the 30-point trail. Each name gets its OWN trend + volatility so
+    // the sparklines read like distinct real charts - steady climbers, choppy
+    // names, sliders - instead of identical noise. Multiplicative walk with a
+    // per-name drift and a per-name step size.
+    const trend = round((rand() - 0.5) * 0.5, 4); // total drift over the trail: -25%..+25%
+    const vol = 0.005 + rand() * 0.018; // per-step volatility 0.5%..2.3%
     const history: number[] = [];
     let h = basePrice;
     for (let k = 0; k < 30; k++) {
-      h = Math.max(0.5, h + (rand() - 0.5) * basePrice * 0.01);
+      h = Math.max(0.5, h * (1 + trend / 30 + (rand() - 0.5) * vol));
       history.push(round(h, 2));
     }
     const last = history[history.length - 1]!;
@@ -199,8 +286,10 @@
   }
 
   function makeSeed(n: number): Security[] {
+    const usedNames = new Set<string>();
+    const usedTickers = new Set<string>();
     const out: Security[] = new Array(n);
-    for (let i = 0; i < n; i++) out[i] = makeRow(i);
+    for (let i = 0; i < n; i++) out[i] = makeRow(i, usedNames, usedTickers);
     return out;
   }
 
@@ -212,6 +301,61 @@
   let paused = $state(false);
   let ticks = $state(0);
   let sectorFilter = $state<Sector | "All">("All");
+
+  // ---- Notifications: a lightweight desk feed. The tick loop surfaces the odd
+  // notable move as a toast + a bell entry (throttled so it stays an occasional
+  // heads-up, never a stream). Purely local demo state - no engine, no watching.
+  type Notif = {
+    id: number;
+    symbol: string;
+    tone: "up" | "down";
+    title: string;
+    detail: string;
+  };
+  let notifications = $state<Notif[]>([]);
+  let unread = $state(0);
+  let bellOpen = $state(false);
+  let notifSeq = 0;
+  let lastNotifTick = -100;
+  const NOTIF_GAP = 6; // min ticks between notifications (~3 s at 500 ms)
+  const NOTIF_PCT = 10; // only flag names at least this far from open
+
+  function pushNotif(top: Security) {
+    lastNotifTick = ticks;
+    const up = top.pctChange >= 0;
+    const n: Notif = {
+      id: ++notifSeq,
+      symbol: top.symbol,
+      tone: up ? "up" : "down",
+      title: `${top.symbol} ${up ? "+" : ""}${top.pctChange.toFixed(1)}% today`,
+      detail: `${top.name} · ${fmtUsd(top.last)} · ${top.risk} risk`,
+    };
+    notifications = [n, ...notifications].slice(0, 24);
+    unread += 1;
+    // Linger a while - a desk alert you can actually read, not a blink.
+    toast[up ? "success" : "warning"](n.detail, { title: n.title, duration: 9000 });
+  }
+
+  function toggleBell() {
+    bellOpen = !bellOpen;
+    if (bellOpen) unread = 0;
+  }
+  function clearNotifs() {
+    notifications = [];
+    unread = 0;
+  }
+
+  // Close the bell dropdown on an outside click.
+  $effect(() => {
+    if (!bellOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target;
+      if (t instanceof Element && t.closest(".td-notif")) return;
+      bellOpen = false;
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  });
 
   // Columns that should flash on tick. Symbol / Name / Sector are static
   // so they're excluded - pulsing them is misleading.
@@ -238,6 +382,8 @@
     }
 
     const nextRows = rows.slice();
+    // Track the most extreme mover among the rows that ticked, for the desk feed.
+    let topMover: Security | null = null;
     for (const idx of touchSet) {
       const row = rows[idx]!;
       const drift = (rand() - 0.5) * row.last * 0.006; // up to ±0.3 %
@@ -265,10 +411,21 @@
         nextPulses[`${row.symbol}:${col}`] = direction;
       }
       nextRows[idx] = next;
+      if (!topMover || Math.abs(next.pctChange) > Math.abs(topMover.pctChange)) {
+        topMover = next;
+      }
     }
     rows = nextRows;
     pulses = nextPulses;
     ticks += 1;
+    // Occasionally surface the standout mover as a toast + bell notification.
+    if (
+      topMover &&
+      Math.abs(topMover.pctChange) >= NOTIF_PCT &&
+      ticks - lastNotifTick >= NOTIF_GAP
+    ) {
+      pushNotif(topMover);
+    }
   }
 
   $effect(() => {
@@ -363,10 +520,14 @@
     const max = Math.max(...history);
     const range = Math.max(1e-6, max - min);
     const step = w / (history.length - 1);
+    // Vertical padding so the line never sits flush against the top/bottom edge -
+    // reads cleaner and lets a nearly-flat series actually look flat.
+    const pad = h * 0.16;
+    const inner = h - pad * 2;
     let d = "";
     for (let i = 0; i < history.length; i++) {
       const x = round(i * step, 2);
-      const y = round(h - ((history[i]! - min) / range) * h, 2);
+      const y = round(pad + (1 - (history[i]! - min) / range) * inner, 2);
       d += `${i === 0 ? "M" : "L"}${x} ${y} `;
     }
     return d.trim();
@@ -396,14 +557,59 @@
 
 <!-- ─────────────────────────  CELL SNIPPETS  ───────────────────────── -->
 
+{#snippet LogoMark(m: { sym: string; name: string })}
+  {@const c = brandColor(m.sym)}
+  {@const style = symbolHash(m.sym) % 6}
+  {@const roundTile = symbolHash(m.sym) % 2 === 0}
+  {@const initials = companyInitials(m.name, m.sym)}
+  <svg class="td-logo" viewBox="0 0 28 28" width="27" height="27" aria-hidden="true">
+    <!-- Brand tile: per-company colour, alternating rounded-square / disc, with a
+         soft top sheen + darker foot so it reads like a moulded logo chip. -->
+    {#if roundTile}
+      <circle cx="14" cy="14" r="13" fill={c} />
+      <path d="M2 12 A13 13 0 0 1 26 12 L26 3 L2 3 Z" fill="#fff" opacity="0.16" />
+      <path d="M2 17 A13 13 0 0 0 26 17 L26 25 L2 25 Z" fill="#000" opacity="0.12" />
+    {:else}
+      <rect x="1" y="1" width="26" height="26" rx="7.5" fill={c} />
+      <rect x="1" y="1" width="26" height="12" rx="7.5" fill="#fff" opacity="0.16" />
+      <rect x="1" y="16" width="26" height="11" rx="7.5" fill="#000" opacity="0.1" />
+    {/if}
+    <!-- Mark: a distinct emblem per company (deterministic from the ticker). -->
+    {#if style === 0}
+      <circle cx="14" cy="14" r="6" fill="none" stroke="#fff" stroke-width="2.2" opacity="0.92" />
+      <circle cx="14" cy="14" r="1.9" fill="#fff" />
+    {:else if style === 1}
+      <path d="M9 18.5 L13.5 9.5 M14.5 18.5 L19 9.5" stroke="#fff" stroke-width="2.3" stroke-linecap="round" opacity="0.92" />
+    {:else if style === 2}
+      <rect x="8" y="15" width="3.1" height="5" rx="1" fill="#fff" opacity="0.92" />
+      <rect x="12.45" y="11.5" width="3.1" height="8.5" rx="1" fill="#fff" opacity="0.92" />
+      <rect x="16.9" y="8" width="3.1" height="12" rx="1" fill="#fff" opacity="0.92" />
+    {:else if style === 3}
+      <path d="M14 8 L20 19 L8 19 Z" fill="#fff" opacity="0.92" />
+    {:else if style === 4}
+      <circle cx="11.6" cy="14" r="4.8" fill="#fff" opacity="0.5" />
+      <circle cx="16.4" cy="14" r="4.8" fill="#fff" opacity="0.5" />
+    {:else}
+      <text
+        x="14"
+        y="18.4"
+        text-anchor="middle"
+        font-size="11"
+        font-weight="800"
+        fill="#fff"
+        font-family="ui-monospace, SFMono-Regular, Menlo, monospace">{initials}</text>
+    {/if}
+  </svg>
+{/snippet}
+
 {#snippet SymbolCell(props: { row: Security })}
-  {@const slug = props.row.sector.toLowerCase().replace(/\s+/g, "-")}
-  {@const initials = props.row.symbol.slice(0, 2)}
+  {@const exchange = EXCHANGES[symbolHash(props.row.symbol) % EXCHANGES.length]}
   <span class="td-symbol">
-    <span class={`td-sym-logo td-sym-${slug}`} aria-hidden="true"
-      >{initials}</span
-    >
-    <span class="td-sym-ticker">{props.row.symbol}</span>
+    {@render LogoMark({ sym: props.row.symbol, name: props.row.name })}
+    <span class="td-sym-meta">
+      <span class="td-sym-ticker">{props.row.symbol}</span>
+      <span class="td-sym-exch">{exchange}</span>
+    </span>
   </span>
 {/snippet}
 
@@ -451,28 +657,33 @@
 {#snippet TrendCell(props: { row: Security })}
   {@const h = props.row.history}
   {@const positive = h[h.length - 1]! >= h[0]!}
-  <svg
-    class="td-spark"
-    viewBox="0 0 120 24"
-    preserveAspectRatio="none"
-    aria-hidden="true"
-  >
-    <path
-      d={sparkPath(h, 120, 24)}
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.4"
-    />
-    <path
-      d={`${sparkPath(h, 120, 24)} L 120 24 L 0 24 Z`}
-      fill="currentColor"
-      opacity="0.10"
-    />
-  </svg>
-  <span class={`td-spark-pct ${positive ? "td-up" : "td-down"}`}>
-    {positive ? "+" : ""}{(((h[h.length - 1]! - h[0]!) / h[0]!) * 100).toFixed(
-      1,
-    )}%
+  {@const pct = ((h[h.length - 1]! - h[0]!) / h[0]!) * 100}
+  <span class="td-trend">
+    <svg
+      class={`td-spark ${positive ? "td-up" : "td-down"}`}
+      style={`color: ${positive ? "var(--td-spark-up)" : "var(--td-spark-down)"}`}
+      viewBox="0 0 120 32"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path
+        d={`${sparkPath(h, 120, 32)} L 120 32 L 0 32 Z`}
+        fill="currentColor"
+        opacity="0.12"
+      />
+      <path
+        d={sparkPath(h, 120, 32)}
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linejoin="round"
+        stroke-linecap="round"
+        vector-effect="non-scaling-stroke"
+      />
+    </svg>
+    <span class={`td-spark-pct ${positive ? "td-up" : "td-down"}`}>
+      {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
+    </span>
   </span>
 {/snippet}
 
@@ -605,6 +816,64 @@
     <button type="button" class="td-btn" onclick={() => (paused = !paused)}
       >{paused ? "▶ Resume" : "⏸ Pause"}</button
     >
+
+    <!-- Notifications bell -->
+    <div class="td-notif">
+      <button
+        type="button"
+        class="td-bell"
+        class:td-bell-on={unread > 0}
+        onclick={toggleBell}
+        aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}
+        aria-expanded={bellOpen}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="17"
+          height="17"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.9"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+        </svg>
+        {#if unread > 0}
+          <span class="td-bell-badge">{unread > 9 ? "9+" : unread}</span>
+        {/if}
+      </button>
+
+      {#if bellOpen}
+        <div class="td-notif-panel" role="dialog" aria-label="Notifications">
+          <div class="td-notif-head">
+            <span>Notifications</span>
+            {#if notifications.length}
+              <button type="button" class="td-notif-clear" onclick={clearNotifs}
+                >Clear</button
+              >
+            {/if}
+          </div>
+          {#if notifications.length === 0}
+            <div class="td-notif-empty">You're all caught up.</div>
+          {:else}
+            <ul class="td-notif-list">
+              {#each notifications as n (n.id)}
+                <li class={`td-notif-item td-${n.tone}`}>
+                  <span class="td-notif-dot" aria-hidden="true"></span>
+                  <div class="td-notif-text">
+                    <span class="td-notif-title">{n.title}</span>
+                    <span class="td-notif-detail">{n.detail}</span>
+                  </div>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+      {/if}
+    </div>
   </div>
 
   <!-- Grid -->
@@ -626,7 +895,7 @@
           width: 140,
           hideBelow: 700,
           editorType: "list",
-          editorOptions: SECTORS as unknown as ReadonlyArray<string>,
+          editorOptions: SECTOR_OPTIONS,
           cell: (ctx) => renderSnippet(SectorChip, { row: ctx.row.original }),
         },
         {
@@ -715,7 +984,7 @@
           width: 95,
           hideBelow: 700,
           editorType: "list",
-          editorOptions: ["Low", "Med", "High"] as const,
+          editorOptions: RISK_OPTIONS,
           cell: (ctx) => renderSnippet(RiskCell, { row: ctx.row.original }),
         },
         {
@@ -734,7 +1003,7 @@
       enableInlineEditing={true}
       enableCellSelection={true}
       enableRowSummaries={false}
-      rowHeight={34}
+      rowHeight={40}
       containerHeight="100%"
       fitColumns={false}
       columnVirtualization={false}
@@ -745,7 +1014,16 @@
   </div>
 </section>
 
+<SvToaster position="top-right" max={3} />
+
 <style>
+  /* Keep every data cell at one size. Without this the grid cells inherit the
+     page's 16px, which reads oddly next to the 11-13px chips/labels - the tags
+     looked smaller than the numbers. 13px is the standard dense-grid size. */
+  :global(.td-shell .sv-grid-cell) {
+    font-size: 13px;
+  }
+
   /* ─── KPI strip ──────────────────────────────────────────────── */
   .td-kpi-strip {
     display: grid;
@@ -830,6 +1108,143 @@
     background: var(--sg-header-bg, #f1f5f9);
   }
 
+  /* ─── Notifications bell + panel ──────────────────────────────── */
+  .td-notif {
+    position: relative;
+    display: inline-flex;
+  }
+  .td-bell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 30px;
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #1e293b);
+    border-radius: 6px;
+    cursor: pointer;
+    transition:
+      background 0.14s ease,
+      border-color 0.14s ease;
+  }
+  .td-bell:hover {
+    background: var(--sg-header-bg, #f1f5f9);
+  }
+  .td-bell-on {
+    color: var(--site-accent, #2563eb);
+    border-color: color-mix(in srgb, var(--site-accent, #2563eb) 45%, var(--sg-border, #cbd5e1));
+  }
+  .td-bell-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    background: #dc2626;
+    border-radius: 999px;
+    box-shadow: 0 0 0 2px var(--sg-bg, #fff);
+  }
+  .td-notif-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 40;
+    width: 300px;
+    max-height: 360px;
+    overflow: auto;
+    background: var(--sg-bg, #ffffff);
+    border: 1px solid var(--sg-border, #e2e8f0);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.35);
+  }
+  .td-notif-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--sg-muted, #64748b);
+    border-bottom: 1px solid var(--sg-border, #e2e8f0);
+    position: sticky;
+    top: 0;
+    background: var(--sg-bg, #ffffff);
+  }
+  .td-notif-clear {
+    border: 0;
+    background: transparent;
+    color: var(--site-accent, #2563eb);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+  }
+  .td-notif-empty {
+    padding: 28px 16px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--sg-muted, #64748b);
+  }
+  .td-notif-list {
+    list-style: none;
+    margin: 0;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .td-notif-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 9px;
+    align-items: start;
+    padding: 9px 10px;
+    border-radius: 8px;
+  }
+  .td-notif-item:hover {
+    background: var(--sg-header-bg, #f1f5f9);
+  }
+  .td-notif-dot {
+    width: 8px;
+    height: 8px;
+    margin-top: 5px;
+    border-radius: 50%;
+    background: #16a34a;
+  }
+  .td-notif-item.td-down .td-notif-dot {
+    background: #dc2626;
+  }
+  .td-notif-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .td-notif-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-fg, #0f172a);
+  }
+  .td-notif-detail {
+    font-size: 11.5px;
+    color: var(--sg-muted, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .td-hint {
     font-size: 11.5px;
     color: var(--sg-muted, #64748b);
@@ -872,9 +1287,9 @@
   /* ─── Sector tints (chips + inline pills) ─────────────────────── */
   :global(.td-sector) {
     display: inline-block;
-    padding: 2px 9px;
+    padding: 2px 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     line-height: 1.5;
     white-space: nowrap;
@@ -967,60 +1382,18 @@
     gap: 9px;
     width: 100%;
   }
-  :global(.td-sym-logo) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  :global(.td-logo) {
     flex-shrink: 0;
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
-    font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo,
-      monospace;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    color: #ffffff;
-    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
-    /* Default; per-sector classes override the gradient */
-    background: linear-gradient(135deg, #64748b, #475569);
-    box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.18),
-      inset 0 -2px 0 rgba(0, 0, 0, 0.12);
-    user-select: none;
-  }
-  /* Sector-tinted logo gradients - match the chip palette */
-  :global(.td-sym-technology) {
-    background: linear-gradient(135deg, #6366f1, #4338ca);
-  }
-  :global(.td-sym-financials) {
-    background: linear-gradient(135deg, #10b981, #059669);
-  }
-  :global(.td-sym-energy) {
-    background: linear-gradient(135deg, #f59e0b, #b45309);
-  }
-  :global(.td-sym-healthcare) {
-    background: linear-gradient(135deg, #ef4444, #b91c1c);
-  }
-  :global(.td-sym-consumer) {
-    background: linear-gradient(135deg, #ec4899, #be185d);
-  }
-  :global(.td-sym-industrials) {
-    background: linear-gradient(135deg, #0ea5e9, #0369a1);
-  }
-  :global(.td-sym-utilities) {
-    background: linear-gradient(135deg, #14b8a6, #0f766e);
-  }
-  :global(.td-sym-materials) {
-    background: linear-gradient(135deg, #a855f7, #7e22ce);
-  }
-  :global(.td-sym-communications) {
-    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-  }
-  :global(.td-sym-real-estate) {
-    background: linear-gradient(135deg, #f97316, #c2410c);
+    /* A shape-following shadow so circular marks don't get a square halo. */
+    filter: drop-shadow(0 1px 1.5px rgba(15, 23, 42, 0.3));
   }
 
+  :global(.td-sym-meta) {
+    display: inline-flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.15;
+  }
   :global(.td-sym-ticker) {
     font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo,
       monospace;
@@ -1028,6 +1401,13 @@
     letter-spacing: 0.03em;
     color: var(--sg-fg, #0f172a);
     font-size: 13px;
+  }
+  :global(.td-sym-exch) {
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--sg-muted, #64748b);
+    text-transform: uppercase;
   }
 
   /* ─── Pulse + change tints ────────────────────────────────────── */
@@ -1082,20 +1462,37 @@
   }
 
   /* ─── Sparkline ───────────────────────────────────────────────── */
-  :global(.td-spark) {
-    width: 120px;
-    height: 24px;
-    color: #2563eb;
-    vertical-align: middle;
+  /* Direction colours live as theme-aware CSS vars on the cell, and the SVG
+     reads them inline (see TrendCell). Setting the colour inline makes the
+     trail reliably green/red in every context - including the home-page
+     preview - instead of falling back to a neutral slate that looks blue. */
+  :global(.td-trend) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+    --td-spark-up: #16a34a;
+    --td-spark-down: #dc2626;
   }
-  :global([data-theme="dark"] .td-spark) {
-    color: #60a5fa;
+  :global([data-theme="dark"] .td-trend) {
+    --td-spark-up: #4ade80;
+    --td-spark-down: #f87171;
+  }
+  :global(.td-spark) {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 68%;
+    max-height: 30px;
+    color: #64748b;
   }
   :global(.td-spark-pct) {
-    margin-left: 6px;
-    font-size: 11px;
+    flex: 0 0 auto;
+    width: 48px;
+    text-align: right;
+    font-size: 11.5px;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
-    vertical-align: middle;
   }
 
   /* ─── Position bar ────────────────────────────────────────────── */
@@ -1147,9 +1544,9 @@
   /* ─── Risk pill ───────────────────────────────────────────────── */
   :global(.td-risk) {
     display: inline-block;
-    padding: 2px 9px;
+    padding: 2px 10px;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     line-height: 1.5;
   }

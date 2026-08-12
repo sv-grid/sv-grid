@@ -29,20 +29,19 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
-  } from '@svgrid/grid'
-  import {
-    installEnterprise,
-    setLicenseKey,
-    dismissUnlicensedNudge,
     setAIProvider,
     mockAIProvider,
-    type EnterpriseGridApi,
+    aiFilter,
+    aiSmartFill,
+    aiSummarize,
+    aiClassify,
+    type ColumnDef,
+    type SvGridApi,
     type AIFilterResult,
     type AISmartFillResult,
     type AISummary,
     type AIClassifyResult,
-  } from '@svgrid/enterprise'
+  } from '@svgrid/grid'
 
   // ---- Domain ---------------------------------------------------------
 
@@ -123,13 +122,11 @@
 
   // Mock provider so the demo works without an API key. In a real app
   // this is the seam where you wire your model call.
-  setLicenseKey('SVENTERPRISE-DEV-AI')
-  dismissUnlicensedNudge()
   setAIProvider(mockAIProvider)
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   let accounts = $state<Account[]>(seedAccounts())
-  let api = $state<EnterpriseGridApi<typeof features, Account> | null>(null)
+  let api = $state<SvGridApi<typeof features, Account> | null>(null)
   let activeIndex = $state<number>(0)
 
   // Tab state
@@ -166,7 +163,7 @@
     if (!api) return
     busy = 'ask'; errorMsg = null; askPlan = null
     try {
-      askPlan = await api.ai.filter(askQuery)
+      askPlan = await aiFilter(api, askQuery)
     } catch (e) { errorMsg = (e as Error).message }
     finally { busy = null }
   }
@@ -186,7 +183,7 @@
     if (!api) return
     busy = 'fill'; errorMsg = null; fillResult = null
     try {
-      fillResult = await api.ai.smartFill({
+      fillResult = await aiSmartFill(api, {
         field: 'tier',
         examples: fillExamples.map((ex) => ({
           input: accounts.find((a) => a.company === ex.company) ?? {},
@@ -230,7 +227,7 @@
     if (!api) return
     busy = 'summary'; errorMsg = null; summary = null
     try {
-      summary = await api.ai.summarize({
+      summary = await aiSummarize(api, {
         target: summaryScope === 'row' ? { kind: 'row', rowIndex: activeIndex } : { kind: 'all' },
         question: summaryQuestion.trim() || undefined,
       })
@@ -242,7 +239,7 @@
     if (!api) return
     busy = 'classify'; errorMsg = null; classifyResult = null
     try {
-      classifyResult = await api.ai.classify({
+      classifyResult = await aiClassify(api, {
         inputField: 'notes',
         outputField: 'sentiment',
         classes: [...CLASSES],
@@ -496,7 +493,7 @@
       rowHeight={44}
       containerHeight="100%"
       fitColumns={false}
-      onApiReady={(a) => { api = installEnterprise(a) }}
+      onApiReady={(a) => { api = a }}
       onActiveCellChange={(args) => { activeIndex = args.rowIndex }}
     />
   </div>

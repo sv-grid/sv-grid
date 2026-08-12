@@ -920,7 +920,7 @@
   .wb-btn-sm { font-size: 11px; padding: 0 6px; min-width: 24px; }
   .wb-btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #eef2ff); }
   .wb-btn:disabled { opacity: 0.5; cursor: default; }
-  .wb-btn.on { background: var(--sg-accent, #2563eb); color: #fff; border-color: transparent; }
+  .wb-btn.on { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); border-color: transparent; }
   .wb-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border: 0; font-weight: 600; padding: 0 12px; }
   .wb-import { cursor: pointer; }
   .wb-sw { width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.18); cursor: pointer; padding: 0; }

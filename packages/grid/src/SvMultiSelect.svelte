@@ -20,7 +20,7 @@
 
   type Props = Pick<
     SvEditorProps,
-    'disabled' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel'
+    'disabled' | 'readonly' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel' | 'loading'
   > & {
     options: ReadonlyArray<MultiSelectOption>
     value?: ReadonlyArray<string | number>
@@ -53,6 +53,7 @@
     debounceMs = 250,
     loadingText = 'Loading…',
     disabled = false,
+    readonly = false,
     label,
     hint,
     error,
@@ -63,6 +64,7 @@
     name,
     dir,
     ariaLabel,
+    loading: loadingProp = false,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-ms')
@@ -120,6 +122,7 @@
   const ms = createPopoverSelect({
     itemCount: () => filtered.length,
     disabled: (i) => !!filtered[i]?.disabled,
+    readonly: () => readonly,
     onSelect: (i) => { const o = filtered[i]; if (o) toggleOption(o) },
     onOpenChange: (o) => { if (o) { search = ''; if (loadOptions) doLoad('') } },
     getTrigger: () => triggerEl,
@@ -131,7 +134,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} loading={loadingProp || loading}>
   <div class="sv-ms sv-ms--{size}" class:is-disabled={disabled}>
     <button
       bind:this={triggerEl}
@@ -147,7 +150,7 @@
         <span class="sv-ms__placeholder">{placeholder}</span>
       {:else}
         <span class="sv-ms__chips">
-          {#each selectedOptions.slice(0, maxTagCount) as opt (opt.value)}
+          {#each selectedOptions.slice(0, maxTagCount) as opt, i (i)}
             <span class="sv-ms__chip">{opt.label}</span>
           {/each}
           {#if selectedOptions.length > maxTagCount}
@@ -206,7 +209,7 @@
       aria-activedescendant={searchable ? undefined : ms.activeDescendant()}
       tabindex={searchable ? -1 : 0}
     >
-      {#each filtered as opt, i (opt.value)}
+      {#each filtered as opt, i (i)}
         <li
           class="sv-ms__opt"
           class:is-active={ms.isActive(i)}

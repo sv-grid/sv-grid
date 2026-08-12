@@ -104,6 +104,6 @@
   }
   .mc-btn:hover { border-color: var(--sg-accent, #3b82f6); }
   .mc-btn.is-on { border-color: var(--sg-accent, #3b82f6); background: color-mix(in oklab, var(--sg-accent, #3b82f6) 12%, transparent); }
-  .mc-join { font-size: 9px; font-weight: 800; letter-spacing: 0.05em; color: #fff; background: var(--sg-accent, #3b82f6); border-radius: 4px; padding: 1px 5px; }
+  .mc-join { font-size: 9px; font-weight: 800; letter-spacing: 0.05em; color: var(--sg-on-accent, #fff); background: var(--sg-accent, #3b82f6); border-radius: 4px; padding: 1px 5px; }
   .mc-or { background: #8b5cf6; }
 </style>

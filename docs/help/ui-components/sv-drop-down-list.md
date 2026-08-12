@@ -58,7 +58,12 @@ import { SvDropDownList } from '@svgrid/grid'
 | `autoOpen`    | `boolean`                           | `false`    | Focus the trigger and open the panel on mount.               |
 | `virtual`     | `boolean`                           | `false`    | Window the option list for large sets. Flat lists only.      |
 | `rowHeight`   | `number`                            | `34`       | Fixed option height in px; must match the CSS.               |
+| `maxRows`     | `number`                            | `8`        | Options shown before the panel scrolls (native-select behaviour). |
 | `resizable`   | `boolean`                           | `false`    | Show a bottom drag grip so users can resize the open panel.  |
+| `readonly`    | `boolean`                           | `false`    | Value shown; the panel will not open.                        |
+| `item`        | `Snippet<[ListOption]>`             | -          | Custom render for each option.                               |
+| `header` / `footer` | `Snippet`                     | -          | Content pinned above / below the option list.                |
+| `noData`      | `Snippet`                           | -          | Shown when there are no options.                             |
 | `size`        | `sm \| md \| lg`                    | `md`       | Control height and font size.                                |
 | `disabled`    | `boolean`                           | `false`    | Blocks interaction and dims the trigger.                     |
 | `label`       | `string`                            | -          | Visible field label, wired to the control.                   |
@@ -139,6 +144,11 @@ hidden.
 ```svelte
 <SvDropDownList {options} resizable />
 ```
+
+The same `resizable` prop works on [SvComboBox](sv-combo-box.md) and
+[SvAutoComplete](sv-auto-complete.md):
+
+<div data-docs-demo="411-resizable-dropdowns" data-height="440"></div>
 
 ### Cascading selects
 

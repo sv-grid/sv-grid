@@ -29,6 +29,8 @@ real-world scale:
 - [**AI Toolkit**](./ai-toolkit.md) - the hub for every AI feature: in-grid helpers, agents, MCP server, and LLM grounding, all model-agnostic
 - [AI assistant - Enterprise](./ai.md) - natural-language filter, smart fill, summarise, classify; bring-your-own model adapter
 - [Pivot tables - Enterprise](./pivot.md) - `createPivotModel` + nested column headers; designer UI is a separate demo
+- [Alerts - Enterprise](./alerts.md) - no-code alert rules: toast / highlight / flash / prevent-edit when the data crosses a line; persisted + shareable
+- [Expression query language - Enterprise](./expressions-query.md) - the predicate / scalar / change language behind alerts (and styled + calculated columns)
 - **Migrating to SvGrid** - column / API translation guides from other grids:
   [AG Grid](./migrating-from-ag-grid.md) ·
   [TanStack Table](./migrating-from-tanstack-table.md) ·

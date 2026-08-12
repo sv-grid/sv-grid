@@ -53,6 +53,11 @@ anywhere.
 
 ## Props
 
+Pass any of `label` / `hint` / `error` (plus `required` / `invalid` / `id`) to
+wrap the dial in [SvField](sv-field.md) chrome (a label + hint/error line) when
+using it as a standalone form control; omit them and it renders bare, as it does
+inside [SvDateTimePicker](sv-date-time-picker.md)'s popover.
+
 | Prop                  | Type                       | Default     | Description                                                       |
 | --------------------- | -------------------------- | ----------- | ---------------------------------------------------------------- |
 | `value`               | `TimeValue`                | `null`      | A `Date`, `"HH:MM[:SS]"` string, or epoch ms.                    |

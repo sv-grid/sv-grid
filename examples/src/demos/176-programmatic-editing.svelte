@@ -159,11 +159,11 @@
   }
   .pe-btn:hover:not(:disabled) { border-color: var(--sg-accent, #3b82f6); }
   .pe-btn:disabled { opacity: 0.45; cursor: default; }
-  .pe-primary { background: var(--sg-accent, #3b82f6); color: #fff; border-color: transparent; }
+  .pe-primary { background: var(--sg-accent, #3b82f6); color: var(--sg-on-accent, #fff); border-color: transparent; }
   .pe-accent { border-color: var(--sg-accent, #3b82f6); color: var(--sg-accent, #3b82f6); }
   .pe-badge {
     display: inline-flex; min-width: 18px; justify-content: center;
     padding: 0 5px; border-radius: 9px; font-size: 10px;
-    background: var(--sg-accent, #3b82f6); color: #fff;
+    background: var(--sg-accent, #3b82f6); color: var(--sg-on-accent, #fff);
   }
 </style>

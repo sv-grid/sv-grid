@@ -76,6 +76,15 @@
      * localStorage under this key, so it reopens where the user left it.
      */
     persistKey?: string
+    /** Form column count (default 2). A field with `span: 2` spans all columns. */
+    columns?: 1 | 2 | 3
+    /** Restrict + order the form fields (by field name). Default: all schema fields. */
+    formFields?: string[]
+    /** Group fields into titled fieldsets. Fields not in any section render in a
+     *  trailing default group. When set, `formFields` ordering is per-section. */
+    sections?: Array<{ title?: string; fields: string[] }>
+    /** Dialog width for the modal / drawer presentations. Default 'md'. */
+    formSize?: 'sm' | 'md' | 'lg'
     onSubmit: (payload: SubmitPayload) => void | Promise<void>
     onCancel?: () => void
   }
@@ -91,11 +100,34 @@
     uploads,
     dependentOptions,
     persistKey,
+    columns = 2,
+    formFields,
+    sections,
+    formSize = 'md',
     onSubmit,
     onCancel,
   }: Props = $props()
 
-  const fields = $derived(schemaToFormFields(schema))
+  const allFields = $derived(schemaToFormFields(schema))
+  // Apply the include/order list (formFields), else keep the schema order.
+  const fields = $derived(
+    formFields && formFields.length
+      ? (formFields.map((name) => allFields.find((f) => f.field === name)).filter(Boolean) as FormFieldDescriptor[])
+      : allFields,
+  )
+  // Grouped layout: each section's resolvable fields, plus a trailing group for
+  // anything not assigned to a section (so no field is ever silently dropped).
+  const fieldGroups = $derived.by((): Array<{ title?: string; fields: FormFieldDescriptor[] }> => {
+    if (!sections || !sections.length) return [{ fields }]
+    const assigned = new Set<string>()
+    const groups = sections.map((s) => {
+      const gf = s.fields.map((name) => fields.find((f) => f.field === name)).filter(Boolean) as FormFieldDescriptor[]
+      for (const f of gf) assigned.add(f.field)
+      return { title: s.title, fields: gf }
+    })
+    const rest = fields.filter((f) => !assigned.has(f.field))
+    return rest.length ? [...groups, { fields: rest }] : groups
+  })
 
   // Options for the custom dropdown: prepend a blank "clear" option for
   // non-required fields (parity with the native select's empty option).
@@ -344,8 +376,35 @@
       </div>
     </header>
 
-    <div class="sv-ep__body">
-      {#each fields as f (f.field)}
+    {#if fieldGroups.length > 1 || fieldGroups[0]?.title}
+      {#each fieldGroups as g, gi (gi)}
+        <div class="sv-ep__section">
+          {#if g.title}<h4 class="sv-ep__section-title">{g.title}</h4>{/if}
+          <div class="sv-ep__body" style="--sv-ep-cols: {columns}">
+            {#each g.fields as f (f.field)}{@render fieldRow(f)}{/each}
+          </div>
+        </div>
+      {/each}
+    {:else}
+      <div class="sv-ep__body" style="--sv-ep-cols: {columns}">
+        {#each fields as f (f.field)}{@render fieldRow(f)}{/each}
+      </div>
+    {/if}
+
+    {#if submitError}<p class="sv-ep__submit-err" role="alert">{submitError}</p>{/if}
+
+    <footer class="sv-ep__footer">
+      {#if onCancel}
+        <button type="button" class="sv-ep__btn" onclick={close} disabled={submitting}>Cancel</button>
+      {/if}
+      <button type="submit" class="sv-ep__btn sv-ep__btn--primary" disabled={submitting}>
+        {submitting ? 'Saving…' : (submitLabel ?? (mode === 'create' ? 'Create' : 'Save'))}
+      </button>
+    </footer>
+  </form>
+{/snippet}
+
+{#snippet fieldRow(f: FormFieldDescriptor)}
         {@const kind = controlKind(f)}
         {@const lk = f.relation ? lookups?.[f.field] : undefined}
         {@const depOptions = dependentOptions?.[f.field]}
@@ -444,20 +503,6 @@
           {#if f.help && !errors[f.field]}<p class="sv-ep-field__help">{f.help}</p>{/if}
           {#if errors[f.field]}<p class="sv-ep-field__err">{errors[f.field]}</p>{/if}
         </div>
-      {/each}
-    </div>
-
-    {#if submitError}<p class="sv-ep__submit-err" role="alert">{submitError}</p>{/if}
-
-    <footer class="sv-ep__footer">
-      {#if onCancel}
-        <button type="button" class="sv-ep__btn" onclick={close} disabled={submitting}>Cancel</button>
-      {/if}
-      <button type="submit" class="sv-ep__btn sv-ep__btn--primary" disabled={submitting}>
-        {submitting ? 'Saving…' : (submitLabel ?? (mode === 'create' ? 'Create' : 'Save'))}
-      </button>
-    </footer>
-  </form>
 {/snippet}
 
 {#if open}
@@ -466,13 +511,13 @@
     <div class="sv-ep-wrap sv-ep-wrap--{presentation}" transition:fade={{ duration: 160 }} onclick={close} role="presentation">
       {#if presentation === 'drawer'}
         <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-        <div class="sv-ep sv-ep--drawer" role="dialog" aria-modal="true" aria-label={heading} tabindex="-1" onclick={stop} transition:fly={{ x: 460, duration: 300, easing: cubicOut }}>
+        <div class="sv-ep sv-ep--drawer sv-ep--sz-{formSize}" role="dialog" aria-modal="true" aria-label={heading} tabindex="-1" onclick={stop} transition:fly={{ x: 460, duration: 300, easing: cubicOut }}>
           {@render panelInner()}
         </div>
       {:else}
         <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
         <div
-          class="sv-ep sv-ep--modal"
+          class="sv-ep sv-ep--modal sv-ep--sz-{formSize}"
           class:sv-ep--floating={floating}
           data-pin={pin}
           bind:this={panelEl}
@@ -559,6 +604,11 @@
     display: flex;
     flex-direction: column;
   }
+  /* Dialog size (modal width / drawer width), unless the user has pinned/resized. */
+  .sv-ep--sz-sm.sv-ep--modal { width: min(400px, 100%); }
+  .sv-ep--sz-lg.sv-ep--modal { width: min(760px, 100%); }
+  .sv-ep--sz-sm.sv-ep--drawer { width: min(360px, 100vw); }
+  .sv-ep--sz-lg.sv-ep--drawer { width: min(600px, 100vw); }
   .sv-ep--modal {
     width: min(520px, 100%);
     max-height: 88vh;
@@ -661,7 +711,7 @@
 
   .sv-ep__body {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(var(--sv-ep-cols, 2), minmax(0, 1fr));
     gap: 14px 16px;
     padding: 18px;
     overflow: auto;
@@ -672,6 +722,11 @@
   .sv-ep--drawer .sv-ep__body {
     grid-template-columns: 1fr;
   }
+  /* Grouped layout: one scroll region holds the titled fieldsets. */
+  .sv-ep__section { display: flex; flex-direction: column; }
+  .sv-ep__section + .sv-ep__section { border-top: 1px solid var(--sg-border, #e6e8ec); }
+  .sv-ep__section-title { margin: 0; padding: 14px 18px 0; font-size: 12.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--sg-muted, #64748b); }
+  .sv-ep__section .sv-ep__body { flex: 0 0 auto; overflow: visible; }
   .sv-ep-field {
     display: flex;
     flex-direction: column;

@@ -104,6 +104,6 @@
   :global(.ff-avatar) {
     width: 30px; height: 30px; border-radius: 50%; object-fit: cover; display: inline-flex;
     align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
-    background: var(--sg-accent, #2563eb); color: #fff; border: 1px solid var(--sg-border, #ddd);
+    background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); border: 1px solid var(--sg-border, #ddd);
   }
 </style>

@@ -56,6 +56,10 @@ import { SvColorInput } from '@svgrid/grid'
 | `palette`   | `string[]`                 | -           | Preset swatches shown in the popover.             |
 | `autoOpen`  | `boolean`                  | `false`     | Focus the trigger and open on mount.              |
 | `messages`  | `Partial<ColorMessages>`   | -           | Override the built-in popover strings.            |
+| `block`     | `boolean`                  | `false`     | Stretch to the container width (else hugs its content). |
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome.
 
 `ColorMessages` is `{ dialog; picker; hex }`.
 

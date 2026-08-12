@@ -568,7 +568,7 @@
   .cq-btn-primary {
     background: var(--sg-accent, #2563eb);
     border-color: transparent;
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
   .cq-btn-warn {
     background: #ca8a04;
@@ -678,7 +678,7 @@
   }
   :global(.cq-step-active) {
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
   :global(.cq-step-approved) { background: #dcfce7; color: #166534; }
   :global(.cq-step-rejected) { background: #fee2e2; color: #b91c1c; }

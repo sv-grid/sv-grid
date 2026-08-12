@@ -289,14 +289,19 @@
   {@const lo = props.row.low}
   {@const hi = props.row.high}
   {@const pos = hi > lo ? ((props.row.last - lo) / (hi - lo)) * 100 : 50}
+  {@const mpos = Math.max(2, Math.min(98, pos))}
+  {@const up = props.row.pctChange >= 0}
   <span class="sv-range">
     <span class="sv-range-end">{lo.toFixed(2)}</span>
-    <span class="sv-range-track"><span class="sv-range-dot" style={`left:${pos}%`}></span></span>
+    <span class="sv-range-track">
+      <span class={`sv-range-fill ${up ? "sv-rng-up" : "sv-rng-dn"}`} style={`width:${pos}%`}></span>
+      <span class={`sv-range-mark ${up ? "sv-rng-up" : "sv-rng-dn"}`} style={`left:${mpos}%`}></span>
+    </span>
     <span class="sv-range-end">{hi.toFixed(2)}</span>
   </span>
 {/snippet}
 
-<section class="flex flex-col flex-1 min-h-0 gap-3">
+<section class="sv-stock-shell flex flex-col flex-1 min-h-0 gap-3">
   <!-- Live market summary -->
   <div class="sv-kpis">
     <div class="sv-kpi">
@@ -390,7 +395,11 @@
         },
         {
           field: 'history', header: 'Intraday', width: 130, align: 'center',
-          sparkline: { type: 'area' },
+          // `currentColor` + a per-row up/down class makes the trail green/red by
+          // direction instead of a single flat blue.
+          sparkline: { type: 'area', color: 'currentColor' },
+          cellClass: (ctx) =>
+            ctx.row.original.pctChange >= 0 ? 'sv-change-up' : 'sv-change-down',
         },
         {
           id: 'dayRange', header: 'Day range', field: 'low', width: 190,
@@ -476,7 +485,7 @@
       enableInlineEditing={false}
       enableCellSelection={true}
       enableRowSummaries={false}
-      rowHeight={34}
+      rowHeight={40}
       containerHeight="100%"
       initialColumnPinning={{ left: ['symbol'] }}
     />
@@ -584,11 +593,15 @@
   .sv-toolbar-hint { margin-left: auto; font-size: 12px; color: var(--sg-muted); }
   @media (max-width: 720px) { .sv-toolbar-hint { display: none; } }
 
+  /* Keep every data cell at one size - the grid otherwise inherits the page's
+     16px, which left the chips looking smaller than the numbers. */
+  :global(.sv-stock-shell .sv-grid-cell) { font-size: 13px; }
+
   /* ---- Sector chip (rendered inside a grid cell) ---- */
   :global(.sv-sector) {
     display: inline-flex; align-items: center;
-    padding: 2px 9px; border-radius: 999px;
-    font-size: 11px; font-weight: 600;
+    padding: 2px 10px; border-radius: 999px;
+    font-size: 13px; font-weight: 600;
     background: color-mix(in oklab, var(--sv-h) 15%, transparent);
     color: var(--sv-h);
     border: 1px solid color-mix(in oklab, var(--sv-h) 30%, transparent);
@@ -602,11 +615,18 @@
   :global(.sec-comm)   { --sv-h: #0284c7; }
 
   /* ---- Day-range bar (rendered inside a grid cell) ---- */
-  :global(.sv-range) { display: inline-flex; align-items: center; gap: 7px; width: 100%; }
-  :global(.sv-range-end) { font-size: 10px; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; min-width: 40px; }
+  :global(.sv-range) { display: inline-flex; align-items: center; gap: 8px; width: 100%; }
+  :global(.sv-range-end) { font-size: 11px; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; min-width: 44px; }
   :global(.sv-range span.sv-range-end:first-of-type) { text-align: right; }
-  :global(.sv-range-track) { position: relative; flex: 1; height: 4px; border-radius: 999px; background: color-mix(in oklab, var(--sg-muted, #94a3b8) 24%, transparent); }
-  :global(.sv-range-dot) { position: absolute; top: 50%; width: 8px; height: 8px; border-radius: 50%; background: var(--sg-accent, #6366f1); transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--sg-bg, #fff); }
+  :global(.sv-range-track) { position: relative; flex: 1; height: 4px; border-radius: 999px; background: color-mix(in oklab, var(--sg-muted, #94a3b8) 22%, transparent); overflow: visible; }
+  /* Subtle fill from the day low up to the current price. */
+  :global(.sv-range-fill) { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; opacity: 0.4; }
+  /* A thin price tick at the current position - reads as a marker, not a slider. */
+  :global(.sv-range-mark) { position: absolute; top: 50%; width: 2.5px; height: 12px; border-radius: 2px; transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--sg-bg, #0f172a); }
+  :global(.sv-rng-up) { background: #16a34a; }
+  :global(.sv-rng-dn) { background: #dc2626; }
+  :global(:where([data-theme='dark']) .sv-rng-up) { background: #4ade80; }
+  :global(:where([data-theme='dark']) .sv-rng-dn) { background: #f87171; }
 
   @keyframes sv-live-pulse {
     0%   { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55); }

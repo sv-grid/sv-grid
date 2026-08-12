@@ -97,8 +97,8 @@ you need pivot, advanced export, or a support SLA, that is Enterprise on SvGrid.
 Capability and architecture, not licensing (both are MIT). SvGrid adds row
 grouping with aggregation, master-detail, Excel-style cell-range selection,
 integrated charts, and pivot, and it ships a headless engine plus an MCP server
-alongside the component. Both are genuinely Svelte-native, so the core grid
-behaviour is comparable; SvGrid simply reaches further.
+alongside the component. Both are Svelte-native, so the core grid
+behaviour is comparable; SvGrid covers more ground.
 
 ### Is the migration a rewrite?
 

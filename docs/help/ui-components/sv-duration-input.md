@@ -57,6 +57,14 @@ import { SvDurationInput } from '@svgrid/grid'
 | `style`       | `colon` \| `units`                  | `colon`       | Display when unfocused: `1:30` vs `1h 30m`.            |
 | `placeholder` | `string`                            | `e.g. 1h 30m` | Empty-state hint text.                                 |
 | `autofocus`   | `boolean`                           | `false`       | Focus + select on mount (used as a cell editor).       |
+| `clearable`   | `boolean`                           | `false`       | Show a clear (x) button when there is a value.         |
+| `leading`     | `Snippet`                           | -             | Leading adornment (icon) inside the field.             |
+| `trailing`    | `Snippet`                           | -             | Trailing adornment (icon) inside the field.            |
+| `block`       | `boolean`                           | `false`       | Stretch to the container width.                        |
+| `width`       | `number`                            | `160`         | Control width in px (ignored when `block`).            |
+
+The box, size, invalid state and focus ring are owned by [SvField](sv-field.md)'s
+shared `frame` chrome.
 
 ## Examples
 

@@ -21,6 +21,7 @@
     indeterminate = false,
     onChange,
     disabled = false,
+    readonly = false,
     size = 'md',
     name,
     value,
@@ -42,7 +43,7 @@
   const cb = createCheckbox({
     checked: () => checked,
     indeterminate: () => indeterminate,
-    onChange: (v) => onChange?.(v),
+    onChange: (v) => { if (readonly) return; onChange?.(v) },
     disabled: () => disabled,
     ariaLabel: () => ariaLabel ?? (children ? undefined : 'checkbox'),
     id: () => uid,
@@ -54,12 +55,14 @@
 </script>
 
 <SvField id={uid} {hint} {error} {required} {dir}>
-  <label class="sv-check sv-check--{size}" class:is-disabled={disabled} class:is-invalid={invalid}>
+  <label class="sv-check sv-check--{size}" class:is-disabled={disabled} class:is-readonly={readonly} class:is-invalid={invalid}>
     <button
+      role="checkbox"
       class="sv-check__box"
       class:is-checked={checked && !indeterminate}
       class:is-indeterminate={indeterminate}
       {...cb.boxProps()}
+      aria-readonly={readonly ? 'true' : undefined}
     >
       {#if indeterminate}
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" /></svg>
@@ -82,6 +85,7 @@
   .sv-check--sm { --_sz: 15px; font-size: 12px; }
   .sv-check--lg { --_sz: 22px; font-size: 15px; }
   .sv-check.is-disabled { opacity: 0.55; cursor: not-allowed; }
+  .sv-check.is-readonly { cursor: default; }
   .sv-check__box {
     width: var(--_sz); height: var(--_sz); flex: none; padding: 0; cursor: inherit;
     display: grid; place-items: center;

@@ -819,7 +819,7 @@
   .cube-tool-primary {
     background: var(--sg-accent, #2563eb);
     border-color: var(--sg-accent, #2563eb);
-    color: #fff; font-weight: 600;
+    color: var(--sg-on-accent, #fff); font-weight: 600;
   }
   .cube-tool-primary:hover { filter: brightness(1.07); background: var(--sg-accent, #2563eb); }
   .cube-tool:disabled { opacity: 0.5; cursor: default; }
@@ -890,7 +890,7 @@
   .cube-chip.on {
     background: var(--sg-accent, #2563eb);
     border-color: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
   .cube-input {
     width: 100%;
@@ -912,7 +912,7 @@
     padding: 4px 8px; font-size: 11px;
     cursor: pointer; color: var(--sg-fg, #1e293b);
   }
-  .cube-seg button.active { background: var(--sg-accent, #2563eb); color: #fff; font-weight: 700; }
+  .cube-seg button.active { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); font-weight: 700; }
   .cube-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
   .cube-slicer-tools { display: flex; gap: 8px; }
   .cube-link {

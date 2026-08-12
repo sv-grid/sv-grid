@@ -80,9 +80,31 @@ createRestDataSource<Item>({
 See the live example: [Live REST (public API)](https://svgrid.com/#/demos/337-live-rest-dummyjson)
 fetches real rows from dummyjson.com through `dummyJsonAdapter`.
 
+**In the designer:** a REST entity's **Configure** builder has an **API format**
+picker - *Manual mapping*, *Offset + Limit*, *DummyJSON*, or *json-server*.
+Choosing one is the no-code equivalent of spreading the adapter above: the
+generated grid does **real server-side paging and sort** (not a single fetched
+page), and the live preview pages through the same adapter. *Offset + Limit*
+exposes the param-name / response-key fields so you can match any offset/limit
+API. Leave it on *Manual mapping* to keep the old rows-path / total-path behavior.
+
 > **Browser demos:** a client-side app can only reach **CORS-enabled** APIs, and
 > must never carry a secret key. For private backends, put the fetch behind a
 > SvelteKit `+server.ts` route and point `createRestDataSource` at that.
+
+## Import an OpenAPI spec
+
+Have an OpenAPI (JSON) description of your API? One command turns it into a
+Studio project - each collection path becomes an entity with a REST source, and
+the component schemas become `EntitySchema`s:
+
+```bash
+npx @svgrid/studio openapi ./openapi.json     # or a URL
+```
+
+It writes `studio.config.json` (and prints any paths it could not map). Open it
+in the [designer](./launch.md) to review the entities and generate the app, or
+continue with [`introspectOpenApi`](./api.md) programmatically.
 
 ## Full control: implement `ServerDataSource` by hand
 

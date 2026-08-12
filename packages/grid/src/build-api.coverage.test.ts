@@ -530,3 +530,104 @@ describe("SvGridApi - sort opt-out + refresh", () => {
     }
   });
 });
+
+describe("SvGridApi - setOption / getOption (runtime prop overrides)", () => {
+  it("getOption returns the incoming prop when no override is set", async () => {
+    const { api, destroy } = await mountGrid();
+    try {
+      expect(api.getOption("rowHeight")).toBe(36);
+      expect(api.getOption("zebraRows")).toBeUndefined();
+    } finally {
+      destroy();
+    }
+  });
+
+  it("setOption overrides a prop, getOption reflects it, undefined clears it", async () => {
+    const { api, destroy } = await mountGrid();
+    try {
+      api.setOption("rowHeight", 48);
+      await flush();
+      expect(api.getOption("rowHeight")).toBe(48);
+
+      api.setOption("zebraRows", true);
+      await flush();
+      expect(api.getOption("zebraRows")).toBe(true);
+
+      // Clearing an override falls back to the incoming prop.
+      api.setOption("rowHeight", undefined);
+      await flush();
+      expect(api.getOption("rowHeight")).toBe(36);
+    } finally {
+      destroy();
+    }
+  });
+
+  it("setOption('sortable', true) turns sorting on at runtime; false turns it off", async () => {
+    // Mount with NO features so sorting starts disabled - only the runtime
+    // override can inject rowSortingFeature (mirrors resolveEffectiveFeatures).
+    const { api, destroy } = await mountGrid({}, tableFeatures({}));
+    try {
+      // Off by default: setSort is guarded to a no-op.
+      api.setSort("salary", "asc");
+      await flush();
+      expect(api.getState().sorting).toEqual([]);
+
+      // Turn sorting on via the override, then setSort takes effect.
+      api.setOption("sortable", true);
+      await flush();
+      api.setSort("salary", "asc");
+      await flush();
+      expect(api.getState().sorting).toEqual([{ id: "salary", desc: false }]);
+
+      // Turn it back off: setSort is guarded again.
+      api.setOption("sortable", false);
+      await flush();
+      api.clearSort();
+      await flush();
+      api.setSort("team", "asc");
+      await flush();
+      expect(api.getState().sorting).toEqual([]);
+    } finally {
+      destroy();
+    }
+  });
+
+  it("a view-direct prop (zebraRows) visually re-renders on override", async () => {
+    const { api, target, destroy } = await mountGrid();
+    try {
+      // No striping to start.
+      expect(target.querySelectorAll(".sv-grid-row-alt").length).toBe(0);
+
+      api.setOption("zebraRows", true);
+      await flush();
+      await flush();
+      // Odd rows now carry the alternate-row class (view reads props.zebraRows,
+      // which is the effective proxy).
+      expect(target.querySelectorAll(".sv-grid-row-alt").length).toBeGreaterThan(0);
+
+      api.setOption("zebraRows", undefined);
+      await flush();
+      await flush();
+      expect(target.querySelectorAll(".sv-grid-row-alt").length).toBe(0);
+    } finally {
+      destroy();
+    }
+  });
+
+  it("resetOptions clears every override", async () => {
+    const { api, destroy } = await mountGrid();
+    try {
+      api.setOption("rowHeight", 60);
+      api.setOption("zebraRows", true);
+      await flush();
+      expect(api.getOption("rowHeight")).toBe(60);
+
+      api.resetOptions();
+      await flush();
+      expect(api.getOption("rowHeight")).toBe(36);
+      expect(api.getOption("zebraRows")).toBeUndefined();
+    } finally {
+      destroy();
+    }
+  });
+});

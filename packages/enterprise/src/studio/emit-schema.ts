@@ -12,7 +12,7 @@
  */
 import { resolveIdField, titleCase, type EntityField, type EntityFieldType, type EntitySchema, type ValidationRuleSpec } from '../schema.js'
 import type { GeneratedFile } from './scaffold.js'
-import type { EntityDataSource, RestSource, ShellConfig, ShellStyle, SqlDialectKind, EntityTriggers, TriggerEvent } from './project.js'
+import type { EntityDataSource, RestAdapterConfig, RestSource, ShellConfig, ShellStyle, SqlDialectKind, SqlSource, EntityTriggers, TriggerEvent } from './project.js'
 import { sanitizeClassName, compileTriggerSteps, TRIGGER_EVENTS } from './project.js'
 
 /** Build the createKitHandlers `hooks: {...}` option from an entity's triggers.
@@ -48,7 +48,11 @@ const camel = (name: string): string => {
 }
 
 /** Entity field type -> a TS property type for the generated row type. */
-function tsType(type: EntityFieldType): string {
+function tsType(field: EntityField): string {
+  // A chips/tags editor stores multiple values (string[]) - its seed rows + form
+  // value are arrays, so the row type must be string[] even on a `text` field.
+  if (field.input?.editorType === 'chips') return 'string[]'
+  const type = field.type
   if (type === 'number') return 'number'
   if (type === 'boolean') return 'boolean'
   if (type === 'json') return 'unknown'
@@ -82,8 +86,10 @@ export function namesFor(schema: EntitySchema): Names {
 export const lookupVar = (schema: EntitySchema, field: string) => `${camel(schema.name)}${pascal(field)}Lookup`
 
 function rowType(schema: EntitySchema, derived: Set<string>): string {
-  // Derived columns (relation labels) are filled at runtime, so they're optional.
-  const lines = schema.fields.map((f) => `  ${f.field}${derived.has(f.field) ? '?' : ''}: ${tsType(f.type)}`)
+  // Runtime-filled columns are optional in the row type: relation labels (`derived`)
+  // and computed / no-code-formula fields (not present on seed rows / inserts).
+  const optional = (f: EntityField) => derived.has(f.field) || !!f.formula || !!f.computed
+  const lines = schema.fields.map((f) => `  ${f.field}${optional(f) ? '?' : ''}: ${tsType(f)}`)
   return `export type ${pascal(schema.name)} = {\n${lines.join('\n')}\n}`
 }
 
@@ -293,6 +299,23 @@ function sqlDialectExpr(dialect?: SqlDialectKind): string | null {
 
 const sq = (s: string): string => `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
 
+/** The generator name for a REST adapter kind. */
+export function restAdapterImport(a: RestAdapterConfig): string {
+  return a.kind === 'dummyjson' ? 'dummyJsonAdapter' : a.kind === 'jsonServer' ? 'jsonServerAdapter' : 'offsetLimitAdapter'
+}
+/** The adapter spread emitted into the createRestDataSource(...) call - it supplies
+ *  a `buildQuery` (real server paging/sort) + `parse` (row/total unwrap). */
+function restAdapterExpr(a: RestAdapterConfig, T: string): string {
+  if (a.kind === 'dummyjson') return `...dummyJsonAdapter<${T}>(${a.rowsKey ? sq(a.rowsKey) : ''})`
+  if (a.kind === 'jsonServer') return `...jsonServerAdapter<${T}>()`
+  const fields: string[] = []
+  for (const k of ['offsetParam', 'limitParam', 'sortByParam', 'orderParam', 'searchParam', 'rowsKey', 'totalKey'] as const) {
+    const v = a[k]
+    if (v) fields.push(`${k}: ${sq(v)}`)
+  }
+  return `...offsetLimitAdapter<${T}>(${fields.length ? `{ ${fields.join(', ')} }` : ''})`
+}
+
 /** The `createRestDataSource(...)` call for one entity's REST binding. */
 function restStoreExpr(src: RestSource, storeName: string, T: string, schemaVar: string): string {
   const opts: string[] = [`url: ${sq(buildRestUrl(src))}`, `schema: ${schemaVar}`]
@@ -301,7 +324,11 @@ function restStoreExpr(src: RestSource, storeName: string, T: string, schemaVar:
   if (headers.length) opts.push(`headers: { ${headers.map((h) => `${sq(h.name)}: ${sq(h.value ?? '')}`).join(', ')} }`)
   const query = src.params.filter((p) => p.location === 'query' && p.value !== undefined && p.value !== '')
   if (query.length) opts.push(`query: { ${query.map((q) => `${sq(q.name)}: ${sq(q.value ?? '')}`).join(', ')} }`)
-  if (src.rowsPath || src.totalPath) {
+  // An adapter provides both buildQuery (server paging/sort) + parse, so it wins over
+  // the legacy manual rowsPath/totalPath (which only unwraps a single fetched page).
+  if (src.adapter) {
+    opts.push(restAdapterExpr(src.adapter, T))
+  } else if (src.rowsPath || src.totalPath) {
     const rowsExpr = src.rowsPath ? dottedAccess('body', src.rowsPath) : 'body'
     const totalExpr = src.totalPath ? dottedAccess('body', src.totalPath) : `(${rowsExpr})?.length`
     opts.push(`parse: (body: any) => ({ rows: ${rowsExpr} ?? [], rowCount: Number(${totalExpr} ?? 0) })`)
@@ -314,7 +341,7 @@ type DataModuleNeeds = {
   supabaseUrl?: string
   supabaseKey?: string
   /** SQL-bound entities get a connected `+server.ts` API route each. */
-  sqlRoutes: Array<{ schema: EntitySchema; table: string; dialect?: SqlDialectKind }>
+  sqlRoutes: Array<{ schema: EntitySchema; table: string; dialect?: SqlDialectKind; dbSchema?: string }>
   /** Embedded-Postgres (PGlite) entities: one shared client + a table each. */
   pglite?: boolean
   pgliteTables?: Array<{ schema: EntitySchema; table: string; seed?: Record<string, unknown>[] }>
@@ -335,7 +362,7 @@ const SQL_DRIVERS: Record<'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso', {
  *  the route imports the shared access policy and rejects unauthorized writes -
  *  server-enforced, so a tampered client can't bypass it. When audit is on, every
  *  successful write is recorded. */
-function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean; screenIds?: string[]; triggers?: EntityTriggers } = {}): GeneratedFile {
+function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean; screenIds?: string[]; triggers?: EntityTriggers; dbSchema?: string } = {}): GeneratedFile {
   const n = namesFor(schema)
   const key = (dialect === 'supabase' ? 'postgres' : (dialect ?? 'postgres')) as 'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso'
   const driver = SQL_DRIVERS[key]
@@ -363,7 +390,7 @@ ${driver.setup}
 
 const source = createSqlDataSource<${n.type}>({
   schema: ${n.schemaVar},
-  table: ${JSON.stringify(table)},${dialectLiteral ? `\n  dialect: ${dialectLiteral},` : ''}
+  table: ${JSON.stringify(table)},${feat.dbSchema ? `\n  dbSchema: ${JSON.stringify(feat.dbSchema)},` : ''}${dialectLiteral ? `\n  dialect: ${dialectLiteral},` : ''}
   execute: async (text, params) => {
     ${driver.exec}
   },
@@ -418,10 +445,89 @@ async function _pgSeed(table: string, rows: Record<string, unknown>[], cols: str
 `
 }
 
+// ---------------------------------------------------------------------------
+// db/schema.sql + db/seed.sql - plain SQL a user runs against their database
+// before first deploy, for SQL entities WITHOUT the Drizzle data layer (which
+// owns DDL via migrations when active). This closes the "tables must already
+// exist" cliff on every dialect - including MSSQL, which Drizzle can't cover.
+// ---------------------------------------------------------------------------
+
+type DdlDialect = 'postgres' | 'mysql' | 'sqlite' | 'mssql'
+
+/** Normalize a source dialect to a DDL family (supabase = postgres, turso = sqlite). */
+const ddlDialect = (d?: SqlDialectKind): DdlDialect =>
+  d === 'mysql' ? 'mysql' : d === 'sqlite' || d === 'turso' ? 'sqlite' : d === 'mssql' ? 'mssql' : 'postgres'
+
+/** Column types per dialect (default column type = the `text` entry). */
+const DDL_COL_TYPES: Record<DdlDialect, Record<string, string>> = {
+  postgres: { text: 'text', number: 'double precision', boolean: 'boolean', date: 'date', dateString: 'date', datetime: 'timestamptz', json: 'jsonb' },
+  mysql: { text: 'varchar(255)', number: 'double', boolean: 'tinyint(1)', date: 'date', dateString: 'date', datetime: 'datetime', json: 'json' },
+  sqlite: { text: 'text', number: 'real', boolean: 'integer', date: 'text', dateString: 'text', datetime: 'text', json: 'text' },
+  mssql: { text: 'nvarchar(255)', number: 'float', boolean: 'bit', date: 'date', dateString: 'date', datetime: 'datetime2', json: 'nvarchar(max)' },
+}
+
+/** Identifier quoter per dialect (doubles the quote char to escape, like sql.ts). */
+function ddlQuoter(dialect: DdlDialect): (name: string) => string {
+  const q = dialect === 'mysql' ? '`' : '"'
+  return (name) => `${q}${name.replaceAll(q, q + q)}${q}`
+}
+
+/** A SQL literal for a seed value, per dialect. */
+function ddlLiteral(v: unknown, dialect: DdlDialect): string {
+  if (v == null || v === '') return 'NULL'
+  if (typeof v === 'number') return Number.isFinite(v) ? String(v) : 'NULL'
+  if (typeof v === 'boolean') return dialect === 'postgres' ? (v ? 'TRUE' : 'FALSE') : v ? '1' : '0'
+  const s = typeof v === 'object' ? JSON.stringify(v) : String(v)
+  const escaped = s.replaceAll("'", "''")
+  return dialect === 'mssql' ? `N'${escaped}'` : `'${escaped}'`
+}
+
+/** `db/schema.sql` + `db/seed.sql` for the project's SQL-bound entities. */
+export function sqlDdlFiles(schemas: EntitySchema[], sources: Record<string, EntityDataSource>): GeneratedFile[] {
+  const { entries, seed } = prepareEntities(schemas)
+  const sqlEntries = entries
+    .map((e) => ({ ...e, src: sources[e.schema.name] }))
+    .filter((e): e is Prepared & { src: SqlSource } => e.src?.kind === 'sql')
+  if (sqlEntries.length === 0) return []
+
+  const create: string[] = []
+  const inserts: string[] = []
+  for (const { schema, infos, src } of sqlEntries) {
+    const dialect = ddlDialect(src.dialect)
+    const q = ddlQuoter(dialect)
+    const types = DDL_COL_TYPES[dialect]
+    const pk = resolveIdField(schema)
+    // Relation display fields are filled at runtime (labels), not stored.
+    const display = new Set(infos.map((i) => i.displayField))
+    const cols = schema.fields.filter((f) => !display.has(f.field) && !f.formula && !f.computed)
+    const colDefs = cols.map((f) => `  ${q(f.field)} ${types[f.type] ?? types.text}${f.field === pk ? ' PRIMARY KEY' : ''}`)
+    const body = `CREATE TABLE ${dialect === 'mssql' ? '' : 'IF NOT EXISTS '}${q(src.table)} (\n${colDefs.join(',\n')}\n)`
+    create.push(dialect === 'mssql' ? `IF OBJECT_ID(N'${src.table.replaceAll("'", "''")}', N'U') IS NULL\n${body};` : `${body};`)
+
+    const rows = seed.get(schema.name) ?? []
+    if (rows.length) {
+      const names = cols.map((f) => q(f.field)).join(', ')
+      const values = rows.map((r) => `  (${cols.map((f) => ddlLiteral(r[f.field], dialect)).join(', ')})`).join(',\n')
+      inserts.push(`INSERT INTO ${q(src.table)} (${names}) VALUES\n${values};`)
+    }
+  }
+
+  const header = (what: string) =>
+    `-- ${what} for the app's SQL entities. Generated by SvGrid Studio.\n` +
+    `-- Run against the database your DATABASE_URL points at (psql/mysql/sqlite3/sqlcmd,\n` +
+    `-- or your provider's SQL console) before first use. Tip: the Drizzle data layer\n` +
+    `-- replaces this file with real, versioned migrations.\n\n`
+  return [
+    { path: 'db/schema.sql', description: 'CREATE TABLE statements for the SQL entities (run once against your database).', contents: header('Table definitions') + create.join('\n\n') + '\n' },
+    ...(inserts.length ? [{ path: 'db/seed.sql', description: 'Optional sample rows for the SQL entities.', contents: header('Sample seed rows (optional)') + inserts.join('\n\n') + '\n' }] : []),
+  ]
+}
+
 function dataModule(
   entries: Prepared[],
   seed: Map<string, Array<Record<string, unknown>>>,
   sources?: Record<string, EntityDataSource>,
+  supabaseConn?: { url?: string; key?: string },
 ): { file: GeneratedFile; needs: DataModuleNeeds } {
   const schemas = entries.map((e) => e.schema)
   // Each type gets its own `type` keyword - SvelteKit enables verbatimModuleSyntax.
@@ -442,15 +548,17 @@ function dataModule(
       switch (src.kind) {
         case 'rest':
           entImports.add('createRestDataSource')
+          if (src.adapter) entImports.add(restAdapterImport(src.adapter))
           return restStoreExpr(src, store, T, sv)
         case 'sql':
           // SQL runs server-side: the client talks to a generated /api/<entity> route.
           entImports.add('createKitDataSource')
-          needs.sqlRoutes.push({ schema: e.schema, table: src.table, dialect: src.dialect })
+          needs.sqlRoutes.push({ schema: e.schema, table: src.table, dialect: src.dialect, dbSchema: src.schema })
           return `const ${store} = createKitDataSource<${T}>({ endpoint: '/api/${namesFor(e.schema).route}' })`
         case 'supabase':
           entImports.add('createSupabaseDataSource')
           needs.supabase = true
+          // Per-entity url/key overrides the project-level connection for the .env hint.
           if (src.url && src.key && !needs.supabaseUrl) { needs.supabaseUrl = src.url; needs.supabaseKey = src.key }
           return `const ${store} = createSupabaseDataSource<${T}>({ client: supabaseClient, table: ${sq(src.table)}, schema: ${sv} })`
         case 'pglite': {
@@ -495,6 +603,11 @@ function dataModule(
     })
     .join('\n')
 
+  // Project-level connection fills the .env hint when no entity carries its own url/key.
+  if (needs.supabase && !needs.supabaseUrl && (supabaseConn?.url || supabaseConn?.key)) {
+    needs.supabaseUrl = supabaseConn.url
+    needs.supabaseKey = supabaseConn.key
+  }
   const connImportLine = needs.supabase ? `\nimport { supabaseClient } from './connections'` : ''
   const pgliteImportLine = needs.pglite ? `\nimport { PGlite } from '@electric-sql/pglite'` : ''
   const pgliteBoot = needs.pglite ? pgliteBootstrap(needs.pgliteTables!, seed) + '\n' : ''
@@ -523,27 +636,30 @@ export const nextId = (prefix: string) => \`\${prefix}\${++seq}\`
   return { file, needs }
 }
 
-/** The connection stubs for SQL / Supabase sources - the one manual wiring step. */
+/** The Supabase client wiring. Reads the project URL + anon key from PUBLIC_ env vars
+ *  (never inlined into source); the anon key is public / browser-safe, so this is a
+ *  secret-hygiene win and matches SvelteKit convention. The designer-entered values are
+ *  shown as a comment so they can be pasted straight into `.env` / `.env.example`. */
 function connectionsModule(needs: DataModuleNeeds): GeneratedFile {
-  const realSupabase = !!(needs.supabaseUrl && needs.supabaseKey)
-  const valueImport = realSupabase ? `import { createClient } from '@supabase/supabase-js'\n` : ''
-  const body = realSupabase
-    ? `/**
- * Supabase client. The anon key is public (browser-safe) - access is protected
- * by your Row Level Security policies. Requires \`@supabase/supabase-js\`
- * (\`npm i @supabase/supabase-js\`).
- */
-export const supabaseClient = createClient(${sq(needs.supabaseUrl!)}, ${sq(needs.supabaseKey!)}) as unknown as SupabaseClientLike`
-    : `/**
- * TODO: connect Supabase. Add your project URL + anon key in the Studio designer,
- * or replace this null stub with a real client:
- * \`import { createClient } from '@supabase/supabase-js'; export const supabaseClient = createClient(url, anonKey)\`.
- */
-export const supabaseClient = null as unknown as SupabaseClientLike`
+  const hint = needs.supabaseUrl || needs.supabaseKey
+    ? `// From the Studio designer - paste into .env:\n//   PUBLIC_SUPABASE_URL=${needs.supabaseUrl ?? ''}\n//   PUBLIC_SUPABASE_ANON_KEY=${needs.supabaseKey ?? ''}\n`
+    : `// Set PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY in .env (see .env.example).\n`
   return {
     path: 'src/lib/connections.ts',
-    description: 'Supabase client for Supabase-bound entities.',
-    contents: `${valueImport}import type { SupabaseClientLike } from '@svgrid/enterprise'\n\n${body}\n`,
+    description: 'Supabase client for Supabase-bound entities (reads PUBLIC_SUPABASE_* env vars).',
+    contents: `import { createClient } from '@supabase/supabase-js'
+import { env } from '$env/dynamic/public'
+import type { SupabaseClientLike } from '@svgrid/enterprise'
+
+/**
+ * Supabase client. The anon key is public (browser-safe) - access is protected by
+ * your Row Level Security policies. Requires \`@supabase/supabase-js\`.
+ */
+${hint}export const supabaseClient = createClient(
+  env.PUBLIC_SUPABASE_URL ?? '',
+  env.PUBLIC_SUPABASE_ANON_KEY ?? '',
+) as unknown as SupabaseClientLike
+`,
   }
 }
 
@@ -580,7 +696,7 @@ export function entityScreenPage(schema: EntitySchema, route?: string, title?: s
 
 export type NavItem = { href: string; label: string; id?: string }
 
-export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; lightVars?: Record<string, string>; darkVars?: Record<string, string>; dark?: boolean; access?: boolean; auth?: boolean; authRoutes?: string[]; authAccount?: boolean; i18n?: boolean; appClass?: string } = {}): GeneratedFile {
+export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; lightVars?: Record<string, string>; darkVars?: Record<string, string>; dark?: boolean; access?: boolean; auth?: boolean; supabaseAuth?: boolean; authRoutes?: string[]; authAccount?: boolean; i18n?: boolean; appClass?: string } = {}): GeneratedFile {
   // Nav is the app's own screens; `/` just redirects to the first one, so no separate
   // "Home" link (it would duplicate the first screen).
   const links = nav
@@ -736,7 +852,9 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
               <button type="button" class="sv-app__menu-item" role="menuitem" onclick={() => (menuOpen = false)}>Settings</button>`}
               ${opts.auth
                 ? `<form method="POST" action="/logout" class="sv-app__signout"><button type="submit" class="sv-app__menu-item sv-app__menu-item--danger" role="menuitem">Sign out</button></form>`
-                : `<button type="button" class="sv-app__menu-item sv-app__menu-item--danger" role="menuitem" onclick={() => (menuOpen = false)}>Sign out</button>`}
+                : opts.supabaseAuth
+                  ? '' // Supabase Auth: the real sign-out lives on SvAuthGate's own bar, so no placeholder here.
+                  : `<button type="button" class="sv-app__menu-item sv-app__menu-item--danger" role="menuitem" onclick={() => (menuOpen = false)}>Sign out</button>`}
             </div>
           {/if}
         </div>
@@ -744,9 +862,17 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
       {#if bellOpen || menuOpen}<button type="button" class="sv-app__scrim" tabindex="-1" aria-label="Close menus" onclick={() => { bellOpen = false; menuOpen = false }}></button>{/if}
     </div>\n    `
     : ''
+  // Supabase Auth: gate the whole app behind a client-side sign-in. SvAuthGate shows
+  // the sign-in form when signed out, and the app + a "signed in as … / Sign out" bar
+  // when signed in. Reads the shared client from $lib/connections.
+  const content = opts.supabaseAuth
+    ? `<SvAuthGate client={supabaseClient as unknown as SupabaseAuthClientLike} title={\`Sign in to \${brand}\`}>
+        {@render children()}
+      </SvAuthGate>`
+    : `{@render children()}`
   const mainMarkup = `<main class="sv-app__main">
     ${toolbarMarkup}<div class="sv-app__content">
-      {@render children()}
+      ${content}
     </div>
   </main>`
 
@@ -842,7 +968,7 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
     contents: `<script lang="ts">
   import '../app.css'
   import '../custom.css'
-  import { page } from '$app/stores'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}${opts.auth ? `\n  import type { LayoutData } from './$types'` : ''}
+  import { page } from '$app/stores'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}${opts.auth ? `\n  import type { LayoutData } from './$types'` : ''}${opts.supabaseAuth ? `\n  import { SvAuthGate, type SupabaseAuthClientLike } from '@svgrid/enterprise'\n  import { supabaseClient } from '$lib/connections'` : ''}
 
   let { children${opts.auth ? ', data' : ''} }${opts.auth ? ": { children: import('svelte').Snippet; data: LayoutData }" : ''} = $props()
   const nav = ${JSON.stringify(links)}
@@ -1011,13 +1137,18 @@ export function prepareEntities(schemas: EntitySchema[]): { entries: Prepared[];
 /** Emit the shared entity modules: `src/lib/schemas.ts` + `src/lib/data.ts` (+ `connections.ts`). */
 export function emitEntityModules(
   schemas: EntitySchema[],
-  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean; screensByEntity?: Map<string, string[]>; triggers?: Record<string, EntityTriggers> } = {},
+  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean; screensByEntity?: Map<string, string[]>; triggers?: Record<string, EntityTriggers>; supabaseConn?: { url?: string; key?: string }; supabaseAuth?: boolean } = {},
 ): { files: GeneratedFile[]; prepared: EntitySchema[] } {
   const { entries, seed } = prepareEntities(schemas)
-  const { file: data, needs } = dataModule(entries, seed, opts.sources)
+  const { file: data, needs } = dataModule(entries, seed, opts.sources, opts.supabaseConn)
   const files: GeneratedFile[] = [schemasModule(entries), data]
-  if (needs.supabase) files.push(connectionsModule(needs))
-  for (const r of needs.sqlRoutes) files.push(sqlRouteFile(r.schema, r.table, r.dialect, { access: opts.accessEnabled, audit: opts.auditEnabled, screenIds: opts.screensByEntity?.get(r.schema.name) ?? [], triggers: opts.triggers?.[r.schema.name] }))
+  // Supabase Auth needs the shared client even with no Supabase-bound entity; seed
+  // the .env paste hint from the project connection when nothing else did.
+  if ((needs.supabase || opts.supabaseAuth) && !needs.supabaseUrl && (opts.supabaseConn?.url || opts.supabaseConn?.key)) {
+    needs.supabaseUrl = opts.supabaseConn.url; needs.supabaseKey = opts.supabaseConn.key
+  }
+  if (needs.supabase || opts.supabaseAuth) files.push(connectionsModule(needs))
+  for (const r of needs.sqlRoutes) files.push(sqlRouteFile(r.schema, r.table, r.dialect, { access: opts.accessEnabled, audit: opts.auditEnabled, screenIds: opts.screensByEntity?.get(r.schema.name) ?? [], triggers: opts.triggers?.[r.schema.name], dbSchema: r.dbSchema }))
   return { files, prepared: entries.map((e) => e.schema) }
 }
 

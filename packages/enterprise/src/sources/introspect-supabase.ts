@@ -106,6 +106,26 @@ async function viaSample(o: Required<IntrospectSupabaseOptions>, base: string): 
   }))
 }
 
+/** List a Supabase project's tables from its PostgREST OpenAPI doc (URL + anon key).
+ *  Returns the exposed table names (sorted), or `[]` when the doc can't be read
+ *  (CORS-blocked, bad key). Lets the Studio wizard offer a table picker instead of
+ *  making the user hand-type the table name. */
+export async function listSupabaseTables(url: string, key: string, fetchFn: typeof fetch = globalThis.fetch): Promise<string[]> {
+  const base = url.replace(/\/+$/, '')
+  let res: Response
+  try {
+    res = await fetchFn(`${base}/rest/v1/`, { headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' } })
+  } catch {
+    return []
+  }
+  if (!res.ok) return []
+  let spec: any
+  try { spec = await res.json() } catch { return [] }
+  const defs: Record<string, unknown> = spec?.definitions ?? spec?.components?.schemas ?? {}
+  // PostgREST also lists RPCs under `paths` as `/rpc/...`; `definitions` are the tables/views.
+  return Object.keys(defs).sort((a, b) => a.localeCompare(b))
+}
+
 /** Introspect a Supabase/PostgREST table into an EntitySchema, or null. */
 export async function introspectSupabaseTable<TData extends RowData = RowData>(
   options: IntrospectSupabaseOptions,

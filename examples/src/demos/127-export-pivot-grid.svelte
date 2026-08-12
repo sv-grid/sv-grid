@@ -442,7 +442,7 @@
     padding: 4px 10px; font-size: 11px;
     cursor: pointer; color: var(--sg-fg, #1e293b);
   }
-  .ep-seg button.active { background: var(--sg-accent, #2563eb); color: #fff; font-weight: 700; }
+  .ep-seg button.active { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); font-weight: 700; }
   .ep-input {
     border: 1px solid var(--sg-border, #cbd5e1);
     background: var(--sg-bg, #ffffff);

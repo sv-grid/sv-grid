@@ -9,6 +9,8 @@ an event to reschedule it and the new time is written back through the data sour
 The calendar renderer ships in `@svgrid/enterprise`; the generated app registers it
 once with `enableSchedulerView()` and then renders `<SvGrid scheduler={...}>`.
 
+![The scheduler view: the grid's rows rendered as a week calendar with timed events, an all-day lane, Month / Week / Day / Agenda switches, and a Calendar / Table toggle.](/docs-media/studio-scheduler.png)
+
 ## Turn it on
 
 In the [visual designer](./app-designer.md), select a grid block and expand

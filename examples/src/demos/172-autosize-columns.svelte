@@ -116,7 +116,7 @@
   .az-btn {
     border: 1px solid var(--sg-border, #cbd5e1);
     background: var(--sg-accent, #2563eb);
-    color: white;
+    color: var(--sg-on-accent, white);
     padding: 5px 12px;
     border-radius: 6px;
     font-size: 12px;

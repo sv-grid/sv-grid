@@ -65,6 +65,9 @@ export type RecurrenceException = {
   end?: DateLike | null
   title?: string
   allDay?: boolean
+  /** Per-occurrence overrides for any other field, merged over the row for just
+   *  this occurrence (attendees, calendar, color, resource, ...). */
+  fields?: Record<string, unknown>
 }
 
 /** Field accessors the model uses to read an event off a row. The component
@@ -251,6 +254,14 @@ export function resolveEvents<TData>(
         let iEnd = new Date(occStart.getTime() + durationMs)
         let iTitle = title
         let iAllDay = allDay
+        // Per-occurrence overrides of ANY other field: merge onto a copy of the
+        // row for this instance, then re-derive the surfaced props from it so a
+        // "This event" change to attendees / calendar / color / resource shows.
+        let iRow = row
+        let iColor = color
+        let iColor2 = color2
+        let iStatus = status
+        let iResource = resourceId
         if (ex) {
           const exS = toDate(ex.start)
           const exE = toDate(ex.end)
@@ -262,21 +273,29 @@ export function resolveEvents<TData>(
           }
           if (ex.title != null) iTitle = ex.title
           if (ex.allDay != null) iAllDay = ex.allDay
+          if (ex.fields) {
+            iRow = { ...(row as Record<string, unknown>), ...ex.fields } as TData
+            iColor = spec.getColor?.(iRow) ?? color
+            iColor2 = spec.getSecondaryColor?.(iRow) ?? color2
+            iStatus = spec.getStatus?.(iRow) ?? status
+            iResource = spec.getResource?.(iRow) ?? resourceId
+            if (ex.title == null) iTitle = spec.getTitle?.(iRow) ?? iTitle
+          }
         }
         if (!rangesOverlap(iStart, iEnd, rangeStart, rangeEnd)) continue
         out.push({
           // Key on the CANONICAL occurrence start so a moved occurrence keeps its identity.
           key: `${rowKey}#${occStart.getFullYear()}-${occStart.getMonth() + 1}-${occStart.getDate()}T${occStart.getHours()}:${occStart.getMinutes()}`,
           rowKey,
-          row,
+          row: iRow,
           title: iTitle,
           start: iStart,
           end: iEnd,
           allDay: iAllDay,
-          color,
-          color2,
-          status,
-          resourceId,
+          color: iColor,
+          color2: iColor2,
+          status: iStatus,
+          resourceId: iResource,
           recurring: true,
           occurrenceStart: occStart,
           isException: !!ex,

@@ -25,7 +25,7 @@ describe('SvNumberInput validation a11y (editor contract)', () => {
       const err = target.querySelector('#qty__error')!
       expect(err.getAttribute('role')).toBe('alert')
       expect(err.textContent).toBe('Too big')
-      expect(target.querySelector('.sv-num.is-invalid')).toBeTruthy()
+      expect(target.querySelector('.sv-field__control.is-invalid')).toBeTruthy()
     } finally { destroy() }
   })
 
@@ -35,7 +35,7 @@ describe('SvNumberInput validation a11y (editor contract)', () => {
       const input = target.querySelector<HTMLInputElement>('.sv-num__input')!
       expect(input.getAttribute('aria-invalid')).toBeNull()
       expect(input.getAttribute('aria-describedby')).toBeNull()
-      expect(target.querySelector('.sv-num.is-invalid')).toBeNull()
+      expect(target.querySelector('.sv-field__control.is-invalid')).toBeNull()
     } finally { destroy() }
   })
 })

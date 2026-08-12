@@ -61,15 +61,24 @@ import { SvForm } from '@svgrid/grid'
 | `showReset`   | `boolean`                                       | `false`    | Render a Reset button that restores the initial values.     |
 | `resetLabel`  | `string`                                       | `Reset`    | Label for the Reset button.                                 |
 | `stepper`     | `boolean`                                       | `false`    | Render titled sections as a validated multi-step wizard (Back / Next, per-step gating). |
+| `tabs`        | `boolean`                                       | `false`    | Render titled sections as tabs (one panel at a time; a failed submit jumps to the erroring tab). Ignored with `stepper`. |
 | `columns`     | `number`                                       | `1`        | Columns in the responsive field grid (a section can override its own). |
 | `disabled`    | `boolean`                                       | `false`    | Disable every field and the submit button.                  |
+| `serverErrors` | `Record<string, string>`                       | -          | Inject server-side errors (`{ field: message }`), applied reactively. |
+| `formError`   | `string`                                        | -          | A form-level message shown in a banner above the fields.    |
+| `errorSummary` | `boolean`                                      | `false`    | Show a summary of field errors (with focus links) above the form after a failed submit. |
+| `reinitialize` | `off` \| `always` \| `ifPristine`              | `off`      | Re-seed when the `initial` identity changes (e.g. editing a different record). `ifPristine` re-seeds only when there are no unsaved edits. |
+| `dir`         | `ltr` \| `rtl` \| `auto`                        | -          | Text direction; `rtl` mirrors the form layout.              |
+| `messages`    | `Partial<FormMessages>`                         | -          | Override the built-in generated strings (`required(label)`, `minItems`, `maxItems`, `checking`). |
 
 ### FormField
 
 ```ts
 type FormFieldType =
   | 'text' | 'email' | 'tel' | 'textarea' | 'number' | 'password'
-  | 'select' | 'checkbox' | 'switch' | 'date' | 'color' | 'rating'
+  | 'select' | 'multiselect' | 'combobox' | 'checkbox' | 'switch' | 'radio'
+  | 'date' | 'datetime' | 'color' | 'rating' | 'slider' | 'tags'
+  | 'phone' | 'country' | 'mask' | 'file'
   | 'array'   // a repeatable group - see itemFields
 
 type FormField = {
@@ -77,13 +86,23 @@ type FormField = {
   label: string
   type?: FormFieldType                 // defaults to 'text'
   required?: boolean
+  readonly?: boolean                   // shown but not editable (still submitted, unlike hidden)
+  help?: string                        // helper text under the control (distinct from an error)
   placeholder?: string
-  options?: Array<{ value: string | number; label: string }>  // for 'select'
+  options?: Array<{ value; label }> | ((values) => Array<{ value; label }>)  // a function CASCADES (list derived from other values)
+  dependsOn?: string | string[]        // clear this field when a parent changes (cascading selects)
+  mask?: string                        // for type: 'mask' (#=digit, A=letter, *=alnum)
+  min?: number; max?: number; step?: number; precision?: number  // number / slider
+  prefix?: string; suffix?: string     // number affixes ($ / %)
+  loadOptions?: (query: string) => Promise<Array<{ value; label }>>  // remote combobox
+  accept?: string; multiple?: boolean  // for type: 'file'
+  computed?: (values) => any           // derive a read-only value from other fields (included in the payload)
   rules?: ReadonlyArray<Validator>     // declarative rules (email/pattern/min/compare...)
   validate?: (value: any, values: Record<string, any>) => string | null | undefined
   asyncValidate?: (value, values) => Promise<string | null | undefined>  // debounced, stale-guarded
   asyncDebounce?: number               // ms before asyncValidate runs on edit (default 300)
   full?: boolean                       // span the full width in the grid
+  span?: number                        // columns to span (generalizes full)
   visible?: boolean | ((values) => boolean)   // show only when true; hidden = not validated, not submitted
   disabled?: boolean | ((values) => boolean)  // disable, statically or derived from other values
   // For type: 'array' (a repeatable group):
@@ -92,6 +111,32 @@ type FormField = {
   minItems?: number                            // min / max row count
   maxItems?: number
 }
+```
+
+Beyond the basics, `SvForm` maps each rich `type` to the matching kit editor:
+`radio`, `slider`, `tags`, `phone`, `country`, `mask`, `datetime`, `combobox`
+(with remote `loadOptions`) and `file`. See the
+[rich field types demo](../../examples).
+
+**Cascading fields:** give a child a function `options` (derived from the current
+`values`) and a `dependsOn` naming its parent(s). When the parent changes, the
+child's list re-derives and its value is cleared so a stale selection never
+lingers - for example Country -> State -> City:
+
+```ts
+{ name: 'country', label: 'Country', type: 'select', options: countries }
+{ name: 'state', label: 'State', type: 'select', dependsOn: 'country',
+  options: (v) => statesByCountry[v.country] ?? [] }
+```
+
+**Computed fields:** `computed: (values) => ...` derives a read-only value from
+the other fields; it recomputes reactively, is never user-validated, and its
+value is included in the submitted payload - a live total, for instance:
+
+```ts
+{ name: 'qty', label: 'Qty', type: 'number' }
+{ name: 'price', label: 'Unit price', type: 'number' }
+{ name: 'total', label: 'Total', computed: (v) => (v.qty ?? 0) * (v.price ?? 0) }
 ```
 
 ### FormSection
@@ -136,7 +181,9 @@ const fields: FormField[] = [
 
 Group fields into `FormSection`s and they render as titled fieldsets. Add `stepper`
 and each section becomes a validated step - **Next** only advances when the current
-step is valid, and the last step submits:
+step is valid, and the last step submits. Or add `tabs` to render the sections as
+tabs instead (one panel at a time; a failed submit jumps to the first tab that has
+an error, which is also marked):
 
 <div data-docs-demo="324-form-wizard" data-height="560" data-code></div>
 
@@ -158,9 +205,10 @@ const schema: FormEntry[] = [
 
 ### Field arrays (repeatable groups)
 
-A `type: 'array'` field with `itemFields` renders add / remove rows. Its value is
-an array of item objects; each row validates against **itself** (so within-row
-rules work), and `required` / `minItems` / `maxItems` gate the row count:
+A `type: 'array'` field with `itemFields` renders add / remove rows (and up / down
+reorder buttons once there is more than one row). Its value is an array of item
+objects; each row validates against **itself** (so within-row rules work), and
+`required` / `minItems` / `maxItems` gate the row count:
 
 <div data-docs-demo="325-form-array" data-height="520" data-code></div>
 
@@ -270,9 +318,12 @@ must also be present.
 
 - Every field renders a `<label>` wired to its control; required fields add a
   visible marker and validation blocks submit.
-- Errors render with `role="alert"` so they are announced when they appear.
+- Errors render with `role="alert"` so they are announced when they appear, and
+  each control is wired to its message with `aria-invalid` + `aria-describedby`.
 - The form sets `novalidate` and runs its own validation, so messages are
   consistent across browsers.
+- `dir="rtl"` mirrors the layout, and every generated string is overridable via
+  `messages` for localization.
 
 ## See also
 

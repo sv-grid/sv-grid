@@ -151,6 +151,22 @@ describe('resolveEvents', () => {
     expect(other.isException).toBeFalsy()
   })
 
+  it('applies per-occurrence `fields` overrides to one instance (merged row + resource)', () => {
+    const rows: Row[] = [
+      { ...weekly, who: 'room1', exceptions: [{ occurrenceStart: '2026-07-13T09:30', fields: { who: 'room9', title: 'Standup (offsite)' } }] },
+    ]
+    const out = resolveEvents(rows, spec(), at(2026, 7, 1), at(2026, 8, 1))
+    const overridden = out.find((e) => e.start.getDate() === 13)!
+    expect(overridden.resourceId).toBe('room9') // re-derived from the merged row
+    expect((overridden.row as Row).who).toBe('room9') // the instance row carries the override
+    expect(overridden.title).toBe('Standup (offsite)') // title from fields when not set explicitly
+    expect(overridden.isException).toBe(true)
+    // Siblings keep the base resource + row.
+    const sibling = out.find((e) => e.start.getDate() === 20)!
+    expect(sibling.resourceId).toBe('room1')
+    expect((sibling.row as Row).who).toBe('room1')
+  })
+
   it('sorts all-day before timed at the same start', () => {
     const rows: Row[] = [
       { id: 'timed', title: 't', start: '2026-07-15T00:00', end: '2026-07-15T01:00' },

@@ -1,4 +1,7 @@
 <script lang="ts">
+  // Kanban board rendering is an Enterprise feature - register the renderer.
+  import { enableBoardView } from "@svgrid/enterprise";
+  enableBoardView();
   /**
    * 352. Epics -> stories (hierarchical cards)
    * ------------------------------------------

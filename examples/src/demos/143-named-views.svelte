@@ -139,7 +139,7 @@
   .nv-primary {
     background: var(--sg-accent);
     border-color: var(--sg-accent);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     font-weight: 600;
   }
   .nv-chip {

@@ -2,7 +2,7 @@
 
 Glide Data Grid is the canvas-rendered, ultra-high-performance choice
 for very wide datasets (100k+ rows, 100+ columns). Sv-grid renders to
-DOM with virtualization, which trades the absolute peak FPS for
+DOM with virtualization, which trades peak FPS for
 accessibility + standards-compliant HTML.
 
 > Estimated effort: **3-6 hours** per grid. Glide's getCellContent /

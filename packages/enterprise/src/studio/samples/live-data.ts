@@ -260,10 +260,9 @@ const dummyjsonRest: SampleApp = {
       preset: 'shadcn',
       dataSource: 'rest',
       entities: [restProduct],
-      // A page size that covers the whole catalogue: the grid asks for one page,
-      // so it reads the entire live feed in a single request. (DummyJSON pages by
-      // `skip`, not `offset`, so deep server-paging would need a REST adapter -
-      // see docs/enterprise/studio/rest-api.md.)
+      // The DummyJSON REST adapter gives the grid REAL server-side paging + sort
+      // (skip/limit/sortBy), and the dashboard aggregates fetch the catalogue in one
+      // large page. No pageSize hack, no manual row/total mapping.
       screens: [
         // Catalog dashboard: price / rating / stock KPIs + category & brand breakdowns
         // over the live feed, with the grid drilling into a product page.
@@ -275,7 +274,7 @@ const dummyjsonRest: SampleApp = {
           { chart: 'category', reduce: 'count', type: 'bar', span: 2 },
           { chart: 'brand', measure: 'price', reduce: 'avg', type: 'bar', span: 1 },
           { filter: ['category', 'brand'], span: 3 },
-          { grid: true, pageSize: 200, rowLink: { screen: 'product-detail', sourceField: 'id', targetField: 'id' }, span: 3 },
+          { grid: true, rowLink: { screen: 'product-detail', sourceField: 'id', targetField: 'id' }, span: 3 },
         ]),
         detailScreen(restProduct, { id: 'product-detail', title: 'Product', order: 1 }, {
           titleField: 'title', subtitleField: 'brand', metricFields: ['price', 'rating', 'stock'],
@@ -283,16 +282,15 @@ const dummyjsonRest: SampleApp = {
         }),
       ],
       sources: {
-        // Rows + total read from DummyJSON's { products, total } envelope. `limit=0`
-        // asks DummyJSON for the whole catalogue so the dashboard aggregates it all.
+        // The dummyjson adapter maps skip/limit/sortBy + unwraps the { products, total }
+        // envelope, so the grid pages + sorts against the live feed for real.
         products: {
           kind: 'rest',
           baseUrl: 'https://dummyjson.com',
           path: 'products',
           method: 'GET',
-          params: [{ name: 'limit', location: 'query', type: 'number', value: '0' }],
-          rowsPath: 'products',
-          totalPath: 'total',
+          params: [],
+          adapter: { kind: 'dummyjson', rowsKey: 'products' },
         },
       },
     })

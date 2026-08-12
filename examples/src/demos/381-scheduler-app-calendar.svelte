@@ -225,9 +225,13 @@
   })
   function resetLayout() { workspace = defaultWorkspace() }
 
+  // The roster an event can invite - drives the drawer's multi-select attendees editor.
+  const ATTENDEES = ['Jordan Lee', 'Sam Ortiz', 'Priya Nair', 'Owen Bradley', 'Mia Fenn', 'Alex Roman', 'Dana West', 'Chris Vale']
+
   const columns: ColumnDef<any, Ev>[] = [
     { field: 'title', header: 'Subject', editorType: 'text', width: 200 },
     { field: 'cal', header: 'Calendar', editorType: 'list', editorOptions: calendars.map((c) => ({ value: c.id, label: c.name, color: c.color })), width: 120 },
+    { field: 'attendees', header: 'Attendees', editorType: 'chips', editorOptions: ATTENDEES.map((n) => ({ value: n, label: n })), width: 200 },
     { field: 'start', header: 'Start', editorType: 'datetime', width: 160 },
     { field: 'end', header: 'End', editorType: 'datetime', width: 160 },
   ]
@@ -249,8 +253,46 @@
 
   function onOccurrenceChange(e: SchedulerOccurrenceChangeEvent<Ev>) {
     const ex = e.exception
-    const key = (ex.occurrenceStart as Date).getTime()
-    const stored: SchedulerException = { occurrenceStart: iso(ex.occurrenceStart as Date), ...(ex.deleted ? { deleted: true } : {}), ...(ex.start ? { start: iso(ex.start as Date) } : {}), ...(ex.end ? { end: iso(ex.end as Date) } : {}) }
+    const occStart = new Date(e.occurrenceStart as Date) // this occurrence's canonical start
+
+    // "This and following": SPLIT the series - stop the original before this
+    // occurrence and start a NEW series here that carries the changes, so they
+    // apply to this occurrence AND every one after it.
+    if (e.scope === 'following') {
+      const origRepeat = e.row.repeat as RecurrenceRule
+      const durationMs = new Date(e.row.end).getTime() - new Date(e.row.start).getTime()
+      const newStart = ex.start ? new Date(ex.start as Date) : occStart
+      const newEnd = ex.end ? new Date(ex.end as Date) : new Date(newStart.getTime() + durationMs)
+      const newRow: Ev = {
+        ...e.row,
+        id: ++seq,
+        start: iso(newStart),
+        end: iso(newEnd),
+        repeat: { ...origRepeat, until: null }, // continues indefinitely from the split
+        exceptions: [],
+      }
+      if (ex.title != null) newRow.title = ex.title
+      if (ex.fields) Object.assign(newRow, ex.fields) // attendees / calendar / ...
+      newRow.color = CAL_COLOR[newRow.cal] ?? newRow.color
+      // Truncate the original series to end the day before the split point, and
+      // drop any of its exceptions that fell on/after the split.
+      e.row.repeat = { ...origRepeat, until: iso(new Date(occStart.getTime() - 86_400_000)) }
+      e.row.exceptions = (e.row.exceptions ?? []).filter((x) => new Date(x.occurrenceStart as string).getTime() < occStart.getTime())
+      rows = [...rows, newRow]
+      return
+    }
+
+    // "This event": store / merge a single per-occurrence exception.
+    const key = occStart.getTime()
+    const stored: SchedulerException = {
+      occurrenceStart: iso(occStart),
+      ...(ex.deleted ? { deleted: true } : {}),
+      ...(ex.start ? { start: iso(ex.start as Date) } : {}),
+      ...(ex.end ? { end: iso(ex.end as Date) } : {}),
+      ...(ex.title != null ? { title: ex.title } : {}),
+      ...(ex.allDay != null ? { allDay: ex.allDay } : {}),
+      ...(ex.fields ? { fields: ex.fields } : {}),
+    }
     e.row.exceptions = [...(e.row.exceptions ?? []).filter((x) => new Date(x.occurrenceStart as string).getTime() !== key), stored]
   }
   function onEventMove(e: SchedulerEventMoveEvent<Ev>) { e.row.start = iso(e.start); e.row.end = iso(e.end) }

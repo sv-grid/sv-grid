@@ -13,9 +13,19 @@
  *
  * Mount a single <SvToaster /> once near the app root to render the queue.
  */
+import type { Snippet } from 'svelte'
 import { announce } from './a11y/live-region'
 
 export type ToastVariant = 'info' | 'success' | 'warning' | 'error'
+
+/** A button rendered inside a toast (a primary `action` or a secondary `cancel`). */
+export type ToastAction = {
+  label: string
+  /** Invoked with the toast id when pressed. */
+  onClick?: (id: number) => void
+  /** Keep the toast open after the click (default: dismiss it). */
+  keepOpen?: boolean
+}
 
 export type ToastOptions = {
   variant?: ToastVariant
@@ -25,6 +35,12 @@ export type ToastOptions = {
   dismissible?: boolean
   /** Optional bold title above the message. */
   title?: string
+  /** Primary action button. */
+  action?: ToastAction
+  /** Secondary (cancel) action button. */
+  cancel?: ToastAction
+  /** Render a fully custom toast body instead of the icon + title + message. */
+  render?: Snippet<[Toast]>
 }
 
 export type Toast = {
@@ -34,6 +50,19 @@ export type Toast = {
   duration: number
   dismissible: boolean
   title?: string
+  action?: ToastAction
+  cancel?: ToastAction
+  render?: Snippet<[Toast]>
+}
+
+/** Patch applied by `toast.update(id, patch)`; every field is optional. */
+export type UpdateToast = Partial<Omit<Toast, 'id'>>
+
+/** Messages for `toast.promise`; success/error may derive from the value/error. */
+export type PromiseMessages<T> = {
+  loading: string
+  success: string | ((value: T) => string)
+  error: string | ((error: unknown) => string)
 }
 
 type VariantOptions = Omit<ToastOptions, 'variant'>
@@ -44,6 +73,17 @@ export type ToastFn = {
   success: (message: string, options?: VariantOptions) => number
   warning: (message: string, options?: VariantOptions) => number
   error: (message: string, options?: VariantOptions) => number
+  /**
+   * Show a sticky loading toast, then update it IN PLACE to success/error when
+   * the promise settles. Returns the original promise so callers can await it.
+   */
+  promise: <T>(promise: Promise<T>, messages: PromiseMessages<T>, options?: ToastOptions) => Promise<T>
+  /** Patch an existing toast (message/variant/title/action/duration/render). */
+  update: (id: number, patch: UpdateToast) => void
+  /** Push a toast with a fully custom body snippet. Returns its id. */
+  custom: (render: Snippet<[Toast]>, options?: ToastOptions) => number
+  /** Dismiss a toast by id. */
+  dismiss: (id: number) => void
 }
 
 function createToastStore() {
@@ -104,6 +144,9 @@ function createToastStore() {
       duration,
       dismissible: options.dismissible ?? true,
       title: options.title,
+      action: options.action,
+      cancel: options.cancel,
+      render: options.render,
     }
     toasts.push(entry)
     // Errors/warnings interrupt (assertive); info/success are polite.
@@ -114,17 +157,70 @@ function createToastStore() {
     return id
   }
 
+  /** Patch an existing toast in place (used by `promise`, and callable directly). */
+  function update(id: number, patch: UpdateToast): void {
+    const t = toasts.find((x) => x.id === id)
+    if (!t) return
+    if (patch.message != null) t.message = patch.message
+    if (patch.title !== undefined) t.title = patch.title
+    if (patch.variant) t.variant = patch.variant
+    if (patch.dismissible !== undefined) t.dismissible = patch.dismissible
+    if (patch.action !== undefined) t.action = patch.action
+    if (patch.cancel !== undefined) t.cancel = patch.cancel
+    if (patch.render !== undefined) t.render = patch.render
+    // A new duration restarts the auto-dismiss timer (0 = make it sticky again).
+    if (patch.duration !== undefined) {
+      const timer = timers.get(id)
+      if (timer) { clearTimeout(timer); timers.delete(id) }
+      meta.delete(id)
+      t.duration = patch.duration
+      if (patch.duration > 0) schedule(id, patch.duration)
+    }
+    announce(t.title ? `${t.title}: ${t.message}` : t.message, {
+      assertive: t.variant === 'error' || t.variant === 'warning',
+    })
+  }
+
+  function promise<T>(p: Promise<T>, messages: PromiseMessages<T>, options: ToastOptions = {}): Promise<T> {
+    const id = push(messages.loading, {
+      ...options,
+      variant: 'info',
+      duration: 0,
+      dismissible: options.dismissible ?? false,
+    })
+    p.then(
+      (value) => update(id, {
+        message: typeof messages.success === 'function' ? messages.success(value) : messages.success,
+        variant: 'success',
+        duration: options.duration ?? 4000,
+        dismissible: true,
+      }),
+      (error) => update(id, {
+        message: typeof messages.error === 'function' ? messages.error(error) : messages.error,
+        variant: 'error',
+        duration: options.duration ?? 6000,
+        dismissible: true,
+      }),
+    )
+    return p
+  }
+
   const toast = push as ToastFn
   toast.info = (m, o = {}) => push(m, { ...o, variant: 'info' })
   toast.success = (m, o = {}) => push(m, { ...o, variant: 'success' })
   toast.warning = (m, o = {}) => push(m, { ...o, variant: 'warning' })
   toast.error = (m, o = {}) => push(m, { ...o, variant: 'error' })
+  toast.promise = promise
+  toast.update = update
+  toast.custom = (render, o = {}) => push('', { ...o, render })
+  toast.dismiss = dismiss
 
   return {
     get toasts() {
       return toasts
     },
     toast,
+    update,
     dismiss,
     clear,
     pause,
@@ -140,6 +236,8 @@ export const toastStore = { get toasts() { return store.toasts } }
 export const toast: ToastFn = store.toast
 /** Dismiss a toast by id. */
 export const dismissToast = (id: number): void => store.dismiss(id)
+/** Patch an existing toast in place (message/variant/title/action/duration/render). */
+export const updateToast = (id: number, patch: UpdateToast): void => store.update(id, patch)
 /** Remove every toast (and cancel their timers). */
 export const clearToasts = (): void => store.clear()
 /** Pause a toast's auto-dismiss countdown (e.g. while hovered). */

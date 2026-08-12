@@ -10,7 +10,7 @@
 import type { EntitySchema } from '../../schema.js'
 import type { ChartType } from '@svgrid/grid'
 import { generateValue } from '../sample-data.js'
-import { defaultBlockConfig, sanitizeProject, screenFromTemplate, buildDockLayout, type Block, type BlockConfig, type DetailRelated, type FormatRule, type GridConfig, type GridDensity, type KpiFormat, type Reduce, type RowAction, type RowLink, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle, type SchedulerViewConfig, type SchedulerViewMode } from '../project.js'
+import { defaultBlockConfig, sanitizeProject, screenFromTemplate, buildDockLayout, type Block, type BlockConfig, type DetailRelated, type FormatRule, type GridConfig, type GridDensity, type KpiFormat, type Reduce, type RowAction, type RowLink, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle, type SchedulerViewConfig, type SchedulerViewMode, type AuthConfig, type AccessControl } from '../project.js'
 
 type Row = Record<string, unknown>
 
@@ -111,9 +111,12 @@ function gridConfig(entity: EntitySchema, opts: GridOpts): BlockConfig {
 }
 
 /** One dashboard tile -> a Block. Recurses for `tabs` (whose children must be
- *  display blocks: chart / kpi / gauge / pivot / tree). */
-function tileBlock(entity: EntitySchema, t: Tile, i: number): Block {
-  const id = `blk-${i + 1}`
+ *  display blocks: chart / kpi / gauge / pivot / tree). `nextId` yields ids unique
+ *  across the WHOLE screen (top-level tiles AND every nested tab child) - a per-level
+ *  index would collide (top-level `blk-1` vs each tab's first child `blk-1`), which
+ *  makes a keyed each throw `each_key_duplicate`. */
+function tileBlock(entity: EntitySchema, t: Tile, nextId: () => string): Block {
+  const id = nextId()
   if ('kpi' in t) {
     const config: BlockConfig = {
       kind: 'kpi', label: t.kpi, ...(t.measure ? { measure: t.measure } : {}), reduce: t.reduce,
@@ -138,7 +141,7 @@ function tileBlock(entity: EntitySchema, t: Tile, i: number): Block {
     return { id, span: t.span ?? 3, config: { kind: 'filter', fields: t.filter } }
   }
   if ('tabs' in t) {
-    return { id, span: t.span ?? 3, config: { kind: 'tabs', tabs: t.tabs.map((tab) => ({ label: tab.label, blocks: tab.tiles.map((tt, j) => tileBlock(entity, tt, j)) })) } }
+    return { id, span: t.span ?? 3, config: { kind: 'tabs', tabs: t.tabs.map((tab) => ({ label: tab.label, blocks: tab.tiles.map((tt) => tileBlock(entity, tt, nextId)) })) } }
   }
   return { id, span: t.span ?? 3, config: gridConfig(entity, t) }
 }
@@ -150,7 +153,9 @@ export function dashScreen(
   meta: { id: string; title: string; order: number },
   tiles: Tile[],
 ): Screen {
-  const blocks = tiles.map((t, i) => tileBlock(entity, t, i))
+  let n = 0
+  const nextId = () => `blk-${++n}`
+  const blocks = tiles.map((t) => tileBlock(entity, t, nextId))
   return { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order } }
 }
 
@@ -324,6 +329,17 @@ export function project(opts: {
    *  what makes each app read as a distinct product (Salesforce vs Excel vs Linear). */
   preset?: string
   mode?: 'light' | 'dark'
+  /** Bespoke app chrome: raw CSS written to the generated app's `custom.css` (imported
+   *  after `app.css`, so it overrides). Scope rules under `.sv-app.<appClass>` so an
+   *  app can look like its real-world archetype, not a recolored sibling. */
+  customCss?: string
+  /** Extra class on the shell root (the hook `customCss` targets). */
+  appClass?: string
+  /** A sign-in starter: `{ enabled: true }` gives the generated app a `/login` page,
+   *  a signed-cookie session, and route guards (dependency-free, no DB). */
+  auth?: AuthConfig
+  /** Role-based access. With `auth`, seeds one demo login per role. */
+  access?: AccessControl
   entities: EntitySchema[]
   screens: Screen[]
   seed: Record<string, Record<string, unknown>[]>
@@ -340,7 +356,11 @@ export function project(opts: {
       accent: opts.accent,
       ...(opts.preset ? { preset: opts.preset } : {}),
       ...(opts.mode ? { mode: opts.mode } : {}),
+      ...(opts.customCss ? { customCss: opts.customCss } : {}),
+      ...(opts.appClass ? { appClass: opts.appClass } : {}),
       shell: { style: opts.navStyle ?? 'sidebar', brand: opts.brand, footer: opts.footer ?? '', navPosition: opts.navPosition ?? 'left' },
     },
+    ...(opts.auth?.enabled ? { auth: opts.auth } : {}),
+    ...(opts.access?.enabled ? { access: opts.access } : {}),
   })
 }

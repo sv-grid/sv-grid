@@ -8,8 +8,8 @@ composes **screens** across **many entities**.
 
 Grid-centric by design: the blocks are schema-driven and data-bound (a grid, a
 chart, a pivot, a dashboard, a KPI, master-detail, a faceted filter panel, a
-record panel, a lookup) - not arbitrary layout components. It's the Radzen
-"database → CRUD app" idea, kept to data views.
+record panel, a lookup) - not arbitrary layout components. Point it at a
+database, get a CRUD app - kept to data views.
 
 > **Just want to open it?** `npx @svgrid/studio designer` launches this designer
 > in your browser, auto-saves your work to `studio.config.json`, and writes the
@@ -20,7 +20,7 @@ record panel, a lookup) - not arbitrary layout components. It's the Radzen
 
 Here is the real designer with a small Sales App open:
 
-![The visual app designer: a screens and entities rail on the left, a block palette across the top, a live grid preview in the middle, and a properties panel on the right.](/docs-media/studio-app-designer.png)
+![The visual app designer: a Pages and Entities rail on the left, Design / Code tabs above a live grid preview (a customer grid with status chips) in the middle, and a screen properties panel on the right.](/docs-media/studio-app-designer.png)
 
 You do not need to understand the internals to use it. The same layout, labelled:
 
@@ -146,10 +146,16 @@ views, not generic widgets:
 | **Gauge** | A radial gauge (`SvGauge`) of one reduced measure within a range - utilization, progress, scores. | Label, measure, reduce, min / max, unit. |
 | **Tree** | A hierarchical tree (`SvTree`) built from the entity's own rows via a self-referential parent. | A label field + a parent field (a row's link to its parent row). |
 | **Tabs** | A tabbed container (`SvTabs`) that **groups display blocks** into tabs - e.g. an Overview tab of KPIs + a Details tab with a chart. | Add / rename / remove tabs; per tab, add child blocks (charts, KPIs, gauges, pivots, trees). |
+| **Accordion** | A collapsible-sections container (like Tabs, stacked vertically). | Add / rename / remove sections; child blocks per section. |
 | **Master / detail** | A row that expands into a nested grid of related records. | Child entity + foreign key. |
+| **Board** | A kanban board of the entity's rows, one lane per value of a group-by field, with drag between lanes. | Group-by, card title / subtitle / badge fields, open-screen drill. |
+| **Calendar** | A month event-calendar: each row with a date lands on its day, labelled and optionally color-coded. | Date field, title field, color field, open-screen drill. |
+| **Detail** | A full record "detail page": header, metric row, field sections, and related-record tabs - the 360 view a row action or drill-through opens. | Title / subtitle / status / metric fields, sections, related child entities. |
+| **Form** | A standalone create / edit form for the entity. | Presentation (drawer / modal / inline). |
 | **Filter panel** | A faceted sidebar that **filters the screen's grid** - enum / boolean facets pick a value, text facets search. | Title + which fields become facets. |
 | **Record panel** | Shows the row **selected in the grid** - a read-only field list, or an inline edit form. | Editable on / off, and (read-only) which fields to show. |
 | **Lookup** | Marks a relation field as a searchable picker in the edit form. | The relation field. |
+| **UI component** | A component from the SvGrid UI kit (button, badge, alert, card, stat, timeline, sparkline, chip, ...) dropped from the toolbox - entity-agnostic, works on freestanding pages too. | The component's own props, plus data bindings. |
 
 The **filter** and **record** panels wire to the grid on the same screen: the
 filter panel calls the grid controller's `setFilter`, and clicking a grid row
@@ -188,30 +194,43 @@ section binds the screen's entity to:
   running in the browser and saved to IndexedDB, so rows survive reloads with zero
   backend. Same SQL as production - swap to a hosted **SQL** source later without
   touching the schema. See [Local database](./local-database.md).
-- **REST API** - a spacious request builder (Open request builder): **method**,
-  **base URL**, **path** (path params auto-derive from `{tokens}`), and **Query /
-  Path / Header** tabs. **Send** runs it live and shows a **response table** plus
-  the real rows in the canvas grid; **Import fields** rewrites the entity's schema
-  to match the response keys. A **rows path** / **total path** maps a nested body.
-- **Supabase** - its own builder dialog (Open Supabase builder): project URL +
-  anon key + table, with the same **Fetch sample** / **Import fields** flow (reads
-  rows via the public anon key, browser-safe). **Generate app** emits a real
-  `createClient(url, anonKey)` in `connections.ts` and adds `@supabase/supabase-js`
-  to the app, so it runs against Supabase with no manual wiring (access is
-  protected by your RLS policies).
-- **SQL** - its own builder dialog (Open SQL builder): table + dialect. SQL runs
-  server-side (a driver + credentials can't live in the browser), so there's no
-  live preview. **Generate app** emits a connected `src/routes/api/<table>/+server.ts`
-  (the dialect's driver, reading `DATABASE_URL`) and points the grid at it; the
-  driver dep is added for you. Set `DATABASE_URL` in `.env`. To scaffold from an
-  existing DB instead: `npx @svgrid/studio add <table> --db <dialect> --url …`.
+  The builder is a draggable, resizable, maximizable panel, and you can open it for
+  any entity straight from the **Data model** dialog's **Configure** button.
+
+- **REST API** - a request builder: **method**, **base URL**, **path** (path
+  params auto-derive from `{tokens}`), and **Query / Path / Header** tabs. **Send**
+  runs it live and shows a **response table** plus the real rows in the canvas
+  grid; **Import fields** rewrites the entity's schema to match the response keys.
+  An **API format** picker (Manual / Offset + Limit / DummyJSON / json-server)
+  wires a wire-format adapter so the grid does **real server-side paging and sort**;
+  Manual keeps the rows-path / total-path mapping for a single fetched page.
+- **Supabase** - **List tables** reads your project's tables so you pick one, and
+  **Import schema** pulls its real columns, primary key, foreign keys, and enums
+  into the entity; **Preview** shows live rows (works in the online designer, since
+  Supabase is HTTP). The project **URL + anon key are a shared connection** you set
+  once for every Supabase entity. A **Live updates (Realtime)** toggle emits a live
+  subscription. **Generate app** emits `createClient` in `connections.ts` reading
+  `PUBLIC_SUPABASE_URL` / `PUBLIC_SUPABASE_ANON_KEY` from `.env` (the key is never
+  inlined) and adds `@supabase/supabase-js`; access is protected by your RLS
+  policies.
+- **SQL** - paste a connection string (the dialect is auto-detected) or fill the
+  guided form, set the **Schema** (Postgres search path). In the **local** designer
+  (`npx @svgrid/studio designer`) **Preview data** runs a real `SELECT` and shows
+  your actual rows on the canvas, and a missing `pg` / `mysql2` / ... driver is a
+  **one-click install**. **Generate app** emits a connected
+  `src/routes/api/<table>/+server.ts` (the dialect's driver, reading
+  `DATABASE_URL`) and points the grid at it; the driver dep is added for you. In
+  the **online** designer, bind the entity and generate - the app connects for real
+  at runtime. To scaffold from an existing DB via CLI: `npx @svgrid/studio add
+  <table> --db <dialect> --url …`.
 
 **Generate app** then emits the matching adapter per entity in `src/lib/data.ts`
 (`createRestDataSource` / `createSqlDataSource` / `createSupabaseDataSource` /
-`createInMemoryDataSource`). SQL and Supabase entities read their connection from
-a generated `src/lib/connections.ts` - the one manual step is wiring a real
-`SqlExecutor` / Supabase client there (you can't ship DB credentials to the
-browser). See [Databases](./databases.md) and [REST API](./rest-api.md).
+`createInMemoryDataSource`). SQL and Supabase entities read their connection from a
+generated `src/lib/connections.ts` (or the `+server.ts` route) - the SQL driver and
+the Supabase client are wired for you; the only manual step is setting the
+connection in `.env` (the bundle ships a `.env.example`). See
+[Databases](./databases.md) and [REST API](./rest-api.md).
 
 ## Import a CSV / spreadsheet
 
@@ -240,6 +259,10 @@ all client-side: `csvToEntity(name, text)` is a pure function exported from
 - **Pages** - each screen is a route. In the inspector's **Page** section, toggle
   **Show in navigation**, set a **nav label** and **nav order**, or start a page
   from the **Empty** template. Hidden pages stay routable but drop out of the nav.
+- **Render mode** - eligible screens (a single plain grid, or read-only block
+  screens, on a memory / SQL source) can switch from the default client page to
+  **SSR**: an idiomatic `+page.server.ts` with `load` + form actions. The rules
+  are in [Code generation](./code-generation.md#render-mode-spa-or-ssr-per-screen).
 - **App layout** - the rail's **App layout** section themes the generated shell:
   **Sidebar** or **Top navigation**, a **brand** name, a **company logo**
   (uploaded - stored inline and shown in the nav in place of the brand text), a
@@ -295,6 +318,7 @@ const files = emitStudioProject(project) // [{ path, contents, description }, ..
 
 ## See also
 
+- [Code behind (Code view)](./code-behind.md) - write TypeScript against a typed `ctx` (grid API, events, `ctx.grid.sortable = true`, lifecycle)
 - [Sample apps + bind your data](./samples.md) - start from a ready-made app, then point it at your database
 - [Launch the designer](./launch.md) - `npx @svgrid/studio designer` (auto-save + generate to a folder)
 - [Schema designer](./designer.md) - author a single entity

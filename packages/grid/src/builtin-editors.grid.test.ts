@@ -77,7 +77,7 @@ describe('registerBuiltinEditors in SvGrid', () => {
       api.startEditing(0, 'estimate')
       await tick()
       await tick()
-      expect(target.querySelector('.sv-dur')).not.toBeNull()
+      expect(target.querySelector('.sv-dur__input')).not.toBeNull()
     } finally {
       destroy()
     }

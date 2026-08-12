@@ -11,15 +11,26 @@
  * the node:fs wiring.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { dirname, resolve } from 'node:path'
 import {
   buildStudioBugReport,
+  createProject,
+  deployCommands,
+  emitStudioAppBundle,
+  emitStudioFragment,
   introspectDatabase,
+  introspectOpenApi,
+  runtimeDeps,
   listDatabaseTables,
+  missingEnvKeys,
   parseProject,
+  resolveDeployTarget,
   resolveSchemas,
   runStudioAdd,
   runStudioAddApp,
+  serializeProject,
+  setEntityDataSource,
   summarizeVerify,
   type EntitySchema,
   type SqlDialectName,
@@ -29,6 +40,7 @@ import {
 import { connect } from './db-connect.js'
 import { DRIVER_FOR, installDriver, isDriverInstalled } from './driver-install.js'
 import { startDesignerServer } from './designer-server.js'
+import { ensureApp, startAppServer, type AppServer } from './dev.js'
 
 const io: StudioIO = {
   readFile: async (path) => {
@@ -60,6 +72,11 @@ type Parsed = {
   port?: number
   noOpen?: boolean
   template?: string
+  target?: string
+  dryRun?: boolean
+  ai?: boolean
+  appPort?: number
+  fragment?: boolean
 }
 
 function parse(args: string[]): Parsed {
@@ -80,6 +97,11 @@ function parse(args: string[]): Parsed {
     else if (a === '--port') out.port = Number(args[++i])
     else if (a === '--template') out.template = args[++i]
     else if (a === '--no-open') out.noOpen = true
+    else if (a === '--target') out.target = args[++i]
+    else if (a === '--dry-run') out.dryRun = true
+    else if (a === '--ai') out.ai = true
+    else if (a === '--app-port') out.appPort = Number(args[++i])
+    else if (a === '--fragment') out.fragment = true
     else if (a === '-h' || a === '--help') out.help = true
     else if (!a.startsWith('-')) positional.push(a)
   }
@@ -97,6 +119,15 @@ Usage:
   svgrid-studio add --all   --from <schema>         # every table/model, linked
   svgrid-studio add <name> --db <dialect> --url <conn>   # one table from a live database
   svgrid-studio add --all   --db <dialect> --url <conn>  # every table from a live database
+  svgrid-studio openapi <file|url>                   # import an OpenAPI (JSON) spec -> studio.config.json
+  svgrid-studio eject [--fragment]                  # write the app (or a drop-in fragment) from studio.config.json
+  svgrid-studio dev                                 # designer + the RUNNING app, side by side (HMR)
+  svgrid-studio deploy [--target <provider>] [--dry-run]  # build + deploy via the provider CLI
+
+Deploy (build first, then the provider CLI; target from --target, else
+studio.config.json, else the adapter in svelte.config.js):
+  --target <p>     vercel | netlify | cloudflare | node
+  --dry-run        print the resolved commands without running anything
 
 Designer (visual app builder, auto-saves to studio.config.json):
   --template <id>  open a ready-made sample app (crm | ecommerce | projects | support)
@@ -104,6 +135,8 @@ Designer (visual app builder, auto-saves to studio.config.json):
   --out <dir>      folder to write the generated app into (default: .)
   --port <n>       port to serve on (default: 4321)
   --no-open        don't open the browser
+  --ai             enable the AI copilot (needs ANTHROPIC_API_KEY in the environment)
+  --app-port <n>   dev: port for the generated app's dev server (default: designer port + 1)
 
 Schema files: a Drizzle schema.ts or a Prisma schema.prisma (auto-detected).
   Foreign keys become searchable relation lookups; enums become select fields.
@@ -139,6 +172,89 @@ async function main(): Promise<void> {
   const [cmd, ...rest] = process.argv.slice(2)
   const opts = parse(rest)
 
+  // --- eject: write the app (or a fragment) from studio.config.json ---------
+  if (cmd === 'eject' && !opts.help) {
+    const configPath = opts.config ?? 'studio.config.json'
+    const json = await io.readFile(configPath)
+    if (json == null) {
+      process.stderr.write(`eject: ${configPath} not found - run \`svgrid-studio designer\` first, or pass --config.\n`)
+      process.exit(1)
+    }
+    const project = parseProject(json)
+    const outDir = opts.outDir ?? '.'
+    const files = opts.fragment ? emitStudioFragment(project) : emitStudioAppBundle(project)
+    for (const f of files) {
+      const full = resolve(outDir, f.path)
+      await mkdir(dirname(full), { recursive: true })
+      await writeFile(full, f.contents)
+    }
+    process.stdout.write(`Wrote ${files.length} ${opts.fragment ? 'fragment' : 'app'} file(s) -> ${resolve(outDir)}\n`)
+    if (opts.fragment) {
+      const deps = runtimeDeps(project, files.map((f) => f.contents).join('\n'))
+      const install = Object.keys(deps).filter((d) => d !== '@svgrid/grid' && d !== '@svgrid/enterprise')
+      process.stdout.write(`Fragment: merge src/routes + src/lib into your app, import src/app.css, then:\n  npm install ${install.join(' ') || '@svgrid/grid @svgrid/enterprise'}\nSee FRAGMENT.md for the full runbook.\n`)
+    }
+    return
+  }
+
+  // --- import an OpenAPI spec into a studio.config.json ---------------------
+  if (cmd === 'openapi' && !opts.help) {
+    const src = opts.from ?? rest.find((a) => !a.startsWith('-'))
+    if (!src) {
+      process.stderr.write('openapi: pass a spec - `svgrid-studio openapi ./openapi.json` (or a URL)\n')
+      process.exit(1)
+    }
+    const text = /^https?:\/\//.test(src) ? await (await fetch(src)).text() : await readFile(src, 'utf8')
+    const { entities, sources, warnings } = introspectOpenApi(text)
+    let project = createProject(entities, { title: 'API app' })
+    for (const [name, source] of Object.entries(sources)) project = setEntityDataSource(project, name, source)
+    const outPath = opts.config ?? 'studio.config.json'
+    await writeFile(outPath, serializeProject(project))
+    process.stdout.write(`Imported ${entities.length} REST resource(s) -> ${outPath}\n`)
+    for (const w of warnings) process.stdout.write(`  ! ${w}\n`)
+    process.stdout.write(`Next: svgrid-studio designer   (open it visually)  or  svgrid-studio dev\n`)
+    return
+  }
+
+  // --- live dev loop: designer + the real app, side by side ----------------
+  if (cmd === 'dev' && !opts.help) {
+    const configPath = opts.config ?? 'studio.config.json'
+    const outDir = opts.outDir ?? '.'
+    const port = Number.isFinite(opts.port) ? (opts.port as number) : 4321
+    const appPort = Number.isFinite(opts.appPort) ? (opts.appPort as number) : port + 1
+    const log = (l: string) => process.stdout.write(l + '\n')
+
+    const hasApp = await ensureApp(resolve(outDir), resolve(configPath), log)
+    let app: AppServer | null = null
+    if (hasApp) {
+      app = await startAppServer({ outDir, port: appPort, log })
+      log(`\n  app:      ${app.url} (Vite dev server - designer saves hot-reload it)`)
+    } else {
+      log(`\n  No app here yet - design something and hit "Save to folder"; the app server starts on the first save.`)
+    }
+    process.on('SIGINT', () => {
+      app?.stop()
+      process.exit(0)
+    })
+    await startDesignerServer({
+      configPath,
+      outDir,
+      port,
+      open: !opts.noOpen,
+      template: opts.template,
+      ai: !!opts.ai,
+      appUrl: app?.url,
+      onGenerated: async () => {
+        if (app) await app.syncDeps()
+        else {
+          app = await startAppServer({ outDir, port: appPort, log })
+          log(`  app:      ${app.url} (started after first save)`)
+        }
+      },
+    })
+    return
+  }
+
   // --- visual designer -----------------------------------------------------
   if (cmd === 'designer' && !opts.help) {
     await startDesignerServer({
@@ -147,8 +263,45 @@ async function main(): Promise<void> {
       port: Number.isFinite(opts.port) ? (opts.port as number) : 4321,
       open: !opts.noOpen,
       template: opts.template,
+      ai: !!opts.ai,
     })
     // Keep the process alive; the server holds the event loop until Ctrl+C.
+    return
+  }
+
+  // --- deploy --------------------------------------------------------------
+  if (cmd === 'deploy' && !opts.help) {
+    const read = (p: string) => io.readFile(p)
+    const resolution = resolveDeployTarget({
+      flag: opts.target,
+      configJson: await read('studio.config.json'),
+      svelteConfig: (await read('svelte.config.js')) ?? (await read('svelte.config.ts')),
+    })
+    if (!resolution.ok) {
+      process.stderr.write(`deploy: ${resolution.reason}\n`)
+      process.exit(1)
+    }
+    const plan = deployCommands(resolution.provider)
+    process.stdout.write(`Deploying to ${plan.provider} (from ${resolution.source === 'flag' ? '--target' : resolution.source === 'config' ? 'studio.config.json' : 'svelte.config.js adapter'}).\n`)
+    // Preflight: env keys the app declares but the local .env doesn't set.
+    const missing = missingEnvKeys(await read('.env.example'), await read('.env'))
+    if (missing.length) process.stdout.write(`! Unset env keys (set them on the host too): ${missing.join(', ')}\n`)
+    for (const note of plan.notes) process.stdout.write(`  ${note}\n`)
+    const commands = [plan.build, ...(plan.deploy ? [plan.deploy] : [])]
+    if (opts.dryRun) {
+      process.stdout.write(commands.map((c) => `> ${c}\n`).join(''))
+      return
+    }
+    for (const command of commands) {
+      process.stdout.write(`\n> ${command}\n`)
+      const res = spawnSync(command, { stdio: 'inherit', shell: true })
+      if (res.status !== 0) {
+        if (command !== plan.build) {
+          process.stderr.write(`deploy: "${command}" failed. If the provider CLI isn't set up yet, log in first (see the note above) and re-run.\n`)
+        }
+        process.exit(res.status ?? 1)
+      }
+    }
     return
   }
 

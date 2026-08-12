@@ -10,9 +10,11 @@ import { printGrid, type PrintOptions } from './print'
 import { importData, type ImportOptions, type ImportResult } from './import'
 import { isLicenseKeySet } from './license'
 import { emitUnlicensedNudge } from './watermark'
+// AI helpers are built-in + free in @svgrid/grid now; enterprise just wires them
+// into the Pro API and registers its export engine so AI exports can write xlsx/pdf.
 import {
   aiFilter, aiSmartFill, aiSummarize, aiClassify, aiExport, aiFindAnomalies,
-  aiChart, enableAiCharting,
+  aiChart, enableAiCharting, registerExportProvider,
   type AIChartOptions, type AIChartPlan,
   type AIFilterOptions, type AIFilterResult,
   type AISmartFillOptions, type AISmartFillResult,
@@ -20,13 +22,15 @@ import {
   type AIClassifyOptions, type AIClassifyResult,
   type AIExportOptions, type AIExportPlan,
   type AIAnomalyOptions, type AIAnomalyResult,
-} from './ai'
+} from '@svgrid/grid'
 import {
   createPivotModel,
   type PivotConfig,
   type PivotResult,
 } from './pivot'
 import { enableSchedulerView } from './scheduler'
+import { enableBoardView } from './board'
+import { enablePivot } from './pivot-enable'
 
 export type EnterpriseAIApi<TData extends RowData> = {
   /** Natural-language -> filter + sort plan (and optionally apply it). */
@@ -128,6 +132,12 @@ export function installEnterprise<
   enableAiCharting(pro)
   // Register the scheduler / calendar view (no-op without the `scheduler` prop).
   enableSchedulerView()
+  // Register the Kanban board view (no-op without the `board` prop).
+  enableBoardView()
+  // Register the export engine so built-in AI exports (aiExport) can write the
+  // enterprise formats (xlsx / pdf / ...); free grids without it get the plan only.
+  registerExportProvider(exportGrid as never)
+  enablePivot()
   pro.pivot = {
     build: (config) =>
       createPivotModel<TFeatures, TData>(pro.getData(), config),

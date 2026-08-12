@@ -10,6 +10,8 @@ arrangement is saved per user.
 It is a per-screen choice: a data-heavy console can dock while your simple CRUD
 screens stay on the grid.
 
+![A docking workspace: an explorer pane docked left of a tabbed editor pane, with a terminal pane split below - every pane floatable, reorderable, and pinnable.](/docs-media/studio-dock-layout.png)
+
 ## Turn it on
 
 In the [visual designer](./app-designer.md), select a screen (click empty
@@ -66,6 +68,20 @@ features (sorting, editing, its own data):
   pivot the user tears off into their own windows.
 - **Stay on the grid** for straightforward list / form / detail screens, and
   anything that should read top-to-bottom on mobile.
+
+## The other screen layouts
+
+Dock is one of five per-screen layout modes in the designer:
+
+- **Grid** (default) - blocks flow in a 12-column grid; presets like two-column,
+  sidebar, and KPI-row arrange them in one click.
+- **Stack** - one block per row, top to bottom.
+- **Split** - the dock engine with the panes locked in place: users can resize
+  the splits but not rearrange or float them.
+- **Dock** - this page: rearrangeable, floatable, persistent.
+- **Canvas** - free-form placement: each block gets explicit cell coordinates
+  and spans on a 12-column grid of fixed-height rows, so blocks sit exactly
+  where you drop them.
 
 ## Related
 

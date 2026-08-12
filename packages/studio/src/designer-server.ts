@@ -15,9 +15,9 @@ import { createReadStream, existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, normalize, resolve, extname } from 'node:path'
 import { createRequire } from 'node:module'
+import { createHash } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import {
-  createProject,
   parseProject,
   serializeProject,
   introspectDatabase,
@@ -26,6 +26,7 @@ import {
   linkRelationLabels,
   buildConnectionString,
   getSampleApp,
+  starterProject as buildStarterProject,
   skipUserOwned,
   type EntitySchema,
   type GeneratedFile,
@@ -34,6 +35,7 @@ import {
   type StudioProject,
 } from '@svgrid/enterprise/studio'
 import { connect } from './db-connect.js'
+import { runCopilot } from './copilot.js'
 import { DRIVER_FOR, installDriver, isDriverInstalled } from './driver-install.js'
 
 export type DesignerServerOptions = {
@@ -47,6 +49,12 @@ export type DesignerServerOptions = {
   open: boolean
   /** Sample-app id to seed a fresh session with (`--template <id>`). */
   template?: string
+  /** Enable the AI copilot endpoint (`--ai`); requires ANTHROPIC_API_KEY. */
+  ai?: boolean
+  /** `studio dev`: the running generated app's URL, advertised to the SPA. */
+  appUrl?: string
+  /** `studio dev`: called after each successful Save-to-folder (dep sync). */
+  onGenerated?: () => void | Promise<void>
   /** Log lines (defaults to process.stdout). */
   log?: (line: string) => void
 }
@@ -63,6 +71,21 @@ const MIME: Record<string, string> = {
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
   '.map': 'application/json; charset=utf-8',
+}
+
+/** Quote a SQL identifier for the dialect (doubling the closing quote char). */
+function quoteIdent(dialect: SqlDialectName, name: string): string {
+  if (dialect === 'mysql') return '`' + name.replace(/`/g, '``') + '`'
+  if (dialect === 'mssql') return '[' + name.replace(/]/g, ']]') + ']'
+  return '"' + name.replace(/"/g, '""') + '"' // postgres / supabase / sqlite
+}
+
+/** A read-only preview SELECT for one table (optionally schema-qualified). No
+ *  params - it's a fixed `SELECT * ... LIMIT n` (MSSQL uses `TOP n`). */
+function buildPreviewSql(dialect: SqlDialectName, table: string, schema: string | undefined, limit: number): string {
+  const t = schema ? `${quoteIdent(dialect, schema)}.${quoteIdent(dialect, table)}` : quoteIdent(dialect, table)
+  const n = Math.max(1, Math.min(200, Math.floor(limit)))
+  return dialect === 'mssql' ? `SELECT TOP ${n} * FROM ${t}` : `SELECT * FROM ${t} LIMIT ${n}`
 }
 
 /** The runtime deps the generated code imports, keyed by a source needle. */
@@ -87,25 +110,15 @@ function resolveDesignerDir(): string {
   return dir
 }
 
-/** The project a fresh session opens with: a chosen sample app (`--template`), or
- *  a minimal tasks starter. */
+/** The project a fresh session opens with: a chosen sample app (`--template`), or the
+ *  default enterprise-ready Customers CRUD showcase (rich grid + export + popup form,
+ *  seeded) - so the first screen is a complete, generate-and-copy-ready SvGrid app. */
 function starterProject(templateId?: string): StudioProject {
   if (templateId) {
     const app = getSampleApp(templateId)
     if (app) return app.build()
   }
-  const tasks: EntitySchema = {
-    name: 'tasks',
-    label: 'Task',
-    idField: 'id',
-    fields: [
-      { field: 'id', type: 'number', primaryKey: true, readonly: true },
-      { field: 'title', type: 'text', required: true },
-      { field: 'status', type: 'enum', options: [{ value: 'todo', label: 'To do' }, { value: 'doing', label: 'Doing' }, { value: 'done', label: 'Done' }] },
-      { field: 'due', type: 'date' },
-    ],
-  }
-  return createProject([tasks], { title: 'My App' })
+  return buildStarterProject()
 }
 
 function send(res: ServerResponse, status: number, body: string, type = 'application/json; charset=utf-8'): void {
@@ -133,8 +146,23 @@ function serveStatic(res: ServerResponse, dir: string, urlPath: string): void {
   createReadStream(filePath).pipe(res)
 }
 
-/** Write the generated app bundle to disk and add any runtime deps it imports. */
-async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<number> {
+/** Write the generated app bundle to disk and add any runtime deps it imports.
+ *
+ *  Clobber guard: `.studio/manifest.json` records the hash of every file Studio
+ *  last wrote. On regenerate, a file the USER has since edited (disk differs from
+ *  the manifest) gets the new version written as `<file>.new` + reported as a
+ *  conflict, instead of silently overwriting their work. Files Studio wrote and
+ *  nobody touched are overwritten as before. */
+export async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<{ written: number; conflicts: string[] }> {
+  const manifestPath = join(outDir, '.studio', 'manifest.json')
+  let manifest: Record<string, string> = {}
+  try {
+    manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, string>
+  } catch {
+    /* first generate (or pre-manifest project) - guard activates from now on */
+  }
+  const sha = (s: string) => createHash('sha256').update(s).digest('hex')
+  const conflicts: string[] = []
   let written = 0
   for (const f of files) {
     const full = join(outDir, f.path)
@@ -142,10 +170,30 @@ async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<numb
     // developer's forever: never overwrite one that already exists on disk. This is
     // the make-or-break round-trip guarantee. See HANDLERS-DESIGN.md.
     if (skipUserOwned(f, existsSync(full))) continue
+    const newHash = sha(f.contents)
+    if (existsSync(full)) {
+      const onDisk = await readFile(full, 'utf8').catch(() => null)
+      const diskHash = onDisk == null ? null : sha(onDisk)
+      if (diskHash === newHash) {
+        manifest[f.path] = newHash // already identical - nothing to write
+        continue
+      }
+      const lastGenerated = manifest[f.path]
+      if (lastGenerated !== undefined && diskHash !== null && diskHash !== lastGenerated) {
+        // Locally modified since the last generate AND the regenerated content
+        // differs: park it next to the user's version instead of clobbering.
+        await writeFile(full + '.new', f.contents)
+        conflicts.push(f.path)
+        continue
+      }
+    }
     await mkdir(dirname(full), { recursive: true })
     await writeFile(full, f.contents)
+    manifest[f.path] = newHash
     written++
   }
+  await mkdir(dirname(manifestPath), { recursive: true })
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
   const allSource = files.map((f) => f.contents).join('\n')
   const pkgPath = join(outDir, 'package.json')
   if (existsSync(pkgPath)) {
@@ -163,7 +211,7 @@ async function writeBundle(outDir: string, files: GeneratedFile[]): Promise<numb
       // leave package.json untouched if it isn't valid JSON
     }
   }
-  return written
+  return { written, conflicts }
 }
 
 /** Best-effort open the default browser (no dependency). */
@@ -190,9 +238,36 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
     })
   })
 
+  // Copilot is live only when BOTH the flag and the key are present; the SPA
+  // probes /api/capabilities and only then wires (and shows) the Copilot button.
+  const copilotKey = process.env.ANTHROPIC_API_KEY
+  const copilotOn = !!opts.ai && !!copilotKey
+
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = req.url ?? '/'
     const path = url.split('?')[0]!
+
+    if (path === '/api/capabilities' && req.method === 'GET') {
+      send(res, 200, JSON.stringify({ copilot: copilotOn, ...(opts.appUrl ? { appUrl: opts.appUrl } : {}) }))
+      return
+    }
+
+    if (path === '/api/copilot' && req.method === 'POST') {
+      if (!copilotOn) {
+        send(res, 404, JSON.stringify({ error: 'Copilot is not enabled. Start with --ai and set ANTHROPIC_API_KEY.' }))
+        return
+      }
+      const body = await readBody(req)
+      const { prompt, project } = JSON.parse(body) as { prompt?: string; project?: string }
+      if (!prompt || !project) {
+        send(res, 400, JSON.stringify({ error: 'prompt and project are required' }))
+        return
+      }
+      log(`  copilot: ${prompt.slice(0, 80)}`)
+      const updated = await runCopilot(prompt, project, { apiKey: copilotKey! })
+      send(res, 200, updated)
+      return
+    }
 
     if (path === '/api/project' && req.method === 'GET') {
       const json = existsSync(configPath) ? await readFile(configPath, 'utf8') : null
@@ -220,9 +295,17 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
         send(res, 400, JSON.stringify({ error: 'no files to write' }))
         return
       }
-      const count = await writeBundle(outDir, files)
-      log(`  generated ${count} files -> ${outDir}`)
-      send(res, 200, JSON.stringify({ ok: true, count, outDir }))
+      const { written, conflicts } = await writeBundle(outDir, files)
+      log(`  generated ${written} files -> ${outDir}`)
+      if (conflicts.length) {
+        log(`  ! ${conflicts.length} file(s) were edited by hand since the last generate - the new`)
+        log(`    version was written NEXT TO yours as "<file>.new" (merge or replace, then delete it):`)
+        for (const c of conflicts) log(`    - ${c}  ->  ${c}.new`)
+      }
+      // `studio dev`: give the app-server loop a chance to install newly added
+      // deps + restart; plain file rewrites are picked up by Vite's HMR.
+      await opts.onGenerated?.()
+      send(res, 200, JSON.stringify({ ok: true, count: written, conflicts, outDir }))
       return
     }
 
@@ -264,8 +347,9 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
       const reqBody = JSON.parse(body) as {
         dialect?: SqlDialectName
         url?: string
-        action?: 'tables' | 'introspect' | 'test'
+        action?: 'tables' | 'introspect' | 'test' | 'preview'
         tables?: string[]
+        schema?: string
       }
       const { dialect, url, action } = reqBody
       if (!dialect || !url) {
@@ -290,6 +374,22 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
         try {
           const probe = await probeConnection(dialect, execute, { counts: true })
           send(res, 200, JSON.stringify(probe))
+        } catch (err) {
+          send(res, 502, JSON.stringify({ error: err instanceof Error ? err.message : String(err) }))
+        }
+        return
+      }
+      if (action === 'preview') {
+        // "Preview data": run a real SELECT so the designer canvas shows the user's
+        // actual rows (the SQL equivalent of the Supabase/REST live preview).
+        const table = Array.isArray(reqBody.tables) ? reqBody.tables[0] : undefined
+        if (!table) {
+          send(res, 400, JSON.stringify({ error: 'a table is required for preview' }))
+          return
+        }
+        try {
+          const rows = await execute(buildPreviewSql(dialect, table, reqBody.schema, 25), [])
+          send(res, 200, JSON.stringify({ rows }))
         } catch (err) {
           send(res, 502, JSON.stringify({ error: err instanceof Error ? err.message : String(err) }))
         }
@@ -345,6 +445,8 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
   log(`\n  SvGrid Studio designer running at ${url}`)
   log(`  config:  ${configPath}`)
   log(`  output:  ${outDir}`)
+  if (copilotOn) log(`  copilot: ON (Anthropic)`)
+  else if (opts.ai) log(`  copilot: OFF - --ai was passed but ANTHROPIC_API_KEY is not set`)
   log(`  (edits auto-save; "Save to folder" writes the app. Ctrl+C to stop.)\n`)
   if (opts.open) openBrowser(url)
 

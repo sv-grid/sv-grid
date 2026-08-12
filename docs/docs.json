@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-03T23:59:42.225Z",
+  "generatedAt": "2026-08-11T18:22:51.847Z",
   "counts": {
-    "pages": 350,
-    "enterprise": 8,
-    "withDemo": 231
+    "pages": 365,
+    "enterprise": 55,
+    "withDemo": 243
   },
   "pillars": [
     {
@@ -93,6 +93,7 @@
         "help/ai-smart-paste.md",
         "help/ai-toolkit.md",
         "help/ai.md",
+        "help/alerts.md",
         "help/api-stability.md",
         "help/architecture.md",
         "help/benchmarks.md",
@@ -104,6 +105,7 @@
         "help/conditional-form-schema.md",
         "help/errors.md",
         "help/export.md",
+        "help/expressions-query.md",
         "help/glossary.md",
         "help/grouping-aggregation.md",
         "help/i18n-rtl.md",
@@ -369,49 +371,143 @@
       "pillar": "studio",
       "pages": [
         "enterprise/studio.md",
-        "enterprise/studio/access-control.md",
-        "enterprise/studio/accessibility.md",
-        "enterprise/studio/ai-generation.md",
-        "enterprise/studio/api.md",
-        "enterprise/studio/app-designer.md",
-        "enterprise/studio/audit-log.md",
-        "enterprise/studio/auth.md",
-        "enterprise/studio/business-logic.md",
+        "enterprise/studio/getting-started.md",
+        "enterprise/studio/concepts.md",
+        "enterprise/studio/samples.md",
+        "enterprise/studio/tutorial-crm.md",
         "enterprise/studio/cli.md",
-        "enterprise/studio/code-generation.md",
-        "enterprise/studio/dashboards.md",
+        "enterprise/studio/launch.md",
+        "enterprise/studio/app-designer.md",
+        "enterprise/studio/designer.md",
+        "enterprise/studio/ai-generation.md",
         "enterprise/studio/data-binding.md",
         "enterprise/studio/databases.md",
-        "enterprise/studio/deployment.md",
-        "enterprise/studio/designer.md",
-        "enterprise/studio/dock-layout.md",
-        "enterprise/studio/drizzle.md",
-        "enterprise/studio/edit-forms.md",
-        "enterprise/studio/getting-started.md",
-        "enterprise/studio/i18n.md",
-        "enterprise/studio/in-memory.md",
-        "enterprise/studio/launch.md",
         "enterprise/studio/local-database.md",
-        "enterprise/studio/master-detail.md",
-        "enterprise/studio/navigation.md",
-        "enterprise/studio/odata-graphql.md",
-        "enterprise/studio/postgres-grid.md",
+        "enterprise/studio/supabase.md",
+        "enterprise/studio/drizzle.md",
         "enterprise/studio/prisma.md",
-        "enterprise/studio/realtime.md",
-        "enterprise/studio/relations.md",
         "enterprise/studio/rest-api.md",
+        "enterprise/studio/odata-graphql.md",
+        "enterprise/studio/in-memory.md",
+        "enterprise/studio/postgres-grid.md",
+        "enterprise/studio/supabase-grid.md",
         "enterprise/studio/rest-grid.md",
-        "enterprise/studio/samples.md",
-        "enterprise/studio/scheduler.md",
+        "enterprise/studio/supabase-sample.md",
         "enterprise/studio/schema.md",
         "enterprise/studio/server-grid.md",
-        "enterprise/studio/supabase-grid.md",
-        "enterprise/studio/supabase-sample.md",
-        "enterprise/studio/supabase.md",
-        "enterprise/studio/testing.md",
+        "enterprise/studio/edit-forms.md",
+        "enterprise/studio/relations.md",
+        "enterprise/studio/master-detail.md",
+        "enterprise/studio/dashboards.md",
+        "enterprise/studio/scheduler.md",
+        "enterprise/studio/dock-layout.md",
+        "enterprise/studio/navigation.md",
+        "enterprise/studio/realtime.md",
+        "enterprise/studio/business-logic.md",
+        "enterprise/studio/code-behind.md",
+        "enterprise/studio/code-generation.md",
+        "enterprise/studio/auth.md",
+        "enterprise/studio/access-control.md",
+        "enterprise/studio/audit-log.md",
         "enterprise/studio/theming.md",
-        "enterprise/studio/troubleshooting.md",
-        "enterprise/studio/tutorial-crm.md"
+        "enterprise/studio/i18n.md",
+        "enterprise/studio/accessibility.md",
+        "enterprise/studio/testing.md",
+        "enterprise/studio/deployment.md",
+        "enterprise/studio/api.md",
+        "enterprise/studio/troubleshooting.md"
+      ],
+      "groups": [
+        {
+          "label": "Start here",
+          "pages": [
+            "enterprise/studio/getting-started.md",
+            "enterprise/studio/concepts.md",
+            "enterprise/studio/samples.md",
+            "enterprise/studio/tutorial-crm.md"
+          ]
+        },
+        {
+          "label": "Three ways to build",
+          "pages": [
+            "enterprise/studio/cli.md",
+            "enterprise/studio/launch.md",
+            "enterprise/studio/app-designer.md",
+            "enterprise/studio/designer.md",
+            "enterprise/studio/ai-generation.md"
+          ]
+        },
+        {
+          "label": "Connect to data",
+          "pages": [
+            "enterprise/studio/data-binding.md",
+            "enterprise/studio/databases.md",
+            "enterprise/studio/local-database.md",
+            "enterprise/studio/supabase.md",
+            "enterprise/studio/drizzle.md",
+            "enterprise/studio/prisma.md",
+            "enterprise/studio/rest-api.md",
+            "enterprise/studio/odata-graphql.md",
+            "enterprise/studio/in-memory.md"
+          ]
+        },
+        {
+          "label": "One-page CRUD tutorials",
+          "pages": [
+            "enterprise/studio/postgres-grid.md",
+            "enterprise/studio/supabase-grid.md",
+            "enterprise/studio/rest-grid.md",
+            "enterprise/studio/supabase-sample.md"
+          ]
+        },
+        {
+          "label": "Screens & features",
+          "pages": [
+            "enterprise/studio/schema.md",
+            "enterprise/studio/server-grid.md",
+            "enterprise/studio/edit-forms.md",
+            "enterprise/studio/relations.md",
+            "enterprise/studio/master-detail.md",
+            "enterprise/studio/dashboards.md",
+            "enterprise/studio/scheduler.md",
+            "enterprise/studio/dock-layout.md",
+            "enterprise/studio/navigation.md",
+            "enterprise/studio/realtime.md"
+          ]
+        },
+        {
+          "label": "Logic & generated code",
+          "pages": [
+            "enterprise/studio/business-logic.md",
+            "enterprise/studio/code-behind.md",
+            "enterprise/studio/code-generation.md"
+          ]
+        },
+        {
+          "label": "Auth & security",
+          "pages": [
+            "enterprise/studio/auth.md",
+            "enterprise/studio/access-control.md",
+            "enterprise/studio/audit-log.md"
+          ]
+        },
+        {
+          "label": "Ship it",
+          "pages": [
+            "enterprise/studio/theming.md",
+            "enterprise/studio/i18n.md",
+            "enterprise/studio/accessibility.md",
+            "enterprise/studio/testing.md",
+            "enterprise/studio/deployment.md"
+          ]
+        },
+        {
+          "label": "Reference & help",
+          "pages": [
+            "enterprise/studio/api.md",
+            "enterprise/studio/troubleshooting.md"
+          ]
+        }
       ]
     },
     {
@@ -447,6 +543,7 @@
         "help/ui-components/sv-check-box.md",
         "help/ui-components/sv-chip.md",
         "help/ui-components/sv-circular-progress.md",
+        "help/ui-components/sv-collapsible.md",
         "help/ui-components/sv-color-input.md",
         "help/ui-components/sv-combo-box.md",
         "help/ui-components/sv-command.md",
@@ -454,6 +551,7 @@
         "help/ui-components/sv-country-input.md",
         "help/ui-components/sv-date-range-input.md",
         "help/ui-components/sv-date-time-picker.md",
+        "help/ui-components/sv-display-primitives.md",
         "help/ui-components/sv-divider.md",
         "help/ui-components/sv-dock-layout.md",
         "help/ui-components/sv-dock-manager.md",
@@ -468,10 +566,14 @@
         "help/ui-components/sv-grid-chart.md",
         "help/ui-components/sv-grid-dropdown.md",
         "help/ui-components/sv-grid-select.md",
+        "help/ui-components/sv-hover-card.md",
+        "help/ui-components/sv-layout-primitives.md",
         "help/ui-components/sv-list-box.md",
+        "help/ui-components/sv-loading-overlay.md",
         "help/ui-components/sv-masked-input.md",
         "help/ui-components/sv-menu-list.md",
         "help/ui-components/sv-menu.md",
+        "help/ui-components/sv-menubar.md",
         "help/ui-components/sv-modal.md",
         "help/ui-components/sv-multi-select.md",
         "help/ui-components/sv-nav-pane.md",
@@ -480,16 +582,20 @@
         "help/ui-components/sv-pagination.md",
         "help/ui-components/sv-password-input.md",
         "help/ui-components/sv-phone-input.md",
+        "help/ui-components/sv-popconfirm.md",
         "help/ui-components/sv-popover.md",
         "help/ui-components/sv-progress.md",
         "help/ui-components/sv-radio-group.md",
         "help/ui-components/sv-rating.md",
         "help/ui-components/sv-repeat-button.md",
+        "help/ui-components/sv-result.md",
         "help/ui-components/sv-rich-text.md",
         "help/ui-components/sv-scroll-area.md",
+        "help/ui-components/sv-segmented.md",
         "help/ui-components/sv-skeleton.md",
         "help/ui-components/sv-slider.md",
         "help/ui-components/sv-sparkline.md",
+        "help/ui-components/sv-spinner.md",
         "help/ui-components/sv-splitter.md",
         "help/ui-components/sv-stat.md",
         "help/ui-components/sv-stepper.md",
@@ -505,7 +611,8 @@
         "help/ui-components/sv-tooltip.md",
         "help/ui-components/sv-tour.md",
         "help/ui-components/sv-tree-select.md",
-        "help/ui-components/sv-tree.md"
+        "help/ui-components/sv-tree.md",
+        "help/ui-components/sv-typography.md"
       ]
     },
     {
@@ -679,12 +786,12 @@
       "path": "enterprise/README.md",
       "url": "/enterprise/README",
       "title": "Enterprise feature pack",
-      "summary": "@svgrid/enterprise is a paid add-on for @svgrid/grid. It bolts onto the same <SvGrid> you already have and adds four feature areas: data export, data import, an AI assistant, and pivot tables.",
+      "summary": "@svgrid/enterprise is a paid add-on for @svgrid/grid. It bolts onto the same <SvGrid> you already have and adds three feature areas: data export, data import, and pivot tables. (The AI helpers are built in and **free** in @svgrid/grid - see AI assistant.)",
       "section": "enterprise",
       "pillar": "company",
       "tier": "enterprise",
-      "words": 793,
-      "lastUpdated": "2026-07-22",
+      "words": 787,
+      "lastUpdated": "2026-08-10",
       "demoIds": []
     },
     {
@@ -694,9 +801,9 @@
       "summary": "Studio is the grid-centric data-app layer in @svgrid/enterprise: turn a database or schema into a **production-ready CRUD screen** - grid, edit form, and SvelteKit API route - in seconds. One EntitySchema drives the grid columns, the edit form, validation, and the generated code.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 1695,
-      "lastUpdated": "2026-07-23",
+      "tier": "enterprise",
+      "words": 2051,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "192-data-app-studio",
         "193-studio-live-sql",
@@ -711,7 +818,8 @@
       "summary": "Studio has **authentication** (who you are, via SvAuthGate + Supabase) and, separately, **authorization** - what a signed-in user may do. Role-based access control (RBAC) gates **screens** and **write actions** (create / update / delete) per role, and it is enforced in **two** places: the generated UI *and* the generated API route. Server enforcement is the point - a tampered client can hide the buttons all it likes; the route still rejects the write.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Auth & security",
       "words": 758,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -723,7 +831,8 @@
       "summary": "A Studio screen is accessible out of the box, because it is built from the grid and the edit form - both designed to the WAI-ARIA patterns. This page is what you get for free, what you own, and how to verify it.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Ship it",
       "words": 583,
       "lastUpdated": "2026-07-22",
       "demoIds": [
@@ -737,9 +846,10 @@
       "summary": "The @svgrid/mcp server exposes Studio to AI coding agents (Claude Code, Cursor, Codex, ...) through the Model Context Protocol. Ask your agent to build a screen for a table and it introspects, scaffolds, and verifies - producing the same code the CLI and designer do.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 735,
-      "lastUpdated": "2026-07-15",
+      "tier": "enterprise",
+      "group": "Three ways to build",
+      "words": 1149,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -749,9 +859,10 @@
       "summary": "Every Studio export in one place, grouped by what it does. Each links to the guide with the full detail. All are imported from **@svgrid/enterprise** unless noted; createServerDataSource is from @svgrid/grid.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 623,
-      "lastUpdated": "2026-07-15",
+      "tier": "enterprise",
+      "group": "Reference & help",
+      "words": 678,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -761,9 +872,10 @@
       "summary": "SvStudioDesigner is the grid-centric visual **data-app** designer - compose a multi-entity app by arranging data-bound blocks on a canvas, then generate a runnable SvelteKit project. It's the app-level companion to the single-entity schema designer: where that authors one EntitySchema, this composes **screens** across **many entities**.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 2792,
-      "lastUpdated": "2026-07-19",
+      "tier": "enterprise",
+      "group": "Three ways to build",
+      "words": 3174,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -773,7 +885,8 @@
       "summary": "An audit trail records **who changed what, and when** - a baseline requirement for any regulated or multi-user app. Studio records writes **server-side**, at the API route, so the trail can't be skipped by a tampered client, and ships an **Audit log** viewer screen.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Auth & security",
       "words": 506,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -785,9 +898,10 @@
       "summary": "Put a Studio screen behind a login and scope its data per user. The pattern is **Supabase Auth for *who*, Row-Level Security for *what*** - auth establishes the signed-in user; RLS policies decide which rows that user can read and write.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 506,
-      "lastUpdated": "2026-07-22",
+      "tier": "enterprise",
+      "group": "Auth & security",
+      "words": 870,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "196-studio-auth"
       ]
@@ -799,9 +913,10 @@
       "summary": "Two ways to put business logic on an EntitySchema: **computed fields** (values derived from the row) and **hooks** (logic that runs when rows are created, updated, or deleted). Both live on the schema, so they apply everywhere the schema does - grid, edit form, and generated code.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 1213,
-      "lastUpdated": "2026-07-22",
+      "tier": "enterprise",
+      "group": "Logic & generated code",
+      "words": 1403,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "199-studio-computed-hooks"
       ]
@@ -813,9 +928,23 @@
       "summary": "@svgrid/studio is the command-line generator. One command reads a schema or a live database and writes a working CRUD screen into your SvelteKit app.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 647,
-      "lastUpdated": "2026-07-22",
+      "tier": "enterprise",
+      "group": "Three ways to build",
+      "words": 825,
+      "lastUpdated": "2026-08-11",
+      "demoIds": []
+    },
+    {
+      "path": "enterprise/studio/code-behind.md",
+      "url": "/enterprise/studio/code-behind",
+      "title": "Code behind (Code view)",
+      "summary": "The visual designer covers layout, data, validation, and no-code business rules. When you need real logic - run something on load, react to a click, change a grid option at runtime - open a screen's **Code view** and write TypeScript against a typed **ctx** object. Your code lives in a user-owned file (handlers.ts) that regeneration never overwrites, and ctx is fully typed by a generated page-context.ts, so autocomplete offers every block and every grid operation on the screen.",
+      "section": "enterprise/studio",
+      "pillar": "studio",
+      "tier": "enterprise",
+      "group": "Logic & generated code",
+      "words": 800,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -825,12 +954,26 @@
       "summary": "Studio generates plain SvelteKit code you own - there is no runtime and no lock-in. The same scaffold() core powers the CLI, the AI generator, and the visual designer, so all three emit identical files.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 615,
-      "lastUpdated": "2026-07-15",
+      "tier": "enterprise",
+      "group": "Logic & generated code",
+      "words": 804,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "192-data-app-studio"
       ]
+    },
+    {
+      "path": "enterprise/studio/concepts.md",
+      "url": "/enterprise/studio/concepts",
+      "title": "Concepts",
+      "summary": "The mental model behind Studio: one EntitySchema drives the screens, the data binding, and the generated code. This page walks that pipeline once, defines every Studio term, and ends with a table for picking which build tool fits how you work. Ten minutes here makes every other Studio page shorter.",
+      "section": "enterprise/studio",
+      "pillar": "studio",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 946,
+      "lastUpdated": "2026-08-11",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/dashboards.md",
@@ -839,9 +982,10 @@
       "summary": "SvSchemaDashboard renders a **schema-driven dashboard** - KPI tiles + charts - over an entity. It's a declarative data *view*, not a drag-drop page builder: you describe the widgets as plain data and the component lays them out, reusing SvSchemaChart for the charts.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Screens & features",
       "words": 708,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "200-studio-dashboard"
       ]
@@ -853,9 +997,10 @@
       "summary": "Every Studio screen binds to data through one small, uniform contract: **ServerDataSource**. Read a page of rows, and (optionally) create, update, and delete. Because sorting, filtering, pagination, and the edit form all speak to this one interface, the grid works the same whether your data comes from PostgreSQL, a REST API, or an in-memory array.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 573,
-      "lastUpdated": "2026-07-17",
+      "tier": "enterprise",
+      "group": "Connect to data",
+      "words": 922,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -865,9 +1010,10 @@
       "summary": "Studio connects directly to your relational database, reads a table's columns from the catalog, and scaffolds a connected CRUD screen. Supported: **PostgreSQL, Supabase, MySQL / MariaDB, SQL Server, SQLite**.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 1410,
-      "lastUpdated": "2026-07-17",
+      "tier": "enterprise",
+      "group": "Connect to data",
+      "words": 1677,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "194-studio-supabase",
         "193-studio-live-sql"
@@ -880,7 +1026,8 @@
       "summary": "A Studio-generated app is a normal SvelteKit app - the screens are +page.svelte files and the data endpoints are +server.ts routes. It deploys anywhere SvelteKit runs. This page is the production checklist.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Ship it",
       "words": 967,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -888,13 +1035,14 @@
     {
       "path": "enterprise/studio/designer.md",
       "url": "/enterprise/studio/designer",
-      "title": "Visual designer",
-      "summary": "SvSchemaDesigner is the human-in-the-loop surface over the Studio engine. Author an EntitySchema visually, see the grid and edit form update live, and click **Generate code** to emit the same SvelteKit files the CLI and AI paths produce.",
+      "title": "Schema designer (embeddable)",
+      "summary": "SvSchemaDesigner is a small, **embeddable, single-entity** component: drop it into your own app to author one EntitySchema visually - add fields, set types and validation - and see the grid and edit form update live. It's controlled (you own where the schema is stored), so it's the building block for a \"let users customize this table\" screen.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 495,
-      "lastUpdated": "2026-07-15",
+      "tier": "enterprise",
+      "group": "Three ways to build",
+      "words": 589,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -904,9 +1052,10 @@
       "summary": "By default a screen arranges its blocks in a responsive **12-column grid**. For dashboards, consoles, and analyst tools you can switch a screen to a **docking workspace** instead: the same blocks become **dockable, floatable, pinnable panes** (an SvDockManager). Drag a tab to split a region, pull it out into a floating window, or pin it to an edge - and the arrangement is saved per user.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 471,
-      "lastUpdated": "2026-08-01",
+      "tier": "enterprise",
+      "group": "Screens & features",
+      "words": 603,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "362-dock-manager"
       ]
@@ -918,7 +1067,8 @@
       "summary": "If you use Drizzle ORM, Studio can scaffold a screen straight from your schema.ts - no live database connection needed at generation time. Your schema file is the single source of truth.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Connect to data",
       "words": 614,
       "lastUpdated": "2026-07-13",
       "demoIds": []
@@ -930,7 +1080,8 @@
       "summary": "SvGridEditPanel is the create / edit form for a row. It renders itself from an EntitySchema, validates input, and hands you a ready payload to save. It presents as a right-hand **drawer**, a centered **modal**, or **inline**, and follows the grid's light / dark theme.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Screens & features",
       "words": 909,
       "lastUpdated": "2026-07-18",
       "demoIds": [
@@ -944,9 +1095,10 @@
       "summary": "This is the gentlest path into SvGrid Studio. By the end you will have a real, working **Customers** screen - a grid you can sort, filter, and page, with a create / edit form and delete - running on your machine. No prior experience with SvGrid is assumed.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 1667,
-      "lastUpdated": "2026-07-23",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 2535,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "192-data-app-studio",
         "193-studio-live-sql",
@@ -960,7 +1112,8 @@
       "summary": "Ship a Studio app in more than one language. When localization is on, the generator emits a **message catalog** + a **locale switcher**, and routes the app's user-facing strings - nav labels, screen titles, the New button, and **grid column headers** - through a reactive t() translator.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Ship it",
       "words": 539,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -972,7 +1125,8 @@
       "summary": "The in-memory source runs a full CRUD data screen against a plain array - no database, no API. It applies the grid's filter, global search, sort, and paging in memory, and supports create / update / delete. Ideal for prototyping a schema, tests, demos, static reference data, or seeding a screen before the backend exists.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Connect to data",
       "words": 624,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -980,13 +1134,14 @@
     {
       "path": "enterprise/studio/launch.md",
       "url": "/enterprise/studio/launch",
-      "title": "Launch the designer",
+      "title": "Launch the designer (CLI)",
       "summary": "One command opens the visual app designer in your browser, backed by a tiny local server that **auto-saves** your design to disk and **generates the app** into a folder - no host app to build, no copy-paste JSON.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 911,
-      "lastUpdated": "2026-07-23",
+      "tier": "enterprise",
+      "group": "Three ways to build",
+      "words": 957,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -996,7 +1151,8 @@
       "summary": "The local database source gives a generated app a **real, persistent Postgres** that runs entirely in the browser - no connection string, no keys, no server to provision. It is powered by PGlite, a full WASM build of Postgres that stores its data in IndexedDB, so rows survive reloads and the app works offline.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Connect to data",
       "words": 618,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -1008,7 +1164,8 @@
       "summary": "SvGridMasterDetail expands a master row into a nested grid of related records - orders and their line items, customers and their invoices, and so on. It is a feature of the grid's data stack (built on the grid's own isDetailRow / renderDetailRow), not a separate widget. Click a master row to expand or collapse its detail region.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Screens & features",
       "words": 908,
       "lastUpdated": "2026-07-15",
       "demoIds": [
@@ -1022,7 +1179,8 @@
       "summary": "Blocks show data; **navigation** turns a set of screens into an app. Studio wires two kinds of flow, both grid-native: **drill-through** (click a row or a chart category to open another screen, filtered to what you clicked) and **row action buttons** (per-row Edit / Delete / Open).",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Screens & features",
       "words": 483,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -1034,7 +1192,8 @@
       "summary": "Studio binds to OData and GraphQL the same way it binds to any API: implement the ServerDataSource contract and translate the grid's request (paging + sortModel + filterModel) into the query the service expects. The grid, edit form, sorting, filtering, and pagination then work unchanged.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Connect to data",
       "words": 481,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -1046,9 +1205,10 @@
       "summary": "The **one page** that wires a data grid to a **PostgreSQL** database with full **create / read / update / delete** - sorting, filtering, search, and paging included. SQL runs on the server (a driver and credentials can't live in the browser), so this has a server route plus the page. Copy the four files and run.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 1046,
-      "lastUpdated": "2026-07-15",
+      "tier": "enterprise",
+      "group": "One-page CRUD tutorials",
+      "words": 1092,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -1058,7 +1218,8 @@
       "summary": "If you use Prisma, Studio can scaffold screens straight from your schema.prisma - no live database connection needed at generation time. Your Prisma schema is the single source of truth, and the --from flag auto-detects it (by the .prisma extension or a model block).",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Connect to data",
       "words": 513,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -1070,9 +1231,10 @@
       "summary": "Make a Studio screen **live**: when a row is inserted, updated, or deleted in the database - by another user, another tab, or a background job - the grid reflects it instantly, with no polling. This uses Supabase Realtime (Postgres change streams) and the createSupabaseRealtime helper.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 676,
-      "lastUpdated": "2026-07-22",
+      "tier": "enterprise",
+      "group": "Screens & features",
+      "words": 740,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "194-studio-supabase"
       ]
@@ -1084,7 +1246,8 @@
       "summary": "Real apps have related entities - a company has many deals, an order has many line items. Studio models relations in the EntitySchema and turns them into **master-detail** screens (a row that expands into a nested grid) and **relation pickers** in the edit form.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Screens & features",
       "words": 889,
       "lastUpdated": "2026-07-22",
       "demoIds": [
@@ -1099,9 +1262,10 @@
       "summary": "Not every backend is a database Studio can introspect. When you have an existing REST API - or any bespoke data layer - back the screen with a ServerDataSource. Use the built-in **createRestDataSource** for a conventional JSON API, or implement the four methods by hand for full control. Either way the grid, edit form, sorting, filtering, and pagination keep working unchanged.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 1074,
-      "lastUpdated": "2026-07-22",
+      "tier": "enterprise",
+      "group": "Connect to data",
+      "words": 1236,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "337-live-rest-dummyjson"
       ]
@@ -1113,9 +1277,10 @@
       "summary": "The **one page** that wires a data grid to an existing **REST / JSON API** with full **create / read / update / delete** - sorting, filtering, search, and paging included. Copy the three files and run.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 934,
-      "lastUpdated": "2026-07-15",
+      "tier": "enterprise",
+      "group": "One-page CRUD tutorials",
+      "words": 982,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -1125,9 +1290,10 @@
       "summary": "The fastest way to a working app: open a **ready-made sample**, see it running with realistic data, then point it at **your own database**. No block-by-block build, no placeholder rows.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 947,
-      "lastUpdated": "2026-07-19",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 967,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -1137,9 +1303,10 @@
       "summary": "Any grid whose rows carry a date can render as a **calendar** instead of a table - a Month / Week / Day / Agenda (and Timeline) view where each row becomes an event placed by time. It is a **view of the grid**, exactly like the Kanban board: same rows, same data source, same edit form - only the presentation changes. Drag an event to reschedule it and the new time is written back through the data source.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 624,
-      "lastUpdated": "2026-08-02",
+      "tier": "enterprise",
+      "group": "Screens & features",
+      "words": 655,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "363-scheduler-intro",
         "371-scheduler-timeline",
@@ -1157,7 +1324,8 @@
       "summary": "EntitySchema is the single model at the heart of Studio. It describes an entity - its fields, types, validation, keys, and relations - and everything else derives from it: the grid columns, the edit form, validation, and the generated code.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Screens & features",
       "words": 950,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -1169,7 +1337,8 @@
       "summary": "In a Studio screen the data lives on the server, so the grid does not sort, filter, or paginate locally - it renders its **native UI** and emits the user's intent, and your data source fetches the matching page. This is \"server mode\", and it is wired for you in generated screens. This page shows how it works so you can customize it.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Screens & features",
       "words": 470,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -1181,9 +1350,10 @@
       "summary": "This is the **one page** that does it all: create a data grid, connect it to a **Supabase** database, and get full **create / read / update / delete** - sorting, filtering, search, and paging included. Everything is here; copy the four files and run.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 1316,
-      "lastUpdated": "2026-07-15",
+      "tier": "enterprise",
+      "group": "One-page CRUD tutorials",
+      "words": 1355,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "194-studio-supabase"
       ]
@@ -1195,9 +1365,10 @@
       "summary": "A ready-made, **relational** public dataset you can host on Supabase in one paste and connect to from the browser. It is the classic **Northwind** database - categories, customers, products, orders, order_details - plus an order_lines **join view**, so you get a real multi-table schema, not a single flat table.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 1027,
-      "lastUpdated": "2026-07-22",
+      "tier": "enterprise",
+      "group": "One-page CRUD tutorials",
+      "words": 1071,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "338-pglite-northwind",
         "194-studio-supabase"
@@ -1210,9 +1381,10 @@
       "summary": "Supabase gives you a hosted PostgreSQL database with a generous free tier and a browser-safe client. This guide takes you from an empty Supabase project to a live CRUD screen, step by step. No backend to run.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 1231,
-      "lastUpdated": "2026-07-22",
+      "tier": "enterprise",
+      "group": "Connect to data",
+      "words": 1454,
+      "lastUpdated": "2026-08-11",
       "demoIds": [
         "194-studio-supabase"
       ]
@@ -1224,7 +1396,8 @@
       "summary": "A Studio screen is plain SvelteKit code, so you test it with the tools you already use. Three layers, cheapest first: the **data source** (no DOM), the **screen** (a component test), and the **flow** (end to end).",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Ship it",
       "words": 649,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -1236,7 +1409,8 @@
       "summary": "Every Studio surface - the grid, the edit panel (drawer / modal / inline), the schema designer, and the generated screens - is styled with the grid's --sg-* CSS custom properties. Set the tokens once and everything follows, including light / dark. No per-component styling required.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Ship it",
       "words": 470,
       "lastUpdated": "2026-07-22",
       "demoIds": []
@@ -1248,9 +1422,10 @@
       "summary": "Common issues and answers when building with SvGrid Studio.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
-      "words": 674,
-      "lastUpdated": "2026-07-13",
+      "tier": "enterprise",
+      "group": "Reference & help",
+      "words": 806,
+      "lastUpdated": "2026-08-11",
       "demoIds": []
     },
     {
@@ -1260,7 +1435,8 @@
       "summary": "This walkthrough builds a small CRM - **Companies**, **Contacts**, and **Deals** - with SvGrid Studio: scaffolded CRUD screens, a related-record picker, a master-detail view, validation, theming, and a real database. Follow it end to end in about fifteen minutes.",
       "section": "enterprise/studio",
       "pillar": "studio",
-      "tier": "community",
+      "tier": "enterprise",
+      "group": "Start here",
       "words": 738,
       "lastUpdated": "2026-07-15",
       "demoIds": []
@@ -1430,8 +1606,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1249,
-      "lastUpdated": "2026-07-22",
+      "words": 1247,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "75-ai-smart-paste"
       ]
@@ -1444,8 +1620,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2090,
-      "lastUpdated": "2026-07-30",
+      "words": 2097,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -1453,15 +1629,29 @@
     {
       "path": "help/ai.md",
       "url": "/help/ai",
-      "title": "AI assistant - Enterprise",
-      "summary": "Bring a language model into your grid with four helpers that stay strictly model-agnostic: **natural-language filter**, **smart fill**, **summarise**, and **classify**. Ships in the paid **@svgrid/enterprise** add-on; the Community build does not include these features.",
+      "title": "AI assistant",
+      "summary": "Bring a language model into your grid with helpers that stay strictly model-agnostic: **natural-language filter**, **smart fill**, **summarise**, **classify**, **chart-this**, **find anomalies**, and **natural-language export**. Built in and **free** in **@svgrid/grid** - no license key, no separate package. They ship no model client and do nothing until you register a provider, so they add nothing to your bundle unless you import them.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1784,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "51-ai-assistant"
+      ]
+    },
+    {
+      "path": "help/alerts.md",
+      "url": "/help/alerts",
+      "title": "Alerts - Enterprise",
+      "summary": "Alert rules let your users say \"tell me when the data does X\" - and then act on it automatically: raise a toast, tint the row, flash the cell, block the edit, or just log it. Rules are authored at runtime in a no-code builder, persisted, and shareable as JSON. No redeploy to add an alert.",
       "section": "help",
       "pillar": "grid",
       "tier": "enterprise",
-      "words": 1706,
-      "lastUpdated": "2026-07-22",
+      "words": 1302,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
-        "51-ai-assistant"
+        "399-alert-rules-engine"
       ]
     },
     {
@@ -1906,12 +2096,12 @@
       "path": "help/comparison.md",
       "url": "/help/comparison",
       "title": "Comparison: SvGrid vs AG Grid vs TanStack Table",
-      "summary": "This is the page enterprise evaluators land on first. It is honest. The three projects solve overlapping problems and the right choice depends on your stack, your budget, and which constraints bite hardest.",
+      "summary": "The three projects solve overlapping problems, and the right choice depends on the framework you ship on and your budget.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1480,
-      "lastUpdated": "2026-06-28",
+      "words": 1467,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2081,6 +2271,18 @@
       "demoIds": [
         "21-export-and-print"
       ]
+    },
+    {
+      "path": "help/expressions-query.md",
+      "url": "/help/expressions-query",
+      "title": "Expression query language - Enterprise",
+      "summary": "The expression language is a small, dependency-free query language your users author through the UI. It is the connective tissue behind alerts (and, in time, styled and calculated columns): one model for predicates, scalar maths, and change detection, evaluated the same way everywhere.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "enterprise",
+      "words": 546,
+      "lastUpdated": "2026-08-08",
+      "demoIds": []
     },
     {
       "path": "help/filtering/applying-filters.md",
@@ -2400,8 +2602,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1287,
-      "lastUpdated": "2026-07-29",
+      "words": 1332,
+      "lastUpdated": "2026-08-08",
       "demoIds": [
         "00-trading-desk"
       ]
@@ -2438,8 +2640,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2129,
-      "lastUpdated": "2026-07-02",
+      "words": 2127,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "08-tree-and-master-detail",
         "09-server-side"
@@ -2461,12 +2663,12 @@
       "path": "help/migrating-from-glide.md",
       "url": "/help/migrating-from-glide",
       "title": "Migrating from Glide Data Grid",
-      "summary": "Glide Data Grid is the canvas-rendered, ultra-high-performance choice for very wide datasets (100k+ rows, 100+ columns). Sv-grid renders to DOM with virtualization, which trades the absolute peak FPS for accessibility + standards-compliant HTML.",
+      "summary": "Glide Data Grid is the canvas-rendered, ultra-high-performance choice for very wide datasets (100k+ rows, 100+ columns). Sv-grid renders to DOM with virtualization, which trades peak FPS for accessibility + standards-compliant HTML.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 939,
-      "lastUpdated": "2026-06-12",
+      "words": 937,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2489,8 +2691,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 967,
-      "lastUpdated": "2026-06-16",
+      "words": 970,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "27-spreadsheet-ribbon"
       ]
@@ -2503,8 +2705,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 573,
-      "lastUpdated": "2026-06-16",
+      "words": 574,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2577,8 +2779,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 733,
-      "lastUpdated": "2026-06-16",
+      "words": 732,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2613,8 +2815,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 484,
-      "lastUpdated": "2026-06-16",
+      "words": 482,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -2931,8 +3133,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 4870,
-      "lastUpdated": "2026-08-03",
+      "words": 6784,
+      "lastUpdated": "2026-08-08",
       "demoIds": [
         "363-scheduler-intro",
         "382-scheduler-app-clinic",
@@ -3349,8 +3551,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 852,
-      "lastUpdated": "2026-08-03",
+      "words": 891,
+      "lastUpdated": "2026-08-10",
       "demoIds": []
     },
     {
@@ -3397,8 +3599,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 636,
-      "lastUpdated": "2026-08-03",
+      "words": 666,
+      "lastUpdated": "2026-08-09",
       "demoIds": []
     },
     {
@@ -3461,10 +3663,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 811,
-      "lastUpdated": "2026-08-03",
+      "words": 893,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
-        "315-autocomplete"
+        "315-autocomplete",
+        "411-resizable-dropdowns"
       ]
     },
     {
@@ -3559,8 +3762,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1406,
-      "lastUpdated": "2026-08-03",
+      "words": 1452,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "250-calendar",
         "258-calendar-range",
@@ -3639,6 +3842,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-collapsible.md",
+      "url": "/help/ui-components/sv-collapsible",
+      "title": "SvCollapsible",
+      "summary": "A single show/hide section: a header that toggles one region of content open and closed, with a smooth height animation. The standalone building block behind an accordion.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 391,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-color-input.md",
       "url": "/help/ui-components/sv-color-input",
       "title": "SvColorInput",
@@ -3646,8 +3863,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 577,
-      "lastUpdated": "2026-08-03",
+      "words": 609,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "304-color-input"
       ]
@@ -3660,10 +3877,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 869,
-      "lastUpdated": "2026-08-03",
+      "words": 1047,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
-        "313-combobox"
+        "313-combobox",
+        "411-resizable-dropdowns"
       ]
     },
     {
@@ -3738,6 +3956,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-display-primitives.md",
+      "url": "/help/ui-components/sv-display-primitives",
+      "title": "Display primitives - SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden",
+      "summary": "The small display helpers you reach for constantly in docs, command palettes, and media layouts - each themed from the shared --sg-* tokens and dependency-free.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 517,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "410-typography-display"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-divider.md",
       "url": "/help/ui-components/sv-divider",
       "title": "SvDivider",
@@ -3801,10 +4033,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1184,
-      "lastUpdated": "2026-08-03",
+      "words": 1272,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
-        "314-dropdownlist"
+        "314-dropdownlist",
+        "411-resizable-dropdowns"
       ]
     },
     {
@@ -3815,8 +4048,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 620,
-      "lastUpdated": "2026-08-03",
+      "words": 709,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "334-input-editors"
       ]
@@ -3843,8 +4076,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 683,
-      "lastUpdated": "2026-08-03",
+      "words": 968,
+      "lastUpdated": "2026-08-10",
       "demoIds": []
     },
     {
@@ -3869,8 +4102,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1631,
-      "lastUpdated": "2026-08-03",
+      "words": 2175,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "322-form",
         "323-form-dynamic",
@@ -3933,6 +4166,34 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-hover-card.md",
+      "url": "/help/ui-components/sv-hover-card",
+      "title": "SvHoverCard",
+      "summary": "A rich preview card that opens when the pointer rests on its anchor and closes shortly after it leaves.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 552,
+      "lastUpdated": "2026-08-09",
+      "demoIds": [
+        "289-overlays-hovercard-menubar"
+      ]
+    },
+    {
+      "path": "help/ui-components/sv-layout-primitives.md",
+      "url": "/help/ui-components/sv-layout-primitives",
+      "title": "Layout primitives - SvStack, SvGroup, SvSimpleGrid",
+      "summary": "Three tiny flex/grid wrappers that cover the layouts you reach for constantly, so you stop hand-writing display: flex; gap: … on every wrapper div. They carry no visual styling - just structure - and take a numeric gap (pixels) or any CSS length.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 511,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-list-box.md",
       "url": "/help/ui-components/sv-list-box",
       "title": "SvListBox",
@@ -3947,6 +4208,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-loading-overlay.md",
+      "url": "/help/ui-components/sv-loading-overlay",
+      "title": "SvLoadingOverlay",
+      "summary": "A cover-a-container loading scrim: a translucent overlay with a centred spinner that sits on top of any positioned parent while its content loads or saves.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 383,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-masked-input.md",
       "url": "/help/ui-components/sv-masked-input",
       "title": "SvMaskedInput",
@@ -3954,8 +4229,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 631,
-      "lastUpdated": "2026-08-03",
+      "words": 740,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "302-masked-input"
       ]
@@ -3968,8 +4243,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 818,
-      "lastUpdated": "2026-08-03",
+      "words": 857,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "326-menu"
       ]
@@ -3982,10 +4257,24 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 838,
-      "lastUpdated": "2026-08-03",
+      "words": 892,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "326-menu"
+      ]
+    },
+    {
+      "path": "help/ui-components/sv-menubar.md",
+      "url": "/help/ui-components/sv-menubar",
+      "title": "SvMenubar",
+      "summary": "An application menu bar: a horizontal row of menu buttons (File / Edit / View ...) that each open a dropdown.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 604,
+      "lastUpdated": "2026-08-09",
+      "demoIds": [
+        "289-overlays-hovercard-menubar"
       ]
     },
     {
@@ -4038,8 +4327,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 671,
-      "lastUpdated": "2026-08-03",
+      "words": 833,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "300-number-input"
       ]
@@ -4080,8 +4369,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 596,
-      "lastUpdated": "2026-08-03",
+      "words": 669,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "301-password-input"
       ]
@@ -4094,10 +4383,24 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 589,
-      "lastUpdated": "2026-08-03",
+      "words": 647,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "303-phone-input"
+      ]
+    },
+    {
+      "path": "help/ui-components/sv-popconfirm.md",
+      "url": "/help/ui-components/sv-popconfirm",
+      "title": "SvPopconfirm",
+      "summary": "A quick confirm step in a popover anchored to its trigger, for a low-stakes destructive action where a full modal dialog would be too heavy.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 593,
+      "lastUpdated": "2026-08-09",
+      "demoIds": [
+        "289-overlays-hovercard-menubar"
       ]
     },
     {
@@ -4108,8 +4411,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 690,
-      "lastUpdated": "2026-08-03",
+      "words": 922,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "288-overlays"
       ]
@@ -4171,6 +4474,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-result.md",
+      "url": "/help/ui-components/sv-result",
+      "title": "SvResult",
+      "summary": "A full result page: a centred icon, title, description, and actions for the outcome of a flow - success, error, warning, info, or not-found. The whole-screen counterpart to a toast.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 363,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-rich-text.md",
       "url": "/help/ui-components/sv-rich-text",
       "title": "SvRichText",
@@ -4199,6 +4516,20 @@
       ]
     },
     {
+      "path": "help/ui-components/sv-segmented.md",
+      "url": "/help/ui-components/sv-segmented",
+      "title": "SvSegmented",
+      "summary": "A segmented control: a compact row of mutually-exclusive options in a shared track - the modern alternative to a small radio group or a tab strip for a setting.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 553,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "408-segmented"
+      ]
+    },
+    {
       "path": "help/ui-components/sv-skeleton.md",
       "url": "/help/ui-components/sv-skeleton",
       "title": "SvSkeleton",
@@ -4206,8 +4537,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 607,
-      "lastUpdated": "2026-08-03",
+      "words": 611,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "333-app-feedback"
       ]
@@ -4237,6 +4568,20 @@
       "words": 662,
       "lastUpdated": "2026-08-03",
       "demoIds": []
+    },
+    {
+      "path": "help/ui-components/sv-spinner.md",
+      "url": "/help/ui-components/sv-spinner",
+      "title": "SvSpinner",
+      "summary": "An indeterminate spinner: a small spinning ring for \"something is happening\" when you cannot show real progress.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 330,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "409-layout-feedback"
+      ]
     },
     {
       "path": "help/ui-components/sv-splitter.md",
@@ -4344,8 +4689,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 682,
-      "lastUpdated": "2026-08-03",
+      "words": 906,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "334-input-editors"
       ]
@@ -4358,8 +4703,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 745,
-      "lastUpdated": "2026-08-03",
+      "words": 791,
+      "lastUpdated": "2026-08-10",
       "demoIds": [
         "251-timepicker"
       ]
@@ -4386,8 +4731,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 706,
-      "lastUpdated": "2026-08-03",
+      "words": 993,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "331-app-overlays"
       ]
@@ -4414,8 +4759,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 560,
-      "lastUpdated": "2026-08-03",
+      "words": 790,
+      "lastUpdated": "2026-08-09",
       "demoIds": [
         "288-overlays"
       ]
@@ -4460,6 +4805,20 @@
       "lastUpdated": "2026-08-03",
       "demoIds": [
         "321-tree"
+      ]
+    },
+    {
+      "path": "help/ui-components/sv-typography.md",
+      "url": "/help/ui-components/sv-typography",
+      "title": "Typography - SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList",
+      "summary": "A small set of prose primitives so headings, body copy, links, quotes, highlights, and lists all pull from one type scale and the shared --sg-* tokens - instead of scattering ad-hoc font sizes and colours across your app.",
+      "section": "help/ui-components",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 804,
+      "lastUpdated": "2026-08-10",
+      "demoIds": [
+        "410-typography-display"
       ]
     },
     {

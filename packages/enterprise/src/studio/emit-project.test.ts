@@ -3,7 +3,7 @@ import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
 import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setScreenDock, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
-import { emitStudioProject, emitStudioAppBundle, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
+import { emitStudioProject, emitStudioAppBundle, emitStudioFragment, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
 import { UI_COMPONENT_REGISTRY } from './ui-components'
 
 /** Type-check a handler BODY against a generated ambient ctx `.d.ts` using the real
@@ -47,6 +47,320 @@ const orders: EntitySchema = {
     { field: 'customer_id', type: 'relation', relation: { entity: 'customers', foreignKey: 'customer_id', labelField: 'name' } },
   ],
 }
+
+describe('SSR-native screens (renderMode: ssr)', () => {
+  const ssrProject = (): StudioProject => {
+    const p = createProject([customers])
+    return { ...p, screens: p.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })) }
+  }
+
+  it('emits +page.server.ts with a load + CRUD form actions + server validation', () => {
+    const server = emitStudioProject(ssrProject()).find((f) => f.path === 'src/routes/customers/+page.server.ts')
+    expect(server, 'an SSR screen should emit a +page.server.ts').toBeTruthy()
+    const c = server!.contents
+    expect(c).toMatch(/export const ssr = true/) // opts back into SSR over the SPA layout's ssr=false
+    expect(c).toMatch(/export const load: PageServerLoad/)
+    expect(c).toMatch(/export const actions: Actions/)
+    expect(c).toMatch(/create:\s*async/)
+    expect(c).toMatch(/update:\s*async/)
+    expect(c).toMatch(/delete:\s*async/)
+    expect(c).toMatch(/await validateAll\(customersSchema, values\)/) // server-side validation
+    expect(c).toMatch(/return fail\(422/)
+    expect(c).toMatch(/planFromSearchParams\(url/)
+    expect(c).toMatch(/await customersSource\.getRows\(plan\)/)
+  })
+
+  it('emits an SSR +page.svelte: server rows, URL-driven sort/page, form-action editing', () => {
+    const page = emitStudioProject(ssrProject()).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/import type \{ PageProps \} from '\.\/\$types'/)
+    expect(page).toMatch(/data=\{data\.rows\}/) // renders SSR'd rows
+    expect(page).toMatch(/externalSort/)
+    expect(page).toMatch(/initialSorting=\{data\.sort\}/) // header indicator matches the URL sort on hard reload
+    expect(page).toMatch(/externalPagination/)
+    expect(page).toMatch(/onSortingChange=/)
+    expect(page).toMatch(/use:enhance=\{onSubmit\}/) // progressive enhancement
+    expect(page).toMatch(/action=\{isCreate \? '\?\/create' : '\?\/update'\}/)
+    // It must NOT fall back to the client data-source controller.
+    expect(page).not.toMatch(/createServerDataSource/)
+    // Valid Svelte 5.
+    expect(() => compile(page, { generate: 'client' })).not.toThrow()
+  })
+
+  it('SSR grid honors filterable: URL-driven filter (q + f_<col>) via applyFilters; off when not filterable', () => {
+    const p0 = createProject([customers])
+    const withFilter: StudioProject = {
+      ...p0,
+      screens: p0.screens.map((s) => ({
+        ...s,
+        renderMode: 'ssr' as const,
+        blocks: s.blocks.map((b) => (b.config.kind === 'grid' ? { ...b, config: { ...b.config, filterable: true } } : b)),
+      })),
+    }
+    const page = emitStudioProject(withFilter).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/externalFilter/)
+    expect(page).toMatch(/onFiltersChange=\{applyFilters\}/)
+    expect(page).toMatch(/function applyFilters/)
+    expect(page).toMatch(/sp\.set\('f_' \+ c\.id, c\.value\)/) // per-column f_ params
+    // The default grid (filterable: false) omits the whole filter surface.
+    const off = emitStudioProject(ssrProject()).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(off).not.toMatch(/externalFilter/)
+    expect(off).not.toMatch(/function applyFilters/)
+  })
+
+  it('emits the shared server query helper once', () => {
+    const files = emitStudioProject(ssrProject())
+    const helpers = files.filter((f) => f.path === 'src/lib/server/query.ts')
+    expect(helpers).toHaveLength(1)
+    expect(helpers[0]!.contents).toMatch(/export function planFromSearchParams/)
+  })
+
+  it('sql SSR screen: load/actions proxy to the connected /api route via createKitDataSource', () => {
+    const p0 = createProject([customers])
+    const p: StudioProject = {
+      ...p0,
+      dataSource: 'sql',
+      dataSources: { customers: { kind: 'sql', dialect: 'postgres', table: 'customers' } },
+      screens: p0.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })),
+    }
+    const files = emitStudioProject(p)
+    const server = files.find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).toMatch(/import \{ validateAll, createKitDataSource \} from '@svgrid\/enterprise'/)
+    expect(server).toMatch(/createKitDataSource<Customers>\(\{ endpoint: '\/api\/customers', fetch \}\)/)
+    expect(server).toMatch(/load: PageServerLoad = async \(\{ url, fetch \}\)/) // load gets event.fetch
+    expect(server).not.toMatch(/from '\$lib\/data'/) // no in-process source import for sql
+    // The connected /api route is still emitted - enforcement (validate/RBAC/triggers/audit) lives there.
+    expect(files.find((f) => f.path === 'src/routes/api/customers/+server.ts')).toBeTruthy()
+    // Page still compiles.
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(() => compile(page, { generate: 'client' })).not.toThrow()
+  })
+
+  it('read-only SSR screens (dashboard/kpi): load-only server file + page renders from data.*', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? { ...s, blocks: [], renderMode: 'ssr' as const } : s)) }
+    p = addBlock(p, sid, 'kpi')
+    p = addBlock(p, sid, 'chart')
+    const files = emitStudioProject(p)
+    const server = files.find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).toMatch(/export const ssr = true/)
+    expect(server).toMatch(/export const load: PageServerLoad/)
+    expect(server).toMatch(/const rows = \(await customersSource\.getRows\(PAGE\)\)\.rows/)
+    expect(server).not.toMatch(/export const actions/) // read-only
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/let \{ data \}: PageProps = \$props\(\)/)
+    expect(page).toMatch(/const allRows = \$derived\(data\.rows as Customers\[\]\)/)
+    expect(page).not.toMatch(/loadAll\(\)/)
+    expect(page).not.toMatch(/from '\$lib\/data'/) // all data comes from the server load
+    expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('read-only SSR + master-detail: child collections load server-side too (sql via /api)', () => {
+    const p0 = createProject([customers, orders])
+    let p: StudioProject = {
+      ...p0,
+      dataSource: 'sql',
+      dataSources: {
+        customers: { kind: 'sql', table: 'customers', dialect: 'postgres' },
+        orders: { kind: 'sql', table: 'orders', dialect: 'postgres' },
+      },
+    }
+    const sid = p.screens[0]!.id
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? { ...s, blocks: [], renderMode: 'ssr' as const } : s)) }
+    p = addBlock(p, sid, 'master-detail')
+    const mdId = p.screens[0]!.blocks.at(-1)!.id
+    p = updateBlock(p, sid, mdId, { config: { childEntity: 'orders', foreignKey: 'customer_id' } as Partial<MasterDetailConfig> })
+    const files = emitStudioProject(p)
+    const server = files.find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).toMatch(/createKitDataSource<Record<string, unknown>>\(\{ endpoint: '\/api\/customers', fetch \}\)/)
+    expect(server).toMatch(/const md_orders_rows = \(await createKitDataSource.*'\/api\/orders'/)
+    expect(server).toMatch(/return \{ rows, md_orders_rows \}/)
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/const md_orders_rows = \$derived\(data\.md_orders_rows as Orders\[\]\)/)
+    expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('a board screen stays SPA even with renderMode ssr (client-only interaction)', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = { ...p, screens: p.screens.map((s) => (s.id === sid ? { ...s, blocks: [], renderMode: 'ssr' as const } : s)) }
+    p = addBlock(p, sid, 'board')
+    const files = emitStudioProject(p)
+    expect(files.find((f) => f.path === 'src/routes/customers/+page.server.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents).toMatch(/loadAll\(\)/)
+  })
+
+  it('sql SSR + relation field: prefetches options via the related /api route', () => {
+    const p0 = createProject([customers, orders])
+    const p: StudioProject = {
+      ...p0,
+      dataSource: 'sql',
+      dataSources: { customers: { kind: 'sql', dialect: 'postgres', table: 'customers' }, orders: { kind: 'sql', dialect: 'postgres', table: 'orders' } },
+      screens: p0.screens.map((s) => (s.entity === 'orders' ? { ...s, renderMode: 'ssr' as const } : s)),
+    }
+    const server = emitStudioProject(p).find((f) => f.path === 'src/routes/orders/+page.server.ts')!.contents
+    expect(server).toMatch(/const customer_idOptions = \(await createKitDataSource<Record<string, unknown>>\(\{ endpoint: '\/api\/customers', fetch \}\)\.getRows\(/)
+    expect(server).toMatch(/, customer_idOptions \}/)
+    expect(server).not.toMatch(/from '\$lib\/data'/) // sql uses the /api route, not the in-process source
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/orders/+page.svelte')!.contents
+    expect(page).toMatch(/<select name='customer_id'/)
+    expect(page).toMatch(/#each data\.customer_idOptions as o/)
+  })
+
+  it('memory SSR + RBAC: load/actions enforce authz inline (sql inherits from /api)', () => {
+    const p0 = createProject([customers])
+    const p: StudioProject = {
+      ...p0,
+      access: { enabled: true, defaultRole: 'viewer', roles: [{ role: 'admin', screens: '*', actions: '*' }, { role: 'viewer', screens: p0.screens.map((s) => s.id), actions: [] }] },
+      screens: p0.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })),
+    }
+    const server = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).toMatch(/import \{ fail, error \} from '@sveltejs\/kit'/)
+    expect(server).toMatch(/import \{ authorizeAction, getServerRole \} from '\$lib\/access'/)
+    expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'read', SCREEN_IDS\)/)
+    expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'create', SCREEN_IDS\)/)
+    expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'delete', SCREEN_IDS\)/)
+  })
+
+  it('memory SSR + relation field: prefetches options in load and renders a <select>', () => {
+    const p0 = createProject([customers, orders])
+    const p: StudioProject = { ...p0, screens: p0.screens.map((s) => (s.entity === 'orders' ? { ...s, renderMode: 'ssr' as const } : s)) }
+    const files = emitStudioProject(p)
+    const server = files.find((f) => f.path === 'src/routes/orders/+page.server.ts')!.contents
+    expect(server).toMatch(/import \{ ordersSource, customersSource, nextId \} from '\$lib\/data'/)
+    expect(server).toMatch(/const customer_idOptions = \(await customersSource\.getRows\(/)
+    expect(server).toMatch(/label: String\(r\['name'\]/) // uses the relation's labelField
+    expect(server).toMatch(/, customer_idOptions \}/) // options returned from load
+    const page = files.find((f) => f.path === 'src/routes/orders/+page.svelte')!.contents
+    expect(page).toMatch(/<select name='customer_id'/)
+    expect(page).toMatch(/#each data\.customer_idOptions as o/)
+    expect(() => compile(page, { generate: 'client' })).not.toThrow()
+  })
+
+  it('leaves spa screens on the client-controller path', () => {
+    const p = createProject([customers]) // default renderMode is spa
+    const files = emitStudioProject(p)
+    expect(files.find((f) => f.path === 'src/routes/customers/+page.server.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/lib/server/query.ts')).toBeUndefined()
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/createServerDataSource/)
+  })
+})
+
+describe('emitStudioFragment (drop into an existing app)', () => {
+  it('emits app content minus the shell, plus app.css + FRAGMENT.md', () => {
+    const files = emitStudioFragment(createProject([customers]))
+    const paths = files.map((f) => f.path)
+    // No whole-app scaffolding.
+    expect(paths).not.toContain('package.json')
+    expect(paths).not.toContain('svelte.config.js')
+    expect(paths).not.toContain('src/routes/+layout.svelte') // the nav shell
+    expect(paths).not.toContain('src/routes/+page.svelte') // the home redirect
+    // The screens + lib + the lifted styles + the readme ARE present.
+    expect(paths).toContain('src/routes/customers/+page.svelte')
+    expect(paths).toContain('src/lib/schemas.ts')
+    expect(paths).toContain('src/lib/data.ts')
+    expect(paths).toContain('src/app.css')
+    expect(paths).toContain('FRAGMENT.md')
+  })
+
+  it('FRAGMENT.md reports the runtime deps + host requirements', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    const md = emitStudioFragment(p).find((f) => f.path === 'FRAGMENT.md')!.contents
+    expect(md).toMatch(/npm install .*\bpg\b/) // the sql driver the fragment imports
+    expect(md).toMatch(/DATABASE_URL/) // env the host must set
+    expect(md).toMatch(/Import `src\/app\.css`/)
+    expect(md).toMatch(/nav shell.*NOT here/s)
+  })
+})
+
+describe('db/schema.sql + db/seed.sql + drizzle db:seed (real-DB last mile)', () => {
+  const sqlProject = (dialect: 'postgres' | 'mysql' | 'sqlite' | 'mssql' | 'turso'): StudioProject => {
+    let p = createProject([customers, orders])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect })
+    p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect })
+    return p
+  }
+
+  it('emits db/schema.sql + db/seed.sql for SQL entities without the Drizzle layer', () => {
+    const files = emitStudioProject(sqlProject('postgres'))
+    const ddl = files.find((f) => f.path === 'db/schema.sql')!.contents
+    expect(ddl).toMatch(/CREATE TABLE IF NOT EXISTS "customers" \(/)
+    expect(ddl).toMatch(/"id" text PRIMARY KEY/)
+    expect(ddl).toMatch(/"mrr" double precision/)
+    // Relation display fields are runtime labels, not columns.
+    const seedSql = files.find((f) => f.path === 'db/seed.sql')!.contents
+    expect(seedSql).toMatch(/INSERT INTO "customers" \(/)
+    expect(seedSql).toMatch(/INSERT INTO "orders" \(/)
+  })
+
+  it('mssql gets a guarded CREATE TABLE (no Drizzle possible) with N-literals', () => {
+    const files = emitStudioProject(sqlProject('mssql'))
+    const ddl = files.find((f) => f.path === 'db/schema.sql')!.contents
+    expect(ddl).toMatch(/IF OBJECT_ID\(N'customers', N'U'\) IS NULL/)
+    expect(ddl).toMatch(/"mrr" float/)
+    const seedSql = files.find((f) => f.path === 'db/seed.sql')!.contents
+    expect(seedSql).toMatch(/N'/)
+    // Even WITH the drizzle toggle, mssql still ships plain SQL (dzDialect is null).
+    const withLayer = emitStudioProject(setDataLayer(sqlProject('mssql'), true))
+    expect(withLayer.some((f) => f.path === 'db/schema.sql')).toBe(true)
+  })
+
+  it('mysql uses backticks; sqlite/turso use sqlite types', () => {
+    const my = emitStudioProject(sqlProject('mysql')).find((f) => f.path === 'db/schema.sql')!.contents
+    expect(my).toMatch(/CREATE TABLE IF NOT EXISTS `customers` \(/)
+    expect(my).toMatch(/`mrr` double/)
+    const tu = emitStudioProject(sqlProject('turso')).find((f) => f.path === 'db/schema.sql')!.contents
+    expect(tu).toMatch(/"mrr" real/)
+  })
+
+  it('the Drizzle layer replaces plain DDL with migrations + a db:seed script', () => {
+    const p = setDataLayer(sqlProject('postgres'), true)
+    const files = emitStudioAppBundle(p)
+    expect(files.some((f) => f.path === 'db/schema.sql')).toBe(false) // migrations own DDL
+    const seedTs = files.find((f) => f.path === 'db/seed.ts')!.contents
+    expect(seedTs).toMatch(/studio:db-seed/)
+    expect(seedTs).toMatch(/process\.env\.DATABASE_URL/) // own client - no \$env import
+    expect(seedTs).not.toMatch(/\$env\/dynamic\/private/)
+    expect(seedTs).toMatch(/db\.insert\(schema\.customers\)/)
+    expect(seedTs).toMatch(/existing\.length === 0/) // idempotent
+    const pkg = JSON.parse(files.find((f) => f.path === 'package.json')!.contents)
+    expect(pkg.scripts['db:seed']).toBe('tsx db/seed.ts')
+    expect(pkg.devDependencies.tsx).toBeTruthy()
+    const deploy = files.find((f) => f.path === 'DEPLOY.md')!.contents
+    expect(deploy).toMatch(/npm run db:seed/)
+  })
+
+  it('DEPLOY.md points at db/schema.sql on the non-Drizzle path', () => {
+    const deploy = emitStudioAppBundle(sqlProject('postgres')).find((f) => f.path === 'DEPLOY.md')!.contents
+    expect(deploy).toMatch(/db\/schema\.sql/)
+    expect(deploy).toMatch(/VITE_SVPRO_KEY/)
+  })
+})
+
+describe('secure-by-default auth', () => {
+  const authApp = () => emitStudioAppBundle(setAuth(createProject([customers]), { enabled: true, protect: true }))
+
+  it('ships a git-ignored .env with a real random SESSION_SECRET (not the hardcoded fallback)', () => {
+    const env = authApp().find((f) => f.path === '.env')
+    expect(env, 'an auth app should ship a .env with a real secret').toBeTruthy()
+    expect(env!.contents).toMatch(/SESSION_SECRET=[0-9a-f]{64}/)
+    expect(env!.contents).not.toMatch(/change-me-to-a-long-random-string/)
+  })
+
+  it('hashes demo users - no plaintext store or plaintext login compare', () => {
+    const files = authApp()
+    const users = files.find((f) => f.path === 'src/lib/server/users.ts')!.contents
+    expect(users).toMatch(/passwordHash: await hashPassword/)
+    // The stored user type carries only the hash (the SEED keeps plaintext defaults,
+    // which are hashed at module load).
+    expect(users).toMatch(/AppUser = \{ email: string; name: string; role: string; passwordHash: string \}/)
+    const login = files.find((f) => f.path === 'src/routes/login/+page.server.ts')!.contents
+    expect(login).toMatch(/await verifyPassword\(password, user\.passwordHash\)/)
+    expect(login).not.toMatch(/user\.password !== password/)
+  })
+})
 
 describe('emitStudioProject (per-block screens)', () => {
   const project = createProject([customers, orders])
@@ -635,6 +949,38 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(users).not.toContain('viewer@example.com')
   })
 
+  it('Supabase Auth: gates the app via SvAuthGate over the shared client, not the builtin session', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
+    p = setAuth(p, { enabled: true, provider: 'supabase' })
+    const files = emitStudioProject(p)
+    const layout = files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents
+    expect(layout).toContain('<SvAuthGate')
+    expect(layout).toContain("import { SvAuthGate, type SupabaseAuthClientLike } from '@svgrid/enterprise'")
+    expect(layout).toContain("import { supabaseClient } from '$lib/connections'")
+    // Shared client emitted; NO builtin cookie-session scaffold.
+    expect(files.find((f) => f.path === 'src/lib/connections.ts')).toBeTruthy()
+    expect(files.find((f) => f.path === 'src/hooks.server.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/lib/server/users.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/routes/login/+page.svelte')).toBeUndefined()
+    // No cosmetic fake "Sign out" in the account menu - SvAuthGate's own bar owns it.
+    expect(layout).not.toMatch(/menuOpen = false\)}>Sign out/)
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('Supabase Auth emits the shared client even with no Supabase-bound entity', () => {
+    let p = createProject([customers]) // stays in-memory
+    p = { ...p, supabase: { url: 'https://proj.supabase.co', key: 'anon' } }
+    p = setAuth(p, { enabled: true, provider: 'supabase' })
+    const files = emitStudioProject(p)
+    expect(files.find((f) => f.path === 'src/lib/connections.ts')).toBeTruthy()
+    expect(files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents).toContain('<SvAuthGate')
+    // data.ts does NOT import the client (no Supabase data entity uses it).
+    expect(files.find((f) => f.path === 'src/lib/data.ts')!.contents).not.toContain("from './connections'")
+  })
+
   it('Audit: emits the store + route + viewer, wires connected routes, and compiles', () => {
     let p = createProject([customers, orders])
     p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' })
@@ -1034,6 +1380,49 @@ describe('Custom actions', () => {
   })
 })
 
+describe('form/dialog layout depth', () => {
+  const gridScreen = (extra: Partial<GridConfig>) => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    p = updateBlock(p, sid, gid, { config: { editing: 'form', ...extra } as Partial<GridConfig> })
+    return emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+  }
+
+  const panelLine = (page: string) => page.split('\n').find((l) => l.includes('<SvGridEditPanel schema='))!
+
+  it('emits nothing extra for a default form', () => {
+    const line = panelLine(gridScreen({}))
+    expect(line).toMatch(/<SvGridEditPanel schema=\{customersSchema\} row=\{editing\}/)
+    expect(line).not.toMatch(/columns=\{/)
+    expect(line).not.toMatch(/sections=\{/)
+  })
+
+  it('passes columns / field selection+order / sections / title / size to the panel', () => {
+    const page = gridScreen({
+      formColumns: 3,
+      formFields: ['name', 'email'],
+      formSections: [{ title: 'Contact', fields: ['name', 'email'] }],
+      formTitle: 'Edit customer',
+      formSize: 'lg',
+    })
+    const line = panelLine(page)
+    expect(line).toMatch(/columns=\{3\}/)
+    expect(line).toMatch(/formFields=\{\["name","email"\]\}/)
+    expect(line).toMatch(/sections=\{\[\{"title":"Contact","fields":\["name","email"\]\}\]\}/)
+    expect(line).toMatch(/title=\{'Edit customer'\}/)
+    expect(line).toMatch(/formSize='lg'/)
+    expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('omits default-valued knobs (columns 2, size md)', () => {
+    const line = panelLine(gridScreen({ formColumns: 2, formSize: 'md', formFields: ['name'] }))
+    expect(line).not.toMatch(/columns=\{/)
+    expect(line).not.toMatch(/formSize=/)
+    expect(line).toMatch(/formFields=\{\["name"\]\}/)
+  })
+})
+
 describe('Component blocks', () => {
   it('a component block mixed onto an entity-bound screen emits the import + literal markup, and compiles', () => {
     let p = createProject([customers])
@@ -1044,7 +1433,10 @@ describe('Component blocks', () => {
     const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
     const importLine = page.split('\n').find((l) => l.includes("from '@svgrid/grid'"))!
     expect(importLine).toContain('SvButton') // merged into the screen's one @svgrid/grid import
-    expect(page).toContain("<SvButton variant={'primary'} size={'md'} block>{'Click me'}</SvButton>")
+    // Full extracted surface: curated attrs first, then the rest of the component's
+    // real props (e.g. type={'button'}); content children last.
+    expect(page).toContain("<SvButton variant={'primary'} size={'md'} block")
+    expect(page).toContain(">{'Click me'}</SvButton>")
 
     for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
@@ -1060,8 +1452,10 @@ describe('Component blocks', () => {
 
     const page = files.find((f) => f.path === 'src/routes/reports/+page.svelte')!.contents
     expect(page).toContain("import { SvBadge, SvButton } from '@svgrid/grid'") // sorted, deduped
-    expect(page).toContain("<SvButton variant={'secondary'} size={'md'}>{'Click me'}</SvButton>")
-    expect(page).toContain("<SvBadge variant={'success'} size={'md'} pill>{'Badge'}</SvBadge>")
+    expect(page).toContain("<SvButton variant={'secondary'} size={'md'}")
+    expect(page).toContain(">{'Click me'}</SvButton>")
+    expect(page).toContain("<SvBadge variant={'success'} size={'md'} pill")
+    expect(page).toContain(">{'Badge'}</SvBadge>")
     expect(page).not.toContain('Add your own content here')
 
     for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
@@ -1180,6 +1574,41 @@ describe('data-source codegen', () => {
     expect(dataTs).not.toContain('createInMemoryDataSource') // customers is REST-bound
   })
 
+  it('REST adapter (dummyjson): emits real server paging via the adapter + imports it', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', {
+      kind: 'rest', baseUrl: 'https://dummyjson.com', path: 'users', method: 'GET', params: [],
+      adapter: { kind: 'dummyjson', rowsKey: 'users' },
+    })
+    const dataTs = byPathOf(emitStudioProject(p), 'src/lib/data.ts')!.contents
+    expect(dataTs).toContain('dummyJsonAdapter') // imported from @svgrid/enterprise
+    expect(dataTs).toMatch(/\.\.\.dummyJsonAdapter<\w+>\('users'\)/)
+  })
+
+  it('REST offsetLimit adapter emits only the configured params', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', {
+      kind: 'rest', baseUrl: 'https://api', path: 'c', method: 'GET', params: [],
+      adapter: { kind: 'offsetLimit', offsetParam: '_start', limitParam: '_limit', sortByParam: 'sort' },
+    })
+    const dataTs = byPathOf(emitStudioProject(p), 'src/lib/data.ts')!.contents
+    expect(dataTs).toContain("offsetParam: '_start'")
+    expect(dataTs).toContain("limitParam: '_limit'")
+    expect(dataTs).toContain("sortByParam: 'sort'")
+    expect(dataTs).not.toContain('orderParam') // unset fields are omitted
+  })
+
+  it('a REST adapter supersedes the manual rowsPath/totalPath parse', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', {
+      kind: 'rest', baseUrl: 'https://api', path: 'c', method: 'GET', params: [],
+      adapter: { kind: 'jsonServer' }, rowsPath: 'data', totalPath: 'total',
+    })
+    const dataTs = byPathOf(emitStudioProject(p), 'src/lib/data.ts')!.contents
+    expect(dataTs).toContain('jsonServerAdapter')
+    expect(dataTs).not.toContain('parse: (body: any)') // adapter provides parse instead
+  })
+
   it('substitutes static path params into the URL', () => {
     let p = createProject([customers])
     p = setEntityDataSource(p, 'customers', {
@@ -1245,20 +1674,30 @@ describe('data-source codegen', () => {
     expect(emitStudioAppBundle(createProject([customers])).find((f) => f.path === '.env.example')).toBeUndefined()
   })
 
-  it('emits a real Supabase client from a project URL + anon key', () => {
+  it('emits a Supabase client that reads PUBLIC_SUPABASE_* env vars (never inlines the key)', () => {
     let p = createProject([customers])
     p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers', url: 'https://x.supabase.co', key: 'anon123' })
     const conn = byPathOf(emitStudioProject(p), 'src/lib/connections.ts')!.contents
     expect(conn).toContain("import { createClient } from '@supabase/supabase-js'")
-    expect(conn).toContain("createClient('https://x.supabase.co', 'anon123')")
+    expect(conn).toContain("import { env } from '$env/dynamic/public'")
+    expect(conn).toContain('createClient(')
+    expect(conn).toContain('env.PUBLIC_SUPABASE_URL')
+    expect(conn).toContain('env.PUBLIC_SUPABASE_ANON_KEY')
+    // The anon key is NEVER baked into source (it goes to .env); the designer values
+    // appear only as a paste-into-.env comment.
+    expect(conn).not.toContain("createClient('https://x.supabase.co'")
+    // .env.example lists the public Supabase keys.
+    const envEx = emitStudioAppBundle(p).find((f) => f.path === '.env.example')!.contents
+    expect(envEx).toContain('PUBLIC_SUPABASE_URL=')
+    expect(envEx).toContain('PUBLIC_SUPABASE_ANON_KEY=')
   })
 
-  it('falls back to a Supabase null stub without url/key', () => {
+  it('still emits an env-var Supabase client without designer url/key', () => {
     let p = createProject([customers])
     p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
     const conn = byPathOf(emitStudioProject(p), 'src/lib/connections.ts')!.contents
-    expect(conn).toContain('supabaseClient = null as unknown as SupabaseClientLike')
-    expect(conn).not.toMatch(/^import \{ createClient \}/m) // no real client import without creds
+    expect(conn).toContain('env.PUBLIC_SUPABASE_URL')
+    expect(conn).not.toContain('null as unknown as SupabaseClientLike') // no stub - reads env
   })
 
   it('every emitted .svelte compiles with mixed REST + Supabase sources', () => {
@@ -1268,6 +1707,50 @@ describe('data-source codegen', () => {
     for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
     }
+  })
+
+  it('Supabase realtime: subscribes the grid page to live changes and refreshes on change', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers', realtime: true })
+    const page = byPathOf(emitStudioProject(p), 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain('createSupabaseRealtime')
+    expect(page).toContain("import { supabaseClient } from '$lib/connections'")
+    expect(page).toContain("table: 'customers'")
+    expect(page).toContain('onChange: () => controller.refresh()')
+    // Cleanup unsubscribes the channel alongside disposing the controller.
+    expect(page).toContain('__rt.unsubscribe()')
+    expect(page).toContain('controller.dispose()')
+    // Compiles.
+    expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('Supabase without realtime does NOT emit a subscription', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
+    const page = byPathOf(emitStudioProject(p), 'src/routes/customers/+page.svelte')!.contents
+    expect(page).not.toContain('createSupabaseRealtime')
+  })
+
+  it('project-level Supabase connection feeds the .env paste hint (entity carries only the table)', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
+    p = { ...p, supabase: { url: 'https://proj.supabase.co', key: 'anonKEY' } }
+    const conn = byPathOf(emitStudioProject(p), 'src/lib/connections.ts')!.contents
+    expect(conn).toContain('PUBLIC_SUPABASE_URL=https://proj.supabase.co')
+    expect(conn).toContain('PUBLIC_SUPABASE_ANON_KEY=anonKEY')
+    // The client still reads env (project-level values only seed the paste comment).
+    expect(conn).not.toContain("createClient('https://proj.supabase.co'")
+  })
+
+  it('SQL schema selector qualifies the table in the generated route', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres', schema: 'analytics' })
+    const route = byPathOf(emitStudioProject(p), 'src/routes/api/customers/+server.ts')!.contents
+    expect(route).toContain('dbSchema: "analytics"')
+    // No schema set -> no dbSchema option (unqualified table).
+    let q = createProject([customers])
+    q = setEntityDataSource(q, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    expect(byPathOf(emitStudioProject(q), 'src/routes/api/customers/+server.ts')!.contents).not.toContain('dbSchema:')
   })
 })
 
@@ -1710,7 +2193,7 @@ describe('dock layout (screen.layout = dock)', () => {
     const page = emitStudioProject(p).find((f) => f.path.endsWith('/+page.svelte'))!.contents
     expect(page).toContain('async function save({ mode, id, values }')
     expect(page).toContain('const row = values')
-    expect(page).toContain('const ctx = { grid: gridApi!,')
+    expect(page).toContain('const ctx = { grid: gridCtx,')
     expect(page).toContain("ctx.goto('/customers')")
     for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
@@ -2043,7 +2526,7 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain("import * as handlers from './handlers'")
     // onLoad runs on mount and onDestroy on unmount, both with the full ctx (grid +
     // the settable data battery, since this freestanding page owns its rows).
-    expect(page.contents).toContain('const ctx = { grid: gridApi!, data: { get rows() { return rows }, setRows: (r) => (rows = r) }')
+    expect(page.contents).toContain('const ctx = { grid: gridCtx, data: { get rows() { return rows }, setRows: (r) => (rows = r) }')
     expect(page.contents).toContain('as PageContext')
     expect(page.contents).toContain('handlers.onLoad(ctx)')
     expect(page.contents).toContain('return () => handlers.onDestroy(ctx)')
@@ -2074,10 +2557,12 @@ describe('code companion (design + your own code)', () => {
     const companion = files.find((f) => f.path === 'src/routes/report/handlers.ts')!
     // Named handle (button1) created + wired into the component markup.
     expect(page.contents).toContain('const button1 = handle(')
-    expect(page.contents).toContain('<SvButton {...button1.props}>{button1.text}</SvButton>')
-    expect(page.contents).toContain("import { handle } from '$lib/handles.svelte'")
+    // Click is wired through the component's own onclick callback prop (exact
+    // semantics), not a bubbling wrapper listener.
+    expect(page.contents).toContain("<SvButton {...button1.props} onclick={(e) => button1.fire('click', e)}>{button1.text}</SvButton>")
+    expect(page.contents).toContain("import { handle, gridHandle } from '$lib/handles.svelte'")
     expect(page.contents).toContain('button1.fire(\'click\', e)')
-    expect(page.contents).toContain('const ctx = { grid: gridApi!, button1, data:')
+    expect(page.contents).toContain('const ctx = { grid: gridCtx, button1, data:')
     expect(page.contents).toContain('handlers.onLoad(ctx)')
     // Typed handle: ButtonHandle intersects Handle with the button's real setters.
     expect(ctx.contents).toContain('button1: ButtonHandle')
@@ -2177,7 +2662,7 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('let gridApi = $state<SvGridApi<any, any> | null>(null)')
     expect(page.contents).toContain('onApiReady={(a) => (gridApi = a)}')
     // Full ctx on mount + cleanup on unmount; the grid exposes reload(), not setRows.
-    expect(page.contents).toContain('const ctx = { grid: gridApi!, data: { get rows() { return view.rows }, reload: () => controller.refresh(), create: (v) => controller.createRow(v), update: (id, v) => controller.updateRow(id, v), delete: (id) => controller.deleteRow(id) }, goto, params: Object.fromEntries($page.url.searchParams) } as unknown as PageContext')
+    expect(page.contents).toContain('const ctx = { grid: gridCtx, data: { get rows() { return view.rows }, reload: () => controller.refresh(), create: (v) => controller.createRow(v), update: (id, v) => controller.updateRow(id, v), delete: (id) => controller.deleteRow(id) }, goto, params: Object.fromEntries($page.url.searchParams) } as unknown as PageContext')
     expect(page.contents).toContain('handlers.onLoad(ctx)')
     expect(page.contents).toContain('return () => handlers.onDestroy(ctx)')
     // The grid api is typed to the entity's row (Customers), not any.
@@ -2203,7 +2688,7 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('const chart1 = dataHandle<Customers>(() => allRows)')
     expect(page.contents).toContain('const kpi1 = dataHandle<Customers>(() => allRows)')
     expect(page.contents).toContain('rows={chart1.rows}')
-    expect(page.contents).toContain("import { handle, dataHandle } from '$lib/handles.svelte'")
+    expect(page.contents).toContain("import { handle, dataHandle, gridHandle } from '$lib/handles.svelte'")
     // ctx carries the data handles + the entity component handle + batteries.
     expect(ctx.contents).toContain('chart1: DataHandle<Customers>')
     expect(ctx.contents).toContain('kpi1: DataHandle<Customers>')

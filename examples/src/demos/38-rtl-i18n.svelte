@@ -441,7 +441,7 @@
   .i18n-locale-active {
     border-color: transparent;
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
   .i18n-flag { font-size: 14px; line-height: 1; }
   .i18n-cur {

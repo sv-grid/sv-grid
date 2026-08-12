@@ -554,7 +554,7 @@
   .fm-btn-primary {
     border-color: transparent;
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
 
   /* Tabs */
@@ -657,7 +657,7 @@
   .fm-contact-primary {
     font-size: 10px;
     font-weight: 700;
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     background: var(--sg-accent, #2563eb);
     padding: 2px 6px;
     border-radius: 3px;

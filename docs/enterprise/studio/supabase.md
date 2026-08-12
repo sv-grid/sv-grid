@@ -16,6 +16,15 @@ Supabase project to a live CRUD screen, step by step. No backend to run.
 > grid page with create / edit / delete, start to finish. This page is the deeper
 > reference behind it.
 
+**All the Supabase pages, one map.** This guide is the canonical entry point -
+connect, keys, and Row-Level Security. From here:
+
+- [Supabase CRUD grid](./supabase-grid.md) - the copy-paste one-page tutorial
+- [Supabase Northwind sample](./supabase-sample.md) - a relational practice dataset to load and explore
+- [Real-time](./realtime.md) - live grid over Supabase change streams
+- [Auth & secured screens](./auth.md) - Supabase Auth + RLS per signed-in user
+- [Databases](./databases.md#supabase) - the server-side connection-string route instead
+
 There are two ways to connect, and you can use either:
 
 | Path | When | Runs in |
@@ -84,6 +93,28 @@ In the dashboard: **Project Settings -> API**. Copy two values:
 
 The anon key is designed to be shipped in the browser. Never ship the
 **service_role** key to a client - it bypasses RLS.
+
+---
+
+## In the designer (no code)
+
+The visual designer wraps all of the below. Bind an entity to **Supabase**, open
+its **Configure** builder, and:
+
+- Paste the **Project URL** and **anon public** key once - they are stored as a
+  **shared project connection**, so every Supabase entity reuses them (you only
+  set them one time).
+- Click **List tables** to read the tables from your project, pick one, and
+  **Import schema** to pull its real columns, primary key, foreign-key relations,
+  and enums into the entity.
+- **Preview** loads live rows onto the canvas. This works in the **online**
+  designer too, because Supabase is reached over HTTP.
+
+**Generate app** emits `createClient` in `connections.ts` reading
+`PUBLIC_SUPABASE_URL` / `PUBLIC_SUPABASE_ANON_KEY` from `.env` (the key is never
+inlined into source), plus a `.env.example`. Tick **Live updates (Realtime)** to
+also emit a live subscription ([Real-time](./realtime.md)), and use the
+[Supabase Auth provider](./auth.md) to gate the app.
 
 ---
 

@@ -9,6 +9,25 @@ export type ListOption = {
   color?: string
 }
 
+/**
+ * Coerce a raw options array into well-formed ListOptions. A primitive item
+ * (`1`, `'a'`) becomes `{ value, label: String(value) }`; an object missing a
+ * `label` or `value` gets the other filled in. This makes a caller who passes
+ * e.g. `[1, 2, 3]` or `['a', 'b']` render sensibly instead of crashing a keyed
+ * `#each` on `undefined`/duplicate `value`s.
+ */
+export function normalizeOptions(raw: ReadonlyArray<ListOption | string | number> | null | undefined): ListOption[] {
+  if (!raw) return []
+  return raw.map((o) => {
+    if (o != null && typeof o === 'object') {
+      const opt = o as Partial<ListOption>
+      const value = opt.value ?? opt.label ?? ''
+      return { ...(opt as ListOption), value, label: opt.label ?? String(value) }
+    }
+    return { value: o, label: String(o) }
+  })
+}
+
 /** Case-insensitive substring filter over option labels. */
 export function filterOptions(options: ReadonlyArray<ListOption>, query: string): ListOption[] {
   const q = query.trim().toLowerCase()
@@ -42,6 +61,68 @@ export function groupOptions(options: ReadonlyArray<ListOption>): OptionGroup[] 
 /** Whether any option declares a `group` (so headings are worth rendering). */
 export function hasGroups(options: ReadonlyArray<ListOption>): boolean {
   return options.some((o) => o.group != null)
+}
+
+/** Fixed px, or a per-option function - lets a virtualized list mix row heights. */
+export type RowHeight = number | ((opt: IndexedOption, index: number) => number)
+
+/** One row of the flattened virtualization model: a group heading or an option. */
+export type VirtualListRow =
+  | { type: 'group'; label: string; size: number }
+  | { type: 'option'; opt: IndexedOption; size: number }
+
+export type FlatVirtualModel = {
+  /** Group headings + options in render order, each with its px height. */
+  entries: VirtualListRow[]
+  /** Whether any group heading rows are present. */
+  hasGroups: boolean
+  /** Height (px) of the entry at flat index `i` - feeds the virtualizer's `estimateSize`. */
+  sizeAt: (i: number) => number
+  /** Maps an OPTION index (position in the source options array, as used by
+   *  `optionProps(index)`) to its flat entry index - so the active option can
+   *  be scrolled into view even with group rows interleaved. */
+  optionFlatIndex: number[]
+}
+
+/**
+ * Flatten a (possibly grouped) option list into a single virtualization model:
+ * group headings become rows interleaved with their options, and each row
+ * carries its pixel height. This is what lets the selection controls window a
+ * GROUPED list (previously they fell back to rendering every node) and support
+ * variable row heights, while reusing the shared `createSvelteVirtualizer`.
+ *
+ * Pure - no DOM. Builds on `groupOptions`, which already tags each option with
+ * its flat `index` (the value `optionProps(index)` expects).
+ */
+export function flattenForVirtual(
+  options: ReadonlyArray<ListOption>,
+  opts: { rowHeight: RowHeight; groupHeaderHeight?: number },
+): FlatVirtualModel {
+  const headerH = Math.max(1, opts.groupHeaderHeight ?? 28)
+  const rh = opts.rowHeight
+  const sizeOf = (o: IndexedOption) => Math.max(1, typeof rh === 'function' ? rh(o, o.index) : rh)
+
+  const entries: VirtualListRow[] = []
+  const optionFlatIndex = new Array<number>(options.length)
+  let anyGroups = false
+
+  for (const g of groupOptions(options)) {
+    if (g.group != null) {
+      anyGroups = true
+      entries.push({ type: 'group', label: g.group, size: headerH })
+    }
+    for (const opt of g.options) {
+      optionFlatIndex[opt.index] = entries.length
+      entries.push({ type: 'option', opt, size: sizeOf(opt) })
+    }
+  }
+
+  return {
+    entries,
+    hasGroups: anyGroups,
+    sizeAt: (i) => entries[i]?.size ?? 0,
+    optionFlatIndex,
+  }
 }
 
 /**

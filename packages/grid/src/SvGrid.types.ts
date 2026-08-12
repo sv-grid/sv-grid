@@ -9,6 +9,8 @@ import type {
   TableFeatures,
 } from "./index";
 import type { ConditionalFormat } from "./conditional-formatting";
+import type { GridMessages } from "./grid-messages";
+import type { GridPivotConfig } from "./pivot-view.svelte";
 import type { MenuItem } from "./SvMenuList.svelte";
 import type { RecurrenceRule } from "./recurrence";
 
@@ -65,6 +67,7 @@ import type {
   ChartSpec,
   ChartAnnotation,
   ChartReferenceLine,
+  ChartValueFormat,
 } from "./chart";
 
 /** One aggregated bucket returned by a server-side `getAggregate`. */
@@ -196,7 +199,9 @@ export type ContextMenuTarget<TData extends RowData = RowData> = {
 /**
  * A context-menu entry. Either a built-in action key, the `"separator"`
  * divider, or a custom item. Built-in keys: `"copy" | "cut" | "paste" |
- * "clear" | "row_above" | "row_below" | "remove_row" | "remove_col"`.
+ * "clear" | "row_above" | "row_below" | "remove_row" | "remove_col" |
+ * "chart"`. The `"chart"` item (chart the selected range) is only shown when
+ * `charting` is enabled; it is appended to the default menu automatically.
  */
 export type ContextMenuItem<TData extends RowData = RowData> =
   | string
@@ -301,6 +306,58 @@ export type BoardCardMoveEvent<TData extends RowData = RowData> = {
  * of a table. Dragging a card between lanes fires {@link BoardConfig.onCardMove}
  * where you reassign the `groupBy` field on your own data.
  */
+/**
+ * Chart view of the grid. Setting the `chart` prop on `<SvGrid>` swaps the table
+ * for a chart driven by the grid's FILTERED + SORTED rows - so the search box,
+ * column filters and sort all flow through to the chart. Unlike the board and
+ * scheduler views, the renderer is free: the grid lazy-loads a built-in
+ * `SvChart` view unless a host overrides it via `registerChartView`.
+ *
+ * The config maps directly onto `rowsToChartSpec` - one row field for the
+ * category axis, one or more for the value series (or a `series` field to pivot
+ * one series per distinct value).
+ *
+ * ```svelte
+ * <SvGrid {data} {columns}
+ *   chart={{ type: 'bar', category: 'month', value: 'revenue', reduce: 'sum' }} />
+ * ```
+ */
+export type ChartViewConfig<
+  TFeatures extends TableFeatures = TableFeatures,
+  TData extends RowData = RowData,
+> = {
+  /** Chart type. Default `'bar'`. */
+  type?: ChartType;
+  /** Row field for the category (x) axis. */
+  category: keyof TData & string;
+  /** Row field(s) for the value (y) series. */
+  value: (keyof TData & string) | Array<keyof TData & string>;
+  /** Pivot dimension: one series per distinct value of this field. */
+  series?: keyof TData & string;
+  /** Aggregation when several rows share a category. Default `'sum'`. */
+  reduce?: "sum" | "avg" | "count";
+  /** Stack bar / area series instead of grouping them. */
+  stacked?: boolean;
+  /** Stack to 100% (implies `stacked`). */
+  stacked100?: boolean;
+  /** Order categories. Default: insertion order (value-desc when `topN` is set). */
+  sort?: "value-desc" | "value-asc" | "category" | "none";
+  /** Keep only the top N categories; bucket the rest into "Other". */
+  topN?: number;
+  /** Palette for series without an explicit colour. */
+  palette?: string[];
+  /** Number format for the value axis, tooltips and data labels. */
+  valueFormat?: ChartValueFormat;
+  /** Show the clickable legend. Default `true`. */
+  legend?: boolean;
+  /** Draw the value on each bar / point / slice. Default `false`. */
+  dataLabels?: boolean;
+  /** Show the search box above the chart (filters rows first). Default `true`. */
+  searchable?: boolean;
+  /** Placeholder for the search box. */
+  searchPlaceholder?: string;
+};
+
 export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
   /** Field whose value buckets each row into a lane. */
   groupBy: keyof TData & string;
@@ -581,6 +638,12 @@ export type SchedulerException = {
   end?: string | number | Date;
   title?: string;
   allDay?: boolean;
+  /**
+   * Per-occurrence overrides for ANY other field (e.g. attendees, calendar,
+   * color, resource). Merged over the row for just this occurrence, so "This
+   * event" can change fields beyond start / end / title / all-day.
+   */
+  fields?: Record<string, unknown>;
 };
 
 /** How a change to a recurring event should apply. */
@@ -908,6 +971,30 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   scheduler?: SchedulerConfig<TFeatures, TData>;
   /**
+   * Chart view. When set, the grid renders its FILTERED + SORTED rows as a chart
+   * instead of a table (search / filters / sort flow through). Unlike board and
+   * scheduler, the renderer is free - the grid lazy-loads a built-in `SvChart`
+   * view, overridable via `registerChartView`. See {@link ChartViewConfig}.
+   */
+  chart?: ChartViewConfig<TFeatures, TData>;
+  /**
+   * Pivot mode. When set (and `pivotMode` is on), the grid renders its rows as a
+   * pivot table in place - the same grid, aggregated across `pivot.rows` /
+   * `pivot.cols` with nested column headers - instead of the flat table. The
+   * pivot ENGINE ships in `@svgrid/enterprise`; call `enablePivot()` (or
+   * `installEnterprise(api)`) to register it, otherwise an upsell note shows.
+   * See {@link GridPivotConfig}.
+   */
+  pivot?: GridPivotConfig<TData>;
+  /**
+   * Whether pivot mode is currently active. Defaults to `true` when `pivot` is
+   * set. Bindable so a toolbar toggle can flip between the pivot and the flat
+   * table over the same data.
+   */
+  pivotMode?: boolean;
+  /** Fired when the in-grid Pivot toggle flips `pivotMode`. */
+  onPivotModeChange?: (on: boolean) => void;
+  /**
    * Right-click context menu. `true` shows the default item set (copy, cut,
    * paste, clear, insert row above/below, remove row, remove column). Pass an
    * array to customize: strings are built-in keys, `"separator"` is a divider,
@@ -957,6 +1044,24 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   loadingSkeletonRows?: number;
   error?: string | null;
   emptyMessage?: string;
+  /**
+   * The single place to localize the grid. One object with two fields:
+   *
+   * - `locale` - BCP-47 tag(s) for the DATA: accent/case-insensitive filter
+   *   matching AND every column's number / currency / percent / date formatting
+   *   (when the column's own `format.locales` is unset). The default for
+   *   `filterLocale` and per-column format locales.
+   * - `text` - overrides for the grid's own UI STRINGS (empty state, tool panel,
+   *   pager, status bar, filter operator labels, context-menu items, upsell
+   *   notes). Any subset overrides the English defaults; unset keys stay English.
+   *
+   * ```svelte
+   * <SvGrid localization={{ locale: 'fr-FR', text: { noRows: 'Aucune ligne' } }} />
+   * ```
+   *
+   * Omitting it (or any field) is a no-op. See {@link GridMessages}.
+   */
+  localization?: GridLocalization;
   showGlobalFilter?: boolean;
   showColumnFilters?: boolean;
   /**
@@ -1177,6 +1282,13 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * consumer wants to own the row ordering.
    */
   onSortingChange?: (sorting: Array<{ id: string; desc: boolean }>) => void;
+  /**
+   * The sort state to start in - `{ id, desc }` entries. Use with `externalSort`
+   * when the initial ordering is decided server-side (e.g. a URL `?sort=` param
+   * read in a SvelteKit `load`), so the header sort indicators match the already-
+   * sorted data on first render. Applied once at mount; user sorting takes over.
+   */
+  initialSorting?: Array<{ id: string; desc: boolean }>;
   /**
    * When `true`, the grid still records column-filter / global-filter /
    * facet state (so the menu UI works and indicators light up) but does
@@ -1453,6 +1565,18 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * browser's locale.
    */
   filterLocale?: string | ReadonlyArray<string>;
+};
+
+/**
+ * The grid's single localization surface (see {@link Props.localization}):
+ * `locale` handles the data (filter matching + number/date formatting) and
+ * `text` handles the UI strings.
+ */
+export type GridLocalization = {
+  /** BCP-47 tag(s) for filter matching + number / date formatting. */
+  locale?: string | ReadonlyArray<string>;
+  /** Overrides for the grid's own UI strings. */
+  text?: Partial<GridMessages>;
 };
 
 export type SelectionPoint = { rowIndex: number; colIndex: number };

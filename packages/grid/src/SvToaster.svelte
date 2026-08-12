@@ -10,7 +10,7 @@
    * ```
    */
   import { portalToBody } from './popover'
-  import { toastStore, dismissToast, pauseToast, resumeToast, type Toast } from './toast-store.svelte'
+  import { toastStore, dismissToast, pauseToast, resumeToast, type Toast, type ToastAction } from './toast-store.svelte'
 
   type Position =
     | 'top-left' | 'top-center' | 'top-right'
@@ -32,6 +32,12 @@
   // Swipe-to-dismiss: drag a toast sideways past ~60px to dismiss it.
   let drag = $state<{ id: number; startX: number; dx: number } | null>(null)
   function onDown(e: PointerEvent, id: number) {
+    // Only the primary button starts a swipe.
+    if (e.button !== 0) return
+    // Don't hijack presses on the toast's own controls (dismiss X, action /
+    // cancel buttons). Capturing the pointer here would redirect the pointerup
+    // to the toast and swallow the button's click.
+    if (e.target instanceof Element && e.target.closest('button')) return
     drag = { id, startX: e.clientX, dx: 0 }
     ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
     pauseToast(id)
@@ -47,6 +53,12 @@
     else resumeToast(id)
   }
   const dragDx = (id: number) => (drag?.id === id ? drag.dx : 0)
+
+  // Run a toast action, then dismiss the toast unless it opted to stay open.
+  function runAction(a: ToastAction, id: number) {
+    a.onClick?.(id)
+    if (!a.keepOpen) dismissToast(id)
+  }
 </script>
 
 <div class="sv-toaster sv-toaster--{position}" use:portalToBody role="region" aria-label="Notifications">
@@ -67,11 +79,25 @@
       onpointerup={() => onUp(t.id)}
       onpointercancel={() => onUp(t.id)}
     >
-      <span class="sv-toast__icon" aria-hidden="true">{icon(t.variant)}</span>
-      <div class="sv-toast__content">
-        {#if t.title}<div class="sv-toast__title">{t.title}</div>{/if}
-        <div class="sv-toast__msg">{t.message}</div>
-      </div>
+      {#if t.render}
+        <div class="sv-toast__content">{@render t.render(t)}</div>
+      {:else}
+        <span class="sv-toast__icon" aria-hidden="true">{icon(t.variant)}</span>
+        <div class="sv-toast__content">
+          {#if t.title}<div class="sv-toast__title">{t.title}</div>{/if}
+          <div class="sv-toast__msg">{t.message}</div>
+          {#if t.action || t.cancel}
+            <div class="sv-toast__actions">
+              {#if t.cancel}
+                <button type="button" class="sv-toast__action sv-toast__action--cancel" onclick={() => runAction(t.cancel!, t.id)}>{t.cancel.label}</button>
+              {/if}
+              {#if t.action}
+                <button type="button" class="sv-toast__action" onclick={() => runAction(t.action!, t.id)}>{t.action.label}</button>
+              {/if}
+            </div>
+          {/if}
+        </div>
+      {/if}
       {#if t.dismissible}
         <button type="button" class="sv-toast__x" aria-label="Dismiss" onclick={() => dismissToast(t.id)}>&times;</button>
       {/if}
@@ -116,6 +142,15 @@
   :global(.sv-toast__content) { flex: 1; min-width: 0; }
   :global(.sv-toast__title) { font-weight: 650; margin-bottom: 1px; }
   :global(.sv-toast__msg) { color: var(--sg-fg, #0f172a); overflow-wrap: anywhere; }
+  :global(.sv-toast__actions) { display: flex; gap: 8px; margin-top: 9px; }
+  :global(.sv-toast__action) {
+    font: inherit; font-size: 12.5px; font-weight: 600; padding: 4px 11px; border-radius: 6px;
+    border: 1px solid var(--_accent, var(--sg-accent, #2563eb)); background: none; color: var(--_accent, var(--sg-accent, #2563eb));
+    cursor: pointer;
+  }
+  :global(.sv-toast__action:hover) { background: color-mix(in srgb, var(--_accent, #2563eb) 12%, transparent); }
+  :global(.sv-toast__action--cancel) { border-color: var(--sg-border, #e2e8f0); color: var(--sg-muted, #64748b); }
+  :global(.sv-toast__action--cancel:hover) { background: var(--sg-row-hover-bg, #f1f5f9); color: var(--sg-fg, #0f172a); }
   :global(.sv-toast__x) {
     flex: none; width: 22px; height: 22px; display: grid; place-items: center; margin: -2px -2px 0 0;
     background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; border-radius: 5px; font-size: 17px; line-height: 1;

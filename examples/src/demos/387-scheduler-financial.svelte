@@ -26,10 +26,11 @@
     type BoardCardMoveEvent,
     type BoardCardCommitEvent,
   } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+  import { enableSchedulerView, enableBoardView, setLicenseKey } from '@svgrid/enterprise'
 
   setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
+  enableBoardView()
 
   type Stage = 'To review' | 'Modeling' | 'Published' | 'Archived'
   type Klass = 'Earnings' | 'Macro' | 'Meeting' | 'Roadshow'

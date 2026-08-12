@@ -59,13 +59,48 @@ server exposes two generation tools:
 | `introspect_source` | Infer an `EntitySchema` from a Drizzle schema file (`kind:"drizzle"`) or sample JSON rows (`kind:"json"`). Returns a **draft** to review. |
 | `scaffold_entity` | Generate the SvelteKit files from an `EntitySchema`. The output is **compile-verified** (the generated page is run through the Svelte compiler) before it comes back, and each file carries `svgrid:managed` markers. |
 
+## Drive the whole project model
+
+Beyond single screens, the server exposes the full
+[project model](./concepts.md#the-project-model) - the same
+`studio.config.json` the visual designer edits - as a set of `studio_*` tools.
+Your agent can build a complete multi-screen app, or continue editing one the
+designer produced, and hand it back:
+
+| Tool | What it does |
+| --- | --- |
+| `studio_new_project` | Start a new, empty project |
+| `studio_load_project` | Load an existing `studio.config.json` to continue editing it |
+| `studio_describe_project` | Summarize the current project: entities, screens + block ids, theme, RBAC, auth, deploy |
+| `studio_get_config` | Return the project as a `studio.config.json` string - write it to disk and the designer opens it (round-trip) |
+| `studio_capabilities` | List what can be added: block kinds, UI component keys, theme presets, source kinds, deploy targets |
+| `studio_add_entity` | Add an entity + its default screen, from an `EntitySchema`, a Drizzle source, or sample JSON rows |
+| `studio_add_screen` | Add an entity-bound screen (default grid) or a freestanding page |
+| `studio_add_block` | Add a data block (grid, chart, kpi, gauge, tree, tabs, accordion, pivot, board, calendar, detail, master-detail, filter, record, lookup, dashboard) to a screen |
+| `studio_add_component` | Add a UI component block (button, badge, alert, card, stat, timeline, sparkline, chip, ...) with prop overrides |
+| `studio_set_entity_source` | Bind an entity to a data source: `sql`, `supabase`, `rest`, `pglite`, or `memory` |
+| `studio_set_theme` | Set the theme preset, light/dark mode, and accent color |
+| `studio_set_access` | Configure [RBAC](./access-control.md): roles gating screens and create/update/delete actions |
+| `studio_set_auth` | Configure the [auth starter](./auth.md): protect, register, user admin, 2FA, email, OAuth (`github` / `google` / `oidc`) |
+| `studio_set_data_layer` | Turn the typed Drizzle data layer (schema + repositories + migrations) on or off |
+| `studio_set_deploy_target` | Set `auto` / `vercel` / `netlify` / `cloudflare` / `node` - picks the adapter and emits CI/CD config |
+| `studio_validate` | Validate the current project; returns errors + warnings |
+| `studio_generate_app` | Emit the full runnable SvelteKit app - every file, ready to write and `svelte-check` |
+
+A prompt that exercises the loop end to end:
+
+> "Using the svgrid MCP: new project 'Support desk'. Add a `tickets` entity from
+> these sample rows, a dashboard screen with a KPI and a chart over tickets,
+> RBAC with an agent role that cannot delete, dark theme, then validate and
+> generate the app."
+
 ## Step by step
 
 1. **Point it at a source.** A Drizzle schema file, or a handful of sample rows.
 2. **Introspect.** The agent calls `introspect_source` and shows you the drafted
    `EntitySchema` - field names, types, primary key, guessed formats.
 3. **Refine (optional).** Correct a type, mark a field hidden or read-only, add
-   validation - in chat, or later in the [visual designer](./designer.md).
+   validation - in chat, or later in the [visual designer](./app-designer.md).
 4. **Scaffold.** The agent calls `scaffold_entity`; the files come back already
    run through the Svelte compiler.
 5. **Verify.** The agent runs your project's `svelte-check`; if anything fails it
@@ -122,6 +157,6 @@ notice, and the generated app carries the usual watermark until you call
 ## See also
 
 - [The Studio CLI](./cli.md) - the deterministic, no-AI path
-- [Visual designer](./designer.md) - refine an AI draft by hand before generating
+- [Visual app designer](./app-designer.md) - refine an AI draft by hand before generating
 - [Code generation](./code-generation.md) - the anatomy of the emitted files
 - [MCP server](../../help/mcp-server.md) - full MCP reference

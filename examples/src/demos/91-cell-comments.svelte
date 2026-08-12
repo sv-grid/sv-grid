@@ -505,7 +505,7 @@
   }
   .cc-btn-ghost:hover:not(:disabled) { background: var(--sg-row-hover-bg, rgba(148,163,184,0.10)); }
   .cc-btn-primary {
-    background: var(--sg-accent, #2563eb); color: #fff;
+    background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff);
     border: 1px solid transparent;
   }
   .cc-btn-primary:hover:not(:disabled) { filter: brightness(1.06); }

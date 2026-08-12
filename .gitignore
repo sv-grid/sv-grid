@@ -69,3 +69,5 @@ extract-part.mjs
 
 # Generated PDF (rebuilt from docs/legal/EULA.md by tools/eula-to-pdf.mjs).
 docs/legal/SvGrid-EULA.pdf
+tools/prerender-site.mjs
+*.mjs

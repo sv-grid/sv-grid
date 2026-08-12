@@ -66,7 +66,7 @@ That is a real, working, accessible grid. Sorting, filtering, virtualization, ce
 - **Operations.** Find in grid (Ctrl+F), undo / redo (Ctrl+Z), transaction API, optimistic updates, server-side row model with sort / filter / group pushdown.
 - **UI components.** A Svelte 5 component suite ships in the same package - inputs, selection, date/time, overlays, layout, feedback - usable standalone or as grid cell editors.
 - **A11y.** WAI-ARIA grid roles, full keyboard navigation, RTL, high-contrast theme.
-- **Bundle.** ~7.5 KB gzipped headless core, ~42 KB gzipped full render component (Svelte stays a peer).
+- **Bundle.** ~2 KB gzipped headless core, ~77 KB gzipped full grid (+ ~9 KB CSS); charts, cell editors and export load on demand as their own chunks, and the Kanban board + scheduler are Enterprise views. Svelte stays a peer.
 
 The MIT community core has zero feature gating, no license key, no watermark, no row-count cap.
 

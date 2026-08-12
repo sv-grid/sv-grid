@@ -4,9 +4,14 @@
    * (label / hint / error / RTL / a11y via SvField). Handles `text`, `email`,
    * `url`, `tel` and `search`. As a grid cell editor it honours the interaction
    * contract: Enter commits, Escape cancels. Parity: Smart `smart-input`.
+   *
+   * The control box, size, invalid state, clear button and leading/trailing
+   * adornments are all owned by SvField's `frame` mode, so they behave identically
+   * across the text-input family.
    */
+  import type { Snippet } from 'svelte'
   import SvField from './SvField.svelte'
-  import { editorAria, nextEditorId, type SvEditorProps } from './editor-contract'
+  import { editorAria, nextEditorId, type EditorAction, type SvEditorProps } from './editor-contract'
 
   type Props = SvEditorProps & {
     value?: string
@@ -23,6 +28,22 @@
     autocomplete?: AutoFill
     /** Autofocus + select on mount (used when mounted as a cell editor). */
     autofocus?: boolean
+    /** Select the whole value whenever the field is focused. */
+    selectOnFocus?: boolean
+    /** Leading adornment (icon/button) inside the field. */
+    leading?: Snippet
+    /** Trailing adornment (icon/button) inside the field. */
+    trailing?: Snippet
+    /** Plain-text affix at the start (e.g. a `$` or protocol). */
+    prefix?: string
+    /** Plain-text affix at the end (e.g. a unit). */
+    suffix?: string
+    /** `floating` animates the label up on focus/value. Default `static`. */
+    labelMode?: 'static' | 'floating'
+    /** Compact in-field action buttons (lookup/generate/copy...). */
+    actions?: EditorAction[]
+    /** Stretch to the container width. */
+    block?: boolean
   }
 
   let {
@@ -46,8 +67,17 @@
     hint,
     dir,
     id,
+    loading = false,
     autocomplete,
     autofocus = false,
+    selectOnFocus = false,
+    leading,
+    trailing,
+    prefix,
+    suffix,
+    labelMode = 'static',
+    actions,
+    block = false,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-text')
@@ -68,48 +98,50 @@
   function mountFocus(node: HTMLInputElement) {
     if (autofocus) { node.focus(); node.select() }
   }
+  function onFocus(e: FocusEvent) {
+    if (selectOnFocus) (e.currentTarget as HTMLInputElement).select()
+  }
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
-  <div class="sv-text sv-text--{size}" class:is-disabled={disabled}>
-    <div class="sv-text__field" class:is-invalid={invalid}>
-      <input
-        use:mountFocus
-        class="sv-text__input"
-        {type}
-        {value}
-        {placeholder}
-        {disabled}
-        {readonly}
-        {maxlength}
-        {autocomplete}
-        oninput={onInput}
-        onkeydown={onKeydown}
-        {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
-      />
-      {#if clearable && value && !disabled && !readonly}
-        <button class="sv-text__clear" type="button" tabindex="-1" aria-label="Clear" onclick={() => set('')}>&times;</button>
-      {/if}
-    </div>
-    {#if name}<input type="hidden" {name} value={value} />{/if}
-  </div>
+<SvField
+  frame
+  id={uid}
+  {label}
+  {hint}
+  {error}
+  {required}
+  {dir}
+  {size}
+  {invalid}
+  {disabled}
+  {readonly}
+  {loading}
+  {block}
+  {leading}
+  {trailing}
+  {prefix}
+  {suffix}
+  {labelMode}
+  filled={!!value}
+  {actions}
+  clearable={clearable}
+  showClear={!!value}
+  onclear={() => set('')}
+>
+  <input
+    use:mountFocus
+    class="sv-text__input"
+    {type}
+    {value}
+    placeholder={labelMode === 'floating' ? undefined : placeholder}
+    {disabled}
+    {readonly}
+    {maxlength}
+    {autocomplete}
+    oninput={onInput}
+    onkeydown={onKeydown}
+    onfocus={onFocus}
+    {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
+  />
+  {#if name}<input type="hidden" {name} value={value} />{/if}
 </SvField>
-
-<style>
-  .sv-text { --_accent: var(--sg-accent, #2563eb); display: inline-flex; flex-direction: column; width: 220px; }
-  .sv-text.is-disabled { opacity: 0.6; }
-  .sv-text__field {
-    display: flex; align-items: center;
-    background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a);
-    border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1)); border-radius: var(--sg-radius, 8px);
-  }
-  .sv-text__field:focus-within { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
-  .sv-text__field.is-invalid { border-color: var(--sg-danger, #dc2626); }
-  .sv-text__field.is-invalid:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
-  .sv-text__input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: inherit; font: inherit; padding: 0 10px; }
-  .sv-text--sm .sv-text__field { height: 28px; font-size: 12px; }
-  .sv-text--md .sv-text__field { height: 34px; font-size: 13px; }
-  .sv-text--lg .sv-text__field { height: 40px; font-size: 15px; }
-  .sv-text__clear { display: grid; place-items: center; width: 28px; align-self: stretch; background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; font-size: 17px; line-height: 1; }
-  .sv-text__clear:hover { color: var(--sg-fg, #0f172a); }
-</style>

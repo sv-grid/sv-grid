@@ -124,7 +124,7 @@
     border-right: 1px solid var(--sg-border, #cbd5e1);
   }
   .hc-toggle button:last-child { border-right: 0; }
-  .hc-toggle button.on { background: var(--sg-accent, #2563eb); color: #fff; font-weight: 600; }
+  .hc-toggle button.on { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); font-weight: 600; }
 
   /* High-contrast token preset. Light + dark variants. */
   .hc-host-contrast {

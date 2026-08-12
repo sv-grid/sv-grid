@@ -491,16 +491,21 @@ export function createMenus<
   }
 
   // Built-in items, keyed. `run` reads the live target passed at click time.
-  const builtins: Record<string, { label: string; run: (t: CtxTarget) => void }> = {
-    copy: { label: "Copy", run: () => ctx.copySelectionToClipboard() },
-    cut: { label: "Cut", run: () => ctx.cutSelectionToClipboard() },
-    paste: { label: "Paste", run: () => void ctx.pasteFromClipboard() },
-    clear: { label: "Clear", run: () => ctx.clearSelectedCells() },
-    row_above: { label: "Insert row above", run: (t) => insertRowAt(t, 0) },
-    row_below: { label: "Insert row below", run: (t) => insertRowAt(t, 1) },
-    remove_row: { label: "Remove row", run: removeRowAt },
-    remove_col: { label: "Remove column", run: removeColAt },
-    comment: { label: "Edit comment", run: (t) => openCommentEditor(t) },
+  // `msg` names the GridMessages key so the label localizes (falls back to the
+  // English `label` when no `localeText` is set).
+  const builtins: Record<string, { label: string; msg?: string; run: (t: CtxTarget) => void }> = {
+    copy: { label: "Copy", msg: "menuCopy", run: () => ctx.copySelectionToClipboard() },
+    cut: { label: "Cut", msg: "menuCut", run: () => ctx.cutSelectionToClipboard() },
+    paste: { label: "Paste", msg: "menuPaste", run: () => void ctx.pasteFromClipboard() },
+    clear: { label: "Clear", msg: "menuClear", run: () => ctx.clearSelectedCells() },
+    row_above: { label: "Insert row above", msg: "menuInsertRowAbove", run: (t) => insertRowAt(t, 0) },
+    row_below: { label: "Insert row below", msg: "menuInsertRowBelow", run: (t) => insertRowAt(t, 1) },
+    remove_row: { label: "Remove row", msg: "menuRemoveRow", run: removeRowAt },
+    remove_col: { label: "Remove column", msg: "menuRemoveColumn", run: removeColAt },
+    comment: { label: "Edit comment", msg: "menuEditComment", run: (t) => openCommentEditor(t) },
+    // Charting: open the chart panel scoped to the current cell selection. Gated
+    // on `chartingEnabled` in the resolver below.
+    chart: { label: "Chart selected range", msg: "chartRange", run: () => { ctx.chartPanelOpen = true; } },
   };
   const DEFAULT_ITEMS = [
     "copy", "cut", "paste", "clear", "separator",
@@ -574,16 +579,24 @@ export function createMenus<
     const target = ctx.contextMenuFor as CtxTarget | null;
     if (!target) return [];
     const cfg = ctx.props.contextMenu;
+    const messages = ctx.messages;
     const entries: any[] = Array.isArray(cfg)
       ? cfg
-      : [...DEFAULT_ITEMS, ...(ctx.props.editableComments ? ["separator", "comment"] : [])];
+      : [
+          ...DEFAULT_ITEMS,
+          ...(ctx.chartingEnabled ? ["separator", "chart"] : []),
+          ...(ctx.props.editableComments ? ["separator", "comment"] : []),
+        ];
     const out: ResolvedItem[] = [];
     for (const entry of entries) {
       if (entry === "separator") { out.push({ key: "sep" + out.length, label: "", separator: true }); continue; }
       if (typeof entry === "string") {
+        // The chart item only makes sense when charting is enabled.
+        if (entry === "chart" && !ctx.chartingEnabled) continue;
         const b = builtins[entry];
         if (!b) continue;
-        out.push({ key: entry, label: b.label, run: () => b.run(target) });
+        const label = (b.msg && messages?.[b.msg]) || b.label;
+        out.push({ key: entry, label, run: () => b.run(target) });
         continue;
       }
       if (entry.hidden?.(target)) continue;

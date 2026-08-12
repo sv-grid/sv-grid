@@ -30,6 +30,8 @@ export type DropdownListConfig = {
   value: () => DropdownValue
   onChange?: (value: string | number) => void
   disabled?: () => boolean
+  /** Read-only: value shown, trigger focusable, but the panel will not open. */
+  readonly?: () => boolean
   ariaLabel?: () => string | undefined
   /** DOM focus hook provided by the renderer; the core never touches the DOM. */
   focusTrigger?: () => void
@@ -48,6 +50,7 @@ export function createDropdownList(config: DropdownListConfig) {
   const optionId = (index: number) => `${listId}-opt-${index}`
   const opts = () => config.options()
   const disabled = () => config.disabled?.() ?? false
+  const readonly = () => config.readonly?.() ?? false
 
   const ariaState = (): EditorAriaState => ({
     id: config.id?.(),
@@ -65,13 +68,14 @@ export function createDropdownList(config: DropdownListConfig) {
   const enabledIdx = $derived(opts().map((o, i) => (o.disabled ? -1 : i)).filter((i) => i >= 0))
 
   function openPanel() {
-    if (disabled() || open) return
+    if (disabled() || readonly() || open) return
     open = true
     active = Math.max(0, opts().findIndex((o) => o.value === config.value()))
   }
   function close() { open = false }
   function toggle() { if (open) { close() } else { openPanel() } }
   function pick(i: number) {
+    if (readonly()) return
     const o = opts()[i]
     if (!o || o.disabled) return
     config.onChange?.(o.value); close(); config.focusTrigger?.()
@@ -85,6 +89,7 @@ export function createDropdownList(config: DropdownListConfig) {
   // when the list is closed, matching a native <select>).
   const typeahead = createTypeaheadBuffer()
   function onTypeahead(char: string) {
+    if (readonly()) return
     const buffer = typeahead.push(char.toLowerCase())
     const from = active >= 0 ? active : opts().findIndex((o) => o.value === config.value())
     const next = nextTypeaheadIndex(opts(), buffer, from)
@@ -93,7 +98,7 @@ export function createDropdownList(config: DropdownListConfig) {
     if (!open) config.onChange?.(opts()[next]!.value)
   }
   function onKeydown(e: KeyboardEvent) {
-    if (disabled()) return
+    if (disabled() || readonly()) return
     if (isTypeaheadKey(e)) { onTypeahead(e.key); return }
     if (!open && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openPanel(); return }
     if (!open) return
@@ -132,6 +137,7 @@ export function createDropdownList(config: DropdownListConfig) {
       'aria-controls': listId,
       'aria-activedescendant': open && opts()[active] ? optionId(active) : undefined,
       ...editorAria(ariaState()),
+      'aria-readonly': readonly() || undefined,
       disabled: disabled(),
       onclick: toggle,
       onkeydown: onKeydown,

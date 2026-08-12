@@ -56,5 +56,5 @@
   header p { margin: 0; color: var(--sg-muted, #64748b); font-size: 13.5px; line-height: 1.5; }
   .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; align-items: start; }
   section h3 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--sg-muted, #64748b); }
-  .btn { margin-top: 14px; font: inherit; font-size: 13px; font-weight: 600; padding: 7px 16px; border: 0; border-radius: 8px; background: var(--sg-accent, #2563eb); color: #fff; cursor: pointer; }
+  .btn { margin-top: 14px; font: inherit; font-size: 13px; font-weight: 600; padding: 7px 16px; border: 0; border-radius: 8px; background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); cursor: pointer; }
 </style>

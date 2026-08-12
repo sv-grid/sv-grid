@@ -726,7 +726,7 @@
   .pt-btn-ghost.is-active { background: color-mix(in srgb, var(--sg-accent, #3b82f6) 12%, transparent); border-color: var(--sg-accent, #3b82f6); color: var(--sg-accent, #3b82f6); }
   .pt-btn-primary {
     background: var(--sg-accent, #3b82f6);
-    color: white;
+    color: var(--sg-on-accent, white);
     border-color: var(--sg-accent, #3b82f6);
     font-weight: 600;
   }

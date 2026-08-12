@@ -11,6 +11,46 @@ signed-in user; RLS policies decide which rows that user can read and write.
 
 ---
 
+## In the designer (no code)
+
+In the designer, open **Authentication**, turn it on, and set **Provider** to
+**Supabase Auth**. Studio then wraps the whole app in `SvAuthGate` over the shared
+Supabase client (from `connections.ts`) - email/password sign-in, sign-up, and
+sign-out - and skips the built-in cookie-session scaffold entirely. It needs a
+Supabase connection (set the shared project URL / anon key, or bind an entity to
+Supabase); the designer flags it if one is missing.
+
+Because Supabase Auth signs in **on the client**, it does not populate a
+server-side role, so it does not drive server route guards. Enforce per-user
+access with **Row-Level Security** on your tables (below) - that is the right
+model with Supabase anyway. The other provider, **Built-in**, is the
+dependency-free cookie-session starter with server-side roles; pick that when you
+want RBAC route guards without Supabase.
+
+## The built-in auth starter
+
+**Provider: Built-in** generates a complete, dependency-free auth stack the app
+owns: cookie sessions, a login screen, server-side route guards, and its own
+user store - no external service. It is what powers
+[access control](./access-control.md) role checks on the server. The options,
+all toggles in the designer's **Authentication** panel (or
+[`studio_set_auth`](./ai-generation.md#drive-the-whole-project-model) from an
+agent):
+
+| Option | What it adds |
+| --- | --- |
+| **Protect** | Require sign-in for every screen (route guards, not just hidden nav). |
+| **Register** | Self-service sign-up, with new users landing in the default role. |
+| **User admin** | An admin **Users** screen: create users, assign roles, reset passwords. Needs RBAC enabled. |
+| **OAuth** | Sign in with **GitHub**, **Google**, or any **OIDC** provider, next to email + password. |
+| **Two-factor** | Email-code second factor at sign-in. |
+| **Email** | Real email delivery (Resend or SMTP) for verification / reset / 2FA codes; without it, codes land in the server log for development. |
+
+Register, user admin, OAuth, and two-factor persist users in your database, so
+they need the **Drizzle data layer** enabled and a SQL-bound entity; the
+designer points this out when a prerequisite is off. Seed users per role can be
+defined in the panel so a fresh app has accounts to sign in with.
+
 ## Gate the UI with `SvAuthGate`
 
 Wrap your screen. `SvAuthGate` shows a login / sign-up form when signed out and

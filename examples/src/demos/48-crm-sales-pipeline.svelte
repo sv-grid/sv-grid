@@ -598,7 +598,7 @@
   .crm-chip-active {
     background: var(--sg-accent, #2563eb);
     border-color: transparent;
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
   .crm-chip-n {
     font-size: 11px;
@@ -854,6 +854,6 @@
   .crm-btn-primary {
     border-color: transparent;
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
 </style>

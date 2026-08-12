@@ -255,7 +255,7 @@
   .ie-btn-ghost:hover:not(:disabled) { background: var(--sg-row-hover-bg, rgba(148,163,184,0.10)); }
   .ie-btn-primary {
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     border: 1px solid transparent;
     box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25);
   }

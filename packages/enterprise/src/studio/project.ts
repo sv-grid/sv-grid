@@ -34,6 +34,24 @@ export type SqlDialectKind = 'postgres' | 'mysql' | 'sqlite' | 'mssql' | 'supaba
 /** In-memory (seeded) source. `seed` carries curated rows (e.g. a sample app);
  *  when absent the codegen + preview synthesize realistic rows. */
 export type MemorySource = { kind: 'memory'; seed?: Record<string, unknown>[] }
+/** Wire-format preset that teaches the REST source how a backend pages / sorts /
+ *  wraps its rows, so the generated grid does REAL server-side paging + sort (not a
+ *  single fetched page). Maps to the `offsetLimit` / `dummyjson` / `jsonServer`
+ *  adapters in `@svgrid/enterprise`. Absent = the legacy manual `rowsPath`/`totalPath`
+ *  (parse only; no server paging). */
+export type RestAdapterConfig =
+  | { kind: 'dummyjson'; rowsKey?: string }
+  | { kind: 'jsonServer' }
+  | {
+      kind: 'offsetLimit'
+      offsetParam?: string
+      limitParam?: string
+      sortByParam?: string
+      orderParam?: string
+      searchParam?: string
+      rowsKey?: string
+      totalKey?: string
+    }
 export type RestSource = {
   kind: 'rest'
   /** Origin + version prefix, e.g. `https://api.example.com/v1`. */
@@ -43,13 +61,16 @@ export type RestSource = {
   method: RestMethod
   params: RequestParam[]
   idField?: string
+  /** Wire-format preset for real server paging/sort (offsetLimit / dummyjson /
+   *  jsonServer). When set, it supersedes `rowsPath`/`totalPath`. */
+  adapter?: RestAdapterConfig
   /** Dotted path in the response body holding the rows, e.g. `data.items`. */
   rowsPath?: string
   /** Dotted path holding the total row count, e.g. `data.total`. */
   totalPath?: string
 }
-export type SqlSource = { kind: 'sql'; table: string; dialect?: SqlDialectKind }
-export type SupabaseSource = { kind: 'supabase'; table: string; url?: string; key?: string }
+export type SqlSource = { kind: 'sql'; table: string; dialect?: SqlDialectKind; /** DB schema / search path (Postgres/MSSQL); default `public`. Qualifies the table. */ schema?: string }
+export type SupabaseSource = { kind: 'supabase'; table: string; url?: string; key?: string; realtime?: boolean }
 /** Embedded Postgres (PGlite) - a real, persistent database with ZERO backend
  *  setup. Runs in the browser, persisting to IndexedDB. Swap for a `sql` source
  *  pointed at hosted Postgres to go to production (same schema + SQL). */
@@ -100,6 +121,15 @@ export type GridConfig = {
   editing: GridEditing
   /** Presentation of the edit form when `editing === 'form'`. */
   formPresentation: Presentation
+  /** Form layout depth (all optional; default = the auto 2-column form of all fields). */
+  formColumns?: 1 | 2 | 3
+  /** Restrict + order the form's fields (field names). */
+  formFields?: string[]
+  /** Group fields into titled fieldsets. */
+  formSections?: Array<{ title?: string; fields: string[] }>
+  /** Dialog title override + width for the modal/drawer form. */
+  formTitle?: string
+  formSize?: 'sm' | 'md' | 'lg'
   density: GridDensity
   striped: boolean
   /** Excel-style cell/range selection. */
@@ -135,6 +165,10 @@ export type GridConfig = {
    *  Kanban board). Mutually exclusive with grouping / tree. Uses the enterprise
    *  scheduler renderer (`enableSchedulerView`). */
   scheduler?: SchedulerViewConfig
+  /** Raw SvGrid prop overrides from the block's "All properties" panel - every grid
+   *  prop the curated controls don't manage. Passed straight through to `<SvGrid>`
+   *  (deduped against the curated props at codegen time). */
+  props?: Record<string, unknown>
 }
 /** Which calendar view the scheduler opens on / offers. */
 export type SchedulerViewMode = 'month' | 'week' | 'day' | 'agenda' | 'timelineDay' | 'timelineWeek' | 'timelineMonth' | 'timelineYear'
@@ -360,7 +394,9 @@ export function blockClassName(block: Pick<Block, 'className'>): string {
 }
 /** The number of columns (1-12) a block occupies in the 12-col layout. */
 export const blockColumns = (b: Pick<Block, 'span' | 'colSpan'>): number =>
-  Math.max(1, Math.min(12, Math.round(b.colSpan ?? b.span * 4)))
+  // Default to full width when a block sets neither colSpan nor span (Copilot /
+  // hand-authored configs may omit both) - never emit `span NaN` into the HTML.
+  Math.max(1, Math.min(12, Math.round(b.colSpan ?? (b.span != null ? b.span * 4 : 12))))
 
 /** Restrict a user-typed color to a safe subset so it can't break out of an inline
  *  `style="..."` attribute (hex, rgb()/hsl(), named colors, css vars). */
@@ -408,9 +444,48 @@ export const clickSlot = (blockId: string) => `click:${blockId}`
 export const rowSelectSlot = (blockId: string) => `rowSelect:${blockId}`
 /** The handler-steps key for a component block's change (value change) event. */
 export const changeSlot = (blockId: string) => `change:${blockId}`
+/** Generic event slot - `click`/`change` produce the same keys as clickSlot/changeSlot,
+ *  so existing projects keep their wiring; any other declared component event
+ *  (focus, select, toggle, ...) gets its own `<event>:<blockId>` slot. */
+export const eventSlot = (event: string, blockId: string) => `${event}:${blockId}`
 /** The handler-steps key for the screen's form-submit (record saved) event. The
  *  compiled steps get the submitted `row` (values) in scope. */
 export const FORM_SUBMIT = 'formSubmit'
+
+/** One event on the Grid, exposed to code-behind as `ctx.grid.<method> = (e) => {}`.
+ *  `prop` is the SvGrid callback it wires to (empty for `dataEvent`s, which fire from
+ *  Studio's data controller on create/update/delete rather than from the grid markup). */
+export type GridEventDef = { key: string; method: string; prop: string; params: string; builtin: boolean; desc: string; dataEvent?: boolean }
+/** The Grid's real event surface (mirrors SvGrid's `on*` callbacks). Studio wires
+ *  every one into `ctx.grid` so page code can subscribe with `ctx.grid.onCellClick =
+ *  (e) => {}`. `params` is the handler's parameter list, with `Row` as the row-type
+ *  placeholder (substituted per screen). `builtin` marks events a Studio feature may
+ *  already use (sort/filter/paginate/edit/row-click) - codegen COMPOSES the user's
+ *  handler onto the built-in rather than emitting a duplicate prop. Signatures are
+ *  transcribed from packages/grid/src/SvGrid.types.ts. */
+export const GRID_EVENTS: readonly GridEventDef[] = [
+  { key: 'rowClick', method: 'onRowClick', prop: 'onRowClick', builtin: true, desc: 'A data row is single-clicked.', params: 'e: { rowIndex: number; columnId: string; row: Row }' },
+  { key: 'rowDoubleClick', method: 'onRowDoubleClick', prop: 'onRowDoubleClick', builtin: true, desc: 'A data row is double-clicked.', params: 'e: { rowIndex: number; columnId: string; row: Row }' },
+  { key: 'cellClick', method: 'onCellClick', prop: 'onCellClick', builtin: false, desc: 'A data cell is single-clicked.', params: 'e: { rowIndex: number; colIndex: number; columnId: string; value: unknown; row: Row }' },
+  { key: 'cellDoubleClick', method: 'onCellDoubleClick', prop: 'onCellDoubleClick', builtin: false, desc: 'A data cell is double-clicked.', params: 'e: { rowIndex: number; colIndex: number; columnId: string; value: unknown; row: Row }' },
+  { key: 'rowSelectionChange', method: 'onRowSelectionChange', prop: 'onRowSelectionChange', builtin: false, desc: 'The row selection changes.', params: 'selection: Record<string, boolean>, rows: Row[]' },
+  { key: 'cellSelectionChange', method: 'onCellSelectionChange', prop: 'onCellSelectionChange', builtin: false, desc: 'The cell-selection rectangle changes.', params: 'ranges: Array<[number, number, number, number]>' },
+  { key: 'activeCellChange', method: 'onActiveCellChange', prop: 'onActiveCellChange', builtin: false, desc: 'The active cell changes.', params: 'cell: { rowIndex: number; colIndex: number; columnId: string }' },
+  { key: 'cellValueChange', method: 'onCellValueChange', prop: 'onCellValueChange', builtin: true, desc: 'An inline cell edit is committed.', params: 'e: { rowIndex: number; columnId: string; oldValue: unknown; newValue: unknown; row: Row }' },
+  { key: 'sortingChange', method: 'onSortingChange', prop: 'onSortingChange', builtin: true, desc: 'The sort clauses change.', params: 'sorting: Array<{ id: string; desc: boolean }>' },
+  { key: 'filtersChange', method: 'onFiltersChange', prop: 'onFiltersChange', builtin: true, desc: 'Any in-grid filter changes.', params: 'filters: { global: string; columns: Array<{ id: string; operator: string; value: string; valueTo?: string; selectedValues?: string[] }> }' },
+  { key: 'paginationChange', method: 'onPaginationChange', prop: 'onPaginationChange', builtin: true, desc: 'The page or page size changes.', params: 'pagination: { pageIndex: number; pageSize: number }' },
+  { key: 'columnOrderChange', method: 'onColumnOrderChange', prop: 'onColumnOrderChange', builtin: false, desc: 'The column order changes.', params: 'order: ReadonlyArray<string>' },
+  { key: 'scrollBottomReached', method: 'onScrollBottomReached', prop: 'onScrollBottomReached', builtin: false, desc: 'The body scrolls near the bottom (lazy-load hook).', params: 'e: { scrollTop: number; scrollHeight: number; clientHeight: number }' },
+  { key: 'noteChange', method: 'onNoteChange', prop: 'onNoteChange', builtin: false, desc: 'A cell note/comment is saved or removed (needs editable comments).', params: 'e: { rowId: string; columnId: string; note: string }' },
+  { key: 'rowDragEnd', method: 'onRowDragEnd', prop: 'onRowDragEnd', builtin: false, desc: 'A managed row drag settles (needs row dragging enabled).', params: 'e: { row: Row; toIndex: number; sameGrid: boolean; fromGridId: number; toGridId: number }' },
+  // Data-layer events - fired by the screen's data controller after a write settles
+  // (form save, inline edit, delete action, or ctx.data.create/update/delete), not by
+  // the grid markup. Only fire on entity screens (which have a data source).
+  { key: 'rowAdded', method: 'onRowAdded', prop: '', builtin: false, dataEvent: true, desc: 'A row was created (form / ctx.data.create).', params: 'row: Row' },
+  { key: 'rowUpdated', method: 'onRowUpdated', prop: '', builtin: false, dataEvent: true, desc: 'A row was updated (form / inline edit / ctx.data.update).', params: 'row: Row' },
+  { key: 'rowDeleted', method: 'onRowDeleted', prop: '', builtin: false, dataEvent: true, desc: 'A row was deleted (delete action / ctx.data.delete).', params: 'id: string' },
+]
 
 // --- logic core: screen state + a small expression engine --------------------
 
@@ -644,7 +719,7 @@ export function setLayoutOpts<K extends keyof LayoutOpts>(project: StudioProject
   return mapScreen(project, screenId, (s) => ({ ...s, layoutOpts: { ...s.layoutOpts, [mode]: { ...s.layoutOpts?.[mode], ...patch } } }))
 }
 
-export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlerSteps?: Record<string, ActionStep[]>; handlersSource?: string; className?: string; layout?: ScreenLayout; dock?: DockManagerState; canvas?: Record<string, CanvasRect>; layoutOpts?: LayoutOpts; state?: StateVar[] }
+export type Screen = { id: string; entity?: string; title: string; route: string; blocks: Block[]; nav?: ScreenNav; actions?: ActionConfig[]; code?: boolean; renderGrid?: boolean; handlerBodies?: Record<string, string>; handlerSteps?: Record<string, ActionStep[]>; handlersSource?: string; className?: string; layout?: ScreenLayout; dock?: DockManagerState; canvas?: Record<string, CanvasRect>; layoutOpts?: LayoutOpts; state?: StateVar[]; renderMode?: 'ssr' | 'spa' }
 
 /** The generated app's shell (master layout): sidebar, top-nav, or bottom-nav; brand, footer. */
 export type ShellStyle = 'sidebar' | 'top-nav' | 'bottom-nav'
@@ -680,6 +755,13 @@ export type AccessControl = {
 export type OAuthProvider = 'github' | 'google' | 'oidc'
 export type AuthConfig = {
   enabled: boolean
+  /** Which sign-in system to scaffold. `'builtin'` (default) is the dependency-free
+   *  cookie-session starter below (own user store, server route guards, RBAC).
+   *  `'supabase'` delegates to Supabase Auth: a client-side `SvAuthGate` over the
+   *  shared Supabase client, pairing with the database's Row Level Security. The
+   *  builtin-only sub-options (register / userAdmin / oauth / twoFactor / email) do
+   *  not apply to the Supabase provider. */
+  provider?: 'builtin' | 'supabase'
   /** Redirect unauthenticated visitors to /login for every route. Default true. */
   protect?: boolean
   /** Self-service sign-up + password recovery (/register, /forgot-password,
@@ -711,6 +793,10 @@ export type StudioProject = {
   dataSource: DataSourceKind
   /** Per-entity data-source binding, keyed by entity name. */
   dataSources?: Record<string, EntityDataSource>
+  /** Project-level Supabase connection (URL + anon key), shared by every
+   *  Supabase-bound entity so it's set once. A per-entity `SupabaseSource.url`/`key`
+   *  still overrides for that entity. Read by the wizard + the `.env` paste hint. */
+  supabase?: { url?: string; key?: string }
   theme?: ProjectTheme
   /** Role-based access control (optional; off unless `access.enabled`). */
   access?: AccessControl
@@ -731,6 +817,55 @@ export type StudioProject = {
   /** Server-side business-rule triggers, keyed by entity name. Enforced on the
    *  SQL route (compiled into createKitHandlers `hooks`). */
   triggers?: Record<string, EntityTriggers>
+}
+
+/** The render mode for a screen. `'ssr'` emits idiomatic SvelteKit (`+page.server.ts`
+ *  with a `load` + form `actions`, SSR + progressive enhancement); `'spa'` (the
+ *  default) emits the client data-source-controller page. Opt-in for now. */
+export function screenRenderMode(_project: StudioProject, screen: Screen): 'ssr' | 'spa' {
+  return screen.renderMode === 'ssr' ? 'ssr' : 'spa'
+}
+
+/** Block kinds a read-only SSR screen can host: pure renders over server-loaded
+ *  rows. Board/calendar/scheduler (client interaction runtimes), components
+ *  (client bindings), grids-with-extras, and containers stay SPA. */
+const SSR_READ_KINDS = new Set<BlockKind>(['chart', 'pivot', 'dashboard', 'kpi', 'gauge', 'tree', 'detail', 'master-detail'])
+
+/** How a screen would emit under SSR: 'grid' (single grid -> load + form actions,
+ *  URL-driven sort/filter/page), 'read' (data-viz/detail blocks -> load only), or
+ *  null when it must stay SPA. */
+export function ssrScreenShape(project: StudioProject, screen: Screen): 'grid' | 'read' | null {
+  if (!screen.entity || screen.code) return null
+  const kind = project.dataSources?.[screen.entity]?.kind ?? project.dataSource
+  // memory runs the source in-process; sql reuses the connected /api route via
+  // event.fetch. (rest/supabase/pglite stay SPA for now.)
+  if (kind !== 'memory' && kind !== 'sql') return null
+  const blocks = screen.blocks ?? []
+  if (blocks.length === 1 && blocks[0]!.config.kind === 'grid') {
+    const g = blocks[0]!.config as GridConfig
+    if (g.treeData || g.scheduler) return null
+    return 'grid'
+  }
+  if (blocks.length >= 1 && blocks.every((b) => SSR_READ_KINDS.has(b.config.kind))) return 'read'
+  return null
+}
+
+/** Whether a screen can be emitted as SSR-native (any supported shape). */
+export function ssrEligible(project: StudioProject, screen: Screen): boolean {
+  return ssrScreenShape(project, screen) !== null
+}
+
+/** Set a screen's render mode ('spa' clears back to the default). */
+export function setScreenRenderMode(project: StudioProject, screenId: string, mode: 'ssr' | 'spa'): StudioProject {
+  return {
+    ...project,
+    screens: project.screens.map((s) => (s.id === screenId ? { ...s, renderMode: mode === 'ssr' ? 'ssr' : undefined } : s)),
+  }
+}
+
+/** True when the screen should actually emit as SSR (mode is 'ssr' AND eligible). */
+export function isSsrScreen(project: StudioProject, screen: Screen): boolean {
+  return screenRenderMode(project, screen) === 'ssr' && ssrEligible(project, screen)
 }
 
 /** The triggers configured for an entity (or an empty object). */
@@ -1761,10 +1896,12 @@ export function setAuth(project: StudioProject, patch: Partial<AuthConfig> & { e
   if (!patch.enabled) { const { auth: _drop, ...rest } = project; return rest }
   const prev = project.auth
   const oauth = patch.oauth ?? prev?.oauth
+  const provider = patch.provider ?? prev?.provider
   return {
     ...project,
     auth: {
       enabled: true,
+      ...(provider && provider !== 'builtin' ? { provider } : {}),
       protect: patch.protect ?? prev?.protect ?? true,
       register: patch.register ?? prev?.register ?? false,
       userAdmin: patch.userAdmin ?? prev?.userAdmin ?? false,
@@ -1812,9 +1949,11 @@ export function setEntityDataSource(project: StudioProject, entityName: string, 
   return { ...project, dataSources: { ...project.dataSources, [entityName]: source } }
 }
 
-/** The resolved source for an entity (its explicit binding, else in-memory). */
+/** The resolved source for an entity: its explicit per-entity binding, else a skeleton
+ *  for the project's default source kind (so the rail "Default source" actually applies
+ *  to unbound entities, and this agrees with `ssrScreenShape`'s fallback). */
 export function entityDataSource(project: StudioProject, entityName: string): EntityDataSource {
-  return project.dataSources?.[entityName] ?? { kind: 'memory' }
+  return project.dataSources?.[entityName] ?? defaultEntitySource(project.dataSource ?? 'memory', entityName)
 }
 
 export function setTheme(project: StudioProject, theme: ProjectTheme): StudioProject {
@@ -1972,6 +2111,7 @@ export function parseProject(json: string): StudioProject {
     screens: p.screens as Screen[],
     dataSource: (p.dataSource ?? 'memory') as DataSourceKind,
     ...(p.dataSources && typeof p.dataSources === 'object' ? { dataSources: p.dataSources as Record<string, EntityDataSource> } : {}),
+    ...(p.supabase && typeof p.supabase === 'object' ? { supabase: p.supabase as { url?: string; key?: string } } : {}),
     ...(p.theme && typeof p.theme === 'object' ? { theme: p.theme as ProjectTheme } : {}),
     ...(p.access && typeof p.access === 'object' ? { access: p.access as AccessControl } : {}),
     ...(p.auth && typeof p.auth === 'object' && (p.auth as AuthConfig).enabled ? { auth: p.auth as AuthConfig } : {}),
@@ -2026,6 +2166,53 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
       } else if (c.kind === 'component') {
         if (!c.component) issues.push(at('Component block has no component selected.'))
       }
+    }
+  }
+
+  // Project-level deployment footguns (all advisory - the app still generates).
+  const sources = Object.values(project.dataSources ?? {})
+  const sqlSources = sources.filter((s): s is Extract<EntityDataSource, { kind: 'sql' }> => s.kind === 'sql')
+  if (sqlSources.length > 0 && project.dataLayer !== 'drizzle') {
+    issues.push({
+      level: 'warning',
+      message:
+        'SQL entities have no migrations - their tables must already exist in the database. ' +
+        'Enable the Drizzle data layer for typed migrations, or run the generated db/schema.sql against your database first.',
+    })
+  }
+  if (project.deploy === 'cloudflare' && sqlSources.some((s) => s.dialect === 'postgres' || s.dialect === 'supabase')) {
+    issues.push({
+      level: 'warning',
+      message:
+        'Cloudflare Workers cannot run the socket "pg" Postgres driver. Swap the generated route to an HTTP driver ' +
+        '(e.g. Neon serverless) or choose another deploy target.',
+    })
+  }
+  for (const [name, src] of Object.entries(project.dataSources ?? {})) {
+    if (src.kind === 'supabase' && !(src.url ?? project.supabase?.url) && !(src.key ?? project.supabase?.key)) {
+      issues.push({
+        level: 'warning',
+        message: `Supabase entity "${name}" has no URL/key - set the shared project connection (or this entity's own), or the generated app just reads PUBLIC_SUPABASE_URL / PUBLIC_SUPABASE_ANON_KEY from .env.`,
+      })
+    }
+  }
+  // Supabase Auth needs a Supabase client to authenticate against: either the shared
+  // project connection or at least one Supabase-bound entity (both emit connections.ts).
+  if (project.auth?.enabled && project.auth.provider === 'supabase') {
+    const hasSupabase = !!project.supabase?.url || sources.some((s) => s.kind === 'supabase')
+    if (!hasSupabase) {
+      issues.push({
+        level: 'warning',
+        message: 'Supabase Auth needs a Supabase connection. Set the shared project URL / anon key (in a data-source builder), or bind an entity to Supabase.',
+      })
+    }
+    // Supabase Auth is a client-side gate; it does not populate the server-side role
+    // the RBAC route guard reads. Server enforcement must come from RLS instead.
+    if (project.access?.enabled) {
+      issues.push({
+        level: 'warning',
+        message: 'Supabase Auth signs in on the client, so it does not populate the server-side role that RBAC route guards check. Enforce per-user access with Row Level Security policies on your Supabase tables.',
+      })
     }
   }
   return issues

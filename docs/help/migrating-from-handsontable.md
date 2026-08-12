@@ -131,7 +131,7 @@ function onCellValueChange(e) {
 
 This is the only piece where the swap isn't 1:1. Most teams find
 sv-grid's shipped subset covers 80% of real-world formula usage; if
-yours is in the 20%, HyperFormula plugs in cleanly.
+yours is in the 20%, HyperFormula plugs in with the pattern above.
 
 ## Trial → license
 

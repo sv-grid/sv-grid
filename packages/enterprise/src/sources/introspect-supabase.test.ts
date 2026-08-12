@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { introspectSupabaseTable } from './introspect-supabase'
+import { introspectSupabaseTable, listSupabaseTables } from './introspect-supabase'
 
 type Parts = { openapi?: unknown; openapiStatus?: number; csv?: string; sample?: unknown }
 
@@ -96,5 +96,17 @@ describe('introspectSupabaseTable', () => {
   it('returns null when nothing can determine the columns', async () => {
     const schema = await introspectSupabaseTable(opts(fetchFor({ openapiStatus: 404, sample: [], csv: '' })))
     expect(schema).toBeNull()
+  })
+})
+
+describe('listSupabaseTables', () => {
+  it('lists table names from the OpenAPI definitions (sorted)', async () => {
+    const openapi = { definitions: { orders: {}, customers: {}, deals: {} } }
+    const tables = await listSupabaseTables('https://x.supabase.co', 'anon', fetchFor({ openapi }))
+    expect(tables).toEqual(['customers', 'deals', 'orders'])
+  })
+
+  it('returns [] when the OpenAPI doc is blocked or the key is wrong', async () => {
+    expect(await listSupabaseTables('https://x.supabase.co', 'anon', fetchFor({ openapiStatus: 401 }))).toEqual([])
   })
 })

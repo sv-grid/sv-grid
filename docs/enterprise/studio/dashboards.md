@@ -133,5 +133,5 @@ Live demo: [Dashboard](https://svgrid.com/#/demos/200-studio-dashboard).
 
 ## See also
 
-- [Chart](./studio.md#three-ways-to-build) · `SvSchemaChart`
+- [Chart](../studio.md#three-ways-to-build) · `SvSchemaChart`
 - [Computed fields & hooks](./business-logic.md) · [Server grid](./server-grid.md)

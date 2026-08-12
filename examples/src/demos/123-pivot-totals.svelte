@@ -292,7 +292,7 @@
     border: 0; background: transparent; padding: 4px 10px;
     font-size: 11.5px; cursor: pointer; color: var(--sg-fg, #1e293b);
   }
-  .tot-seg button.active { background: var(--sg-accent, #2563eb); color: #fff; font-weight: 700; }
+  .tot-seg button.active { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); font-weight: 700; }
   .tot-btn {
     border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-bg, #ffffff);
     color: var(--sg-fg, #1e293b);

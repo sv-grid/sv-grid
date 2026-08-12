@@ -74,6 +74,16 @@
     popIn,
     createDismissableLayer,
   } from "@svgrid/grid";
+  // Scheduler Pro feature models (this package).
+  import { cascade, violations, type SchedulerDependency } from "./scheduler-dependencies";
+  import { expandAssignments, resourceLoad, type SchedulerAssignment } from "./scheduler-assignments";
+  import { columnSummaries } from "./scheduler-summary";
+  import { buildAxis, timeToX, xToTime, resolveZoom, zoomPresets, type Axis, type ZoomLevel } from "./scheduler-axis";
+  import { buildResourceRows, visibleResourceIds, type ResourceRow } from "./scheduler-resource-tree";
+  import { heatCells, heatPeak, type HeatCell } from "./scheduler-heatmap";
+  import { respectsBuffer, withinDurationBounds, afterLead, type BusyEvent } from "./scheduler-booking";
+  import { availableSlots, type Slot, type Interval as SlotInterval } from "./scheduler-slots";
+  import type { SchedulerProConfig } from "./scheduler-config";
 
   let {
     data,
@@ -152,7 +162,7 @@
   }
   // Emit a per-occurrence override as a real instant (converts out of pseudo-local).
   // `scope` = 'occurrence' (merge into the row) or 'following' (split the series).
-  function emitOccurrence(ev: ResolvedEvent<TData>, opts: { start?: Date; end?: Date; deleted?: boolean; title?: string; allDay?: boolean }, scope: "occurrence" | "following" = "occurrence") {
+  function emitOccurrence(ev: ResolvedEvent<TData>, opts: { start?: Date; end?: Date; deleted?: boolean; title?: string; allDay?: boolean; fields?: Record<string, unknown> }, scope: "occurrence" | "following" = "occurrence") {
     if (!ev.occurrenceStart) return;
     const occ = fromZ(ev.occurrenceStart);
     scheduler.onOccurrenceChange?.({
@@ -166,6 +176,7 @@
         ...(opts.end ? { end: fromZ(opts.end) } : {}),
         ...(opts.title != null ? { title: opts.title } : {}),
         ...(opts.allDay != null ? { allDay: opts.allDay } : {}),
+        ...(opts.fields && Object.keys(opts.fields).length ? { fields: opts.fields } : {}),
       },
     });
   }
@@ -227,7 +238,7 @@
     getColor: (r) =>
       scheduler.colorField
         ? (fieldValue(r, scheduler.colorField) as string | undefined)
-        : scheduler.color,
+        : calendarColorOf(r) ?? scheduler.color,
     getSecondaryColor: (r) =>
       scheduler.secondaryColorField
         ? (fieldValue(r, scheduler.secondaryColorField) as string | undefined)
@@ -244,7 +255,7 @@
     getExceptions: (r) => {
       const f = scheduler.recurrenceExceptionsField;
       if (!f) return undefined;
-      const arr = fieldValue(r, f) as ReadonlyArray<{ occurrenceStart: unknown; deleted?: boolean; start?: unknown; end?: unknown; title?: string; allDay?: boolean }> | undefined;
+      const arr = fieldValue(r, f) as ReadonlyArray<{ occurrenceStart: unknown; deleted?: boolean; start?: unknown; end?: unknown; title?: string; allDay?: boolean; fields?: Record<string, unknown> }> | undefined;
       return arr?.map((e) => ({
         occurrenceStart: toZ(e.occurrenceStart) ?? new Date(NaN),
         deleted: e.deleted,
@@ -252,6 +263,7 @@
         end: e.end != null ? toZ(e.end) : undefined,
         title: e.title,
         allDay: e.allDay,
+        fields: e.fields,
       }));
     },
     defaultDurationMin: scheduler.defaultDurationMin ?? 60,
@@ -283,13 +295,35 @@
     return out;
   });
   let hiddenResources = $state<Set<string>>(new Set());
-  // The events actually rendered: `events` minus any filtered-out resources.
-  // Used by EVERY view so the resource filter works everywhere.
-  const viewEvents = $derived(
-    resourceField && hiddenResources.size
-      ? events.filter((e) => !hiddenResources.has(e.resourceId ?? ""))
-      : events,
-  );
+  // --- multi-calendar overlay ---
+  const calendars = $derived(pcfg.calendars ?? []);
+  const calField = $derived(pcfg.calendarField);
+  const calById = $derived(new Map(calendars.map((c) => [c.id, c])));
+  const calendarColorOf = (r: TData): string | undefined =>
+    calField ? calById.get(String(fieldValue(r, calField as string) ?? ""))?.color : undefined;
+  // Seed hidden calendars from any `hidden: true` in the config (once).
+  let hiddenCalendars = $state<Set<string>>(new Set());
+  let calSeeded = false;
+  $effect(() => {
+    if (calSeeded || !calendars.length) return;
+    calSeeded = true;
+    const init = calendars.filter((c) => c.hidden).map((c) => c.id);
+    if (init.length) hiddenCalendars = new Set(init);
+  });
+  function toggleCalendar(id: string) {
+    const next = new Set(hiddenCalendars);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    hiddenCalendars = next;
+  }
+  // The events actually rendered: `events` minus filtered-out resources / calendars.
+  // Used by EVERY view so the filters work everywhere.
+  const viewEvents = $derived.by(() => {
+    let out = events;
+    if (resourceField && hiddenResources.size) out = out.filter((e) => !hiddenResources.has(e.resourceId ?? ""));
+    if (calField && hiddenCalendars.size) out = out.filter((e) => !hiddenCalendars.has(String(fieldValue(e.row, calField as string) ?? "")));
+    return out;
+  });
   function toggleResource(id: string) {
     const next = new Set(hiddenResources);
     if (next.has(id)) next.delete(id);
@@ -307,23 +341,440 @@
   const tlResW = $derived(scheduler.resourceAreaWidth ?? 160);
   const tlSlot = $derived(Math.max(1, scheduler.timelineSlotMinutes ?? slotMinutes));
   const tlAxis = $derived(
-    timelineAxis(view, range.start, range.end, {
-      dayStartHour,
-      dayEndHour,
-      today: startOfDay(toZonedLocal(new Date(), tz)),
-    }),
+    axisPro
+      ? proTimelineAxis()
+      : timelineAxis(view, range.start, range.end, {
+          dayStartHour,
+          dayEndHour,
+          today: startOfDay(toZonedLocal(new Date(), tz)),
+        }),
   );
-  // One tick is at least this wide; the axis scrolls horizontally past it.
+  // One tick is at least this wide; the axis scrolls horizontally past it. A
+  // `timelineTickMinWidth` config widens it (room for narrow sub-day event labels).
   const TL_TICK_MIN = $derived(
-    view === "timelineMonth" ? 42 : view === "timelineDay" ? 68 : view === "timelineYear" ? 80 : 96,
+    ((scheduler as SchedulerProConfig<TFeatures, TData>).timelineTickMinWidth ?? 0) > 0
+      ? (scheduler as SchedulerProConfig<TFeatures, TData>).timelineTickMinWidth!
+      : view === "timelineMonth" ? 42 : view === "timelineDay" ? 68 : view === "timelineYear" ? 80 : 96,
   );
   // Measured width of the timeline scroller, so the axis can STRETCH to fill it
   // (week / year) yet still scroll when the ticks genuinely overflow (month).
   let tlOuterW = $state(0);
   const tlAxisWidth = $derived(
-    Math.max(tlAxis.ticks.length * TL_TICK_MIN, tlOuterW ? tlOuterW - tlResW : 0, 320),
+    axisPro && proAxisData
+      ? Math.max(proAxisData.axis.totalPx, tlOuterW ? tlOuterW - tlResW : 0, 320)
+      : Math.max(tlAxis.ticks.length * TL_TICK_MIN, tlOuterW ? tlOuterW - tlResW : 0, 320),
   );
-  const tlRows = $derived(timelineRows(resourceField ? resources : null, viewEvents));
+  const tlRows = $derived(
+    timelineRows(
+      resourceField ? (visibleResIds ? resources.filter((r) => visibleResIds.has(r.id)) : resources) : null,
+      tlEventsForRows,
+    ),
+  );
+
+  // --- Grouped / tree resources (timeline) ----------------------------------
+  const GROUP_ROW_H = 30;
+  const hasGroups = $derived(isTimeline && !!resourceField && !!(pcfg.resourceGroups && pcfg.resourceGroups.length));
+  let collapsedGroups = $state<Set<string>>(new Set());
+  $effect(() => {
+    const k = pcfg.groupPersistKey;
+    if (!k) return;
+    try {
+      const s = localStorage.getItem(k);
+      if (s) collapsedGroups = new Set(JSON.parse(s) as string[]);
+    } catch { /* ignore */ }
+  });
+  function toggleGroup(id: string) {
+    const next = new Set(collapsedGroups);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    collapsedGroups = next;
+    const k = pcfg.groupPersistKey;
+    if (k) try { localStorage.setItem(k, JSON.stringify([...next])); } catch { /* ignore */ }
+  }
+  const treeRows = $derived(
+    hasGroups ? buildResourceRows(resources, pcfg.resourceGroups!, pcfg.resourceGroupOf ?? (() => undefined), collapsedGroups) : [],
+  );
+  const visibleResIds = $derived(hasGroups ? new Set(visibleResourceIds(treeRows)) : null);
+  // The unified list the timeline body iterates: group-header rows interleaved
+  // with resource rows (each carrying its lane-packed tlRow + its tlRows index).
+  type TlPacked = (typeof tlRows)[number];
+  type TlRenderRow =
+    | { kind: "group"; group: ResourceRow<SchedulerResource>; row: null; ri: -1; depth: number }
+    | { kind: "resource"; group: null; row: TlPacked; ri: number; depth: number };
+  const tlRenderRows = $derived.by<TlRenderRow[]>(() => {
+    if (!hasGroups) return tlRows.map((row, ri) => ({ kind: "resource", group: null, row, ri, depth: 0 }));
+    const byId = new Map(tlRows.map((r, ri) => [r.resource?.id ?? "", { r, ri }]));
+    const out: TlRenderRow[] = [];
+    for (const tr of treeRows) {
+      if (tr.kind === "group") out.push({ kind: "group", group: tr as ResourceRow<SchedulerResource>, row: null, ri: -1, depth: tr.depth });
+      else {
+        const hit = byId.get(tr.id);
+        if (hit) out.push({ kind: "resource", group: null, row: hit.r, ri: hit.ri, depth: tr.depth });
+      }
+    }
+    return out;
+  });
+
+  // --- Scheduler Pro: event dependencies + auto-reschedule -------------------
+  // The renderer receives config untyped (registered as Component<any>); read the
+  // Pro fields through a cast so the free grid's SchedulerConfig stays unchanged.
+  const pcfg = $derived(scheduler as unknown as SchedulerProConfig<TFeatures, TData>);
+  // Resolve dependency links from the flat list + any per-row `dependencyField`.
+  const depList = $derived.by<SchedulerDependency[]>(() => {
+    const out: SchedulerDependency[] = [];
+    if (pcfg.dependencies) out.push(...pcfg.dependencies);
+    const f = pcfg.dependencyField;
+    if (f) {
+      for (const row of data) {
+        const raw = fieldValue(row, f);
+        if (!Array.isArray(raw)) continue;
+        const fromKey = key(row);
+        for (const d of raw) {
+          if (typeof d === "string") out.push({ id: `${fromKey}->${d}`, from: fromKey, to: d });
+          else if (d && typeof d === "object" && "to" in d) {
+            const o = d as { id?: string; from?: string; to: string; type?: SchedulerDependency["type"]; lag?: number };
+            out.push({ id: o.id ?? `${o.from ?? fromKey}->${o.to}`, from: o.from ?? fromKey, to: o.to, type: o.type, lag: o.lag });
+          }
+        }
+      }
+    }
+    return out;
+  });
+  const hasDeps = $derived(depList.length > 0);
+  const autoReschedule = $derived(hasDeps && pcfg.autoReschedule !== false);
+  // Optional working-time snap when cascading: push a start that lands before the
+  // business-hours window forward to its opening (a light, business-hours-only
+  // version of the model's `snapForward` hook).
+  const depSnapForward = $derived.by<((s: Date) => Date) | undefined>(() => {
+    const bh = scheduler.businessHours;
+    if (!pcfg.dependencyRespectWorkingTime || !bh) return undefined;
+    return (s: Date) => {
+      const h = s.getHours() + s.getMinutes() / 60;
+      if (h >= bh.start && h < bh.end) return s;
+      // Before opening -> today's open; at/after close -> next day's open.
+      const base = startOfDay(s);
+      if (h < bh.start) return new Date(base.getTime() + bh.start * 3_600_000);
+      return new Date(addDays(base, 1).getTime() + bh.start * 3_600_000);
+    };
+  });
+  // Current resolved [start,end] of every row (overlay-aware) for cascade / arrows.
+  const depTimes = $derived.by(() => {
+    const m = new Map<string, { start: Date; end: Date }>();
+    for (const ev of events) if (!m.has(ev.rowKey)) m.set(ev.rowKey, { start: ev.start, end: ev.end });
+    return m;
+  });
+  const depViolations = $derived(hasDeps ? violations(depTimes, depList) : []);
+
+  // Pixel rects for each row's bars in the timeline body (for the arrow overlay).
+  const tlBarRects = $derived.by(() => {
+    const byKey = new Map<string, { left: number; right: number; midY: number }>();
+    let top = 0;
+    for (const dr of tlRenderRows) {
+      if (dr.kind === "group") { top += GROUP_ROW_H; continue; }
+      const row = dr.row;
+      const rowH = Math.max(1, row.laneCount) * tlLaneH + 6 + histH;
+      for (const it of row.items) {
+        const g = tlGeom(it.event.start, it.event.end);
+        if (!g) continue;
+        const left = (g.leftPct / 100) * tlAxisWidth;
+        const right = left + (g.widthPct / 100) * tlAxisWidth;
+        const midY = top + it.lane * tlLaneH + 3 + (tlLaneH - 4) / 2;
+        if (!byKey.has(it.event.rowKey)) byKey.set(it.event.rowKey, { left, right, midY });
+      }
+      top += rowH;
+    }
+    return { byKey, height: top };
+  });
+  // SVG path + state for each dependency arrow (elbow connector, pred finish -> succ start).
+  const tlDepArrows = $derived.by(() => {
+    if (!isTimeline || !hasDeps) return [] as Array<{ id: string; d: string; bad: boolean; hx: number; hy: number }>;
+    const rects = tlBarRects.byKey;
+    const bad = new Set(depViolations.map((d) => d.id));
+    const out: Array<{ id: string; d: string; bad: boolean; hx: number; hy: number }> = [];
+    for (const dep of depList) {
+      const a = rects.get(dep.from);
+      const b = rects.get(dep.to);
+      if (!a || !b) continue;
+      const type = dep.type ?? "FS";
+      const x1 = type === "SS" || type === "SF" ? a.left : a.right;
+      const x2 = type === "FF" || type === "SF" ? b.right : b.left;
+      out.push({ id: dep.id, d: depElbow(x1, a.midY, x2, b.midY), bad: bad.has(dep.id), hx: x2, hy: b.midY });
+    }
+    return out;
+  });
+  // Orthogonal elbow connector between two anchor points; loops around when the
+  // successor sits left of the predecessor (a backward / violating link).
+  function depElbow(x1: number, y1: number, x2: number, y2: number): string {
+    const s = 10;
+    const p = x1 + s;
+    if (x2 >= p) return `M${x1},${y1} L${p},${y1} L${p},${y2} L${x2},${y2}`;
+    const q = x2 - s;
+    const midY = y2 >= y1 ? y1 + tlLaneH : y1 - tlLaneH;
+    return `M${x1},${y1} L${p},${y1} L${p},${midY} L${q},${midY} L${q},${y2} L${x2},${y2}`;
+  }
+  // Cascade successors forward after a move / resize, writing the shifts into the
+  // overlay and reporting them (never mutating source rows).
+  function cascadeDeps(movedKey: string, ns: Date, ne: Date) {
+    if (!autoReschedule) return;
+    const times = new Map<string, { start: Date; end: Date }>();
+    for (const [k, v] of depTimes) times.set(k, v);
+    times.set(movedKey, { start: ns, end: ne });
+    const shifts = cascade(times, depList, { snapForward: depSnapForward });
+    if (!shifts.size) return;
+    const moves: Array<{ id: string; start: Date; end: Date }> = [];
+    for (const [k, t] of shifts) {
+      startOfE[k] = t.start;
+      endOfE[k] = t.end;
+      moves.push({ id: k, start: fromZ(t.start), end: fromZ(t.end) });
+    }
+    pcfg.onDependenciesChange?.(moves);
+  }
+
+  // --- Scheduler Pro: multi-assignment + resource histogram + column summary --
+  // Resolve assignments from the flat list + any per-row `assignmentField`.
+  const assignmentsList = $derived.by<SchedulerAssignment[]>(() => {
+    const out: SchedulerAssignment[] = [];
+    if (pcfg.assignments) out.push(...pcfg.assignments);
+    const f = pcfg.assignmentField;
+    if (f) {
+      for (const row of data) {
+        const raw = fieldValue(row, f);
+        if (!Array.isArray(raw)) continue;
+        const evId = key(row);
+        for (const r of raw) {
+          if (typeof r === "string") out.push({ id: `${evId}@${r}`, eventId: evId, resourceId: r });
+          else if (r && typeof r === "object" && "resourceId" in r) {
+            const o = r as { id?: string; resourceId: string; units?: number };
+            out.push({ id: o.id ?? `${evId}@${o.resourceId}`, eventId: evId, resourceId: o.resourceId, units: o.units });
+          }
+        }
+      }
+    }
+    return out;
+  });
+  const hasAssignments = $derived(assignmentsList.length > 0 || !!pcfg.assignmentField);
+  // Flattened (event x resource) allocations for the visible timeline events.
+  const tlAllocations = $derived.by(() => {
+    if (!isTimeline || !resourceField) return [];
+    return expandAssignments(viewEvents, assignmentsList, {
+      keyOf: (e) => e.rowKey,
+      startOf: (e) => e.start,
+      endOf: (e) => e.end,
+      resourceOf: (e) => e.resourceId,
+    });
+  });
+  // Events fed to timelineRows: expanded per assigned resource when assignments
+  // are in play (one event can then appear under several resources), else plain.
+  const tlEventsForRows = $derived(
+    hasAssignments
+      ? tlAllocations.map((a) => ({ ...a.event, key: `${a.event.key}@${a.resourceId}`, resourceId: a.resourceId }))
+      : viewEvents,
+  );
+  // Resource utilization histogram (timeline): a bar per axis tick under each row.
+  const histCfg = $derived(typeof pcfg.resourceHistogram === "object" ? pcfg.resourceHistogram : {});
+  const histOn = $derived(!!pcfg.resourceHistogram && isTimeline && !!resourceField);
+  const histH = $derived(histOn ? Math.max(12, histCfg.height ?? 18) : 0);
+  const histCapField = $derived(histCfg.capacityField);
+  function resourceCapacity(res: SchedulerResource | null): number {
+    if (res && histCapField) {
+      const v = (res as Record<string, unknown>)[histCapField as string];
+      if (typeof v === "number" && v > 0) return v;
+    }
+    return 1;
+  }
+  // ONE global scale for every row's bars (per-row peaks made a single shift look
+  // like a full block, and heights were not comparable between people).
+  const histPeak = $derived.by(() => {
+    if (!histOn) return 1;
+    let peak = 1;
+    for (const res of resources) {
+      const cap = resourceCapacity(res);
+      for (const t of tlAxis.ticks) peak = Math.max(peak, cap, resourceLoad(tlAllocations, res.id, t.start, t.end));
+    }
+    return peak;
+  });
+  // Per-resource histogram bars (one per tick), on the shared `histPeak` scale.
+  function histBars(res: SchedulerResource | null): Array<{ leftPct: number; widthPct: number; hPct: number; over: boolean }> {
+    if (!histOn || !res) return [];
+    const cap = resourceCapacity(res);
+    const peak = histPeak;
+    const out: Array<{ leftPct: number; widthPct: number; hPct: number; over: boolean }> = [];
+    for (const t of tlAxis.ticks) {
+      const load = resourceLoad(tlAllocations, res.id, t.start, t.end);
+      if (load <= 0) continue; // skip idle ticks so bars read as discrete
+      out.push({ leftPct: t.leftPct, widthPct: t.widthPct, hPct: Math.min(100, (load / peak) * 100), over: load > cap + 1e-9 });
+    }
+    return out;
+  }
+  // --- utilization heatmap (row-background tint) ------------------------------
+  const heatOn = $derived(!!pcfg.utilizationHeatmap && isTimeline && !!resourceField);
+  const heatCapField = $derived(typeof pcfg.utilizationHeatmap === "object" ? pcfg.utilizationHeatmap.capacityField : undefined);
+  function heatCapacity(res: SchedulerResource | null): number {
+    if (res && heatCapField) {
+      const v = (res as Record<string, unknown>)[heatCapField as string];
+      if (typeof v === "number" && v > 0) return v;
+    }
+    return 1;
+  }
+  // One shared load scale across all resources so rows are comparable.
+  const heatScale = $derived.by(() => {
+    if (!heatOn) return 1;
+    const rows = resources.map((res) => tlAxis.ticks.map((t) => resourceLoad(tlAllocations, res.id, t.start, t.end)));
+    return heatPeak(rows, 1);
+  });
+  function heatCellsFor(res: SchedulerResource | null): HeatCell[] {
+    if (!heatOn || !res) return [];
+    const loads = tlAxis.ticks.map((t) => resourceLoad(tlAllocations, res.id, t.start, t.end));
+    return heatCells(tlAxis.ticks, loads, heatCapacity(res), heatScale);
+  }
+  // --- bookable slots / find-a-time (Day timeline) ---------------------------
+  const bookableCfg = $derived(pcfg.bookable && typeof pcfg.bookable === "object" ? pcfg.bookable : null);
+  const bookableOn = $derived(!!bookableCfg && view === "timelineDay" && !!resourceField);
+  function bookableSlotsFor(res: SchedulerResource | null): Slot[] {
+    if (!bookableOn || !res || !bookableCfg) return [];
+    const day = startOfDay(range.start);
+    const avail = (res as Record<string, unknown>).availability as ReadonlyArray<{ days?: number[]; start: number; end: number }> | undefined;
+    const windows = avail && avail.length
+      ? avail
+      : scheduler.businessHours
+        ? [{ start: scheduler.businessHours.start, end: scheduler.businessHours.end }]
+        : [{ start: dayStartHour, end: dayEndHour }];
+    const iv = workingIntervals(day.getDay(), windows, dayStartHour * 60, dayEndHour * 60);
+    const working: SlotInterval[] = iv.map(([a, b]) => ({ start: new Date(day.getTime() + a * 60_000), end: new Date(day.getTime() + b * 60_000) }));
+    const busy: SlotInterval[] = viewEvents.filter((e) => (e.resourceId ?? "") === res.id).map((e) => ({ start: e.start, end: e.end }));
+    const lead = pcfg.minLeadMin ?? 0;
+    return availableSlots({
+      working,
+      busy,
+      durationMin: bookableCfg.durationMin,
+      stepMin: bookableCfg.stepMin,
+      bufferBeforeMin: typeof pcfg.bufferBeforeMin === "number" ? pcfg.bufferBeforeMin : 0,
+      bufferAfterMin: typeof pcfg.bufferAfterMin === "number" ? pcfg.bufferAfterMin : 0,
+      minStart: lead ? new Date(nowZoned().getTime() + lead * 60_000) : undefined,
+    });
+  }
+  function pickSlot(res: SchedulerResource | null, slot: Slot) {
+    suppressClick = true;
+    if (pcfg.onSlotPick) pcfg.onSlotPick(fromZ(slot.start), fromZ(slot.end), res?.id);
+    else emitAdd(slot.start, slot.end, res?.id, false);
+  }
+  // --- free/busy availability overlay ---------------------------------------
+  const freeBusyOn = $derived(!!pcfg.freeBusyOf && isTimeline && !!resourceField);
+  function freeBusyBandsFor(res: SchedulerResource | null): Array<{ leftPct: number; widthPct: number }> {
+    if (!freeBusyOn || !res || !pcfg.freeBusyOf) return [];
+    const out: Array<{ leftPct: number; widthPct: number }> = [];
+    for (const b of pcfg.freeBusyOf(res)) {
+      const g = tlGeom(toZ(b.start) ?? b.start, toZ(b.end) ?? b.end);
+      if (g) out.push({ leftPct: g.leftPct, widthPct: g.widthPct });
+    }
+    return out;
+  }
+  // Per-time-column summary strip (counts / sums / custom reducer) over axis ticks.
+  const summaryCfg = $derived(pcfg.columnSummary && pcfg.columnSummary !== false ? pcfg.columnSummary : null);
+  const tlSummary = $derived.by(() => {
+    if (!summaryCfg || !isTimeline) return null;
+    const cols = tlAxis.ticks.map((t) => ({ start: t.start, end: t.end }));
+    const vals = columnSummaries(viewEvents, cols, summaryCfg.reducer as never, {
+      startOf: (e) => e.start,
+      endOf: (e) => e.end,
+      rowOf: (e) => e.row,
+    });
+    return vals;
+  });
+
+  // --- Scheduler Pro: non-working-time collapse + continuous zoom ------------
+  const collapseOn = $derived(isTimeline && (pcfg.collapseNonWorking === true || pcfg.collapseWeekends === true));
+  // Zoom: consumer-controlled `zoom`, overridable by the built-in stepper.
+  let zoomOverride = $state<number | null>(null);
+  const zoomValue = $derived(zoomOverride ?? pcfg.zoom ?? null);
+  const zoomOn = $derived(isTimeline && zoomValue != null);
+  const zoomLadder = $derived(pcfg.zoomLevels ?? zoomPresets);
+  const axisPro = $derived(collapseOn || zoomOn);
+  // The piecewise axis (working spans full width, non-working collapsed) + tick size.
+  const proAxisData = $derived.by<{ axis: Axis; tickMinutes: number; level: ZoomLevel | null } | null>(() => {
+    if (!axisPro) return null;
+    const z = zoomOn ? resolveZoom(zoomValue as number | ZoomLevel, zoomLadder) : null;
+    const pxPerMinute = z ? z.pxPerMinute : 0.5;
+    const axis = buildAxis(range.start, range.end, {
+      pxPerMinute,
+      businessHours: scheduler.businessHours,
+      nonWorkingDays: scheduler.nonWorkingDays,
+      collapseNonWorking: pcfg.collapseNonWorking,
+      collapseWeekends: pcfg.collapseWeekends,
+      collapsedGapPx: pcfg.collapsedGapPx,
+    });
+    const tickMinutes = z ? z.level.tickMinutes : view === "timelineDay" ? 60 : 1440;
+    return { axis, tickMinutes, level: z?.level ?? null };
+  });
+  function stepZoom(dir: number) {
+    const cur = zoomValue == null ? 3 : typeof zoomValue === "number" ? zoomValue : zoomLadder.indexOf(zoomValue as ZoomLevel);
+    const next = Math.max(0, Math.min(zoomLadder.length - 1, (cur < 0 ? 3 : cur) + dir));
+    zoomOverride = next;
+    pcfg.onZoomChange?.(zoomLadder[next]!);
+  }
+  const TL_WD_S = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const TL_MO_S = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function proTickLabel(d: Date, tickMinutes: number): string {
+    if (tickMinutes < 1440) { const h = d.getHours(); return h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`; }
+    if (tickMinutes < 10_080) return `${TL_WD_S[d.getDay()]} ${d.getDate()}`;
+    if (tickMinutes < 43_200) return `${TL_MO_S[d.getMonth()]} ${d.getDate()}`;
+    return `${TL_MO_S[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  // Build a TimelineAxis-shaped object from the piecewise Pro axis so the existing
+  // timeline template (ticks / majors / gridlines) renders unchanged. Collapsed
+  // segments emit no ticks - the visual gap conveys the compression.
+  function proTimelineAxis(): typeof tlAxis {
+    const data = proAxisData!;
+    const ax = data.axis;
+    const total = ax.totalPx || 1;
+    const todayD = startOfDay(toZonedLocal(new Date(), tz));
+    const tickMs = data.tickMinutes * 60_000;
+    const ticks: Array<{ start: Date; end: Date; leftPct: number; widthPct: number; label: string; today: boolean }> = [];
+    for (const seg of ax.segments) {
+      if (seg.kind === "collapsed") continue;
+      let t = seg.start.getTime();
+      const segEnd = seg.end.getTime();
+      let guard = 0;
+      while (t < segEnd && guard++ < 2000) {
+        // Align the next boundary to the tick grid from the axis origin.
+        const sinceOrigin = t - ax.start.getTime();
+        const aligned = ax.start.getTime() + (Math.floor(sinceOrigin / tickMs) + 1) * tickMs;
+        const next = Math.min(segEnd, aligned > t ? aligned : t + tickMs);
+        const ts = new Date(t);
+        const x1 = timeToX(ts, ax);
+        const x2 = timeToX(new Date(next), ax);
+        ticks.push({ start: ts, end: new Date(next), leftPct: (x1 / total) * 100, widthPct: ((x2 - x1) / total) * 100, label: proTickLabel(ts, data.tickMinutes), today: isSameDay(ts, todayD) });
+        t = next;
+      }
+    }
+    // Majors group ticks by day (sub-day ticks) or month (day+ ticks).
+    const subDay = data.tickMinutes < 1440;
+    const majors: Array<{ label: string; leftPct: number; widthPct: number }> = [];
+    for (const tk of ticks) {
+      const kd = subDay ? `${tk.start.getFullYear()}-${tk.start.getMonth()}-${tk.start.getDate()}` : `${tk.start.getFullYear()}-${tk.start.getMonth()}`;
+      const label = subDay ? `${TL_WD_S[tk.start.getDay()]}, ${TL_MO_S[tk.start.getMonth()]} ${tk.start.getDate()}` : `${TL_MO_S[tk.start.getMonth()]} ${tk.start.getFullYear()}`;
+      const last = majors[majors.length - 1] as (typeof majors[number] & { _k?: string }) | undefined;
+      if (last && last._k === kd) last.widthPct += tk.widthPct;
+      else majors.push(Object.assign({ label, leftPct: tk.leftPct, widthPct: tk.widthPct }, { _k: kd }));
+    }
+    return { start: ax.start, end: ax.end, totalMs: ax.end.getTime() - ax.start.getTime(), ticks, majors: majors.map(({ _k, ...m }: any) => m) } as typeof tlAxis;
+  }
+  // Time -> bar geometry, routed through the piecewise axis when Pro axis is on.
+  function tlGeom(a: Date, b: Date) {
+    if (axisPro && proAxisData) {
+      const ax = proAxisData.axis;
+      const total = ax.totalPx || 1;
+      const s = Math.max(a.getTime(), ax.start.getTime());
+      const e = Math.min(b.getTime(), ax.end.getTime());
+      if (e <= ax.start.getTime() || s >= ax.end.getTime() || e <= s) return null;
+      const x1 = timeToX(new Date(s), ax);
+      const x2 = timeToX(new Date(e), ax);
+      if (x2 <= x1) return null;
+      return { leftPct: (x1 / total) * 100, widthPct: ((x2 - x1) / total) * 100, continuesLeft: a.getTime() < ax.start.getTime(), continuesRight: b.getTime() > ax.end.getTime() };
+    }
+    return timelineGeom(a, b, tlAxis.start, tlAxis.totalMs);
+  }
+
   const VIEW_LABELS: Record<SchedulerView, string> = {
     month: "Month",
     week: "Week",
@@ -628,8 +1079,38 @@
   }
   // Returns true (and flashes) when placing [start,end] should be rejected -
   // out-of-hours (when restricted) or a same-resource double-book. Caller reverts.
-  function bookingBlocked(start: Date, end: Date, resourceId: string | undefined, excludeRowKey: string): boolean {
+  // --- eligibility / skill matching ----------------------------------------
+  const hasEligibility = $derived(!!pcfg.eligible || !!pcfg.requiresField);
+  function eligibleFor(row: TData, resourceId: string | undefined): boolean {
+    if (!hasEligibility || resourceId == null) return true;
+    const res = resById.get(resourceId);
+    if (!res) return true;
+    if (pcfg.eligible) return pcfg.eligible(row, res);
+    const rf = pcfg.requiresField;
+    if (!rf) return true;
+    const req = (row as Record<string, unknown>)[rf as string];
+    const reqTags = Array.isArray(req) ? (req as unknown[]) : req != null ? [req] : [];
+    if (!reqTags.length) return true;
+    const skills = pcfg.resourceSkillsOf ? pcfg.resourceSkillsOf(res) : ((res as Record<string, unknown>).skills as unknown);
+    const skillSet = new Set(Array.isArray(skills) ? (skills as unknown[]) : []);
+    return reqTags.every((t) => skillSet.has(t));
+  }
+  function bookingBlocked(start: Date, end: Date, resourceId: string | undefined, excludeRowKey: string, row?: TData): boolean {
     // Hard bounds first (always enforced, no opt-in).
+    if (row !== undefined && !eligibleFor(row, resourceId)) { flashBlocked("Not eligible"); return true; }
+    // Free/busy: the resource is busy elsewhere in this span -> cannot book it.
+    if (pcfg.freeBusyOf && resourceId != null) {
+      const fbRes = resById.get(resourceId);
+      if (fbRes) {
+        const s = start.getTime();
+        const e = end.getTime();
+        for (const b of pcfg.freeBusyOf(fbRes)) {
+          const bs = (toZ(b.start) ?? b.start).getTime();
+          const be = (toZ(b.end) ?? b.end).getTime();
+          if (s < be && e > bs) { flashBlocked("Busy elsewhere"); return true; }
+        }
+      }
+    }
     if (minDate && startOfDay(start).getTime() < minDate.getTime()) { flashBlocked("Before the allowed range"); return true; }
     if (maxDate && startOfDay(start).getTime() > maxDate.getTime()) { flashBlocked("After the allowed range"); return true; }
     if (isRestrictedDate(start)) { flashBlocked("Date is blocked"); return true; }
@@ -651,8 +1132,29 @@
       flashBlocked(`Limit of ${maxEventsPerSlot} per slot reached`);
       return true;
     }
+    // --- booking-rule depth: lead time, duration bounds, buffers / travel ---
+    if (pcfg.minLeadMin != null && !afterLead(start, nowZoned(), pcfg.minLeadMin)) { flashBlocked("Too soon to book"); return true; }
+    if (pcfg.minDurationMin != null || pcfg.maxDurationMin != null) {
+      if (!withinDurationBounds(start, end, pcfg.minDurationMin, pcfg.maxDurationMin)) {
+        const dur = (end.getTime() - start.getTime()) / 60000;
+        flashBlocked(pcfg.minDurationMin != null && dur < pcfg.minDurationMin ? "Too short" : "Too long");
+        return true;
+      }
+    }
+    if (row !== undefined && (pcfg.bufferBeforeMin != null || pcfg.bufferAfterMin != null || pcfg.travelTimeOf)) {
+      const bufB = typeof pcfg.bufferBeforeMin === "function" ? pcfg.bufferBeforeMin(row) : pcfg.bufferBeforeMin ?? 0;
+      const bufA = typeof pcfg.bufferAfterMin === "function" ? pcfg.bufferAfterMin(row) : pcfg.bufferAfterMin ?? 0;
+      const busy: BusyEvent<TData>[] = events
+        .filter((e) => (e.resourceId ?? undefined) === (resourceId ?? undefined))
+        .map((e) => ({ start: e.start, end: e.end, key: e.rowKey, data: e.row }));
+      const travel = pcfg.travelTimeOf;
+      const gapBefore = travel ? (n: BusyEvent<TData>) => bufB + travel(row, n.data as TData) : bufB;
+      const gapAfter = travel ? (n: BusyEvent<TData>) => bufA + travel(row, n.data as TData) : bufA;
+      if (!respectsBuffer(start, end, busy, gapBefore, gapAfter, excludeRowKey)) { flashBlocked("Needs a gap between bookings"); return true; }
+    }
     return false;
   }
+  const nowZoned = () => toZonedLocal(new Date(), tz);
 
   // --- undo / redo of drag-move + resize -----------------------------------
   const historyEnabled = $derived(scheduler.history === true);
@@ -791,6 +1293,11 @@
   // (timelineGeom rejects zero-width spans, so position it directly.)
   const nowTlPct = $derived.by(() => {
     if (!nowIndicator || !isTimeline) return null;
+    if (axisPro && proAxisData) {
+      const ax = proAxisData.axis;
+      if (now.getTime() < ax.start.getTime() || now.getTime() > ax.end.getTime()) return null;
+      return (timeToX(now, ax) / (ax.totalPx || 1)) * 100;
+    }
     const frac = (now.getTime() - tlAxis.start.getTime()) / tlAxis.totalMs;
     return frac >= 0 && frac <= 1 ? frac * 100 : null;
   });
@@ -1068,7 +1575,7 @@
     }
     // Reject a double-booking (same resource) - snap back, don't apply/emit.
     const checkRes = mode === "move" ? previewCol.resourceId : ev.resourceId;
-    if (bookingBlocked(previewStart, previewEnd, checkRes, k)) return;
+    if (bookingBlocked(previewStart, previewEnd, checkRes, k, ev.row)) return;
     startOfE[k] = previewStart;
     endOfE[k] = previewEnd;
     if (mode === "move") {
@@ -1556,6 +2063,10 @@
   // `drawerRow` only once the exit finishes (SvDrawer.onClosed) so the content
   // stays rendered while it animates away.
   let drawerOpen = $state(false);
+  // For a recurring occurrence, the drawer shows a "Apply changes to" selector
+  // (This event / This and following / All events) so the scope is chosen inline.
+  let drawerScope = $state<"occurrence" | "following" | "series">("occurrence");
+  const showScope = $derived(hasExceptions && !!drawerEv?.recurring && !!drawerEv?.occurrenceStart);
   const drawerCfg = $derived(
     scheduler.drawer && typeof scheduler.drawer === "object" ? scheduler.drawer : null,
   );
@@ -1586,6 +2097,10 @@
       case "list":
       case "select":
       case "rich-select": return "select";
+      case "chips":
+      case "multiselect":
+      case "multiSelect":
+      case "tags": return "multiselect";
       default: return "text";
     }
   }
@@ -1833,6 +2348,16 @@
       drawerValues = { ...next };
       if (recurEditable) loadRule(row);
       loadWhen(row);
+      // For a recurring OCCURRENCE the "When" fields must show THIS occurrence's
+      // time, not the series' base start (else editing it looks like a start
+      // change and mis-anchors a "following" split). ev.start/end are already in
+      // the display zone (resolved), matching loadWhen.
+      if (ev.recurring && ev.occurrenceStart) {
+        whenStart = ev.start;
+        whenEnd = ev.end ?? whenEnd;
+        whenAllDay = ev.allDay;
+      }
+      drawerScope = "occurrence"; // default a recurring edit to "This event"
       drawerRow = row;
       drawerEv = ev;
       drawerOpen = true;
@@ -2128,8 +2653,18 @@
   // Range selection in the TIMELINE (horizontal: time span × resource rows).
   type TlRangeSel = { anchorIdx: number; anchorT: number; curIdx: number; curT: number; moved: boolean; pending?: boolean };
   let tlRangeSel = $state<TlRangeSel | null>(null);
+  // Manual double-click detection: the pointerdown `preventDefault()` below
+  // suppresses the browser's native `dblclick`, so a quick second press at the
+  // same spot is treated as a double-click (create) here instead.
+  let lastTlDown = { t: 0, x: 0, y: 0 };
   function startTlRangeSelect(rowIdx: number, e: PointerEvent) {
     if (!rangeSelectable || e.button !== 0) return;
+    if (scheduler.onEventAdd && e.timeStamp - lastTlDown.t < 400 && Math.abs(e.clientX - lastTlDown.x) < 6 && Math.abs(e.clientY - lastTlDown.y) < 6) {
+      lastTlDown = { t: 0, x: 0, y: 0 };
+      onTlSlotDblClick(tlRows[rowIdx]?.resource?.id, e);
+      return;
+    }
+    lastTlDown = { t: e.timeStamp, x: e.clientX, y: e.clientY };
     suppressClick = false;
     e.preventDefault();
     const t = tlTimeAtX(e.clientX).getTime();
@@ -2182,7 +2717,7 @@
     if (!tlRangeSel || !tlRangeSel.moved) return null;
     const s = tlStepStart(Math.min(tlRangeSel.anchorT, tlRangeSel.curT));
     const e = tlStepEnd(Math.max(tlRangeSel.anchorT, tlRangeSel.curT));
-    const g = timelineGeom(new Date(s), new Date(e), tlAxis.start, tlAxis.totalMs);
+    const g = tlGeom(new Date(s), new Date(e));
     if (!g) return null;
     return { lo: Math.min(tlRangeSel.anchorIdx, tlRangeSel.curIdx), hi: Math.max(tlRangeSel.anchorIdx, tlRangeSel.curIdx), leftPct: g.leftPct, widthPct: g.widthPct };
   });
@@ -2247,6 +2782,8 @@
   function openRangeMenu(e: MouseEvent) {
     if (e.defaultPrevented) return;
     if (!rangeSel?.pending && !tlRangeSel?.pending && !monthRangeSel?.pending) return;
+    // Only offer "Add Event" when there is actually a way to create one.
+    if (!scheduler.onEventAdd && !scheduler.onRangeSelect) return;
     e.preventDefault();
     e.stopPropagation();
     menuItems = [{ label: "Add Event", shortcut: "Enter", onSelect: commitPendingRange }];
@@ -2265,16 +2802,27 @@
       const startChanged = !!whenStart && whenStart.getTime() !== ev.start.getTime();
       const endChanged = !!whenEnd && !!ev.end && whenEnd.getTime() !== ev.end.getTime();
       const titleChanged = newTitle != null && newTitle !== ev.title;
-      if (!startChanged && !endChanged && !titleChanged) { drawerOpen = false; return; }
-      const occOpts = { start: whenStart ?? undefined, end: whenEnd ?? undefined, allDay: whenAllDay, title: titleChanged ? newTitle : undefined };
+      // Any OTHER drawer field that changed (attendees, calendar, ...) - carried
+      // into the per-occurrence exception's `fields` so "This event" can hold them.
+      const valueChanged = (f: string): boolean => {
+        const a = values[f];
+        const b = fieldValue(row, f);
+        if (Array.isArray(a) && Array.isArray(b)) return a.length !== b.length || a.some((x, i) => x !== b[i]);
+        return a !== b;
+      };
+      const changedFields: Record<string, unknown> = {};
+      for (const col of drawerFieldCols) {
+        const f = col.field as string;
+        if (f === scheduler.titleField) continue; // title handled explicitly
+        if (valueChanged(f)) changedFields[f] = values[f];
+      }
+      const otherChanged = Object.keys(changedFields).length > 0;
+      if (!startChanged && !endChanged && !titleChanged && !otherChanged) { drawerOpen = false; return; }
+      const occOpts = { start: whenStart ?? undefined, end: whenEnd ?? undefined, allDay: whenAllDay, title: titleChanged ? newTitle : undefined, fields: otherChanged ? changedFields : undefined };
       drawerOpen = false;
-      askRecurScope(
-        Math.round(window.innerWidth / 2 - 90), Math.round(window.innerHeight / 2 - 70),
-        ev, "edit",
-        () => emitOccurrence(ev, occOpts, "occurrence"),
-        () => applyDrawerToSeries(row, k, { ...values }),
-        () => emitOccurrence(ev, occOpts, "following"),
-      );
+      // Apply with the scope chosen inline in the drawer.
+      if (drawerScope === "series") applyDrawerToSeries(row, k, { ...values });
+      else emitOccurrence(ev, occOpts, drawerScope);
       return;
     }
     applyDrawerToSeries(row, k, values);
@@ -2344,6 +2892,11 @@
   function tlTimeAtX(clientX: number): Date {
     if (!tlLanesEl) return tlAxis.start;
     const r = tlLanesEl.getBoundingClientRect();
+    // Piecewise inverse when the Pro axis (collapse / zoom) is active.
+    if (axisPro && proAxisData) {
+      const x = Math.min(r.width, Math.max(0, clientX - r.left));
+      return xToTime((x / r.width) * proAxisData.axis.totalPx, proAxisData.axis);
+    }
     const frac = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
     return new Date(tlAxis.start.getTime() + frac * tlAxis.totalMs);
   }
@@ -2394,7 +2947,7 @@
   }
   function tlScrollActiveIntoView(t: number) {
     if (!tlScrollEl) return;
-    const g = timelineGeom(new Date(tlStepStart(t)), new Date(tlStepEnd(t)), tlAxis.start, tlAxis.totalMs);
+    const g = tlGeom(new Date(tlStepStart(t)), new Date(tlStepEnd(t)));
     if (!g) return;
     const cellLeft = tlResW + (g.leftPct / 100) * tlAxisWidth;
     const cellRight = tlResW + ((g.leftPct + g.widthPct) / 100) * tlAxisWidth;
@@ -2458,20 +3011,27 @@
     tlDrag.y = e.clientY;
     dragOverBacklog = tlDrag.mode === "move" && !!scheduler.onUnschedule && !!backlogEl && pointInEl(e.clientX, e.clientY, backlogEl);
     const t = tlTimeAtX(e.clientX);
-    const minDur = (view === "timelineDay" ? tlSlot : 24 * 60) * TL_MS_MIN;
+    const slotMs = tlSlot * TL_MS_MIN;
+    // Move AND resize share one granularity per view: the slot (hour-scale) in
+    // Day / Week where hours are visible, the day in Month / Year where they are
+    // not. So dragging and resizing always snap the same way.
+    const fine = view === "timelineDay" || view === "timelineWeek";
+    const snapStart = (d: Date) => (fine ? new Date(Math.round(d.getTime() / slotMs) * slotMs) : startOfDay(d));
+    const snapEnd = (d: Date) => (fine ? new Date(Math.round(d.getTime() / slotMs) * slotMs) : addDays(startOfDay(d), 1));
+    const minStep = fine ? slotMs : 24 * 60 * TL_MS_MIN;
     if (tlDrag.mode === "move") {
-      const ns = snapTlStart(new Date(t.getTime() - tlDrag.grabOffsetMs));
+      const ns = snapStart(new Date(t.getTime() - tlDrag.grabOffsetMs));
       tlDrag.previewStart = ns;
       tlDrag.previewEnd = new Date(ns.getTime() + tlDrag.durationMs);
       // Recurring instances keep their row; others can change resource.
       tlDrag.previewRes = tlDrag.ev.recurring ? tlDrag.ev.resourceId : tlResAt(e.clientX, e.clientY) ?? tlDrag.previewRes;
     } else if (tlDrag.mode === "resize-end") {
-      const ne = snapTlEnd(t);
-      tlDrag.previewEnd = new Date(Math.max(ne.getTime(), tlDrag.origStart.getTime() + minDur));
+      const ne = snapEnd(t);
+      tlDrag.previewEnd = new Date(Math.max(ne.getTime(), tlDrag.origStart.getTime() + minStep));
       tlDrag.previewStart = tlDrag.origStart;
     } else {
-      const ns = snapTlStart(t);
-      tlDrag.previewStart = new Date(Math.min(ns.getTime(), tlDrag.origEnd.getTime() - minDur));
+      const ns = snapStart(t);
+      tlDrag.previewStart = new Date(Math.min(ns.getTime(), tlDrag.origEnd.getTime() - minStep));
       tlDrag.previewEnd = tlDrag.origEnd;
     }
   }
@@ -2504,16 +3064,24 @@
       return;
     }
     const checkRes = mode === "move" ? previewRes : ev.resourceId;
-    if (bookingBlocked(previewStart, previewEnd, checkRes, k)) return;
+    if (bookingBlocked(previewStart, previewEnd, checkRes, k, ev.row)) return;
     startOfE[k] = previewStart;
     endOfE[k] = previewEnd;
     if (mode === "move") {
-      if (previewRes != null) resourceOfE[k] = previewRes;
+      // With multi-assignment, a cross-row drag REASSIGNS (the event belongs to
+      // several resources) rather than moving the single `resourceField`.
+      if (hasAssignments && previewRes != null && previewRes !== ev.resourceId) {
+        pcfg.onAssignmentChange?.({ eventId: ev.rowKey, from: ev.resourceId, to: previewRes });
+      } else if (previewRes != null) {
+        resourceOfE[k] = previewRes;
+      }
       emitMove({ row: ev.row, start: previewStart, end: previewEnd, allDay: ev.allDay, fromResource: ev.resourceId, toResource: previewRes });
       applyBulkMove(k, previewStart.getTime() - d.origStart.getTime());
     } else {
       emitResize({ row: ev.row, start: previewStart, end: previewEnd });
     }
+    // Auto-reschedule dependent successors (Scheduler Pro).
+    cascadeDeps(k, previewStart, previewEnd);
     pushHistory({
       key: k,
       row: ev.row,
@@ -2526,9 +3094,14 @@
   function onTlSlotDblClick(resourceId: string | undefined, e: MouseEvent) {
     tlRangeSel = null; // a double-click creates directly - drop the click's marker
     if (!scheduler.onEventAdd) return;
-    const s = snapTlStart(tlTimeAtX(e.clientX));
-    const durMs = (view === "timelineDay" ? scheduler.defaultDurationMin ?? 60 : 24 * 60) * TL_MS_MIN;
-    emitAdd(s, new Date(s.getTime() + durMs), resourceId, view !== "timelineDay");
+    // Day / Week create a TIMED event at the clicked slot (hours are visible);
+    // Month / Year create an all-day one.
+    const fine = view === "timelineDay" || view === "timelineWeek";
+    const slotMs = tlSlot * TL_MS_MIN;
+    const raw = tlTimeAtX(e.clientX);
+    const s = fine ? new Date(Math.round(raw.getTime() / slotMs) * slotMs) : startOfDay(raw);
+    const durMs = (fine ? scheduler.defaultDurationMin ?? 60 : 24 * 60) * TL_MS_MIN;
+    emitAdd(s, new Date(s.getTime() + durMs), resourceId, !fine);
   }
   // Geometry for one timeline bar. A RESIZE morphs the bar in place (live); a
   // MOVE leaves the source bar where it is (dimmed) - a separate preview bar in
@@ -2536,13 +3109,13 @@
   function tlBarGeom(ev: ResolvedEvent<TData>) {
     const d = tlDrag;
     const isDrag = d?.ev.key === ev.key && d.moved;
-    if (isDrag && d!.mode !== "move") return timelineGeom(d!.previewStart, d!.previewEnd, tlAxis.start, tlAxis.totalMs);
-    return timelineGeom(ev.start, ev.end, tlAxis.start, tlAxis.totalMs);
+    if (isDrag && d!.mode !== "move") return tlGeom(d!.previewStart, d!.previewEnd);
+    return tlGeom(ev.start, ev.end);
   }
   // The move-preview geometry (for the destination-row ghost bar).
   const tlMovePreview = $derived.by(() => {
     if (!tlDrag || !tlDrag.moved || tlDrag.mode !== "move") return null;
-    const g = timelineGeom(tlDrag.previewStart, tlDrag.previewEnd, tlAxis.start, tlAxis.totalMs);
+    const g = tlGeom(tlDrag.previewStart, tlDrag.previewEnd);
     return g ? { g, resId: tlDrag.previewRes ?? "", ev: tlDrag.ev } : null;
   });
 
@@ -2587,6 +3160,13 @@
           {/each}
         </div>
       {/if}
+      {#if zoomOn && proAxisData}
+        <div class="sv-sched-slots sv-sched-zoom" role="group" aria-label="Zoom">
+          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(-1)} aria-label="Zoom in">-</button>
+          <span class="sv-sched-zoom-label">{proAxisData.level?.label ?? "Zoom"}</span>
+          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(1)} aria-label="Zoom out">+</button>
+        </div>
+      {/if}
       {#each views as v (v)}
         <button
           type="button"
@@ -2613,6 +3193,25 @@
         >
           <span class="sv-sched-dot"></span>
           <span>{r.title ?? r.id}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
+
+  {#if calendars.length}
+    <!-- Calendar legend + filter: toggle a whole calendar's events on/off. -->
+    <div class="sv-sched-reslegend sv-sched-callegend">
+      {#each calendars as c (c.id)}
+        <button
+          type="button"
+          class="sv-sched-reschip"
+          class:sv-sched-reschip-off={hiddenCalendars.has(c.id)}
+          style={c.color ? `--sv-sched-accent:${c.color};` : ""}
+          aria-pressed={!hiddenCalendars.has(c.id)}
+          onclick={() => toggleCalendar(c.id)}
+        >
+          <span class="sv-sched-cal-check">{hiddenCalendars.has(c.id) ? "" : "✓"}</span>
+          <span>{c.title}</span>
         </button>
       {/each}
     </div>
@@ -2785,11 +3384,32 @@
       </div>
       <!-- body: resource gutter + lane track, scrolls together -->
       <div class="sv-sched-tl-body">
-        {#each tlRows as row, ri (row.resource?.id ?? "__all")}
-          {@const rowH = Math.max(1, row.laneCount) * tlLaneH + 6}
+        {#if tlDepArrows.length}
+          <!-- Dependency arrows: an overlay over the lanes area (offset past the
+               resource gutter), spanning all rows. Pointer-transparent. -->
+          <svg
+            class="sv-sched-dep-layer"
+            style={`left:var(--tl-res-w); width:${tlAxisWidth}px; height:${tlBarRects.height}px`}
+            width={tlAxisWidth}
+            height={tlBarRects.height}
+            aria-hidden="true"
+          >
+            {#each tlDepArrows as arr (arr.id)}
+              <path class="sv-sched-dep-line" class:sv-sched-dep-bad={arr.bad} d={arr.d} />
+              <path
+                class="sv-sched-dep-arrow"
+                class:sv-sched-dep-bad={arr.bad}
+                d={`M${arr.hx},${arr.hy} l-6,-3.5 l0,7 z`}
+              />
+            {/each}
+          </svg>
+        {/if}
+        {#snippet tlResourceRow(row: TlPacked, ri: number, depth: number)}
+          {@const rowH = Math.max(1, row.laneCount) * tlLaneH + 6 + histH}
           {@const isDropRow = !!tlMovePreview && tlMovePreview.resId === (row.resource?.id ?? "")}
-          <div class="sv-sched-tl-row" class:sv-sched-tl-row-drop={isDropRow} style={`height:${rowH}px`}>
-            <div class="sv-sched-tl-resgutter">
+          {@const isBlocked = !!tlDrag?.moved && tlDrag.mode === "move" && hasEligibility && !eligibleFor(tlDrag.ev.row, row.resource?.id)}
+          <div class="sv-sched-tl-row" class:sv-sched-tl-row-drop={isDropRow} class:sv-sched-tl-row-blocked={isBlocked} style={`height:${rowH}px`}>
+            <div class="sv-sched-tl-resgutter" style={depth > 0 ? `padding-left:${8 + depth * 14}px` : undefined}>
               {#if row.resource?.color}<span class="sv-sched-dot" style={`--sv-sched-accent:${row.resource.color}`}></span>{/if}
               <span class="sv-sched-tl-resname">{row.resource?.title ?? row.resource?.id ?? "All"}</span>
             </div>
@@ -2798,13 +3418,49 @@
               class="sv-sched-tl-lanes"
               data-tlres={row.resource?.id ?? ""}
               onpointerdown={(e) => startTlRangeSelect(ri, e)}
-              ondblclick={(e) => onTlSlotDblClick(row.resource?.id, e)}
               oncontextmenu={openRangeMenu}
             >
               <!-- vertical tick gridlines -->
               {#each tlAxis.ticks as t (t.start.getTime())}
                 <div class="sv-sched-tl-gridline" class:sv-sched-today={t.today} style={`left:${t.leftPct}%; width:${t.widthPct}%`}></div>
               {/each}
+              {#if heatOn}
+                <!-- utilization heatmap: a background tint per tick by load. -->
+                {#each heatCellsFor(row.resource) as hc, hi (hi)}
+                  {#if hc.intensity > 0}
+                    <div class="sv-sched-heat-cell" class:sv-sched-heat-over={hc.over} style={`left:${hc.leftPct}%; width:${hc.widthPct}%; --sv-heat-i:${hc.intensity}`}></div>
+                  {/if}
+                {/each}
+              {/if}
+              {#if freeBusyOn}
+                <!-- free/busy overlay: external busy time shaded on the row. -->
+                {#each freeBusyBandsFor(row.resource) as fb, fi (fi)}
+                  <div class="sv-sched-freebusy" style={`left:${fb.leftPct}%; width:${fb.widthPct}%`} aria-hidden="true"></div>
+                {/each}
+              {/if}
+              {#if bookableOn}
+                <!-- bookable slots: clickable ghost cells over the free time. -->
+                {#each bookableSlotsFor(row.resource) as slot, si (si)}
+                  {@const sg = tlGeom(slot.start, slot.end)}
+                  {#if sg}
+                    <button
+                      type="button"
+                      class="sv-sched-bookslot"
+                      style={`left:${sg.leftPct}%; width:${sg.widthPct}%; top:3px; height:${tlLaneH - 4}px`}
+                      onclick={() => pickSlot(row.resource, slot)}
+                      title={`Book ${fmtTime(slot.start)} - ${fmtTime(slot.end)}`}
+                    ><span class="sv-sched-bookslot-label">{fmtTime(slot.start)}</span></button>
+                  {/if}
+                {/each}
+              {/if}
+              {#if histOn}
+                <!-- resource utilization histogram: a bar per tick, pinned to the bottom -->
+                <div class="sv-sched-hist" style={`height:${histH}px`} aria-hidden="true">
+                  {#each histBars(row.resource) as b, bi (bi)}
+                    <div class="sv-sched-hist-bar" class:sv-sched-hist-over={b.over} style={`left:calc(${b.leftPct}% + 3px); width:calc(${b.widthPct}% - 6px); height:${b.hPct}%`}></div>
+                  {/each}
+                </div>
+              {/if}
               {#if nowTlPct != null}
                 <div class="sv-sched-tl-nowline" style={`left:${nowTlPct}%`}></div>
               {/if}
@@ -2829,7 +3485,7 @@
                     type="button"
                     class="sv-sched-bar sv-sched-tl-bar"
                     data-status={evStatus(it.event)}
-                    class:sv-sched-tl-bar-tiny={wpx < 34}
+                    class:sv-sched-tl-bar-tiny={wpx < 22}
                     class:sv-sched-bar-recurring={it.event.recurring}
                     class:sv-sched-bar-draggable={canEdit}
                     class:sv-sched-bar-source={tlDrag?.moved && tlDrag.mode === "move" && tlDrag.ev.key === it.event.key}
@@ -2850,7 +3506,7 @@
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <span class="sv-sched-chip-resize sv-sched-chip-resize-start" aria-hidden="true" onpointerdown={(e) => startTlDrag(e, it.event, "resize-start")}></span>
                     {/if}
-                    {#if wpx >= 34}
+                    {#if wpx >= 22}
                       {#if scheduler.event}{@render scheduler.event(it.event.row)}{:else}{#if view === "timelineDay" && !it.event.allDay && !g.continuesLeft}<span class="sv-sched-bar-time">{fmtTime(it.event.start)}</span>{/if}<span class="sv-sched-bar-title">{it.event.title}</span>{/if}
                     {/if}
                     {#if canEdit && !g.continuesRight}
@@ -2862,6 +3518,28 @@
               {/each}
             </div>
           </div>
+        {/snippet}
+        {#each tlRenderRows as dr (dr.kind === "group" ? "g:" + dr.group.id : "r:" + (dr.row.resource?.id ?? "__all"))}
+          {#if dr.kind === "group"}
+            {@const g = dr.group}
+            <div class="sv-sched-tl-row sv-sched-tl-grouprow" style={`height:${GROUP_ROW_H}px`}>
+              <div class="sv-sched-tl-resgutter sv-sched-tl-grouphdr" style={`padding-left:${8 + g.depth * 14}px`}>
+                <button type="button" class="sv-sched-group-toggle" aria-expanded={!g.collapsed} onclick={() => toggleGroup(g.id)}>
+                  <span class="sv-sched-group-chevron" class:sv-collapsed={g.collapsed} aria-hidden="true">▾</span>
+                  {#if g.color}<span class="sv-sched-dot" style={`--sv-sched-accent:${g.color}`}></span>{/if}
+                  <span class="sv-sched-tl-resname">{g.title}</span>
+                  <span class="sv-sched-group-count">{g.childResourceIds?.length ?? 0}</span>
+                </button>
+              </div>
+              <div class="sv-sched-tl-lanes sv-sched-tl-grouplanes">
+                {#each tlAxis.ticks as t (t.start.getTime())}
+                  <div class="sv-sched-tl-gridline" class:sv-sched-today={t.today} style={`left:${t.leftPct}%; width:${t.widthPct}%`}></div>
+                {/each}
+              </div>
+            </div>
+          {:else}
+            {@render tlResourceRow(dr.row, dr.ri, dr.depth)}
+          {/if}
         {/each}
         <!-- filler row so the axis gridlines fill the remaining height -->
         <div class="sv-sched-tl-row sv-sched-tl-filler">
@@ -2876,6 +3554,17 @@
           </div>
         </div>
       </div>
+      {#if tlSummary}
+        <!-- per-time-column summary strip, sticky to the bottom of the scroller -->
+        <div class="sv-sched-tl-summary">
+          <div class="sv-sched-tl-resgutter sv-sched-tl-summary-label">{summaryCfg?.label ?? "Total"}</div>
+          <div class="sv-sched-tl-lanes">
+            {#each tlAxis.ticks as t, ti (t.start.getTime())}
+              <div class="sv-sched-tl-summary-cell" style={`left:${t.leftPct}%; width:${t.widthPct}%`}>{tlSummary[ti] ?? ""}</div>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
   {:else}
     <!-- week / day time-grid -->
@@ -3435,6 +4124,16 @@
         {/if}
       </div>
     {/if}
+    {#if showScope}
+      <div class="sv-sched-scope-inline" role="radiogroup" aria-label="Apply changes to">
+        <span class="sv-sched-scope-inline-label">Apply changes to</span>
+        <div class="sv-sched-scope-seg">
+          <button type="button" role="radio" aria-checked={drawerScope === "occurrence"} class:sv-on={drawerScope === "occurrence"} onclick={() => (drawerScope = "occurrence")}>This event</button>
+          <button type="button" role="radio" aria-checked={drawerScope === "following"} class:sv-on={drawerScope === "following"} onclick={() => (drawerScope = "following")}>This &amp; following</button>
+          <button type="button" role="radio" aria-checked={drawerScope === "series"} class:sv-on={drawerScope === "series"} onclick={() => (drawerScope = "series")}>All events</button>
+        </div>
+      </div>
+    {/if}
     <SvForm
       fields={drawerFields}
       initial={drawerInitial}
@@ -3484,6 +4183,8 @@
   .sv-sched-nav { display: flex; gap: 4px; }
   .sv-sched-title { flex: 1 1 auto; font-weight: 600; font-size: 0.95rem; }
   .sv-sched-views { display: flex; gap: 4px; align-items: center; }
+  .sv-sched-zoom { align-items: center; }
+  .sv-sched-zoom-label { font-size: 0.76rem; color: var(--sg-muted, #6b7280); min-width: 54px; text-align: center; }
   .sv-sched-slots { display: inline-flex; gap: 2px; margin-right: 8px; padding-right: 8px; border-right: 1px solid var(--sg-border, #e5e7eb); }
   .sv-sched-btn-slot { min-width: 34px; padding-left: 7px; padding-right: 7px; }
   /* Resource legend / filter (shown in every view when resourceField is set). */
@@ -3623,6 +4324,20 @@
   .sv-sched-bar-cont-right { border-top-right-radius: 0; border-bottom-right-radius: 0; }
   .sv-sched-bar-time { color: color-mix(in srgb, var(--sg-fg, #1f2937) 60%, transparent); font-variant-numeric: tabular-nums; font-size: 0.68rem; }
   .sv-sched-bar-title { overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+  /* Timeline bars: let a title wrap to two lines (taller lanes then show narrow,
+     sub-day events legibly instead of clipping them to an ellipsis). */
+  .sv-sched-tl-bar { align-items: flex-start; white-space: normal; padding-top: 2px; }
+  .sv-sched-tl-bar .sv-sched-bar-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    overflow: hidden;
+    line-height: 1.12;
+    word-break: break-word;
+  }
+  .sv-sched-tl-bar-tiny { align-items: center; }
   /* Month resize grips: drag a bar's left/right edge across days to change the
      event's start / end date. Revealed on hover, like the time-grid grips. */
   .sv-sched-chip-resize {
@@ -4183,6 +4898,41 @@
     cursor: pointer;
   }
   .sv-sched-scope-btn:hover { background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 14%, transparent); }
+  /* Inline "Apply changes to" scope selector inside the drawer (recurring events). */
+  .sv-sched-scope-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+  .sv-sched-scope-inline-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--sg-muted, #6b7280);
+  }
+  .sv-sched-scope-seg {
+    display: inline-flex;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .sv-sched-scope-seg button {
+    flex: 1 1 0;
+    padding: 6px 8px;
+    border: none;
+    border-right: 1px solid var(--sg-border, #e5e7eb);
+    background: transparent;
+    color: var(--sg-muted, #6b7280);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .sv-sched-scope-seg button:last-child { border-right: none; }
+  .sv-sched-scope-seg button.sv-on {
+    background: var(--sv-sched-accent, #4f46e5);
+    color: var(--sg-on-accent, #fff);
+  }
 
   /* "+N more" event-list popover (cap overflow + month day cell). */
   .sv-sched-listpop {
@@ -4351,9 +5101,178 @@
        scrollbar pins to the viewport, not the content's far right). flex:1 keeps
        the filler row filling the height when there are few resource rows. */
     overflow: visible;
+    /* Positioning context for the dependency-arrow overlay. */
+    position: relative;
+  }
+  /* Dependency arrows (Scheduler Pro): drawn over the lanes, past the gutter. */
+  .sv-sched-dep-layer {
+    position: absolute;
+    top: 0;
+    pointer-events: none;
+    z-index: 3;
+    overflow: visible;
+  }
+  .sv-sched-dep-line {
+    fill: none;
+    stroke: var(--sv-sched-dep, color-mix(in srgb, var(--sg-fg, #1f2937) 45%, transparent));
+    stroke-width: 1.5;
+  }
+  .sv-sched-dep-arrow {
+    fill: var(--sv-sched-dep, color-mix(in srgb, var(--sg-fg, #1f2937) 45%, transparent));
+  }
+  .sv-sched-dep-line.sv-sched-dep-bad,
+  .sv-sched-dep-arrow.sv-sched-dep-bad {
+    stroke: var(--sv-sched-dep-bad, #dc2626);
+    fill: var(--sv-sched-dep-bad, #dc2626);
+  }
+  .sv-sched-dep-line.sv-sched-dep-bad {
+    stroke-dasharray: 4 3;
+  }
+  /* Resource utilization histogram (Scheduler Pro) - a subtle meter strip at the
+     bottom of each resource row, clearly separated from the event lanes above. */
+  .sv-sched-hist {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--sg-fg, #1f2937) 4%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--sg-fg, #1f2937) 10%, transparent);
+  }
+  .sv-sched-hist-bar {
+    position: absolute;
+    bottom: 0;
+    min-height: 2px;
+    background: var(--sv-sched-hist, color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 38%, transparent));
+    border-radius: 2px 2px 0 0;
+  }
+  .sv-sched-hist-bar.sv-sched-hist-over {
+    background: var(--sv-sched-hist-over, color-mix(in srgb, #dc2626 78%, transparent));
+  }
+  /* Per-time-column summary strip (Scheduler Pro). */
+  .sv-sched-tl-summary {
+    display: flex;
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    min-height: 26px;
+    /* Theme-aware footer tint (a hint of fg over the grid bg) so the numbers stay
+       legible in both light and dark themes. */
+    background: color-mix(in srgb, var(--sg-fg, #1f2937) 5%, var(--sg-bg, #fff));
+    border-top: 1px solid var(--sg-border, #e5e7eb);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--sg-fg, #1f2937);
+  }
+  .sv-sched-tl-summary .sv-sched-tl-resgutter {
+    background: color-mix(in srgb, var(--sg-fg, #1f2937) 5%, var(--sg-bg, #fff));
+  }
+  .sv-sched-tl-summary-label {
+    color: var(--sg-muted, #6b7280);
+    font-weight: 600;
+  }
+  .sv-sched-tl-summary .sv-sched-tl-lanes { display: block; }
+  .sv-sched-tl-summary-cell {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid color-mix(in srgb, var(--sg-fg, #1f2937) 6%, transparent);
+    color: var(--sg-fg, #1f2937);
   }
   .sv-sched-tl-row { display: flex; border-bottom: 1px solid var(--sg-border, #e5e7eb); flex: 0 0 auto; }
   .sv-sched-tl-row.sv-sched-tl-filler { flex: 1 1 auto; min-height: 0; border-bottom: none; }
+  /* Grouped / tree resource header rows. */
+  .sv-sched-tl-grouprow { background: color-mix(in srgb, var(--sg-fg, #1f2937) 4%, var(--sg-bg, #fff)); }
+  .sv-sched-tl-grouphdr { align-items: center; }
+  .sv-sched-group-toggle {
+    display: flex; align-items: center; gap: 7px;
+    border: 0; background: transparent; color: inherit; font: inherit;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer; padding: 0; width: 100%; text-align: left;
+    overflow: hidden;
+  }
+  .sv-sched-group-chevron { font-size: 0.7rem; transition: transform 0.12s ease; flex: none; }
+  .sv-sched-group-chevron.sv-collapsed { transform: rotate(-90deg); }
+  .sv-sched-group-count {
+    margin-left: auto; font-size: 0.68rem; font-weight: 600; color: var(--sg-muted, #6b7280);
+    background: color-mix(in srgb, var(--sg-fg, #1f2937) 8%, transparent);
+    padding: 1px 6px; border-radius: 999px; flex: none;
+  }
+  .sv-sched-tl-grouplanes { background: color-mix(in srgb, var(--sg-fg, #1f2937) 4%, transparent); }
+  /* Free/busy overlay: external busy time shaded on a resource row. */
+  .sv-sched-freebusy {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 4px, color-mix(in srgb, var(--sg-fg, #1f2937) 10%, transparent) 4px, color-mix(in srgb, var(--sg-fg, #1f2937) 10%, transparent) 8px);
+  }
+  /* Multi-calendar legend: a colour-swatch checkbox per calendar. */
+  .sv-sched-cal-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    font-size: 0.62rem;
+    line-height: 1;
+    color: var(--sg-on-accent, #fff);
+    background: var(--sv-sched-accent, #4f46e5);
+    border: 1px solid var(--sv-sched-accent, #4f46e5);
+  }
+  .sv-sched-reschip-off .sv-sched-cal-check { background: transparent; color: transparent; }
+  /* Bookable slots (find-a-time): dashed clickable ghost cells over free time.
+     NB: a distinct class from the time-grid hour rows (`.sv-sched-slot`). */
+  .sv-sched-bookslot {
+    position: absolute;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    box-sizing: border-box;
+    /* Neutral "empty slot" look so it never blends with coloured events; it only
+       lights up in the accent colour on hover to invite a booking. */
+    border: 1px dashed color-mix(in srgb, var(--sg-fg, #1f2937) 26%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--sg-fg, #1f2937) 3%, transparent);
+    color: var(--sg-muted, #6b7280);
+    font: inherit;
+    font-size: 0.66rem;
+    font-weight: 500;
+    cursor: pointer;
+    overflow: hidden;
+    min-width: 6px;
+  }
+  .sv-sched-bookslot::before { content: "+"; font-weight: 700; opacity: 0.7; }
+  .sv-sched-bookslot:hover {
+    z-index: 2;
+    border-style: solid;
+    border-color: var(--sv-sched-accent, #4f46e5);
+    background: color-mix(in srgb, var(--sv-sched-accent, #4f46e5) 15%, var(--sg-bg, #fff));
+    color: var(--sv-sched-accent, #4f46e5);
+  }
+  .sv-sched-bookslot:hover::before { opacity: 1; }
+  .sv-sched-bookslot-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Utilization heatmap: a background tint per tick, behind events + gridlines. */
+  .sv-sched-heat-cell {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--sv-sched-heat, var(--sv-sched-accent, #4f46e5)) calc(var(--sv-heat-i, 0) * 55%), transparent);
+  }
+  .sv-sched-heat-cell.sv-sched-heat-over {
+    background: color-mix(in srgb, var(--sv-sched-heat-over, #dc2626) 42%, transparent);
+  }
+  /* Ineligible target row while dragging (skill / eligibility mismatch). */
+  .sv-sched-tl-row-blocked .sv-sched-tl-lanes {
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, color-mix(in srgb, #dc2626 12%, transparent) 5px, color-mix(in srgb, #dc2626 12%, transparent) 10px);
+    cursor: not-allowed;
+  }
   .sv-sched-tl-filler .sv-sched-tl-resgutter { border-right: 1px solid var(--sg-border, #e5e7eb); }
   .sv-sched-tl-resgutter {
     flex: 0 0 var(--tl-res-w);

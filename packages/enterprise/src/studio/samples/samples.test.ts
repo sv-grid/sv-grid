@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { compile } from 'svelte/compiler'
 import { sampleApps, getSampleApp } from './index.js'
+import { starterProject } from './starter.js'
 import { validateProject, parseProject, serializeProject } from '../project.js'
 import { emitStudioProject } from '../emit-project.js'
 
@@ -212,5 +213,56 @@ describe('sample apps', () => {
         if (resource) expect(tag, `${id}: resource not resolved`).toContain(`resourceField: '${resource}'`)
       }
     })
+  })
+})
+
+describe('starter project (fresh `svgrid-studio designer` session)', () => {
+  const project = starterProject()
+
+  it('is a valid, multi-page CRM (dashboard + CRUD + board + calendar + forecast) with seeded rows', () => {
+    expect(validateProject(project).filter((i) => i.level === 'error')).toHaveLength(0)
+    expect(project.entities.map((e) => e.name)).toEqual(['customers', 'deals'])
+    // Several pages, so the first-run app is a real app, not a lone table.
+    const ids = project.screens.map((s) => s.id)
+    expect(ids).toEqual(['overview', 'customers', 'pipeline', 'deals', 'calendar', 'forecast'])
+    // A range of block kinds across the app (the "wow" surface).
+    const kinds = new Set(project.screens.flatMap((s) => s.blocks.map((b) => b.config.kind)))
+    for (const k of ['kpi', 'chart', 'pivot', 'grid', 'board', 'calendar']) expect(kinds.has(k as never), `missing ${k}`).toBe(true)
+    for (const e of ['customers', 'deals']) {
+      const seed = (project.dataSources?.[e] as { seed?: unknown[] } | undefined)?.seed
+      expect(seed?.length ?? 0, `${e} seed`).toBeGreaterThanOrEqual(10)
+    }
+  })
+
+  it('the Customers page turns on the enterprise-grade grid surface (filter + export + pills + row actions)', () => {
+    const screen = project.screens.find((s) => s.id === 'customers')!
+    const grid = screen.blocks.find((b) => b.config.kind === 'grid')!.config as Record<string, unknown>
+    expect(screen.blocks.some((b) => b.config.kind === 'filter')).toBe(true)
+    expect(grid.filterable).toBe(true)
+    expect(grid.export).toEqual({ csv: true, json: true, copy: true })
+    expect(grid.rowSummaries).toBe(true)
+    expect((grid.rowActions as unknown[])?.length).toBeGreaterThan(0)
+    // status / industry / plan render as colored chips (editorType 'list' on the enum fields).
+    const cust = project.entities.find((e) => e.name === 'customers')!
+    for (const f of ['status', 'industry', 'plan']) {
+      expect(cust.fields.find((x) => x.field === f)?.input?.editorType, `${f} chip`).toBe('list')
+    }
+  })
+
+  it('generates enterprise-wired, compiling code with a visible export toolbar', () => {
+    const files = emitStudioProject(project)
+    const customersPage = files.find((f) => f.path.endsWith('customers/+page.svelte'))!.contents
+    expect(customersPage).toContain('@svgrid/enterprise')
+    expect(customersPage).toContain('exportCsv') // export toolbar wired to the grid api
+    // Every generated screen compiles (dashboard, board, calendar, forecast, ...).
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('round-trips through parse/serialize', () => {
+    const again = parseProject(serializeProject(project))
+    expect(again.entities.map((e) => e.name)).toEqual(project.entities.map((e) => e.name))
+    expect(again.dataSources).toEqual(project.dataSources)
   })
 })

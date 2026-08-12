@@ -69,7 +69,7 @@ Show skeletons while `loading`, then render the real content once it arrives:
 
 ### Avatar plus text row
 
-Compose primitives to mirror a list item so the swap is seamless:
+Compose primitives to mirror a list item so the layout doesn't shift when real content loads:
 
 ```svelte
 <div style="display:flex; gap:12px; align-items:center;">

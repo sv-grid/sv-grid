@@ -95,6 +95,43 @@ Wire it to the grid's native server-mode UI and you are done:
   onPaginationChange={({ pageIndex, pageSize }) => ...} />
 ```
 
+## Bind data in the designer (no code)
+
+You don't have to write any of the above by hand. In the visual designer, open
+**Data model**, and each entity has a **Data source** dropdown - In-memory, Local
+database, SQL, Supabase, or REST. Every option carries a one-line description so
+it's clear which to pick:
+
+![The Data model dialog: each entity (Customer, Deal) shows its fields and a Data source dropdown with a plain-language description, plus the relationships between them.](/docs-media/studio-data-model.png)
+
+- **In-memory** - seeded sample data, zero setup. Best for designing and demos.
+- **Local database** - a real Postgres that runs in the browser (PGlite), saved
+  on the machine. No server, no sign-up.
+- **Supabase** - a free hosted Postgres with a web dashboard; works right in the
+  browser via its REST API.
+- **SQL** - your own Postgres / MySQL / SQL Server / SQLite database.
+- **REST** - an existing web API that returns JSON.
+
+Pick a remote source (SQL / Supabase / REST) and a **Configure** button opens a
+focused builder - a draggable, resizable, maximizable panel - where you enter the
+connection, **preview your real rows**, and (for SQL / Supabase) **import the
+table's columns** into the entity. The preview feeds the design canvas, so the
+grid you are laying out shows your actual data.
+
+### Online designer vs. the local designer
+
+A web browser can't open a raw TCP connection to Postgres / MySQL / SQL Server,
+and the database driver is a server-side package. So **live SQL preview and the
+"Connect database" wizard only run in the local designer** (`npx @svgrid/studio
+designer`), which starts a small Node server that holds the drivers. In the
+**online** designer you still bind an entity to SQL (dialect + table + schema) and
+**Generate app** - the generated app connects to your database for real through
+its own `DATABASE_URL` route.
+
+**Supabase and REST work live in the online designer too**, because both are
+reachable over HTTP from the browser. If you want a real database inside the
+online designer with zero setup, pick **Supabase** or **Local database**.
+
 ## Choose a binding
 
 | Option | Guide |

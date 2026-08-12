@@ -32,7 +32,10 @@
   </header>
 
   <div class="toolbar">
-    <label class="f">Status<SvDropDownList options={statuses} value={status} onChange={(v) => (status = v)} /></label>
+    <label class="f">Status<SvDropDownList options={statuses} value={status} onChange={(v) => (status = v)}>
+      {#snippet item(o)}<span class="opt-row"><span class="opt-dot"></span>{o.label}</span>{/snippet}
+      {#snippet footer()}<span class="opt-foot">{statuses.length} statuses</span>{/snippet}
+    </SvDropDownList></label>
     <label class="f">Priority<SvDropDownList options={priorities} value={priority} onChange={(v) => (priority = v)} /></label>
   </div>
 
@@ -53,6 +56,9 @@
   header p { margin: 0; color: var(--sg-muted, #64748b); font-size: 13.5px; line-height: 1.5; }
   .toolbar { display: flex; gap: 16px; flex-wrap: wrap; }
   .f { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: var(--sg-muted, #64748b); }
+  .opt-row { display: flex; align-items: center; gap: 8px; }
+  .opt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sg-accent, #4f46e5); flex: none; }
+  .opt-foot { color: var(--sg-muted, #64748b); }
   .issues { display: flex; flex-direction: column; gap: 6px; }
   .issue { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--sg-border, #e2e8f0); border-radius: 8px; font-size: 13px; }
   .title { flex: 1; }

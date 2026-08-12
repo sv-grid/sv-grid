@@ -5,10 +5,10 @@
  * one with `npx @svgrid/studio add <table> --db postgres --url ...`) - the grid,
  * form, sorting, filtering, and paging keep working unchanged.
  */
+import type { ServerDataSource } from '@svgrid/grid'
 import {
   createInMemoryDataSource,
   createRelationLookup,
-  type ServerDataSource,
 } from '@svgrid/enterprise'
 import { customerSchema, orderSchema, productSchema, type Customer, type Order, type Product } from './schemas'
 

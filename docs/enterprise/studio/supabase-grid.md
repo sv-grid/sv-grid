@@ -13,6 +13,11 @@ and run.
 You need a [SvelteKit](https://svelte.dev/docs/kit) app (`npx sv create my-app`)
 and a free [Supabase](https://supabase.com) account. About ten minutes end to end.
 
+> **Where this fits:** the same Customers screen as
+> [Getting started](./getting-started.md), bound to Supabase instead of
+> in-memory data. This page is the copy-paste path; concepts, keys, and
+> Row-Level Security in depth live in the [Supabase guide](./supabase.md).
+
 ---
 
 ## Step 1 - Create the table in Supabase

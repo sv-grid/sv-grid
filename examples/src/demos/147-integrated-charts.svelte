@@ -270,7 +270,7 @@
   .ic-badge {
     font-size: 11px;
     font-weight: 700;
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     background: var(--sg-accent, #2563eb);
     border-radius: 999px;
     padding: 2px 9px;

@@ -1,27 +1,25 @@
 <script lang="ts">
   /**
-   * 357. AI "chart this" (Enterprise)
-   * ---------------------------------
-   * The built-in chart panel gains an AI button once the grid is upgraded with
-   * `installEnterprise(api)`: type a request in plain English - "revenue by
-   * country, stacked by product" - and the model turns it into a chart config
-   * (type, group-by, split-by, measure, aggregate) that's applied live. Wired
-   * to the bundled `mockAIProvider` so it runs with no API key; swap in
-   * `setAIProvider(yourAdapter)` for a real model. The AI is enterprise-gated
-   * (soft-gated for evaluation); the chart panel itself is free MIT core.
+   * 357. AI "chart this"
+   * --------------------
+   * The built-in chart panel gains an AI button once you call `enableAiCharting(api)`:
+   * type a request in plain English - "revenue by country, stacked by product" -
+   * and the model turns it into a chart config (type, group-by, split-by, measure,
+   * aggregate) that's applied live. Wired to the bundled `mockAIProvider` so it
+   * runs with no API key; swap in `setAIProvider(yourAdapter)` for a real model.
+   * The AI helpers are built-in and free (MIT) in @svgrid/grid - no license needed.
    */
-  import { SvGrid, tableFeatures, type ColumnDef, type SvGridApi } from '@svgrid/grid'
   import {
-    installEnterprise,
-    setLicenseKey,
-    dismissUnlicensedNudge,
+    SvGrid,
+    tableFeatures,
     setAIProvider,
     mockAIProvider,
-  } from '@svgrid/enterprise'
+    enableAiCharting,
+    type ColumnDef,
+    type SvGridApi,
+  } from '@svgrid/grid'
   import { makeOrders } from '../shared/seed'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
-  dismissUnlicensedNudge()
   setAIProvider(mockAIProvider) // deterministic canned model for the demo
 
   // Project to just the chartable fields so the AI's column schema (built from
@@ -49,10 +47,10 @@
     { field: 'revenue', header: 'Revenue', width: 130, align: 'right', cellDataType: 'number', format: money },
   ]
 
-  // installEnterprise(api) wires the chart panel's AI button to aiChart() via
-  // enableAiCharting - nothing else to do here.
+  // enableAiCharting wires the chart panel's AI button to aiChart() - a built-in,
+  // free @svgrid/grid feature; no enterprise install or license needed.
   function onReady(next: SvGridApi<typeof features, Sale>) {
-    installEnterprise(next)
+    enableAiCharting(next)
   }
 </script>
 

@@ -17,7 +17,8 @@
    * important dates, week numbers, firstDayOfWeek, drill navigation, keyboard).
    */
   import { untrack, type Snippet } from 'svelte'
-  import { resolveMessages, type EditorDir } from './editor-contract'
+  import SvField from './SvField.svelte'
+  import { nextEditorId, resolveMessages, type EditorDir, type EditorSize } from './editor-contract'
   import {
     createCalendar,
     type CalendarValue,
@@ -91,6 +92,16 @@
      *  the date + its day-state. Switches the month grid to a taller,
      *  top-aligned layout so there's room for the content. */
     day?: Snippet<[Date, CalendarDayState]>
+    // Optional field chrome: when any of label/hint/error is set, the calendar is
+    // wrapped in <SvField> so it gains a label/hint/error line; otherwise it
+    // renders bare (as embedded inside SvDateTimePicker's popover).
+    label?: string
+    hint?: string
+    error?: string
+    required?: boolean
+    invalid?: boolean
+    size?: EditorSize
+    id?: string
   }
 
   let {
@@ -124,8 +135,17 @@
     messages,
     recurrence = null,
     day,
+    label,
+    hint,
+    error,
+    required = false,
+    invalid = false,
+    id,
   }: Props = $props()
 
+  const calAutoId = nextEditorId('sv-cal')
+  const uid = $derived(id ?? calAutoId)
+  const hasChrome = $derived(!!(label || hint || error))
   const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
   const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
   // With several month panels side by side, leading/trailing days of adjacent
@@ -206,14 +226,17 @@
   }
 </script>
 
+{#snippet calBody()}
 <div
   class="sv-cal"
   class:sv-cal--disabled={disabled}
+  class:sv-cal--invalid={invalid}
   class:sv-cal--with-presets={presets && presets.length}
   class:sv-cal--band={selectionMode === 'range' || selectionMode === 'week'}
   class:sv-cal--rich={!!day}
+  id={uid}
   role="group"
-  aria-label={M.label}
+  aria-label={label ?? M.label}
   aria-disabled={disabled}
   dir={resolvedDir}
 >
@@ -314,6 +337,13 @@
 
   {#if name}<input type="hidden" {name} value={cal.selectedDates.map((d) => d.toISOString()).join(',')} />{/if}
 </div>
+{/snippet}
+
+{#if hasChrome}
+  <SvField id={uid} {label} {hint} {error} {required} {dir}>{@render calBody()}</SvField>
+{:else}
+  {@render calBody()}
+{/if}
 
 <style>
   .sv-cal {
@@ -336,6 +366,7 @@
     user-select: none;
   }
   .sv-cal--disabled { opacity: 0.55; pointer-events: none; }
+  .sv-cal--invalid { border-color: var(--sg-danger, #dc2626); }
   .sv-cal__main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   /* Clip so animated content slides in from the edge (not past the border). Day
      focus outlines use outline-offset:-2px, so they stay inside and aren't clipped. */

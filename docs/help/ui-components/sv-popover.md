@@ -4,10 +4,14 @@ A floating panel anchored to a trigger, portalled to `<body>` so it escapes any
 `overflow:hidden` ancestor.
 
 `SvPopover` wraps an anchor snippet and reveals a panel next to it on click,
-hover, or under your own control. It flips above the trigger when there is no
-room below, closes on outside-click and Escape through the shared dismissable
-layer stack, and animates in. Every color comes from the grid's `--sg-*` tokens,
-so it matches the rest of the kit in light and dark.
+hover, or under your own control. It is positioned by the shared engine, so you
+get the full placement matrix (`top` / `bottom` / `left` / `right`, each with an
+optional `-start` / `-end` alignment), automatic flip when there is no room on
+the chosen side, shift-to-stay-in-view, and an optional pointer arrow - all kept
+in sync as the page scrolls or resizes. It closes on outside-click and Escape
+through the shared dismissable layer stack, and animates in. Every color comes
+from the grid's `--sg-*` tokens, so it matches the rest of the kit in light and
+dark.
 
 Related: [SvTooltip](sv-tooltip.md) · [SvMenu](sv-menu.md) · [Overlays & menus overview](overlays.md)
 
@@ -50,7 +54,12 @@ import { SvPopover } from '@svgrid/grid'
 | `open`                | `boolean`                         | `false`   | Controlled, bindable open state.                                     |
 | `onOpenChange`        | `(open: boolean) => void`         | -         | Fires whenever the open state changes.                              |
 | `trigger`             | `click` \| `hover` \| `manual`    | `click`   | How the anchor opens the panel. `manual` = only `open` drives it.   |
-| `estimatedHeight`     | `number`                          | `220`     | Estimated panel height used for the flip-above decision.            |
+| `placement`           | `Placement`                       | `bottom-start` | Preferred side + alignment; flips to the opposite side when there is no room. |
+| `offset`              | `number`                          | `8`       | Main-axis gap between trigger and panel (leaves room for the arrow). |
+| `arrow`               | `boolean`                         | `true`    | Render a pointer arrow toward the trigger.                          |
+| `openDelay`           | `number`                          | `0`       | Hover trigger: delay (ms) before opening.                          |
+| `closeDelay`          | `number`                          | `120`     | Hover trigger: delay (ms) before closing after leave.              |
+| `estimatedHeight`     | `number`                          | `220`     | Panel height estimate used before the panel has been measured.      |
 | `minWidth`            | `number`                          | -         | Force a minimum panel width; otherwise it hugs its content.        |
 | `closeOnOutsideClick` | `boolean`                         | `true`    | Close when a click lands outside the anchor and panel.             |
 | `ariaLabel`           | `string`                          | -         | Accessible name for the `role="dialog"` panel.                     |
@@ -59,13 +68,33 @@ import { SvPopover } from '@svgrid/grid'
 
 ## Examples
 
-### Hover cards
+### Placement and arrow
 
-Set `trigger="hover"` to reveal the panel on pointer-enter with a short close
-delay, so moving between the anchor and panel keeps it open:
+Pick any side and alignment with `placement`; the engine flips to the opposite
+side when there is no room and shifts along the cross axis to stay in view. The
+arrow points at the trigger and is clamped inside the panel:
 
 ```svelte
-<SvPopover trigger="hover">
+<SvPopover placement="right-start">
+  {#snippet anchor()}<SvButton>Details</SvButton>{/snippet}
+  <p>Anchored to the right, aligned to the trigger's top edge.</p>
+</SvPopover>
+
+<!-- turn the arrow off for a flush panel -->
+<SvPopover placement="top" arrow={false}>
+  {#snippet anchor()}<SvButton>No arrow</SvButton>{/snippet}
+  <p>Centered above the trigger.</p>
+</SvPopover>
+```
+
+### Hover cards
+
+Set `trigger="hover"` to reveal the panel on pointer-enter. Tune `openDelay` and
+`closeDelay` so a quick pass does not flash it open and moving between the anchor
+and panel keeps it open (the panel is hoverable):
+
+```svelte
+<SvPopover trigger="hover" openDelay={120} closeDelay={160}>
   {#snippet anchor()}<a href="/u/ada">@ada</a>{/snippet}
   <strong>Ada Lovelace</strong>
   <p>Analyst, first programmer.</p>

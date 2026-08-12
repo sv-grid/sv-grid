@@ -1,7 +1,7 @@
 /**
  * Track C: free-text autocomplete cell type + editable cell comments.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import { createCoreRowModel, tableFeatures } from './index'
@@ -13,7 +13,10 @@ const rows: Row[] = [
   { id: 1, name: 'Ann', city: 'Paris' },
   { id: 2, name: 'Bo', city: 'Berlin' },
 ]
-const tick = () => new Promise<void>((r) => queueMicrotask(r))
+// Macrotask boundary: drains pending microtasks incl. the menu overlay's lazy
+// import() + flush, so the context menu is mounted before assertions (GridMenus
+// loads lazily as its own chunk the first time a menu/tooltip opens).
+const tick = () => new Promise<void>((r) => setTimeout(r))
 
 function mountGrid(extraCols: ColumnDef<typeof features, Row>[], props: Record<string, unknown> = {}) {
   return new Promise<{ api: SvGridApi<typeof features, Row>; target: HTMLElement; destroy: () => void }>(
@@ -90,6 +93,8 @@ describe('editable comments', () => {
     await tick()
     const cell = dataCell(target, 0)
     cell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    // First menu-open triggers GridMenus' lazy import; poll until it mounts.
+    await vi.waitFor(() => expect(target.querySelector('.sv-grid-context-menu')).not.toBeNull())
     await tick()
     const editItem = [...target.querySelectorAll('.sv-grid-context-menu .sv-grid-menu-item')].find(
       (b) => b.textContent?.trim() === 'Edit comment',

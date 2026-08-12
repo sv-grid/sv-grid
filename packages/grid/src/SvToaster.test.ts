@@ -47,6 +47,38 @@ describe('SvToaster', () => {
     } finally { destroy() }
   })
 
+  it('clicking the dismiss (x) button removes the toast', () => {
+    const { destroy } = mountToaster()
+    try {
+      toast('Close me', { duration: 0 })
+      flushSync()
+      const x = document.body.querySelector<HTMLButtonElement>('.sv-toast__x')!
+      expect(x).not.toBeNull()
+      x.click()
+      flushSync()
+      expect(toastStore.toasts).toHaveLength(0)
+      expect(toastEl()).toBeNull()
+    } finally { destroy() }
+  })
+
+  it('a press that starts on the dismiss button does not begin a swipe', () => {
+    // The swipe handler must ignore presses on the toast's own controls,
+    // otherwise pointer-capture on the toast swallows the button's click.
+    const { destroy } = mountToaster()
+    try {
+      toast('Keep me', { duration: 0 })
+      flushSync()
+      const el = toastEl()!
+      const x = el.querySelector<HTMLButtonElement>('.sv-toast__x')!
+      x.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 100, button: 0 }))
+      el.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 240 })) // dx 140 > 60
+      el.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientX: 240 }))
+      flushSync()
+      // No swipe was started, so the toast survives (the click path owns dismiss).
+      expect(toastStore.toasts).toHaveLength(1)
+    } finally { destroy() }
+  })
+
   it('a small swipe does not dismiss', () => {
     const { destroy } = mountToaster()
     try {

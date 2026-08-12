@@ -5,7 +5,11 @@
    *
    * The styled renderer over the headless `createPasswordInput` core: the reveal
    * toggle + strength heuristic come from the core, spread here via prop-getters.
+   * The box, size, invalid state and focus ring are owned by SvField's `frame`
+   * chrome; the reveal eye lives in the trailing slot and the strength meter sits
+   * below the field.
    */
+  import type { Snippet } from 'svelte'
   import SvField from './SvField.svelte'
   import { nextEditorId, resolveMessages, type SvEditorProps } from './editor-contract'
   import { createPasswordInput } from './createPasswordInput.svelte'
@@ -28,6 +32,12 @@
     autocomplete?: string
     /** Override the built-in strings (reveal toggle + strength labels). */
     messages?: Partial<PasswordMessages>
+    /** Leading adornment (icon) inside the field. */
+    leading?: Snippet
+    /** Stretch to the container width. */
+    block?: boolean
+    /** Control width in px (ignored when `block`). Default 220. */
+    width?: number
   }
 
   let {
@@ -48,8 +58,12 @@
     hint,
     dir,
     id,
+    loading = false,
     autocomplete = 'current-password',
     messages,
+    leading,
+    block = false,
+    width = 220,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-pass')
@@ -76,20 +90,40 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
-<div class="sv-pw sv-pw--{size}" class:is-disabled={disabled}>
-  <div class="sv-pw__field" class:is-invalid={invalid}>
+{#snippet eye()}
+  {#if revealable}
+    <button class="sv-pw__eye" {...pw.toggleProps()}>
+      {#if pw.revealed}
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><path d="M1 1l22 22" /></svg>
+      {:else}
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+      {/if}
+    </button>
+  {/if}
+{/snippet}
+
+<div class="sv-pw" class:sv-pw--block={block}>
+  <SvField
+    frame
+    id={uid}
+    {label}
+    {hint}
+    {error}
+    {required}
+    {dir}
+    {size}
+    {invalid}
+    {disabled}
+    {readonly}
+    {loading}
+    {block}
+    {width}
+    {leading}
+    trailing={revealable ? eye : undefined}
+  >
     <input class="sv-pw__input" {...pw.inputProps()} />
-    {#if revealable}
-      <button class="sv-pw__eye" {...pw.toggleProps()}>
-        {#if pw.revealed}
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><path d="M1 1l22 22" /></svg>
-        {:else}
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-        {/if}
-      </button>
-    {/if}
-  </div>
+    {#if name}<input type="hidden" {name} value={value} />{/if}
+  </SvField>
   {#if showStrength}
     <div class="sv-pw__meter" aria-hidden="true">
       {#each Array(4) as _, i (i)}
@@ -98,27 +132,13 @@
     </div>
     <span class="sv-pw__strength is-lvl{pw.strength}">{pw.strengthLabel}</span>
   {/if}
-  {#if name}<input type="hidden" {name} value={value} />{/if}
 </div>
-</SvField>
 
 <style>
-  .sv-pw { --_accent: var(--sg-accent, #2563eb); display: inline-flex; flex-direction: column; gap: 5px; width: 220px; }
-  .sv-pw.is-disabled { opacity: 0.6; }
-  .sv-pw__field {
-    display: flex; align-items: center;
-    background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a);
-    border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1)); border-radius: var(--sg-radius, 8px);
-  }
-  .sv-pw__field:focus-within { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
-  .sv-pw__field.is-invalid { border-color: var(--sg-danger, #dc2626); }
-  .sv-pw__field.is-invalid:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
-  .sv-pw__input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: inherit; font: inherit; padding: 0 10px; }
-  .sv-pw--sm .sv-pw__field { height: 28px; font-size: 12px; }
-  .sv-pw--md .sv-pw__field { height: 34px; font-size: 13px; }
-  .sv-pw--lg .sv-pw__field { height: 40px; font-size: 15px; }
-  .sv-pw__eye { display: grid; place-items: center; width: 32px; align-self: stretch; background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; }
-  .sv-pw__eye:hover { color: var(--_accent); }
+  .sv-pw { display: inline-flex; flex-direction: column; gap: 5px; }
+  .sv-pw--block { display: flex; width: 100%; }
+  .sv-pw__eye { display: grid; place-items: center; width: 26px; align-self: center; background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; padding: 0; }
+  .sv-pw__eye:hover { color: var(--sg-accent, #2563eb); }
   .sv-pw__meter { display: flex; gap: 4px; }
   .sv-pw__bar { flex: 1; height: 4px; border-radius: 2px; background: var(--sg-border, #e2e8f0); transition: background 0.15s; }
   .sv-pw__bar.on.is-lvl1 { background: var(--sg-danger, #dc2626); }

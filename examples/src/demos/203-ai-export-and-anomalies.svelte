@@ -15,18 +15,23 @@
     columnFilteringFeature,
     columnGroupingFeature,
     rowExpandingFeature,
+    setAIProvider,
+    mockAIProvider,
+    aiExport,
+    aiFindAnomalies,
     type ColumnDef,
     type SvGridApi,
+    type AIExportPlan,
+    type AIAnomaly,
   } from '@svgrid/grid'
+  // Enterprise only supplies the EXPORT ENGINE here (xlsx / pdf). The AI itself
+  // is built-in + free above; installEnterprise registers the export engine so
+  // the AI's planned export can actually write the file.
   import {
     installEnterprise,
     setLicenseKey,
     dismissUnlicensedNudge,
-    setAIProvider,
-    mockAIProvider,
     type EnterpriseGridApi,
-    type AIExportPlan,
-    type AIAnomaly,
   } from '@svgrid/enterprise'
   import { makeOrders, type Order } from '../shared/seed'
 
@@ -71,7 +76,7 @@
     errorMsg = null
     plan = null
     try {
-      plan = await api.ai.export(query, { filename: 'ai-export' })
+      plan = await aiExport(api, query, { filename: 'ai-export' })
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : String(err)
     } finally {
@@ -87,7 +92,7 @@
     anomalySummary = ''
     scanned = false
     try {
-      const res = await api.ai.findAnomalies({ target: { kind: 'all' } })
+      const res = await aiFindAnomalies(api, { target: { kind: 'all' } })
       anomalies = res.anomalies
       anomalySummary = res.summary
       scanned = true
@@ -164,10 +169,11 @@
   </div>
 
   <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
-    Enterprise feature. <code>api.ai.export()</code> and
-    <code>api.ai.findAnomalies()</code> route through your registered
+    Built-in + free. <code>aiExport(api, ...)</code> and
+    <code>aiFindAnomalies(api, ...)</code> route through your registered
     <code>AIProvider</code> - the grid bundles no model client. This demo uses
     <code>mockAIProvider</code>; the plans are heuristic, not a real model.
+    Writing the xlsx / PDF uses the @svgrid/enterprise export engine.
   </footer>
 </section>
 

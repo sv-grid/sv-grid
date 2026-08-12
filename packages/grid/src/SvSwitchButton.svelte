@@ -20,6 +20,7 @@
     checked = false,
     onChange,
     disabled = false,
+    readonly = false,
     size = 'md',
     name,
     ariaLabel,
@@ -40,7 +41,7 @@
   // The styled switch is just a renderer over the headless core.
   const sw = createSwitch({
     checked: () => checked,
-    onChange: (v) => onChange?.(v),
+    onChange: (v) => { if (readonly) return; onChange?.(v) },
     disabled: () => disabled,
     ariaLabel: () => ariaLabel,
     id: () => uid,
@@ -53,9 +54,12 @@
 
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
   <button
+    role="switch"
     class="sv-switch sv-switch--{size}"
     class:is-on={checked}
+    class:is-readonly={readonly}
     {...sw.switchProps()}
+    aria-readonly={readonly ? 'true' : undefined}
   >
     <span class="sv-switch__track">
       {#if onLabel || offLabel}
@@ -77,6 +81,7 @@
   .sv-switch--sm { --_h: 18px; --_w: 32px; }
   .sv-switch--lg { --_h: 28px; --_w: 52px; }
   .sv-switch[disabled] { opacity: 0.5; cursor: not-allowed; }
+  .sv-switch.is-readonly { cursor: default; }
   .sv-switch__track {
     position: relative; width: var(--_w); height: var(--_h); border-radius: 999px;
     background: var(--sg-border, #cbd5e1); transition: background 0.16s;

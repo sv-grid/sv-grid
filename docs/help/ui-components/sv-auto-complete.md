@@ -54,6 +54,7 @@ import { SvAutoComplete } from '@svgrid/grid'
 | `suggestions` | `ReadonlyArray<string \| ListOption>`   | `[]`    | Suggestion shortcuts - strings or `{ value, label }`.              |
 | `minChars`    | `number`                                | `1`     | Chars typed before suggestions appear.                             |
 | `placeholder` | `string`                                | -       | Input placeholder.                                                 |
+| `resizable`   | `boolean`                               | `false` | Add a bottom drag grip so the user can resize the open suggestion panel (hidden on an upward flip). |
 | `size`        | `sm \| md \| lg`                        | `md`    | Control height and font size.                                      |
 | `disabled`    | `boolean`                               | `false` | Blocks interaction.                                                |
 | `label`       | `string`                                | -       | Visible field label, wired to the control.                         |
@@ -120,6 +121,19 @@ still type anything:
 > Tip: `onChange` fires the raw text on every keystroke, so debounce any expensive
 > side effect (a fetch, a route change) you drive from it rather than running it
 > inline.
+
+### Resizable panel
+
+Set `resizable` to give the open suggestion panel a bottom drag grip; drag it to
+grow or shrink the list, and the height sticks for the session. The grip hides on
+an upward flip. The same prop is on [SvComboBox](sv-combo-box.md) and
+[SvDropDownList](sv-drop-down-list.md).
+
+```svelte
+<SvAutoComplete resizable {suggestions} label="City" />
+```
+
+<div data-docs-demo="411-resizable-dropdowns" data-height="440"></div>
 
 ## Accessibility
 

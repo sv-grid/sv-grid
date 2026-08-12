@@ -9,6 +9,7 @@ import SvSwitchButton from './SvSwitchButton.svelte'
 import SvCheckBox from './SvCheckBox.svelte'
 import SvRadioGroup from './SvRadioGroup.svelte'
 import SvRating from './SvRating.svelte'
+import SvSegmented from './SvSegmented.svelte'
 
 function mnt(Comp: any, props: Record<string, unknown>) {
   const target = document.createElement('div')
@@ -52,6 +53,17 @@ describe('SvSwitchButton', () => {
       expect(states.at(-1)).toBe(true)
     } finally { destroy() }
   })
+  it('readonly blocks the change but stays focusable + aria-readonly', () => {
+    let got: boolean | undefined
+    const { target, destroy } = mnt(SvSwitchButton, { checked: false, readonly: true, onChange: (v: boolean) => (got = v) })
+    try {
+      const sw = target.querySelector<HTMLButtonElement>('[role="switch"]')!
+      expect(sw.getAttribute('aria-readonly')).toBe('true')
+      expect(sw.hasAttribute('disabled')).toBe(false) // focusable, unlike disabled
+      sw.click(); flushSync()
+      expect(got).toBeUndefined() // no change emitted
+    } finally { destroy() }
+  })
 })
 
 describe('SvCheckBox', () => {
@@ -67,6 +79,16 @@ describe('SvCheckBox', () => {
     try {
       expect(b.target.querySelector('[role="checkbox"]')!.getAttribute('aria-checked')).toBe('mixed')
     } finally { b.destroy() }
+  })
+  it('readonly blocks the toggle', () => {
+    let got: boolean | undefined
+    const { target, destroy } = mnt(SvCheckBox, { checked: false, readonly: true, onChange: (v: boolean) => (got = v) })
+    try {
+      const box = target.querySelector<HTMLButtonElement>('[role="checkbox"]')!
+      expect(box.getAttribute('aria-readonly')).toBe('true')
+      box.click(); flushSync()
+      expect(got).toBeUndefined()
+    } finally { destroy() }
   })
 })
 
@@ -100,6 +122,23 @@ describe('SvRating', () => {
       target.querySelector<HTMLElement>('.sv-rating')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
       flushSync()
       expect(vals.at(-1)).toBe(3) // 2 + 1 step
+    } finally { destroy() }
+  })
+})
+
+describe('SvSegmented', () => {
+  const opts = [{ value: 'list', label: 'List' }, { value: 'grid', label: 'Grid' }, { value: 'map', label: 'Map' }]
+  it('is a radiogroup; clicking selects and reports the value', () => {
+    let got: unknown
+    const { target, destroy } = mnt(SvSegmented, { options: opts, value: 'list', onChange: (v: unknown) => (got = v) })
+    try {
+      expect(target.querySelector('[role="radiogroup"]')).not.toBeNull()
+      const radios = target.querySelectorAll<HTMLButtonElement>('[role="radio"]')
+      expect(radios.length).toBe(3)
+      expect(radios[0]!.getAttribute('aria-checked')).toBe('true')
+      radios[2]!.click(); flushSync()
+      expect(got).toBe('map')
+      expect(radios[2]!.getAttribute('aria-checked')).toBe('true')
     } finally { destroy() }
   })
 })

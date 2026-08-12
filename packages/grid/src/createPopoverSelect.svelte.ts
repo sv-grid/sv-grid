@@ -23,6 +23,8 @@ export type PopoverSelectConfig = {
   itemCount: () => number
   /** Whether item `i` is disabled (skipped by roving, not selectable). */
   disabled?: (index: number) => boolean
+  /** Read-only: value shown, trigger focusable, but the panel will not open. */
+  readonly?: () => boolean
   /** Commit the item at `index` (Enter or a click the component forwards). */
   onSelect: (index: number) => void
   /** Notified whenever the open state changes. */
@@ -59,6 +61,7 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
 
   const count = () => config.itemCount()
   const isDisabled = (i: number) => config.disabled?.(i) ?? false
+  const readonly = () => config.readonly?.() ?? false
 
   function enabledIndices(): number[] {
     return enabledIndicesOf(count(), isDisabled)
@@ -74,6 +77,7 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
     config.onOpenChange?.(v)
   }
   function openPanel() {
+    if (readonly()) return
     active = clampActive(config.initialActive?.() ?? 0)
     setOpen(true)
   }
@@ -82,6 +86,7 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
     config.getTrigger()?.focus()
   }
   function toggle() {
+    if (readonly()) return
     open ? setOpen(false) : openPanel()
   }
 
@@ -92,7 +97,7 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
   function first() { active = enabledIndices()[0] ?? 0 }
   function last() { active = enabledIndices().at(-1) ?? 0 }
   function selectActive() {
-    if (count() === 0 || isDisabled(active)) return
+    if (readonly() || count() === 0 || isDisabled(active)) return
     config.onSelect(active)
     if (config.closeOnSelect?.() ?? true) closePanel()
   }
@@ -129,6 +134,7 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
   })
 
   function onTriggerKeydown(e: KeyboardEvent) {
+    if (readonly()) return
     if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       openPanel()
@@ -185,6 +191,7 @@ export function createPopoverSelect(config: PopoverSelectConfig) {
       'aria-haspopup': haspopup,
       'aria-expanded': open,
       'aria-controls': open ? panelId : undefined,
+      'aria-readonly': readonly() || undefined,
       onkeydown: onTriggerKeydown,
     }),
     /** Attributes for the element that OWNS focus + activedescendant (the panel,

@@ -63,8 +63,8 @@ engineering lineage is shared.
 
 ## A note on family
 
-This is not "switching vendors" - it is moving to the team's Svelte-5
-grid. The Enterprise tier and support come from the same people behind jqxGrid.
+Moving to SvGrid keeps you with the same team's Svelte-5 grid rather
+than switching vendors. The Enterprise tier and support come from the same people behind jqxGrid.
 If your app is still on jQuery / Angular / React / Vue, jqxGrid remains
 the right tool; reach for SvGrid when the codebase is Svelte 5.
 

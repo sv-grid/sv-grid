@@ -3,7 +3,7 @@
  * fires a synthetic `contextmenu` event on a cell, and asserts the menu
  * opens with the expected items and that actions/close work.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -29,7 +29,10 @@ const cols: ColumnDef<typeof features, Row>[] = [
   { field: 'name', header: 'Name', width: 200, editorType: 'text' },
   { field: 'team', header: 'Team', width: 160, editorType: 'text' },
 ]
-const tick = () => new Promise<void>((r) => queueMicrotask(r))
+// Macrotask boundary: drains pending microtasks incl. the menu overlay's lazy
+// import() + flush, so the context menu is mounted before assertions (GridMenus
+// loads lazily as its own chunk the first time a menu/tooltip opens).
+const tick = () => new Promise<void>((r) => setTimeout(r))
 
 function mountGrid(contextMenu: unknown) {
   return new Promise<{ api: SvGridApi<typeof features, Row>; target: HTMLElement; destroy: () => void }>(
@@ -76,7 +79,9 @@ describe('SvGrid context menu', () => {
     const { target, destroy } = await mountGrid(true)
     await tick()
     rightClickFirstCell(target)
-    await tick()
+    // First menu-open triggers GridMenus' lazy import (transforming the module on
+    // first load can exceed a single tick); poll until the overlay mounts.
+    await vi.waitFor(() => expect(target.querySelector('.sv-grid-context-menu')).not.toBeNull())
     const menu = target.querySelector('.sv-grid-context-menu')
     expect(menu).not.toBeNull()
     const labels = [...menu!.querySelectorAll('.sv-grid-menu-item')].map((b) => b.textContent?.trim())

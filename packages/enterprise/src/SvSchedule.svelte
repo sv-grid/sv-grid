@@ -23,7 +23,9 @@
     loading = false,
     height,
   }: {
-    schema: EntitySchema
+    // Accept any specialized EntitySchema<T> (the type param is invariant); this is
+    // pure presentation over the schema's field metadata + plain record rows.
+    schema: EntitySchema<any>
     rows?: ReadonlyArray<Row>
     /** The date / datetime field that places a row on the calendar. */
     dateField: string

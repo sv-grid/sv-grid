@@ -41,6 +41,9 @@ export type SqlDataSourceConfig<TData extends RowData> = {
   schema: EntitySchema<TData>
   /** Table (or view) name. Quoted per the dialect; not interpolated raw. */
   table: string
+  /** DB schema / namespace (e.g. Postgres `public`, SQL Server `dbo`). When set,
+   *  the table is addressed as `"schema"."table"`. Each part is quoted separately. */
+  dbSchema?: string
   execute: SqlExecutor
   dialect?: SqlDialect
   /**
@@ -76,6 +79,8 @@ export function createSqlDataSource<TData extends RowData>(
   const returning = config.returning ?? true
   const id = quoter(dialect)
   const idField = resolveIdField(schema)
+  // Optionally schema-qualify the table: "schema"."table" (each part quoted separately).
+  const qtable = config.dbSchema ? `${id(config.dbSchema)}.${id(config.table)}` : id(config.table)
 
   // Column mapping: when a field has a `dbColumn` (e.g. Drizzle `created_at` vs
   // key `createdAt`), read/write the real column and alias it back to the field.
@@ -94,7 +99,7 @@ export function createSqlDataSource<TData extends RowData>(
     async getRows(request: ServerRequest): Promise<ServerResult<TData>> {
       const plan = planQuery(schema, request)
       const sql = planToSql(plan, planDialect)
-      const t = id(table)
+      const t = qtable
       const rowsSql = squish(
         `SELECT ${projection} FROM ${t} ${sql.whereText} ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`,
       )
@@ -112,7 +117,7 @@ export function createSqlDataSource<TData extends RowData>(
       const bind = binder(dialect, params)
       const values = cols.map((c) => bind((input as RowData)[c]))
       const sql = squish(
-        `INSERT INTO ${id(table)} (${cols.map(col).join(', ')}) VALUES (${values.join(', ')})${RET}`,
+        `INSERT INTO ${qtable} (${cols.map(col).join(', ')}) VALUES (${values.join(', ')})${RET}`,
       )
       const rows = await execute(sql, params)
       return (rows[0] ?? input) as TData
@@ -125,7 +130,7 @@ export function createSqlDataSource<TData extends RowData>(
       const bind = binder(dialect, params)
       const sets = cols.map((c) => `${col(c)} = ${bind((patch as RowData)[c])}`)
       const where = `${col(idField)} = ${bind(rowIdValue)}`
-      const sql = squish(`UPDATE ${id(table)} SET ${sets.join(', ')} WHERE ${where}${RET}`)
+      const sql = squish(`UPDATE ${qtable} SET ${sets.join(', ')} WHERE ${where}${RET}`)
       const rows = await execute(sql, params)
       return (rows[0] ?? { ...patch, [idField]: rowIdValue }) as TData
     },
@@ -133,7 +138,7 @@ export function createSqlDataSource<TData extends RowData>(
     async deleteRow(rowIdValue: string): Promise<void> {
       const params: unknown[] = []
       const bind = binder(dialect, params)
-      const sql = squish(`DELETE FROM ${id(table)} WHERE ${col(idField)} = ${bind(rowIdValue)}`)
+      const sql = squish(`DELETE FROM ${qtable} WHERE ${col(idField)} = ${bind(rowIdValue)}`)
       await execute(sql, params)
     },
 
@@ -151,13 +156,13 @@ export function createSqlDataSource<TData extends RowData>(
           : `${SQL_AGG[request.reduce]}(${col(request.measure)})`
       // No dimension -> a single grand total (a KPI), no GROUP BY.
       if (!request.dimension) {
-        const text = squish(`SELECT ${fn} AS value FROM ${id(table)} ${sql.whereText}`)
+        const text = squish(`SELECT ${fn} AS value FROM ${qtable} ${sql.whereText}`)
         const rows = await execute(text, sql.params)
         return [{ category: '', value: Number(rows[0]?.value ?? 0) }]
       }
       const dim = col(request.dimension)
       const text = squish(
-        `SELECT ${dim} AS category, ${fn} AS value FROM ${id(table)} ${sql.whereText} GROUP BY ${dim} ORDER BY value DESC`,
+        `SELECT ${dim} AS category, ${fn} AS value FROM ${qtable} ${sql.whereText} GROUP BY ${dim} ORDER BY value DESC`,
       )
       const rows = await execute(text, sql.params)
       return rows.map((r) => ({ category: String(r.category ?? ''), value: Number(r.value ?? 0) }))

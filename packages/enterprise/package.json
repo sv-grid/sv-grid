@@ -71,7 +71,8 @@
     "build": "node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs",
     "build:cdn": "node ./scripts/build-cdn.mjs",
     "build:node": "node ./scripts/build-node.mjs",
-    "prepublishOnly": "node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs"
+    "prepublishOnly": "node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs",
+    "extract:ui-props": "node scripts/extract-ui-props.mjs"
   },
   "peerDependencies": {
     "svelte": "^5.0.0",

@@ -1,4 +1,7 @@
 ﻿import type { CellFormatConfig, ColumnDef, RowData, SvGridOptions, TableFeatures } from './core'
+// Type-only import (the reverse of SvGrid.types importing SvGridApi); TS resolves the
+// type-level cycle. Backs the generic key/value typing of `setOption` / `getOption`.
+import type { Props } from './SvGrid.types'
 import type { GridExportOptions, GridClipboardOptions } from './export-format'
 import type { ChartSpec, ChartType } from './chart'
 
@@ -194,6 +197,26 @@ export type SvGridApi<
   setSort(columnId: string, direction: 'asc' | 'desc' | null): void
   clearSort(): void
   setGroupBy(columnIds: ReadonlyArray<string>): void
+
+  // ----- Options (runtime prop overrides) -----
+  /**
+   * Change a grid prop at runtime, e.g. `api.setOption('sortable', true)`. The
+   * override is merged over the incoming prop and the grid re-renders reactively -
+   * identical to the parent passing a new prop value. Pass `undefined` to clear the
+   * override and fall back to the prop.
+   *
+   * Note: seed-once props are NOT retroactive - `initialSorting`,
+   * `initialColumnPinning`, `initialHiddenColumns`, `columnOrder`, the initial
+   * `pageSize`, and the one-shot `externalSort` / `externalFilter` are read at mount,
+   * so overriding them later has no effect. Prefer the dedicated data path for
+   * `data` / `columns` (this works, but the sync effects are the idiomatic route).
+   */
+  setOption<K extends keyof Props<TFeatures, TData>>(key: K, value: Props<TFeatures, TData>[K] | undefined): void
+  /** Read a prop's effective value: the runtime override if set, else the incoming prop. */
+  getOption<K extends keyof Props<TFeatures, TData>>(key: K): Props<TFeatures, TData>[K]
+  /** Clear every runtime override set via `setOption`, reverting to the incoming props. */
+  resetOptions(): void
+
   /** Set the operator filter for a column. Pass `null` to clear. */
   setFilter(
     columnId: string,

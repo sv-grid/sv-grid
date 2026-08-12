@@ -3,10 +3,15 @@
 A small hover and focus tooltip anchored to its child, portalled to `<body>` so
 it is never clipped by a scroll container.
 
-`SvTooltip` wraps any element and shows a short label after a brief delay. It
-opens on pointer-enter and on keyboard focus, hides on leave, blur, or Escape,
-and wires itself to the trigger via `aria-describedby` with `role="tooltip"`. It
-reads its colors from the grid's `--sg-*` tokens, so it matches in light and dark.
+`SvTooltip` wraps any element and shows a short label after a brief delay. It is
+positioned by the shared engine, so it takes any `placement` (`top` / `bottom` /
+`left` / `right`, each with an optional `-start` / `-end`), flips when there is no
+room, and keeps its arrow on the anchor. It opens on pointer-enter and on keyboard
+focus, hides on leave, blur, or Escape, and wires itself to the trigger via
+`aria-describedby` with `role="tooltip"`. Give several tooltips the same `group`
+so scanning between them skips the re-delay, or set `interactive` for a hoverable
+tip. It reads its colors from the grid's `--sg-*` tokens, so it matches in light
+and dark.
 
 Related: [SvPopover](sv-popover.md) · [SvButton](sv-button.md) · [Overlays & menus overview](overlays.md)
 
@@ -45,11 +50,14 @@ import { SvTooltip } from '@svgrid/grid'
 
 | Prop        | Type                 | Default | Description                                            |
 | ----------- | -------------------- | ------- | ---------------------------------------------------- |
-| `text`      | `string`             | -       | Tooltip label. An empty string suppresses the tip.   |
-| `placement` | `top` \| `bottom`    | `top`   | Side of the anchor the tip and its arrow sit on.     |
-| `delay`     | `number`             | `300`   | Show delay in milliseconds after pointer-enter/focus. |
-| `disabled`  | `boolean`            | `false` | Never show the tooltip while set.                    |
-| `children`  | `Snippet`            | -       | The element the tooltip describes.                   |
+| `text`        | `string`    | -       | Tooltip label. An empty string suppresses the tip.   |
+| `placement`   | `Placement` | `top`   | Preferred side + alignment; flips when there is no room. |
+| `delay`       | `number`    | `300`   | Show delay in milliseconds after pointer-enter/focus. |
+| `closeDelay`  | `number`    | `0`     | Hide delay after leave/blur (interactive tips default to `120`). |
+| `group`       | `string`    | -       | Delay-group id; grouped tooltips open instantly while the group is warm. |
+| `interactive` | `boolean`   | `false` | Let the pointer move onto the tip without closing it. |
+| `disabled`    | `boolean`   | `false` | Never show the tooltip while set.                    |
+| `children`    | `Snippet`   | -       | The element the tooltip describes.                   |
 
 ## Examples
 
@@ -73,6 +81,29 @@ toolbars where hover intent is obvious:
 ```svelte
 <SvTooltip text="Filter" placement="bottom" delay={120}>
   <SvButton ariaLabel="Filter">⧩</SvButton>
+</SvTooltip>
+```
+
+### Delay groups for toolbars
+
+Give every tooltip in a cluster the same `group`. The first one waits the normal
+`delay`; while the group stays warm (a member is open, or one just closed) the
+rest open instantly, so scanning a row of icon buttons feels immediate:
+
+```svelte
+<SvTooltip text="Bold" group="format"><SvButton ariaLabel="Bold">B</SvButton></SvTooltip>
+<SvTooltip text="Italic" group="format"><SvButton ariaLabel="Italic">I</SvButton></SvTooltip>
+<SvTooltip text="Underline" group="format"><SvButton ariaLabel="Underline">U</SvButton></SvTooltip>
+```
+
+### Interactive tips
+
+When the tip holds something to click (a link, a shortcut), set `interactive` so
+the pointer can travel onto it without it closing (it gets a short `closeDelay`):
+
+```svelte
+<SvTooltip interactive placement="right" text="Opens the full report">
+  <SvButton ariaLabel="Report">📊</SvButton>
 </SvTooltip>
 ```
 
@@ -105,8 +136,9 @@ handy when the value is not actually truncated.
 - The tip is a `role="tooltip"` linked to its anchor through `aria-describedby`,
   so screen readers announce it as a description of the control.
 - It opens on `focusin` as well as hover, so keyboard users get the same hint.
-- The panel is `pointer-events: none`, so it never intercepts clicks; Escape
-  dismisses it immediately.
+- The panel is `pointer-events: none` by default, so it never intercepts clicks;
+  Escape dismisses it immediately. `interactive` tips opt into pointer events so
+  their content can be hovered and clicked.
 
 ## See also
 

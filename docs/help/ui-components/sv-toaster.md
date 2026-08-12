@@ -65,6 +65,13 @@ functions.
 | `duration`    | `number`                                    | `4000`  | Auto-dismiss after N ms; `0` = sticky.            |
 | `dismissible` | `boolean`                                   | `true`  | Show the dismiss (x) button.                      |
 | `title`       | `string`                                    | -       | Optional bold title above the message.            |
+| `action`      | `{ label, onClick?, keepOpen? }`            | -       | Primary action button; dismisses on click unless `keepOpen`. |
+| `cancel`      | `{ label, onClick?, keepOpen? }`            | -       | Secondary (cancel) action button.                 |
+| `render`      | `Snippet<[Toast]>`                          | -       | Render a fully custom toast body.                 |
+
+Companion functions on `toast`: `toast.promise(...)`, `toast.update(id, patch)`,
+`toast.custom(render, options)`, and `toast.dismiss(id)` (also exported as
+`updateToast` / `dismissToast` / `clearToasts`).
 
 ## Examples
 
@@ -87,6 +94,62 @@ errors that need action:
 const id = toast.error('Sync failed', { duration: 0 })
 // later, once resolved
 dismissToast(id)
+```
+
+### Promise toasts
+
+`toast.promise` shows a sticky loading toast, then updates that SAME toast in
+place to success or error when the promise settles - one line for the whole
+lifecycle. It returns the original promise, so you can still await it:
+
+```ts
+await toast.promise(api.save(row), {
+  loading: 'Saving...',
+  success: (saved) => `Saved "${saved.name}"`,
+  error: (err) => `Could not save: ${err.message}`,
+})
+```
+
+### Action buttons
+
+Give a toast an `action` (and optionally a `cancel`) - the classic "Undo" flow.
+The button dismisses the toast when clicked unless you set `keepOpen`:
+
+```ts
+const removed = deleteRow(row)
+toast('Row deleted', {
+  action: { label: 'Undo', onClick: () => restore(removed) },
+  cancel: { label: 'Dismiss' },
+})
+```
+
+### Update in place
+
+Hold the id and patch a toast as work progresses, without stacking new ones:
+
+```ts
+const id = toast.info('Uploading... 0%', { duration: 0 })
+onProgress((pct) => toast.update(id, { message: `Uploading... ${pct}%` }))
+onDone(() => toast.update(id, { message: 'Uploaded', variant: 'success', duration: 3000 }))
+```
+
+### Custom body
+
+For a richer toast (an avatar, inline controls), pass a `render` snippet - it
+receives the `Toast` and replaces the default icon/title/message:
+
+```svelte
+<script lang="ts">
+  import { toast } from '@svgrid/grid'
+  function notify() {
+    toast.custom(mention, { duration: 6000 })
+  }
+</script>
+
+{#snippet mention(t)}
+  <img class="avatar" src={user.avatar} alt="" />
+  <div><strong>{user.name}</strong> mentioned you</div>
+{/snippet}
 ```
 
 ### Position and cap

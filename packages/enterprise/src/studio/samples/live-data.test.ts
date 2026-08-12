@@ -93,6 +93,7 @@ describe('live-data starters', () => {
     const data = emitStudioProject(getLiveDataSample('live-dummyjson-rest')!.build()).find((f) => f.path.endsWith('src/lib/data.ts'))!.contents
     expect(data).toContain('createRestDataSource')
     expect(data).toContain('dummyjson.com/products')
-    expect(data).toContain('body?.products') // rowsPath parse
+    expect(data).toContain('dummyJsonAdapter') // real server paging via the adapter (skip/limit/sortBy)
+    expect(data).not.toContain('body?.products') // adapter unwraps { products, total }, no manual parse
   })
 })

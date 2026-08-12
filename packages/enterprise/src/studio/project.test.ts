@@ -4,6 +4,8 @@ import {
   addBlock,
   applyGridPreset,
   addStateVar,
+  setDataLayer,
+  setDeployTarget,
   updateStateVar,
   removeStateVar,
   stateInitExpr,
@@ -55,6 +57,7 @@ import {
   reorderScreen,
   insertBlock,
   validateProject,
+  setAuth,
   addTab,
   removeTab,
   renameTab,
@@ -599,6 +602,22 @@ describe('component blocks', () => {
     p = addComponentBlock(p, sid, 'button', {})
     expect(validateProject(p).some((i) => /is empty/.test(i.message))).toBe(false)
   })
+
+  it('Supabase Auth warns without a Supabase connection, and clears once one is set', () => {
+    let p = setAuth(createProject([customers]), { enabled: true, provider: 'supabase' })
+    const needsConn = (pr: typeof p) => validateProject(pr).some((i) => /Supabase Auth needs a Supabase connection/.test(i.message))
+    expect(needsConn(p)).toBe(true)
+    // Shared project connection satisfies it.
+    p = { ...p, supabase: { url: 'https://x.supabase.co', key: 'anon' } }
+    expect(needsConn(p)).toBe(false)
+  })
+
+  it('Supabase Auth + RBAC warns that the client session does not populate the server role', () => {
+    let p = createProject([customers])
+    p = { ...p, supabase: { url: 'https://x.supabase.co', key: 'anon' }, access: { enabled: true, roles: [] } as never }
+    p = setAuth(p, { enabled: true, provider: 'supabase' })
+    expect(validateProject(p).some((i) => /Row Level Security/.test(i.message))).toBe(true)
+  })
 })
 
 describe('validateProject', () => {
@@ -616,6 +635,33 @@ describe('validateProject', () => {
 
     const broken = { ...p, screens: [{ ...p.screens[0]!, entity: 'ghosts' }] }
     expect(validateProject(broken).some((i) => /missing entity/.test(i.message))).toBe(true)
+  })
+
+  it('warns when SQL entities have no Drizzle data layer (tables must pre-exist)', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    const warn = validateProject(p).find((i) => /tables must already exist/.test(i.message))
+    expect(warn?.level).toBe('warning')
+    // Enabling the Drizzle layer clears it.
+    expect(validateProject(setDataLayer(p, true)).some((i) => /tables must already exist/.test(i.message))).toBe(false)
+  })
+
+  it('warns on cloudflare deploy + a socket Postgres driver', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    p = setDeployTarget(p, 'cloudflare')
+    expect(validateProject(p).some((i) => /Cloudflare Workers cannot run the socket/.test(i.message))).toBe(true)
+    // sqlite on cloudflare doesn't trip the pg warning.
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'sqlite' })
+    expect(validateProject(p).some((i) => /Cloudflare Workers cannot run the socket/.test(i.message))).toBe(false)
+  })
+
+  it('warns when a supabase source has no url/key (stub client)', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
+    expect(validateProject(p).some((i) => /has no URL\/key/.test(i.message))).toBe(true)
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers', url: 'https://x.supabase.co', key: 'anon' })
+    expect(validateProject(p).some((i) => /has no URL\/key/.test(i.message))).toBe(false)
   })
 
   it('the palette lists every block kind', () => {
@@ -759,6 +805,17 @@ describe('per-entity data sources', () => {
     const p1 = setEntityDataSource(p0, 'customers', { kind: 'rest', baseUrl: 'https://api', path: 'customers', method: 'GET', params: [] })
     expect(entityDataSource(p1, 'customers').kind).toBe('rest')
     expect(p1.dataSources).toMatchObject({ customers: { kind: 'rest' } })
+  })
+
+  it('an unbound entity inherits the project default source (not always memory)', () => {
+    const p0 = createProject([customers]) // dataSource: 'memory'
+    expect(entityDataSource(p0, 'customers')).toEqual({ kind: 'memory' })
+    // Flip the project default to SQL: unbound entities now resolve to the SQL skeleton.
+    const pSql = { ...p0, dataSource: 'sql' as const }
+    expect(entityDataSource(pSql, 'customers')).toEqual({ kind: 'sql', table: 'customers' })
+    // An explicit per-entity binding still wins over the default.
+    const pOverride = setEntityDataSource(pSql, 'customers', { kind: 'memory' })
+    expect(entityDataSource(pOverride, 'customers')).toEqual({ kind: 'memory' })
   })
 
   it('defaultEntitySource seeds a skeleton per kind', () => {

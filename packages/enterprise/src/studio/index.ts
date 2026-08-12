@@ -8,6 +8,7 @@ export { inferType, introspectJson, introspectDrizzle, introspectDrizzleAll } fr
 export { refineField, refineFields } from '../sources/field-inference.js'
 export { parseCsv, detectDelimiter, csvToEntity, type CsvEntity } from './csv.js'
 export { introspectPrisma, introspectPrismaAll } from './introspect-prisma.js'
+export { introspectOpenApi, type OpenApiImport } from './introspect-openapi.js'
 export {
   introspectDatabase,
   listDatabaseTables,
@@ -39,8 +40,9 @@ export {
 } from './scaffold.js'
 export { scaffoldApp, type ScaffoldAppOptions } from './scaffold-app.js'
 export { emitStudioApp, emitEntityModules, entityScreenPage, prepareEntities } from './emit-schema.js'
-export { emitStudioProject, emitStudioAppBundle, studioDeployInfo, screenHandles, screenDataset, ctxCompletions, componentHandleMembers, ctxAmbientDts, GRID_API_MEMBERS, type BlockHandle, type HandleTier } from './emit-project.js'
+export { emitStudioProject, emitStudioAppBundle, emitStudioFragment, runtimeDeps, studioDeployInfo, screenHandles, screenDataset, ctxCompletions, componentHandleMembers, ctxAmbientDts, GRID_API_MEMBERS, type BlockHandle, type HandleTier } from './emit-project.js'
 export { sampleApps, getSampleApp, type SampleApp } from './samples/index.js'
+export { starterProject } from './samples/starter.js'
 export { liveDataSamples, getLiveDataSample } from './samples/live-data.js'
 export {
   sanitizeStudioProject,
@@ -133,9 +135,15 @@ export {
   type TriggerEvent,
   type EntityTriggers,
   clickSlot,
+  ssrScreenShape,
+  ssrEligible,
+  setScreenRenderMode,
+  eventSlot,
   rowSelectSlot,
   changeSlot,
   FORM_SUBMIT,
+  GRID_EVENTS,
+  type GridEventDef,
   addStateVar,
   updateStateVar,
   removeStateVar,
@@ -263,6 +271,7 @@ export {
   type EntityDataSource,
   type MemorySource,
   type RestSource,
+  type RestAdapterConfig,
   type SqlSource,
   type SupabaseSource,
   type PgliteSource,
@@ -288,10 +297,25 @@ export {
 export {
   UI_COMPONENT_REGISTRY,
   uiComponentSpec,
+  gridPropSurface,
+  gridApiSettableProps,
+  GRID_CURATED_PROPS,
+  STANDARD_UI_EVENTS,
   type UiPropType,
+  type UiPropGroup,
+  type UiComponentEvent,
   type UiComponentProp,
   type UiComponentSpec,
 } from './ui-components.js'
+export { buildCopilotMessages, projectFromModelText, type CopilotMessages } from './copilot-core.js'
+export {
+  resolveDeployTarget,
+  deployCommands,
+  missingEnvKeys,
+  type DeployProvider,
+  type DeployResolution,
+  type DeployPlanCommands,
+} from './deploy-cli.js'
 export {
   runStudioAdd,
   runStudioAddApp,

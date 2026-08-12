@@ -199,6 +199,8 @@ async function getJSZip(): Promise<any> {
     jszipPromise = (async () => {
       let mod: unknown
       try {
+        // Optional peer, loaded on demand (keeps consumer type-checks clean when absent).
+        // @ts-ignore - "jszip" is an optional peerDependency
         mod = await import('jszip')
       } catch {
         throw new Error(

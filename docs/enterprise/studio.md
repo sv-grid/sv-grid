@@ -84,6 +84,9 @@ from it - so a change to the schema flows everywhere at once.
 
 ![One EntitySchema drives the grid, edit form, dashboard, generated app, and every data source; author it with the visual designer, the CLI, or the AI generator.](/docs-media/studio-architecture.svg)
 
+New here? [Concepts](./studio/concepts.md) walks this picture end to end and
+defines every Studio term (screen, block, project model, managed region).
+
 ---
 
 ## Data binding options
@@ -117,15 +120,21 @@ your agent (Claude Code, Cursor, ...) to build a screen for a table; it calls
 `introspect_source` -> `scaffold_entity`, and the output is compile-verified
 before it's written.
 
-**3. [Visual designer](./studio/designer.md)** - `<SvSchemaDesigner>`: author the
-schema, preview the grid + form live, and click **Generate code**. For a whole
-multi-screen app, the [visual **app** designer](./studio/app-designer.md) composes
-grids, charts, dashboards, and master-detail across many entities.
+**3. [Visual app designer](./studio/app-designer.md)** - run `npx @svgrid/studio
+designer` to open the full app builder (`SvStudioDesigner`): compose grids, charts,
+dashboards, boards, schedulers, and master-detail across **many entities and
+screens**, bind each to real data, write code-behind, and click **Generate app**.
+This is the rich, multi-screen builder you see when you launch Studio.
 
-![The visual schema designer: edit fields, types, and validation on the left; live grid + edit-panel preview on the right.](/docs-media/studio-designer.png)
+![The visual app designer: a Pages and Entities rail on the left, a live grid preview with status chips in the middle, and a screen properties panel on the right.](/docs-media/studio-app-designer.png)
 
-Here a ready-made **CRM sample** is open in the app designer - KPI tiles and a
-deal-pipeline chart, all built by pointing and clicking, no code:
+Want to embed a schema editor in your **own** app instead? The
+[`<SvSchemaDesigner>`](./studio/designer.md) component is a smaller,
+**single-entity** widget - author one entity's fields + validation with a live grid
++ form preview, and you own where the schema is stored.
+
+Here a ready-made **CRM sample** is open in the app designer - a forecast dashboard
+with KPI tiles and deal-value charts, all built by pointing and clicking, no code:
 
 ![A CRM sample loaded in the visual app designer: KPI tiles (open deals, pipeline value, average deal size) and a bar chart of deal value by stage.](/docs-media/studio-sample-loaded.png)
 
@@ -161,7 +170,7 @@ A shippable data screen, not a stub:
 | `createSupabaseDataSource` | a `ServerDataSource` over a `supabase-js` client (browser + RLS) |
 | `createSupabaseRealtime` | live grid: refetch / flash rows on Postgres change streams ([Real-time](./studio/realtime.md)) |
 | `SvAuthGate` / `createSupabaseAuth` | secure a screen behind Supabase Auth; RLS scopes data per user ([Auth](./studio/auth.md)) |
-| `SvSchemaChart` | a chart bound to the schema; aggregates client-side or via a source's `getAggregate` (`GROUP BY`) |
+| `SvSchemaChart` | a chart bound to the schema; aggregates client-side or via a source's `getAggregate` (`GROUP BY`) ([Dashboards](./studio/dashboards.md)) |
 | `scaffoldApp` | scaffold a whole multi-entity app - nav + home + every screen |
 | `createRestDataSource` | a `ServerDataSource` over an HTTP/JSON API (overridable request/response) |
 | `introspectSupabaseTable` | detect a Supabase table's columns -> `EntitySchema`, from the browser |
@@ -193,49 +202,78 @@ and `pageIndex`, it emits change events, you fetch the page.
 
 ## All Studio topics
 
+Every Studio page, in reading order. The sidebar follows the same order.
+
 **Start here**
 
 - [Getting started](./studio/getting-started.md) - zero to a working CRUD screen, step by step
+- [Concepts](./studio/concepts.md) - the mental model: one `EntitySchema` drives screens, data, and code
+- [Sample apps](./studio/samples.md) - ready-made apps to open, explore, and rebind to your data
+- [Build a CRM](./studio/tutorial-crm.md) - companies, contacts, deals - a multi-entity app end to end
 
-**Data binding**
-
-- [Data binding](./studio/data-binding.md) - the `ServerDataSource` contract
-- [Databases](./studio/databases.md) - PostgreSQL, Supabase, MySQL, SQL Server, SQLite
-- [Supabase](./studio/supabase.md) - hosted Postgres, from the browser or the server
-- [Real-time](./studio/realtime.md) - live grid over Supabase change streams
-- [Drizzle schema](./studio/drizzle.md) - scaffold from a `schema.ts` file
-- [REST & custom APIs](./studio/rest-api.md) - any HTTP / bespoke backend
-- [OData & GraphQL](./studio/odata-graphql.md) - map the request to OData / GraphQL
-- [In-memory](./studio/in-memory.md) - static / prototype data
-
-**Build**
+**Three ways to build**
 
 - [The Studio CLI](./studio/cli.md) - the `add` command + all flags
-- [Visual designer](./studio/designer.md) - author schemas in a UI
+- [Launch the designer](./studio/launch.md) - `npx @svgrid/studio designer`, saved to disk as you edit
+- [Visual app designer](./studio/app-designer.md) - the full multi-screen builder (`SvStudioDesigner`)
+- [Schema designer](./studio/designer.md) - the embeddable single-entity widget (`SvSchemaDesigner`)
 - [AI generation](./studio/ai-generation.md) - the MCP server + agents
 
-**Reference**
+**Connect to data**
+
+- [Data binding](./studio/data-binding.md) - the `ServerDataSource` contract; read this one first
+- [Databases](./studio/databases.md) - PostgreSQL, Supabase, MySQL / MariaDB, SQL Server, SQLite, Turso
+- [Local database](./studio/local-database.md) - Postgres in the browser (PGlite), no server needed
+- [Supabase](./studio/supabase.md) - hosted Postgres, from the browser or the server
+- [Drizzle schema](./studio/drizzle.md) - scaffold from a `schema.ts` file
+- [Prisma schema](./studio/prisma.md) - scaffold from a `schema.prisma` file
+- [REST & custom APIs](./studio/rest-api.md) - any HTTP / bespoke backend
+- [OData & GraphQL](./studio/odata-graphql.md) - map the grid request to either protocol
+- [In-memory](./studio/in-memory.md) - static / prototype data
+
+**One-page CRUD tutorials**
+
+- [Postgres CRUD grid](./studio/postgres-grid.md) - pick this if you have a Postgres connection string
+- [Supabase CRUD grid](./studio/supabase-grid.md) - pick this if your data lives in Supabase
+- [REST CRUD grid](./studio/rest-grid.md) - pick this if you already have an HTTP API
+- [Supabase Northwind sample](./studio/supabase-sample.md) - a relational practice dataset, ready to load
+
+**Screens & features**
 
 - [The EntitySchema](./studio/schema.md) - the model everything derives from
 - [Sorting, filtering & paging](./studio/server-grid.md) - the grid's server-mode UI
 - [Edit forms & validation](./studio/edit-forms.md) - `SvGridEditPanel`
-- [Relations & master-detail](./studio/relations.md) - related entities from the schema
+- [Relations](./studio/relations.md) - foreign keys, lookup pickers, related entities from the schema
 - [Master-detail](./studio/master-detail.md) - the `SvGridMasterDetail` component
-- [Auth & secured screens](./studio/auth.md) - Supabase Auth + RLS per user
+- [Dashboards & charts](./studio/dashboards.md) - KPI tiles + `SvSchemaChart` over your entities
+- [Scheduler](./studio/scheduler.md) - a calendar view of any entity with dates
+- [Dock layout](./studio/dock-layout.md) - dockable, floatable panes for workspace screens
+- [Navigation](./studio/navigation.md) - drill-through pages and row action buttons
+- [Real-time](./studio/realtime.md) - live grid over Supabase change streams
+
+**Logic & generated code**
+
+- [Business logic](./studio/business-logic.md) - computed fields, hooks, server-enforced rules
+- [Code-behind](./studio/code-behind.md) - typed event handlers that survive regeneration
 - [Code generation](./studio/code-generation.md) - what's emitted + safe regeneration
 
-**Tutorials**
+**Auth & security**
 
-- [Supabase CRUD grid](./studio/supabase-grid.md) - a grid wired to Supabase with full create / edit / delete, in one page
-- [Build a CRM](./studio/tutorial-crm.md) - companies, contacts, deals - end to end
+- [Auth & secured screens](./studio/auth.md) - Supabase Auth + RLS per user
+- [Access control](./studio/access-control.md) - roles gating screens and write actions
+- [Audit log](./studio/audit-log.md) - a server-side change trail with a viewer screen
 
-**Deploy & style**
+**Ship it**
 
-- [Deploying a Studio app](./studio/deployment.md) - production checklist
 - [Themes & styling](./studio/theming.md) - `--sg-*` tokens, light / dark, your design system
+- [Internationalization](./studio/i18n.md) - message catalog + locale switcher
+- [Accessibility](./studio/accessibility.md) - what's handled for you and what you own
+- [Testing](./studio/testing.md) - data source, component, and end-to-end layers
+- [Deploying a Studio app](./studio/deployment.md) - production checklist
 
-**Help**
+**Reference & help**
 
+- [API index](./studio/api.md) - every Studio export, grouped by area
 - [Troubleshooting & FAQ](./studio/troubleshooting.md) - common issues + answers
 
 **Enterprise**

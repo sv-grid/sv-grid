@@ -131,8 +131,11 @@ to the parent only from within a nested list.
   separators are `role="separator"` and disabled items are skipped.
 - Keyboard: Up/Down move, Home/End jump, Enter or Space activate, Escape closes,
   ArrowRight opens a submenu, and ArrowLeft (in a submenu) returns to the parent.
+- Type-ahead: printable keys jump to the next item whose label starts with the
+  typed characters (they accumulate briefly, then reset).
 - Submenu triggers carry `aria-haspopup="menu"` and `aria-expanded`, and focus
-  moves into the flyout as it opens.
+  moves into the flyout as it opens. Flyouts are positioned by the shared engine,
+  so they flip side and clamp vertically near a screen edge.
 
 ## See also
 

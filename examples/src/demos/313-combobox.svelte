@@ -34,7 +34,7 @@
   </header>
 
   <form class="form" onsubmit={(e) => e.preventDefault()}>
-    <SvComboBox options={currencies} value={currency} label="Currency" onChange={(v) => (currency = v)} />
+    <SvComboBox options={currencies} value={currency} label="Currency" clearable onChange={(v) => (currency = v)} />
     <SvComboBox options={accounts} value={account} label="From account" required invalid={!!accountError} error={accountError} onChange={(v) => (account = v)} />
   </form>
 </div>

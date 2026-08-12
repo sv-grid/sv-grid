@@ -48,17 +48,14 @@ import {
   getDateFormatter,
   resolveDatePattern,
 } from "./cell-formatting";
-import {
-  projectGridRows,
-  serializeDelimited,
-  serializeJson,
-  serializeMarkdown,
-  downloadTextFile,
-  copyTextToClipboard,
-  type GridExportColumn,
-  type GridExportScope,
-  type GridExportOptions,
-  type GridClipboardOptions,
+// The export serializers load lazily (their own chunk) so export-format.ts stays
+// out of the base bundle - it is fetched only when an export/copy method is
+// actually invoked (an explicit, already-async user action).
+import type {
+  GridExportColumn,
+  GridExportScope,
+  GridExportOptions,
+  GridClipboardOptions,
 } from "./export-format";
 import {
   RenderSnippetConfig,
@@ -166,16 +163,18 @@ export function createGridApi<
       }
       return out;
     };
-    const projectForExport = (
+    const projectForExport = async (
       scope: GridExportScope,
       columns: ReadonlyArray<string> | undefined,
       rawValues: boolean | undefined,
-    ) =>
-      projectGridRows(
+    ) => {
+      const { projectGridRows } = await import("./export-format");
+      return projectGridRows(
         exportScopeRows(scope) as ReadonlyArray<Record<string, unknown>>,
         exportColumns(),
         { columns, rawValues },
       );
+    };
 
     return {
       getCellValue(rowIndex, columnId) {
@@ -372,6 +371,28 @@ export function createGridApi<
       setGroupBy(columnIds) {
         ctx.grid.setGrouping([...columnIds]);
       },
+      setOption(key, value) {
+        // Runtime prop override. Writes into the controller's `optionOverrides`
+        // store, which the effective-props proxy merges over the incoming prop, so
+        // the grid re-renders exactly as if the parent had changed that prop.
+        // `undefined` clears the override (falls back to the prop). Reassign the
+        // whole object for reliable reactivity; `untrack` per the `setFilter` note.
+        untrack(() => {
+          const next: Record<string, unknown> = { ...ctx.optionOverrides };
+          if (value === undefined) delete next[key as string];
+          else next[key as string] = value;
+          ctx.optionOverrides = next;
+        });
+      },
+      getOption(key) {
+        // The effective value: the override if set, otherwise the incoming prop.
+        return (ctx.props as Record<string, unknown>)[key as string] as never;
+      },
+      resetOptions() {
+        untrack(() => {
+          ctx.optionOverrides = {};
+        });
+      },
       setFilter(columnId, filter) {
         // `untrack`: these imperative mutators read the same filter state they
         // write (read-modify-write on `filterMenuValues`). When a consumer
@@ -511,7 +532,8 @@ export function createGridApi<
       },
       // ---- Free data export (CSV / TSV / JSON + clipboard) -----------------
       async exportCsv(options: GridExportOptions = {}) {
-        const { records, fields } = projectForExport(
+        const { serializeDelimited, downloadTextFile } = await import("./export-format");
+        const { records, fields } = await projectForExport(
           options.rows ?? "displayed",
           options.columns,
           options.rawValues,
@@ -526,7 +548,8 @@ export function createGridApi<
         return text;
       },
       async exportTsv(options: GridExportOptions = {}) {
-        const { records, fields } = projectForExport(
+        const { serializeDelimited, downloadTextFile } = await import("./export-format");
+        const { records, fields } = await projectForExport(
           options.rows ?? "displayed",
           options.columns,
           options.rawValues,
@@ -541,7 +564,8 @@ export function createGridApi<
         return text;
       },
       async exportJson(options: GridExportOptions = {}) {
-        const { records, fields } = projectForExport(
+        const { serializeJson, downloadTextFile } = await import("./export-format");
+        const { records, fields } = await projectForExport(
           options.rows ?? "displayed",
           options.columns,
           options.rawValues,
@@ -555,7 +579,8 @@ export function createGridApi<
         return text;
       },
       async copyToClipboard(options: GridClipboardOptions = {}) {
-        const { records, fields, align } = projectForExport(
+        const { serializeDelimited, serializeMarkdown, copyTextToClipboard } = await import("./export-format");
+        const { records, fields, align } = await projectForExport(
           options.rows ?? "displayed",
           options.columns,
           options.rawValues,

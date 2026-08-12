@@ -2,6 +2,15 @@ import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
 import { screen, formScreen, boardScreen, schedulerScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
+// Jira-style chrome: a dark navy issue-tracker sidebar with muted labels and a
+// blue active row (accent bar + tinted fill), the board front and centre.
+const JIRA_CSS = `.sv-app.theme-jira .sv-app__side { background: #1d2125; border-right: 1px solid #2c333a; }
+.sv-app.theme-jira .sv-app__brandtext { color: #fff; font-weight: 700; }
+.sv-app.theme-jira .sv-app__link { color: #c7d1db; border-radius: 4px; padding: 7px 12px; }
+.sv-app.theme-jira .sv-app__link:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.sv-app.theme-jira .sv-app__link.is-active { background: color-mix(in srgb, #0c66e4 30%, #1d2125); color: #fff; box-shadow: inset 3px 0 0 #4c9aff; }
+.sv-app.theme-jira .sv-app__collapse, .sv-app.theme-jira .sv-app__foot { color: #8c9bab; }`
+
 const projectsEntity: EntitySchema = {
   name: 'projects',
   label: 'Project',
@@ -115,9 +124,9 @@ const seed = {
 export const projectTracker: SampleApp = {
   id: 'projects',
   name: 'Project tracker',
-  description: 'Projects, tasks and a team roster - portfolio + task-board dashboards (budget KPI sparkline + target, progress gauge, status/priority breakdowns with pie + area trend, status x priority pivot, tabbed views), filtered status-pill grids with row actions, master/detail, and rich edit forms (progress slider, color labels, tag chips, phone, rating, datetime).',
+  description: 'Projects, tasks and a team roster - a Jira-style issue tracker behind a sign-in, with portfolio + task-board dashboards (budget KPI sparkline + target, progress gauge, status/priority breakdowns with pie + area trend, status x priority pivot, tabbed views), filtered status-pill grids with row actions, master/detail, and rich edit forms (progress slider, color labels, tag chips, phone, rating, datetime).',
   emoji: '\u{1F4CB}',
-  accent: '#8b5cf6',
+  accent: '#0c66e4',
   build: () => {
     const projectRows = pad(projectsEntity, seed.projects, 10)
     const projectPool = ids(projectRows)
@@ -127,9 +136,22 @@ export const projectTracker: SampleApp = {
     return project({
       title: 'Project Tracker',
       brand: 'Tracker',
-      accent: '#8b5cf6',
+      accent: '#0c66e4',
       preset: 'linear',
       footer: '',
+      // Jira-style issue tracker: dark navy rail, board-forward.
+      appClass: 'theme-jira',
+      customCss: JIRA_CSS,
+      // Sign-in with two roles: developers move issues but cannot delete them.
+      auth: { enabled: true, protect: true },
+      access: {
+        enabled: true,
+        defaultRole: 'developer',
+        roles: [
+          { role: 'admin', screens: '*', actions: '*' },
+          { role: 'developer', screens: '*', actions: ['create', 'update'] },
+        ],
+      },
       entities: [projectsEntity, members, tasks],
       seed: { projects: projectRows, members: memberRows, tasks: taskRows },
       screens: [

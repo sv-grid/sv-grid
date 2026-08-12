@@ -294,7 +294,7 @@
   }
   .ah-sev button.on {
     background: var(--sg-accent, #2563eb);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     border-color: transparent;
     font-weight: 600;
   }

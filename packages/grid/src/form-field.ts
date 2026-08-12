@@ -8,7 +8,9 @@ import type { Validator } from './validators'
  */
 export type FormFieldType =
   | 'text' | 'email' | 'tel' | 'textarea' | 'number' | 'password'
-  | 'select' | 'checkbox' | 'switch' | 'date' | 'color' | 'rating'
+  | 'select' | 'multiselect' | 'checkbox' | 'switch' | 'date' | 'color' | 'rating'
+  | 'radio' | 'slider' | 'tags' | 'phone' | 'country' | 'mask'
+  | 'datetime' | 'time' | 'daterange' | 'combobox' | 'file'
   | 'array'
 
 export type FormField = {
@@ -16,8 +18,44 @@ export type FormField = {
   label: string
   type?: FormFieldType
   required?: boolean
+  /** Show the field but block edits (still submitted, unlike hidden fields). */
+  readonly?: boolean
+  /** Helper text shown under the control (distinct from a validation error). */
+  help?: string
   placeholder?: string
-  options?: Array<{ value: string | number; label: string; color?: string }>
+  /**
+   * Options for select/combobox/radio/multiselect. A function makes them CASCADE:
+   * the list is derived from the current form values (e.g. cities for the picked
+   * country). Pair with `dependsOn` so the child clears when the parent changes.
+   */
+  options?:
+    | Array<{ value: string | number; label: string; color?: string }>
+    | ((values: Record<string, any>) => Array<{ value: string | number; label: string; color?: string }>)
+  /** Field name(s) this one depends on; when a parent changes, this field's value
+   *  is cleared (cascading selects). */
+  dependsOn?: string | string[]
+  /** Mask pattern for `type: 'mask'` (`#`=digit, `A`=letter, `*`=alnum). */
+  mask?: string
+  /** Numeric bounds for `type: 'number'` / `'slider'`. */
+  min?: number
+  max?: number
+  step?: number
+  precision?: number
+  /** Text affixes for `type: 'number'` (e.g. `$` / `%`). */
+  prefix?: string
+  suffix?: string
+  /** Remote option loader for `type: 'combobox'` (debounced typeahead). The
+   *  current form `values` are passed so it can depend on other fields. */
+  loadOptions?: (query: string, values: Record<string, any>) => Promise<Array<{ value: string | number; label: string }>>
+  /** File input hints for `type: 'file'`. */
+  accept?: string
+  multiple?: boolean
+  /**
+   * Derive this field's value from the other form values (e.g. a total). A
+   * computed field is read-only, recomputes reactively, is not user-validated,
+   * and its derived value is included in the submitted payload.
+   */
+  computed?: (values: Record<string, any>) => any
   /** Declarative validation rules (see `rules` - email/pattern/min/compare...). */
   rules?: ReadonlyArray<Validator>
   /** Return an error message, or null/undefined when valid. */
@@ -33,6 +71,8 @@ export type FormField = {
   asyncDebounce?: number
   /** Span full width in the grid. */
   full?: boolean
+  /** Columns to span (generalizes `full`); `2`+ widens the field in a grid. */
+  span?: number
   /**
    * Show the field only when this is `true` / returns `true` (default: always).
    * A field derived from other values, e.g. `visible: (v) => v.hasAddress`.

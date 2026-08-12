@@ -27,6 +27,7 @@ export default defineConfig({
       // The Svelte-free `/format` subpath (used by @svgrid/enterprise's export
       // code). Must precede the bare alias below so it wins for this specifier.
       '@svgrid/grid/format': path.resolve(repoRoot, 'packages/grid/src/export-format.ts'),
+      '@svgrid/grid/filtering': path.resolve(repoRoot, 'packages/grid/src/filtering/excel-filters.ts'),
       '@svgrid/grid/themes': path.resolve(repoRoot, 'packages/grid/src/themes/index.ts'),
       '@svgrid/grid': path.resolve(repoRoot, 'packages/grid/src/index.ts'),
       // Studio subpath (Svelte-free core) - must precede the bare alias below.

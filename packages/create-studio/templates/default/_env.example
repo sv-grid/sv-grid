@@ -1,0 +1,15 @@
+# Environment variables. This starter runs fully in-memory, so nothing here is
+# required to start - copy to .env and fill in as you grow the app.
+
+# Your database connection string, once you bind entities to a real database
+# (Neon / Supabase / Postgres / MySQL / SQLite path). See DEPLOY.md.
+# DATABASE_URL=
+
+# Turso / libSQL auth token (only for Turso).
+# DATABASE_AUTH_TOKEN=
+
+# Session signing secret - required if you add authentication. Use a long random value.
+# SESSION_SECRET=
+
+# Optional: your SvGrid license key removes the unlicensed watermark.
+# VITE_SVPRO_KEY=
