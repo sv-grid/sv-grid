@@ -90,7 +90,7 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
+  <div class="ba-lead text-sm shrink-0">
     Check one or more rows to reveal the bulk-actions bar. Pick an action; the
     grid mutates locally (your backend call goes where the action handlers are).
   </div>
@@ -100,12 +100,12 @@
        when the user checks/unchecks rows. -->
   <div
     class="shrink-0 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2"
-    style="border-color: var(--site-accent, #6366f1); background: color-mix(in srgb, #6366f1 8%, transparent);"
+    style="border-color: var(--sg-accent, #6366f1); background: color-mix(in srgb, var(--sg-accent, #6366f1) 8%, transparent);"
   >
     <span class="text-sm font-semibold" style="color: var(--sg-fg);">
       {#if n > 0}{n} selected{:else}No rows selected{/if}
     </span>
-    <span class="mx-1 text-slate-400">·</span>
+    <span class="ba-dot mx-1">·</span>
 
     <button type="button" class="action-btn" disabled={n === 0} onclick={markInStock}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -141,7 +141,7 @@
   </div>
 
   {#if toast}
-    <p class="shrink-0 text-xs" style="color: #4ade80;">{toast}</p>
+    <p class="shrink-0 text-xs" style="color: var(--ba-ok);">{toast}</p>
   {/if}
 
   <div class="flex-1 min-h-0">
@@ -163,12 +163,21 @@
     />
   </div>
 
-  <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="ba-foot text-xs shrink-0">
     {rows.length} rows total · the toolbar appears only while rows are selected.
   </footer>
 </section>
 
 <style>
+  /* Success tone is semantic, so it keeps its own light/dark pair instead of
+     following the theme accent. */
+  section { --ba-ok: #15803d; }
+  :global([data-theme='dark']) section { --ba-ok: #4ade80; }
+
+  .ba-lead { color: var(--sg-fg, #475569); }
+  .ba-foot { color: var(--sg-muted, #64748b); }
+  .ba-dot  { color: var(--sg-muted, #94a3b8); }
+
   .action-btn {
     display: inline-flex;
     align-items: center;
@@ -186,7 +195,7 @@
   }
   .action-btn:hover:not(:disabled) {
     background: var(--sg-row-hover-bg);
-    border-color: color-mix(in srgb, var(--site-accent, #6366f1) 35%, var(--sg-border));
+    border-color: color-mix(in srgb, var(--sg-accent, #6366f1) 35%, var(--sg-border));
   }
   .action-btn:disabled {
     opacity: 0.45;

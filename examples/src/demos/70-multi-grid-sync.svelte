@@ -54,7 +54,7 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <p class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <p class="sync-note text-sm shrink-0">
     Both grids read from the same <code>$state</code> array. Edit any
     <code>Qty</code> or <code>Warehouse</code> on the left - the right
     grid updates instantly. Each grid keeps its OWN filter + sort.
@@ -62,8 +62,8 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
     <div class="flex flex-col gap-2 min-h-0">
-      <div class="text-sm font-medium text-slate-700 dark:text-slate-200">
-        Operations view <span class="text-slate-500 dark:text-slate-400 font-normal">- editable</span>
+      <div class="sync-title text-sm font-medium">
+        Operations view <span class="sync-sub font-normal">- editable</span>
       </div>
       <div class="flex-1 min-h-0">
         <SvGrid responsive={true}
@@ -85,8 +85,8 @@
     </div>
 
     <div class="flex flex-col gap-2 min-h-0">
-      <div class="text-sm font-medium text-slate-700 dark:text-slate-200">
-        Analytics view <span class="text-slate-500 dark:text-slate-400 font-normal">- read-only mirror</span>
+      <div class="sync-title text-sm font-medium">
+        Analytics view <span class="sync-sub font-normal">- read-only mirror</span>
       </div>
       <div class="flex-1 min-h-0">
         <SvGrid responsive={true}
@@ -108,3 +108,10 @@
     </div>
   </div>
 </section>
+
+<style>
+  /* Caption chrome follows the active grid theme. */
+  .sync-note { color: var(--sg-muted, #64748b); }
+  .sync-title { color: var(--sg-fg, #334155); }
+  .sync-sub { color: var(--sg-muted, #64748b); }
+</style>

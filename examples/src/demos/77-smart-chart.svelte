@@ -313,8 +313,8 @@
   }
   .smart-title { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
   .smart-badge {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+    background: var(--sg-accent, #6366f1);
+    color: var(--sg-on-accent, #fff); font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
     padding: 3px 8px; border-radius: 999px; text-transform: uppercase;
   }
   .smart-sub  { font-size: 13px; color: var(--sg-fg, #0f172a); font-weight: 500; }
@@ -338,7 +338,7 @@
   .smart-tabs button.is-active {
     background: var(--sg-bg, #fff);
     color: var(--sg-fg, #0f172a);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
   }
   .smart-tab-icon { font-size: 14px; line-height: 1; }
 
@@ -349,7 +349,7 @@
     font-family: inherit;
     --smart-background: transparent;
     --smart-surface: transparent;
-    --smart-primary: #6366f1;
+    --smart-primary: var(--sg-accent, #6366f1);
     background: transparent;
   }
   .smart-host :global(.sv-axis-label) { font-size: 11px; fill: var(--sg-muted, #64748b); }

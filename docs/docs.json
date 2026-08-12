@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-11T18:22:51.847Z",
+  "generatedAt": "2026-08-12T08:08:11.867Z",
   "counts": {
     "pages": 365,
     "enterprise": 55,
@@ -803,7 +803,7 @@
       "pillar": "studio",
       "tier": "enterprise",
       "words": 2051,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "192-data-app-studio",
         "193-studio-live-sql",
@@ -849,7 +849,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 1149,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -862,7 +862,7 @@
       "tier": "enterprise",
       "group": "Reference & help",
       "words": 678,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -875,7 +875,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 3174,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -901,7 +901,7 @@
       "tier": "enterprise",
       "group": "Auth & security",
       "words": 870,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "196-studio-auth"
       ]
@@ -916,7 +916,7 @@
       "tier": "enterprise",
       "group": "Logic & generated code",
       "words": 1403,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "199-studio-computed-hooks"
       ]
@@ -931,7 +931,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 825,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -944,7 +944,7 @@
       "tier": "enterprise",
       "group": "Logic & generated code",
       "words": 800,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -957,7 +957,7 @@
       "tier": "enterprise",
       "group": "Logic & generated code",
       "words": 804,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "192-data-app-studio"
       ]
@@ -972,7 +972,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 946,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -985,7 +985,7 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 708,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "200-studio-dashboard"
       ]
@@ -1000,7 +1000,7 @@
       "tier": "enterprise",
       "group": "Connect to data",
       "words": 922,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -1013,7 +1013,7 @@
       "tier": "enterprise",
       "group": "Connect to data",
       "words": 1677,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "194-studio-supabase",
         "193-studio-live-sql"
@@ -1042,7 +1042,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 589,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -1055,7 +1055,7 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 603,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "362-dock-manager"
       ]
@@ -1098,7 +1098,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 2535,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "192-data-app-studio",
         "193-studio-live-sql",
@@ -1141,7 +1141,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 957,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -1208,7 +1208,7 @@
       "tier": "enterprise",
       "group": "One-page CRUD tutorials",
       "words": 1092,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -1234,7 +1234,7 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 740,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "194-studio-supabase"
       ]
@@ -1265,7 +1265,7 @@
       "tier": "enterprise",
       "group": "Connect to data",
       "words": 1236,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "337-live-rest-dummyjson"
       ]
@@ -1280,7 +1280,7 @@
       "tier": "enterprise",
       "group": "One-page CRUD tutorials",
       "words": 982,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -1293,7 +1293,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 967,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -1306,7 +1306,7 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 655,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "363-scheduler-intro",
         "371-scheduler-timeline",
@@ -1353,7 +1353,7 @@
       "tier": "enterprise",
       "group": "One-page CRUD tutorials",
       "words": 1355,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "194-studio-supabase"
       ]
@@ -1368,7 +1368,7 @@
       "tier": "enterprise",
       "group": "One-page CRUD tutorials",
       "words": 1071,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "338-pglite-northwind",
         "194-studio-supabase"
@@ -1384,7 +1384,7 @@
       "tier": "enterprise",
       "group": "Connect to data",
       "words": 1454,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "194-studio-supabase"
       ]
@@ -1425,7 +1425,7 @@
       "tier": "enterprise",
       "group": "Reference & help",
       "words": 806,
-      "lastUpdated": "2026-08-11",
+      "lastUpdated": "2026-08-12",
       "demoIds": []
     },
     {
@@ -2004,8 +2004,8 @@
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
-      "words": 756,
-      "lastUpdated": "2026-07-22",
+      "words": 827,
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "25-column-pinning"
       ]
@@ -3464,8 +3464,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 931,
-      "lastUpdated": "2026-07-23",
+      "words": 1183,
+      "lastUpdated": "2026-08-12",
       "demoIds": [
         "74-theme-integrations",
         "10-custom-cells-and-themes"

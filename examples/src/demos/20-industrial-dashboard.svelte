@@ -221,12 +221,12 @@
 
 {#snippet AckCell(props: { alarm: Alarm })}
   {#if props.alarm.ack}
-    <span class="text-xs text-slate-500 dark:text-slate-400">acknowledged</span>
+    <span class="ind-muted text-xs">acknowledged</span>
   {:else}
     <button
       type="button"
       onclick={() => ack(props.alarm.id)}
-      class="rounded border border-slate-300 dark:border-slate-600 px-2 py-0.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+      class="ind-btn rounded px-2 py-0.5 text-xs"
     >Ack</button>
   {/if}
 {/snippet}
@@ -236,16 +236,16 @@
     <button
       type="button"
       onclick={() => (paused = !paused)}
-      class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+      class="ind-btn rounded px-3 py-1"
     >
       {paused ? '▶ Resume' : '⏸ Pause'}
     </button>
-    <span class="text-slate-500 dark:text-slate-400">Tick every 2 s · {lines.length} lines · {alarms.length} alarms</span>
+    <span class="ind-muted">Tick every 2 s · {lines.length} lines · {alarms.length} alarms</span>
     <button
       type="button"
       onclick={ackAll}
       disabled={kpis.activeAlarms === 0}
-      class="ml-auto rounded border border-slate-300 dark:border-slate-600 px-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+      class="ind-btn ml-auto rounded px-3 py-1 disabled:opacity-50"
     >Acknowledge all</button>
   </div>
 
@@ -279,7 +279,7 @@
 
   <div class="grid gap-3 flex-1 min-h-0 lg:grid-cols-[1.5fr_1fr]">
     <div class="flex flex-col min-h-0">
-      <div class="mb-1 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 shrink-0">Production lines</div>
+      <div class="ind-muted mb-1 text-xs uppercase tracking-wide shrink-0">Production lines</div>
       <div class="flex-1 min-h-0">
         <SvGrid responsive={true}
           data={lines}
@@ -317,7 +317,7 @@
     </div>
 
     <div class="flex flex-col min-h-0">
-      <div class="mb-1 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 shrink-0">Active alarms</div>
+      <div class="ind-muted mb-1 text-xs uppercase tracking-wide shrink-0">Active alarms</div>
       <div class="flex-1 min-h-0">
         <SvGrid responsive={true}
           data={alarms}
@@ -352,6 +352,16 @@
 </section>
 
 <style>
+  /* Chrome (buttons, meta text) follows the active grid theme; the status /
+     severity badges below stay on their own semantic palette. */
+  .ind-muted { color: var(--sg-muted, #64748b); }
+  .ind-btn {
+    border: 1px solid var(--sg-border, #cbd5e1);
+    color: var(--sg-fg, #0f172a);
+    background: transparent;
+  }
+  .ind-btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+
   .ind-kpi {
     border: 1px solid var(--sg-border, #e2e8f0);
     border-radius: 8px;

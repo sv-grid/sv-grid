@@ -3,7 +3,8 @@
  * for light, signature Mauve accent (#cba6f7 / #8839ef). Verified
  * against the official Catppuccin palette. 8px radius.
  * ============================================================ */
-html[data-preset='catppuccin'] .demo-page {
+html[data-preset='catppuccin'] .demo-page,
+html[data-preset='catppuccin'] .page-warm {
   --sg-bg: #eff1f5;                /* latte base */
   --sg-fg: #4c4f69;                /* latte text */
   --sg-muted: #6c6f85;             /* latte subtext0 */
@@ -36,7 +37,8 @@ html[data-preset='catppuccin'] .demo-page .demo-aside {
   background: #e6e9ef;
   border-color: #ccd0da !important;
 }
-html[data-preset='catppuccin'][data-theme='dark'] .demo-page {
+html[data-preset='catppuccin'][data-theme='dark'] .demo-page,
+html[data-preset='catppuccin'][data-theme='dark'] .page-warm {
   --sg-bg: #1e1e2e;                /* mocha base */
   --sg-fg: #cdd6f4;                /* mocha text */
   --sg-muted: #a6adc8;             /* mocha subtext0 (per style guide) */

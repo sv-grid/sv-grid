@@ -235,15 +235,15 @@
     <button
       type="button"
       onclick={() => (paused = !paused)}
-      class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+      class="iot-btn rounded px-3 py-1"
     >
       {paused ? '▶ Resume' : '⏸ Pause'}
     </button>
-    <label class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+    <label class="iot-label flex items-center gap-2">
       Tick:
       <select
         bind:value={tickIntervalMs}
-        class="rounded border border-slate-300 dark:border-slate-600 px-2 py-1"
+        class="iot-select rounded px-2 py-1"
       >
         <option value={250}>250 ms</option>
         <option value={500}>500 ms</option>
@@ -253,10 +253,10 @@
     </label>
 
     <span class="ml-3 font-medium">Group:</span>
-    <button onclick={() => applyGroup([])}        class="rounded border px-3 py-1 {groupBy.length === 0 ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}">None</button>
-    <button onclick={() => applyGroup(['line'])}  class="rounded border px-3 py-1 {groupBy.join() === 'line' ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}">Line</button>
-    <button onclick={() => applyGroup(['type'])}  class="rounded border px-3 py-1 {groupBy.join() === 'type' ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}">Type</button>
-    <button onclick={() => applyGroup(['status'])} class="rounded border px-3 py-1 {groupBy.join() === 'status' ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}">Status</button>
+    <button onclick={() => applyGroup([])}        class="iot-btn rounded px-3 py-1 {groupBy.length === 0 ? 'iot-btn-on' : ''}">None</button>
+    <button onclick={() => applyGroup(['line'])}  class="iot-btn rounded px-3 py-1 {groupBy.join() === 'line' ? 'iot-btn-on' : ''}">Line</button>
+    <button onclick={() => applyGroup(['type'])}  class="iot-btn rounded px-3 py-1 {groupBy.join() === 'type' ? 'iot-btn-on' : ''}">Type</button>
+    <button onclick={() => applyGroup(['status'])} class="iot-btn rounded px-3 py-1 {groupBy.join() === 'status' ? 'iot-btn-on' : ''}">Status</button>
 
     <span class="ml-auto inline-flex items-center gap-3 tabular-nums">
       <span class="inline-flex items-center gap-1.5"><span class="iot-dot iot-dot-normal"></span>{counts.normal}</span>
@@ -313,6 +313,22 @@
 </section>
 
 <style>
+  /* Toolbar chrome follows the active grid theme; the status colors below
+     stay fixed because they carry meaning, not styling. */
+  .iot-btn {
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, transparent);
+    color: var(--sg-fg, inherit);
+  }
+  .iot-btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .iot-btn-on    { background: var(--sg-bg-subtle, var(--sg-header-bg, #e2e8f0)); }
+  .iot-label     { color: var(--sg-muted, #475569); }
+  .iot-select {
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: var(--sg-input-bg, var(--sg-bg, transparent));
+    color: var(--sg-fg, inherit);
+  }
+
   .iot-reading {
     font-variant-numeric: tabular-nums;
     font-weight: 600;

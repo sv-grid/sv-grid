@@ -124,7 +124,7 @@
       <input type="checkbox" bind:checked={highContrast} class="rounded" />
       High-contrast focus outline
     </label>
-    <span class="ml-auto text-slate-500 dark:text-slate-400">
+    <span class="ml-auto a11y-muted">
       Try the grid with your keyboard - the sidebar shows what a screen reader hears.
     </span>
   </div>
@@ -172,16 +172,16 @@
       />
     </div>
 
-    <aside class="rounded border border-slate-200 dark:border-slate-700 p-3 overflow-y-auto text-sm">
+    <aside class="a11y-panel rounded border p-3 overflow-y-auto text-sm">
       <h3 class="font-semibold mb-2">ARIA state</h3>
       <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 mb-3">
-        <dt class="text-slate-500 dark:text-slate-400">Active cell</dt>
+        <dt class="a11y-muted">Active cell</dt>
         <dd class="tabular-nums">{activeCellInfo}</dd>
-        <dt class="text-slate-500 dark:text-slate-400">Selected rows</dt>
+        <dt class="a11y-muted">Selected rows</dt>
         <dd class="tabular-nums">{selectedCount}</dd>
-        <dt class="text-slate-500 dark:text-slate-400">Sort</dt>
+        <dt class="a11y-muted">Sort</dt>
         <dd>{sortLabel}</dd>
-        <dt class="text-slate-500 dark:text-slate-400">Filters</dt>
+        <dt class="a11y-muted">Filters</dt>
         <dd class="tabular-nums">{filterCount}</dd>
       </dl>
 
@@ -189,7 +189,7 @@
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        class="mb-3 rounded bg-slate-50 dark:bg-slate-900 px-2 py-1 text-xs italic text-slate-600 dark:text-slate-300 min-h-[1.8em]"
+        class="a11y-live mb-3 rounded px-2 py-1 text-xs italic min-h-[1.8em]"
       >
         {announcement || '(announcements will appear here)'}
       </div>
@@ -197,8 +197,8 @@
       <h3 class="font-semibold mb-2">Keyboard shortcuts</h3>
       <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
         {#each SHORTCUTS as s, i (i)}
-          <dt class="font-mono text-slate-700 dark:text-slate-200 whitespace-nowrap">{s.keys}</dt>
-          <dd class="text-slate-500 dark:text-slate-400">{s.what}</dd>
+          <dt class="a11y-key font-mono whitespace-nowrap">{s.keys}</dt>
+          <dd class="a11y-muted">{s.what}</dd>
         {/each}
       </dl>
     </aside>
@@ -206,6 +206,15 @@
 </section>
 
 <style>
+  /* Panel chrome follows the active grid theme. */
+  .a11y-panel { border-color: var(--sg-border, #e2e8f0); }
+  .a11y-muted { color: var(--sg-muted, #64748b); }
+  .a11y-key { color: var(--sg-fg, #334155); }
+  .a11y-live {
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
+    color: var(--sg-fg, #475569);
+  }
+
   /* Toggleable high-contrast focus ring for users who need a stronger cue
    * than the default browser outline. The 3-px outline + 1-px ring stays
    * inside the cell so it doesn't overlap neighbours. */

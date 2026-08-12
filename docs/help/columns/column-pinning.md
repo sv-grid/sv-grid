@@ -77,6 +77,7 @@ match your design system:
 | `--sg-pinned-bg`            | `color-mix(in oklab, var(--sg-header-bg) 92%, var(--sg-accent) 8%)`       | Body cells in pinned columns   |
 | `--sg-pinned-header-bg`     | `color-mix(in oklab, var(--sg-header-bg) 86%, var(--sg-accent) 14%)`      | Header cells in pinned columns |
 | `--sg-pinned-divider`       | `var(--sg-border)`                                                        | The 1-pixel inside-edge line   |
+| `--sg-pinned-shadow-color`  | `rgba(15, 23, 42, 0.22)`                                                  | The drop shadow into the scroll area |
 
 > **Keep the pinned background opaque.** When you override `--sg-pinned-bg`
 > with `color-mix`, the two percentages **must sum to 100%**. If they add up
@@ -86,8 +87,22 @@ match your design system:
 
 The fallbacks compute a subtle accent-tinted background from your
 existing header background, so a pinned column never looks identical
-to the rest of the grid even if you don't set anything. To opt out
-of the tint and match the body exactly:
+to the rest of the grid even if you don't set anything. That works
+well for a low-chroma accent. If yours is saturated, the derived tint
+can get loud enough to compete with your selection colour - name a
+neutral fill instead and let the divider and shadow carry the
+boundary:
+
+```css
+.themed-host {
+  --sg-pinned-bg:           var(--sg-row-alt-bg);
+  --sg-pinned-header-bg:    var(--sg-header-bg);
+  --sg-pinned-divider:      var(--sg-border);
+  --sg-pinned-shadow-color: rgba(94, 72, 52, 0.18);
+}
+```
+
+To opt out of the tint and match the body exactly:
 
 ```css
 .themed-host {

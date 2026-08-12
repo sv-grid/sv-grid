@@ -61,15 +61,15 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0 flex-wrap">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="text-sm kb-note">
       The same <strong>&lt;SvGrid&gt;</strong>, two views: <strong>{fmt.format(rows.length)}</strong>
       cards virtualized as a board, or the same rows virtualized as a table.
     </div>
     <div class="flex items-center gap-3 shrink-0">
-      <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
-        <button class="px-3 py-1 {view === 'board' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+      <div class="inline-flex rounded-md border overflow-hidden text-sm kb-switch">
+        <button class="px-3 py-1 kb-tab {view === 'board' ? 'kb-tab-on' : ''}"
           onclick={() => (view = 'board')}>Board</button>
-        <button class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        <button class="px-3 py-1 kb-tab {view === 'table' ? 'kb-tab-on' : ''}"
           onclick={() => (view = 'table')}>Table</button>
       </div>
       <label class="flex items-center gap-2 text-sm">
@@ -111,7 +111,24 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="text-sm shrink-0 kb-foot">
     ~{fmt.format(Math.round(rows.length / lanes.length))} cards per lane · a few dozen DOM nodes.
   </footer>
 </section>
+
+<style>
+  /* Toolbar chrome follows the active grid theme via --sg-* tokens.
+     Lane colours stay fixed - they identify the lane, not the theme. */
+  .kb-note { color: var(--sg-fg, #475569); }
+  .kb-foot { color: var(--sg-muted, #64748b); }
+  .kb-switch { border-color: var(--sg-border, #cbd5e1); }
+  .kb-tab {
+    background: transparent;
+    color: var(--sg-fg, inherit);
+  }
+  .kb-tab:not(.kb-tab-on):hover { background: var(--sg-row-hover-bg, transparent); }
+  .kb-tab-on {
+    background: var(--sg-accent, #1e293b);
+    color: var(--sg-on-accent, #ffffff);
+  }
+</style>

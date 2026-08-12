@@ -84,17 +84,17 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="text-sm kb-note">
       The same <strong>&lt;SvGrid&gt;</strong>, two views. Filter by the chips, <strong>click</strong>
       / <kbd>Ctrl</kbd>-click to multi-select then drag the group, <strong>right-click</strong> a card
       or a lane header for menus, and <strong>double-click a lane title</strong> to rename.
       A <strong>Blocked</strong> card is locked - you can't drag it until you unblock it
       (right-click -> Unblock); the small badge is card age.
     </div>
-    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
-      <button class="px-3 py-1 {view === 'board' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+    <div class="inline-flex rounded-md border overflow-hidden text-sm shrink-0 kb-seg">
+      <button class="px-3 py-1 kb-seg-btn {view === 'board' ? 'is-on' : ''}"
         onclick={() => (view = 'board')}>Board</button>
-      <button class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+      <button class="px-3 py-1 kb-seg-btn {view === 'table' ? 'is-on' : ''}"
         onclick={() => (view = 'table')}>Table</button>
     </div>
   </div>
@@ -141,7 +141,20 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="text-sm shrink-0 kb-note">
     {rows.length} tasks · {rows.filter((t) => t.blocked).length} blocked · {selectedCount} selected
   </footer>
 </section>
+
+<style>
+  .kb-note { color: var(--sg-muted, #64748b); }
+  .kb-seg { border-color: var(--sg-border, #cbd5e1); }
+  .kb-seg-btn {
+    background: transparent;
+    color: var(--sg-fg, #0f172a);
+  }
+  .kb-seg-btn.is-on {
+    background: var(--sg-accent, #1e293b);
+    color: var(--sg-on-accent, #fff);
+  }
+</style>

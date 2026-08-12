@@ -377,7 +377,7 @@
     position: absolute;
     top: 0; bottom: 0;
     width: 0;
-    border-left: 1px dashed rgba(148, 163, 184, 0.35);
+    border-left: 1px dashed var(--sg-border, rgba(148, 163, 184, 0.35));
     pointer-events: none;
   }
   :global(.t28-elbow) {
@@ -385,7 +385,7 @@
     top: 50%;
     width: 14px;
     height: 0;
-    border-top: 1px dashed rgba(148, 163, 184, 0.45);
+    border-top: 1px dashed var(--sg-border, rgba(148, 163, 184, 0.45));
     pointer-events: none;
   }
   :global(.t28-chev) {
@@ -420,7 +420,7 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: rgba(148, 163, 184, 0.6);
+    background: var(--sg-muted, rgba(148, 163, 184, 0.6));
   }
   :global(.t28-avatar) {
     width: 32px;
@@ -474,12 +474,11 @@
     background: var(--sg-input-bg, #e2e8f0);
     overflow: hidden;
   }
-  :global([data-theme='dark']) :global(.t28-count-bar) { background: rgba(148,163,184,0.22); }
   :global(.t28-count-bar-fill) {
     display: block;
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #2563eb, #06b6d4);
+    background: var(--sg-accent, #2563eb);
   }
 
   /* Tenure cell */

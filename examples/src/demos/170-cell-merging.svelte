@@ -413,7 +413,7 @@
     font-size: 16px;
     font-weight: 800;
     letter-spacing: 0.04em;
-    color: #2563eb;
+    color: var(--sg-accent, #2563eb);
     padding: 4px 12px;
   }
   :global(.inv-desc.is-addressLabel),
@@ -468,17 +468,17 @@
     display: inline-block;
     font-weight: 800;
     font-size: 14px;
-    color: #0f172a;
+    color: var(--sg-fg, #0f172a);
   }
   :global(.inv-amount-total) { font-weight: 700; }
-  :global(.inv-amount-grand) { font-weight: 800; font-size: 14px; color: #0f172a; }
+  :global(.inv-amount-grand) { font-weight: 800; font-size: 14px; color: var(--sg-fg, #0f172a); }
   :global(.inv-desc.is-notesBanner) {
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #2563eb;
-    background: #eff6ff;
+    color: var(--sg-accent, #2563eb);
+    background: color-mix(in oklab, var(--sg-accent, #2563eb) 8%, transparent);
     padding: 4px 10px;
     display: inline-block;
     width: 100%;

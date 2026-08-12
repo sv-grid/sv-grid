@@ -3,7 +3,8 @@
  * matches shadcn's `--radius: 0.5rem` default scaled down for the
  * grid's tighter controls. System font.
  * ============================================================ */
-html[data-preset='shadcn'] .demo-page {
+html[data-preset='shadcn'] .demo-page,
+html[data-preset='shadcn'] .page-warm {
   --sg-bg: #ffffff;
   --sg-fg: #09090b;
   --sg-muted: #71717a;
@@ -39,7 +40,8 @@ html[data-preset='shadcn'] .demo-page .demo-aside {
   background: #fafafa;
   border-color: #e4e4e7 !important;
 }
-html[data-preset='shadcn'][data-theme='dark'] .demo-page {
+html[data-preset='shadcn'][data-theme='dark'] .demo-page,
+html[data-preset='shadcn'][data-theme='dark'] .page-warm {
   --sg-bg: #0a0a0a;
   --sg-fg: #fafafa;
   --sg-muted: #a1a1aa;

@@ -2,7 +2,8 @@
  * ANT DESIGN v5 - tokens verified against antd's tokens/seed +
  * derivative tables. borderRadius.base = 6px. PingFang SC / SF Pro.
  * ============================================================ */
-html[data-preset='antd'] .demo-page {
+html[data-preset='antd'] .demo-page,
+html[data-preset='antd'] .page-warm {
   --sg-bg: #ffffff;                /* colorBgContainer */
   --sg-fg: rgba(0, 0, 0, 0.88);    /* colorText */
   --sg-muted: rgba(0, 0, 0, 0.65); /* colorTextSecondary */
@@ -39,7 +40,8 @@ html[data-preset='antd'] .demo-page .demo-aside {
   background: #fafafa;
   border-color: #d9d9d9 !important;
 }
-html[data-preset='antd'][data-theme='dark'] .demo-page {
+html[data-preset='antd'][data-theme='dark'] .demo-page,
+html[data-preset='antd'][data-theme='dark'] .page-warm {
   --sg-bg: #141414;
   --sg-fg: rgba(255, 255, 255, 0.85);
   --sg-muted: rgba(255, 255, 255, 0.65);

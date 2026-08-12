@@ -281,7 +281,18 @@
 </section>
 
 <style>
-  .staged-shell { font-family: inherit; }
+  .staged-shell {
+    font-family: inherit;
+    /* Diff colours carry meaning (removed vs added) rather than brand, so they
+       stay red/green under every preset - only their lightness tracks the mode
+       so they stay legible on a dark ground. */
+    --diff-neg: #b91c1c;
+    --diff-pos: #047857;
+  }
+  :global([data-theme="dark"]) .staged-shell {
+    --diff-neg: #f87171;
+    --diff-pos: #34d399;
+  }
 
   /* ---- Header ---- */
   .staged-head {
@@ -289,14 +300,14 @@
     gap: 16px; flex-wrap: wrap;
     padding: 14px 16px;
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(168, 85, 247, 0.03));
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
     border-radius: 10px;
   }
   .head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .head-badge {
     display: inline-block;
-    background: linear-gradient(135deg, #6366f1, #a855f7);
-    color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    background: var(--sg-accent, #6366f1);
+    color: var(--sg-on-accent, #fff); font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
     padding: 4px 10px; border-radius: 999px; text-transform: uppercase;
   }
   .staged-head h2 { margin: 0; font-size: 16px; font-weight: 700; color: var(--sg-fg, #0f172a); }
@@ -336,16 +347,16 @@
   .kpi-sub   { font-size: 11px; color: var(--sg-muted, #94a3b8); }
   .kpi-pending { border-left: 3px solid #f59e0b; }
   .kpi-up      { border-left: 3px solid #10b981; }
-  .kpi-up .kpi-value      { color: #047857; }
+  .kpi-up .kpi-value      { color: var(--diff-pos, #047857); }
   .kpi-down    { border-left: 3px solid #ef4444; }
-  .kpi-down .kpi-value    { color: #b91c1c; }
-  .kpi-accent  { border-left: 3px solid #6366f1; background: linear-gradient(135deg, rgba(99, 102, 241, 0.04), transparent); }
-  .kpi-accent .kpi-value  { color: #4338ca; }
+  .kpi-down .kpi-value    { color: var(--diff-neg, #b91c1c); }
+  .kpi-accent  { border-left: 3px solid var(--sg-accent, #6366f1); background: linear-gradient(135deg, color-mix(in srgb, var(--sg-accent, #6366f1) 6%, transparent), transparent); }
+  .kpi-accent .kpi-value  { color: var(--sg-accent, #4338ca); }
 
   .result-banner {
     padding: 8px 14px;
     background: rgba(16, 185, 129, 0.10);
-    color: #047857;
+    color: var(--diff-pos, #047857);
     border: 1px solid rgba(16, 185, 129, 0.25);
     border-radius: 8px;
     font-size: 12.5px; font-weight: 600;
@@ -365,7 +376,6 @@
     overflow: hidden;
     min-width: 0;
   }
-  :global([data-theme="dark"]) .grid-card { background: #0f172a; border-color: #1e293b; }
 
   /* ---- Right rail ---- */
   .stage-rail {
@@ -374,7 +384,6 @@
     background: var(--sg-bg, #fff);
     border-radius: 10px; overflow: hidden;
   }
-  :global([data-theme="dark"]) .stage-rail { background: #0f172a; border-color: #1e293b; }
   .stage-rail header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 14px; border-bottom: 1px solid var(--sg-border, #e2e8f0);
@@ -382,7 +391,8 @@
   }
   .stage-rail header strong { font-size: 13px; color: var(--sg-fg, #0f172a); }
   .stage-rail .badge {
-    background: #4338ca; color: #fff; font-size: 11px; font-weight: 700;
+    background: var(--sg-accent, #4338ca); color: var(--sg-on-accent, #fff);
+    font-size: 11px; font-weight: 700;
     padding: 2px 8px; border-radius: 999px;
   }
 
@@ -394,7 +404,7 @@
   .empty-icon {
     width: 48px; height: 48px;
     border-radius: 999px;
-    background: rgba(148, 163, 184, 0.12);
+    background: color-mix(in srgb, var(--sg-muted, #94a3b8) 12%, transparent);
     display: grid; place-items: center;
     color: var(--sg-muted, #94a3b8);
     font-size: 22px;
@@ -416,20 +426,18 @@
     border-radius: 8px;
     overflow: hidden;
   }
-  :global([data-theme="dark"]) .emp-card { background: #1e293b; border-color: #334155; }
   .emp-head {
     display: flex; align-items: center; justify-content: space-between;
     gap: 6px;
     padding: 8px 10px;
-    background: var(--sg-header-bg, #f8fafc);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
   }
-  :global([data-theme="dark"]) .emp-head { background: rgba(99, 102, 241, 0.08); border-bottom-color: #334155; }
   .emp-id { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
   .emp-avatar {
     width: 28px; height: 28px; border-radius: 999px;
-    background: linear-gradient(135deg, #6366f1, #a855f7);
-    color: #fff; font-size: 11px; font-weight: 700;
+    background: var(--sg-accent, #6366f1);
+    color: var(--sg-on-accent, #fff); font-size: 11px; font-weight: 700;
     display: grid; place-items: center;
     flex-shrink: 0;
   }
@@ -448,14 +456,14 @@
   }
   .emp-diffs li + li { border-top: 1px dashed var(--sg-border, rgba(148, 163, 184, 0.20)); }
   .diff-col   { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sg-muted, #64748b); font-weight: 600; }
-  .diff-from  { color: #b91c1c; text-decoration: line-through; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .diff-from  { color: var(--diff-neg, #b91c1c); text-decoration: line-through; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .diff-arrow { color: var(--sg-muted, #94a3b8); text-align: center; }
-  .diff-to    { color: #047857; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .diff-to    { color: var(--diff-pos, #047857); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .diff-drop  {
     background: transparent; border: 0;
     color: var(--sg-muted, #94a3b8);
     width: 22px; height: 22px; border-radius: 4px;
     cursor: pointer; font-size: 14px; line-height: 1;
   }
-  .diff-drop:hover { background: rgba(239, 68, 68, 0.10); color: #b91c1c; }
+  .diff-drop:hover { background: rgba(239, 68, 68, 0.10); color: var(--diff-neg, #b91c1c); }
 </style>

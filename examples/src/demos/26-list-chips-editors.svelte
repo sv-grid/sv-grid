@@ -263,7 +263,11 @@
     />
   </div>
 
-  <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="lc-muted text-xs shrink-0">
     {rows.length} rows · 6 columns · 4 list/chips editor variations
   </footer>
 </section>
+
+<style>
+  .lc-muted { color: var(--sg-muted, #64748b); }
+</style>

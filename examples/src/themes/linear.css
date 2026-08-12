@@ -3,7 +3,8 @@
  * famous (#5e6ad2), plus its lighter theme. Muted medium-weight
  * headers, Inter, 6px radius.
  * ============================================================ */
-html[data-preset='linear'] .demo-page {
+html[data-preset='linear'] .demo-page,
+html[data-preset='linear'] .page-warm {
   --sg-bg: #ffffff;
   --sg-fg: #282a30;
   --sg-muted: #6b6f76;
@@ -36,7 +37,8 @@ html[data-preset='linear'] .demo-page .demo-aside {
   background: #f9f9fb;
   border-color: #e9e9eb !important;
 }
-html[data-preset='linear'][data-theme='dark'] .demo-page {
+html[data-preset='linear'][data-theme='dark'] .demo-page,
+html[data-preset='linear'][data-theme='dark'] .page-warm {
   --sg-bg: #08090a;                /* Linear canvas */
   --sg-fg: #f7f8f8;                /* Linear ink */
   --sg-muted: #8a8f98;             /* Linear ink-subtle */

@@ -162,11 +162,11 @@
     <div class="ml-auto inline-flex items-center gap-1">
       <button type="button" disabled={page <= 1}
         onclick={() => { page = Math.max(1, page - 1); void refresh() }}
-        class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 disabled:opacity-40"
+        class="gql-btn rounded-md border px-2 py-1 disabled:opacity-40"
         >‹ Prev</button>
       <button type="button" disabled={page >= totalPages}
         onclick={() => { page = Math.min(totalPages, page + 1); void refresh() }}
-        class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1 disabled:opacity-40"
+        class="gql-btn rounded-md border px-2 py-1 disabled:opacity-40"
         >Next ›</button>
     </div>
   </div>
@@ -197,10 +197,26 @@
 
     <aside class="flex flex-col gap-2 min-h-0">
       <header class="flex items-baseline justify-between shrink-0">
-        <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Last GraphQL query</div>
-        <div class="text-[10px] text-slate-400">round-trip {lastElapsed} ms</div>
+        <div class="gql-label text-xs uppercase tracking-wide">Last GraphQL query</div>
+        <div class="gql-meta text-[10px]">round-trip {lastElapsed} ms</div>
       </header>
-      <pre class="flex-1 min-h-0 overflow-auto text-[11px] leading-snug bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-3">{lastDoc}</pre>
+      <pre class="gql-doc flex-1 min-h-0 overflow-auto text-[11px] leading-snug border rounded p-3">{lastDoc}</pre>
     </aside>
   </div>
 </section>
+
+<style>
+  /* Pager + query panel chrome track the active grid theme. */
+  .gql-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .gql-label { color: var(--sg-muted, #64748b); }
+  .gql-meta { color: var(--sg-muted, #94a3b8); }
+  .gql-doc {
+    border-color: var(--sg-border, #e2e8f0);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
+    color: var(--sg-fg, #0f172a);
+  }
+</style>

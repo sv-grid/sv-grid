@@ -163,7 +163,7 @@
   <div class="info shrink-0">
     <p>
       Three stacked grids share the same column schema. The
-      <strong style="color:#6366f1">top strip</strong> shows all-accounts totals;
+      <strong style="color:var(--sg-accent, #6366f1)">top strip</strong> shows all-accounts totals;
       the <strong style="color:#10b981">bottom strip</strong> shows totals for the visible / filtered set,
       plus any user-pinned rows.
       <span class="info-tip">Right-click any data row to pin it to the bottom.</span>
@@ -241,7 +241,7 @@
 <style>
   .info {
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(16,185,129,0.04));
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 5%, transparent);
     border-radius: 8px; padding: 10px 14px;
     font-size: 13px; color: var(--sg-fg, #0f172a);
   }
@@ -255,7 +255,7 @@
     overflow: hidden;
     background: var(--sg-bg, #fff);
   }
-  .pin-strip.pin-top    { border-top: 3px solid #6366f1; }
+  .pin-strip.pin-top    { border-top: 3px solid var(--sg-accent, #6366f1); }
   .pin-strip.pin-bottom { border-bottom: 3px solid #10b981; }
   .pin-tag {
     position: absolute; top: 8px; left: 8px; z-index: 10;
@@ -264,7 +264,7 @@
     text-transform: uppercase;
     pointer-events: none;
   }
-  .pin-tag-top    { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+  .pin-tag-top    { background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff); }
   .pin-tag-bottom { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
   .pin-grid { overflow: hidden; }
   /* Bottom strip hides the duplicated header - the top strip's header
@@ -288,7 +288,7 @@
 
   /* Aggregator rows: bold the pinned-row's "summary" feel. */
   .pin-strip :global(td) {
-    background: linear-gradient(180deg, color-mix(in oklab, #6366f1 4%, transparent), transparent) !important;
+    background: linear-gradient(180deg, color-mix(in oklab, var(--sg-accent, #6366f1) 4%, transparent), transparent) !important;
     font-weight: 600;
   }
   .pin-strip.pin-bottom :global(td) {

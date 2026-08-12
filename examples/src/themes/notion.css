@@ -3,7 +3,8 @@
  * brown-grey text #37352f, quiet muted database headers, Notion
  * blue #2383e2 accent. Small 4px radius.
  * ============================================================ */
-html[data-preset='notion'] .demo-page {
+html[data-preset='notion'] .demo-page,
+html[data-preset='notion'] .page-warm {
   --sg-bg: #ffffff;
   --sg-fg: #37352f;                /* Notion default text */
   --sg-muted: #787774;             /* Notion gray text */
@@ -36,7 +37,8 @@ html[data-preset='notion'] .demo-page .demo-aside {
   background: #f7f6f3;
   border-color: #e9e9e7 !important;
 }
-html[data-preset='notion'][data-theme='dark'] .demo-page {
+html[data-preset='notion'][data-theme='dark'] .demo-page,
+html[data-preset='notion'][data-theme='dark'] .page-warm {
   --sg-bg: #191919;                /* Notion dark bg */
   --sg-fg: #d4d4d4;
   --sg-muted: #9b9b9b;

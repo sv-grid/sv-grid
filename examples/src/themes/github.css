@@ -4,7 +4,8 @@
  * borderRadius.medium. System font stack (Primer never ships a
  * custom font - it uses Apple system / Segoe / Noto).
  * ============================================================ */
-html[data-preset='github'] .demo-page {
+html[data-preset='github'] .demo-page,
+html[data-preset='github'] .page-warm {
   --sg-bg: #ffffff;                /* canvas.default */
   --sg-fg: #1f2328;                /* fgColor.default */
   --sg-muted: #59636e;             /* fgColor.muted */
@@ -40,7 +41,8 @@ html[data-preset='github'] .demo-page .demo-aside {
   background: #f6f8fa;
   border-color: #d1d9e0 !important;
 }
-html[data-preset='github'][data-theme='dark'] .demo-page {
+html[data-preset='github'][data-theme='dark'] .demo-page,
+html[data-preset='github'][data-theme='dark'] .page-warm {
   --sg-bg: #0d1117;
   --sg-fg: #f0f6fc;
   --sg-muted: #9198a1;

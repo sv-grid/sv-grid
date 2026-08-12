@@ -528,15 +528,15 @@
   .ch-header {
     padding: 12px 14px 8px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(236, 72, 153, 0.04));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 6%, transparent 94%);
   }
   :global([data-theme='dark']) .ch-header {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(236, 72, 153, 0.08));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 14%, transparent 86%);
   }
   .ch-header-row { display: flex; align-items: center; gap: 8px; }
   .ch-badge {
-    background: linear-gradient(135deg, #6366f1, #db2777);
-    color: #fff;
+    background: var(--sg-accent, #6366f1);
+    color: var(--sg-on-accent, #fff);
     font-size: 10px;
     font-weight: 800;
     padding: 2px 7px;
@@ -729,12 +729,11 @@
     border-radius: 999px;
     overflow: hidden;
   }
-  :global([data-theme='dark']) :global(.ch-prob-bar) { background: rgba(148,163,184,.22); }
   :global(.ch-prob-fill) {
     display: block;
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #2563eb, #06b6d4);
+    background: var(--sg-accent, #2563eb);
   }
 
   :global(.ch-health) {

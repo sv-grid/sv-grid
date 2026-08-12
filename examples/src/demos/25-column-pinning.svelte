@@ -97,7 +97,7 @@
     />
   </div>
 
-  <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="pin-foot text-xs shrink-0">
     {rows.length} rows · {columns.length} columns ·
     <code>fitColumns=&lbrace;false&rbrace;</code> +
     <code>columnVirtualization=&lbrace;false&rbrace;</code>
@@ -106,6 +106,8 @@
 </section>
 
 <style>
+  .pin-foot { color: var(--sg-muted, #64748b); }
+
   /* Punch up the visual contrast for pinned columns so the user can
      immediately see which columns are frozen. The grid already supports
      these tokens; this demo just turns the dial higher to demo the

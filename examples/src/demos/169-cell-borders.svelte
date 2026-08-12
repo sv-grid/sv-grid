@@ -421,13 +421,13 @@
   :global(.kpi-label) { color: var(--sg-fg, #0f172a); font-size: 13px; }
   :global(.kpi-label.is-title) {
     font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
-    font-size: 12px; color: #0f172a;
+    font-size: 12px; color: var(--sg-fg, #0f172a);
   }
   :global(.kpi-label.is-header) {
     font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
     font-size: 11px; color: var(--accent, #64748b);
   }
-  :global(.kpi-label.is-item)     { padding-left: 14px; color: #334155; }
+  :global(.kpi-label.is-item)     { padding-left: 14px; color: var(--sg-fg, #334155); }
   :global(.kpi-label.is-subtotal) {
     font-weight: 700; padding-left: 14px; color: var(--accent, #0f172a);
   }

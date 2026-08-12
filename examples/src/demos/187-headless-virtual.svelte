@@ -86,7 +86,7 @@
 <style>
   .hv-wrap { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
   .hv-note { font-size: 13px; color: var(--sg-fg, #0f172a); margin: 0; }
-  .hv-note strong { color: #6366f1; }
+  .hv-note strong { color: var(--sg-accent, #6366f1); }
   .hv-scroll {
     overflow: auto; position: relative;
     border: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px;
@@ -104,7 +104,8 @@
   .hv-name { font-weight: 500; }
   .hv-city {
     justify-self: start; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px;
-    background: color-mix(in oklab, #6366f1 12%, transparent); color: #6366f1;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 12%, transparent);
+    color: var(--sg-accent, #6366f1);
   }
   .hv-score { text-align: right; font-variant-numeric: tabular-nums; }
   .hv-count { font-size: 11px; color: var(--sg-muted, #64748b); margin: 0; }

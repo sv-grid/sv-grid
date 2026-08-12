@@ -516,15 +516,15 @@
   .ai-header {
     padding: 14px 16px 10px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(14, 165, 233, 0.04));
+    background: color-mix(in srgb, var(--sg-accent, #2563eb) 6%, transparent 94%);
   }
   :global([data-theme='dark']) .ai-header {
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(14, 165, 233, 0.08));
+    background: color-mix(in srgb, var(--sg-accent, #2563eb) 14%, transparent 86%);
   }
   .ai-header-row { display: flex; align-items: center; gap: 8px; }
   .ai-badge {
-    background: linear-gradient(135deg, #2563eb, #0ea5e9);
-    color: #fff;
+    background: var(--sg-accent, #2563eb);
+    color: var(--sg-on-accent, #fff);
     font-size: 10px;
     font-weight: 800;
     padding: 2px 7px;
@@ -630,8 +630,8 @@
   }
   .ai-btn-primary {
     border-color: transparent;
-    background: linear-gradient(135deg, #2563eb, #0ea5e9);
-    color: #fff;
+    background: var(--sg-accent, #2563eb);
+    color: var(--sg-on-accent, #fff);
     font-weight: 600;
   }
   .ai-btn-primary:disabled { opacity: 0.6; cursor: progress; }
@@ -764,7 +764,7 @@
   :global(.ai-pred-dot) {
     width: 6px; height: 6px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    background: var(--sg-accent, #2563eb);
   }
 
   :global(.ai-notes) {

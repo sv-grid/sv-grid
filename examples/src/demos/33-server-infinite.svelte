@@ -1129,7 +1129,7 @@
     padding: 4px 12px;
   }
   .srv-net-status-dot {
-    width: 7px; height: 7px; border-radius: 50%; background: #94a3b8;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--sg-muted, #94a3b8);
   }
   .srv-net-ok   .srv-net-status-dot { background: #16a34a; }
   .srv-net-cancelled .srv-net-status-dot { background: #ca8a04; }

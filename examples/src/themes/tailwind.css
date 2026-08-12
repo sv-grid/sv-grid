@@ -1,7 +1,8 @@
 /* ============================================================
  * TAILWIND - slate + indigo. Inter font.
  * ============================================================ */
-html[data-preset='tailwind'] .demo-page {
+html[data-preset='tailwind'] .demo-page,
+html[data-preset='tailwind'] .page-warm {
   --sg-bg: #ffffff;
   --sg-fg: #0f172a;
   --sg-muted: #64748b;
@@ -37,7 +38,8 @@ html[data-preset='tailwind'] .demo-page .demo-aside {
   background: #f8fafc;
   border-color: #e2e8f0 !important;
 }
-html[data-preset='tailwind'][data-theme='dark'] .demo-page {
+html[data-preset='tailwind'][data-theme='dark'] .demo-page,
+html[data-preset='tailwind'][data-theme='dark'] .page-warm {
   --sg-bg: #0f172a;
   --sg-fg: #f8fafc;
   --sg-muted: #94a3b8;

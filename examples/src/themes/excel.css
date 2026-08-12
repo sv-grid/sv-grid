@@ -3,7 +3,8 @@
  * headers, iconic Excel green (#107c41) selection accent.
  * Sharp corners. Aptos / Segoe UI.
  * ============================================================ */
-html[data-preset='excel'] .demo-page {
+html[data-preset='excel'] .demo-page,
+html[data-preset='excel'] .page-warm {
   --sg-bg: #ffffff;
   --sg-fg: #323130;
   --sg-muted: #605e5c;
@@ -41,7 +42,8 @@ html[data-preset='excel'] .demo-page .demo-aside {
   background: #f3f2f1;
   border-color: #d2d0ce !important;
 }
-html[data-preset='excel'][data-theme='dark'] .demo-page {
+html[data-preset='excel'][data-theme='dark'] .demo-page,
+html[data-preset='excel'][data-theme='dark'] .page-warm {
   --sg-bg: #1b1a19;
   --sg-fg: #f3f2f1;
   --sg-muted: #c8c6c4;

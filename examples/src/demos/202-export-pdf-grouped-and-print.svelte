@@ -124,21 +124,21 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
+  <div class="note text-sm shrink-0">
     Group the grid, then export. The <strong>PDF</strong> and <strong>Excel</strong>
     files include a group header + a subtotal row (Qty + Price) per cluster.
     <strong>Print</strong> opens the browser "Save as PDF" view.
   </div>
 
   <div class="flex flex-wrap items-center gap-2 shrink-0">
-    <span class="text-xs text-slate-500">Group by</span>
+    <span class="note text-xs">Group by</span>
     <button class="chip" class:on={groupBy.length === 0} onclick={() => applyGroup([])}>None</button>
     <button class="chip" class:on={groupBy.join() === 'country'} onclick={() => applyGroup(['country'])}>Country</button>
     <button class="chip" class:on={groupBy.join() === 'country,company'} onclick={() => applyGroup(['country', 'company'])}>Country + Company</button>
 
-    <span class="mx-1 h-5 w-px bg-slate-300 dark:bg-slate-700"></span>
+    <span class="sep mx-1 h-5 w-px"></span>
 
-    <label class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+    <label class="note flex items-center gap-1.5 text-xs">
       <input type="checkbox" checked={orientation === 'landscape'} onchange={(e) => (orientation = e.currentTarget.checked ? 'landscape' : 'portrait')} class="h-4 w-4" />
       Landscape
     </label>
@@ -165,7 +165,7 @@
     />
   </div>
 
-  <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="note text-xs shrink-0">
     Enterprise feature. Grouping is auto-carried into the export - no
     <code>groupBy</code> option needed. Currency + number columns get summed
     subtotals; the PDF uses our own pdfmake layout (repeated header, page
@@ -174,23 +174,27 @@
 </section>
 
 <style>
+  .note { color: var(--sg-muted, rgb(100 116 139)); }
+  .sep  { background: var(--sg-border, rgb(203 213 225)); }
   .chip, .btn {
-    border-radius: 0.375rem;
-    border: 1px solid rgb(203 213 225);
+    border-radius: var(--sg-radius, 0.375rem);
+    border: 1px solid var(--sg-border, rgb(203 213 225));
     padding: 0.3rem 0.7rem;
     font-size: 0.8rem;
     font-weight: 500;
-    background: white;
-    color: rgb(15 23 42);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, rgb(15 23 42));
     cursor: pointer;
   }
-  .chip.on { border-color: rgb(79 70 229); background: rgb(238 242 255); color: rgb(55 48 163); }
-  .btn:disabled { opacity: 0.5; }
-  .btn-primary { border-color: rgb(79 70 229); background: rgb(79 70 229); color: white; }
-  :global(.dark) .chip, :global(.dark) .btn {
-    border-color: rgb(51 65 85);
-    background: rgb(15 23 42);
-    color: rgb(241 245 249);
+  .chip.on {
+    border-color: var(--sg-accent, rgb(79 70 229));
+    background: color-mix(in srgb, var(--sg-accent, rgb(79 70 229)) 12%, var(--sg-bg, #fff));
+    color: var(--sg-accent, rgb(55 48 163));
   }
-  :global(.dark) .chip.on { background: rgb(30 27 75); color: rgb(199 210 254); }
+  .btn:disabled { opacity: 0.5; }
+  .btn-primary {
+    border-color: var(--sg-accent, rgb(79 70 229));
+    background: var(--sg-accent, rgb(79 70 229));
+    color: var(--sg-on-accent, #fff);
+  }
 </style>

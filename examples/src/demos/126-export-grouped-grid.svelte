@@ -378,7 +378,6 @@
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
     background: var(--sg-header-bg, #f8fafc);
   }
-  :global([data-theme='dark']) .ex-preview-head { background: rgba(148,163,184,0.10); }
   .ex-preview-eyebrow {
     font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--sg-muted, #64748b); font-weight: 700;
@@ -392,10 +391,10 @@
     align-items: center;
     padding: 4px 8px;
     border-radius: 5px;
-    background: rgba(99,102,241,0.06);
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 6%, transparent 94%);
     font-size: 11.5px;
   }
-  :global([data-theme='dark']) .ex-group-li { background: rgba(99,102,241,0.14); }
+  :global([data-theme='dark']) .ex-group-li { background: color-mix(in srgb, var(--sg-accent, #6366f1) 14%, transparent 86%); }
   .ex-group-name { font-weight: 600; }
   .ex-group-count { font-size: 10.5px; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; }
   .ex-group-overflow {
@@ -414,7 +413,8 @@
   }
   .ex-snippet {
     margin: 0; padding: 8px 10px;
-    background: #0f172a; color: #e2e8f0;
+    /* Code block reads as an inset surface - fallbacks keep the old dark slab. */
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #0f172a)); color: var(--sg-fg, #e2e8f0);
     border-radius: 6px;
     font-family: ui-monospace, SFMono-Regular, monospace;
     font-size: 11px;

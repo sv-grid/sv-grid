@@ -25,8 +25,6 @@
    */
   import {
     SvGrid,
-    SvToaster,
-    toast,
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
@@ -303,7 +301,7 @@
   let sectorFilter = $state<Sector | "All">("All");
 
   // ---- Notifications: a lightweight desk feed. The tick loop surfaces the odd
-  // notable move as a toast + a bell entry (throttled so it stays an occasional
+  // notable move as a bell entry (throttled so it stays an occasional
   // heads-up, never a stream). Purely local demo state - no engine, no watching.
   type Notif = {
     id: number;
@@ -332,8 +330,6 @@
     };
     notifications = [n, ...notifications].slice(0, 24);
     unread += 1;
-    // Linger a while - a desk alert you can actually read, not a blink.
-    toast[up ? "success" : "warning"](n.detail, { title: n.title, duration: 9000 });
   }
 
   function toggleBell() {
@@ -418,7 +414,7 @@
     rows = nextRows;
     pulses = nextPulses;
     ticks += 1;
-    // Occasionally surface the standout mover as a toast + bell notification.
+    // Occasionally surface the standout mover as a bell notification.
     if (
       topMover &&
       Math.abs(topMover.pctChange) >= NOTIF_PCT &&
@@ -1014,8 +1010,6 @@
   </div>
 </section>
 
-<SvToaster position="top-right" max={3} />
-
 <style>
   /* Keep every data cell at one size. Without this the grid cells inherit the
      page's 16px, which reads oddly next to the 11-13px chips/labels - the tags
@@ -1105,7 +1099,7 @@
     cursor: pointer;
   }
   .td-btn:hover {
-    background: var(--sg-header-bg, #f1f5f9);
+    background: var(--sg-row-hover-bg, #f1f5f9);
   }
 
   /* ─── Notifications bell + panel ──────────────────────────────── */
@@ -1130,11 +1124,11 @@
       border-color 0.14s ease;
   }
   .td-bell:hover {
-    background: var(--sg-header-bg, #f1f5f9);
+    background: var(--sg-row-hover-bg, #f1f5f9);
   }
   .td-bell-on {
-    color: var(--site-accent, #2563eb);
-    border-color: color-mix(in srgb, var(--site-accent, #2563eb) 45%, var(--sg-border, #cbd5e1));
+    color: var(--sg-accent, #2563eb);
+    border-color: color-mix(in srgb, var(--sg-accent, #2563eb) 45%, var(--sg-border, #cbd5e1));
   }
   .td-bell-badge {
     position: absolute;
@@ -1185,7 +1179,7 @@
   .td-notif-clear {
     border: 0;
     background: transparent;
-    color: var(--site-accent, #2563eb);
+    color: var(--sg-accent, #2563eb);
     font-size: 11px;
     font-weight: 600;
     text-transform: none;
@@ -1215,7 +1209,7 @@
     border-radius: 8px;
   }
   .td-notif-item:hover {
-    background: var(--sg-header-bg, #f1f5f9);
+    background: var(--sg-row-hover-bg, #f1f5f9);
   }
   .td-notif-dot {
     width: 8px;
@@ -1274,7 +1268,7 @@
   }
   .td-chip-active {
     border-color: transparent;
-    box-shadow: 0 0 0 2px var(--site-accent, #2563eb) inset;
+    box-shadow: 0 0 0 2px var(--sg-accent, #2563eb) inset;
     font-weight: 600;
   }
   .td-chip-count {
@@ -1484,7 +1478,7 @@
     min-width: 0;
     height: 68%;
     max-height: 30px;
-    color: #64748b;
+    color: var(--sg-muted, #64748b);
   }
   :global(.td-spark-pct) {
     flex: 0 0 auto;

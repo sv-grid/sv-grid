@@ -259,7 +259,7 @@
   /* Stars (read-only display) */
   :global(.ce-stars) { display: inline-flex; gap: 2px; }
   :global(.ce-star)  {
-    color: #cbd5e1; font-size: 18px; line-height: 1;
+    color: var(--sg-border, #cbd5e1); font-size: 18px; line-height: 1;
   }
   :global(.ce-star-on) { color: #f59e0b; }
 

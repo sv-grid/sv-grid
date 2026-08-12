@@ -92,6 +92,6 @@
   .hm-sub { font-size: 0.78rem; color: var(--sg-muted, #6b7280); }
   .hm-seg { display: inline-flex; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
   .hm-seg-btn { border: 0; background: var(--sg-bg, #fff); color: var(--sg-muted, #6b7280); font: inherit; font-size: 0.82rem; padding: 5px 12px; cursor: pointer; }
-  .hm-seg-btn.hm-on { background: var(--sg-accent, #4f46e5); color: #fff; }
+  .hm-seg-btn.hm-on { background: var(--sg-accent, #4f46e5); color: var(--sg-on-accent, #fff); }
   .hm-body { flex: 1 1 auto; min-height: 0; padding: 8px; }
 </style>

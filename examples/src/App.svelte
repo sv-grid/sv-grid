@@ -83,10 +83,12 @@
   ]
   const PRESETS: { id: Preset; label: string }[] =
     PRESET_GROUPS.flatMap((g) => g.presets)
+  // Ember (the house theme) is the starting point here and on the website, so
+  // the standalone gallery and svgrid.com open on the same look.
   function readPreset(): Preset {
-    if (typeof localStorage === 'undefined') return 'default'
+    if (typeof localStorage === 'undefined') return 'ember'
     const stored = localStorage.getItem('sg-preset')
-    return (PRESETS.some((p) => p.id === stored) ? stored : 'default') as Preset
+    return (PRESETS.some((p) => p.id === stored) ? stored : 'ember') as Preset
   }
 
   let route = $state(readHash() || landingDemo.id)
@@ -110,14 +112,11 @@
     }
   })
 
-  // Theme preset (shadcn / Excel / Fluent / Material). `default` clears
-  // the attribute so the gallery's original tokens stay in effect.
+  // Theme preset (shadcn / Excel / Fluent / Material). `default` is a real
+  // preset too (themes/default.css - the cool slate palette), so it declares
+  // its own tokens rather than inheriting whatever shell hosts the gallery.
   $effect(() => {
-    if (preset === 'default') {
-      document.documentElement.removeAttribute('data-preset')
-    } else {
-      document.documentElement.setAttribute('data-preset', preset)
-    }
+    document.documentElement.setAttribute('data-preset', preset)
     try {
       localStorage.setItem('sg-preset', preset)
     } catch {

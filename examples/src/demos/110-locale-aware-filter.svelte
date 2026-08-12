@@ -151,7 +151,7 @@
 <style>
   .info {
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(16,185,129,0.04));
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 5%, transparent);
     border-radius: 8px; padding: 10px 14px;
     font-size: 13px; color: var(--sg-fg, #0f172a);
   }
@@ -164,7 +164,7 @@
     font-weight: 700; color: var(--sg-muted, #64748b);
   }
   .hint-inline { font-size: 12px; align-self: flex-end; color: var(--sg-muted, #64748b); }
-  .hint-inline strong { color: #6366f1; }
+  .hint-inline strong { color: var(--sg-accent, #6366f1); }
   .ctrl input, .ctrl select {
     border: 1px solid var(--sg-input-border, #cbd5e1);
     background: var(--sg-input-bg, #fff);
@@ -175,7 +175,7 @@
     color: var(--sg-muted, #64748b); font-size: 12px; font-style: italic;
     margin-top: 4px !important;
   }
-  .hint strong { font-style: normal; color: #6366f1; font-weight: 700; }
+  .hint strong { font-style: normal; color: var(--sg-accent, #6366f1); font-weight: 700; }
 
   .samples { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
   .samples-label {
@@ -191,6 +191,6 @@
     font-size: 11px; font-family: ui-monospace, monospace;
     cursor: pointer;
   }
-  .sample:hover { background: color-mix(in oklab, #6366f1 8%, transparent);
-                  border-color: #6366f1; color: #4338ca; }
+  .sample:hover { background: color-mix(in oklab, var(--sg-accent, #6366f1) 8%, transparent);
+                  border-color: var(--sg-accent, #6366f1); color: var(--sg-accent, #4338ca); }
 </style>

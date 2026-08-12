@@ -16,6 +16,25 @@ export type ThemePalette = {
   bg: string; fg: string; muted: string; border: string
   headerBg: string; headerFg: string; accent: string
   rowAlt: string; rowHover: string; selectionBg: string
+  /* Optional refinements. A preset that leaves these out keeps the derived
+     behaviour it had before they existed, so adding one to a single preset
+     never shifts the others. */
+  /** Inset surface (master-detail region, generated auth pages). Defaults to `headerBg`. */
+  bgSubtle?: string
+  /** Underline below the leaf header row, when it should read stronger than a cell border. */
+  headerBorder?: string
+  /** Header label color, when it should differ from `headerFg`. */
+  headerLabel?: string
+  /** Frozen-column body cells. Without it the grid derives a tint from `headerBg` + `accent`. */
+  pinnedBg?: string
+  /** Frozen-column header cells. */
+  pinnedHeaderBg?: string
+  /** The 1px line on a pinned column's inside edge. Defaults to `border`. */
+  pinnedDivider?: string
+  /** Top/bottom border of pinned ROWS. Defaults to a translucent accent. */
+  pinnedBorder?: string
+  /** Drop shadow cast by a pinned column into the scroll area. */
+  pinnedShadow?: string
 }
 
 export type ThemePreset = {
@@ -27,12 +46,32 @@ export type ThemePreset = {
   radius: number
   /** Font stack applied to the app surface. */
   font: string
+  /** Header label typography. Mode-independent, like `radius` and `font`. */
+  headerType?: { weight?: string; size?: string; transform?: string; tracking?: string }
   light: ThemePalette
   dark: ThemePalette
 }
 
-/** The built-in theme presets, in gallery order (default first). */
+/** The built-in theme presets, in gallery order (SvGrid's own theme first). */
 export const themePresets: ThemePreset[] = [
+  // Ember is SvGrid's signature look - the palette svgrid.com itself runs on, so
+  // a screenshot of the site's grids is reproducible with one stylesheet import.
+  // Unlike the rest of this list it mimics no external design system: warm
+  // neutrals (warm off-white ground and warm ink in light, warm near-black in
+  // dark) with Svelte orange as the single accent.
+  // Orange is spent only on selection, focus and the active-cell ring. The
+  // chrome stays quiet: the header sits a hair off the page ground and earns
+  // its separation from the underline plus small tracked caps, and the frozen
+  // columns are a warm neutral rather than the accent tint the grid would
+  // otherwise derive (which landed right on top of the selection color).
+  { id: 'ember', name: 'Ember', radius: 8, font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    headerType: { weight: '600', size: '11.5px', transform: 'uppercase', tracking: '0.05em' },
+    light: { bg: '#fdfbf8', fg: '#1b1613', muted: '#6b625a', border: '#e7e1d8', headerBg: '#fbf9f5', headerFg: '#1b1613', accent: '#ff3e00', rowAlt: '#faf7f2', rowHover: '#f3ede4', selectionBg: '#ffe3d6',
+      bgSubtle: '#f4f0ea', headerBorder: '#ddd4c8', headerLabel: '#6b625a',
+      pinnedBg: '#faf7f2', pinnedHeaderBg: '#f6f2ec', pinnedDivider: '#d8cfc2', pinnedBorder: '#d8cfc2', pinnedShadow: 'rgba(94, 72, 52, 0.18)' },
+    dark: { bg: '#1a1512', fg: '#f4efe8', muted: '#a89e93', border: '#2c2520', headerBg: '#1c1713', headerFg: '#f4efe8', accent: '#ff5a1f', rowAlt: '#171310', rowHover: '#241d18', selectionBg: '#3a2318',
+      bgSubtle: '#211b16', headerBorder: '#352c25', headerLabel: '#a89e93',
+      pinnedBg: '#1e1814', pinnedHeaderBg: '#211b16', pinnedDivider: '#3a312a', pinnedBorder: '#3a312a', pinnedShadow: 'rgba(10, 6, 3, 0.55)' } },
   { id: 'shadcn', name: 'shadcn/ui', radius: 6, font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
     light: { bg: '#ffffff', fg: '#09090b', muted: '#71717a', border: '#e4e4e7', headerBg: '#fafafa', headerFg: '#71717a', accent: '#18181b', rowAlt: '#ffffff', rowHover: '#f4f4f5', selectionBg: '#f4f4f5' },
     dark: { bg: '#0a0a0a', fg: '#fafafa', muted: '#a1a1aa', border: '#27272a', headerBg: '#18181b', headerFg: '#a1a1aa', accent: '#fafafa', rowAlt: '#0a0a0a', rowHover: '#18181b', selectionBg: '#27272a' } },
@@ -123,12 +162,28 @@ export function resolveThemeTokens(preset: ThemePreset | undefined, mode: ThemeM
     '--sg-border': p.border,
     '--sg-header-bg': p.headerBg,
     '--sg-header-fg': p.headerFg,
+    ...(p.headerBorder ? { '--sg-header-border': p.headerBorder } : {}),
+    ...(p.headerLabel ? { '--sg-header-label-color': p.headerLabel } : {}),
+    ...(resolved.headerType?.weight ? { '--sg-header-weight': resolved.headerType.weight } : {}),
+    ...(resolved.headerType?.size ? { '--sg-header-size': resolved.headerType.size } : {}),
+    ...(resolved.headerType?.transform ? { '--sg-header-transform': resolved.headerType.transform } : {}),
+    ...(resolved.headerType?.tracking ? { '--sg-header-tracking': resolved.headerType.tracking } : {}),
     // A subtle inset surface (used by e.g. the master-detail region behind the
     // nested grid). Themed so it isn't a fixed light grey on dark presets.
-    '--sg-bg-subtle': p.headerBg,
+    // Presets whose header sits almost on the page ground set `bgSubtle`
+    // separately, otherwise their inset surfaces would vanish.
+    '--sg-bg-subtle': p.bgSubtle ?? p.headerBg,
     '--sg-row-alt-bg': p.rowAlt,
     '--sg-row-hover-bg': p.rowHover,
     '--sg-selection-bg': p.selectionBg,
+    // Frozen columns/rows. Left unset the grid mixes the accent into the header
+    // color, which suits presets with a cool, low-chroma accent; a preset with a
+    // saturated accent should name these instead.
+    ...(p.pinnedBg ? { '--sg-pinned-bg': p.pinnedBg } : {}),
+    ...(p.pinnedHeaderBg ? { '--sg-pinned-header-bg': p.pinnedHeaderBg } : {}),
+    ...(p.pinnedDivider ? { '--sg-pinned-divider': p.pinnedDivider } : {}),
+    ...(p.pinnedBorder ? { '--sg-pinned-border': p.pinnedBorder } : {}),
+    ...(p.pinnedShadow ? { '--sg-pinned-shadow-color': p.pinnedShadow } : {}),
     // Inputs/checkboxes: pin to the theme's own surface so they never borrow the
     // host page's input tokens (which is how a themed grid ended up with dark
     // checkboxes on a light page when the host mode differed).
@@ -144,7 +199,7 @@ export function resolveThemeTokens(preset: ThemePreset | undefined, mode: ThemeM
     // grid. CSS custom properties pierce shadow DOM, so defining them here (on
     // the themed container) reaches the scrollbar. Derive them from the palette
     // so the scrollbar tracks the preset + light/dark mode like everything else.
-    '--sg-scrollbar-bg': p.headerBg,
+    '--sg-scrollbar-bg': p.bgSubtle ?? p.headerBg,
     '--sg-scrollbar-border': p.border,
     '--sg-scrollbar-thumb': p.muted,
     '--sg-scrollbar-thumb-hover': p.fg,

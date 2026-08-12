@@ -322,7 +322,10 @@
 </section>
 
 <style>
-  .fx-shell { height: 100%; }
+  /* The success banner's green carries meaning, so it stays off the theme
+     tokens; only its dark ramp is adjusted here for legibility. */
+  .fx-shell { height: 100%; --fx-ok-fg: #166534; }
+  :global([data-theme='dark']) .fx-shell { --fx-ok-fg: #4ade80; }
   .fx-head  { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .fx-title { margin: 0; font-size: 20px; font-weight: 700; color: var(--sg-fg, #0f172a); }
   .fx-sub   { margin: 4px 0 0 0; font-size: 13px; color: var(--sg-muted, #64748b); max-width: 70ch; line-height: 1.45; }
@@ -341,9 +344,9 @@
   }
   .fx-btn:disabled { opacity: 0.5; cursor: default; }
   .fx-btn-primary {
-    background: linear-gradient(135deg, #6366f1, #a855f7);
-    color: #fff; border: 0;
-    box-shadow: 0 1px 2px rgba(99, 102, 241, 0.30);
+    background: var(--sg-accent, #6366f1);
+    color: var(--sg-on-accent, #fff); border: 0;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--sg-accent, #6366f1) 30%, transparent);
   }
   .fx-btn-ghost   {
     background: transparent; color: var(--sg-fg, #0f172a);
@@ -353,13 +356,12 @@
 
   .fx-success {
     background: rgba(34,197,94,0.10);
-    color: #166534;
+    color: var(--fx-ok-fg);
     border: 1px solid rgba(34,197,94,0.40);
     border-radius: 6px;
     padding: 8px 12px;
     font-size: 12.5px;
   }
-  :global([data-theme='dark']) .fx-success { color: #4ade80; }
 
   .fx-foot {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;

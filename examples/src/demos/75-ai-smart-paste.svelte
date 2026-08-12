@@ -836,7 +836,7 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
   ]
 </script>
 
-<section class="flex flex-col flex-1 min-h-0 gap-3">
+<section class="ai-demo flex flex-col flex-1 min-h-0 gap-3">
   <!-- Smart paste zone -->
   <div class="ai-zone shrink-0">
     <header class="ai-zone-head">
@@ -1003,10 +1003,35 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
 </section>
 
 <style>
+  /* Status colours (insert / update / warn / error) carry meaning, so they
+     stay off the theme tokens; only their dark ramp is adjusted here. */
+  .ai-demo {
+    --ai-pos-bg:   rgba(16, 185, 129, 0.15);
+    --ai-pos-fg:   #047857;
+    --ai-info-bg:  rgba(59, 130, 246, 0.15);
+    --ai-info-fg:  #1d4ed8;
+    --ai-info-soft: rgba(59, 130, 246, 0.05);
+    --ai-warn-bg:  rgba(245, 158, 11, 0.15);
+    --ai-warn-fg:  #b45309;
+    --ai-neg-bg:   rgba(239, 68, 68, 0.15);
+    --ai-neg-fg:   #b91c1c;
+  }
+  :global([data-theme="dark"]) .ai-demo {
+    --ai-pos-bg:   rgba(16, 185, 129, 0.22);
+    --ai-pos-fg:   #6ee7b7;
+    --ai-info-bg:  rgba(59, 130, 246, 0.22);
+    --ai-info-fg:  #93c5fd;
+    --ai-info-soft: rgba(59, 130, 246, 0.10);
+    --ai-warn-bg:  rgba(245, 158, 11, 0.22);
+    --ai-warn-fg:  #fcd34d;
+    --ai-neg-bg:   rgba(239, 68, 68, 0.22);
+    --ai-neg-fg:   #fca5a5;
+  }
+
   /* ---- Paste zone ---- */
   .ai-zone {
-    border: 1px solid rgba(99, 102, 241, 0.28);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.03));
+    border: 1px solid color-mix(in srgb, var(--sg-accent, #6366f1) 28%, transparent);
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 5%, transparent);
     border-radius: 12px;
     padding: 14px;
     display: flex; flex-direction: column; gap: 12px;
@@ -1015,9 +1040,9 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
   .ai-zone-title  { display: inline-flex; align-items: flex-start; gap: 10px; }
   .ai-zone-h1     { font-weight: 700; font-size: 15px; color: var(--sg-fg, #0f172a); display: inline-flex; align-items: center; gap: 8px; }
   .ai-zone-h2     { font-size: 12px; color: var(--sg-muted, #64748b); margin-top: 1px; }
-  .ai-spark       { font-size: 22px; line-height: 1; filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.55)); padding-top: 2px; }
+  .ai-spark       { font-size: 22px; line-height: 1; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--sg-accent, #a855f7) 55%, transparent)); padding-top: 2px; }
   .ai-pill        {
-    background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
     padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
   }
@@ -1047,16 +1072,16 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
     transition: border-color 80ms, background 80ms, transform 80ms;
   }
   .ai-sample-card:hover {
-    border-color: #6366f1;
-    background: rgba(99, 102, 241, 0.04);
+    border-color: var(--sg-accent, #6366f1);
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 4%, transparent);
     transform: translateY(-1px);
   }
   .ai-sample-icon {
     width: 32px; height: 32px;
     display: inline-grid; place-items: center;
     border-radius: 8px;
-    background: rgba(99, 102, 241, 0.10);
-    color: #4338ca;
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent);
+    color: var(--sg-accent, #4338ca);
     font-size: 16px; font-weight: 700; flex: none;
   }
   .ai-sample-body  { display: flex; flex-direction: column; min-width: 0; }
@@ -1076,15 +1101,18 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
     resize: vertical;
     outline: none;
   }
-  .ai-textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.18); }
+  .ai-textarea:focus {
+    border-color: var(--sg-accent, #6366f1);
+    box-shadow: var(--sg-focus-ring, 0 0 0 3px color-mix(in srgb, var(--sg-accent, #6366f1) 18%, transparent));
+  }
 
   /* ---- Action bar ---- */
   .ai-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .ai-primary {
-    background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border: 0; border-radius: 8px;
     padding: 8px 14px; font-weight: 600; cursor: pointer;
-    box-shadow: 0 1px 2px rgba(99, 102, 241, 0.25);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--sg-accent, #6366f1) 25%, transparent);
   }
   .ai-primary:disabled { opacity: 0.50; cursor: default; box-shadow: none; }
   .ai-accept {
@@ -1152,13 +1180,8 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
     cursor: default;
   }
   .ai-accept:disabled .ai-accept-badge {
-    background: rgba(148, 163, 184, 0.18);
+    background: var(--sg-border, rgba(148, 163, 184, 0.18));
     color: var(--sg-muted, #94a3b8);
-  }
-  :global([data-theme='dark']) .ai-accept:disabled {
-    background: rgba(148, 163, 184, 0.10);
-    color: rgba(148, 163, 184, 0.65);
-    box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.20) inset;
   }
   .ai-cancel {
     background: transparent; color: var(--sg-muted, #64748b);
@@ -1171,7 +1194,7 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
     font-size: 11px; color: var(--sg-muted, #64748b);
     max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .ai-skip-count   { color: rgba(148, 163, 184, 0.9); font-weight: 500; margin-left: 4px; }
+  .ai-skip-count   { color: var(--sg-muted, rgba(148, 163, 184, 0.9)); font-weight: 500; margin-left: 4px; }
 
   /* ---- Preview panel ---- */
   .ai-preview {
@@ -1194,9 +1217,9 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
     font-size: 11px; font-weight: 600;
     padding: 1px 8px; border-radius: 999px;
   }
-  .ai-count-insert { background: rgba(16, 185, 129, 0.15); color: #047857; }
-  .ai-count-update { background: rgba(59, 130, 246, 0.15); color: #1d4ed8; }
-  .ai-count-skip   { background: rgba(148, 163, 184, 0.18); color: #475569; }
+  .ai-count-insert { background: var(--ai-pos-bg);  color: var(--ai-pos-fg); }
+  .ai-count-update { background: var(--ai-info-bg); color: var(--ai-info-fg); }
+  .ai-count-skip   { background: var(--sg-border, rgba(148, 163, 184, 0.18)); color: var(--sg-muted, #475569); }
   .ai-legend       { font-size: 11px; color: var(--sg-muted, #64748b); }
 
   .ai-card-list {
@@ -1215,8 +1238,8 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
     transition: border-color 80ms, background 80ms;
   }
   .ai-row-card.ai-mode-insert { border-left: 3px solid #10b981; }
-  .ai-row-card.ai-mode-update { border-left: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.03); }
-  .ai-row-card.ai-mode-skip   { border-left: 3px solid #cbd5e1; opacity: 0.65; }
+  .ai-row-card.ai-mode-update { border-left: 3px solid #3b82f6; background: var(--ai-info-soft); }
+  .ai-row-card.ai-mode-skip   { border-left: 3px solid var(--sg-border, #cbd5e1); opacity: 0.65; }
 
   .ai-row-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .ai-row-id        { display: inline-flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
@@ -1224,8 +1247,8 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
   .ai-row-email     {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 11px;
-    background: rgba(99, 102, 241, 0.10);
-    color: #4338ca;
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent);
+    color: var(--sg-accent, #4338ca);
     padding: 1px 6px; border-radius: 4px;
   }
 
@@ -1246,17 +1269,17 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
     color: var(--sg-muted, #64748b);
   }
   .ai-tag:disabled            { opacity: 0.40; cursor: not-allowed; }
-  .ai-tag-insert.is-active    { background: #d1fae5; color: #047857; }
-  .ai-tag-update.is-active    { background: #dbeafe; color: #1d4ed8; }
-  .ai-tag-skip.is-active      { background: #e2e8f0; color: #334155; }
+  .ai-tag-insert.is-active    { background: var(--ai-pos-bg);  color: var(--ai-pos-fg); }
+  .ai-tag-update.is-active    { background: var(--ai-info-bg); color: var(--ai-info-fg); }
+  .ai-tag-skip.is-active      { background: var(--sg-bg-subtle, var(--sg-header-bg, #e2e8f0)); color: var(--sg-fg, #334155); }
   .ai-tag:hover:not(:disabled):not(.is-active) { background: var(--sg-row-hover-bg, rgba(148,163,184,0.10)); color: var(--sg-fg, #0f172a); }
 
   /* Confidence badge */
   .ai-badge        { font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
                      padding: 2px 6px; border-radius: 4px; }
-  .ai-badge-high   { background: #d1fae5; color: #047857; }
-  .ai-badge-medium { background: #fef3c7; color: #b45309; }
-  .ai-badge-low    { background: #fee2e2; color: #b91c1c; }
+  .ai-badge-high   { background: var(--ai-pos-bg);  color: var(--ai-pos-fg); }
+  .ai-badge-medium { background: var(--ai-warn-bg); color: var(--ai-warn-fg); }
+  .ai-badge-low    { background: var(--ai-neg-bg);  color: var(--ai-neg-fg); }
 
   /* Field grid */
   .ai-row-fields {
@@ -1272,57 +1295,13 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
 
   /* Inline match / issues */
   .ai-row-match  {
-    font-size: 11px; color: #1d4ed8;
-    background: rgba(59, 130, 246, 0.08);
+    font-size: 11px; color: var(--ai-info-fg);
+    background: var(--ai-info-bg);
     padding: 4px 8px; border-radius: 6px;
   }
   .ai-row-issues {
-    font-size: 11px; color: #b45309;
-    background: rgba(245, 158, 11, 0.10);
+    font-size: 11px; color: var(--ai-warn-fg);
+    background: var(--ai-warn-bg);
     padding: 4px 8px; border-radius: 6px;
   }
-
-  /* ---- Dark-mode polish ---- */
-  :global([data-theme="dark"]) .ai-zone {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.10), rgba(168, 85, 247, 0.06));
-    border-color: rgba(99, 102, 241, 0.40);
-  }
-  :global([data-theme="dark"]) .ai-zone-h2,
-  :global([data-theme="dark"]) .ai-sample-tag,
-  :global([data-theme="dark"]) .ai-legend,
-  :global([data-theme="dark"]) .ai-log-summary { color: #94a3b8; }
-  :global([data-theme="dark"]) .ai-zone-h1,
-  :global([data-theme="dark"]) .ai-sample-label,
-  :global([data-theme="dark"]) .ai-row-name { color: #f1f5f9; }
-  :global([data-theme="dark"]) .ai-clipboard,
-  :global([data-theme="dark"]) .ai-sample-card,
-  :global([data-theme="dark"]) .ai-textarea,
-  :global([data-theme="dark"]) .ai-mode-picker,
-  :global([data-theme="dark"]) .ai-preview,
-  :global([data-theme="dark"]) .ai-row-card {
-    background: #0f172a;
-    border-color: #334155;
-    color: #f1f5f9;
-  }
-  :global([data-theme="dark"]) .ai-sample-card:hover { border-color: #818cf8; background: rgba(99, 102, 241, 0.08); }
-  :global([data-theme="dark"]) .ai-sample-icon { background: rgba(99, 102, 241, 0.20); color: #c7d2fe; }
-  :global([data-theme="dark"]) .ai-row-email   { background: rgba(99, 102, 241, 0.22); color: #c7d2fe; }
-  :global([data-theme="dark"]) .ai-preview-head { background: #1e293b; border-bottom-color: #334155; }
-  :global([data-theme="dark"]) .ai-row-card.ai-mode-update { background: rgba(59, 130, 246, 0.10); }
-  :global([data-theme="dark"]) .ai-tag           { color: #94a3b8; }
-  :global([data-theme="dark"]) .ai-tag-insert.is-active { background: rgba(16, 185, 129, 0.22); color: #6ee7b7; }
-  :global([data-theme="dark"]) .ai-tag-update.is-active { background: rgba(59, 130, 246, 0.22); color: #93c5fd; }
-  :global([data-theme="dark"]) .ai-tag-skip.is-active   { background: rgba(148, 163, 184, 0.22); color: #cbd5e1; }
-  :global([data-theme="dark"]) .ai-tag:hover:not(:disabled):not(.is-active) { background: rgba(148, 163, 184, 0.14); color: #f1f5f9; }
-  :global([data-theme="dark"]) .ai-field dt    { color: #64748b; }
-  :global([data-theme="dark"]) .ai-field dd    { color: #f1f5f9; }
-  :global([data-theme="dark"]) .ai-empty       { color: #475569; }
-  :global([data-theme="dark"]) .ai-count-insert { background: rgba(16, 185, 129, 0.22); color: #6ee7b7; }
-  :global([data-theme="dark"]) .ai-count-update { background: rgba(59, 130, 246, 0.22); color: #93c5fd; }
-  :global([data-theme="dark"]) .ai-count-skip   { background: rgba(148, 163, 184, 0.20); color: #cbd5e1; }
-  :global([data-theme="dark"]) .ai-row-match    { background: rgba(59, 130, 246, 0.16); color: #93c5fd; }
-  :global([data-theme="dark"]) .ai-row-issues   { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
-  :global([data-theme="dark"]) .ai-badge-high   { background: rgba(16, 185, 129, 0.22); color: #6ee7b7; }
-  :global([data-theme="dark"]) .ai-badge-medium { background: rgba(245, 158, 11, 0.22); color: #fcd34d; }
-  :global([data-theme="dark"]) .ai-badge-low    { background: rgba(239, 68, 68, 0.22); color: #fca5a5; }
 </style>

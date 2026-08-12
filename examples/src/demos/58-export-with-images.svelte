@@ -152,11 +152,11 @@
       type="button"
       onclick={doExport}
       disabled={busy}
-      class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+      class="ex-btn rounded border px-3 py-1 disabled:opacity-50"
     >
       {busy ? 'Exporting…' : '⬇ Export XLSX with images'}
     </button>
-    <span class="text-slate-500 dark:text-slate-400">
+    <span class="ex-note">
       Open the file - each row's thumbnail will be embedded in the Thumb column.
     </span>
   </div>
@@ -193,3 +193,14 @@
     />
   </div>
 </section>
+
+<style>
+  .ex-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
+    cursor: pointer;
+  }
+  .ex-btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, rgba(148, 163, 184, 0.12)); }
+  .ex-note { color: var(--sg-muted, #64748b); }
+</style>

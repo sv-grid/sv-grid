@@ -65,15 +65,15 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="kb-note text-sm">
       The same <strong>&lt;SvGrid&gt;</strong>, two views. Status lanes x an assignee
       swimlane; <strong>In progress</strong> caps at 2 (enforced); each header sums its
       story points.
     </div>
-    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
-      <button class="px-3 py-1 {view === 'board' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+    <div class="kb-seg inline-flex rounded-md border overflow-hidden text-sm shrink-0">
+      <button class="kb-seg-btn px-3 py-1 {view === 'board' ? 'kb-on' : ''}"
         onclick={() => (view = 'board')}>Board</button>
-      <button class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+      <button class="kb-seg-btn px-3 py-1 {view === 'table' ? 'kb-on' : ''}"
         onclick={() => (view = 'table')}>Table</button>
     </div>
   </div>
@@ -117,7 +117,7 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="kb-muted text-sm shrink-0">
     {rows.length} stories · {points(rows)} points committed
   </footer>
 </section>
@@ -126,14 +126,27 @@
   <div class="flex flex-col gap-1.5">
     <div class="font-semibold text-[0.82rem] leading-snug">{s.title}</div>
     <div class="flex items-center justify-between gap-2">
-      <span class="inline-flex items-center gap-1.5 text-[0.72rem] text-slate-500 dark:text-slate-400">
+      <span class="kb-muted inline-flex items-center gap-1.5 text-[0.72rem]">
         <SvAvatar name={s.assignee} size={18} />
         {s.assignee.split(' ')[0]}
       </span>
       <span class="inline-flex items-center gap-1.5">
         <SvChip variant={chipVariant(s.priority)} size="sm">{s.priority}</SvChip>
-        <span class="text-[0.7rem] font-semibold text-slate-400">{s.points}</span>
+        <span class="kb-muted text-[0.7rem] font-semibold">{s.points}</span>
       </span>
     </div>
   </div>
 {/snippet}
+
+<style>
+  .kb-note  { color: var(--sg-muted, #475569); }
+  .kb-muted { color: var(--sg-muted, #64748b); }
+  .kb-seg   { border-color: var(--sg-border, #cbd5e1); }
+  .kb-seg-btn {
+    background: transparent;
+    color: inherit;
+    border: 0;
+    cursor: pointer;
+  }
+  .kb-seg-btn.kb-on { background: var(--sg-accent, #1e293b); color: var(--sg-on-accent, #fff); }
+</style>

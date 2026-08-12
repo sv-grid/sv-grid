@@ -324,9 +324,9 @@
   }
   .pe-btn:disabled { opacity: 0.5; cursor: default; }
   .pe-btn-primary {
-    background: linear-gradient(135deg, #16a34a, #047857);
-    color: #fff; border: 0;
-    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.30);
+    background: var(--sg-accent, #16a34a);
+    color: var(--sg-on-accent, #fff); border: 0;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--sg-accent, #16a34a) 30%, transparent);
   }
   .pe-btn-ghost   {
     background: transparent; color: var(--sg-fg, #0f172a);
@@ -421,7 +421,7 @@
   .pe-strength-label { font-size: 11px; margin-top: 2px; font-weight: 600; }
 
   .pe-warn { font-size: 11.5px; color: #b91c1c; }
-  .pe-tip  { background: rgba(99,102,241,0.08); border-radius: 6px; padding: 8px 10px; font-size: 12px; color: var(--sg-muted, #475569); }
+  .pe-tip  { background: color-mix(in srgb, var(--sg-accent, #6366f1) 8%, transparent); border-radius: 6px; padding: 8px 10px; font-size: 12px; color: var(--sg-muted, #475569); }
 
   .pe-dlg-foot {
     display: flex; justify-content: flex-end; gap: 8px;

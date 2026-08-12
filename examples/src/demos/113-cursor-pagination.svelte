@@ -274,11 +274,11 @@
   .pagebar {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(59,130,246,0.03));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 4%, transparent 96%);
     border-radius: 8px; padding: 10px 12px;
   }
   .pgbtn {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border: 0; border-radius: 6px; padding: 6px 14px;
     font-size: 13px; font-weight: 700; cursor: pointer;
   }
@@ -299,7 +299,7 @@
   }
   .cursor-label {
     font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
-    color: #6366f1; font-weight: 700;
+    color: var(--sg-accent, #6366f1); font-weight: 700;
   }
   .cursor-card code {
     font-family: ui-monospace, monospace; font-size: 10.5px;
@@ -308,13 +308,13 @@
   }
 
   .explain {
-    border: 1px solid color-mix(in oklab, #6366f1 30%, transparent);
-    background: color-mix(in oklab, #6366f1 5%, var(--sg-bg, #fff));
+    border: 1px solid color-mix(in oklab, var(--sg-accent, #6366f1) 30%, transparent);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 5%, var(--sg-bg, #fff));
     border-radius: 8px; padding: 8px 12px;
     font-size: 12px; color: var(--sg-fg, #0f172a);
     line-height: 1.4;
   }
-  .explain strong { color: #4338ca; margin-right: 4px; }
+  .explain strong { color: var(--sg-accent, #4338ca); margin-right: 4px; }
 
   :global(td.mono-cell) {
     font-family: ui-monospace, monospace; font-size: 11.5px;

@@ -109,6 +109,6 @@
   .ds-dot { width: 9px; height: 9px; border-radius: 3px; }
   .ds-seg { display: inline-flex; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
   .ds-seg-btn { border: 0; background: var(--sg-bg, #fff); color: var(--sg-muted, #6b7280); font: inherit; font-size: 0.82rem; padding: 5px 12px; cursor: pointer; }
-  .ds-seg-btn.ds-on { background: var(--sg-accent, #4f46e5); color: #fff; }
+  .ds-seg-btn.ds-on { background: var(--sg-accent, #4f46e5); color: var(--sg-on-accent, #fff); }
   .ds-body { flex: 1 1 auto; min-height: 0; padding: 8px; }
 </style>

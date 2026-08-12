@@ -229,7 +229,7 @@
       <button
         type="button"
         onclick={() => toggle(props.node.id)}
-        class="inline-flex h-4 w-4 items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+        class="inline-flex h-4 w-4 items-center justify-center rounded tm-toggle"
         aria-label="Toggle"
         aria-expanded={!!expanded[props.node.id]}
       >{expanded[props.node.id] ? '▾' : '▸'}</button>
@@ -244,7 +244,7 @@
 <section class="space-y-6">
   <div>
     <h3 class="mb-2 font-semibold">Tree data - file system</h3>
-    <p class="mb-2 text-xs text-slate-500 dark:text-slate-400">
+    <p class="mb-2 text-xs tm-note">
       Click a row, then use <kbd>→</kbd>/<kbd>←</kbd> to expand/collapse,
       or <kbd>Enter</kbd>/<kbd>Space</kbd> to toggle.
     </p>
@@ -270,27 +270,27 @@
 
   <div>
     <h3 class="mb-2 font-semibold">Master / detail - orders → line items</h3>
-    <p class="mb-2 text-sm text-slate-500 dark:text-slate-400">Click an order to load its lines below.</p>
+    <p class="mb-2 text-sm tm-note">Click an order to load its lines below.</p>
     <div class="grid gap-4 md:grid-cols-2">
       <div>
-        <h4 class="mb-1 text-xs uppercase tracking-wide text-slate-500">Orders</h4>
-        <ul class="divide-y divide-slate-200 dark:divide-slate-700 rounded border border-slate-200 dark:border-slate-700">
+        <h4 class="mb-1 text-xs uppercase tracking-wide tm-eyebrow">Orders</h4>
+        <ul class="divide-y rounded border tm-list">
           {#each orders as o (o.id)}
             <li>
               <button
                 type="button"
                 onclick={() => (selectedOrder = o.id)}
-                class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 {selectedOrder === o.id ? 'bg-blue-50 dark:bg-blue-900/40' : ''}"
+                class="w-full text-left px-3 py-2 text-sm tm-order {selectedOrder === o.id ? 'tm-order-on' : ''}"
               >
                 <span class="font-medium">{o.id}</span>
-                <span class="text-slate-500 dark:text-slate-400"> · {o.customer} · {o.date}</span>
+                <span class="tm-meta"> · {o.customer} · {o.date}</span>
               </button>
             </li>
           {/each}
         </ul>
       </div>
       <div>
-        <h4 class="mb-1 text-xs uppercase tracking-wide text-slate-500">Line items - {selectedOrder}</h4>
+        <h4 class="mb-1 text-xs uppercase tracking-wide tm-eyebrow">Line items - {selectedOrder}</h4>
         {#key selectedOrder}
           <SvGrid responsive={true}
             data={detailRows}
@@ -310,3 +310,16 @@
     </div>
   </div>
 </section>
+
+<style>
+  /* Page chrome follows the active grid theme via --sg-* tokens. */
+  .tm-note { color: var(--sg-muted, #64748b); }
+  .tm-eyebrow { color: var(--sg-muted, #64748b); }
+  .tm-toggle:hover { background: var(--sg-row-hover-bg, #e2e8f0); }
+  .tm-list { border-color: var(--sg-border, #e2e8f0); }
+  .tm-list li + li { border-color: var(--sg-border, #e2e8f0); }
+  .tm-order:hover { background: var(--sg-row-hover-bg, #f8fafc); }
+  .tm-order-on { background: var(--sg-selection-bg, #eff6ff); }
+  .tm-order-on:hover { background: var(--sg-selection-bg, #eff6ff); }
+  .tm-meta { color: var(--sg-muted, #64748b); }
+</style>

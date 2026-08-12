@@ -717,11 +717,10 @@
   }
   .sp-tab:hover { background: var(--sg-header-bg, #f1f5f9); }
   .sp-tab-active {
-    background: #1e293b;
-    color: #fff;
+    background: var(--sg-accent, #1e293b);
+    color: var(--sg-on-accent, #fff);
     border-color: transparent;
   }
-  :global([data-theme='dark']) .sp-tab-active { background: #f97316; }
   .sp-tab-n {
     font-size: 11px;
     background: rgba(15, 23, 42, 0.08);
@@ -828,7 +827,6 @@
     border-radius: 999px;
     overflow: visible;
   }
-  :global([data-theme='dark']) :global(.sp-stock-bar) { background: rgba(148,163,184,.22); }
   :global(.sp-stock-fill) {
     position: absolute;
     inset: 0 auto 0 0;
@@ -839,9 +837,8 @@
   :global(.sp-stock-mark) {
     position: absolute;
     top: -2px; bottom: -2px;
-    border-left: 2px dashed #1e293b;
+    border-left: 2px dashed var(--sg-fg, #1e293b);
   }
-  :global([data-theme='dark']) :global(.sp-stock-mark) { border-left-color: #cbd5e1; }
   :global(.sp-stock-low .sp-stock-fill) { background: #f59e0b; }
   :global(.sp-stock-out .sp-stock-fill) { background: #dc2626; }
   :global(.sp-stock-foot) {
@@ -880,7 +877,6 @@
     border-radius: 999px;
     overflow: visible;
   }
-  :global([data-theme='dark']) :global(.sp-inv-bar) { background: rgba(148,163,184,.22); }
   :global(.sp-inv-fill) { position: absolute; inset: 0 auto 0 0; height: 100%; border-radius: 999px; }
   :global(.sp-inv-ok)   { background: linear-gradient(90deg, #16a34a, #22c55e); }
   :global(.sp-inv-low)  { background: linear-gradient(90deg, #d97706, #f59e0b); }
@@ -888,9 +884,8 @@
   :global(.sp-inv-threshold) {
     position: absolute;
     top: -3px; bottom: -3px;
-    border-left: 2px dashed #1e293b;
+    border-left: 2px dashed var(--sg-fg, #1e293b);
   }
-  :global([data-theme='dark']) :global(.sp-inv-threshold) { border-left-color: #cbd5e1; }
   :global(.sp-inv-text) { font-size: 11.5px; }
 
   :global(.sp-days) { display: inline-flex; flex-direction: column; line-height: 1.2; font-size: 11.5px; }
@@ -954,7 +949,7 @@
     width: 36px;
     height: 20px;
     border-radius: 999px;
-    background: #cbd5e1;
+    background: var(--sg-border, #cbd5e1);
     border: 0;
     position: relative;
     cursor: pointer;
@@ -967,7 +962,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #fff;
+    background: var(--sg-bg, #fff);
     transition: left 150ms ease;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
   }

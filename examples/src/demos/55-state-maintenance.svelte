@@ -478,6 +478,18 @@
 {/if}
 
 <style>
+  /* Danger / success colours carry meaning, so they stay off the theme
+     tokens; only their dark ramp is adjusted here for legibility. The
+     modal is portalled outside .sm-shell, hence both roots declare them. */
+  .sm-shell, .sm-backdrop {
+    --sm-bad-bg: #fee2e2; --sm-bad-fg: #b91c1c; --sm-bad-border: #fecaca;
+    --sm-ok-bg:  #dcfce7; --sm-ok-fg:  #166534;
+  }
+  :global([data-theme='dark']) .sm-shell,
+  :global([data-theme='dark']) .sm-backdrop {
+    --sm-bad-bg: rgba(239,68,68,.18); --sm-bad-fg: #f87171; --sm-bad-border: rgba(239,68,68,0.4);
+    --sm-ok-bg:  rgba(34,197,94,.2);  --sm-ok-fg:  #4ade80;
+  }
   .sm-shell { min-height: 0; }
 
   /* Toolbar */
@@ -521,10 +533,9 @@
   }
   .sm-btn-primary:hover:not(:disabled) { filter: brightness(0.95); background: var(--sg-accent, #2563eb); }
   .sm-btn-danger {
-    border-color: #fecaca;
-    color: #b91c1c;
+    border-color: var(--sm-bad-border);
+    color: var(--sm-bad-fg);
   }
-  :global([data-theme='dark']) .sm-btn-danger { border-color: rgba(239,68,68,0.4); color: #f87171; }
 
   .sm-stat {
     background: var(--sg-header-bg, #f1f5f9);
@@ -533,8 +544,7 @@
     padding: 3px 9px;
     font-size: 11.5px;
   }
-  .sm-stat-on { background: #dcfce7; color: #166534; }
-  :global([data-theme='dark']) .sm-stat-on { background: rgba(34,197,94,.2); color: #4ade80; }
+  .sm-stat-on { background: var(--sm-ok-bg); color: var(--sm-ok-fg); }
 
   /* Auto-save toggle (custom) */
   .sm-toggle {
@@ -648,7 +658,7 @@
     border-radius: 5px;
   }
   .sm-hist-active { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); }
-  .sm-hist-active .sm-hist-time, .sm-hist-active .sm-hist-index { color: rgba(255,255,255,.85); }
+  .sm-hist-active .sm-hist-time, .sm-hist-active .sm-hist-index { color: color-mix(in srgb, var(--sg-on-accent, #fff) 85%, transparent); }
   .sm-hist-row {
     width: 100%;
     text-align: left;
@@ -727,11 +737,10 @@
     align-items: center;
   }
   .sm-error {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--sm-bad-bg);
+    color: var(--sm-bad-fg);
     padding: 6px 10px;
     border-radius: 6px;
     font-size: 12px;
   }
-  :global([data-theme='dark']) .sm-error { background: rgba(239,68,68,.18); color: #f87171; }
 </style>

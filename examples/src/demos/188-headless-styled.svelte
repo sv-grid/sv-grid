@@ -120,9 +120,9 @@
     border-right: 1px solid var(--sg-border, #e2e8f0);
   }
   .hs-seg button:last-child { border-right: 0; }
-  .hs-seg button.on { background: #6366f1; color: #fff; }
+  .hs-seg button.on { background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff); }
   .hs-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--sg-fg, #0f172a); }
-  .hs-check input { accent-color: #6366f1; }
+  .hs-check input { accent-color: var(--sg-accent, #6366f1); }
 
   /* ---- base table (all presets share this) ---- */
   .hs-table table { border-collapse: collapse; width: 100%; font-size: 13px; color: var(--sg-fg, #0f172a); }
@@ -130,8 +130,8 @@
     text-align: left; font-weight: 700; cursor: pointer; user-select: none;
     color: var(--sg-fg, #0f172a); white-space: nowrap;
   }
-  .hs-table th:hover { color: #6366f1; }
-  .hs-ind { color: #6366f1; margin-left: 6px; font-size: 10px; }
+  .hs-table th:hover { color: var(--sg-accent, #6366f1); }
+  .hs-ind { color: var(--sg-accent, #6366f1); margin-left: 6px; font-size: 10px; }
   .hs-table td.num, .hs-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .hs-strong { font-weight: 600; }
   /* density */
@@ -139,7 +139,7 @@
   .hs-compact th, .hs-compact td { padding: 5px 10px; }
   /* zebra */
   .hs-zebra tbody tr:nth-child(even) td { background: color-mix(in oklab, var(--sg-muted, #94a3b8) 8%, transparent); }
-  .hs-table tbody tr:hover td { background: color-mix(in oklab, #6366f1 8%, transparent); }
+  .hs-table tbody tr:hover td { background: var(--sg-row-hover-bg, color-mix(in oklab, #6366f1 8%, transparent)); }
 
   /* ---- preset: minimal (underline header only) ---- */
   .hs-minimal th { border-bottom: 2px solid var(--sg-border, #e2e8f0); }
@@ -156,8 +156,8 @@
   .hs-card tbody tr td { background: var(--sg-bg, #fff); border-top: 1px solid var(--sg-border, #e2e8f0); border-bottom: 1px solid var(--sg-border, #e2e8f0); }
   .hs-card tbody tr td:first-child { border-left: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px 0 0 10px; }
   .hs-card tbody tr td:last-child { border-right: 1px solid var(--sg-border, #e2e8f0); border-radius: 0 10px 10px 0; }
-  .hs-card tbody tr:hover td { box-shadow: 0 2px 10px rgba(99, 102, 241, 0.14); }
+  .hs-card tbody tr:hover td { box-shadow: 0 2px 10px color-mix(in oklab, var(--sg-accent, #6366f1) 14%, transparent); }
 
   .hs-note { font-size: 12.5px; color: var(--sg-muted, #64748b); margin: 0; }
-  .hs-note strong { color: #6366f1; }
+  .hs-note strong { color: var(--sg-accent, #6366f1); }
 </style>

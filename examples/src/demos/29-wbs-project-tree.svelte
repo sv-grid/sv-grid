@@ -425,10 +425,10 @@
   .t29-kpi-foot { font-size: 11px; color: var(--sg-muted, #64748b); margin-top: 4px; }
 
   .t29-kpi-hero {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(14, 165, 233, 0.04));
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 6%, transparent);
   }
   :global([data-theme='dark']) .t29-kpi-hero {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(14, 165, 233, 0.08));
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 16%, transparent);
   }
   .t29-kpi-hero-row {
     display: flex;
@@ -444,13 +444,13 @@
     flex: 1 1 0;
     height: 8px;
     border-radius: 999px;
-    background: rgba(148, 163, 184, 0.25);
+    background: var(--sg-border, rgba(148, 163, 184, 0.25));
     overflow: hidden;
   }
   .t29-kpi-bar-fill {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #2563eb, #06b6d4);
+    background: var(--sg-accent, #2563eb);
     transition: width 200ms ease;
   }
 
@@ -497,14 +497,14 @@
     position: absolute;
     top: 0; bottom: 0;
     width: 0;
-    border-left: 1px dashed rgba(148, 163, 184, 0.35);
+    border-left: 1px dashed var(--sg-border, rgba(148, 163, 184, 0.35));
     pointer-events: none;
   }
   :global(.t29-elbow) {
     position: absolute;
     top: 50%;
     width: 14px;
-    border-top: 1px dashed rgba(148, 163, 184, 0.45);
+    border-top: 1px dashed var(--sg-border, rgba(148, 163, 184, 0.45));
     pointer-events: none;
   }
   :global(.t29-chev) {
@@ -539,7 +539,7 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: rgba(148, 163, 184, 0.6);
+    background: var(--sg-muted, rgba(148, 163, 184, 0.6));
   }
   :global(.t29-phase-icon) {
     width: 28px;
@@ -574,8 +574,8 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #06b6d4);
-    color: #fff;
+    background: var(--sg-accent, #6366f1);
+    color: var(--sg-on-accent, #fff);
     font-weight: 700;
     font-size: 10px;
     display: inline-flex;
@@ -595,7 +595,7 @@
   :global(.t29-pct-bar) {
     height: 8px;
     border-radius: 999px;
-    background: rgba(148, 163, 184, 0.22);
+    background: var(--sg-border, rgba(148, 163, 184, 0.22));
     overflow: hidden;
   }
   :global(.t29-pct-fill) {
@@ -618,7 +618,7 @@
   }
   :global(.t29-pct-text-derived) { color: var(--sg-muted, #64748b); font-style: italic; }
   :global(.t29-pct-tag) {
-    background: rgba(148, 163, 184, 0.18);
+    background: var(--sg-bg-subtle, rgba(148, 163, 184, 0.18));
     color: var(--sg-muted, #64748b);
     font-size: 9.5px;
     font-weight: 700;

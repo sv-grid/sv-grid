@@ -51,7 +51,7 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0 flex-wrap">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="kb-note text-sm">
       The same <strong>&lt;SvGrid&gt;</strong>, two views. Switch the lane axis live, and
       <strong>drag a lane header</strong> to reorder columns.
     </div>
@@ -60,16 +60,16 @@
         <label class="flex items-center gap-1.5 text-sm">
           Group by:
           <select
-            class="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-transparent capitalize"
+            class="kb-select px-2 py-1 rounded border bg-transparent capitalize"
             bind:value={groupField}>
             {#each GROUPS as g (g)}<option value={g}>{g}</option>{/each}
           </select>
         </label>
       {/if}
-      <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
-        <button class="px-3 py-1 {view === 'board' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+      <div class="kb-switch inline-flex rounded-md border overflow-hidden text-sm">
+        <button class="kb-seg px-3 py-1 {view === 'board' ? 'kb-seg-on' : ''}"
           onclick={() => (view = 'board')}>Board</button>
-        <button class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        <button class="kb-seg px-3 py-1 {view === 'table' ? 'kb-seg-on' : ''}"
           onclick={() => (view = 'table')}>Table</button>
       </div>
     </div>
@@ -108,7 +108,26 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="kb-foot text-sm shrink-0">
     Grouped by <strong class="capitalize">{groupField}</strong> · {rows.length} tasks · drag a header to reorder.
   </footer>
 </section>
+
+<style>
+  .kb-note { color: var(--sg-muted, #475569); }
+  .kb-foot { color: var(--sg-muted, #64748b); }
+  .kb-switch { border-color: var(--sg-border, #cbd5e1); }
+  .kb-select {
+    border-color: var(--sg-border, #cbd5e1);
+    color: var(--sg-fg, #0f172a);
+  }
+  .kb-seg {
+    background: transparent;
+    color: var(--sg-fg, #0f172a);
+    cursor: pointer;
+  }
+  .kb-seg-on {
+    background: var(--sg-accent, #1e293b);
+    color: var(--sg-on-accent, #fff);
+  }
+</style>

@@ -394,8 +394,10 @@
 }
 
 /* Pinned columns read as "frozen" via three layered cues:
-     1. A distinct tint (slightly stronger than the header) so the
-        pinned strip is visible even before you scroll.
+     1. A distinct fill (slightly stronger than the header) so the
+        pinned strip is visible even before you scroll. Themes with a
+        saturated accent set --sg-pinned-bg / --sg-pinned-header-bg to a
+        neutral instead of taking the accent mix below.
      2. A solid 1px divider on the inside edge (toward the scrollable
         middle) and a soft drop shadow extending into the scroll area.
      3. A thin accent stripe on the outermost edge that turns on when
@@ -407,14 +409,14 @@
   background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 92%, var(--sg-accent, #2563eb) 8%));
   box-shadow:
     inset -1px 0 0 var(--sg-pinned-divider, var(--sg-border, #cbd5e1)),
-    8px 0 12px -6px rgba(15, 23, 42, 0.22);
+    8px 0 12px -6px var(--sg-pinned-shadow-color, rgba(15, 23, 42, 0.22));
 }
 .sv-grid-cell[data-pinned="right"],
 .sv-grid-column[data-pinned="right"] {
   background: var(--sg-pinned-bg, color-mix(in oklab, var(--sg-header-bg, #f1f5f9) 92%, var(--sg-accent, #2563eb) 8%));
   box-shadow:
     inset 1px 0 0 var(--sg-pinned-divider, var(--sg-border, #cbd5e1)),
-    -8px 0 12px -6px rgba(15, 23, 42, 0.22);
+    -8px 0 12px -6px var(--sg-pinned-shadow-color, rgba(15, 23, 42, 0.22));
 }
 /* Header row pinned cells get a slightly darker variant + bolder font
    so the frozen header itself reads as part of the grid chrome. */
@@ -586,6 +588,10 @@
   font-size: var(--sg-header-size, inherit);
   text-transform: var(--sg-header-transform, none);
   letter-spacing: var(--sg-header-tracking, normal);
+  /* Themes that keep the header close to the page ground lean on this line
+     rather than a fill to separate header from body. Scoped to the leaf header
+     row so strengthening it doesn't thicken every cell border. */
+  border-bottom-color: var(--sg-header-border, var(--sg-border, #e2e8f0));
 }
 
 /* Header drag-to-reorder. The `draggable` attribute is only set
@@ -815,7 +821,8 @@
   inset-inline-end: 0;
   width: 16px;
   background: var(--sg-header-bg, #f5f7fb);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  /* Continues the leaf-header underline across the scrollbar gutter. */
+  border-bottom: 1px solid var(--sg-header-border, rgba(15, 23, 42, 0.08));
   /* Above pinned header cells (z-index 30) so the gap above the
      vertical scrollbar stays clean over a frozen column. */
   z-index: 41;
@@ -1625,6 +1632,11 @@ select.sv-grid-fr-editor {
   background: transparent;
   font: inherit;
   color: inherit;
+  /* Form controls get `text-transform: none` from the UA sheet, which the
+     `font` shorthand doesn't undo. Without this the label ignores
+     --sg-header-transform on every sortable column. */
+  text-transform: inherit;
+  letter-spacing: inherit;
   text-align: left;
   cursor: pointer;
 }

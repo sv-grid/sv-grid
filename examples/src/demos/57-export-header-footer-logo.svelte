@@ -106,12 +106,12 @@
       type="button"
       onclick={doExport}
       disabled={busy || !logoPng}
-      class="inline-flex items-center gap-2 rounded-md border border-indigo-600 bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+      class="xp-btn inline-flex items-center gap-2 rounded-md px-3 py-1.5 font-medium disabled:opacity-50"
     >
       {#if logoPng}<img src={logoPng} alt="" class="h-5 w-5 rounded" />{/if}
       {busy ? 'Exporting…' : 'Download branded XLSX'}
     </button>
-    <div class="text-slate-500 dark:text-slate-400">
+    <div class="xp-note">
       The logo above is embedded in the xlsx page header; the footer carries the date + Excel page-number macros.
     </div>
   </div>
@@ -136,3 +136,13 @@
     />
   </div>
 </section>
+
+<style>
+  .xp-btn {
+    border: 1px solid var(--sg-accent, #4f46e5);
+    background: var(--sg-accent, #4f46e5);
+    color: var(--sg-on-accent, #fff);
+  }
+  .xp-btn:hover:not(:disabled) { filter: brightness(1.08); }
+  .xp-note { color: var(--sg-muted, #64748b); }
+</style>

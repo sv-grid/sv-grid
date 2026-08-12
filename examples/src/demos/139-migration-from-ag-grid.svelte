@@ -297,9 +297,8 @@ $: filtered = deals.filter(d =>
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 12px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: var(--sg-header-bg, #f8fafc);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
   }
-  :global([data-theme='dark']) .mg-side-head { background: rgba(148,163,184,0.10); }
   .mg-side-eyebrow {
     font-size: 11.5px; font-weight: 700;
     color: var(--sg-fg, #1e293b);
@@ -307,7 +306,7 @@ $: filtered = deals.filter(d =>
   .mg-side-tag {
     font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
     color: var(--sg-muted, #64748b);
-    background: var(--sg-header-bg, #f1f5f9);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f1f5f9));
     padding: 1px 7px; border-radius: 999px;
   }
   .mg-grid { flex: 1; min-height: 0; }
@@ -321,21 +320,21 @@ $: filtered = deals.filter(d =>
   .mg-code-card {
     border: 1px solid var(--sg-border, #e2e8f0);
     border-radius: 10px;
-    background: #0f172a;
+    background: var(--sg-bg, #0f172a);
     overflow: hidden;
     display: flex; flex-direction: column;
   }
   .mg-code-head {
     padding: 6px 12px;
-    color: #cbd5e1;
+    color: var(--sg-muted, #cbd5e1);
     font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
     font-weight: 700;
-    border-bottom: 1px solid rgba(148,163,184,0.18);
-    background: #0c1729;
+    border-bottom: 1px solid var(--sg-border, rgba(148,163,184,0.18));
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #0c1729));
   }
   .mg-code {
     margin: 0; flex: 1;
-    color: #e2e8f0;
+    color: var(--sg-fg, #e2e8f0);
     font-family: ui-monospace, SFMono-Regular, monospace;
     font-size: 11px; line-height: 1.55;
     padding: 12px 14px;

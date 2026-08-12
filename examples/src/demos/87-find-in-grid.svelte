@@ -132,9 +132,10 @@
   }
   .info p { margin: 0; flex: 1; min-width: 0; }
   .info kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-              background: rgba(148,163,184,0.18); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+              background: var(--sg-bg-subtle, var(--sg-header-bg, rgba(148,163,184,0.18)));
+              padding: 1px 6px; border-radius: 4px; font-size: 11px; }
   .mock-cmd {
-    background: #4338ca; color: #fff; border: 0; border-radius: 6px;
+    background: var(--sg-accent, #4338ca); color: var(--sg-on-accent, #fff); border: 0; border-radius: 6px;
     padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
   }
 

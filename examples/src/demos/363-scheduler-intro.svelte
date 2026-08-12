@@ -135,7 +135,7 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="sc-note text-sm">
       The same grid, two views. <strong>Add</strong> (button or double-click an
       empty slot), <strong>drag</strong> to reschedule, drag an edge to resize,
       <strong>click</strong> to edit (and make any event <strong>recurring</strong>
@@ -144,14 +144,14 @@
     </div>
     <div class="flex items-center gap-2 shrink-0">
       <button
-        class="rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+        class="sc-btn rounded-md px-3 py-1 text-sm"
         onclick={addEventNow}>+ Add event</button>
-      <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
+      <div class="sc-switch inline-flex rounded-md overflow-hidden text-sm">
         <button
-          class="px-3 py-1 {view === 'calendar' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          class="px-3 py-1 {view === 'calendar' ? 'sc-on' : 'bg-transparent'}"
           onclick={() => (view = 'calendar')}>Calendar</button>
         <button
-          class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          class="px-3 py-1 {view === 'table' ? 'sc-on' : 'bg-transparent'}"
           onclick={() => (view = 'table')}>Table</button>
       </div>
     </div>
@@ -199,7 +199,23 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="sc-muted text-sm shrink-0">
     {rows.length} events this week
   </footer>
 </section>
+
+<style>
+  .sc-note   { color: var(--sg-muted, #475569); }
+  .sc-muted  { color: var(--sg-muted, #64748b); }
+  .sc-switch { border: 1px solid var(--sg-border, #cbd5e1); }
+  .sc-btn {
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, transparent);
+    color: var(--sg-fg, inherit);
+  }
+  .sc-btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .sc-on {
+    background: var(--sg-accent, #1e293b);
+    color: var(--sg-on-accent, #fff);
+  }
+</style>

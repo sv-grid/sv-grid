@@ -192,21 +192,21 @@
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex flex-wrap items-end gap-3 text-sm shrink-0">
     <label class="flex flex-col">
-      <span class="text-slate-500 dark:text-slate-400">Search</span>
+      <span class="ss-muted">Search</span>
       <input
         type="text"
         bind:value={q}
         oninput={() => (page = 0)}
         placeholder="name or email"
-        class="rounded border border-slate-300 dark:border-slate-600 bg-transparent px-2 py-1 w-56"
+        class="ss-field rounded px-2 py-1 w-56"
       />
     </label>
     <label class="flex flex-col">
-      <span class="text-slate-500 dark:text-slate-400">Department</span>
+      <span class="ss-muted">Department</span>
       <select
         bind:value={dept}
         onchange={() => (page = 0)}
-        class="rounded border border-slate-300 dark:border-slate-600 bg-transparent px-2 py-1 w-48"
+        class="ss-field rounded px-2 py-1 w-48"
       >
         <option value="">All</option>
         <option>Engineering</option>
@@ -217,7 +217,7 @@
         <option>Operations</option>
       </select>
     </label>
-    <span class="ml-auto text-slate-500 dark:text-slate-400">
+    <span class="ss-muted ml-auto">
       {#if loading}<span aria-live="polite">Loading…</span>{:else}{total.toLocaleString()} matches{/if}
     </span>
   </div>
@@ -255,14 +255,29 @@
       type="button"
       onclick={() => (page = Math.max(0, page - 1))}
       disabled={page === 0 || loading}
-      class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 disabled:opacity-50"
+      class="ss-btn rounded px-3 py-1 disabled:opacity-50"
     >‹ Previous</button>
-    <span class="text-slate-500 dark:text-slate-400">Page {page + 1} of {pageCount.toLocaleString()}</span>
+    <span class="ss-muted">Page {page + 1} of {pageCount.toLocaleString()}</span>
     <button
       type="button"
       onclick={() => (page = Math.min(pageCount - 1, page + 1))}
       disabled={page + 1 >= pageCount || loading}
-      class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 disabled:opacity-50"
+      class="ss-btn rounded px-3 py-1 disabled:opacity-50"
     >Next ›</button>
   </nav>
 </section>
+
+<style>
+  .ss-muted { color: var(--sg-muted, #64748b); }
+  .ss-field {
+    border: 1px solid var(--sg-input-border, #cbd5e1);
+    background: var(--sg-input-bg, transparent);
+    color: var(--sg-fg, #0f172a);
+  }
+  .ss-btn {
+    border: 1px solid var(--sg-border, #cbd5e1);
+    color: var(--sg-fg, #0f172a);
+    background: transparent;
+  }
+  .ss-btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f1f5f9); }
+</style>

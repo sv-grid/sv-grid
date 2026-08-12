@@ -89,29 +89,29 @@
   <div class="flex flex-wrap items-center gap-2 text-sm shrink-0">
     <span class="font-medium">Quick filters:</span>
     <button type="button" onclick={filterMidRangePrices}
-      class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+      class="qf-btn rounded-md px-3 py-1.5"
       >Price $100 - $300</button>
     <button type="button" onclick={filterLargeQty}
-      class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+      class="qf-btn rounded-md px-3 py-1.5"
       >Qty 50 - 120</button>
     <button type="button" onclick={filterRecentSixMonths}
-      class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+      class="qf-btn rounded-md px-3 py-1.5"
       >Sell date - last 6 months</button>
     <button type="button" onclick={filterOlderHalf}
-      class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+      class="qf-btn rounded-md px-3 py-1.5"
       >Sell date - older half (180 - 365 days ago)</button>
     <button type="button" onclick={clearAll}
       class="rounded-md border border-rose-300 dark:border-rose-700 px-3 py-1.5 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50"
       >Clear all</button>
-    <span class="ml-auto text-xs text-slate-500 dark:text-slate-400">
+    <span class="qf-hint ml-auto text-xs">
       Or open the column menu (three dots) and pick Between.
     </span>
   </div>
 
   {#if Object.keys(activeFilters).length > 0}
-    <div class="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 shrink-0">
-      <div class="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">Active filters</div>
-      <pre class="text-xs leading-relaxed text-slate-700 dark:text-slate-300 m-0">{JSON.stringify(activeFilters, null, 2)}</pre>
+    <div class="qf-panel rounded-md px-3 py-2 shrink-0">
+      <div class="qf-panel-label text-[10px] uppercase tracking-wide mb-1">Active filters</div>
+      <pre class="qf-pre text-xs leading-relaxed m-0">{JSON.stringify(activeFilters, null, 2)}</pre>
     </div>
   {/if}
 
@@ -136,3 +136,19 @@
     />
   </div>
 </section>
+
+<style>
+  .qf-btn {
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .qf-btn:hover { background: var(--sg-row-hover-bg, #f8fafc); }
+  .qf-hint { color: var(--sg-muted, #64748b); }
+  .qf-panel {
+    border: 1px solid var(--sg-border, #e2e8f0);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
+  }
+  .qf-panel-label { color: var(--sg-muted, #64748b); }
+  .qf-pre { color: var(--sg-fg, #334155); }
+</style>

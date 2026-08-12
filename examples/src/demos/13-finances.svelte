@@ -190,13 +190,13 @@
   <span class="ledger-status ledger-status-{props.value.toLowerCase()}">{props.value}</span>
 {/snippet}
 
-<section class="flex flex-col flex-1 min-h-0 gap-3">
+<section class="ledger flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex flex-wrap items-end gap-4 text-sm shrink-0">
     <label class="flex flex-col">
-      <span class="text-slate-500 dark:text-slate-400">Account</span>
+      <span class="ledger-label">Account</span>
       <select
         bind:value={selectedAccount}
-        class="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 min-w-56"
+        class="ledger-select rounded border px-2 py-1 min-w-56"
       >
         {#each ACCOUNTS as a (a.id)}
           <option value={a.id}>{a.label} · {a.currency}</option>
@@ -205,19 +205,19 @@
     </label>
     <div class="ml-auto flex items-end gap-6 text-right">
       <div>
-        <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Money in</div>
-        <div class="text-base font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+        <div class="ledger-label text-xs uppercase tracking-wide">Money in</div>
+        <div class="ledger-amount-pos text-base font-semibold tabular-nums">
           {fmtMoney(summary.inflow, account.currency)}
         </div>
       </div>
       <div>
-        <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Money out</div>
-        <div class="text-base font-semibold text-rose-600 dark:text-rose-400 tabular-nums">
+        <div class="ledger-label text-xs uppercase tracking-wide">Money out</div>
+        <div class="ledger-amount-neg text-base font-semibold tabular-nums">
           {fmtMoney(summary.outflow, account.currency)}
         </div>
       </div>
       <div>
-        <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Latest balance</div>
+        <div class="ledger-label text-xs uppercase tracking-wide">Latest balance</div>
         <div class="text-base font-semibold tabular-nums">
           {fmtMoney(summary.latestBalance, account.currency)}
         </div>
@@ -268,6 +268,31 @@
 </section>
 
 <style>
+  /* Money in / out and the status badges carry meaning, so they keep their
+   * own hues - declared here as local props so the dark variants that keep
+   * them legible live in one place instead of in theme-specific overrides. */
+  .ledger {
+    --led-pos: #16a34a;
+    --led-neg: #dc2626;
+    --led-cleared-bg: #dcfce7;  --led-cleared-fg: #166534;
+    --led-pending-bg: #fef3c7;  --led-pending-fg: #92400e;
+    --led-disputed-bg: #fee2e2; --led-disputed-fg: #b91c1c;
+  }
+  :global([data-theme='dark']) .ledger {
+    --led-pos: #4ade80;
+    --led-neg: #f87171;
+    --led-cleared-bg: rgba(34, 197, 94, 0.18);   --led-cleared-fg: #4ade80;
+    --led-pending-bg: rgba(245, 158, 11, 0.18);  --led-pending-fg: #fbbf24;
+    --led-disputed-bg: rgba(239, 68, 68, 0.18);  --led-disputed-fg: #f87171;
+  }
+
+  .ledger-label { color: var(--sg-muted, #64748b); }
+  .ledger-select {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-input-bg, var(--sg-bg, #fff));
+    color: var(--sg-fg, #0f172a);
+  }
+
   .ledger-chip {
     display: inline-block;
     padding: 2px 8px;
@@ -276,10 +301,8 @@
     font-weight: 600;
     line-height: 1.5;
   }
-  .ledger-amount-pos { color: #16a34a; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .ledger-amount-neg { color: #dc2626; font-weight: 600; font-variant-numeric: tabular-nums; }
-  :global([data-theme='dark']) .ledger-amount-pos { color: #4ade80; }
-  :global([data-theme='dark']) .ledger-amount-neg { color: #f87171; }
+  .ledger-amount-pos { color: var(--led-pos, #16a34a); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ledger-amount-neg { color: var(--led-neg, #dc2626); font-weight: 600; font-variant-numeric: tabular-nums; }
   .ledger-status {
     display: inline-block;
     padding: 2px 8px;
@@ -287,10 +310,7 @@
     font-size: 11px;
     font-weight: 600;
   }
-  .ledger-status-cleared  { background: #dcfce7; color: #166534; }
-  .ledger-status-pending  { background: #fef3c7; color: #92400e; }
-  .ledger-status-disputed { background: #fee2e2; color: #b91c1c; }
-  :global([data-theme='dark']) .ledger-status-cleared  { background: rgba(34, 197, 94, 0.18); color: #4ade80; }
-  :global([data-theme='dark']) .ledger-status-pending  { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
-  :global([data-theme='dark']) .ledger-status-disputed { background: rgba(239, 68, 68, 0.18); color: #f87171; }
+  .ledger-status-cleared  { background: var(--led-cleared-bg, #dcfce7);  color: var(--led-cleared-fg, #166534); }
+  .ledger-status-pending  { background: var(--led-pending-bg, #fef3c7);  color: var(--led-pending-fg, #92400e); }
+  .ledger-status-disputed { background: var(--led-disputed-bg, #fee2e2); color: var(--led-disputed-fg, #b91c1c); }
 </style>

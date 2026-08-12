@@ -281,7 +281,7 @@
 
   /* ---- Plan badges - flat, monochrome by tier ---- */
   .plan-badge        { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
-  .plan-free         { background: #f1f5f9; color: #475569; }
+  .plan-free         { background: var(--sg-bg-subtle, var(--sg-header-bg, #f1f5f9)); color: var(--sg-muted, #475569); }
   .plan-pro          { background: #e0e7ff; color: #4338ca; }
   .plan-enterprise   { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
 
@@ -292,10 +292,10 @@
   .priority-urgent   .priority-dot { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.18); }
   .priority-high     { color: #c2410c; }
   .priority-high     .priority-dot { background: #f97316; }
-  .priority-normal   { color: #475569; }
-  .priority-normal   .priority-dot { background: #94a3b8; }
-  .priority-low      { color: #64748b; }
-  .priority-low      .priority-dot { background: #cbd5e1; }
+  .priority-normal   { color: var(--sg-fg, #475569); }
+  .priority-normal   .priority-dot { background: var(--sg-muted, #94a3b8); }
+  .priority-low      { color: var(--sg-muted, #64748b); }
+  .priority-low      .priority-dot { background: var(--sg-border, #cbd5e1); }
 
   /* ---- Status pills - low-saturation tonal chips ---- */
   .status            { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
@@ -303,11 +303,11 @@
   .status-in_progress { background: #f5f3ff; color: #6d28d9; }
   .status-waiting     { background: #fffbeb; color: #b45309; }
   .status-resolved    { background: #ecfdf5; color: #047857; }
-  .status-closed      { background: #f1f5f9; color: #475569; }
+  .status-closed      { background: var(--sg-bg-subtle, var(--sg-header-bg, #f1f5f9)); color: var(--sg-muted, #475569); }
 
   /* ---- Load - calm bar + numeric ---- */
   .load              { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-  .load-track        { width: 64px; height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden; flex: none; }
+  .load-track        { width: 64px; height: 6px; border-radius: 3px; background: var(--sg-bg-subtle, var(--sg-header-bg, #e2e8f0)); overflow: hidden; flex: none; }
   .load-fill         { display: block; height: 100%; border-radius: 3px; }
   .load-low  .load-fill { background: #10b981; }
   .load-mid  .load-fill { background: #f59e0b; }

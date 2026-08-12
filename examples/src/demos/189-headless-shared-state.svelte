@@ -104,7 +104,7 @@
 <style>
   .ss-wrap { display: flex; flex-direction: column; gap: 14px; padding: 4px; }
   .ss-note { font-size: 13px; color: var(--sg-fg, #0f172a); margin: 0; }
-  .ss-note strong { color: #6366f1; }
+  .ss-note strong { color: var(--sg-accent, #6366f1); }
   .ss-grids { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 640px) { .ss-grids { grid-template-columns: 1fr; } }
   .ss-panel { border: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px; overflow: hidden; }
@@ -118,8 +118,8 @@
     text-align: left; padding: 8px 12px; cursor: pointer; user-select: none; font-weight: 700;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
   }
-  .ss-panel th:hover { color: #6366f1; }
-  .ss-ind { color: #6366f1; margin-left: 5px; font-size: 10px; }
+  .ss-panel th:hover { color: var(--sg-accent, #6366f1); }
+  .ss-ind { color: var(--sg-accent, #6366f1); margin-left: 5px; font-size: 10px; }
   .ss-panel td { padding: 8px 12px; border-bottom: 1px solid var(--sg-border, #eef2f7); }
   .ss-panel td.num, .ss-panel th.num { text-align: right; font-variant-numeric: tabular-nums; }
 </style>

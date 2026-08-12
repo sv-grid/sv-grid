@@ -60,14 +60,14 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="kb-note text-sm">
       The same <strong>&lt;SvGrid&gt;</strong>, two views. Each epic card shows its child
       <strong>stories</strong> - expand a card to see them inline, with their own status.
     </div>
-    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
-      <button class="px-3 py-1 {view === 'board' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+    <div class="kb-seg inline-flex rounded-md border overflow-hidden text-sm shrink-0">
+      <button class="kb-seg-btn px-3 py-1 {view === 'board' ? 'kb-on' : ''}"
         onclick={() => (view = 'board')}>Board</button>
-      <button class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+      <button class="kb-seg-btn px-3 py-1 {view === 'table' ? 'kb-on' : ''}"
         onclick={() => (view = 'table')}>Table</button>
     </div>
   </div>
@@ -105,8 +105,21 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="kb-foot text-sm shrink-0">
     {rows.length} epics · {rows.reduce((s, e) => s + doneStories(e), 0)} of
     {rows.reduce((s, e) => s + e.stories.length, 0)} stories done
   </footer>
 </section>
+
+<style>
+  /* Caption + view-switcher chrome follows the active grid theme. */
+  .kb-note { color: var(--sg-fg, #475569); }
+  .kb-foot { color: var(--sg-muted, #64748b); }
+  .kb-seg { border-color: var(--sg-border, #cbd5e1); }
+  .kb-seg-btn {
+    background: transparent;
+    color: var(--sg-fg, #0f172a);
+    cursor: pointer;
+  }
+  .kb-seg-btn.kb-on { background: var(--sg-accent, #1e293b); color: var(--sg-on-accent, #fff); }
+</style>

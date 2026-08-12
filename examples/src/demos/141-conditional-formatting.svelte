@@ -207,14 +207,14 @@
           type="button"
           class="rounded px-2 py-0.5 border"
           disabled={!anyFilter}
-          style="border-color: var(--sg-border); background: {statScope === 'visible' ? 'var(--sg-accent, #2563eb)' : 'transparent'}; color: {statScope === 'visible' ? '#fff' : 'var(--sg-fg)'}; cursor: {anyFilter ? 'pointer' : 'not-allowed'};"
+          style="border-color: var(--sg-border); background: {statScope === 'visible' ? 'var(--sg-accent, #2563eb)' : 'transparent'}; color: {statScope === 'visible' ? 'var(--sg-on-accent, #fff)' : 'var(--sg-fg)'}; cursor: {anyFilter ? 'pointer' : 'not-allowed'};"
           onclick={() => (statScope = 'visible')}
         >visible</button>
         <button
           type="button"
           class="rounded px-2 py-0.5 border"
           disabled={!anyFilter}
-          style="border-color: var(--sg-border); background: {statScope === 'all' ? 'var(--sg-accent, #2563eb)' : 'transparent'}; color: {statScope === 'all' ? '#fff' : 'var(--sg-fg)'}; cursor: {anyFilter ? 'pointer' : 'not-allowed'};"
+          style="border-color: var(--sg-border); background: {statScope === 'all' ? 'var(--sg-accent, #2563eb)' : 'transparent'}; color: {statScope === 'all' ? 'var(--sg-on-accent, #fff)' : 'var(--sg-fg)'}; cursor: {anyFilter ? 'pointer' : 'not-allowed'};"
           onclick={() => (statScope = 'all')}
         >all</button>
       </span>

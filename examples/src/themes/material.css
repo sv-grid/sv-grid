@@ -3,7 +3,8 @@
  * Material data tables use square cells + medium rounding (8px)
  * for elevated containers.
  * ============================================================ */
-html[data-preset='material'] .demo-page {
+html[data-preset='material'] .demo-page,
+html[data-preset='material'] .page-warm {
   --sg-bg: #fef7ff;                /* M3 baseline surface */
   --sg-fg: #1d1b20;
   --sg-muted: #49454f;
@@ -40,7 +41,8 @@ html[data-preset='material'] .demo-page .demo-aside {
   background: #f3edf7;
   border-color: #cac4d0 !important;
 }
-html[data-preset='material'][data-theme='dark'] .demo-page {
+html[data-preset='material'][data-theme='dark'] .demo-page,
+html[data-preset='material'][data-theme='dark'] .page-warm {
   --sg-bg: #141218;
   --sg-fg: #e6e0e9;
   --sg-muted: #cac4d0;

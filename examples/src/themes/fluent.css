@@ -3,7 +3,8 @@
  * mediumRadius (4px) corners, Segoe UI Variable.
  * Token names verified against the Fluent UI 2 design token spec.
  * ============================================================ */
-html[data-preset='fluent'] .demo-page {
+html[data-preset='fluent'] .demo-page,
+html[data-preset='fluent'] .page-warm {
   --sg-bg: #ffffff;                /* neutralBackground1 */
   --sg-fg: #242424;                /* neutralForeground1 */
   --sg-muted: #616161;             /* neutralForeground2 */
@@ -39,7 +40,8 @@ html[data-preset='fluent'] .demo-page .demo-aside {
   background: #f5f5f5;
   border-color: #e0e0e0 !important;
 }
-html[data-preset='fluent'][data-theme='dark'] .demo-page {
+html[data-preset='fluent'][data-theme='dark'] .demo-page,
+html[data-preset='fluent'][data-theme='dark'] .page-warm {
   --sg-bg: #1f1f1f;
   --sg-fg: #ffffff;
   --sg-muted: #d4d4d4;

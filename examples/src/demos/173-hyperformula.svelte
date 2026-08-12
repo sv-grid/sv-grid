@@ -534,7 +534,7 @@
     position: relative;
   }
   .hf-wrap.resizing :global(tr.sv-grid-row:hover) {
-    background: rgba(59, 130, 246, 0.04);
+    background: var(--sg-row-hover-bg, rgba(59, 130, 246, 0.04));
   }
 
   /* Kill zebra striping AND row hover - spreadsheet UX wants

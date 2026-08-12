@@ -95,7 +95,7 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="sc-lead text-sm">
       <strong>Drag</strong> (or <strong>click</strong>) empty slots to mark a
       <strong>date/time range</strong>; <strong>arrow keys</strong> move the cell,
       <strong>Shift+arrows</strong> extend it. Press <strong>Enter</strong> or
@@ -103,9 +103,9 @@
       cancels). <strong>Ctrl/Cmd-click</strong> events to multi-select (Shift-click
       a range); drag one to move them together, or <strong>Delete</strong> to remove.
     </div>
-    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
-      <button class="px-3 py-1 {view === 'calendar' ? 'bg-slate-800 text-white' : 'bg-transparent'}" onclick={() => (view = 'calendar')}>Calendar</button>
-      <button class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}" onclick={() => (view = 'table')}>Table</button>
+    <div class="sc-seg inline-flex rounded-md overflow-hidden text-sm shrink-0">
+      <button class="sc-seg-btn px-3 py-1 {view === 'calendar' ? 'sc-on' : ''}" onclick={() => (view = 'calendar')}>Calendar</button>
+      <button class="sc-seg-btn px-3 py-1 {view === 'table' ? 'sc-on' : ''}" onclick={() => (view = 'table')}>Table</button>
     </div>
   </div>
 
@@ -145,7 +145,16 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="sc-foot text-sm shrink-0">
     {rows.length} events · {selectedCount} selected{lastRange ? ` · last drag: ${lastRange}` : ''}
   </footer>
 </section>
+
+<style>
+  .sc-lead { color: var(--sg-fg, #475569); }
+  .sc-foot { color: var(--sg-muted, #64748b); }
+  .sc-seg { border: 1px solid var(--sg-border, #cbd5e1); }
+  .sc-seg-btn { background: transparent; color: var(--sg-fg, #0f172a); }
+  .sc-seg-btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .sc-seg-btn.sc-on { background: var(--sg-accent, #1e293b); color: var(--sg-on-accent, #fff); }
+</style>

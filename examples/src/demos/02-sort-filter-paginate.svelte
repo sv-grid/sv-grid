@@ -50,9 +50,9 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex flex-wrap items-center gap-3 text-sm shrink-0">
-    <span class="text-slate-600 dark:text-slate-300">{rows.length.toLocaleString()} rows</span>
-    <span class="text-slate-400">·</span>
-    <span class="text-slate-500 dark:text-slate-400">
+    <span class="sfp-strong">{rows.length.toLocaleString()} rows</span>
+    <span class="sfp-muted">·</span>
+    <span class="sfp-muted">
       Click a header to sort. Shift+click to multi-sort. Type in the filter row.
     </span>
   </div>
@@ -76,3 +76,8 @@
     />
   </div>
 </section>
+
+<style>
+  .sfp-strong { color: var(--sg-fg, #475569); }
+  .sfp-muted  { color: var(--sg-muted, #64748b); }
+</style>

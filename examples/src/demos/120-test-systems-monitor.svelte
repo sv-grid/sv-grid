@@ -448,7 +448,7 @@
     border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a);
     border-radius: 999px; padding: 5px 12px; font-weight: 600; cursor: pointer;
   }
-  .chip.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+  .chip.active { background: var(--sg-accent, #1d4ed8); border-color: var(--sg-accent, #1d4ed8); color: var(--sg-on-accent, #fff); }
   .tg { display: inline-flex; align-items: center; gap: 5px; color: var(--sg-muted, #64748b); cursor: pointer; }
   .live-btn {
     display: inline-flex; align-items: center; gap: 6px;
@@ -461,21 +461,22 @@
   /* Bulk-action bar */
   .bulkbar {
     display: flex; align-items: center; gap: 8px;
-    border: 1px solid #1d4ed8; border-radius: 8px;
-    background: color-mix(in oklab, #1d4ed8 10%, var(--sg-bg, #fff));
+    border: 1px solid var(--sg-accent, #1d4ed8); border-radius: 8px;
+    background: color-mix(in oklab, var(--sg-accent, #1d4ed8) 10%, var(--sg-bg, #fff));
     padding: 7px 12px; font-size: 13px;
   }
-  .bulk-count { font-weight: 700; color: #1d4ed8; margin-right: 4px; }
+  .bulk-count { font-weight: 700; color: var(--sg-accent, #1d4ed8); margin-right: 4px; }
   .bulk-btn {
-    border: 1px solid #1d4ed8; background: #1d4ed8; color: #fff;
+    border: 1px solid var(--sg-accent, #1d4ed8); background: var(--sg-accent, #1d4ed8); color: var(--sg-on-accent, #fff);
     border-radius: 7px; padding: 5px 12px; font-weight: 600; cursor: pointer;
   }
-  .bulk-btn.ghost { background: transparent; color: #1d4ed8; }
+  .bulk-btn.ghost { background: transparent; color: var(--sg-accent, #1d4ed8); }
   .bulk-btn:hover { filter: brightness(1.05); }
 
+  /* Inverted surface: fg/bg are swapped so the toast keeps contrast in both themes. */
   .toast {
     position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
-    background: #0f172a; color: #fff; padding: 8px 16px; border-radius: 8px;
+    background: var(--sg-fg, #0f172a); color: var(--sg-bg, #fff); padding: 8px 16px; border-radius: 8px;
     font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(15,23,42,0.3);
     z-index: 20; pointer-events: none;
   }

@@ -200,10 +200,10 @@
     border-radius: 8px; padding: 10px 14px;
   }
   .md-info { flex: 1; min-width: 280px; font-size: 13px; color: var(--sg-fg, #0f172a); }
-  .md-info strong { color: #6366f1; }
+  .md-info strong { color: var(--sg-accent, #6366f1); }
   .md-actions { display: flex; align-items: center; gap: 8px; }
   .md-btn {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border: 0;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff); border: 0;
     border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
   }
   .md-btn.alt { background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); border: 1px solid var(--sg-border, #cbd5e1); }
@@ -215,14 +215,14 @@
     color: var(--sg-muted, #64748b); border-radius: 4px;
     display: inline-flex; align-items: center; justify-content: center;
   }
-  :global(.md-chev:hover) { background: color-mix(in oklab, #6366f1 12%, transparent); color: #6366f1; }
+  :global(.md-chev:hover) { background: color-mix(in oklab, var(--sg-accent, #6366f1) 12%, transparent); color: var(--sg-accent, #6366f1); }
   :global(.md-chev svg) { transition: transform 140ms; }
   :global(.md-chev svg.is-open) { transform: rotate(90deg); }
 
   /* Detail row: a nested grid on an inset, accent-bordered panel. */
   :global(.md-detail) {
-    border-left: 3px solid #6366f1;
-    background: color-mix(in oklab, #6366f1 4%, var(--sg-bg, #fff));
+    border-left: 3px solid var(--sg-accent, #6366f1);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 4%, var(--sg-bg, #fff));
     padding: 12px 16px; width: 100%; box-sizing: border-box;
   }
   :global(.md-detail-title) {
@@ -232,7 +232,7 @@
   :global(.md-detail-title strong) { color: var(--sg-fg, #0f172a); }
   :global(.md-detail-count) {
     font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-    background: color-mix(in oklab, #6366f1 14%, transparent); color: #6366f1;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 14%, transparent); color: var(--sg-accent, #6366f1);
     padding: 1px 7px; border-radius: 999px;
   }
   :global(.md-detail-grid) {

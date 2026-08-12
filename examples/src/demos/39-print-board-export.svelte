@@ -510,7 +510,9 @@ ${coverHtml}
 <style>
   .pb-shell { height: 100%; }
 
-  /* Print preview "paper" simulation in screen view. */
+  /* Print preview "paper" simulation in screen view. The sheet stays
+   * white on a grey desk in every theme - it is standing in for real
+   * paper, so these are deliberately not theme tokens. */
   .pb-print-preview {
     background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
     padding: 20px;

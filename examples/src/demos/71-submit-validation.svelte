@@ -106,10 +106,10 @@
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex flex-wrap items-center gap-2 text-sm shrink-0">
     <button type="button" onclick={submit}
-      class="rounded-md border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-white font-medium hover:bg-indigo-500"
+      class="sv-btn-primary rounded-md px-3 py-1.5 font-medium"
       >Submit all leads</button>
     <button type="button" onclick={reset}
-      class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+      class="sv-btn rounded-md px-3 py-1.5"
       >Clear errors</button>
     {#if submitted}
       <span class="text-emerald-600 dark:text-emerald-400 text-xs">✓ {submitted}</span>
@@ -126,7 +126,7 @@
         {#each errors as e (`${e.rowId}-${e.field}`)}
           <li>
             <code>{e.rowId}</code>
-            <span class="text-slate-500 dark:text-slate-400">·</span>
+            <span class="sv-sep">·</span>
             <strong>{e.field}</strong>: {e.message}
           </li>
         {/each}
@@ -154,6 +154,22 @@
 </section>
 
 <style>
+  /* Toolbar chrome tracks the grid theme; the rose invalid-cell tint below
+     is a validation signal, so it stays fixed. */
+  .sv-btn-primary {
+    border: 1px solid var(--sg-accent, #4f46e5);
+    background: var(--sg-accent, #4f46e5);
+    color: var(--sg-on-accent, #fff);
+  }
+  .sv-btn-primary:hover { filter: brightness(1.08); }
+  .sv-btn {
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .sv-btn:hover { background: var(--sg-row-hover-bg, #f8fafc); }
+  .sv-sep { color: var(--sg-muted, #64748b); }
+
   :global(td.cell-invalid) {
     background: rgba(244, 63, 94, 0.12);
     box-shadow: inset 0 0 0 1px #f43f5e;

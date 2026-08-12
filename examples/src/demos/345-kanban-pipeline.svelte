@@ -85,23 +85,23 @@
   }
 </script>
 
-<section class="flex flex-col flex-1 min-h-0 gap-3">
+<section class="kb flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="kb-note text-sm">
       The same <strong>&lt;SvGrid&gt;</strong>, two views. Deal stages as lanes with a
       live <strong>total value</strong> per stage. The whole board layout - card order,
       edits, collapsed lanes - persists via <code>board.persistKey</code>; reload and it's
       exactly as you left it. Reset to reseed.
     </div>
     <div class="flex items-center gap-2 shrink-0">
-      <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
-        <button class="px-3 py-1 {view === 'board' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+      <div class="kb-seg inline-flex rounded-md border overflow-hidden text-sm">
+        <button class="kb-seg-btn px-3 py-1 {view === 'board' ? 'kb-on' : ''}"
           onclick={() => (view = 'board')}>Board</button>
-        <button class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        <button class="kb-seg-btn px-3 py-1 {view === 'table' ? 'kb-on' : ''}"
           onclick={() => (view = 'table')}>Table</button>
       </div>
       <button
-        class="px-3 py-1 text-sm rounded-md border border-slate-300 dark:border-slate-600"
+        class="kb-btn px-3 py-1 text-sm rounded-md border"
         onclick={reset}>Reset</button>
     </div>
   </div>
@@ -144,7 +144,7 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="kb-muted text-sm shrink-0">
     {rows.length} deals · {laneTotal(rows)} in pipeline
   </footer>
 </section>
@@ -153,9 +153,9 @@
   <div class="flex flex-col gap-1.5">
     <div class="flex items-center justify-between gap-2">
       <span class="font-semibold text-[0.82rem]">{d.company}</span>
-      <span class="text-[0.8rem] font-semibold text-emerald-600 dark:text-emerald-400">{usd.format(d.amount)}</span>
+      <span class="kb-amount text-[0.8rem] font-semibold">{usd.format(d.amount)}</span>
     </div>
-    <div class="flex items-center justify-between gap-2 text-[0.72rem] text-slate-500 dark:text-slate-400">
+    <div class="kb-muted flex items-center justify-between gap-2 text-[0.72rem]">
       <span class="inline-flex items-center gap-1.5">
         <SvAvatar name={d.owner} size={18} />
         {d.owner.split(' ')[0]}
@@ -164,3 +164,28 @@
     </div>
   </div>
 {/snippet}
+
+<style>
+  /* Deal value stays green - it reads as money, not chrome - so it is a
+   * local prop with a dark variant rather than a theme token. */
+  .kb { --kb-amount: #16a34a; }
+  :global([data-theme='dark']) .kb { --kb-amount: #4ade80; }
+
+  .kb-note  { color: var(--sg-muted, #475569); }
+  .kb-muted { color: var(--sg-muted, #64748b); }
+  .kb-seg   { border-color: var(--sg-border, #cbd5e1); }
+  .kb-seg-btn {
+    background: transparent;
+    color: inherit;
+    border: 0;
+    cursor: pointer;
+  }
+  .kb-seg-btn.kb-on { background: var(--sg-accent, #1e293b); color: var(--sg-on-accent, #fff); }
+  .kb-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .kb-btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .kb-amount { color: var(--kb-amount, #16a34a); }
+</style>

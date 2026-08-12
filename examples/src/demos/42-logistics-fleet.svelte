@@ -431,7 +431,7 @@
   .lo-conn-paused { color: #ca8a04; }
   .lo-conn-reconnecting { color: #d97706; }
   .lo-conn-connecting { color: #2563eb; }
-  .lo-conn-closed { color: #64748b; }
+  .lo-conn-closed { color: var(--sg-muted, #64748b); }
   :global([data-theme='dark']) .lo-conn-open { color: #4ade80; }
 
   /* Toolbar */

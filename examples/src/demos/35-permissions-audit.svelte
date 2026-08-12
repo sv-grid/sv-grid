@@ -874,7 +874,7 @@
   :global(.pa-prob-fill) {
     position: absolute;
     inset: 0 auto 0 0;
-    background: linear-gradient(90deg, #2563eb, #22d3ee);
+    background: var(--sg-accent, #2563eb);
     transition: width 250ms ease-out;
   }
   :global(.pa-prob-text) {

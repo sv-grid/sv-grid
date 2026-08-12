@@ -120,13 +120,13 @@
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <!-- Saved-views bar -->
   <div class="flex flex-wrap items-center gap-2 text-sm shrink-0">
-    <div class="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+    <div class="inline-flex items-center rounded-md border overflow-hidden vw-bar">
       {#each views as v (v.name)}
         <button
           type="button"
           onclick={() => applyView(v)}
-          class="group inline-flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 border-r border-slate-200 dark:border-slate-700 last:border-r-0
-                 {v.name === activeName ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-medium' : 'text-slate-700 dark:text-slate-200'}"
+          class="group inline-flex items-center gap-1.5 px-3 py-1.5 border-r last:border-r-0 vw-tab
+                 {v.name === activeName ? 'vw-tab-on font-medium' : ''}"
         >
           <span>{v.name}</span>
           {#if views.length > 1 && v.name !== 'Default'}
@@ -135,7 +135,7 @@
               role="button"
               tabindex="0"
               aria-label="Delete view {v.name}"
-              class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 text-xs leading-none"
+              class="opacity-0 group-hover:opacity-100 text-xs leading-none vw-x"
             >×</span>
           {/if}
         </button>
@@ -146,24 +146,24 @@
       type="text"
       bind:value={newName}
       placeholder="Name and Save current layout…"
-      class="w-56 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 placeholder:text-slate-400"
+      class="w-56 rounded-md border px-2 py-1.5 vw-input"
       onkeydown={(e) => { if (e.key === 'Enter') saveAsCurrent() }}
     />
     <button
       type="button"
       onclick={saveAsCurrent}
       disabled={!newName.trim()}
-      class="rounded-md border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-white font-medium hover:bg-indigo-500 disabled:opacity-50"
+      class="rounded-md border px-3 py-1.5 font-medium disabled:opacity-50 vw-save"
     >Save view</button>
 
     <button
       type="button"
       onclick={resetAllViews}
-      class="ml-auto text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 underline-offset-2 hover:underline"
+      class="ml-auto text-xs underline-offset-2 hover:underline vw-reset"
     >Reset to presets</button>
   </div>
 
-  <p class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <p class="text-xs shrink-0 vw-note">
     Resize columns or pin from the header menu, then save - the layout is persisted to <code>localStorage</code> and shows up on the next reload.
     Click any saved view to restore it instantly.
   </p>
@@ -193,3 +193,38 @@
     />
   </div>
 </section>
+
+<style>
+  /* Toolbar chrome follows the active grid theme via --sg-* tokens. */
+  .vw-bar {
+    border-color: var(--sg-border, #e2e8f0);
+    background: var(--sg-bg, #ffffff);
+  }
+  .vw-tab {
+    border-color: var(--sg-border, #e2e8f0);
+    color: var(--sg-fg, #334155);
+  }
+  .vw-tab:not(.vw-tab-on):hover { background: var(--sg-row-hover-bg, #f8fafc); }
+  .vw-tab-on {
+    background: var(--sg-selection-bg, #eef2ff);
+    color: var(--sg-accent, #4338ca);
+  }
+  .vw-x { color: var(--sg-muted, #94a3b8); }
+  /* Delete affordance keeps its danger tint - meaning, not theme. */
+  .vw-x:hover { color: #f43f5e; }
+  .vw-input {
+    border-color: var(--sg-input-border, var(--sg-border, #cbd5e1));
+    background: var(--sg-input-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .vw-input::placeholder { color: var(--sg-muted, #94a3b8); }
+  .vw-save {
+    border-color: var(--sg-accent, #4f46e5);
+    background: var(--sg-accent, #4f46e5);
+    color: var(--sg-on-accent, #ffffff);
+  }
+  .vw-save:hover:not(:disabled) { filter: brightness(1.08); }
+  .vw-reset { color: var(--sg-muted, #64748b); }
+  .vw-reset:hover { color: var(--sg-fg, #334155); }
+  .vw-note { color: var(--sg-muted, #64748b); }
+</style>

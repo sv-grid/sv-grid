@@ -142,15 +142,16 @@
 <style>
   .info-strip {
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(168,85,247,0.03));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 4%, transparent 96%);
     border-radius: 8px;
     padding: 10px 14px;
     font-size: 13px;
     color: var(--sg-fg, #0f172a);
   }
   .info-strip code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-                     background: rgba(99,102,241,0.10); padding: 1px 5px; border-radius: 3px;
-                     color: #4338ca; font-size: 12px; }
+                     background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent 90%);
+                     padding: 1px 5px; border-radius: 3px;
+                     color: var(--sg-accent, #4338ca); font-size: 12px; }
 
   .severity-editor {
     display: flex; align-items: center; gap: 8px;

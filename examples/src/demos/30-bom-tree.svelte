@@ -371,10 +371,7 @@
   .t30-kpi-pct { font-size: 14px; opacity: 0.55; margin-left: 1px; font-weight: 500; }
   .t30-kpi-foot { margin-top: 4px; font-size: 11px; color: var(--sg-muted, #64748b); }
   .t30-kpi-hero {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(99, 102, 241, 0.04));
-  }
-  :global([data-theme='dark']) .t30-kpi-hero {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(99, 102, 241, 0.08));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 8%, transparent);
   }
   .t30-kpi-hero .t30-kpi-value {
     font-size: 26px;
@@ -420,14 +417,14 @@
     position: absolute;
     top: 0; bottom: 0;
     width: 0;
-    border-left: 1px dashed rgba(148, 163, 184, 0.32);
+    border-left: 1px dashed color-mix(in srgb, var(--sg-border, #94a3b8) 70%, transparent);
     pointer-events: none;
   }
   :global(.t30-elbow) {
     position: absolute;
     top: 50%;
     width: 14px;
-    border-top: 1px dashed rgba(148, 163, 184, 0.45);
+    border-top: 1px dashed color-mix(in srgb, var(--sg-border, #94a3b8) 85%, transparent);
     pointer-events: none;
   }
   :global(.t30-chev) {
@@ -462,7 +459,7 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: rgba(148, 163, 184, 0.6);
+    background: color-mix(in srgb, var(--sg-muted, #94a3b8) 60%, transparent);
   }
   :global(.t30-icon) {
     width: 26px;
@@ -473,7 +470,10 @@
     justify-content: center;
     flex-shrink: 0;
   }
-  :global(.t30-icon-asm)  { background: rgba(99, 102, 241, 0.14); color: #6366f1; }
+  :global(.t30-icon-asm)  {
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 14%, transparent);
+    color: var(--sg-accent, #6366f1);
+  }
   :global(.t30-icon-leaf) { background: rgba(16, 185, 129, 0.14); color: #10b981; }
   :global(.t30-name-text) { font-weight: 500; }
 
@@ -508,7 +508,7 @@
   :global(.t30-sub-amt) { font-weight: 700; }
   :global(.t30-sub-bar) {
     height: 4px;
-    background: rgba(148, 163, 184, 0.2);
+    background: color-mix(in srgb, var(--sg-border, #94a3b8) 45%, transparent);
     border-radius: 999px;
     overflow: hidden;
   }

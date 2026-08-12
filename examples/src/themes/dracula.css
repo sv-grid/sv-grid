@@ -4,7 +4,8 @@
  * #44475a. Verified against the official Dracula spec. Light
  * variant is an Alucard-style inversion. 6px radius.
  * ============================================================ */
-html[data-preset='dracula'] .demo-page {
+html[data-preset='dracula'] .demo-page,
+html[data-preset='dracula'] .page-warm {
   --sg-bg: #fffbeb;                /* Alucard background (warm cream) */
   --sg-fg: #1f1f1f;
   --sg-muted: #6c664b;             /* Alucard comment */
@@ -37,7 +38,8 @@ html[data-preset='dracula'] .demo-page .demo-aside {
   background: #ece9df;
   border-color: #dedccf !important;
 }
-html[data-preset='dracula'][data-theme='dark'] .demo-page {
+html[data-preset='dracula'][data-theme='dark'] .demo-page,
+html[data-preset='dracula'][data-theme='dark'] .page-warm {
   --sg-bg: #282a36;                /* background */
   --sg-fg: #f8f8f2;                /* foreground */
   --sg-muted: #6272a4;             /* comment */

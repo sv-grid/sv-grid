@@ -202,21 +202,21 @@
     <span class="font-medium">Group by:</span>
     <button
       onclick={() => applyGroup([])}
-      class="rounded border px-3 py-1 {groupBy.length === 0 ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}"
+      class="rounded border px-3 py-1 hr-gbtn {groupBy.length === 0 ? 'hr-gbtn-on' : ''}"
     >None</button>
     <button
       onclick={() => applyGroup(['team'])}
-      class="rounded border px-3 py-1 {groupBy.join() === 'team' ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}"
+      class="rounded border px-3 py-1 hr-gbtn {groupBy.join() === 'team' ? 'hr-gbtn-on' : ''}"
     >Team</button>
     <button
       onclick={() => applyGroup(['location'])}
-      class="rounded border px-3 py-1 {groupBy.join() === 'location' ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}"
+      class="rounded border px-3 py-1 hr-gbtn {groupBy.join() === 'location' ? 'hr-gbtn-on' : ''}"
     >Location</button>
     <button
       onclick={() => applyGroup(['status'])}
-      class="rounded border px-3 py-1 {groupBy.join() === 'status' ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}"
+      class="rounded border px-3 py-1 hr-gbtn {groupBy.join() === 'status' ? 'hr-gbtn-on' : ''}"
     >Status</button>
-    <span class="ml-auto text-slate-500 dark:text-slate-400">{rows.length} employees</span>
+    <span class="ml-auto hr-meta">{rows.length} employees</span>
   </div>
 
   <div class="flex-1 min-h-0">
@@ -280,6 +280,16 @@
 </section>
 
 <style>
+  /* Toolbar chrome follows the active grid theme via --sg-* tokens. */
+  .hr-gbtn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, transparent);
+    color: var(--sg-fg, inherit);
+  }
+  .hr-gbtn:not(.hr-gbtn-on):hover { background: var(--sg-row-hover-bg, transparent); }
+  .hr-gbtn-on { background: var(--sg-bg-subtle, var(--sg-header-bg, #e2e8f0)); }
+  .hr-meta { color: var(--sg-muted, #64748b); }
+
   .hr-person {
     display: inline-flex;
     align-items: center;

@@ -4,8 +4,10 @@
  * border-radius, cell density) so the entire demo experience reads
  * as one cohesive theme.
  *
- * Scoped to `.demo-page` so the rest of the website chrome (top-nav,
- * landing-page sections) keeps the gallery's default tokens.
+ * Each palette block targets two selectors: `.demo-page` (the gallery page
+ * and every embedded live grid) and `.page-warm` (the website shell), so
+ * picking a preset restyles the top-nav and page ground as well. The
+ * `.demo-aside` blocks stay gallery-only.
  *
  * Tokens documented against each source design system's published
  * token tables. Where a value is approximate vs. specified, that's
@@ -14,6 +16,7 @@
 
 /* Each preset now lives in its own file under ./themes/. This barrel keeps
  * the single `@import './themes.css'` entry point both consumers use. */
+@import './themes/default.css';
 @import './themes/ember.css';
 @import './themes/shadcn.css';
 @import './themes/tailwind.css';

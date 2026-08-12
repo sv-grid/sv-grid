@@ -161,7 +161,7 @@
     cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
   }
-  .search-clear:hover { background: rgba(148,163,184,0.18); color: var(--sg-fg, #0f172a); }
+  .search-clear:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.18)); color: var(--sg-fg, #0f172a); }
 
   .search-meta {
     font-size: 13px; color: var(--sg-muted, #64748b);
@@ -171,7 +171,7 @@
 
   /* Calmer mark - rounded, tonal, no neon yellow */
   :global(mark.hit) {
-    background: rgba(99, 102, 241, 0.18);
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 18%, transparent);
     color: inherit;
     border-radius: 3px;
     padding: 0 1px;

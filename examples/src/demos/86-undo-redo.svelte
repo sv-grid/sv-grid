@@ -168,8 +168,9 @@
   .info kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
               background: rgba(148,163,184,0.18); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
   .info code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-               background: rgba(99,102,241,0.10); padding: 1px 5px; border-radius: 3px;
-               color: #4338ca; font-size: 12px; }
+               background: color-mix(in oklab, var(--sg-accent, #6366f1) 10%, transparent);
+               padding: 1px 5px; border-radius: 3px;
+               color: var(--sg-accent, #4338ca); font-size: 12px; }
 
   .toolbar { display: flex; align-items: center; gap: 8px; font-size: 13px; }
   .toolbar button {

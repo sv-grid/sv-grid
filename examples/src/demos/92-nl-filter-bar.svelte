@@ -403,9 +403,8 @@
   .nlf-aikey {
     display: flex; align-items: flex-start; gap: 12px;
     padding: 10px 12px;
-    border: 1px solid color-mix(in oklab, #6366f1 30%, transparent);
-    background: linear-gradient(135deg, color-mix(in oklab, #6366f1 8%, var(--sg-bg, #fff)),
-                                         color-mix(in oklab, #8b5cf6 5%, var(--sg-bg, #fff)));
+    border: 1px solid color-mix(in oklab, var(--sg-accent, #6366f1) 30%, transparent);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 8%, var(--sg-bg, #fff));
     border-radius: 8px;
     font-size: 12.5px; line-height: 1.4;
     color: var(--sg-fg, #0f172a);
@@ -413,28 +412,28 @@
   .nlf-aikey-badge {
     flex-shrink: 0;
     font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: #fff;
+    background: var(--sg-accent, #6366f1);
+    color: var(--sg-on-accent, #fff);
     padding: 4px 8px; border-radius: 4px;
     align-self: center;
   }
   .nlf-aikey-body { flex: 1; min-width: 0; }
-  .nlf-aikey-body strong { color: #4338ca; margin-right: 4px; }
+  .nlf-aikey-body strong { color: var(--sg-accent, #4338ca); margin-right: 4px; }
   .nlf-aikey-body em { font-style: italic; color: var(--sg-muted, #64748b); }
   .nlf-aikey-body code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    background: color-mix(in oklab, #6366f1 12%, transparent);
-    color: #4338ca; padding: 1px 5px; border-radius: 3px; font-size: 11.5px;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 12%, transparent);
+    color: var(--sg-accent, #4338ca); padding: 1px 5px; border-radius: 3px; font-size: 11.5px;
   }
   .nlf-aikey-docs {
     flex-shrink: 0; align-self: center;
-    color: #6366f1; font-weight: 700; font-size: 12px;
+    color: var(--sg-accent, #6366f1); font-weight: 700; font-size: 12px;
     text-decoration: none; white-space: nowrap;
     padding: 4px 10px; border-radius: 6px;
-    border: 1px solid color-mix(in oklab, #6366f1 30%, transparent);
+    border: 1px solid color-mix(in oklab, var(--sg-accent, #6366f1) 30%, transparent);
     background: var(--sg-bg, #fff);
   }
-  .nlf-aikey-docs:hover { background: color-mix(in oklab, #6366f1 10%, transparent); }
+  .nlf-aikey-docs:hover { background: color-mix(in oklab, var(--sg-accent, #6366f1) 10%, transparent); }
 
   .nlf-bar {
     display: flex; align-items: center; gap: 8px;
@@ -460,7 +459,7 @@
     cursor: pointer;
   }
   .nlf-btn:disabled { opacity: 0.5; cursor: default; }
-  .nlf-btn-primary { background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; border: 0; }
+  .nlf-btn-primary { background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff); border: 0; }
   .nlf-btn-ghost   {
     background: transparent; color: var(--sg-fg, #0f172a);
     border: 1px solid var(--sg-border, #cbd5e1);
@@ -481,8 +480,10 @@
     color: var(--sg-fg, #0f172a);
     font-size: 12px;
   }
-  .nlf-chip-sort { background: rgba(99,102,241,0.18); color: #3730a3; }
-  :global([data-theme='dark']) .nlf-chip-sort { background: rgba(99,102,241,0.30); color: #c7d2fe; }
+  .nlf-chip-sort {
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 18%, transparent);
+    color: var(--sg-accent, #3730a3);
+  }
 
   .nlf-samples { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
   .nlf-samples-label { font-size: 11px; color: var(--sg-muted, #64748b); }

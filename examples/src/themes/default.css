@@ -1,0 +1,84 @@
+/* ============================================================
+ * DEFAULT - the gallery's original cool-slate palette: neutral
+ * slate surfaces with a blue accent (selection, focus ring,
+ * active cell). This used to be implicit - picking "Default"
+ * just cleared `data-preset` and let the page's ambient tokens
+ * show through. That broke once the website put its warm
+ * marketing shell (`.page-warm`) on every route: the warm
+ * --sg-* tokens cascaded into the demo page and "Default"
+ * rendered as Ember. Declaring the palette here, on the same
+ * `.demo-page` scope every other preset uses, keeps Default
+ * independent of whatever shell hosts the gallery.
+ * ============================================================ */
+html[data-preset='default'] .demo-page,
+html[data-preset='default'] .page-warm {
+  --sg-bg: #ffffff;
+  --sg-fg: #0f172a;
+  --sg-muted: #64748b;
+  --sg-border: #e2e8f0;
+  --sg-header-bg: #f1f5f9;
+  --sg-header-fg: #0f172a;
+  --sg-row-alt-bg: #f8fafc;
+  --sg-row-hover-bg: #eef2ff;
+  --sg-selection-bg: #dbeafe;
+  --sg-accent: #2563eb;
+  --sg-focus-ring: 0 0 0 2px #2563eb;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #cbd5e1;
+  --sg-pill-active: #dcfce7;
+  --sg-pill-active-fg: #166534;
+  --sg-pill-pending: #fef9c3;
+  --sg-pill-pending-fg: #854d0e;
+  --sg-pill-inactive: #fee2e2;
+  --sg-pill-inactive-fg: #991b1b;
+  background: #ffffff;
+  color: #0f172a;
+  /* Scrollbar - cool slate. Unset in light mode elsewhere, but the warm shell
+     sets `scrollbar-color` (an inherited property), so state it here. */
+  scrollbar-color: #b1bccd #f1f5f9;
+}
+html[data-preset='default'] .demo-page .demo-aside {
+  background: #f8fafc;
+  border-color: #e2e8f0 !important;
+}
+html[data-preset='default'][data-theme='dark'] .demo-page,
+html[data-preset='default'][data-theme='dark'] .page-warm {
+  --sg-bg: #181d27;
+  --sg-fg: #e2e8f0;
+  --sg-muted: #94a3b8;
+  --sg-border: #374151;
+  --sg-header-bg: #1e2433;
+  --sg-header-fg: #e2e8f0;
+  --sg-row-alt-bg: #1b2230;
+  --sg-row-hover-bg: #232b3c;
+  --sg-selection-bg: #1d3a73;
+  --sg-accent: #3b82f6;
+  --sg-focus-ring: 0 0 0 2px #3b82f6;
+  --sg-input-bg: #1a2130;
+  --sg-input-border: #2c3548;
+  --sg-pill-active: #064e3b;
+  --sg-pill-active-fg: #6ee7b7;
+  --sg-pill-pending: #713f12;
+  --sg-pill-pending-fg: #fde68a;
+  --sg-pill-inactive: #7f1d1d;
+  --sg-pill-inactive-fg: #fecaca;
+  background: #181d27;
+  color: #e2e8f0;
+  /* Scrollbar - cool slate on dark */
+  --sg-scrollbar-bg: #1a2130;
+  --sg-scrollbar-border: rgba(148, 163, 184, 0.08);
+  --sg-scrollbar-thumb: #475569;
+  --sg-scrollbar-thumb-hover: #64748b;
+  --sg-scrollbar-thumb-active: #94a3b8;
+  --sg-scrollbar-arrow: #64748b;
+  --sg-scrollbar-arrow-hover: #e2e8f0;
+  --sg-scrollbar-arrow-hover-bg: #2a3142;
+  --sg-scrollbar-arrow-active: #f1f5f9;
+  --sg-scrollbar-arrow-active-bg: #374151;
+  --sg-scrollbar-arrow-disabled: #475569;
+  scrollbar-color: #475569 #1a2130;
+}
+html[data-preset='default'][data-theme='dark'] .demo-page .demo-aside {
+  background: #1b2230;
+  border-color: #374151 !important;
+}

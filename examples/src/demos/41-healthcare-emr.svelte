@@ -428,11 +428,10 @@
     box-shadow: 0 0 0 2px var(--sg-accent, #2563eb) inset;
     font-weight: 600;
   }
-  .hc-role-viewer    { color: #475569; }
+  .hc-role-viewer    { color: var(--sg-muted, #475569); }
   .hc-role-nurse     { color: #166534; }
   .hc-role-physician { color: #1d4ed8; }
   .hc-role-admin     { color: #b91c1c; }
-  :global([data-theme='dark']) .hc-role-viewer    { color: #cbd5e1; }
   :global([data-theme='dark']) .hc-role-nurse     { color: #4ade80; }
   :global([data-theme='dark']) .hc-role-physician { color: #93c5fd; }
   :global([data-theme='dark']) .hc-role-admin     { color: #f87171; }
@@ -511,11 +510,10 @@
   :global(.hc-code-full_code)    { background: #dcfce7; color: #166534; }
   :global(.hc-code-dnr)          { background: #fee2e2; color: #b91c1c; }
   :global(.hc-code-dni)          { background: #fef3c7; color: #92400e; }
-  :global(.hc-code-comfort_only) { background: #e2e8f0; color: #475569; }
+  :global(.hc-code-comfort_only) { background: var(--sg-bg-subtle, var(--sg-header-bg, #e2e8f0)); color: var(--sg-muted, #475569); }
   :global([data-theme='dark'] .hc-code-full_code)    { background: rgba(34,197,94,.18); color: #4ade80; }
   :global([data-theme='dark'] .hc-code-dnr)          { background: rgba(239,68,68,.18); color: #f87171; }
   :global([data-theme='dark'] .hc-code-dni)          { background: rgba(245,158,11,.18); color: #fbbf24; }
-  :global([data-theme='dark'] .hc-code-comfort_only) { background: rgba(148,163,184,.2); color: #cbd5e1; }
 
   :global(.hc-vitals) {
     display: inline-flex;

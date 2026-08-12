@@ -104,19 +104,19 @@
       <button
         type="button"
         onclick={() => (region = r as typeof region)}
-        class="rounded border px-3 py-1 {region === r ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}"
+        class="rounded border px-3 py-1 ms-btn {region === r ? 'is-on' : ''}"
       >{r === 'all' ? 'All' : r}</button>
     {/each}
     <button
       type="button"
       onclick={doExport}
       disabled={busy}
-      class="ml-auto rounded border border-slate-300 dark:border-slate-600 px-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+      class="ml-auto rounded border px-3 py-1 disabled:opacity-50 ms-btn"
     >
       {busy ? 'Exporting…' : '⬇ Export 5-sheet XLSX'}
     </button>
   </div>
-  <p class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <p class="text-xs shrink-0 ms-note">
     The grid shows the <strong>{region === 'all' ? 'All orders' : region}</strong> view ({visible.length} rows).
     The exported file always contains <strong>5 sheets</strong> regardless of the current filter.
   </p>
@@ -141,3 +141,18 @@
     />
   </div>
 </section>
+
+<style>
+  .ms-note { color: var(--sg-muted, #64748b); }
+  .ms-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .ms-btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .ms-btn.is-on {
+    background: var(--sg-accent, #e2e8f0);
+    border-color: var(--sg-accent, #e2e8f0);
+    color: var(--sg-on-accent, #0f172a);
+  }
+</style>

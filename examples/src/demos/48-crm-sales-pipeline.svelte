@@ -564,7 +564,6 @@
     overflow: hidden;
     background: var(--sg-input-bg, #e2e8f0);
   }
-  :global([data-theme='dark']) .crm-forecast-bar { background: rgba(148,163,184,0.18); }
   .crm-forecast-seg { display: block; height: 100%; }
   .crm-forecast-quota {
     position: absolute;
@@ -602,7 +601,7 @@
   }
   .crm-chip-n {
     font-size: 11px;
-    background: rgba(15, 23, 42, 0.08);
+    background: color-mix(in srgb, var(--sg-fg, #0f172a) 8%, transparent);
     padding: 1px 7px;
     border-radius: 999px;
   }
@@ -681,7 +680,6 @@
     border-radius: 2px;
     background: var(--sg-input-bg, #e2e8f0);
   }
-  :global([data-theme='dark'] .crm-stage-step) { background: rgba(148,163,184,0.25); }
   :global(.crm-stage-step-on) { background: #16a34a; }
   :global(.crm-stage-step-lost) { background: #dc2626; }
   :global(.crm-stage-step-lost.crm-stage-step-on) { background: #dc2626; }
@@ -695,7 +693,6 @@
     border-radius: 999px;
     overflow: hidden;
   }
-  :global([data-theme='dark'] .crm-prob-bar) { background: rgba(148,163,184,0.22); }
   :global(.crm-prob-fill) { display: block; height: 100%; border-radius: 999px; transition: width 200ms ease; }
 
   /* ARR cell */

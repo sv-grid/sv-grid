@@ -3,7 +3,8 @@
  * accent. Tokens verified against carbon-elements/themes white +
  * gray100. IBM Plex Sans.
  * ============================================================ */
-html[data-preset='carbon'] .demo-page {
+html[data-preset='carbon'] .demo-page,
+html[data-preset='carbon'] .page-warm {
   --sg-bg: #ffffff;                /* layer-01 */
   --sg-fg: #161616;                /* text-primary */
   --sg-muted: #525252;             /* text-secondary */
@@ -39,7 +40,8 @@ html[data-preset='carbon'] .demo-page .demo-aside {
   background: #f4f4f4;
   border-color: #e0e0e0 !important;
 }
-html[data-preset='carbon'][data-theme='dark'] .demo-page {
+html[data-preset='carbon'][data-theme='dark'] .demo-page,
+html[data-preset='carbon'][data-theme='dark'] .page-warm {
   --sg-bg: #161616;                /* gray-100 */
   --sg-fg: #f4f4f4;
   --sg-muted: #c6c6c6;

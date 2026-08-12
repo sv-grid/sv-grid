@@ -265,14 +265,14 @@
     user-select: none;
   }
   .cf-toggle input {
-    accent-color: #6366f1; width: 15px; height: 15px; cursor: pointer;
+    accent-color: var(--sg-accent, #6366f1); width: 15px; height: 15px; cursor: pointer;
   }
   .cf-divider { width: 1px; height: 22px; background: var(--sg-border, #e2e8f0); }
   .cf-preset {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border: 0; border-radius: 7px; padding: 6px 12px; font-size: 12px;
     font-weight: 600; cursor: pointer;
-    box-shadow: 0 1px 2px rgba(79,70,229,0.35);
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--sg-accent, #4f46e5) 35%, transparent);
     transition: transform 0.08s ease, filter 0.12s ease;
   }
   .cf-preset.alt {

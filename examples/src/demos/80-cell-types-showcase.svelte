@@ -341,12 +341,11 @@
     display: inline-block; padding: 3px 10px; border-radius: 999px;
     font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
   }
-  :global(.vs-tier-strategic) { background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; }
+  :global(.vs-tier-strategic) { background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff); }
   :global(.vs-tier-preferred) { background: #dbeafe; color: #1e3a8a; }
-  :global(.vs-tier-approved)  { background: #f1f5f9; color: #334155; }
+  :global(.vs-tier-approved)  { background: var(--sg-bg-subtle, var(--sg-header-bg, #f1f5f9)); color: var(--sg-fg, #334155); }
   :global(.vs-tier-trial)     { background: #fef3c7; color: #92400e; }
   :global([data-theme='dark'] .vs-tier-preferred) { background: rgba(59,130,246,0.20); color: #93c5fd; }
-  :global([data-theme='dark'] .vs-tier-approved)  { background: rgba(148,163,184,0.18); color: #cbd5e1; }
   :global([data-theme='dark'] .vs-tier-trial)     { background: rgba(245,158,11,0.20); color: #fbbf24; }
 
   /* Category chips */
@@ -376,7 +375,7 @@
   /* Star rating (read-only display) */
   :global(.vs-stars) { display: inline-flex; gap: 2px; }
   :global(.vs-star)  {
-    color: #cbd5e1; font-size: 18px; line-height: 1;
+    color: var(--sg-border, #cbd5e1); font-size: 18px; line-height: 1;
   }
   :global(.vs-star-on) { color: #f59e0b; }
 

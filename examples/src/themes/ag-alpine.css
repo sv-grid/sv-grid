@@ -3,7 +3,8 @@
  * quartz-blue accent. Verified against ag-grid-community/styles
  * ag-theme-alpine.css.
  * ============================================================ */
-html[data-preset='ag-alpine'] .demo-page {
+html[data-preset='ag-alpine'] .demo-page,
+html[data-preset='ag-alpine'] .page-warm {
   --sg-bg: #ffffff;
   --sg-fg: #181d1f;                /* foregroundColor */
   --sg-muted: rgba(24, 29, 31, 0.5); /* disabled-foreground-color */
@@ -39,7 +40,8 @@ html[data-preset='ag-alpine'] .demo-page .demo-aside {
   background: #f8f8f8;
   border-color: #babfc7 !important;
 }
-html[data-preset='ag-alpine'][data-theme='dark'] .demo-page {
+html[data-preset='ag-alpine'][data-theme='dark'] .demo-page,
+html[data-preset='ag-alpine'][data-theme='dark'] .page-warm {
   --sg-bg: #181d1f;
   --sg-fg: #ffffff;
   --sg-muted: rgba(255, 255, 255, 0.5);

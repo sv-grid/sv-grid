@@ -3,7 +3,8 @@
  * Snow Storm for light, Frost #88c0d0 / #5e81ac accent. Verified
  * against the official Nord color reference. 4px radius.
  * ============================================================ */
-html[data-preset='nord'] .demo-page {
+html[data-preset='nord'] .demo-page,
+html[data-preset='nord'] .page-warm {
   --sg-bg: #eceff4;                /* nord6 */
   --sg-fg: #2e3440;                /* nord0 */
   --sg-muted: #4c566a;             /* nord3 */
@@ -36,7 +37,8 @@ html[data-preset='nord'] .demo-page .demo-aside {
   background: #e5e9f0;
   border-color: #d8dee9 !important;
 }
-html[data-preset='nord'][data-theme='dark'] .demo-page {
+html[data-preset='nord'][data-theme='dark'] .demo-page,
+html[data-preset='nord'][data-theme='dark'] .page-warm {
   --sg-bg: #2e3440;                /* nord0 */
   --sg-fg: #d8dee9;                /* nord4 */
   --sg-muted: #4c566a;             /* nord3 - official "subtle UI text" */

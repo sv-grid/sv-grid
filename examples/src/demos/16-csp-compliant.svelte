@@ -148,25 +148,25 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="grid gap-3 lg:grid-cols-2 shrink-0">
-    <div class="rounded border border-slate-200 dark:border-slate-700 p-3 text-sm">
+    <div class="panel rounded p-3 text-sm">
       <div class="flex items-center justify-between mb-2">
         <h3 class="font-semibold">Recommended CSP header</h3>
         <button
           type="button"
           onclick={copyCsp}
-          class="rounded border border-slate-300 dark:border-slate-600 px-2 py-0.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+          class="btn rounded px-2 py-0.5 text-xs"
         >Copy</button>
       </div>
-      <p class="text-slate-500 dark:text-slate-400 text-xs mb-2">
+      <p class="muted text-xs mb-2">
         Set this on the response that serves your app. Notice: no
         <code>'unsafe-eval'</code>, no <code>'unsafe-inline'</code> on
         <code>script-src</code>.
       </p>
-      <pre class="rounded bg-slate-50 dark:bg-slate-950 p-2 text-xs leading-relaxed overflow-x-auto"><code>Content-Security-Policy:
+      <pre class="code rounded p-2 text-xs leading-relaxed overflow-x-auto"><code>Content-Security-Policy:
 {RECOMMENDED_CSP.replace(/; /g, ';\n  ')}</code></pre>
     </div>
 
-    <div class="rounded border border-slate-200 dark:border-slate-700 p-3 text-sm">
+    <div class="panel rounded p-3 text-sm">
       <h3 class="font-semibold mb-2">Runtime self-check</h3>
       <ul class="space-y-1">
         {#each checks as c, i (i)}
@@ -178,12 +178,12 @@
           </li>
         {/each}
       </ul>
-      <div class="mt-3 border-t border-slate-200 dark:border-slate-700 pt-2">
-        <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+      <div class="mt-3 divider pt-2">
+        <div class="text-xs uppercase tracking-wide muted">
           CSP violations during this session
         </div>
         {#if violations.length === 0}
-          <div class="text-slate-500 dark:text-slate-400 mt-1">
+          <div class="muted mt-1">
             {mounted ? 'None - the grid is staying inside the policy.' : 'Listening…'}
           </div>
         {:else}
@@ -219,3 +219,17 @@
     />
   </div>
 </section>
+
+<style>
+  .panel { border: 1px solid var(--sg-border, #e2e8f0); }
+  .divider { border-top: 1px solid var(--sg-border, #e2e8f0); }
+  .muted { color: var(--sg-muted, #64748b); }
+  .btn {
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: transparent;
+    color: var(--sg-fg, #0f172a);
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .code { background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc)); }
+</style>

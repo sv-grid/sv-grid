@@ -147,10 +147,10 @@
 <section class="flex flex-col flex-1 min-h-0 gap-3" dir={localeMeta.dir}>
   <div class="flex flex-wrap items-end gap-4 text-sm shrink-0" dir="ltr">
     <label class="flex flex-col">
-      <span class="text-slate-500 dark:text-slate-400">Locale</span>
+      <span class="loc-label">Locale</span>
       <select
         bind:value={locale}
-        class="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 min-w-44"
+        class="rounded border px-2 py-1 min-w-44 loc-select"
       >
         {#each LOCALES as l (l.id)}
           <option value={l.id}>{l.flag} {l.label} ({l.id})</option>
@@ -158,17 +158,17 @@
       </select>
     </label>
     <label class="flex flex-col">
-      <span class="text-slate-500 dark:text-slate-400">Currency</span>
+      <span class="loc-label">Currency</span>
       <select
         bind:value={currency}
-        class="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 min-w-32"
+        class="rounded border px-2 py-1 min-w-32 loc-select"
       >
         {#each CURRENCIES as c (c.id)}
           <option value={c.id}>{c.id}</option>
         {/each}
       </select>
     </label>
-    <div class="ml-auto text-slate-500 dark:text-slate-400 text-xs leading-tight">
+    <div class="ml-auto text-xs leading-tight loc-meta">
       <div>Direction: <strong>{localeMeta.dir.toUpperCase()}</strong></div>
       <div>Today in this locale: <strong>{dateFmt.format(new Date())}</strong></div>
       <div>Sample number: <strong>{numberFmt.format(1234567.89)}</strong></div>
@@ -220,3 +220,14 @@
     {/key}
   </div>
 </section>
+
+<style>
+  /* Toolbar chrome follows the active grid theme via --sg-* tokens. */
+  .loc-label { color: var(--sg-muted, #64748b); }
+  .loc-meta  { color: var(--sg-muted, #64748b); }
+  .loc-select {
+    border-color: var(--sg-input-border, var(--sg-border, #cbd5e1));
+    background: var(--sg-input-bg, transparent);
+    color: var(--sg-fg, inherit);
+  }
+</style>

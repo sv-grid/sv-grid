@@ -269,7 +269,7 @@
 <section class="cc-shell flex flex-col flex-1 min-h-0 gap-3">
   <div class="cc-toolbar shrink-0">
     <div class="cc-acting">
-      <span class="cc-avatar" style="background: #6366f1">{me.initials}</span>
+      <span class="cc-avatar" style="background: var(--sg-accent, #6366f1)">{me.initials}</span>
       <span>You are <strong>{me.name}</strong></span>
     </div>
     <div class="cc-stats">
@@ -328,7 +328,7 @@
         </div>
       {/if}
       <div class="cc-compose">
-        <span class="cc-avatar" style="background: #6366f1">{me.initials}</span>
+        <span class="cc-avatar" style="background: var(--sg-accent, #6366f1)">{me.initials}</span>
         <div class="cc-compose-input">
           <textarea
             bind:this={editorTextarea}
@@ -424,7 +424,7 @@
     width: 0; height: 0;
     border-left: 6px solid transparent;
     border-bottom: 6px solid transparent;
-    border-right: 6px solid #6366f1;
+    border-right: 6px solid var(--sg-accent, #6366f1);
     transform: rotate(45deg);
   }
 
@@ -449,10 +449,10 @@
   .cc-msg-text { font-size: 13px; line-height: 1.45; color: var(--sg-fg, #0f172a); white-space: pre-wrap; }
   :global(.cc-chip) {
     display: inline-block; padding: 0 6px; border-radius: 4px;
-    background: rgba(99,102,241,0.16); color: #4338ca;
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 16%, transparent);
+    color: var(--sg-accent, #4338ca);
     font-weight: 600; font-size: 12px;
   }
-  :global([data-theme='dark'] .cc-chip) { background: rgba(99,102,241,0.25); color: #c7d2fe; }
 
   .cc-compose { display: flex; align-items: flex-start; gap: 8px; }
   .cc-compose-input { flex: 1; position: relative; }

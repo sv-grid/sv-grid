@@ -322,7 +322,7 @@
   }
   .tb-btn:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.1)); }
   .tb-btn.primary {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border-color: transparent;
   }
   .tb-btn.primary:hover { filter: brightness(1.1); }
@@ -342,7 +342,7 @@
     color: var(--sg-muted, #64748b);
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
     background: linear-gradient(180deg,
-      color-mix(in oklab, #6366f1 4%, transparent),
+      color-mix(in oklab, var(--sg-accent, #6366f1) 4%, transparent),
       transparent);
   }
   .panel-body { padding: 10px 12px; }
@@ -358,7 +358,7 @@
     font-size: 12px; color: var(--sg-fg, #0f172a);
     font-variant-numeric: tabular-nums;
   }
-  .ls-stats strong { color: #6366f1; font-weight: 800; margin-right: 4px;
+  .ls-stats strong { color: var(--sg-accent, #6366f1); font-weight: 800; margin-right: 4px;
                      font-size: 10px; letter-spacing: 0.06em; }
   .ls-empty { font-size: 12px; font-style: italic; color: var(--sg-muted, #64748b); }
 
@@ -369,13 +369,13 @@
     align-items: center; padding: 3px 6px;
     border-radius: 4px; font-size: 12px;
   }
-  .ev:first-child { background: color-mix(in oklab, #6366f1 8%, transparent); }
+  .ev:first-child { background: color-mix(in oklab, var(--sg-accent, #6366f1) 8%, transparent); }
   .ev-time { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
              font-size: 11px; color: var(--sg-muted, #64748b); }
   .ev-source { font-weight: 600; color: var(--sg-fg, #0f172a); overflow: hidden;
                text-overflow: ellipsis; white-space: nowrap; }
   .ev-range { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-              font-size: 11px; color: #6366f1; font-weight: 700; }
+              font-size: 11px; color: var(--sg-accent, #6366f1); font-weight: 700; }
 
   :global(td.region-na)   { color: #6366f1; font-weight: 600; }
   :global(td.region-emea) { color: #14b8a6; font-weight: 600; }

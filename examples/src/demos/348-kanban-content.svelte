@@ -63,14 +63,14 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="text-sm demo-note">
       The same <strong>&lt;SvGrid&gt;</strong>, two views. Pipeline stages as lanes, a
       swimlane per channel. Drag a piece to the next stage, or across a band to re-channel it.
     </div>
-    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
-      <button class="px-3 py-1 {view === 'board' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+    <div class="view-toggle inline-flex rounded-md overflow-hidden text-sm shrink-0">
+      <button class="px-3 py-1 {view === 'board' ? 'is-on' : ''}"
         onclick={() => (view = 'board')}>Board</button>
-      <button class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+      <button class="px-3 py-1 {view === 'table' ? 'is-on' : ''}"
         onclick={() => (view = 'table')}>Table</button>
     </div>
   </div>
@@ -111,7 +111,7 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="text-sm demo-note shrink-0">
     {rows.length} pieces · {rows.filter((p) => p.stage === 'published').length} published
   </footer>
 </section>
@@ -121,7 +121,7 @@
     <span class="text-xl leading-none shrink-0" aria-hidden="true">{p.cover}</span>
     <div class="flex flex-col gap-1 min-w-0">
       <div class="font-semibold text-[0.8rem] leading-snug">{p.title}</div>
-      <div class="flex items-center justify-between gap-2 text-[0.72rem] text-slate-500 dark:text-slate-400">
+      <div class="flex items-center justify-between gap-2 text-[0.72rem] card-meta">
         <span class="inline-flex items-center gap-1.5 min-w-0">
           <SvAvatar name={p.author} size={16} />
           <span class="truncate">{p.author.split(' ')[0]}</span>
@@ -131,3 +131,19 @@
     </div>
   </div>
 {/snippet}
+
+<style>
+  .demo-note { color: var(--sg-muted, #475569); }
+  .card-meta { color: var(--sg-muted, #64748b); }
+
+  .view-toggle { border: 1px solid var(--sg-border, #cbd5e1); }
+  .view-toggle button {
+    background: transparent;
+    color: var(--sg-fg, #0f172a);
+    cursor: pointer;
+  }
+  .view-toggle button.is-on {
+    background: var(--sg-accent, #1e293b);
+    color: var(--sg-on-accent, #fff);
+  }
+</style>

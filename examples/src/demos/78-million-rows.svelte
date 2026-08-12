@@ -202,13 +202,13 @@
     <button type="button" onclick={() => applyGroup(['status'])}
       class="mr-btn {groupBy.join() === 'status' ? 'mr-btn-on' : ''}">Status</button>
 
-    <span class="mx-3 text-slate-400 dark:text-slate-600">|</span>
+    <span class="mx-3 mr-note">|</span>
     <label class="inline-flex items-center gap-2">
       <input type="checkbox" bind:checked={editing} />
       <span>Inline editing</span>
     </label>
 
-    <span class="ml-auto text-slate-500 dark:text-slate-400 text-xs">
+    <span class="ml-auto text-xs mr-note">
       Sort / filter via column headers · scroll the grid - only ~50 rows are mounted in the DOM at any moment.
       Row height is tightened to {ROW_H}px so all 1,000,000 rows stay within the browser's element-height limit.
     </span>
@@ -271,6 +271,7 @@
     color: var(--sg-fg, #0f172a);
   }
   .mr-kpi-foot { font-size: 11px; color: var(--sg-muted, #94a3b8); }
+  .mr-note { color: var(--sg-muted, #64748b); }
   .mr-up   { color: #16a34a; }
   .mr-down { color: var(--sg-muted, #64748b); }
 
@@ -311,7 +312,7 @@
   }
   .mr-progress-fill {
     height: 100%;
-    background: linear-gradient(135deg, #6366f1, #a855f7);
+    background: var(--sg-accent, #6366f1);
     transition: width 100ms linear;
   }
   .mr-progress-text {

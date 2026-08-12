@@ -165,25 +165,28 @@
 <style>
   .info {
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(16,185,129,0.04));
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 5%, transparent);
     border-radius: 8px; padding: 10px 14px;
     font-size: 13px; color: var(--sg-fg, #0f172a);
   }
   .info p { margin: 0 0 6px; }
   .info code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    background: rgba(99,102,241,0.12); color: #4338ca;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 12%, transparent);
+    color: var(--sg-accent, #4338ca);
     padding: 1px 5px; border-radius: 3px; font-size: 12px;
   }
   .toggles { display: flex; gap: 14px; font-size: 12px; }
   .toggles label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-  .toggles input { accent-color: #6366f1; }
+  .toggles input { accent-color: var(--sg-accent, #6366f1); }
   .tag-top, .tag-bot {
     display: inline-block; padding: 0 6px; border-radius: 3px;
     font-size: 11px; font-weight: 800; font-family: ui-monospace, monospace;
   }
-  .tag-top { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
-  .tag-bot { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+  .tag-top { background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff); }
+  /* The bottom tag keeps its green so top vs bottom stay tellable apart
+     whatever the theme accent happens to be. */
+  .tag-bot { background: #10b981; color: #fff; }
 
   :global(td.health-good) { color: #059669; font-weight: 700; }
   :global(td.health-warn) { color: #d97706; font-weight: 600; }

@@ -3,7 +3,8 @@
  * Pure mono neutrals, a quiet muted header, Vercel blue #0070f3
  * for selection/accent. Geist Sans, 6px radius.
  * ============================================================ */
-html[data-preset='vercel'] .demo-page {
+html[data-preset='vercel'] .demo-page,
+html[data-preset='vercel'] .page-warm {
   --sg-bg: #ffffff;
   --sg-fg: #000000;
   --sg-muted: #666666;             /* geist accents-5 */
@@ -36,7 +37,8 @@ html[data-preset='vercel'] .demo-page .demo-aside {
   background: #fafafa;
   border-color: #eaeaea !important;
 }
-html[data-preset='vercel'][data-theme='dark'] .demo-page {
+html[data-preset='vercel'][data-theme='dark'] .demo-page,
+html[data-preset='vercel'][data-theme='dark'] .page-warm {
   --sg-bg: #000000;
   --sg-fg: #ffffff;
   --sg-muted: #888888;

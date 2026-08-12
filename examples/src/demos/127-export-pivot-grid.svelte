@@ -487,9 +487,8 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 12px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: var(--sg-header-bg, #f8fafc);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
   }
-  :global([data-theme='dark']) .ep-preview-head { background: rgba(148,163,184,0.10); }
   .ep-preview-eyebrow {
     font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--sg-muted, #64748b); font-weight: 700;
@@ -499,10 +498,9 @@
     display: flex; gap: 0;
     padding: 0 8px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: var(--sg-header-bg, #f8fafc);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
     overflow-x: auto;
   }
-  :global([data-theme='dark']) .ep-tab-strip { background: rgba(148,163,184,0.10); }
   .ep-tab {
     padding: 5px 10px; font-size: 11px; cursor: default;
     color: var(--sg-muted, #64748b);
@@ -520,10 +518,8 @@
     padding: 3px 8px; border-bottom: 1px solid var(--sg-border, #f1f5f9);
     text-align: left; white-space: nowrap;
   }
-  :global([data-theme='dark']) .ep-preview-body th,
-  :global([data-theme='dark']) .ep-preview-body td { border-color: rgba(148,163,184,0.18); }
   .ep-preview-body th {
-    background: var(--sg-header-bg, #f8fafc);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
     font-weight: 700; color: var(--sg-muted, #64748b);
     position: sticky; top: 0;
   }
@@ -532,14 +528,13 @@
 
   .ep-row-leaf { color: var(--sg-fg, #1e293b); }
   .ep-row-group {
-    background: rgba(99,102,241,0.10);
-    font-weight: 700; color: #3730a3;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 10%, transparent);
+    font-weight: 700; color: var(--sg-accent, #3730a3);
   }
   .ep-row-grandTotal {
     background: rgba(245,158,11,0.18);
     font-weight: 800; color: #854d0e;
   }
-  :global([data-theme='dark']) .ep-row-group      { color: #c7d2fe; }
   :global([data-theme='dark']) .ep-row-grandTotal { color: #fcd34d; }
   .ep-row-overflow td {
     text-align: center; font-style: italic; color: var(--sg-muted, #64748b);
@@ -548,7 +543,7 @@
 
   /* Grid pivot row tints */
   :global(.pv-label) { display: inline-flex; align-items: center; font-size: 12.5px; }
-  :global(.pv-row-group) { background: rgba(99,102,241,0.10) !important; font-weight: 700; }
+  :global(.pv-row-group) { background: color-mix(in oklab, var(--sg-accent, #6366f1) 10%, transparent) !important; font-weight: 700; }
   :global(.pv-row-grand) { background: rgba(245,158,11,0.18) !important; font-weight: 800; color: #854d0e; }
   :global([data-theme='dark']) :global(.pv-row-grand) { color: #fcd34d; }
 </style>

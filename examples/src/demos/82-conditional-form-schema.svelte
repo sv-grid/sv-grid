@@ -258,7 +258,19 @@
 </section>
 
 <style>
-  .cf-shell { height: 100%; }
+  /* Status pill colours carry meaning, so they stay off the theme tokens;
+     only their dark ramp is adjusted here for legibility. */
+  .cf-shell {
+    height: 100%;
+    --cf-warn-bg: #fef3c7; --cf-warn-fg: #92400e;
+    --cf-good-bg: #dcfce7; --cf-good-fg: #166534;
+    --cf-bad-bg:  #fee2e2; --cf-bad-fg:  #991b1b; --cf-bad-ring: #dc2626;
+  }
+  :global([data-theme='dark']) .cf-shell {
+    --cf-warn-bg: rgba(245,158,11,0.20); --cf-warn-fg: #fbbf24;
+    --cf-good-bg: rgba(34,197,94,0.18);  --cf-good-fg: #4ade80;
+    --cf-bad-bg:  rgba(239,68,68,0.22);  --cf-bad-fg:  #fca5a5; --cf-bad-ring: #ef4444;
+  }
 
   .cf-kpi-strip {
     display: grid;
@@ -314,12 +326,8 @@
     display: inline-block; padding: 3px 10px; border-radius: 999px;
     font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
   }
-  :global(.cf-status-draft)    { background: #f1f5f9; color: #334155; }
-  :global(.cf-status-pending)  { background: #fef3c7; color: #92400e; }
-  :global(.cf-status-approved) { background: #dcfce7; color: #166534; }
-  :global(.cf-status-rejected) { background: #fee2e2; color: #991b1b; box-shadow: inset 0 0 0 1px #dc2626; }
-  :global([data-theme='dark'] .cf-status-draft)    { background: rgba(148,163,184,0.18); color: #cbd5e1; }
-  :global([data-theme='dark'] .cf-status-pending)  { background: rgba(245,158,11,0.20); color: #fbbf24; }
-  :global([data-theme='dark'] .cf-status-approved) { background: rgba(34,197,94,0.18); color: #4ade80; }
-  :global([data-theme='dark'] .cf-status-rejected) { background: rgba(239,68,68,0.22); color: #fca5a5; box-shadow: inset 0 0 0 1px #ef4444; }
+  :global(.cf-status-draft)    { background: var(--sg-bg-subtle, var(--sg-header-bg, #f1f5f9)); color: var(--sg-fg, #334155); }
+  :global(.cf-status-pending)  { background: var(--cf-warn-bg); color: var(--cf-warn-fg); }
+  :global(.cf-status-approved) { background: var(--cf-good-bg); color: var(--cf-good-fg); }
+  :global(.cf-status-rejected) { background: var(--cf-bad-bg);  color: var(--cf-bad-fg); box-shadow: inset 0 0 0 1px var(--cf-bad-ring); }
 </style>

@@ -100,7 +100,7 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
+  <div class="text-sm shrink-0 imp-intro">
     Open <strong>Import</strong>, then drop a file or use the <strong>Paste</strong> tab.
     <code>Company</code>, <code>Product</code>, <code>Country</code> and
     <code>Qty</code> auto-map; retarget <code>Sold On</code> &rarr;
@@ -135,7 +135,7 @@
     />
   </div>
 
-  <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="text-xs shrink-0 imp-foot">
     Enterprise feature. Parse-once, chunked non-blocking mapping (won't freeze
     on 100k rows), size + row + error guard-rails, prototype-pollution-safe
     field handling, cancel, and a focus-trapped dialog. The engine
@@ -145,19 +145,18 @@
 </section>
 
 <style>
+  /* Page chrome follows the active grid theme via --sg-* tokens. */
   .btn {
     border-radius: 0.375rem;
-    border: 1px solid rgb(203 213 225);
+    border: 1px solid var(--sg-border, rgb(203 213 225));
     padding: 0.3rem 0.7rem;
     font-size: 0.8rem;
     font-weight: 500;
-    background: white;
-    color: rgb(15 23 42);
+    background: var(--sg-bg, white);
+    color: var(--sg-fg, rgb(15 23 42));
     cursor: pointer;
   }
-  :global(.dark) .btn {
-    border-color: rgb(51 65 85);
-    background: rgb(15 23 42);
-    color: rgb(241 245 249);
-  }
+  .btn:hover { background: var(--sg-row-hover-bg, white); }
+  .imp-intro { color: var(--sg-fg, rgb(71 85 105)); }
+  .imp-foot { color: var(--sg-muted, rgb(100 116 139)); }
 </style>

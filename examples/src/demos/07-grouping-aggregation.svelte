@@ -56,21 +56,21 @@
     <span class="font-medium">Group by:</span>
     <button
       onclick={() => applyGroup([])}
-      class="rounded border px-3 py-1 {groupBy.length === 0 ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}"
+      class="gb-btn rounded border px-3 py-1 {groupBy.length === 0 ? 'is-on' : ''}"
     >None</button>
     <button
       onclick={() => applyGroup(['department'])}
-      class="rounded border px-3 py-1 {groupBy.join() === 'department' ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}"
+      class="gb-btn rounded border px-3 py-1 {groupBy.join() === 'department' ? 'is-on' : ''}"
     >Department</button>
     <button
       onclick={() => applyGroup(['country'])}
-      class="rounded border px-3 py-1 {groupBy.join() === 'country' ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}"
+      class="gb-btn rounded border px-3 py-1 {groupBy.join() === 'country' ? 'is-on' : ''}"
     >Country</button>
     <button
       onclick={() => applyGroup(['department', 'country'])}
-      class="rounded border px-3 py-1 {groupBy.join() === 'department,country' ? 'bg-slate-200 dark:bg-slate-700' : 'border-slate-300 dark:border-slate-600'}"
+      class="gb-btn rounded border px-3 py-1 {groupBy.join() === 'department,country' ? 'is-on' : ''}"
     >Department → Country</button>
-    <span class="ml-3 text-slate-500 dark:text-slate-400">
+    <span class="gb-hint ml-3">
       Click a group row to expand. The row-summaries footer aggregates totals.
     </span>
   </div>
@@ -101,3 +101,17 @@
     />
   </div>
 </section>
+
+<style>
+  .gb-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .gb-btn:hover { background: var(--sg-row-hover-bg, rgba(148, 163, 184, 0.12)); }
+  .gb-btn.is-on {
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #e2e8f0));
+    border-color: var(--sg-border, #cbd5e1);
+  }
+  .gb-hint { color: var(--sg-muted, #64748b); }
+</style>

@@ -72,8 +72,10 @@
 
     // Collect the page stylesheets so the iframe renders the table with
     // the same look (borders, fonts, zebra). We inline them as plain
-    // <style> blocks so the iframe's `csp` block on scripts doesn't
-    // also block external stylesheet loading.
+    // style elements so the iframe's `csp` block on scripts doesn't
+    // also block external stylesheet loading. (Spelling the tag out here
+    // would pair with this component's own style block and hand the whole
+    // file to the CSS preprocessor.)
     const styles = Array.from(document.styleSheets)
       .map((sheet) => {
         try {
@@ -114,11 +116,11 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="rounded border border-slate-200 dark:border-slate-700 p-3 text-sm shrink-0">
+  <div class="ssr-panel rounded border p-3 text-sm shrink-0">
     <div class="flex items-center justify-between mb-2">
       <h3 class="font-semibold">SvelteKit integration (in a real app)</h3>
     </div>
-    <pre class="rounded bg-slate-50 dark:bg-slate-950 p-2 text-xs leading-relaxed overflow-x-auto"><code>{`// +page.server.ts
+    <pre class="ssr-code rounded p-2 text-xs leading-relaxed overflow-x-auto"><code>{`// +page.server.ts
 export async function load() {
   const rows = await db.query('select * from people')
   return { rows }
@@ -130,7 +132,7 @@ export async function load() {
   let { data } = $props()
 <\/script>
 <SvGrid responsive={true} data={data.rows} columns={columns} features={tableFeatures({ rowSortingFeature })} />`}</code></pre>
-    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+    <p class="ssr-muted mt-2 text-xs">
       SvelteKit calls <code>{'render(Page, { props: { data } })'}</code> server-side and ships the resulting HTML.
       The user sees data on first paint; hydration only attaches event listeners.
     </p>
@@ -140,23 +142,23 @@ export async function load() {
     <button
       type="button"
       onclick={takeSnapshot}
-      class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+      class="ssr-btn rounded border px-3 py-1"
     >📸 Take SSR-equivalent snapshot</button>
     {#if snapshot}
       <button
         type="button"
         onclick={clearSnapshot}
-        class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+        class="ssr-btn rounded border px-3 py-1"
       >Clear</button>
     {/if}
-    <span class="text-slate-500 dark:text-slate-400 ml-2">
+    <span class="ssr-muted ml-2">
       The snapshot is rendered in a JS-disabled iframe to prove the HTML is meaningful pre-hydration.
     </span>
   </div>
 
   <div class="grid gap-3 flex-1 min-h-0 lg:grid-cols-2">
     <div class="flex flex-col min-h-0">
-      <div class="mb-1 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 shrink-0">
+      <div class="ssr-muted mb-1 text-xs uppercase tracking-wide shrink-0">
         Live grid (hydrated, interactive)
       </div>
       <div id="ssr-live-grid" class="flex-1 min-h-0">
@@ -178,7 +180,7 @@ export async function load() {
       </div>
     </div>
     <div class="flex flex-col min-h-0">
-      <div class="mb-1 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 shrink-0">
+      <div class="ssr-muted mb-1 text-xs uppercase tracking-wide shrink-0">
         Snapshot iframe (no JS, no event listeners)
       </div>
       {#if iframeSrc}
@@ -186,10 +188,10 @@ export async function load() {
           src={iframeSrc}
           title="Pre-hydration snapshot"
           sandbox=""
-          class="flex-1 min-h-0 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+          class="ssr-frame flex-1 min-h-0 rounded border"
         ></iframe>
       {:else}
-        <div class="flex-1 min-h-0 grid place-items-center rounded border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 text-sm">
+        <div class="ssr-placeholder flex-1 min-h-0 grid place-items-center rounded border border-dashed text-sm">
           Click <em>Take SSR-equivalent snapshot</em> to populate.
         </div>
       {/if}
@@ -197,9 +199,30 @@ export async function load() {
   </div>
 
   {#if snapshot}
-    <details class="rounded border border-slate-200 dark:border-slate-700 p-3 text-xs shrink-0">
+    <details class="ssr-panel rounded border p-3 text-xs shrink-0">
       <summary class="cursor-pointer font-semibold">Raw HTML ({(snapshot.length / 1024).toFixed(1)} KB)</summary>
-      <pre class="mt-2 max-h-48 overflow-auto rounded bg-slate-50 dark:bg-slate-950 p-2 leading-relaxed"><code>{escapeHtml(snapshot.slice(0, 4000))}{snapshot.length > 4000 ? '\n…' : ''}</code></pre>
+      <pre class="ssr-code mt-2 max-h-48 overflow-auto rounded p-2 leading-relaxed"><code>{escapeHtml(snapshot.slice(0, 4000))}{snapshot.length > 4000 ? '\n…' : ''}</code></pre>
     </details>
   {/if}
 </section>
+
+<style>
+  /* Chrome follows the active grid theme; the old literals stay as fallbacks. */
+  .ssr-panel     { border-color: var(--sg-border, #e2e8f0); }
+  .ssr-code      { background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc)); }
+  .ssr-muted     { color: var(--sg-muted, #64748b); }
+  .ssr-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .ssr-btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .ssr-frame {
+    border-color: var(--sg-border, #e2e8f0);
+    background: var(--sg-bg, #fff);
+  }
+  .ssr-placeholder {
+    border-color: var(--sg-border, #cbd5e1);
+    color: var(--sg-muted, #64748b);
+  }
+</style>

@@ -222,7 +222,7 @@
                color: var(--sg-muted, #64748b); }
   .kpi-value { font-size: 22px; font-weight: 700; color: var(--sg-fg, #0f172a);
                font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .kpi-value.accent { color: #6366f1; }
+  .kpi-value.accent { color: var(--sg-accent, #6366f1); }
   .kpi-of { font-size: 14px; color: var(--sg-muted, #94a3b8); font-weight: 500; }
   .coverage-bar {
     height: 6px; background: var(--sg-row-hover-bg, rgba(148,163,184,0.15));
@@ -230,7 +230,7 @@
   }
   .coverage-bar span {
     display: block; height: 100%;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    background: var(--sg-accent, #6366f1);
     transition: width 200ms ease-out;
   }
 
@@ -239,7 +239,7 @@
     display: grid; grid-template-columns: auto 1fr auto; align-items: center;
     gap: 16px;
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(180deg, color-mix(in oklab, #6366f1 4%, var(--sg-bg, #fff)), var(--sg-bg, #fff));
+    background: linear-gradient(180deg, color-mix(in oklab, var(--sg-accent, #6366f1) 4%, var(--sg-bg, #fff)), var(--sg-bg, #fff));
     border-radius: 10px; padding: 10px 14px;
   }
   .topn-toggle {
@@ -247,7 +247,7 @@
     font-size: 12px; font-weight: 700; color: var(--sg-fg, #0f172a);
     text-transform: uppercase; letter-spacing: 0.06em;
   }
-  .topn-toggle input { accent-color: #6366f1; }
+  .topn-toggle input { accent-color: var(--sg-accent, #6366f1); }
 
   .topn-controls {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -266,7 +266,7 @@
     color: var(--sg-muted, #64748b);
   }
   .seg button.is-on {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
   }
   .seg button + button { border-left: 1px solid var(--sg-border, #cbd5e1); }
 
@@ -297,7 +297,8 @@
   }
   .n-quick button:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.1)); }
   .n-quick button.is-on {
-    background: #6366f1; color: #fff; border-color: #6366f1;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
+    border-color: var(--sg-accent, #6366f1);
   }
 
   .by { font-size: 11px; color: var(--sg-muted, #64748b);
@@ -314,5 +315,5 @@
     font-size: 12px; color: var(--sg-muted, #64748b);
     text-align: right;
   }
-  .topn-summary strong { color: #6366f1; }
+  .topn-summary strong { color: var(--sg-accent, #6366f1); }
 </style>

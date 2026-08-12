@@ -448,11 +448,8 @@
     padding: 10px 12px;
     border: 1px solid var(--sg-border, #e2e8f0);
     border-radius: 8px;
-    background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(14,165,233,0.04));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 6%, transparent);
     flex-shrink: 0;
-  }
-  :global([data-theme='dark']) .ch-scope {
-    background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(14,165,233,0.10));
   }
   .ch-scope-eyebrow {
     display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
@@ -497,9 +494,8 @@
     display: flex; align-items: baseline; gap: 8px;
     padding: 8px 12px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: var(--sg-header-bg, #f8fafc);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
   }
-  :global([data-theme='dark']) .ch-chart-head { background: rgba(148,163,184,0.10); }
   .ch-chart-eyebrow {
     font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--sg-muted, #64748b); font-weight: 700;
@@ -524,9 +520,6 @@
   :global(.ch-bar-name)  { font-size: 11px; fill: var(--sg-fg, #1e293b); font-weight: 600; }
   :global(.ch-bar-value) { font-size: 10px; fill: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; }
   :global(.ch-axis-label) { font-size: 10px; fill: var(--sg-muted, #64748b); }
-  :global([data-theme='dark']) :global(.ch-bar-name)  { fill: #f1f5f9; }
-  :global([data-theme='dark']) :global(.ch-bar-value) { fill: #94a3b8; }
-  :global([data-theme='dark']) :global(.ch-axis-label) { fill: #94a3b8; }
 
   /* Pivot rows */
   :global(.pv-label) { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }
@@ -539,15 +532,17 @@
     font-size: 13px; line-height: 1;
     transition: transform 120ms ease, background 120ms ease;
   }
-  :global(.pv-chev:hover) { background: rgba(148,163,184,0.18); }
+  :global(.pv-chev:hover) { background: var(--sg-row-hover-bg, rgba(148,163,184,0.18)); }
   :global(.pv-chev.open) { transform: rotate(90deg); }
   :global(.pv-chev-spacer) { display: inline-block; width: 18px; height: 18px; flex-shrink: 0; }
 
-  :global(.pv-row-l1)    { background: rgba(99,102,241,0.08) !important; font-weight: 700; }
-  :global(.pv-row-l2)    { background: rgba(14,165,233,0.06) !important; font-weight: 600; }
-  :global(.pv-row-grand) { background: rgba(99,102,241,0.18) !important; font-weight: 800; color: var(--sg-accent, #2563eb); }
+  /* Level tints step down in alpha, not hue, so the hierarchy survives
+     whichever accent the active theme supplies. */
+  :global(.pv-row-l1)    { background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent) !important; font-weight: 700; }
+  :global(.pv-row-l2)    { background: color-mix(in srgb, var(--sg-accent, #6366f1) 5%, transparent) !important; font-weight: 600; }
+  :global(.pv-row-grand) { background: color-mix(in srgb, var(--sg-accent, #6366f1) 18%, transparent) !important; font-weight: 800; color: var(--sg-accent, #2563eb); }
   :global(.pv-row-selected) {
     box-shadow: inset 3px 0 0 var(--sg-accent, #2563eb);
-    background: rgba(99,102,241,0.16) !important;
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 16%, transparent) !important;
   }
 </style>

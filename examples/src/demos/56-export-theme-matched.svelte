@@ -103,7 +103,7 @@
         type="button"
         onclick={() => doExport(fmt as ExportFormat)}
         disabled={busy !== null}
-        class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+        class="rounded-md border px-3 py-1.5 disabled:opacity-50 ex-btn"
       >
         {busy === fmt ? 'Exporting…' : fmt.toUpperCase()}
       </button>
@@ -111,7 +111,7 @@
     {#if lastExport}
       <span class="text-xs text-emerald-600 dark:text-emerald-400">✓ {lastExport}</span>
     {/if}
-    <span class="ml-auto text-slate-500 dark:text-slate-400">
+    <span class="ml-auto ex-hint">
       Flip the gallery theme (sidebar sun/moon) then re-export to compare.
     </span>
   </div>
@@ -136,3 +136,14 @@
     />
   </div>
 </section>
+
+<style>
+  /* Toolbar chrome follows the same --sg-* tokens the export reads. */
+  .ex-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .ex-btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f8fafc); }
+  .ex-hint { color: var(--sg-muted, #64748b); }
+</style>

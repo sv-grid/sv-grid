@@ -108,15 +108,15 @@
   .brand {
     display: flex; flex-direction: column; justify-content: space-between;
     gap: 28px; padding: 32px;
-    color: #fff;
-    background:
-      radial-gradient(120% 120% at 0% 0%, #6366f1 0%, #4338ca 45%, #1e1b4b 100%);
+    color: var(--sg-on-accent, #fff);
+    background: var(--sg-accent, #4338ca);
   }
   .brand-top { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; }
   .logo { font-size: 22px; }
   .brand-mid h1 { font-size: 30px; line-height: 1.15; margin: 14px 0 10px; letter-spacing: -.02em; }
   .brand-mid p { margin: 0; opacity: .82; max-width: 34ch; line-height: 1.5; }
-  .quote { margin: 0; font-size: 14px; line-height: 1.55; opacity: .9; border-left: 3px solid rgba(255,255,255,.4); padding-left: 14px; }
+  /* currentColor so the rule tracks whatever sits legibly on the accent. */
+  .quote { margin: 0; font-size: 14px; line-height: 1.55; opacity: .9; border-left: 3px solid color-mix(in srgb, currentColor 40%, transparent); padding-left: 14px; }
   .quote cite { display: block; margin-top: 8px; font-style: normal; opacity: .7; font-size: 12.5px; }
 
   .form-wrap { display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 32px; max-width: 420px; margin: 0 auto; width: 100%; }

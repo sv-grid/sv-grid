@@ -287,15 +287,16 @@
 <style>
   .info {
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(168,85,247,0.03));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 4%, transparent);
     border-radius: 8px; padding: 10px 14px;
     font-size: 13px; color: var(--sg-fg, #0f172a);
   }
   .info p { margin: 0; }
   .info p + p { margin-top: 4px; color: var(--sg-muted, #64748b); }
   .info code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-               background: rgba(99,102,241,0.10); padding: 1px 5px; border-radius: 3px;
-               color: #4338ca; font-size: 12px; }
+               background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent);
+               padding: 1px 5px; border-radius: 3px;
+               color: var(--sg-accent, #4338ca); font-size: 12px; }
 
   /* Validation cell ---------------------------------------------- */
   :global(.val-cell) {
@@ -306,8 +307,8 @@
                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   :global(.val-spinner) {
     display: inline-block; width: 12px; height: 12px;
-    border: 2px solid color-mix(in oklab, #6366f1 30%, transparent);
-    border-top-color: #6366f1;
+    border: 2px solid color-mix(in oklab, var(--sg-accent, #6366f1) 30%, transparent);
+    border-top-color: var(--sg-accent, #6366f1);
     border-radius: 50%;
     animation: val-spin 700ms linear infinite;
   }
@@ -357,7 +358,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 12px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(180deg, color-mix(in oklab, #6366f1 4%, transparent), transparent);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 4%, transparent);
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; color: var(--sg-muted, #64748b);
   }
@@ -370,7 +371,7 @@
     padding: 4px 12px; font-size: 12px;
     align-items: center;
   }
-  .log:first-child { background: color-mix(in oklab, #6366f1 6%, transparent); }
+  .log:first-child { background: color-mix(in oklab, var(--sg-accent, #6366f1) 6%, transparent); }
   .log-time { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
               font-size: 11px; color: var(--sg-muted, #64748b); }
   .log-where { color: var(--sg-fg, #0f172a); font-weight: 600;
@@ -379,7 +380,7 @@
                 letter-spacing: 0.04em; }
   .log-valid   .log-status { color: #16a34a; }
   .log-invalid .log-status { color: #dc2626; }
-  .log-validating .log-status { color: #6366f1; }
+  .log-validating .log-status { color: var(--sg-accent, #6366f1); }
   .log-message { color: var(--sg-muted, #64748b); font-size: 12px;
                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

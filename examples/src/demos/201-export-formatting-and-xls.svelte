@@ -119,7 +119,7 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
+  <div class="ex-lead text-sm shrink-0">
     Exports reflect what you see: currency, dates, and percents are formatted.
     Toggle <strong>raw values</strong> to export underlying numbers, pick a
     <strong>scope</strong>, and try <strong>.xls</strong> for legacy Excel.
@@ -136,7 +136,7 @@
       {conditionalFormats}
     />
 
-    <span class="mx-1 h-5 w-px bg-slate-300 dark:bg-slate-700"></span>
+    <span class="ex-divider mx-1 h-5 w-px"></span>
 
     <!-- Manual buttons wired to the scope + rawValues toggles below -->
     <button type="button" class="btn" disabled={!api} onclick={() => run('Excel (.xlsx)', 'xlsx')}>xlsx</button>
@@ -144,15 +144,15 @@
     <button type="button" class="btn" disabled={!api} onclick={() => run('CSV', 'csv')}>csv</button>
     <button type="button" class="btn" disabled={!api} onclick={() => run('PDF', 'pdf')}>pdf</button>
 
-    <label class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+    <label class="ex-label flex items-center gap-1.5 text-xs">
       Scope
-      <select bind:value={scope} class="rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs">
+      <select bind:value={scope} class="ex-select rounded px-2 py-1 text-xs">
         <option value="displayed">Current view</option>
         <option value="selected">Selected</option>
         <option value="all">All rows</option>
       </select>
     </label>
-    <label class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+    <label class="ex-label flex items-center gap-1.5 text-xs">
       <input type="checkbox" bind:checked={rawValues} class="h-4 w-4" />
       Raw values
     </label>
@@ -184,7 +184,7 @@
     />
   </div>
 
-  <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="ex-foot text-xs shrink-0">
     Enterprise feature. <code>.xls</code> is the Excel 2003 XML Spreadsheet
     format - opens in Excel 97-2003+ with no <code>jszip</code> dependency and
     keeps numbers numeric. The <code>#Order</code> column uses an
@@ -195,17 +195,21 @@
 <style>
   .btn {
     border-radius: 0.375rem;
-    border: 1px solid rgb(203 213 225);
+    border: 1px solid var(--sg-border, rgb(203 213 225));
     padding: 0.375rem 0.75rem;
     font-size: 0.875rem;
     font-weight: 500;
-    background: white;
-    color: rgb(15 23 42);
+    background: var(--sg-bg, white);
+    color: var(--sg-fg, rgb(15 23 42));
   }
   .btn:disabled { opacity: 0.5; }
-  :global(.dark) .btn {
-    border-color: rgb(51 65 85);
-    background: rgb(15 23 42);
-    color: rgb(241 245 249);
+  .ex-lead { color: var(--sg-fg, #475569); }
+  .ex-foot { color: var(--sg-muted, #64748b); }
+  .ex-label { color: var(--sg-muted, #475569); }
+  .ex-divider { background: var(--sg-border, #cbd5e1); }
+  .ex-select {
+    border: 1px solid var(--sg-input-border, #cbd5e1);
+    background: var(--sg-input-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
   }
 </style>

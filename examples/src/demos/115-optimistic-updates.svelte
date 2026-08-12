@@ -291,7 +291,7 @@
     border-radius: 8px; padding: 8px 12px;
     display: flex; flex-direction: column; gap: 2px;
   }
-  .kpi.info { background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(59,130,246,0.03)); }
+  .kpi.info { background: color-mix(in srgb, var(--sg-accent, #6366f1) 5%, transparent); }
   .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
                font-weight: 700; color: var(--sg-muted, #64748b); }
   .kpi-value { font-size: 22px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
@@ -302,11 +302,11 @@
 
   .info {
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(168,85,247,0.03));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 5%, transparent);
     border-radius: 8px; padding: 10px 12px;
     font-size: 13px; color: var(--sg-fg, #0f172a);
   }
-  .info strong { color: #4338ca; margin-right: 4px; }
+  .info strong { color: var(--sg-accent, #4338ca); margin-right: 4px; }
   .info em { color: var(--sg-muted, #64748b); }
 
   /* Cell with status badge --------------------------------------- */
@@ -348,7 +348,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 12px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(180deg, color-mix(in oklab, #6366f1 4%, transparent), transparent);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 4%, transparent);
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; color: var(--sg-muted, #64748b);
   }
@@ -360,7 +360,7 @@
     display: grid; grid-template-columns: 70px 130px 70px 1fr; gap: 8px;
     padding: 3px 12px; font-size: 12px; align-items: center;
   }
-  .log:first-child { background: color-mix(in oklab, #6366f1 5%, transparent); }
+  .log:first-child { background: color-mix(in oklab, var(--sg-accent, #6366f1) 5%, transparent); }
   .log-time { font-family: ui-monospace, monospace; font-size: 11px; color: var(--sg-muted, #64748b); }
   .log-where { color: var(--sg-fg, #0f172a); font-weight: 600;
                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

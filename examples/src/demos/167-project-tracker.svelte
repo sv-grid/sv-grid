@@ -762,7 +762,7 @@
   .pt-kpi[data-accent='green']   { --kpi: #10b981; }
   .pt-kpi[data-accent='red']     { --kpi: #ef4444; }
   .pt-kpi[data-accent='violet']  { --kpi: #8b5cf6; }
-  .pt-kpi[data-accent='neutral'] { --kpi: #64748b; }
+  .pt-kpi[data-accent='neutral'] { --kpi: var(--sg-muted, #64748b); }
   .pt-kpi-label {
     font-size: 10.5px;
     color: var(--sg-muted, #64748b);
@@ -805,7 +805,7 @@
     flex-shrink: 0;
   }
   .pt-pcard {
-    --c: #64748b;
+    --c: var(--sg-muted, #64748b);
     padding: 10px 12px;
     border-radius: 8px;
     border: 1px solid var(--sg-border, #e2e8f0);
@@ -956,8 +956,8 @@
     font-size: 13px;
   }
   :global(.pt-new-pill) {
-    background: color-mix(in srgb, #3b82f6 16%, transparent);
-    color: #3b82f6;
+    background: color-mix(in srgb, var(--sg-accent, #3b82f6) 16%, transparent);
+    color: var(--sg-accent, #3b82f6);
     font-size: 9px;
     font-weight: 800;
     padding: 1px 5px;
@@ -1023,7 +1023,7 @@
 
   /* ----- Cell: Pills (status, priority, risk) ---------------- */
   :global(.pt-pill) {
-    --c: #64748b;
+    --c: var(--sg-muted, #64748b);
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -1048,7 +1048,7 @@
 
   /* ----- Cell: Department chip ------------------------------- */
   :global(.pt-dept) {
-    --c: #64748b;
+    --c: var(--sg-muted, #64748b);
     display: inline-flex;
     align-items: center;
     padding: 3px 9px;

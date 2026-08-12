@@ -117,31 +117,31 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="kb-note text-sm">
       The same grid, two views. Drag a card, or focus one and use <kbd>Space</kbd>
       + arrows. <strong>Double-click</strong> to edit, <strong>right-click</strong> for a
       context menu, search to filter, collapse a lane, and switch on swimlanes.
       <strong>In progress</strong> has an enforced WIP limit of 3.
     </div>
-    <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm shrink-0">
+    <div class="kb-switch inline-flex rounded-md overflow-hidden text-sm shrink-0">
       <button
-        class="px-3 py-1 {view === 'board' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        class="px-3 py-1 {view === 'board' ? 'kb-on' : 'bg-transparent'}"
         onclick={() => (view = 'board')}>Board</button>
       <button
-        class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        class="px-3 py-1 {view === 'table' ? 'kb-on' : 'bg-transparent'}"
         onclick={() => (view = 'table')}>Table</button>
     </div>
   </div>
 
   {#if view === 'board'}
     <div class="flex items-center gap-2 text-sm shrink-0">
-      <span class="text-slate-500 dark:text-slate-400">Swimlanes:</span>
-      <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden">
+      <span class="kb-muted">Swimlanes:</span>
+      <div class="kb-switch inline-flex rounded-md overflow-hidden">
         <button
-          class="px-2.5 py-0.5 {swimlane === 'none' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          class="px-2.5 py-0.5 {swimlane === 'none' ? 'kb-on' : 'bg-transparent'}"
           onclick={() => (swimlane = 'none')}>None</button>
         <button
-          class="px-2.5 py-0.5 {swimlane === 'assignee' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          class="px-2.5 py-0.5 {swimlane === 'assignee' ? 'kb-on' : 'bg-transparent'}"
           onclick={() => (swimlane = 'assignee')}>By assignee</button>
       </div>
     </div>
@@ -187,7 +187,7 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="kb-muted text-sm shrink-0">
     {rows.length} tasks · {rows.reduce((s, r) => s + r.points, 0)} points
   </footer>
 </section>
@@ -196,12 +196,22 @@
   <div class="flex flex-col gap-2">
     <div class="font-semibold text-[0.84rem] leading-snug">{task.title}</div>
     <div class="flex items-center justify-between gap-2">
-      <span class="inline-flex items-center gap-1.5 text-[0.74rem] text-slate-500 dark:text-slate-400">
+      <span class="kb-muted inline-flex items-center gap-1.5 text-[0.74rem]">
         <SvAvatar name={task.assignee} size={20} />
         {task.assignee}
       </span>
       <SvChip variant={chipVariant(task.priority)}>{task.priority}</SvChip>
     </div>
-    <div class="text-[0.7rem] text-slate-400">{task.points} pts</div>
+    <div class="kb-muted text-[0.7rem]">{task.points} pts</div>
   </div>
 {/snippet}
+
+<style>
+  .kb-note   { color: var(--sg-muted, #475569); }
+  .kb-muted  { color: var(--sg-muted, #64748b); }
+  .kb-switch { border: 1px solid var(--sg-border, #cbd5e1); }
+  .kb-on {
+    background: var(--sg-accent, #1e293b);
+    color: var(--sg-on-accent, #fff);
+  }
+</style>

@@ -448,12 +448,12 @@
       <svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="thrFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#6366f1" stop-opacity="0.34" />
-            <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
+            <stop offset="0%" stop-color="var(--sg-accent, #6366f1)" stop-opacity="0.34" />
+            <stop offset="100%" stop-color="var(--sg-accent, #6366f1)" stop-opacity="0" />
           </linearGradient>
         </defs>
         <path d={chart.area} fill="url(#thrFill)" />
-        <path d={chart.line} fill="none" stroke="#6366f1" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
+        <path d={chart.line} fill="none" stroke="var(--sg-accent, #6366f1)" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
       </svg>
       <div class="chart-foot"><span>peak {chart.max}/s</span><span>last 60 seconds</span></div>
     </div>
@@ -573,7 +573,7 @@
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
     padding: 3px 9px; border-radius: 999px; text-transform: uppercase;
-    background: color-mix(in srgb, #94a3b8 18%, transparent); color: var(--sg-muted, #64748b);
+    background: color-mix(in srgb, var(--sg-muted, #94a3b8) 18%, transparent); color: var(--sg-muted, #64748b);
   }
   .live-badge.on { background: color-mix(in srgb, #ef4444 16%, transparent); color: #ef4444; }
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
@@ -595,8 +595,7 @@
   .kpi-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sg-muted, #64748b); margin-bottom: 5px; }
   .kpi-value { font-size: 23px; font-weight: 800; line-height: 1.05; letter-spacing: -0.02em; color: var(--sg-fg, #0f172a); }
   .kpi-unit { font-size: 13px; font-weight: 600; color: var(--sg-muted, #64748b); margin-left: 2px; }
-  .kpi-value.accent { color: #6366f1; }
-  :global([data-theme='dark']) .kpi-value.accent { color: #a5b4fc; }
+  .kpi-value.accent { color: var(--sg-accent, #6366f1); }
   .kpi-value.pos { color: #16a34a; }
   :global([data-theme='dark']) .kpi-value.pos { color: #4ade80; }
   .kpi-foot { margin-top: 6px; font-size: 11px; color: var(--sg-muted, #64748b); }
@@ -606,8 +605,7 @@
   .chart-card { border: 1px solid var(--sg-border, #e2e8f0); background: var(--sg-bg, #fff); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
   .chart-head { display: flex; align-items: center; justify-content: space-between; }
   .chart-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sg-muted, #64748b); }
-  .chart-now { font-size: 18px; font-weight: 800; color: #6366f1; letter-spacing: -0.02em; }
-  :global([data-theme='dark']) .chart-now { color: #a5b4fc; }
+  .chart-now { font-size: 18px; font-weight: 800; color: var(--sg-accent, #6366f1); letter-spacing: -0.02em; }
   .chart-now-unit { font-size: 11px; font-weight: 600; color: var(--sg-muted, #64748b); }
   .spark { flex: 1 1 auto; width: 100%; min-height: 0; margin: 6px 0 2px; display: block; }
   .chart-foot { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--sg-muted, #64748b); }
@@ -623,7 +621,7 @@
   .rbars { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
   .rbar { display: grid; grid-template-columns: 40px 1fr 32px; align-items: center; gap: 8px; font-size: 11px; color: var(--sg-muted, #64748b); }
   .rbar-track { height: 6px; border-radius: 999px; background: var(--sg-header-bg, #f1f5f9); overflow: hidden; }
-  .rbar-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6366f1, #8b5cf6); transition: width 0.4s ease; }
+  .rbar-fill { display: block; height: 100%; border-radius: 999px; background: var(--sg-accent, #6366f1); transition: width 0.4s ease; }
   .rbar-val { text-align: right; color: var(--sg-fg, #334155); font-weight: 600; }
 
   /* ─── Toolbar ────────────────────────────────────────────────── */
@@ -655,11 +653,11 @@
     position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
     background: color-mix(in srgb, var(--sg-bg, #fff) 55%, transparent); backdrop-filter: blur(1px);
   }
-  .spinner { width: 26px; height: 26px; border-radius: 50%; border: 3px solid color-mix(in srgb, #6366f1 25%, transparent); border-top-color: #6366f1; animation: spin 0.7s linear infinite; }
+  .spinner { width: 26px; height: 26px; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--sg-accent, #6366f1) 25%, transparent); border-top-color: var(--sg-accent, #6366f1); animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   :global(.live-new td) { animation: flash-row 1.1s ease-out; }
   @keyframes flash-row {
-    0% { background: color-mix(in srgb, #6366f1 22%, transparent); }
+    0% { background: color-mix(in srgb, var(--sg-accent, #6366f1) 22%, transparent); }
     100% { background: transparent; }
   }
 

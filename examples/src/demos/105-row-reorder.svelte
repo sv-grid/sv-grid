@@ -253,15 +253,15 @@
     border-radius: 8px; padding: 10px 14px;
   }
   .tb-info { flex: 1; min-width: 280px; font-size: 13px; color: var(--sg-fg, #0f172a); }
-  .tb-info strong { color: #6366f1; }
+  .tb-info strong { color: var(--sg-accent, #6366f1); }
   .grip-inline {
-    font-weight: 800; color: #6366f1;
-    background: color-mix(in oklab, #6366f1 10%, transparent);
+    font-weight: 800; color: var(--sg-accent, #6366f1);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 10%, transparent);
     padding: 1px 6px; border-radius: 3px; font-family: ui-monospace, monospace;
   }
   .tb-actions { display: flex; gap: 6px; }
   .tb-btn {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border: 0; border-radius: 6px; padding: 6px 12px;
     font-size: 12.5px; font-weight: 700; cursor: pointer;
   }
@@ -278,7 +278,7 @@
   :global(.hcell) {
     display: inline-flex; align-items: center; gap: 6px;
   }
-  :global(.cbx) { width: 13px; height: 13px; accent-color: #6366f1; cursor: pointer; }
+  :global(.cbx) { width: 13px; height: 13px; accent-color: var(--sg-accent, #6366f1); cursor: pointer; }
   :global(.grip) {
     cursor: grab; user-select: none;
     color: var(--sg-muted, #94a3b8);
@@ -286,14 +286,14 @@
     font-weight: 800; font-size: 14px;
     padding: 0 4px;
   }
-  :global(.grip:hover) { color: #6366f1; }
+  :global(.grip:hover) { color: var(--sg-accent, #6366f1); }
   :global(.grip:active) { cursor: grabbing; }
 
   .drop-line {
     position: absolute; height: 3px;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    background: var(--sg-accent, #6366f1);
     border-radius: 2px;
-    box-shadow: 0 0 8px #6366f1;
+    box-shadow: 0 0 8px var(--sg-accent, #6366f1);
     pointer-events: none;
     z-index: 50;
   }

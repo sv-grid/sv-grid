@@ -439,7 +439,7 @@
 {/snippet}
 
 <section class="flex flex-col flex-1 min-h-0">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0 mb-3">
+  <div class="admin-note text-sm shrink-0 mb-3">
     Compact admin app - sidebar + three pages, all in this one .svelte file.
     Full standalone version: <code>packages/svgrid-admin-template/</code>.
   </div>
@@ -798,7 +798,7 @@
                     <span>Seats used</span>
                     <div class="flex items-center gap-3">
                       <span class="font-semibold tabular-nums">{settings.seatsUsed} / {settings.seats}</span>
-                      <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background: rgba(148,163,184,0.25);">
+                      <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background: var(--sg-border, rgba(148,163,184,0.25));">
                         <div class="h-full" style="width: {Math.round(settings.seatsUsed / settings.seats * 100)}%; background: var(--sg-admin-accent);"></div>
                       </div>
                     </div>
@@ -843,36 +843,31 @@
 <style>
   /* All styles scoped to .sg-admin-shell so the demo doesn't leak into
    * the gallery chrome (tokens, fonts, button styles, etc.). */
+  .admin-note { color: var(--sg-muted, #475569); }
+
+  /* The shell keeps its own --sg-admin-* names, but every one of them now
+   * resolves against the active grid theme instead of a fixed palette. */
   .sg-admin-shell {
-    --sg-admin-bg: #0b1224;
-    --sg-admin-panel: #111827;
-    --sg-admin-border: #1e293b;
-    --sg-admin-fg: #f1f5f9;
-    --sg-admin-muted: #94a3b8;
-    --sg-admin-sidebar-bg: #060c1d;
-    --sg-admin-sidebar-fg: #cbd5e1;
-    --sg-admin-sidebar-active-bg: #1e293b;
-    --sg-admin-accent: #6366f1;
-    --sg-admin-accent-2: #22d3ee;
+    --sg-admin-bg: var(--sg-bg-subtle, var(--sg-header-bg, #0b1224));
+    --sg-admin-panel: var(--sg-bg, #111827);
+    --sg-admin-border: var(--sg-border, #1e293b);
+    --sg-admin-fg: var(--sg-fg, #f1f5f9);
+    --sg-admin-muted: var(--sg-muted, #94a3b8);
+    --sg-admin-sidebar-bg: var(--sg-header-bg, #060c1d);
+    --sg-admin-sidebar-fg: var(--sg-muted, #cbd5e1);
+    --sg-admin-sidebar-active-bg: var(--sg-accent, #1e293b);
+    --sg-admin-accent: var(--sg-accent, #6366f1);
+    --sg-admin-on-accent: var(--sg-on-accent, #fff);
     background: var(--sg-admin-bg);
     color: var(--sg-admin-fg);
     font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-  :global(html[data-theme='light']) .sg-admin-shell {
-    --sg-admin-bg: #f8fafc;
-    --sg-admin-panel: #ffffff;
-    --sg-admin-border: #e2e8f0;
-    --sg-admin-fg: #0f172a;
-    --sg-admin-muted: #64748b;
-    --sg-admin-sidebar-bg: #0f172a;
-    --sg-admin-sidebar-fg: #cbd5e1;
-    --sg-admin-sidebar-active-bg: #1e293b;
   }
 
   .sg-sidebar {
     width: 200px;
     flex-shrink: 0;
     background: var(--sg-admin-sidebar-bg);
+    border-right: 1px solid var(--sg-admin-border);
     color: var(--sg-admin-sidebar-fg);
     display: flex;
     flex-direction: column;
@@ -883,19 +878,22 @@
     gap: 8px;
     padding: 0 16px;
     height: 56px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid var(--sg-admin-border);
     font-weight: 700;
-    color: #fff;
+    color: var(--sg-admin-fg);
     font-size: 14px;
   }
   .sg-brand-mark {
     width: 22px; height: 22px; border-radius: 5px;
-    background: linear-gradient(135deg, var(--sg-admin-accent), var(--sg-admin-accent-2));
+    background: var(--sg-admin-accent);
     display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px;
   }
-  .sg-brand-mark span { background: rgba(255,255,255,0.85); border-radius: 1px; display: block; }
+  .sg-brand-mark span {
+    background: color-mix(in srgb, var(--sg-admin-on-accent) 85%, transparent);
+    border-radius: 1px; display: block;
+  }
   .sg-brand-mark span:nth-child(2),
-  .sg-brand-mark span:nth-child(3) { background: rgba(255,255,255,0.55); }
+  .sg-brand-mark span:nth-child(3) { background: color-mix(in srgb, var(--sg-admin-on-accent) 55%, transparent); }
   .sg-nav {
     flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px;
     overflow-y: auto;
@@ -908,14 +906,14 @@
     font-size: 13px; cursor: pointer; text-align: left;
     transition: background 120ms ease, color 120ms ease;
   }
-  .sg-nav-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+  .sg-nav-btn:hover { background: var(--sg-row-hover-bg, rgba(255,255,255,0.05)); color: var(--sg-admin-fg); }
   .sg-nav-btn.active {
     background: var(--sg-admin-sidebar-active-bg);
-    color: #fff; font-weight: 600;
+    color: var(--sg-admin-on-accent); font-weight: 600;
   }
   .sg-foot {
-    padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08);
-    font-size: 11px; color: rgba(203,213,225,0.7);
+    padding: 12px 16px; border-top: 1px solid var(--sg-admin-border);
+    font-size: 11px; color: var(--sg-admin-muted);
   }
 
   .sg-main { background: var(--sg-admin-bg); }
@@ -936,7 +934,7 @@
   .sg-section-title { font-size: 13px; font-weight: 600; color: var(--sg-admin-fg); margin: 0; }
   .sg-link {
     background: transparent; border: none; cursor: pointer;
-    font-size: 12px; color: var(--sg-admin-accent-2);
+    font-size: 12px; color: var(--sg-admin-accent);
   }
   .sg-kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
                   color: var(--sg-admin-muted); font-weight: 600; margin: 0; }
@@ -959,8 +957,8 @@
   }
   .sg-btn:disabled { opacity: 0.55; cursor: not-allowed; }
   .sg-btn-primary {
-    background: linear-gradient(135deg, var(--sg-admin-accent), var(--sg-admin-accent-2));
-    border-color: transparent; color: #fff;
+    background: var(--sg-admin-accent);
+    border-color: transparent; color: var(--sg-admin-on-accent);
   }
   .sg-btn-primary:hover:not(:disabled) { filter: brightness(1.08); border-color: transparent; }
 
@@ -986,10 +984,10 @@
     color: var(--sg-admin-muted);
     cursor: pointer;
   }
-  .sg-tab:hover { color: var(--sg-admin-fg); background: rgba(99, 102, 241, 0.08); }
+  .sg-tab:hover { color: var(--sg-admin-fg); background: var(--sg-row-hover-bg, rgba(99, 102, 241, 0.08)); }
   .sg-tab.active {
     background: var(--sg-admin-accent);
-    color: white;
+    color: var(--sg-admin-on-accent);
   }
   .sg-field {
     display: flex;

@@ -874,7 +874,7 @@
                   <div class="wb-bar-row">
                     <span class="wb-bar-label" title={p.label}>{p.label}</span>
                     <span class="wb-bar-track">
-                      <span class="wb-bar-fill" style={`width:${Math.max(2, (Math.abs(p.value) / chartMax) * 100)}%; background:${p.value < 0 ? '#ef4444' : 'linear-gradient(90deg,#6366f1,#8b5cf6)'};`}></span>
+                      <span class="wb-bar-fill" style={`width:${Math.max(2, (Math.abs(p.value) / chartMax) * 100)}%; background:${p.value < 0 ? '#ef4444' : 'var(--sg-accent, #6366f1)'};`}></span>
                     </span>
                     <span class="wb-bar-val tabular-nums">{formatValue(p.value, activeSheet.fmt[1]?.[activeCol])}</span>
                   </div>
@@ -921,7 +921,7 @@
   .wb-btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #eef2ff); }
   .wb-btn:disabled { opacity: 0.5; cursor: default; }
   .wb-btn.on { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); border-color: transparent; }
-  .wb-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border: 0; font-weight: 600; padding: 0 12px; }
+  .wb-primary { background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff); border: 0; font-weight: 600; padding: 0 12px; }
   .wb-import { cursor: pointer; }
   .wb-sw { width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.18); cursor: pointer; padding: 0; }
 
@@ -943,7 +943,7 @@
   /* Merged title banner */
   .wb-title {
     display: flex; align-items: baseline; gap: 10px; flex-shrink: 0;
-    background: linear-gradient(90deg, color-mix(in srgb, #6366f1 12%, var(--sg-bg, #fff)), var(--sg-bg, #fff));
+    background: linear-gradient(90deg, color-mix(in srgb, var(--sg-accent, #6366f1) 12%, var(--sg-bg, #fff)), var(--sg-bg, #fff));
     border: 1px solid var(--sg-border, #e2e8f0); border-bottom: 0;
     border-radius: 10px 10px 0 0; padding: 8px 14px;
   }
@@ -1010,7 +1010,7 @@
   /* Toast */
   .wb-toast {
     position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-    background: #0f172a; color: #fff; font-size: 12.5px; font-weight: 500;
+    background: var(--sg-fg, #0f172a); color: var(--sg-bg, #fff); font-size: 12.5px; font-weight: 500;
     padding: 8px 16px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 40;
   }
 </style>

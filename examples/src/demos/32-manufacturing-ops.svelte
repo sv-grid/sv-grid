@@ -235,7 +235,7 @@
   {@const pct = props.run.batchSize > 0 ? Math.min(100, Math.round((props.run.produced / props.run.batchSize) * 100)) : 0}
   {@const color = props.run.status === 'fault' ? '#ef4444' : props.run.status === 'completed' ? '#64748b' : '#10b981'}
   <div class="inline-flex items-center gap-2 w-full">
-    <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background: rgba(148, 163, 184, 0.25);">
+    <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background: color-mix(in srgb, var(--sg-border, #94a3b8) 50%, transparent);">
       <div class="h-full" style="width: {pct}%; background: {color}; transition: width 400ms ease;"></div>
     </div>
     <span class="text-xs tabular-nums" style:color="var(--sg-muted)">
@@ -247,7 +247,7 @@
 {#snippet OeeCell(props: { oee: number })}
   {@const color = props.oee >= 85 ? '#10b981' : props.oee >= 65 ? '#f59e0b' : '#ef4444'}
   <div class="inline-flex items-center gap-2 w-full">
-    <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background: rgba(148, 163, 184, 0.25);">
+    <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background: color-mix(in srgb, var(--sg-border, #94a3b8) 50%, transparent);">
       <div class="h-full" style="width: {props.oee}%; background: {color}; transition: width 400ms ease;"></div>
     </div>
     <span class="text-xs tabular-nums w-8 text-right">{props.oee}%</span>

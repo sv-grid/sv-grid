@@ -686,7 +686,7 @@
   .rt-status-paused { color: #ca8a04; }
   .rt-status-reconnecting { color: #d97706; }
   .rt-status-connecting { color: #2563eb; }
-  .rt-status-closed { color: #64748b; }
+  .rt-status-closed { color: var(--sg-muted, #64748b); }
   :global([data-theme='dark']) .rt-status-open { color: #4ade80; }
   :global([data-theme='dark']) .rt-status-paused { color: #fbbf24; }
   :global([data-theme='dark']) .rt-status-reconnecting { color: #fb923c; }

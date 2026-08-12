@@ -105,7 +105,7 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
+  <div class="ai-muted text-sm shrink-0">
     Describe an export in plain English - the AI turns it into a filter + group +
     format plan and downloads the file (the grid stays as-is). Or scan the view
     for anomalies. Running on the bundled mock model (no API key).
@@ -115,7 +115,7 @@
     <input
       bind:value={query}
       placeholder="e.g. export orders over $300 as a grouped PDF by country"
-      class="flex-1 min-w-[280px] rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm"
+      class="ai-input flex-1 min-w-[280px] rounded border px-3 py-1.5 text-sm"
       onkeydown={(e) => e.key === 'Enter' && runExport()}
     />
     <button class="btn btn-primary" disabled={!api || busy} onclick={runExport}>
@@ -133,7 +133,7 @@
       <strong>Plan:</strong> format <code>{plan.format}</code>
       {#if plan.groupBy.length}· group by <code>{plan.groupBy.join(', ')}</code>{/if}
       {#if plan.filters.length}· {plan.filters.length} filter(s){/if}
-      <div class="text-slate-500 dark:text-slate-400 mt-1">{plan.rationale}</div>
+      <div class="ai-muted mt-1">{plan.rationale}</div>
     </div>
   {/if}
 
@@ -168,7 +168,7 @@
     />
   </div>
 
-  <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="ai-muted text-xs shrink-0">
     Built-in + free. <code>aiExport(api, ...)</code> and
     <code>aiFindAnomalies(api, ...)</code> route through your registered
     <code>AIProvider</code> - the grid bundles no model client. This demo uses
@@ -178,18 +178,28 @@
 </section>
 
 <style>
+  .ai-muted { color: var(--sg-muted, rgb(100 116 139)); }
+  .ai-input {
+    border-color: var(--sg-input-border, var(--sg-border, rgb(203 213 225)));
+    background: var(--sg-input-bg, var(--sg-bg, #fff));
+    color: var(--sg-fg, rgb(15 23 42));
+  }
   .btn {
     border-radius: 0.375rem;
-    border: 1px solid rgb(203 213 225);
+    border: 1px solid var(--sg-border, rgb(203 213 225));
     padding: 0.375rem 0.85rem;
     font-size: 0.85rem;
     font-weight: 500;
-    background: white;
-    color: rgb(15 23 42);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, rgb(15 23 42));
     cursor: pointer;
   }
   .btn:disabled { opacity: 0.5; }
-  .btn-primary { border-color: rgb(79 70 229); background: rgb(79 70 229); color: white; }
+  .btn-primary {
+    border-color: var(--sg-accent, rgb(79 70 229));
+    background: var(--sg-accent, rgb(79 70 229));
+    color: var(--sg-on-accent, #fff);
+  }
   .ai-card {
     border: 1px solid var(--sg-border, rgb(203 213 225));
     background: var(--sg-header-bg, rgb(248 250 252));
@@ -201,9 +211,4 @@
   .sev-high { background: #fee2e2; color: #991b1b; }
   .sev-medium { background: #fef9c3; color: #854d0e; }
   .sev-low { background: #dcfce7; color: #166534; }
-  :global(.dark) .btn {
-    border-color: rgb(51 65 85);
-    background: rgb(15 23 42);
-    color: rgb(241 245 249);
-  }
 </style>

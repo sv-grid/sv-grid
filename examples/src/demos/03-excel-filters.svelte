@@ -72,22 +72,22 @@
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex flex-wrap items-center gap-2 text-sm shrink-0">
     <span class="font-medium">Quick presets:</span>
-    <button onclick={() => preset('engineers')} class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1">Engineering only</button>
-    <button onclick={() => preset('senior')} class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1">Age &gt; 50</button>
-    <button onclick={() => preset('active')} class="rounded border border-slate-300 dark:border-slate-600 px-3 py-1">Active only</button>
-    <span class="ml-3 text-slate-500 dark:text-slate-400">Or click the filter icon on any column header.</span>
+    <button onclick={() => preset('engineers')} class="xf-btn rounded px-3 py-1">Engineering only</button>
+    <button onclick={() => preset('senior')} class="xf-btn rounded px-3 py-1">Age &gt; 50</button>
+    <button onclick={() => preset('active')} class="xf-btn rounded px-3 py-1">Active only</button>
+    <span class="xf-hint ml-3">Or click the filter icon on any column header.</span>
   </div>
 
   {#if chips.length}
     <div class="flex flex-wrap items-center gap-2 text-xs shrink-0">
-      <span class="text-slate-500">Active:</span>
+      <span class="xf-hint">Active:</span>
       {#each chips as chip (chip.columnId)}
-        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 dark:bg-blue-900 dark:text-blue-200">
+        <span class="xf-chip inline-flex items-center gap-1 rounded-full px-2 py-0.5">
           {chip.columnId} {chip.operator} {chip.value ?? ''}
-          <button onclick={() => removeChip(chip.columnId)} aria-label="Remove filter" class="rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 px-1">×</button>
+          <button onclick={() => removeChip(chip.columnId)} aria-label="Remove filter" class="xf-chip-x rounded-full px-1">×</button>
         </span>
       {/each}
-      <button onclick={clearAll} class="ml-2 text-slate-600 dark:text-slate-300 underline">Clear all</button>
+      <button onclick={clearAll} class="xf-clear ml-2 underline">Clear all</button>
     </div>
   {/if}
 
@@ -109,3 +109,19 @@
     />
   </div>
 </section>
+
+<style>
+  .xf-btn {
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .xf-btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .xf-hint { color: var(--sg-muted, #64748b); }
+  .xf-clear { color: var(--sg-muted, #475569); }
+  .xf-chip {
+    background: color-mix(in srgb, var(--sg-accent, #2563eb) 14%, transparent);
+    color: var(--sg-accent, #1d4ed8);
+  }
+  .xf-chip-x:hover { background: color-mix(in srgb, var(--sg-accent, #2563eb) 26%, transparent); }
+</style>

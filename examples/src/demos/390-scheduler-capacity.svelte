@@ -110,9 +110,9 @@
   .st-title { display: flex; flex-direction: column; gap: 2px; }
   .st-sub { font-size: 0.78rem; color: var(--sg-muted, #6b7280); }
   .st-right { display: flex; align-items: center; gap: 10px; }
-  .st-badge { font-size: 0.74rem; font-weight: 600; color: #2563eb; background: color-mix(in srgb, #2563eb 12%, transparent); padding: 3px 8px; border-radius: 999px; }
+  .st-badge { font-size: 0.74rem; font-weight: 600; color: var(--sg-accent, #2563eb); background: color-mix(in srgb, var(--sg-accent, #2563eb) 12%, transparent); padding: 3px 8px; border-radius: 999px; }
   .st-seg { display: inline-flex; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
   .st-seg-btn { border: 0; background: var(--sg-bg, #fff); color: var(--sg-muted, #6b7280); font: inherit; font-size: 0.82rem; padding: 5px 12px; cursor: pointer; }
-  .st-seg-btn.st-on { background: var(--sg-accent, #4f46e5); color: #fff; }
+  .st-seg-btn.st-on { background: var(--sg-accent, #4f46e5); color: var(--sg-on-accent, #fff); }
   .st-body { flex: 1 1 auto; min-height: 0; padding: 8px; }
 </style>

@@ -5,14 +5,27 @@
  * focus and the active-cell ring all glow orange. System font.
  * Unlike the other presets this one mimics no external design
  * system - it is the SvGrid house look from the marketing site.
+ * The chrome stays quiet so the orange only ever means "you did
+ * this": the header sits a hair off the page ground and separates
+ * with a line plus small tracked caps, and frozen columns are a
+ * warm neutral instead of the accent tint the grid derives by
+ * default (which landed on top of the selection color).
  * ============================================================ */
-html[data-preset='ember'] .demo-page {
+html[data-preset='ember'] .demo-page,
+html[data-preset='ember'] .page-warm {
   --sg-bg: #fdfbf8;
   --sg-fg: #1b1613;
   --sg-muted: #6b625a;
   --sg-border: #e7e1d8;
-  --sg-header-bg: #f4f0ea;
+  --sg-header-bg: #fbf9f5;
   --sg-header-fg: #1b1613;
+  --sg-header-border: #ddd4c8;
+  --sg-bg-subtle: #f4f0ea;
+  --sg-pinned-bg: #faf7f2;
+  --sg-pinned-header-bg: #f6f2ec;
+  --sg-pinned-divider: #d8cfc2;
+  --sg-pinned-border: #d8cfc2;
+  --sg-pinned-shadow-color: rgba(94, 72, 52, 0.18);
   --sg-row-alt-bg: #faf7f2;
   --sg-row-hover-bg: #f3ede4;
   --sg-selection-bg: #ffe3d6;        /* warm peach - Svelte orange at low tint */
@@ -29,6 +42,7 @@ html[data-preset='ember'] .demo-page {
   --sg-radius: 8px;
   --sg-cell-px: 12px;
   --sg-header-weight: 600; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 44px;
+  --sg-header-size: 11.5px; --sg-header-transform: uppercase; --sg-header-tracking: 0.05em;
   background: #fbf9f6;
   color: #1b1613;
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -42,13 +56,21 @@ html[data-preset='ember'] .demo-page .demo-aside {
   background: #f4f0ea;
   border-color: #e7e1d8 !important;
 }
-html[data-preset='ember'][data-theme='dark'] .demo-page {
+html[data-preset='ember'][data-theme='dark'] .demo-page,
+html[data-preset='ember'][data-theme='dark'] .page-warm {
   --sg-bg: #1a1512;
   --sg-fg: #f4efe8;
   --sg-muted: #a89e93;
   --sg-border: #2c2520;
-  --sg-header-bg: #211b16;
+  --sg-header-bg: #1c1713;
   --sg-header-fg: #f4efe8;
+  --sg-header-border: #352c25;
+  --sg-bg-subtle: #211b16;
+  --sg-pinned-bg: #1e1814;
+  --sg-pinned-header-bg: #211b16;
+  --sg-pinned-divider: #3a312a;
+  --sg-pinned-border: #3a312a;
+  --sg-pinned-shadow-color: rgba(10, 6, 3, 0.55);
   --sg-row-alt-bg: #171310;
   --sg-row-hover-bg: #241d18;
   --sg-selection-bg: #3a2318;        /* warm ember glow under the selection */

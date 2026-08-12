@@ -106,7 +106,7 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
+  <div class="text-sm shrink-0 xp-note">
     {rows.length} rows. Apply sort or filter - exports always reflect the
     <em>currently displayed</em> rows. Print opens a new window with the
     same view, ready for the browser print dialog.
@@ -116,11 +116,7 @@
     {#each exportFormats as f (f.format)}
       <button
         type="button"
-        class="rounded border px-3 py-1.5 text-sm font-medium disabled:opacity-50
-               border-slate-300 dark:border-slate-700
-               bg-white dark:bg-slate-900
-               text-slate-900 dark:text-slate-100
-               hover:bg-slate-50 dark:hover:bg-slate-800"
+        class="rounded border px-3 py-1.5 text-sm font-medium disabled:opacity-50 xp-btn"
         disabled={busy !== null || api === null}
         onclick={() =>
           run(`Exported ${f.label}`, () =>
@@ -137,8 +133,7 @@
     {/each}
     <button
       type="button"
-      class="rounded border px-3 py-1.5 text-sm font-medium disabled:opacity-50
-             border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-500"
+      class="rounded border px-3 py-1.5 text-sm font-medium disabled:opacity-50 xp-btn xp-btn-primary"
       disabled={busy !== null || api === null}
       onclick={() =>
         run('Opened print view', () =>
@@ -152,7 +147,7 @@
       Print…
     </button>
     {#if busy}
-      <span class="text-xs text-slate-500">{busy}…</span>
+      <span class="text-xs xp-note">{busy}…</span>
     {:else if lastAction}
       <span class="text-xs text-green-600 dark:text-green-400">{lastAction}</span>
     {/if}
@@ -160,7 +155,7 @@
       <span class="text-xs text-red-600 dark:text-red-400">{errorMsg}</span>
     {/if}
 
-    <label class="ml-auto flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+    <label class="ml-auto flex items-center gap-2 text-xs xp-note">
       <input type="checkbox" bind:checked={licensed} class="h-4 w-4" />
       Licensed (uncheck to see the unlicensed watermark + console nudge)
     </label>
@@ -186,9 +181,28 @@
     />
   </div>
 
-  <footer class="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="text-xs shrink-0 xp-note">
     Pro feature - gated by <code>setLicenseKey()</code>. Without a valid key
     (prefix <code>SVENTERPRISE-</code>), the feature still runs but the grid shows
     a watermark linking to jqwidgets.com. Revoked or malformed keys throw.
   </footer>
 </section>
+
+<style>
+  .xp-note { color: var(--sg-muted, #475569); }
+  .xp-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .xp-btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f8fafc); }
+  .xp-btn-primary {
+    border-color: var(--sg-accent, #4f46e5);
+    background: var(--sg-accent, #4f46e5);
+    color: var(--sg-on-accent, #fff);
+  }
+  .xp-btn-primary:hover:not(:disabled) {
+    background: var(--sg-accent, #4f46e5);
+    filter: brightness(1.08);
+  }
+</style>

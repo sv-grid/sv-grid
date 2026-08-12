@@ -141,21 +141,21 @@
     background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); font-size: 13px;
   }
   .rm-pipe { color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; }
-  .rm-arrow { color: #6366f1; margin: 0 4px; font-weight: 700; }
+  .rm-arrow { color: var(--sg-accent, #6366f1); margin: 0 4px; font-weight: 700; }
   table { border-collapse: collapse; width: 100%; font-size: 13px; color: var(--sg-fg, #0f172a); }
   th {
     text-align: left; padding: 8px 12px; cursor: pointer; user-select: none; font-weight: 700;
     border-bottom: 2px solid var(--sg-border, #e2e8f0);
   }
-  th:hover { color: #6366f1; }
+  th:hover { color: var(--sg-accent, #6366f1); }
   td { padding: 7px 12px; border-bottom: 1px solid var(--sg-border, #eef2f7); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .rm-group { cursor: pointer; background: var(--sg-header-bg, #f8fafc); font-weight: 700; }
-  .rm-group:hover { color: #6366f1; }
-  .rm-caret { color: #6366f1; margin-right: 6px; }
+  .rm-group:hover { color: var(--sg-accent, #6366f1); }
+  .rm-caret { color: var(--sg-accent, #6366f1); margin-right: 6px; }
   .rm-count {
     margin-left: 8px; font-weight: 500; font-size: 11px; text-transform: uppercase;
     letter-spacing: 0.04em; color: var(--sg-muted, #94a3b8);
   }
-  .rm-agg { color: #6366f1; }
+  .rm-agg { color: var(--sg-accent, #6366f1); }
 </style>

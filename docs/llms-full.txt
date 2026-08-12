@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-11 from 365 pages.
+Generated 2026-08-12 from 365 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -15463,6 +15463,7 @@ match your design system:
 | `--sg-pinned-bg`            | `color-mix(in oklab, var(--sg-header-bg) 92%, var(--sg-accent) 8%)`       | Body cells in pinned columns   |
 | `--sg-pinned-header-bg`     | `color-mix(in oklab, var(--sg-header-bg) 86%, var(--sg-accent) 14%)`      | Header cells in pinned columns |
 | `--sg-pinned-divider`       | `var(--sg-border)`                                                        | The 1-pixel inside-edge line   |
+| `--sg-pinned-shadow-color`  | `rgba(15, 23, 42, 0.22)`                                                  | The drop shadow into the scroll area |
 
 > **Keep the pinned background opaque.** When you override `--sg-pinned-bg`
 > with `color-mix`, the two percentages **must sum to 100%**. If they add up
@@ -15472,8 +15473,22 @@ match your design system:
 
 The fallbacks compute a subtle accent-tinted background from your
 existing header background, so a pinned column never looks identical
-to the rest of the grid even if you don't set anything. To opt out
-of the tint and match the body exactly:
+to the rest of the grid even if you don't set anything. That works
+well for a low-chroma accent. If yours is saturated, the derived tint
+can get loud enough to compete with your selection colour - name a
+neutral fill instead and let the divider and shadow carry the
+boundary:
+
+```css
+.themed-host {
+  --sg-pinned-bg:           var(--sg-row-alt-bg);
+  --sg-pinned-header-bg:    var(--sg-header-bg);
+  --sg-pinned-divider:      var(--sg-border);
+  --sg-pinned-shadow-color: rgba(94, 72, 52, 0.18);
+}
+```
+
+To opt out of the tint and match the body exactly:
 
 ```css
 .themed-host {
@@ -33235,6 +33250,7 @@ ship in a corporate design system.
 | `--sg-border`          | `#e2e8f0`              | `#1e293b`              | Cell borders, separators                                             |
 | `--sg-header-bg`       | `#f8fafc`              | `#1e293b`              | Column-header row background                                         |
 | `--sg-header-fg`       | inherits `--sg-fg`     | inherits `--sg-fg`     | Column-header text                                                   |
+| `--sg-header-border`   | inherits `--sg-border` | inherits `--sg-border` | Line under the column-header row only (body cell borders unaffected) |
 | `--sg-row-alt-bg`      | inherits `--sg-bg`     | inherits `--sg-bg`     | Zebra-stripe background for even-indexed rows                        |
 | `--sg-row-hover-bg`    | `rgba(148,163,184,.10)`| `rgba(148,163,184,.14)`| Hover row background                                                 |
 | `--sg-selection-bg`    | `rgba(99,102,241,.10)` | `rgba(99,102,241,.18)` | Selected row / selected cell-range fill                              |
@@ -33249,6 +33265,21 @@ ship in a corporate design system.
 | `--sg-radius`          | `6px`       | Border radius on rounded UI inside the grid (chips, badges, menus)      |
 | `--sg-font`            | inherits    | Font family used inside the grid                                        |
 
+## Header typography tokens
+
+The column-header label is themeable on its own so a preset can match
+its design system's grid header (bold, muted, small caps) without
+touching the rest of the grid.
+
+| Token                     | Default                | What it controls                                                    |
+| ------------------------- | ---------------------- | ------------------------------------------------------------------- |
+| `--sg-header-label-color` | inherits `--sg-header-fg` | Header label colour, when it should differ from the header text  |
+| `--sg-header-weight`      | `600`                  | Header label font weight                                            |
+| `--sg-header-size`        | inherits               | Header label font size                                              |
+| `--sg-header-transform`   | `none`                 | Header label `text-transform` (e.g. `uppercase`)                    |
+| `--sg-header-tracking`    | `normal`               | Header label `letter-spacing`                                       |
+| `--sg-header-min-height`  | `auto`                 | Minimum height of a header cell                                     |
+
 ## Pinned-column tokens
 
 | Token                  | Default     | What it paints                                                         |
@@ -33256,6 +33287,14 @@ ship in a corporate design system.
 | `--sg-pinned-bg`       | inherits `--sg-bg` | Pinned-column cell background (must be opaque to cover scroll under) |
 | `--sg-pinned-header-bg`| inherits `--sg-header-bg` | Pinned-column header background                              |
 | `--sg-pinned-divider`  | `#cbd5e1`   | 2px separator between pinned and scrolling region                      |
+| `--sg-pinned-border`   | `color-mix(in oklab, var(--sg-accent) 24%, transparent)` | Top/bottom border of pinned **rows** |
+| `--sg-pinned-shadow-color` | `rgba(15,23,42,.22)` | Colour of the shadow a pinned column casts into the scroll area |
+
+## Surface tokens
+
+| Token                  | Default                   | What it paints                                                    |
+| ---------------------- | ------------------------- | ------------------------------------------------------------------ |
+| `--sg-bg-subtle`       | inherits `--sg-header-bg` | Inset surfaces such as the master-detail region behind a nested grid |
 
 ## Input + form tokens
 
@@ -33344,7 +33383,7 @@ dark token bundle ready to copy.
 
 ### Built-in design-system presets
 
-`@svgrid/grid` also ships 19 ready-made presets as plain stylesheets - import the
+`@svgrid/grid` also ships 20 ready-made presets as plain stylesheets - import the
 one you want and the grid re-skins immediately, light and dark both included
 (toggle with the same `[data-theme="dark"]` attribute as above):
 
@@ -33352,9 +33391,13 @@ one you want and the grid re-skins immediately, light and dark both included
 @import '@svgrid/grid/themes/material.css';
 ```
 
-Available ids: `shadcn`, `tailwind`, `material`, `excel`, `fluent`, `carbon`,
-`sap`, `salesforce`, `atlassian`, `github`, `antd`, `ag-alpine`, `bootstrap`,
-`vercel`, `linear`, `notion`, `nord`, `dracula`, `catppuccin`.
+Available ids: `ember`, `shadcn`, `tailwind`, `material`, `excel`, `fluent`,
+`carbon`, `sap`, `salesforce`, `atlassian`, `github`, `antd`, `ag-alpine`,
+`bootstrap`, `vercel`, `linear`, `notion`, `nord`, `dracula`, `catppuccin`.
+
+`ember` is SvGrid's own theme rather than a copy of an external design system:
+warm neutrals with Svelte orange as the single accent. It is the palette
+svgrid.com runs on, so one import reproduces the look of the grids on the site.
 
 ## Stability promise
 

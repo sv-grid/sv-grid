@@ -370,7 +370,18 @@
 </section>
 
 <style>
-  .mb-shell { height: 100%; }
+  /* Due-date tones stay semantic (overdue / due-soon), so they are local
+     custom props rather than theme tokens. The dark values only lift
+     contrast on a dark ground - the meaning is identical. */
+  .mb-shell {
+    height: 100%;
+    --mb-overdue: #b91c1c;
+    --mb-soon: #b45309;
+  }
+  :global([data-theme='dark']) .mb-shell {
+    --mb-overdue: #fca5a5;
+    --mb-soon: #fbbf24;
+  }
 
   /* KPI strip */
   .mb-kpi-strip {
@@ -429,13 +440,12 @@
   .mb-card {
     display: flex; align-items: stretch;
     min-height: 140px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
+    border: 1px solid var(--sg-border, #e2e8f0);
+    background: var(--sg-bg, #ffffff);
     border-radius: 12px;
     overflow: hidden;
     transition: border-color 140ms ease, box-shadow 140ms ease, transform 80ms ease;
   }
-  :global([data-theme='dark']) .mb-card { background: #0f172a; border-color: #1e293b; }
   .mb-card:hover {
     border-color: var(--sg-accent, #6366f1);
     box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
@@ -468,7 +478,6 @@
     border-radius: 4px;
     padding: 2px 7px;
   }
-  :global([data-theme='dark']) .mb-id { background: rgba(148,163,184,0.16); color: #cbd5e1; }
   .mb-edit-toggle {
     margin-left: auto;
     background: transparent;
@@ -490,11 +499,10 @@
 
   .mb-card-title {
     font-size: 15px; font-weight: 600;
-    color: #0f172a;
+    color: var(--sg-fg, #0f172a);
     line-height: 1.35;
     word-break: break-word;
   }
-  :global([data-theme='dark']) .mb-card-title { color: #f1f5f9; }
 
   /* ---- Detail grid (assignee / due / estimate) ---- */
   .mb-detail-grid {
@@ -513,11 +521,10 @@
   }
   .mb-detail dd {
     margin: 0;
-    font-size: 12.5px; color: #0f172a;
+    font-size: 12.5px; color: var(--sg-fg, #0f172a);
     display: inline-flex; align-items: center; gap: 5px;
     min-width: 0;
   }
-  :global([data-theme='dark']) .mb-detail dd { color: #f1f5f9; }
 
   .mb-assignee       { font-weight: 500; }
   .mb-assignee-name  { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -531,20 +538,14 @@
 
   .mb-due-icon       { font-size: 12px; opacity: 0.7; }
   .mb-due-label      { color: var(--sg-muted, #94a3b8); font-size: 11px; }
-  .mb-due-overdue    { color: #b91c1c; font-weight: 600; }
-  .mb-due-overdue .mb-due-label { color: #b91c1c; }
-  .mb-due-soon       { color: #b45309; font-weight: 600; }
-  .mb-due-soon .mb-due-label { color: #b45309; }
+  .mb-due-overdue    { color: var(--mb-overdue); font-weight: 600; }
+  .mb-due-overdue .mb-due-label { color: var(--mb-overdue); }
+  .mb-due-soon       { color: var(--mb-soon); font-weight: 600; }
+  .mb-due-soon .mb-due-label { color: var(--mb-soon); }
   .mb-due-done       { color: var(--sg-muted, #94a3b8); }
 
   .mb-est            { font-weight: 700; font-variant-numeric: tabular-nums; }
   .mb-est-unit       { font-size: 11px; color: var(--sg-muted, #94a3b8); }
-
-  :global([data-theme='dark']) .mb-detail-grid { border-top-color: rgba(148,163,184,0.20); }
-  :global([data-theme='dark']) .mb-due-overdue { color: #fca5a5; }
-  :global([data-theme='dark']) .mb-due-overdue .mb-due-label { color: #fca5a5; }
-  :global([data-theme='dark']) .mb-due-soon    { color: #fbbf24; }
-  :global([data-theme='dark']) .mb-due-soon .mb-due-label { color: #fbbf24; }
 
   /* ---- Priority tag ------------------------------------------------- */
   .mb-prio-tag {
@@ -586,7 +587,6 @@
     overflow: hidden;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   }
-  :global([data-theme='dark']) .mb-grid-host { background: #0f172a; border-color: #1e293b; }
   :global(.mb-grid-host td)                  { font-size: 13px; }
   :global(.mb-grid-host thead th) {
     font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
@@ -596,7 +596,7 @@
   :global(.mb-grid-host tr.mb-grid-row-overdue td) { background: rgba(239, 68, 68, 0.08); }
   :global(.mb-grid-host tr.mb-grid-row-soon td)    { background: rgba(245, 158, 11, 0.06); }
   :global(.mb-grid-host tr.mb-grid-row-done td)    { color: var(--sg-muted, #94a3b8); }
-  :global(.mb-grid-host tbody tr:hover td)         { background: rgba(99, 102, 241, 0.06); }
+  :global(.mb-grid-host tbody tr:hover td)         { background: var(--sg-row-hover-bg, rgba(99, 102, 241, 0.06)); }
 
   /* ---- Edit modal --------------------------------------------------- */
   .mb-modal-backdrop {
@@ -611,50 +611,44 @@
   .mb-modal {
     width: 100%; max-width: 520px; max-height: 90vh;
     display: flex; flex-direction: column;
-    background: #ffffff;
-    color: #0f172a;
-    border: 1px solid #e2e8f0;
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
+    border: 1px solid var(--sg-border, #e2e8f0);
     border-radius: 14px;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
     overflow: hidden;
     animation: mb-pop 160ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   @keyframes mb-pop { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  :global([data-theme='dark']) .mb-modal { background: #0f172a; color: #f1f5f9; border-color: #1e293b; }
 
   .mb-modal-head {
     display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
     padding: 14px 16px;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    border-bottom: 1px solid var(--sg-border, #e2e8f0);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
   }
-  :global([data-theme='dark']) .mb-modal-head { background: #1e293b; border-bottom-color: #334155; }
   .mb-modal-title-wrap { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   .mb-modal-id-row     { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .mb-modal-title {
     margin: 0; font-size: 16px; font-weight: 700;
-    color: #0f172a; line-height: 1.3;
+    color: var(--sg-fg, #0f172a); line-height: 1.3;
   }
-  :global([data-theme='dark']) .mb-modal-title { color: #f1f5f9; }
   .mb-modal-close {
     flex: none; background: transparent; border: 0;
-    color: #64748b; font-size: 18px; line-height: 1;
+    color: var(--sg-muted, #64748b); font-size: 18px; line-height: 1;
     width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
   }
-  .mb-modal-close:hover { background: rgba(148, 163, 184, 0.16); color: #0f172a; }
-  :global([data-theme='dark']) .mb-modal-close:hover { color: #f1f5f9; }
+  .mb-modal-close:hover { background: var(--sg-row-hover-bg, rgba(148, 163, 184, 0.16)); color: var(--sg-fg, #0f172a); }
 
   .mb-modal-body { padding: 16px; overflow-y: auto; }
 
   .mb-modal-foot {
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px 16px;
-    border-top: 1px solid #e2e8f0;
-    background: #f8fafc;
+    border-top: 1px solid var(--sg-border, #e2e8f0);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
   }
-  :global([data-theme='dark']) .mb-modal-foot { background: #1e293b; border-top-color: #334155; }
-  .mb-modal-hint { font-size: 11px; color: #64748b; }
-  :global([data-theme='dark']) .mb-modal-hint { color: #94a3b8; }
+  .mb-modal-hint { font-size: 11px; color: var(--sg-muted, #64748b); }
   .mb-field-grid {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;

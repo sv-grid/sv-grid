@@ -530,7 +530,7 @@ create policy "svgrid demo access" on customers
 
 <style>
   .sb__connect { border: 1px solid var(--sg-border, #e2e2e2); border-radius: 10px; padding: 16px 18px; background: var(--sg-bg, #fff); display: flex; flex-direction: column; gap: 14px; }
-  .sb__sample { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--site-accent, #2563eb) 35%, var(--sg-border, #e2e2e2)); border-radius: 10px; background: color-mix(in srgb, var(--site-accent, #2563eb) 6%, transparent); font-size: 13px; line-height: 1.5; }
+  .sb__sample { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--sg-accent, #2563eb) 35%, var(--sg-border, #e2e2e2)); border-radius: 10px; background: color-mix(in srgb, var(--sg-accent, #2563eb) 6%, transparent); font-size: 13px; line-height: 1.5; }
   .sb__sample > div { flex: 1 1 260px; }
   .sb__sample .st-btn { flex: 0 0 auto; }
   .sb__or { display: flex; align-items: center; gap: 10px; color: var(--sg-muted, #999); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -563,7 +563,7 @@ create policy "svgrid demo access" on customers
   .sb__spacer { flex: 1 1 auto; }
 
   .sb__live { display: inline-flex; align-items: center; gap: 6px; }
-  .sb__live .sb__dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; flex: 0 0 auto; }
+  .sb__live .sb__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sg-muted, #94a3b8); flex: 0 0 auto; }
   .sb__live.is-on { color: #16a34a !important; border-color: color-mix(in srgb, #16a34a 40%, transparent) !important; }
   .sb__live.is-on .sb__dot { background: #16a34a; animation: sb-pulse 1.6s ease-out infinite; }
   @keyframes sb-pulse {

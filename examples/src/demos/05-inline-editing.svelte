@@ -257,7 +257,7 @@
     background: var(--sg-accent, #2563eb);
     color: var(--sg-on-accent, #fff);
     border: 1px solid transparent;
-    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25);
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--sg-accent, #2563eb) 25%, transparent);
   }
   .ie-btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
 

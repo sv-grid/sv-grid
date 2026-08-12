@@ -290,7 +290,7 @@
                color: var(--sg-muted, #64748b); }
   .kpi-value { font-size: 22px; font-weight: 700; color: var(--sg-fg, #0f172a);
                font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .kpi-value.accent { color: #6366f1; }
+  .kpi-value.accent { color: var(--sg-accent, #6366f1); }
   .kpi-of { font-size: 14px; color: var(--sg-muted, #94a3b8); font-weight: 500; }
   .kpi-hint { font-size: 11px; color: var(--sg-muted, #64748b); }
   .coverage-bar {
@@ -299,16 +299,16 @@
   }
   .coverage-bar span {
     display: block; height: 100%;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    background: var(--sg-accent, #6366f1);
     transition: width 200ms ease-out;
   }
   .kpi.action {
-    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.04));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 8%, transparent 92%);
     border-color: transparent;
   }
   .bulk { display: flex; gap: 6px; margin: 2px 0; }
   .bulk-btn {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border: 0; border-radius: 6px; padding: 5px 12px;
     font-size: 12px; font-weight: 700; cursor: pointer;
   }
@@ -317,7 +317,7 @@
     border: 1px solid var(--sg-border, #cbd5e1);
   }
   .bulk-btn:hover { filter: brightness(1.07); }
-  .link-btn { background: transparent; border: 0; color: #6366f1;
+  .link-btn { background: transparent; border: 0; color: var(--sg-accent, #6366f1);
               font-size: 11px; cursor: pointer; padding: 0; font-weight: 700; }
   .link-btn:hover { text-decoration: underline; }
 
@@ -334,11 +334,11 @@
   .chev svg.is-open { transform: rotate(90deg); }
   .chev-spacer { display: inline-block; width: 18px; height: 18px; }
 
-  .cbx { width: 14px; height: 14px; accent-color: #6366f1; cursor: pointer; }
+  .cbx { width: 14px; height: 14px; accent-color: var(--sg-accent, #6366f1); cursor: pointer; }
 
   .tree-label { font-size: 13px; color: var(--sg-fg, #0f172a); }
   .tree-label.kind-workspace { font-weight: 700; }
-  .tree-label.kind-resource  { font-weight: 600; color: #4338ca; }
+  .tree-label.kind-resource  { font-weight: 600; color: var(--sg-accent, #4338ca); }
   .tree-label.kind-action    { color: var(--sg-fg, #334155); }
 
   :global(.kind-pill) {
@@ -351,6 +351,6 @@
   :global(.kind-pill-action)    { background: #dcfce7; color: #166534; }
 
   :global(.cost-free)   { font-size: 11px; color: var(--sg-muted, #94a3b8); font-style: italic; }
-  :global(.cost-paid)   { color: #6366f1; font-weight: 700; font-variant-numeric: tabular-nums; }
+  :global(.cost-paid)   { color: var(--sg-accent, #6366f1); font-weight: 700; font-variant-numeric: tabular-nums; }
   :global(.cost-rollup) { color: var(--sg-muted, #64748b); font-weight: 600; font-variant-numeric: tabular-nums; }
 </style>

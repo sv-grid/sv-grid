@@ -314,10 +314,7 @@
     justify-content: space-between;
     padding: 12px 14px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(14,165,233,0.06));
-  }
-  :global([data-theme='dark']) .dt-rail-head {
-    background: linear-gradient(135deg, rgba(99,102,241,0.20), rgba(14,165,233,0.12));
+    background: color-mix(in srgb, var(--sg-accent, #6366f1) 8%, transparent);
   }
   .dt-rail-titles { display: flex; flex-direction: column; min-width: 0; }
   .dt-rail-eyebrow {

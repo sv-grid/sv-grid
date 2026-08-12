@@ -250,7 +250,7 @@
 {/snippet}
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <p class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <p class="combo-note text-sm shrink-0">
     Click a <strong>Country</strong> / <strong>State</strong> / <strong>City</strong> cell. Type to filter, arrow-keys to navigate, Enter to pick.
     The last row is deliberately inconsistent - the amber cells offer a one-click <strong>Fix</strong>.
   </p>
@@ -313,6 +313,7 @@
 {/if}
 
 <style>
+  .combo-note      { color: var(--sg-muted, #64748b); }
   .combo-cell      { display: inline-flex; align-items: center; gap: 6px; width: 100%; }
   .combo-trigger {
     flex: 1; min-width: 0;
@@ -348,31 +349,31 @@
     background: transparent;
     border: 0; padding: 0;
   }
+  /* The popover is portalled out of this subtree, so it reads the tokens
+   * straight off :root rather than inheriting them. */
   :global(.combo-popover) {
     position: fixed; z-index: 9999;
     width: max-content; max-width: 320px;
-    background: #ffffff; color: #0f172a;
-    border: 1px solid rgba(15, 23, 42, 0.15);
+    background: var(--sg-bg, #ffffff); color: var(--sg-fg, #0f172a);
+    border: 1px solid var(--sg-border, rgba(15, 23, 42, 0.15));
     border-radius: 8px;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
     overflow: hidden;
   }
-  :global([data-theme="dark"] .combo-popover) { background: #0f172a; color: #f8fafc; border-color: rgba(255,255,255,0.08); }
   :global(.combo-input) {
     display: block; width: 100%;
     background: transparent; color: inherit;
-    border: 0; border-bottom: 1px solid rgba(15,23,42,0.08);
+    border: 0; border-bottom: 1px solid var(--sg-border, rgba(15,23,42,0.08));
     padding: 8px 12px; font-size: 13px; outline: none;
   }
-  :global([data-theme="dark"] .combo-input) { border-bottom-color: rgba(255,255,255,0.08); }
   :global(.combo-list) { list-style: none; margin: 0; padding: 4px 0; max-height: 260px; overflow: auto; }
   :global(.combo-option) {
     display: block; width: 100%; text-align: left;
     background: transparent; border: 0; color: inherit;
     padding: 6px 12px; font-size: 13px; cursor: pointer;
   }
-  :global(.combo-option:hover), :global(.combo-option.is-active) { background: rgba(99,102,241,0.10); }
+  :global(.combo-option:hover), :global(.combo-option.is-active) { background: var(--sg-row-hover-bg, rgba(99,102,241,0.10)); }
   :global(.combo-option.is-current) { font-weight: 600; }
-  :global(.combo-option mark) { background: rgba(99,102,241,0.20); color: inherit; border-radius: 2px; padding: 0 1px; }
-  :global(.combo-empty) { padding: 8px 12px; font-size: 12px; color: rgba(148,163,184,0.9); }
+  :global(.combo-option mark) { background: color-mix(in srgb, var(--sg-accent, #6366f1) 20%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }
+  :global(.combo-empty) { padding: 8px 12px; font-size: 12px; color: var(--sg-muted, rgba(148,163,184,0.9)); }
 </style>

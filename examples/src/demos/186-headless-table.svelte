@@ -117,7 +117,7 @@
 <style>
   .ht-wrap { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
   .ht-note { font-size: 13px; color: var(--sg-fg, #0f172a); margin: 0; }
-  .ht-note strong { color: #6366f1; }
+  .ht-note strong { color: var(--sg-accent, #6366f1); }
   .ht-input {
     align-self: flex-start; width: 260px; padding: 7px 11px; font-size: 13px;
     border: 1px solid var(--sg-border, #cbd5e1); border-radius: 8px;
@@ -130,14 +130,14 @@
     border-bottom: 2px solid var(--sg-border, #e2e8f0); font-weight: 700;
     position: sticky; top: 0;
   }
-  .ht-table thead th:hover { color: #6366f1; }
-  .ht-ind { color: #6366f1; margin-left: 6px; font-size: 10px; }
+  .ht-table thead th:hover { color: var(--sg-accent, #6366f1); }
+  .ht-ind { color: var(--sg-accent, #6366f1); margin-left: 6px; font-size: 10px; }
   .ht-table tbody td { padding: 9px 12px; border-bottom: 1px solid var(--sg-border, #eef2f7); }
-  .ht-table tbody tr:hover td { background: color-mix(in oklab, #6366f1 6%, transparent); }
+  .ht-table tbody tr:hover td { background: var(--sg-row-hover-bg, color-mix(in oklab, #6366f1 6%, transparent)); }
   .ht-num { text-align: right; font-variant-numeric: tabular-nums; }
   .ht-lang {
     font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px;
-    background: color-mix(in oklab, #6366f1 12%, transparent); color: #6366f1;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 12%, transparent); color: var(--sg-accent, #6366f1);
   }
   .ht-empty { text-align: center; color: var(--sg-muted, #94a3b8); font-style: italic; padding: 20px; }
   .ht-count { font-size: 11px; color: var(--sg-muted, #64748b); margin: 0; }

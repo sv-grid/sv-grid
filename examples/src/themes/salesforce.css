@@ -3,7 +3,8 @@
  * Web Components Workbench tokens. 3px corners on inputs/tags.
  * Salesforce Sans (falls back to system Helvetica/Arial).
  * ============================================================ */
-html[data-preset='salesforce'] .demo-page {
+html[data-preset='salesforce'] .demo-page,
+html[data-preset='salesforce'] .page-warm {
   --sg-bg: #ffffff;                /* color-background */
   --sg-fg: #181818;                /* color-text-default */
   --sg-muted: #757575;             /* on-surface-1 (neutral-50) */
@@ -39,7 +40,8 @@ html[data-preset='salesforce'] .demo-page .demo-aside {
   background: #f3f3f3;
   border-color: #c9c9c9 !important;
 }
-html[data-preset='salesforce'][data-theme='dark'] .demo-page {
+html[data-preset='salesforce'][data-theme='dark'] .demo-page,
+html[data-preset='salesforce'][data-theme='dark'] .page-warm {
   --sg-bg: #181818;
   --sg-fg: #ffffff;
   --sg-muted: #c9c9c9;

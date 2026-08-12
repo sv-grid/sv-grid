@@ -5,7 +5,8 @@
  * sapList_SelectionBackgroundColor #ECF2FF. Accent: Horizon
  * Blue #0070F2. "72" font family.
  * ============================================================ */
-html[data-preset='sap'] .demo-page {
+html[data-preset='sap'] .demo-page,
+html[data-preset='sap'] .page-warm {
   --sg-bg: #f5f6f7;                /* sapBackgroundColor (Horizon) */
   --sg-fg: #131e29;                /* sapTextColor */
   --sg-muted: #556b82;             /* sapContent_LabelColor */
@@ -41,7 +42,8 @@ html[data-preset='sap'] .demo-page .demo-aside {
   background: #f7f7f7;             /* sapShellGroupTextColor area */
   border-color: #d5dadd !important;
 }
-html[data-preset='sap'][data-theme='dark'] .demo-page {
+html[data-preset='sap'][data-theme='dark'] .demo-page,
+html[data-preset='sap'][data-theme='dark'] .page-warm {
   --sg-bg: #12171c;                /* Horizon Dark sapBackgroundColor */
   --sg-fg: #f5f6f7;
   --sg-muted: #8396a8;

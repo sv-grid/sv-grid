@@ -290,7 +290,7 @@
   .quick-bar {
     display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(16,185,129,0.03));
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 4%, transparent);
     border-radius: 8px; padding: 8px 12px;
   }
   .qb-label {
@@ -305,9 +305,9 @@
     border-radius: 6px; padding: 4px 10px;
     font-size: 12px; font-weight: 600; cursor: pointer;
   }
-  .qb-btn:hover:not(:disabled) { background: color-mix(in oklab, #6366f1 8%, transparent); }
+  .qb-btn:hover:not(:disabled) { background: color-mix(in oklab, var(--sg-accent, #6366f1) 8%, transparent); }
   .qb-btn:disabled { opacity: 0.4; cursor: default; }
-  .qb-btn.primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border-color: transparent; }
+  .qb-btn.primary { background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff); border-color: transparent; }
   .qb-btn.danger  { color: #b91c1c; border-color: #fecaca; }
   .qb-btn.danger:hover { background: #fef2f2; }
 
@@ -323,8 +323,8 @@
               letter-spacing: 0.06em; color: var(--sg-muted, #64748b); }
   .sb-readout {
     font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700;
-    background: color-mix(in oklab, #6366f1 10%, transparent);
-    color: #4338ca; padding: 3px 10px; border-radius: 5px;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 10%, transparent);
+    color: var(--sg-accent, #4338ca); padding: 3px 10px; border-radius: 5px;
   }
   .sb-cell { display: inline-flex; flex-direction: column; gap: 1px; min-width: 90px; }
   .sb-key {
@@ -339,7 +339,7 @@
   /* Cell coloring */
   :global(td.pos)     { color: #16a34a; font-variant-numeric: tabular-nums; font-weight: 600; }
   :global(td.neg)     { color: #dc2626; font-variant-numeric: tabular-nums; font-weight: 600; }
-  :global(td.fy)      { background: color-mix(in oklab, #6366f1 4%, transparent); font-weight: 800; }
+  :global(td.fy)      { background: color-mix(in oklab, var(--sg-accent, #6366f1) 4%, transparent); font-weight: 800; }
   :global(td.type-revenue) { color: #166534; font-weight: 700; }
   :global(td.type-expense) { color: #991b1b; font-weight: 700; }
 
@@ -353,7 +353,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 12px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(180deg, color-mix(in oklab, #6366f1 4%, transparent), transparent);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 4%, transparent);
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; color: var(--sg-muted, #64748b);
   }
@@ -365,12 +365,12 @@
     display: grid; grid-template-columns: 90px 160px 1fr; gap: 8px;
     padding: 3px 12px; font-size: 11.5px; align-items: center;
   }
-  .ev-log li:first-child { background: color-mix(in oklab, #6366f1 5%, transparent); }
+  .ev-log li:first-child { background: color-mix(in oklab, var(--sg-accent, #6366f1) 5%, transparent); }
   .ev-time { font-family: ui-monospace, monospace; color: var(--sg-muted, #64748b); }
   .ev-coords {
     font-family: ui-monospace, monospace; font-size: 11px;
-    color: #6366f1; font-weight: 700;
-    background: color-mix(in oklab, #6366f1 8%, transparent);
+    color: var(--sg-accent, #6366f1); font-weight: 700;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 8%, transparent);
     padding: 1px 6px; border-radius: 3px;
   }
   .ev-label { color: var(--sg-fg, #0f172a); font-weight: 600; }

@@ -86,7 +86,7 @@
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex items-center justify-between gap-3 shrink-0">
-    <div class="text-sm text-slate-600 dark:text-slate-300">
+    <div class="kb-note text-sm">
       The same <strong>&lt;SvGrid&gt;</strong>, two views. Rich cards from config alone.
       <strong>Double-click a card</strong> for the built-in detail drawer (SvDrawer +
       SvForm) - edit its fields and <strong>read / write / delete comments</strong> there
@@ -95,17 +95,17 @@
     </div>
     <div class="flex items-center gap-3 shrink-0">
       {#if view === 'board'}
-        <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
-          <button class="px-2.5 py-1 {drawerScope === 'all' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        <div class="kb-switch inline-flex rounded-md border overflow-hidden text-sm">
+          <button class="kb-seg px-2.5 py-1 {drawerScope === 'all' ? 'kb-seg-on' : ''}"
             onclick={() => (drawerScope = 'all')}>All fields</button>
-          <button class="px-2.5 py-1 {drawerScope === 'core' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+          <button class="kb-seg px-2.5 py-1 {drawerScope === 'core' ? 'kb-seg-on' : ''}"
             onclick={() => (drawerScope = 'core')}>Core fields</button>
         </div>
       {/if}
-      <div class="inline-flex rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden text-sm">
-        <button class="px-3 py-1 {view === 'board' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+      <div class="kb-switch inline-flex rounded-md border overflow-hidden text-sm">
+        <button class="kb-seg px-3 py-1 {view === 'board' ? 'kb-seg-on' : ''}"
           onclick={() => (view = 'board')}>Board</button>
-        <button class="px-3 py-1 {view === 'table' ? 'bg-slate-800 text-white' : 'bg-transparent'}"
+        <button class="kb-seg px-3 py-1 {view === 'table' ? 'kb-seg-on' : ''}"
           onclick={() => (view = 'table')}>Table</button>
       </div>
     </div>
@@ -157,8 +157,23 @@
     {/if}
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="kb-foot text-sm shrink-0">
     {rows.length} tasks · cards, badges, sub-tasks, composer and the detail drawer
     all come from <code>board</code> config - no bespoke drawer code.
   </footer>
 </section>
+
+<style>
+  .kb-note { color: var(--sg-muted, #475569); }
+  .kb-foot { color: var(--sg-muted, #64748b); }
+  .kb-switch { border-color: var(--sg-border, #cbd5e1); }
+  .kb-seg {
+    background: transparent;
+    color: var(--sg-fg, #0f172a);
+    cursor: pointer;
+  }
+  .kb-seg-on {
+    background: var(--sg-accent, #1e293b);
+    color: var(--sg-on-accent, #fff);
+  }
+</style>

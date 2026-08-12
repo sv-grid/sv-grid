@@ -1384,8 +1384,8 @@
   .sheet-cell { display: block; width: 100%; height: 100%; padding: 0 7px;
                 box-sizing: border-box; text-align: inherit; line-height: 32px; }
   .sheet-cell-cut {
-    outline: 2px dashed #6366f1; outline-offset: -2px;
-    background: rgba(99, 102, 241, 0.08) !important;
+    outline: 2px dashed var(--sg-accent, #6366f1); outline-offset: -2px;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 8%, transparent) !important;
   }
   .sheet-cell-error { font-family: ui-monospace, Menlo, monospace; font-weight: 700; }
   .sheet-fx { display: inline-block; color: var(--sg-accent, #2563eb);

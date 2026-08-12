@@ -138,8 +138,8 @@
     aria-valuenow={props.value}
     class="inline-flex items-center gap-2"
   >
-    <div class="relative h-1.5 w-24 rounded bg-slate-200 dark:bg-slate-700">
-      <div class="absolute inset-y-0 left-0 rounded bg-blue-600" style="width: {props.value}%"></div>
+    <div class="perf-track relative h-1.5 w-24 rounded">
+      <div class="perf-fill absolute inset-y-0 left-0 rounded" style="width: {props.value}%"></div>
     </div>
     <span class="text-xs tabular-nums w-7 text-right">{props.value}</span>
   </div>
@@ -157,7 +157,7 @@
   <div class="flex flex-wrap items-center gap-3 text-sm shrink-0">
     <label class="flex items-center gap-2">
       Density:
-      <select bind:value={density} class="rounded border border-slate-300 dark:border-slate-600 bg-transparent px-2 py-1">
+      <select bind:value={density} class="sel rounded px-2 py-1">
         <option value="compact">Compact</option>
         <option value="normal">Normal</option>
         <option value="comfortable">Comfortable</option>
@@ -165,14 +165,14 @@
     </label>
     <label class="flex items-center gap-2">
       Theme:
-      <select bind:value={theme} class="rounded border border-slate-300 dark:border-slate-600 bg-transparent px-2 py-1">
+      <select bind:value={theme} class="sel rounded px-2 py-1">
         <option value="auto">Auto (system)</option>
         <option value="light">Light</option>
         <option value="dark">Dark</option>
         <option value="high-contrast">High contrast</option>
       </select>
     </label>
-    <span class="text-slate-500 dark:text-slate-400">All controls are driven by CSS custom properties.</span>
+    <span class="hint">All controls are driven by CSS custom properties.</span>
   </div>
 
   <div
@@ -195,3 +195,17 @@
     />
   </div>
 </section>
+
+<style>
+  /* Page chrome only. The THEME_PALETTES block above is the demo's subject
+     and deliberately keeps its own literal token values. */
+  .sel {
+    border: 1px solid var(--sg-input-border, #cbd5e1);
+    background: transparent;
+    color: var(--sg-fg, #0f172a);
+  }
+  .hint { color: var(--sg-muted, #64748b); }
+
+  .perf-track { background: var(--sg-border, #e2e8f0); }
+  .perf-fill  { background: var(--sg-accent, #2563eb); }
+</style>

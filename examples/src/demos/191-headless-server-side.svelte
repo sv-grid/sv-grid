@@ -157,26 +157,26 @@
     border: 1px solid var(--sg-border, #e2e8f0); border-radius: 7px;
     background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a);
   }
-  .ss-search:focus { outline: 2px solid #6366f1; outline-offset: -1px; }
+  .ss-search:focus { outline: 2px solid var(--sg-accent, #6366f1); outline-offset: -1px; }
   .ss-stat {
     font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
     color: var(--sg-muted, #64748b); white-space: nowrap;
   }
-  .ss-req { color: #6366f1; }
+  .ss-req { color: var(--sg-accent, #6366f1); }
   .ss-tablewrap { position: relative; border: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px; overflow: hidden; min-height: 200px; }
   .ss-tablewrap.loading table { opacity: 0.45; transition: opacity 0.1s; }
   table { border-collapse: collapse; width: 100%; font-size: 13px; color: var(--sg-fg, #0f172a); }
   th {
     text-align: left; padding: 9px 14px; cursor: pointer; user-select: none; font-weight: 700;
-    background: var(--sg-header-bg, #f8fafc); border-bottom: 1px solid var(--sg-border, #e2e8f0);
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc)); border-bottom: 1px solid var(--sg-border, #e2e8f0);
   }
-  th:hover { color: #6366f1; }
+  th:hover { color: var(--sg-accent, #6366f1); }
   td { padding: 8px 14px; border-bottom: 1px solid var(--sg-border, #eef2f7); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .ss-empty { text-align: center; color: var(--sg-muted, #94a3b8); padding: 24px; }
   .ss-spinner {
     position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
-    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6366f1;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sg-accent, #6366f1);
   }
   .ss-pager { display: flex; align-items: center; justify-content: center; gap: 14px; }
   .ss-pager button {
@@ -184,7 +184,7 @@
     border: 1px solid var(--sg-border, #e2e8f0); border-radius: 7px;
     background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a);
   }
-  .ss-pager button:hover:not(:disabled) { border-color: #6366f1; color: #6366f1; }
+  .ss-pager button:hover:not(:disabled) { border-color: var(--sg-accent, #6366f1); color: var(--sg-accent, #6366f1); }
   .ss-pager button:disabled { opacity: 0.4; cursor: default; }
   .ss-pageinfo { font-size: 13px; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; }
 </style>

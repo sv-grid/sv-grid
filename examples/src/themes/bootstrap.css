@@ -3,7 +3,8 @@
  * Primary #0d6efd, body/border greys from the Bootstrap CSS
  * variables (--bs-*). Native system font stack, 6px radius.
  * ============================================================ */
-html[data-preset='bootstrap'] .demo-page {
+html[data-preset='bootstrap'] .demo-page,
+html[data-preset='bootstrap'] .page-warm {
   --sg-bg: #ffffff;                /* --bs-body-bg */
   --sg-fg: #212529;                /* --bs-body-color */
   --sg-muted: #6c757d;             /* --bs-secondary-color */
@@ -36,7 +37,8 @@ html[data-preset='bootstrap'] .demo-page .demo-aside {
   background: #f8f9fa;
   border-color: #dee2e6 !important;
 }
-html[data-preset='bootstrap'][data-theme='dark'] .demo-page {
+html[data-preset='bootstrap'][data-theme='dark'] .demo-page,
+html[data-preset='bootstrap'][data-theme='dark'] .page-warm {
   --sg-bg: #212529;                /* --bs-body-bg dark */
   --sg-fg: #dee2e6;                /* --bs-body-color dark */
   --sg-muted: #adb5bd;

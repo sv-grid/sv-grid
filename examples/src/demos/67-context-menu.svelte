@@ -120,7 +120,7 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3 relative">
-  <p class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <p class="text-sm shrink-0 ctx-note">
     <strong>Right-click any row</strong> for the context menu. ESC closes it.
   </p>
 
@@ -185,6 +185,8 @@
 </section>
 
 <style>
+  .ctx-note { color: var(--sg-muted, #64748b); }
+
   /* Use position: fixed so clientX/clientY map 1:1 - no relative-parent
      math, no off-screen drift. --sg-* tokens follow the active theme. */
   .ctx-menu {

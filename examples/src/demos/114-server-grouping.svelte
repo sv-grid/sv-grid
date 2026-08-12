@@ -321,7 +321,7 @@
   .toolbar {
     display: flex; align-items: stretch; gap: 12px; flex-wrap: wrap;
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(16,185,129,0.03));
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
     border-radius: 8px; padding: 10px 12px;
   }
   .group-by { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -337,9 +337,9 @@
     border-radius: 999px; padding: 5px 14px;
     font-size: 12.5px; font-weight: 700; cursor: pointer;
   }
-  .pill:hover { background: color-mix(in oklab, #6366f1 6%, transparent); }
+  .pill:hover { background: var(--sg-row-hover-bg, color-mix(in oklab, #6366f1 6%, transparent)); }
   .pill.is-on {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border-color: transparent;
   }
 
@@ -351,13 +351,13 @@
     display: flex; flex-direction: column; gap: 2px;
     min-width: 200px;
   }
-  .kpi.alt { background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(168,85,247,0.03)); }
+  .kpi.alt { background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc)); }
   .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
                color: var(--sg-muted, #64748b); font-weight: 700; }
   .kpi-value { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .kpi-foot  { font-size: 10.5px; color: var(--sg-muted, #94a3b8); }
   .bench-btn {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border: 0; border-radius: 6px; padding: 4px 10px;
     font-size: 11px; font-weight: 700; cursor: pointer;
     align-self: flex-start;
@@ -371,22 +371,25 @@
     border-radius: 4px;
     display: inline-flex; align-items: center; justify-content: center;
   }
-  :global(.chev:hover) { background: color-mix(in oklab, #6366f1 12%, transparent); color: #6366f1; }
+  :global(.chev:hover) {
+    background: var(--sg-row-hover-bg, color-mix(in oklab, #6366f1 12%, transparent));
+    color: var(--sg-accent, #6366f1);
+  }
   :global(.chev svg) { transition: transform 140ms; }
   :global(.chev.is-open svg) { transform: rotate(90deg); }
 
   .drill {
-    border: 1px solid color-mix(in oklab, #6366f1 30%, transparent);
-    background: color-mix(in oklab, #6366f1 4%, var(--sg-bg, #fff));
+    border: 1px solid color-mix(in oklab, var(--sg-accent, #6366f1) 30%, transparent);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 4%, var(--sg-bg, #fff));
     border-radius: 8px; padding: 10px 12px;
     display: flex; flex-direction: column; gap: 6px;
   }
   .drill-head { display: flex; align-items: center; gap: 10px; font-size: 12px; flex-wrap: wrap; }
-  .drill-head strong { color: #4338ca; }
+  .drill-head strong { color: var(--sg-accent, #4338ca); }
   .drill-head code {
     font-family: ui-monospace, monospace; background: var(--sg-bg, #fff);
-    padding: 2px 8px; border-radius: 4px; color: #4338ca; font-weight: 700;
-    border: 1px dashed color-mix(in oklab, #6366f1 30%, transparent);
+    padding: 2px 8px; border-radius: 4px; color: var(--sg-accent, #4338ca); font-weight: 700;
+    border: 1px dashed color-mix(in oklab, var(--sg-accent, #6366f1) 30%, transparent);
   }
   .drill-note { color: var(--sg-muted, #64748b); flex: 1; }
   .close {
@@ -399,8 +402,8 @@
                 border: 1px solid var(--sg-border, #e2e8f0); }
   .spin {
     display: inline-block; width: 10px; height: 10px;
-    border: 2px solid color-mix(in oklab, #6366f1 30%, transparent);
-    border-top-color: #6366f1; border-radius: 50%;
+    border: 2px solid color-mix(in oklab, var(--sg-accent, #6366f1) 30%, transparent);
+    border-top-color: var(--sg-accent, #6366f1); border-radius: 50%;
     animation: spin 700ms linear infinite;
     margin-right: 4px;
   }

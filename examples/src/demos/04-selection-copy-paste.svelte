@@ -98,9 +98,19 @@
     />
   </div>
 
-  <footer class="rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2 text-sm flex flex-wrap items-center gap-6 shrink-0">
+  <footer class="sel-summary rounded border px-4 py-2 text-sm flex flex-wrap items-center gap-6 shrink-0">
     <span><strong>{stats.count}</strong> rows selected</span>
     <span>Σ Salary: <strong>{currency.format(stats.sumSalary)}</strong></span>
     <span>⌀ Performance: <strong>{stats.avgPerf}</strong></span>
   </footer>
 </section>
+
+<style>
+  /* Theme tokens rather than fixed slate utilities, so the summary bar tracks
+     whichever preset the gallery is running. */
+  .sel-summary {
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc));
+    border-color: var(--sg-border, #e2e8f0);
+    color: var(--sg-fg, #0f172a);
+  }
+</style>

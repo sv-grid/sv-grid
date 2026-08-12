@@ -119,10 +119,10 @@
         type="button"
         onclick={() => load(option)}
         disabled={busy || active}
-        class="rounded border px-3 py-1 {active ? 'bg-slate-200 dark:bg-slate-700 font-semibold' : 'border-slate-300 dark:border-slate-600'} disabled:opacity-50"
+        class="rounded border px-3 py-1 ds-btn {active ? 'ds-btn-on font-semibold' : ''} disabled:opacity-50"
       >{option.label}</button>
     {/each}
-    <span class="ml-auto text-slate-500 dark:text-slate-400">
+    <span class="ml-auto ds-meta">
       {#if busy}
         Generating…
       {:else if rows.length}
@@ -155,3 +155,15 @@
     </div>
   {/if}
 </section>
+
+<style>
+  /* Toolbar chrome follows the active grid theme via --sg-* tokens. */
+  .ds-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, transparent);
+    color: var(--sg-fg, inherit);
+  }
+  .ds-btn:not(.ds-btn-on):hover:not(:disabled) { background: var(--sg-row-hover-bg, transparent); }
+  .ds-btn-on { background: var(--sg-bg-subtle, var(--sg-header-bg, #e2e8f0)); }
+  .ds-meta { color: var(--sg-muted, #64748b); }
+</style>

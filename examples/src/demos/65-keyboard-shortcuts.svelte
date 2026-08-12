@@ -180,15 +180,15 @@
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex flex-wrap items-center gap-2 text-sm shrink-0">
     <button type="button" onclick={() => (showPalette = true)}
-      class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+      class="kbd-btn rounded-md border px-3 py-1.5"
       >⌘ K - Command palette</button>
     <button type="button" onclick={() => (showCheatsheet = !showCheatsheet)}
-      class="rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+      class="kbd-btn rounded-md border px-3 py-1.5"
       >⌘ / - Keyboard shortcuts</button>
     {#if lastChord}
-      <span class="text-xs text-slate-500 dark:text-slate-400">last chord: <code>{lastChord}</code></span>
+      <span class="kbd-muted text-xs">last chord: <code>{lastChord}</code></span>
     {/if}
-    <span class="ml-auto text-xs text-slate-500 dark:text-slate-400">Try <kbd>g g</kbd>, <kbd>G</kbd>, <kbd>⌘ K</kbd></span>
+    <span class="kbd-muted ml-auto text-xs">Try <kbd>g g</kbd>, <kbd>G</kbd>, <kbd>⌘ K</kbd></span>
   </div>
 
   <div class="flex-1 min-h-0">
@@ -270,6 +270,16 @@
 <style>
   kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
+  .kbd-btn {
+    border-color: var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
+  }
+  .kbd-btn:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .kbd-muted { color: var(--sg-muted, #64748b); }
+
+  /* The scrim stays a fixed dark wash - it dims whatever is behind the
+   * overlay, so it must not follow the surface tokens. */
   .kbd-backdrop {
     position: fixed; inset: 0; z-index: 9998;
     background: rgba(15, 23, 42, 0.45);
@@ -281,51 +291,47 @@
     top: 15vh; left: 50%; transform: translateX(-50%);
     width: min(520px, 92vw);
     border-radius: 12px;
-    border: 1px solid rgba(15, 23, 42, 0.15);
-    background: #ffffff;
-    color: #0f172a;
+    border: 1px solid var(--sg-border, rgba(15, 23, 42, 0.15));
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
     box-shadow: 0 20px 50px rgba(15, 23, 42, 0.35);
     overflow: hidden;
   }
-  :global([data-theme="dark"]) .kbd-palette { background: #0f172a; color: #f8fafc; border-color: rgba(255,255,255,0.08); }
   .kbd-palette input {
     display: block; width: 100%;
     background: transparent; color: inherit;
-    border: 0; border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    border: 0; border-bottom: 1px solid var(--sg-border, rgba(15, 23, 42, 0.08));
     padding: 14px 16px; font-size: 15px;
     outline: none;
   }
-  :global([data-theme="dark"]) .kbd-palette input { border-bottom-color: rgba(255,255,255,0.08); }
-  .kbd-palette input::placeholder { color: rgba(15, 23, 42, 0.45); }
+  .kbd-palette input::placeholder { color: var(--sg-muted, rgba(15, 23, 42, 0.45)); }
   .kbd-palette ul { list-style: none; margin: 0; padding: 4px 0; max-height: 360px; overflow: auto; }
   .kbd-palette li button {
     display: block; width: 100%; text-align: left;
     background: transparent; border: 0; color: inherit;
     padding: 8px 16px; font-size: 14px; cursor: pointer;
   }
-  .kbd-palette li button:hover { background: rgba(99,102,241,0.12); }
-  .kbd-palette li.empty { padding: 12px 16px; color: rgba(15, 23, 42, 0.45); font-size: 13px; }
+  .kbd-palette li button:hover { background: var(--sg-row-hover-bg, rgba(99,102,241,0.12)); }
+  .kbd-palette li.empty { padding: 12px 16px; color: var(--sg-muted, rgba(15, 23, 42, 0.45)); font-size: 13px; }
 
   .kbd-cheatsheet {
     position: fixed; z-index: 9999;
     top: 80px; right: 24px;
     width: min(380px, 92vw);
     border-radius: 12px;
-    border: 1px solid rgba(15, 23, 42, 0.15);
-    background: #ffffff;
-    color: #0f172a;
+    border: 1px solid var(--sg-border, rgba(15, 23, 42, 0.15));
+    background: var(--sg-bg, #ffffff);
+    color: var(--sg-fg, #0f172a);
     box-shadow: 0 20px 50px rgba(15, 23, 42, 0.35);
     overflow: hidden;
   }
-  :global([data-theme="dark"]) .kbd-cheatsheet { background: #0f172a; color: #f8fafc; border-color: rgba(255,255,255,0.08); }
   .kbd-cheatsheet header {
     display: flex; align-items: center; justify-content: space-between;
     font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-    color: rgba(15, 23, 42, 0.55);
+    color: var(--sg-muted, rgba(15, 23, 42, 0.55));
     padding: 12px 16px;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    border-bottom: 1px solid var(--sg-border, rgba(15, 23, 42, 0.08));
   }
-  :global([data-theme="dark"]) .kbd-cheatsheet header { color: rgba(248, 250, 252, 0.55); border-bottom-color: rgba(255,255,255,0.08); }
   .kbd-close {
     background: transparent; border: 0; color: inherit; cursor: pointer;
     font-size: 18px; line-height: 1; padding: 0 4px;
@@ -337,10 +343,9 @@
   }
   .kbd-cheatsheet .keys { display: inline-flex; gap: 4px; }
   .kbd-cheatsheet kbd {
-    border: 1px solid rgba(15, 23, 42, 0.18);
-    background: rgba(241, 245, 249, 0.7);
+    border: 1px solid var(--sg-border, rgba(15, 23, 42, 0.18));
+    background: var(--sg-bg-subtle, var(--sg-header-bg, rgba(241, 245, 249, 0.7)));
     border-radius: 4px;
     padding: 2px 6px; font-size: 11px; min-width: 18px; text-align: center;
   }
-  :global([data-theme="dark"]) .kbd-cheatsheet kbd { background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.12); }
 </style>

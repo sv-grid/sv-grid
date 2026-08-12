@@ -357,13 +357,13 @@
                color: var(--sg-muted, #64748b); }
   .kpi-value { font-size: 18px; font-weight: 700; color: var(--sg-fg, #0f172a);
                font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px; }
-  .kpi-value.accent { color: #6366f1; }
+  .kpi-value.accent { color: var(--sg-accent, #6366f1); }
 
   /* ---- Group panel --------------------------------------------------- */
   .gp-wrap {
     border: 1px solid var(--sg-border, #e2e8f0);
     background: linear-gradient(180deg,
-      color-mix(in oklab, #6366f1 4%, var(--sg-bg, #fff)),
+      color-mix(in oklab, var(--sg-accent, #6366f1) 4%, var(--sg-bg, #fff)),
       var(--sg-bg, #fff));
     border-radius: 10px; padding: 10px 12px;
     display: flex; flex-direction: column; gap: 8px;
@@ -380,15 +380,15 @@
     flex: 1; min-width: 0;
     display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
     min-height: 38px; padding: 4px 8px;
-    border: 1.5px dashed color-mix(in oklab, #6366f1 35%, transparent);
+    border: 1.5px dashed color-mix(in oklab, var(--sg-accent, #6366f1) 35%, transparent);
     border-radius: 8px;
-    background: color-mix(in oklab, #6366f1 3%, transparent);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 3%, transparent);
     transition: background 120ms, border-color 120ms, box-shadow 120ms;
   }
   .gp-panel.is-hot {
-    background: color-mix(in oklab, #6366f1 9%, transparent);
-    border-color: #6366f1; border-style: solid;
-    box-shadow: 0 0 0 3px color-mix(in oklab, #6366f1 18%, transparent);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 9%, transparent);
+    border-color: var(--sg-accent, #6366f1); border-style: solid;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--sg-accent, #6366f1) 18%, transparent);
   }
   .gp-panel.is-empty .gp-empty { color: var(--sg-muted, #64748b); }
   .gp-empty { font-size: 12px; font-style: italic; padding: 0 4px; }
@@ -443,9 +443,9 @@
   .gp-insert {
     display: inline-block;
     width: 3px; height: 22px;
-    background: #6366f1;
+    background: var(--sg-accent, #6366f1);
     border-radius: 2px;
-    box-shadow: 0 0 6px #6366f1;
+    box-shadow: 0 0 6px var(--sg-accent, #6366f1);
     animation: gp-pulse 600ms ease-in-out infinite alternate;
   }
   @keyframes gp-pulse { from { opacity: 0.55; } to { opacity: 1; } }

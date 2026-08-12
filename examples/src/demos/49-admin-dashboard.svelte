@@ -671,7 +671,7 @@
   }
   .ad-bulk-bar .ad-btn {
     background: rgba(255, 255, 255, 0.16);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
     border-color: rgba(255, 255, 255, 0.32);
   }
   .ad-bulk-bar .ad-btn:hover { background: rgba(255, 255, 255, 0.28); }
@@ -920,7 +920,7 @@
   .ad-perm-r   { background: #e0f2fe; color: #075985; }
   .ad-perm-rw  { background: #dbeafe; color: #1d4ed8; }
   .ad-perm-rwd { background: #dcfce7; color: #166534; }
-  :global(.ad-perm-pill.ad-perm-\-) { background: #e2e8f0; color: #64748b; }
+  :global(.ad-perm-pill.ad-perm-\-) { background: var(--sg-bg-subtle, var(--sg-header-bg, #e2e8f0)); color: var(--sg-muted, #64748b); }
   :global([data-theme='dark']) .ad-perm-r   { background: rgba(14,165,233,.2); color: #7dd3fc; }
   :global([data-theme='dark']) .ad-perm-rw  { background: rgba(59,130,246,.2); color: #93c5fd; }
   :global([data-theme='dark']) .ad-perm-rwd { background: rgba(34,197,94,.2); color: #4ade80; }
@@ -938,7 +938,7 @@
     gap: 8px;
     padding: 6px 8px;
     border-radius: 5px;
-    border-left: 3px solid #94a3b8;
+    border-left: 3px solid var(--sg-border, #94a3b8);
     background: var(--sg-header-bg, #f1f5f9);
     margin-bottom: 5px;
   }

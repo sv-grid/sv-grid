@@ -229,15 +229,16 @@
 <style>
   .info {
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(168,85,247,0.03));
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 5%, transparent);
     border-radius: 8px; padding: 10px 14px;
     font-size: 13px; color: var(--sg-fg, #0f172a);
   }
   .info p { margin: 0; }
   .info p + p { margin-top: 4px; color: var(--sg-muted, #64748b); }
   .info code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-               background: rgba(99,102,241,0.10); padding: 1px 5px; border-radius: 3px;
-               color: #4338ca; font-size: 12px; }
+               background: color-mix(in oklab, var(--sg-accent, #6366f1) 10%, transparent);
+               padding: 1px 5px; border-radius: 3px;
+               color: var(--sg-accent, #4338ca); font-size: 12px; }
 
   .toolbar {
     display: flex; align-items: center; gap: 8px;
@@ -250,7 +251,11 @@
     background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a);
     font-weight: 600; cursor: pointer;
   }
-  .tb-btn.active { background: #4338ca; border-color: #4338ca; color: #fff; }
+  .tb-btn.active {
+    background: var(--sg-accent, #4338ca);
+    border-color: var(--sg-accent, #4338ca);
+    color: var(--sg-on-accent, #fff);
+  }
   .tb-check { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px;
               color: var(--sg-muted, #64748b); cursor: pointer; }
 
@@ -264,19 +269,19 @@
     display: flex; flex-direction: column; gap: 10px;
     border: 1px solid var(--sg-border, #e2e8f0);
     border-radius: 10px; padding: 14px 16px;
-    background: #ffffff; color: #0f172a;
+    background: var(--sg-bg, #ffffff); color: var(--sg-fg, #0f172a);
     box-shadow: 0 10px 30px rgba(15,23,42,0.10);
     max-width: 460px;
   }
   .label-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .label-name { font-size: 16px; font-weight: 700; }
-  .label-sub  { font-size: 12px; color: #64748b; margin-top: 2px; }
-  .label-price { font-size: 22px; font-weight: 800; color: #4338ca; }
+  .label-sub  { font-size: 12px; color: var(--sg-muted, #64748b); margin-top: 2px; }
+  .label-price { font-size: 22px; font-weight: 800; color: var(--sg-accent, #4338ca); }
   .label-bc { display: flex; justify-content: center; padding-top: 4px; }
   .label-close {
     position: absolute; top: -8px; right: -8px;
     width: 26px; height: 26px; border-radius: 50%;
-    border: 1px solid var(--sg-border, #cbd5e1); background: #fff; color: #475569;
+    border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-bg, #fff); color: var(--sg-muted, #475569);
     font-size: 16px; line-height: 1; cursor: pointer;
     box-shadow: 0 2px 6px rgba(15,23,42,0.12);
   }

@@ -378,20 +378,23 @@
     border-radius: 999px; padding: 4px 12px; font-size: 12px;
     font-weight: 600; cursor: pointer;
   }
-  .preset:hover { background: color-mix(in oklab, #6366f1 8%, transparent); border-color: #6366f1; }
+  .preset:hover {
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 8%, transparent);
+    border-color: var(--sg-accent, #6366f1);
+  }
   .preset-touched { font-size: 11px; color: #f59e0b; font-weight: 700; padding: 0 6px; }
   .preset-spacer { flex: 1; }
   .match-stat {
     font-size: 13px; color: var(--sg-fg, #0f172a);
     font-variant-numeric: tabular-nums;
   }
-  .match-stat strong { color: #6366f1; font-size: 16px; }
+  .match-stat strong { color: var(--sg-accent, #6366f1); font-size: 16px; }
   .match-stat-meta { color: var(--sg-muted, #64748b); }
 
   /* ---- Builder ---- */
   .builder {
     border: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(180deg, color-mix(in oklab, #6366f1 4%, var(--sg-bg, #fff)), var(--sg-bg, #fff));
+    background: linear-gradient(180deg, color-mix(in oklab, var(--sg-accent, #6366f1) 4%, var(--sg-bg, #fff)), var(--sg-bg, #fff));
     border-radius: 10px; padding: 10px 12px;
     display: flex; flex-direction: column; gap: 6px;
   }
@@ -405,16 +408,16 @@
     color: var(--sg-muted, #64748b);
   }
   .combo-btn.is-on {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border-color: transparent;
   }
   .builder-actions { display: flex; gap: 6px; }
   .link-btn {
     background: transparent; border: 0; padding: 4px 8px;
-    color: #6366f1; font-size: 12px; font-weight: 700; cursor: pointer;
+    color: var(--sg-accent, #6366f1); font-size: 12px; font-weight: 700; cursor: pointer;
     border-radius: 4px;
   }
-  .link-btn:hover { background: color-mix(in oklab, #6366f1 12%, transparent); }
+  .link-btn:hover { background: color-mix(in oklab, var(--sg-accent, #6366f1) 12%, transparent); }
   .link-btn.danger { color: #b91c1c; }
   .link-btn:disabled { opacity: 0.4; cursor: default; }
   .link-btn:disabled:hover { background: transparent; }
@@ -432,7 +435,8 @@
   }
   .rule-link {
     font-size: 10px; font-weight: 800;
-    color: #6366f1; background: color-mix(in oklab, #6366f1 10%, transparent);
+    color: var(--sg-accent, #6366f1);
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 10%, transparent);
     border-radius: 4px; padding: 2px 6px;
     width: 56px; text-align: center;
   }
@@ -453,10 +457,10 @@
     border-radius: 999px; padding: 2px 8px;
     font-size: 11px; cursor: pointer; user-select: none;
   }
-  .chip-check input { accent-color: #6366f1; }
+  .chip-check input { accent-color: var(--sg-accent, #6366f1); }
   .chip-check:has(input:checked) {
-    background: color-mix(in oklab, #6366f1 15%, var(--sg-bg, #fff));
-    border-color: #6366f1; color: #4338ca; font-weight: 600;
+    background: color-mix(in oklab, var(--sg-accent, #6366f1) 15%, var(--sg-bg, #fff));
+    border-color: var(--sg-accent, #6366f1); color: var(--sg-accent, #4338ca); font-weight: 600;
   }
   .rule-x {
     margin-left: auto;

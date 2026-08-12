@@ -542,8 +542,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-    fill: #1e293b;
+    background: var(--sg-bg-subtle, var(--sg-header-bg, #f1f5f9));
+    fill: var(--sg-fg, #1e293b);
   }
   :global(.tk-truck-text) { display: inline-flex; flex-direction: column; line-height: 1.2; }
   :global(.tk-truck-id) { font-weight: 600; font-size: 12.5px; font-variant-numeric: tabular-nums; }
@@ -554,10 +554,6 @@
   :global(.tk-window) { fill: #93c5fd; }
   :global(.tk-wheel) { fill: #0f172a; }
   :global(.tk-hub)   { fill: #cbd5e1; }
-  :global([data-theme='dark'] .tk-truck-icon) {
-    background: linear-gradient(135deg, rgba(148,163,184,0.18), rgba(100,116,139,0.18));
-    fill: #cbd5e1;
-  }
   :global([data-theme='dark'] .tk-wheel) { fill: #0f172a; }
   :global([data-theme='dark'] .tk-hub) { fill: #64748b; }
 
@@ -590,7 +586,6 @@
     border-radius: 999px;
     overflow: hidden;
   }
-  :global([data-theme='dark'] .tk-fill-bar) { background: rgba(148,163,184,0.2); }
   :global(.tk-fill-level) {
     display: block;
     height: 100%;
@@ -629,7 +624,7 @@
     position: absolute;
     top: 24px; height: 4px;
     border-radius: 4px;
-    background: linear-gradient(90deg, #2563eb, #06b6d4);
+    background: var(--sg-accent, #2563eb);
     transition: width 220ms linear;
   }
   :global(.tk-stop) {
@@ -651,7 +646,6 @@
     background: #94a3b8;
     border: 2px solid var(--sg-bg, #ffffff);
   }
-  :global([data-theme='dark'] .tk-stop-dot) { border-color: #0f172a; }
   :global(.tk-stop-residential .tk-stop-dot) { background: #2563eb; }
   :global(.tk-stop-commercial  .tk-stop-dot) { background: #7c3aed; }
   :global(.tk-stop-transfer    .tk-stop-dot) { background: #f59e0b; }

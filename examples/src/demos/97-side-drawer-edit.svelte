@@ -305,10 +305,10 @@
                color: var(--sg-muted, #64748b); }
   .kpi-value { font-size: 20px; font-weight: 700; color: var(--sg-fg, #0f172a);
                font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .kpi.action { background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.05));
+  .kpi.action { background: color-mix(in oklab, var(--sg-accent, #6366f1) 8%, transparent);
                 border-color: transparent; align-items: stretch; justify-content: space-between; }
   .new-btn {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border: 0; border-radius: 6px; padding: 7px 12px; font-size: 13px;
     font-weight: 600; cursor: pointer;
   }
@@ -322,11 +322,11 @@
   :global(td.status-in-review)  { color: #f59e0b; font-weight: 600; }
   :global(td.status-approved)   { color: #10b981; font-weight: 600; }
   :global(td.status-rejected)   { color: #ef4444; font-weight: 600; }
-  :global(td.status-archived)   { color: #94a3b8; }
+  :global(td.status-archived)   { color: var(--sg-muted, #94a3b8); }
   :global(td.pri-urgent)        { color: #b91c1c; font-weight: 700; }
   :global(td.pri-high)          { color: #c2410c; font-weight: 600; }
-  :global(td.pri-normal)        { color: #475569; }
-  :global(td.pri-low)           { color: #94a3b8; }
+  :global(td.pri-normal)        { color: var(--sg-fg, #475569); }
+  :global(td.pri-low)           { color: var(--sg-muted, #94a3b8); }
 
   /* ---------- Drawer ---------- */
   .drawer-backdrop {
@@ -352,7 +352,7 @@
     display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
     padding: 16px 20px;
     border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    background: linear-gradient(180deg, color-mix(in oklab, #6366f1 5%, var(--sg-bg, #fff)), transparent);
+    background: linear-gradient(180deg, color-mix(in oklab, var(--sg-accent, #6366f1) 5%, var(--sg-bg, #fff)), transparent);
   }
   .drawer-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
                     color: var(--sg-muted, #64748b); font-weight: 700; }
@@ -387,8 +387,8 @@
   }
   .field textarea { resize: vertical; min-height: 60px; }
   .field input:focus, .field select:focus, .field textarea:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px color-mix(in oklab, #6366f1 22%, transparent);
+    border-color: var(--sg-accent, #6366f1);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--sg-accent, #6366f1) 22%, transparent);
   }
 
   .errors {
@@ -417,7 +417,7 @@
   }
   .btn:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.1)); }
   .btn.primary {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+    background: var(--sg-accent, #6366f1); color: var(--sg-on-accent, #fff);
     border-color: transparent;
   }
   .btn.primary:hover { filter: brightness(1.08); }

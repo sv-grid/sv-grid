@@ -476,8 +476,26 @@
 </section>
 
 <style>
+  /* Status / tier chip colours identify a value, not the theme, so they
+     stay hardcoded; only their dark ramp is adjusted here for legibility. */
   .fm-shell {
     height: 100%;
+    --fm-err-fg:  #b91c1c;
+    --fm-blue-bg: #dbeafe;   --fm-blue-fg: #1d4ed8;
+    --fm-green-bg: #dcfce7;  --fm-green-fg: #166534;
+    --fm-amber-bg: #fef3c7;  --fm-amber-fg: #92400e;
+    --fm-teal-bg: #ccfbf1;   --fm-teal-fg: #115e59;
+    --fm-red-bg:  #fee2e2;   --fm-red-fg:  #b91c1c;
+    --fm-violet-bg: #ede9fe; --fm-violet-fg: #5b21b6;
+  }
+  :global([data-theme='dark']) .fm-shell {
+    --fm-err-fg:  #f87171;
+    --fm-blue-bg: rgba(59,130,246,.18);  --fm-blue-fg: #93c5fd;
+    --fm-green-bg: rgba(34,197,94,.18);  --fm-green-fg: #4ade80;
+    --fm-amber-bg: rgba(245,158,11,.18); --fm-amber-fg: #fbbf24;
+    --fm-teal-bg: rgba(20,184,166,.18);  --fm-teal-fg: #5eead4;
+    --fm-red-bg:  rgba(239,68,68,.18);   --fm-red-fg:  #f87171;
+    --fm-violet-bg: rgba(139,92,246,.18); --fm-violet-fg: #c4b5fd;
   }
 
   /* Master grid */
@@ -628,9 +646,8 @@
   }
   .fm-err {
     font-size: 10.5px;
-    color: #b91c1c;
+    color: var(--fm-err-fg);
   }
-  :global([data-theme='dark']) .fm-err { color: #f87171; }
 
   /* Contacts */
   .fm-contact-list { display: flex; flex-direction: column; gap: 10px; }
@@ -711,16 +728,11 @@
     font-weight: 600;
     text-transform: capitalize;
   }
-  :global(.fm-status-prospect)    { background: #dbeafe; color: #1d4ed8; }
-  :global(.fm-status-active)      { background: #dcfce7; color: #166534; }
-  :global(.fm-status-churn_risk)  { background: #fef3c7; color: #92400e; }
-  :global(.fm-status-closed_won)  { background: #ccfbf1; color: #115e59; }
-  :global(.fm-status-closed_lost) { background: #fee2e2; color: #b91c1c; }
-  :global([data-theme='dark'] .fm-status-prospect)    { background: rgba(59,130,246,.18); color: #93c5fd; }
-  :global([data-theme='dark'] .fm-status-active)      { background: rgba(34,197,94,.18); color: #4ade80; }
-  :global([data-theme='dark'] .fm-status-churn_risk)  { background: rgba(245,158,11,.18); color: #fbbf24; }
-  :global([data-theme='dark'] .fm-status-closed_won)  { background: rgba(20,184,166,.18); color: #5eead4; }
-  :global([data-theme='dark'] .fm-status-closed_lost) { background: rgba(239,68,68,.18); color: #f87171; }
+  :global(.fm-status-prospect)    { background: var(--fm-blue-bg);  color: var(--fm-blue-fg); }
+  :global(.fm-status-active)      { background: var(--fm-green-bg); color: var(--fm-green-fg); }
+  :global(.fm-status-churn_risk)  { background: var(--fm-amber-bg); color: var(--fm-amber-fg); }
+  :global(.fm-status-closed_won)  { background: var(--fm-teal-bg);  color: var(--fm-teal-fg); }
+  :global(.fm-status-closed_lost) { background: var(--fm-red-bg);   color: var(--fm-red-fg); }
 
   :global(.fm-tier) {
     display: inline-block;
@@ -730,12 +742,9 @@
     font-weight: 700;
     text-transform: uppercase;
   }
-  :global(.fm-tier-starter)    { background: #e2e8f0; color: #475569; }
-  :global(.fm-tier-growth)     { background: #dbeafe; color: #1d4ed8; }
-  :global(.fm-tier-enterprise) { background: #ede9fe; color: #5b21b6; }
-  :global([data-theme='dark'] .fm-tier-starter)    { background: rgba(148,163,184,.2); color: #cbd5e1; }
-  :global([data-theme='dark'] .fm-tier-growth)     { background: rgba(59,130,246,.18); color: #93c5fd; }
-  :global([data-theme='dark'] .fm-tier-enterprise) { background: rgba(139,92,246,.18); color: #c4b5fd; }
+  :global(.fm-tier-starter)    { background: var(--sg-bg-subtle, var(--sg-header-bg, #e2e8f0)); color: var(--sg-muted, #475569); }
+  :global(.fm-tier-growth)     { background: var(--fm-blue-bg);   color: var(--fm-blue-fg); }
+  :global(.fm-tier-enterprise) { background: var(--fm-violet-bg); color: var(--fm-violet-fg); }
 
   :global(.fm-arr) { font-variant-numeric: tabular-nums; font-weight: 600; }
 </style>

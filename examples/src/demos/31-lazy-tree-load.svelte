@@ -400,10 +400,7 @@
     background: var(--c);
   }
   .t31-kpi-hero {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(37, 99, 235, 0.04));
-  }
-  :global([data-theme='dark']) .t31-kpi-hero {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(37, 99, 235, 0.08));
+    background: color-mix(in oklab, var(--sg-accent, #2563eb) 8%, var(--sg-bg, #ffffff));
   }
   .t31-kpi-label {
     font-size: 11px;
@@ -558,7 +555,7 @@
     display: block;
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #a855f7, #06b6d4);
+    background: var(--sg-accent, #a855f7);
   }
 
   :global(.t31-rev) {
