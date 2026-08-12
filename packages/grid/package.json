@@ -23,7 +23,8 @@
   ],
   "type": "module",
   "sideEffects": [
-    "**/*.css"
+    "**/*.css",
+    "**/sv-grid-scrollbar.*"
   ],
   "types": "dist/index.d.ts",
   "module": "dist/index.js",
