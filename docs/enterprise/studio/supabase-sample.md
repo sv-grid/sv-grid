@@ -12,6 +12,11 @@ It is the same dataset as the in-browser
 page hosts it on real Postgres so the anon key works from any browser app, and so
 Supabase **realtime** and Row-Level Security apply.
 
+> **Where this fits:** this page gives you a rich dataset to practice on. To
+> build a screen from scratch against your own table, follow the
+> [Supabase CRUD grid tutorial](./supabase-grid.md); for connect, keys, and RLS
+> in depth, see the [Supabase guide](./supabase.md).
+
 > The public anon key is **read-only** here (RLS `select` for `anon`). That is
 > what makes it safe to expose in a client-side demo. To allow writes, scope a
 > policy to authenticated users - see [making it writable](#making-it-writable).

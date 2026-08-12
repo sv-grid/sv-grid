@@ -13,9 +13,10 @@
    * `createTree` core; this component renders it, and owns the DOM concerns
    * (windowing, focus, and merging lazily-loaded children into the node tree).
    */
-  import { tick, flushSync } from 'svelte'
+  import { tick, untrack } from 'svelte'
   import { type EditorDir } from './editor-contract'
-  import { virtualRange, scrollToIndex } from './virtual'
+  import { createSvelteVirtualizer } from './virtualization/svelte-virtualizer.svelte'
+  import { createJsScroller } from './js-scroller.svelte'
   import { createTree, sortTreeNodes, type TreeNode, type TreeDropPosition } from './createTree.svelte'
 
   type Props = {
@@ -35,8 +36,9 @@
     dir?: EditorDir
     /** Window rows (render only visible) - for large trees. Needs `height`. */
     virtual?: boolean
-    /** Fixed row height in px (must match the CSS). Default 30. */
-    rowHeight?: number
+    /** Row height in px - a number, or a per-node function for variable
+     *  heights. Must match the rendered row height. Default 30. */
+    rowHeight?: number | ((node: TreeNode, index: number) => number)
     /** Scroll-viewport height in px. Enables scrolling (required for `virtual`). */
     height?: number
     /** Load a lazy node's children on first expand (node has `lazy: true`). */
@@ -197,14 +199,58 @@
   })
 
   // --- Virtualization ---------------------------------------------------------
+  // Windowing runs on the shared `createSvelteVirtualizer` (cumulative offsets +
+  // binary search + variable-size support). Rows stay keyed by node id (NOT slot
+  // recycling): a tree row carries per-row identity - an in-progress inline
+  // rename, an active drag, roving focus - that must stay pinned to its node
+  // while scrolling. The engine only supplies the window + each row's offset.
   const scrollable = $derived(virtual || height != null)
   let treeEl = $state<HTMLDivElement | null>(null)
-  let scrollTop = $state(0)
   let viewportH = $state(0)
-  const vr = $derived(
-    virtualRange({ scrollTop, viewportHeight: viewportH, rowHeight, count: tree.rows.length, overscan: 10 }),
+  const rowHeightBase = $derived(typeof rowHeight === 'number' ? rowHeight : 30)
+  const uniform = $derived(typeof rowHeight === 'number')
+  const rowSize = (i: number) => {
+    const r = tree.rows[i]
+    return r ? (typeof rowHeight === 'function' ? rowHeight(r.node, i) : rowHeight) : rowHeightBase
+  }
+
+  const estimateSize = $derived(uniform ? rowHeightBase : (i: number) => rowSize(i))
+  // Generous overscan buffers fast flings; effective viewport never 0 (see SvListBox).
+  const OVERSCAN = 20
+  const effViewport = $derived(viewportH > 0 ? viewportH : Math.max(1, height ?? 320))
+  // Seed with the initial (untracked) values so the first paint renders a full window.
+  const virtualizer = createSvelteVirtualizer(
+    untrack(() => ({ count: tree.rows.length, estimateSize, overscan: OVERSCAN, viewportHeight: effViewport })),
   )
-  const visibleRows = $derived(virtual ? tree.rows.slice(vr.start, vr.end) : tree.rows)
+  // untrack keeps the virtualizer's internal `version` write out of these
+  // effects' dependencies, so they re-run only on their real inputs.
+  $effect(() => {
+    const count = tree.rows.length
+    const es = estimateSize
+    untrack(() => virtualizer.setOptions({ count, estimateSize: es }))
+  })
+  $effect(() => {
+    const vh = effViewport
+    untrack(() => virtualizer.setViewportHeight(vh))
+  })
+  const totalSize = $derived.by(() => { virtualizer.version; return virtualizer.getTotalSize() })
+  const visibleRows = $derived.by(() => {
+    if (!virtual) return tree.rows
+    virtualizer.version
+    const st = virtualizer.getState()
+    return tree.rows.slice(st.startIndex, st.endIndex + 1)
+  })
+  const rowTop = (i: number) => virtualizer.getOffsetForIndex(i)
+  const rowHeightPx = (i: number) => (virtual ? virtualizer.getSizeForIndex(i) : rowSize(i))
+
+  // JS-driven scroll for virtual mode (see js-scroller): no native scroll, so a
+  // fast thumb-drag never flashes an empty tree.
+  const scroller = createJsScroller({
+    virtualizer,
+    totalSize: () => totalSize,
+    viewport: () => effViewport,
+    lineStep: () => rowHeightBase,
+  })
 
   // Follow the core's roving focus row; scroll it into view first when windowed.
   let lastFocusTick = 0
@@ -212,10 +258,7 @@
     if (tree.focusTick === lastFocusTick) return
     lastFocusTick = tree.focusTick
     const i = tree.activeIndex
-    if (virtual && treeEl) {
-      const next = scrollToIndex(i, scrollTop, treeEl.clientHeight, rowHeight)
-      if (next !== scrollTop) { treeEl.scrollTop = next; scrollTop = next }
-    }
+    if (virtual) untrack(() => scroller.ensureIndexVisible(i))
     tick().then(() => treeEl?.querySelector<HTMLElement>(`[data-row="${i}"]`)?.focus())
   })
 </script>
@@ -228,25 +271,35 @@
     {#if query}<button type="button" class="sv-tree__search-clear" aria-label="Clear search" onclick={() => (query = '')}>&times;</button>{/if}
   </div>
 {/if}
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   bind:this={treeEl}
   class="sv-tree"
-  class:sv-tree--scroll={scrollable}
+  class:sv-tree--scroll={scrollable && !virtual}
   class:is-virtual={virtual}
   dir={resolvedDir}
   style:height={height != null ? `${height}px` : undefined}
-  onscroll={scrollable ? (e) => { scrollTop = e.currentTarget.scrollTop; if (virtual) flushSync() } : undefined}
+  onwheel={virtual ? scroller.onWheel : undefined}
+  onpointerdown={virtual ? scroller.onContentDown : undefined}
+  onpointermove={virtual ? scroller.onContentMove : undefined}
+  onpointerup={virtual ? scroller.onContentUp : undefined}
+  onpointercancel={virtual ? scroller.onContentUp : undefined}
   bind:clientHeight={viewportH}
   {...tree.treeProps()}
 >
-  {#if virtual}<div class="sv-tree__sizer" aria-hidden="true" style:height={`${vr.totalHeight}px`}></div>{/if}
   {#each visibleRows as item (item.node.id)}
     {@render treeRow(item)}
   {/each}
+  {#if virtual && scroller.maxOffset > 0}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="sv-tree__sb" onpointerdown={scroller.onTrackDown} aria-hidden="true">
+      <div class="sv-tree__thumb" class:is-dragging={scroller.dragging} style:height={`${scroller.thumbH}px`} style:transform={`translateY(${scroller.thumbTop}px)`} onpointerdown={scroller.onThumbDown} onpointermove={scroller.onThumbMove} onpointerup={scroller.onThumbUp} onpointercancel={scroller.onThumbUp}></div>
+    </div>
+  {/if}
 </div>
 </div>
 
-{#snippet treeRow(item)}
+{#snippet treeRow(item: (typeof tree.rows)[number])}
   {@const cs = checkable ? tree.checkStateOf(item.node) : 'unchecked'}
   {@const isLoading = loadingIds.has(item.node.id)}
   {@const rowProps = tree.itemProps(item)}
@@ -258,9 +311,9 @@
     class:drop-before={dropId === item.node.id && dropPos === 'before'}
     class:drop-after={dropId === item.node.id && dropPos === 'after'}
     class:drop-inside={dropId === item.node.id && dropPos === 'inside'}
-    style:height={`${rowHeight}px`}
+    style:height={`${rowHeightPx(item.index)}px`}
     style:padding-inline-start={`${item.depth * 18 + 6}px`}
-    style:transform={virtual ? `translateY(${item.index * rowHeight}px)` : undefined}
+    style:transform={virtual ? `translateY(${rowTop(item.index) - scroller.scrollOffset}px)` : undefined}
     draggable={reorderable && editingId !== item.node.id && !item.node.disabled}
     ondragstart={reorderable ? (e) => onRowDragStart(e, item.node) : undefined}
     ondragover={reorderable ? (e) => onRowDragOver(e, item.node) : undefined}
@@ -329,10 +382,17 @@
     border: 1px solid var(--sg-border, #e2e8f0); border-radius: var(--sg-radius, 8px);
     font-size: 13px;
   }
-  .sv-tree--scroll { overflow-y: auto; }
-  .sv-tree.is-virtual { position: relative; will-change: scroll-position; }
-  .sv-tree__sizer { padding: 0; margin: 0; pointer-events: none; }
+  /* Non-virtual (height-capped) tree uses native scroll. */
+  .sv-tree--scroll { overflow-y: auto; overscroll-behavior: contain; overflow-anchor: none; }
+  /* Virtual tree: JS-driven, no native scroll - rows are moved by `scrollOffset`. */
+  .sv-tree.is-virtual { position: relative; overflow: hidden; touch-action: none; }
   .sv-tree.is-virtual .sv-tree__row { position: absolute; inset-inline: 4px; top: 4px; }
+  .sv-tree__sb { position: absolute; top: 4px; right: 2px; bottom: 4px; width: 10px; z-index: 2; }
+  .sv-tree__thumb {
+    position: absolute; left: 2px; right: 2px; top: 0; min-height: 24px; border-radius: 4px;
+    background: color-mix(in srgb, currentColor 26%, transparent); cursor: default; touch-action: none;
+  }
+  .sv-tree__thumb:hover, .sv-tree__thumb.is-dragging { background: color-mix(in srgb, currentColor 42%, transparent); }
   .sv-tree__row {
     display: flex; align-items: center; gap: 4px; box-sizing: border-box; padding-inline-end: 8px;
     border-radius: 6px; cursor: pointer; outline: none;

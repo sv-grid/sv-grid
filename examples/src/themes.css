@@ -14,6 +14,7 @@
 
 /* Each preset now lives in its own file under ./themes/. This barrel keeps
  * the single `@import './themes.css'` entry point both consumers use. */
+@import './themes/ember.css';
 @import './themes/shadcn.css';
 @import './themes/tailwind.css';
 @import './themes/material.css';

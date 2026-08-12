@@ -2,6 +2,19 @@ import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
 import { screen, formScreen, boardScreen, calendarScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
+// SAP Fiori-style chrome: a dark shell bar across the top (the toolbar), a white
+// launchpad-style rail, and a blue left-bar on the active item (square corners).
+const FIORI_CSS = `.sv-app.theme-fiori .sv-app__toolbar { background: #354a5f; border-bottom: 0; }
+.sv-app.theme-fiori .sv-app__search { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.24); }
+.sv-app.theme-fiori .sv-app__search-in { color: #fff; }
+.sv-app.theme-fiori .sv-app__search-in::placeholder { color: rgba(255, 255, 255, 0.72); }
+.sv-app.theme-fiori .sv-app__search-ic, .sv-app.theme-fiori .sv-app__kbd { color: #fff; }
+.sv-app.theme-fiori .sv-app__side { background: #fff; border-right: 1px solid #e5e5e5; }
+.sv-app.theme-fiori .sv-app__brandtext { color: #0a6ed1; font-weight: 700; }
+.sv-app.theme-fiori .sv-app__link { border-radius: 0; padding: 9px 12px; border-left: 3px solid transparent; color: #32363a; }
+.sv-app.theme-fiori .sv-app__link:hover { background: #f5f6f7; }
+.sv-app.theme-fiori .sv-app__link.is-active { background: #ebf5ff; color: #0a6ed1; border-left-color: #0a6ed1; font-weight: 600; }`
+
 const policies: EntitySchema = {
   name: 'policies',
   label: 'Policy',
@@ -129,9 +142,9 @@ const claimFormats: FormatRule[] = [
 export const insurance: SampleApp = {
   id: 'insurance',
   name: 'Insurance Claims',
-  description: 'Policies, adjusters and claims - a claims pipeline board (Filed -> Paid), payout + approval dashboards (target KPIs, a filings sparkline, a severity gauge, type/status breakdowns, an adjuster x status pivot, tabbed views), a fraud-risk red grid, policy master/detail with a claims timeline, and rich edit forms (policy/claim number masks, region, adjuster phone, risk + fraud ratings, severity slider, triage chips, filing datetime).',
+  description: 'Policies, adjusters and claims - a SAP Fiori-style claims desk behind a sign-in (adjuster and admin roles), with a claims pipeline board (Filed -> Paid), payout + approval dashboards (target KPIs, a filings sparkline, a severity gauge, type/status breakdowns, an adjuster x status pivot, tabbed views), a fraud-risk red grid, policy master/detail with a claims timeline, and rich edit forms (policy/claim number masks, region, adjuster phone, risk + fraud ratings, severity slider, triage chips, filing datetime).',
   emoji: '\u{1F6E1}\u{FE0F}',
-  accent: '#1e5eff',
+  accent: '#0070f2',
   build: () => {
     const policyRows = pad(policies, seed.policies, 40)
     const adjusterRows = pad(adjusters, seed.adjusters, 16)
@@ -139,9 +152,24 @@ export const insurance: SampleApp = {
     return project({
       title: 'Claims',
       brand: 'Assurance',
-      accent: '#1e5eff',
+      accent: '#0070f2',
       preset: 'sap',
       footer: '',
+      // SAP Fiori-style enterprise shell: a dark shell bar + a launchpad rail.
+      appClass: 'theme-fiori',
+      customCss: FIORI_CSS,
+      // Sign-in with two roles. Adjusters work the claims queue but cannot delete;
+      // the policy portfolio and the adjuster roster are admin-only, so they drop
+      // out of an adjuster's nav.
+      auth: { enabled: true, protect: true },
+      access: {
+        enabled: true,
+        defaultRole: 'adjuster',
+        roles: [
+          { role: 'admin', screens: '*', actions: '*' },
+          { role: 'adjuster', screens: ['overview', 'pipeline', 'claim-detail', 'claims', 'calendar'], actions: ['create', 'update'] },
+        ],
+      },
       entities: [policies, adjusters, claims],
       seed: { policies: policyRows, adjusters: adjusterRows, claims: claimRows },
       screens: [

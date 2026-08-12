@@ -3865,9 +3865,17 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
       {
         "key": "rowHeight",
         "label": "Row Height",
-        "type": "number",
+        "type": "json",
         "default": 32,
-        "description": "Fixed row height in px (must match the CSS row height). Default 32.",
+        "description": "Row height in px - a number, or a per-option function for variable heights. Must match the rendered row height. Default 32.",
+        "group": "common"
+      },
+      {
+        "key": "groupHeaderHeight",
+        "label": "Group Header Height",
+        "type": "number",
+        "default": 28,
+        "description": "Height (px) of a group heading row when virtualized + grouped. Default 28.",
         "group": "common"
       }
     ],
@@ -4024,9 +4032,25 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
       {
         "key": "rowHeight",
         "label": "Row Height",
-        "type": "number",
+        "type": "json",
         "default": 34,
-        "description": "Fixed option height in px (must match the CSS). Default 34.",
+        "description": "Option height in px - a number, or a per-option function for variable heights. Must match the rendered row height. Default 34.",
+        "group": "common"
+      },
+      {
+        "key": "groupHeaderHeight",
+        "label": "Group Header Height",
+        "type": "number",
+        "default": 28,
+        "description": "Height (px) of a group heading row when virtualized + grouped. Default 28.",
+        "group": "common"
+      },
+      {
+        "key": "maxRows",
+        "label": "Max Rows",
+        "type": "number",
+        "default": 8,
+        "description": "Max options shown before the panel scrolls (native-select behaviour). Default 8.",
         "group": "common"
       },
       {
@@ -4187,6 +4211,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "default": false,
         "description": "Show a clear (x) button when a value is selected.",
         "group": "behavior"
+      },
+      {
+        "key": "resizable",
+        "label": "Resizable",
+        "type": "boolean",
+        "default": false,
+        "description": "Show a bottom drag grip so the user can resize the open panel's height (hidden when the panel flips upward, where there is no room to grow).",
+        "group": "common"
       },
       {
         "key": "loadOptions",
@@ -4360,6 +4392,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "placeholder",
         "label": "Placeholder",
         "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "resizable",
+        "label": "Resizable",
+        "type": "boolean",
+        "default": false,
+        "description": "Show a bottom drag grip so the user can resize the open suggestion panel's height (hidden when the panel flips upward, where there is no room to grow).",
         "group": "common"
       }
     ],
@@ -4647,7 +4687,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Row Height",
         "type": "number",
         "default": 30,
-        "description": "Fixed row height in px (must match the CSS). Default 30.",
+        "description": "Row height in px - a number, or a per-node function for variable heights. Must match the rendered row height. Default 30.",
         "group": "common"
       },
       {

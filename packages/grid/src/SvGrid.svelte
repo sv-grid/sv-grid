@@ -66,6 +66,7 @@
   // views - lazy-loaded below so they stay out of the base <SvGrid> bundle.
   import { getSchedulerView } from "./scheduler-view.svelte";
   import { getBoardView } from "./board-view.svelte";
+  import { getChartView } from "./chart-view.svelte";
   let props: Props<TFeatures, TData> = $props();
   const ctrl = createSvGridController(props);
   // Effective props: the controller's `override ?? prop` proxy that backs
@@ -83,6 +84,10 @@
   const boardConfig = $derived(opt.board);
   // Scheduler / calendar mode: same "view of the grid" seam as the board.
   const schedulerConfig = $derived(opt.scheduler);
+  // Chart mode: another "view of the grid". Unlike board/scheduler, the renderer
+  // is free - a built-in default (SvGridChartView, lazy-loaded below) wraps the
+  // standalone SvChart, overridable via the `chart-view` seam (getChartView).
+  const chartViewConfig = $derived(opt.chart);
   // Lazy views + editors: charting (SvGridChart engine), the Kanban board, the
   // list/date cell editors and the menu/tooltip overlay host are all large and
   // only used behind a prop or an interaction, so each loads as its own chunk the
@@ -95,6 +100,15 @@
   // The Kanban board renderer ships in @svgrid/enterprise and plugs in through
   // the `board-view` seam (getBoardView) - same model as the scheduler view.
   let ChartPanelView = $state<typeof import("./SvGridChartPanel.svelte").default | null>(null);
+  // Built-in chart-view renderer, lazy-loaded the first time the `chart` prop is
+  // set (it pulls in the charting engine, so it stays out of the base bundle).
+  // Typed as Component<any> - same as the board/scheduler view holders - so the
+  // grid's generic <TData> doesn't clash with the renderer's base prop types.
+  let ChartView = $state<import("svelte").Component<any> | null>(null);
+  $effect(() => {
+    if (chartViewConfig && !ChartView)
+      import("./SvGridChartView.svelte").then((m) => (ChartView = m.default));
+  });
   let DropdownEditor = $state<typeof import("./SvGridDropdown.svelte").default | null>(null);
   let DateEditor = $state<typeof import("./SvDateTimePicker.svelte").default | null>(null);
   let MenusOverlay = $state<typeof import("./GridMenus.svelte").default | null>(null);
@@ -711,6 +725,52 @@
             to render it.
           </p>
         </div>
+      {/if}
+    </div>
+  </div>
+{:else if chartViewConfig}
+  <div
+    class="sv-grid-root sv-grid-chart-root"
+    class:sv-grid-root-fill={opt.containerHeight === "100%"}
+    style={`height: ${
+      typeof opt.containerHeight === "string"
+        ? opt.containerHeight
+        : `${opt.containerHeight ?? 520}px`
+    }; display: flex; flex-direction: column;`}
+  >
+    {#if chartViewConfig.searchable !== false}
+      <label class="sv-grid-board-search">
+        <svg viewBox="0 0 16 16" aria-hidden="true" width="14" height="14">
+          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <line x1="10.2" y1="10.2" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        <input
+          type="search"
+          placeholder={chartViewConfig.searchPlaceholder ?? "Search data..."}
+          bind:value={ctrl.globalFilter}
+          aria-label="Search data"
+        />
+      </label>
+    {/if}
+    <div style="flex: 1 1 auto; min-height: 0;">
+      {#if getChartView()}
+        {@const RegisteredChartView = getChartView()}
+        <RegisteredChartView
+          data={boardData}
+          columns={opt.columns}
+          chart={chartViewConfig}
+          getRowId={opt.getRowId}
+        />
+      {:else if ChartView}
+        <ChartView
+          data={boardData}
+          columns={opt.columns}
+          chart={chartViewConfig}
+          getRowId={opt.getRowId}
+        />
+      {:else}
+        <!-- The built-in chart view is loading (lazy chunk). -->
+        <div class="sv-grid-state" role="status">Loading chart...</div>
       {/if}
     </div>
   </div>

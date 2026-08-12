@@ -1,11 +1,20 @@
-# Visual designer
+# Schema designer (embeddable)
 
-`SvSchemaDesigner` is the human-in-the-loop surface over the Studio engine.
-Author an `EntitySchema` visually, see the grid and edit form update live, and
-click **Generate code** to emit the same SvelteKit files the CLI and AI paths
-produce.
+`SvSchemaDesigner` is a small, **embeddable, single-entity** component: drop it into
+your own app to author one `EntitySchema` visually - add fields, set types and
+validation - and see the grid and edit form update live. It's controlled (you own
+where the schema is stored), so it's the building block for a "let users customize
+this table" screen.
 
-![The visual schema designer: field editor on the left, live grid + edit-panel preview on the right.](/docs-media/studio-designer.png)
+> **Looking for the full app builder?** The rich, multi-screen designer you get
+> from `npx @svgrid/studio designer` - grids, charts, dashboards, boards,
+> schedulers, and master-detail across many entities, with data binding and
+> code-behind - is a different component, [`SvStudioDesigner`](./app-designer.md),
+> opened locally with [`npx @svgrid/studio designer`](./launch.md).
+> Use this page's `SvSchemaDesigner` when you only need to design one entity, or to
+> embed a schema editor inside your own product.
+
+![The single-entity schema designer: field editor on the left, live grid + edit-panel preview on the right.](/docs-media/studio-designer.png)
 
 ## Usage
 

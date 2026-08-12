@@ -33,7 +33,7 @@ and **seeded with believable data**, so you see the real thing, not `name 1 / em
 | **Gym** | Members, Classes, Bookings - capacity + attendance |
 | **Library** | Books, Members, Loans - circulation + overdue |
 
-![A loaded sample: the CRM overview dashboard](/docs-media/studio-samples-crm.png)
+![A loaded sample in the designer: the CRM forecast dashboard - KPI tiles (pipeline value, open deals, average deal size) and deal-value charts by stage and owner.](/docs-media/studio-sample-loaded.png)
 
 Loading a sample replaces the current design (undo with Ctrl+Z). From the
 [launcher](./launch.md) you can open one directly:

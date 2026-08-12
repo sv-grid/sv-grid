@@ -74,7 +74,7 @@
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="text-sm text-slate-600 dark:text-slate-300 shrink-0">
+  <div class="text-sm shrink-0" style="color: var(--sg-muted);">
     {rows.length} rows · {columns.length} columns ·
     sort, filter, select, edit, and resize columns are all live.
     Double-click a cell or press <kbd>F2</kbd> to edit.
@@ -102,7 +102,7 @@
     />
   </div>
 
-  <footer class="text-sm text-slate-500 dark:text-slate-400 shrink-0">
+  <footer class="text-sm shrink-0" style="color: var(--sg-muted);">
     Rows: {rows.length}
   </footer>
 </section>

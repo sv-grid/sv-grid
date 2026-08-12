@@ -27,6 +27,20 @@ npm i mssql         # sql server
 npm i better-sqlite3  # sqlite
 ```
 
+In the local designer you don't need to run these by hand - when a connect or
+preview fails on a missing driver, the SQL builder shows an **Install** button
+that adds it and retries.
+
+### I can't connect to my SQL database in the online designer
+
+Expected. A web browser can't open a raw TCP connection to Postgres / MySQL / SQL
+Server, and the driver is a server-side package, so **live connect / test /
+preview only run in the local designer** (`npx @svgrid/studio designer`). In the
+online designer, bind the entity (dialect + table + schema) and **Generate app** -
+the app connects for real at runtime via `DATABASE_URL`. For a live database
+inside the online designer, use **Supabase** or the **Local database** (PGlite),
+both reachable from the browser.
+
 ### The database connection fails
 
 - Check `DATABASE_URL` is set on the **server** (not client code).

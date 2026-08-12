@@ -90,6 +90,44 @@ const SECTION_ORDER = [
   'enterprise', 'compliance', 'legal', 'brand',
 ]
 
+// Curated reading order within a section, expressed as labelled groups so one
+// source drives both the sidebar order (prev/next follows it) and the group
+// headers the site can render. Bare names expand to `<section>/<name>.md`;
+// pages a section has that are not listed here sort after the curated ones,
+// alphabetically. Sections without an entry keep the alphabetical order.
+const PAGE_GROUPS = {
+  'enterprise/studio': [
+    { label: '',                        pages: ['enterprise/studio.md'] },
+    { label: 'Start here',              pages: ['getting-started', 'concepts', 'samples', 'tutorial-crm'] },
+    { label: 'Three ways to build',     pages: ['cli', 'launch', 'app-designer', 'designer', 'ai-generation'] },
+    { label: 'Connect to data',         pages: ['data-binding', 'databases', 'local-database', 'supabase', 'drizzle', 'prisma', 'rest-api', 'odata-graphql', 'in-memory'] },
+    { label: 'One-page CRUD tutorials', pages: ['postgres-grid', 'supabase-grid', 'rest-grid', 'supabase-sample'] },
+    { label: 'Screens & features',      pages: ['schema', 'server-grid', 'edit-forms', 'relations', 'master-detail', 'dashboards', 'scheduler', 'dock-layout', 'navigation', 'realtime'] },
+    { label: 'Logic & generated code',  pages: ['business-logic', 'code-behind', 'code-generation'] },
+    { label: 'Auth & security',         pages: ['auth', 'access-control', 'audit-log'] },
+    { label: 'Ship it',                 pages: ['theming', 'i18n', 'accessibility', 'testing', 'deployment'] },
+    { label: 'Reference & help',        pages: ['api', 'troubleshooting'] },
+  ],
+}
+
+const expandPagePath = (sectionId, p) => (p.endsWith('.md') ? p : `${sectionId}/${p}.md`)
+// path -> curated position / group label, flattened once up front.
+const pageOrderIndex = new Map()
+const pageGroupLabel = new Map()
+for (const [sectionId, groups] of Object.entries(PAGE_GROUPS)) {
+  let i = 0
+  for (const g of groups) {
+    for (const p of g.pages) {
+      const path = expandPagePath(sectionId, p)
+      pageOrderIndex.set(path, i++)
+      if (g.label) pageGroupLabel.set(path, g.label)
+    }
+  }
+}
+
+// Whole sections that are part of the commercial tier regardless of page title.
+const ENTERPRISE_SECTIONS = new Set(['enterprise', 'enterprise/studio'])
+
 /** Walk a directory recursively, yielding absolute file paths. */
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -167,7 +205,8 @@ async function main() {
       summary,
       section,
       pillar:      SECTION_PILLAR[section] ?? 'grid',
-      tier:        /\bEnterprise\b/.test(title) ? 'enterprise' : 'community',
+      tier:        ENTERPRISE_SECTIONS.has(section) || /\bEnterprise\b/.test(title) ? 'enterprise' : 'community',
+      ...(pageGroupLabel.has(rel) ? { group: pageGroupLabel.get(rel) } : {}),
       words:       src.split(/\s+/).filter(Boolean).length,
       lastUpdated: s.mtime.toISOString().slice(0, 10),
       // Demo associations come from two link styles: the `data-docs-demo`
@@ -185,13 +224,31 @@ async function main() {
     const i = SECTION_ORDER.indexOf(id)
     return i === -1 ? SECTION_ORDER.length : i
   }
+  const pageRank = (p) => (pageOrderIndex.has(p) ? pageOrderIndex.get(p) : Infinity)
   const sections = [...new Set(docs.map((d) => d.section))]
     .sort((a, b) => orderOf(a) - orderOf(b) || a.localeCompare(b))
     .map((id) => ({
       id,
       title:  SECTION_TITLES[id] ?? id,
       pillar: SECTION_PILLAR[id] ?? 'grid',
-      pages:  docs.filter((d) => d.section === id).map((d) => d.path),
+      pages:  docs
+        .filter((d) => d.section === id)
+        .sort((a, b) => pageRank(a.path) - pageRank(b.path) || a.path.localeCompare(b.path))
+        .map((d) => d.path),
+      // Labelled sub-groups for the sidebar; only pages that actually exist.
+      ...(PAGE_GROUPS[id]
+        ? {
+            groups: PAGE_GROUPS[id]
+              .filter((g) => g.label)
+              .map((g) => ({
+                label: g.label,
+                pages: g.pages
+                  .map((p) => expandPagePath(id, p))
+                  .filter((p) => docs.some((d) => d.path === p)),
+              }))
+              .filter((g) => g.pages.length > 0),
+          }
+        : {}),
     }))
   const manifest = {
     name:        'sv-grid documentation',

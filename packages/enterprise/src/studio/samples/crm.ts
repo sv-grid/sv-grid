@@ -2,6 +2,16 @@ import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
 import { screen, formScreen, boardScreen, schedulerScreen, workspaceScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
+// Salesforce Lightning-style chrome: a gradient blue brand rail, white rounded-pill
+// nav with a solid-white active state, and a Lightning-blue rule under the toolbar.
+const LIGHTNING_CSS = `.sv-app.theme-lightning .sv-app__side { background: linear-gradient(180deg, #032d60, #0176d3); border-right: 0; }
+.sv-app.theme-lightning .sv-app__brandtext { color: #fff; font-weight: 800; letter-spacing: -0.01em; }
+.sv-app.theme-lightning .sv-app__link { color: #d9edff; font-weight: 600; border-radius: 9999px; padding: 8px 14px; }
+.sv-app.theme-lightning .sv-app__link:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.sv-app.theme-lightning .sv-app__link.is-active { background: #fff; color: #032d60; }
+.sv-app.theme-lightning .sv-app__collapse, .sv-app.theme-lightning .sv-app__foot { color: rgba(255, 255, 255, 0.72); }
+.sv-app.theme-lightning .sv-app__toolbar { border-bottom: 2px solid #0176d3; }`
+
 // A fixed sales-rep pool, shared by deals + activities so leaderboards, pivots
 // and owner pills stay clean (padded rows cycle these instead of random names).
 const OWNERS = [
@@ -156,9 +166,9 @@ const seed = {
 export const crm: SampleApp = {
   id: 'crm',
   name: 'CRM',
-  description: 'Companies, contacts, deals and activities - sales + forecast + activity dashboards (KPI sparklines, target gauge, value-over-time trend, pivot, tabs), filtered status-pill grids with drill-through and row actions, master/detail, and rich edit forms.',
+  description: 'Companies, contacts, deals and activities - a Salesforce Lightning-style CRM behind a sign-in, with sales + forecast + activity dashboards (KPI sparklines, target gauge, value-over-time trend, pivot, tabs), filtered status-pill grids with drill-through and row actions, master/detail, and rich edit forms.',
   emoji: '\u{1F91D}',
-  accent: '#6366f1',
+  accent: '#0176d3',
   build: () => {
     const companyRows = pad(companies, seed.companies, 12)
     const pool = ids(companyRows)
@@ -169,9 +179,23 @@ export const crm: SampleApp = {
     return project({
       title: 'Acme CRM',
       brand: 'Acme CRM',
-      accent: '#6366f1',
+      accent: '#0176d3',
       preset: 'salesforce',
       footer: '© Acme Inc.',
+      // Salesforce Lightning look: a deep-blue brand rail with white pill nav, and a
+      // Lightning-blue accent bar under the app toolbar.
+      appClass: 'theme-lightning',
+      customCss: LIGHTNING_CSS,
+      // A sign-in wall with two sales roles (reps can create + edit, not delete).
+      auth: { enabled: true, protect: true },
+      access: {
+        enabled: true,
+        defaultRole: 'rep',
+        roles: [
+          { role: 'admin', screens: '*', actions: '*' },
+          { role: 'rep', screens: '*', actions: ['create', 'update'] },
+        ],
+      },
       entities: [companies, contacts, deals, activities],
       seed: { companies: companyRows, contacts: contactRows, deals: dealRows, activities: activityRows },
       screens: [

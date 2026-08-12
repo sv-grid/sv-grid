@@ -48,12 +48,26 @@ describe('SvListBox virtual', () => {
       const rendered = target.querySelectorAll('.sv-listbox__opt').length
       expect(rendered).toBeGreaterThan(0)
       expect(rendered).toBeLessThan(60) // nowhere near 5000
-      // Top + bottom spacers + the windowed rows reserve the full scroll height,
-      // keeping the scrollbar honest without positioning rows out of flow.
-      const spacers = target.querySelectorAll<HTMLElement>('.sv-listbox__spacer')
-      expect(spacers.length).toBe(2)
-      const spacerPx = [...spacers].reduce((sum, s) => sum + parseFloat(s.style.height || '0'), 0)
-      expect(spacerPx + rendered * 32).toBe(5000 * 32)
+      // Virtual mode is a JS-driven scroller: one clipped viewport holds the
+      // windowed rows (moved by `scrollOffset`, not native scroll) plus a custom
+      // scrollbar - so there is no native async-scroll gap to flash blank.
+      expect(target.querySelector('.sv-listbox__vp')).not.toBeNull()
+      expect(target.querySelector('.sv-listbox__sb')).not.toBeNull()
+    } finally { unmount(app); target.remove() }
+  })
+
+  it('windows a GROUPED list too (group headings render inside the window)', () => {
+    const roles = ['Eng', 'Design', 'Ops']
+    const options = Array.from({ length: 3000 }, (_, i) => ({ value: i, label: `User ${i}`, group: roles[i % 3] }))
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const app = mount(SvListBox, { target, props: { options, virtual: true } as any })
+    flushSync()
+    try {
+      const rendered = target.querySelectorAll('.sv-listbox__opt').length
+      expect(rendered).toBeGreaterThan(0)
+      expect(rendered).toBeLessThan(60) // grouped list is windowed, not fully rendered
+      expect(target.querySelector('.sv-listbox__vp')).not.toBeNull()
     } finally { unmount(app); target.remove() }
   })
 

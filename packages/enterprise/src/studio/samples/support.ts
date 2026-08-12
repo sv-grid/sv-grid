@@ -1,6 +1,18 @@
 import type { EntitySchema } from '../../schema.js'
 import { screen, formScreen, boardScreen, workspaceScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
+// Outlook-style chrome: a solid blue command ribbon (the toolbar), a light "folder"
+// rail with compact rows, and an accented left bar on the active folder.
+const OUTLOOK_CSS = `.sv-app.theme-outlook .sv-app__toolbar { background: #0f6cbd; border-bottom: 0; }
+.sv-app.theme-outlook .sv-app__toolbar, .sv-app.theme-outlook .sv-app__search-ic, .sv-app.theme-outlook .sv-app__kbd { color: #fff; }
+.sv-app.theme-outlook .sv-app__search { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.28); }
+.sv-app.theme-outlook .sv-app__search-in { color: #fff; }
+.sv-app.theme-outlook .sv-app__search-in::placeholder { color: rgba(255, 255, 255, 0.75); }
+.sv-app.theme-outlook .sv-app__side { background: #faf9f8; padding: 12px 8px; }
+.sv-app.theme-outlook .sv-app__brandtext { color: #0f6cbd; font-weight: 700; }
+.sv-app.theme-outlook .sv-app__link { border-radius: 4px; padding: 6px 12px; font-size: 13.5px; }
+.sv-app.theme-outlook .sv-app__link.is-active { background: color-mix(in srgb, #0f6cbd 12%, #fff); color: #0f6cbd; box-shadow: inset 3px 0 0 #0f6cbd; }`
+
 const customers: EntitySchema = {
   name: 'customers',
   label: 'Customer',
@@ -110,9 +122,9 @@ const seed = {
 export const support: SampleApp = {
   id: 'support',
   name: 'Support desk',
-  description: 'Tickets, customers and agents - triage + SLA dashboards (CSAT sparkline + gauge, pivot, tabbed breakdown), a team-capacity dashboard, status-pill grids, master/detail, and rich edit forms.',
+  description: 'Tickets, customers and agents - an Outlook-style help desk behind a sign-in, with triage + SLA dashboards (CSAT sparkline + gauge, pivot, tabbed breakdown), a team-capacity dashboard, status-pill grids, master/detail, and rich edit forms.',
   emoji: '\u{1F3AF}',
-  accent: '#0ea5e9',
+  accent: '#0f6cbd',
   build: () => {
     const customerRows = pad(customers, seed.customers, 16)
     const agentRows = pad(agents, seed.agents, 6)
@@ -120,9 +132,22 @@ export const support: SampleApp = {
     return project({
       title: 'Support Desk',
       brand: 'Support Desk',
-      accent: '#0ea5e9',
+      accent: '#0f6cbd',
       preset: 'atlassian',
       footer: '',
+      // Outlook-style mail/triage client: blue command ribbon + a light folder rail.
+      appClass: 'theme-outlook',
+      customCss: OUTLOOK_CSS,
+      // Sign-in with two roles: agents work tickets but cannot delete records.
+      auth: { enabled: true, protect: true },
+      access: {
+        enabled: true,
+        defaultRole: 'agent',
+        roles: [
+          { role: 'admin', screens: '*', actions: '*' },
+          { role: 'agent', screens: '*', actions: ['create', 'update'] },
+        ],
+      },
       entities: [customers, agents, tickets],
       seed: { customers: customerRows, agents: agentRows, tickets: ticketRows },
       screens: [

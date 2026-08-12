@@ -271,6 +271,7 @@ export {
   type EntityDataSource,
   type MemorySource,
   type RestSource,
+  type RestAdapterConfig,
   type SqlSource,
   type SupabaseSource,
   type PgliteSource,

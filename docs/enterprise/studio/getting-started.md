@@ -12,6 +12,18 @@ needed:
 - **[Live SQL](https://svgrid.com/#/demos/193-studio-live-sql)** - a real Postgres in the browser (PGlite)
 - **[Supabase](https://svgrid.com/#/demos/194-studio-supabase)** - connect your own hosted Postgres
 
+**Choose your tutorial.** This page needs no database and teaches the whole
+shape; the one-page tutorials build the same screen against a real backend.
+They all end in the same place, so pick by what you have:
+
+| You have | Follow | What it adds |
+| --- | --- | --- |
+| Nothing yet | this page | the full path: install, schema, generate, run, change |
+| A Postgres connection string | [Postgres CRUD grid](./postgres-grid.md) | a server route querying your database |
+| A Supabase project | [Supabase CRUD grid](./supabase-grid.md) | browser client, keys, Row-Level Security |
+| An HTTP / JSON API | [REST CRUD grid](./rest-grid.md) | the REST adapter, no server route at all |
+| An afternoon | [Build a CRM](./tutorial-crm.md) | multi-entity: relations, master-detail, a real DB |
+
 ---
 
 ## Fastest path - a downloadable, ready-to-run example
@@ -65,7 +77,7 @@ an *existing* app rather than a fresh one? Continue below.
 
 ---
 
-## Two ways to build - pick yours
+## Three ways to build - pick yours
 
 ![Build a data app in four no-code steps: open the designer, start from a sample or your database, arrange it visually, then generate the app.](/docs-media/studio-nocode-steps.svg)
 
@@ -75,17 +87,22 @@ press **Generate**:
 
 ![The visual app designer with a customer grid previewed live and a properties panel for the screen and its fields.](/docs-media/studio-app-designer.png)
 
-- **No code (visual).** You never write code - you point, click, and preview,
-  then press one button to generate the finished app. Try it immediately, no
-  install, at **[svgrid.com/studio](https://svgrid.com/studio)** - or run it
-  locally with **[Launch the designer](./launch.md)**, which auto-saves to disk
-  and generates straight into a folder. The [sample apps](./samples.md) let you
-  open a complete, realistic app in one click and point it at your own data.
-- **With code.** Prefer to work in an editor? Continue below - this page builds
-  the same screen by hand so you can see exactly what Studio generates.
+- **Visual designer (no code).** You never write code - you point, click, and
+  preview, then press one button to generate the finished app. Try it
+  immediately, no install, at **[svgrid.com/studio](https://svgrid.com/studio)** -
+  or run it locally with **[Launch the designer](./launch.md)**, which
+  auto-saves to disk and generates straight into a folder. The
+  [sample apps](./samples.md) let you open a complete, realistic app in one
+  click and point it at your own data.
+- **CLI.** One deterministic command per screen: `npx @svgrid/studio add ...`
+  introspects your table or schema and writes the files. No AI involved. This
+  page uses the CLI from Step 3 on - continue below.
+- **AI via MCP.** With [`@svgrid/mcp`](./ai-generation.md) configured, ask your
+  coding agent to build the screen; it introspects, scaffolds, and
+  compile-verifies through the same core the CLI uses.
 
-The two paths produce the **same result**; the visual designer just writes the
-code for you.
+All three produce the **same generated code** - pick whichever fits how you
+work, and switch freely later.
 
 ---
 
@@ -125,9 +142,207 @@ npm i @svgrid/grid @svgrid/enterprise
 
 ## Step 2 - Describe your data once
 
-Everything in Studio flows from one **`EntitySchema`** - a plain object that
-lists your fields and their types. This single object drives the grid columns,
-the edit form, and validation. Create `src/lib/customers.ts`:
+The generator needs one description of your table. If you have a live database
+it can introspect it directly (Step 3 shows that variant). Here we stay
+database-free: describe the table in a small Drizzle schema file, which the
+generator **reads as text** - it never connects to anything.
+
+```bash
+npm i -D drizzle-orm
+```
+
+(`drizzle-orm` is only there so the schema file type-checks; nothing runs
+against a database. It is also the natural next step when you do add one.)
+
+Create `src/lib/db/schema.ts`:
+
+```ts
+import { pgTable, text, integer, boolean } from 'drizzle-orm/pg-core'
+
+export const customers = pgTable('customers', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  tier: text('tier').notNull().default('free'),
+  mrr: integer('mrr'),
+  active: boolean('active'),
+})
+```
+
+A Prisma `schema.prisma` works the same way. Prefer to write Studio's own
+model - the `EntitySchema` - by hand instead? That is the
+[appendix](#appendix-wire-it-by-hand-no-generator) at the bottom of this page.
+
+---
+
+## Step 3 - Generate the screen
+
+One command:
+
+```bash
+npx @svgrid/studio add customers --from src/lib/db/schema.ts
+```
+
+Have a live database instead? Same command, different source - no schema file
+needed:
+
+```bash
+npx @svgrid/studio add customers --db postgres --url "$DATABASE_URL"
+```
+
+Either way it writes **three files**, and the screen is done. A quick tour of
+what you now own:
+
+**1. `src/lib/customers.schema.ts` - the model.** The generator turned your
+table into an `EntitySchema` - the single object that drives the grid columns,
+the form fields, and validation:
+
+```ts
+export type CustomersRow = {
+  id: string
+  name: string
+  email: string
+  tier: string
+  mrr: number | null
+  active: boolean | null
+}
+
+export const customersSchema: EntitySchema<CustomersRow> = {
+  name: 'customers',
+  idField: 'id',
+  fields: [
+    { field: 'id', type: 'text', primaryKey: true, readonly: true },
+    { field: 'name', type: 'text', required: true },
+    { field: 'email', type: 'text', required: true },
+    // ...
+  ],
+}
+```
+
+Every field option (labels, enum choices, min/max, regex, custom validators) is
+explained in [The EntitySchema](./schema.md).
+
+**2. `src/routes/api/customers/+server.ts` - the API route.** A
+`ServerDataSource` (read + create + update + delete) exposed over one SvelteKit
+endpoint. With `--from` it starts in-memory so it runs immediately; with `--db`
+it is already wired to your database:
+
+```ts
+const source = createInMemoryDataSource<CustomersRow>([], customersSchema)
+
+export const { POST } = createKitHandlers({ schema: customersSchema, source })
+```
+
+Swapping in a real database later means replacing that one `source` line - the
+page never changes. See [Databases](./databases.md).
+
+**3. `src/routes/customers/+page.svelte` - the screen.** The grid with
+server-side sort, filter, global search, a native pagination footer,
+multi-select delete with optimistic updates, and a modal create / edit form -
+all reading through the API route:
+
+```ts
+const source = createKitDataSource<CustomersRow>({ endpoint: '/api/customers' })
+const columns = schemaToColumns(customersSchema)
+const controller = createServerDataSource<CustomersRow>(source, {
+  pageSize: 25, optimistic: true,
+  getRowId: (r) => String(r.id),
+  onChange: (s) => (state = s),
+})
+```
+
+Each file wraps its generated body in `// svgrid:managed:start` /
+`// svgrid:managed:end` markers. Everything you write **outside** the markers
+is yours; re-running `add` only rewrites what is inside. That is what makes
+Step 5 safe.
+
+> One thing the generated screen inherits from your page: the **font**. A bare
+> `npx sv create` app sets no CSS at all, so add a
+> `body { font-family: system-ui, sans-serif }` rule (or a
+> [`--sg-font`](./theming.md) token) once, or the page renders in the
+> browser's default serif. Borders, backgrounds, and hover states the grid
+> themes itself.
+
+---
+
+## Step 4 - Run it
+
+```bash
+npm run dev
+```
+
+Open the URL it prints (usually `http://localhost:5173`) and go to
+**`/customers`**. With `--from` the grid starts empty (in-memory source, no
+seed) - click **New** and add two or three customers, then try the screen:
+
+- Click a **column header** to sort.
+- Type in the **filter row** under a header to filter (it stays focused as you type).
+- Click a **row** to edit. The form validates as you type - clear a required
+  field and watch it complain.
+- Select rows with the checkboxes and **Delete** them - the grid updates
+  instantly and rolls back if the server says no.
+- Page through with the **native pager** at the bottom.
+
+![A CRUD screen generated by SvGrid Studio: sortable, filterable grid with a native pager, over a live data source.](/docs-media/studio-crud.png)
+
+---
+
+## Step 5 - Change something
+
+Because the schema drives everything, changes are one edit. Add a column to
+`src/lib/db/schema.ts`:
+
+```ts
+country: text('country'),
+```
+
+Then re-run the exact same command:
+
+```bash
+npx @svgrid/studio add customers --from src/lib/db/schema.ts
+```
+
+The managed regions are regenerated: the grid gets a **Country** column and the
+edit form gets a **Country** input. Anything you wrote outside the
+`svgrid:managed` markers - extra buttons, styles, handlers - is untouched.
+That round trip (change schema, re-run, keep your code) is the everyday
+workflow; [Code generation](./code-generation.md) explains the rules.
+
+Prefer not to re-run the generator? Editing the generated
+`customers.schema.ts` directly works too - grid and form update together from
+the one schema object.
+
+---
+
+## Where to go next
+
+You have the whole shape now. The usual next steps:
+
+- **Understand the model** - [Concepts](./concepts.md) walks the pipeline
+  (schema, screens, data source, codegen) once and defines every Studio term.
+- **Connect a real database** - re-run `add` with `--db` and a connection
+  string, or swap the one `source` line in the API route; the page does not
+  change. For Supabase, follow the one-page
+  **[Supabase CRUD grid tutorial](./supabase-grid.md)**; for SQL, see
+  [Databases](./databases.md).
+- **Design visually** - `npx @svgrid/studio designer` opens the full app builder:
+  compose screens across entities, bind data, and click *Generate app*. See the
+  [Visual app designer](./app-designer.md). (To embed a single-entity schema editor
+  in your own app, see the [Schema designer](./designer.md).)
+- **Build a full app** - the [Build a CRM tutorial](./tutorial-crm.md) wires up
+  companies, contacts, and deals with relations and master-detail.
+
+---
+
+## Appendix: wire it by hand (no generator)
+
+Everything the generator wrote in Step 3 can be built up by hand - useful when
+you want to see exactly how the pieces fit, or to embed a Studio screen in an
+unusual spot. Two files replace the three generated ones (no API route: here
+the data source lives in the page itself).
+
+First, the `EntitySchema` - Studio's own model, the object the generator
+derived from your Drizzle file. Create `src/lib/customers.ts`:
 
 ```ts
 import type { EntitySchema } from '@svgrid/enterprise'
@@ -160,16 +375,10 @@ export const customersSchema: EntitySchema<Customer> = {
 }
 ```
 
-Every field option is explained in [The EntitySchema](./schema.md).
-
----
-
-## Step 3 - Build the screen
-
-Studio binds any data through one small contract, `ServerDataSource`
-(read + create + update + delete). For a first run, `createInMemoryDataSource`
-gives you that contract over a plain array - so the whole screen works before
-you have a database. Create `src/routes/customers/+page.svelte`:
+Then the page. `createInMemoryDataSource` provides the `ServerDataSource`
+contract over a plain array, `createServerDataSource` runs sort / filter /
+page / CRUD against it, and the grid + edit panel render it. Create
+`src/routes/customers/+page.svelte`:
 
 ```svelte
 <script lang="ts">
@@ -241,64 +450,14 @@ and `<SvGridEditPanel>` already theme their own borders, backgrounds, and hover 
 of the box (via [`--sg-*` tokens](../../help/tokens.md) with built-in fallbacks) - font is
 the one thing they intentionally inherit from the page rather than force, so it fits
 whatever type your app already uses. If your app already sets a body font (or a
-[`--sg-font`](../theming.md) token), skip this block.
-
----
-
-## Step 4 - Run it
-
-```bash
-npm run dev
-```
-
-Open the URL it prints (usually `http://localhost:5173`) and go to
-**`/customers`**. You now have a working screen:
-
-- Click a **column header** to sort.
-- Type in the **filter row** under a header to filter (it stays focused as you type).
-- Click **+ New customer** to create; click a **row** to edit. The form validates
-  as you type - try an invalid email.
-- Page through with the **native pager** at the bottom.
-
-![A CRUD screen generated by SvGrid Studio: sortable, filterable grid with a native pager, over a live data source.](/docs-media/studio-crud.png)
-
----
-
-## Step 5 - Change something
-
-Because the schema drives everything, changes are one edit. Add a field to
-`customers.ts`:
-
-```ts
-{ field: 'country', type: 'text', label: 'Country' },
-```
-
-Save. The grid gets a **Country** column and the edit form gets a **Country**
-input - no other change. That is the payoff of the single schema.
-
----
-
-## Where to go next
-
-You have the whole shape now. The usual next steps:
-
-- **Connect a real database** - swap `createInMemoryDataSource` for a SQL or
-  Supabase source; the page above does not change. For Supabase, follow the
-  complete one-page **[Supabase CRUD grid tutorial](./supabase-grid.md)**, or see
-  [Databases](./databases.md) for SQL.
-- **Skip the boilerplate** - `npx @svgrid/studio add customers --db postgres --url ...`
-  generates all of the above (schema + API route + page) from a live table.
-  See [The Studio CLI](./cli.md).
-- **Design visually** - author the schema in a UI with live preview and click
-  *Generate code*. See [Visual designer](./designer.md).
-- **Build a full app** - the [Build a CRM tutorial](./tutorial-crm.md) wires up
-  companies, contacts, and deals with relations and master-detail.
+[`--sg-font`](./theming.md) token), skip this block.
 
 ---
 
 ## See also
 
 - [SvGrid Studio overview](../studio.md)
+- [Concepts](./concepts.md) - the mental model + glossary
 - [Data binding](./data-binding.md) - the `ServerDataSource` contract in depth
 - [Edit forms & validation](./edit-forms.md)
 - [Troubleshooting & FAQ](./troubleshooting.md)

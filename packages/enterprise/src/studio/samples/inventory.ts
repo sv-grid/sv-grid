@@ -2,6 +2,23 @@ import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
 import { screen, formScreen, boardScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
+// Excel-style chrome: a green header band over the brand, a green command bar
+// (the toolbar), square-cornered nav rows with a green left-marker on the active
+// sheet. Pairs with the square-cornered `excel` preset.
+const EXCEL_CSS = `.sv-app.theme-excel .sv-app__side { background: #f3f2f1; border-right: 1px solid #d0cfce; padding: 0 0 12px; }
+.sv-app.theme-excel .sv-app__sidehead { background: #107c41; margin: 0 0 6px; padding: 13px 14px; }
+.sv-app.theme-excel .sv-app__brandtext { color: #fff; font-weight: 700; }
+.sv-app.theme-excel .sv-app__collapse { color: rgba(255, 255, 255, 0.85); }
+.sv-app.theme-excel .sv-app__links { padding: 0 8px; }
+.sv-app.theme-excel .sv-app__link { border-radius: 0; padding: 7px 12px; border-left: 3px solid transparent; }
+.sv-app.theme-excel .sv-app__link.is-active { background: #e7f2ec; color: #0b5c31; border-left-color: #107c41; font-weight: 600; }
+.sv-app.theme-excel .sv-app__foot { padding-left: 12px; }
+.sv-app.theme-excel .sv-app__toolbar { background: #107c41; border-bottom: 1px solid #0b5c31; }
+.sv-app.theme-excel .sv-app__search { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.3); }
+.sv-app.theme-excel .sv-app__search-in { color: #fff; }
+.sv-app.theme-excel .sv-app__search-in::placeholder { color: rgba(255, 255, 255, 0.78); }
+.sv-app.theme-excel .sv-app__search-ic, .sv-app.theme-excel .sv-app__kbd { color: #fff; }`
+
 const suppliers: EntitySchema = {
   name: 'suppliers',
   label: 'Supplier',
@@ -107,9 +124,9 @@ const productFormats: FormatRule[] = [
 export const inventory: SampleApp = {
   id: 'inventory',
   name: 'Inventory',
-  description: 'Products, suppliers and purchase orders - stock and purchasing dashboards (target KPIs, an order-trend sparkline, a reorder gauge, a category pie, a supplier x status pivot, tabbed breakdowns), a low-stock red grid plus a status-pill order grid with row actions, suppliers master/detail, and rich edit forms (country, phone, supplier rating, SKU mask, tag chips, discount slider, order datetime).',
+  description: 'Products, suppliers and purchase orders - an Excel-style warehouse app behind a sign-in (clerk and manager roles), with stock and purchasing dashboards (target KPIs, an order-trend sparkline, a reorder gauge, a category pie, a supplier x status pivot, tabbed breakdowns), a low-stock red grid plus a status-pill order grid with row actions, suppliers master/detail, and rich edit forms (country, phone, supplier rating, SKU mask, tag chips, discount slider, order datetime).',
   emoji: '\u{1F4E6}',
-  accent: '#f59e0b',
+  accent: '#107c41',
   build: () => {
     const supplierRows = pad(suppliers, seed.suppliers, 24)
     const productRows = pad(products, seed.products, 60)
@@ -117,9 +134,23 @@ export const inventory: SampleApp = {
     return project({
       title: 'Warehouse',
       brand: 'Warehouse',
-      accent: '#f59e0b',
+      accent: '#107c41',
       preset: 'excel',
       footer: '',
+      // Excel/spreadsheet-style shell: green header + command bar, square sheets.
+      appClass: 'theme-excel',
+      customCss: EXCEL_CSS,
+      // Sign-in with two roles. Clerks manage stock but cannot delete; purchasing
+      // analytics and the supplier directory are manager-only.
+      auth: { enabled: true, protect: true },
+      access: {
+        enabled: true,
+        defaultRole: 'clerk',
+        roles: [
+          { role: 'manager', screens: '*', actions: '*' },
+          { role: 'clerk', screens: ['overview', 'product-detail', 'products', 'board'], actions: ['create', 'update'] },
+        ],
+      },
       entities: [suppliers, products, purchaseOrders],
       seed: { suppliers: supplierRows, products: productRows, purchaseOrders: poRows },
       screens: [

@@ -3,11 +3,20 @@
    * SvListBox - an inline single/multi-select list (WAI-ARIA listbox) with
    * roving highlight + full keyboard. Parity: Smart `smart-list-box`. Controlled
    * via `value` (scalar or array) + `onChange`. Scales to huge option sets with
-   * `virtual` (fixed-row windowing), and each row can be an `itemTemplate`.
+   * `virtual` - windowing over the shared `createSvelteVirtualizer` (slot-keyed
+   * DOM recycling), which also windows GROUPED lists and mixes row heights.
+   *
+   * Virtual mode uses a JS-DRIVEN scroller (like Smart): the option list does
+   * NOT use native overflow scroll - a single `scrollOffset` state positions the
+   * rows (`translateY`) AND drives the virtualizer window in the same reactive
+   * flush. Native scroll is composited off the main thread, so it paints the
+   * empty scrolled position a frame before JS can re-window (the "blank on a
+   * fast thumb-drag" flash); driving the offset in JS removes that async gap.
    */
-  import { type Snippet } from 'svelte'
-  import { groupOptions, hasGroups, normalizeOptions, type ListOption } from './list-option'
-  import { virtualRange, scrollToIndex } from './virtual'
+  import { untrack, type Snippet } from 'svelte'
+  import { groupOptions, normalizeOptions, flattenForVirtual, type ListOption, type IndexedOption, type RowHeight } from './list-option'
+  import { createSvelteVirtualizer } from './virtualization/svelte-virtualizer.svelte'
+  import { createJsScroller } from './js-scroller.svelte'
   import { createListbox } from './createListbox.svelte'
   import SvField from './SvField.svelte'
   import { nextEditorId, type SvEditorProps } from './editor-contract'
@@ -21,8 +30,11 @@
     rows?: number
     /** Window the list (render only visible rows) for large option sets. */
     virtual?: boolean
-    /** Fixed row height in px (must match the CSS row height). Default 32. */
-    rowHeight?: number
+    /** Row height in px - a number, or a per-option function for variable
+     *  heights. Must match the rendered row height. Default 32. */
+    rowHeight?: RowHeight
+    /** Height (px) of a group heading row when virtualized + grouped. Default 28. */
+    groupHeaderHeight?: number
     /** Custom per-option content. Receives the option. */
     item?: Snippet<[ListOption]>
     /** @deprecated Use `item`. */
@@ -39,6 +51,7 @@
     rows = 7,
     virtual = false,
     rowHeight = 32,
+    groupHeaderHeight = 28,
     item,
     itemTemplate,
     ariaLabel,
@@ -76,26 +89,63 @@
   })
   const isSel = (o: ListOption) => lb.isSelected(o.value)
 
-  // Virtualization only applies to a flat (ungrouped) list.
-  const useVirtual = $derived(virtual && !hasGroups(norm))
-  let listEl = $state<HTMLUListElement | null>(null)
-  let scrollTop = $state(0)
+  const rowHeightBase = $derived(typeof rowHeight === 'number' ? rowHeight : 32)
+  const optHeight = (o: IndexedOption) => (typeof rowHeight === 'function' ? rowHeight(o, o.index) : rowHeight)
+
+  // --- Virtualization ---------------------------------------------------------
+  const useVirtual = $derived(virtual)
+  let listEl = $state<HTMLDivElement | null>(null)
   let viewportH = $state(0)
-  const vr = $derived(
-    virtualRange({ scrollTop, viewportHeight: viewportH, rowHeight, count: norm.length, overscan: 10 }),
-  )
-  const windowed = $derived(
-    useVirtual ? norm.slice(vr.start, vr.end).map((o, i) => ({ ...o, index: vr.start + i })) : [],
+
+  const flat = $derived(flattenForVirtual(norm, { rowHeight, groupHeaderHeight }))
+  const uniform = $derived(!flat.hasGroups && typeof rowHeight === 'number')
+  const estimateSize = $derived(uniform ? rowHeightBase : (i: number) => flat.sizeAt(i))
+
+  const OVERSCAN = 6
+  // Effective viewport height: measured, or the computed `rows` height until the
+  // viewport element is measured. Never 0.
+  const effViewport = $derived(viewportH > 0 ? viewportH : Math.max(1, rows * rowHeightBase))
+
+  const virtualizer = createSvelteVirtualizer(
+    untrack(() => ({ count: flat.entries.length, estimateSize, overscan: OVERSCAN, viewportHeight: effViewport })),
   )
 
-  // Keep the active option in view. Virtual mode drives scrollTop directly (the
-  // active row may not be in the DOM); otherwise use scrollIntoView.
+  $effect(() => {
+    const count = flat.entries.length
+    const es = estimateSize
+    untrack(() => virtualizer.setOptions({ count, estimateSize: es }))
+  })
+  $effect(() => {
+    const vh = effViewport
+    untrack(() => virtualizer.setViewportHeight(vh))
+  })
+
+  const vItems = $derived.by(() => {
+    virtualizer.version
+    return virtualizer.getVirtualItems()
+  })
+  const totalSize = $derived.by(() => {
+    virtualizer.version
+    return virtualizer.getTotalSize()
+  })
+
+  // JS-driven scroll: one offset positions the rows AND drives the virtualizer
+  // window in the same flush - no native scroll, so no async "blank flash".
+  const scroller = createJsScroller({
+    virtualizer,
+    totalSize: () => totalSize,
+    viewport: () => effViewport,
+    lineStep: () => rowHeightBase,
+  })
+
+  // Keep the active option in view - via the scroller (virtual) or scrollIntoView
+  // (native non-virtual). Driven by roving keyboard nav.
   $effect(() => {
     const i = lb.activeIndex
     if (useVirtual) {
-      if (!listEl) return
-      const next = scrollToIndex(i, listEl.scrollTop, listEl.clientHeight, rowHeight)
-      if (next !== listEl.scrollTop) listEl.scrollTop = next
+      const flatIdx = flat.optionFlatIndex[i]
+      if (flatIdx == null) return
+      untrack(() => scroller.ensureIndexVisible(flatIdx))
     } else {
       queueMicrotask(() => listEl?.querySelector<HTMLElement>(`[data-idx="${i}"]`)?.scrollIntoView({ block: 'nearest' }))
     }
@@ -103,94 +153,122 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
-  <ul
+  <!-- Div-based listbox (role comes from `lb.rootProps()`). -->
+  <div
     bind:this={listEl}
     class="sv-listbox sv-listbox--{size}"
     class:is-invalid={invalid}
     class:is-virtual={useVirtual}
     style:--sv-rows={rows}
-    style:--sv-row-h={`${rowHeight}px`}
-    onscroll={(e) => (scrollTop = e.currentTarget.scrollTop)}
-    bind:clientHeight={viewportH}
+    style:--sv-row-h={`${rowHeightBase}px`}
+    onwheel={useVirtual ? scroller.onWheel : undefined}
     {...lb.rootProps()}
   >
     {#if useVirtual}
-      <!-- Windowing by top/bottom spacers with the visible rows IN FLOW between
-           them (padTop + rows + padBottom always sum to the full height). Plain
-           flow rows (no absolute positioning, no will-change) keep the scroller
-           off its own compositor layer, so a fast jump repaints in step with the
-           scroll instead of showing the blank frame a promoted layer would. The
-           window updates from `scrollTop` state, which Svelte flushes before the
-           next paint - no flushSync (it over-flushes app-wide and, on a fling,
-           starves the very handler that has to keep up with the scroll). -->
-      <li class="sv-listbox__spacer" aria-hidden="true" style:height={`${vr.padTop}px`}></li>
-      {#each windowed as opt (opt.index)}
-        {@render optionLi(opt, opt.index)}
-      {/each}
-      <li class="sv-listbox__spacer" aria-hidden="true" style:height={`${vr.padBottom}px`}></li>
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        class="sv-listbox__vp"
+        bind:clientHeight={viewportH}
+        onpointerdown={scroller.onContentDown}
+        onpointermove={scroller.onContentMove}
+        onpointerup={scroller.onContentUp}
+        onpointercancel={scroller.onContentUp}
+      >
+        {#each vItems as vi (vi.key)}
+          {@const entry = flat.entries[vi.index]}
+          {#if entry?.type === 'group'}
+            <div class="sv-listbox__group" role="presentation" style:height={`${vi.size}px`} style:transform={`translateY(${vi.start - scroller.scrollOffset}px)`}>{entry.label}</div>
+          {:else if entry}
+            {@render optionRow(entry.opt, entry.opt.index, vi.size, vi.start - scroller.scrollOffset)}
+          {/if}
+        {/each}
+      </div>
+      {#if scroller.maxOffset > 0}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="sv-listbox__sb" onpointerdown={scroller.onTrackDown} aria-hidden="true">
+          <div
+            class="sv-listbox__thumb"
+            class:is-dragging={scroller.dragging}
+            style:height={`${scroller.thumbH}px`}
+            style:transform={`translateY(${scroller.thumbTop}px)`}
+            onpointerdown={scroller.onThumbDown}
+            onpointermove={scroller.onThumbMove}
+            onpointerup={scroller.onThumbUp}
+            onpointercancel={scroller.onThumbUp}
+          ></div>
+        </div>
+      {/if}
     {:else}
       {#each groupOptions(norm) as g (g.group ?? ' ')}
-        {#if g.group != null}<li class="sv-listbox__group" role="presentation">{g.group}</li>{/if}
+        {#if g.group != null}<div class="sv-listbox__group" role="presentation">{g.group}</div>{/if}
         {#each g.options as opt (opt.index)}
-          {@render optionLi(opt, opt.index)}
+          {@render optionRow(opt, opt.index)}
         {/each}
       {/each}
     {/if}
-  </ul>
+  </div>
   {#if name}{#each lb.selectedValues as v (v)}<input type="hidden" {name} value={v} />{/each}{/if}
 </SvField>
 
-{#snippet optionLi(opt, index)}
+{#snippet optionInner(opt: ListOption)}
+  {#if multiple}<span class="sv-listbox__check" aria-hidden="true">{isSel(opt) ? '✓' : ''}</span>{/if}
+  {#if item ?? itemTemplate}{@render (item ?? itemTemplate)!(opt)}{:else}<span class="sv-listbox__label">{opt.label}</span>{/if}
+{/snippet}
+
+{#snippet optionRow(opt: IndexedOption, index: number, h?: number, top?: number)}
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus -->
-  <li
+  <div
     class="sv-listbox__opt"
     class:is-selected={isSel(opt)}
     class:is-active={lb.isActive(index)}
     class:is-disabled={opt.disabled}
-    style:height={`${rowHeight}px`}
+    style:height={`${h ?? optHeight(opt)}px`}
+    style:transform={top == null ? undefined : `translateY(${top}px)`}
     {...lb.optionProps(index)}
   >
-    {#if multiple}<span class="sv-listbox__check" aria-hidden="true">{isSel(opt) ? '✓' : ''}</span>{/if}
-    {#if item ?? itemTemplate}{@render (item ?? itemTemplate)!(opt)}{:else}<span class="sv-listbox__label">{opt.label}</span>{/if}
-  </li>
+    {@render optionInner(opt)}
+  </div>
 {/snippet}
 
 <style>
   .sv-listbox {
     --_accent: var(--sg-accent, #2563eb);
-    margin: 0; padding: 4px; list-style: none;
-    max-height: calc(var(--sv-rows, 7) * var(--sv-row-h, 32px) + 8px); overflow-y: auto;
+    margin: 0; list-style: none;
     background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a);
     border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1)); border-radius: var(--sg-radius, 8px);
     width: 220px; outline: none; --_fs: 13px;
+  }
+  /* Native scroll for the (fully rendered) non-virtual list. */
+  .sv-listbox:not(.is-virtual) {
+    padding: 4px; overflow-y: auto;
+    max-height: calc(var(--sv-rows, 7) * var(--sv-row-h, 32px) + 8px);
+  }
+  /* JS-driven scroller for the virtual list: fixed height, no native scroll -
+     the rows are absolutely positioned and moved by `scrollOffset`. */
+  .sv-listbox.is-virtual {
+    padding: 0; overflow: hidden; position: relative;
+    height: calc(var(--sv-rows, 7) * var(--sv-row-h, 32px) + 8px);
   }
   .sv-listbox--sm { --_fs: 12px; }
   .sv-listbox--lg { --_fs: 15px; }
   .sv-listbox:focus-visible { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
   .sv-listbox.is-invalid { border-color: var(--sg-danger, #dc2626); }
   .sv-listbox.is-invalid:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-danger, #dc2626) 22%, transparent); }
-  /* Spacers reserve the off-screen height above/below the windowed rows. They
-     also paint faint per-row skeleton bars: on a fast scrollbar-thumb drag the
-     compositor can reveal this padding before JS re-windows (a drag jumps many
-     rows in one frame - overscan can't cover it), so the user would see blank.
-     The skeleton fills that gap with placeholder rows that the real rows paint
-     over a frame later. Bars are one per `--sv-row-h` band, aligned to the row
-     grid (padTop/padBottom are exact multiples of the row height). */
-  .sv-listbox__spacer {
-    padding: 0; margin: 0; flex: none; pointer-events: none; list-style: none;
-    background-image: linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent calc((var(--sv-row-h, 32px) - 10px) / 2),
-      var(--sg-skeleton, color-mix(in srgb, currentColor 9%, transparent)) calc((var(--sv-row-h, 32px) - 10px) / 2),
-      var(--sg-skeleton, color-mix(in srgb, currentColor 9%, transparent)) calc((var(--sv-row-h, 32px) + 10px) / 2),
-      transparent calc((var(--sv-row-h, 32px) + 10px) / 2),
-      transparent var(--sv-row-h, 32px)
-    );
-    background-size: 62% var(--sv-row-h, 32px);
-    background-repeat: repeat-y;
-    background-position: 12px 0;
+
+  /* The clipped viewport that holds the translated rows. */
+  .sv-listbox__vp { position: absolute; inset: 4px; overflow: hidden; touch-action: none; }
+  .sv-listbox.is-virtual .sv-listbox__opt,
+  .sv-listbox.is-virtual .sv-listbox__group { position: absolute; left: 0; right: 0; top: 0; }
+
+  /* Custom scrollbar (mouse affordance; keyboard nav handles a11y scrolling). */
+  .sv-listbox__sb { position: absolute; top: 4px; right: 2px; bottom: 4px; width: 10px; z-index: 2; }
+  .sv-listbox__thumb {
+    position: absolute; left: 2px; right: 2px; top: 0; min-height: 24px;
+    border-radius: 4px; background: color-mix(in srgb, currentColor 26%, transparent);
+    cursor: default; touch-action: none;
   }
+  .sv-listbox__thumb:hover, .sv-listbox__thumb.is-dragging { background: color-mix(in srgb, currentColor 42%, transparent); }
+
   .sv-listbox__opt {
     display: flex; align-items: center; gap: 8px; box-sizing: border-box; flex: none; padding: 0 10px;
     border-radius: 6px; cursor: pointer; font-size: var(--_fs, 13px);
@@ -200,8 +278,9 @@
   .sv-listbox__opt.is-selected.is-active { background: color-mix(in srgb, var(--_accent) 22%, transparent); }
   .sv-listbox__opt.is-disabled { opacity: 0.4; cursor: not-allowed; }
   .sv-listbox__group {
-    padding: 8px 10px 3px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
-    color: var(--sg-muted, #94a3b8);
+    box-sizing: border-box; padding: 8px 10px 3px; font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--sg-muted, #94a3b8);
+    display: flex; align-items: flex-end;
   }
   .sv-listbox__check { width: 14px; text-align: center; color: var(--_accent); }
   .sv-listbox__label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -217,6 +217,7 @@ export {
   dummyJsonAdapter,
   jsonServerAdapter,
   introspectSupabaseTable,
+  listSupabaseTables,
   createSupabaseRealtime,
   createRelationLookup,
   createSupabaseAuth,

@@ -215,14 +215,37 @@ function faqFromMarkdown(md) {
   return out
 }
 
-/** Parse the gallery registry (one demo(...) call per line) into metadata. */
+// SvGrid UI (@svgrid/grid component) demo categories - mirrors EDITOR_CATEGORIES
+// in website/src/lib/demos.ts. Flips the demo <title> suffix to "Component
+// Example" so a UI page (accordion, button, ...) stops mislabeling itself as a
+// data grid for component-name searches.
+const EDITOR_CATEGORIES = new Set([
+  'Recipes', 'Date & Time', 'Buttons & Toggles', 'Inputs', 'Selection',
+  'Range & Feedback', 'Layout', 'Headless Editors',
+])
+
+/** Parse the gallery registry (one demo(...) call) into metadata. Each demo()
+ *  call may carry a multi-line opts object with pro / seoTitle / seoDescription,
+ *  so we slice the source between calls and read the overrides per chunk. */
 async function parseDemos() {
   const src = await readFile(join(ROOT, 'website', 'src', 'lib', 'demos.ts'), 'utf-8')
-  const re = /demo\(\s*'([^']+)'\s*,\s*'((?:\\.|[^'\\])*)'\s*,\s*'((?:\\.|[^'\\])*)'\s*,\s*'([^']+)'([^\n]*)/g
-  const out = []
+  const re = /demo\(\s*'([^']+)'\s*,\s*'((?:\\.|[^'\\])*)'\s*,\s*'((?:\\.|[^'\\])*)'\s*,\s*'([^']+)'/g
+  const marks = []
   let m
   while ((m = re.exec(src))) {
-    out.push({ id: m[1], title: unesc(m[2]), blurb: unesc(m[3]), category: m[4], pro: /pro:\s*true/.test(m[5]) })
+    marks.push({ id: m[1], title: unesc(m[2]), blurb: unesc(m[3]), category: m[4], at: m.index })
+  }
+  const out = []
+  for (let i = 0; i < marks.length; i += 1) {
+    const chunk = src.slice(marks[i].at, i + 1 < marks.length ? marks[i + 1].at : marks[i].at + 1000)
+    const st = chunk.match(/seoTitle:\s*'((?:\\.|[^'\\])*)'/)
+    const sd = chunk.match(/seoDescription:\s*'((?:\\.|[^'\\])*)'/)
+    out.push({
+      id: marks[i].id, title: marks[i].title, blurb: marks[i].blurb, category: marks[i].category,
+      pro: /pro:\s*true/.test(chunk),
+      seoTitle: st ? unesc(st[1]) : undefined,
+      seoDescription: sd ? unesc(sd[1]) : undefined,
+    })
   }
   return out
 }
@@ -317,6 +340,11 @@ async function parseBlog() {
       slug: entry.name.replace(/\.md$/, ''),
       title: meta.title ?? entry.name.replace(/\.md$/, ''),
       description: meta.description ?? '',
+      // Optional search-snippet overrides: tune the <title> / meta description
+      // for CTR without changing the article's on-page headline. Falls back to
+      // the generated title / the description above.
+      seoTitle: meta.seoTitle || undefined,
+      seoDescription: meta.seoDescription || undefined,
       date: meta.date ?? '1970-01-01',
       updated: meta.updated || undefined,
       category,
@@ -832,8 +860,10 @@ async function main() {
   // 4b. Prerender each demo page (per-example SEO + crawlable blurb).
   for (const d of demos) {
     const url = `${CANON}/demos/${d.id}/`
-    const title = `${d.title} - SvGrid Svelte Data Grid Example`
-    const description = d.blurb
+    const title =
+      d.seoTitle ||
+      `${d.title} - SvGrid ${EDITOR_CATEGORIES.has(d.category) ? 'Svelte Component' : 'Svelte Data Grid'} Example`
+    const description = d.seoDescription || d.blurb
     let html = applyHead(template, { title, description, canonical: url, ogType: 'article', image: `${CANON}/og/demos.svg`, imageAlt: `${d.title} - SvGrid demo` })
     html = injectJsonLd(html, [
       {
@@ -923,8 +953,8 @@ async function main() {
   })
   for (const p of blogPosts) {
     const url = `${CANON}/blog/${p.slug}/`
-    const title = `${p.title} - SvGrid Blog`
-    const description = p.description
+    const title = p.seoTitle || `${p.title} - SvGrid Blog`
+    const description = p.seoDescription || p.description
     const heroImg = `${CANON}/og/blog/${p.slug}.${blogImgExt.get(p.slug) || 'svg'}`
     const heroAlt = `${p.title} - SvGrid blog illustration`
     let html = applyHead(template, { title, description, canonical: url, ogType: 'article', image: heroImg, imageAlt: heroAlt })

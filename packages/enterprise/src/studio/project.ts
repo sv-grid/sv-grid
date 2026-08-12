@@ -34,6 +34,24 @@ export type SqlDialectKind = 'postgres' | 'mysql' | 'sqlite' | 'mssql' | 'supaba
 /** In-memory (seeded) source. `seed` carries curated rows (e.g. a sample app);
  *  when absent the codegen + preview synthesize realistic rows. */
 export type MemorySource = { kind: 'memory'; seed?: Record<string, unknown>[] }
+/** Wire-format preset that teaches the REST source how a backend pages / sorts /
+ *  wraps its rows, so the generated grid does REAL server-side paging + sort (not a
+ *  single fetched page). Maps to the `offsetLimit` / `dummyjson` / `jsonServer`
+ *  adapters in `@svgrid/enterprise`. Absent = the legacy manual `rowsPath`/`totalPath`
+ *  (parse only; no server paging). */
+export type RestAdapterConfig =
+  | { kind: 'dummyjson'; rowsKey?: string }
+  | { kind: 'jsonServer' }
+  | {
+      kind: 'offsetLimit'
+      offsetParam?: string
+      limitParam?: string
+      sortByParam?: string
+      orderParam?: string
+      searchParam?: string
+      rowsKey?: string
+      totalKey?: string
+    }
 export type RestSource = {
   kind: 'rest'
   /** Origin + version prefix, e.g. `https://api.example.com/v1`. */
@@ -43,13 +61,16 @@ export type RestSource = {
   method: RestMethod
   params: RequestParam[]
   idField?: string
+  /** Wire-format preset for real server paging/sort (offsetLimit / dummyjson /
+   *  jsonServer). When set, it supersedes `rowsPath`/`totalPath`. */
+  adapter?: RestAdapterConfig
   /** Dotted path in the response body holding the rows, e.g. `data.items`. */
   rowsPath?: string
   /** Dotted path holding the total row count, e.g. `data.total`. */
   totalPath?: string
 }
-export type SqlSource = { kind: 'sql'; table: string; dialect?: SqlDialectKind }
-export type SupabaseSource = { kind: 'supabase'; table: string; url?: string; key?: string }
+export type SqlSource = { kind: 'sql'; table: string; dialect?: SqlDialectKind; /** DB schema / search path (Postgres/MSSQL); default `public`. Qualifies the table. */ schema?: string }
+export type SupabaseSource = { kind: 'supabase'; table: string; url?: string; key?: string; realtime?: boolean }
 /** Embedded Postgres (PGlite) - a real, persistent database with ZERO backend
  *  setup. Runs in the browser, persisting to IndexedDB. Swap for a `sql` source
  *  pointed at hosted Postgres to go to production (same schema + SQL). */
@@ -734,6 +755,13 @@ export type AccessControl = {
 export type OAuthProvider = 'github' | 'google' | 'oidc'
 export type AuthConfig = {
   enabled: boolean
+  /** Which sign-in system to scaffold. `'builtin'` (default) is the dependency-free
+   *  cookie-session starter below (own user store, server route guards, RBAC).
+   *  `'supabase'` delegates to Supabase Auth: a client-side `SvAuthGate` over the
+   *  shared Supabase client, pairing with the database's Row Level Security. The
+   *  builtin-only sub-options (register / userAdmin / oauth / twoFactor / email) do
+   *  not apply to the Supabase provider. */
+  provider?: 'builtin' | 'supabase'
   /** Redirect unauthenticated visitors to /login for every route. Default true. */
   protect?: boolean
   /** Self-service sign-up + password recovery (/register, /forgot-password,
@@ -765,6 +793,10 @@ export type StudioProject = {
   dataSource: DataSourceKind
   /** Per-entity data-source binding, keyed by entity name. */
   dataSources?: Record<string, EntityDataSource>
+  /** Project-level Supabase connection (URL + anon key), shared by every
+   *  Supabase-bound entity so it's set once. A per-entity `SupabaseSource.url`/`key`
+   *  still overrides for that entity. Read by the wizard + the `.env` paste hint. */
+  supabase?: { url?: string; key?: string }
   theme?: ProjectTheme
   /** Role-based access control (optional; off unless `access.enabled`). */
   access?: AccessControl
@@ -1864,10 +1896,12 @@ export function setAuth(project: StudioProject, patch: Partial<AuthConfig> & { e
   if (!patch.enabled) { const { auth: _drop, ...rest } = project; return rest }
   const prev = project.auth
   const oauth = patch.oauth ?? prev?.oauth
+  const provider = patch.provider ?? prev?.provider
   return {
     ...project,
     auth: {
       enabled: true,
+      ...(provider && provider !== 'builtin' ? { provider } : {}),
       protect: patch.protect ?? prev?.protect ?? true,
       register: patch.register ?? prev?.register ?? false,
       userAdmin: patch.userAdmin ?? prev?.userAdmin ?? false,
@@ -1915,9 +1949,11 @@ export function setEntityDataSource(project: StudioProject, entityName: string, 
   return { ...project, dataSources: { ...project.dataSources, [entityName]: source } }
 }
 
-/** The resolved source for an entity (its explicit binding, else in-memory). */
+/** The resolved source for an entity: its explicit per-entity binding, else a skeleton
+ *  for the project's default source kind (so the rail "Default source" actually applies
+ *  to unbound entities, and this agrees with `ssrScreenShape`'s fallback). */
 export function entityDataSource(project: StudioProject, entityName: string): EntityDataSource {
-  return project.dataSources?.[entityName] ?? { kind: 'memory' }
+  return project.dataSources?.[entityName] ?? defaultEntitySource(project.dataSource ?? 'memory', entityName)
 }
 
 export function setTheme(project: StudioProject, theme: ProjectTheme): StudioProject {
@@ -2075,6 +2111,7 @@ export function parseProject(json: string): StudioProject {
     screens: p.screens as Screen[],
     dataSource: (p.dataSource ?? 'memory') as DataSourceKind,
     ...(p.dataSources && typeof p.dataSources === 'object' ? { dataSources: p.dataSources as Record<string, EntityDataSource> } : {}),
+    ...(p.supabase && typeof p.supabase === 'object' ? { supabase: p.supabase as { url?: string; key?: string } } : {}),
     ...(p.theme && typeof p.theme === 'object' ? { theme: p.theme as ProjectTheme } : {}),
     ...(p.access && typeof p.access === 'object' ? { access: p.access as AccessControl } : {}),
     ...(p.auth && typeof p.auth === 'object' && (p.auth as AuthConfig).enabled ? { auth: p.auth as AuthConfig } : {}),
@@ -2152,10 +2189,29 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
     })
   }
   for (const [name, src] of Object.entries(project.dataSources ?? {})) {
-    if (src.kind === 'supabase' && (!src.url || !src.key)) {
+    if (src.kind === 'supabase' && !(src.url ?? project.supabase?.url) && !(src.key ?? project.supabase?.key)) {
       issues.push({
         level: 'warning',
-        message: `Supabase entity "${name}" has no URL/key - the generated client is a stub that throws until you fill in src/lib/connections.ts.`,
+        message: `Supabase entity "${name}" has no URL/key - set the shared project connection (or this entity's own), or the generated app just reads PUBLIC_SUPABASE_URL / PUBLIC_SUPABASE_ANON_KEY from .env.`,
+      })
+    }
+  }
+  // Supabase Auth needs a Supabase client to authenticate against: either the shared
+  // project connection or at least one Supabase-bound entity (both emit connections.ts).
+  if (project.auth?.enabled && project.auth.provider === 'supabase') {
+    const hasSupabase = !!project.supabase?.url || sources.some((s) => s.kind === 'supabase')
+    if (!hasSupabase) {
+      issues.push({
+        level: 'warning',
+        message: 'Supabase Auth needs a Supabase connection. Set the shared project URL / anon key (in a data-source builder), or bind an entity to Supabase.',
+      })
+    }
+    // Supabase Auth is a client-side gate; it does not populate the server-side role
+    // the RBAC route guard reads. Server enforcement must come from RLS instead.
+    if (project.access?.enabled) {
+      issues.push({
+        level: 'warning',
+        message: 'Supabase Auth signs in on the client, so it does not populate the server-side role that RBAC route guards check. Enforce per-user access with Row Level Security policies on your Supabase tables.',
       })
     }
   }

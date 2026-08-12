@@ -949,6 +949,38 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(users).not.toContain('viewer@example.com')
   })
 
+  it('Supabase Auth: gates the app via SvAuthGate over the shared client, not the builtin session', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
+    p = setAuth(p, { enabled: true, provider: 'supabase' })
+    const files = emitStudioProject(p)
+    const layout = files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents
+    expect(layout).toContain('<SvAuthGate')
+    expect(layout).toContain("import { SvAuthGate, type SupabaseAuthClientLike } from '@svgrid/enterprise'")
+    expect(layout).toContain("import { supabaseClient } from '$lib/connections'")
+    // Shared client emitted; NO builtin cookie-session scaffold.
+    expect(files.find((f) => f.path === 'src/lib/connections.ts')).toBeTruthy()
+    expect(files.find((f) => f.path === 'src/hooks.server.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/lib/server/users.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/routes/login/+page.svelte')).toBeUndefined()
+    // No cosmetic fake "Sign out" in the account menu - SvAuthGate's own bar owns it.
+    expect(layout).not.toMatch(/menuOpen = false\)}>Sign out/)
+    for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('Supabase Auth emits the shared client even with no Supabase-bound entity', () => {
+    let p = createProject([customers]) // stays in-memory
+    p = { ...p, supabase: { url: 'https://proj.supabase.co', key: 'anon' } }
+    p = setAuth(p, { enabled: true, provider: 'supabase' })
+    const files = emitStudioProject(p)
+    expect(files.find((f) => f.path === 'src/lib/connections.ts')).toBeTruthy()
+    expect(files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents).toContain('<SvAuthGate')
+    // data.ts does NOT import the client (no Supabase data entity uses it).
+    expect(files.find((f) => f.path === 'src/lib/data.ts')!.contents).not.toContain("from './connections'")
+  })
+
   it('Audit: emits the store + route + viewer, wires connected routes, and compiles', () => {
     let p = createProject([customers, orders])
     p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' })
@@ -1542,6 +1574,41 @@ describe('data-source codegen', () => {
     expect(dataTs).not.toContain('createInMemoryDataSource') // customers is REST-bound
   })
 
+  it('REST adapter (dummyjson): emits real server paging via the adapter + imports it', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', {
+      kind: 'rest', baseUrl: 'https://dummyjson.com', path: 'users', method: 'GET', params: [],
+      adapter: { kind: 'dummyjson', rowsKey: 'users' },
+    })
+    const dataTs = byPathOf(emitStudioProject(p), 'src/lib/data.ts')!.contents
+    expect(dataTs).toContain('dummyJsonAdapter') // imported from @svgrid/enterprise
+    expect(dataTs).toMatch(/\.\.\.dummyJsonAdapter<\w+>\('users'\)/)
+  })
+
+  it('REST offsetLimit adapter emits only the configured params', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', {
+      kind: 'rest', baseUrl: 'https://api', path: 'c', method: 'GET', params: [],
+      adapter: { kind: 'offsetLimit', offsetParam: '_start', limitParam: '_limit', sortByParam: 'sort' },
+    })
+    const dataTs = byPathOf(emitStudioProject(p), 'src/lib/data.ts')!.contents
+    expect(dataTs).toContain("offsetParam: '_start'")
+    expect(dataTs).toContain("limitParam: '_limit'")
+    expect(dataTs).toContain("sortByParam: 'sort'")
+    expect(dataTs).not.toContain('orderParam') // unset fields are omitted
+  })
+
+  it('a REST adapter supersedes the manual rowsPath/totalPath parse', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', {
+      kind: 'rest', baseUrl: 'https://api', path: 'c', method: 'GET', params: [],
+      adapter: { kind: 'jsonServer' }, rowsPath: 'data', totalPath: 'total',
+    })
+    const dataTs = byPathOf(emitStudioProject(p), 'src/lib/data.ts')!.contents
+    expect(dataTs).toContain('jsonServerAdapter')
+    expect(dataTs).not.toContain('parse: (body: any)') // adapter provides parse instead
+  })
+
   it('substitutes static path params into the URL', () => {
     let p = createProject([customers])
     p = setEntityDataSource(p, 'customers', {
@@ -1607,20 +1674,30 @@ describe('data-source codegen', () => {
     expect(emitStudioAppBundle(createProject([customers])).find((f) => f.path === '.env.example')).toBeUndefined()
   })
 
-  it('emits a real Supabase client from a project URL + anon key', () => {
+  it('emits a Supabase client that reads PUBLIC_SUPABASE_* env vars (never inlines the key)', () => {
     let p = createProject([customers])
     p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers', url: 'https://x.supabase.co', key: 'anon123' })
     const conn = byPathOf(emitStudioProject(p), 'src/lib/connections.ts')!.contents
     expect(conn).toContain("import { createClient } from '@supabase/supabase-js'")
-    expect(conn).toContain("createClient('https://x.supabase.co', 'anon123')")
+    expect(conn).toContain("import { env } from '$env/dynamic/public'")
+    expect(conn).toContain('createClient(')
+    expect(conn).toContain('env.PUBLIC_SUPABASE_URL')
+    expect(conn).toContain('env.PUBLIC_SUPABASE_ANON_KEY')
+    // The anon key is NEVER baked into source (it goes to .env); the designer values
+    // appear only as a paste-into-.env comment.
+    expect(conn).not.toContain("createClient('https://x.supabase.co'")
+    // .env.example lists the public Supabase keys.
+    const envEx = emitStudioAppBundle(p).find((f) => f.path === '.env.example')!.contents
+    expect(envEx).toContain('PUBLIC_SUPABASE_URL=')
+    expect(envEx).toContain('PUBLIC_SUPABASE_ANON_KEY=')
   })
 
-  it('falls back to a Supabase null stub without url/key', () => {
+  it('still emits an env-var Supabase client without designer url/key', () => {
     let p = createProject([customers])
     p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
     const conn = byPathOf(emitStudioProject(p), 'src/lib/connections.ts')!.contents
-    expect(conn).toContain('supabaseClient = null as unknown as SupabaseClientLike')
-    expect(conn).not.toMatch(/^import \{ createClient \}/m) // no real client import without creds
+    expect(conn).toContain('env.PUBLIC_SUPABASE_URL')
+    expect(conn).not.toContain('null as unknown as SupabaseClientLike') // no stub - reads env
   })
 
   it('every emitted .svelte compiles with mixed REST + Supabase sources', () => {
@@ -1630,6 +1707,50 @@ describe('data-source codegen', () => {
     for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
     }
+  })
+
+  it('Supabase realtime: subscribes the grid page to live changes and refreshes on change', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers', realtime: true })
+    const page = byPathOf(emitStudioProject(p), 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain('createSupabaseRealtime')
+    expect(page).toContain("import { supabaseClient } from '$lib/connections'")
+    expect(page).toContain("table: 'customers'")
+    expect(page).toContain('onChange: () => controller.refresh()')
+    // Cleanup unsubscribes the channel alongside disposing the controller.
+    expect(page).toContain('__rt.unsubscribe()')
+    expect(page).toContain('controller.dispose()')
+    // Compiles.
+    expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('Supabase without realtime does NOT emit a subscription', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
+    const page = byPathOf(emitStudioProject(p), 'src/routes/customers/+page.svelte')!.contents
+    expect(page).not.toContain('createSupabaseRealtime')
+  })
+
+  it('project-level Supabase connection feeds the .env paste hint (entity carries only the table)', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers' })
+    p = { ...p, supabase: { url: 'https://proj.supabase.co', key: 'anonKEY' } }
+    const conn = byPathOf(emitStudioProject(p), 'src/lib/connections.ts')!.contents
+    expect(conn).toContain('PUBLIC_SUPABASE_URL=https://proj.supabase.co')
+    expect(conn).toContain('PUBLIC_SUPABASE_ANON_KEY=anonKEY')
+    // The client still reads env (project-level values only seed the paste comment).
+    expect(conn).not.toContain("createClient('https://proj.supabase.co'")
+  })
+
+  it('SQL schema selector qualifies the table in the generated route', () => {
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres', schema: 'analytics' })
+    const route = byPathOf(emitStudioProject(p), 'src/routes/api/customers/+server.ts')!.contents
+    expect(route).toContain('dbSchema: "analytics"')
+    // No schema set -> no dbSchema option (unqualified table).
+    let q = createProject([customers])
+    q = setEntityDataSource(q, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    expect(byPathOf(emitStudioProject(q), 'src/routes/api/customers/+server.ts')!.contents).not.toContain('dbSchema:')
   })
 })
 

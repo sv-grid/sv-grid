@@ -15,7 +15,8 @@
   }
 
   type Preset =
-    | 'default' | 'shadcn' | 'tailwind' | 'material'
+    | 'default' | 'ember'
+    | 'shadcn' | 'tailwind' | 'material'
     | 'excel' | 'fluent'
     | 'carbon' | 'sap' | 'salesforce' | 'atlassian' | 'github' | 'antd'
     | 'ag-alpine'
@@ -23,6 +24,12 @@
     | 'nord' | 'dracula' | 'catppuccin'
   type PresetGroup = { label: string; presets: { id: Preset; label: string }[] }
   const PRESET_GROUPS: PresetGroup[] = [
+    {
+      label: 'SvGrid',
+      presets: [
+        { id: 'ember', label: 'Ember (signature)' },
+      ],
+    },
     {
       label: 'Modern design systems',
       presets: [

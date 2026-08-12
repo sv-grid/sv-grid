@@ -8,6 +8,12 @@ import Segmented408 from '../demos/408-segmented.svelte'
 import LayoutFeedback409 from '../demos/409-layout-feedback.svelte'
 import TypographyDisplay410 from '../demos/410-typography-display.svelte'
 import ResizableDropdowns411 from '../demos/411-resizable-dropdowns.svelte'
+import BlockLogin420 from '../demos/420-block-login.svelte'
+import BlockSignup421 from '../demos/421-block-signup.svelte'
+import BlockOtp422 from '../demos/422-block-otp.svelte'
+import BlockDashboard423 from '../demos/423-block-dashboard.svelte'
+import BlockAppShell424 from '../demos/424-block-app-shell.svelte'
+import BlockPricing425 from '../demos/425-block-pricing.svelte'
 import ButtonGroup284 from '../demos/284-button-group.svelte'
 import ButtonDemo305 from '../demos/305-button.svelte'
 import RepeatButton306 from '../demos/306-repeat-button.svelte'
@@ -99,6 +105,7 @@ import AlertAggregateKpi401 from '../demos/401-alert-aggregate-kpi.svelte'
 import AlertValidationGuardrails402 from '../demos/402-alert-validation-guardrails.svelte'
 import AlertConsoleNavPane403 from '../demos/403-alert-console-navpane.svelte'
 import ChartContextMenu406 from '../demos/406-chart-context-menu.svelte'
+import GridChartView407 from '../demos/407-grid-chart-view.svelte'
 import AppFeedback333 from '../demos/333-app-feedback.svelte'
 import StatusDisplay339 from '../demos/339-status-display.svelte'
 import InputEditors334 from '../demos/334-input-editors.svelte'
@@ -413,6 +420,7 @@ export type DemoCategory =
   | 'Selection'
   | 'Range & Feedback'
   | 'Layout'
+  | 'Blocks'
   | 'Headless Editors'
 
 /**
@@ -443,6 +451,7 @@ export const EDITOR_CATEGORIES = new Set<DemoCategory>([
   'Selection',
   'Range & Feedback',
   'Layout',
+  'Blocks',
   'Headless Editors',
 ])
 
@@ -484,6 +493,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Selection',
   'Range & Feedback',
   'Layout',
+  'Blocks',
   'Headless Editors',
 ]
 
@@ -549,7 +559,7 @@ export const demos: Demo[] = [
   demo('411-resizable-dropdowns',   'Resizable dropdowns',         'Built-in browser bounds detection - every picker panel (SvDropDownList / SvComboBox / SvAutoComplete) opens downward when there is room and flips upward automatically near the window edge. Plus a `resizable` prop that adds a bottom drag grip to the open panel (drag to grow/shrink; height sticks for the session; grip hides on an upward flip). A switch compares fixed-height vs resizable. Theme-aware (light/dark).', 'Selection', ResizableDropdowns411),
   demo('316-tags-input',            'Tags input',                  'SvTagsInput: a token editor (Enter / comma to add, Backspace / x to remove) with unique + max enforced - skills and email recipients with validation.', 'Selection', TagsInput316),
   demo('317-country-input',         'Country input',               'SvCountryInput: a searchable checkout country picker (flag + name + dial code) emitting the ISO code, with label + required validation.', 'Selection', CountryInput317),
-  demo('323-list-virtualization',   'Virtualized list',            'SvListBox scaling to 50,000 options via fixed-row windowing (only visible rows in the DOM) - scroll + type-ahead stay instant. Plus a custom itemTemplate row (avatar + role). Just add virtual.', 'Selection', ListVirtualization323),
+  demo('323-list-virtualization',   'Virtualized list',            'SvListBox / SvDropDownList scaling to 50,000 options by windowing - only visible rows in the DOM, recycled on scroll (no mount/unmount churn). Grouped lists window too (headings included), rowHeight can be a function for variable-height rows, plus a custom itemTemplate. Just add virtual.', 'Selection', ListVirtualization323),
   demo('329-combobox-remote',       'Remote combo box',            'SvComboBox with a remote dataSource: debounced server search (loadOptions), a loading state, latest-response-wins race handling and a type-to-search hint. Local filtering off.', 'Selection', ComboRemote329),
   demo('260-headless-editors',      'Headless editors',            'Headless-first, like the grid: createListbox is the state machine behind SvListBox (roving focus, single/multi selection, keyboard, ARIA) exposed as prop-getters you spread onto YOUR own markup. One core drives both the styled SvListBox and a custom chip-cloud render, bound to one value.', 'Headless Editors', HeadlessEditors260),
   demo('261-headless-combobox',          'Combobox - headless',           'createCombobox drives the styled SvComboBox and a custom filter-input render, both bound to one value with a readout.', 'Headless Editors', HlCombobox),
@@ -609,6 +619,14 @@ export const demos: Demo[] = [
   demo('345-ops-dashboard',         'Operations KPI dashboard', 'A KPI console: SvStat + SvSparkline tiles, an SvGauge SLA dial, SvHoverCard drill-down previews per service, an SvMenubar toolbar (View / Range / Actions) and a promise toast on Refresh. Pure UI-kit composition, no grid dependency.', 'Layout', OpsDashboard345),
   demo('404-form-rich-fields',      'Form: rich field types', 'SvForm reaching the whole input suite from one schema - phone, country, mask, combobox, radio, slider, tags, datetime and file - plus per-field help text, a readonly field, column span, and a promise toast on submit.', 'Layout', FormRichFields404),
   demo('405-form-cascading',        'Form: cascading fields', 'SvForm dependent selects - a child list derives from the parent value via a function `options`, and `dependsOn` clears the child when the parent changes so a stale selection never lingers. Country -> State -> City.', 'Layout', FormCascading405),
+
+  // ===== Blocks - copy-paste, full-page UI sections built from the kit (shadcn "blocks"-style).
+  demo('420-block-login',           'Login block',            'A two-column authentication page: a branded gradient panel beside a sign-in SvCard with social SvButtons, SvTextInput + SvPasswordInput (reveal), remember-me SvCheckBox, an "or" SvDivider and forgot-password link. Drops into any route as-is.', 'Blocks', BlockLogin420),
+  demo('421-block-signup',          'Sign-up block',          'A centered account-creation card: two-up name fields, work email, a password with the live strength meter, a plan SvSegmented switch, terms SvCheckBox and a benefits rail. Submit fires a promise toast. Pure UI-kit.', 'Blocks', BlockSignup421),
+  demo('422-block-otp',             'Two-factor / OTP block', 'The verification step of a sign-in flow: SvOtpInput (6 digits, auto-advance + onComplete), a resend cooldown timer, and the waiting -> verifying -> verified states. Enter 000000 to see the error path.', 'Blocks', BlockOtp422),
+  demo('423-block-dashboard',       'Analytics dashboard block', 'A full overview page: a range SvSegmented + actions header, a KPI grid (SvStat + SvSparkline), a revenue bar panel, a recent-activity SvTimeline and a top-products list with SvProgress bars. No grid dependency.', 'Blocks', BlockDashboard423),
+  demo('424-block-app-shell',       'App shell block',        'A complete application layout: a SvNavPane sidebar with sections + badges, a top bar with SvBreadcrumb, search and an account SvMenu, and a routed content area. Nav swaps the page; the toggle collapses the rail to an icon rail.', 'Blocks', BlockAppShell424),
+  demo('425-block-pricing',         'Pricing block',          'A three-tier plan grid with a monthly/annual SvSegmented toggle (annual applies the discount live), a highlighted "most popular" card, per-plan feature SvLists with check marks, and a CTA SvButton on each.', 'Blocks', BlockPricing425),
   demo('341-rich-text-editor',      'Rich text editor (WYSIWYG)', 'SvRichText: a lightweight WYSIWYG over a contentEditable region - bold/italic/underline/strike, headings, lists, quote, code block, alignment, links, undo/redo - emitting HTML via bind:value, with a configurable toolbar. Parity: Smart editor.', 'Inputs', RichTextEditor341),
   demo('335-tree-select',           'Tree select', 'SvTreeSelect: a single-select dropdown showing a collapsible tree in its portalled panel (the tree-select / cascader pattern). Arrow keys navigate, Right/Left expand/collapse, Enter selects; optional full-path label in the trigger.', 'Selection', TreeSelect335),
   demo('336-grid-select',           'Grid select (multi-column)', 'SvGridSelect: a "grid in a dropdown" single-select - the panel shows options as a compact multi-column table with a header row and search, so you pick by more than a label. Built on its own panel (no embedded SvGrid); standalone or as a cell editor.', 'Selection', GridSelect336),
@@ -654,6 +672,7 @@ export const demos: Demo[] = [
   demo('402-alert-validation-guardrails', 'Validation guardrails', 'A validation-trigger alert is evaluated on edit and can veto the change. A budget sheet is editable, and two guardrail rules block bad edits: a negative amount, or an amount over that line budget. The pure engine is wired into the grid per-column validate hook - the blessed integration point for prevent-edit. Toggle a guardrail off to allow the edit through.', 'Alerts', AlertValidationGuardrails402, { pro: true }),
   demo('403-alert-console-navpane', 'Alerts operations console', 'A full monitoring app: an Outlook-style navigation pane (SvNavPane) on the left - a module rail (Monitor / Rules / Reports) plus badged folders (Critical / Warnings / Healthy and per-region) - filtering a live fleet grid on the right. Alert rules watch every host regardless of the folder you are viewing, paint the rows, and feed the bell and the fired-alert panel. Module buttons open the rule manager and the report panel.', 'Alerts', AlertConsoleNavPane403, { pro: true }),
   demo('406-chart-context-menu', 'Chart a selection (context menu)', 'With integrated charting enabled, the right-click menu gains a Chart selected range item: select a block of cells, right-click, and the chart panel opens scoped to that range - the Excel chart-this gesture, built in. The item appears only when charting is on and is appended to the default context menu automatically.', 'Charts', ChartContextMenu406),
+  demo('407-grid-chart-view', 'Chart view of the grid', 'The `chart` prop turns the same <SvGrid> into a chart, driven by the grid’s filtered + sorted rows (search + sort flow through). A view of the grid like board and scheduler, but the renderer is free: the grid lazy-loads a built-in view wrapping the standalone SvChart via rowsToChartSpec. Flip Table <-> Chart (bar / line / area) over one source of truth.', 'Charts', GridChartView407),
 
   // ----- Getting Started (the first stop for every evaluator)
   demo('00-trading-desk',           'Trading desk - live',         '10,000 securities ticking on a 500 ms feed. Pinned Symbol + P&L, per-company logo marks, direction-coloured sparklines, sector chips, a KPI strip, and a notifications bell that flags standout movers. The hero.', 'Getting Started', TradingDesk),
@@ -789,7 +808,6 @@ export const demos: Demo[] = [
   demo('356-spreadsheet-chart','Spreadsheet chart (Excel-style)','An editable sales sheet with the chart drawer open beside it - type a new number into any Units / Revenue cell and the chart redraws, just like an Excel chart bound to a table. Switch Type, swap Group by / Split by / Value, aggregate, stack, format, or add labels - all live.', 'Charts', SpreadsheetChart),
   demo('358-charting-by-date','Charting by date (time axis)','A daily signups sheet charted by a real date column. Because the group-by is a date, the chart panel adds a Date-axis toggle (proportional time gaps + real date ticks) alongside a Log-scale toggle - both live. Export the chart as PNG / SVG / CSV from the panel.', 'Charts', ChartingByDate),
   demo('357-ai-chart-this','AI chart builder','With `installEnterprise(api)`, the chart panel gains an AI button: describe a chart in plain English ("total price by country stacked by product") and the model returns a chart config - type, group-by, split-by, measure, aggregate - applied live. Enterprise-gated AI over the free MIT chart panel; runs on the bundled mock provider.', 'AI', AiChartThis, { pro: true }),
-  demo('359-pivot-chart','Pivot chart (Table <-> Chart)','The Excel PivotTable <-> PivotChart pairing: one drag-drop pivot layout (Rows / Columns / Values) renders as either an expandable table or a live chart. Rows become categories (nested -> a grouped axis), Columns series, Values the measure. Enterprise pivot engine (createPivotModel -> pivotToChartSpec) over the free MIT SvGridChart.', 'Pivot Grid', PivotChart, { pro: true }),
   demo('147-integrated-charts',     'Integrated charts (no dependencies)', 'Chart the grid data with no external charting library. SvGridChart renders a ChartSpec; rowsToChartSpec aggregates the grid current (filtered/sorted) rows into one. Bar, line, area, pie - plus 100% stacked, top-N + Other, an average reference line, and double-click-to-isolate a series. Filter the grid and the chart re-aggregates live.', 'Charts', IntegratedCharts),
   demo('150-scatter-bubble',        'Scatter / bubble chart',      'A scatter plot maps two numeric measures (x vs y); a bubble chart adds a third via dot radius. type: scatter with series points [{ x, y, r }]. Spend vs revenue, sized by deals, coloured by region, with an average-revenue reference line. Filter the grid and the cloud re-plots.', 'Charts', ScatterBubble),
   demo('151-time-series-chart',     'Time-series chart (date axis)','xType: time spaces points by ACTUAL time - irregular date gaps render proportionally - and shows real date ticks. A referenceLines target/SLA line spans the plot; toggle 100% stacked to read each day as a share of its total. Line, stacked area, or stacked bar.', 'Charts', TimeSeriesChart),
@@ -893,6 +911,7 @@ export const demos: Demo[] = [
   demo('125-pivot-charts',            'Pivot - Linked charts',          'Pivot cube wired to a horizontal bar chart + multi-year line chart. Click any cube row to drill the charts one level deeper (region → country → product); scope KPI strip tracks selection; charts are zero-dep inline SVG.', 'Pivot Grid', PivotCharts,            { pro: true }),
   demo('166-pivot-analysis-workspace','Pivot - Analysis workspace',     'Excel-style pivot analysis: left-rail field picker (search + checkboxes) feeding four wells (Rows / Columns / Data / Filters), live re-pivot on every layout change, click-to-cycle aggregator chips, data-bar Total Spend cells + amber Avg Rating strips, subtotal + grand-total row tints.', 'Pivot Grid', PivotAnalysisWorkspace, { pro: true }),
   demo('168-pivot-designer',          'Pivot - Designer component',     'SvPivotDesigner: self-contained, enterprise-ready pivot authoring with a left-rail field picker (search + grouped), four drop wells (Filters / Columns / Rows / Values), drag-and-drop between wells, per-chip aggregator + filter menus, presets toolbar, and an inline pivot grid driven by createPivotModel. Single bindable `layout` prop so the page can persist or restore it.', 'Pivot Grid', PivotDesigner,          { pro: true }),
+  demo('359-pivot-chart','Pivot chart (Table <-> Chart)','The Excel PivotTable <-> PivotChart pairing: one drag-drop pivot layout (Rows / Columns / Values) renders as either an expandable table or a live chart. Rows become categories (nested -> a grouped axis), Columns series, Values the measure. Enterprise pivot engine (createPivotModel -> pivotToChartSpec) over the free MIT SvGridChart.', 'Pivot Grid', PivotChart, { pro: true }),
 
   // ----- Pro: Export cluster (kept together at the very bottom)
   demo('21-export-and-print',         'Export + Print',                 'Pro feature pack: download to Excel, PDF, CSV, TSV, HTML, or open a printable view in a new window.',           'Data Export & Import', ExportAndPrint,         { pro: true }),

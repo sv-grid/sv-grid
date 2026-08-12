@@ -63,6 +63,19 @@ describe('createSqlDataSource reads', () => {
     expect(calls[1]!.params).toEqual([20])
   })
 
+  it('schema-qualifies the table as "schema"."table" when dbSchema is set', async () => {
+    const { execute, calls } = recorder([[{ id: '1' }], [{ count: 1 }]])
+    const src = createSqlDataSource({ schema, table: 'customers', dbSchema: 'analytics', execute })
+    await src.getRows(req({}))
+    expect(calls[0]!.sql).toContain('FROM "analytics"."customers"')
+    expect(calls[1]!.sql).toContain('FROM "analytics"."customers"')
+    // Writes are qualified too.
+    const { execute: ex2, calls: c2 } = recorder([[{ id: '9' }]])
+    const src2 = createSqlDataSource({ schema, table: 'customers', dbSchema: 'analytics', execute: ex2 })
+    await src2.createRow({ name: 'Zed' } as never)
+    expect(c2[0]!.sql).toContain('INSERT INTO "analytics"."customers"')
+  })
+
   it('honors the Postgres dialect ($ placeholders)', async () => {
     const { execute, calls } = recorder([[], [{ count: 0 }]])
     const src = createSqlDataSource({

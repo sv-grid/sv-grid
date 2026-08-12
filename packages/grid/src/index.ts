@@ -105,6 +105,11 @@ export type {
   SchedulerOccurrenceChangeEvent,
 } from './SvGrid.types'
 export { registerSchedulerView, getSchedulerView, hasSchedulerView } from './scheduler-view.svelte'
+// Chart view. The `chart` prop + its config live in the free grid AND so does the
+// renderer (SvGridChartView wraps the free SvChart) - so unlike board/scheduler
+// it works out of the box. This seam only lets a host OVERRIDE the built-in view.
+export type { ChartViewConfig } from './SvGrid.types'
+export { registerChartView, getChartView, hasChartView } from './chart-view.svelte'
 export {
   registerPivotEngine,
   getPivotEngine,
@@ -498,6 +503,12 @@ export { default as FlexRender } from './FlexRender.svelte'
 export { renderComponent, renderSnippet } from './render-component'
 export { default as SvGridChart } from './SvGridChart.svelte'
 export { default as SvGridChartPanel } from './SvGridChartPanel.svelte'
+// Preferred names for the standalone chart primitives. `SvChart` is a genuine
+// standalone component (spec-driven, no grid needed), so it sits alongside its
+// unprefixed siblings SvGauge / SvSparkline. The `SvGrid*` names remain exported
+// as aliases so existing imports keep working.
+export { default as SvChart } from './SvGridChart.svelte'
+export { default as SvChartPanel } from './SvGridChartPanel.svelte'
 export type { ChartingConfig, ChartAggregateRequest, ChartAggregateBucket } from './SvGrid.types'
 export type { GridLocalization } from './SvGrid.types'
 export {

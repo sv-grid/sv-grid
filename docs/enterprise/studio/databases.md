@@ -82,32 +82,11 @@ The generated route is identical to PostgreSQL above.
 
 ### With the `supabase-js` client (RLS + auth)
 
-Prefer the Supabase client so row-level security and auth are enforced per user?
-Keep the schema, grid, and form, and back them with a `ServerDataSource` built on
-`supabase-js`:
-
-```ts
-import { createClient } from '@supabase/supabase-js'
-import type { ServerDataSource, ServerRequest } from '@svgrid/grid'
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-export const customersSource: ServerDataSource<Customer> = {
-  async getRows(req: ServerRequest) {
-    let q = supabase.from('customers').select('*', { count: 'exact' })
-    if (req.filterModel.global) q = q.ilike('name', `%${req.filterModel.global}%`)
-    for (const s of req.sortModel) q = q.order(s.id, { ascending: !s.desc })
-    const { data, count } = await q.range(req.startRow, req.endRow - 1)
-    return { rows: data ?? [], rowCount: count ?? 0 }
-  },
-  createRow: (input) => supabase.from('customers').insert(input).select().single().then((r) => r.data),
-  updateRow: (id, patch) => supabase.from('customers').update(patch).eq('id', id).select().single().then((r) => r.data),
-  deleteRow: (id) => supabase.from('customers').delete().eq('id', id).then(() => undefined),
-}
-```
-
-RLS policies then apply automatically. See [REST & custom APIs](./rest-api.md)
-for the pattern in full.
+Prefer the Supabase client so row-level security and auth are enforced per
+user? Use `createSupabaseDataSource` from the browser - no server route at all.
+The **[Supabase guide](./supabase.md)** is the canonical walkthrough for that
+path (keys, RLS policies, and the ready-made source); this page only covers the
+connection-string route above.
 
 ---
 
@@ -181,6 +160,39 @@ const client = createClient({ url: env.DATABASE_URL ?? '', authToken: env.DATABA
 execute: async (text, params) => (await client.execute({ sql: text, args: params })).rows,
 ```
 
+## Connect a database in the designer
+
+Prefer clicking to typing CLI flags? The **local** designer (`npx @svgrid/studio
+designer`) has a **Connect database** wizard that does the same job visually:
+
+1. **Pick a dialect** (PostgreSQL / MySQL / SQL Server / SQLite / Supabase /
+   Turso) and enter the connection. A guided form collects host, port, database,
+   user, password, and SSL and assembles the string for you - or paste a full
+   connection string on the string tab. For MySQL that string is
+   `mysql://user:pass@host:3306/db`; passwords and every credential stay
+   server-side and go only to `.env`.
+2. **Test connection** proves it works and shows the real row count per table.
+3. **Pick tables**, and hit **Preview** on any of them to see actual rows before
+   you import - a quick way to confirm you're pointed at the right database.
+4. **Add entities** reads the chosen tables' columns (types, primary key, foreign
+   keys) into schemas and binds each to its SQL table.
+
+Missing the driver? When a connect or preview fails because `pg` / `mysql2` /
+`mssql` / `better-sqlite3` isn't installed, the wizard offers a **one-click
+install** (it runs your project's package manager) and retries.
+
+Already have entities? Open a SQL entity's **Configure** builder, paste a
+connection string (the dialect is auto-detected), set the **Schema** (Postgres
+search path, default `public`), and **Preview data** to load real rows onto the
+canvas.
+
+> **Online vs. local.** Live connect / test / preview need the local designer,
+> because a browser can't reach a raw SQL database and the driver is a server-side
+> package. In the **online** designer you bind the entity (dialect + table +
+> schema) and **Generate app** - the app connects for real at runtime via
+> `DATABASE_URL`. Want a live database inside the online designer? Use
+> **[Supabase](./supabase.md)** or the **[Local database](./local-database.md)**.
+
 ## One-click hosted database (from the designer)
 
 Don't have a database yet? The designer's **Get a database** button provisions one
@@ -245,6 +257,13 @@ This lists the base tables and generates a screen (and route) for each.
   number, bool/bit -> boolean, timestamp -> datetime, date -> dateString, json ->
   json, else text). Refine anything in the schema file or the
   [visual designer](../studio.md#three-ways-to-build).
+- **Non-default schema**: to read a table outside the default namespace (Postgres
+  `public`, SQL Server `dbo`), pass **`dbSchema`** to `createSqlDataSource` - the
+  table is then addressed as `"schema"."table"`, each part quoted separately:
+  ```ts
+  createSqlDataSource({ schema: ordersSchema, table: 'orders', dbSchema: 'analytics', /* ... */ })
+  ```
+  In the designer, set the SQL builder's **Schema** field and it emits this for you.
 - **Security**: reads and writes are fully parameterized; the table name and
   columns come from the schema, never from request input.
 
