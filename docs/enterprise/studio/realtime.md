@@ -14,6 +14,14 @@ it instantly, with no polling. This uses [Supabase Realtime](https://supabase.co
 
 ---
 
+## In the designer (no code)
+
+For a Supabase-bound entity, open its **Configure** builder and tick **Live
+updates (Realtime)**. Studio then emits the subscription below into the generated
+page for you - `createSupabaseRealtime` wired to `controller.refresh()`, with a
+250 ms debounce and cleanup on unmount. You still enable Realtime on the table in
+Supabase (Step 1); the checkbox only wires up the client side.
+
 ## Step 1 - Enable Realtime on the table
 
 Realtime is off per table until you add it to the `supabase_realtime`

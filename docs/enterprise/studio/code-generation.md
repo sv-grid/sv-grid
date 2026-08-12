@@ -2,7 +2,7 @@
 
 Studio generates plain SvelteKit code you own - there is no runtime and no
 lock-in. The same `scaffold()` core powers the [CLI](./cli.md), the
-[AI generator](./ai-generation.md), and the [visual designer](./designer.md), so
+[AI generator](./ai-generation.md), and the [visual designer](./app-designer.md), so
 all three emit identical files.
 
 ![The generated files: schema module, +server.ts API route, and +page.svelte screen, with svgrid:managed markers.](/docs-media/studio-generated-code.png)
@@ -107,6 +107,32 @@ The generated `+server.ts` backend depends on how you scaffold:
 
 See [Databases](./databases.md) and [Data binding](./data-binding.md).
 
+## Render mode: SPA or SSR per screen
+
+By default a generated screen is a client page (`spa`): the browser talks to
+the API route through the data-source controller. In the
+[app designer](./app-designer.md), a screen can instead opt into **`ssr`**,
+which emits idiomatic server-rendered SvelteKit - a `+page.server.ts` with a
+`load` function and form `actions`, URL-driven sort / filter / page state, and
+progressive enhancement.
+
+Not every screen shape can emit as SSR. The rules:
+
+- The screen must be entity-bound, without a [code-behind](./code-behind.md)
+  companion.
+- Its data source must be `memory` (runs in-process) or `sql` (reuses the
+  connected `/api` route via `event.fetch`); `rest`, `supabase`, and `pglite`
+  screens stay SPA.
+- **A single plain grid** emits as load + form actions (no tree data, no
+  scheduler view).
+- **Read-only block screens** - any mix of chart, pivot, dashboard, KPI, gauge,
+  tree, detail, and master-detail - emit as a load-only page.
+- Anything else (boards, calendars, UI component blocks, containers,
+  grids with extras) stays SPA.
+
+The designer only offers the toggle when the screen qualifies; a screen set to
+`ssr` that stops qualifying falls back to the SPA emit.
+
 ## Verification
 
 The AI path compiles the generated page (via the Svelte compiler) before handing
@@ -118,4 +144,4 @@ npx svelte-check
 
 ## See also
 
-- [The Studio CLI](./cli.md) · [AI generation](./ai-generation.md) · [Visual designer](./designer.md)
+- [The Studio CLI](./cli.md) · [AI generation](./ai-generation.md) · [Visual app designer](./app-designer.md)

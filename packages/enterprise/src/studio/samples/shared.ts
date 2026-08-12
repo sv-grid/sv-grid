@@ -10,7 +10,7 @@
 import type { EntitySchema } from '../../schema.js'
 import type { ChartType } from '@svgrid/grid'
 import { generateValue } from '../sample-data.js'
-import { defaultBlockConfig, sanitizeProject, screenFromTemplate, buildDockLayout, type Block, type BlockConfig, type DetailRelated, type FormatRule, type GridConfig, type GridDensity, type KpiFormat, type Reduce, type RowAction, type RowLink, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle, type SchedulerViewConfig, type SchedulerViewMode } from '../project.js'
+import { defaultBlockConfig, sanitizeProject, screenFromTemplate, buildDockLayout, type Block, type BlockConfig, type DetailRelated, type FormatRule, type GridConfig, type GridDensity, type KpiFormat, type Reduce, type RowAction, type RowLink, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle, type SchedulerViewConfig, type SchedulerViewMode, type AuthConfig, type AccessControl } from '../project.js'
 
 type Row = Record<string, unknown>
 
@@ -329,6 +329,17 @@ export function project(opts: {
    *  what makes each app read as a distinct product (Salesforce vs Excel vs Linear). */
   preset?: string
   mode?: 'light' | 'dark'
+  /** Bespoke app chrome: raw CSS written to the generated app's `custom.css` (imported
+   *  after `app.css`, so it overrides). Scope rules under `.sv-app.<appClass>` so an
+   *  app can look like its real-world archetype, not a recolored sibling. */
+  customCss?: string
+  /** Extra class on the shell root (the hook `customCss` targets). */
+  appClass?: string
+  /** A sign-in starter: `{ enabled: true }` gives the generated app a `/login` page,
+   *  a signed-cookie session, and route guards (dependency-free, no DB). */
+  auth?: AuthConfig
+  /** Role-based access. With `auth`, seeds one demo login per role. */
+  access?: AccessControl
   entities: EntitySchema[]
   screens: Screen[]
   seed: Record<string, Record<string, unknown>[]>
@@ -345,7 +356,11 @@ export function project(opts: {
       accent: opts.accent,
       ...(opts.preset ? { preset: opts.preset } : {}),
       ...(opts.mode ? { mode: opts.mode } : {}),
+      ...(opts.customCss ? { customCss: opts.customCss } : {}),
+      ...(opts.appClass ? { appClass: opts.appClass } : {}),
       shell: { style: opts.navStyle ?? 'sidebar', brand: opts.brand, footer: opts.footer ?? '', navPosition: opts.navPosition ?? 'left' },
     },
+    ...(opts.auth?.enabled ? { auth: opts.auth } : {}),
+    ...(opts.access?.enabled ? { access: opts.access } : {}),
   })
 }

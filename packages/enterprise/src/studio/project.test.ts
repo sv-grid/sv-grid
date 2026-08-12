@@ -57,6 +57,7 @@ import {
   reorderScreen,
   insertBlock,
   validateProject,
+  setAuth,
   addTab,
   removeTab,
   renameTab,
@@ -601,6 +602,22 @@ describe('component blocks', () => {
     p = addComponentBlock(p, sid, 'button', {})
     expect(validateProject(p).some((i) => /is empty/.test(i.message))).toBe(false)
   })
+
+  it('Supabase Auth warns without a Supabase connection, and clears once one is set', () => {
+    let p = setAuth(createProject([customers]), { enabled: true, provider: 'supabase' })
+    const needsConn = (pr: typeof p) => validateProject(pr).some((i) => /Supabase Auth needs a Supabase connection/.test(i.message))
+    expect(needsConn(p)).toBe(true)
+    // Shared project connection satisfies it.
+    p = { ...p, supabase: { url: 'https://x.supabase.co', key: 'anon' } }
+    expect(needsConn(p)).toBe(false)
+  })
+
+  it('Supabase Auth + RBAC warns that the client session does not populate the server role', () => {
+    let p = createProject([customers])
+    p = { ...p, supabase: { url: 'https://x.supabase.co', key: 'anon' }, access: { enabled: true, roles: [] } as never }
+    p = setAuth(p, { enabled: true, provider: 'supabase' })
+    expect(validateProject(p).some((i) => /Row Level Security/.test(i.message))).toBe(true)
+  })
 })
 
 describe('validateProject', () => {
@@ -788,6 +805,17 @@ describe('per-entity data sources', () => {
     const p1 = setEntityDataSource(p0, 'customers', { kind: 'rest', baseUrl: 'https://api', path: 'customers', method: 'GET', params: [] })
     expect(entityDataSource(p1, 'customers').kind).toBe('rest')
     expect(p1.dataSources).toMatchObject({ customers: { kind: 'rest' } })
+  })
+
+  it('an unbound entity inherits the project default source (not always memory)', () => {
+    const p0 = createProject([customers]) // dataSource: 'memory'
+    expect(entityDataSource(p0, 'customers')).toEqual({ kind: 'memory' })
+    // Flip the project default to SQL: unbound entities now resolve to the SQL skeleton.
+    const pSql = { ...p0, dataSource: 'sql' as const }
+    expect(entityDataSource(pSql, 'customers')).toEqual({ kind: 'sql', table: 'customers' })
+    // An explicit per-entity binding still wins over the default.
+    const pOverride = setEntityDataSource(pSql, 'customers', { kind: 'memory' })
+    expect(entityDataSource(pOverride, 'customers')).toEqual({ kind: 'memory' })
   })
 
   it('defaultEntitySource seeds a skeleton per kind', () => {

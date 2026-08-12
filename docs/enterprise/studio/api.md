@@ -12,9 +12,10 @@ form, sorting, filtering, paging, and CRUD all speak.
 | Function | Signature (key options) | Guide |
 | --- | --- | --- |
 | `createInMemoryDataSource` | `(rows, schema)` | [In-memory](./in-memory.md) |
-| `createSqlDataSource` | `({ schema, table, dialect, execute, returning? })` | [Databases](./databases.md) |
+| `createSqlDataSource` | `({ schema, table, dialect, execute, dbSchema?, returning? })` - `dbSchema` qualifies the table as `"schema"."table"` | [Databases](./databases.md) |
 | `createSupabaseDataSource` | `({ client, table, schema, searchColumns? })` | [Supabase](./supabase.md) |
-| `createRestDataSource` | `({ url, schema, headers?, buildQuery?, parse? })` | [REST & custom APIs](./rest-api.md) |
+| `createRestDataSource` | `({ url, schema, headers?, query?, buildQuery?, parse? })` | [REST & custom APIs](./rest-api.md) |
+| `offsetLimitAdapter` / `dummyJsonAdapter` / `jsonServerAdapter` | wire-format `{ buildQuery, parse }` presets for real server paging/sort - spread into `createRestDataSource` | [REST & custom APIs](./rest-api.md#adapters-for-common-apis) |
 | `createKitDataSource` | `({ endpoint })` - the SvelteKit-transport client | [REST & custom APIs](./rest-api.md) |
 
 ## Controller & transport
@@ -45,7 +46,7 @@ See [The EntitySchema](./schema.md) for the model these read.
 | `SvGridMasterDetail` | `schema`, `data`, `detailSchema`, `getChildren`, `containerHeight?`, `detailHeight?` | [Master-detail](./master-detail.md) |
 | `SvSchemaDashboard` | `schema`, `rows` \| `getAggregate`, `spec?`, `refreshKey?`, `filterModel?`, `onDrill?` | [Dashboards](./dashboards.md) |
 | `SvSchemaChart` | schema-bound chart (dimension / measure / reduce / type) | [Dashboards](./dashboards.md) |
-| `SvSchemaDesigner` | `schema`, `onChange?`, `showPreview?` | [Visual designer](./designer.md) |
+| `SvSchemaDesigner` | `schema`, `onChange?`, `showPreview?` | [Schema designer](./designer.md) (embeddable, single entity) |
 | `SvStudioDesigner` | `project`, `onChange?` | [Visual app designer](./app-designer.md) |
 | `SvLookupInput` / `createRelationLookup` | searchable foreign-key picker over any `ServerDataSource` | [Relations](./relations.md) |
 | `SvAuthGate` | `client`, `title?` | [Auth](./auth.md) |
@@ -57,6 +58,7 @@ See [The EntitySchema](./schema.md) for the model these read.
 | `createSupabaseAuth` | `({ client, onChange })` -> `{ signIn, signUp, signOut, getState, dispose }` | [Auth](./auth.md) |
 | `createSupabaseRealtime` | live refetch / row-flash on Postgres change streams | [Real-time](./realtime.md) |
 | `introspectSupabaseTable` | `({ url, key, table })` -> `EntitySchema` (reads columns + FKs) | [Supabase](./supabase.md) |
+| `listSupabaseTables` | `(url, key)` -> `string[]` (table names from the PostgREST doc) | [Supabase](./supabase.md) |
 
 ## Designer & project model
 

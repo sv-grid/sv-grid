@@ -2,6 +2,18 @@ import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
 import { screen, formScreen, schedulerScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
 
+// Industrial control-console chrome (the look of a LabVIEW / SystemLink operations
+// dashboard): a near-black rail, uppercase monospace nav labels, a cyan LED-style
+// active indicator, and a faint measurement grid over the content.
+const CONTROL_CSS = `.sv-app.theme-control .sv-app__side { background: #0a0e14; border-right: 1px solid #1b2430; }
+.sv-app.theme-control .sv-app__brandtext { color: #e6f6ff; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; text-transform: uppercase; letter-spacing: 0.08em; font-size: 14px; }
+.sv-app.theme-control .sv-app__link { color: #9fb3c8; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 4px; padding: 7px 12px; }
+.sv-app.theme-control .sv-app__link:hover { background: rgba(34, 211, 238, 0.08); color: #e6f6ff; }
+.sv-app.theme-control .sv-app__link.is-active { background: rgba(34, 211, 238, 0.14); color: #67e8f9; box-shadow: inset 3px 0 0 #22d3ee; }
+.sv-app.theme-control .sv-app__collapse, .sv-app.theme-control .sv-app__foot { color: #64798f; }
+.sv-app.theme-control .sv-app__toolbar { border-bottom: 1px solid #1b2430; }
+.sv-app.theme-control .sv-app__content { background-image: linear-gradient(rgba(34, 211, 238, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.045) 1px, transparent 1px); background-size: 28px 28px; }`
+
 const drivers: EntitySchema = {
   name: 'drivers',
   label: 'Driver',
@@ -116,7 +128,7 @@ const tripFormats: FormatRule[] = [
 export const fleet: SampleApp = {
   id: 'fleet',
   name: 'Fleet',
-  description: 'Vehicles, drivers and trips - fleet + trips dashboards (mileage/cost KPIs with a startAt sparkline, a fuel-level gauge, a type x status pivot, a cost-over-time area trend, tabbed breakdowns), filtered status-pill grids with row actions, master/detail, and rich edit forms (phone, license/VIN/plate masks, safety rating, fuel slider, livery color, datetime).',
+  description: 'Vehicles, drivers and trips - a LabVIEW / SystemLink-style operations console behind a sign-in, with fleet + trips dashboards (mileage/cost KPIs with a startAt sparkline, a fuel-level gauge, a type x status pivot, a cost-over-time area trend, tabbed breakdowns), filtered status-pill grids with row actions, master/detail, and rich edit forms (phone, license/VIN/plate masks, safety rating, fuel slider, livery color, datetime).',
   emoji: '\u{1F69A}',
   accent: '#38bdf8',
   build: () => {
@@ -125,11 +137,26 @@ export const fleet: SampleApp = {
     const tripRows = pad(trips, seed.trips, 30, { vehicleId: ids(vehicleRows), driverId: ids(driverRows) })
     return project({
       title: 'Fleetly',
-      brand: 'Fleetly',
-      accent: '#38bdf8',
+      brand: 'Fleet Ops',
+      accent: '#22d3ee',
       preset: 'carbon',
       mode: 'dark',
       footer: '',
+      // A LabVIEW / SystemLink-style operations console: dark control-room chrome.
+      appClass: 'theme-control',
+      customCss: CONTROL_CSS,
+      // Sign-in with two roles. Operators get the dispatch floor (and cannot delete);
+      // the Trips cost dashboard and the driver roster are manager-only, so they drop
+      // out of an operator's nav entirely.
+      auth: { enabled: true, protect: true },
+      access: {
+        enabled: true,
+        defaultRole: 'operator',
+        roles: [
+          { role: 'manager', screens: '*', actions: '*' },
+          { role: 'operator', screens: ['overview', 'dispatch', 'vehicle-detail', 'vehicles', 'trip-forms'], actions: ['create', 'update'] },
+        ],
+      },
       entities: [drivers, vehicles, trips],
       seed: { drivers: driverRows, vehicles: vehicleRows, trips: tripRows },
       screens: [

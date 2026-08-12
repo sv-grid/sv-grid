@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-10 from 363 pages.
+Generated 2026-08-11 from 365 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -1421,7 +1421,7 @@ pnpm add @svgrid/enterprise jszip pdfmake    # also pdf
 - [Missing features](../help/missing-features.md) - the honest gap list.
 
 <!-- =================================================================
-     /enterprise/studio  (community)
+     /enterprise/studio  (enterprise)
      ================================================================== -->
 
 # SvGrid Studio
@@ -1510,6 +1510,9 @@ from it - so a change to the schema flows everywhere at once.
 
 ![One EntitySchema drives the grid, edit form, dashboard, generated app, and every data source; author it with the visual designer, the CLI, or the AI generator.](/docs-media/studio-architecture.svg)
 
+New here? [Concepts](./studio/concepts.md) walks this picture end to end and
+defines every Studio term (screen, block, project model, managed region).
+
 ---
 
 ## Data binding options
@@ -1543,15 +1546,21 @@ your agent (Claude Code, Cursor, ...) to build a screen for a table; it calls
 `introspect_source` -> `scaffold_entity`, and the output is compile-verified
 before it's written.
 
-**3. [Visual designer](./studio/designer.md)** - `<SvSchemaDesigner>`: author the
-schema, preview the grid + form live, and click **Generate code**. For a whole
-multi-screen app, the [visual **app** designer](./studio/app-designer.md) composes
-grids, charts, dashboards, and master-detail across many entities.
+**3. [Visual app designer](./studio/app-designer.md)** - run `npx @svgrid/studio
+designer` to open the full app builder (`SvStudioDesigner`): compose grids, charts,
+dashboards, boards, schedulers, and master-detail across **many entities and
+screens**, bind each to real data, write code-behind, and click **Generate app**.
+This is the rich, multi-screen builder you see when you launch Studio.
 
-![The visual schema designer: edit fields, types, and validation on the left; live grid + edit-panel preview on the right.](/docs-media/studio-designer.png)
+![The visual app designer: a Pages and Entities rail on the left, a live grid preview with status chips in the middle, and a screen properties panel on the right.](/docs-media/studio-app-designer.png)
 
-Here a ready-made **CRM sample** is open in the app designer - KPI tiles and a
-deal-pipeline chart, all built by pointing and clicking, no code:
+Want to embed a schema editor in your **own** app instead? The
+[`<SvSchemaDesigner>`](./studio/designer.md) component is a smaller,
+**single-entity** widget - author one entity's fields + validation with a live grid
++ form preview, and you own where the schema is stored.
+
+Here a ready-made **CRM sample** is open in the app designer - a forecast dashboard
+with KPI tiles and deal-value charts, all built by pointing and clicking, no code:
 
 ![A CRM sample loaded in the visual app designer: KPI tiles (open deals, pipeline value, average deal size) and a bar chart of deal value by stage.](/docs-media/studio-sample-loaded.png)
 
@@ -1587,7 +1596,7 @@ A shippable data screen, not a stub:
 | `createSupabaseDataSource` | a `ServerDataSource` over a `supabase-js` client (browser + RLS) |
 | `createSupabaseRealtime` | live grid: refetch / flash rows on Postgres change streams ([Real-time](./studio/realtime.md)) |
 | `SvAuthGate` / `createSupabaseAuth` | secure a screen behind Supabase Auth; RLS scopes data per user ([Auth](./studio/auth.md)) |
-| `SvSchemaChart` | a chart bound to the schema; aggregates client-side or via a source's `getAggregate` (`GROUP BY`) |
+| `SvSchemaChart` | a chart bound to the schema; aggregates client-side or via a source's `getAggregate` (`GROUP BY`) ([Dashboards](./studio/dashboards.md)) |
 | `scaffoldApp` | scaffold a whole multi-entity app - nav + home + every screen |
 | `createRestDataSource` | a `ServerDataSource` over an HTTP/JSON API (overridable request/response) |
 | `introspectSupabaseTable` | detect a Supabase table's columns -> `EntitySchema`, from the browser |
@@ -1619,49 +1628,78 @@ and `pageIndex`, it emits change events, you fetch the page.
 
 ## All Studio topics
 
+Every Studio page, in reading order. The sidebar follows the same order.
+
 **Start here**
 
 - [Getting started](./studio/getting-started.md) - zero to a working CRUD screen, step by step
+- [Concepts](./studio/concepts.md) - the mental model: one `EntitySchema` drives screens, data, and code
+- [Sample apps](./studio/samples.md) - ready-made apps to open, explore, and rebind to your data
+- [Build a CRM](./studio/tutorial-crm.md) - companies, contacts, deals - a multi-entity app end to end
 
-**Data binding**
-
-- [Data binding](./studio/data-binding.md) - the `ServerDataSource` contract
-- [Databases](./studio/databases.md) - PostgreSQL, Supabase, MySQL, SQL Server, SQLite
-- [Supabase](./studio/supabase.md) - hosted Postgres, from the browser or the server
-- [Real-time](./studio/realtime.md) - live grid over Supabase change streams
-- [Drizzle schema](./studio/drizzle.md) - scaffold from a `schema.ts` file
-- [REST & custom APIs](./studio/rest-api.md) - any HTTP / bespoke backend
-- [OData & GraphQL](./studio/odata-graphql.md) - map the request to OData / GraphQL
-- [In-memory](./studio/in-memory.md) - static / prototype data
-
-**Build**
+**Three ways to build**
 
 - [The Studio CLI](./studio/cli.md) - the `add` command + all flags
-- [Visual designer](./studio/designer.md) - author schemas in a UI
+- [Launch the designer](./studio/launch.md) - `npx @svgrid/studio designer`, saved to disk as you edit
+- [Visual app designer](./studio/app-designer.md) - the full multi-screen builder (`SvStudioDesigner`)
+- [Schema designer](./studio/designer.md) - the embeddable single-entity widget (`SvSchemaDesigner`)
 - [AI generation](./studio/ai-generation.md) - the MCP server + agents
 
-**Reference**
+**Connect to data**
+
+- [Data binding](./studio/data-binding.md) - the `ServerDataSource` contract; read this one first
+- [Databases](./studio/databases.md) - PostgreSQL, Supabase, MySQL / MariaDB, SQL Server, SQLite, Turso
+- [Local database](./studio/local-database.md) - Postgres in the browser (PGlite), no server needed
+- [Supabase](./studio/supabase.md) - hosted Postgres, from the browser or the server
+- [Drizzle schema](./studio/drizzle.md) - scaffold from a `schema.ts` file
+- [Prisma schema](./studio/prisma.md) - scaffold from a `schema.prisma` file
+- [REST & custom APIs](./studio/rest-api.md) - any HTTP / bespoke backend
+- [OData & GraphQL](./studio/odata-graphql.md) - map the grid request to either protocol
+- [In-memory](./studio/in-memory.md) - static / prototype data
+
+**One-page CRUD tutorials**
+
+- [Postgres CRUD grid](./studio/postgres-grid.md) - pick this if you have a Postgres connection string
+- [Supabase CRUD grid](./studio/supabase-grid.md) - pick this if your data lives in Supabase
+- [REST CRUD grid](./studio/rest-grid.md) - pick this if you already have an HTTP API
+- [Supabase Northwind sample](./studio/supabase-sample.md) - a relational practice dataset, ready to load
+
+**Screens & features**
 
 - [The EntitySchema](./studio/schema.md) - the model everything derives from
 - [Sorting, filtering & paging](./studio/server-grid.md) - the grid's server-mode UI
 - [Edit forms & validation](./studio/edit-forms.md) - `SvGridEditPanel`
-- [Relations & master-detail](./studio/relations.md) - related entities from the schema
+- [Relations](./studio/relations.md) - foreign keys, lookup pickers, related entities from the schema
 - [Master-detail](./studio/master-detail.md) - the `SvGridMasterDetail` component
-- [Auth & secured screens](./studio/auth.md) - Supabase Auth + RLS per user
+- [Dashboards & charts](./studio/dashboards.md) - KPI tiles + `SvSchemaChart` over your entities
+- [Scheduler](./studio/scheduler.md) - a calendar view of any entity with dates
+- [Dock layout](./studio/dock-layout.md) - dockable, floatable panes for workspace screens
+- [Navigation](./studio/navigation.md) - drill-through pages and row action buttons
+- [Real-time](./studio/realtime.md) - live grid over Supabase change streams
+
+**Logic & generated code**
+
+- [Business logic](./studio/business-logic.md) - computed fields, hooks, server-enforced rules
+- [Code-behind](./studio/code-behind.md) - typed event handlers that survive regeneration
 - [Code generation](./studio/code-generation.md) - what's emitted + safe regeneration
 
-**Tutorials**
+**Auth & security**
 
-- [Supabase CRUD grid](./studio/supabase-grid.md) - a grid wired to Supabase with full create / edit / delete, in one page
-- [Build a CRM](./studio/tutorial-crm.md) - companies, contacts, deals - end to end
+- [Auth & secured screens](./studio/auth.md) - Supabase Auth + RLS per user
+- [Access control](./studio/access-control.md) - roles gating screens and write actions
+- [Audit log](./studio/audit-log.md) - a server-side change trail with a viewer screen
 
-**Deploy & style**
+**Ship it**
 
-- [Deploying a Studio app](./studio/deployment.md) - production checklist
 - [Themes & styling](./studio/theming.md) - `--sg-*` tokens, light / dark, your design system
+- [Internationalization](./studio/i18n.md) - message catalog + locale switcher
+- [Accessibility](./studio/accessibility.md) - what's handled for you and what you own
+- [Testing](./studio/testing.md) - data source, component, and end-to-end layers
+- [Deploying a Studio app](./studio/deployment.md) - production checklist
 
-**Help**
+**Reference & help**
 
+- [API index](./studio/api.md) - every Studio export, grouped by area
 - [Troubleshooting & FAQ](./studio/troubleshooting.md) - common issues + answers
 
 **Enterprise**
@@ -1669,7 +1707,7 @@ and `pageIndex`, it emits change events, you fetch the page.
 - [Licensing](./licensing.md) · [MCP server](../help/mcp-server.md) · [Evaluation](./evaluation.md)
 
 <!-- =================================================================
-     /enterprise/studio/access-control  (community)
+     /enterprise/studio/access-control  (enterprise)
      ================================================================== -->
 
 # Access control (RBAC)
@@ -1806,7 +1844,7 @@ two are complementary: keep both on for defense in depth.
 - [The visual designer](./app-designer.md) - where you author the policy
 
 <!-- =================================================================
-     /enterprise/studio/accessibility  (community)
+     /enterprise/studio/accessibility  (enterprise)
      ================================================================== -->
 
 # Accessibility
@@ -1887,7 +1925,7 @@ couple of minutes and catch what axe cannot.
 - [Themes & styling](./theming.md) - contrast + the high-contrast preset
 
 <!-- =================================================================
-     /enterprise/studio/ai-generation  (community)
+     /enterprise/studio/ai-generation  (enterprise)
      ================================================================== -->
 
 # AI generation
@@ -1951,13 +1989,48 @@ server exposes two generation tools:
 | `introspect_source` | Infer an `EntitySchema` from a Drizzle schema file (`kind:"drizzle"`) or sample JSON rows (`kind:"json"`). Returns a **draft** to review. |
 | `scaffold_entity` | Generate the SvelteKit files from an `EntitySchema`. The output is **compile-verified** (the generated page is run through the Svelte compiler) before it comes back, and each file carries `svgrid:managed` markers. |
 
+## Drive the whole project model
+
+Beyond single screens, the server exposes the full
+[project model](./concepts.md#the-project-model) - the same
+`studio.config.json` the visual designer edits - as a set of `studio_*` tools.
+Your agent can build a complete multi-screen app, or continue editing one the
+designer produced, and hand it back:
+
+| Tool | What it does |
+| --- | --- |
+| `studio_new_project` | Start a new, empty project |
+| `studio_load_project` | Load an existing `studio.config.json` to continue editing it |
+| `studio_describe_project` | Summarize the current project: entities, screens + block ids, theme, RBAC, auth, deploy |
+| `studio_get_config` | Return the project as a `studio.config.json` string - write it to disk and the designer opens it (round-trip) |
+| `studio_capabilities` | List what can be added: block kinds, UI component keys, theme presets, source kinds, deploy targets |
+| `studio_add_entity` | Add an entity + its default screen, from an `EntitySchema`, a Drizzle source, or sample JSON rows |
+| `studio_add_screen` | Add an entity-bound screen (default grid) or a freestanding page |
+| `studio_add_block` | Add a data block (grid, chart, kpi, gauge, tree, tabs, accordion, pivot, board, calendar, detail, master-detail, filter, record, lookup, dashboard) to a screen |
+| `studio_add_component` | Add a UI component block (button, badge, alert, card, stat, timeline, sparkline, chip, ...) with prop overrides |
+| `studio_set_entity_source` | Bind an entity to a data source: `sql`, `supabase`, `rest`, `pglite`, or `memory` |
+| `studio_set_theme` | Set the theme preset, light/dark mode, and accent color |
+| `studio_set_access` | Configure [RBAC](./access-control.md): roles gating screens and create/update/delete actions |
+| `studio_set_auth` | Configure the [auth starter](./auth.md): protect, register, user admin, 2FA, email, OAuth (`github` / `google` / `oidc`) |
+| `studio_set_data_layer` | Turn the typed Drizzle data layer (schema + repositories + migrations) on or off |
+| `studio_set_deploy_target` | Set `auto` / `vercel` / `netlify` / `cloudflare` / `node` - picks the adapter and emits CI/CD config |
+| `studio_validate` | Validate the current project; returns errors + warnings |
+| `studio_generate_app` | Emit the full runnable SvelteKit app - every file, ready to write and `svelte-check` |
+
+A prompt that exercises the loop end to end:
+
+> "Using the svgrid MCP: new project 'Support desk'. Add a `tickets` entity from
+> these sample rows, a dashboard screen with a KPI and a chart over tickets,
+> RBAC with an agent role that cannot delete, dark theme, then validate and
+> generate the app."
+
 ## Step by step
 
 1. **Point it at a source.** A Drizzle schema file, or a handful of sample rows.
 2. **Introspect.** The agent calls `introspect_source` and shows you the drafted
    `EntitySchema` - field names, types, primary key, guessed formats.
 3. **Refine (optional).** Correct a type, mark a field hidden or read-only, add
-   validation - in chat, or later in the [visual designer](./designer.md).
+   validation - in chat, or later in the [visual designer](./app-designer.md).
 4. **Scaffold.** The agent calls `scaffold_entity`; the files come back already
    run through the Svelte compiler.
 5. **Verify.** The agent runs your project's `svelte-check`; if anything fails it
@@ -2014,12 +2087,12 @@ notice, and the generated app carries the usual watermark until you call
 ## See also
 
 - [The Studio CLI](./cli.md) - the deterministic, no-AI path
-- [Visual designer](./designer.md) - refine an AI draft by hand before generating
+- [Visual app designer](./app-designer.md) - refine an AI draft by hand before generating
 - [Code generation](./code-generation.md) - the anatomy of the emitted files
 - [MCP server](../../help/mcp-server.md) - full MCP reference
 
 <!-- =================================================================
-     /enterprise/studio/api  (community)
+     /enterprise/studio/api  (enterprise)
      ================================================================== -->
 
 # Studio API reference
@@ -2036,9 +2109,10 @@ form, sorting, filtering, paging, and CRUD all speak.
 | Function | Signature (key options) | Guide |
 | --- | --- | --- |
 | `createInMemoryDataSource` | `(rows, schema)` | [In-memory](./in-memory.md) |
-| `createSqlDataSource` | `({ schema, table, dialect, execute, returning? })` | [Databases](./databases.md) |
+| `createSqlDataSource` | `({ schema, table, dialect, execute, dbSchema?, returning? })` - `dbSchema` qualifies the table as `"schema"."table"` | [Databases](./databases.md) |
 | `createSupabaseDataSource` | `({ client, table, schema, searchColumns? })` | [Supabase](./supabase.md) |
-| `createRestDataSource` | `({ url, schema, headers?, buildQuery?, parse? })` | [REST & custom APIs](./rest-api.md) |
+| `createRestDataSource` | `({ url, schema, headers?, query?, buildQuery?, parse? })` | [REST & custom APIs](./rest-api.md) |
+| `offsetLimitAdapter` / `dummyJsonAdapter` / `jsonServerAdapter` | wire-format `{ buildQuery, parse }` presets for real server paging/sort - spread into `createRestDataSource` | [REST & custom APIs](./rest-api.md#adapters-for-common-apis) |
 | `createKitDataSource` | `({ endpoint })` - the SvelteKit-transport client | [REST & custom APIs](./rest-api.md) |
 
 ## Controller & transport
@@ -2069,7 +2143,7 @@ See [The EntitySchema](./schema.md) for the model these read.
 | `SvGridMasterDetail` | `schema`, `data`, `detailSchema`, `getChildren`, `containerHeight?`, `detailHeight?` | [Master-detail](./master-detail.md) |
 | `SvSchemaDashboard` | `schema`, `rows` \| `getAggregate`, `spec?`, `refreshKey?`, `filterModel?`, `onDrill?` | [Dashboards](./dashboards.md) |
 | `SvSchemaChart` | schema-bound chart (dimension / measure / reduce / type) | [Dashboards](./dashboards.md) |
-| `SvSchemaDesigner` | `schema`, `onChange?`, `showPreview?` | [Visual designer](./designer.md) |
+| `SvSchemaDesigner` | `schema`, `onChange?`, `showPreview?` | [Schema designer](./designer.md) (embeddable, single entity) |
 | `SvStudioDesigner` | `project`, `onChange?` | [Visual app designer](./app-designer.md) |
 | `SvLookupInput` / `createRelationLookup` | searchable foreign-key picker over any `ServerDataSource` | [Relations](./relations.md) |
 | `SvAuthGate` | `client`, `title?` | [Auth](./auth.md) |
@@ -2081,6 +2155,7 @@ See [The EntitySchema](./schema.md) for the model these read.
 | `createSupabaseAuth` | `({ client, onChange })` -> `{ signIn, signUp, signOut, getState, dispose }` | [Auth](./auth.md) |
 | `createSupabaseRealtime` | live refetch / row-flash on Postgres change streams | [Real-time](./realtime.md) |
 | `introspectSupabaseTable` | `({ url, key, table })` -> `EntitySchema` (reads columns + FKs) | [Supabase](./supabase.md) |
+| `listSupabaseTables` | `(url, key)` -> `string[]` (table names from the PostgREST doc) | [Supabase](./supabase.md) |
 
 ## Designer & project model
 
@@ -2106,7 +2181,7 @@ options in full.
 - [SvGrid Studio overview](../studio.md)
 
 <!-- =================================================================
-     /enterprise/studio/app-designer  (community)
+     /enterprise/studio/app-designer  (enterprise)
      ================================================================== -->
 
 # Visual app designer
@@ -2119,8 +2194,8 @@ composes **screens** across **many entities**.
 
 Grid-centric by design: the blocks are schema-driven and data-bound (a grid, a
 chart, a pivot, a dashboard, a KPI, master-detail, a faceted filter panel, a
-record panel, a lookup) - not arbitrary layout components. It's the Radzen
-"database → CRUD app" idea, kept to data views.
+record panel, a lookup) - not arbitrary layout components. Point it at a
+database, get a CRUD app - kept to data views.
 
 > **Just want to open it?** `npx @svgrid/studio designer` launches this designer
 > in your browser, auto-saves your work to `studio.config.json`, and writes the
@@ -2131,7 +2206,7 @@ record panel, a lookup) - not arbitrary layout components. It's the Radzen
 
 Here is the real designer with a small Sales App open:
 
-![The visual app designer: a screens and entities rail on the left, a block palette across the top, a live grid preview in the middle, and a properties panel on the right.](/docs-media/studio-app-designer.png)
+![The visual app designer: a Pages and Entities rail on the left, Design / Code tabs above a live grid preview (a customer grid with status chips) in the middle, and a screen properties panel on the right.](/docs-media/studio-app-designer.png)
 
 You do not need to understand the internals to use it. The same layout, labelled:
 
@@ -2257,10 +2332,16 @@ views, not generic widgets:
 | **Gauge** | A radial gauge (`SvGauge`) of one reduced measure within a range - utilization, progress, scores. | Label, measure, reduce, min / max, unit. |
 | **Tree** | A hierarchical tree (`SvTree`) built from the entity's own rows via a self-referential parent. | A label field + a parent field (a row's link to its parent row). |
 | **Tabs** | A tabbed container (`SvTabs`) that **groups display blocks** into tabs - e.g. an Overview tab of KPIs + a Details tab with a chart. | Add / rename / remove tabs; per tab, add child blocks (charts, KPIs, gauges, pivots, trees). |
+| **Accordion** | A collapsible-sections container (like Tabs, stacked vertically). | Add / rename / remove sections; child blocks per section. |
 | **Master / detail** | A row that expands into a nested grid of related records. | Child entity + foreign key. |
+| **Board** | A kanban board of the entity's rows, one lane per value of a group-by field, with drag between lanes. | Group-by, card title / subtitle / badge fields, open-screen drill. |
+| **Calendar** | A month event-calendar: each row with a date lands on its day, labelled and optionally color-coded. | Date field, title field, color field, open-screen drill. |
+| **Detail** | A full record "detail page": header, metric row, field sections, and related-record tabs - the 360 view a row action or drill-through opens. | Title / subtitle / status / metric fields, sections, related child entities. |
+| **Form** | A standalone create / edit form for the entity. | Presentation (drawer / modal / inline). |
 | **Filter panel** | A faceted sidebar that **filters the screen's grid** - enum / boolean facets pick a value, text facets search. | Title + which fields become facets. |
 | **Record panel** | Shows the row **selected in the grid** - a read-only field list, or an inline edit form. | Editable on / off, and (read-only) which fields to show. |
 | **Lookup** | Marks a relation field as a searchable picker in the edit form. | The relation field. |
+| **UI component** | A component from the SvGrid UI kit (button, badge, alert, card, stat, timeline, sparkline, chip, ...) dropped from the toolbox - entity-agnostic, works on freestanding pages too. | The component's own props, plus data bindings. |
 
 The **filter** and **record** panels wire to the grid on the same screen: the
 filter panel calls the grid controller's `setFilter`, and clicking a grid row
@@ -2299,30 +2380,43 @@ section binds the screen's entity to:
   running in the browser and saved to IndexedDB, so rows survive reloads with zero
   backend. Same SQL as production - swap to a hosted **SQL** source later without
   touching the schema. See [Local database](./local-database.md).
-- **REST API** - a spacious request builder (Open request builder): **method**,
-  **base URL**, **path** (path params auto-derive from `{tokens}`), and **Query /
-  Path / Header** tabs. **Send** runs it live and shows a **response table** plus
-  the real rows in the canvas grid; **Import fields** rewrites the entity's schema
-  to match the response keys. A **rows path** / **total path** maps a nested body.
-- **Supabase** - its own builder dialog (Open Supabase builder): project URL +
-  anon key + table, with the same **Fetch sample** / **Import fields** flow (reads
-  rows via the public anon key, browser-safe). **Generate app** emits a real
-  `createClient(url, anonKey)` in `connections.ts` and adds `@supabase/supabase-js`
-  to the app, so it runs against Supabase with no manual wiring (access is
-  protected by your RLS policies).
-- **SQL** - its own builder dialog (Open SQL builder): table + dialect. SQL runs
-  server-side (a driver + credentials can't live in the browser), so there's no
-  live preview. **Generate app** emits a connected `src/routes/api/<table>/+server.ts`
-  (the dialect's driver, reading `DATABASE_URL`) and points the grid at it; the
-  driver dep is added for you. Set `DATABASE_URL` in `.env`. To scaffold from an
-  existing DB instead: `npx @svgrid/studio add <table> --db <dialect> --url …`.
+  The builder is a draggable, resizable, maximizable panel, and you can open it for
+  any entity straight from the **Data model** dialog's **Configure** button.
+
+- **REST API** - a request builder: **method**, **base URL**, **path** (path
+  params auto-derive from `{tokens}`), and **Query / Path / Header** tabs. **Send**
+  runs it live and shows a **response table** plus the real rows in the canvas
+  grid; **Import fields** rewrites the entity's schema to match the response keys.
+  An **API format** picker (Manual / Offset + Limit / DummyJSON / json-server)
+  wires a wire-format adapter so the grid does **real server-side paging and sort**;
+  Manual keeps the rows-path / total-path mapping for a single fetched page.
+- **Supabase** - **List tables** reads your project's tables so you pick one, and
+  **Import schema** pulls its real columns, primary key, foreign keys, and enums
+  into the entity; **Preview** shows live rows (works in the online designer, since
+  Supabase is HTTP). The project **URL + anon key are a shared connection** you set
+  once for every Supabase entity. A **Live updates (Realtime)** toggle emits a live
+  subscription. **Generate app** emits `createClient` in `connections.ts` reading
+  `PUBLIC_SUPABASE_URL` / `PUBLIC_SUPABASE_ANON_KEY` from `.env` (the key is never
+  inlined) and adds `@supabase/supabase-js`; access is protected by your RLS
+  policies.
+- **SQL** - paste a connection string (the dialect is auto-detected) or fill the
+  guided form, set the **Schema** (Postgres search path). In the **local** designer
+  (`npx @svgrid/studio designer`) **Preview data** runs a real `SELECT` and shows
+  your actual rows on the canvas, and a missing `pg` / `mysql2` / ... driver is a
+  **one-click install**. **Generate app** emits a connected
+  `src/routes/api/<table>/+server.ts` (the dialect's driver, reading
+  `DATABASE_URL`) and points the grid at it; the driver dep is added for you. In
+  the **online** designer, bind the entity and generate - the app connects for real
+  at runtime. To scaffold from an existing DB via CLI: `npx @svgrid/studio add
+  <table> --db <dialect> --url …`.
 
 **Generate app** then emits the matching adapter per entity in `src/lib/data.ts`
 (`createRestDataSource` / `createSqlDataSource` / `createSupabaseDataSource` /
-`createInMemoryDataSource`). SQL and Supabase entities read their connection from
-a generated `src/lib/connections.ts` - the one manual step is wiring a real
-`SqlExecutor` / Supabase client there (you can't ship DB credentials to the
-browser). See [Databases](./databases.md) and [REST API](./rest-api.md).
+`createInMemoryDataSource`). SQL and Supabase entities read their connection from a
+generated `src/lib/connections.ts` (or the `+server.ts` route) - the SQL driver and
+the Supabase client are wired for you; the only manual step is setting the
+connection in `.env` (the bundle ships a `.env.example`). See
+[Databases](./databases.md) and [REST API](./rest-api.md).
 
 ## Import a CSV / spreadsheet
 
@@ -2351,6 +2445,10 @@ all client-side: `csvToEntity(name, text)` is a pure function exported from
 - **Pages** - each screen is a route. In the inspector's **Page** section, toggle
   **Show in navigation**, set a **nav label** and **nav order**, or start a page
   from the **Empty** template. Hidden pages stay routable but drop out of the nav.
+- **Render mode** - eligible screens (a single plain grid, or read-only block
+  screens, on a memory / SQL source) can switch from the default client page to
+  **SSR**: an idiomatic `+page.server.ts` with `load` + form actions. The rules
+  are in [Code generation](./code-generation.md#render-mode-spa-or-ssr-per-screen).
 - **App layout** - the rail's **App layout** section themes the generated shell:
   **Sidebar** or **Top navigation**, a **brand** name, a **company logo**
   (uploaded - stored inline and shown in the nav in place of the brand text), a
@@ -2406,6 +2504,7 @@ const files = emitStudioProject(project) // [{ path, contents, description }, ..
 
 ## See also
 
+- [Code behind (Code view)](./code-behind.md) - write TypeScript against a typed `ctx` (grid API, events, `ctx.grid.sortable = true`, lifecycle)
 - [Sample apps + bind your data](./samples.md) - start from a ready-made app, then point it at your database
 - [Launch the designer](./launch.md) - `npx @svgrid/studio designer` (auto-save + generate to a folder)
 - [Schema designer](./designer.md) - author a single entity
@@ -2413,7 +2512,7 @@ const files = emitStudioProject(project) // [{ path, contents, description }, ..
 - [CLI](./cli.md) / [Drizzle](./drizzle.md) / [Prisma](./prisma.md) - import a schema to design from
 
 <!-- =================================================================
-     /enterprise/studio/audit-log  (community)
+     /enterprise/studio/audit-log  (enterprise)
      ================================================================== -->
 
 # Audit trail
@@ -2512,7 +2611,7 @@ Now the trail survives restarts and is queryable like any other table, and the
 - [Databases](./databases.md) - persist the trail in SQL / Supabase
 
 <!-- =================================================================
-     /enterprise/studio/auth  (community)
+     /enterprise/studio/auth  (enterprise)
      ================================================================== -->
 
 # Auth & secured screens
@@ -2527,6 +2626,46 @@ signed-in user; RLS policies decide which rows that user can read and write.
 > - the grid sits behind a login (mock auth; any email + password).
 
 ---
+
+## In the designer (no code)
+
+In the designer, open **Authentication**, turn it on, and set **Provider** to
+**Supabase Auth**. Studio then wraps the whole app in `SvAuthGate` over the shared
+Supabase client (from `connections.ts`) - email/password sign-in, sign-up, and
+sign-out - and skips the built-in cookie-session scaffold entirely. It needs a
+Supabase connection (set the shared project URL / anon key, or bind an entity to
+Supabase); the designer flags it if one is missing.
+
+Because Supabase Auth signs in **on the client**, it does not populate a
+server-side role, so it does not drive server route guards. Enforce per-user
+access with **Row-Level Security** on your tables (below) - that is the right
+model with Supabase anyway. The other provider, **Built-in**, is the
+dependency-free cookie-session starter with server-side roles; pick that when you
+want RBAC route guards without Supabase.
+
+## The built-in auth starter
+
+**Provider: Built-in** generates a complete, dependency-free auth stack the app
+owns: cookie sessions, a login screen, server-side route guards, and its own
+user store - no external service. It is what powers
+[access control](./access-control.md) role checks on the server. The options,
+all toggles in the designer's **Authentication** panel (or
+[`studio_set_auth`](./ai-generation.md#drive-the-whole-project-model) from an
+agent):
+
+| Option | What it adds |
+| --- | --- |
+| **Protect** | Require sign-in for every screen (route guards, not just hidden nav). |
+| **Register** | Self-service sign-up, with new users landing in the default role. |
+| **User admin** | An admin **Users** screen: create users, assign roles, reset passwords. Needs RBAC enabled. |
+| **OAuth** | Sign in with **GitHub**, **Google**, or any **OIDC** provider, next to email + password. |
+| **Two-factor** | Email-code second factor at sign-in. |
+| **Email** | Real email delivery (Resend or SMTP) for verification / reset / 2FA codes; without it, codes land in the server log for development. |
+
+Register, user admin, OAuth, and two-factor persist users in your database, so
+they need the **Drizzle data layer** enabled and a SQL-bound entity; the
+designer points this out when a prerequisite is off. Seed users per role can be
+defined in the panel so a fresh app has accounts to sign in with.
 
 ## Gate the UI with `SvAuthGate`
 
@@ -2616,7 +2755,7 @@ create policy "admins delete" on customers
 - [Deploying a Studio app](./deployment.md)
 
 <!-- =================================================================
-     /enterprise/studio/business-logic  (community)
+     /enterprise/studio/business-logic  (enterprise)
      ================================================================== -->
 
 # Computed fields & hooks
@@ -2760,6 +2899,27 @@ validate: ({ action, values, event }) =>
 > server-validated out of the box. This pairs with [RBAC](./access-control.md),
 > which adds the `authorize` guard on the same route.
 
+## No-code triggers in the designer
+
+Everything above is code you write. The designer offers the same power as
+**Triggers** on an entity - no-code server-side rules that compile into the
+generated route's hooks. Six events, matching the hook points:
+`beforeCreate`, `afterCreate`, `beforeUpdate`, `afterUpdate`, `beforeDelete`,
+`afterDelete`. Each event holds a list of steps:
+
+| Step | What it does |
+| --- | --- |
+| **Set field** | Assign a value (a literal, another field, or an expression) - a transform before the write. |
+| **Require field** | Reject the write when a field is empty, with your message. |
+| **Reject when** | Reject the write when a condition holds - a cross-field guard. |
+| **Branch** | If / else over a condition, each side its own step list. |
+| **Code** | Escape hatch: a snippet for anything the steps cannot say. |
+
+Before-hooks transform and validate; after-hooks are for side effects. The
+steps are stored in the project model and enforced **on the server route** of
+SQL-bound entities - the same place `validate: true` runs - so they hold even
+against direct API calls.
+
 ## A worked example
 
 Computed `subtotal` / `tax` / `total`, a cross-field guard, and a delete veto -
@@ -2813,7 +2973,7 @@ Live demo: [Computed fields & hooks](https://svgrid.com/#/demos/199-studio-compu
 - [Dashboards](./dashboards.md) - schema-driven KPI + chart views
 
 <!-- =================================================================
-     /enterprise/studio/cli  (community)
+     /enterprise/studio/cli  (enterprise)
      ================================================================== -->
 
 # The Studio CLI
@@ -2908,6 +3068,21 @@ output is available programmatically as
 [`scaffoldApp(schemas, options)`](./code-generation.md) from `@svgrid/enterprise/studio`,
 fed by `introspectDrizzleAll` / `introspectPrismaAll`.
 
+## The other commands
+
+`designer` and `add` are the daily drivers; the binary has four more:
+
+| Command | What it does |
+| --- | --- |
+| `svgrid-studio dev` | The designer and the **running generated app side by side** - the designer writes real files into the app folder and Vite hot-reloads them. `--app-port <n>` sets the app's port. |
+| `svgrid-studio openapi <file\|url>` | Import an OpenAPI (JSON) spec: paths + schemas become entities with REST sources in `studio.config.json`. See [REST & custom APIs](./rest-api.md). |
+| `svgrid-studio eject [--fragment]` | Write the full app (or, with `--fragment`, a drop-in set of files for an existing app) from `studio.config.json` without opening the designer. |
+| `svgrid-studio deploy [--target <p>] [--dry-run]` | Build, then deploy through the provider's own CLI. Target: `vercel` \| `netlify` \| `cloudflare` \| `node`, resolved from the flag, the config, or `svelte.config.js`. `--dry-run` prints the commands. |
+
+Useful `designer` flags beyond the basics: `--template crm|ecommerce|projects|support`
+opens a [sample app](./samples.md) directly, and `--ai` enables the built-in
+copilot (reads `ANTHROPIC_API_KEY` from the environment).
+
 ## Safe regeneration
 
 Every generated file wraps its body in `svgrid:managed` markers. Re-running
@@ -2933,17 +3108,153 @@ is part of the [Enterprise license](../licensing.md) (soft-gate).
 
 - [Databases](./databases.md) · [Drizzle schema](./drizzle.md)
 - [AI generation](./ai-generation.md) - the same engine, driven by an AI agent
-- [Visual designer](./designer.md) - the same engine, driven by a UI
+- [Visual app designer](./app-designer.md) - the same engine, driven by a UI
 
 <!-- =================================================================
-     /enterprise/studio/code-generation  (community)
+     /enterprise/studio/code-behind  (enterprise)
+     ================================================================== -->
+
+# Code behind (Code view)
+
+The visual designer covers layout, data, validation, and no-code business rules.
+When you need real logic - run something on load, react to a click, change a grid
+option at runtime - open a screen's **Code view** and write TypeScript against a
+typed **`ctx`** object. Your code lives in a user-owned file (`handlers.ts`) that
+regeneration never overwrites, and `ctx` is fully typed by a generated
+`page-context.ts`, so autocomplete offers every block and every grid operation on
+the screen.
+
+Code behind complements the no-code layers - it does not replace them. Prefer
+[computed fields & hooks](./business-logic.md) for data rules and the visual
+Methods panel for simple actions; drop into code when you want the full API.
+
+![The Code view: handlers.ts open on an onLoad handler with insert snippets, and a "ctx gives you" rail listing the typed handle for every block on the screen.](/docs-media/studio-code-behind.png)
+
+> **Where it runs.** Your `onLoad` runs both in the designer's **full-screen
+> preview** (click **Preview**) and in the generated app - `ctx.grid.setSort(...)`,
+> `ctx.grid.sortable = true`, and friends drive the real grid in both. It does
+> **not** run on the static design canvas (that just renders your blocks), so open
+> the preview to see code-behind take effect.
+
+## The `ctx` object
+
+Every handler receives one argument, `ctx` (`PageContext`). It exposes a typed
+handle per block on the screen, plus a few page-level batteries:
+
+- **`ctx.grid`** - the grid's full imperative `SvGridApi`. Call any operation
+  (`ctx.grid.exportCsv()`, `ctx.grid.setFilter(...)`, `ctx.grid.addRow(...)`,
+  `ctx.grid.selectCells(...)`, `ctx.grid.startEditing(...)`, `ctx.grid.setSort(...)`),
+  subscribe to grid events, and set grid options live (both below).
+- **`ctx.<chart>` / data-viz handles** - `setData(rows)` to feed a chart or KPI
+  your own rows, `.rows` to read them, `clear()` to follow the screen data again.
+- **`ctx.<component>` / UI handles** - for a button, input, etc.:
+  `ctx.button1.setLabel('Save')`, `ctx.button1.set('variant', 'danger')`,
+  `ctx.button1.onclick = fn`.
+- **`ctx.data`** - the screen's dataset. On an entity screen with a grid:
+  `ctx.data.rows` (the current page) and `ctx.data.reload()`. On a freestanding
+  data grid the page owns its rows: `ctx.data.setRows(rows)` and `ctx.data.rows`.
+- **`ctx.goto(path)`** - navigate to another route.
+- **`ctx.params`** - the page's URL query params (`Record<string, string>`).
+
+## Change grid options at runtime
+
+You can set any grid option through `ctx.grid` and it takes effect immediately:
+
+```ts
+ctx.grid.sortable = true
+ctx.grid.zebraRows = false
+ctx.grid.density = 'compact'
+if (ctx.grid.editable) { /* reads work too */ }
+```
+
+Why not just re-render `<SvGrid sortable={...}>`? In Svelte 5 a component's props
+are **one-way** - the parent owns them, and a child can't assign back to a prop it
+received. So Studio routes `ctx.grid.<prop> = value` to the grid API's
+**`setOption`** (a reactive override the grid applies on top of its props), and
+reads route to **`getOption`**. The upshot: you flip options from code without
+re-wiring the template, and it type-checks and autocompletes because the settable
+surface is generated from the grid's real option list.
+
+The same `setOption` / `getOption` methods exist on `SvGridApi` directly if you
+hold your own reference outside Studio:
+
+```ts
+api.setOption('sortable', true)
+api.getOption('density')
+api.resetOptions()   // drop all overrides, back to the props
+```
+
+## Subscribe to grid events
+
+Assign an `on<Event>` on the grid handle to react to what the user does:
+
+```ts
+ctx.grid.onRowClick = (e) => ctx.goto(`/orders/${e.row.id}`)
+ctx.grid.onCellValueChanged = (e) => console.log('edited', e.field, e.newValue)
+```
+
+Your handler runs alongside any behavior the designer already wired for that event
+(they compose - yours doesn't clobber the built-in one). Event params are typed
+with the screen's row type.
+
+## Lifecycle: `onLoad` and `onDestroy`
+
+The two screen lifecycle hooks live in `handlers.ts`. `onLoad` runs when the
+screen mounts (after the grid API is ready); `onDestroy` on unmount - use it to
+tear down anything you started.
+
+```ts
+// src/routes/orders/handlers.ts
+import type { PageContext } from './page-context'
+
+export function onLoad(ctx: PageContext) {
+  // Deep-link: /orders?status=open -> filter + a tighter layout.
+  const status = ctx.params.status
+  if (status) {
+    ctx.grid.setFilter({ columns: { status: { operator: 'equals', value: status } } })
+    ctx.grid.density = 'compact'
+  }
+}
+
+export function onDestroy(_ctx: PageContext) {
+  // clean up timers / subscriptions started in onLoad
+}
+```
+
+A button's click handler (wired in the designer, or by name here) gets the same
+`ctx`:
+
+```ts
+export function refresh(ctx: PageContext) {
+  ctx.button1.setLabel('Refreshing…')
+  ctx.data.reload()
+}
+```
+
+## Regeneration-safe
+
+`handlers.ts` is **yours** - the generator never rewrites it. `page-context.ts`
+(the `ctx` type) and the screen markup are regenerated from the model, so they
+stay in sync with the blocks you add in the designer, while your logic survives.
+Keep custom helpers in their own modules and import them; don't edit inside the
+`svgrid:managed` markers of the generated screen. See
+[Code generation](./code-generation.md).
+
+## See also
+
+- [App designer](./app-designer.md) - the visual layout + data binding
+- [Computed fields & hooks](./business-logic.md) - no-code data rules
+- [Studio API reference](./api.md) - the enterprise symbols the generated app uses
+
+<!-- =================================================================
+     /enterprise/studio/code-generation  (enterprise)
      ================================================================== -->
 
 # Code generation
 
 Studio generates plain SvelteKit code you own - there is no runtime and no
 lock-in. The same `scaffold()` core powers the [CLI](./cli.md), the
-[AI generator](./ai-generation.md), and the [visual designer](./designer.md), so
+[AI generator](./ai-generation.md), and the [visual designer](./app-designer.md), so
 all three emit identical files.
 
 ![The generated files: schema module, +server.ts API route, and +page.svelte screen, with svgrid:managed markers.](/docs-media/studio-generated-code.png)
@@ -3048,6 +3359,32 @@ The generated `+server.ts` backend depends on how you scaffold:
 
 See [Databases](./databases.md) and [Data binding](./data-binding.md).
 
+## Render mode: SPA or SSR per screen
+
+By default a generated screen is a client page (`spa`): the browser talks to
+the API route through the data-source controller. In the
+[app designer](./app-designer.md), a screen can instead opt into **`ssr`**,
+which emits idiomatic server-rendered SvelteKit - a `+page.server.ts` with a
+`load` function and form `actions`, URL-driven sort / filter / page state, and
+progressive enhancement.
+
+Not every screen shape can emit as SSR. The rules:
+
+- The screen must be entity-bound, without a [code-behind](./code-behind.md)
+  companion.
+- Its data source must be `memory` (runs in-process) or `sql` (reuses the
+  connected `/api` route via `event.fetch`); `rest`, `supabase`, and `pglite`
+  screens stay SPA.
+- **A single plain grid** emits as load + form actions (no tree data, no
+  scheduler view).
+- **Read-only block screens** - any mix of chart, pivot, dashboard, KPI, gauge,
+  tree, detail, and master-detail - emit as a load-only page.
+- Anything else (boards, calendars, UI component blocks, containers,
+  grids with extras) stays SPA.
+
+The designer only offers the toggle when the screen qualifies; a screen set to
+`ssr` that stops qualifying falls back to the SPA emit.
+
 ## Verification
 
 The AI path compiles the generated page (via the Svelte compiler) before handing
@@ -3059,10 +3396,112 @@ npx svelte-check
 
 ## See also
 
-- [The Studio CLI](./cli.md) · [AI generation](./ai-generation.md) · [Visual designer](./designer.md)
+- [The Studio CLI](./cli.md) · [AI generation](./ai-generation.md) · [Visual app designer](./app-designer.md)
 
 <!-- =================================================================
-     /enterprise/studio/dashboards  (community)
+     /enterprise/studio/concepts  (enterprise)
+     ================================================================== -->
+
+# Concepts
+
+The mental model behind Studio: one `EntitySchema` drives the screens, the data
+binding, and the generated code. This page walks that pipeline once, defines
+every Studio term, and ends with a table for picking which build tool fits how
+you work. Ten minutes here makes every other Studio page shorter.
+
+![One EntitySchema drives the grid, edit form, dashboard, generated app, and every data source; author it with the visual designer, the CLI, or the AI generator.](/docs-media/studio-architecture.svg)
+
+## The pipeline
+
+Everything in Studio is one flow, left to right:
+
+1. **An `EntitySchema` describes your data.** Field names, types, validation,
+   labels, relations. You get one by introspection (a live database table, a
+   Drizzle or Prisma schema file, an OpenAPI spec, a CSV, sample JSON) or by
+   authoring it in the designer. See [The EntitySchema](./schema.md).
+2. **Screens arrange blocks over entities.** A screen is one route in your app.
+   It holds blocks - a grid, a chart, a KPI tile, a board, a calendar - each
+   bound to an entity. The visual [app designer](./app-designer.md) is where
+   you compose them; the CLI and AI produce the same structures.
+3. **A `ServerDataSource` moves the data.** Read, create, update, delete - one
+   small contract that every backend implements (SQL databases, Supabase,
+   REST, in-memory, Postgres-in-the-browser). Sorting, filtering, paging, and
+   editing work identically no matter where the data lives. See
+   [Data binding](./data-binding.md).
+4. **Codegen writes real SvelteKit files.** The schema, a `+server.ts` API
+   route, and a `+page.svelte` screen - plain code you own, no runtime, no
+   proprietary host. Generated sections sit inside `svgrid:managed` region
+   markers, so re-generating updates them without touching your edits. See
+   [Code generation](./code-generation.md).
+
+![How a grid request flows: the grid emits sort / filter / page events, the ServerDataSource turns them into one query, the backend answers with rows + count.](/docs-media/studio-data-flow.svg)
+
+A change flows forward automatically: add a field to the schema and the grid
+column, the form input, its validation, and the generated code all pick it up.
+
+## The project model
+
+The designer edits a single JSON document - the **project** - with this shape:
+
+- **project** - title, theme, default data source, plus optional
+  [auth](./auth.md), [access control](./access-control.md),
+  [audit](./audit-log.md), [i18n](./i18n.md), and deploy settings.
+  - **entities** - one `EntitySchema` per table / collection.
+  - **screens** - one per route. Each screen has:
+    - **blocks** - the data-bound building pieces (grid, form, chart,
+      dashboard, kpi, gauge, tree, tabs, accordion, master-detail, lookup,
+      pivot, filter, record, board, calendar, detail, component).
+    - a **layout** - `grid` (12-column flow, the default), `stack`, `split`
+      (resizable panes), `dock` (dockable / floatable panes, see
+      [Dock layout](./dock-layout.md)), or `canvas` (free-form placement on a
+      12-column cell grid).
+    - a **render mode** - `spa` (default; the page fetches through the data
+      source in the browser) or `ssr` (emits idiomatic SvelteKit
+      `+page.server.ts` load + form actions).
+    - optional **code-behind** - a user-owned `handlers.ts` companion for
+      event handlers, written once and never regenerated.
+
+When you run the [local designer](./launch.md), the project auto-saves to
+`studio.config.json` in your working folder as you edit; **Generate app** turns
+it into the SvelteKit project. The same file is what the
+[MCP tools](./ai-generation.md) read and write, so a coding agent and the
+designer can work on one project interchangeably.
+
+## Glossary
+
+| Term | Meaning |
+| --- | --- |
+| **EntitySchema** | The model of one entity: fields, types, validation, labels, relations. Everything else derives from it. [Schema](./schema.md) |
+| **Screen** | One route / page of the generated app; holds blocks and a layout. [App designer](./app-designer.md) |
+| **Block** | A data-bound piece placed on a screen: grid, chart, KPI, board, calendar, and so on. [App designer](./app-designer.md) |
+| **Companion block** | A block that works alongside a grid on the same screen and shares its data, like a filter panel or a record panel. [App designer](./app-designer.md) |
+| **Project model** | The single JSON document (`studio.config.json`) holding entities, screens, sources, theme, auth. This page, above |
+| **ServerDataSource** | The read + create + update + delete contract every backend implements. [Data binding](./data-binding.md) |
+| **Managed region** | A `svgrid:managed` marker pair in a generated file; regeneration rewrites only what is inside. [Code generation](./code-generation.md) |
+| **Code-behind** | A user-owned `handlers.ts` next to a generated screen for typed event handlers; created once, never overwritten. [Code-behind](./code-behind.md) |
+| **Scaffold** | The codegen step: schema in, SvelteKit files out. Shared by the CLI, the designer, and the AI path. [CLI](./cli.md) |
+| **Introspection** | Reading an existing source (database table, Drizzle / Prisma schema, OpenAPI spec, CSV) to produce an `EntitySchema`. [Databases](./databases.md) |
+| **Soft gate** | Enterprise licensing without a hard stop: unlicensed use shows a watermark and a console notice, nothing breaks. [Licensing](../licensing.md) |
+
+## Which tool when
+
+All three build paths share one scaffold core and produce the same output, so
+this is a workflow choice, not a feature choice - and you can switch anytime.
+
+| Tool | Pick it if | Page |
+| --- | --- | --- |
+| **CLI** - `npx @svgrid/studio add ...` | you want one deterministic command per screen, in scripts or CI, no AI involved | [The Studio CLI](./cli.md) |
+| **AI via MCP** - `@svgrid/mcp` | you already work in a coding agent (Claude Code, Cursor, ...) and want to describe screens in plain language | [AI generation](./ai-generation.md) |
+| **Visual designer** - `npx @svgrid/studio designer` | you want to see the app while composing it, or you are not writing code at all | [Visual app designer](./app-designer.md) |
+
+## See also
+
+- [Getting started](./getting-started.md) - build your first screen step by step
+- [Data binding](./data-binding.md) - the `ServerDataSource` contract in detail
+- [Code generation](./code-generation.md) - the emitted files and safe regeneration
+
+<!-- =================================================================
+     /enterprise/studio/dashboards  (enterprise)
      ================================================================== -->
 
 # Dashboards
@@ -3200,11 +3639,11 @@ Live demo: [Dashboard](https://svgrid.com/#/demos/200-studio-dashboard).
 
 ## See also
 
-- [Chart](./studio.md#three-ways-to-build) · `SvSchemaChart`
+- [Chart](../studio.md#three-ways-to-build) · `SvSchemaChart`
 - [Computed fields & hooks](./business-logic.md) · [Server grid](./server-grid.md)
 
 <!-- =================================================================
-     /enterprise/studio/data-binding  (community)
+     /enterprise/studio/data-binding  (enterprise)
      ================================================================== -->
 
 # Data binding
@@ -3304,6 +3743,43 @@ Wire it to the grid's native server-mode UI and you are done:
   onPaginationChange={({ pageIndex, pageSize }) => ...} />
 ```
 
+## Bind data in the designer (no code)
+
+You don't have to write any of the above by hand. In the visual designer, open
+**Data model**, and each entity has a **Data source** dropdown - In-memory, Local
+database, SQL, Supabase, or REST. Every option carries a one-line description so
+it's clear which to pick:
+
+![The Data model dialog: each entity (Customer, Deal) shows its fields and a Data source dropdown with a plain-language description, plus the relationships between them.](/docs-media/studio-data-model.png)
+
+- **In-memory** - seeded sample data, zero setup. Best for designing and demos.
+- **Local database** - a real Postgres that runs in the browser (PGlite), saved
+  on the machine. No server, no sign-up.
+- **Supabase** - a free hosted Postgres with a web dashboard; works right in the
+  browser via its REST API.
+- **SQL** - your own Postgres / MySQL / SQL Server / SQLite database.
+- **REST** - an existing web API that returns JSON.
+
+Pick a remote source (SQL / Supabase / REST) and a **Configure** button opens a
+focused builder - a draggable, resizable, maximizable panel - where you enter the
+connection, **preview your real rows**, and (for SQL / Supabase) **import the
+table's columns** into the entity. The preview feeds the design canvas, so the
+grid you are laying out shows your actual data.
+
+### Online designer vs. the local designer
+
+A web browser can't open a raw TCP connection to Postgres / MySQL / SQL Server,
+and the database driver is a server-side package. So **live SQL preview and the
+"Connect database" wizard only run in the local designer** (`npx @svgrid/studio
+designer`), which starts a small Node server that holds the drivers. In the
+**online** designer you still bind an entity to SQL (dialect + table + schema) and
+**Generate app** - the generated app connects to your database for real through
+its own `DATABASE_URL` route.
+
+**Supabase and REST work live in the online designer too**, because both are
+reachable over HTTP from the browser. If you want a real database inside the
+online designer with zero setup, pick **Supabase** or **Local database**.
+
 ## Choose a binding
 
 | Option | Guide |
@@ -3325,7 +3801,7 @@ methods above directly - see [REST & custom APIs](./rest-api.md).
 - [Databases](./databases.md)
 
 <!-- =================================================================
-     /enterprise/studio/databases  (community)
+     /enterprise/studio/databases  (enterprise)
      ================================================================== -->
 
 # Databases
@@ -3412,32 +3888,11 @@ The generated route is identical to PostgreSQL above.
 
 ### With the `supabase-js` client (RLS + auth)
 
-Prefer the Supabase client so row-level security and auth are enforced per user?
-Keep the schema, grid, and form, and back them with a `ServerDataSource` built on
-`supabase-js`:
-
-```ts
-import { createClient } from '@supabase/supabase-js'
-import type { ServerDataSource, ServerRequest } from '@svgrid/grid'
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-export const customersSource: ServerDataSource<Customer> = {
-  async getRows(req: ServerRequest) {
-    let q = supabase.from('customers').select('*', { count: 'exact' })
-    if (req.filterModel.global) q = q.ilike('name', `%${req.filterModel.global}%`)
-    for (const s of req.sortModel) q = q.order(s.id, { ascending: !s.desc })
-    const { data, count } = await q.range(req.startRow, req.endRow - 1)
-    return { rows: data ?? [], rowCount: count ?? 0 }
-  },
-  createRow: (input) => supabase.from('customers').insert(input).select().single().then((r) => r.data),
-  updateRow: (id, patch) => supabase.from('customers').update(patch).eq('id', id).select().single().then((r) => r.data),
-  deleteRow: (id) => supabase.from('customers').delete().eq('id', id).then(() => undefined),
-}
-```
-
-RLS policies then apply automatically. See [REST & custom APIs](./rest-api.md)
-for the pattern in full.
+Prefer the Supabase client so row-level security and auth are enforced per
+user? Use `createSupabaseDataSource` from the browser - no server route at all.
+The **[Supabase guide](./supabase.md)** is the canonical walkthrough for that
+path (keys, RLS policies, and the ready-made source); this page only covers the
+connection-string route above.
 
 ---
 
@@ -3511,6 +3966,39 @@ const client = createClient({ url: env.DATABASE_URL ?? '', authToken: env.DATABA
 execute: async (text, params) => (await client.execute({ sql: text, args: params })).rows,
 ```
 
+## Connect a database in the designer
+
+Prefer clicking to typing CLI flags? The **local** designer (`npx @svgrid/studio
+designer`) has a **Connect database** wizard that does the same job visually:
+
+1. **Pick a dialect** (PostgreSQL / MySQL / SQL Server / SQLite / Supabase /
+   Turso) and enter the connection. A guided form collects host, port, database,
+   user, password, and SSL and assembles the string for you - or paste a full
+   connection string on the string tab. For MySQL that string is
+   `mysql://user:pass@host:3306/db`; passwords and every credential stay
+   server-side and go only to `.env`.
+2. **Test connection** proves it works and shows the real row count per table.
+3. **Pick tables**, and hit **Preview** on any of them to see actual rows before
+   you import - a quick way to confirm you're pointed at the right database.
+4. **Add entities** reads the chosen tables' columns (types, primary key, foreign
+   keys) into schemas and binds each to its SQL table.
+
+Missing the driver? When a connect or preview fails because `pg` / `mysql2` /
+`mssql` / `better-sqlite3` isn't installed, the wizard offers a **one-click
+install** (it runs your project's package manager) and retries.
+
+Already have entities? Open a SQL entity's **Configure** builder, paste a
+connection string (the dialect is auto-detected), set the **Schema** (Postgres
+search path, default `public`), and **Preview data** to load real rows onto the
+canvas.
+
+> **Online vs. local.** Live connect / test / preview need the local designer,
+> because a browser can't reach a raw SQL database and the driver is a server-side
+> package. In the **online** designer you bind the entity (dialect + table +
+> schema) and **Generate app** - the app connects for real at runtime via
+> `DATABASE_URL`. Want a live database inside the online designer? Use
+> **[Supabase](./supabase.md)** or the **[Local database](./local-database.md)**.
+
 ## One-click hosted database (from the designer)
 
 Don't have a database yet? The designer's **Get a database** button provisions one
@@ -3575,6 +4063,13 @@ This lists the base tables and generates a screen (and route) for each.
   number, bool/bit -> boolean, timestamp -> datetime, date -> dateString, json ->
   json, else text). Refine anything in the schema file or the
   [visual designer](../studio.md#three-ways-to-build).
+- **Non-default schema**: to read a table outside the default namespace (Postgres
+  `public`, SQL Server `dbo`), pass **`dbSchema`** to `createSqlDataSource` - the
+  table is then addressed as `"schema"."table"`, each part quoted separately:
+  ```ts
+  createSqlDataSource({ schema: ordersSchema, table: 'orders', dbSchema: 'analytics', /* ... */ })
+  ```
+  In the designer, set the SQL builder's **Schema** field and it emits this for you.
 - **Security**: reads and writes are fully parameterized; the table name and
   columns come from the schema, never from request input.
 
@@ -3596,7 +4091,7 @@ This lists the base tables and generates a screen (and route) for each.
 - [Drizzle schema](./drizzle.md) · [REST & custom APIs](./rest-api.md) · [In-memory](./in-memory.md)
 
 <!-- =================================================================
-     /enterprise/studio/deployment  (community)
+     /enterprise/studio/deployment  (enterprise)
      ================================================================== -->
 
 # Deploying a Studio app
@@ -3747,17 +4242,26 @@ Only the `svgrid:managed` regions regenerate - your customizations survive. See
 - [Licensing](../licensing.md) · [Databases](./databases.md) · [Themes & styling](./theming.md)
 
 <!-- =================================================================
-     /enterprise/studio/designer  (community)
+     /enterprise/studio/designer  (enterprise)
      ================================================================== -->
 
-# Visual designer
+# Schema designer (embeddable)
 
-`SvSchemaDesigner` is the human-in-the-loop surface over the Studio engine.
-Author an `EntitySchema` visually, see the grid and edit form update live, and
-click **Generate code** to emit the same SvelteKit files the CLI and AI paths
-produce.
+`SvSchemaDesigner` is a small, **embeddable, single-entity** component: drop it into
+your own app to author one `EntitySchema` visually - add fields, set types and
+validation - and see the grid and edit form update live. It's controlled (you own
+where the schema is stored), so it's the building block for a "let users customize
+this table" screen.
 
-![The visual schema designer: field editor on the left, live grid + edit-panel preview on the right.](/docs-media/studio-designer.png)
+> **Looking for the full app builder?** The rich, multi-screen designer you get
+> from `npx @svgrid/studio designer` - grids, charts, dashboards, boards,
+> schedulers, and master-detail across many entities, with data binding and
+> code-behind - is a different component, [`SvStudioDesigner`](./app-designer.md),
+> opened locally with [`npx @svgrid/studio designer`](./launch.md).
+> Use this page's `SvSchemaDesigner` when you only need to design one entity, or to
+> embed a schema editor inside your own product.
+
+![The single-entity schema designer: field editor on the left, live grid + edit-panel preview on the right.](/docs-media/studio-designer.png)
 
 ## Usage
 
@@ -3857,7 +4361,7 @@ mark fields hidden, add validation) before generating - AI drafts, you approve.
 - [Edit forms & validation](./edit-forms.md) · [Code generation](./code-generation.md)
 
 <!-- =================================================================
-     /enterprise/studio/dock-layout  (community)
+     /enterprise/studio/dock-layout  (enterprise)
      ================================================================== -->
 
 # Docking layout
@@ -3871,6 +4375,8 @@ arrangement is saved per user.
 
 It is a per-screen choice: a data-heavy console can dock while your simple CRUD
 screens stay on the grid.
+
+![A docking workspace: an explorer pane docked left of a tabbed editor pane, with a terminal pane split below - every pane floatable, reorderable, and pinnable.](/docs-media/studio-dock-layout.png)
 
 ## Turn it on
 
@@ -3929,6 +4435,20 @@ features (sorting, editing, its own data):
 - **Stay on the grid** for straightforward list / form / detail screens, and
   anything that should read top-to-bottom on mobile.
 
+## The other screen layouts
+
+Dock is one of five per-screen layout modes in the designer:
+
+- **Grid** (default) - blocks flow in a 12-column grid; presets like two-column,
+  sidebar, and KPI-row arrange them in one click.
+- **Stack** - one block per row, top to bottom.
+- **Split** - the dock engine with the panes locked in place: users can resize
+  the splits but not rearrange or float them.
+- **Dock** - this page: rearrangeable, floatable, persistent.
+- **Canvas** - free-form placement: each block gets explicit cell coordinates
+  and spans on a 12-column grid of fixed-height rows, so blocks sit exactly
+  where you drop them.
+
 ## Related
 
 - [App designer](./app-designer.md) - the block palette and inspector.
@@ -3937,7 +4457,7 @@ features (sorting, editing, its own data):
 - The underlying component: [docking layout demo](#/demos/362-dock-manager).
 
 <!-- =================================================================
-     /enterprise/studio/drizzle  (community)
+     /enterprise/studio/drizzle  (enterprise)
      ================================================================== -->
 
 # Drizzle schema
@@ -4071,7 +4591,7 @@ renamed column works end to end with no manual mapping.
 - [Data binding](./data-binding.md) · [In-memory](./in-memory.md)
 
 <!-- =================================================================
-     /enterprise/studio/edit-forms  (community)
+     /enterprise/studio/edit-forms  (enterprise)
      ================================================================== -->
 
 # Edit forms & validation
@@ -4228,7 +4748,7 @@ click can still select or interact with a row without popping the form.
 - [Master-detail](./master-detail.md) · [Data binding](./data-binding.md)
 
 <!-- =================================================================
-     /enterprise/studio/getting-started  (community)
+     /enterprise/studio/getting-started  (enterprise)
      ================================================================== -->
 
 # Getting started
@@ -4244,6 +4764,18 @@ needed:
 - **[Data-app Studio](https://svgrid.com/#/demos/192-data-app-studio)** - the whole stack in the browser
 - **[Live SQL](https://svgrid.com/#/demos/193-studio-live-sql)** - a real Postgres in the browser (PGlite)
 - **[Supabase](https://svgrid.com/#/demos/194-studio-supabase)** - connect your own hosted Postgres
+
+**Choose your tutorial.** This page needs no database and teaches the whole
+shape; the one-page tutorials build the same screen against a real backend.
+They all end in the same place, so pick by what you have:
+
+| You have | Follow | What it adds |
+| --- | --- | --- |
+| Nothing yet | this page | the full path: install, schema, generate, run, change |
+| A Postgres connection string | [Postgres CRUD grid](./postgres-grid.md) | a server route querying your database |
+| A Supabase project | [Supabase CRUD grid](./supabase-grid.md) | browser client, keys, Row-Level Security |
+| An HTTP / JSON API | [REST CRUD grid](./rest-grid.md) | the REST adapter, no server route at all |
+| An afternoon | [Build a CRM](./tutorial-crm.md) | multi-entity: relations, master-detail, a real DB |
 
 ---
 
@@ -4298,7 +4830,7 @@ an *existing* app rather than a fresh one? Continue below.
 
 ---
 
-## Two ways to build - pick yours
+## Three ways to build - pick yours
 
 ![Build a data app in four no-code steps: open the designer, start from a sample or your database, arrange it visually, then generate the app.](/docs-media/studio-nocode-steps.svg)
 
@@ -4308,17 +4840,22 @@ press **Generate**:
 
 ![The visual app designer with a customer grid previewed live and a properties panel for the screen and its fields.](/docs-media/studio-app-designer.png)
 
-- **No code (visual).** You never write code - you point, click, and preview,
-  then press one button to generate the finished app. Try it immediately, no
-  install, at **[svgrid.com/studio](https://svgrid.com/studio)** - or run it
-  locally with **[Launch the designer](./launch.md)**, which auto-saves to disk
-  and generates straight into a folder. The [sample apps](./samples.md) let you
-  open a complete, realistic app in one click and point it at your own data.
-- **With code.** Prefer to work in an editor? Continue below - this page builds
-  the same screen by hand so you can see exactly what Studio generates.
+- **Visual designer (no code).** You never write code - you point, click, and
+  preview, then press one button to generate the finished app. Try it
+  immediately, no install, at **[svgrid.com/studio](https://svgrid.com/studio)** -
+  or run it locally with **[Launch the designer](./launch.md)**, which
+  auto-saves to disk and generates straight into a folder. The
+  [sample apps](./samples.md) let you open a complete, realistic app in one
+  click and point it at your own data.
+- **CLI.** One deterministic command per screen: `npx @svgrid/studio add ...`
+  introspects your table or schema and writes the files. No AI involved. This
+  page uses the CLI from Step 3 on - continue below.
+- **AI via MCP.** With [`@svgrid/mcp`](./ai-generation.md) configured, ask your
+  coding agent to build the screen; it introspects, scaffolds, and
+  compile-verifies through the same core the CLI uses.
 
-The two paths produce the **same result**; the visual designer just writes the
-code for you.
+All three produce the **same generated code** - pick whichever fits how you
+work, and switch freely later.
 
 ---
 
@@ -4358,9 +4895,207 @@ npm i @svgrid/grid @svgrid/enterprise
 
 ## Step 2 - Describe your data once
 
-Everything in Studio flows from one **`EntitySchema`** - a plain object that
-lists your fields and their types. This single object drives the grid columns,
-the edit form, and validation. Create `src/lib/customers.ts`:
+The generator needs one description of your table. If you have a live database
+it can introspect it directly (Step 3 shows that variant). Here we stay
+database-free: describe the table in a small Drizzle schema file, which the
+generator **reads as text** - it never connects to anything.
+
+```bash
+npm i -D drizzle-orm
+```
+
+(`drizzle-orm` is only there so the schema file type-checks; nothing runs
+against a database. It is also the natural next step when you do add one.)
+
+Create `src/lib/db/schema.ts`:
+
+```ts
+import { pgTable, text, integer, boolean } from 'drizzle-orm/pg-core'
+
+export const customers = pgTable('customers', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  tier: text('tier').notNull().default('free'),
+  mrr: integer('mrr'),
+  active: boolean('active'),
+})
+```
+
+A Prisma `schema.prisma` works the same way. Prefer to write Studio's own
+model - the `EntitySchema` - by hand instead? That is the
+[appendix](#appendix-wire-it-by-hand-no-generator) at the bottom of this page.
+
+---
+
+## Step 3 - Generate the screen
+
+One command:
+
+```bash
+npx @svgrid/studio add customers --from src/lib/db/schema.ts
+```
+
+Have a live database instead? Same command, different source - no schema file
+needed:
+
+```bash
+npx @svgrid/studio add customers --db postgres --url "$DATABASE_URL"
+```
+
+Either way it writes **three files**, and the screen is done. A quick tour of
+what you now own:
+
+**1. `src/lib/customers.schema.ts` - the model.** The generator turned your
+table into an `EntitySchema` - the single object that drives the grid columns,
+the form fields, and validation:
+
+```ts
+export type CustomersRow = {
+  id: string
+  name: string
+  email: string
+  tier: string
+  mrr: number | null
+  active: boolean | null
+}
+
+export const customersSchema: EntitySchema<CustomersRow> = {
+  name: 'customers',
+  idField: 'id',
+  fields: [
+    { field: 'id', type: 'text', primaryKey: true, readonly: true },
+    { field: 'name', type: 'text', required: true },
+    { field: 'email', type: 'text', required: true },
+    // ...
+  ],
+}
+```
+
+Every field option (labels, enum choices, min/max, regex, custom validators) is
+explained in [The EntitySchema](./schema.md).
+
+**2. `src/routes/api/customers/+server.ts` - the API route.** A
+`ServerDataSource` (read + create + update + delete) exposed over one SvelteKit
+endpoint. With `--from` it starts in-memory so it runs immediately; with `--db`
+it is already wired to your database:
+
+```ts
+const source = createInMemoryDataSource<CustomersRow>([], customersSchema)
+
+export const { POST } = createKitHandlers({ schema: customersSchema, source })
+```
+
+Swapping in a real database later means replacing that one `source` line - the
+page never changes. See [Databases](./databases.md).
+
+**3. `src/routes/customers/+page.svelte` - the screen.** The grid with
+server-side sort, filter, global search, a native pagination footer,
+multi-select delete with optimistic updates, and a modal create / edit form -
+all reading through the API route:
+
+```ts
+const source = createKitDataSource<CustomersRow>({ endpoint: '/api/customers' })
+const columns = schemaToColumns(customersSchema)
+const controller = createServerDataSource<CustomersRow>(source, {
+  pageSize: 25, optimistic: true,
+  getRowId: (r) => String(r.id),
+  onChange: (s) => (state = s),
+})
+```
+
+Each file wraps its generated body in `// svgrid:managed:start` /
+`// svgrid:managed:end` markers. Everything you write **outside** the markers
+is yours; re-running `add` only rewrites what is inside. That is what makes
+Step 5 safe.
+
+> One thing the generated screen inherits from your page: the **font**. A bare
+> `npx sv create` app sets no CSS at all, so add a
+> `body { font-family: system-ui, sans-serif }` rule (or a
+> [`--sg-font`](./theming.md) token) once, or the page renders in the
+> browser's default serif. Borders, backgrounds, and hover states the grid
+> themes itself.
+
+---
+
+## Step 4 - Run it
+
+```bash
+npm run dev
+```
+
+Open the URL it prints (usually `http://localhost:5173`) and go to
+**`/customers`**. With `--from` the grid starts empty (in-memory source, no
+seed) - click **New** and add two or three customers, then try the screen:
+
+- Click a **column header** to sort.
+- Type in the **filter row** under a header to filter (it stays focused as you type).
+- Click a **row** to edit. The form validates as you type - clear a required
+  field and watch it complain.
+- Select rows with the checkboxes and **Delete** them - the grid updates
+  instantly and rolls back if the server says no.
+- Page through with the **native pager** at the bottom.
+
+![A CRUD screen generated by SvGrid Studio: sortable, filterable grid with a native pager, over a live data source.](/docs-media/studio-crud.png)
+
+---
+
+## Step 5 - Change something
+
+Because the schema drives everything, changes are one edit. Add a column to
+`src/lib/db/schema.ts`:
+
+```ts
+country: text('country'),
+```
+
+Then re-run the exact same command:
+
+```bash
+npx @svgrid/studio add customers --from src/lib/db/schema.ts
+```
+
+The managed regions are regenerated: the grid gets a **Country** column and the
+edit form gets a **Country** input. Anything you wrote outside the
+`svgrid:managed` markers - extra buttons, styles, handlers - is untouched.
+That round trip (change schema, re-run, keep your code) is the everyday
+workflow; [Code generation](./code-generation.md) explains the rules.
+
+Prefer not to re-run the generator? Editing the generated
+`customers.schema.ts` directly works too - grid and form update together from
+the one schema object.
+
+---
+
+## Where to go next
+
+You have the whole shape now. The usual next steps:
+
+- **Understand the model** - [Concepts](./concepts.md) walks the pipeline
+  (schema, screens, data source, codegen) once and defines every Studio term.
+- **Connect a real database** - re-run `add` with `--db` and a connection
+  string, or swap the one `source` line in the API route; the page does not
+  change. For Supabase, follow the one-page
+  **[Supabase CRUD grid tutorial](./supabase-grid.md)**; for SQL, see
+  [Databases](./databases.md).
+- **Design visually** - `npx @svgrid/studio designer` opens the full app builder:
+  compose screens across entities, bind data, and click *Generate app*. See the
+  [Visual app designer](./app-designer.md). (To embed a single-entity schema editor
+  in your own app, see the [Schema designer](./designer.md).)
+- **Build a full app** - the [Build a CRM tutorial](./tutorial-crm.md) wires up
+  companies, contacts, and deals with relations and master-detail.
+
+---
+
+## Appendix: wire it by hand (no generator)
+
+Everything the generator wrote in Step 3 can be built up by hand - useful when
+you want to see exactly how the pieces fit, or to embed a Studio screen in an
+unusual spot. Two files replace the three generated ones (no API route: here
+the data source lives in the page itself).
+
+First, the `EntitySchema` - Studio's own model, the object the generator
+derived from your Drizzle file. Create `src/lib/customers.ts`:
 
 ```ts
 import type { EntitySchema } from '@svgrid/enterprise'
@@ -4393,16 +5128,10 @@ export const customersSchema: EntitySchema<Customer> = {
 }
 ```
 
-Every field option is explained in [The EntitySchema](./schema.md).
-
----
-
-## Step 3 - Build the screen
-
-Studio binds any data through one small contract, `ServerDataSource`
-(read + create + update + delete). For a first run, `createInMemoryDataSource`
-gives you that contract over a plain array - so the whole screen works before
-you have a database. Create `src/routes/customers/+page.svelte`:
+Then the page. `createInMemoryDataSource` provides the `ServerDataSource`
+contract over a plain array, `createServerDataSource` runs sort / filter /
+page / CRUD against it, and the grid + edit panel render it. Create
+`src/routes/customers/+page.svelte`:
 
 ```svelte
 <script lang="ts">
@@ -4474,70 +5203,20 @@ and `<SvGridEditPanel>` already theme their own borders, backgrounds, and hover 
 of the box (via [`--sg-*` tokens](../../help/tokens.md) with built-in fallbacks) - font is
 the one thing they intentionally inherit from the page rather than force, so it fits
 whatever type your app already uses. If your app already sets a body font (or a
-[`--sg-font`](../theming.md) token), skip this block.
-
----
-
-## Step 4 - Run it
-
-```bash
-npm run dev
-```
-
-Open the URL it prints (usually `http://localhost:5173`) and go to
-**`/customers`**. You now have a working screen:
-
-- Click a **column header** to sort.
-- Type in the **filter row** under a header to filter (it stays focused as you type).
-- Click **+ New customer** to create; click a **row** to edit. The form validates
-  as you type - try an invalid email.
-- Page through with the **native pager** at the bottom.
-
-![A CRUD screen generated by SvGrid Studio: sortable, filterable grid with a native pager, over a live data source.](/docs-media/studio-crud.png)
-
----
-
-## Step 5 - Change something
-
-Because the schema drives everything, changes are one edit. Add a field to
-`customers.ts`:
-
-```ts
-{ field: 'country', type: 'text', label: 'Country' },
-```
-
-Save. The grid gets a **Country** column and the edit form gets a **Country**
-input - no other change. That is the payoff of the single schema.
-
----
-
-## Where to go next
-
-You have the whole shape now. The usual next steps:
-
-- **Connect a real database** - swap `createInMemoryDataSource` for a SQL or
-  Supabase source; the page above does not change. For Supabase, follow the
-  complete one-page **[Supabase CRUD grid tutorial](./supabase-grid.md)**, or see
-  [Databases](./databases.md) for SQL.
-- **Skip the boilerplate** - `npx @svgrid/studio add customers --db postgres --url ...`
-  generates all of the above (schema + API route + page) from a live table.
-  See [The Studio CLI](./cli.md).
-- **Design visually** - author the schema in a UI with live preview and click
-  *Generate code*. See [Visual designer](./designer.md).
-- **Build a full app** - the [Build a CRM tutorial](./tutorial-crm.md) wires up
-  companies, contacts, and deals with relations and master-detail.
+[`--sg-font`](./theming.md) token), skip this block.
 
 ---
 
 ## See also
 
 - [SvGrid Studio overview](../studio.md)
+- [Concepts](./concepts.md) - the mental model + glossary
 - [Data binding](./data-binding.md) - the `ServerDataSource` contract in depth
 - [Edit forms & validation](./edit-forms.md)
 - [Troubleshooting & FAQ](./troubleshooting.md)
 
 <!-- =================================================================
-     /enterprise/studio/i18n  (community)
+     /enterprise/studio/i18n  (enterprise)
      ================================================================== -->
 
 # Localization (i18n)
@@ -4640,7 +5319,7 @@ Add the key to each locale in the catalog and it's covered.
 - [Theming](./theming.md) - the other half of white-labeling an app
 
 <!-- =================================================================
-     /enterprise/studio/in-memory  (community)
+     /enterprise/studio/in-memory  (enterprise)
      ================================================================== -->
 
 # In-memory
@@ -4761,10 +5440,10 @@ schema, grid, and form stay exactly the same.
 - [Data binding](./data-binding.md) · [Databases](./databases.md) · [Drizzle schema](./drizzle.md)
 
 <!-- =================================================================
-     /enterprise/studio/launch  (community)
+     /enterprise/studio/launch  (enterprise)
      ================================================================== -->
 
-# Launch the designer
+# Launch the designer (CLI)
 
 > **No install at all?** Open **[svgrid.com/studio](https://svgrid.com/studio)**
 > directly - the same designer, running in your browser, nothing to run
@@ -4778,6 +5457,12 @@ schema, grid, and form stay exactly the same.
 One command opens the visual [app designer](./app-designer.md) in your browser,
 backed by a tiny local server that **auto-saves** your design to disk and
 **generates the app** into a folder - no host app to build, no copy-paste JSON.
+
+> **Three "designer" pages, one map.** This page is about *opening* the app
+> builder locally. [Visual app designer](./app-designer.md) documents the
+> builder itself (`SvStudioDesigner`, multi-screen). [Schema designer](./designer.md)
+> is a different, embeddable component (`SvSchemaDesigner`) for editing a single
+> entity inside your own app.
 
 ![Build a data app in four no-code steps: open the designer, start from a sample or your database, arrange it visually, then generate the app.](/docs-media/studio-nocode-steps.svg)
 
@@ -4885,7 +5570,7 @@ the one file - design visually, regenerate from CI, or hand it to a teammate.
 - [Getting started](./getting-started.md) - the full first-app walkthrough
 
 <!-- =================================================================
-     /enterprise/studio/local-database  (community)
+     /enterprise/studio/local-database  (enterprise)
      ================================================================== -->
 
 # Local database (no setup)
@@ -4989,7 +5674,7 @@ managed Postgres with auth.
 - [Data binding](./data-binding.md) · [Databases](./databases.md) · [In-memory](./in-memory.md)
 
 <!-- =================================================================
-     /enterprise/studio/master-detail  (community)
+     /enterprise/studio/master-detail  (enterprise)
      ================================================================== -->
 
 # Master-detail
@@ -5165,7 +5850,7 @@ or fix a height and let the nested grid scroll for long child lists.
 - Live demo: [Master / detail (nested grid)](https://svgrid.com/#/demos/181-master-detail-grid)
 
 <!-- =================================================================
-     /enterprise/studio/navigation  (community)
+     /enterprise/studio/navigation  (enterprise)
      ================================================================== -->
 
 # Navigation & row actions
@@ -5234,7 +5919,7 @@ already own - nothing bespoke to learn.
 - [Master-detail](./master-detail.md) - the other way to relate two entities on one screen
 
 <!-- =================================================================
-     /enterprise/studio/odata-graphql  (community)
+     /enterprise/studio/odata-graphql  (enterprise)
      ================================================================== -->
 
 # OData & GraphQL
@@ -5339,7 +6024,7 @@ binding - hand it to `createServerDataSource` and render the grid in server mode
 - [Data binding](./data-binding.md) - the `ServerDataSource` contract
 
 <!-- =================================================================
-     /enterprise/studio/postgres-grid  (community)
+     /enterprise/studio/postgres-grid  (enterprise)
      ================================================================== -->
 
 # Tutorial: a Postgres CRUD grid
@@ -5357,6 +6042,12 @@ browser), so this has a server route plus the page. Copy the four files and run.
 You need a [SvelteKit](https://svelte.dev/docs/kit) app and a Postgres database
 (local, or hosted - the same steps work for [Supabase](./supabase-grid.md),
 Neon, RDS, and so on).
+
+> **Where this fits:** the same Customers screen as
+> [Getting started](./getting-started.md), bound to a real Postgres database
+> instead of in-memory data. This page is the copy-paste path; every dialect
+> and driver detail lives in [Databases](./databases.md), and the wiring
+> contract in [Data binding](./data-binding.md).
 
 ---
 
@@ -5569,7 +6260,7 @@ The footer shows the real total (`1 to 10 of 240`) from a `COUNT` query.
 - [Getting started](./getting-started.md) - the same screen over in-memory data
 
 <!-- =================================================================
-     /enterprise/studio/prisma  (community)
+     /enterprise/studio/prisma  (enterprise)
      ================================================================== -->
 
 # Prisma schema
@@ -5676,7 +6367,7 @@ source by hand - the schema + grid + form stay the same.
 - [Relations](./relations.md) · [In-memory](./in-memory.md)
 
 <!-- =================================================================
-     /enterprise/studio/realtime  (community)
+     /enterprise/studio/realtime  (enterprise)
      ================================================================== -->
 
 # Real-time (Supabase)
@@ -5694,6 +6385,14 @@ it instantly, with no polling. This uses [Supabase Realtime](https://supabase.co
 > **Live** pill.
 
 ---
+
+## In the designer (no code)
+
+For a Supabase-bound entity, open its **Configure** builder and tick **Live
+updates (Realtime)**. Studio then emits the subscription below into the generated
+page for you - `createSupabaseRealtime` wired to `controller.refresh()`, with a
+250 ms debounce and cleanup on unmount. You still enable Realtime on the table in
+Supabase (Step 1); the checkbox only wires up the client side.
 
 ## Step 1 - Enable Realtime on the table
 
@@ -5813,7 +6512,7 @@ createSupabaseRealtime({ client, table: 'deals', filter: 'stage=eq.open', onChan
 - [Sorting, filtering & paging](./server-grid.md) - the grid's server-mode UI
 
 <!-- =================================================================
-     /enterprise/studio/relations  (community)
+     /enterprise/studio/relations  (enterprise)
      ================================================================== -->
 
 # Relations & master-detail
@@ -5994,7 +6693,7 @@ plain `options` - it renders as a simple `<select>`:
 - [Tutorial: build a CRM](./tutorial-crm.md) - relations end to end
 
 <!-- =================================================================
-     /enterprise/studio/rest-api  (community)
+     /enterprise/studio/rest-api  (enterprise)
      ================================================================== -->
 
 # REST & custom APIs
@@ -6079,9 +6778,31 @@ createRestDataSource<Item>({
 See the live example: [Live REST (public API)](https://svgrid.com/#/demos/337-live-rest-dummyjson)
 fetches real rows from dummyjson.com through `dummyJsonAdapter`.
 
+**In the designer:** a REST entity's **Configure** builder has an **API format**
+picker - *Manual mapping*, *Offset + Limit*, *DummyJSON*, or *json-server*.
+Choosing one is the no-code equivalent of spreading the adapter above: the
+generated grid does **real server-side paging and sort** (not a single fetched
+page), and the live preview pages through the same adapter. *Offset + Limit*
+exposes the param-name / response-key fields so you can match any offset/limit
+API. Leave it on *Manual mapping* to keep the old rows-path / total-path behavior.
+
 > **Browser demos:** a client-side app can only reach **CORS-enabled** APIs, and
 > must never carry a secret key. For private backends, put the fetch behind a
 > SvelteKit `+server.ts` route and point `createRestDataSource` at that.
+
+## Import an OpenAPI spec
+
+Have an OpenAPI (JSON) description of your API? One command turns it into a
+Studio project - each collection path becomes an entity with a REST source, and
+the component schemas become `EntitySchema`s:
+
+```bash
+npx @svgrid/studio openapi ./openapi.json     # or a URL
+```
+
+It writes `studio.config.json` (and prints any paths it could not map). Open it
+in the [designer](./launch.md) to review the entities and generate the app, or
+continue with [`introspectOpenApi`](./api.md) programmatically.
 
 ## Full control: implement `ServerDataSource` by hand
 
@@ -6190,7 +6911,7 @@ request into portable, parameterized SQL you can send anywhere - see
 - [Databases](./databases.md) · [In-memory](./in-memory.md)
 
 <!-- =================================================================
-     /enterprise/studio/rest-grid  (community)
+     /enterprise/studio/rest-grid  (enterprise)
      ================================================================== -->
 
 # Tutorial: a REST CRUD grid
@@ -6202,6 +6923,12 @@ included. Copy the three files and run.
 This is the path when you already have an HTTP API (your own, or a third party).
 No database driver, no server route to write - the grid talks to your endpoint
 through `createRestDataSource`.
+
+> **Where this fits:** the same Customers screen as
+> [Getting started](./getting-started.md), bound to your HTTP API instead of
+> in-memory data. This page is the copy-paste path; the adapter options and the
+> `ServerDataSource` contract in depth live in
+> [REST & custom APIs](./rest-api.md) and [Data binding](./data-binding.md).
 
 > **No API yet?** If your API *is* your SvelteKit app, use the built-in transport
 > (`createKitHandlers` + `createKitDataSource`) instead of hand-rolling REST - see
@@ -6400,7 +7127,7 @@ to your API - the grid stays a thin, server-driven view.
 - [OData & GraphQL](./odata-graphql.md) - map the request to those query languages
 
 <!-- =================================================================
-     /enterprise/studio/samples  (community)
+     /enterprise/studio/samples  (enterprise)
      ================================================================== -->
 
 # Sample apps + bind your data
@@ -6438,7 +7165,7 @@ and **seeded with believable data**, so you see the real thing, not `name 1 / em
 | **Gym** | Members, Classes, Bookings - capacity + attendance |
 | **Library** | Books, Members, Loans - circulation + overdue |
 
-![A loaded sample: the CRM overview dashboard](/docs-media/studio-samples-crm.png)
+![A loaded sample in the designer: the CRM forecast dashboard - KPI tiles (pipeline value, open deals, average deal size) and deal-value charts by stage and owner.](/docs-media/studio-sample-loaded.png)
 
 Loading a sample replaces the current design (undo with Ctrl+Z). From the
 [launcher](./launch.md) you can open one directly:
@@ -6515,7 +7242,7 @@ connection stays on your machine.
 - [Databases](./databases.md) - the per-dialect connection details
 
 <!-- =================================================================
-     /enterprise/studio/scheduler  (community)
+     /enterprise/studio/scheduler  (enterprise)
      ================================================================== -->
 
 # Scheduler / calendar view
@@ -6528,6 +7255,8 @@ an event to reschedule it and the new time is written back through the data sour
 
 The calendar renderer ships in `@svgrid/enterprise`; the generated app registers it
 once with `enableSchedulerView()` and then renders `<SvGrid scheduler={...}>`.
+
+![The scheduler view: the grid's rows rendered as a week calendar with timed events, an all-day lane, Month / Week / Day / Agenda switches, and a Calendar / Table toggle.](/docs-media/studio-scheduler.png)
 
 ## Turn it on
 
@@ -6613,7 +7342,7 @@ Several starter apps ship a scheduler so you can see it end to end:
 - [Kanban board](./app-designer.md) - the other "view of the grid".
 
 <!-- =================================================================
-     /enterprise/studio/schema  (community)
+     /enterprise/studio/schema  (enterprise)
      ================================================================== -->
 
 # The EntitySchema
@@ -6768,7 +7497,7 @@ const field = {
 - [Edit forms & validation](./edit-forms.md) · [Data binding](./data-binding.md)
 
 <!-- =================================================================
-     /enterprise/studio/server-grid  (community)
+     /enterprise/studio/server-grid  (enterprise)
      ================================================================== -->
 
 # Sorting, filtering & paging
@@ -6874,7 +7603,7 @@ or point the events at a custom controller.
 - [The EntitySchema](./schema.md) · [Databases](./databases.md)
 
 <!-- =================================================================
-     /enterprise/studio/supabase-grid  (community)
+     /enterprise/studio/supabase-grid  (enterprise)
      ================================================================== -->
 
 # Tutorial: a Supabase CRUD grid
@@ -6891,6 +7620,11 @@ and run.
 
 You need a [SvelteKit](https://svelte.dev/docs/kit) app (`npx sv create my-app`)
 and a free [Supabase](https://supabase.com) account. About ten minutes end to end.
+
+> **Where this fits:** the same Customers screen as
+> [Getting started](./getting-started.md), bound to Supabase instead of
+> in-memory data. This page is the copy-paste path; concepts, keys, and
+> Row-Level Security in depth live in the [Supabase guide](./supabase.md).
 
 ---
 
@@ -7158,7 +7892,7 @@ contract.
 - [Databases](./databases.md) - Postgres, MySQL, SQL Server, SQLite
 
 <!-- =================================================================
-     /enterprise/studio/supabase-sample  (community)
+     /enterprise/studio/supabase-sample  (enterprise)
      ================================================================== -->
 
 # The Northwind sample on Supabase
@@ -7174,6 +7908,11 @@ It is the same dataset as the in-browser
 [Northwind on PGlite demo](https://svgrid.com/#/demos/338-pglite-northwind); this
 page hosts it on real Postgres so the anon key works from any browser app, and so
 Supabase **realtime** and Row-Level Security apply.
+
+> **Where this fits:** this page gives you a rich dataset to practice on. To
+> build a screen from scratch against your own table, follow the
+> [Supabase CRUD grid tutorial](./supabase-grid.md); for connect, keys, and RLS
+> in depth, see the [Supabase guide](./supabase.md).
 
 > The public anon key is **read-only** here (RLS `select` for `anon`). That is
 > what makes it safe to expose in a client-side demo. To allow writes, scope a
@@ -7369,7 +8108,7 @@ you want to show it offline.
 - [Databases](./databases.md) - the other databases Studio can introspect the same way.
 
 <!-- =================================================================
-     /enterprise/studio/supabase  (community)
+     /enterprise/studio/supabase  (enterprise)
      ================================================================== -->
 
 # Supabase
@@ -7389,6 +8128,15 @@ Supabase project to a live CRUD screen, step by step. No backend to run.
 > copy-paste walkthrough - the table, the schema, the data source, and the full
 > grid page with create / edit / delete, start to finish. This page is the deeper
 > reference behind it.
+
+**All the Supabase pages, one map.** This guide is the canonical entry point -
+connect, keys, and Row-Level Security. From here:
+
+- [Supabase CRUD grid](./supabase-grid.md) - the copy-paste one-page tutorial
+- [Supabase Northwind sample](./supabase-sample.md) - a relational practice dataset to load and explore
+- [Real-time](./realtime.md) - live grid over Supabase change streams
+- [Auth & secured screens](./auth.md) - Supabase Auth + RLS per signed-in user
+- [Databases](./databases.md#supabase) - the server-side connection-string route instead
 
 There are two ways to connect, and you can use either:
 
@@ -7458,6 +8206,28 @@ In the dashboard: **Project Settings -> API**. Copy two values:
 
 The anon key is designed to be shipped in the browser. Never ship the
 **service_role** key to a client - it bypasses RLS.
+
+---
+
+## In the designer (no code)
+
+The visual designer wraps all of the below. Bind an entity to **Supabase**, open
+its **Configure** builder, and:
+
+- Paste the **Project URL** and **anon public** key once - they are stored as a
+  **shared project connection**, so every Supabase entity reuses them (you only
+  set them one time).
+- Click **List tables** to read the tables from your project, pick one, and
+  **Import schema** to pull its real columns, primary key, foreign-key relations,
+  and enums into the entity.
+- **Preview** loads live rows onto the canvas. This works in the **online**
+  designer too, because Supabase is reached over HTTP.
+
+**Generate app** emits `createClient` in `connections.ts` reading
+`PUBLIC_SUPABASE_URL` / `PUBLIC_SUPABASE_ANON_KEY` from `.env` (the key is never
+inlined into source), plus a `.env.example`. Tick **Live updates (Realtime)** to
+also emit a live subscription ([Real-time](./realtime.md)), and use the
+[Supabase Auth provider](./auth.md) to gate the app.
 
 ---
 
@@ -7567,7 +8337,7 @@ More answers in [Troubleshooting & FAQ](./troubleshooting.md).
 - [Getting started](./getting-started.md) - the page code, end to end
 
 <!-- =================================================================
-     /enterprise/studio/testing  (community)
+     /enterprise/studio/testing  (enterprise)
      ================================================================== -->
 
 # Testing a Studio app
@@ -7691,7 +8461,7 @@ logic that actually breaks. Add a few layer-3 smoke tests for confidence.
 - [Accessibility](./accessibility.md) - and how to test it with axe
 
 <!-- =================================================================
-     /enterprise/studio/theming  (community)
+     /enterprise/studio/theming  (enterprise)
      ================================================================== -->
 
 # Themes & styling
@@ -7804,7 +8574,7 @@ inputs, the primary Save button (`--sg-accent`), and the header / footer bars
 - [Edit forms & validation](./edit-forms.md) · [Deploying a Studio app](./deployment.md)
 
 <!-- =================================================================
-     /enterprise/studio/troubleshooting  (community)
+     /enterprise/studio/troubleshooting  (enterprise)
      ================================================================== -->
 
 # Troubleshooting & FAQ
@@ -7835,6 +8605,20 @@ npm i mysql2        # mysql / mariadb
 npm i mssql         # sql server
 npm i better-sqlite3  # sqlite
 ```
+
+In the local designer you don't need to run these by hand - when a connect or
+preview fails on a missing driver, the SQL builder shows an **Install** button
+that adds it and retries.
+
+### I can't connect to my SQL database in the online designer
+
+Expected. A web browser can't open a raw TCP connection to Postgres / MySQL / SQL
+Server, and the driver is a server-side package, so **live connect / test /
+preview only run in the local designer** (`npx @svgrid/studio designer`). In the
+online designer, bind the entity (dialect + table + schema) and **Generate app** -
+the app connects for real at runtime via `DATABASE_URL`. For a live database
+inside the online designer, use **Supabase** or the **Local database** (PGlite),
+both reachable from the browser.
 
 ### The database connection fails
 
@@ -7937,7 +8721,7 @@ a watermark for evaluation. See [pricing](https://svgrid.com/pricing).
 - [SvGrid Studio overview](../studio.md) · [Databases](./databases.md) · [Deploying a Studio app](./deployment.md)
 
 <!-- =================================================================
-     /enterprise/studio/tutorial-crm  (community)
+     /enterprise/studio/tutorial-crm  (enterprise)
      ================================================================== -->
 
 # Tutorial: build a CRM

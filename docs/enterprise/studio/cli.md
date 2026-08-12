@@ -90,6 +90,21 @@ output is available programmatically as
 [`scaffoldApp(schemas, options)`](./code-generation.md) from `@svgrid/enterprise/studio`,
 fed by `introspectDrizzleAll` / `introspectPrismaAll`.
 
+## The other commands
+
+`designer` and `add` are the daily drivers; the binary has four more:
+
+| Command | What it does |
+| --- | --- |
+| `svgrid-studio dev` | The designer and the **running generated app side by side** - the designer writes real files into the app folder and Vite hot-reloads them. `--app-port <n>` sets the app's port. |
+| `svgrid-studio openapi <file\|url>` | Import an OpenAPI (JSON) spec: paths + schemas become entities with REST sources in `studio.config.json`. See [REST & custom APIs](./rest-api.md). |
+| `svgrid-studio eject [--fragment]` | Write the full app (or, with `--fragment`, a drop-in set of files for an existing app) from `studio.config.json` without opening the designer. |
+| `svgrid-studio deploy [--target <p>] [--dry-run]` | Build, then deploy through the provider's own CLI. Target: `vercel` \| `netlify` \| `cloudflare` \| `node`, resolved from the flag, the config, or `svelte.config.js`. `--dry-run` prints the commands. |
+
+Useful `designer` flags beyond the basics: `--template crm|ecommerce|projects|support`
+opens a [sample app](./samples.md) directly, and `--ai` enables the built-in
+copilot (reads `ANTHROPIC_API_KEY` from the environment).
+
 ## Safe regeneration
 
 Every generated file wraps its body in `svgrid:managed` markers. Re-running
@@ -115,4 +130,4 @@ is part of the [Enterprise license](../licensing.md) (soft-gate).
 
 - [Databases](./databases.md) · [Drizzle schema](./drizzle.md)
 - [AI generation](./ai-generation.md) - the same engine, driven by an AI agent
-- [Visual designer](./designer.md) - the same engine, driven by a UI
+- [Visual app designer](./app-designer.md) - the same engine, driven by a UI

@@ -1,8 +1,11 @@
 <script lang="ts">
   /**
-   * SvListBox virtualization - 50,000 options rendered smoothly by windowing
-   * (only the visible rows exist in the DOM), plus a custom `itemTemplate` row.
-   * The public API is unchanged; add `virtual` and you scale to huge datasets.
+   * SvListBox / SvDropDownList virtualization - huge option sets rendered
+   * smoothly by windowing (only the visible rows exist in the DOM), now over the
+   * shared virtualizer: rows are RECYCLED on scroll (no mount/unmount churn),
+   * GROUPED lists window too (headings included), and `rowHeight` can be a
+   * function for variable-height rows. The public API is unchanged; add
+   * `virtual`.
    */
   import { SvListBox, SvDropDownList } from '@svgrid/grid'
   import type { ListOption } from '@svgrid/grid'
@@ -13,42 +16,58 @@
     label: `Item ${(i + 1).toLocaleString()}`,
   }))
 
-  // A richer dataset for the templated list.
-  const roles = ['Engineer', 'Designer', 'Manager', 'Analyst', 'Support']
+  // A grouped dataset: 8,000 people bucketed by role. Grouped lists are now
+  // windowed too - previously enabling `virtual` fell back to rendering every
+  // node, so a list this size mounted 8,000 rows.
+  const roles = ['Engineering', 'Design', 'Product', 'Analytics', 'Support']
   const people: ListOption[] = Array.from({ length: 8000 }, (_, i) => ({
     value: `u${i}`,
     label: `User ${i + 1}`,
+    group: roles[i % roles.length],
   }))
-  const roleOf = (v: string | number) => roles[Number(String(v).replace('u', '')) % roles.length]
   const initials = (v: string | number) => `U${(Number(String(v).replace('u', '')) % 99) + 1}`
+
+  // Variable-height rows: `rowHeight` as a function. Every 4th row is taller.
+  const mixed: ListOption[] = Array.from({ length: 3000 }, (_, i) => ({
+    value: i,
+    label: i % 4 === 0 ? `Row ${i + 1}  -  tall (56px)` : `Row ${i + 1}  -  compact (30px)`,
+  }))
+  const mixedHeight = (_opt: ListOption, i: number) => (i % 4 === 0 ? 56 : 30)
 
   let picked = $state<string | number | null>(42)
   let member = $state<string | number | null>('u3')
+  let tall = $state<string | number | null>(0)
   let ddlValue = $state<string | number | null>(1234)
 </script>
 
 <div class="wrap">
   <header>
     <h2>Virtualized list</h2>
-    <p>Two selects backed by <strong>{N.toLocaleString()}</strong> and <strong>8,000</strong> options. Only the visible rows are in the DOM - scroll and type-ahead stay instant. Just add <code>virtual</code>.</p>
+    <p>Selects backed by up to <strong>{N.toLocaleString()}</strong> options. Only the visible rows are in the DOM and they are <strong>recycled</strong> as you scroll - grouped lists and variable-height rows window too. Just add <code>virtual</code>.</p>
   </header>
 
   <div class="cols">
     <div class="cell">
-      <span class="ttl">{N.toLocaleString()} items</span>
+      <span class="ttl">{N.toLocaleString()} items · recycled</span>
       <SvListBox {options} value={picked} rows={9} virtual onChange={(v) => (picked = v)} />
       <span class="val">Selected: {picked}</span>
     </div>
 
     <div class="cell">
-      <span class="ttl">Custom row template</span>
-      <SvListBox options={people} value={member} rows={9} virtual rowHeight={44} onChange={(v) => (member = v)}>
+      <span class="ttl">Grouped + templated</span>
+      <SvListBox options={people} value={member} rows={9} virtual rowHeight={44} groupHeaderHeight={26} onChange={(v) => (member = v)}>
         {#snippet itemTemplate(opt)}
           <span class="av">{initials(opt.value)}</span>
-          <span class="who"><strong>{opt.label}</strong><em>{roleOf(opt.value)}</em></span>
+          <span class="who"><strong>{opt.label}</strong><em>{opt.group}</em></span>
         {/snippet}
       </SvListBox>
-      <span class="val">Selected: {member}</span>
+      <span class="val">8,000 people, windowed by group</span>
+    </div>
+
+    <div class="cell">
+      <span class="ttl">Variable row heights</span>
+      <SvListBox options={mixed} value={tall} rows={7} virtual rowHeight={mixedHeight} onChange={(v) => (tall = v)} />
+      <span class="val"><code>rowHeight</code> is a function</span>
     </div>
 
     <div class="cell">
@@ -60,9 +79,9 @@
 </div>
 
 <style>
-  .wrap { padding: 20px; max-width: 620px; display: flex; flex-direction: column; gap: 18px; }
+  .wrap { padding: 20px; max-width: 900px; display: flex; flex-direction: column; gap: 18px; }
   header h2 { margin: 0 0 4px; font-size: 20px; font-weight: 700; }
-  header p { margin: 0; color: var(--sg-muted, #64748b); font-size: 13.5px; line-height: 1.5; }
+  header p { margin: 0; color: var(--sg-muted, #64748b); font-size: 13.5px; line-height: 1.5; max-width: 70ch; }
   code { background: var(--sg-row-hover-bg, #eef2ff); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
   .cols { display: flex; gap: 28px; flex-wrap: wrap; align-items: start; }
   .cell { display: flex; flex-direction: column; gap: 8px; }

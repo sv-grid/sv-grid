@@ -1,4 +1,4 @@
-# Launch the designer
+# Launch the designer (CLI)
 
 > **No install at all?** Open **[svgrid.com/studio](https://svgrid.com/studio)**
 > directly - the same designer, running in your browser, nothing to run
@@ -12,6 +12,12 @@
 One command opens the visual [app designer](./app-designer.md) in your browser,
 backed by a tiny local server that **auto-saves** your design to disk and
 **generates the app** into a folder - no host app to build, no copy-paste JSON.
+
+> **Three "designer" pages, one map.** This page is about *opening* the app
+> builder locally. [Visual app designer](./app-designer.md) documents the
+> builder itself (`SvStudioDesigner`, multi-screen). [Schema designer](./designer.md)
+> is a different, embeddable component (`SvSchemaDesigner`) for editing a single
+> entity inside your own app.
 
 ![Build a data app in four no-code steps: open the designer, start from a sample or your database, arrange it visually, then generate the app.](/docs-media/studio-nocode-steps.svg)
 

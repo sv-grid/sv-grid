@@ -14,6 +14,12 @@ You need a [SvelteKit](https://svelte.dev/docs/kit) app and a Postgres database
 (local, or hosted - the same steps work for [Supabase](./supabase-grid.md),
 Neon, RDS, and so on).
 
+> **Where this fits:** the same Customers screen as
+> [Getting started](./getting-started.md), bound to a real Postgres database
+> instead of in-memory data. This page is the copy-paste path; every dialect
+> and driver detail lives in [Databases](./databases.md), and the wiring
+> contract in [Data binding](./data-binding.md).
+
 ---
 
 ## Step 1 - The table

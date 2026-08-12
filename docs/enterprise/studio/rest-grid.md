@@ -8,6 +8,12 @@ This is the path when you already have an HTTP API (your own, or a third party).
 No database driver, no server route to write - the grid talks to your endpoint
 through `createRestDataSource`.
 
+> **Where this fits:** the same Customers screen as
+> [Getting started](./getting-started.md), bound to your HTTP API instead of
+> in-memory data. This page is the copy-paste path; the adapter options and the
+> `ServerDataSource` contract in depth live in
+> [REST & custom APIs](./rest-api.md) and [Data binding](./data-binding.md).
+
 > **No API yet?** If your API *is* your SvelteKit app, use the built-in transport
 > (`createKitHandlers` + `createKitDataSource`) instead of hand-rolling REST - see
 > the [Postgres tutorial](./postgres-grid.md) for that shape, or

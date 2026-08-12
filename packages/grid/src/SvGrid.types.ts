@@ -67,6 +67,7 @@ import type {
   ChartSpec,
   ChartAnnotation,
   ChartReferenceLine,
+  ChartValueFormat,
 } from "./chart";
 
 /** One aggregated bucket returned by a server-side `getAggregate`. */
@@ -305,6 +306,58 @@ export type BoardCardMoveEvent<TData extends RowData = RowData> = {
  * of a table. Dragging a card between lanes fires {@link BoardConfig.onCardMove}
  * where you reassign the `groupBy` field on your own data.
  */
+/**
+ * Chart view of the grid. Setting the `chart` prop on `<SvGrid>` swaps the table
+ * for a chart driven by the grid's FILTERED + SORTED rows - so the search box,
+ * column filters and sort all flow through to the chart. Unlike the board and
+ * scheduler views, the renderer is free: the grid lazy-loads a built-in
+ * `SvChart` view unless a host overrides it via `registerChartView`.
+ *
+ * The config maps directly onto `rowsToChartSpec` - one row field for the
+ * category axis, one or more for the value series (or a `series` field to pivot
+ * one series per distinct value).
+ *
+ * ```svelte
+ * <SvGrid {data} {columns}
+ *   chart={{ type: 'bar', category: 'month', value: 'revenue', reduce: 'sum' }} />
+ * ```
+ */
+export type ChartViewConfig<
+  TFeatures extends TableFeatures = TableFeatures,
+  TData extends RowData = RowData,
+> = {
+  /** Chart type. Default `'bar'`. */
+  type?: ChartType;
+  /** Row field for the category (x) axis. */
+  category: keyof TData & string;
+  /** Row field(s) for the value (y) series. */
+  value: (keyof TData & string) | Array<keyof TData & string>;
+  /** Pivot dimension: one series per distinct value of this field. */
+  series?: keyof TData & string;
+  /** Aggregation when several rows share a category. Default `'sum'`. */
+  reduce?: "sum" | "avg" | "count";
+  /** Stack bar / area series instead of grouping them. */
+  stacked?: boolean;
+  /** Stack to 100% (implies `stacked`). */
+  stacked100?: boolean;
+  /** Order categories. Default: insertion order (value-desc when `topN` is set). */
+  sort?: "value-desc" | "value-asc" | "category" | "none";
+  /** Keep only the top N categories; bucket the rest into "Other". */
+  topN?: number;
+  /** Palette for series without an explicit colour. */
+  palette?: string[];
+  /** Number format for the value axis, tooltips and data labels. */
+  valueFormat?: ChartValueFormat;
+  /** Show the clickable legend. Default `true`. */
+  legend?: boolean;
+  /** Draw the value on each bar / point / slice. Default `false`. */
+  dataLabels?: boolean;
+  /** Show the search box above the chart (filters rows first). Default `true`. */
+  searchable?: boolean;
+  /** Placeholder for the search box. */
+  searchPlaceholder?: string;
+};
+
 export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
   /** Field whose value buckets each row into a lane. */
   groupBy: keyof TData & string;
@@ -917,6 +970,13 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * {@link SchedulerConfig}.
    */
   scheduler?: SchedulerConfig<TFeatures, TData>;
+  /**
+   * Chart view. When set, the grid renders its FILTERED + SORTED rows as a chart
+   * instead of a table (search / filters / sort flow through). Unlike board and
+   * scheduler, the renderer is free - the grid lazy-loads a built-in `SvChart`
+   * view, overridable via `registerChartView`. See {@link ChartViewConfig}.
+   */
+  chart?: ChartViewConfig<TFeatures, TData>;
   /**
    * Pivot mode. When set (and `pivotMode` is on), the grid renders its rows as a
    * pivot table in place - the same grid, aggregated across `pivot.rows` /

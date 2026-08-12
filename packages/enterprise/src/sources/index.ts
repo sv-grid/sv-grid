@@ -20,7 +20,7 @@ export {
   type RestAdapter,
   type OffsetLimitOptions,
 } from './rest-adapters'
-export { introspectSupabaseTable, type IntrospectSupabaseOptions } from './introspect-supabase'
+export { introspectSupabaseTable, listSupabaseTables, type IntrospectSupabaseOptions } from './introspect-supabase'
 export {
   createSupabaseRealtime,
   type SupabaseRealtimeConfig,

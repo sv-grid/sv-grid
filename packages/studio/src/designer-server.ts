@@ -73,6 +73,21 @@ const MIME: Record<string, string> = {
   '.map': 'application/json; charset=utf-8',
 }
 
+/** Quote a SQL identifier for the dialect (doubling the closing quote char). */
+function quoteIdent(dialect: SqlDialectName, name: string): string {
+  if (dialect === 'mysql') return '`' + name.replace(/`/g, '``') + '`'
+  if (dialect === 'mssql') return '[' + name.replace(/]/g, ']]') + ']'
+  return '"' + name.replace(/"/g, '""') + '"' // postgres / supabase / sqlite
+}
+
+/** A read-only preview SELECT for one table (optionally schema-qualified). No
+ *  params - it's a fixed `SELECT * ... LIMIT n` (MSSQL uses `TOP n`). */
+function buildPreviewSql(dialect: SqlDialectName, table: string, schema: string | undefined, limit: number): string {
+  const t = schema ? `${quoteIdent(dialect, schema)}.${quoteIdent(dialect, table)}` : quoteIdent(dialect, table)
+  const n = Math.max(1, Math.min(200, Math.floor(limit)))
+  return dialect === 'mssql' ? `SELECT TOP ${n} * FROM ${t}` : `SELECT * FROM ${t} LIMIT ${n}`
+}
+
 /** The runtime deps the generated code imports, keyed by a source needle. */
 const RUNTIME_DEPS: Array<[needle: string, dep: string, version: string]> = [
   ["from '@supabase/supabase-js'", '@supabase/supabase-js', '^2.45.0'],
@@ -332,8 +347,9 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
       const reqBody = JSON.parse(body) as {
         dialect?: SqlDialectName
         url?: string
-        action?: 'tables' | 'introspect' | 'test'
+        action?: 'tables' | 'introspect' | 'test' | 'preview'
         tables?: string[]
+        schema?: string
       }
       const { dialect, url, action } = reqBody
       if (!dialect || !url) {
@@ -358,6 +374,22 @@ export async function startDesignerServer(opts: DesignerServerOptions): Promise<
         try {
           const probe = await probeConnection(dialect, execute, { counts: true })
           send(res, 200, JSON.stringify(probe))
+        } catch (err) {
+          send(res, 502, JSON.stringify({ error: err instanceof Error ? err.message : String(err) }))
+        }
+        return
+      }
+      if (action === 'preview') {
+        // "Preview data": run a real SELECT so the designer canvas shows the user's
+        // actual rows (the SQL equivalent of the Supabase/REST live preview).
+        const table = Array.isArray(reqBody.tables) ? reqBody.tables[0] : undefined
+        if (!table) {
+          send(res, 400, JSON.stringify({ error: 'a table is required for preview' }))
+          return
+        }
+        try {
+          const rows = await execute(buildPreviewSql(dialect, table, reqBody.schema, 25), [])
+          send(res, 200, JSON.stringify({ rows }))
         } catch (err) {
           send(res, 502, JSON.stringify({ error: err instanceof Error ? err.message : String(err) }))
         }

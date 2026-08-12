@@ -11,7 +11,7 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, SchedulerViewConfig, Screen, StudioProject } from './project.js'
+import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, SchedulerViewConfig, Screen, StudioProject, SupabaseSource } from './project.js'
 import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, eventSlot, FORM_SUBMIT, GRID_EVENTS, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen, ssrScreenShape } from './project.js'
 import { uiComponentSpec, gridApiSettableProps, STANDARD_UI_EVENTS } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
@@ -1731,7 +1731,7 @@ ${content}
 /** A self-contained screen page composing the screen's blocks. When `accessEnabled`
  *  the page gates create / update affordances by the current role (server still
  *  enforces via the route's `authorize`). */
-function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Screen, resolve: (name: string) => EntitySchema | undefined, rawResolve: (name: string) => EntitySchema | undefined, accessEnabled = false, i18nEnabled = false, routeById: Map<string, string> = new Map(), drillEnabled = false, ssrData = false): GeneratedFile {
+function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Screen, resolve: (name: string) => EntitySchema | undefined, rawResolve: (name: string) => EntitySchema | undefined, accessEnabled = false, i18nEnabled = false, routeById: Map<string, string> = new Map(), drillEnabled = false, ssrData = false, entSource?: EntityDataSource): GeneratedFile {
   const n = namesFor(schema)
   const label = schema.label ?? n.label
   const blocks = screen.blocks
@@ -1791,6 +1791,11 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // Filter panels drive the grid's controller; record panels read the grid's
   // selection - both need the controller even if the grid isn't editable.
   const needsController = hasGrid || wantsForm || hasFilter || hasRecord
+  // Supabase Realtime: when the screen's entity is Supabase-backed and opts into
+  // live updates, subscribe to Postgres change streams and refresh() the paged
+  // grid on any INSERT / UPDATE / DELETE (respects the active sort/filter/page).
+  const rtSupabase = !ssrData && needsController && entSource?.kind === 'supabase' && entSource.realtime === true
+  const rtTable = rtSupabase ? (entSource as SupabaseSource).table : ''
   const hasAgg = has(allBlocks, 'chart') || has(allBlocks, 'dashboard') || has(allBlocks, 'kpi') || has(allBlocks, 'gauge') || has(allBlocks, 'tree')
   const relationFields = schema.fields.filter((f) => f.type === 'relation' && f.relation)
 
@@ -1859,8 +1864,11 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   if (hasPivot) entImports.push('SvPivotDesigner')
   // The scheduler renderer (grid scheduler-view + calendar block) is registered app-wide (idempotent).
   if (usesScheduler) entImports.push('enableSchedulerView')
+  if (rtSupabase) entImports.push('createSupabaseRealtime', 'type SupabaseRealtimeClientLike')
   // Dedupe: record + form both want SvGridEditPanel.
   const entImport = entImports.length ? `import { ${[...new Set(entImports)].join(', ')} } from '@svgrid/enterprise'\n  ` : ''
+  // Realtime pulls the shared client from the generated connections module.
+  const connImport = rtSupabase ? `import { supabaseClient } from '$lib/connections'\n  ` : ''
   const lookupVars = relationFields.map((f) => lookupVar(schema, f.field))
   const childSchemaVars = childList.map((c) => namesFor(c).schemaVar)
   const childTypes = childList.map((c) => namesFor(c).type)
@@ -1907,11 +1915,14 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     const ctlDecl = codeGrid
       ? `const __ctl = ${ctlBase}\n  const controller = { ...__ctl, createRow: async (i: Partial<${n.type}>) => { const r = await __ctl.createRow(i); gridCtx.fire('rowAdded', r); return r }, updateRow: async (id: string, p: Partial<${n.type}>) => { const r = await __ctl.updateRow(id, p); gridCtx.fire('rowUpdated', r); return r }, deleteRow: async (id: string) => { await __ctl.deleteRow(id); gridCtx.fire('rowDeleted', id) } }`
       : `const controller = ${ctlBase}`
+    const rtWiring = rtSupabase
+      ? `\n    const __rt = createSupabaseRealtime({ client: supabaseClient as unknown as SupabaseRealtimeClientLike, table: ${jsStr(rtTable)}, debounceMs: 250, onChange: () => controller.refresh() })
+    return () => { __rt.unsubscribe(); controller.dispose() } })`
+      : `\n    controller.refresh(); return () => controller.dispose() })`
     parts.push(`const idField = ${n.schemaVar}.idField ?? 'id'
   let view = $state<ServerState<${n.type}>>({ rows: [], total: 0, loading: false, saving: false, error: null, pageIndex: 0, pageSize: ${gridPageSize}, pageCount: 1, sortModel: [], filterModel: {} })
   ${ctlDecl}
-  $effect(() => {${urlFilter}
-    controller.refresh(); return () => controller.dispose() })`)
+  $effect(() => {${urlFilter}${rtSupabase ? '\n    controller.refresh()' : ''}${rtWiring}`)
   }
   const actionSnippets: string[] = []
   // Tree-grid scripts reference `allRows`; collected here, appended AFTER its declaration.
@@ -2135,7 +2146,7 @@ ${body}
     path: `src/routes/${screen.route}/+page.svelte`,
     description: `${screen.title} screen (${blocks.map((b) => b.config.kind).join(', ') || 'empty'}).`,
     contents: `<script lang="ts">
-  ${gridImports}${entImport}${handleImport}${accessImport}${i18nImport}${gotoImport}${codeImport}${pageImport}${ssrData ? "import type { PageProps } from './$types'\n  " : ''}import { ${schemaVarImports.join(', ')}, ${typeImports.map((t) => `type ${t}`).join(', ')} } from '$lib/schemas'
+  ${gridImports}${entImport}${connImport}${handleImport}${accessImport}${i18nImport}${gotoImport}${codeImport}${pageImport}${ssrData ? "import type { PageProps } from './$types'\n  " : ''}import { ${schemaVarImports.join(', ')}, ${typeImports.map((t) => `type ${t}`).join(', ')} } from '$lib/schemas'
 ${dataImports.length ? `  import { ${dataImports.join(', ')} } from '$lib/data'\n` : ''}
   ${ssrData ? 'let { data }: PageProps = $props()\n\n  ' : ''}${parts.join('\n\n  ')}
 </script>
@@ -2552,7 +2563,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     if (s.entity === undefined) continue // freestanding screen - gates no entity route
     screensByEntity.set(s.entity, [...(screensByEntity.get(s.entity) ?? []), s.id])
   }
-  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled, screensByEntity, triggers: project.triggers })
+  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled, screensByEntity, triggers: project.triggers, supabaseConn: project.supabase, supabaseAuth: project.auth?.enabled === true && project.auth.provider === 'supabase' })
   const byName = new Map(prepared.map((s) => [s.name, s]))
   // Raw (unprepared) entities keep their original field set - needed to derive
   // relation display-field names that match withRelationLabels (the prepared
@@ -2611,7 +2622,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
       }
       continue
     }
-    pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled))
+    pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled, false, sources[screen.entity]))
   }
   // Any SSR screen needs the shared URL-params -> query helper (server-only).
   const ssrHelpers = project.screens.some((s) => isSsrScreen(project, s)) ? [ssrQueryHelperFile()] : []
@@ -2629,7 +2640,11 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   // auth requires that active layer, so its user store can live in the same schema.
   const firstSqlSrc = sqlEntities.length ? sources[sqlEntities[0]!.name] : undefined
   const dataLayerActive = project.dataLayer === 'drizzle' && sqlEntities.length > 0 && dzDialect(firstSqlSrc?.kind === 'sql' ? firstSqlSrc.dialect : undefined) !== null
-  const dbBackedAuth = authEnabled && dataLayerActive
+  // Supabase Auth: a client-side SvAuthGate over the shared Supabase client, in place
+  // of the builtin cookie-session scaffold. Mutually exclusive with the builtin
+  // provider, and it never uses the DB-backed user store.
+  const supabaseAuth = authEnabled && project.auth?.provider === 'supabase'
+  const dbBackedAuth = authEnabled && !supabaseAuth && dataLayerActive
   const authRegister = dbBackedAuth && project.auth?.register === true
   const authUserAdmin = dbBackedAuth && accessEnabled && project.auth?.userAdmin === true
   const authTwoFactor = dbBackedAuth && project.auth?.twoFactor === true
@@ -2637,16 +2652,18 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   // Without the Drizzle layer (or on MSSQL, which it can't cover), ship plain SQL the
   // user runs once against their database - otherwise the tables must pre-exist.
   const ddlFiles = sqlEntities.length > 0 && !dataLayerActive ? sqlDdlFiles(project.entities, sources) : []
-  const authFileList = authEnabled ? authFiles(project, dbBackedAuth, accessEnabled) : []
+  // The builtin cookie-session auth files (hooks.server, /login, session store, ...)
+  // are skipped for the Supabase provider - SvAuthGate replaces them.
+  const authFileList = authEnabled && !supabaseAuth ? authFiles(project, dbBackedAuth, accessEnabled) : []
   const auditFiles = auditEnabled ? [auditModule(), auditRouteFile(), auditViewerPage()] : []
   // Routes that render bare (no shell) + skip the login guard.
-  const publicAuthRoutes = authEnabled ? ['/login', ...(authTwoFactor ? ['/login/verify'] : []), ...(authRegister ? ['/register', '/forgot-password', '/reset-password'] : [])] : []
+  const publicAuthRoutes = authEnabled && !supabaseAuth ? ['/login', ...(authTwoFactor ? ['/login/verify'] : []), ...(authRegister ? ['/register', '/forgot-password', '/reset-password'] : [])] : []
   let navExtras = auditEnabled ? [...nav, { href: '/audit', label: 'Audit log', id: '__audit__' }] : nav
   // The admin Users screen is nav-gated by canScreen('__users__') - only full-access ('*') roles see it.
   if (authUserAdmin) navExtras = [...navExtras, { href: '/users', label: 'Users', id: '__users__' }]
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
   const handleFiles = project.screens.some(screenHasCode) ? [handlesModuleFile()] : []
-  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...ddlFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...ssrHelpers, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
+  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...ddlFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...ssrHelpers, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled && !supabaseAuth, supabaseAuth, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the
@@ -4397,6 +4414,7 @@ function envKeysUsed(allSource: string): string[] {
   const keys: string[] = []
   if (allSource.includes('env.DATABASE_URL')) keys.push('DATABASE_URL')
   if (allSource.includes('env.DATABASE_AUTH_TOKEN')) keys.push('DATABASE_AUTH_TOKEN')
+  if (allSource.includes('PUBLIC_SUPABASE_URL')) keys.push('PUBLIC_SUPABASE_URL', 'PUBLIC_SUPABASE_ANON_KEY')
   if (allSource.includes('SESSION_SECRET')) keys.push('SESSION_SECRET')
   // Feature keys - same detection as envExample, so DEPLOY.md's checklist matches
   // .env.example instead of silently omitting the auth/email vars.
@@ -4437,6 +4455,12 @@ function envExample(allSource: string): string | null {
   if (allSource.includes('env.DATABASE_AUTH_TOKEN')) {
     lines.push('# Turso / libSQL database auth token.')
     lines.push('DATABASE_AUTH_TOKEN=')
+  }
+  if (allSource.includes('PUBLIC_SUPABASE_URL')) {
+    if (lines.length) lines.push('')
+    lines.push('# Supabase project (Settings > API). The anon key is public / browser-safe.')
+    lines.push('PUBLIC_SUPABASE_URL=')
+    lines.push('PUBLIC_SUPABASE_ANON_KEY=')
   }
   if (allSource.includes('SESSION_SECRET')) {
     if (lines.length) lines.push('')
