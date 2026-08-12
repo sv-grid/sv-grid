@@ -1,0 +1,77 @@
+/* ============================================================
+ * EMBER - SvGrid's own signature theme. A warm-neutral palette
+ * (warm off-white ground + warm ink in light; a warm near-black
+ * in dark) with Svelte orange as the single accent: selection,
+ * focus and the active-cell ring all glow orange. System font.
+ * Unlike the other presets this one mimics no external design
+ * system - it is the SvGrid house look from the marketing site.
+ * ============================================================ */
+html[data-preset='ember'] .demo-page {
+  --sg-bg: #fdfbf8;
+  --sg-fg: #1b1613;
+  --sg-muted: #6b625a;
+  --sg-border: #e7e1d8;
+  --sg-header-bg: #f4f0ea;
+  --sg-header-fg: #1b1613;
+  --sg-row-alt-bg: #faf7f2;
+  --sg-row-hover-bg: #f3ede4;
+  --sg-selection-bg: #ffe3d6;        /* warm peach - Svelte orange at low tint */
+  --sg-accent: #ff3e00;              /* Svelte orange */
+  --sg-focus-ring: 0 0 0 2px #ff3e00;
+  --sg-input-bg: #ffffff;
+  --sg-input-border: #d3c9bb;
+  --sg-pill-active: #e9f7ec;
+  --sg-pill-active-fg: #15803d;
+  --sg-pill-pending: #fdf0d9;
+  --sg-pill-pending-fg: #b45309;
+  --sg-pill-inactive: #fbe4de;
+  --sg-pill-inactive-fg: #b91c1c;
+  --sg-radius: 8px;
+  --sg-cell-px: 12px;
+  --sg-header-weight: 600; --sg-header-label-color: var(--sg-muted); --sg-header-min-height: 44px;
+  background: #fbf9f6;
+  color: #1b1613;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* Scrollbar - warm neutrals, no accent on drag */
+  --sg-scrollbar-bg: #f4f0ea; --sg-scrollbar-border: #e7e1d8;
+  --sg-scrollbar-thumb: #d6cab8; --sg-scrollbar-thumb-hover: #c3b6a2; --sg-scrollbar-thumb-active: #a89e93;
+  --sg-scrollbar-arrow: #6b625a; --sg-scrollbar-arrow-hover: #1b1613; --sg-scrollbar-arrow-hover-bg: #f3ede4;
+  --sg-scrollbar-arrow-active: #1b1613; --sg-scrollbar-arrow-active-bg: #e7e1d8; --sg-scrollbar-arrow-disabled: #d6cab8;
+}
+html[data-preset='ember'] .demo-page .demo-aside {
+  background: #f4f0ea;
+  border-color: #e7e1d8 !important;
+}
+html[data-preset='ember'][data-theme='dark'] .demo-page {
+  --sg-bg: #1a1512;
+  --sg-fg: #f4efe8;
+  --sg-muted: #a89e93;
+  --sg-border: #2c2520;
+  --sg-header-bg: #211b16;
+  --sg-header-fg: #f4efe8;
+  --sg-row-alt-bg: #171310;
+  --sg-row-hover-bg: #241d18;
+  --sg-selection-bg: #3a2318;        /* warm ember glow under the selection */
+  --sg-accent: #ff5a1f;              /* brighter Svelte orange on dark */
+  --sg-on-accent: #ffffff;
+  --sg-focus-ring: 0 0 0 2px #ff7a45;
+  --sg-input-bg: #221b16;
+  --sg-input-border: #3d332a;
+  --sg-pill-active: #0f3d2a;
+  --sg-pill-active-fg: #6ee7b7;
+  --sg-pill-pending: #4a2f10;
+  --sg-pill-pending-fg: #fde68a;
+  --sg-pill-inactive: #4a1d18;
+  --sg-pill-inactive-fg: #fecaca;
+  background: #100d0b;
+  color: #f4efe8;
+  /* Scrollbar - warm near-black */
+  --sg-scrollbar-bg: #17120e; --sg-scrollbar-border: rgba(168, 158, 147, 0.08);
+  --sg-scrollbar-thumb: #4a3f35; --sg-scrollbar-thumb-hover: #5f5347; --sg-scrollbar-thumb-active: #a89e93;
+  --sg-scrollbar-arrow: #a89e93; --sg-scrollbar-arrow-hover: #f4efe8; --sg-scrollbar-arrow-hover-bg: #2a221c;
+  --sg-scrollbar-arrow-active: #f4efe8; --sg-scrollbar-arrow-active-bg: #3a3128; --sg-scrollbar-arrow-disabled: #5f5347;
+}
+html[data-preset='ember'][data-theme='dark'] .demo-page .demo-aside {
+  background: #17120e;
+  border-color: #2c2520 !important;
+}
