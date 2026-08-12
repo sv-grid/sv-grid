@@ -56,22 +56,23 @@ export type ThemePreset = {
 export const themePresets: ThemePreset[] = [
   // Ember is SvGrid's signature look - the palette svgrid.com itself runs on, so
   // a screenshot of the site's grids is reproducible with one stylesheet import.
-  // Unlike the rest of this list it mimics no external design system: warm
-  // neutrals (warm off-white ground and warm ink in light, warm near-black in
-  // dark) with Svelte orange as the single accent.
-  // Orange is spent only on selection, focus and the active-cell ring. The
-  // chrome stays quiet: the header sits a hair off the page ground and earns
-  // its separation from the underline plus small tracked caps, and the frozen
-  // columns are a warm neutral rather than the accent tint the grid would
-  // otherwise derive (which landed right on top of the selection color).
-  { id: 'ember', name: 'Ember', radius: 8, font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-    headerType: { weight: '600', size: '11.5px', transform: 'uppercase', tracking: '0.05em' },
-    light: { bg: '#fdfbf8', fg: '#1b1613', muted: '#6b625a', border: '#e7e1d8', headerBg: '#fbf9f5', headerFg: '#1b1613', accent: '#ff3e00', rowAlt: '#faf7f2', rowHover: '#f3ede4', selectionBg: '#ffe3d6',
-      bgSubtle: '#f4f0ea', headerBorder: '#ddd4c8', headerLabel: '#6b625a',
-      pinnedBg: '#faf7f2', pinnedHeaderBg: '#f6f2ec', pinnedDivider: '#d8cfc2', pinnedBorder: '#d8cfc2', pinnedShadow: 'rgba(94, 72, 52, 0.18)' },
-    dark: { bg: '#1a1512', fg: '#f4efe8', muted: '#a89e93', border: '#2c2520', headerBg: '#1c1713', headerFg: '#f4efe8', accent: '#ff5a1f', rowAlt: '#171310', rowHover: '#241d18', selectionBg: '#3a2318',
-      bgSubtle: '#211b16', headerBorder: '#352c25', headerLabel: '#a89e93',
-      pinnedBg: '#1e1814', pinnedHeaderBg: '#211b16', pinnedDivider: '#3a312a', pinnedBorder: '#3a312a', pinnedShadow: 'rgba(10, 6, 3, 0.55)' } },
+  // It is shaped like the shadcn/ui preset below - white ground, stone neutrals,
+  // 6px rounding, a medium-weight muted header row, no zebra - with SvGrid's
+  // orange standing in for shadcn's near-black primary. Stone rather than zinc
+  // because the neutral has to sit next to orange without going cold, which is
+  // the same pairing shadcn's own orange base color makes.
+  // Orange is spent only on selection, focus and the active-cell ring; nothing
+  // in the chrome is tinted. The frozen columns name a neutral explicitly
+  // instead of letting the grid derive a tint from the accent (that tint landed
+  // right on top of the selection color).
+  { id: 'ember', name: 'Ember', radius: 6, font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    headerType: { weight: '500' },
+    light: { bg: '#ffffff', fg: '#1c1917', muted: '#78716c', border: '#e7e5e4', headerBg: '#fafaf9', headerFg: '#78716c', accent: '#ff3e00', rowAlt: '#ffffff', rowHover: '#f5f5f4', selectionBg: '#ffece3',
+      bgSubtle: '#fafaf9',
+      pinnedBg: '#fafaf9', pinnedHeaderBg: '#f5f5f4', pinnedDivider: '#e7e5e4', pinnedBorder: '#e7e5e4', pinnedShadow: 'rgba(28, 25, 23, 0.10)' },
+    dark: { bg: '#0c0a09', fg: '#fafaf9', muted: '#a8a29e', border: '#292524', headerBg: '#1c1917', headerFg: '#a8a29e', accent: '#ff5a1f', rowAlt: '#0c0a09', rowHover: '#1c1917', selectionBg: '#3a2318',
+      bgSubtle: '#1c1917',
+      pinnedBg: '#151312', pinnedHeaderBg: '#1c1917', pinnedDivider: '#292524', pinnedBorder: '#292524', pinnedShadow: 'rgba(0, 0, 0, 0.50)' } },
   { id: 'shadcn', name: 'shadcn/ui', radius: 6, font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
     light: { bg: '#ffffff', fg: '#09090b', muted: '#71717a', border: '#e4e4e7', headerBg: '#fafafa', headerFg: '#71717a', accent: '#18181b', rowAlt: '#ffffff', rowHover: '#f4f4f5', selectionBg: '#f4f4f5' },
     dark: { bg: '#0a0a0a', fg: '#fafafa', muted: '#a1a1aa', border: '#27272a', headerBg: '#18181b', headerFg: '#a1a1aa', accent: '#fafafa', rowAlt: '#0a0a0a', rowHover: '#18181b', selectionBg: '#27272a' } },
