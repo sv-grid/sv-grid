@@ -107,7 +107,7 @@
 <SvField frame id={uid} {label} {hint} {error} {required} {dir} {size} {invalid} {disabled} {readonly} {loading} {block} width={block ? undefined : 'fit-content'}>
   <button
     bind:this={triggerEl}
-    class="sv-color__trigger"
+    class="sv-color sv-color__trigger"
     class:is-disabled={disabled}
     {...col.swatchProps()}
     use:focusOpen

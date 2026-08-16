@@ -99,6 +99,10 @@
       leaving = true
       leaveTimer = setTimeout(() => { show = false; leaving = false; onClosed?.() }, reduceMotion ? 0 : EXIT_MS)
     }
+    // `open` is this effect's only dependency, so the cleanup runs on reopen (a
+    // no-op after the clearTimeout above) or on destroy - where it matters, so a
+    // drawer unmounted mid-exit doesn't leave a timer firing into a dead scope.
+    return () => clearTimeout(leaveTimer)
   })
 
   // Swipe-down-to-close for the sheet grab handle.

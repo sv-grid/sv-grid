@@ -4956,6 +4956,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "chart",
+        "label": "Chart",
+        "type": "json",
+        "description": "Chart view. When set, the grid renders its FILTERED + SORTED rows as a chart instead of a table (search / filters / sort flow through). Unlike board and scheduler, the renderer is free - the grid lazy-loads a built-in `SvChart` view, overridable via `registerChartView`. See .",
+        "group": "common"
+      },
+      {
         "key": "pivot",
         "label": "Pivot",
         "type": "json",

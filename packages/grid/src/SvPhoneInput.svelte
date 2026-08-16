@@ -105,7 +105,9 @@
   {width}
   leading={countryChip}
 >
-  <input class="sv-phone__number" {...ph.inputProps()} />
+  <!-- `sv-phone` on the control is the component's public CSS/query hook, the
+       same convention SvCountryInput and the rest of the suite follow. -->
+  <input class="sv-phone sv-phone__number" {...ph.inputProps()} />
   {#if name}<input type="hidden" {name} value={ph.value} />{/if}
 </SvField>
 

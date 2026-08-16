@@ -3,7 +3,7 @@
  * scroll lock, and Escape / backdrop dismissal - all inherited from the shared
  * a11y primitives.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, unmount, flushSync } from 'svelte'
 import SvDrawer from './SvDrawer.svelte'
 
@@ -16,6 +16,16 @@ function mountDrawer(props: Record<string, unknown>) {
 }
 
 const dialog = () => document.body.querySelector<HTMLElement>('.sv-drawer')
+
+// Closing plays a 260ms exit keyframe (`is-leaving`) before the panel unmounts,
+// so dismissal assertions have to let that timer run. Fake timers keep it instant.
+const EXIT_MS = 260
+function runExitAnimation() {
+  vi.advanceTimersByTime(EXIT_MS)
+  flushSync()
+}
+
+afterEach(() => { vi.useRealTimers() })
 
 describe('SvDrawer', () => {
   it('renders nothing when closed', () => {
@@ -57,12 +67,15 @@ describe('SvDrawer', () => {
   })
 
   it('closes on Escape and fires onClose', () => {
+    vi.useFakeTimers()
     let closed = 0
     const { destroy } = mountDrawer({ open: true, onClose: () => closed++ })
     try {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
       flushSync()
       expect(closed).toBe(1)
+      expect(dialog()!.classList.contains('is-leaving')).toBe(true) // exit keyframe first
+      runExitAnimation()
       expect(dialog()).toBeNull()
     } finally { destroy() }
   })
@@ -77,11 +90,13 @@ describe('SvDrawer', () => {
   })
 
   it('dismisses on outside (backdrop) pointerdown', () => {
+    vi.useFakeTimers()
     const { destroy } = mountDrawer({ open: true })
     try {
       const backdrop = document.body.querySelector<HTMLElement>('.sv-drawer__backdrop')!
       backdrop.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
       flushSync()
+      runExitAnimation()
       expect(dialog()).toBeNull()
     } finally { destroy() }
   })
@@ -98,6 +113,7 @@ describe('SvDrawer', () => {
   })
 
   it('swiping the grab handle down past the threshold closes the sheet', () => {
+    vi.useFakeTimers()
     let closed = 0
     const { destroy } = mountDrawer({ open: true, sheet: true, onClose: () => closed++ })
     try {
@@ -107,6 +123,7 @@ describe('SvDrawer', () => {
       grab.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 220 }))
       flushSync()
       expect(closed).toBe(1)
+      runExitAnimation()
       expect(dialog()).toBeNull()
     } finally { destroy() }
   })

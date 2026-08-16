@@ -49,8 +49,9 @@ describe('SvNavPane', () => {
     } finally { destroy() }
   })
 
-  it('the resize splitter (ArrowUp) collapses one module row into the rail', () => {
-    let rows: number | undefined
+  // Outlook direction: the strip grows upward, so ArrowUp adds a full row and
+  // ArrowDown collapses one back into the icon rail (see onSplitMove).
+  it('the resize splitter (ArrowDown) collapses one module row into the rail', () => {
     const { target, destroy } = mountNav({
       sections, modules, moduleRows: 3, height: 400,
       // bindable moduleRows reported via a spy is awkward; assert DOM instead.
@@ -60,11 +61,21 @@ describe('SvNavPane', () => {
       const split = target.querySelector<HTMLElement>('.sv-nav__msplit')!
       expect(split.getAttribute('role')).toBe('separator')
       expect(split.getAttribute('aria-valuenow')).toBe('3')
-      split.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
+      split.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
       flushSync()
       expect(target.querySelectorAll('.sv-nav__mod').length).toBe(2)
       expect(target.querySelector('.sv-nav__msplit')!.getAttribute('aria-valuenow')).toBe('2')
-      void rows
+    } finally { destroy() }
+  })
+
+  it('the resize splitter (ArrowUp) promotes a rail icon back to a full row', () => {
+    const { target, destroy } = mountNav({ sections, modules, moduleRows: 3, height: 400 })
+    try {
+      const split = target.querySelector<HTMLElement>('.sv-nav__msplit')!
+      split.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
+      flushSync()
+      expect(target.querySelectorAll('.sv-nav__mod').length).toBe(4)
+      expect(target.querySelector('.sv-nav__mrail')).toBeNull() // rail drops out when empty
     } finally { destroy() }
   })
 })
