@@ -1,7 +1,7 @@
 # Prompt: 07-grouping-aggregation
 
 Source: `examples/src/demos/07-grouping-aggregation.svelte`
-Live:   https://svgrid.dev/#/demos/07-grouping-aggregation
+Live:   https://svgrid.com/demos/07-grouping-aggregation/
 
 ## What this demo proves
 

@@ -1,7 +1,7 @@
 # Prompt: 00-trading-desk
 
 Source: `examples/src/demos/00-trading-desk.svelte`
-Live:   https://svgrid.dev/#/demos/00-trading-desk
+Live:   https://svgrid.com/demos/00-trading-desk/
 
 ## What this demo proves
 

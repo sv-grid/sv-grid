@@ -1,7 +1,7 @@
 # Prompt: 06-large-dataset
 
 Source: `examples/src/demos/06-large-dataset.svelte`
-Live:   https://svgrid.dev/#/demos/06-large-dataset
+Live:   https://svgrid.com/demos/06-large-dataset/
 
 ## What this demo proves
 
@@ -9,10 +9,15 @@ Live:   https://svgrid.dev/#/demos/06-large-dataset
 ------------------------------
 Row + column virtualization make a wide grid scroll smoothly.
 
-The user can scale the dataset up at runtime. The default is 10,000 rows
-× 50 columns - a realistic enterprise size that mounts in well under a
-second. The 100,000-row option pushes the grid hard; expect a brief
-pause on mount, then smooth scrolling once the virtualizer is live.
+The data is a sales team where each rep carries a rolling monthly ledger -
+Revenue / Units / Margin per month going back a couple of years. That's a
+genuinely wide real-world shape (not placeholder "Metric N" columns), so
+scrolling both axes exercises the virtualizer on data that means something.
+
+The user can scale it up at runtime. The default is 10,000 rows × 55
+columns - a realistic enterprise size that mounts in well under a second.
+The 100,000-row option pushes the grid hard; expect a brief pause on
+mount, then smooth scrolling once the virtualizer is live.
 
 ## Imports
 

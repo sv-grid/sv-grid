@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvPopconfirm - a quick confirm step in a popover. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-popconfirm
+  // SvPopconfirm - a quick confirm step in a popover. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-popconfirm
   import { SvPopconfirm, SvButton } from '@svgrid/grid'
 
   function remove() {

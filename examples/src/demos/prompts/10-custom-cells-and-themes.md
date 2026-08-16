@@ -1,7 +1,7 @@
 # Prompt: 10-custom-cells-and-themes
 
 Source: `examples/src/demos/10-custom-cells-and-themes.svelte`
-Live:   https://svgrid.dev/#/demos/10-custom-cells-and-themes
+Live:   https://svgrid.com/demos/10-custom-cells-and-themes/
 
 ## What this demo proves
 

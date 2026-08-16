@@ -1,7 +1,7 @@
 # Prompt: 27-spreadsheet-ribbon
 
 Source: `examples/src/demos/27-spreadsheet-ribbon.svelte`
-Live:   https://svgrid.dev/#/demos/27-spreadsheet-ribbon
+Live:   https://svgrid.com/demos/27-spreadsheet-ribbon/
 
 ## What this demo proves
 

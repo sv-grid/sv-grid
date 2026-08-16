@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvStepper - a progress stepper for wizards and multi-step forms. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-stepper
+  // SvStepper - a progress stepper for wizards and multi-step forms. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-stepper
   import { SvStepper } from '@svgrid/grid'
 
   let current = $state(0)

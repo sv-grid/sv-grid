@@ -251,5 +251,5 @@ output isn't influenced by client-only state.
   where.
 - [Recipes / Cookbook](./recipes.md) - the saved-views recipe uses
   this page's pattern.
-- [Demo #36 Reporting workspace](https://svgrid.com/#/demos/36-reporting-workspace)
+- [Demo #36 Reporting workspace](https://svgrid.com/demos/36-reporting-workspace/)
   - end-to-end implementation.

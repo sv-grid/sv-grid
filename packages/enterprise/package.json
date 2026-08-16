@@ -5,7 +5,7 @@
     "url": "https://svgrid.com/pricing"
   },
   "version": "2.2.1",
-  "description": "Pro feature pack for sv-grid: data export (Excel, PDF, CSV, TSV, HTML), import (xlsx, CSV, TSV, JSON), pivot table + designer, AI assistant (BYO model), and printing. Requires a paid license key.",
+  "description": "Enterprise feature pack for SvGrid: Excel (xlsx), PDF, CSV, TSV and HTML export, Excel/CSV/JSON import, pivot tables with a drag-and-drop designer, paginated print, Kanban board and scheduler views. Requires a paid license key.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "jQWidgets <sales@jqwidgets.com>",
   "homepage": "https://svgrid.com/pricing",
@@ -25,11 +25,6 @@
       "types": "./src/print.ts",
       "svelte": "./src/print.ts",
       "import": "./src/print.ts"
-    },
-    "./ai": {
-      "types": "./src/ai.ts",
-      "svelte": "./src/ai.ts",
-      "import": "./src/ai.ts"
     },
     "./import": {
       "types": "./src/import.ts",
@@ -96,5 +91,30 @@
     "@svgrid/grid": "workspace:^",
     "typescript": "6.0.3",
     "vite": "^8.0.10"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sv-grid/sv-grid.git",
+    "directory": "packages/enterprise"
+  },
+  "keywords": [
+    "svelte",
+    "svelte5",
+    "sveltekit",
+    "data grid",
+    "datagrid",
+    "data table",
+    "excel export",
+    "xlsx",
+    "pdf export",
+    "csv",
+    "pivot table",
+    "pivot",
+    "import",
+    "print",
+    "kanban",
+    "scheduler",
+    "svgrid",
+    "sv-grid"
+  ]
 }

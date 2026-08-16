@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvAlert - an inline contextual message with icon and actions. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-alert
+  // SvAlert - an inline contextual message with icon and actions. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-alert
   import { SvAlert, SvButton } from '@svgrid/grid'
 </script>
 

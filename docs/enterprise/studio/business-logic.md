@@ -205,7 +205,7 @@ Only `qty`, `rate`, `taxRate`, and `status` are ever submitted - `subtotal`,
 (client-side) or SQL (inside the API route) - write the logic once, run it
 everywhere.
 
-Live demo: [Computed fields & hooks](https://svgrid.com/#/demos/199-studio-computed-hooks).
+Live demo: [Computed fields & hooks](https://svgrid.com/demos/199-studio-computed-hooks/).
 
 ## See also
 

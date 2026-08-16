@@ -194,6 +194,7 @@ export { lockScroll, scrollLockDepth } from './a11y/scroll-lock'
 export {
   createDismissableLayer,
   dismissableDepth,
+  onScrollOutside,
   type DismissableLayer,
   type DismissableOptions,
 } from './a11y/dismissable'

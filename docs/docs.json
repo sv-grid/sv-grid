@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-12T08:08:11.867Z",
+  "generatedAt": "2026-08-15T19:32:00.913Z",
   "counts": {
     "pages": 365,
     "enterprise": 55,
-    "withDemo": 243
+    "withDemo": 208
   },
   "pillars": [
     {
@@ -702,11 +702,8 @@
       "pillar": "company",
       "tier": "community",
       "words": 661,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "35-permissions-audit",
-        "49-admin-dashboard"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "compliance/gdpr.md",
@@ -729,10 +726,8 @@
       "pillar": "company",
       "tier": "community",
       "words": 647,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "41-healthcare-emr"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "compliance/index.md",
@@ -743,7 +738,7 @@
       "pillar": "company",
       "tier": "community",
       "words": 463,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -766,8 +761,8 @@
       "section": "enterprise",
       "pillar": "company",
       "tier": "enterprise",
-      "words": 699,
-      "lastUpdated": "2026-07-22",
+      "words": 689,
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -779,7 +774,7 @@
       "pillar": "company",
       "tier": "enterprise",
       "words": 892,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -791,7 +786,7 @@
       "pillar": "company",
       "tier": "enterprise",
       "words": 787,
-      "lastUpdated": "2026-08-10",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -802,14 +797,9 @@
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "enterprise",
-      "words": 2051,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "192-data-app-studio",
-        "193-studio-live-sql",
-        "194-studio-supabase",
-        "197-studio-chart"
-      ]
+      "words": 2040,
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/access-control.md",
@@ -834,10 +824,8 @@
       "tier": "enterprise",
       "group": "Ship it",
       "words": 583,
-      "lastUpdated": "2026-07-22",
-      "demoIds": [
-        "17-accessibility"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/ai-generation.md",
@@ -901,10 +889,8 @@
       "tier": "enterprise",
       "group": "Auth & security",
       "words": 870,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "196-studio-auth"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/business-logic.md",
@@ -916,10 +902,8 @@
       "tier": "enterprise",
       "group": "Logic & generated code",
       "words": 1403,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "199-studio-computed-hooks"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/cli.md",
@@ -956,11 +940,9 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Logic & generated code",
-      "words": 804,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "192-data-app-studio"
-      ]
+      "words": 805,
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/concepts.md",
@@ -985,10 +967,8 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 708,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "200-studio-dashboard"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/data-binding.md",
@@ -1013,11 +993,8 @@
       "tier": "enterprise",
       "group": "Connect to data",
       "words": 1677,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "194-studio-supabase",
-        "193-studio-live-sql"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/deployment.md",
@@ -1083,10 +1060,8 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 909,
-      "lastUpdated": "2026-07-18",
-      "demoIds": [
-        "198-studio-form-fields"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/getting-started.md",
@@ -1097,13 +1072,9 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 2535,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "192-data-app-studio",
-        "193-studio-live-sql",
-        "194-studio-supabase"
-      ]
+      "words": 2542,
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/i18n.md",
@@ -1167,10 +1138,8 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 908,
-      "lastUpdated": "2026-07-15",
-      "demoIds": [
-        "181-master-detail-grid"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/navigation.md",
@@ -1234,10 +1203,8 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 740,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "194-studio-supabase"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/relations.md",
@@ -1249,11 +1216,8 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 889,
-      "lastUpdated": "2026-07-22",
-      "demoIds": [
-        "194-studio-supabase",
-        "195-studio-relations"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/rest-api.md",
@@ -1265,10 +1229,8 @@
       "tier": "enterprise",
       "group": "Connect to data",
       "words": 1236,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "337-live-rest-dummyjson"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/rest-grid.md",
@@ -1353,10 +1315,8 @@
       "tier": "enterprise",
       "group": "One-page CRUD tutorials",
       "words": 1355,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "194-studio-supabase"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/supabase-sample.md",
@@ -1368,11 +1328,8 @@
       "tier": "enterprise",
       "group": "One-page CRUD tutorials",
       "words": 1071,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "338-pglite-northwind",
-        "194-studio-supabase"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/supabase.md",
@@ -1384,10 +1341,8 @@
       "tier": "enterprise",
       "group": "Connect to data",
       "words": 1454,
-      "lastUpdated": "2026-08-12",
-      "demoIds": [
-        "194-studio-supabase"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "enterprise/studio/testing.md",
@@ -1425,7 +1380,7 @@
       "tier": "enterprise",
       "group": "Reference & help",
       "words": 806,
-      "lastUpdated": "2026-08-12",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -1450,7 +1405,7 @@
       "pillar": "company",
       "tier": "enterprise",
       "words": 499,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -1462,7 +1417,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3330,
-      "lastUpdated": "2026-07-02",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -1591,12 +1546,9 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1273,
-      "lastUpdated": "2026-07-22",
-      "demoIds": [
-        "75-ai-smart-paste",
-        "52-pivot-table"
-      ]
+      "words": 1272,
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "help/ai-smart-paste.md",
@@ -1620,8 +1572,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2097,
-      "lastUpdated": "2026-08-10",
+      "words": 2086,
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -1674,8 +1626,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1037,
-      "lastUpdated": "2026-07-21",
+      "words": 1040,
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -1686,11 +1638,10 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1252,
-      "lastUpdated": "2026-07-21",
+      "words": 1273,
+      "lastUpdated": "2026-08-15",
       "demoIds": [
-        "06-large-dataset",
-        "33-server-infinite"
+        "06-large-dataset"
       ]
     },
     {
@@ -1702,10 +1653,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 839,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "19-ssr"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "help/cells/cell-components.md",
@@ -1906,7 +1855,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 944,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "54-columns-hierarchy"
       ]
@@ -1934,7 +1883,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 591,
-      "lastUpdated": "2026-07-02",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "01-quick-start"
       ]
@@ -2100,8 +2049,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1467,
-      "lastUpdated": "2026-08-09",
+      "words": 1536,
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2254,8 +2203,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1205,
-      "lastUpdated": "2026-07-02",
+      "words": 1208,
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2267,7 +2216,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3881,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "21-export-and-print"
       ]
@@ -2448,7 +2397,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1112,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "07-grouping-aggregation"
       ]
@@ -2574,7 +2523,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1156,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "38-rtl-i18n"
       ]
@@ -2602,8 +2551,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1332,
-      "lastUpdated": "2026-08-08",
+      "words": 1333,
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "00-trading-desk"
       ]
@@ -2616,8 +2565,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 845,
-      "lastUpdated": "2026-07-21",
+      "words": 843,
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2628,8 +2577,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1077,
-      "lastUpdated": "2026-07-22",
+      "words": 1078,
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2641,11 +2590,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2127,
-      "lastUpdated": "2026-08-09",
-      "demoIds": [
-        "08-tree-and-master-detail",
-        "09-server-side"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "help/migrating-from-devextreme.md",
@@ -2656,7 +2602,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 476,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2668,7 +2614,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 937,
-      "lastUpdated": "2026-08-09",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2680,7 +2626,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 406,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2692,10 +2638,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 970,
-      "lastUpdated": "2026-08-09",
-      "demoIds": [
-        "27-spreadsheet-ribbon"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "help/migrating-from-jqxgrid.md",
@@ -2706,7 +2650,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 574,
-      "lastUpdated": "2026-08-09",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2718,7 +2662,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 498,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2730,10 +2674,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 871,
-      "lastUpdated": "2026-06-22",
-      "demoIds": [
-        "74-theme-integrations"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "help/migrating-from-primevue-datatable.md",
@@ -2744,7 +2686,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 452,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2756,7 +2698,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 454,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2768,7 +2710,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 532,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2780,7 +2722,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 732,
-      "lastUpdated": "2026-08-09",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2792,7 +2734,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 670,
-      "lastUpdated": "2026-07-02",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2804,7 +2746,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 453,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2816,7 +2758,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 482,
-      "lastUpdated": "2026-08-09",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2840,7 +2782,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 642,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2852,7 +2794,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 632,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -2915,8 +2857,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1111,
-      "lastUpdated": "2026-07-22",
+      "words": 1141,
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "22-admin-template"
       ]
@@ -3197,7 +3139,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1152,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "36-reporting-workspace"
       ]
@@ -3223,7 +3165,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1270,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "16-csp-compliant"
       ]
@@ -3344,10 +3286,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 963,
-      "lastUpdated": "2026-07-30",
-      "demoIds": [
-        "74-theme-integrations"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "help/skill.md",
@@ -3384,7 +3324,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1092,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "55-state-maintenance"
       ]
@@ -3465,10 +3405,9 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1183,
-      "lastUpdated": "2026-08-12",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
-        "74-theme-integrations",
-        "10-custom-cells-and-themes"
+        "74-theme-integrations"
       ]
     },
     {
@@ -4854,7 +4793,7 @@
       "pillar": "company",
       "tier": "community",
       "words": 1680,
-      "lastUpdated": "2026-06-22",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -4866,11 +4805,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 228,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "55-state-maintenance",
-        "24-validation"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/barcode-cells.md",
@@ -4881,7 +4817,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 973,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "112-barcode-cells"
       ]
@@ -4894,11 +4830,9 @@
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 1050,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "134-stress-matrix"
-      ]
+      "words": 1028,
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/between-date-filter.md",
@@ -4909,7 +4843,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 99,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -4949,10 +4883,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 550,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "84-editor-types"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/chartjs-sync.md",
@@ -4963,7 +4895,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 100,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "73-chartjs-sync"
       ]
@@ -4977,7 +4909,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 95,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "62-conditional-styling"
       ]
@@ -4991,10 +4923,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 286,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "33-server-infinite"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/custom-filter-functions.md",
@@ -5017,10 +4947,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 268,
-      "lastUpdated": "2026-06-12",
-      "demoIds": [
-        "68-dependent-dropdowns"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/drag-drop-columns.md",
@@ -5031,7 +4959,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 105,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "54-columns-hierarchy"
       ]
@@ -5045,7 +4973,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 108,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "69-highlighted-search"
       ]
@@ -5059,10 +4987,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 756,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "97-side-drawer-edit"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/grid-state-inspector.md",
@@ -5072,11 +4998,9 @@
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 776,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "135-devtools-panel"
-      ]
+      "words": 758,
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/heatmap-cells.md",
@@ -5087,7 +5011,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 95,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "60-pivot-expandable"
       ]
@@ -5101,7 +5025,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 422,
-      "lastUpdated": "2026-06-12",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -5113,7 +5037,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 209,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "343-kanban-board"
       ]
@@ -5127,7 +5051,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 103,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "31-lazy-tree-load"
       ]
@@ -5141,10 +5065,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 310,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "72-graphql-adapter"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/million-rows.md",
@@ -5155,7 +5077,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 101,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "78-million-rows"
       ]
@@ -5169,7 +5091,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 106,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "81-mobile-card-view"
       ]
@@ -5183,7 +5105,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 102,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "59-export-multi-sheet"
       ]
@@ -5197,7 +5119,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 102,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -5223,7 +5145,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 101,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "25-column-pinning"
       ]
@@ -5236,11 +5158,9 @@
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 710,
-      "lastUpdated": "2026-06-12",
-      "demoIds": [
-        "132-profiler-dashboard"
-      ]
+      "words": 688,
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/role-based-editing.md",
@@ -5251,7 +5171,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 100,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "41-healthcare-emr"
       ]
@@ -5265,7 +5185,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 95,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -5279,10 +5199,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 249,
-      "lastUpdated": "2026-06-16",
-      "demoIds": [
-        "63-column-layout-api"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/server-side-filter-with-tanstack-query.md",
@@ -5307,7 +5225,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 110,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "75-ai-smart-paste"
       ]
@@ -5321,7 +5239,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 95,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "11-stock-market"
       ]
@@ -5335,11 +5253,8 @@
       "pillar": "grid",
       "tier": "community",
       "words": 249,
-      "lastUpdated": "2026-06-12",
-      "demoIds": [
-        "71-submit-validation",
-        "24-validation"
-      ]
+      "lastUpdated": "2026-08-15",
+      "demoIds": []
     },
     {
       "path": "recipes/testing-your-grid.md",
@@ -5362,7 +5277,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 100,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "56-export-theme-matched"
       ]
@@ -5376,7 +5291,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 106,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "74-theme-integrations"
       ]
@@ -5404,7 +5319,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 107,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "55-state-maintenance"
       ]
@@ -5430,7 +5345,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 103,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-15",
       "demoIds": [
         "34-realtime-orders"
       ]
@@ -5535,12 +5450,12 @@
       "path": "reference/bundle-size.md",
       "url": "/reference/bundle-size",
       "title": "Bundle size",
-      "summary": "What each feature costs in the final bundle, how to reproduce the numbers on your branch, and what to do if size matters.",
+      "summary": "What SvGrid costs in your bundle, how to reproduce the number on your branch, and what to do if size matters.",
       "section": "reference",
       "pillar": "grid",
       "tier": "community",
-      "words": 534,
-      "lastUpdated": "2026-06-16",
+      "words": 570,
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -5564,7 +5479,7 @@
       "pillar": "grid",
       "tier": "enterprise",
       "words": 737,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {
@@ -5599,8 +5514,8 @@
       "section": "reference",
       "pillar": "grid",
       "tier": "community",
-      "words": 206,
-      "lastUpdated": "2026-06-16",
+      "words": 204,
+      "lastUpdated": "2026-08-15",
       "demoIds": []
     },
     {

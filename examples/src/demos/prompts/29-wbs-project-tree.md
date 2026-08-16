@@ -1,7 +1,7 @@
 # Prompt: 29-wbs-project-tree
 
 Source: `examples/src/demos/29-wbs-project-tree.svelte`
-Live:   https://svgrid.dev/#/demos/29-wbs-project-tree
+Live:   https://svgrid.com/demos/29-wbs-project-tree/
 
 ## What this demo proves
 

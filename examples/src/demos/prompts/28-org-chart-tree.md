@@ -1,7 +1,7 @@
 # Prompt: 28-org-chart-tree
 
 Source: `examples/src/demos/28-org-chart-tree.svelte`
-Live:   https://svgrid.dev/#/demos/28-org-chart-tree
+Live:   https://svgrid.com/demos/28-org-chart-tree/
 
 ## What this demo proves
 

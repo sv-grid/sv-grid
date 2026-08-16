@@ -1,7 +1,7 @@
 # Prompt: 62-conditional-styling
 
 Source: `examples/src/demos/62-conditional-styling.svelte`
-Live:   https://svgrid.dev/#/demos/62-conditional-styling
+Live:   https://svgrid.com/demos/62-conditional-styling/
 
 ## What this demo proves
 

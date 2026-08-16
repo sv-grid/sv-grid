@@ -1,7 +1,7 @@
 # Prompt: 39-print-board-export
 
 Source: `examples/src/demos/39-print-board-export.svelte`
-Live:   https://svgrid.dev/#/demos/39-print-board-export
+Live:   https://svgrid.com/demos/39-print-board-export/
 
 ## What this demo proves
 

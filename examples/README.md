@@ -1,15 +1,17 @@
-﻿# SvGrid - Examples Gallery
+# SvGrid - Examples Gallery
 
-Ten production-quality demos showcasing the full SvGrid feature surface.
+370+ runnable demos covering the full SvGrid feature surface. The first ten
+below are the guided tour; the rest are grouped by feature in the running app
+and on [svgrid.com/demos](https://svgrid.com/demos/).
 
 ```bash
 # from the repo root
 pnpm install
-pnpm --filter @svgrid/grid-example-gallery dev
+pnpm dev
 # open http://localhost:5174
 ```
 
-## Demos
+## Start here
 
 | # | Title | Source | What it shows |
 | - | ----- | ------ | ------------- |
@@ -20,9 +22,19 @@ pnpm --filter @svgrid/grid-example-gallery dev
 | 5 | Inline editing                   | [05-inline-editing.svelte](src/demos/05-inline-editing.svelte) | Typed editors (text / number / checkbox / date) + dirty tracking + save. |
 | 6 | 100k rows · 100 columns          | [06-large-dataset.svelte](src/demos/06-large-dataset.svelte) | Row + column virtualization, chunked load with progress indicator. |
 | 7 | Grouping + aggregation           | [07-grouping-aggregation.svelte](src/demos/07-grouping-aggregation.svelte) | Group by department / country / both, row-summaries footer. |
-| 8 | Tree + master/detail             | [08-tree-and-master-detail.svelte](src/demos/08-tree-and-master-detail.svelte) | Indented file-system tree + a master/detail orders → lines view. |
+| 8 | Tree + master/detail             | [08-tree-and-master-detail.svelte](src/demos/08-tree-and-master-detail.svelte) | Indented file-system tree + a master/detail orders to lines view. |
 | 9 | Server-side data                 | [09-server-side.svelte](src/demos/09-server-side.svelte) | Debounced query, abort-cancellation, page navigation against a mock endpoint. |
 | 10 | Custom cells + themes           | [10-custom-cells-and-themes.svelte](src/demos/10-custom-cells-and-themes.svelte) | `renderSnippet` cells (avatar, pill, progress, sparkline), density + theme toggles. |
+
+## Adding a demo
+
+Two edits, always:
+
+1. `src/demos/<id>-<slug>.svelte` in this folder.
+2. A matching `demo('<id>-<slug>', ...)` entry in `website/src/lib/demos.ts`.
+
+`pnpm demos:count` fails if the two disagree. Community demos take a lighter
+path - see [src/demos/community/README.md](src/demos/community/README.md).
 
 ## Shared
 
@@ -39,6 +51,8 @@ examples/
 │  ├─ main.ts            # entry
 │  ├─ index.css          # shared tokens & helper classes
 │  ├─ demos/             # one .svelte file per example
+│  │  ├─ community/      # community-contributed demos
+│  │  └─ prompts/        # generated AI prompt sidecars
 │  └─ shared/            # seed data, registry
 ├─ index.html
 ├─ package.json

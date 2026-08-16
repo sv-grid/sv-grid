@@ -1,7 +1,7 @@
 # Prompt: 25-column-pinning
 
 Source: `examples/src/demos/25-column-pinning.svelte`
-Live:   https://svgrid.dev/#/demos/25-column-pinning
+Live:   https://svgrid.com/demos/25-column-pinning/
 
 ## What this demo proves
 

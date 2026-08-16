@@ -66,7 +66,7 @@ export const { POST } = createKitHandlers({ schema: customersSchema, source })
 > **Step-by-step walkthrough:** see the dedicated **[Supabase guide](./supabase.md)** -
 > create the table, set up Row-Level Security, and connect from the browser or a
 > SvelteKit server route. It matches the
-> [live Supabase demo](https://svgrid.com/#/demos/194-studio-supabase).
+> [live Supabase demo](https://svgrid.com/demos/194-studio-supabase/).
 
 Supabase is Postgres, so use the same `pg` driver with your Supabase connection
 string. In the Supabase dashboard: **Project Settings -> Database -> Connection
@@ -236,7 +236,7 @@ in-browser Postgres. Great for demos, offline / local-first apps, and tests.
 
 ![The live-SQL demo: a real Postgres in the browser, showing the executed query.](/docs-media/studio-live-sql.png)
 
-> **Live demo:** [Data-app Studio · live SQL](https://svgrid.com/#/demos/193-studio-live-sql) -
+> **Live demo:** [Data-app Studio · live SQL](https://svgrid.com/demos/193-studio-live-sql/) -
 > a full CRUD screen over PGlite; watch the SQL update as you sort and filter.
 
 ---

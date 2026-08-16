@@ -1,7 +1,7 @@
 # Prompt: 20-industrial-dashboard
 
 Source: `examples/src/demos/20-industrial-dashboard.svelte`
-Live:   https://svgrid.dev/#/demos/20-industrial-dashboard
+Live:   https://svgrid.com/demos/20-industrial-dashboard/
 
 ## What this demo proves
 

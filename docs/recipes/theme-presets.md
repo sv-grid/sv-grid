@@ -1,6 +1,6 @@
 # Theme tokens for Ant / MUI / Fluent / shadcn
 
-> Live in [demo 74-theme-integrations](https://svgrid.com/#/demos/74-theme-integrations).
+> Live in [demo 74-theme-integrations](https://svgrid.com/demos/74-theme-integrations/).
 
 <div data-docs-demo="74-theme-integrations" data-height="480"></div>
 

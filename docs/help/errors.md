@@ -167,14 +167,14 @@ the trailing detail at the patch level if the diagnostic improves.
 
 ## @svgrid/enterprise - AI
 
-### `NoProviderError: @svgrid/enterprise/ai: no AI provider registered. Call setAIProvider(fn) with an adapter that talks to OpenAI / Anthropic / your proxy.`
+### `NoProviderError: @svgrid/grid ai: no AI provider registered. Call setAIProvider(fn) with an adapter that talks to OpenAI / Anthropic / your proxy.`
 
 - **Class:** `NoProviderError` (extends `Error`)
 - **When:** Any `api.ai.*` call before `setAIProvider(fn)` ran.
 - **Fix:** Wire your adapter at app boot. For demos, use
   `setAIProvider(mockAIProvider)`.
 
-### `BadJsonError: @svgrid/enterprise/ai: provider returned non-JSON for a json-format request. First 200 chars: <prefix>`
+### `BadJsonError: @svgrid/grid ai: provider returned non-JSON for a json-format request. First 200 chars: <prefix>`
 
 - **Class:** `BadJsonError` (extends `Error`)
 - **When:** A helper asked the provider for JSON and got prose back.
@@ -186,7 +186,7 @@ the trailing detail at the patch level if the diagnostic improves.
   automatically before parsing; multiple fences or surrounding prose
   trip this error.
 
-### `Error: @svgrid/enterprise/ai: aiSmartFill requires at least one example.`
+### `Error: @svgrid/grid ai: aiSmartFill requires at least one example.`
 
 - **Class:** `Error`
 - **When:** `aiSmartFill({ examples: [] })`.

@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvModal - an accessible modal dialog with focus trap. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-modal
+  // SvModal - an accessible modal dialog with focus trap. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-modal
   import { SvModal, SvButton } from '@svgrid/grid'
 
   let open = $state(false)

@@ -86,7 +86,7 @@ you need pivot, advanced export, or a support SLA, that is Enterprise on SvGrid.
 
 ## See also
 
-- [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid) - the side-by-side comparison
+- [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/) - the side-by-side comparison
 - [Architecture](./architecture.md) - the engine + render-component split
 - [Cell components](./cells/cell-components.md) - custom cells and editors
 

@@ -135,7 +135,7 @@ postgres.js, better-sqlite3, mysql2, Kysely, and others all work.
 ### Is Studio free?
 
 It is part of the Enterprise license and is soft-gated - it runs unlicensed with
-a watermark for evaluation. See [pricing](https://svgrid.com/pricing).
+a watermark for evaluation. See [pricing](https://svgrid.com/pricing/).
 
 ## See also
 

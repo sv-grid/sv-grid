@@ -271,7 +271,7 @@ Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../refere
 
 ## See also
 
-- [AI assistant - Enterprise](./ai.md) - the in-grid helpers in full, with response shapes and the license gate
+- [AI assistant](./ai.md) - the in-grid helpers in full, with response shapes
 - [Agents](./agents.md) - build an agent that drives the live grid
 - [Agent Skill](./skill.md) - always-on, project-aware context and house style for coding assistants
 - [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
@@ -282,9 +282,9 @@ Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../refere
 
 ### What AI features does SvGrid have?
 
-Two kinds. At runtime, the `@svgrid/enterprise` AI assistant adds six
-model-agnostic helpers to the grid - natural-language filter, smart fill,
-summarise, classify, export, and anomaly detection. At build time, an MCP
+Two kinds. At runtime, `@svgrid/grid` ships six model-agnostic helpers
+free - natural-language filter, smart fill, summarise, classify, export,
+and anomaly detection. At build time, an MCP
 server plus grounding files let your coding agent write correct SvGrid code
 and scaffold CRUD screens.
 

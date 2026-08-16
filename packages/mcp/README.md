@@ -8,13 +8,21 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@svgrid/mcp"><img src="https://img.shields.io/npm/v/%40svgrid%2Fmcp.svg?label=%40svgrid%2Fmcp" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@svgrid/mcp"><img src="https://img.shields.io/npm/dm/%40svgrid%2Fmcp.svg" alt="npm downloads" /></a>
+  <a href="https://svgrid.com/pricing/"><img src="https://img.shields.io/badge/license-commercial-blue.svg" alt="Commercial license" /></a>
+</p>
+
+<p align="center">
   <a href="https://svgrid.com">Website</a> ·
-  <a href="https://svgrid.com/docs">Docs</a>
+  <a href="https://svgrid.com/docs/help/mcp-server/">Docs</a> ·
+  <a href="https://svgrid.com/pricing/">Pricing</a>
 </p>
 
 ---
 
 Point any MCP-capable client - Claude Desktop, Claude Code, Cursor, Zed - at this server and the model answers with **accurate, version-pinned** facts about SvGrid: real prop, method, and event names, plus every demo's source as grounding. No hallucinated APIs, no stale blog posts.
+
+**Why this beats pasting docs into the chat.** A model working from memory invents plausible SvGrid APIs, because it learned from a mix of other grids and older versions. Pasting docs helps for one question and then falls out of the context window. This server puts the current API surface and 370+ working demo sources one tool call away, for every question, pinned to the version you installed.
 
 ## Tools exposed
 
@@ -114,7 +122,7 @@ them into `src/data.ts`, so the published package is fully self-contained.
 
 ## Licensing
 
-Commercial. Part of the SvGrid Enterprise offering; see [svgrid.com/pricing](https://svgrid.com/pricing).
+Commercial. Part of the SvGrid Enterprise offering; see [svgrid.com/pricing](https://svgrid.com/pricing/).
 The MIT [`@svgrid/grid`](https://www.npmjs.com/package/@svgrid/grid) core is free for any use.
 
 SvGrid&trade; and sv-grid&trade; are trademarks of jQWidgets Ltd.

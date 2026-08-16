@@ -1,7 +1,7 @@
 # Prompt: 63-column-layout-api
 
 Source: `examples/src/demos/63-column-layout-api.svelte`
-Live:   https://svgrid.dev/#/demos/63-column-layout-api
+Live:   https://svgrid.com/demos/63-column-layout-api/
 
 ## What this demo proves
 

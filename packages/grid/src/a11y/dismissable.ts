@@ -92,3 +92,23 @@ export function createDismissableLayer(options: DismissableOptions): Dismissable
 export function dismissableDepth(): number {
   return stack.length
 }
+
+/**
+ * Close-on-scroll for popovers that are position:fixed and anchored by a
+ * one-time measurement taken when they open. Scrolling an ancestor slides the
+ * anchor out from under them, so they have to close - but scrolling INSIDE
+ * them (a long menu, a facet list) must not, which is what a bare capture-phase
+ * window listener gets wrong: inner scroll containers don't bubble, so the
+ * capture listener sees them and dismisses the panel the user is scrolling.
+ *
+ * Returns the unsubscribe function.
+ */
+export function onScrollOutside(element: () => DismissTarget, onOutside: () => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+  const handler = (event: Event) => {
+    if (containsTarget(element(), event.target as Node)) return
+    onOutside()
+  }
+  window.addEventListener('scroll', handler, true)
+  return () => window.removeEventListener('scroll', handler, true)
+}

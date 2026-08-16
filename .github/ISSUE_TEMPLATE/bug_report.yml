@@ -1,0 +1,66 @@
+name: Bug report
+description: Something in SvGrid behaves incorrectly
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. A runnable reproduction is worth more than any
+        amount of description - the fastest path is usually forking a demo in
+        the [demo gallery](https://svgrid.com/demos/).
+
+        For security vulnerabilities, do not file here. See
+        [SECURITY.md](https://github.com/sv-grid/sv-grid/blob/main/SECURITY.md).
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      description: Output of `npm ls @svgrid/grid @svgrid/enterprise`
+      placeholder: '@svgrid/grid 2.2.18'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Which package
+      multiple: true
+      options:
+        - '@svgrid/grid'
+        - '@svgrid/enterprise'
+        - '@svgrid/grid-wc'
+        - '@svgrid/ui'
+        - '@svgrid/mcp'
+        - '@svgrid/studio'
+        - '@svgrid/create or @svgrid/create-studio'
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: |
+        A playground link, a minimal repo, or a demo id plus the change that
+        breaks it. Issues without a reproduction usually stall.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Svelte version, bundler, browser, OS, SSR or client-only.
+      placeholder: |
+        Svelte 5.55.9, Vite 8, SvelteKit SSR, Chrome 141, Windows 11
+    validations:
+      required: true

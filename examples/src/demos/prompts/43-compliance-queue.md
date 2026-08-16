@@ -1,7 +1,7 @@
 # Prompt: 43-compliance-queue
 
 Source: `examples/src/demos/43-compliance-queue.svelte`
-Live:   https://svgrid.dev/#/demos/43-compliance-queue
+Live:   https://svgrid.com/demos/43-compliance-queue/
 
 ## What this demo proves
 

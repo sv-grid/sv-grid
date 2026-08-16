@@ -39,13 +39,11 @@ runs unlicensed, it just nudges. See
 > (auto-saves to disk, generates straight into a folder), or open a one-click
 > **[sample app](./studio/samples.md)**.
 
-> **Live demos:** [Data-app Studio](https://svgrid.com/#/demos/192-data-app-studio)
-> (the whole stack: grid + edit modal + schema designer) ·
-> [Live SQL](https://svgrid.com/#/demos/193-studio-live-sql) (real Postgres in the
-> browser via PGlite) ·
-> [Supabase](https://svgrid.com/#/demos/194-studio-supabase) (your own hosted
+> **Live demos:** [Live SQL](https://svgrid.com/demos/193-studio-live-sql/)
+> (the whole stack over real Postgres in the browser via PGlite) ·
+> [Supabase](https://svgrid.com/demos/194-studio-supabase/) (your own hosted
 > Postgres, straight from the browser) ·
-> [Chart](https://svgrid.com/#/demos/197-studio-chart) (a live chart panel
+> [Chart](https://svgrid.com/demos/197-studio-chart/) (a live chart panel
 > beside the grid; click to filter).
 
 ---

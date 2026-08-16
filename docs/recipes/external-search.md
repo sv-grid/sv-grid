@@ -1,6 +1,6 @@
 # External search box with highlighted matches
 
-> Live in [demo 69-highlighted-search](https://svgrid.com/#/demos/69-highlighted-search).
+> Live in [demo 69-highlighted-search](https://svgrid.com/demos/69-highlighted-search/).
 
 <div data-docs-demo="69-highlighted-search" data-height="480"></div>
 

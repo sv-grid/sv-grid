@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvGridChart - inline-SVG chart from a ChartSpec, no charting dependency. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-grid-chart
+  // SvGridChart - inline-SVG chart from a ChartSpec, no charting dependency. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-grid-chart
   import { SvGridChart, rowsToChartSpec, type ChartSpec } from '@svgrid/grid'
 
   const rows = [

@@ -152,7 +152,7 @@ Most apps want #1.
 
 ## See also
 
-- [Side-drawer edit demo (97)](https://svgrid.com/#/demos/97-side-drawer-edit) - the slide-in pattern used as the form host
+- [Side-drawer edit demo (97)](https://svgrid.com/demos/97-side-drawer-edit/) - the slide-in pattern used as the form host
 - [Submit-time validation recipe](./submit-time-validation.md) - similar bulk-commit-then-validate pattern
 - [Undo / redo for grid edits](./undo-redo-edits.md) - layer history on top of the same `setCellValue` calls
 - [`SvGridApi.setCellValue`](../reference/SvGridApi.md#setcellvalue)

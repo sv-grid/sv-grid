@@ -1,7 +1,7 @@
 # Prompt: 79-loading-from-rest
 
 Source: `examples/src/demos/79-loading-from-rest.svelte`
-Live:   https://svgrid.dev/#/demos/79-loading-from-rest
+Live:   https://svgrid.com/demos/79-loading-from-rest/
 
 ## What this demo proves
 

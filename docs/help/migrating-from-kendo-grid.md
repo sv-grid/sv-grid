@@ -63,8 +63,8 @@ with an MIT core - and a much cheaper paid tier.
 
 ## See also
 
-- [SvGrid vs Kendo UI Grid](https://svgrid.com/compare/kendo-ui-grid) - the side-by-side comparison
-- [Pricing](https://svgrid.com/pricing) - the SvGrid Enterprise tiers
+- [SvGrid vs Kendo UI Grid](https://svgrid.com/compare/kendo-ui-grid/) - the side-by-side comparison
+- [Pricing](https://svgrid.com/pricing/) - the SvGrid Enterprise tiers
 - [Architecture](./architecture.md) - engine + render-component split
 
 ## Frequently asked questions

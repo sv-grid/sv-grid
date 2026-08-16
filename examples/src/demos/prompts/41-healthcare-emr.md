@@ -1,7 +1,7 @@
 # Prompt: 41-healthcare-emr
 
 Source: `examples/src/demos/41-healthcare-emr.svelte`
-Live:   https://svgrid.dev/#/demos/41-healthcare-emr
+Live:   https://svgrid.com/demos/41-healthcare-emr/
 
 ## What this demo proves
 

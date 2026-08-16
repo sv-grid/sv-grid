@@ -1,7 +1,7 @@
 # Prompt: 42-logistics-fleet
 
 Source: `examples/src/demos/42-logistics-fleet.svelte`
-Live:   https://svgrid.dev/#/demos/42-logistics-fleet
+Live:   https://svgrid.com/demos/42-logistics-fleet/
 
 ## What this demo proves
 

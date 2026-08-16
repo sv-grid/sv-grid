@@ -6,8 +6,8 @@ existing audit table, Datadog logs, an immutable ledger (DynamoDB
 with conditional writes, AWS QLDB, Kafka), or a write-once S3
 bucket.
 
-> Live in [demo 35 (Permissions, audit & history)](https://svgrid.com/#/demos/35-permissions-audit)
-> and [demo 49 (Admin dashboard)](https://svgrid.com/#/demos/49-admin-dashboard).
+> Live in [demo 35 (Permissions, audit & history)](https://svgrid.com/demos/35-permissions-audit/)
+> and [demo 49 (Admin dashboard)](https://svgrid.com/demos/49-admin-dashboard/).
 
 ## What's in scope
 
@@ -152,4 +152,4 @@ demonstrations:
 - [Observability](../help/observability.md) - the broader callback surface
 - [SOC 2 posture](./soc2.md)
 - [HIPAA posture](./hipaa.md)
-- [Demo 35 - Permissions, audit & history](https://svgrid.com/#/demos/35-permissions-audit)
+- [Demo 35 - Permissions, audit & history](https://svgrid.com/demos/35-permissions-audit/)

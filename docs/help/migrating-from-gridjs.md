@@ -57,7 +57,7 @@ filters, editing, grouping - when you outgrow the basics.
 
 ## See also
 
-- [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs) - the side-by-side comparison
+- [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/) - the side-by-side comparison
 - [Getting started](../getting-started.md) - a working grid in ~15 lines
 - [Server-side data](./server-side-data.md) - the external-data pattern
 

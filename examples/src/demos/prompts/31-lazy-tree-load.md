@@ -1,7 +1,7 @@
 # Prompt: 31-lazy-tree-load
 
 Source: `examples/src/demos/31-lazy-tree-load.svelte`
-Live:   https://svgrid.dev/#/demos/31-lazy-tree-load
+Live:   https://svgrid.com/demos/31-lazy-tree-load/
 
 ## What this demo proves
 

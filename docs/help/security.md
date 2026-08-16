@@ -16,7 +16,7 @@ our InfoSec team?".
 | --------------------------------- | ---------------------------------------------------------------------- |
 | Network egress at runtime         | **None.** Zero analytics, zero phone-home, no automatic update checks. |
 | Telemetry                         | **Zero.** No `fetch`, no `navigator.sendBeacon`, no console identifiers. |
-| `eval` / `new Function` / dynamic code | **None in `@svgrid/grid`.** See [CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) demo + runtime self-check. |
+| `eval` / `new Function` / dynamic code | **None in `@svgrid/grid`.** See [CSP-compliant grid](https://svgrid.com/demos/16-csp-compliant/) demo + runtime self-check. |
 | Cookies / localStorage            | None set by the library itself. (Your app's saved-views helpers may opt in.) |
 | Outbound dependencies             | **Community:** zero runtime deps. **Enterprise:** two optional peer deps (`jszip`, `pdfmake`), see below. |
 | AI calls                          | The user's own `AIProvider` adapter calls whichever endpoint *they* configured. The package never embeds a model client. |
@@ -84,7 +84,7 @@ Notes:
 - `script-src` does NOT need `'unsafe-eval'` for community. (Enterprise pulls
   in `pdfmake` which historically used `eval`; check the pdfmake version
   if your CSP is strict.)
-- Demo [16. CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) runs the grid under a CSP header and surfaces any violation in real time.
+- Demo [16. CSP-compliant grid](https://svgrid.com/demos/16-csp-compliant/) runs the grid under a CSP header and surfaces any violation in real time.
 
 ## Source provenance
 

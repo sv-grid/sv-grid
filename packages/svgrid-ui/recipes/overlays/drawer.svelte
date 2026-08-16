@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvDrawer - an edge-anchored side sheet with backdrop. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-drawer
+  // SvDrawer - an edge-anchored side sheet with backdrop. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-drawer
   import { SvDrawer, SvButton } from '@svgrid/grid'
 
   let open = $state(false)

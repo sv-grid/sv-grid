@@ -1,7 +1,7 @@
 # Prompt: 30-bom-tree
 
 Source: `examples/src/demos/30-bom-tree.svelte`
-Live:   https://svgrid.dev/#/demos/30-bom-tree
+Live:   https://svgrid.com/demos/30-bom-tree/
 
 ## What this demo proves
 

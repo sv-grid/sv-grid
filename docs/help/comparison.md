@@ -7,7 +7,7 @@ depends on the framework you ship on and your budget.
 
 | Project              | Lives in                                 | Ships                                   | Bundle (typical) | License            |
 | -------------------- | ---------------------------------------- | --------------------------------------- | ---------------- | ------------------ |
-| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~9.4 KB headless / ~60 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
+| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~2 KB headless / ~80 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
 | **AG Grid Community**| React, Angular, Vue, plain JS            | Full grid + renderer                    | ~340 KB                                   | MIT                                |
 | **AG Grid Enterprise**| same                                    | Adds pivot, integrated charts, server-side row model, more | ~600 KB+ | Commercial                         |
 | **TanStack Table**   | React, Vue, Svelte, Solid, Qwik, Lit, JS | Headless engine **only**                | ~12-14 KB                                 | MIT                                |
@@ -90,8 +90,14 @@ Measured gzipped, with Svelte treated as a peer dependency and excluded
 
 | @svgrid/grid path                          | Gzipped | Minified |
 | ----------------------------------------------- | ------- | -------- |
-| Headless core (`createSvGrid` + a row model)    | ~9.4 KB | ~48 KB   |
-| Full `<SvGrid>` render component                | ~60 KB  | ~273 KB  |
+| Headless core (`createGrid` + a row model)      | ~2 KB   | ~7 KB    |
+| Full `<SvGrid>` render component                | ~80 KB  | ~293 KB  |
+
+Add ~9 KB gzipped for the render component's CSS. A further ~64 KB of
+charts, date/time editors, menus, and export splits into `import()` chunks
+that load on demand rather than shipping in your initial bundle. Re-measure
+any time with `node packages/grid/scripts/measure-size.mjs`; see the
+[bundle size reference](../reference/bundle-size.md).
 
 The full render component is the whole grid - virtualization, Excel-style
 filters, inline editing, grouping, tree, master/detail, and accessibility -
@@ -125,7 +131,7 @@ TanStack Table's React adapter in 90% of cases. The big differences:
 
 SvGrid Community is MIT - free for commercial use, no attribution
 required at runtime. SvGrid Enterprise is a paid license; see
-<https://svgrid.com/pricing> for per-seat / per-app / multi-app tiers.
+<https://svgrid.com/pricing/> for per-seat / per-app / multi-app tiers.
 
 AG Grid Community is MIT. AG Grid Enterprise pricing is on
 ag-grid.com; expect a per-developer annual license plus a separate
@@ -155,8 +161,8 @@ bridge into Svelte 5.
 
 ### Is SvGrid a good AG Grid alternative?
 
-Yes, for Svelte projects. SvGrid ships a much smaller bundle (~60 KB gzipped
-for the full render component, ~9.4 KB headless) than AG Grid Community, is
+Yes, for Svelte projects. SvGrid ships a much smaller bundle (~80 KB gzipped
+for the full render component, ~2 KB headless) than AG Grid Community, is
 MIT-licensed for commercial use, and offers `@svgrid/enterprise` for
 export/pivot/import at a per-developer price instead of AG Grid Enterprise's
 per-deployment licensing. It does not yet match every AG Grid Enterprise
@@ -171,7 +177,9 @@ virtualization, and editing UI yourself. Both are MIT-licensed.
 
 ### How big is the SvGrid bundle?
 
-Measured gzipped (Svelte excluded as a peer dependency): ~9.4 KB for the
-headless core and ~60 KB for the full `<SvGrid>` render component (~273 KB
-minified). Enterprise features are separate, lazy-loaded subpath imports, so you ship
-only what you import.
+Measured gzipped (Svelte excluded as a peer dependency): ~2 KB for the
+headless core and ~80 KB for the full `<SvGrid>` render component (~293 KB
+minified), plus ~9 KB of CSS. Charts, date/time editors, menus, and export
+add another ~64 KB that loads on demand rather than up front. Enterprise
+features are separate, lazy-loaded subpath imports, so you ship only what
+you import.

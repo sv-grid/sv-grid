@@ -64,7 +64,7 @@ lower-cost paid tier.
 
 ## See also
 
-- [SvGrid vs DevExtreme DataGrid](https://svgrid.com/compare/devextreme-datagrid) - the side-by-side comparison
+- [SvGrid vs DevExtreme DataGrid](https://svgrid.com/compare/devextreme-datagrid/) - the side-by-side comparison
 - [Saved views](./saved-views.md) - the state-persistence pattern
 - [Data export and printing - Enterprise](./export.md) - the Enterprise export pack
 

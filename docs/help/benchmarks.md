@@ -25,17 +25,22 @@ the former catches jank that mean averages smooths over.
 
 ## Bundle size
 
-Production build, gzipped, measured on the `dist/` output:
+Production build, gzipped. The first two rows come from
+`node packages/grid/scripts/measure-size.mjs` (Svelte excluded as a peer);
+see the [bundle size reference](../reference/bundle-size.md).
 
-| Surface                             | Brotli | gzip   | Notes                                  |
-| ----------------------------------- | ------ | ------ | -------------------------------------- |
-| `@svgrid/grid` (full)          | 41 kB  | 49 kB  | One import covers the entire renderer  |
-| Headless engine (no `<SvGrid>`)     | 11 kB  | 13 kB  | If you bring your own renderer         |
-| `@svgrid/enterprise` core                  | 7 kB   | 8 kB   | Export + print + import + AI shells    |
-| `@svgrid/enterprise` AI module only        | 4 kB   | 5 kB   | Imported via `'@svgrid/enterprise/ai'`        |
-| `@svgrid/enterprise` import module only    | 5 kB   | 6 kB   | Imported via `'@svgrid/enterprise/import'`    |
-| Peer: `jszip`                       | 30 kB  | 35 kB  | Loaded on first `xlsx` export *or* import |
-| Peer: `pdfmake` + vfs               | ~200 kB| ~280 kB| Loaded on first `pdf` export only      |
+| Surface                             | gzip   | Notes                                  |
+| ----------------------------------- | ------ | -------------------------------------- |
+| `@svgrid/grid` (full `<SvGrid>`)    | 80 kB  | One import covers the entire renderer; + 9 kB CSS |
+| Headless engine (`createGrid`)      | 2 kB   | If you bring your own renderer         |
+| Lazy chunks (charts, date editors, menus, export) | 64 kB | Loaded on demand, not in the initial bundle |
+| `@svgrid/enterprise` core           | 8 kB   | Export + print + import shells         |
+| `@svgrid/enterprise` import module only | 6 kB | Imported via `'@svgrid/enterprise/import'` |
+| Peer: `jszip`                       | 35 kB  | Loaded on first `xlsx` export *or* import |
+| Peer: `pdfmake` + vfs               | ~280 kB| Loaded on first `pdf` export only      |
+
+The AI helpers are no longer in this table: they moved into the free
+`@svgrid/grid` and tree-shake out unless you import them.
 
 Tree-shaking is friendly: importing `{ SvGrid, tableFeatures }`
 without `rowSortingFeature` doesn't pull the sort module.
@@ -101,7 +106,7 @@ scroll pass:
 
 ## Server-side / chunked loading
 
-Demo [33. Server-side infinite scroll](https://svgrid.com/#/demos/33-server-infinite) covers the chunked-load path. Numbers from that demo:
+Demo [33. Server-side infinite scroll](https://svgrid.com/demos/33-server-infinite/) covers the chunked-load path. Numbers from that demo:
 
 | Scenario                                         | Result                                  |
 | ------------------------------------------------ | --------------------------------------- |
@@ -158,7 +163,7 @@ fail CI on the main branch.
   real-world snippets (status pills, mini-bars).
 - Single-thread performance > 1M rows. For >1M, do the heavy lifting
   on the server and feed chunks through the [server-side infinite
-  scroll pattern](https://svgrid.com/#/demos/33-server-infinite).
+  scroll pattern](https://svgrid.com/demos/33-server-infinite/).
 
 ## See also
 
@@ -184,7 +189,7 @@ holds the visible window regardless of total row count.
 
 ### How fast is SvGrid, and how big is it?
 
-It ships a much smaller bundle (~60 KB gzipped for the full render component,
-or ~9.4 KB for the headless core) and virtualizes by default. Raw scroll
+It ships a much smaller bundle (~80 KB gzipped for the full render component,
+or ~2 KB for the headless core) and virtualizes by default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.

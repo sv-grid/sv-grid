@@ -1,6 +1,6 @@
 # Sparkline cell renderer
 
-> Live in [demo 11-stock-market](https://svgrid.com/#/demos/11-stock-market).
+> Live in [demo 11-stock-market](https://svgrid.com/demos/11-stock-market/).
 
 <div data-docs-demo="11-stock-market" data-height="480"></div>
 

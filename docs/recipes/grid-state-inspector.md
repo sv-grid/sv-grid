@@ -188,8 +188,6 @@ unnecessary in prod.
 
 ## Demo
 
-The runnable companion: [Demo 135 - Devtools panel (gallery)](https://svgrid.com/#/demos/135-devtools-panel) - this panel running next to a real grid.
-
 ## See also
 
 - [`SvGridApi` reference](../reference/SvGridApi.md) - every reader the panel calls

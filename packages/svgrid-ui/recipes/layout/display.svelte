@@ -1,6 +1,6 @@
 <script lang="ts">
   // Display primitives - SvKbd / SvCode / SvAspectRatio / SvVisuallyHidden.
-  // Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-display-primitives
+  // Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-display-primitives
   import { SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden } from '@svgrid/grid'
 </script>
 

@@ -206,7 +206,7 @@ use pivot when you also roll up columns.
 - [Pivot tables](./pivot.md) - the column-axis version.
 - [Row pagination](./rows/row-pagination.md) - the paging stage runs
   AFTER grouping, so group rows count toward the page size.
-- [Demo #07 Grouping + aggregation](https://svgrid.com/#/demos/07-grouping-aggregation)
+- [Demo #07 Grouping + aggregation](https://svgrid.com/demos/07-grouping-aggregation/)
   - the source for the example above.
 
 ## Frequently asked questions

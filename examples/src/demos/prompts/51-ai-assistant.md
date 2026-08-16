@@ -1,7 +1,7 @@
 # Prompt: 51-ai-assistant
 
 Source: `examples/src/demos/51-ai-assistant.svelte`
-Live:   https://svgrid.dev/#/demos/51-ai-assistant
+Live:   https://svgrid.com/demos/51-ai-assistant/
 
 ## What this demo proves
 

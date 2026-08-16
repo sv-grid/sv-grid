@@ -89,7 +89,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 
 ## See also
 
-- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table) - the side-by-side comparison
+- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/) - the side-by-side comparison
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - sibling headless guide
 - [Why headless?](../why-headless.md) - the design rationale
 - [Architecture](./architecture.md) - the engine + render-component split

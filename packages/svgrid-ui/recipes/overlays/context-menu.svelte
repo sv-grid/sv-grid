@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvContextMenu - opens a menu at the pointer on right-click. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-context-menu
+  // SvContextMenu - opens a menu at the pointer on right-click. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-context-menu
   import { SvContextMenu, type MenuItem } from '@svgrid/grid'
 
   const items: MenuItem[] = [

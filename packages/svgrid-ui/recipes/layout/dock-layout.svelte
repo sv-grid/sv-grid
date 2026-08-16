@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvDockLayout - nested resizable splits + tabbed leaves with drag-to-dock. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-dock-layout
+  // SvDockLayout - nested resizable splits + tabbed leaves with drag-to-dock. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-dock-layout
   import { SvDockLayout, dockGroup, dockTabs, dockPane, type DockNode } from '@svgrid/grid'
 
   let layout = $state<DockNode>(

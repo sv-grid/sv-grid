@@ -213,7 +213,7 @@ The package ships per-feature subpaths so you can tree-shake:
 ```ts
 import { exportGrid }      from '@svgrid/enterprise/export'
 import { importData }      from '@svgrid/enterprise/import'
-import { aiFilter }        from '@svgrid/enterprise/ai'
+import { aiFilter }        from '@svgrid/grid'
 import { createPivotModel } from '@svgrid/enterprise/pivot'
 ```
 

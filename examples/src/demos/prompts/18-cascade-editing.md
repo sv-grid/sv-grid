@@ -1,7 +1,7 @@
 # Prompt: 18-cascade-editing
 
 Source: `examples/src/demos/18-cascade-editing.svelte`
-Live:   https://svgrid.dev/#/demos/18-cascade-editing
+Live:   https://svgrid.com/demos/18-cascade-editing/
 
 ## What this demo proves
 

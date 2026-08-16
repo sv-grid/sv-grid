@@ -1,9 +1,9 @@
 # Community demos
 
 Demos in this folder are contributed by the community. They live **only in the
-[playground](https://svgrid.com/playground)** - pick one from the demo switcher's
+[playground](https://svgrid.com/demos/)** - pick one from the demo switcher's
 **Community** group to run and remix it - and are not listed in the main
-[examples gallery](https://svgrid.com/demos). They carry a **Community** badge,
+[examples gallery](https://svgrid.com/demos/). They carry a **Community** badge,
 credit you by name, and can be upvoted on GitHub.
 
 ## Submit one in 3 steps
@@ -33,7 +33,7 @@ credit you by name, and can be upvoted on GitHub.
      number that backs your demo's upvotes once the thread exists (see below).
 
 3. **Open a PR.** The easiest path: build your demo in the
-   [playground](https://svgrid.com/playground) and click **Share as a community
+   [playground](https://svgrid.com/demos/) and click **Share as a community
    demo** - it prepends the header, copies the file, and opens a pre-filled
    GitHub PR for you. Or add the file by hand and open a PR the usual way.
 

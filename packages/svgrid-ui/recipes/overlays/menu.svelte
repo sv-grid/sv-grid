@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvMenu - a trigger-opened dropdown / actions menu. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-menu
+  // SvMenu - a trigger-opened dropdown / actions menu. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-menu
   import { SvMenu, SvButton, type MenuItem } from '@svgrid/grid'
 
   const items: MenuItem[] = [

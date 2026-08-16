@@ -132,7 +132,7 @@ buildPage({
     '### Go deeper\n\n' +
     'Every tip above links to its full documentation. Start with the ' +
     '[getting-started guide](https://svgrid.com/docs/getting-started) or browse the ' +
-    '[150+ live examples](https://svgrid.com/demos).',
+    '[150+ live examples](https://svgrid.com/demos/).',
 })
 
 buildPage({
@@ -151,7 +151,7 @@ buildPage({
     '### Explore the kit\n\n' +
     'Every tip links to its component docs. Browse the full ' +
     '[UI components reference](https://svgrid.com/docs/help/ui-components) or see them ' +
-    'live in the [examples gallery](https://svgrid.com/demos). The same components double ' +
+    'live in the [examples gallery](https://svgrid.com/demos/). The same components double ' +
     'as in-cell editors inside [SvGrid](https://svgrid.com), the Svelte 5 data grid.',
 })
 
@@ -172,7 +172,7 @@ buildPage({
     '### Start building\n\n' +
     'Every tip links to its Studio docs. Begin with the ' +
     '[Studio getting-started guide](https://svgrid.com/docs/enterprise/studio/getting-started) ' +
-    'or read how the [app designer](https://svgrid.com/docs/enterprise/studio/app-designer) ' +
+    'or read how the [app designer](https://svgrid.com/docs/enterprise/studio/app-designer/) ' +
     'generates code you own.',
 })
 

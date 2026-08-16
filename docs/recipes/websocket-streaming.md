@@ -1,6 +1,6 @@
 # WebSocket streaming with backpressure
 
-> Live in [demo 34-realtime-orders](https://svgrid.com/#/demos/34-realtime-orders).
+> Live in [demo 34-realtime-orders](https://svgrid.com/demos/34-realtime-orders/).
 
 <div data-docs-demo="34-realtime-orders" data-height="480"></div>
 

@@ -27,7 +27,7 @@ real-world scale:
 - [Data export and printing - Enterprise](./export.md) - Excel, PDF, CSV, TSV, HTML, and Print
 - [Data import - Enterprise](./import.md) - Excel, CSV, TSV, and JSON import with column mapping + validation
 - [**AI Toolkit**](./ai-toolkit.md) - the hub for every AI feature: in-grid helpers, agents, MCP server, and LLM grounding, all model-agnostic
-- [AI assistant - Enterprise](./ai.md) - natural-language filter, smart fill, summarise, classify; bring-your-own model adapter
+- [AI assistant](./ai.md) - natural-language filter, smart fill, summarise, classify; free in @svgrid/grid, bring-your-own model adapter
 - [Pivot tables - Enterprise](./pivot.md) - `createPivotModel` + nested column headers; designer UI is a separate demo
 - [Alerts - Enterprise](./alerts.md) - no-code alert rules: toast / highlight / flash / prevent-edit when the data crosses a line; persisted + shareable
 - [Expression query language - Enterprise](./expressions-query.md) - the predicate / scalar / change language behind alerts (and styled + calculated columns)
@@ -100,7 +100,7 @@ shipping. Each link drops you straight into the relevant topic page.
 | Export to Excel / PDF / CSV      | [Data export and printing](./export.md)                                                            |
 | Excel / CSV / JSON import        | [Data import](./import.md) - file picker -> column map -> preview -> commit                       |
 | Add AI to the grid               | [AI assistant](./ai.md) - one provider adapter, four helpers                                       |
-| Multi-app deployment licensing   | [Pricing](https://svgrid.com/#/pricing) - Multiple App License covers an org        |
+| Multi-app deployment licensing   | [Pricing](https://svgrid.com/pricing/) - Multiple App License covers an org        |
 | Testing the grid                 | [Testing your grid](./testing.md) + [Testing and quality](./testing-and-quality.md)                |
 
 If a question is missing from this table, **press `Ctrl/Cmd + K`** in

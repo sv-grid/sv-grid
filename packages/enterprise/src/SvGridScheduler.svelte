@@ -73,6 +73,7 @@
     portalToBody,
     popIn,
     createDismissableLayer,
+    onScrollOutside,
   } from "@svgrid/grid";
   // Scheduler Pro feature models (this package).
   import { cascade, violations, type SchedulerDependency } from "./scheduler-dependencies";
@@ -1995,11 +1996,13 @@
       onDismiss: () => (menuOpen = false),
     });
     layer.activate();
-    const onScroll = () => (menuOpen = false);
-    window.addEventListener("scroll", onScroll, true);
+    const offScroll = onScrollOutside(
+      () => menuPanel,
+      () => (menuOpen = false),
+    );
     return () => {
       layer.release();
-      window.removeEventListener("scroll", onScroll, true);
+      offScroll();
     };
   });
 
@@ -2045,11 +2048,13 @@
       onDismiss: () => (listOpen = false),
     });
     layer.activate();
-    const onScroll = () => (listOpen = false);
-    window.addEventListener("scroll", onScroll, true);
+    const offScroll = onScrollOutside(
+      () => listPanel,
+      () => (listOpen = false),
+    );
     return () => {
       layer.release();
-      window.removeEventListener("scroll", onScroll, true);
+      offScroll();
     };
   });
 

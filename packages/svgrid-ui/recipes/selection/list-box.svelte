@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvListBox - inline single/multi-select list picker. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-list-box
+  // SvListBox - inline single/multi-select list picker. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-list-box
   import { SvListBox, type ListOption } from '@svgrid/grid'
 
   const options: ListOption[] = [

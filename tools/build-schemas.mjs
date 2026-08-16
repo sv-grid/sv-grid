@@ -16,10 +16,11 @@
  * a reviewer can diff for drift.
  */
 import { mkdir, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { existsSync } from 'node:fs'
+import { join, dirname } from 'node:path'
 
 const SCHEMAS_DIR = join(process.cwd(), 'docs', 'schemas')
-const BASE_URI    = 'https://svgrid.dev/schemas'
+const BASE_URI    = 'https://svgrid.com/schemas'
 
 function schema(id, body) {
   return {
@@ -208,13 +209,32 @@ const manifest = {
   ],
 }
 
+// The docs and the Agent Skill tell models to fetch these at
+// https://svgrid.com/schemas/*.json, so they have to land in the website's
+// public/ as well as in docs/. Emitting to only one of the two is how they
+// ended up 404ing for months. Mirrors build-docs-index.mjs.
+const OUT_DIRS = [SCHEMAS_DIR, join(process.cwd(), 'website', 'public', 'schemas')]
+
 async function main() {
-  await mkdir(SCHEMAS_DIR, { recursive: true })
-  await writeFile(join(SCHEMAS_DIR, 'column-def.json'),     JSON.stringify(columnDef,     null, 2) + '\n', 'utf-8')
-  await writeFile(join(SCHEMAS_DIR, 'svgrid-options.json'), JSON.stringify(svgridOptions, null, 2) + '\n', 'utf-8')
-  await writeFile(join(SCHEMAS_DIR, 'export-options.json'), JSON.stringify(exportOptions, null, 2) + '\n', 'utf-8')
-  await writeFile(join(SCHEMAS_DIR, 'index.json'),          JSON.stringify(manifest,      null, 2) + '\n', 'utf-8')
-  process.stdout.write(`build-schemas: wrote ${manifest.schemas.length} schemas to docs/schemas/\n`)
+  const payloads = [
+    ['column-def.json', columnDef],
+    ['svgrid-options.json', svgridOptions],
+    ['export-options.json', exportOptions],
+    ['index.json', manifest],
+  ]
+  const written = []
+  for (const dir of OUT_DIRS) {
+    // website/ is a private submodule and may not be checked out.
+    if (dir !== SCHEMAS_DIR && !existsSync(dirname(dir))) continue
+    await mkdir(dir, { recursive: true })
+    for (const [name, data] of payloads) {
+      await writeFile(join(dir, name), JSON.stringify(data, null, 2) + '\n', 'utf-8')
+    }
+    written.push(dir.replace(process.cwd(), '').replace(/^[\\/]/, '') || '.')
+  }
+  process.stdout.write(
+    `build-schemas: wrote ${manifest.schemas.length + 1} files to ${written.join(' + ')}\n`,
+  )
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })

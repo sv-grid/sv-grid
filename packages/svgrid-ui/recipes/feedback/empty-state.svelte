@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvEmptyState - a centered placeholder for empty or no-results screens. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-empty-state
+  // SvEmptyState - a centered placeholder for empty or no-results screens. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-empty-state
   import { SvEmptyState, SvButton } from '@svgrid/grid'
 </script>
 

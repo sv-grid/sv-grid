@@ -18,10 +18,10 @@
 //     bundle, works in any host app regardless of its styling.
 
 const CARD_ATTR = 'data-svgrid-enterprise-upgrade'
-const PRICING_URL = 'https://www.svgrid.com/pricing'
+const PRICING_URL = 'https://svgrid.com/pricing'
 // ?ref=in-app lets us measure how many trials start from this exact prompt
 // vs. the pricing page itself - the whole point of a moment-of-intent CTA.
-const TRIAL_URL = 'https://www.svgrid.com/pricing?ref=in-app&utm_source=svgrid-enterprise&utm_medium=upgrade-prompt'
+const TRIAL_URL = 'https://svgrid.com/pricing?ref=in-app&utm_source=svgrid-enterprise&utm_medium=upgrade-prompt'
 
 let shownThisSession = false
 

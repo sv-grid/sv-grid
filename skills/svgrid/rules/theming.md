@@ -2,14 +2,14 @@
 
 The grid reads every colour, size, and radius from CSS custom properties
 named `--sg-*`. You re-theme by declaring those variables **above** the
-grid — at `:root`, on a wrapper `<div>`, or inline on `<SvGrid>`. The
+grid - at `:root`, on a wrapper `<div>`, or inline on `<SvGrid>`. The
 grid's own class names are Svelte-mangled and unstable; never target them.
 
 ```css
-/* ❌ Incorrect — targeting internal nodes / a mangled class. */
+/* ❌ Incorrect - targeting internal nodes / a mangled class. */
 .svelte-1abcxyz .cell { background: #eee; }
 
-/* ✅ Correct — set the token; the grid inherits it. */
+/* ✅ Correct - set the token; the grid inherits it. */
 :root {
   --sg-bg:     #ffffff;
   --sg-fg:     #0f172a;
@@ -37,7 +37,7 @@ wrapping it:
 
 ## Dark mode
 
-The library ships no built-in dark theme — it reads whatever the app
+The library ships no built-in dark theme - it reads whatever the app
 provides. Redeclare the same tokens under the app's dark selector. Match
 the project's existing convention (`[data-theme='dark']` or `.dark`); don't
 introduce a second one.
@@ -112,5 +112,5 @@ inside `--sg-*` declarations:
 ```
 
 Don't put Tailwind utility classes on the grid's child nodes, and don't
-`@apply` inside grid selectors — the grid lives outside the Tailwind purge
+`@apply` inside grid selectors - the grid lives outside the Tailwind purge
 pass.

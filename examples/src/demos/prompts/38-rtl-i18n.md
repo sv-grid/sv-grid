@@ -1,7 +1,7 @@
 # Prompt: 38-rtl-i18n
 
 Source: `examples/src/demos/38-rtl-i18n.svelte`
-Live:   https://svgrid.dev/#/demos/38-rtl-i18n
+Live:   https://svgrid.com/demos/38-rtl-i18n/
 
 ## What this demo proves
 

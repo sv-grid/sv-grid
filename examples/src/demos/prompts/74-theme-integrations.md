@@ -1,7 +1,7 @@
 # Prompt: 74-theme-integrations
 
 Source: `examples/src/demos/74-theme-integrations.svelte`
-Live:   https://svgrid.dev/#/demos/74-theme-integrations
+Live:   https://svgrid.com/demos/74-theme-integrations/
 
 ## What this demo proves
 

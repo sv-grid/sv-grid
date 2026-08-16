@@ -92,7 +92,7 @@ shadcn:
 
 ## See also
 
-- [SvGrid vs UI-kit tables](https://svgrid.com/compare/svelte-ui-kit-tables) - the side-by-side comparison
+- [SvGrid vs UI-kit tables](https://svgrid.com/compare/svelte-ui-kit-tables/) - the side-by-side comparison
 - [Tailwind integration](./tailwind.md) - match your design system
 - [Getting started](../getting-started.md) - a working grid in ~15 lines
 

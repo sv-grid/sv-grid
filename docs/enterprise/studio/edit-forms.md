@@ -122,7 +122,7 @@ values with `dependentOptions` - the field clears when it stops being valid
   onSubmit={save} />
 ```
 
-See the [rich fields demo](https://svgrid.com/#/demos/198-studio-form-fields).
+See the [rich fields demo](https://svgrid.com/demos/198-studio-form-fields/).
 
 Enum and `relation` fields use a custom dropdown whose panel **portals to
 `document.body`** (position: fixed), so it opens *above* a drawer or modal and

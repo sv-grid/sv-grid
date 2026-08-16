@@ -31,6 +31,7 @@
     popIn,
     createDismissableLayer,
     createFocusTrap,
+    onScrollOutside,
     type ColumnDef,
     type ChartType,
     type MenuItem,
@@ -692,9 +693,8 @@
     trap.activate()
     const layer = createDismissableLayer({ element: () => ctxPanelEl, onDismiss: closeCtx })
     layer.activate()
-    const onScroll = () => closeCtx()
-    window.addEventListener('scroll', onScroll, true)
-    return () => { layer.release(); trap.release(); window.removeEventListener('scroll', onScroll, true) }
+    const offScroll = onScrollOutside(() => ctxPanelEl, closeCtx)
+    return () => { layer.release(); trap.release(); offScroll() }
   })
 
   function clearWell(well: Well) {

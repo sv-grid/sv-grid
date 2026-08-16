@@ -107,7 +107,7 @@ Every file is exhaustive but tightly scoped to sv-grid surface area:
   `SvGridApi`, every field on `ColumnDef`
 - **Features**: when to use sorting / filtering / grouping / pagination
   feature toggles, and the trade-offs
-- **Enterprise tier**: export, import, pivot, AI helpers - each documented as
+- **Enterprise tier**: export, import, pivot - each documented as
   if it were free, with the licensing call-out at the top of the page
 - **Recipes**: 25+ copy-paste patterns from the cookbook
 - **Migrations**: how to translate concepts from other data grids

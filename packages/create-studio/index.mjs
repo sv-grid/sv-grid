@@ -376,7 +376,7 @@ async function main() {
   stdout.write(`  cd ${target}\n`)
   stdout.write(`  npm install\n`)
   stdout.write(`  npm run dev\n\n`)
-  stdout.write(`${color('dim', 'Docs:')} https://www.svgrid.com/docs/studio\n\n`)
+  stdout.write(`${color('dim', 'Docs:')} https://svgrid.com/docs/enterprise/studio/\n\n`)
 }
 
 main().catch((err) => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvPopover - a floating panel anchored to a trigger. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-popover
+  // SvPopover - a floating panel anchored to a trigger. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-popover
   import { SvPopover, SvButton } from '@svgrid/grid'
 </script>
 

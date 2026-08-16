@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvTimeline - a vertical activity or history feed. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-timeline
+  // SvTimeline - a vertical activity or history feed. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-timeline
   import { SvTimeline } from '@svgrid/grid'
 </script>
 

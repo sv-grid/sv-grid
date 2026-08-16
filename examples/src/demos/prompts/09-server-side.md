@@ -1,7 +1,7 @@
 # Prompt: 09-server-side
 
 Source: `examples/src/demos/09-server-side.svelte`
-Live:   https://svgrid.dev/#/demos/09-server-side
+Live:   https://svgrid.com/demos/09-server-side/
 
 ## What this demo proves
 

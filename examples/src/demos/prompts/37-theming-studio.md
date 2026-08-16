@@ -1,7 +1,7 @@
 # Prompt: 37-theming-studio
 
 Source: `examples/src/demos/37-theming-studio.svelte`
-Live:   https://svgrid.dev/#/demos/37-theming-studio
+Live:   https://svgrid.com/demos/37-theming-studio/
 
 ## What this demo proves
 

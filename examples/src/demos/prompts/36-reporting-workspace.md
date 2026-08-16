@@ -1,7 +1,7 @@
 # Prompt: 36-reporting-workspace
 
 Source: `examples/src/demos/36-reporting-workspace.svelte`
-Live:   https://svgrid.dev/#/demos/36-reporting-workspace
+Live:   https://svgrid.com/demos/36-reporting-workspace/
 
 ## What this demo proves
 

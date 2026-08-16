@@ -1,7 +1,7 @@
 # Prompt: 78-million-rows
 
 Source: `examples/src/demos/78-million-rows.svelte`
-Live:   https://svgrid.dev/#/demos/78-million-rows
+Live:   https://svgrid.com/demos/78-million-rows/
 
 ## What this demo proves
 

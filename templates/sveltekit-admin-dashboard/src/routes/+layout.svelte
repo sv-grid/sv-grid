@@ -62,7 +62,7 @@
 
     <div class="px-5 py-4 text-[11px]" style="color: var(--app-muted);">
       Built with
-      <a class="underline" href="https://www.svgrid.com" target="_blank" rel="noopener">SvGrid</a>
+      <a class="underline" href="https://svgrid.com" target="_blank" rel="noopener">SvGrid</a>
       + SvelteKit
     </div>
   </aside>
@@ -99,7 +99,7 @@
           {/if}
         </button>
         <a
-          href="https://www.svgrid.com/docs"
+          href="https://svgrid.com/docs"
           target="_blank"
           rel="noopener"
           class="rounded-lg border px-3 py-1.5 text-sm font-medium"

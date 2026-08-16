@@ -22,7 +22,7 @@ A detected FK column becomes a `relation` field pointing at the referenced table
 The **generated page wires the lookup for you** - the CLI emits a
 `createRelationLookup` over the related entity's API route and passes it to the
 edit panel (so scaffold the related table too). The
-[Supabase demo](https://svgrid.com/#/demos/194-studio-supabase) does the same at
+[Supabase demo](https://svgrid.com/demos/194-studio-supabase/) does the same at
 runtime. When you introspect several tables at once,
 `linkRelationLabels(schemas)` fills in each relation's display field from the
 actual related schema (a `name` / `title` column, else its first text field).
@@ -145,7 +145,7 @@ That's it. The `companyId` field now renders `SvLookupInput`: type to search
 lookup is just a `ServerDataSource`, the options can come from **Supabase, REST,
 SQL, or in-memory** - whatever backs the related table.
 
-> **Live demo:** [Data-app Studio · relations](https://svgrid.com/#/demos/195-studio-relations)
+> **Live demo:** [Data-app Studio · relations](https://svgrid.com/demos/195-studio-relations/)
 > - Contacts with a searchable Company picker.
 
 ### Show the related name in the grid

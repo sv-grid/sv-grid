@@ -1,7 +1,7 @@
 # Prompt: 64-filter-between-operator
 
 Source: `examples/src/demos/64-filter-between-operator.svelte`
-Live:   https://svgrid.dev/#/demos/64-filter-between-operator
+Live:   https://svgrid.com/demos/64-filter-between-operator/
 
 ## What this demo proves
 

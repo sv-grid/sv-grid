@@ -60,7 +60,7 @@ for a Svelte-5-native grid with an unconditional MIT core.
 
 ## See also
 
-- [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid) - the side-by-side comparison
+- [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid/) - the side-by-side comparison
 - [Data export and printing - Enterprise](./export.md) - the Enterprise export pack
 - [Getting started](../getting-started.md) - a working grid in ~15 lines
 

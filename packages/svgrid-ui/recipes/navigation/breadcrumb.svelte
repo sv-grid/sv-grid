@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvBreadcrumb - a navigation trail to the current page. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-breadcrumb
+  // SvBreadcrumb - a navigation trail to the current page. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-breadcrumb
   import { SvBreadcrumb } from '@svgrid/grid'
 
   const items = [

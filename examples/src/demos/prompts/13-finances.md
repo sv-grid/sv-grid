@@ -1,7 +1,7 @@
 # Prompt: 13-finances
 
 Source: `examples/src/demos/13-finances.svelte`
-Live:   https://svgrid.dev/#/demos/13-finances
+Live:   https://svgrid.com/demos/13-finances/
 
 ## What this demo proves
 

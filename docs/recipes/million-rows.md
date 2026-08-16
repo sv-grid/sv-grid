@@ -1,6 +1,6 @@
 # 1 million rows with virtualization
 
-> Live in [demo 78-million-rows](https://svgrid.com/#/demos/78-million-rows).
+> Live in [demo 78-million-rows](https://svgrid.com/demos/78-million-rows/).
 
 <div data-docs-demo="78-million-rows" data-height="480"></div>
 

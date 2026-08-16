@@ -19,6 +19,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:install": "playwright install chromium",
     "lint": "pnpm -r lint",
+    "size": "node packages/grid/scripts/measure-size.mjs",
+    "demos:count": "node tools/count-demos.mjs",
     "thumbs": "node tools/capture-demo-thumbs.mjs",
     "thumbs:check": "node tools/check-demo-thumbs.mjs"
   },

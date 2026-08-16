@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvButtonGroup - a segmented single/multi-select button bar. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-button-group
+  // SvButtonGroup - a segmented single/multi-select button bar. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-button-group
   import { SvButtonGroup, type ButtonGroupItem } from '@svgrid/grid'
 
   const views: ButtonGroupItem[] = [

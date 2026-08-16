@@ -1,6 +1,6 @@
 # Between-operator filters for date ranges
 
-> Live in [demo 64-filter-between-operator](https://svgrid.com/#/demos/64-filter-between-operator).
+> Live in [demo 64-filter-between-operator](https://svgrid.com/demos/64-filter-between-operator/).
 
 <div data-docs-demo="64-filter-between-operator" data-height="480"></div>
 

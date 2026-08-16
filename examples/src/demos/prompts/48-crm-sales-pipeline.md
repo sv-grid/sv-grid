@@ -1,7 +1,7 @@
 # Prompt: 48-crm-sales-pipeline
 
 Source: `examples/src/demos/48-crm-sales-pipeline.svelte`
-Live:   https://svgrid.dev/#/demos/48-crm-sales-pipeline
+Live:   https://svgrid.com/demos/48-crm-sales-pipeline/
 
 ## What this demo proves
 

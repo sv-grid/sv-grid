@@ -14,7 +14,7 @@ the matching feature for you. Use them for the common path:
 | `groupable` | row grouping controls |
 
 ```svelte
-<!-- ✅ Correct — common path, no manual feature wiring. -->
+<!-- ✅ Correct - common path, no manual feature wiring. -->
 <SvGrid {data} {columns} sortable filterable pageable />
 ```
 
@@ -68,12 +68,12 @@ try to read grid state by reaching into the DOM.
 Common methods: `setFilter`, `clearAllFilters`, `setSort`, `setGroupBy`,
 `getDisplayedRows`, `setPageSize`. When a name is uncertain, check
 `https://svgrid.com/schemas/svgrid-options.json` or the MCP `list_docs`
-tool — don't guess.
+tool - don't guess.
 
 ## Data is a plain reactive array
 
 Pass a `$state` array as `data`. Mutating it (push, splice, reassign
-fields) updates the grid — no imperative "refresh" call.
+fields) updates the grid - no imperative "refresh" call.
 
 ```ts
 const data = $state<Row[]>([])
@@ -109,7 +109,7 @@ const source: ServerDataSource<Row> = {
 
 Wire it via `createServerDataSource(source)` and pass to `<SvGrid>`; keep
 `pageable` on so the footer shows. The exact request/response shape is in
-the docs — fetch `llms-full.txt` or use the MCP server for the current
+the docs - fetch `llms-full.txt` or use the MCP server for the current
 contract.
 
 ## Enterprise data helpers (only if installed)

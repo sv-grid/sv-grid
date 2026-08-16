@@ -119,7 +119,7 @@ you can plug your own `<HeaderToolbar />` component without forking
 
 Custom inline editors use `cellEditor:` and follow the
 `(ctx) => renderSnippet(...)` pattern - see the [`84-editor-types`
-demo](https://svgrid.com/#/demos/84-editor-types).
+demo](https://svgrid.com/demos/84-editor-types/).
 
 ## See also
 

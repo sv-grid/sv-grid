@@ -1,7 +1,7 @@
 # Prompt: 50-seller-panel
 
 Source: `examples/src/demos/50-seller-panel.svelte`
-Live:   https://svgrid.dev/#/demos/50-seller-panel
+Live:   https://svgrid.com/demos/50-seller-panel/
 
 ## What this demo proves
 

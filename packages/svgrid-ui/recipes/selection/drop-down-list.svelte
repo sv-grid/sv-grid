@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvDropDownList - single-select dropdown with no typing. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-drop-down-list
+  // SvDropDownList - single-select dropdown with no typing. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-drop-down-list
   import { SvDropDownList, type ListOption } from '@svgrid/grid'
 
   const options: ListOption[] = [

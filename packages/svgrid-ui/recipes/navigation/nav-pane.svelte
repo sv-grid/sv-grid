@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvNavPane - an Outlook-style app-shell navigation sidebar. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-nav-pane
+  // SvNavPane - an Outlook-style app-shell navigation sidebar. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-nav-pane
   import { SvNavPane, type NavSection } from '@svgrid/grid'
 
   let value = $state<string | null>('inbox')

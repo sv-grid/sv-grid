@@ -1,7 +1,7 @@
 # Prompt: 59-export-multi-sheet
 
 Source: `examples/src/demos/59-export-multi-sheet.svelte`
-Live:   https://svgrid.dev/#/demos/59-export-multi-sheet
+Live:   https://svgrid.com/demos/59-export-multi-sheet/
 
 ## What this demo proves
 

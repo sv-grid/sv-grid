@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvGridSelect - grid-in-a-dropdown multi-column single-select. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-grid-select
+  // SvGridSelect - grid-in-a-dropdown multi-column single-select. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-grid-select
   import { SvGridSelect, type GridSelectColumn } from '@svgrid/grid'
 
   const columns: GridSelectColumn[] = [

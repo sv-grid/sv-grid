@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvGauge - radial arc gauge for a single KPI. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-gauge
+  // SvGauge - radial arc gauge for a single KPI. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-gauge
   import { SvGauge } from '@svgrid/grid'
 
   let value = $state(72)

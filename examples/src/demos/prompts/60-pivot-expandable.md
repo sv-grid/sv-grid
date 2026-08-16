@@ -1,7 +1,7 @@
 # Prompt: 60-pivot-expandable
 
 Source: `examples/src/demos/60-pivot-expandable.svelte`
-Live:   https://svgrid.dev/#/demos/60-pivot-expandable
+Live:   https://svgrid.com/demos/60-pivot-expandable/
 
 ## What this demo proves
 

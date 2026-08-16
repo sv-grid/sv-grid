@@ -1,6 +1,6 @@
 # Mobile card view with grid-on-desktop
 
-> Live in [demo 81-mobile-card-view](https://svgrid.com/#/demos/81-mobile-card-view).
+> Live in [demo 81-mobile-card-view](https://svgrid.com/demos/81-mobile-card-view/).
 
 <div data-docs-demo="81-mobile-card-view" data-height="480"></div>
 

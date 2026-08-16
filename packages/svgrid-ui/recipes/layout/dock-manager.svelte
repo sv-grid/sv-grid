@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvDockManager - docking with floating windows, reorder and auto-hide. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-dock-manager
+  // SvDockManager - docking with floating windows, reorder and auto-hide. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-dock-manager
   import { SvDockManager, dockGroup, dockTabs, dockPane, type DockManagerState } from '@svgrid/grid'
 
   let workspace = $state<DockManagerState>({

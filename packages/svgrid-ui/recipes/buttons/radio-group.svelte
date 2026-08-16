@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvRadioGroup - an accessible single-select radio group. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-radio-group
+  // SvRadioGroup - an accessible single-select radio group. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-radio-group
   import { SvRadioGroup, type RadioOption } from '@svgrid/grid'
 
   const plans: RadioOption[] = [

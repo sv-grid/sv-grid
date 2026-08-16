@@ -150,7 +150,7 @@ visual piece is a CSS custom property (`--sg-*`); see
 ```
 
 For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
-[demo 74](https://svgrid.com/#/demos/74-theme-integrations).
+[demo 74](https://svgrid.com/demos/74-theme-integrations/).
 
 ## What you get for free vs MUI X
 
@@ -162,14 +162,14 @@ For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
 ## What you give up
 
 - **The Material Design look out of the box.** Sv-grid ships
-  unstyled-by-token; the [MUI preset in demo 74](https://svgrid.com/#/demos/74-theme-integrations)
+  unstyled-by-token; the [MUI preset in demo 74](https://svgrid.com/demos/74-theme-integrations/)
   is one drop-in.
 - **MUI form-field integration.** Bind directly to your own MUI
   inputs in custom cell components if you want them.
 
 ## See also
 
-- [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid) - the side-by-side comparison
+- [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/) - the side-by-side comparison
 - [Migrating from AG Grid](./migrating-from-ag-grid.md)
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md)
 - [Design tokens](./tokens.md)
@@ -193,4 +193,4 @@ bind your own MUI inputs inside custom cell components.
 SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterprise`
 is priced per developer ($599 single-app / $999 multi-app) rather than
 per seat with Premium add-ons. Compare your team size and feature needs against
-the [pricing page](https://svgrid.com/#/pricing).
+the [pricing page](https://svgrid.com/pricing/).

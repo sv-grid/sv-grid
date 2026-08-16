@@ -1,7 +1,7 @@
 # Prompt: 19-ssr
 
 Source: `examples/src/demos/19-ssr.svelte`
-Live:   https://svgrid.dev/#/demos/19-ssr
+Live:   https://svgrid.com/demos/19-ssr/
 
 ## What this demo proves
 

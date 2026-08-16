@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvTabs - WAI-ARIA tab strip with roving arrow-key nav. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-tabs
+  // SvTabs - WAI-ARIA tab strip with roving arrow-key nav. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-tabs
   import { SvTabs, type TabItem } from '@svgrid/grid'
 
   const tabs: TabItem[] = [

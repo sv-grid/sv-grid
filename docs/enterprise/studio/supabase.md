@@ -6,7 +6,7 @@ Supabase project to a live CRUD screen, step by step. No backend to run.
 
 ![From an empty Supabase project, create a table, open access with Row-Level Security, and pass the anon key to createSupabaseDataSource to wire hosted Postgres straight into the grid.](/docs-media/studio-supabase.svg)
 
-> **Try it first:** the [Supabase demo](https://svgrid.com/#/demos/194-studio-supabase)
+> **Try it first:** the [Supabase demo](https://svgrid.com/demos/194-studio-supabase/)
 > is exactly this - paste your project URL + anon key and it runs against your
 > real database in the browser.
 
@@ -171,7 +171,7 @@ against hosted Postgres, with RLS enforced on every request.
 > **Don't know the columns ahead of time?** `introspectSupabaseTable({ url, key,
 > table })` reads them from PostgREST and returns an `EntitySchema` you can feed
 > to `schemaToColumns` and `createSupabaseDataSource` - that's how the
-> [live demo](https://svgrid.com/#/demos/194-studio-supabase) adapts to any table.
+> [live demo](https://svgrid.com/demos/194-studio-supabase/) adapts to any table.
 > It also reads **foreign keys**, so a FK column comes back as a `relation` field
 > and the form gets a searchable picker automatically - see [Relations](./relations.md).
 
@@ -218,7 +218,7 @@ More answers in [Troubleshooting & FAQ](./troubleshooting.md).
 
 ## See also
 
-- [Supabase demo](https://svgrid.com/#/demos/194-studio-supabase) - this guide, live
+- [Supabase demo](https://svgrid.com/demos/194-studio-supabase/) - this guide, live
 - [Databases](./databases.md) - the SQL sources and dialects
 - [Data binding](./data-binding.md) - the `ServerDataSource` contract
 - [Getting started](./getting-started.md) - the page code, end to end

@@ -258,5 +258,5 @@ that any storage backend accepts.
 - [Columns hierarchy](./columns-hierarchy.md) - the tree state is
   another slice to capture in `extras`.
 - [Architecture](./architecture.md) - which slices live where.
-- [Demo #55 State maintenance](https://svgrid.com/#/demos/55-state-maintenance)
+- [Demo #55 State maintenance](https://svgrid.com/demos/55-state-maintenance/)
   - the reference implementation.

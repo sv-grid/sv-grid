@@ -1,7 +1,7 @@
 # Prompt: 17-accessibility
 
 Source: `examples/src/demos/17-accessibility.svelte`
-Live:   https://svgrid.dev/#/demos/17-accessibility
+Live:   https://svgrid.com/demos/17-accessibility/
 
 ## What this demo proves
 

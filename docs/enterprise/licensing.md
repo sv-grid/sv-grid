@@ -163,4 +163,4 @@ support uses the ID you give us, not anything we phoned home for.
 
 - [Enterprise evaluation](./evaluation.md) - 30-day evaluation flow
 - [Enterprise support](./support.md) - SLAs, escalation, contact channels
-- [Pricing](https://svgrid.com/pricing) - canonical pricing source
+- [Pricing](https://svgrid.com/pricing/) - canonical pricing source

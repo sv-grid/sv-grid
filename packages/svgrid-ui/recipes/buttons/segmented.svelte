@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvSegmented - a compact single-select track. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-segmented
+  // SvSegmented - a compact single-select track. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-segmented
   import { SvSegmented } from '@svgrid/grid'
   let view = $state('board')
 </script>

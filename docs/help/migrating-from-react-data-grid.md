@@ -59,7 +59,7 @@ is mostly a column rename pass.
 
 ## See also
 
-- [SvGrid vs React Data Grid](https://svgrid.com/compare/react-data-grid) - the side-by-side comparison
+- [SvGrid vs React Data Grid](https://svgrid.com/compare/react-data-grid/) - the side-by-side comparison
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - sibling React-to-Svelte guide
 - [Cell components](./cells/cell-components.md) - custom cells + editors
 

@@ -1,7 +1,7 @@
 # Prompt: 23-bulk-actions
 
 Source: `examples/src/demos/23-bulk-actions.svelte`
-Live:   https://svgrid.dev/#/demos/23-bulk-actions
+Live:   https://svgrid.com/demos/23-bulk-actions/
 
 ## What this demo proves
 

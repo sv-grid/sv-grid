@@ -1,42 +1,30 @@
 # Prompt: 52-pivot-table
 
 Source: `examples/src/demos/52-pivot-table.svelte`
-Live:   https://svgrid.dev/#/demos/52-pivot-table
+Live:   https://svgrid.com/demos/52-pivot-table/
 
 ## What this demo proves
 
-52. Pivot table + Pivot Designer
----------------------------------
-A real Pivot Table built on top of plain SvGrid. We don't extend the
-grid's core; we build a small pivot engine that takes a source row
-set + a config (rows, columns, values, filters) and emits:
+52. Pivot table - built on <SvPivotDesigner>
+---------------------------------------------
+A self-contained sales pivot built on the shipped `<SvPivotDesigner>`
+(which the previous 1,232-line version of this demo hand-rolled).
+The component handles the field rail, the four wells, drag-and-drop,
+chip menus, presets, totals toggles, and the inline pivot grid.
 
-  - a nested ColumnDef tree (multi-level headers like
-    "2025 / Q1 / Revenue") that maps straight onto SvGrid's
-    `columns?: ColumnDef[]` recursive type, and
+This demo adds two thin layers around it:
 
-  - a flat array of pivoted rows with subtotal + grand-total rows
-    marked for styling.
+ - A grand-total KPI strip ABOVE the pivot, recomputed from the
+   designer's `onPivot` callback whenever the layout changes.
+ - Currency / number formatting on value cells via `decorateColumns`
+   so revenue + cost render as money and units as plain numbers.
 
-The **Pivot Designer** on the left is a drag-and-drop field
-arranger - four zones (Filters / Columns / Rows / Values) plus an
-"Available fields" pool. Drag a chip between zones and the pivot
-recomputes live. Click a chip in Values to change its aggregator
-(sum / avg / count / min / max); click in Filters to pick allowed
-values; click in Rows / Columns to remove.
+The pivot data is ~2,400 synthetic sales facts: 4 regions × 13
+countries × 4 channels × 6 categories × 3 years × 4 quarters.
 
 ## Imports
 
 ```ts
-```
-
-## Registered features
-
-```ts
-const features = tableFeatures({
-  rowSortingFeature,
-  columnFilteringFeature,
-})
 ```
 
 ## How to use this prompt

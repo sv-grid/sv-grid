@@ -56,9 +56,9 @@ cell with an aria-live summary panel.
 }
 ```
 
-Live in [demo 71 (Submit-time validation)](https://svgrid.com/#/demos/71-submit-validation).
+Live in [demo 71 (Submit-time validation)](https://svgrid.com/demos/71-submit-validation/).
 
 ## See also
 
 - [Validation while editing](../help/editing/validation.md) - per-keystroke variant
-- [Demo 24 (Validation)](https://svgrid.com/#/demos/24-validation) - rejecting bad values inline
+- [Demo 24 (Validation)](https://svgrid.com/demos/24-validation/) - rejecting bad values inline

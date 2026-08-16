@@ -1,7 +1,7 @@
 # Prompt: 04-selection-copy-paste
 
 Source: `examples/src/demos/04-selection-copy-paste.svelte`
-Live:   https://svgrid.dev/#/demos/04-selection-copy-paste
+Live:   https://svgrid.com/demos/04-selection-copy-paste/
 
 ## What this demo proves
 

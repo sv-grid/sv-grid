@@ -70,8 +70,8 @@ the right tool; reach for SvGrid when the codebase is Svelte 5.
 
 ## See also
 
-- [SvGrid vs jqxGrid](https://svgrid.com/compare/jqxgrid) - the side-by-side comparison
-- [About SvGrid](https://svgrid.com/about) - built by jQWidgets
+- [SvGrid vs jqxGrid](https://svgrid.com/compare/jqxgrid/) - the side-by-side comparison
+- [About SvGrid](https://svgrid.com/about/) - built by jQWidgets
 - [Getting started](../getting-started.md) - a working grid in ~15 lines
 
 ## Frequently asked questions

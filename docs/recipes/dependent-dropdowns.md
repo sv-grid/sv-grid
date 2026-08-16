@@ -50,7 +50,7 @@ invalid. Catch the cell change and snap them to a sane default:
 />
 ```
 
-Live in [demo 68 (Dependent dropdowns)](https://svgrid.com/#/demos/68-dependent-dropdowns)
+Live in [demo 68 (Dependent dropdowns)](https://svgrid.com/demos/68-dependent-dropdowns/)
 - includes a typeahead combobox + a one-click "Fix" button when seed
 data leaves the cascade in an inconsistent state.
 

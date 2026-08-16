@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvTextArea - multi-line text field with auto-grow and a character counter. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-text-area
+  // SvTextArea - multi-line text field with auto-grow and a character counter. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-text-area
   import { SvTextArea } from '@svgrid/grid'
 
   let notes = $state('')

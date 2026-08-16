@@ -68,6 +68,6 @@ async function loadMore() {
 
 ## See also
 
-- [Demo 33 (Server-side infinite scroll)](https://svgrid.com/#/demos/33-server-infinite) - live
+- [Demo 33 (Server-side infinite scroll)](https://svgrid.com/demos/33-server-infinite/) - live
 - [Server-side data](../help/server-side-data.md) - the full pattern catalog
 - [Real-time / streaming](../help/real-time.md) - if events arrive PUSHED instead of PULLED

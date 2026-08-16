@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-12 from 365 pages.
+Generated 2026-08-15 from 365 pages.
 
 <!-- =================================================================
      /brand/company-description  (community)
@@ -405,8 +405,8 @@ existing audit table, Datadog logs, an immutable ledger (DynamoDB
 with conditional writes, AWS QLDB, Kafka), or a write-once S3
 bucket.
 
-> Live in [demo 35 (Permissions, audit & history)](https://svgrid.com/#/demos/35-permissions-audit)
-> and [demo 49 (Admin dashboard)](https://svgrid.com/#/demos/49-admin-dashboard).
+> Live in [demo 35 (Permissions, audit & history)](https://svgrid.com/demos/35-permissions-audit/)
+> and [demo 49 (Admin dashboard)](https://svgrid.com/demos/49-admin-dashboard/).
 
 ## What's in scope
 
@@ -551,7 +551,7 @@ demonstrations:
 - [Observability](../help/observability.md) - the broader callback surface
 - [SOC 2 posture](./soc2.md)
 - [HIPAA posture](./hipaa.md)
-- [Demo 35 - Permissions, audit & history](https://svgrid.com/#/demos/35-permissions-audit)
+- [Demo 35 - Permissions, audit & history](https://svgrid.com/demos/35-permissions-audit/)
 
 <!-- =================================================================
      /compliance/gdpr  (community)
@@ -679,7 +679,7 @@ adding sv-grid, adding sv-grid does not break that compliance.
 This page documents the four configuration choices that matter for
 healthcare deployments.
 
-> **Live example:** [demo 41 (Healthcare EMR - inpatient board)](https://svgrid.com/#/demos/41-healthcare-emr)
+> **Live example:** [demo 41 (Healthcare EMR - inpatient board)](https://svgrid.com/demos/41-healthcare-emr/)
 > shows a role-based ICU census - the same patterns this page describes.
 
 ## 1. Disable persistent saved-views
@@ -805,7 +805,7 @@ make them worse, but you should be aware:
 - [GDPR + data residency](./gdpr.md)
 - [Audit log integration](./audit-log.md)
 - [Security & supply chain](../help/security.md)
-- [Demo 41 - Healthcare EMR](https://svgrid.com/#/demos/41-healthcare-emr) - role-based cell editing in practice
+- [Demo 41 - Healthcare EMR](https://svgrid.com/demos/41-healthcare-emr/) - role-based cell editing in practice
 
 <!-- =================================================================
      /compliance/index  (community)
@@ -841,7 +841,7 @@ this section answers each one directly.
 | Does the library transmit any data?               | **No.** Zero outbound network calls. Inspect with DevTools.     |
 | Does the library write to localStorage?           | **Only when you opt in.** [Saved views](../help/saved-views.md) writes when you tell it to. |
 | Does the library evaluate user input as code?     | **No.** CSP-compliant; no `eval` / `new Function`.              |
-| Does the library include third-party trackers?    | **No.** Verify the bundle - 49 kB gzip, no analytics SDK.      |
+| Does the library include third-party trackers?    | **No.** Verify the bundle - ~80 kB gzip, no analytics SDK.     |
 | Is the library SOC 2 / ISO 27001 certified?       | The LIBRARY can't be certified - it's not a service. Your hosted app gets certified; the library is in-scope as a dependency. See [SOC 2 posture](./soc2.md). |
 | Is the library GDPR-compliant?                    | The library is GDPR-neutral: it never processes data the user didn't already see. See [GDPR + data residency](./gdpr.md). |
 | Is the library HIPAA-compliant?                   | Same: HIPAA-neutral. PHI handling is a property of your app, not the grid. See [HIPAA posture](./hipaa.md). |
@@ -1037,7 +1037,7 @@ augments the api object.
 | AI      | `setAIProvider(yourAdapter); const plan = await api.ai.filter('show last quarter > $10k')` |
 
 Each Enterprise feature has a fully-working demo in the gallery
-([56-60 + 51 + 52 + 53](https://svgrid.com/#/demos)) that you can
+([56-60 + 51 + 52 + 53](https://svgrid.com/demos/)) that you can
 read end-to-end.
 
 ## Step 5: Performance + budget check
@@ -1046,11 +1046,10 @@ Bundle sizes (gzip):
 
 | Surface         | Size  | Notes                              |
 | --------------- | ----- | ---------------------------------- |
-| Community only  | 49 kB | Renderer + engine                  |
+| Community only  | 80 kB | Renderer + engine (+ 9 kB CSS)     |
 | + Enterprise export    | +12 kB| + `jszip` peer when xlsx is used   |
 | + Enterprise pdf       | +90 kB| + `pdfmake` peer when pdf is used  |
 | + Enterprise pivot     | +6 kB | Pure TS, no peers                  |
-| + Enterprise AI        | +4 kB | You bring the model client         |
 | + Enterprise import    | +5 kB | + `jszip` for xlsx import          |
 
 Subpath imports (`@svgrid/enterprise/export`, `@svgrid/enterprise/pivot`, etc.)
@@ -1068,7 +1067,7 @@ ensure you only pay for what you use.
 Each is a perpetual license + 1 year of updates and support that renews
 automatically; cancel anytime.
 
-[Full pricing](https://svgrid.com/pricing).
+[Full pricing](https://svgrid.com/pricing/).
 
 ## Migrating from another grid mid-evaluation
 
@@ -1251,7 +1250,7 @@ support uses the ID you give us, not anything we phoned home for.
 
 - [Enterprise evaluation](./evaluation.md) - 30-day evaluation flow
 - [Enterprise support](./support.md) - SLAs, escalation, contact channels
-- [Pricing](https://svgrid.com/pricing) - canonical pricing source
+- [Pricing](https://svgrid.com/pricing/) - canonical pricing source
 
 <!-- =================================================================
      /enterprise/README  (enterprise)
@@ -1348,7 +1347,7 @@ setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
 For dev builds, the demos use `setLicenseKey('SVENTERPRISE-DEV-DEMO')` to
 suppress the watermark in screenshots.
 
-Pricing + multi-app licensing: <https://svgrid.com/pricing>.
+Pricing + multi-app licensing: <https://svgrid.com/pricing/>.
 
 ## How Enterprise integrates
 
@@ -1465,13 +1464,11 @@ runs unlicensed, it just nudges. See
 > (auto-saves to disk, generates straight into a folder), or open a one-click
 > **[sample app](./studio/samples.md)**.
 
-> **Live demos:** [Data-app Studio](https://svgrid.com/#/demos/192-data-app-studio)
-> (the whole stack: grid + edit modal + schema designer) ·
-> [Live SQL](https://svgrid.com/#/demos/193-studio-live-sql) (real Postgres in the
-> browser via PGlite) ·
-> [Supabase](https://svgrid.com/#/demos/194-studio-supabase) (your own hosted
+> **Live demos:** [Live SQL](https://svgrid.com/demos/193-studio-live-sql/)
+> (the whole stack over real Postgres in the browser via PGlite) ·
+> [Supabase](https://svgrid.com/demos/194-studio-supabase/) (your own hosted
 > Postgres, straight from the browser) ·
-> [Chart](https://svgrid.com/#/demos/197-studio-chart) (a live chart panel
+> [Chart](https://svgrid.com/demos/197-studio-chart/) (a live chart panel
 > beside the grid; click to filter).
 
 ---
@@ -1861,7 +1858,7 @@ patterns. This page is what you get for free, what you own, and how to verify it
   tabindex** (one tab stop for the whole grid; arrow keys move the active cell),
   and `aria-sort` on sorted headers. Full keyboard navigation, no mouse required.
   See [Accessibility](../../help/accessibility.md) for the grid's complete a11y
-  behaviour and the [live demo](https://svgrid.com/#/demos/17-accessibility).
+  behaviour and the [live demo](https://svgrid.com/demos/17-accessibility/).
 - **The edit form** labels every input from the schema's `label` (or a title-cased
   field name), marks required fields, and surfaces validation messages next to the
   field they belong to.
@@ -2622,7 +2619,7 @@ signed-in user; RLS policies decide which rows that user can read and write.
 
 ![Auth establishes the signed-in user, then Row-Level Security decides which rows that user can read and write, so the user sees only their own rows.](/docs-media/studio-auth-rls.svg)
 
-> **Live demo:** [Data-app Studio · secured](https://svgrid.com/#/demos/196-studio-auth)
+> **Live demo:** [Data-app Studio · secured](https://svgrid.com/demos/196-studio-auth/)
 > - the grid sits behind a login (mock auth; any email + password).
 
 ---
@@ -2965,7 +2962,7 @@ Only `qty`, `rate`, `taxRate`, and `status` are ever submitted - `subtotal`,
 (client-side) or SQL (inside the API route) - write the logic once, run it
 everywhere.
 
-Live demo: [Computed fields & hooks](https://svgrid.com/#/demos/199-studio-computed-hooks).
+Live demo: [Computed fields & hooks](https://svgrid.com/demos/199-studio-computed-hooks/).
 
 ## See also
 
@@ -3322,7 +3319,7 @@ work.
 **3. The screen** wires the grid and the edit panel to that route through the
 controller - server-side sort / filter / page, the create-edit modal, and
 optimistic delete. It is a normal `+page.svelte` you own; see the
-[Data-app Studio demo](https://svgrid.com/#/demos/192-data-app-studio) for the
+[Studio live SQL demo](https://svgrid.com/demos/193-studio-live-sql/) for the
 whole thing running.
 
 ## Managed regions & safe regeneration
@@ -3635,7 +3632,7 @@ function drill(category: string, dimension: string) {
 }
 ```
 
-Live demo: [Dashboard](https://svgrid.com/#/demos/200-studio-dashboard).
+Live demo: [Dashboard](https://svgrid.com/demos/200-studio-dashboard/).
 
 ## See also
 
@@ -3872,7 +3869,7 @@ export const { POST } = createKitHandlers({ schema: customersSchema, source })
 > **Step-by-step walkthrough:** see the dedicated **[Supabase guide](./supabase.md)** -
 > create the table, set up Row-Level Security, and connect from the browser or a
 > SvelteKit server route. It matches the
-> [live Supabase demo](https://svgrid.com/#/demos/194-studio-supabase).
+> [live Supabase demo](https://svgrid.com/demos/194-studio-supabase/).
 
 Supabase is Postgres, so use the same `pg` driver with your Supabase connection
 string. In the Supabase dashboard: **Project Settings -> Database -> Connection
@@ -4042,7 +4039,7 @@ in-browser Postgres. Great for demos, offline / local-first apps, and tests.
 
 ![The live-SQL demo: a real Postgres in the browser, showing the executed query.](/docs-media/studio-live-sql.png)
 
-> **Live demo:** [Data-app Studio · live SQL](https://svgrid.com/#/demos/193-studio-live-sql) -
+> **Live demo:** [Data-app Studio · live SQL](https://svgrid.com/demos/193-studio-live-sql/) -
 > a full CRUD screen over PGlite; watch the SQL update as you sort and filter.
 
 ---
@@ -4718,7 +4715,7 @@ values with `dependentOptions` - the field clears when it stops being valid
   onSubmit={save} />
 ```
 
-See the [rich fields demo](https://svgrid.com/#/demos/198-studio-form-fields).
+See the [rich fields demo](https://svgrid.com/demos/198-studio-form-fields/).
 
 Enum and `relation` fields use a custom dropdown whose panel **portals to
 `document.body`** (position: fixed), so it opens *above* a drawer or modal and
@@ -4761,9 +4758,9 @@ with SvGrid is assumed.
 If you would rather just click around first, open a live demo - no install
 needed:
 
-- **[Data-app Studio](https://svgrid.com/#/demos/192-data-app-studio)** - the whole stack in the browser
-- **[Live SQL](https://svgrid.com/#/demos/193-studio-live-sql)** - a real Postgres in the browser (PGlite)
-- **[Supabase](https://svgrid.com/#/demos/194-studio-supabase)** - connect your own hosted Postgres
+- **[Studio live SQL](https://svgrid.com/demos/193-studio-live-sql/)** - the whole stack in the browser, backed by real Postgres via PGlite
+- **[Live SQL](https://svgrid.com/demos/193-studio-live-sql/)** - a real Postgres in the browser (PGlite)
+- **[Supabase](https://svgrid.com/demos/194-studio-supabase/)** - connect your own hosted Postgres
 
 **Choose your tutorial.** This page needs no database and teaches the whole
 shape; the one-page tutorials build the same screen against a real backend.
@@ -5847,7 +5844,7 @@ or fix a height and let the nested grid scroll for long child lists.
 
 - [The EntitySchema](./schema.md) - the model both grids derive from
 - [Edit forms & validation](./edit-forms.md) · [Data binding](./data-binding.md)
-- Live demo: [Master / detail (nested grid)](https://svgrid.com/#/demos/181-master-detail-grid)
+- Live demo: [Master / detail (nested grid)](https://svgrid.com/demos/181-master-detail-grid/)
 
 <!-- =================================================================
      /enterprise/studio/navigation  (enterprise)
@@ -6379,7 +6376,7 @@ it instantly, with no polling. This uses [Supabase Realtime](https://supabase.co
 
 ![A Postgres change made by another user, tab, or job streams through Supabase Realtime into createSupabaseRealtime, and the grid reflects it instantly with no polling.](/docs-media/studio-realtime.svg)
 
-> **Live demo:** the [Supabase demo](https://svgrid.com/#/demos/194-studio-supabase)
+> **Live demo:** the [Supabase demo](https://svgrid.com/demos/194-studio-supabase/)
 > is real-time out of the box - connect your table, then change a row in the
 > Supabase dashboard and watch it flash in the grid. Toggle it with the
 > **Live** pill.
@@ -6539,7 +6536,7 @@ A detected FK column becomes a `relation` field pointing at the referenced table
 The **generated page wires the lookup for you** - the CLI emits a
 `createRelationLookup` over the related entity's API route and passes it to the
 edit panel (so scaffold the related table too). The
-[Supabase demo](https://svgrid.com/#/demos/194-studio-supabase) does the same at
+[Supabase demo](https://svgrid.com/demos/194-studio-supabase/) does the same at
 runtime. When you introspect several tables at once,
 `linkRelationLabels(schemas)` fills in each relation's display field from the
 actual related schema (a `name` / `title` column, else its first text field).
@@ -6662,7 +6659,7 @@ That's it. The `companyId` field now renders `SvLookupInput`: type to search
 lookup is just a `ServerDataSource`, the options can come from **Supabase, REST,
 SQL, or in-memory** - whatever backs the related table.
 
-> **Live demo:** [Data-app Studio · relations](https://svgrid.com/#/demos/195-studio-relations)
+> **Live demo:** [Data-app Studio · relations](https://svgrid.com/demos/195-studio-relations/)
 > - Contacts with a searchable Company picker.
 
 ### Show the related name in the grid
@@ -6775,7 +6772,7 @@ createRestDataSource<Item>({
 })
 ```
 
-See the live example: [Live REST (public API)](https://svgrid.com/#/demos/337-live-rest-dummyjson)
+See the live example: [Live REST (public API)](https://svgrid.com/demos/337-live-rest-dummyjson/)
 fetches real rows from dummyjson.com through `dummyJsonAdapter`.
 
 **In the designer:** a REST entity's **Configure** builder has an **API format**
@@ -7614,7 +7611,7 @@ filtering, search, and paging included. Everything is here; copy the four files
 and run.
 
 > **Try it first, no install:** the
-> [Supabase demo](https://svgrid.com/#/demos/194-studio-supabase) is exactly this -
+> [Supabase demo](https://svgrid.com/demos/194-studio-supabase/) is exactly this -
 > paste your project URL + anon key and it runs against your real database in the
 > browser.
 
@@ -7905,7 +7902,7 @@ categories, customers, products, orders, order_details - plus an `order_lines`
 ![Five compact Northwind tables joined by the order_lines view, read-only to the anon role via Row-Level Security, browsed by the grid.](/docs-media/studio-northwind.svg)
 
 It is the same dataset as the in-browser
-[Northwind on PGlite demo](https://svgrid.com/#/demos/338-pglite-northwind); this
+[Northwind on PGlite demo](https://svgrid.com/demos/338-pglite-northwind/); this
 page hosts it on real Postgres so the anon key works from any browser app, and so
 Supabase **realtime** and Row-Level Security apply.
 
@@ -8048,7 +8045,7 @@ end $$;
 ## Step 3 - Connect
 
 **No-code (fastest):** open the
-[Supabase demo](https://svgrid.com/#/demos/194-studio-supabase), paste your
+[Supabase demo](https://svgrid.com/demos/194-studio-supabase/), paste your
 Project URL + anon key, and set the table to **`order_lines`** to browse the
 joined data, or **`products`** / **`customers`** for the base tables. The grid
 introspects the columns and renders sort / filter / search / paging - all pushed
@@ -8096,7 +8093,7 @@ see CRUD. This Northwind sample exists for the next question: **relations**. The
 `order_lines` view joins five tables into one grid, so you can demo grouping,
 totals, and filtering across the whole schema - the shape real business data
 takes. The same dataset runs with **zero backend** in the
-[Northwind on PGlite demo](https://svgrid.com/#/demos/338-pglite-northwind) when
+[Northwind on PGlite demo](https://svgrid.com/demos/338-pglite-northwind/) when
 you want to show it offline.
 
 ## See also
@@ -8119,7 +8116,7 @@ Supabase project to a live CRUD screen, step by step. No backend to run.
 
 ![From an empty Supabase project, create a table, open access with Row-Level Security, and pass the anon key to createSupabaseDataSource to wire hosted Postgres straight into the grid.](/docs-media/studio-supabase.svg)
 
-> **Try it first:** the [Supabase demo](https://svgrid.com/#/demos/194-studio-supabase)
+> **Try it first:** the [Supabase demo](https://svgrid.com/demos/194-studio-supabase/)
 > is exactly this - paste your project URL + anon key and it runs against your
 > real database in the browser.
 
@@ -8284,7 +8281,7 @@ against hosted Postgres, with RLS enforced on every request.
 > **Don't know the columns ahead of time?** `introspectSupabaseTable({ url, key,
 > table })` reads them from PostgREST and returns an `EntitySchema` you can feed
 > to `schemaToColumns` and `createSupabaseDataSource` - that's how the
-> [live demo](https://svgrid.com/#/demos/194-studio-supabase) adapts to any table.
+> [live demo](https://svgrid.com/demos/194-studio-supabase/) adapts to any table.
 > It also reads **foreign keys**, so a FK column comes back as a `relation` field
 > and the form gets a searchable picker automatically - see [Relations](./relations.md).
 
@@ -8331,7 +8328,7 @@ More answers in [Troubleshooting & FAQ](./troubleshooting.md).
 
 ## See also
 
-- [Supabase demo](https://svgrid.com/#/demos/194-studio-supabase) - this guide, live
+- [Supabase demo](https://svgrid.com/demos/194-studio-supabase/) - this guide, live
 - [Databases](./databases.md) - the SQL sources and dialects
 - [Data binding](./data-binding.md) - the `ServerDataSource` contract
 - [Getting started](./getting-started.md) - the page code, end to end
@@ -8714,7 +8711,7 @@ postgres.js, better-sqlite3, mysql2, Kysely, and others all work.
 ### Is Studio free?
 
 It is part of the Enterprise license and is soft-gated - it runs unlicensed with
-a watermark for evaluation. See [pricing](https://svgrid.com/pricing).
+a watermark for evaluation. See [pricing](https://svgrid.com/pricing/).
 
 ## See also
 
@@ -8993,7 +8990,7 @@ disclosure policy.
 
 ## Roadmap visibility
 
-- Community: public roadmap at [svgrid.com/roadmap](https://svgrid.com/roadmap)
+- Community: public roadmap at [svgrid.com/roadmap](https://svgrid.com/roadmap/)
 - Single / Multiple Application: quarterly roadmap email + invite to monthly office hours
 - Enterprise: named PM, monthly roadmap call, ability to sponsor features
 
@@ -9797,7 +9794,7 @@ auto-complete and type-check.
 
 ### Core features
 
-- **[Examples gallery](https://svgrid.com/#/demos)** - 50+ production-quality
+- **[Examples gallery](https://svgrid.com/demos/)** - 50+ production-quality
   demos, from quick-start to 100k-row virtualization.
 - **[Column definitions](./help/columns/column-definitions.md)** - every
   property on `ColumnDef`.
@@ -9810,7 +9807,7 @@ auto-complete and type-check.
   paginate, group, and aggregate locally or against your backend.
 - **[Tailwind integration](./help/tailwind.md)** - full list of CSS
   custom properties (`--sg-*`) and recipes for building your own theme.
-- **[Compare SvGrid with other Svelte data grids](https://svgrid.com/#/compare)** -
+- **[Compare SvGrid with other Svelte data grids](https://svgrid.com/compare/)** -
   side-by-side feature matrix and when to pick which.
 
 ### Enterprise features (`@svgrid/enterprise`)
@@ -9839,7 +9836,7 @@ demos and evaluation.
 
 - File issues at the [project repository](https://github.com/sv-grid/sv-grid/issues).
 - Browse the [Help index](./help/index.md) for topic-oriented guides.
-- Use the [@svgrid/mcp](https://svgrid.com/#/mcp) server
+- Use the [@svgrid/mcp](https://svgrid.com/mcp/) server
   to give your AI assistant accurate answers.
 - Read the source - it is small, well-commented, and meant to be read
   before opening a bug report.
@@ -11200,7 +11197,7 @@ imperative `SvGridApi` together form a clean tool surface that any
 agent SDK can consume.
 
 > **Looking for the in-grid AI features?** See
-> [AI assistant - Enterprise](./ai.md) for NL filter / smart fill /
+> [AI assistant](./ai.md) for NL filter / smart fill /
 > summarise / classify - the agent surface this page describes is
 > what you'd build ON TOP of those.
 
@@ -11372,8 +11369,8 @@ implement the above patterns:
 
 ## Worked example: NL → Pivot
 
-Live in [demo 75 (AI Smart Paste)](https://svgrid.com/#/demos/75-ai-smart-paste)
-and [demo 52 (Pivot designer)](https://svgrid.com/#/demos/52-pivot-table)
+Live in [demo 75 (AI Smart Paste)](https://svgrid.com/demos/75-ai-smart-paste/)
+and [demo 52 (Pivot designer)](https://svgrid.com/demos/52-pivot-table/)
 - both ship in the gallery.
 
 ## Failure modes
@@ -11389,7 +11386,7 @@ and [demo 52 (Pivot designer)](https://svgrid.com/#/demos/52-pivot-table)
 
 - [LLM grounding](./llm-grounding.md) - the static doc files agents read
 - [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
-- [AI assistant - Enterprise](./ai.md) - the in-grid NL features (not the agent layer)
+- [AI assistant](./ai.md) - the in-grid NL features, free in @svgrid/grid (not the agent layer)
 - [Architecture](./architecture.md) - what state lives where (agents need to know)
 
 ## Frequently asked questions
@@ -11960,7 +11957,7 @@ Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../refere
 
 ## See also
 
-- [AI assistant - Enterprise](./ai.md) - the in-grid helpers in full, with response shapes and the license gate
+- [AI assistant](./ai.md) - the in-grid helpers in full, with response shapes
 - [Agents](./agents.md) - build an agent that drives the live grid
 - [Agent Skill](./skill.md) - always-on, project-aware context and house style for coding assistants
 - [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
@@ -11971,9 +11968,9 @@ Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../refere
 
 ### What AI features does SvGrid have?
 
-Two kinds. At runtime, the `@svgrid/enterprise` AI assistant adds six
-model-agnostic helpers to the grid - natural-language filter, smart fill,
-summarise, classify, export, and anomaly detection. At build time, an MCP
+Two kinds. At runtime, `@svgrid/grid` ships six model-agnostic helpers
+free - natural-language filter, smart fill, summarise, classify, export,
+and anomaly detection. At build time, an MCP
 server plus grounding files let your coding agent write correct SvGrid code
 and scaffold CRUD screens.
 
@@ -12866,8 +12863,8 @@ mutate DOM nodes during a sort.
 | Layer | Source path                                       | Build output                         |
 | ----- | ------------------------------------------------- | ------------------------------------ |
 | 1     | Your app                                          | n/a                                  |
-| 2     | `packages/grid/src/core.ts` + row-models | `dist/index.js` (~13 kB gzip)    |
-| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~49 kB gzip total) |
+| 2     | `packages/grid/src/core.ts` + row-models | `dist/index.js` (~2 kB gzip)     |
+| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~80 kB gzip + 9 kB CSS) |
 |       | `packages/enterprise/src/{export,print,import,ai}.ts` | `@svgrid/enterprise/dist/*` (lazy-loaded peers) |
 
 ## See also
@@ -12931,17 +12928,22 @@ the former catches jank that mean averages smooths over.
 
 ## Bundle size
 
-Production build, gzipped, measured on the `dist/` output:
+Production build, gzipped. The first two rows come from
+`node packages/grid/scripts/measure-size.mjs` (Svelte excluded as a peer);
+see the [bundle size reference](../reference/bundle-size.md).
 
-| Surface                             | Brotli | gzip   | Notes                                  |
-| ----------------------------------- | ------ | ------ | -------------------------------------- |
-| `@svgrid/grid` (full)          | 41 kB  | 49 kB  | One import covers the entire renderer  |
-| Headless engine (no `<SvGrid>`)     | 11 kB  | 13 kB  | If you bring your own renderer         |
-| `@svgrid/enterprise` core                  | 7 kB   | 8 kB   | Export + print + import + AI shells    |
-| `@svgrid/enterprise` AI module only        | 4 kB   | 5 kB   | Imported via `'@svgrid/enterprise/ai'`        |
-| `@svgrid/enterprise` import module only    | 5 kB   | 6 kB   | Imported via `'@svgrid/enterprise/import'`    |
-| Peer: `jszip`                       | 30 kB  | 35 kB  | Loaded on first `xlsx` export *or* import |
-| Peer: `pdfmake` + vfs               | ~200 kB| ~280 kB| Loaded on first `pdf` export only      |
+| Surface                             | gzip   | Notes                                  |
+| ----------------------------------- | ------ | -------------------------------------- |
+| `@svgrid/grid` (full `<SvGrid>`)    | 80 kB  | One import covers the entire renderer; + 9 kB CSS |
+| Headless engine (`createGrid`)      | 2 kB   | If you bring your own renderer         |
+| Lazy chunks (charts, date editors, menus, export) | 64 kB | Loaded on demand, not in the initial bundle |
+| `@svgrid/enterprise` core           | 8 kB   | Export + print + import shells         |
+| `@svgrid/enterprise` import module only | 6 kB | Imported via `'@svgrid/enterprise/import'` |
+| Peer: `jszip`                       | 35 kB  | Loaded on first `xlsx` export *or* import |
+| Peer: `pdfmake` + vfs               | ~280 kB| Loaded on first `pdf` export only      |
+
+The AI helpers are no longer in this table: they moved into the free
+`@svgrid/grid` and tree-shake out unless you import them.
 
 Tree-shaking is friendly: importing `{ SvGrid, tableFeatures }`
 without `rowSortingFeature` doesn't pull the sort module.
@@ -13007,7 +13009,7 @@ scroll pass:
 
 ## Server-side / chunked loading
 
-Demo [33. Server-side infinite scroll](https://svgrid.com/#/demos/33-server-infinite) covers the chunked-load path. Numbers from that demo:
+Demo [33. Server-side infinite scroll](https://svgrid.com/demos/33-server-infinite/) covers the chunked-load path. Numbers from that demo:
 
 | Scenario                                         | Result                                  |
 | ------------------------------------------------ | --------------------------------------- |
@@ -13064,7 +13066,7 @@ fail CI on the main branch.
   real-world snippets (status pills, mini-bars).
 - Single-thread performance > 1M rows. For >1M, do the heavy lifting
   on the server and feed chunks through the [server-side infinite
-  scroll pattern](https://svgrid.com/#/demos/33-server-infinite).
+  scroll pattern](https://svgrid.com/demos/33-server-infinite/).
 
 ## See also
 
@@ -13090,8 +13092,8 @@ holds the visible window regardless of total row count.
 
 ### How fast is SvGrid, and how big is it?
 
-It ships a much smaller bundle (~60 KB gzipped for the full render component,
-or ~9.4 KB for the headless core) and virtualizes by default. Raw scroll
+It ships a much smaller bundle (~80 KB gzipped for the full render component,
+or ~2 KB for the headless core) and virtualizes by default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.
 
@@ -13158,7 +13160,7 @@ on the security page.
 SvGrid is SSR-compatible. The render component does nothing on the
 server beyond emitting the wrapper markup with an `aria-busy` shell -
 the data + interactions hydrate on the client. Demo
-[19. Server-side rendering](https://svgrid.com/#/demos/19-ssr)
+[19. Server-side rendering](https://svgrid.com/demos/19-ssr/)
 shows a sandboxed pre-hydration snapshot.
 
 ### Tested SSR runtimes
@@ -14826,7 +14828,7 @@ work afterward (~1-2 ms). Mutating the tree state at interactive rates
   sessions.
 - [State maintenance](./state-maintenance.md) - undo / redo for tree
   changes.
-- [Demo #54 Columns hierarchy](https://svgrid.com/#/demos/54-columns-hierarchy)
+- [Demo #54 Columns hierarchy](https://svgrid.com/demos/54-columns-hierarchy/)
   - the reference implementation.
 
 <!-- =================================================================
@@ -14881,7 +14883,7 @@ Vertical scroll and selection stay independent (each grid owns its own rows).
 
 A `ColumnDef` tells SvGrid how to read a value out of a row, how to render it,
 and which features apply to it. The grid below is built from a handful
-of `ColumnDef`s - look at the [source](https://svgrid.com/#/demos/01-quick-start) to see how each shape maps to a column behaviour:
+of `ColumnDef`s - look at the [source](https://svgrid.com/demos/01-quick-start/) to see how each shape maps to a column behaviour:
 
 <div data-docs-demo="01-quick-start" data-height="460"></div>
 
@@ -16099,7 +16101,7 @@ depends on the framework you ship on and your budget.
 
 | Project              | Lives in                                 | Ships                                   | Bundle (typical) | License            |
 | -------------------- | ---------------------------------------- | --------------------------------------- | ---------------- | ------------------ |
-| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~9.4 KB headless / ~60 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
+| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~2 KB headless / ~80 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
 | **AG Grid Community**| React, Angular, Vue, plain JS            | Full grid + renderer                    | ~340 KB                                   | MIT                                |
 | **AG Grid Enterprise**| same                                    | Adds pivot, integrated charts, server-side row model, more | ~600 KB+ | Commercial                         |
 | **TanStack Table**   | React, Vue, Svelte, Solid, Qwik, Lit, JS | Headless engine **only**                | ~12-14 KB                                 | MIT                                |
@@ -16182,8 +16184,14 @@ Measured gzipped, with Svelte treated as a peer dependency and excluded
 
 | @svgrid/grid path                          | Gzipped | Minified |
 | ----------------------------------------------- | ------- | -------- |
-| Headless core (`createSvGrid` + a row model)    | ~9.4 KB | ~48 KB   |
-| Full `<SvGrid>` render component                | ~60 KB  | ~273 KB  |
+| Headless core (`createGrid` + a row model)      | ~2 KB   | ~7 KB    |
+| Full `<SvGrid>` render component                | ~80 KB  | ~293 KB  |
+
+Add ~9 KB gzipped for the render component's CSS. A further ~64 KB of
+charts, date/time editors, menus, and export splits into `import()` chunks
+that load on demand rather than shipping in your initial bundle. Re-measure
+any time with `node packages/grid/scripts/measure-size.mjs`; see the
+[bundle size reference](../reference/bundle-size.md).
 
 The full render component is the whole grid - virtualization, Excel-style
 filters, inline editing, grouping, tree, master/detail, and accessibility -
@@ -16217,7 +16225,7 @@ TanStack Table's React adapter in 90% of cases. The big differences:
 
 SvGrid Community is MIT - free for commercial use, no attribution
 required at runtime. SvGrid Enterprise is a paid license; see
-<https://svgrid.com/pricing> for per-seat / per-app / multi-app tiers.
+<https://svgrid.com/pricing/> for per-seat / per-app / multi-app tiers.
 
 AG Grid Community is MIT. AG Grid Enterprise pricing is on
 ag-grid.com; expect a per-developer annual license plus a separate
@@ -16247,8 +16255,8 @@ bridge into Svelte 5.
 
 ### Is SvGrid a good AG Grid alternative?
 
-Yes, for Svelte projects. SvGrid ships a much smaller bundle (~60 KB gzipped
-for the full render component, ~9.4 KB headless) than AG Grid Community, is
+Yes, for Svelte projects. SvGrid ships a much smaller bundle (~80 KB gzipped
+for the full render component, ~2 KB headless) than AG Grid Community, is
 MIT-licensed for commercial use, and offers `@svgrid/enterprise` for
 export/pivot/import at a per-developer price instead of AG Grid Enterprise's
 per-deployment licensing. It does not yet match every AG Grid Enterprise
@@ -16263,10 +16271,12 @@ virtualization, and editing UI yourself. Both are MIT-licensed.
 
 ### How big is the SvGrid bundle?
 
-Measured gzipped (Svelte excluded as a peer dependency): ~9.4 KB for the
-headless core and ~60 KB for the full `<SvGrid>` render component (~273 KB
-minified). Enterprise features are separate, lazy-loaded subpath imports, so you ship
-only what you import.
+Measured gzipped (Svelte excluded as a peer dependency): ~2 KB for the
+headless core and ~80 KB for the full `<SvGrid>` render component (~293 KB
+minified), plus ~9 KB of CSS. Charts, date/time editors, menus, and export
+add another ~64 KB that loads on demand rather than up front. Enterprise
+features are separate, lazy-loaded subpath imports, so you ship only what
+you import.
 
 <!-- =================================================================
      /help/conditional-form-schema  (community)
@@ -17675,14 +17685,14 @@ the trailing detail at the patch level if the diagnostic improves.
 
 ## @svgrid/enterprise - AI
 
-### `NoProviderError: @svgrid/enterprise/ai: no AI provider registered. Call setAIProvider(fn) with an adapter that talks to OpenAI / Anthropic / your proxy.`
+### `NoProviderError: @svgrid/grid ai: no AI provider registered. Call setAIProvider(fn) with an adapter that talks to OpenAI / Anthropic / your proxy.`
 
 - **Class:** `NoProviderError` (extends `Error`)
 - **When:** Any `api.ai.*` call before `setAIProvider(fn)` ran.
 - **Fix:** Wire your adapter at app boot. For demos, use
   `setAIProvider(mockAIProvider)`.
 
-### `BadJsonError: @svgrid/enterprise/ai: provider returned non-JSON for a json-format request. First 200 chars: <prefix>`
+### `BadJsonError: @svgrid/grid ai: provider returned non-JSON for a json-format request. First 200 chars: <prefix>`
 
 - **Class:** `BadJsonError` (extends `Error`)
 - **When:** A helper asked the provider for JSON and got prose back.
@@ -17694,7 +17704,7 @@ the trailing detail at the patch level if the diagnostic improves.
   automatically before parsing; multiple fences or surrounding prose
   trip this error.
 
-### `Error: @svgrid/enterprise/ai: aiSmartFill requires at least one example.`
+### `Error: @svgrid/grid ai: aiSmartFill requires at least one example.`
 
 - **Class:** `Error`
 - **When:** `aiSmartFill({ examples: [] })`.
@@ -17876,7 +17886,7 @@ them.
 | `SVENTERPRISE-DEV-...` or `SVENTERPRISE-EVAL-...`        | Works. One-time console.info notice. No watermark. |
 | Any other `SVENTERPRISE-...`                      | Works silently. |
 
-Buy a production key at <https://svgrid.com/pricing> ($599 / developer /
+Buy a production key at <https://svgrid.com/pricing/> ($599 / developer /
 year). `SVENTERPRISE-DEV-...` and `SVENTERPRISE-EVAL-...` keys cover local development
 and 14-day trials respectively.
 
@@ -19793,7 +19803,7 @@ use pivot when you also roll up columns.
 - [Pivot tables](./pivot.md) - the column-axis version.
 - [Row pagination](./rows/row-pagination.md) - the paging stage runs
   AFTER grouping, so group rows count toward the page size.
-- [Demo #07 Grouping + aggregation](https://svgrid.com/#/demos/07-grouping-aggregation)
+- [Demo #07 Grouping + aggregation](https://svgrid.com/demos/07-grouping-aggregation/)
   - the source for the example above.
 
 ## Frequently asked questions
@@ -20953,7 +20963,7 @@ swap in a custom editor via [Custom header components](./columns/custom-header-c
 - [Accessibility](./accessibility.md) - all of the above respects
   forced-colors / reduced-motion / screen-reader announcements per
   locale.
-- [Demo #38 RTL + i18n](https://svgrid.com/#/demos/38-rtl-i18n)
+- [Demo #38 RTL + i18n](https://svgrid.com/demos/38-rtl-i18n/)
   - full locale + direction toggle reference.
 
 ## Frequently asked questions
@@ -21459,7 +21469,7 @@ real-world scale:
 - [Data export and printing - Enterprise](./export.md) - Excel, PDF, CSV, TSV, HTML, and Print
 - [Data import - Enterprise](./import.md) - Excel, CSV, TSV, and JSON import with column mapping + validation
 - [**AI Toolkit**](./ai-toolkit.md) - the hub for every AI feature: in-grid helpers, agents, MCP server, and LLM grounding, all model-agnostic
-- [AI assistant - Enterprise](./ai.md) - natural-language filter, smart fill, summarise, classify; bring-your-own model adapter
+- [AI assistant](./ai.md) - natural-language filter, smart fill, summarise, classify; free in @svgrid/grid, bring-your-own model adapter
 - [Pivot tables - Enterprise](./pivot.md) - `createPivotModel` + nested column headers; designer UI is a separate demo
 - [Alerts - Enterprise](./alerts.md) - no-code alert rules: toast / highlight / flash / prevent-edit when the data crosses a line; persisted + shareable
 - [Expression query language - Enterprise](./expressions-query.md) - the predicate / scalar / change language behind alerts (and styled + calculated columns)
@@ -21532,7 +21542,7 @@ shipping. Each link drops you straight into the relevant topic page.
 | Export to Excel / PDF / CSV      | [Data export and printing](./export.md)                                                            |
 | Excel / CSV / JSON import        | [Data import](./import.md) - file picker -> column map -> preview -> commit                       |
 | Add AI to the grid               | [AI assistant](./ai.md) - one provider adapter, four helpers                                       |
-| Multi-app deployment licensing   | [Pricing](https://svgrid.com/#/pricing) - Multiple App License covers an org        |
+| Multi-app deployment licensing   | [Pricing](https://svgrid.com/pricing/) - Multiple App License covers an org        |
 | Testing the grid                 | [Testing your grid](./testing.md) + [Testing and quality](./testing-and-quality.md)                |
 
 If a question is missing from this table, **press `Ctrl/Cmd + K`** in
@@ -21736,7 +21746,7 @@ Every file is exhaustive but tightly scoped to sv-grid surface area:
   `SvGridApi`, every field on `ColumnDef`
 - **Features**: when to use sorting / filtering / grouping / pagination
   feature toggles, and the trade-offs
-- **Enterprise tier**: export, import, pivot, AI helpers - each documented as
+- **Enterprise tier**: export, import, pivot - each documented as
   if it were free, with the licensing call-out at the top of the page
 - **Recipes**: 25+ copy-paste patterns from the cookbook
 - **Migrations**: how to translate concepts from other data grids
@@ -21981,7 +21991,7 @@ agent's system prompt gives ~80% of the same value.
 
 - [LLM grounding](./llm-grounding.md) - the same files used by the MCP server, but documented for direct LLM consumption
 - [Agents](./agents.md) - how to build an AI agent that drives the live grid
-- [AI assistant - Enterprise](./ai.md) - the in-grid AI features (filter / smart-fill / classify / summarise)
+- [AI assistant](./ai.md) - the in-grid AI features (filter / smart-fill / classify / summarise), free in @svgrid/grid
 
 ## Frequently asked questions
 
@@ -22025,7 +22035,7 @@ We tell you when **not** to switch at the bottom.
 | --- | --- | --- | --- | --- |
 | **License** | MIT | Commercial (~$999/dev/yr) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
 | **Svelte 5 native** | ❌ (wrapper) | ❌ (wrapper) | ✅ | ✅ |
-| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~9.4 KB headless / ~60 KB full | lazy-loaded subpaths |
+| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~2 KB headless / ~80 KB full | lazy-loaded subpaths |
 | **Sorting / filtering / grouping** | ✅ | ✅ | ✅ | (in Community) |
 | **Master/detail, tree, range select** | ❌ Enterprise only | ✅ | ✅ (free) | (in Community) |
 | **Excel export** | ❌ | ✅ Enterprise | ❌ | ✅ |
@@ -22276,14 +22286,14 @@ AG Grid Enterprise's `rowGroupPanelShow: 'always'` + `aggFunc: 'sum'` translates
 ### Master / detail
 
 AG Grid Enterprise feature; **free in SvGrid Community**. See
-[demo 08](https://svgrid.com/#/demos/08-tree-and-master-detail) for the exact pattern.
+[demo 08](https://svgrid.com/demos/08-tree-and-master-detail/) for the exact pattern.
 
 ### Server-side data
 
 AG Grid uses an `IServerSideDatasource` interface. SvGrid uses
 `externalSort` + `externalFilter` props - your code keeps full control
 over the query, and the grid records UI state but doesn't re-order rows
-locally. See [demo 09](https://svgrid.com/#/demos/09-server-side).
+locally. See [demo 09](https://svgrid.com/demos/09-server-side/).
 
 ### Excel / PDF export
 
@@ -22370,7 +22380,7 @@ pre-sales questions.
 - [Getting started](../getting-started.md) - full SvGrid walkthrough
 - [Why headless?](../why-headless.md) - the headless / render-component split
 - [Data export and printing](./export.md) - the `@svgrid/enterprise` feature pack
-- [SvGrid vs AG Grid comparison page](https://svgrid.com/#/compare/ag-grid)
+- [SvGrid vs AG Grid comparison page](https://svgrid.com/compare/ag-grid/)
 
 ## Frequently asked questions
 
@@ -22397,7 +22407,7 @@ and no framework bridge to keep in sync.
 
 ### Will my AG Grid bundle size shrink?
 
-Almost always. SvGrid's full render component is ~60 KB gzipped (or ~9.4 KB
+Almost always. SvGrid's full render component is ~80 KB gzipped (or ~2 KB
 for the headless core) versus a much heavier AG Grid Community bundle, and you
 only add `@svgrid/enterprise` features you actually use - so you ship a fraction of
 the JavaScript.
@@ -22472,7 +22482,7 @@ lower-cost paid tier.
 
 ## See also
 
-- [SvGrid vs DevExtreme DataGrid](https://svgrid.com/compare/devextreme-datagrid) - the side-by-side comparison
+- [SvGrid vs DevExtreme DataGrid](https://svgrid.com/compare/devextreme-datagrid/) - the side-by-side comparison
 - [Saved views](./saved-views.md) - the state-persistence pattern
 - [Data export and printing - Enterprise](./export.md) - the Enterprise export pack
 
@@ -22665,7 +22675,7 @@ covers everything; Glide's theme has ~40).
 
 ## See also
 
-- [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid) - the side-by-side comparison
+- [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/) - the side-by-side comparison
 - [Performance benchmarks](./benchmarks.md) - measured numbers
 - [Server-side data](./server-side-data.md) - the >100k-row pattern
 - [Accessibility](./accessibility.md) - the standards compliance Glide doesn't ship
@@ -22754,7 +22764,7 @@ filters, editing, grouping - when you outgrow the basics.
 
 ## See also
 
-- [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs) - the side-by-side comparison
+- [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/) - the side-by-side comparison
 - [Getting started](../getting-started.md) - a working grid in ~15 lines
 - [Server-side data](./server-side-data.md) - the external-data pattern
 
@@ -22937,10 +22947,10 @@ a watermark for unlicensed builds) - no hard cutoff to plan around.
 
 ## See also
 
-- [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable) - the side-by-side comparison
+- [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/) - the side-by-side comparison
 - [Spreadsheet formulas](./spreadsheet-formulas.md) - sv-grid's
   built-in formula engine
-- [Demo 27 (Spreadsheet + Ribbon)](https://svgrid.com/#/demos/27-spreadsheet-ribbon) - live
+- [Demo 27 (Spreadsheet + Ribbon)](https://svgrid.com/demos/27-spreadsheet-ribbon/) - live
 - [Migrating from AG Grid](./migrating-from-ag-grid.md)
 
 ## Frequently asked questions
@@ -23041,8 +23051,8 @@ the right tool; reach for SvGrid when the codebase is Svelte 5.
 
 ## See also
 
-- [SvGrid vs jqxGrid](https://svgrid.com/compare/jqxgrid) - the side-by-side comparison
-- [About SvGrid](https://svgrid.com/about) - built by jQWidgets
+- [SvGrid vs jqxGrid](https://svgrid.com/compare/jqxgrid/) - the side-by-side comparison
+- [About SvGrid](https://svgrid.com/about/) - built by jQWidgets
 - [Getting started](../getting-started.md) - a working grid in ~15 lines
 
 ## Frequently asked questions
@@ -23133,8 +23143,8 @@ with an MIT core - and a much cheaper paid tier.
 
 ## See also
 
-- [SvGrid vs Kendo UI Grid](https://svgrid.com/compare/kendo-ui-grid) - the side-by-side comparison
-- [Pricing](https://svgrid.com/pricing) - the SvGrid Enterprise tiers
+- [SvGrid vs Kendo UI Grid](https://svgrid.com/compare/kendo-ui-grid/) - the side-by-side comparison
+- [Pricing](https://svgrid.com/pricing/) - the SvGrid Enterprise tiers
 - [Architecture](./architecture.md) - engine + render-component split
 
 ## Frequently asked questions
@@ -23312,7 +23322,7 @@ visual piece is a CSS custom property (`--sg-*`); see
 ```
 
 For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
-[demo 74](https://svgrid.com/#/demos/74-theme-integrations).
+[demo 74](https://svgrid.com/demos/74-theme-integrations/).
 
 ## What you get for free vs MUI X
 
@@ -23324,14 +23334,14 @@ For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
 ## What you give up
 
 - **The Material Design look out of the box.** Sv-grid ships
-  unstyled-by-token; the [MUI preset in demo 74](https://svgrid.com/#/demos/74-theme-integrations)
+  unstyled-by-token; the [MUI preset in demo 74](https://svgrid.com/demos/74-theme-integrations/)
   is one drop-in.
 - **MUI form-field integration.** Bind directly to your own MUI
   inputs in custom cell components if you want them.
 
 ## See also
 
-- [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid) - the side-by-side comparison
+- [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/) - the side-by-side comparison
 - [Migrating from AG Grid](./migrating-from-ag-grid.md)
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md)
 - [Design tokens](./tokens.md)
@@ -23355,7 +23365,7 @@ bind your own MUI inputs inside custom cell components.
 SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterprise`
 is priced per developer ($599 single-app / $999 multi-app) rather than
 per seat with Premium add-ons. Compare your team size and feature needs against
-the [pricing page](https://svgrid.com/#/pricing).
+the [pricing page](https://svgrid.com/pricing/).
 
 <!-- =================================================================
      /help/migrating-from-primevue-datatable  (community)
@@ -23420,7 +23430,7 @@ component.
 
 ## See also
 
-- [SvGrid vs Prime DataTable](https://svgrid.com/compare/primevue-datatable) - the side-by-side comparison
+- [SvGrid vs Prime DataTable](https://svgrid.com/compare/primevue-datatable/) - the side-by-side comparison
 - [Tailwind integration](./tailwind.md) - match your design system
 - [Cell components](./cells/cell-components.md) - snippet cells + editors
 
@@ -23508,7 +23518,7 @@ is mostly a column rename pass.
 
 ## See also
 
-- [SvGrid vs React Data Grid](https://svgrid.com/compare/react-data-grid) - the side-by-side comparison
+- [SvGrid vs React Data Grid](https://svgrid.com/compare/react-data-grid/) - the side-by-side comparison
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - sibling React-to-Svelte guide
 - [Cell components](./cells/cell-components.md) - custom cells + editors
 
@@ -23606,8 +23616,8 @@ right call.
 
 ## See also
 
-- [SvGrid vs Smart.Grid](https://svgrid.com/compare/smart-grid) - the side-by-side comparison
-- [About SvGrid](https://svgrid.com/about) - built by jQWidgets / htmlelements.com
+- [SvGrid vs Smart.Grid](https://svgrid.com/compare/smart-grid/) - the side-by-side comparison
+- [About SvGrid](https://svgrid.com/about/) - built by jQWidgets / htmlelements.com
 - [Cell components](./cells/cell-components.md) - snippet-based custom cells
 
 ## Frequently asked questions
@@ -23721,7 +23731,7 @@ you need pivot, advanced export, or a support SLA, that is Enterprise on SvGrid.
 
 ## See also
 
-- [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid) - the side-by-side comparison
+- [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/) - the side-by-side comparison
 - [Architecture](./architecture.md) - the engine + render-component split
 - [Cell components](./cells/cell-components.md) - custom cells and editors
 
@@ -23843,7 +23853,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 
 ## See also
 
-- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table) - the side-by-side comparison
+- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/) - the side-by-side comparison
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - sibling headless guide
 - [Why headless?](../why-headless.md) - the design rationale
 - [Architecture](./architecture.md) - the engine + render-component split
@@ -23933,7 +23943,7 @@ for a Svelte-5-native grid with an unconditional MIT core.
 
 ## See also
 
-- [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid) - the side-by-side comparison
+- [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid/) - the side-by-side comparison
 - [Data export and printing - Enterprise](./export.md) - the Enterprise export pack
 - [Getting started](../getting-started.md) - a working grid in ~15 lines
 
@@ -24028,7 +24038,7 @@ cells are snippets, and there is no manual mount / teardown.
 
 ## See also
 
-- [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator) - the side-by-side comparison
+- [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/) - the side-by-side comparison
 - [Cell components](./cells/cell-components.md) - snippet-based custom cells
 - [Architecture](./architecture.md) - engine + render-component split
 
@@ -24340,7 +24350,7 @@ shadcn:
 
 ## See also
 
-- [SvGrid vs UI-kit tables](https://svgrid.com/compare/svelte-ui-kit-tables) - the side-by-side comparison
+- [SvGrid vs UI-kit tables](https://svgrid.com/compare/svelte-ui-kit-tables/) - the side-by-side comparison
 - [Tailwind integration](./tailwind.md) - match your design system
 - [Getting started](../getting-started.md) - a working grid in ~15 lines
 
@@ -24463,7 +24473,7 @@ port is mostly about deciding how much markup you want to keep.
 
 ## See also
 
-- [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables) - the side-by-side comparison
+- [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/) - the side-by-side comparison
 - [Migrating from svelte-headless-table](./migrating-from-svelte-headless-table.md) - sibling Svelte guide
 - [Why headless?](../why-headless.md) - keep your own markup if you want to
 
@@ -25449,8 +25459,12 @@ Measured gzipped, with Svelte excluded as a peer dependency:
 
 | What you import                                       | Gzipped | Minified |
 | ----------------------------------------------------- | ------- | -------- |
-| Headless core (`createSvGrid` + `createCoreRowModel`) | ~9.4 KB | ~48 KB   |
-| Full `<SvGrid>` render component (everything)         | ~60 KB  | ~273 KB  |
+| Headless core (`createGrid` + `createCoreRowModel`)   | ~2 KB   | ~7 KB    |
+| Full `<SvGrid>` render component (everything)         | ~80 KB  | ~293 KB  |
+
+Add ~9 KB gzipped for the render component's CSS. Charts, date/time
+editors, menus, and export split into `import()` chunks (~64 KB total)
+that load on demand. Re-measure with `pnpm size`.
 
 The `<SvGrid>` component is batteries-included: virtualization, Excel-style
 filters, inline editing, grouping, tree, master/detail, and accessibility are
@@ -29175,7 +29189,7 @@ output isn't influenced by client-only state.
   where.
 - [Recipes / Cookbook](./recipes.md) - the saved-views recipe uses
   this page's pattern.
-- [Demo #36 Reporting workspace](https://svgrid.com/#/demos/36-reporting-workspace)
+- [Demo #36 Reporting workspace](https://svgrid.com/demos/36-reporting-workspace/)
   - end-to-end implementation.
 
 <!-- =================================================================
@@ -29536,7 +29550,7 @@ our InfoSec team?".
 | --------------------------------- | ---------------------------------------------------------------------- |
 | Network egress at runtime         | **None.** Zero analytics, zero phone-home, no automatic update checks. |
 | Telemetry                         | **Zero.** No `fetch`, no `navigator.sendBeacon`, no console identifiers. |
-| `eval` / `new Function` / dynamic code | **None in `@svgrid/grid`.** See [CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) demo + runtime self-check. |
+| `eval` / `new Function` / dynamic code | **None in `@svgrid/grid`.** See [CSP-compliant grid](https://svgrid.com/demos/16-csp-compliant/) demo + runtime self-check. |
 | Cookies / localStorage            | None set by the library itself. (Your app's saved-views helpers may opt in.) |
 | Outbound dependencies             | **Community:** zero runtime deps. **Enterprise:** two optional peer deps (`jszip`, `pdfmake`), see below. |
 | AI calls                          | The user's own `AIProvider` adapter calls whichever endpoint *they* configured. The package never embeds a model client. |
@@ -29604,7 +29618,7 @@ Notes:
 - `script-src` does NOT need `'unsafe-eval'` for community. (Enterprise pulls
   in `pdfmake` which historically used `eval`; check the pdfmake version
   if your CSP is strict.)
-- Demo [16. CSP-compliant grid](https://svgrid.com/#/demos/16-csp-compliant) runs the grid under a CSP header and surfaces any violation in real time.
+- Demo [16. CSP-compliant grid](https://svgrid.com/demos/16-csp-compliant/) runs the grid under a CSP header and surfaces any violation in real time.
 
 ## Source provenance
 
@@ -31590,7 +31604,7 @@ grid element.
 
 <div style="display:grid;gap:1rem;grid-template-columns:1fr 1fr;align-items:start;margin:1rem 0">
   <div style="min-width:0">
-    <strong>Before — shadcn <code>Table</code></strong>
+    <strong>Before - shadcn <code>Table</code></strong>
     <pre style="overflow:auto"><code>&lt;script lang="ts"&gt;
   import * as Table from '$lib/components/ui/table'
   let rows = [/* ...orders... */]
@@ -31617,7 +31631,7 @@ grid element.
 &lt;!-- static markup: no sort, no filter, no virtualization --&gt;</code></pre>
   </div>
   <div style="min-width:0">
-    <strong>After — <code>&lt;SvGrid&gt;</code>, same tokens</strong>
+    <strong>After - <code>&lt;SvGrid&gt;</code>, same tokens</strong>
     <pre style="overflow:auto"><code>&lt;script lang="ts"&gt;
   import { SvGrid, type ColumnDef } from '@svgrid/grid'
   import '@svgrid/grid/themes/shadcn.css'  // 1 line to match shadcn
@@ -31760,7 +31774,7 @@ handles the flip.
   built-in presets (`shadcn`, `tailwind`, `material`, ...)
 - [Tailwind integration](./tailwind.md) - wiring tokens through
   Tailwind's `theme(...)` layer
-- [Theme integrations](https://svgrid.com/#/demos/74-theme-integrations)
+- [Theme integrations](https://svgrid.com/demos/74-theme-integrations/)
   demo - shadcn and four other design systems, side by side, light and
   dark
 
@@ -32437,7 +32451,7 @@ that any storage backend accepts.
 - [Columns hierarchy](./columns-hierarchy.md) - the tree state is
   another slice to capture in `extras`.
 - [Architecture](./architecture.md) - which slices live where.
-- [Demo #55 State maintenance](https://svgrid.com/#/demos/55-state-maintenance)
+- [Demo #55 State maintenance](https://svgrid.com/demos/55-state-maintenance/)
   - the reference implementation.
 
 <!-- =================================================================
@@ -33233,7 +33247,7 @@ declaration wins.
 > No build step. No theme provider. No design-system lock-in. Set a
 > few `--sg-*` tokens and the grid re-skins immediately.
 
-Live in [demo 74 (Theme integrations)](https://svgrid.com/#/demos/74-theme-integrations)
+Live in [demo 74 (Theme integrations)](https://svgrid.com/demos/74-theme-integrations/)
 - shows the same grid rendered through Ant Design, MUI, Fluent, Base
 Web, and shadcn token sets.
 
@@ -33377,7 +33391,7 @@ token set under that selector:
 ```
 
 Theme presets ship in
-[demo 74](https://svgrid.com/#/demos/74-theme-integrations) for Ant
+[demo 74](https://svgrid.com/demos/74-theme-integrations/) for Ant
 Design, MUI, Fluent, Base Web, and shadcn - each with a light AND a
 dark token bundle ready to copy.
 
@@ -33414,8 +33428,8 @@ them.
 
 - [Tailwind integration](./tailwind.md) - how to wire tokens through
   Tailwind's theming layer
-- [Custom cells + themes](https://svgrid.com/#/demos/10-custom-cells-and-themes) demo - the canonical token-override example
-- [Theme integrations](https://svgrid.com/#/demos/74-theme-integrations) demo - five design-system presets side by side
+- [Custom cells + themes](https://svgrid.com/demos/10-custom-cells-and-themes/) demo - the canonical token-override example
+- [Theme integrations](https://svgrid.com/demos/74-theme-integrations/) demo - five design-system presets side by side
 
 <!-- =================================================================
      /help/ui-components/buttons  (community)
@@ -48428,7 +48442,7 @@ there.
 - Sales and licensing: sales@jqwidgets.com
 - Support: support@jqwidgets.com
 - General: info@jqwidgets.com
-- Pricing: https://svgrid.com/pricing
+- Pricing: https://svgrid.com/pricing/
 
 END OF AGREEMENT
 
@@ -48487,12 +48501,12 @@ Three details that make this production-grade:
 - **Re-enqueue on failure**. Network blip is harmless; retries next tick.
 
 For a more elaborate version with undo / redo, see
-[demo 55 (State maintenance)](https://svgrid.com/#/demos/55-state-maintenance).
+[demo 55 (State maintenance)](https://svgrid.com/demos/55-state-maintenance/).
 
 ## See also
 
 - [Observability](../help/observability.md) - same callback, different sink
-- [Demo 24 (Validation while editing)](https://svgrid.com/#/demos/24-validation) - reject-and-rollback on validation failure
+- [Demo 24 (Validation while editing)](https://svgrid.com/demos/24-validation/) - reject-and-rollback on validation failure
 
 <!-- =================================================================
      /recipes/barcode-cells  (community)
@@ -48602,7 +48616,7 @@ Notes that matter in production:
 ## Print-ready labels
 
 Because every code is SVG, the same markup scales to a shelf label or asset tag
-and prints razor-sharp. The [demo](https://svgrid.com/demos/112-barcode-cells)
+and prints razor-sharp. The [demo](https://svgrid.com/demos/112-barcode-cells/)
 pops a label preview on row click; pair it with the
 [Enterprise print / export pack](../help/export.md) to generate pick lists or label
 sheets from the grid.
@@ -48858,8 +48872,6 @@ test('grid time-to-first-paint regression gate', async ({ page }) => {
 
 ## Demo
 
-The runnable companion: [Demo 134 - Stress matrix (gallery)](https://svgrid.com/#/demos/134-stress-matrix) - this harness wrapped in a page, ready to click on your machine.
-
 ## See also
 
 - [Profiling with a FPS HUD](./profiling-with-fps-hud.md) - the matching live tool
@@ -48872,7 +48884,7 @@ The runnable companion: [Demo 134 - Stress matrix (gallery)](https://svgrid.com/
 
 # Between-operator filters for date ranges
 
-> Live in [demo 64-filter-between-operator](https://svgrid.com/#/demos/64-filter-between-operator).
+> Live in [demo 64-filter-between-operator](https://svgrid.com/demos/64-filter-between-operator/).
 
 <div data-docs-demo="64-filter-between-operator" data-height="480"></div>
 
@@ -49340,7 +49352,7 @@ you can plug your own `<HeaderToolbar />` component without forking
 
 Custom inline editors use `cellEditor:` and follow the
 `(ctx) => renderSnippet(...)` pattern - see the [`84-editor-types`
-demo](https://svgrid.com/#/demos/84-editor-types).
+demo](https://svgrid.com/demos/84-editor-types/).
 
 ## See also
 
@@ -49356,7 +49368,7 @@ demo](https://svgrid.com/#/demos/84-editor-types).
 
 # Chart.js sync from grid filter state
 
-> Live in [demo 73-chartjs-sync](https://svgrid.com/#/demos/73-chartjs-sync).
+> Live in [demo 73-chartjs-sync](https://svgrid.com/demos/73-chartjs-sync/).
 
 <div data-docs-demo="73-chartjs-sync" data-height="480"></div>
 
@@ -49389,7 +49401,7 @@ page that explains the underlying feature in depth is linked from the
 
 # Conditional row coloring
 
-> Live in [demo 62-conditional-styling](https://svgrid.com/#/demos/62-conditional-styling).
+> Live in [demo 62-conditional-styling](https://svgrid.com/demos/62-conditional-styling/).
 
 <div data-docs-demo="62-conditional-styling" data-height="480"></div>
 
@@ -49489,7 +49501,7 @@ async function loadMore() {
 
 ## See also
 
-- [Demo 33 (Server-side infinite scroll)](https://svgrid.com/#/demos/33-server-infinite) - live
+- [Demo 33 (Server-side infinite scroll)](https://svgrid.com/demos/33-server-infinite/) - live
 - [Server-side data](../help/server-side-data.md) - the full pattern catalog
 - [Real-time / streaming](../help/real-time.md) - if events arrive PUSHED instead of PULLED
 
@@ -49699,7 +49711,7 @@ invalid. Catch the cell change and snap them to a sane default:
 />
 ```
 
-Live in [demo 68 (Dependent dropdowns)](https://svgrid.com/#/demos/68-dependent-dropdowns)
+Live in [demo 68 (Dependent dropdowns)](https://svgrid.com/demos/68-dependent-dropdowns/)
 - includes a typeahead combobox + a one-click "Fix" button when seed
 data leaves the cascade in an inconsistent state.
 
@@ -49714,7 +49726,7 @@ data leaves the cascade in an inconsistent state.
 
 # Drag-drop columns to reorder
 
-> Live in [demo 54-columns-hierarchy](https://svgrid.com/#/demos/54-columns-hierarchy).
+> Live in [demo 54-columns-hierarchy](https://svgrid.com/demos/54-columns-hierarchy/).
 
 <div data-docs-demo="54-columns-hierarchy" data-height="480"></div>
 
@@ -49747,7 +49759,7 @@ page that explains the underlying feature in depth is linked from the
 
 # External search box with highlighted matches
 
-> Live in [demo 69-highlighted-search](https://svgrid.com/#/demos/69-highlighted-search).
+> Live in [demo 69-highlighted-search](https://svgrid.com/demos/69-highlighted-search/).
 
 <div data-docs-demo="69-highlighted-search" data-height="480"></div>
 
@@ -49932,7 +49944,7 @@ Most apps want #1.
 
 ## See also
 
-- [Side-drawer edit demo (97)](https://svgrid.com/#/demos/97-side-drawer-edit) - the slide-in pattern used as the form host
+- [Side-drawer edit demo (97)](https://svgrid.com/demos/97-side-drawer-edit/) - the slide-in pattern used as the form host
 - [Submit-time validation recipe](./submit-time-validation.md) - similar bulk-commit-then-validate pattern
 - [Undo / redo for grid edits](./undo-redo-edits.md) - layer history on top of the same `setCellValue` calls
 - [`SvGridApi.setCellValue`](../reference/SvGridApi.md#setcellvalue)
@@ -50131,8 +50143,6 @@ unnecessary in prod.
 
 ## Demo
 
-The runnable companion: [Demo 135 - Devtools panel (gallery)](https://svgrid.com/#/demos/135-devtools-panel) - this panel running next to a real grid.
-
 ## See also
 
 - [`SvGridApi` reference](../reference/SvGridApi.md) - every reader the panel calls
@@ -50145,7 +50155,7 @@ The runnable companion: [Demo 135 - Devtools panel (gallery)](https://svgrid.com
 
 # Heatmap-tinted numeric cells
 
-> Live in [demo 60-pivot-expandable](https://svgrid.com/#/demos/60-pivot-expandable).
+> Live in [demo 60-pivot-expandable](https://svgrid.com/demos/60-pivot-expandable/).
 
 <div data-docs-demo="60-pivot-expandable" data-height="480"></div>
 
@@ -50179,7 +50189,7 @@ page that explains the underlying feature in depth is linked from the
 
 Copy-paste patterns for sv-grid. Every recipe is a complete, runnable
 snippet you can drop into your app. Each pairs with a live demo in
-the [gallery](https://svgrid.com/#/demos).
+the [gallery](https://svgrid.com/demos/).
 
 > Looking for the conceptual story? Start with
 > [Architecture](../help/architecture.md) and the
@@ -50254,7 +50264,7 @@ the [gallery](https://svgrid.com/#/demos).
 ## See also
 
 - [Help topic pages](../help/index.md) - the conceptual story behind each recipe
-- [Demo gallery](https://svgrid.com/#/demos) - every recipe runs live
+- [Demo gallery](https://svgrid.com/demos/) - every recipe runs live
 - [API reference](../reference/index.md) - exhaustive prop / method tables
 
 <!-- =================================================================
@@ -50264,7 +50274,7 @@ the [gallery](https://svgrid.com/#/demos).
 # Kanban board over the same `$state`
 
 > First-class board mode: [Kanban board](../help/rows/kanban-board.md).
-> Live in [demo 343-kanban-board](https://svgrid.com/#/demos/343-kanban-board).
+> Live in [demo 343-kanban-board](https://svgrid.com/demos/343-kanban-board/).
 
 <div data-docs-demo="343-kanban-board" data-height="480"></div>
 
@@ -50317,7 +50327,7 @@ page.
 
 # Lazy-load expand on demand
 
-> Live in [demo 31-lazy-tree-load](https://svgrid.com/#/demos/31-lazy-tree-load).
+> Live in [demo 31-lazy-tree-load](https://svgrid.com/demos/31-lazy-tree-load/).
 
 <div data-docs-demo="31-lazy-tree-load" data-height="480"></div>
 
@@ -50425,7 +50435,7 @@ async function fetchOrders(vars: { page: number; sort?: string; filter?: object 
 }
 ```
 
-Live in [demo 72 (GraphQL adapter)](https://svgrid.com/#/demos/72-graphql-adapter)
+Live in [demo 72 (GraphQL adapter)](https://svgrid.com/demos/72-graphql-adapter/)
 - includes a side panel showing the generated GraphQL document.
 
 ## See also
@@ -50440,7 +50450,7 @@ Live in [demo 72 (GraphQL adapter)](https://svgrid.com/#/demos/72-graphql-adapte
 
 # 1 million rows with virtualization
 
-> Live in [demo 78-million-rows](https://svgrid.com/#/demos/78-million-rows).
+> Live in [demo 78-million-rows](https://svgrid.com/demos/78-million-rows/).
 
 <div data-docs-demo="78-million-rows" data-height="480"></div>
 
@@ -50474,7 +50484,7 @@ page that explains the underlying feature in depth is linked from the
 
 # Mobile card view with grid-on-desktop
 
-> Live in [demo 81-mobile-card-view](https://svgrid.com/#/demos/81-mobile-card-view).
+> Live in [demo 81-mobile-card-view](https://svgrid.com/demos/81-mobile-card-view/).
 
 <div data-docs-demo="81-mobile-card-view" data-height="480"></div>
 
@@ -50507,7 +50517,7 @@ page that explains the underlying feature in depth is linked from the
 
 # Multi-sheet xlsx export
 
-> Live in [demo 59-export-multi-sheet](https://svgrid.com/#/demos/59-export-multi-sheet).
+> Live in [demo 59-export-multi-sheet](https://svgrid.com/demos/59-export-multi-sheet/).
 
 <div data-docs-demo="59-export-multi-sheet" data-height="480"></div>
 
@@ -50539,7 +50549,7 @@ page that explains the underlying feature in depth is linked from the
 
 # NL filter wired to your LLM
 
-> Live in [demo 51-ai-assistant](https://svgrid.com/#/demos/51-ai-assistant).
+> Live in [demo 51-ai-assistant](https://svgrid.com/demos/51-ai-assistant/).
 
 <div data-docs-demo="51-ai-assistant" data-height="480"></div>
 
@@ -50691,7 +50701,7 @@ than in the URL - they're per-user, not per-link. See
 
 # Pin first column on horizontal scroll
 
-> Live in [demo 25-column-pinning](https://svgrid.com/#/demos/25-column-pinning).
+> Live in [demo 25-column-pinning](https://svgrid.com/demos/25-column-pinning/).
 
 <div data-docs-demo="25-column-pinning" data-height="480"></div>
 
@@ -50866,8 +50876,6 @@ Toggle from the console: `localStorage.setItem('svgrid:hud', 'on')`.
 
 ## Demo
 
-The runnable companion: [Demo 132 - Profiler dashboard (gallery)](https://svgrid.com/#/demos/132-profiler-dashboard) - drop this HUD around a 50,000-row grid and use the spam buttons.
-
 ## See also
 
 - [Bundle size reference](../reference/bundle-size.md) - what each feature costs
@@ -50881,7 +50889,7 @@ The runnable companion: [Demo 132 - Profiler dashboard (gallery)](https://svgrid
 
 # Role-based editable columns
 
-> Live in [demo 41-healthcare-emr](https://svgrid.com/#/demos/41-healthcare-emr).
+> Live in [demo 41-healthcare-emr](https://svgrid.com/demos/41-healthcare-emr/).
 
 <div data-docs-demo="41-healthcare-emr" data-height="480"></div>
 
@@ -50913,7 +50921,7 @@ page that explains the underlying feature in depth is linked from the
 
 # Saved filter sets
 
-> Live in [demo 64-filter-between-operator](https://svgrid.com/#/demos/64-filter-between-operator).
+> Live in [demo 64-filter-between-operator](https://svgrid.com/demos/64-filter-between-operator/).
 
 <div data-docs-demo="64-filter-between-operator" data-height="480"></div>
 
@@ -51006,7 +51014,7 @@ localStorage; don't. See [GDPR + data residency](../compliance/gdpr.md).
 
 ## See also
 
-- [Demo 63 (Column layout API)](https://svgrid.com/#/demos/63-column-layout-api) - live
+- [Demo 63 (Column layout API)](https://svgrid.com/demos/63-column-layout-api/) - live
 - [State maintenance](../help/state-maintenance.md) - undo/redo + bookmarks + JSON IO
 - [Persist column layout to URL](./persist-column-layout-to-url.md) - shareable links
 
@@ -51328,7 +51336,7 @@ unobtrusive contrast.
 
 # Smart paste: CSV / TSV / free-form → typed rows
 
-> Live in [demo 75-ai-smart-paste](https://svgrid.com/#/demos/75-ai-smart-paste).
+> Live in [demo 75-ai-smart-paste](https://svgrid.com/demos/75-ai-smart-paste/).
 
 <div data-docs-demo="75-ai-smart-paste" data-height="480"></div>
 
@@ -51361,7 +51369,7 @@ page that explains the underlying feature in depth is linked from the
 
 # Sparkline cell renderer
 
-> Live in [demo 11-stock-market](https://svgrid.com/#/demos/11-stock-market).
+> Live in [demo 11-stock-market](https://svgrid.com/demos/11-stock-market/).
 
 <div data-docs-demo="11-stock-market" data-height="480"></div>
 
@@ -51449,12 +51457,12 @@ cell with an aria-live summary panel.
 }
 ```
 
-Live in [demo 71 (Submit-time validation)](https://svgrid.com/#/demos/71-submit-validation).
+Live in [demo 71 (Submit-time validation)](https://svgrid.com/demos/71-submit-validation/).
 
 ## See also
 
 - [Validation while editing](../help/editing/validation.md) - per-keystroke variant
-- [Demo 24 (Validation)](https://svgrid.com/#/demos/24-validation) - rejecting bad values inline
+- [Demo 24 (Validation)](https://svgrid.com/demos/24-validation/) - rejecting bad values inline
 
 <!-- =================================================================
      /recipes/testing-your-grid  (community)
@@ -51620,7 +51628,7 @@ Notes:
 
 # Theme-matched xlsx export
 
-> Live in [demo 56-export-theme-matched](https://svgrid.com/#/demos/56-export-theme-matched).
+> Live in [demo 56-export-theme-matched](https://svgrid.com/demos/56-export-theme-matched/).
 
 <div data-docs-demo="56-export-theme-matched" data-height="480"></div>
 
@@ -51652,7 +51660,7 @@ page that explains the underlying feature in depth is linked from the
 
 # Theme tokens for Ant / MUI / Fluent / shadcn
 
-> Live in [demo 74-theme-integrations](https://svgrid.com/#/demos/74-theme-integrations).
+> Live in [demo 74-theme-integrations](https://svgrid.com/demos/74-theme-integrations/).
 
 <div data-docs-demo="74-theme-integrations" data-height="480"></div>
 
@@ -51831,7 +51839,7 @@ const detailColumns = [
 
 # Undo / redo for grid edits
 
-> Live in [demo 55-state-maintenance](https://svgrid.com/#/demos/55-state-maintenance).
+> Live in [demo 55-state-maintenance](https://svgrid.com/demos/55-state-maintenance/).
 
 <div data-docs-demo="55-state-maintenance" data-height="480"></div>
 
@@ -52121,7 +52129,7 @@ api?.setColumnOrder(['id', 'salary', 'name', 'status'])
 
 # WebSocket streaming with backpressure
 
-> Live in [demo 34-realtime-orders](https://svgrid.com/#/demos/34-realtime-orders).
+> Live in [demo 34-realtime-orders](https://svgrid.com/demos/34-realtime-orders/).
 
 <div data-docs-demo="34-realtime-orders" data-height="480"></div>
 
@@ -53848,76 +53856,90 @@ export type SvGridWrapperProps<
 
 # Bundle size
 
-What each feature costs in the final bundle, how to reproduce the
-numbers on your branch, and what to do if size matters.
+What SvGrid costs in your bundle, how to reproduce the number on your
+branch, and what to do if size matters.
 
-## Per-feature gzipped cost
+## Measured
 
-Numbers from a `rollup -p terser` production build against
-`packages/grid/dist/`. Each feature is the marginal cost
-*above* the baseline core when imported alone.
+Re-measured **2026-08-15** with the script that ships in the repo:
 
-| Feature                       | gz kB  | Required? | Notes                                          |
-| ----------------------------- | -----: | --------- | ---------------------------------------------- |
-| **Baseline (engine + render)** | **9.2** | -        | `createSvGrid` + the `<SvGrid>` shell          |
-| `rowSortingFeature`           | 1.4    | recommended | Core to the value of a grid                  |
-| `columnFilteringFeature`      | 2.1    | recommended | Operator filters + the menu UI                |
-| `rowSelectionFeature`         | 1.0    | recommended | Checkbox + range + keyboard shift             |
-| `columnGroupingFeature`       | 1.8    | optional  | Group-by; tree-shaken if unused                |
-| `rowExpandingFeature`         | 1.5    | optional  | Tree + master-detail expansion                |
-| `columnPinningFeature`        | 0.9    | recommended | Pin-left / pin-right; sticky cells            |
-| `paginationFeature`           | 0.7    | recommended | Paginated row model                            |
-| `columnReorderFeature`        | 1.3    | optional  | Drag-to-reorder columns                        |
-| `excelFilters`                | 4.2    | optional  | Set-list + facet count + Excel-style menu     |
-| `cellEditing` (built-in)      | 5.8    | recommended | date / number / select / chips / etc.         |
-| `fillHandle`                  | 2.6    | optional  | Excel-style fill handle + pattern detector     |
-| `undoRedo`                    | 1.1    | optional  | Bounded 200-step history                       |
-| `columnVirtualizer`           | 1.6    | recommended | Windowed column rendering                      |
-| `svelteVirtualizer`           | 2.4    | recommended | Windowed row rendering                         |
+```bash
+node packages/grid/scripts/measure-size.mjs
+```
 
-A typical app importing the recommended set ships **~28 kB gzipped**
-of grid code.
+| Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
+| --- | ---: | ---: | ---: |
+| Headless core (`createGrid`) | **2.2 kB** | - | - |
+| Full render component (`<SvGrid>`) | **80.5 kB** | **8.9 kB** | 64.1 kB |
 
-## @svgrid/enterprise
+Svelte is a peer dependency and is excluded from every figure. Builds are
+minified and gzipped at level 9.
 
-Enterprise pack (export + pivot + AI helpers + import + watermark) adds
-~26.4 kB gzipped. xlsx export pulls JSZip as a peer dep
-(~22 kB gzipped) on first call to `api.exportData({ format: 'xlsx' })`,
-not at module load.
+The "loaded on demand" column is code that is reachable only through
+`import()`, so it never lands in your initial bundle. As measured, that
+splits into:
+
+| Chunk | gzip | Loads when |
+| --- | ---: | --- |
+| `SvDateTimePicker` | 20.9 kB | a date / datetime / time cell editor opens |
+| `SvGridChart` | 15.7 kB | a chart renders |
+| `chart` (engine) | 11.6 kB | charting is enabled |
+| `SvGridChartPanel` | 7.5 kB | the chart panel opens |
+| `GridMenus` | 6.0 kB | a header or context menu opens |
+| `export-format` | 1.8 kB | CSV / TSV / JSON export or clipboard copy runs |
+| `SvGridChartView` | 0.7 kB | the grid switches to chart view |
+
+The Kanban board and the scheduler / calendar view are not in either
+figure: their renderers live in `@svgrid/enterprise` and register into the
+free grid through the board and scheduler view seams.
 
 ## Reproduce on your branch
 
-```bash
-# Build
-corepack pnpm --filter @svgrid/grid build
+`measure-size.mjs` runs two isolated Vite library builds, one per target,
+with Svelte marked external, then gzips each emitted chunk and classifies
+it as `base` (statically reachable from the entry) or `lazy` (reachable
+only via `import()`).
 
-# Inspect the dist bundle
+```bash
+node packages/grid/scripts/measure-size.mjs
+# or, from the repo root:
+pnpm size
+```
+
+To see where the weight sits inside the base bundle:
+
+```bash
+corepack pnpm --filter @svgrid/grid build
 npx source-map-explorer packages/grid/dist/index.js
 ```
 
-A treemap opens in your browser. Each block is a source file scaled by
-its byte cost in the final bundle. Hover a feature module to see how
-much of the total weight it owns.
+A treemap opens in your browser. Each block is a source file scaled by its
+byte cost in the final bundle.
 
-For a quick gzipped readout:
+## @svgrid/enterprise
 
-```bash
-node -e "console.log((require('zlib').gzipSync(require('fs').readFileSync('packages/grid/dist/index.js')).length / 1024).toFixed(1) + ' kB gz')"
-```
+The Enterprise pack is a separate install and a separate bundle. `xlsx`
+export pulls JSZip and PDF export pulls pdfmake as optional peer
+dependencies, imported on the first `api.exportData(...)` call rather than
+at module load, so neither is in your synchronous bundle.
 
 ## What to do if size matters
 
-1. **Skip the optional features you don't use.** Each item marked
-   `optional` in the table is fully tree-shaken when not imported.
-2. **Code-split the Enterprise pack.** `installEnterprise(api)` is async-safe;
-   import it dynamically in the route that needs export, not at module
-   load: `const { installEnterprise } = await import('@svgrid/enterprise')`.
-3. **Defer xlsx peer deps.** JSZip + pdfMake are imported on first
-   `api.exportData` call. They aren't part of the synchronous bundle.
-4. **Use the headless engine for read-only views.** When you only need
-   to display server-side data with no interaction, `createSvGrid` +
-   a 30-line `<table>` renderer saves the `<SvGrid>` shell entirely.
-   See the [headless engine reference](./headless-engine.md).
+1. **Use the headless engine for read-only views.** When you only need to
+   display server-side data with no interaction, `createGrid` plus a short
+   `<table>` renderer is 2.2 kB instead of 80.5 kB. See the
+   [headless engine reference](./headless-engine.md).
+2. **Register only the features you use.** The grid is feature-gated:
+   sorting, filtering, grouping, pagination, expansion, and selection are
+   each opt-in and tree-shake out when not imported. See the
+   [features reference](./features.md).
+3. **Let the lazy chunks stay lazy.** Charts, date/time editors, menus,
+   and export already split themselves. Importing their modules directly
+   at the top level pulls them back into your base bundle.
+4. **Code-split the Enterprise pack.** `installEnterprise(api)` is
+   async-safe, so import it in the route that needs export rather than at
+   module load:
+   `const { installEnterprise } = await import('@svgrid/enterprise')`.
 
 ## See also
 
@@ -54335,7 +54357,7 @@ The package ships per-feature subpaths so you can tree-shake:
 ```ts
 import { exportGrid }      from '@svgrid/enterprise/export'
 import { importData }      from '@svgrid/enterprise/import'
-import { aiFilter }        from '@svgrid/enterprise/ai'
+import { aiFilter }        from '@svgrid/grid'
 import { createPivotModel } from '@svgrid/enterprise/pivot'
 ```
 
@@ -54738,7 +54760,7 @@ patterns see [Help](../help/index.md); for first contact see
 
 | Page                  | What's in it                                                          |
 | --------------------- | --------------------------------------------------------------------- |
-| [Enterprise reference](./enterprise.md) | Export, print, import, AI helpers, pivot - the full Enterprise surface.  |
+| [Enterprise reference](./enterprise.md) | Export, print, import, pivot - the full Enterprise surface.             |
 
 ## Conventions
 

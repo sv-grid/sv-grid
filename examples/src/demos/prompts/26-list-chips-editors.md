@@ -1,7 +1,7 @@
 # Prompt: 26-list-chips-editors
 
 Source: `examples/src/demos/26-list-chips-editors.svelte`
-Live:   https://svgrid.dev/#/demos/26-list-chips-editors
+Live:   https://svgrid.com/demos/26-list-chips-editors/
 
 ## What this demo proves
 

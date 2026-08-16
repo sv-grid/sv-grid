@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvChip - a compact interactive pill for tags and filter tokens. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-chip
+  // SvChip - a compact interactive pill for tags and filter tokens. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-chip
   import { SvChip } from '@svgrid/grid'
 
   let tags = $state(['design', 'urgent'])

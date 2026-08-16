@@ -1,6 +1,6 @@
 # Undo / redo for grid edits
 
-> Live in [demo 55-state-maintenance](https://svgrid.com/#/demos/55-state-maintenance).
+> Live in [demo 55-state-maintenance](https://svgrid.com/demos/55-state-maintenance/).
 
 <div data-docs-demo="55-state-maintenance" data-height="480"></div>
 

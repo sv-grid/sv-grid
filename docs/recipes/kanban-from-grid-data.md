@@ -1,7 +1,7 @@
 # Kanban board over the same `$state`
 
 > First-class board mode: [Kanban board](../help/rows/kanban-board.md).
-> Live in [demo 343-kanban-board](https://svgrid.com/#/demos/343-kanban-board).
+> Live in [demo 343-kanban-board](https://svgrid.com/demos/343-kanban-board/).
 
 <div data-docs-demo="343-kanban-board" data-height="480"></div>
 

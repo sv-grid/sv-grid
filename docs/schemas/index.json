@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://svgrid.dev/schemas/index.json",
+  "$id": "https://svgrid.com/schemas/index.json",
   "title": "sv-grid schema index",
   "schemas": [
     {

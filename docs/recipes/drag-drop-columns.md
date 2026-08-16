@@ -1,6 +1,6 @@
 # Drag-drop columns to reorder
 
-> Live in [demo 54-columns-hierarchy](https://svgrid.com/#/demos/54-columns-hierarchy).
+> Live in [demo 54-columns-hierarchy](https://svgrid.com/demos/54-columns-hierarchy/).
 
 <div data-docs-demo="54-columns-hierarchy" data-height="480"></div>
 

@@ -129,7 +129,7 @@ function drill(category: string, dimension: string) {
 }
 ```
 
-Live demo: [Dashboard](https://svgrid.com/#/demos/200-studio-dashboard).
+Live demo: [Dashboard](https://svgrid.com/demos/200-studio-dashboard/).
 
 ## See also
 

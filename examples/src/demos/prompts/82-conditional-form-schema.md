@@ -1,7 +1,7 @@
 # Prompt: 82-conditional-form-schema
 
 Source: `examples/src/demos/82-conditional-form-schema.svelte`
-Live:   https://svgrid.dev/#/demos/82-conditional-form-schema
+Live:   https://svgrid.com/demos/82-conditional-form-schema/
 
 ## What this demo proves
 

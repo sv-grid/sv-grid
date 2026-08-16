@@ -251,7 +251,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [`@svgrid/enterprise` · `pivot.ts`](https://svgrid.com/reference/auto/svgrid-enterprise-pivot): Auto-generated. Source: packages\enterprise\src\pivot.ts.
 - [`@svgrid/grid` · `core.ts`](https://svgrid.com/reference/auto/svgrid-grid-core): Auto-generated. Source: packages\grid\src\core.ts.
 - [`@svgrid/grid` · `svgrid-wrapper.types.ts`](https://svgrid.com/reference/auto/svgrid-grid-svgrid-wrapper.types): Auto-generated. Source: packages\grid\src\svgrid-wrapper.types.ts.
-- [Bundle size](https://svgrid.com/reference/bundle-size): What each feature costs in the final bundle, how to reproduce the numbers on your branch, and what to do if size matters.
+- [Bundle size](https://svgrid.com/reference/bundle-size): What SvGrid costs in your bundle, how to reproduce the number on your branch, and what to do if size matters.
 - [`ColumnDef` reference](https://svgrid.com/reference/ColumnDef): A column definition is the contract between the grid and one column of data. Pass an array of these as the columns prop to <SvGrid>.
 - [Enterprise reference](https://svgrid.com/reference/enterprise): Everything that @svgrid/enterprise adds on top of the Community surface. Install + license: see Enterprise feature pack.
 - [Features reference](https://svgrid.com/reference/features): A "feature" is a small bundle of state + helpers the grid engine checks for when wiring its row-model pipeline. Register only what you use - each feature ships about 1-2 KB gzipped and adds a small…

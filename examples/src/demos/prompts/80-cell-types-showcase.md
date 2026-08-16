@@ -1,7 +1,7 @@
 # Prompt: 80-cell-types-showcase
 
 Source: `examples/src/demos/80-cell-types-showcase.svelte`
-Live:   https://svgrid.dev/#/demos/80-cell-types-showcase
+Live:   https://svgrid.com/demos/80-cell-types-showcase/
 
 ## What this demo proves
 

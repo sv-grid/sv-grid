@@ -1,7 +1,7 @@
 # Prompt: 57-export-header-footer-logo
 
 Source: `examples/src/demos/57-export-header-footer-logo.svelte`
-Live:   https://svgrid.dev/#/demos/57-export-header-footer-logo
+Live:   https://svgrid.com/demos/57-export-header-footer-logo/
 
 ## What this demo proves
 

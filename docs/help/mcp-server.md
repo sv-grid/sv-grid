@@ -210,7 +210,7 @@ agent's system prompt gives ~80% of the same value.
 
 - [LLM grounding](./llm-grounding.md) - the same files used by the MCP server, but documented for direct LLM consumption
 - [Agents](./agents.md) - how to build an AI agent that drives the live grid
-- [AI assistant - Enterprise](./ai.md) - the in-grid AI features (filter / smart-fill / classify / summarise)
+- [AI assistant](./ai.md) - the in-grid AI features (filter / smart-fill / classify / summarise), free in @svgrid/grid
 
 ## Frequently asked questions
 

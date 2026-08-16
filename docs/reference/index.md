@@ -19,7 +19,7 @@ patterns see [Help](../help/index.md); for first contact see
 
 | Page                  | What's in it                                                          |
 | --------------------- | --------------------------------------------------------------------- |
-| [Enterprise reference](./enterprise.md) | Export, print, import, AI helpers, pivot - the full Enterprise surface.  |
+| [Enterprise reference](./enterprise.md) | Export, print, import, pivot - the full Enterprise surface.             |
 
 ## Conventions
 

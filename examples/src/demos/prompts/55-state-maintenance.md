@@ -1,7 +1,7 @@
 # Prompt: 55-state-maintenance
 
 Source: `examples/src/demos/55-state-maintenance.svelte`
-Live:   https://svgrid.dev/#/demos/55-state-maintenance
+Live:   https://svgrid.com/demos/55-state-maintenance/
 
 ## What this demo proves
 

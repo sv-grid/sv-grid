@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvCard - themed surface with header, body and footer. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-card
+  // SvCard - themed surface with header, body and footer. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-card
   import { SvCard } from '@svgrid/grid'
 </script>
 

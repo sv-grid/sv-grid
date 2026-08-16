@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvMultiSelect - multi-select dropdown with a chip trigger. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-multi-select
+  // SvMultiSelect - multi-select dropdown with a chip trigger. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-multi-select
   import { SvMultiSelect, type MultiSelectOption } from '@svgrid/grid'
 
   const options: MultiSelectOption[] = [

@@ -1,7 +1,7 @@
 # Prompt: 12-hr-team
 
 Source: `examples/src/demos/12-hr-team.svelte`
-Live:   https://svgrid.dev/#/demos/12-hr-team
+Live:   https://svgrid.com/demos/12-hr-team/
 
 ## What this demo proves
 

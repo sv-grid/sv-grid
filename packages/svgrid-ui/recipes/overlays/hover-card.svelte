@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvHoverCard - a rich preview card that opens on hover. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-hover-card
+  // SvHoverCard - a rich preview card that opens on hover. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-hover-card
   import { SvHoverCard, SvAvatar } from '@svgrid/grid'
 </script>
 

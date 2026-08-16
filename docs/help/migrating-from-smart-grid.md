@@ -70,8 +70,8 @@ right call.
 
 ## See also
 
-- [SvGrid vs Smart.Grid](https://svgrid.com/compare/smart-grid) - the side-by-side comparison
-- [About SvGrid](https://svgrid.com/about) - built by jQWidgets / htmlelements.com
+- [SvGrid vs Smart.Grid](https://svgrid.com/compare/smart-grid/) - the side-by-side comparison
+- [About SvGrid](https://svgrid.com/about/) - built by jQWidgets / htmlelements.com
 - [Cell components](./cells/cell-components.md) - snippet-based custom cells
 
 ## Frequently asked questions

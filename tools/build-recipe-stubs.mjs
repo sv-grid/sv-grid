@@ -92,7 +92,7 @@ function body(s) {
   return [
     `# ${s.title}`,
     '',
-    `> Live in [demo ${s.demo}](https://svgrid.dev/#/demos/${s.demo}).`,
+    `> Live in [demo ${s.demo}](https://svgrid.com/demos/${s.demo}/).`,
     '',
     '## When',
     '',

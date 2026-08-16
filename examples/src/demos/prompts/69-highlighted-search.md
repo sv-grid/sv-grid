@@ -1,7 +1,7 @@
 # Prompt: 69-highlighted-search
 
 Source: `examples/src/demos/69-highlighted-search.svelte`
-Live:   https://svgrid.dev/#/demos/69-highlighted-search
+Live:   https://svgrid.com/demos/69-highlighted-search/
 
 ## What this demo proves
 

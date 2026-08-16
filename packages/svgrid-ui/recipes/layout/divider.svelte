@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvDivider - themed separator line, horizontal or vertical, with optional label. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-divider
+  // SvDivider - themed separator line, horizontal or vertical, with optional label. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-divider
   import { SvDivider } from '@svgrid/grid'
 </script>
 

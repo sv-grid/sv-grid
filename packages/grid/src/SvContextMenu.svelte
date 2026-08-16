@@ -17,7 +17,7 @@
    */
   import type { Snippet } from 'svelte'
   import { portalToBody, popIn } from './popover'
-  import { createDismissableLayer } from './a11y/dismissable'
+  import { createDismissableLayer, onScrollOutside } from './a11y/dismissable'
   import { createFocusTrap } from './a11y/focus-trap'
   import SvMenuList, { type MenuItem } from './SvMenuList.svelte'
 
@@ -76,9 +76,9 @@
     })
     layer.activate()
     // Reposition-close on scroll (a moved anchor would leave the menu stranded).
-    const onScroll = () => (open = false)
-    window.addEventListener('scroll', onScroll, true)
-    return () => { layer.release(); trap.release(); window.removeEventListener('scroll', onScroll, true) }
+    // Scrolling the menu's own item list doesn't count as the anchor moving.
+    const offScroll = onScrollOutside(() => panelEl, () => (open = false))
+    return () => { layer.release(); trap.release(); offScroll() }
   })
 </script>
 

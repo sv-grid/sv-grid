@@ -1,7 +1,7 @@
 # Prompt: 67-context-menu
 
 Source: `examples/src/demos/67-context-menu.svelte`
-Live:   https://svgrid.dev/#/demos/67-context-menu
+Live:   https://svgrid.com/demos/67-context-menu/
 
 ## What this demo proves
 

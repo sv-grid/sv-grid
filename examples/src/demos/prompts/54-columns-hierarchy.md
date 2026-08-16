@@ -1,7 +1,7 @@
 # Prompt: 54-columns-hierarchy
 
 Source: `examples/src/demos/54-columns-hierarchy.svelte`
-Live:   https://svgrid.dev/#/demos/54-columns-hierarchy
+Live:   https://svgrid.com/demos/54-columns-hierarchy/
 
 ## What this demo proves
 

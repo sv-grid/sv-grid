@@ -76,7 +76,7 @@ function bodyFor(it) {
   if (it.author) b += ` by **${it.author}**${it.github ? ` (@${it.github})` : ''}`
   b += '.\n'
   if (it.tags?.length) b += `\n**Tags:** ${it.tags.join(', ')}\n`
-  b += `\n- Run it in the playground: https://svgrid.com/playground/${it.id}`
+  b += `\n- Run it in the playground: https://svgrid.com/demos/${it.id}`
   b += `\n\n👍 this discussion to upvote the demo - the reaction count is shown as its star count in the playground.`
   return b
 }

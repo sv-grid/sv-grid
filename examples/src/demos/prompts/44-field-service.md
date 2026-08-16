@@ -1,7 +1,7 @@
 # Prompt: 44-field-service
 
 Source: `examples/src/demos/44-field-service.svelte`
-Live:   https://svgrid.dev/#/demos/44-field-service
+Live:   https://svgrid.com/demos/44-field-service/
 
 ## What this demo proves
 

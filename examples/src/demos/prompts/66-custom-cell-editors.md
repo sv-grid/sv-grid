@@ -1,7 +1,7 @@
 # Prompt: 66-custom-cell-editors
 
 Source: `examples/src/demos/66-custom-cell-editors.svelte`
-Live:   https://svgrid.dev/#/demos/66-custom-cell-editors
+Live:   https://svgrid.com/demos/66-custom-cell-editors/
 
 ## What this demo proves
 

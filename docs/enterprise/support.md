@@ -61,7 +61,7 @@ disclosure policy.
 
 ## Roadmap visibility
 
-- Community: public roadmap at [svgrid.com/roadmap](https://svgrid.com/roadmap)
+- Community: public roadmap at [svgrid.com/roadmap](https://svgrid.com/roadmap/)
 - Single / Multiple Application: quarterly roadmap email + invite to monthly office hours
 - Enterprise: named PM, monthly roadmap call, ability to sponsor features
 

@@ -9,8 +9,8 @@ const WATERMARK_ATTR = 'data-svgrid-enterprise-watermark'
 // Marks a grid that has already shown (and faded) its watermark, so the
 // MutationObserver doesn't re-add it once it fades out and is removed.
 const NUDGED_ATTR = 'data-svgrid-enterprise-nudged'
-const HOMEPAGE_URL = 'https://www.svgrid.com'
-const LICENSE_URL = 'https://www.svgrid.com/pricing'
+const HOMEPAGE_URL = 'https://svgrid.com'
+const LICENSE_URL = 'https://svgrid.com/pricing/'
 const WATERMARK_LABEL = 'www.svgrid.com'
 
 // How long the watermark stays fully visible before it starts fading, and how

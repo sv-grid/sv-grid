@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvNumberInput - numeric field with min/max/step, grouping and prefix/suffix. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-number-input
+  // SvNumberInput - numeric field with min/max/step, grouping and prefix/suffix. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-number-input
   import { SvNumberInput } from '@svgrid/grid'
 
   let price = $state<number | null>(1299.5)

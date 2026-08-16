@@ -21,7 +21,7 @@ grid element.
 
 <div style="display:grid;gap:1rem;grid-template-columns:1fr 1fr;align-items:start;margin:1rem 0">
   <div style="min-width:0">
-    <strong>Before — shadcn <code>Table</code></strong>
+    <strong>Before - shadcn <code>Table</code></strong>
     <pre style="overflow:auto"><code>&lt;script lang="ts"&gt;
   import * as Table from '$lib/components/ui/table'
   let rows = [/* ...orders... */]
@@ -48,7 +48,7 @@ grid element.
 &lt;!-- static markup: no sort, no filter, no virtualization --&gt;</code></pre>
   </div>
   <div style="min-width:0">
-    <strong>After — <code>&lt;SvGrid&gt;</code>, same tokens</strong>
+    <strong>After - <code>&lt;SvGrid&gt;</code>, same tokens</strong>
     <pre style="overflow:auto"><code>&lt;script lang="ts"&gt;
   import { SvGrid, type ColumnDef } from '@svgrid/grid'
   import '@svgrid/grid/themes/shadcn.css'  // 1 line to match shadcn
@@ -191,6 +191,6 @@ handles the flip.
   built-in presets (`shadcn`, `tailwind`, `material`, ...)
 - [Tailwind integration](./tailwind.md) - wiring tokens through
   Tailwind's `theme(...)` layer
-- [Theme integrations](https://svgrid.com/#/demos/74-theme-integrations)
+- [Theme integrations](https://svgrid.com/demos/74-theme-integrations/)
   demo - shadcn and four other design systems, side by side, light and
   dark

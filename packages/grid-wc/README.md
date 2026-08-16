@@ -1,12 +1,32 @@
-# @svgrid/grid-wc
+<p align="center">
+  <img src="https://svgrid.com/brand/svgrid-logo-icon-1200.png" alt="SvGrid" width="100" height="100" />
+</p>
 
-**SvGrid as a framework-agnostic web component.** A single, self-contained
-`<sv-grid>` [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components)
-you can drop into React, Vue, Angular, or plain HTML - no build step, no Svelte
+<h1 align="center">@svgrid/grid-wc</h1>
+
+<p align="center"><strong>SvGrid as a framework-agnostic web component.</strong></p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@svgrid/grid-wc"><img src="https://img.shields.io/npm/v/%40svgrid%2Fgrid-wc.svg?label=%40svgrid%2Fgrid-wc" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@svgrid/grid-wc"><img src="https://img.shields.io/npm/dm/%40svgrid%2Fgrid-wc.svg" alt="npm downloads" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="MIT License" /></a>
+</p>
+
+<p align="center">
+  <a href="https://svgrid.com">Website</a> ·
+  <a href="https://svgrid.com/docs/">Docs</a> ·
+  <a href="https://svgrid.com/demos/">Demos</a>
+</p>
+
+---
+
+A single, self-contained `<sv-grid>`
+[custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components)
+you can drop into **React, Vue, Angular, or plain HTML** - no build step, no Svelte
 required in the host app.
 
-Powered by [SvGrid](https://www.svgrid.com), the Svelte 5 data grid:
-virtualization, Excel-style filters, sorting, inline editing, grouping, and
+Powered by [SvGrid](https://svgrid.com), the Svelte 5 data grid and data table:
+virtual scrolling, Excel-style filters, sorting, inline editing, grouping, and
 pagination.
 
 ## CDN (zero build)
@@ -67,7 +87,7 @@ import '@svgrid/grid-wc' // registers <sv-grid> globally
 - **Vue 3**: `<sv-grid sortable :data.prop="rows" :columns.prop="cols" />`.
 - **Angular**: add `CUSTOM_ELEMENTS_SCHEMA`, then `<sv-grid [data]="rows" [columns]="cols" sortable>`.
 
-Full guide: [svgrid.com/docs/help/web-components](https://www.svgrid.com/docs/help/web-components).
+Full guide: [svgrid.com/docs/help/web-components](https://svgrid.com/docs/help/web-components/).
 
 ## Styling
 
@@ -85,6 +105,6 @@ sv-grid {
 ## Pro
 
 This element ships the free MIT `@svgrid/grid` core. For export, import,
-print, pivot, and AI, see [@svgrid/enterprise](https://www.svgrid.com/pricing).
+print, pivot, and AI, see [@svgrid/enterprise](https://svgrid.com/pricing/).
 
 SvGrid(TM) is a trademark of jQWidgets Ltd. This package is MIT-licensed.

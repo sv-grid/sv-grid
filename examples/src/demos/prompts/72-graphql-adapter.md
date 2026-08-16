@@ -1,7 +1,7 @@
 # Prompt: 72-graphql-adapter
 
 Source: `examples/src/demos/72-graphql-adapter.svelte`
-Live:   https://svgrid.dev/#/demos/72-graphql-adapter
+Live:   https://svgrid.com/demos/72-graphql-adapter/
 
 ## What this demo proves
 

@@ -1,7 +1,7 @@
 # Prompt: 03-excel-filters
 
 Source: `examples/src/demos/03-excel-filters.svelte`
-Live:   https://svgrid.dev/#/demos/03-excel-filters
+Live:   https://svgrid.com/demos/03-excel-filters/
 
 ## What this demo proves
 

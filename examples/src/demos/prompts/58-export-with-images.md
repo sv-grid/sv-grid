@@ -1,7 +1,7 @@
 # Prompt: 58-export-with-images
 
 Source: `examples/src/demos/58-export-with-images.svelte`
-Live:   https://svgrid.dev/#/demos/58-export-with-images
+Live:   https://svgrid.com/demos/58-export-with-images/
 
 ## What this demo proves
 

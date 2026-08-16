@@ -4,7 +4,7 @@ An [Agent Skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills)
 that gives AI coding assistants (Claude Code, and any skill-aware client)
 project-aware context for writing correct [SvGrid](https://svgrid.com)
 code: the `ColumnDef` and `<SvGrid>` API, feature toggles, `--sg-*`
-theming, server-side data, and the enterprise add-on — plus
+theming, server-side data, and the enterprise add-on - plus
 correct-vs-incorrect patterns.
 
 It complements the [`@svgrid/mcp`](../../packages/mcp) server: the skill is

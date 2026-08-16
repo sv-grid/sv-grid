@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvTreeSelect - single-select dropdown over a collapsible tree. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-tree-select
+  // SvTreeSelect - single-select dropdown over a collapsible tree. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-tree-select
   import { SvTreeSelect, type TreeSelectNode } from '@svgrid/grid'
 
   const nodes: TreeSelectNode[] = [

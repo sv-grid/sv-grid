@@ -1,6 +1,6 @@
 # Theme-matched xlsx export
 
-> Live in [demo 56-export-theme-matched](https://svgrid.com/#/demos/56-export-theme-matched).
+> Live in [demo 56-export-theme-matched](https://svgrid.com/demos/56-export-theme-matched/).
 
 <div data-docs-demo="56-export-theme-matched" data-height="480"></div>
 

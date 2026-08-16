@@ -404,7 +404,7 @@ async function cmdAdd(registry, tokens, args) {
       }
     }
   }
-  stdout.write(`\n${color('dim', 'Docs:')} https://www.svgrid.com/docs/help/ui-components\n\n`)
+  stdout.write(`\n${color('dim', 'Docs:')} https://svgrid.com/docs/help/ui-components\n\n`)
 }
 
 /** `try` - render the component(s) in a throwaway Vite + Svelte sandbox and open

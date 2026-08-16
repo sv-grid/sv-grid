@@ -1,7 +1,7 @@
 # Prompt: 40-forms-master-detail
 
 Source: `examples/src/demos/40-forms-master-detail.svelte`
-Live:   https://svgrid.dev/#/demos/40-forms-master-detail
+Live:   https://svgrid.com/demos/40-forms-master-detail/
 
 ## What this demo proves
 

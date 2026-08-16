@@ -10,7 +10,7 @@ sorting, filtering, column state, and every `SvGridApi` call. They may be
 equal, but `id` must always be present and unique.
 
 ```ts
-// ❌ Incorrect — no id; API calls and state can't address this column.
+// ❌ Incorrect - no id; API calls and state can't address this column.
 const columns = [{ field: 'name', header: 'Name' }]
 
 // ✅ Correct.
@@ -32,7 +32,7 @@ numeric editor; `'date'` parses/formats dates; `'boolean'` renders a
 checkbox.
 
 ```ts
-// ❌ Incorrect — string amount, manual alignment, no numeric editor.
+// ❌ Incorrect - string amount, manual alignment, no numeric editor.
 { id: 'amount', field: 'amount', header: 'Amount', cell: RightAlignedText }
 
 // ✅ Correct.
@@ -73,7 +73,7 @@ style. A Tailwind/CSS width on a `<th>` will be ignored or clobbered on
 re-render.
 
 ```ts
-// ✅ Correct — sizing in the model.
+// ✅ Correct - sizing in the model.
 { id: 'name', field: 'name', header: 'Name', width: 200, minWidth: 120 }
 { id: 'notes', field: 'notes', header: 'Notes', flex: 1 }
 ```
@@ -102,8 +102,8 @@ Inline editing turns on with the `editable` shortcut prop (or
 configure it with `editorOptions`:
 
 ```ts
-// ❌ Incorrect — a raw <select> inside a cell snippet for a dropdown.
-// ✅ Correct — declarative list editor.
+// ❌ Incorrect - a raw <select> inside a cell snippet for a dropdown.
+// ✅ Correct - declarative list editor.
 {
   id: 'tier', field: 'tier', header: 'Tier',
   editorType: 'list',

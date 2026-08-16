@@ -205,8 +205,6 @@ test('grid time-to-first-paint regression gate', async ({ page }) => {
 
 ## Demo
 
-The runnable companion: [Demo 134 - Stress matrix (gallery)](https://svgrid.com/#/demos/134-stress-matrix) - this harness wrapped in a page, ready to click on your machine.
-
 ## See also
 
 - [Profiling with a FPS HUD](./profiling-with-fps-hud.md) - the matching live tool

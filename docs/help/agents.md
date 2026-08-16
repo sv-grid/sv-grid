@@ -17,7 +17,7 @@ imperative `SvGridApi` together form a clean tool surface that any
 agent SDK can consume.
 
 > **Looking for the in-grid AI features?** See
-> [AI assistant - Enterprise](./ai.md) for NL filter / smart fill /
+> [AI assistant](./ai.md) for NL filter / smart fill /
 > summarise / classify - the agent surface this page describes is
 > what you'd build ON TOP of those.
 
@@ -189,8 +189,8 @@ implement the above patterns:
 
 ## Worked example: NL → Pivot
 
-Live in [demo 75 (AI Smart Paste)](https://svgrid.com/#/demos/75-ai-smart-paste)
-and [demo 52 (Pivot designer)](https://svgrid.com/#/demos/52-pivot-table)
+Live in [demo 75 (AI Smart Paste)](https://svgrid.com/demos/75-ai-smart-paste/)
+and [demo 52 (Pivot designer)](https://svgrid.com/demos/52-pivot-table/)
 - both ship in the gallery.
 
 ## Failure modes
@@ -206,7 +206,7 @@ and [demo 52 (Pivot designer)](https://svgrid.com/#/demos/52-pivot-table)
 
 - [LLM grounding](./llm-grounding.md) - the static doc files agents read
 - [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
-- [AI assistant - Enterprise](./ai.md) - the in-grid NL features (not the agent layer)
+- [AI assistant](./ai.md) - the in-grid NL features, free in @svgrid/grid (not the agent layer)
 - [Architecture](./architecture.md) - what state lives where (agents need to know)
 
 ## Frequently asked questions

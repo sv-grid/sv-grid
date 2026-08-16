@@ -1,7 +1,7 @@
 # Prompt: 15-localization
 
 Source: `examples/src/demos/15-localization.svelte`
-Live:   https://svgrid.dev/#/demos/15-localization
+Live:   https://svgrid.com/demos/15-localization/
 
 ## What this demo proves
 

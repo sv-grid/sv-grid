@@ -1,6 +1,6 @@
 # Chart.js sync from grid filter state
 
-> Live in [demo 73-chartjs-sync](https://svgrid.com/#/demos/73-chartjs-sync).
+> Live in [demo 73-chartjs-sync](https://svgrid.com/demos/73-chartjs-sync/).
 
 <div data-docs-demo="73-chartjs-sync" data-height="480"></div>
 

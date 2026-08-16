@@ -219,6 +219,6 @@ there.
 - Sales and licensing: sales@jqwidgets.com
 - Support: support@jqwidgets.com
 - General: info@jqwidgets.com
-- Pricing: https://svgrid.com/pricing
+- Pricing: https://svgrid.com/pricing/
 
 END OF AGREEMENT

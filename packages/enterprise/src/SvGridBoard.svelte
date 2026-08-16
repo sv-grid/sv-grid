@@ -32,6 +32,7 @@
     portalToBody,
     popIn,
     createDismissableLayer,
+    onScrollOutside,
   } from "@svgrid/grid";
 
   let {
@@ -1090,11 +1091,13 @@
       onDismiss: () => (menuOpen = false),
     });
     layer.activate();
-    const onScroll = () => (menuOpen = false);
-    window.addEventListener("scroll", onScroll, true);
+    const offScroll = onScrollOutside(
+      () => menuPanel,
+      () => (menuOpen = false),
+    );
     return () => {
       layer.release();
-      window.removeEventListener("scroll", onScroll, true);
+      offScroll();
     };
   });
 </script>

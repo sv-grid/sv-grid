@@ -1,7 +1,7 @@
 # Prompt: 33-server-infinite
 
 Source: `examples/src/demos/33-server-infinite.svelte`
-Live:   https://svgrid.dev/#/demos/33-server-infinite
+Live:   https://svgrid.com/demos/33-server-infinite/
 
 ## What this demo proves
 

@@ -7,7 +7,7 @@ it instantly, with no polling. This uses [Supabase Realtime](https://supabase.co
 
 ![A Postgres change made by another user, tab, or job streams through Supabase Realtime into createSupabaseRealtime, and the grid reflects it instantly with no polling.](/docs-media/studio-realtime.svg)
 
-> **Live demo:** the [Supabase demo](https://svgrid.com/#/demos/194-studio-supabase)
+> **Live demo:** the [Supabase demo](https://svgrid.com/demos/194-studio-supabase/)
 > is real-time out of the box - connect your table, then change a row in the
 > Supabase dashboard and watch it flash in the grid. Toggle it with the
 > **Live** pill.

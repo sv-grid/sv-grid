@@ -1,7 +1,7 @@
 # Prompt: 24-validation
 
 Source: `examples/src/demos/24-validation.svelte`
-Live:   https://svgrid.dev/#/demos/24-validation
+Live:   https://svgrid.com/demos/24-validation/
 
 ## What this demo proves
 

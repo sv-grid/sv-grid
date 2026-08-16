@@ -77,7 +77,7 @@ createRestDataSource<Item>({
 })
 ```
 
-See the live example: [Live REST (public API)](https://svgrid.com/#/demos/337-live-rest-dummyjson)
+See the live example: [Live REST (public API)](https://svgrid.com/demos/337-live-rest-dummyjson/)
 fetches real rows from dummyjson.com through `dummyJsonAdapter`.
 
 **In the designer:** a REST entity's **Configure** builder has an **API format**

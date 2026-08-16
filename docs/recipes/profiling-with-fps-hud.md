@@ -143,8 +143,6 @@ Toggle from the console: `localStorage.setItem('svgrid:hud', 'on')`.
 
 ## Demo
 
-The runnable companion: [Demo 132 - Profiler dashboard (gallery)](https://svgrid.com/#/demos/132-profiler-dashboard) - drop this HUD around a 50,000-row grid and use the spam buttons.
-
 ## See also
 
 - [Bundle size reference](../reference/bundle-size.md) - what each feature costs

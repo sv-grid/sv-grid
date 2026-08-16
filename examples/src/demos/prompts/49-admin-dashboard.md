@@ -1,7 +1,7 @@
 # Prompt: 49-admin-dashboard
 
 Source: `examples/src/demos/49-admin-dashboard.svelte`
-Live:   https://svgrid.dev/#/demos/49-admin-dashboard
+Live:   https://svgrid.com/demos/49-admin-dashboard/
 
 ## What this demo proves
 

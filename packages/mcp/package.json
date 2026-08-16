@@ -8,10 +8,10 @@
   "description": "Model Context Protocol (MCP) server for SvGrid. Exposes example sources, docs, and API reference to AI assistants.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "jQWidgets <sales@jqwidgets.com>",
-  "homepage": "https://sv-grid.github.io/sv-grid/#/mcp",
+  "homepage": "https://svgrid.com/docs/help/mcp-server/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sv-grid/sv-grid.git",
+    "url": "git+https://github.com/sv-grid/sv-grid.git",
     "directory": "packages/mcp"
   },
   "type": "module",
@@ -46,5 +46,23 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "keywords": [
+    "mcp",
+    "model context protocol",
+    "model-context-protocol",
+    "ai",
+    "llm",
+    "claude",
+    "cursor",
+    "zed",
+    "svelte",
+    "svelte5",
+    "data grid",
+    "datagrid",
+    "svgrid",
+    "sv-grid",
+    "codegen",
+    "agent"
+  ]
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvCommand - a Cmd+K fuzzy command palette. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-command
+  // SvCommand - a Cmd+K fuzzy command palette. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-command
   import { SvCommand, type CommandItem } from '@svgrid/grid'
 
   const commands: CommandItem[] = [

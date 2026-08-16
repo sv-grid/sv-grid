@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvTour - a guided, spotlighted product tour overlay. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-tour
+  // SvTour - a guided, spotlighted product tour overlay. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-tour
   import { SvTour, SvButton } from '@svgrid/grid'
 
   let open = $state(false)

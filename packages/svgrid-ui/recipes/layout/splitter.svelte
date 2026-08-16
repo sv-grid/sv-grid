@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvSplitter - two resizable panes with a draggable separator. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-splitter
+  // SvSplitter - two resizable panes with a draggable separator. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-splitter
   import { SvSplitter } from '@svgrid/grid'
 
   let fraction = $state(0.3)

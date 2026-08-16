@@ -6,7 +6,7 @@ filtering, search, and paging included. Everything is here; copy the four files
 and run.
 
 > **Try it first, no install:** the
-> [Supabase demo](https://svgrid.com/#/demos/194-studio-supabase) is exactly this -
+> [Supabase demo](https://svgrid.com/demos/194-studio-supabase/) is exactly this -
 > paste your project URL + anon key and it runs against your real database in the
 > browser.
 

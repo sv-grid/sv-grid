@@ -1,46 +1,23 @@
 # Prompt: 46-scheduler
 
 Source: `examples/src/demos/46-scheduler.svelte`
-Live:   https://svgrid.dev/#/demos/46-scheduler
+Live:   https://svgrid.com/demos/46-scheduler/
 
 ## What this demo proves
 
-46. Grid as a Scheduler
-------------------------
-Same playbook as the Gantt demo, smaller window: the wide cell is
-a single-day timeline (07:00 - 20:00) and the rows are resources
-(people on shift). Each resource has 0-N appointments laid out
-by start / end. Click an appointment to load it into the side
-detail panel; click an empty time slot to create a new one.
+46. Clinic day scheduler (Enterprise Scheduler view)
+---------------------------------------------------
+The same <SvGrid>, rendered as a real calendar by setting one `scheduler`
+prop: providers become resource columns, appointment rows become events laid
+out on the hour axis. Drag to reschedule, drag an edge to resize, drag across
+providers to reassign, click to edit in the built-in drawer; a live now-line
+ticks. The calendar renderer ships in @svgrid/enterprise.
 
-  1. **Per-resource timeline cell.** One absolutely-positioned
-     block per appointment, sized by minutes-into-day. The grid
-     itself does no time math - it just renders rows.
-
-  2. **Now indicator.** A live red vertical line crosses every
-     row at the current time; ticks every 30 seconds so the
-     demo "moves" even with no interaction.
-
-  3. **Click to select / edit.** Selected appointment is mirrored
-     in a right-side detail card with editable title, type, time,
-     and resource. Save flushes back into the row data - the
-     grid is the source of truth, the form is a view.
-
-  4. **KPI strip.** Booked hours, utilisation %, next-up - the
-     stats every scheduler dashboard needs.
+(Previously a hand-rolled timeline; now it uses the first-class Scheduler.)
 
 ## Imports
 
 ```ts
-```
-
-## Registered features
-
-```ts
-const features = tableFeatures({
-  rowSortingFeature,
-  columnFilteringFeature,
-})
 ```
 
 ## How to use this prompt

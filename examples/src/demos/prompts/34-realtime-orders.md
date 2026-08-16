@@ -1,7 +1,7 @@
 # Prompt: 34-realtime-orders
 
 Source: `examples/src/demos/34-realtime-orders.svelte`
-Live:   https://svgrid.dev/#/demos/34-realtime-orders
+Live:   https://svgrid.com/demos/34-realtime-orders/
 
 ## What this demo proves
 

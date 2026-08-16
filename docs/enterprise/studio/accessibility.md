@@ -12,7 +12,7 @@ patterns. This page is what you get for free, what you own, and how to verify it
   tabindex** (one tab stop for the whole grid; arrow keys move the active cell),
   and `aria-sort` on sorted headers. Full keyboard navigation, no mouse required.
   See [Accessibility](../../help/accessibility.md) for the grid's complete a11y
-  behaviour and the [live demo](https://svgrid.com/#/demos/17-accessibility).
+  behaviour and the [live demo](https://svgrid.com/demos/17-accessibility/).
 - **The edit form** labels every input from the schema's `label` (or a title-cased
   field name), marks required fields, and surfaces validation messages next to the
   field they belong to.

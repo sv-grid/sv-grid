@@ -1,7 +1,7 @@
 # Prompt: 02-sort-filter-paginate
 
 Source: `examples/src/demos/02-sort-filter-paginate.svelte`
-Live:   https://svgrid.dev/#/demos/02-sort-filter-paginate
+Live:   https://svgrid.com/demos/02-sort-filter-paginate/
 
 ## What this demo proves
 

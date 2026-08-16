@@ -7,7 +7,7 @@ adding sv-grid, adding sv-grid does not break that compliance.
 This page documents the four configuration choices that matter for
 healthcare deployments.
 
-> **Live example:** [demo 41 (Healthcare EMR - inpatient board)](https://svgrid.com/#/demos/41-healthcare-emr)
+> **Live example:** [demo 41 (Healthcare EMR - inpatient board)](https://svgrid.com/demos/41-healthcare-emr/)
 > shows a role-based ICU census - the same patterns this page describes.
 
 ## 1. Disable persistent saved-views
@@ -133,4 +133,4 @@ make them worse, but you should be aware:
 - [GDPR + data residency](./gdpr.md)
 - [Audit log integration](./audit-log.md)
 - [Security & supply chain](../help/security.md)
-- [Demo 41 - Healthcare EMR](https://svgrid.com/#/demos/41-healthcare-emr) - role-based cell editing in practice
+- [Demo 41 - Healthcare EMR](https://svgrid.com/demos/41-healthcare-emr/) - role-based cell editing in practice

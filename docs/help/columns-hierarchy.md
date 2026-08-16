@@ -192,5 +192,5 @@ work afterward (~1-2 ms). Mutating the tree state at interactive rates
   sessions.
 - [State maintenance](./state-maintenance.md) - undo / redo for tree
   changes.
-- [Demo #54 Columns hierarchy](https://svgrid.com/#/demos/54-columns-hierarchy)
+- [Demo #54 Columns hierarchy](https://svgrid.com/demos/54-columns-hierarchy/)
   - the reference implementation.

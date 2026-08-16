@@ -164,7 +164,7 @@ covers everything; Glide's theme has ~40).
 
 ## See also
 
-- [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid) - the side-by-side comparison
+- [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/) - the side-by-side comparison
 - [Performance benchmarks](./benchmarks.md) - measured numbers
 - [Server-side data](./server-side-data.md) - the >100k-row pattern
 - [Accessibility](./accessibility.md) - the standards compliance Glide doesn't ship

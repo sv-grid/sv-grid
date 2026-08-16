@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://svgrid.dev/schemas/column-def.json",
+  "$id": "https://svgrid.com/schemas/column-def.json",
   "title": "ColumnDef",
   "description": "One entry in the `columns` array passed to `<SvGrid>`. Source: packages/grid/src/core.ts (ColumnDef<TFeatures, TData>).",
   "type": "object",

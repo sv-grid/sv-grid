@@ -214,7 +214,7 @@ swap in a custom editor via [Custom header components](./columns/custom-header-c
 - [Accessibility](./accessibility.md) - all of the above respects
   forced-colors / reduced-motion / screen-reader announcements per
   locale.
-- [Demo #38 RTL + i18n](https://svgrid.com/#/demos/38-rtl-i18n)
+- [Demo #38 RTL + i18n](https://svgrid.com/demos/38-rtl-i18n/)
   - full locale + direction toggle reference.
 
 ## Frequently asked questions

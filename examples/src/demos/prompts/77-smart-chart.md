@@ -1,7 +1,7 @@
 # Prompt: 77-smart-chart
 
 Source: `examples/src/demos/77-smart-chart.svelte`
-Live:   https://svgrid.dev/#/demos/77-smart-chart
+Live:   https://svgrid.com/demos/77-smart-chart/
 
 ## What this demo proves
 

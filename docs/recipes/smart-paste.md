@@ -1,6 +1,6 @@
 # Smart paste: CSV / TSV / free-form → typed rows
 
-> Live in [demo 75-ai-smart-paste](https://svgrid.com/#/demos/75-ai-smart-paste).
+> Live in [demo 75-ai-smart-paste](https://svgrid.com/demos/75-ai-smart-paste/).
 
 <div data-docs-demo="75-ai-smart-paste" data-height="480"></div>
 

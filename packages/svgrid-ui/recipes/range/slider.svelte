@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvSlider - single or dual-thumb range slider. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-slider
+  // SvSlider - single or dual-thumb range slider. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-slider
   import { SvSlider } from '@svgrid/grid'
 
   let price = $state<[number, number]>([20, 80])

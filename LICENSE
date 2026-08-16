@@ -6,21 +6,29 @@ the LICENSE file inside that package directory.
 Per-package licensing
 ------------------------------------------------------------------------
 
-  packages/grid/       MIT (terms below, and packages/grid/LICENSE)
-  packages/enterprise/        Commercial - see packages/enterprise/LICENSE
-  packages/mcp/        Commercial - see packages/mcp/LICENSE
-  website/                     Proprietary - see website/LICENSE
+  packages/grid/            @svgrid/grid          MIT
+  packages/grid-wc/         @svgrid/grid-wc       MIT
+  packages/create-sv-grid/  @svgrid/create        MIT
+  packages/create-studio/   @svgrid/create-studio MIT
+  packages/svgrid-ui/       @svgrid/ui            MIT
+  packages/enterprise/      @svgrid/enterprise    Commercial
+  packages/mcp/             @svgrid/mcp           Commercial
+  packages/studio/          @svgrid/studio        Commercial
+  website/                                        Proprietary
 
-Only `@svgrid/grid` is open source. Everything else in this
-repository (the Pro feature pack, the MCP server, the marketing +
-docs website, and any other package added later that does not ship
-its own MIT LICENSE) is proprietary and may not be copied, modified,
-or redistributed without a paid license. Source is visible in this
-repository for transparency and for paying customers; visibility does
-not grant a license.
+Each of the above ships its own LICENSE file, which is authoritative
+for that package. The MIT text reproduced below is the license for the
+MIT-licensed packages in that list.
+
+The commercial and proprietary packages (the Enterprise feature pack,
+the MCP server, SvGrid Studio, the marketing + docs website, and any
+package added later that does not ship its own MIT LICENSE) may not be
+copied, modified, or redistributed without a paid license. Source is
+visible in this repository for transparency and for paying customers;
+visibility does not grant a license.
 
 ------------------------------------------------------------------------
-MIT License (applies ONLY to packages/grid)
+MIT License (applies to the MIT-licensed packages listed above)
 ------------------------------------------------------------------------
 
 MIT License

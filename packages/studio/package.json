@@ -11,7 +11,7 @@
   "homepage": "https://svgrid.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sv-grid/sv-grid.git",
+    "url": "git+https://github.com/sv-grid/sv-grid.git",
     "directory": "packages/studio"
   },
   "type": "module",
@@ -39,5 +39,23 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "keywords": [
+    "svelte",
+    "svelte5",
+    "sveltekit",
+    "crud",
+    "scaffold",
+    "codegen",
+    "drizzle",
+    "prisma",
+    "admin panel",
+    "low-code",
+    "data app",
+    "data grid",
+    "datagrid",
+    "studio",
+    "svgrid",
+    "sv-grid"
+  ]
 }

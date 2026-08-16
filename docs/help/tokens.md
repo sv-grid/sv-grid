@@ -9,7 +9,7 @@ declaration wins.
 > No build step. No theme provider. No design-system lock-in. Set a
 > few `--sg-*` tokens and the grid re-skins immediately.
 
-Live in [demo 74 (Theme integrations)](https://svgrid.com/#/demos/74-theme-integrations)
+Live in [demo 74 (Theme integrations)](https://svgrid.com/demos/74-theme-integrations/)
 - shows the same grid rendered through Ant Design, MUI, Fluent, Base
 Web, and shadcn token sets.
 
@@ -153,7 +153,7 @@ token set under that selector:
 ```
 
 Theme presets ship in
-[demo 74](https://svgrid.com/#/demos/74-theme-integrations) for Ant
+[demo 74](https://svgrid.com/demos/74-theme-integrations/) for Ant
 Design, MUI, Fluent, Base Web, and shadcn - each with a light AND a
 dark token bundle ready to copy.
 
@@ -190,5 +190,5 @@ them.
 
 - [Tailwind integration](./tailwind.md) - how to wire tokens through
   Tailwind's theming layer
-- [Custom cells + themes](https://svgrid.com/#/demos/10-custom-cells-and-themes) demo - the canonical token-override example
-- [Theme integrations](https://svgrid.com/#/demos/74-theme-integrations) demo - five design-system presets side by side
+- [Custom cells + themes](https://svgrid.com/demos/10-custom-cells-and-themes/) demo - the canonical token-override example
+- [Theme integrations](https://svgrid.com/demos/74-theme-integrations/) demo - five design-system presets side by side

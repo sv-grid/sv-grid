@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { createDismissableLayer, dismissableDepth } from './dismissable'
+import { createDismissableLayer, dismissableDepth, onScrollOutside } from './dismissable'
 
 function panel(): HTMLElement {
   const el = document.createElement('div')
@@ -75,6 +75,30 @@ describe('createDismissableLayer', () => {
 
     layerA.release()
     expect(dismissableDepth()).toBe(0)
+  })
+
+  it('close-on-scroll ignores scrolling inside the panel', () => {
+    const el = panel()
+    const list = document.createElement('div') // e.g. the filter menu's facet list
+    el.appendChild(list)
+    let closed = 0
+    const off = onScrollOutside(() => el, () => closed++)
+
+    // Inner scroll containers don't bubble, so this only reaches the capture
+    // listener - it must NOT close the menu the user is scrolling.
+    list.dispatchEvent(new Event('scroll'))
+    el.dispatchEvent(new Event('scroll'))
+    expect(closed).toBe(0)
+
+    // A scroll anywhere else moves the anchor, so the panel closes.
+    document.body.dispatchEvent(new Event('scroll'))
+    expect(closed).toBe(1)
+    document.dispatchEvent(new Event('scroll'))
+    expect(closed).toBe(2)
+
+    off()
+    document.body.dispatchEvent(new Event('scroll'))
+    expect(closed).toBe(2)
   })
 
   it('respects closeOnEscape / closeOnOutside flags', () => {

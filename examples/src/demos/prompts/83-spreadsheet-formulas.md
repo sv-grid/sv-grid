@@ -1,7 +1,7 @@
 # Prompt: 83-spreadsheet-formulas
 
 Source: `examples/src/demos/83-spreadsheet-formulas.svelte`
-Live:   https://svgrid.dev/#/demos/83-spreadsheet-formulas
+Live:   https://svgrid.com/demos/83-spreadsheet-formulas/
 
 ## What this demo proves
 

@@ -90,7 +90,7 @@ export function hasAIProvider(): boolean {
 class NoProviderError extends Error {
   constructor() {
     super(
-      '@svgrid/enterprise/ai: no AI provider registered. Call setAIProvider(fn) ' +
+      '@svgrid/grid ai: no AI provider registered. Call setAIProvider(fn) ' +
         'with an adapter that talks to OpenAI / Anthropic / your proxy.',
     )
     this.name = 'NoProviderError'
@@ -100,7 +100,7 @@ class NoProviderError extends Error {
 class BadJsonError extends Error {
   constructor(raw: string) {
     super(
-      '@svgrid/enterprise/ai: provider returned non-JSON for a json-format request. ' +
+      '@svgrid/grid ai: provider returned non-JSON for a json-format request. ' +
         `First 200 chars: ${raw.slice(0, 200)}`,
     )
     this.name = 'BadJsonError'
@@ -324,7 +324,7 @@ export async function aiSmartFill<
   opts: AISmartFillOptions,
 ): Promise<AISmartFillResult<TValue>> {
   if (opts.examples.length === 0) {
-    throw new Error('@svgrid/enterprise/ai: aiSmartFill requires at least one example.')
+    throw new Error('@svgrid/grid ai: aiSmartFill requires at least one example.')
   }
   const data = api.getData()
   const targets =

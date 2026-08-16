@@ -66,7 +66,7 @@ cells are snippets, and there is no manual mount / teardown.
 
 ## See also
 
-- [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator) - the side-by-side comparison
+- [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/) - the side-by-side comparison
 - [Cell components](./cells/cell-components.md) - snippet-based custom cells
 - [Architecture](./architecture.md) - engine + render-component split
 

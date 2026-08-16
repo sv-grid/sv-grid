@@ -1,7 +1,7 @@
 # Prompt: 68-dependent-dropdowns
 
 Source: `examples/src/demos/68-dependent-dropdowns.svelte`
-Live:   https://svgrid.dev/#/demos/68-dependent-dropdowns
+Live:   https://svgrid.com/demos/68-dependent-dropdowns/
 
 ## What this demo proves
 

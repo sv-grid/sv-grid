@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvTree - a WAI-ARIA tree view with expand/select/checkboxes. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-tree
+  // SvTree - a WAI-ARIA tree view with expand/select/checkboxes. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-tree
   import { SvTree, type SvTreeNode } from '@svgrid/grid'
 
   let selected = $state<string | null>(null)

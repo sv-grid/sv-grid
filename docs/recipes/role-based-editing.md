@@ -1,6 +1,6 @@
 # Role-based editable columns
 
-> Live in [demo 41-healthcare-emr](https://svgrid.com/#/demos/41-healthcare-emr).
+> Live in [demo 41-healthcare-emr](https://svgrid.com/demos/41-healthcare-emr/).
 
 <div data-docs-demo="41-healthcare-emr" data-height="480"></div>
 

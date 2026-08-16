@@ -781,7 +781,7 @@ auto-complete and type-check.
 
 ### Core features
 
-- **[Examples gallery](https://svgrid.com/#/demos)** - 50+ production-quality
+- **[Examples gallery](https://svgrid.com/demos/)** - 50+ production-quality
   demos, from quick-start to 100k-row virtualization.
 - **[Column definitions](./help/columns/column-definitions.md)** - every
   property on `ColumnDef`.
@@ -794,7 +794,7 @@ auto-complete and type-check.
   paginate, group, and aggregate locally or against your backend.
 - **[Tailwind integration](./help/tailwind.md)** - full list of CSS
   custom properties (`--sg-*`) and recipes for building your own theme.
-- **[Compare SvGrid with other Svelte data grids](https://svgrid.com/#/compare)** -
+- **[Compare SvGrid with other Svelte data grids](https://svgrid.com/compare/)** -
   side-by-side feature matrix and when to pick which.
 
 ### Enterprise features (`@svgrid/enterprise`)
@@ -823,7 +823,7 @@ demos and evaluation.
 
 - File issues at the [project repository](https://github.com/sv-grid/sv-grid/issues).
 - Browse the [Help index](./help/index.md) for topic-oriented guides.
-- Use the [@svgrid/mcp](https://svgrid.com/#/mcp) server
+- Use the [@svgrid/mcp](https://svgrid.com/mcp/) server
   to give your AI assistant accurate answers.
 - Read the source - it is small, well-commented, and meant to be read
   before opening a bug report.

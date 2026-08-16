@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvButton - the themeable press primitive with variants and loading. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-button
+  // SvButton - the themeable press primitive with variants and loading. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-button
   import { SvButton } from '@svgrid/grid'
 
   let saving = $state(false)

@@ -1,7 +1,7 @@
 # Prompt: 53-excel-import
 
 Source: `examples/src/demos/53-excel-import.svelte`
-Live:   https://svgrid.dev/#/demos/53-excel-import
+Live:   https://svgrid.com/demos/53-excel-import/
 
 ## What this demo proves
 

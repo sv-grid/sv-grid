@@ -2,7 +2,7 @@
 
 A `ColumnDef` tells SvGrid how to read a value out of a row, how to render it,
 and which features apply to it. The grid below is built from a handful
-of `ColumnDef`s - look at the [source](https://svgrid.com/#/demos/01-quick-start) to see how each shape maps to a column behaviour:
+of `ColumnDef`s - look at the [source](https://svgrid.com/demos/01-quick-start/) to see how each shape maps to a column behaviour:
 
 <div data-docs-demo="01-quick-start" data-height="460"></div>
 

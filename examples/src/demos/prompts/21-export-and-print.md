@@ -1,7 +1,7 @@
 # Prompt: 21-export-and-print
 
 Source: `examples/src/demos/21-export-and-print.svelte`
-Live:   https://svgrid.dev/#/demos/21-export-and-print
+Live:   https://svgrid.com/demos/21-export-and-print/
 
 ## What this demo proves
 

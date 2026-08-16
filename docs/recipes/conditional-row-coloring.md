@@ -1,6 +1,6 @@
 # Conditional row coloring
 
-> Live in [demo 62-conditional-styling](https://svgrid.com/#/demos/62-conditional-styling).
+> Live in [demo 62-conditional-styling](https://svgrid.com/demos/62-conditional-styling/).
 
 <div data-docs-demo="62-conditional-styling" data-height="480"></div>
 

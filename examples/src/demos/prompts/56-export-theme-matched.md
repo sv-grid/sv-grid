@@ -1,7 +1,7 @@
 # Prompt: 56-export-theme-matched
 
 Source: `examples/src/demos/56-export-theme-matched.svelte`
-Live:   https://svgrid.dev/#/demos/56-export-theme-matched
+Live:   https://svgrid.com/demos/56-export-theme-matched/
 
 ## What this demo proves
 

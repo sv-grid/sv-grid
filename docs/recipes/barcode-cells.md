@@ -102,7 +102,7 @@ Notes that matter in production:
 ## Print-ready labels
 
 Because every code is SVG, the same markup scales to a shelf label or asset tag
-and prints razor-sharp. The [demo](https://svgrid.com/demos/112-barcode-cells)
+and prints razor-sharp. The [demo](https://svgrid.com/demos/112-barcode-cells/)
 pops a label preview on row click; pair it with the
 [Enterprise print / export pack](../help/export.md) to generate pick lists or label
 sheets from the grid.

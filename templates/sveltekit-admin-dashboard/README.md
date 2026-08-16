@@ -1,7 +1,7 @@
 # SvGrid Admin Dashboard (SvelteKit starter)
 
 A production-ready admin dashboard built with **[SvelteKit](https://svelte.dev/docs/kit)**
-and **[SvGrid](https://www.svgrid.com)** - the modern Svelte 5 data grid.
+and **[SvGrid](https://svgrid.com)** - the Svelte 5 data grid and data table.
 Sortable, filterable, editable grids; KPI cards; a sidebar shell; prerendered
 to static HTML for SEO; one-click deploy to Vercel.
 
@@ -16,7 +16,7 @@ to static HTML for SEO; one-click deploy to Vercel.
 > standalone copy first (recommended):
 >
 > ```bash
-> npm create sv-grid@latest my-admin -- --template admin-dashboard
+> npm create @svgrid@latest my-admin -- --template admin-dashboard
 > ```
 
 ## Quick start
@@ -65,13 +65,22 @@ Then read `data.orders` in the page via `let { data } = $props()`.
 
 ## Upgrade to Pro
 
-This starter uses the free MIT **`@svgrid/grid`** core. For Excel/PDF
-export, data import, printing, pivot, and the AI helpers, add
-[`@svgrid/enterprise`](https://www.svgrid.com/pricing) and call `installPro(api)` on
-the grid's API. Pro runs in evaluation with a watermark - no key needed to try
-it.
+This starter uses the free MIT **`@svgrid/grid`** core, which already includes
+the AI helpers. For Excel/PDF export, data import, printing, and pivot tables,
+add [`@svgrid/enterprise`](https://svgrid.com/pricing/) and call
+`installEnterprise(api)` on the grid's API. It runs in evaluation with a
+watermark, so no key is needed to try it.
+
+## Working with an AI assistant
+
+Point it at the SvGrid MCP server so it writes against the real API instead of
+guessing:
+
+```bash
+claude mcp add svgrid -- npx -y @svgrid/mcp
+```
 
 ## License
 
-This template is MIT-licensed - use it as the basis for your own app.
-SvGrid(TM) is a trademark of jQWidgets Ltd.
+Built with [SvGrid](https://svgrid.com). This template is MIT-licensed - use it
+as the basis for your own app. SvGrid(TM) is a trademark of jQWidgets Ltd.

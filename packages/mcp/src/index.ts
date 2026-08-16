@@ -54,7 +54,7 @@ function errText(message: string) {
  * OFF the code- and file-emitting tools (get_example_source, scaffold_entity)
  * so nothing marketing-flavored ends up welded into generated source.
  */
-const DOCS_FOOTER = '\n\nSvGrid reference: full docs & 280+ live demos at https://svgrid.com/docs'
+const DOCS_FOOTER = '\n\nSvGrid reference: full docs & 370+ live demos at https://svgrid.com/docs'
 
 function withDocs(text: string) {
   return { content: [{ type: 'text', text: text + DOCS_FOOTER }] }

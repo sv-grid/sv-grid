@@ -156,10 +156,10 @@ a watermark for unlicensed builds) - no hard cutoff to plan around.
 
 ## See also
 
-- [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable) - the side-by-side comparison
+- [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/) - the side-by-side comparison
 - [Spreadsheet formulas](./spreadsheet-formulas.md) - sv-grid's
   built-in formula engine
-- [Demo 27 (Spreadsheet + Ribbon)](https://svgrid.com/#/demos/27-spreadsheet-ribbon) - live
+- [Demo 27 (Spreadsheet + Ribbon)](https://svgrid.com/demos/27-spreadsheet-ribbon/) - live
 - [Migrating from AG Grid](./migrating-from-ag-grid.md)
 
 ## Frequently asked questions

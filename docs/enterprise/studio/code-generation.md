@@ -70,7 +70,7 @@ work.
 **3. The screen** wires the grid and the edit panel to that route through the
 controller - server-side sort / filter / page, the create-edit modal, and
 optimistic delete. It is a normal `+page.svelte` you own; see the
-[Data-app Studio demo](https://svgrid.com/#/demos/192-data-app-studio) for the
+[Studio live SQL demo](https://svgrid.com/demos/193-studio-live-sql/) for the
 whole thing running.
 
 ## Managed regions & safe regeneration

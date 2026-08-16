@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvComboBox - searchable single-select combobox. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-combo-box
+  // SvComboBox - searchable single-select combobox. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-combo-box
   import { SvComboBox, type ListOption } from '@svgrid/grid'
 
   const options: ListOption[] = [

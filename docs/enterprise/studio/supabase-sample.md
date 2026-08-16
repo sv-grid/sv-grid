@@ -8,7 +8,7 @@ categories, customers, products, orders, order_details - plus an `order_lines`
 ![Five compact Northwind tables joined by the order_lines view, read-only to the anon role via Row-Level Security, browsed by the grid.](/docs-media/studio-northwind.svg)
 
 It is the same dataset as the in-browser
-[Northwind on PGlite demo](https://svgrid.com/#/demos/338-pglite-northwind); this
+[Northwind on PGlite demo](https://svgrid.com/demos/338-pglite-northwind/); this
 page hosts it on real Postgres so the anon key works from any browser app, and so
 Supabase **realtime** and Row-Level Security apply.
 
@@ -151,7 +151,7 @@ end $$;
 ## Step 3 - Connect
 
 **No-code (fastest):** open the
-[Supabase demo](https://svgrid.com/#/demos/194-studio-supabase), paste your
+[Supabase demo](https://svgrid.com/demos/194-studio-supabase/), paste your
 Project URL + anon key, and set the table to **`order_lines`** to browse the
 joined data, or **`products`** / **`customers`** for the base tables. The grid
 introspects the columns and renders sort / filter / search / paging - all pushed
@@ -199,7 +199,7 @@ see CRUD. This Northwind sample exists for the next question: **relations**. The
 `order_lines` view joins five tables into one grid, so you can demo grouping,
 totals, and filtering across the whole schema - the shape real business data
 takes. The same dataset runs with **zero backend** in the
-[Northwind on PGlite demo](https://svgrid.com/#/demos/338-pglite-northwind) when
+[Northwind on PGlite demo](https://svgrid.com/demos/338-pglite-northwind/) when
 you want to show it offline.
 
 ## See also

@@ -1,7 +1,7 @@
 # Prompt: 71-submit-validation
 
 Source: `examples/src/demos/71-submit-validation.svelte`
-Live:   https://svgrid.dev/#/demos/71-submit-validation
+Live:   https://svgrid.com/demos/71-submit-validation/
 
 ## What this demo proves
 

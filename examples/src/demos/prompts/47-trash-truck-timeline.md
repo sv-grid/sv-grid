@@ -1,7 +1,7 @@
 # Prompt: 47-trash-truck-timeline
 
 Source: `examples/src/demos/47-trash-truck-timeline.svelte`
-Live:   https://svgrid.dev/#/demos/47-trash-truck-timeline
+Live:   https://svgrid.com/demos/47-trash-truck-timeline/
 
 ## What this demo proves
 
@@ -39,6 +39,10 @@ const features = tableFeatures({
   columnFilteringFeature,
 })
 ```
+
+## SvGridApi methods called
+
+- `api.setColumnWidth(...)`
 
 ## How to use this prompt
 

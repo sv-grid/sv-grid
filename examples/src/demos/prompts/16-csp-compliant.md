@@ -1,7 +1,7 @@
 # Prompt: 16-csp-compliant
 
 Source: `examples/src/demos/16-csp-compliant.svelte`
-Live:   https://svgrid.dev/#/demos/16-csp-compliant
+Live:   https://svgrid.com/demos/16-csp-compliant/
 
 ## What this demo proves
 

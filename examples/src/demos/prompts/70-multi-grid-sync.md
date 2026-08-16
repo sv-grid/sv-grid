@@ -1,7 +1,7 @@
 # Prompt: 70-multi-grid-sync
 
 Source: `examples/src/demos/70-multi-grid-sync.svelte`
-Live:   https://svgrid.dev/#/demos/70-multi-grid-sync
+Live:   https://svgrid.com/demos/70-multi-grid-sync/
 
 ## What this demo proves
 

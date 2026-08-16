@@ -1,6 +1,6 @@
 # Heatmap-tinted numeric cells
 
-> Live in [demo 60-pivot-expandable](https://svgrid.com/#/demos/60-pivot-expandable).
+> Live in [demo 60-pivot-expandable](https://svgrid.com/demos/60-pivot-expandable/).
 
 <div data-docs-demo="60-pivot-expandable" data-height="480"></div>
 

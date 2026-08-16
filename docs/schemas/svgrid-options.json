@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://svgrid.dev/schemas/svgrid-options.json",
+  "$id": "https://svgrid.com/schemas/svgrid-options.json",
   "title": "SvGridProps",
   "description": "Props on the `<SvGrid>` Svelte component plus headless `createSvGrid` options.",
   "type": "object",

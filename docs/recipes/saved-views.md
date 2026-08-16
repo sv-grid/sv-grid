@@ -60,6 +60,6 @@ localStorage; don't. See [GDPR + data residency](../compliance/gdpr.md).
 
 ## See also
 
-- [Demo 63 (Column layout API)](https://svgrid.com/#/demos/63-column-layout-api) - live
+- [Demo 63 (Column layout API)](https://svgrid.com/demos/63-column-layout-api/) - live
 - [State maintenance](../help/state-maintenance.md) - undo/redo + bookmarks + JSON IO
 - [Persist column layout to URL](./persist-column-layout-to-url.md) - shareable links

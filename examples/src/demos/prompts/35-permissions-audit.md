@@ -1,7 +1,7 @@
 # Prompt: 35-permissions-audit
 
 Source: `examples/src/demos/35-permissions-audit.svelte`
-Live:   https://svgrid.dev/#/demos/35-permissions-audit
+Live:   https://svgrid.com/demos/35-permissions-audit/
 
 ## What this demo proves
 

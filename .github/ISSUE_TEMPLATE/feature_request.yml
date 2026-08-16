@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest a capability SvGrid does not have yet
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://svgrid.com/roadmap/) and the
+        [honest gap list](https://svgrid.com/docs/help/missing-features/) first -
+        it may already be planned or deliberately out of scope.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: |
+        Describe the problem, not the solution. "I need to show a running
+        total per group" beats "add a footerAggregate prop".
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What you tried
+      description: Current APIs you attempted, and where they fell short.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API
+      description: Optional. If you have a shape in mind, sketch it.
+
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Which package should this land in
+      options:
+        - '@svgrid/grid (free, MIT)'
+        - '@svgrid/enterprise (commercial)'
+        - 'Not sure'
+    validations:
+      required: true

@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvToggleButton - a button with a sticky pressed on/off state. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-toggle-button
+  // SvToggleButton - a button with a sticky pressed on/off state. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-toggle-button
   import { SvToggleButton } from '@svgrid/grid'
 
   let bold = $state(false)

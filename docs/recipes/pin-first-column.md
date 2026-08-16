@@ -1,6 +1,6 @@
 # Pin first column on horizontal scroll
 
-> Live in [demo 25-column-pinning](https://svgrid.com/#/demos/25-column-pinning).
+> Live in [demo 25-column-pinning](https://svgrid.com/demos/25-column-pinning/).
 
 <div data-docs-demo="25-column-pinning" data-height="480"></div>
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvResult - a full result page (success / error / notfound). Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-result
+  // SvResult - a full result page (success / error / notfound). Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-result
   import { SvResult, SvButton } from '@svgrid/grid'
 </script>
 

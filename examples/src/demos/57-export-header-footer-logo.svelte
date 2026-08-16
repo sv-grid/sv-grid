@@ -66,7 +66,7 @@
       const footer: ExportHeaderFooterLine[] = [
         {
           left:   `Generated ${new Date().toISOString().slice(0, 10)}`,
-          center: 'svgrid.dev',
+          center: 'svgrid.com',
           right:  'Page &P of &N',
         },
       ]

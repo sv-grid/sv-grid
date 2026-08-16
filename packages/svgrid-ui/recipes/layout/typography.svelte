@@ -1,6 +1,6 @@
 <script lang="ts">
   // Typography primitives - SvTitle / SvText / SvAnchor / SvBlockquote / SvMark / SvList.
-  // Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-typography
+  // Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-typography
   import { SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList } from '@svgrid/grid'
 </script>
 

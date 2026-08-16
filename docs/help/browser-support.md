@@ -57,7 +57,7 @@ on the security page.
 SvGrid is SSR-compatible. The render component does nothing on the
 server beyond emitting the wrapper markup with an `aria-busy` shell -
 the data + interactions hydrate on the client. Demo
-[19. Server-side rendering](https://svgrid.com/#/demos/19-ssr)
+[19. Server-side rendering](https://svgrid.com/demos/19-ssr/)
 shows a sandboxed pre-hydration snapshot.
 
 ### Tested SSR runtimes

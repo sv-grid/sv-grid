@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvRepeatButton - a button that keeps firing while held. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-repeat-button
+  // SvRepeatButton - a button that keeps firing while held. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-repeat-button
   import { SvRepeatButton } from '@svgrid/grid'
 
   let qty = $state(1)

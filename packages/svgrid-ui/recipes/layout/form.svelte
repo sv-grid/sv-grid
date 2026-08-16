@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvForm - schema-driven form from a FormField[] with validation. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-form
+  // SvForm - schema-driven form from a FormField[] with validation. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-form
   import { SvForm, type FormField } from '@svgrid/grid'
 
   const fields: FormField[] = [

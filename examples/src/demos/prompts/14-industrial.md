@@ -1,7 +1,7 @@
 # Prompt: 14-industrial
 
 Source: `examples/src/demos/14-industrial.svelte`
-Live:   https://svgrid.dev/#/demos/14-industrial
+Live:   https://svgrid.com/demos/14-industrial/
 
 ## What this demo proves
 

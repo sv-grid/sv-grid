@@ -93,7 +93,7 @@ port is mostly about deciding how much markup you want to keep.
 
 ## See also
 
-- [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables) - the side-by-side comparison
+- [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/) - the side-by-side comparison
 - [Migrating from svelte-headless-table](./migrating-from-svelte-headless-table.md) - sibling Svelte guide
 - [Why headless?](../why-headless.md) - keep your own markup if you want to
 

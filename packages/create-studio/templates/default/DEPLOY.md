@@ -44,4 +44,4 @@ resets on every restart and isn't shared between visitors. To go persistent:
    `DEPLOY.md` with database-specific steps (tables, migrations, seeding).
 3. Set `DATABASE_URL` locally and on your host.
 
-Docs: <https://www.svgrid.com/docs/studio>
+Docs: <https://svgrid.com/docs/enterprise/studio/>

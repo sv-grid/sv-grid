@@ -5,4 +5,4 @@
 # `github: jqwidgets` above the `custom:` line and both will surface.
 # See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
 
-custom: ["https://svgrid.com/pricing"]
+custom: ["https://svgrid.com/pricing/"]

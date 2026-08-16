@@ -75,7 +75,7 @@ async function fetchOrders(vars: { page: number; sort?: string; filter?: object 
 }
 ```
 
-Live in [demo 72 (GraphQL adapter)](https://svgrid.com/#/demos/72-graphql-adapter)
+Live in [demo 72 (GraphQL adapter)](https://svgrid.com/demos/72-graphql-adapter/)
 - includes a side panel showing the generated GraphQL document.
 
 ## See also

@@ -1,7 +1,7 @@
 # Prompt: 73-chartjs-sync
 
 Source: `examples/src/demos/73-chartjs-sync.svelte`
-Live:   https://svgrid.dev/#/demos/73-chartjs-sync
+Live:   https://svgrid.com/demos/73-chartjs-sync/
 
 ## What this demo proves
 

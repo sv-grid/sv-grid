@@ -87,7 +87,7 @@ async function main() {
       `# Prompt: ${id}`,
       '',
       `Source: \`examples/src/demos/${f}\``,
-      `Live:   https://svgrid.dev/#/demos/${id}`,
+      `Live:   https://svgrid.com/demos/${id}/`,
       '',
       '## What this demo proves',
       '',

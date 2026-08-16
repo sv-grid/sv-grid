@@ -168,4 +168,4 @@ or fix a height and let the nested grid scroll for long child lists.
 
 - [The EntitySchema](./schema.md) - the model both grids derive from
 - [Edit forms & validation](./edit-forms.md) · [Data binding](./data-binding.md)
-- Live demo: [Master / detail (nested grid)](https://svgrid.com/#/demos/181-master-detail-grid)
+- Live demo: [Master / detail (nested grid)](https://svgrid.com/demos/181-master-detail-grid/)

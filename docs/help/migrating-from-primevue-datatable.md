@@ -57,7 +57,7 @@ component.
 
 ## See also
 
-- [SvGrid vs Prime DataTable](https://svgrid.com/compare/primevue-datatable) - the side-by-side comparison
+- [SvGrid vs Prime DataTable](https://svgrid.com/compare/primevue-datatable/) - the side-by-side comparison
 - [Tailwind integration](./tailwind.md) - match your design system
 - [Cell components](./cells/cell-components.md) - snippet cells + editors
 

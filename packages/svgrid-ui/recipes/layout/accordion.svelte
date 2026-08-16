@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvAccordion - collapsible WAI-ARIA sections, single or multi expand. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-accordion
+  // SvAccordion - collapsible WAI-ARIA sections, single or multi expand. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-accordion
   import { SvAccordion, type AccordionItem } from '@svgrid/grid'
 
   const items: AccordionItem[] = [

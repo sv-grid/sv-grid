@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvAvatarGroup - overlapping avatars with a "+N" overflow pill. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-avatar-group
+  // SvAvatarGroup - overlapping avatars with a "+N" overflow pill. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-avatar-group
   import { SvAvatarGroup } from '@svgrid/grid'
 </script>
 

@@ -1,7 +1,7 @@
 # Prompt: 81-mobile-card-view
 
 Source: `examples/src/demos/81-mobile-card-view.svelte`
-Live:   https://svgrid.dev/#/demos/81-mobile-card-view
+Live:   https://svgrid.com/demos/81-mobile-card-view/
 
 ## What this demo proves
 

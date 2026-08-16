@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvMenubar - an app-style row of dropdown menus. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-menubar
+  // SvMenubar - an app-style row of dropdown menus. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-menubar
   import { SvMenubar, type MenubarMenu, type MenuItem } from '@svgrid/grid'
 
   const menus: MenubarMenu[] = [

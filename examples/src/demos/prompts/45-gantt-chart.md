@@ -1,7 +1,7 @@
 # Prompt: 45-gantt-chart
 
 Source: `examples/src/demos/45-gantt-chart.svelte`
-Live:   https://svgrid.dev/#/demos/45-gantt-chart
+Live:   https://svgrid.com/demos/45-gantt-chart/
 
 ## What this demo proves
 
@@ -47,6 +47,10 @@ const features = tableFeatures({
   columnFilteringFeature,
 })
 ```
+
+## SvGridApi methods called
+
+- `api.setColumnWidth(...)`
 
 ## How to use this prompt
 

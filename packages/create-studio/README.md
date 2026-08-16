@@ -1,4 +1,23 @@
-# @svgrid/create-studio
+<p align="center">
+  <img src="https://svgrid.com/brand/svgrid-logo-icon-1200.png" alt="SvGrid" width="100" height="100" />
+</p>
+
+<h1 align="center">@svgrid/create-studio</h1>
+
+<p align="center"><strong>Scaffold a runnable SvelteKit data app in one command.</strong></p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@svgrid/create-studio"><img src="https://img.shields.io/npm/v/%40svgrid%2Fcreate-studio.svg?label=%40svgrid%2Fcreate-studio" alt="npm version" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="MIT License" /></a>
+</p>
+
+<p align="center">
+  <a href="https://svgrid.com">Website</a> ·
+  <a href="https://svgrid.com/docs/">Docs</a> ·
+  <a href="https://svgrid.com/pricing/">Pricing</a>
+</p>
+
+---
 
 Scaffold a runnable **SvGrid Studio** data app in one command.
 
@@ -32,7 +51,7 @@ npm create @svgrid/studio@latest my-app -- --from ./src/lib/db/schema.ts
 
 ## From a designer project
 
-Export a `studio.config.json` from the [visual app designer](https://www.svgrid.com/docs/enterprise/studio/app-designer)
+Export a `studio.config.json` from the [visual app designer](https://svgrid.com/docs/enterprise/studio/app-designer/)
 and generate the exact screens + blocks you arranged:
 
 ```bash
@@ -87,6 +106,6 @@ The grid, form, sorting, filtering, and paging keep working unchanged.
 
 ## Links
 
-- Docs: https://www.svgrid.com/docs/studio
+- Docs: https://svgrid.com/docs/enterprise/studio/
 - Grid: [`@svgrid/grid`](https://www.npmjs.com/package/@svgrid/grid)
 - Studio / enterprise: [`@svgrid/enterprise`](https://www.npmjs.com/package/@svgrid/enterprise)

@@ -1,7 +1,7 @@
 # Prompt: 65-keyboard-shortcuts
 
 Source: `examples/src/demos/65-keyboard-shortcuts.svelte`
-Live:   https://svgrid.dev/#/demos/65-keyboard-shortcuts
+Live:   https://svgrid.com/demos/65-keyboard-shortcuts/
 
 ## What this demo proves
 

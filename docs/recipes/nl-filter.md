@@ -1,6 +1,6 @@
 # NL filter wired to your LLM
 
-> Live in [demo 51-ai-assistant](https://svgrid.com/#/demos/51-ai-assistant).
+> Live in [demo 51-ai-assistant](https://svgrid.com/demos/51-ai-assistant/).
 
 <div data-docs-demo="51-ai-assistant" data-height="480"></div>
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvSkeleton - a shimmering loading placeholder. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-skeleton
+  // SvSkeleton - a shimmering loading placeholder. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-skeleton
   import { SvSkeleton } from '@svgrid/grid'
 </script>
 

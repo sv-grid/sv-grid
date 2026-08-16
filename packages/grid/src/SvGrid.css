@@ -1780,6 +1780,9 @@ select.sv-grid-fr-editor {
   z-index: 901;
   max-height: calc(100vh - 24px);
   overflow: auto;
+  /* Keep a wheel that reaches the end of the menu from scrolling the grid
+     underneath it - that scroll would close the menu out from under the user. */
+  overscroll-behavior: contain;
   padding: 4px;
   background: var(--sg-bg, #fff);
   border: 1px solid var(--sg-border, #d6dee9);
@@ -2062,6 +2065,7 @@ select.sv-grid-fr-editor {
 .sv-grid-facet-list {
   max-height: 200px;
   overflow: auto;
+  overscroll-behavior: contain;
   border: 1px solid var(--sg-border, #eaeef4);
   border-radius: 5px;
 }

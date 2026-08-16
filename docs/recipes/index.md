@@ -2,7 +2,7 @@
 
 Copy-paste patterns for sv-grid. Every recipe is a complete, runnable
 snippet you can drop into your app. Each pairs with a live demo in
-the [gallery](https://svgrid.com/#/demos).
+the [gallery](https://svgrid.com/demos/).
 
 > Looking for the conceptual story? Start with
 > [Architecture](../help/architecture.md) and the
@@ -77,5 +77,5 @@ the [gallery](https://svgrid.com/#/demos).
 ## See also
 
 - [Help topic pages](../help/index.md) - the conceptual story behind each recipe
-- [Demo gallery](https://svgrid.com/#/demos) - every recipe runs live
+- [Demo gallery](https://svgrid.com/demos/) - every recipe runs live
 - [API reference](../reference/index.md) - exhaustive prop / method tables

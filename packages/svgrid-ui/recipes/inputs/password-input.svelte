@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvPasswordInput - password field with a reveal toggle and strength meter. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-password-input
+  // SvPasswordInput - password field with a reveal toggle and strength meter. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-password-input
   import { SvPasswordInput } from '@svgrid/grid'
 
   let pw = $state('')

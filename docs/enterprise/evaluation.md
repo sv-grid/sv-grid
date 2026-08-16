@@ -88,7 +88,7 @@ augments the api object.
 | AI      | `setAIProvider(yourAdapter); const plan = await api.ai.filter('show last quarter > $10k')` |
 
 Each Enterprise feature has a fully-working demo in the gallery
-([56-60 + 51 + 52 + 53](https://svgrid.com/#/demos)) that you can
+([56-60 + 51 + 52 + 53](https://svgrid.com/demos/)) that you can
 read end-to-end.
 
 ## Step 5: Performance + budget check
@@ -97,11 +97,10 @@ Bundle sizes (gzip):
 
 | Surface         | Size  | Notes                              |
 | --------------- | ----- | ---------------------------------- |
-| Community only  | 49 kB | Renderer + engine                  |
+| Community only  | 80 kB | Renderer + engine (+ 9 kB CSS)     |
 | + Enterprise export    | +12 kB| + `jszip` peer when xlsx is used   |
 | + Enterprise pdf       | +90 kB| + `pdfmake` peer when pdf is used  |
 | + Enterprise pivot     | +6 kB | Pure TS, no peers                  |
-| + Enterprise AI        | +4 kB | You bring the model client         |
 | + Enterprise import    | +5 kB | + `jszip` for xlsx import          |
 
 Subpath imports (`@svgrid/enterprise/export`, `@svgrid/enterprise/pivot`, etc.)
@@ -119,7 +118,7 @@ ensure you only pay for what you use.
 Each is a perpetual license + 1 year of updates and support that renews
 automatically; cancel anytime.
 
-[Full pricing](https://svgrid.com/pricing).
+[Full pricing](https://svgrid.com/pricing/).
 
 ## Migrating from another grid mid-evaluation
 

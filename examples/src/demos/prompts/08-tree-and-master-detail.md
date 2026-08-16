@@ -1,7 +1,7 @@
 # Prompt: 08-tree-and-master-detail
 
 Source: `examples/src/demos/08-tree-and-master-detail.svelte`
-Live:   https://svgrid.dev/#/demos/08-tree-and-master-detail
+Live:   https://svgrid.com/demos/08-tree-and-master-detail/
 
 ## What this demo proves
 
@@ -13,7 +13,7 @@ so this demo flattens a synthetic file tree by hand and indents the
 row-expanding feature.
 
 The lower grid demonstrates master/detail by mounting a second
-`<SvGrid>` instance keyed to the selected master row.
+`<SvGrid responsive={true}>` instance keyed to the selected master row.
 
 ## Imports
 

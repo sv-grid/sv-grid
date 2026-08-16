@@ -1,6 +1,6 @@
 <script lang="ts">
   // SvTimePicker - an analog clock-dial time picker. This is your copy, edit it
-  // freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-time-picker
+  // freely. Docs: https://svgrid.com/docs/help/ui-components/sv-time-picker
   import { SvTimePicker } from '@svgrid/grid'
 
   let time = $state(new Date())

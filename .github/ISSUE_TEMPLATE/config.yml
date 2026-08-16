@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/sv-grid/sv-grid/discussions
+    about: Usage questions, ideas, and show-and-tell go in Discussions.
+  - name: Documentation and demos
+    url: https://svgrid.com/docs/
+    about: 370+ live demos and topic-by-topic docs.
+  - name: Commercial or priority support
+    url: https://svgrid.com/pricing/
+    about: Included with an Enterprise license. OSS projects get a free key.
+  - name: Report a security vulnerability
+    url: https://github.com/sv-grid/sv-grid/security/advisories/new
+    about: Report privately. Do not open a public issue.

@@ -1,6 +1,6 @@
 <script lang="ts">
   // Layout primitives - SvStack (column), SvGroup (row), SvSimpleGrid (responsive grid).
-  // Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-layout-primitives
+  // Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-layout-primitives
   import { SvStack, SvGroup, SvSimpleGrid, SvCard } from '@svgrid/grid'
 </script>
 

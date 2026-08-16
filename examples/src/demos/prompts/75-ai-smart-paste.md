@@ -1,7 +1,7 @@
 # Prompt: 75-ai-smart-paste
 
 Source: `examples/src/demos/75-ai-smart-paste.svelte`
-Live:   https://svgrid.dev/#/demos/75-ai-smart-paste
+Live:   https://svgrid.com/demos/75-ai-smart-paste/
 
 ## What this demo proves
 

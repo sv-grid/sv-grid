@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvField - shared label / hint / error chrome for any control. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-field
+  // SvField - shared label / hint / error chrome for any control. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-field
   import { SvField } from '@svgrid/grid'
 
   let role = $state('')

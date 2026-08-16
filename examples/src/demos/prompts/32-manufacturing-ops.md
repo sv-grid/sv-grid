@@ -1,7 +1,7 @@
 # Prompt: 32-manufacturing-ops
 
 Source: `examples/src/demos/32-manufacturing-ops.svelte`
-Live:   https://svgrid.dev/#/demos/32-manufacturing-ops
+Live:   https://svgrid.com/demos/32-manufacturing-ops/
 
 ## What this demo proves
 

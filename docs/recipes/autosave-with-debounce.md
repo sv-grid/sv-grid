@@ -49,9 +49,9 @@ Three details that make this production-grade:
 - **Re-enqueue on failure**. Network blip is harmless; retries next tick.
 
 For a more elaborate version with undo / redo, see
-[demo 55 (State maintenance)](https://svgrid.com/#/demos/55-state-maintenance).
+[demo 55 (State maintenance)](https://svgrid.com/demos/55-state-maintenance/).
 
 ## See also
 
 - [Observability](../help/observability.md) - same callback, different sink
-- [Demo 24 (Validation while editing)](https://svgrid.com/#/demos/24-validation) - reject-and-rollback on validation failure
+- [Demo 24 (Validation while editing)](https://svgrid.com/demos/24-validation/) - reject-and-rollback on validation failure

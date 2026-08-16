@@ -1,6 +1,26 @@
-# @svgrid/ui
+<p align="center">
+  <img src="https://svgrid.com/brand/svgrid-logo-icon-1200.png" alt="SvGrid" width="100" height="100" />
+</p>
 
-Add [SvGrid UI](https://www.svgrid.com/docs/help/ui-components) components to your
+<h1 align="center">@svgrid/ui</h1>
+
+<p align="center"><strong>Svelte 5 UI components, added to your app one command at a time.</strong></p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@svgrid/ui"><img src="https://img.shields.io/npm/v/%40svgrid%2Fui.svg?label=%40svgrid%2Fui" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@svgrid/ui"><img src="https://img.shields.io/npm/dm/%40svgrid%2Fui.svg" alt="npm downloads" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="MIT License" /></a>
+</p>
+
+<p align="center">
+  <a href="https://svgrid.com">Website</a> ·
+  <a href="https://svgrid.com/docs/help/ui-components/index/">Docs</a> ·
+  <a href="https://svgrid.com/demos/">Demos</a>
+</p>
+
+---
+
+Add [SvGrid UI](https://svgrid.com/docs/help/ui-components/index/) components to your
 app - and see them - in one command:
 
 ```sh

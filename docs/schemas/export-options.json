@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://svgrid.dev/schemas/export-options.json",
+  "$id": "https://svgrid.com/schemas/export-options.json",
   "title": "ExportOptions",
   "description": "`api.exportData({...})` argument from @svgrid/enterprise.",
   "type": "object",

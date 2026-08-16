@@ -1,5 +1,5 @@
 <script lang="ts">
-  // SvLoadingOverlay - a cover-a-container loading scrim. Your copy, edit freely. Docs: https://www.svgrid.com/docs/help/ui-components/sv-loading-overlay
+  // SvLoadingOverlay - a cover-a-container loading scrim. Your copy, edit freely. Docs: https://svgrid.com/docs/help/ui-components/sv-loading-overlay
   import { SvLoadingOverlay, SvButton } from '@svgrid/grid'
   let loading = $state(false)
   function run() {

@@ -1,13 +1,13 @@
 # Prompt: 11-stock-market
 
 Source: `examples/src/demos/11-stock-market.svelte`
-Live:   https://svgrid.dev/#/demos/11-stock-market
+Live:   https://svgrid.com/demos/11-stock-market/
 
 ## What this demo proves
 
 11. Stock market - live updates
 -------------------------------
-Simulates a fast-moving market feed. A 250 ms interval randomly walks
+Simulates a fast-moving market feed. A 500 ms interval randomly walks
 each symbol's last price, bid/ask, and cumulative volume. Cells flash
 green on an up-tick, red on a down-tick.
 

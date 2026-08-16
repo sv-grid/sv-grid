@@ -1,7 +1,7 @@
 # Prompt: 01-quick-start
 
 Source: `examples/src/demos/01-quick-start.svelte`
-Live:   https://svgrid.dev/#/demos/01-quick-start
+Live:   https://svgrid.com/demos/01-quick-start/
 
 ## What this demo proves
 

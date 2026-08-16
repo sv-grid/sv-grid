@@ -1,4 +1,23 @@
-# @svgrid/studio
+<p align="center">
+  <img src="https://svgrid.com/brand/svgrid-logo-icon-1200.png" alt="SvGrid" width="100" height="100" />
+</p>
+
+<h1 align="center">@svgrid/studio</h1>
+
+<p align="center"><strong>Generate SvelteKit CRUD screens from your database schema.</strong></p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@svgrid/studio"><img src="https://img.shields.io/npm/v/%40svgrid%2Fstudio.svg?label=%40svgrid%2Fstudio" alt="npm version" /></a>
+  <a href="https://svgrid.com/pricing/"><img src="https://img.shields.io/badge/license-commercial-blue.svg" alt="Commercial license" /></a>
+</p>
+
+<p align="center">
+  <a href="https://svgrid.com">Website</a> ·
+  <a href="https://svgrid.com/docs/">Docs</a> ·
+  <a href="https://svgrid.com/pricing/">Pricing</a>
+</p>
+
+---
 
 Scaffold a full CRUD screen for SvelteKit from a **live database** or a
 **Drizzle / Prisma schema** in **one command**.
@@ -14,9 +33,9 @@ npx @svgrid/studio add User      --from prisma/schema.prisma
 
 That generates, into your SvelteKit app:
 
-- `src/lib/customers.schema.ts` — the entity schema + row type
-- `src/routes/api/customers/+server.ts` — the API route
-- `src/routes/customers/+page.svelte` — a working screen: grid + edit panel, with
+- `src/lib/customers.schema.ts` - the entity schema + row type
+- `src/routes/api/customers/+server.ts` - the API route
+- `src/routes/customers/+page.svelte` - a working screen: grid + edit panel, with
   search, server sort, pagination, and multi-select (optimistic) delete
 
 Then:
@@ -79,11 +98,11 @@ in with any client (Drizzle `db.execute`, postgres.js, better-sqlite3, mysql2).
 
 ## Regeneration is safe
 
-Re-running `add` replaces only the `svgrid:managed` regions of each file — your
+Re-running `add` replaces only the `svgrid:managed` regions of each file - your
 edits outside those markers are preserved.
 
 ## Requires
 
 `@svgrid/grid` and `@svgrid/enterprise` in your project. The Studio is part of the
 **Enterprise** license (soft-gate: it works unlicensed, with a nudge). See
-[licensing](https://svgrid.com/pricing).
+[licensing](https://svgrid.com/pricing/).

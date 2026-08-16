@@ -39,6 +39,7 @@
     type TableFeatures,
   } from "./index";
   import "./sv-grid-scrollbar";
+  import { onScrollOutside } from "./a11y/dismissable";
   import type { Snippet } from "svelte";
   import { getKeyboardIntent, getNextActiveCell } from "./keyboard";
   import {
@@ -145,15 +146,20 @@
 
   // Column/filter/operator menus are position:fixed and anchored to their
   // trigger by a one-time measurement taken when they open. On scroll they'd
-  // otherwise detach and float over the wrong place (#88), so close them on any
-  // scroll (capture phase, to catch inner scroll containers) or resize.
+  // otherwise detach and float over the wrong place (#88), so close them when
+  // anything OUTSIDE them scrolls, or on resize. Scrolling the menu's own body
+  // or its facet list has to keep it open - hence onScrollOutside rather than a
+  // bare capture-phase listener.
   $effect(() => {
     if (!(columnMenuFor || filterMenuFor || operatorMenuFor || chooseColumnsPos)) return;
     const close = () => closeMenus();
-    window.addEventListener('scroll', close, true);
+    const offScroll = onScrollOutside(
+      () => Array.from(document.querySelectorAll<HTMLElement>('.sv-grid-menu')),
+      close,
+    );
     window.addEventListener('resize', close);
     return () => {
-      window.removeEventListener('scroll', close, true);
+      offScroll();
       window.removeEventListener('resize', close);
     };
   });

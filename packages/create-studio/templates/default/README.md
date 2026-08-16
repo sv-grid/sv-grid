@@ -1,6 +1,8 @@
 # My Studio App
 
-A data app built with [SvGrid Studio](https://www.svgrid.com/docs/studio).
+A SvelteKit data app built with
+[SvGrid Studio](https://svgrid.com/docs/enterprise/studio/) and the
+[SvGrid](https://svgrid.com) data grid.
 
 ```bash
 npm install

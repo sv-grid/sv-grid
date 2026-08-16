@@ -1,7 +1,7 @@
 # Prompt: 22-admin-template
 
 Source: `examples/src/demos/22-admin-template.svelte`
-Live:   https://svgrid.dev/#/demos/22-admin-template
+Live:   https://svgrid.com/demos/22-admin-template/
 
 ## What this demo proves
 

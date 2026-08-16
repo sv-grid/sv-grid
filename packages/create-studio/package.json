@@ -9,10 +9,10 @@
   "type": "module",
   "license": "MIT",
   "author": "jQWidgets Ltd",
-  "homepage": "https://www.svgrid.com",
+  "homepage": "https://svgrid.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sv-grid/sv-grid.git",
+    "url": "git+https://github.com/sv-grid/sv-grid.git",
     "directory": "packages/create-studio"
   },
   "keywords": [
