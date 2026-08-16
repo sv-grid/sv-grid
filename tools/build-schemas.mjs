@@ -18,8 +18,12 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const SCHEMAS_DIR = join(process.cwd(), 'docs', 'schemas')
+// Resolved from this file, not process.cwd(): the website's `prebuild` runs this
+// with cwd set to website/, where none of these paths exist.
+const ROOT        = join(dirname(fileURLToPath(import.meta.url)), '..')
+const SCHEMAS_DIR = join(ROOT, 'docs', 'schemas')
 const BASE_URI    = 'https://svgrid.com/schemas'
 
 function schema(id, body) {
@@ -213,7 +217,7 @@ const manifest = {
 // https://svgrid.com/schemas/*.json, so they have to land in the website's
 // public/ as well as in docs/. Emitting to only one of the two is how they
 // ended up 404ing for months. Mirrors build-docs-index.mjs.
-const OUT_DIRS = [SCHEMAS_DIR, join(process.cwd(), 'website', 'public', 'schemas')]
+const OUT_DIRS = [SCHEMAS_DIR, join(ROOT, 'website', 'public', 'schemas')]
 
 async function main() {
   const payloads = [
@@ -230,7 +234,7 @@ async function main() {
     for (const [name, data] of payloads) {
       await writeFile(join(dir, name), JSON.stringify(data, null, 2) + '\n', 'utf-8')
     }
-    written.push(dir.replace(process.cwd(), '').replace(/^[\\/]/, '') || '.')
+    written.push(dir.replace(ROOT, '').replace(/^[\\/]/, '') || '.')
   }
   process.stdout.write(
     `build-schemas: wrote ${manifest.schemas.length + 1} files to ${written.join(' + ')}\n`,

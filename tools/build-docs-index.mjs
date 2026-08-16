@@ -6,15 +6,18 @@
  *   docs/llms-full.txt   — concatenated full text of every doc page
  *   docs/docs.json       — machine-readable route manifest with metadata
  *
- * Run from the repo root: `node tools/build-docs-index.mjs`.
+ * Run it from anywhere: `node tools/build-docs-index.mjs`.
  *
  * The generator is deliberately dependency-free so it runs on a fresh
  * clone without `pnpm install`.
  */
 import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises'
-import { join, relative, sep } from 'node:path'
+import { join, relative, sep, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT      = process.cwd()
+// Resolved from this file, not process.cwd(): the website's `prebuild` runs this
+// with cwd set to website/, which used to make DOCS_DIR website/docs and fail.
+const ROOT      = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DOCS_DIR  = join(ROOT, 'docs')
 const DEMOS_DIR = join(ROOT, 'examples', 'src', 'demos')
 const PUBLIC_DIR = join(ROOT, 'website', 'public') // served copies for crawlers

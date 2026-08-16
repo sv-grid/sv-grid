@@ -11,6 +11,13 @@ on:
       - '.github/workflows/deploy-website.yml'
       - 'pnpm-workspace.yaml'
       - 'package.json'
+      # The website's prebuild/postbuild shell out to these, so a fix in one has
+      # to be able to trigger its own deploy (listing the scripts rather than
+      # tools/** keeps unrelated tooling from redeploying the site).
+      - 'tools/build-docs-index.mjs'
+      - 'tools/build-schemas.mjs'
+      - 'tools/fetch-discussions.mjs'
+      - 'tools/prerender-site.mjs'
   # Instant deploy: the PRIVATE website repo (sv-grid/website) fires this via a
   # repository_dispatch on every push to its main (see its notify-monorepo
   # workflow), since website content changes no longer land in this repo.
