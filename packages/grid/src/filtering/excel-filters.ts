@@ -57,29 +57,106 @@ export function normalizeForFilter(
 
 /**
  * Delimiter used to serialise the `in` / `notIn` value list into the single
- * `value` string that the filter model carries. A newline is used because it
- * (unlike a comma) practically never appears inside a typed token, so tokens
- * survive the round-trip unescaped. The chip input in the filter row reads and
- * writes with the same separator via {@link splitInTokens} / {@link joinInTokens}.
+ * `value` string that the filter model carries.
+ *
+ * This has to be single-line safe: the tool panel and the filter menu show the
+ * serialised list in a plain `<input type="text">`, and the HTML input value
+ * sanitiser STRIPS newlines - so a newline-joined list came back out of the DOM
+ * as one run-together token. `splitInTokens` accepts newlines too, so values
+ * serialised by older builds still parse.
  */
-export const IN_TOKEN_SEP = '\n'
+export const IN_TOKEN_SEP = ', '
 
 /**
- * Split a serialised `in` / `notIn` value into its individual tokens. Accepts
- * both the newline separator the chip input writes and a plain comma-separated
- * string (what a raw text field, e.g. the tool-panel filter, produces), so the
- * same value round-trips through either UI.
+ * Split a serialised `in` / `notIn` value into its individual tokens.
+ *
+ * The grammar is CSV-shaped: comma OR newline separates, and a token may be
+ * double-quoted to carry a separator literally (`""` escapes a quote inside
+ * one). Quoting is what makes a comma separator safe - facet values commonly
+ * contain commas of their own, because numeric bucket labels are built with
+ * `toLocaleString` ("1,234 - 5,678") and date labels with a short month
+ * ("Aug 17, 2026"). A quote only opens a token when it is the token's first
+ * non-space character, so an unquoted `5" pipe` stays literal.
  */
 export function splitInTokens(value: unknown): string[] {
-  return String(value ?? '')
-    .split(/[\n,]/)
-    .map((t) => t.trim())
-    .filter((t) => t.length > 0)
+  const { tokens, trailing } = scanInTokens(value)
+  if (trailing) tokens.push(trailing)
+  return tokens
 }
 
-/** Serialise a list of tokens back into the single `in` / `notIn` value. */
+/**
+ * Serialise a list of tokens back into the single `in` / `notIn` value,
+ * quoting any token that carries a separator or a quote of its own.
+ */
 export function joinInTokens(tokens: ReadonlyArray<string>): string {
-  return tokens.map((t) => t.trim()).filter((t) => t.length > 0).join(IN_TOKEN_SEP)
+  return tokens
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
+    .map((t) => (/["\n,]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t))
+    .join(IN_TOKEN_SEP)
+}
+
+/**
+ * The token still being typed at the end of an `in` / `notIn` value - the text
+ * after the last separator. `'AAPL, MS'` -> `'MS'`; a value ending in a
+ * separator (or empty) has no trailing token.
+ *
+ * Inputs that hold the whole token list use this to drive the value-suggestion
+ * dropdown: the trailing fragment is the search query, not a committed token.
+ */
+export function trailingInToken(value: unknown): string {
+  return scanInTokens(value).trailing
+}
+
+/**
+ * One pass over a serialised `in` / `notIn` value, splitting it into the
+ * tokens that are terminated by a separator and the unterminated fragment at
+ * the end. Every token helper above is a view onto this, so they can never
+ * disagree about where a quoted token starts or ends.
+ */
+function scanInTokens(value: unknown): { tokens: string[]; trailing: string } {
+  const raw = String(value ?? '')
+  const tokens: string[] = []
+  let buf = ''
+  let quoted = false
+  let wasQuoted = false
+  let closed = false
+
+  // A quoted token keeps its inner spacing; an unquoted one is trimmed.
+  const take = () => {
+    const t = wasQuoted ? buf : buf.trim()
+    buf = ''
+    wasQuoted = false
+    closed = false
+    return t
+  }
+
+  for (let i = 0; i < raw.length; i += 1) {
+    const ch = raw[i]
+    if (quoted) {
+      if (ch !== '"') { buf += ch; continue }
+      // A doubled quote is an escaped literal quote, not the closing one.
+      if (raw[i + 1] === '"') { buf += '"'; i += 1; continue }
+      quoted = false
+      closed = true
+      continue
+    }
+    if (ch === ',' || ch === '\n') {
+      const t = take()
+      if (t.length) tokens.push(t)
+      continue
+    }
+    // Only opens a quoted token at the token's start - `5" pipe` is literal.
+    if (ch === '"' && !closed && !buf.trim()) {
+      quoted = true
+      wasQuoted = true
+      buf = ''
+      continue
+    }
+    buf += ch
+  }
+
+  return { tokens, trailing: take() }
 }
 
 export function applyExcelFilter(

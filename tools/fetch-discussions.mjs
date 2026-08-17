@@ -33,7 +33,7 @@ query($owner:String!, $name:String!) {
     discussions(first: 50, orderBy: {field: UPDATED_AT, direction: DESC}) {
       totalCount
       nodes {
-        number title url createdAt updatedAt answerChosenAt
+        number title url createdAt updatedAt answerChosenAt closed closedAt
         category { name emoji slug }
         author { login url avatarUrl }
         comments { totalCount }
@@ -73,6 +73,11 @@ async function fetchDiscussions() {
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
     answered: !!d.answerChosenAt,
+    // An Ideas thread gets CLOSED when the feature ships. That is distinct from
+    // `answered` (a chosen answer, Q&A only), so the Community page can show a
+    // "Shipped" badge and filter resolved ideas out of the default view.
+    closed: !!d.closed,
+    closedAt: d.closedAt ?? null,
     category: d.category
       ? { name: d.category.name, emoji: d.category.emoji, slug: d.category.slug }
       : null,

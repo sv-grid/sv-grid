@@ -136,11 +136,19 @@ predicate receives the typed row, so you can key off other fields.
 
 ## Stat scope
 
-`colorScale` and `dataBar` scale against a column's min/max. By default that
-range is computed over the **visible** rows (after filtering and paging), so the
-heat map adapts to what's on screen. Set `conditionalStatScope="all"` on the
-grid to scale against the full unfiltered dataset instead, keeping the ramp put
-as you filter.
+`colorScale` and `dataBar` scale against a column's min/max. `conditionalStatScope`
+picks which rows feed that range:
+
+| Value | Rows scanned |
+| --- | --- |
+| `filtered` (default) | Everything that survives the filters, ignoring the page slice. |
+| `visible` | Only the rows on screen, so each page normalizes to itself. |
+| `all` | The full unfiltered dataset, so the ramp stays put as you filter. |
+
+The default deliberately ignores paging: with a per-page range the same value
+renders one colour on page 1 and a different one on page 2, which makes the
+encoding misleading. Opt into `visible` when you actually want per-page
+normalization.
 
 ```svelte
 <SvGrid {data} {columns} {conditionalFormats} conditionalStatScope="all" />

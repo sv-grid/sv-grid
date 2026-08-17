@@ -81,6 +81,37 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
     document.body.style.cursor = ''
   }
 
+  /**
+   * Keyboard resize (#79). The strip is `role="separator"` acting as a
+   * splitter, so it has to be reachable by Tab and respond to arrow keys.
+   * Up/Down shrink/grow the row, Shift gives a fine 1px step - the same
+   * contract the column resize handle uses (Left/Right, Shift = 1px).
+   */
+  function onKeyDown(e: KeyboardEvent) {
+    if (current.disabled) return
+    const t = e.target as HTMLElement | null
+    if (!t?.classList.contains(STRIP_CLASS)) return
+    const step = e.shiftKey ? 1 : 10
+    let delta = 0
+    if (e.key === 'ArrowUp') delta = -step
+    else if (e.key === 'ArrowDown') delta = step
+    else return
+    const tr = t.closest<HTMLTableRowElement>('tr.sv-grid-row')
+    if (!tr) return
+    const rowIndex = rowIndexOf(tr)
+    if (!Number.isFinite(rowIndex)) return
+    e.preventDefault()
+    e.stopPropagation()
+    const min = current.min ?? 20
+    const max = current.max ?? 320
+    const next = Math.round(
+      Math.max(min, Math.min(max, tr.getBoundingClientRect().height + delta)),
+    )
+    tr.style.height = `${next}px`
+    current.onResizeMove?.(rowIndex, next)
+    current.onResize(rowIndex, next)
+  }
+
   function onPointerDown(e: PointerEvent) {
     if (current.disabled) return
     const t = e.target as HTMLElement | null
@@ -134,6 +165,9 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
       strip.setAttribute('role', 'separator')
       strip.setAttribute('aria-orientation', 'horizontal')
       strip.setAttribute('aria-label', 'Resize row')
+      // A separator used as an interactive splitter has to be focusable so
+      // keyboard-only users can reach it and drive `onKeyDown` (#79).
+      strip.tabIndex = 0
       // Inline the geometry + pointer-events so the strip works even
       // before SvGrid.css is parsed; the hover tint still comes from
       // the stylesheet. We keep the strip fully inside the gutter
@@ -152,6 +186,7 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
   }
 
   node.addEventListener('pointerdown', onPointerDown, { capture: true })
+  node.addEventListener('keydown', onKeyDown, { capture: true })
   const observer = new MutationObserver(() => decorate())
   observer.observe(node, { childList: true, subtree: true })
   decorate()
@@ -165,6 +200,7 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
     },
     destroy() {
       node.removeEventListener('pointerdown', onPointerDown, { capture: true })
+      node.removeEventListener('keydown', onKeyDown, { capture: true })
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', onPointerUp)
       observer.disconnect()

@@ -231,6 +231,7 @@ export function createEditing<
       columnId: column.id,
       editorType,
       value: char,
+      rowRef: row.original,
     };
     ctx.setActiveCell(rowIndex, colIndex);
     ctx.setSelection(rowIndex, colIndex);
@@ -239,7 +240,17 @@ export function createEditing<
 
   function saveEditingCell() {
     if (!ctx.editingCell) return;
-    const row = ctx.allRows.find((entry: any) => entry.id === ctx.editingCell?.rowId);
+    const editing = ctx.editingCell;
+    // Resolve the row this edit belongs to. `allRows` is only the current page,
+    // so fall back to the full filtered model, then to the data object captured
+    // when the edit started. Without that last hop an edit is silently dropped
+    // when a filter typed mid-edit hides the row from both models (#49).
+    const row =
+      ctx.allRows.find((entry: any) => entry.id === editing.rowId) ??
+      ctx.allRowsBeforePagination.find((entry: any) => entry.id === editing.rowId);
+    const rowData = (row?.original ?? editing.rowRef) as
+      | Record<string, unknown>
+      | undefined;
     const column = ctx.allColumns.find(
       (entry: any) => entry.id === ctx.editingCell?.columnId,
     );
@@ -252,10 +263,8 @@ export function createEditing<
     );
     let oldValue: unknown = undefined;
     let finalValue: unknown = parsedValue;
-    if (row?.original && column?.columnDef.field) {
-      oldValue = (row.original as Record<string, unknown>)[
-        column.columnDef.field
-      ];
+    if (rowData && column?.columnDef.field) {
+      oldValue = rowData[column.columnDef.field];
       // Per-column valueParser refines the type-coerced value before storing.
       const parser = (
         column.columnDef as { valueParser?: (p: unknown) => unknown }
@@ -265,12 +274,11 @@ export function createEditing<
           newValue: parsedValue,
           oldValue,
           rawInput: ctx.editingCell.value,
-          data: row.original,
+          data: rowData,
           columnId: ctx.editingCell.columnId,
         });
       }
-      (row.original as Record<string, unknown>)[column.columnDef.field] =
-        finalValue;
+      rowData[column.columnDef.field] = finalValue;
     }
     const key = getCellKey(ctx.editingCell.rowId, ctx.editingCell.columnId);
     ctx.editedCellValues = {
@@ -281,7 +289,7 @@ export function createEditing<
     // Record into the history at the current pointer. Any forward
     // history (steps the user could have redone) is truncated - this
     // is the standard "edit invalidates redo" rule.
-    if (oldValue !== finalValue && row?.original && column?.columnDef.field) {
+    if (oldValue !== finalValue && rowData && column?.columnDef.field) {
       const step: HistoryStep = {
         rowId:    ctx.editingCell.rowId,
         columnId: ctx.editingCell.columnId,
@@ -306,14 +314,14 @@ export function createEditing<
     // Notify the consumer AFTER the row has been updated so any callback-
     // driven recompute (cascade totals, server save, undo stack) sees the
     // post-write state. `rowIndex` matches the position in `props.data`.
-    if (ctx.props.onCellValueChange && row?.original && column) {
-      const rowIndex = ctx.internalData.indexOf(row.original as TData);
+    if (ctx.props.onCellValueChange && rowData && column) {
+      const rowIndex = ctx.internalData.indexOf(rowData as TData);
       ctx.props.onCellValueChange({
         rowIndex,
         columnId: column.id,
         oldValue,
         newValue: finalValue,
-        row: row.original as TData,
+        row: rowData as TData,
       });
     }
     ctx.editingCell = null;
@@ -346,12 +354,36 @@ export function createEditing<
     ctx.editingCell = ctx.editingCell ? { ...ctx.editingCell, value } : ctx.editingCell;
   }
 
+  /**
+   * Commit the open editor and move the active cell one column along, wrapping
+   * at row boundaries the way Excel does. Editors `stopPropagation()` every key
+   * so the grid's own Tab handler never sees this one - without the explicit
+   * move, Tab committed the edit and then let the browser walk focus out of the
+   * grid entirely (#48). Shared by every editor type, including the textarea.
+   */
+  function commitAndMoveByTab(shiftKey: boolean) {
+    const active = ctx.activeCell;
+    saveEditingCell();
+    ctx.gridRootEl?.focus({ preventScroll: true });
+    if (!active) return;
+    const next = getNextActiveCell(active, shiftKey ? "tabPrev" : "tabNext", {
+      maxRow: ctx.allRows.length - 1,
+      maxCol: ctx.allColumns.length - 1,
+    });
+    ctx.setActiveCell(next.rowIndex, next.colIndex);
+    ctx.setSelection(next.rowIndex, next.colIndex);
+    ctx.scrollActiveCellIntoView(next.rowIndex, next.colIndex);
+  }
+
   function onEditorKeyDown(event: KeyboardEvent) {
     event.stopPropagation();
     if (event.key === "Enter") {
       event.preventDefault();
       saveEditingCell();
       ctx.gridRootEl?.focus({ preventScroll: true });
+    } else if (event.key === "Tab") {
+      event.preventDefault();
+      commitAndMoveByTab(event.shiftKey);
     } else if (event.key === "Escape") {
       event.preventDefault();
       ctx.editingCell = null;
@@ -412,6 +444,7 @@ export function createEditing<
       columnId: column.id,
       editorType,
       value: initialValue,
+      rowRef: row.original,
     };
     ctx.setActiveCell(rowIndex, colIndex);
     ctx.setSelection(rowIndex, colIndex);
@@ -667,6 +700,7 @@ export function createEditing<
     applyHistoryStep,
     updateEditingCellValue,
     onEditorKeyDown,
+    commitAndMoveByTab,
     focusOnMount,
     onCellDoubleClick,
     pasteFromClipboard,

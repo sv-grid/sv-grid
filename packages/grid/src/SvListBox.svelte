@@ -23,9 +23,18 @@
 
   type Props = SvEditorProps & {
     options: ReadonlyArray<ListOption>
-    value?: string | number | Array<string | number> | null
+    value?: string | number | ReadonlyArray<string | number> | ReadonlySet<string | number> | null
     onChange?: (value: any) => void
     multiple?: boolean
+    /**
+     * Checklist styling: each row draws a checkbox and the selected-row accent
+     * highlight is suppressed, because a list that starts fully selected (a
+     * filter checklist) would otherwise paint every row. State reads off the
+     * box; `aria-selected` still carries it for assistive tech.
+     */
+    checkbox?: boolean
+    /** Stretch to the container width instead of the default 220px. */
+    block?: boolean
     /** Visible height in rows before scrolling. */
     rows?: number
     /** Window the list (render only visible rows) for large option sets. */
@@ -46,6 +55,8 @@
     value = null,
     onChange,
     multiple = false,
+    checkbox = false,
+    block = false,
     disabled = false,
     size = 'md',
     rows = 7,
@@ -152,13 +163,15 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
   <!-- Div-based listbox (role comes from `lb.rootProps()`). -->
   <div
     bind:this={listEl}
     class="sv-listbox sv-listbox--{size}"
     class:is-invalid={invalid}
     class:is-virtual={useVirtual}
+    class:is-checkbox={checkbox}
+    class:is-block={block}
     style:--sv-rows={rows}
     style:--sv-row-h={`${rowHeightBase}px`}
     onwheel={useVirtual ? scroller.onWheel : undefined}
@@ -211,7 +224,11 @@
 </SvField>
 
 {#snippet optionInner(opt: ListOption)}
-  {#if multiple}<span class="sv-listbox__check" aria-hidden="true">{isSel(opt) ? '✓' : ''}</span>{/if}
+  {#if checkbox}
+    <span class="sv-listbox__box" class:is-on={isSel(opt)} aria-hidden="true"></span>
+  {:else if multiple}
+    <span class="sv-listbox__check" aria-hidden="true">{isSel(opt) ? '✓' : ''}</span>
+  {/if}
   {#if item ?? itemTemplate}{@render (item ?? itemTemplate)!(opt)}{:else}<span class="sv-listbox__label">{opt.label}</span>{/if}
 {/snippet}
 
@@ -249,6 +266,7 @@
     padding: 0; overflow: hidden; position: relative;
     height: calc(var(--sv-rows, 7) * var(--sv-row-h, 32px) + 8px);
   }
+  .sv-listbox.is-block { width: 100%; }
   .sv-listbox--sm { --_fs: 12px; }
   .sv-listbox--lg { --_fs: 15px; }
   .sv-listbox:focus-visible { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
@@ -284,4 +302,25 @@
   }
   .sv-listbox__check { width: 14px; text-align: center; color: var(--_accent); }
   .sv-listbox__label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---- Checklist variant ---- */
+  .sv-listbox__box {
+    width: 14px; height: 14px; flex: none; box-sizing: border-box; position: relative;
+    border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1));
+    border-radius: 3px; background: var(--sg-input-bg, #fff);
+  }
+  .sv-listbox__box.is-on { background: var(--_accent); border-color: var(--_accent); }
+  .sv-listbox__box.is-on::after {
+    content: ''; position: absolute; left: 4px; top: 1px; width: 3px; height: 7px;
+    border: solid var(--sg-input-bg, #fff); border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  /* The box carries the state, so selected rows keep neutral chrome - only the
+     roving highlight tints a row. */
+  .sv-listbox.is-checkbox .sv-listbox__opt.is-selected {
+    background: none; color: inherit; font-weight: inherit;
+  }
+  .sv-listbox.is-checkbox .sv-listbox__opt.is-active,
+  .sv-listbox.is-checkbox .sv-listbox__opt.is-selected.is-active {
+    background: var(--sg-row-hover-bg, #f1f5f9);
+  }
 </style>

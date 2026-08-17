@@ -3847,6 +3847,22 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "behavior"
       },
       {
+        "key": "checkbox",
+        "label": "Checkbox",
+        "type": "boolean",
+        "default": false,
+        "description": "Checklist styling: each row draws a checkbox and the selected-row accent highlight is suppressed, because a list that starts fully selected (a filter checklist) would otherwise paint every row. State reads off the box; `aria-selected` still carries it for assistive tech.",
+        "group": "common"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch to the container width instead of the default 220px.",
+        "group": "appearance"
+      },
+      {
         "key": "rows",
         "label": "Rows",
         "type": "number",
@@ -5424,10 +5440,11 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Conditional Stat Scope",
         "type": "select",
         "options": [
+          "filtered",
           "visible",
           "all"
         ],
-        "description": "Which rows feed the min/max range that `colorScale` / `dataBar` formats scale against. `visible` (default): the currently displayed rows (after filtering + paging), so the heat map adapts to what's on screen. `all`: the full unfiltered dataset, for a scale that stays put as you filter.",
+        "description": "Which rows feed the min/max range that `colorScale` / `dataBar` formats scale against. - `filtered` (default): every row that survives the filters, ignoring the page slice. The scale follows what you filtered to but does not shift when you page, so the same value keeps the same colour on page 1 and page 2. - `visible`: only the rows currently on screen. Rescales per page - use it when you want each page's heat map normalized to that page. - `all`: the full unfiltered dataset, for a scale that stays put as you filter.",
         "group": "common"
       },
       {

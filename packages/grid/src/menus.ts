@@ -209,6 +209,16 @@ export function createMenus<
     else addFilterToken(columnId, token);
   }
 
+  /**
+   * Replace a column's `in` / `notIn` list wholesale. The suggestions dropdown
+   * hands back the full token set after a click, which keeps tokens the user
+   * typed by hand (or that the search box is currently hiding) intact.
+   */
+  function setFilterTokens(columnId: string, tokens: Iterable<string>) {
+    const list = [...tokens].map((t) => t.trim()).filter(Boolean);
+    updateFilterRow(columnId, joinInTokens(list));
+  }
+
   function toggleCheckboxWithKeyboard(
     event: KeyboardEvent,
     toggle: () => void,
@@ -379,6 +389,21 @@ export function createMenus<
     } else {
       ctx.valueFilters = { ...ctx.valueFilters, [columnId]: next };
     }
+  }
+
+  /**
+   * Replace a column's checked-facet set. "Everything checked" is stored as an
+   * ABSENT entry (so an unfiltered high-cardinality column never holds a set of
+   * every value), which is why the full-size case deletes instead of writing.
+   */
+  function setFacetSelection(columnId: string, next: ReadonlySet<string>) {
+    if (next.size >= ctx.columnMenuFacetValues.length) {
+      const copy = { ...ctx.valueFilters };
+      delete copy[columnId];
+      ctx.valueFilters = copy;
+      return;
+    }
+    ctx.valueFilters = { ...ctx.valueFilters, [columnId]: new Set(next) };
   }
 
   function isAllFacetsChecked(columnId: string) {
@@ -636,6 +661,8 @@ export function createMenus<
     clearGroupingFromMenu,
     isFacetChecked,
     toggleFacetValue,
+    setFacetSelection,
+    setFilterTokens,
     isAllFacetsChecked,
     toggleAllFacets,
     clearColumnFilter,

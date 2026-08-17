@@ -309,9 +309,14 @@ describe('SvGridApi - view state (getState / setState)', () => {
 })
 
 describe('SvGridApi - click / double-click / scroll events', () => {
-  function clickCell(_target: HTMLElement, rowIndex: number, colIndex: number, type: 'click' | 'dblclick') {
-    const id = getGridCellDomId('svgrid', rowIndex, colIndex)
-    const el = document.getElementById(id)
+  function clickCell(target: HTMLElement, rowIndex: number, colIndex: number, type: 'click' | 'dblclick') {
+    // Cell ids are scoped per grid instance (#77), so resolve the base from the
+    // grid under test rather than assuming the old global "svgrid" prefix.
+    const anyCell = target.querySelector<HTMLElement>('[role="gridcell"][id]')
+    const base = anyCell?.id.replace(/_cell_\d+_\d+$/, '')
+    if (!base) throw new Error('no gridcell with an id found')
+    const id = getGridCellDomId(base, rowIndex, colIndex)
+    const el = target.querySelector<HTMLElement>(`[id="${id}"]`)
     if (!el) throw new Error(`cell ${id} not found`)
     el.dispatchEvent(new MouseEvent(type, { bubbles: true }))
   }

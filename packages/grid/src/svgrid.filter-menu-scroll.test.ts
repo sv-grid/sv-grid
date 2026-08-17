@@ -79,7 +79,9 @@ describe('SvGrid filter menu scrolling', () => {
     await tick()
     expect(target.querySelector('.sv-grid-filter-menu')).not.toBeNull()
 
-    const facets = menu.querySelector('.sv-grid-facet-list')
+    // The value checklist is an SvListBox; under the virtualization threshold
+    // it scrolls natively, so it still emits the scroll that must be ignored.
+    const facets = menu.querySelector('.sv-listbox')
     expect(facets).not.toBeNull()
     facets!.dispatchEvent(new Event('scroll'))
     await tick()

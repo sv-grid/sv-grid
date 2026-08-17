@@ -153,7 +153,7 @@ export function createSelection<
     ctx.grid.setActiveCell({
       rowIndex,
       colIndex,
-      cellId: getGridCellDomId("svgrid", rowIndex, colIndex),
+      cellId: getGridCellDomId(ctx.gridDomId, rowIndex, colIndex),
     });
     // Notify consumers (toolbars, ribbons) so they stay synced without
     // having to listen on the DOM. Fired on EVERY active-cell move -

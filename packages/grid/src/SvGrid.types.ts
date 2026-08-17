@@ -1370,11 +1370,18 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   conditionalFormats?: ReadonlyArray<ConditionalFormat<TData>>;
   /**
    * Which rows feed the min/max range that `colorScale` / `dataBar` formats
-   * scale against. `visible` (default): the currently displayed rows (after
-   * filtering + paging), so the heat map adapts to what's on screen. `all`:
-   * the full unfiltered dataset, for a scale that stays put as you filter.
+   * scale against.
+   *
+   * - `filtered` (default): every row that survives the filters, ignoring the
+   *   page slice. The scale follows what you filtered to but does not shift
+   *   when you page, so the same value keeps the same colour on page 1 and
+   *   page 2.
+   * - `visible`: only the rows currently on screen. Rescales per page - use it
+   *   when you want each page's heat map normalized to that page.
+   * - `all`: the full unfiltered dataset, for a scale that stays put as you
+   *   filter.
    */
-  conditionalStatScope?: "visible" | "all";
+  conditionalStatScope?: "filtered" | "visible" | "all";
   onCellValueChange?: (event: {
     rowIndex: number;
     columnId: string;
@@ -1589,6 +1596,14 @@ export type CellEditState = {
   columnId: string;
   editorType: CellEditorType;
   value: unknown;
+  /**
+   * The row's underlying data object, captured when the edit started. The
+   * commit path resolves the row by id first; this is the fallback for when
+   * the row has left the row model mid-edit (a filter typed into the filter
+   * row while an editor is open), so the typed value still lands instead of
+   * being silently dropped.
+   */
+  rowRef?: unknown;
 } | null;
 export type FilterOperator =
   | "contains"

@@ -254,6 +254,7 @@ export { default as SvField } from './SvField.svelte'
 export {
   createListbox,
   toSelectedArray,
+  toSelectedSet,
   type Listbox,
   type ListboxConfig,
   type ListboxValue,
@@ -692,6 +693,7 @@ export {
   normalizeForFilter,
   splitInTokens,
   joinInTokens,
+  trailingInToken,
   type ExcelFilter,
   type ExcelFilterOperator,
   type ExcelFilterOptions,

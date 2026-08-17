@@ -20,12 +20,7 @@ export type ColumnGroupMeta = {
   leafControl: Map<string, { groupId: string; show: ColumnGroupShow }>;
 };
 
-// Mirror the id resolution used by the group-header derivation so group ids and
-// leaf ids line up across both.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function idOf(def: any, parentId: string | undefined, ix: number): string {
-  return def.id ?? def.field ?? `${parentId ?? "col"}_d_${ix}`;
-}
+import { resolveColumnId } from "./column-id";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function computeColumnGroupMeta(columns: ReadonlyArray<any>): ColumnGroupMeta {
@@ -33,10 +28,13 @@ export function computeColumnGroupMeta(columns: ReadonlyArray<any>): ColumnGroup
   const defaultOpen = new Map<string, boolean>();
   const leafControl = new Map<string, { groupId: string; show: ColumnGroupShow }>();
 
+  // `depth` is threaded because it is part of the id of an unnamed column -
+  // drop it and the ids here stop matching the ones the engine assigns, so
+  // `leafControl` lookups silently miss for those columns.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function walk(defs: ReadonlyArray<any>, parentId: string | undefined, controllingGroup: string | undefined) {
+  function walk(defs: ReadonlyArray<any>, parentId: string | undefined, controllingGroup: string | undefined, depth: number) {
     defs.forEach((def, ix) => {
-      const id = idOf(def, parentId, ix);
+      const id = resolveColumnId(def, parentId, depth, ix);
       if (def.columns?.length) {
         // A group is collapsible when any DIRECT child declares columnGroupShow.
         const collapsible = def.columns.some(
@@ -47,7 +45,7 @@ export function computeColumnGroupMeta(columns: ReadonlyArray<any>): ColumnGroup
           collapsibleGroupIds.add(id);
           defaultOpen.set(id, def.openByDefault === true);
         }
-        walk(def.columns, id, collapsible ? id : controllingGroup);
+        walk(def.columns, id, collapsible ? id : controllingGroup, depth + 1);
       } else {
         const show = def.columnGroupShow;
         if ((show === "open" || show === "closed") && controllingGroup) {
@@ -57,7 +55,7 @@ export function computeColumnGroupMeta(columns: ReadonlyArray<any>): ColumnGroup
     });
   }
 
-  walk(columns, undefined, undefined);
+  walk(columns, undefined, undefined, 0);
   return { collapsibleGroupIds, defaultOpen, leafControl };
 }
 

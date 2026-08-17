@@ -105,10 +105,10 @@ sparklines, collaboration). The genuine remaining gaps:
 | **Multi Filter** (set + text stacked on one column) | one operator-set per column today | M |
 | **Custom filter / floating-filter component** slot | first-class pluggable filter | M |
 | **Custom tool panels** | panel is fixed Columns + Filters | M |
-| **UI-string localisation** (`localeText`) | menu/panel labels are EN; data formatting is locale-aware | M |
+| ~~**UI-string localisation** (`localeText`)~~ | **shipped** - `localeText` prop over `GridMessages`; every menu/panel/chrome string is overridable | ✓ |
 | **Row-grouping display modes** (single / multiple / groupRows) + group-level footers | grouping + group panel ship; display variants do not | M |
-| **In-grid pivot mode** (toggle on the main grid) | pivot ships as engine + designer, rendered as a separate grid | M-L |
-| **Integrated-chart depth** (range-chart context menu, chart toolbar, cross-filtering) | 17 chart types + wizard ship; the select-range-to-chart loop does not | L |
+| ~~**In-grid pivot mode** (toggle on the main grid)~~ | **shipped** - `enablePivot()` registers the engine and the main grid pivots in place | ✓ |
+| **Integrated-chart depth** (chart toolbar, cross-filtering) | 17 chart types + wizard + a "Chart selected range" context-menu item ship; the chart toolbar and click-to-filter loop do not | L |
 | **Server-side pivot / viewport row model** | SSRM ships sort/filter/group/infinite | L |
 
 ## What's already there

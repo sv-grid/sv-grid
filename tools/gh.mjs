@@ -11,6 +11,7 @@
 //   node tools/gh.mjs issue close   --number 12 --comment "Fixed in abc123."
 //   node tools/gh.mjs discussion create  --category Announcements --title "..." --body "..."
 //   node tools/gh.mjs discussion comment --number 5 --body "Shipped in v1.4."
+//   node tools/gh.mjs discussion close   --number 5 --comment "Shipped." [--reason RESOLVED]
 const REPO = 'sv-grid/sv-grid'
 const [OWNER, NAME] = REPO.split('/')
 const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
@@ -172,6 +173,36 @@ async function discussionEdit() {
   console.log(`✓ edited discussion #${number}: ${r.updateDiscussion.discussion.url}`)
 }
 
+async function discussionClose() {
+  const number = Number(flag('number'))
+  const comment = text('comment')
+  // RESOLVED (default) for a shipped/answered idea, OUTDATED for one that no
+  // longer applies, DUPLICATE when another discussion supersedes it.
+  const reason = (flag('reason') ?? 'RESOLVED').toUpperCase()
+  if (!number) fail('discussion close needs --number')
+  if (!['RESOLVED', 'OUTDATED', 'DUPLICATE'].includes(reason))
+    fail(`--reason must be RESOLVED, OUTDATED or DUPLICATE (got "${reason}")`)
+  if (DRY) return preview(`closeDiscussion #${number}`, { comment, reason })
+  const data = await gql(
+    `query($o:String!,$n:String!,$num:Int!){repository(owner:$o,name:$n){discussion(number:$num){id}}}`,
+    { o: OWNER, n: NAME, num: number },
+  )
+  const id = data.repository.discussion?.id
+  if (!id) fail(`Discussion #${number} not found`)
+  // Comment BEFORE closing so the reasoning is the last thing on the thread.
+  if (comment) {
+    await gql(
+      `mutation($d:ID!,$b:String!){addDiscussionComment(input:{discussionId:$d,body:$b}){comment{url}}}`,
+      { d: id, b: comment },
+    )
+  }
+  const r = await gql(
+    `mutation($d:ID!,$r:DiscussionCloseReason!){closeDiscussion(input:{discussionId:$d,reason:$r}){discussion{url}}}`,
+    { d: id, r: reason },
+  )
+  console.log(`✓ closed discussion #${number} (${reason}): ${r.closeDiscussion.discussion.url}`)
+}
+
 async function discussionDelete() {
   const number = Number(flag('number'))
   if (!number) fail('discussion delete needs --number')
@@ -193,6 +224,7 @@ const ROUTES = {
   'issue:edit': issueEdit,
   'discussion:create': discussionCreate,
   'discussion:comment': discussionComment,
+  'discussion:close': discussionClose,
   'discussion:edit': discussionEdit,
   'discussion:delete': discussionDelete,
 }

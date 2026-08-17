@@ -1,4 +1,5 @@
 ﻿import type { SparklineConfig } from './sparkline'
+import { resolveColumnId } from './column-id'
 
 export type RowData = Record<string, unknown>
 export type Updater<T> = T | ((prev: T) => T)
@@ -913,7 +914,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       ): Array<Column<TData>> => {
         const leaves: Array<Column<TData>> = []
         defs.forEach((columnDef, index) => {
-          const id = columnDef.id ?? columnDef.field ?? `${parentId ?? 'col'}_${depth}_${index}`
+          const id = resolveColumnId(columnDef, parentId, depth, index)
           if (columnDef.columns?.length) {
             leaves.push(...build(columnDef.columns, depth + 1, id))
             return

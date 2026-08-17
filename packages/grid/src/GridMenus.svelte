@@ -3,6 +3,7 @@
     applyExcelFilter,
     normalizeForFilter,
     splitInTokens,
+    trailingInToken,
     createColumnVirtualizer,
     createCoreRowModel,
     createExpandedRowModel,
@@ -61,6 +62,7 @@
     type ResolvedCellFormat,
   } from "./conditional-formatting";
   import SvGridDropdown from "./SvGridDropdown.svelte";
+  import SvListBox from "./SvListBox.svelte";
   import type {
     Props,
     SelectionPoint,
@@ -129,9 +131,6 @@
   const filterRowValues = $derived(ctrl.filterRowValues);
   const inSuggestFor = $derived(ctrl.inSuggestFor);
   const inSuggestPos = $derived(ctrl.inSuggestPos);
-  const inSuggestValues = $derived(ctrl.inSuggestValues);
-  const toggleFilterToken = $derived(ctrl.toggleFilterToken);
-  const facetValuesForColumn = $derived(ctrl.facetValuesForColumn);
 
   // Patch a column's menu filter (used for the optional 2nd condition + join
   // of multi-condition filtering). Merges into the existing entry, creating a
@@ -174,10 +173,60 @@
   const clearGroupingFromMenu = $derived(ctrl.clearGroupingFromMenu);
   const columnMenuFacetValues = $derived(ctrl.columnMenuFacetValues);
   const columnMenuVisibleFacets = $derived(ctrl.columnMenuVisibleFacets);
-  const isFacetChecked = $derived(ctrl.isFacetChecked);
-  const toggleFacetValue = $derived(ctrl.toggleFacetValue);
+  const columnMenuFacetOptions = $derived(ctrl.columnMenuFacetOptions);
+  const columnMenuSelectedFacets = $derived(ctrl.columnMenuSelectedFacets);
+  const setFacetSelection = $derived(ctrl.setFacetSelection);
+  const setFilterTokens = $derived(ctrl.setFilterTokens);
+  const inSuggestOptions = $derived(ctrl.inSuggestOptions);
+  const openInSuggest = $derived(ctrl.openInSuggest);
+  const closeInSuggest = $derived(ctrl.closeInSuggest);
   const isAllFacetsChecked = $derived(ctrl.isAllFacetsChecked);
   const toggleAllFacets = $derived(ctrl.toggleAllFacets);
+
+  /**
+   * Above this many rows the checklists switch to the windowed listbox. Short
+   * lists stay fully rendered so the popover hugs its content instead of
+   * reserving a fixed `rows`-tall box.
+   */
+  const FACET_VIRTUAL_THRESHOLD = 40;
+
+  // The filter panel's `in` / `notIn` box holds the WHOLE token list
+  // ("AAPL, MSFT"), so the suggestion query is the trailing fragment being
+  // typed - not the full value, which would match nothing.
+  function onSetOpFilterFocus(input: HTMLInputElement, columnId: string) {
+    openInSuggest(input, columnId);
+    ctrl.inSuggestQuery = trailingInToken(input.value);
+  }
+
+  function onSetOpFilterInput(input: HTMLInputElement, columnId: string) {
+    ctrl.inSuggestQuery = trailingInToken(input.value);
+    if (ctrl.inSuggestFor !== columnId) openInSuggest(input, columnId);
+  }
+
+  /** Columns as checklist options, labelled by their header when it's a string. */
+  function columnVisibilityOptions(columns: Array<Column<TData>>) {
+    return columns.map((column) => ({
+      value: column.id,
+      label: typeof column.columnDef.header === "string" ? column.columnDef.header : column.id,
+    }));
+  }
+
+  /** Currently visible column ids - the checklist's selection set. */
+  function visibleColumnIds(columns: Array<Column<TData>>) {
+    const set = new Set<string | number>();
+    for (const column of columns) if (!ctrl.hiddenColumns[column.id]) set.add(column.id);
+    return set;
+  }
+
+  /** Write a checklist selection back as the complementary `hiddenColumns` map. */
+  function applyColumnVisibility(columns: Array<Column<TData>>, visible: Set<string>) {
+    const next: Record<string, boolean> = { ...ctrl.hiddenColumns };
+    for (const column of columns) {
+      if (visible.has(column.id)) delete next[column.id];
+      else next[column.id] = true;
+    }
+    ctrl.hiddenColumns = next;
+  }
   const clearColumnFilter = $derived(ctrl.clearColumnFilter);
   const contextMenuFor = $derived(ctrl.contextMenuFor);
   const contextMenuPos = $derived(ctrl.contextMenuPos);
@@ -234,10 +283,12 @@
       {#if menuActiveOperator !== "isBlank" && menuActiveOperator !== "isNotBlank"}
         {@const isSetOp =
           menuActiveOperator === "in" || menuActiveOperator === "notIn"}
+        <!-- in/notIn drives the shared value-suggestions dropdown (a windowed
+             checklist) rather than a native datalist, which capped at 200
+             values and couldn't show which are already selected. -->
         <input
           class="sv-grid-menu-condition-value"
           type={menuActiveOperator === "regex" ? "text" : menuInputType}
-          list={isSetOp ? `sv-in-list-${colId}` : undefined}
           value={filterMenuValues[colId]?.value ?? ""}
           placeholder={menuActiveOperator === "between"
             ? "From"
@@ -246,15 +297,16 @@
               : menuActiveOperator === "regex"
                 ? "Pattern..."
                 : "Filter value..."}
-          oninput={(event) => updateFilterMenuValue(colId, (event.currentTarget as HTMLInputElement).value)}
+          onfocus={isSetOp
+            ? (event) => onSetOpFilterFocus(event.currentTarget as HTMLInputElement, colId)
+            : undefined}
+          onblur={isSetOp ? () => closeInSuggest() : undefined}
+          oninput={(event) => {
+            const input = event.currentTarget as HTMLInputElement;
+            updateFilterMenuValue(colId, input.value);
+            if (isSetOp) onSetOpFilterInput(input, colId);
+          }}
         />
-        {#if isSetOp}
-          <datalist id={`sv-in-list-${colId}`}>
-            {#each facetValuesForColumn(colId).slice(0, 200) as v (v)}
-              <option value={v}></option>
-            {/each}
-          </datalist>
-        {/if}
         {#if menuActiveOperator === "between"}
           <input
             class="sv-grid-menu-condition-value"
@@ -323,16 +375,27 @@
         <input type="checkbox" checked={isAllFacetsChecked(colId)} onchange={() => toggleAllFacets(colId)} />
         <span class="sv-grid-facet-label">(Select all)</span>
       </label>
-      <div class="sv-grid-facet-list">
-        {#each columnMenuVisibleFacets as value (value)}
-          <label class="sv-grid-facet">
-            <input type="checkbox" checked={isFacetChecked(colId, value)} onchange={() => toggleFacetValue(colId, value)} />
-            <span class="sv-grid-facet-label">{value === "" ? "(Blanks)" : value}</span>
-          </label>
-        {:else}
-          <div class="sv-grid-facet-empty">No values</div>
-        {/each}
-      </div>
+      <!-- Windowed checklist. A high-cardinality column (10k distinct symbols
+           on a live feed) would otherwise mount a label + checkbox per value -
+           and 10k focusable checkboxes are 10k tab stops. SvListBox renders
+           only the visible rows and is one roving-tabindex stop. -->
+      {#if columnMenuFacetOptions.length}
+        <SvListBox
+          block
+          checkbox
+          multiple
+          virtual={columnMenuFacetOptions.length > FACET_VIRTUAL_THRESHOLD}
+          rows={7}
+          rowHeight={24}
+          size="sm"
+          ariaLabel="Filter values"
+          options={columnMenuFacetOptions}
+          value={columnMenuSelectedFacets}
+          onChange={(next) => setFacetSelection(colId, next as Set<string>)}
+        />
+      {:else}
+        <div class="sv-grid-facet-empty">No values</div>
+      {/if}
       {#if columnMenuFacetValues.length > columnMenuVisibleFacets.length}
         <div class="sv-grid-facet-note">
           Showing {columnMenuVisibleFacets.length} of {columnMenuFacetValues.length}
@@ -383,30 +446,21 @@
       {#if columnMenuTabsEnabled && menuTab === "filter" && menuCanFilter && showColumnFiltersEffective}
         {@render filterPanelBody(menuColumnId)}
       {:else if columnMenuTabsEnabled && menuTab === "columns"}
+        {@const tabColumns = grid.getAllColumns()}
         <div class="sv-grid-menu-filter-head">Visible columns</div>
-        <div class="sv-grid-facet-list">
-          {#each grid.getAllColumns() as column (column.id)}
-            <label class="sv-grid-facet">
-              <input
-                type="checkbox"
-                checked={!ctrl.hiddenColumns[column.id]}
-                onchange={(event) => {
-                  const visible = (event.currentTarget as HTMLInputElement).checked;
-                  if (visible) {
-                    const next = { ...ctrl.hiddenColumns };
-                    delete next[column.id];
-                    ctrl.hiddenColumns = next;
-                  } else {
-                    ctrl.hiddenColumns = { ...ctrl.hiddenColumns, [column.id]: true };
-                  }
-                }}
-              />
-              <span class="sv-grid-facet-label"
-                >{typeof column.columnDef.header === "string" ? column.columnDef.header : column.id}</span
-              >
-            </label>
-          {/each}
-        </div>
+        <SvListBox
+          block
+          checkbox
+          multiple
+          virtual={tabColumns.length > FACET_VIRTUAL_THRESHOLD}
+          rows={9}
+          rowHeight={24}
+          size="sm"
+          ariaLabel="Visible columns"
+          options={columnVisibilityOptions(tabColumns)}
+          value={visibleColumnIds(tabColumns)}
+          onChange={(next) => applyColumnVisibility(tabColumns, next as Set<string>)}
+        />
       {:else}
       {#if menuCanSort}
         <button
@@ -570,32 +624,19 @@
       style={`left: ${chooseColumnsPos.x}px; top: ${chooseColumnsPos.y}px;`}
     >
       <div class="sv-grid-menu-filter-head">Visible columns</div>
-      <div class="sv-grid-facet-list">
-        {#each everyColumn as column (column.id)}
-          <label class="sv-grid-facet">
-            <input
-              type="checkbox"
-              checked={!ctrl.hiddenColumns[column.id]}
-              onchange={(event) => {
-                const visible = (event.currentTarget as HTMLInputElement)
-                  .checked;
-                if (visible) {
-                  const next = { ...ctrl.hiddenColumns };
-                  delete next[column.id];
-                  ctrl.hiddenColumns = next;
-                } else {
-                  ctrl.hiddenColumns = { ...ctrl.hiddenColumns, [column.id]: true };
-                }
-              }}
-            />
-            <span class="sv-grid-facet-label"
-              >{typeof column.columnDef.header === "string"
-                ? column.columnDef.header
-                : column.id}</span
-            >
-          </label>
-        {/each}
-      </div>
+      <SvListBox
+        block
+        checkbox
+        multiple
+        virtual={everyColumn.length > FACET_VIRTUAL_THRESHOLD}
+        rows={11}
+        rowHeight={24}
+        size="sm"
+        ariaLabel="Visible columns"
+        options={columnVisibilityOptions(everyColumn)}
+        value={visibleColumnIds(everyColumn)}
+        onChange={(next) => applyColumnVisibility(everyColumn, next as Set<string>)}
+      />
     </div>
   {/if}
 
@@ -632,42 +673,49 @@
 
   {#if inSuggestFor}
     {@const suggestColId = inSuggestFor}
-    {@const selectedTokens = new Set(
+    {@const selectedTokens = new Set<string | number>(
       splitInTokens(filterRowValues[suggestColId] ?? ""),
     )}
-    <!-- Value suggestions for an `in` / `notIn` chip input. Items use
-         `onmousedown` (preventDefault) so clicking one keeps focus in the
-         chip input and the dropdown stays open for multi-select; the input's
-         own blur handler closes it when focus truly leaves. -->
+    <!-- Value suggestions for an `in` / `notIn` input. The wrapper swallows
+         `mousedown` so clicking a row keeps focus in the input and the
+         dropdown stays open for multi-select; the input's own blur handler
+         closes it when focus truly leaves. The list still picks on `click`.
+         Tokens the query is currently hiding ride along in the set, so a
+         click never silently drops them. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="sv-grid-menu sv-grid-in-suggest"
-      role="listbox"
-      aria-multiselectable="true"
-      aria-label="Filter values"
       style={`left: ${inSuggestPos.x}px; top: ${inSuggestPos.y}px;`}
+      onmousedown={(event) => event.preventDefault()}
     >
-      {#each inSuggestValues as value (value)}
-        {@const checked = selectedTokens.has(value)}
-        <button
-          type="button"
-          class="sv-grid-menu-item sv-grid-in-suggest-item"
-          role="option"
-          aria-selected={checked}
-          onmousedown={(event) => {
-            event.preventDefault();
-            toggleFilterToken(suggestColId, value);
+      {#if inSuggestOptions.length}
+        <SvListBox
+          block
+          checkbox
+          multiple
+          virtual={inSuggestOptions.length > FACET_VIRTUAL_THRESHOLD}
+          rows={8}
+          rowHeight={26}
+          size="sm"
+          ariaLabel="Filter values"
+          options={inSuggestOptions}
+          value={selectedTokens}
+          onChange={(next) => {
+            const picked = new Set(next as Set<string>);
+            // Boxes that hold the whole list ("AAPL, MS") leave a half-typed
+            // fragment in the token set. The pick REPLACES that fragment
+            // rather than landing beside it as a stray filter value. The chip
+            // input keeps its fragment out of `filterRowValues`, so this is a
+            // no-op there.
+            const fragment = trailingInToken(filterRowValues[suggestColId] ?? "");
+            if (fragment) picked.delete(fragment);
+            setFilterTokens(suggestColId, [...picked]);
+            ctrl.inSuggestQuery = "";
           }}
-        >
-          <span class="sv-grid-in-suggest-check" aria-hidden="true"
-            >{checked ? "✓" : ""}</span
-          >
-          <span class="sv-grid-in-suggest-label"
-            >{value === "" ? "(Blanks)" : value}</span
-          >
-        </button>
+        />
       {:else}
         <div class="sv-grid-facet-empty">No values</div>
-      {/each}
+      {/if}
     </div>
   {/if}
 

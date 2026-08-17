@@ -87,6 +87,7 @@ import {
     computeColumnGroupMeta,
     hiddenLeavesForCollapse,
   } from "./column-groups";
+import { resolveColumnId } from "./column-id";
 import {
     createGridApi,
   } from "./build-api";
@@ -123,6 +124,7 @@ import {
     getColumnAccessorValue,
     columnDefMatchesId,
   } from "./cell-values";
+import { untrack } from "svelte";
 
 /**
  * Conservative fallback for the browser's max element height, used during SSR
@@ -270,7 +272,16 @@ export type SvGridController<
 export function createSvGridController<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
->(rawProps: Props<TFeatures, TData>) {
+>(rawProps: Props<TFeatures, TData>, domIdBase?: string) {
+
+  /**
+   * Base for every DOM id this grid mints (`<base>_cell_<row>_<col>`). The view
+   * passes Svelte's per-instance `$props.id()`, which is stable across SSR and
+   * hydration; two `<SvGrid>` instances on one page used to emit identical cell
+   * ids, so `aria-activedescendant` on the second pointed into the first (#77).
+   * Falls back to the historical literal for direct controller construction.
+   */
+  const gridDomId = domIdBase ?? "svgrid";
 
   // Runtime option overrides set via the imperative api (`api.setOption(key, value)`).
   // Every controller read of a prop goes through the `props` proxy below (and the view
@@ -867,9 +878,6 @@ export function createSvGridController<
     //    compute pixel widths for group cells.
     type LeafEntry = { id: string; widthPx: number };
     const leafEntries: LeafEntry[] = [];
-    function buildId(def: ColumnDef<any, TData>, parentId: string | undefined, fallbackIx: number): string {
-      return def.id ?? def.field ?? `${parentId ?? 'col'}_d_${fallbackIx}`;
-    }
     // Leaves hidden by a collapsed/expanded group are skipped everywhere here,
     // so group colSpan + widthPx exclude them and stay aligned with the leaves
     // the body actually renders.
@@ -880,7 +888,7 @@ export function createSvGridController<
       depthHere: number,
     ): void {
       defs.forEach((def, ix) => {
-        const id = buildId(def, parentId, ix);
+        const id = resolveColumnId(def, parentId, depthHere, ix);
         if (def.columns?.length) {
           collectLeaves(def.columns, id, depthHere + 1);
         } else if (!hiddenLeaf[id]) {
@@ -897,16 +905,22 @@ export function createSvGridController<
       defs: Array<ColumnDef<any, TData>>,
       parentId: string | undefined,
       cursor: { leaf: number },
+      depthHere: number,
     ): NodeAt[] {
       const nodes: NodeAt[] = [];
-      for (const def of defs) {
-        const id = buildId(def, parentId, nodes.length);
+      // Walk by array index, not by a count of pushed nodes: the `continue`
+      // below skips hidden leaves without pushing, so a counter would drift and
+      // hand the next unnamed sibling a different id than `collectLeaves` and
+      // the engine give it (#63).
+      for (let ix = 0; ix < defs.length; ix += 1) {
+        const def = defs[ix]!;
+        const id = resolveColumnId(def, parentId, depthHere, ix);
         // Skip leaves the collapse state hides, so leaf indices/colSpans match
         // `leafEntries` (and the body's rendered columns) exactly.
         if (!def.columns?.length && hiddenLeaf[id]) continue;
         const leafStart = cursor.leaf;
         if (def.columns?.length) {
-          indexTree(def.columns, id, cursor);
+          indexTree(def.columns, id, cursor, depthHere + 1);
         } else {
           cursor.leaf += 1;
         }
@@ -916,7 +930,7 @@ export function createSvGridController<
       return nodes;
     }
     const cursor = { leaf: 0 };
-    const topNodes = indexTree(userCols, undefined, cursor);
+    const topNodes = indexTree(userCols, undefined, cursor, 0);
 
     function nodesAtDepth(
       nodes: NodeAt[],
@@ -928,7 +942,7 @@ export function createSvGridController<
       for (const n of nodes) {
         if (n.def.columns?.length) {
           const childCursor = { leaf: n.leafStart };
-          const children = indexTree(n.def.columns, n.id, childCursor);
+          const children = indexTree(n.def.columns, n.id, childCursor, currentDepth + 1);
           out.push(...nodesAtDepth(children, currentDepth + 1, targetDepth));
         } else {
           // Leaf reached early - emit a placeholder at this row so the
@@ -1033,10 +1047,13 @@ export function createSvGridController<
     const map = new Map<string, ColumnStat>();
     const formats = props.conditionalFormats;
     if (!formats?.length || !formatsNeedingStats(formats)) return map;
-    // `visible` (default): the currently displayed rows (filtered + paged),
-    // so the heat map reflects what the user is looking at. `all`: the full
-    // unfiltered dataset, for a stable scale independent of filter/paging.
-    const scanAll = props.conditionalStatScope === "all";
+    // `filtered` (default): every row that survives the filters, ignoring the
+    // page slice - so a value keeps the same colour as you page through (#61).
+    // `visible`: only the rows on screen, rescaling per page. `all`: the full
+    // unfiltered dataset, for a scale that stays put as you filter.
+    const scope = props.conditionalStatScope ?? "filtered";
+    const scanAll = scope === "all";
+    const scanRows = scope === "visible" ? allRows : allRowsBeforePagination;
     for (const column of allColumns) {
       const needs = formats.some(
         (f) => formatNeedsStats(f) && (!f.columns || f.columns.includes(column.id)),
@@ -1054,7 +1071,7 @@ export function createSvGridController<
               }
             })()
           : (function* () {
-              for (const row of allRows) {
+              for (const row of scanRows) {
                 yield fieldFn
                   ? fieldFn(row.original)
                   : field
@@ -2063,7 +2080,7 @@ export function createSvGridController<
     const inRows = active.rowIndex >= 0 && active.rowIndex < allRows.length;
     const inCols = active.colIndex >= 0 && active.colIndex < allColumns.length;
     if (!inRows || !inCols) return null;
-    return getGridCellDomId("svgrid", active.rowIndex, active.colIndex);
+    return getGridCellDomId(gridDomId, active.rowIndex, active.colIndex);
   });
 
 
@@ -2135,7 +2152,7 @@ export function createSvGridController<
     grid.setActiveCell({
       rowIndex: 0,
       colIndex: 0,
-      cellId: getGridCellDomId("svgrid", 0, 0),
+      cellId: getGridCellDomId(gridDomId, 0, 0),
     });
   });
 
@@ -2592,12 +2609,58 @@ export function createSvGridController<
     );
   }
 
+  /**
+   * Facet values for the open menu, SNAPSHOTTED when it opens.
+   *
+   * `facetValuesForColumn` walks every row and natural-sorts the distinct
+   * values, so deriving it live re-ran that whole scan on every data change.
+   * On a streaming grid (the trading-desk demo replaces its row array a couple
+   * of times a second) that meant rebuilding a 10k-entry set + sort - and
+   * re-keying the rendered value list - continuously for as long as the menu
+   * sat open. The offered values are frozen for the life of the popover
+   * instead, which is also what a spreadsheet's filter checklist does.
+   * Filtering itself is unaffected: `valueFilters` matches live row values.
+   *
+   * The cache is a plain local, not `$state`, so writing it here can't feed
+   * back into this derived.
+   */
+  // Stable identities for the closed-menu case, so the derives below don't hand
+  // out a fresh empty array/set on every read.
+  const EMPTY_FACETS: Array<string> = [];
+  const EMPTY_FACET_SET: ReadonlySet<string> = new Set<string>();
+  let facetCache: {
+    columnId: string;
+    source: Array<string> | null;
+    values: Array<string>;
+  } | null = null;
   const columnMenuFacetValues = $derived.by(() => {
     // The funnel popover drives via `filterMenuFor`; the column menu's Filter
     // tab drives via `columnMenuFor`. Support whichever is open.
     const columnId = filterMenuFor ?? columnMenuFor;
-    if (!columnId) return [] as Array<string>;
-    return facetValuesForColumn(columnId);
+    if (!columnId) return EMPTY_FACETS;
+    // Server-provided values land asynchronously, so they stay TRACKED and
+    // re-snapshot when they arrive. Locally derived values are read untracked
+    // so a live data tick can't retrigger the scan.
+    const source = props.serverFilterValues
+      ? (serverFacetValues[columnId] ?? null)
+      : null;
+    if (facetCache?.columnId === columnId && facetCache.source === source) {
+      return facetCache.values;
+    }
+    facetCache = {
+      columnId,
+      source,
+      values: untrack(() => facetValuesForColumn(columnId)),
+    };
+    return facetCache.values;
+  });
+
+  // Drop the snapshot when the menu closes, so reopening the SAME column
+  // re-scans and picks up whatever the data has become meanwhile. This has to
+  // be an effect rather than a branch in the derived above: the derived is
+  // lazy, and nothing reads it while the menu is shut.
+  $effect(() => {
+    if (!(filterMenuFor ?? columnMenuFor)) facetCache = null;
   });
 
   const columnMenuVisibleFacets = $derived.by(() => {
@@ -2608,19 +2671,45 @@ export function createSvGridController<
     );
   });
 
+  /** Visible facets as listbox options ((Blanks) label for the empty value). */
+  const columnMenuFacetOptions = $derived(
+    columnMenuVisibleFacets.map((value) => ({
+      value,
+      label: value === "" ? "(Blanks)" : value,
+    })),
+  );
+
+  /**
+   * Checked facets for the open menu. An ABSENT `valueFilters` entry means
+   * "everything checked", so that case materializes the set once here rather
+   * than every consumer re-deriving it.
+   */
+  const columnMenuSelectedFacets = $derived.by(() => {
+    const columnId = filterMenuFor ?? columnMenuFor;
+    if (!columnId) return EMPTY_FACET_SET;
+    return valueFilters[columnId] ?? new Set(columnMenuFacetValues);
+  });
+
   // Distinct values offered in the `in` / `notIn` suggestions dropdown for the
-  // active chip input, narrowed by whatever the user has typed. Capped so a
-  // high-cardinality column can't render thousands of rows into the popover.
-  const IN_SUGGEST_LIMIT = 200;
+  // active chip input, narrowed by whatever the user has typed. Uncapped - the
+  // dropdown windows its rows, so a high-cardinality column costs a list of
+  // strings, not thousands of nodes.
   const inSuggestValues = $derived.by(() => {
-    if (!inSuggestFor) return [] as Array<string>;
+    if (!inSuggestFor) return EMPTY_FACETS;
     const query = inSuggestQuery.trim().toLowerCase();
     const all = facetValuesForColumn(inSuggestFor);
-    const matched = query
+    return query
       ? all.filter((value) => value.toLowerCase().includes(query))
       : all;
-    return matched.slice(0, IN_SUGGEST_LIMIT);
   });
+
+  /** `in` / `notIn` suggestions as listbox options. */
+  const inSuggestOptions = $derived(
+    inSuggestValues.map((value) => ({
+      value,
+      label: value === "" ? "(Blanks)" : value,
+    })),
+  );
 
 
 
@@ -2767,6 +2856,7 @@ export function createSvGridController<
     get inSuggestQuery() { return inSuggestQuery; },
     set inSuggestQuery(v) { inSuggestQuery = v as never; },
     get inSuggestValues() { return inSuggestValues; },
+    get inSuggestOptions() { return inSuggestOptions; },
     get facetValuesForColumn() { return facetValuesForColumn; },
     get chooseColumnsPos() { return chooseColumnsPos; },
     set chooseColumnsPos(v) { chooseColumnsPos = v as never; },
@@ -3052,6 +3142,7 @@ export function createSvGridController<
     get columnWindowRightSpacer() { return columnWindowRightSpacer; },
     get activeCell() { return activeCell; },
     get activeDescendantId() { return activeDescendantId; },
+    get gridDomId() { return gridDomId; },
     get formatSummaryNumeric() { return formatSummaryNumeric; },
     get computeSummaries() { return computeSummaries; },
     get SUMMARY_DEFER_CELL_LIMIT() { return SUMMARY_DEFER_CELL_LIMIT; },
@@ -3134,6 +3225,7 @@ export function createSvGridController<
     get applyHistoryStep() { return applyHistoryStep; },
     get updateEditingCellValue() { return updateEditingCellValue; },
     get onEditorKeyDown() { return onEditorKeyDown; },
+    get commitAndMoveByTab() { return commitAndMoveByTab; },
     get focusOnMount() { return focusOnMount; },
     get onHeaderSortClick() { return onHeaderSortClick; },
     get onGridKeyDown() { return onGridKeyDown; },
@@ -3174,6 +3266,7 @@ export function createSvGridController<
     get addFilterToken() { return addFilterToken; },
     get removeFilterToken() { return removeFilterToken; },
     get toggleFilterToken() { return toggleFilterToken; },
+    get setFilterTokens() { return setFilterTokens; },
     get sortColumnFromMenu() { return sortColumnFromMenu; },
     get clearColumnSort() { return clearColumnSort; },
     get groupByColumnFromMenu() { return groupByColumnFromMenu; },
@@ -3185,8 +3278,11 @@ export function createSvGridController<
     get serverFacetLoading() { return serverFacetLoading; },
     get columnMenuFacetValues() { return columnMenuFacetValues; },
     get columnMenuVisibleFacets() { return columnMenuVisibleFacets; },
+    get columnMenuFacetOptions() { return columnMenuFacetOptions; },
+    get columnMenuSelectedFacets() { return columnMenuSelectedFacets; },
     get isFacetChecked() { return isFacetChecked; },
     get toggleFacetValue() { return toggleFacetValue; },
+    get setFacetSelection() { return setFacetSelection; },
     get isAllFacetsChecked() { return isAllFacetsChecked; },
     get toggleAllFacets() { return toggleAllFacets; },
     get clearColumnFilter() { return clearColumnFilter; },
@@ -3200,9 +3296,9 @@ export function createSvGridController<
   const { showTooltipFor, hideTooltip, flushScheduledScrollSync, scheduleScrollSync, onBodyScroll } = createScrollSync<TFeatures, TData>(ctx);
   const { onGridKeyDown, onWindowKeydown, onHeaderSortClick } = createKeyboard<TFeatures, TData>(ctx);
   const { computeSummaries, hasRenderedColumn } = createSummaries<TFeatures, TData>(ctx);
-  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
+  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, setFacetSelection, setFilterTokens, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
-  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
+  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, startColumnResize, onColumnResizeMove, endColumnResize, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);

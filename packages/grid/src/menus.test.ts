@@ -98,23 +98,24 @@ describe('createMenus - filter row/menu value updates', () => {
     expect(ctx.filterRowValues.name).toBe('foo')
   })
 
-  it('addFilterToken builds a newline-serialised in/notIn list, ignoring dupes/blanks', () => {
+  it('addFilterToken builds a comma-serialised in/notIn list, ignoring dupes/blanks', () => {
     const ctx = makeCtx()
     const m = createMenus(ctx)
     m.addFilterToken('symbol', 'TSM')
     m.addFilterToken('symbol', 'BP')
     m.addFilterToken('symbol', 'TSM') // dupe - ignored
     m.addFilterToken('symbol', '   ') // blank - ignored
-    expect(ctx.filterRowValues.symbol).toBe('TSM\nBP')
+    expect(ctx.filterRowValues.symbol).toBe('TSM, BP')
     // mirrored into the menu model too, so both filter surfaces agree
-    expect(ctx.filterMenuValues.symbol.value).toBe('TSM\nBP')
+    expect(ctx.filterMenuValues.symbol.value).toBe('TSM, BP')
   })
 
   it('removeFilterToken drops a value from the list', () => {
+    // Newline-separated input still parses (values serialised by older builds).
     const ctx = makeCtx({ filterRowValues: { symbol: 'TSM\nBP\nBABA' } })
     const m = createMenus(ctx)
     m.removeFilterToken('symbol', 'BP')
-    expect(ctx.filterRowValues.symbol).toBe('TSM\nBABA')
+    expect(ctx.filterRowValues.symbol).toBe('TSM, BABA')
   })
 
   it('toggleFilterToken adds when absent and removes when present', () => {
@@ -123,6 +124,15 @@ describe('createMenus - filter row/menu value updates', () => {
     m.toggleFilterToken('symbol', 'BP')
     expect(ctx.filterRowValues.symbol).toBe('BP')
     m.toggleFilterToken('symbol', 'BP')
+    expect(ctx.filterRowValues.symbol).toBe('')
+  })
+
+  it('setFilterTokens replaces the whole list, dropping blanks', () => {
+    const ctx = makeCtx()
+    const m = createMenus(ctx)
+    m.setFilterTokens('symbol', ['BP', '  ', ' TSM '])
+    expect(ctx.filterRowValues.symbol).toBe('BP, TSM')
+    m.setFilterTokens('symbol', new Set<string>())
     expect(ctx.filterRowValues.symbol).toBe('')
   })
 
@@ -365,6 +375,32 @@ describe('createMenus - facet checkboxes', () => {
     const m = createMenus(ctx)
     m.toggleFacetValue('team', 'B') // now {A,B} == all -> filter removed
     expect(ctx.valueFilters.team).toBeUndefined()
+  })
+
+  it('setFacetSelection stores a subset as-is', () => {
+    const ctx = makeCtx({ columnMenuFacetValues: ['A', 'B', 'C'] })
+    const m = createMenus(ctx)
+    m.setFacetSelection('team', new Set(['B', 'C']))
+    expect([...ctx.valueFilters.team].sort()).toEqual(['B', 'C'])
+  })
+
+  it('setFacetSelection with everything selected drops the entry', () => {
+    const ctx = makeCtx({
+      columnMenuFacetValues: ['A', 'B'],
+      valueFilters: { team: new Set(['A']) },
+    })
+    const m = createMenus(ctx)
+    m.setFacetSelection('team', new Set(['A', 'B']))
+    expect(ctx.valueFilters.team).toBeUndefined()
+  })
+
+  it('setFacetSelection copies the set it is handed', () => {
+    const ctx = makeCtx({ columnMenuFacetValues: ['A', 'B', 'C'] })
+    const m = createMenus(ctx)
+    const incoming = new Set(['A'])
+    m.setFacetSelection('team', incoming)
+    incoming.add('B')
+    expect([...ctx.valueFilters.team]).toEqual(['A'])
   })
 
   it('isAllFacetsChecked true with no filter, false with a subset', () => {

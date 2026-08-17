@@ -6,6 +6,7 @@ import {
   applyExcelFilter,
   splitInTokens,
   joinInTokens,
+  trailingInToken,
   type ExcelFilter,
 } from './excel-filters'
 
@@ -211,6 +212,48 @@ describe('in-token serialization helpers', () => {
   })
   it('joinInTokens round-trips through splitInTokens', () => {
     expect(splitInTokens(joinInTokens(['a', 'b', 'c']))).toEqual(['a', 'b', 'c'])
-    expect(joinInTokens([' a ', '', 'b'])).toBe('a\nb')
+    expect(joinInTokens([' a ', '', 'b'])).toBe('a, b')
+  })
+  it('joinInTokens survives an <input type="text"> value round-trip', () => {
+    // The input value sanitiser strips newlines, so the separator must not be
+    // one - otherwise the list comes back as a single run-together token.
+    const input = document.createElement('input')
+    input.value = joinInTokens(['AAPL', 'MSFT'])
+    expect(splitInTokens(input.value)).toEqual(['AAPL', 'MSFT'])
+  })
+  it('trailingInToken returns the fragment still being typed', () => {
+    expect(trailingInToken('AAPL, MS')).toBe('MS')
+    expect(trailingInToken('AAPL,MS')).toBe('MS')
+    expect(trailingInToken('MS')).toBe('MS')
+    expect(trailingInToken('AAPL\nMS')).toBe('MS')
+  })
+  it('trailingInToken is empty once the fragment is separated off', () => {
+    expect(trailingInToken('AAPL, ')).toBe('')
+    expect(trailingInToken('AAPL,')).toBe('')
+    expect(trailingInToken('AAPL\n')).toBe('')
+    expect(trailingInToken('')).toBe('')
+    expect(trailingInToken(null)).toBe('')
+  })
+  it('quotes tokens containing a separator so they survive the round-trip', () => {
+    // Facet labels really do contain commas: numeric buckets come from
+    // toLocaleString ("1,234 - 5,678") and date buckets use a short month.
+    const labels = ['1,234 - 5,678', 'Aug 17, 2026', 'plain']
+    expect(splitInTokens(joinInTokens(labels))).toEqual(labels)
+    expect(joinInTokens(['Aug 17, 2026'])).toBe('"Aug 17, 2026"')
+  })
+  it('round-trips a token containing a quote', () => {
+    expect(splitInTokens(joinInTokens(['5" pipe']))).toEqual(['5" pipe'])
+    expect(splitInTokens(joinInTokens(['a"b, c']))).toEqual(['a"b, c'])
+  })
+  it('treats a quote mid-token as literal, not as an opening quote', () => {
+    expect(splitInTokens('5" pipe, plain')).toEqual(['5" pipe', 'plain'])
+  })
+  it('keeps inner spacing of a quoted token, trims an unquoted one', () => {
+    expect(splitInTokens('"  padded  ",  bare  ')).toEqual(['  padded  ', 'bare'])
+  })
+  it('trailingInToken understands quoted fragments', () => {
+    expect(trailingInToken('AAPL, "Aug 17, 20')).toBe('Aug 17, 20')
+    expect(trailingInToken('AAPL, "Aug 17, 2026"')).toBe('Aug 17, 2026')
+    expect(trailingInToken('"Aug 17, 2026", ')).toBe('')
   })
 })

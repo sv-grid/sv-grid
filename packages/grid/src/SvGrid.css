@@ -1899,34 +1899,14 @@ select.sv-grid-fr-editor {
 
 /* In / Not-in value-suggestions dropdown (anchored under the chip input).
    Defined AFTER .sv-grid-menu so its tighter sizing wins - the element
-   carries both classes. Compact rows keep a long value list scannable. */
+   carries both classes. The rows come from SvListBox, which owns its own
+   scrolling (windowed past ~40 values), so this is just the frame. */
 .sv-grid-menu.sv-grid-in-suggest {
   min-width: 140px;
   max-width: 260px;
-  max-height: 220px;
-  overflow-y: auto;
+  padding: 0;
+  overflow: visible;
   font-size: 12px;
-}
-.sv-grid-in-suggest-item {
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  line-height: 1.4;
-}
-.sv-grid-in-suggest-item[aria-selected="true"] {
-  color: var(--sg-accent, #0b63f3);
-  font-weight: 600;
-}
-.sv-grid-in-suggest-check {
-  flex: none;
-  width: 12px;
-  text-align: center;
-  color: var(--sg-accent, #0b63f3);
-}
-.sv-grid-in-suggest-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .sv-grid-menu-item[aria-checked="true"] {
@@ -2062,12 +2042,13 @@ select.sv-grid-fr-editor {
   padding: 2px 7px !important;
 }
 
-.sv-grid-facet-list {
-  max-height: 200px;
-  overflow: auto;
+/* The value / column checklists are SvListBox instances (windowed past ~40
+   rows). They draw their own box off the shared --sg-input-border/--sg-border
+   tokens, so all the menu adds is scroll containment - without it a wheel past
+   the end of a non-virtual list scrolls the page behind the popover, which
+   closes it. */
+.sv-grid-menu .sv-listbox {
   overscroll-behavior: contain;
-  border: 1px solid var(--sg-border, #eaeef4);
-  border-radius: 5px;
 }
 
 .sv-grid-facet {
@@ -2082,9 +2063,11 @@ select.sv-grid-fr-editor {
   background: var(--sg-row-hover-bg, #f4f6fa);
 }
 
+/* Sits directly above the checklist, which draws its own frame - so no rule
+   here, or the two borders stack. */
 .sv-grid-facet-all {
-  border-bottom: 1px solid var(--sg-border, #eaeef4);
   font-weight: 600;
+  padding-inline-start: 3px;
 }
 
 .sv-grid-facet input {
@@ -2464,11 +2447,9 @@ select.sv-grid-fr-editor {
 .sv-grid-choose-columns-menu {
   width: 240px;
 }
-.sv-grid-choose-columns-menu .sv-grid-facet-list {
-  max-height: 280px;
-}
 
-/* Native checkboxes in the facet list pick up the theme accent. */
+/* Native checkbox on the "(Select all)" row picks up the theme accent. The
+   checklist rows below it draw SvListBox's own box, not a native input. */
 .sv-grid-facet input[type="checkbox"] {
   accent-color: var(--sg-accent, #2563eb);
   width: 14px;

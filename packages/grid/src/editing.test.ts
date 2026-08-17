@@ -62,6 +62,16 @@ function makeCtx(opts: FakeOptions = {}) {
     get allRows() {
       return ctx._rows
     },
+    // The full filtered model. Same rows here (the fake has no pagination);
+    // tests that exercise the "row left the model" path override `_rows`
+    // alone so the two genuinely diverge.
+    get allRowsBeforePagination() {
+      return ctx._rowsBeforePagination ?? ctx._rows
+    },
+    get activeCell() {
+      return activeCell
+    },
+    scrollActiveCellIntoView: () => {},
     editingEnabled: opts.editingEnabled ?? true,
     editingCell: null,
     editorSelectAll: false,
@@ -244,6 +254,9 @@ describe('startEditingWithChar', () => {
       columnId: 'a',
       editorType: 'text',
       value: 'Z',
+      // The row's data object, kept so the commit still lands if a filter
+      // drops the row from the model mid-edit (#49).
+      rowRef: ctx.internalData[0],
     })
     expect(ctx.editorSelectAll).toBe(false)
     expect(ctx.activeCalls).toEqual([[0, 0]])
@@ -595,6 +608,82 @@ describe('onEditorKeyDown', () => {
     expect(() => ed.onEditorKeyDown(fakeEvent('Escape'))).not.toThrow()
     expect(ctx.editingCell).toBeNull()
   })
+
+  // #45 in the original report: Tab used to commit and then let the browser
+  // walk focus out of the grid, because editors stopPropagation() every key
+  // and nothing called preventDefault() for Tab.
+  it('Tab saves and advances the active cell one column (#48)', () => {
+    const { ctx, ed } = editingFor({
+      columns: [
+        { id: 'a', field: 'a', editorType: 'text' },
+        { id: 'b', field: 'b', editorType: 'text' },
+      ],
+      data: [{ a: 'old', b: 'b0' }],
+    })
+    ctx.gridRootEl = { focus: vi.fn() }
+    ed.onCellDoubleClick(0, 0)
+    ctx.editingCell = { ...ctx.editingCell, value: 'new' }
+    const ev = fakeEvent('Tab')
+    ed.onEditorKeyDown(ev)
+    expect(ev.preventDefault).toHaveBeenCalled()
+    expect(ctx.internalData[0].a).toBe('new')
+    expect(ctx.activeCalls.at(-1)).toEqual([0, 1])
+  })
+
+  it('Shift+Tab moves back a column and wraps to the previous row (#48)', () => {
+    const { ctx, ed } = editingFor({
+      columns: [
+        { id: 'a', field: 'a', editorType: 'text' },
+        { id: 'b', field: 'b', editorType: 'text' },
+      ],
+      data: [
+        { a: 'a0', b: 'b0' },
+        { a: 'a1', b: 'b1' },
+      ],
+    })
+    ctx.gridRootEl = { focus: vi.fn() }
+    ed.onCellDoubleClick(1, 0)
+    const ev = { ...fakeEvent('Tab'), shiftKey: true } as unknown as KeyboardEvent
+    ;(ev as any).preventDefault = vi.fn()
+    ;(ev as any).stopPropagation = vi.fn()
+    ed.onEditorKeyDown(ev)
+    // Off the left edge -> last column of the row above.
+    expect(ctx.activeCalls.at(-1)).toEqual([0, 1])
+  })
+})
+
+describe('saveEditingCell when the row leaves the row model (#49)', () => {
+  it('writes through the captured row when a filter hides it mid-edit', () => {
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'a', field: 'a', editorType: 'text' }],
+      data: [{ a: 'old' }, { a: 'other' }],
+    })
+    const target = ctx.internalData[0]
+    ed.onCellDoubleClick(0, 0)
+    ctx.editingCell = { ...ctx.editingCell, value: 'typed' }
+    // A filter typed into the filter row drops the edited row from BOTH the
+    // page slice and the full filtered model while the editor is still open.
+    ctx._rows = ctx._rows.slice(1)
+    ctx._rowsBeforePagination = ctx._rows
+    ed.saveEditingCell()
+    expect(target.a).toBe('typed')
+    expect(ctx.editingCell).toBeNull()
+  })
+
+  it('still resolves a row that is only off the current page', () => {
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'a', field: 'a', editorType: 'text' }],
+      data: [{ a: 'old' }, { a: 'other' }],
+    })
+    const target = ctx.internalData[0]
+    ed.onCellDoubleClick(0, 0)
+    ctx.editingCell = { ...ctx.editingCell, value: 'typed' }
+    // Paginated away: gone from `allRows`, still in the full filtered model.
+    ctx._rowsBeforePagination = ctx._rows
+    ctx._rows = ctx._rows.slice(1)
+    ed.saveEditingCell()
+    expect(target.a).toBe('typed')
+  })
 })
 
 describe('focusOnMount', () => {
@@ -667,6 +756,7 @@ describe('onCellDoubleClick', () => {
       columnId: 'a',
       editorType: 'text',
       value: 'val',
+      rowRef: ctx.internalData[0],
     })
     expect(ctx.activeCalls).toEqual([[0, 0]])
     expect(ctx.selectionCalls).toEqual([[0, 0]])

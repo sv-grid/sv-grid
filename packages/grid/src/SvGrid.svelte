@@ -56,6 +56,7 @@
   } from "./SvGrid.helpers";
   import {
     splitInTokens,
+    trailingInToken,
     joinInTokens,
   } from "./filtering/excel-filters";
   import { createSvGridController } from "./SvGrid.controller.svelte";
@@ -68,7 +69,13 @@
   import { getBoardView } from "./board-view.svelte";
   import { getChartView } from "./chart-view.svelte";
   let props: Props<TFeatures, TData> = $props();
-  const ctrl = createSvGridController(props);
+  // Per-instance base for every DOM id the grid mints. `$props.id()` is stable
+  // across SSR and hydration, so two grids on one page no longer collide on
+  // `svgrid_cell_0_0` and point `aria-activedescendant` at each other (#77).
+  // `$props.id()` must be its own declaration initializer - it can't be passed
+  // inline as a call argument.
+  const gridInstanceId = $props.id();
+  const ctrl = createSvGridController(props, gridInstanceId);
   // Effective props: the controller's `override ?? prop` proxy that backs
   // `api.setOption(...)`. Reading `opt.X` (instead of `props.X`) makes a view-direct
   // prop honor a runtime override. Svelte binds template `props.X` reads to the prop
@@ -151,6 +158,10 @@
       ctrl.contextMenuFor ||
       ctrl.filterMenuFor ||
       ctrl.operatorMenuFor ||
+      // The value-suggestions dropdown lives in the overlay too, and it can be
+      // the FIRST thing a user opens (focusing an in/notIn filter input), so it
+      // has to pull the chunk in rather than assume a menu already did.
+      ctrl.inSuggestFor ||
       ctrl.chooseColumnsPos;
     if (menuOpen && !MenusOverlay)
       import("./GridMenus.svelte").then((m) => (MenusOverlay = m.default));
@@ -474,7 +485,6 @@
   const closeInSuggest = $derived(ctrl.closeInSuggest);
   const addFilterToken = $derived(ctrl.addFilterToken);
   const removeFilterToken = $derived(ctrl.removeFilterToken);
-  const facetValuesForColumn = $derived(ctrl.facetValuesForColumn);
   const onWindowKeydown = $derived(ctrl.onWindowKeydown);
 
   // True when a `regex` filter's pattern won't compile - used to flag the
@@ -519,6 +529,21 @@
     const input = event.currentTarget as HTMLInputElement;
     ctrl.inSuggestQuery = input.value;
     // Reopen the dropdown if a prior selection/blur had closed it.
+    if (ctrl.inSuggestFor !== columnId) openInSuggest(input, columnId);
+  }
+
+  // The tool-panel / filter-menu `in` / `notIn` inputs hold the WHOLE token
+  // list ("AAPL, MSFT"), unlike the chip input which holds one token. So the
+  // suggestion query is the trailing fragment being typed, not the full value.
+  function onSetOpFilterFocus(event: FocusEvent, columnId: string): void {
+    const input = event.currentTarget as HTMLInputElement;
+    openInSuggest(input, columnId);
+    ctrl.inSuggestQuery = trailingInToken(input.value);
+  }
+
+  function onSetOpFilterInput(event: Event, columnId: string): void {
+    const input = event.currentTarget as HTMLInputElement;
+    ctrl.inSuggestQuery = trailingInToken(input.value);
     if (ctrl.inSuggestFor !== columnId) openInSuggest(input, columnId);
   }
 
@@ -1280,10 +1305,14 @@
             return;
           }
           // Tab and Ctrl/Cmd+Enter both commit. Plain Enter inserts a newline.
-          if (
-            event.key === "Tab" ||
-            (event.key === "Enter" && (event.ctrlKey || event.metaKey))
-          ) {
+          // Tab goes through the shared helper so it advances the active cell
+          // like every other editor does (#48).
+          if (event.key === "Tab") {
+            event.preventDefault();
+            ctrl.commitAndMoveByTab(event.shiftKey);
+            return;
+          }
+          if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
             event.preventDefault();
             saveEditingCell();
             ctrl.gridRootEl?.focus({ preventScroll: true });
@@ -2583,7 +2612,7 @@
                             ),
                           }}
                           {...getGridCellA11yProps({
-                            id: getGridCellDomId("svgrid", rowIndex, colIndex),
+                            id: getGridCellDomId(ctrl.gridDomId, rowIndex, colIndex),
                             rowIndex: rowIndex + 1,
                             colIndex: colIndex + 1,
                             selected: isRowSelected(row.id),
@@ -2833,7 +2862,7 @@
                           ),
                         }}
                         {...getGridCellA11yProps({
-                          id: getGridCellDomId("svgrid", rowIndex, colIndex),
+                          id: getGridCellDomId(ctrl.gridDomId, rowIndex, colIndex),
                           rowIndex: rowIndex + 1,
                           colIndex: colIndex + 1,
                           selected: isRowSelected(row.id),
@@ -3273,10 +3302,13 @@
                     </select>
                     {#if active !== "isBlank" && active !== "isNotBlank"}
                       {@const tpIsSetOp = active === "in" || active === "notIn"}
+                      <!-- in/notIn drives the shared value-suggestions dropdown
+                           (a windowed checklist) rather than a native datalist,
+                           which capped at 200 values and couldn't show which
+                           are already selected. -->
                       <input
                         class="sv-grid-tp-filter-input"
                         type={active === "regex" ? "text" : fType}
-                        list={tpIsSetOp ? `sv-tp-in-list-${column.id}` : undefined}
                         placeholder={active === "between"
                           ? "From"
                           : tpIsSetOp
@@ -3285,19 +3317,15 @@
                               ? "Pattern…"
                               : "Filter…"}
                         value={filterMenuValues[column.id]?.value ?? ""}
-                        oninput={(e) =>
-                          updateFilterMenuValue(
-                            column.id,
-                            e.currentTarget.value,
-                          )}
+                        onfocus={tpIsSetOp
+                          ? (e) => onSetOpFilterFocus(e, column.id)
+                          : undefined}
+                        onblur={tpIsSetOp ? () => closeInSuggest() : undefined}
+                        oninput={(e) => {
+                          updateFilterMenuValue(column.id, e.currentTarget.value);
+                          if (tpIsSetOp) onSetOpFilterInput(e, column.id);
+                        }}
                       />
-                      {#if tpIsSetOp}
-                        <datalist id={`sv-tp-in-list-${column.id}`}>
-                          {#each facetValuesForColumn(column.id).slice(0, 200) as v (v)}
-                            <option value={v}></option>
-                          {/each}
-                        </datalist>
-                      {/if}
                       {#if active === "between"}
                         <input
                           class="sv-grid-tp-filter-input"

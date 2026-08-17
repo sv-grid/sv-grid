@@ -392,3 +392,103 @@ describe('rowResize - update + destroy', () => {
     action.destroy()
   })
 })
+
+// ---------------------------------------------------------------------------
+// Keyboard resize (#79)
+// ---------------------------------------------------------------------------
+
+describe('rowResize - keyboard', () => {
+  function key(k: string, init: Partial<KeyboardEvent> = {}): KeyboardEvent {
+    return new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init })
+  }
+
+  it('makes the strip focusable', () => {
+    const { host, rows } = buildGrid([{}])
+    track(host)
+    const action = rowResize(host, { onResize: vi.fn() })
+    expect(stripOf(rows[0]!)!.tabIndex).toBe(0)
+    action.destroy()
+  })
+
+  it('ArrowDown grows the row by 10px and reports the new height', () => {
+    const { host, rows } = buildGrid([{ rowIndex: 0 }])
+    track(host)
+    mockRowHeight(rows[0]!, 32)
+    const onResize = vi.fn()
+    const action = rowResize(host, { onResize })
+    stripOf(rows[0]!)!.dispatchEvent(key('ArrowDown'))
+    expect(rows[0]!.style.height).toBe('42px')
+    expect(onResize).toHaveBeenCalledWith(0, 42)
+    action.destroy()
+  })
+
+  it('ArrowUp shrinks the row and Shift gives a 1px step', () => {
+    const { host, rows } = buildGrid([{ rowIndex: 0 }])
+    track(host)
+    mockRowHeight(rows[0]!, 60)
+    const onResize = vi.fn()
+    const action = rowResize(host, { onResize })
+    const strip = stripOf(rows[0]!)!
+    strip.dispatchEvent(key('ArrowUp'))
+    expect(onResize).toHaveBeenLastCalledWith(0, 50)
+    strip.dispatchEvent(key('ArrowUp', { shiftKey: true }))
+    expect(onResize).toHaveBeenLastCalledWith(0, 59)
+    action.destroy()
+  })
+
+  it('clamps to the configured min and max', () => {
+    const { host, rows } = buildGrid([{ rowIndex: 0 }])
+    track(host)
+    mockRowHeight(rows[0]!, 42)
+    const onResize = vi.fn()
+    const action = rowResize(host, { onResize, min: 40, max: 44 })
+    const strip = stripOf(rows[0]!)!
+    strip.dispatchEvent(key('ArrowUp'))
+    expect(onResize).toHaveBeenLastCalledWith(0, 40)
+    strip.dispatchEvent(key('ArrowDown'))
+    expect(onResize).toHaveBeenLastCalledWith(0, 44)
+    action.destroy()
+  })
+
+  it('ignores keys other than the arrows and consumes the ones it handles', () => {
+    const { host, rows } = buildGrid([{ rowIndex: 0 }])
+    track(host)
+    mockRowHeight(rows[0]!, 32)
+    const onResize = vi.fn()
+    const action = rowResize(host, { onResize })
+    const strip = stripOf(rows[0]!)!
+    const other = key('Enter')
+    strip.dispatchEvent(other)
+    expect(onResize).not.toHaveBeenCalled()
+    expect(other.defaultPrevented).toBe(false)
+    const handled = key('ArrowDown')
+    strip.dispatchEvent(handled)
+    expect(handled.defaultPrevented).toBe(true)
+    action.destroy()
+  })
+
+  it('does nothing while disabled, and stops after destroy', () => {
+    const { host, rows } = buildGrid([{ rowIndex: 0 }])
+    track(host)
+    mockRowHeight(rows[0]!, 32)
+    const onResize = vi.fn()
+    const action = rowResize(host, { onResize, disabled: true })
+    // Disabled removes the strips entirely, so drive a hand-made one.
+    const strip = document.createElement('div')
+    strip.className = STRIP_CLASS
+    gutterOf(rows[0]!).appendChild(strip)
+    strip.dispatchEvent(key('ArrowDown'))
+    expect(onResize).not.toHaveBeenCalled()
+
+    action.update({ onResize })
+    stripOf(rows[0]!)!.dispatchEvent(key('ArrowDown'))
+    expect(onResize).toHaveBeenCalledTimes(1)
+
+    action.destroy()
+    const orphan = document.createElement('div')
+    orphan.className = STRIP_CLASS
+    gutterOf(rows[0]!).appendChild(orphan)
+    orphan.dispatchEvent(key('ArrowDown'))
+    expect(onResize).toHaveBeenCalledTimes(1)
+  })
+})

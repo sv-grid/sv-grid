@@ -25,14 +25,25 @@
 import { createTypeaheadBuffer, isTypeaheadKey, nextTypeaheadIndex, type ListOption } from './list-option'
 import { editorAria, type EditorAriaState } from './editor-contract'
 
-export type ListboxValue = string | number | Array<string | number> | null
+/**
+ * A `Set` is accepted (and echoed back) in multi-select mode so a caller whose
+ * selection is already set-shaped - a filter checklist whose default state is
+ * "every value selected" - never has to materialize it as an array to drive the
+ * listbox, or to spread it back out again on every click.
+ */
+export type ListboxValue =
+  | string
+  | number
+  | ReadonlyArray<string | number>
+  | ReadonlySet<string | number>
+  | null
 
 /** Reactive inputs are passed as getters so the core tracks live prop changes
  *  (the same controlled pattern Svelte headless libraries use). */
 export type ListboxConfig = {
   options: () => ReadonlyArray<ListOption>
   value: () => ListboxValue
-  onChange?: (value: string | number | Array<string | number>) => void
+  onChange?: (value: string | number | Array<string | number> | Set<string | number>) => void
   multiple?: () => boolean
   disabled?: () => boolean
   ariaLabel?: () => string | undefined
@@ -95,8 +106,23 @@ let uid = 0
 
 /** Normalize a listbox value to an array (pure). */
 export function toSelectedArray(value: ListboxValue, multiple: boolean): Array<string | number> {
-  if (multiple) return Array.isArray(value) ? [...value] : value == null ? [] : [value]
-  return value == null ? [] : [value as string | number]
+  if (value == null) return []
+  if (value instanceof Set || Array.isArray(value)) {
+    const all = [...(value as Iterable<string | number>)]
+    return multiple ? all : all.slice(0, 1)
+  }
+  return [value as string | number]
+}
+
+/**
+ * Membership set for a listbox value (pure). A `Set` value is reused as-is, so
+ * `isSelected` stays O(1) without copying - the difference between a linear
+ * scan per rendered row and a hash hit when the selection runs to thousands of
+ * entries.
+ */
+export function toSelectedSet(value: ListboxValue, multiple: boolean): ReadonlySet<string | number> {
+  if (value instanceof Set) return value
+  return new Set(toSelectedArray(value, multiple))
 }
 
 export function createListbox(config: ListboxConfig): Listbox {
@@ -106,6 +132,9 @@ export function createListbox(config: ListboxConfig): Listbox {
   const disabled = () => config.disabled?.() ?? false
 
   let active = $state(0)
+  // `selectedSet` drives membership; `selected` (the ordered array) stays a
+  // lazy derived so a large selection is only flattened when someone reads it.
+  const selectedSet = $derived(toSelectedSet(config.value(), multiple()))
   const selected = $derived(toSelectedArray(config.value(), multiple()))
   const enabledIdx = $derived(opts().map((o, i) => (o.disabled ? -1 : i)).filter((i) => i >= 0))
 
@@ -115,7 +144,7 @@ export function createListbox(config: ListboxConfig): Listbox {
     if (!o || o.disabled) active = enabledIdx[0] ?? 0
   })
 
-  const isSelected = (value: string | number) => selected.includes(value)
+  const isSelected = (value: string | number) => selectedSet.has(value)
   const isActive = (index: number) => index === active
   const optionId = (index: number) => `${id}-opt-${index}`
 
@@ -129,9 +158,12 @@ export function createListbox(config: ListboxConfig): Listbox {
     if (!o || o.disabled || disabled()) return
     active = index
     if (multiple()) {
-      const set = new Set(selected)
+      const set = new Set(selectedSet)
       set.has(o.value) ? set.delete(o.value) : set.add(o.value)
-      config.onChange?.([...set])
+      // Echo back the shape we were handed. Toggling one option must not
+      // disturb selected values that aren't currently in `options` (search has
+      // narrowed the list, say) - they ride along in the set untouched.
+      config.onChange?.(config.value() instanceof Set ? set : [...set])
     } else {
       config.onChange?.(o.value)
     }
