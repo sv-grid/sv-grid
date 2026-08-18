@@ -1,4 +1,4 @@
-﻿# Column definitions
+# Column definitions
 
 A `ColumnDef` tells SvGrid how to read a value out of a row, how to render it,
 and which features apply to it. The grid below is built from a handful

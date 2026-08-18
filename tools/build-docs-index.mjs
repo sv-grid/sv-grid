@@ -23,6 +23,13 @@ const DEMOS_DIR = join(ROOT, 'examples', 'src', 'demos')
 const PUBLIC_DIR = join(ROOT, 'website', 'public') // served copies for crawlers
 const SITE      = process.env.SVGRID_SITE_ORIGIN ?? 'https://svgrid.com'   // canonical doc origin
 
+// Slugs with no prerendered route. Keep in sync with HIDDEN in
+// tools/prerender-site.mjs.
+const HIDDEN = new Set([
+  'examples-plan', 'help/index', 'recipes/index', 'compliance/index',
+  'reference/index', 'enterprise/README',
+])
+
 const SECTION_TITLES = {
   '':                  'Overview',
   'getting-started':   'Getting started',
@@ -196,6 +203,9 @@ async function main() {
   for await (const file of walk(DOCS_DIR)) {
     if (!file.endsWith('.md')) continue
     const rel = relative(DOCS_DIR, file).replaceAll('\\', '/')
+    // Mirror the HIDDEN set in tools/prerender-site.mjs: these have no route,
+    // so listing them here would advertise 404s to LLM crawlers.
+    if (HIDDEN.has(rel.replace(/\.md$/, ''))) continue
     const src = await readFile(file, 'utf-8')
     const { title, summary } = extract(src)
     if (!title) continue
@@ -203,7 +213,9 @@ async function main() {
     const section = sectionOf(rel.replaceAll('/', sep))
     docs.push({
       path:        rel,
-      url:         `/${rel.replace(/\.md$/, '')}`,
+      // Must match the prerendered route shape (/docs/<slug>/, trailing slash)
+      // or every link we hand to LLM crawlers 404s.
+      url:         `/docs/${rel.replace(/\.md$/, '')}/`,
       title,
       summary,
       section,

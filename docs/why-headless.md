@@ -1,4 +1,4 @@
-﻿# Why headless?
+# Why headless?
 
 SvGrid is **headless at the core**, with a fully-styled Svelte component
 shipped on top. That two-layer split is deliberate, and worth

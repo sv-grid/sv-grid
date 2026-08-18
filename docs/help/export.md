@@ -1,4 +1,4 @@
-﻿# Data export and printing
+# Data export and printing
 
 **CSV / TSV / JSON export and copy-to-clipboard are free** in the community
 **[@svgrid/grid](https://www.npmjs.com/package/@svgrid/grid)** - the commodity

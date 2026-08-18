@@ -64,4 +64,4 @@ createNamedViews(api, { storage: serverStorage })
 - This is the building block; the demo wires a simple save-box + chips UI on
   top, but the manager is headless so you can render views however you like.
 
-See the live [Named views](https://sv-grid.com/demos/143-named-views) demo.
+See the live [Named views](https://svgrid.com/demos/143-named-views/) demo.

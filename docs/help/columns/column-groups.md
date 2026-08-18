@@ -1,4 +1,4 @@
-﻿# Column groups
+# Column groups
 
 A column group is a `ColumnDef` whose `columns` array contains children.
 The parent renders a spanning header above its children. The pivot demo

@@ -1,4 +1,4 @@
-﻿# Data import - Enterprise
+# Data import - Enterprise
 
 The sister to [data export and printing](./export.md). Read an Excel
 file, CSV/TSV blob, or JSON array in the browser and produce a typed

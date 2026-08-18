@@ -1,4 +1,4 @@
-﻿# Updating column definitions
+# Updating column definitions
 
 There are two ways to change columns after the grid has mounted:
 

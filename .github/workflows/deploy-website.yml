@@ -103,12 +103,6 @@ jobs:
       - name: Add .nojekyll
         run: touch website/dist/.nojekyll
 
-      - name: Add SPA 404 fallback
-        # Hash routing means deep links always hit "/", but if someone removes
-        # the hash on a sub-path, GitHub Pages serves its default 404. Mirror
-        # index.html as 404.html so the SPA still loads.
-        run: cp website/dist/index.html website/dist/404.html
-
       - uses: actions/upload-pages-artifact@v3
         with:
           path: website/dist

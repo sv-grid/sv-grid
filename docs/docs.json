@@ -1,10 +1,10 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-15T19:32:00.913Z",
+  "generatedAt": "2026-08-18T22:33:52.049Z",
   "counts": {
-    "pages": 365,
-    "enterprise": 55,
+    "pages": 361,
+    "enterprise": 54,
     "withDemo": 208
   },
   "pillars": [
@@ -110,7 +110,6 @@
         "help/grouping-aggregation.md",
         "help/i18n-rtl.md",
         "help/import.md",
-        "help/index.md",
         "help/llm-grounding.md",
         "help/mcp-server.md",
         "help/migrating-from-ag-grid.md",
@@ -213,6 +212,7 @@
         "help/rows/scheduler.md",
         "help/rows/styling-rows.md",
         "help/rows/transactions.md",
+        "help/rows/tree-data.md",
         "help/rows/tree-rows.md"
       ]
     },
@@ -315,7 +315,6 @@
         "recipes/form-library-bridge.md",
         "recipes/grid-state-inspector.md",
         "recipes/heatmap-cells.md",
-        "recipes/index.md",
         "recipes/kanban-from-grid-data.md",
         "recipes/lazy-load-expand.md",
         "recipes/loading-data.md",
@@ -360,7 +359,6 @@
         "reference/enterprise.md",
         "reference/features.md",
         "reference/headless-engine.md",
-        "reference/index.md",
         "reference/SvGrid.md",
         "reference/SvGridApi.md"
       ]
@@ -622,7 +620,6 @@
       "pages": [
         "enterprise/evaluation.md",
         "enterprise/licensing.md",
-        "enterprise/README.md",
         "enterprise/support.md"
       ]
     },
@@ -634,7 +631,6 @@
         "compliance/audit-log.md",
         "compliance/gdpr.md",
         "compliance/hipaa.md",
-        "compliance/index.md",
         "compliance/soc2.md"
       ]
     },
@@ -659,7 +655,7 @@
   "pages": [
     {
       "path": "brand/company-description.md",
-      "url": "/brand/company-description",
+      "url": "/docs/brand/company-description/",
       "title": "SvGrid - Company / Brand Description",
       "summary": "*About the company and brand behind SvGrid. For partner listings, press kits, marketplace profiles, and procurement forms. Product descriptions live elsewhere.*",
       "section": "brand",
@@ -671,7 +667,7 @@
     },
     {
       "path": "brand/social/README.md",
-      "url": "/brand/social/README",
+      "url": "/docs/brand/social/README/",
       "title": "GitHub social preview images",
       "summary": "On-brand 1280x640 cards for GitHub's repo **Social preview** (Settings -> General -> Social preview). All are PNG, 1280x640 (GitHub's recommended size), and well under the 1 MB upload limit.",
       "section": "brand",
@@ -683,7 +679,7 @@
     },
     {
       "path": "changelog.md",
-      "url": "/changelog",
+      "url": "/docs/changelog/",
       "title": "Changelog",
       "summary": "The user-facing log of what shipped. Format follows Keep a Changelog 1.1.0; versioning follows Semantic Versioning.",
       "section": "",
@@ -695,7 +691,7 @@
     },
     {
       "path": "compliance/audit-log.md",
-      "url": "/compliance/audit-log",
+      "url": "/docs/compliance/audit-log/",
       "title": "Audit log integration",
       "summary": "A typed, tamper-evident audit trail of every user action in the grid, in under 50 lines. Pattern works for any backend - your existing audit table, Datadog logs, an immutable ledger (DynamoDB with conditional writes, AWS QLDB, Kafka), or a write-once S3 bucket.",
       "section": "compliance",
@@ -707,7 +703,7 @@
     },
     {
       "path": "compliance/gdpr.md",
-      "url": "/compliance/gdpr",
+      "url": "/docs/compliance/gdpr/",
       "title": "GDPR + data residency",
       "summary": "sv-grid is **GDPR-neutral**: the library never transmits personal data, never stores it server-side, and never logs it. If your app is GDPR-compliant before adding sv-grid, adding sv-grid does not break that compliance.",
       "section": "compliance",
@@ -719,7 +715,7 @@
     },
     {
       "path": "compliance/hipaa.md",
-      "url": "/compliance/hipaa",
+      "url": "/docs/compliance/hipaa/",
       "title": "HIPAA posture",
       "summary": "sv-grid is **HIPAA-neutral**: the library does not transmit, store, or process PHI on its own. If your app is HIPAA-compliant before adding sv-grid, adding sv-grid does not break that compliance.",
       "section": "compliance",
@@ -730,20 +726,8 @@
       "demoIds": []
     },
     {
-      "path": "compliance/index.md",
-      "url": "/compliance/index",
-      "title": "Compliance",
-      "summary": "sv-grid is a client-side UI library - **all data stays in the browser**, the library never makes a network call of its own, no telemetry phones home. The compliance story is therefore short, but because enterprise procurement asks the same questions every time, this section answers each one directly.",
-      "section": "compliance",
-      "pillar": "company",
-      "tier": "community",
-      "words": 463,
-      "lastUpdated": "2026-08-15",
-      "demoIds": []
-    },
-    {
       "path": "compliance/soc2.md",
-      "url": "/compliance/soc2",
+      "url": "/docs/compliance/soc2/",
       "title": "SOC 2 posture",
       "summary": "sv-grid is a UI library, not a service - so it cannot itself hold a SOC 2 report. But it can sit inside a SOC 2-audited application, and the controls below describe the line where the library's responsibility ends and yours begins.",
       "section": "compliance",
@@ -755,43 +739,31 @@
     },
     {
       "path": "enterprise/evaluation.md",
-      "url": "/enterprise/evaluation",
+      "url": "/docs/enterprise/evaluation/",
       "title": "Enterprise evaluation",
       "summary": "The @svgrid/enterprise package is soft-gated; you can evaluate every feature in production-equivalent code paths without contacting sales. This page is the playbook.",
       "section": "enterprise",
       "pillar": "company",
       "tier": "enterprise",
-      "words": 689,
-      "lastUpdated": "2026-08-15",
+      "words": 681,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "enterprise/licensing.md",
-      "url": "/enterprise/licensing",
+      "url": "/docs/enterprise/licensing/",
       "title": "Enterprise licensing",
       "summary": "The @svgrid/enterprise package is **soft-gated**: every feature runs without a key, with a small unlicensed-build watermark in the bottom-right corner of the grid + a one-time console nudge. Set a key once at app startup and both disappear.",
       "section": "enterprise",
       "pillar": "company",
       "tier": "enterprise",
-      "words": 892,
-      "lastUpdated": "2026-08-15",
-      "demoIds": []
-    },
-    {
-      "path": "enterprise/README.md",
-      "url": "/enterprise/README",
-      "title": "Enterprise feature pack",
-      "summary": "@svgrid/enterprise is a paid add-on for @svgrid/grid. It bolts onto the same <SvGrid> you already have and adds three feature areas: data export, data import, and pivot tables. (The AI helpers are built in and **free** in @svgrid/grid - see AI assistant.)",
-      "section": "enterprise",
-      "pillar": "company",
-      "tier": "enterprise",
-      "words": 787,
-      "lastUpdated": "2026-08-15",
+      "words": 993,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "enterprise/studio.md",
-      "url": "/enterprise/studio",
+      "url": "/docs/enterprise/studio/",
       "title": "SvGrid Studio",
       "summary": "Studio is the grid-centric data-app layer in @svgrid/enterprise: turn a database or schema into a **production-ready CRUD screen** - grid, edit form, and SvelteKit API route - in seconds. One EntitySchema drives the grid columns, the edit form, validation, and the generated code.",
       "section": "enterprise/studio",
@@ -803,20 +775,20 @@
     },
     {
       "path": "enterprise/studio/access-control.md",
-      "url": "/enterprise/studio/access-control",
+      "url": "/docs/enterprise/studio/access-control/",
       "title": "Access control (RBAC)",
       "summary": "Studio has **authentication** (who you are, via SvAuthGate + Supabase) and, separately, **authorization** - what a signed-in user may do. Role-based access control (RBAC) gates **screens** and **write actions** (create / update / delete) per role, and it is enforced in **two** places: the generated UI *and* the generated API route. Server enforcement is the point - a tampered client can hide the buttons all it likes; the route still rejects the write.",
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Auth & security",
-      "words": 758,
-      "lastUpdated": "2026-07-22",
+      "words": 1208,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "enterprise/studio/accessibility.md",
-      "url": "/enterprise/studio/accessibility",
+      "url": "/docs/enterprise/studio/accessibility/",
       "title": "Accessibility",
       "summary": "A Studio screen is accessible out of the box, because it is built from the grid and the edit form - both designed to the WAI-ARIA patterns. This page is what you get for free, what you own, and how to verify it.",
       "section": "enterprise/studio",
@@ -829,20 +801,20 @@
     },
     {
       "path": "enterprise/studio/ai-generation.md",
-      "url": "/enterprise/studio/ai-generation",
+      "url": "/docs/enterprise/studio/ai-generation/",
       "title": "AI generation",
       "summary": "The @svgrid/mcp server exposes Studio to AI coding agents (Claude Code, Cursor, Codex, ...) through the Model Context Protocol. Ask your agent to build a screen for a table and it introspects, scaffolds, and verifies - producing the same code the CLI and designer do.",
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 1149,
-      "lastUpdated": "2026-08-12",
+      "words": 1299,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "enterprise/studio/api.md",
-      "url": "/enterprise/studio/api",
+      "url": "/docs/enterprise/studio/api/",
       "title": "Studio API reference",
       "summary": "Every Studio export in one place, grouped by what it does. Each links to the guide with the full detail. All are imported from **@svgrid/enterprise** unless noted; createServerDataSource is from @svgrid/grid.",
       "section": "enterprise/studio",
@@ -855,20 +827,20 @@
     },
     {
       "path": "enterprise/studio/app-designer.md",
-      "url": "/enterprise/studio/app-designer",
+      "url": "/docs/enterprise/studio/app-designer/",
       "title": "Visual app designer",
       "summary": "SvStudioDesigner is the grid-centric visual **data-app** designer - compose a multi-entity app by arranging data-bound blocks on a canvas, then generate a runnable SvelteKit project. It's the app-level companion to the single-entity schema designer: where that authors one EntitySchema, this composes **screens** across **many entities**.",
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 3174,
-      "lastUpdated": "2026-08-12",
+      "words": 3383,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "enterprise/studio/audit-log.md",
-      "url": "/enterprise/studio/audit-log",
+      "url": "/docs/enterprise/studio/audit-log/",
       "title": "Audit trail",
       "summary": "An audit trail records **who changed what, and when** - a baseline requirement for any regulated or multi-user app. Studio records writes **server-side**, at the API route, so the trail can't be skipped by a tampered client, and ships an **Audit log** viewer screen.",
       "section": "enterprise/studio",
@@ -881,7 +853,7 @@
     },
     {
       "path": "enterprise/studio/auth.md",
-      "url": "/enterprise/studio/auth",
+      "url": "/docs/enterprise/studio/auth/",
       "title": "Auth & secured screens",
       "summary": "Put a Studio screen behind a login and scope its data per user. The pattern is **Supabase Auth for *who*, Row-Level Security for *what*** - auth establishes the signed-in user; RLS policies decide which rows that user can read and write.",
       "section": "enterprise/studio",
@@ -894,20 +866,20 @@
     },
     {
       "path": "enterprise/studio/business-logic.md",
-      "url": "/enterprise/studio/business-logic",
+      "url": "/docs/enterprise/studio/business-logic/",
       "title": "Computed fields & hooks",
       "summary": "Two ways to put business logic on an EntitySchema: **computed fields** (values derived from the row) and **hooks** (logic that runs when rows are created, updated, or deleted). Both live on the schema, so they apply everywhere the schema does - grid, edit form, and generated code.",
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Logic & generated code",
-      "words": 1403,
-      "lastUpdated": "2026-08-15",
+      "words": 1692,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "enterprise/studio/cli.md",
-      "url": "/enterprise/studio/cli",
+      "url": "/docs/enterprise/studio/cli/",
       "title": "The Studio CLI",
       "summary": "@svgrid/studio is the command-line generator. One command reads a schema or a live database and writes a working CRUD screen into your SvelteKit app.",
       "section": "enterprise/studio",
@@ -920,7 +892,7 @@
     },
     {
       "path": "enterprise/studio/code-behind.md",
-      "url": "/enterprise/studio/code-behind",
+      "url": "/docs/enterprise/studio/code-behind/",
       "title": "Code behind (Code view)",
       "summary": "The visual designer covers layout, data, validation, and no-code business rules. When you need real logic - run something on load, react to a click, change a grid option at runtime - open a screen's **Code view** and write TypeScript against a typed **ctx** object. Your code lives in a user-owned file (handlers.ts) that regeneration never overwrites, and ctx is fully typed by a generated page-context.ts, so autocomplete offers every block and every grid operation on the screen.",
       "section": "enterprise/studio",
@@ -933,7 +905,7 @@
     },
     {
       "path": "enterprise/studio/code-generation.md",
-      "url": "/enterprise/studio/code-generation",
+      "url": "/docs/enterprise/studio/code-generation/",
       "title": "Code generation",
       "summary": "Studio generates plain SvelteKit code you own - there is no runtime and no lock-in. The same scaffold() core powers the CLI, the AI generator, and the visual designer, so all three emit identical files.",
       "section": "enterprise/studio",
@@ -946,7 +918,7 @@
     },
     {
       "path": "enterprise/studio/concepts.md",
-      "url": "/enterprise/studio/concepts",
+      "url": "/docs/enterprise/studio/concepts/",
       "title": "Concepts",
       "summary": "The mental model behind Studio: one EntitySchema drives the screens, the data binding, and the generated code. This page walks that pipeline once, defines every Studio term, and ends with a table for picking which build tool fits how you work. Ten minutes here makes every other Studio page shorter.",
       "section": "enterprise/studio",
@@ -959,7 +931,7 @@
     },
     {
       "path": "enterprise/studio/dashboards.md",
-      "url": "/enterprise/studio/dashboards",
+      "url": "/docs/enterprise/studio/dashboards/",
       "title": "Dashboards",
       "summary": "SvSchemaDashboard renders a **schema-driven dashboard** - KPI tiles + charts - over an entity. It's a declarative data *view*, not a drag-drop page builder: you describe the widgets as plain data and the component lays them out, reusing SvSchemaChart for the charts.",
       "section": "enterprise/studio",
@@ -972,7 +944,7 @@
     },
     {
       "path": "enterprise/studio/data-binding.md",
-      "url": "/enterprise/studio/data-binding",
+      "url": "/docs/enterprise/studio/data-binding/",
       "title": "Data binding",
       "summary": "Every Studio screen binds to data through one small, uniform contract: **ServerDataSource**. Read a page of rows, and (optionally) create, update, and delete. Because sorting, filtering, pagination, and the edit form all speak to this one interface, the grid works the same whether your data comes from PostgreSQL, a REST API, or an in-memory array.",
       "section": "enterprise/studio",
@@ -985,7 +957,7 @@
     },
     {
       "path": "enterprise/studio/databases.md",
-      "url": "/enterprise/studio/databases",
+      "url": "/docs/enterprise/studio/databases/",
       "title": "Databases",
       "summary": "Studio connects directly to your relational database, reads a table's columns from the catalog, and scaffolds a connected CRUD screen. Supported: **PostgreSQL, Supabase, MySQL / MariaDB, SQL Server, SQLite**.",
       "section": "enterprise/studio",
@@ -998,7 +970,7 @@
     },
     {
       "path": "enterprise/studio/deployment.md",
-      "url": "/enterprise/studio/deployment",
+      "url": "/docs/enterprise/studio/deployment/",
       "title": "Deploying a Studio app",
       "summary": "A Studio-generated app is a normal SvelteKit app - the screens are +page.svelte files and the data endpoints are +server.ts routes. It deploys anywhere SvelteKit runs. This page is the production checklist.",
       "section": "enterprise/studio",
@@ -1011,7 +983,7 @@
     },
     {
       "path": "enterprise/studio/designer.md",
-      "url": "/enterprise/studio/designer",
+      "url": "/docs/enterprise/studio/designer/",
       "title": "Schema designer (embeddable)",
       "summary": "SvSchemaDesigner is a small, **embeddable, single-entity** component: drop it into your own app to author one EntitySchema visually - add fields, set types and validation - and see the grid and edit form update live. It's controlled (you own where the schema is stored), so it's the building block for a \"let users customize this table\" screen.",
       "section": "enterprise/studio",
@@ -1024,7 +996,7 @@
     },
     {
       "path": "enterprise/studio/dock-layout.md",
-      "url": "/enterprise/studio/dock-layout",
+      "url": "/docs/enterprise/studio/dock-layout/",
       "title": "Docking layout",
       "summary": "By default a screen arranges its blocks in a responsive **12-column grid**. For dashboards, consoles, and analyst tools you can switch a screen to a **docking workspace** instead: the same blocks become **dockable, floatable, pinnable panes** (an SvDockManager). Drag a tab to split a region, pull it out into a floating window, or pin it to an edge - and the arrangement is saved per user.",
       "section": "enterprise/studio",
@@ -1039,7 +1011,7 @@
     },
     {
       "path": "enterprise/studio/drizzle.md",
-      "url": "/enterprise/studio/drizzle",
+      "url": "/docs/enterprise/studio/drizzle/",
       "title": "Drizzle schema",
       "summary": "If you use Drizzle ORM, Studio can scaffold a screen straight from your schema.ts - no live database connection needed at generation time. Your schema file is the single source of truth.",
       "section": "enterprise/studio",
@@ -1052,7 +1024,7 @@
     },
     {
       "path": "enterprise/studio/edit-forms.md",
-      "url": "/enterprise/studio/edit-forms",
+      "url": "/docs/enterprise/studio/edit-forms/",
       "title": "Edit forms & validation",
       "summary": "SvGridEditPanel is the create / edit form for a row. It renders itself from an EntitySchema, validates input, and hands you a ready payload to save. It presents as a right-hand **drawer**, a centered **modal**, or **inline**, and follows the grid's light / dark theme.",
       "section": "enterprise/studio",
@@ -1065,7 +1037,7 @@
     },
     {
       "path": "enterprise/studio/getting-started.md",
-      "url": "/enterprise/studio/getting-started",
+      "url": "/docs/enterprise/studio/getting-started/",
       "title": "Getting started",
       "summary": "This is the gentlest path into SvGrid Studio. By the end you will have a real, working **Customers** screen - a grid you can sort, filter, and page, with a create / edit form and delete - running on your machine. No prior experience with SvGrid is assumed.",
       "section": "enterprise/studio",
@@ -1078,7 +1050,7 @@
     },
     {
       "path": "enterprise/studio/i18n.md",
-      "url": "/enterprise/studio/i18n",
+      "url": "/docs/enterprise/studio/i18n/",
       "title": "Localization (i18n)",
       "summary": "Ship a Studio app in more than one language. When localization is on, the generator emits a **message catalog** + a **locale switcher**, and routes the app's user-facing strings - nav labels, screen titles, the New button, and **grid column headers** - through a reactive t() translator.",
       "section": "enterprise/studio",
@@ -1091,7 +1063,7 @@
     },
     {
       "path": "enterprise/studio/in-memory.md",
-      "url": "/enterprise/studio/in-memory",
+      "url": "/docs/enterprise/studio/in-memory/",
       "title": "In-memory",
       "summary": "The in-memory source runs a full CRUD data screen against a plain array - no database, no API. It applies the grid's filter, global search, sort, and paging in memory, and supports create / update / delete. Ideal for prototyping a schema, tests, demos, static reference data, or seeding a screen before the backend exists.",
       "section": "enterprise/studio",
@@ -1104,7 +1076,7 @@
     },
     {
       "path": "enterprise/studio/launch.md",
-      "url": "/enterprise/studio/launch",
+      "url": "/docs/enterprise/studio/launch/",
       "title": "Launch the designer (CLI)",
       "summary": "One command opens the visual app designer in your browser, backed by a tiny local server that **auto-saves** your design to disk and **generates the app** into a folder - no host app to build, no copy-paste JSON.",
       "section": "enterprise/studio",
@@ -1117,7 +1089,7 @@
     },
     {
       "path": "enterprise/studio/local-database.md",
-      "url": "/enterprise/studio/local-database",
+      "url": "/docs/enterprise/studio/local-database/",
       "title": "Local database (no setup)",
       "summary": "The local database source gives a generated app a **real, persistent Postgres** that runs entirely in the browser - no connection string, no keys, no server to provision. It is powered by PGlite, a full WASM build of Postgres that stores its data in IndexedDB, so rows survive reloads and the app works offline.",
       "section": "enterprise/studio",
@@ -1130,7 +1102,7 @@
     },
     {
       "path": "enterprise/studio/master-detail.md",
-      "url": "/enterprise/studio/master-detail",
+      "url": "/docs/enterprise/studio/master-detail/",
       "title": "Master-detail",
       "summary": "SvGridMasterDetail expands a master row into a nested grid of related records - orders and their line items, customers and their invoices, and so on. It is a feature of the grid's data stack (built on the grid's own isDetailRow / renderDetailRow), not a separate widget. Click a master row to expand or collapse its detail region.",
       "section": "enterprise/studio",
@@ -1143,7 +1115,7 @@
     },
     {
       "path": "enterprise/studio/navigation.md",
-      "url": "/enterprise/studio/navigation",
+      "url": "/docs/enterprise/studio/navigation/",
       "title": "Navigation & row actions",
       "summary": "Blocks show data; **navigation** turns a set of screens into an app. Studio wires two kinds of flow, both grid-native: **drill-through** (click a row or a chart category to open another screen, filtered to what you clicked) and **row action buttons** (per-row Edit / Delete / Open).",
       "section": "enterprise/studio",
@@ -1156,7 +1128,7 @@
     },
     {
       "path": "enterprise/studio/odata-graphql.md",
-      "url": "/enterprise/studio/odata-graphql",
+      "url": "/docs/enterprise/studio/odata-graphql/",
       "title": "OData & GraphQL",
       "summary": "Studio binds to OData and GraphQL the same way it binds to any API: implement the ServerDataSource contract and translate the grid's request (paging + sortModel + filterModel) into the query the service expects. The grid, edit form, sorting, filtering, and pagination then work unchanged.",
       "section": "enterprise/studio",
@@ -1169,7 +1141,7 @@
     },
     {
       "path": "enterprise/studio/postgres-grid.md",
-      "url": "/enterprise/studio/postgres-grid",
+      "url": "/docs/enterprise/studio/postgres-grid/",
       "title": "Tutorial: a Postgres CRUD grid",
       "summary": "The **one page** that wires a data grid to a **PostgreSQL** database with full **create / read / update / delete** - sorting, filtering, search, and paging included. SQL runs on the server (a driver and credentials can't live in the browser), so this has a server route plus the page. Copy the four files and run.",
       "section": "enterprise/studio",
@@ -1182,7 +1154,7 @@
     },
     {
       "path": "enterprise/studio/prisma.md",
-      "url": "/enterprise/studio/prisma",
+      "url": "/docs/enterprise/studio/prisma/",
       "title": "Prisma schema",
       "summary": "If you use Prisma, Studio can scaffold screens straight from your schema.prisma - no live database connection needed at generation time. Your Prisma schema is the single source of truth, and the --from flag auto-detects it (by the .prisma extension or a model block).",
       "section": "enterprise/studio",
@@ -1195,7 +1167,7 @@
     },
     {
       "path": "enterprise/studio/realtime.md",
-      "url": "/enterprise/studio/realtime",
+      "url": "/docs/enterprise/studio/realtime/",
       "title": "Real-time (Supabase)",
       "summary": "Make a Studio screen **live**: when a row is inserted, updated, or deleted in the database - by another user, another tab, or a background job - the grid reflects it instantly, with no polling. This uses Supabase Realtime (Postgres change streams) and the createSupabaseRealtime helper.",
       "section": "enterprise/studio",
@@ -1208,7 +1180,7 @@
     },
     {
       "path": "enterprise/studio/relations.md",
-      "url": "/enterprise/studio/relations",
+      "url": "/docs/enterprise/studio/relations/",
       "title": "Relations & master-detail",
       "summary": "Real apps have related entities - a company has many deals, an order has many line items. Studio models relations in the EntitySchema and turns them into **master-detail** screens (a row that expands into a nested grid) and **relation pickers** in the edit form.",
       "section": "enterprise/studio",
@@ -1221,7 +1193,7 @@
     },
     {
       "path": "enterprise/studio/rest-api.md",
-      "url": "/enterprise/studio/rest-api",
+      "url": "/docs/enterprise/studio/rest-api/",
       "title": "REST & custom APIs",
       "summary": "Not every backend is a database Studio can introspect. When you have an existing REST API - or any bespoke data layer - back the screen with a ServerDataSource. Use the built-in **createRestDataSource** for a conventional JSON API, or implement the four methods by hand for full control. Either way the grid, edit form, sorting, filtering, and pagination keep working unchanged.",
       "section": "enterprise/studio",
@@ -1234,7 +1206,7 @@
     },
     {
       "path": "enterprise/studio/rest-grid.md",
-      "url": "/enterprise/studio/rest-grid",
+      "url": "/docs/enterprise/studio/rest-grid/",
       "title": "Tutorial: a REST CRUD grid",
       "summary": "The **one page** that wires a data grid to an existing **REST / JSON API** with full **create / read / update / delete** - sorting, filtering, search, and paging included. Copy the three files and run.",
       "section": "enterprise/studio",
@@ -1247,7 +1219,7 @@
     },
     {
       "path": "enterprise/studio/samples.md",
-      "url": "/enterprise/studio/samples",
+      "url": "/docs/enterprise/studio/samples/",
       "title": "Sample apps + bind your data",
       "summary": "The fastest way to a working app: open a **ready-made sample**, see it running with realistic data, then point it at **your own database**. No block-by-block build, no placeholder rows.",
       "section": "enterprise/studio",
@@ -1260,7 +1232,7 @@
     },
     {
       "path": "enterprise/studio/scheduler.md",
-      "url": "/enterprise/studio/scheduler",
+      "url": "/docs/enterprise/studio/scheduler/",
       "title": "Scheduler / calendar view",
       "summary": "Any grid whose rows carry a date can render as a **calendar** instead of a table - a Month / Week / Day / Agenda (and Timeline) view where each row becomes an event placed by time. It is a **view of the grid**, exactly like the Kanban board: same rows, same data source, same edit form - only the presentation changes. Drag an event to reschedule it and the new time is written back through the data source.",
       "section": "enterprise/studio",
@@ -1281,7 +1253,7 @@
     },
     {
       "path": "enterprise/studio/schema.md",
-      "url": "/enterprise/studio/schema",
+      "url": "/docs/enterprise/studio/schema/",
       "title": "The EntitySchema",
       "summary": "EntitySchema is the single model at the heart of Studio. It describes an entity - its fields, types, validation, keys, and relations - and everything else derives from it: the grid columns, the edit form, validation, and the generated code.",
       "section": "enterprise/studio",
@@ -1294,7 +1266,7 @@
     },
     {
       "path": "enterprise/studio/server-grid.md",
-      "url": "/enterprise/studio/server-grid",
+      "url": "/docs/enterprise/studio/server-grid/",
       "title": "Sorting, filtering & paging",
       "summary": "In a Studio screen the data lives on the server, so the grid does not sort, filter, or paginate locally - it renders its **native UI** and emits the user's intent, and your data source fetches the matching page. This is \"server mode\", and it is wired for you in generated screens. This page shows how it works so you can customize it.",
       "section": "enterprise/studio",
@@ -1307,7 +1279,7 @@
     },
     {
       "path": "enterprise/studio/supabase-grid.md",
-      "url": "/enterprise/studio/supabase-grid",
+      "url": "/docs/enterprise/studio/supabase-grid/",
       "title": "Tutorial: a Supabase CRUD grid",
       "summary": "This is the **one page** that does it all: create a data grid, connect it to a **Supabase** database, and get full **create / read / update / delete** - sorting, filtering, search, and paging included. Everything is here; copy the four files and run.",
       "section": "enterprise/studio",
@@ -1320,7 +1292,7 @@
     },
     {
       "path": "enterprise/studio/supabase-sample.md",
-      "url": "/enterprise/studio/supabase-sample",
+      "url": "/docs/enterprise/studio/supabase-sample/",
       "title": "The Northwind sample on Supabase",
       "summary": "A ready-made, **relational** public dataset you can host on Supabase in one paste and connect to from the browser. It is the classic **Northwind** database - categories, customers, products, orders, order_details - plus an order_lines **join view**, so you get a real multi-table schema, not a single flat table.",
       "section": "enterprise/studio",
@@ -1333,7 +1305,7 @@
     },
     {
       "path": "enterprise/studio/supabase.md",
-      "url": "/enterprise/studio/supabase",
+      "url": "/docs/enterprise/studio/supabase/",
       "title": "Supabase",
       "summary": "Supabase gives you a hosted PostgreSQL database with a generous free tier and a browser-safe client. This guide takes you from an empty Supabase project to a live CRUD screen, step by step. No backend to run.",
       "section": "enterprise/studio",
@@ -1346,7 +1318,7 @@
     },
     {
       "path": "enterprise/studio/testing.md",
-      "url": "/enterprise/studio/testing",
+      "url": "/docs/enterprise/studio/testing/",
       "title": "Testing a Studio app",
       "summary": "A Studio screen is plain SvelteKit code, so you test it with the tools you already use. Three layers, cheapest first: the **data source** (no DOM), the **screen** (a component test), and the **flow** (end to end).",
       "section": "enterprise/studio",
@@ -1359,7 +1331,7 @@
     },
     {
       "path": "enterprise/studio/theming.md",
-      "url": "/enterprise/studio/theming",
+      "url": "/docs/enterprise/studio/theming/",
       "title": "Themes & styling",
       "summary": "Every Studio surface - the grid, the edit panel (drawer / modal / inline), the schema designer, and the generated screens - is styled with the grid's --sg-* CSS custom properties. Set the tokens once and everything follows, including light / dark. No per-component styling required.",
       "section": "enterprise/studio",
@@ -1372,7 +1344,7 @@
     },
     {
       "path": "enterprise/studio/troubleshooting.md",
-      "url": "/enterprise/studio/troubleshooting",
+      "url": "/docs/enterprise/studio/troubleshooting/",
       "title": "Troubleshooting & FAQ",
       "summary": "Common issues and answers when building with SvGrid Studio.",
       "section": "enterprise/studio",
@@ -1385,7 +1357,7 @@
     },
     {
       "path": "enterprise/studio/tutorial-crm.md",
-      "url": "/enterprise/studio/tutorial-crm",
+      "url": "/docs/enterprise/studio/tutorial-crm/",
       "title": "Tutorial: build a CRM",
       "summary": "This walkthrough builds a small CRM - **Companies**, **Contacts**, and **Deals** - with SvGrid Studio: scaffolded CRUD screens, a related-record picker, a master-detail view, validation, theming, and a real database. Follow it end to end in about fifteen minutes.",
       "section": "enterprise/studio",
@@ -1398,7 +1370,7 @@
     },
     {
       "path": "enterprise/support.md",
-      "url": "/enterprise/support",
+      "url": "/docs/enterprise/support/",
       "title": "Enterprise support",
       "summary": "What you get on each tier, what response time to expect, how to escalate.",
       "section": "enterprise",
@@ -1410,19 +1382,19 @@
     },
     {
       "path": "getting-started-full.md",
-      "url": "/getting-started-full",
+      "url": "/docs/getting-started-full/",
       "title": "Getting Started with SvGrid",
       "summary": "SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,000-row, 100-column editing surface with grouping, multi-column filtering, server-side data, and full keyboard and screen-reader support.",
       "section": "",
       "pillar": "grid",
       "tier": "community",
       "words": 3330,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "getting-started.md",
-      "url": "/getting-started",
+      "url": "/docs/getting-started/",
       "title": "Getting started with SvGrid",
       "summary": "SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,000-row × 100-column editing surface with grouping, multi-column filtering, server-side data, and full keyboard and screen-reader support.",
       "section": "",
@@ -1434,7 +1406,7 @@
     },
     {
       "path": "getting-started/1-install.md",
-      "url": "/getting-started/1-install",
+      "url": "/docs/getting-started/1-install/",
       "title": "1. Install",
       "summary": "SvGrid is a single npm package. There is no peer dependency on a CSS framework - bring your own, or use the default theme that ships with the render component.",
       "section": "getting-started",
@@ -1446,7 +1418,7 @@
     },
     {
       "path": "getting-started/2-first-grid.md",
-      "url": "/getting-started/2-first-grid",
+      "url": "/docs/getting-started/2-first-grid/",
       "title": "2. First grid in 60 seconds",
       "summary": "!Anatomy of the minimal example: a data rows array and a columns ColumnDef array flow into a SvGrid element that renders a small table with a header row and three body rows.",
       "section": "getting-started",
@@ -1460,7 +1432,7 @@
     },
     {
       "path": "getting-started/3-data-and-columns.md",
-      "url": "/getting-started/3-data-and-columns",
+      "url": "/docs/getting-started/3-data-and-columns/",
       "title": "3. Data and columns",
       "summary": "SvGrid reads two arrays: data (your rows) and columns (the column-definition list). Everything else is opt-in.",
       "section": "getting-started",
@@ -1472,33 +1444,33 @@
     },
     {
       "path": "getting-started/4-features.md",
-      "url": "/getting-started/4-features",
+      "url": "/docs/getting-started/4-features/",
       "title": "4. Features",
-      "summary": "The grid engine is **feature-gated**. Out of the box you get the core row model (rows in their original order). To enable sorting, filtering, grouping, pagination, expansion, or selection, register the matching feature; the wrapper wires the matching row-model factory for you.",
+      "summary": "Every capability is **off by default** - a bare <SvGrid> is a plain, read-only table. Opt in with boolean props. No imports, no feature constants:",
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 815,
-      "lastUpdated": "2026-07-21",
+      "words": 810,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "getting-started/5-theme-and-density.md",
-      "url": "/getting-started/5-theme-and-density",
+      "url": "/docs/getting-started/5-theme-and-density/",
       "title": "5. Theme and density",
-      "summary": "The render component (<SvGrid>) ships its own scoped styles. You re-theme it by declaring --sg-* CSS custom properties at any level above the grid - :root for the whole app, a wrapper <div> for one instance, or directly on the <SvGrid> element itself.",
+      "summary": "Before hand-writing any tokens: 20 design-system presets ship with the package, each a single stylesheet with a full light + dark palette. One import re-themes the whole grid.",
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 675,
-      "lastUpdated": "2026-07-22",
+      "words": 805,
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
     },
     {
       "path": "getting-started/6-going-to-production.md",
-      "url": "/getting-started/6-going-to-production",
+      "url": "/docs/getting-started/6-going-to-production/",
       "title": "6. Going to production",
       "summary": "You have a working grid. This page is the checklist that turns it into something you'd ship.",
       "section": "getting-started",
@@ -1514,19 +1486,19 @@
     },
     {
       "path": "getting-started/starters.md",
-      "url": "/getting-started/starters",
+      "url": "/docs/getting-started/starters/",
       "title": "Starters & scaffolding",
       "summary": "The fastest way to a working SvGrid app. One command scaffolds a project with the grid already wired up - no copy-paste, no config archaeology.",
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 592,
-      "lastUpdated": "2026-07-22",
+      "words": 611,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/accessibility.md",
-      "url": "/help/accessibility",
+      "url": "/docs/help/accessibility/",
       "title": "Accessibility",
       "summary": "SvGrid implements the WAI-ARIA 1.2 grid pattern with full keyboard navigation and a screen-reader announcement layer. This page documents exactly what the grid does, where the responsibility line sits between the library and your code, and how to verify conformance.",
       "section": "help",
@@ -1540,7 +1512,7 @@
     },
     {
       "path": "help/agents.md",
-      "url": "/help/agents",
+      "url": "/docs/help/agents/",
       "title": "Build an AI agent that drives the grid",
       "summary": "This is the \"AI-native data grid\" story end-to-end. Three patterns, in order of how much agency you hand to the LLM:",
       "section": "help",
@@ -1552,7 +1524,7 @@
     },
     {
       "path": "help/ai-smart-paste.md",
-      "url": "/help/ai-smart-paste",
+      "url": "/docs/help/ai-smart-paste/",
       "title": "AI Smart Paste",
       "summary": "Drop any shape of contact / lead / row data into a text area - CSV, TSV, JSON, vCard, Markdown table, an email signature block, or a single line of prose - and the parser maps it into typed rows your grid can insert or merge.",
       "section": "help",
@@ -1566,7 +1538,7 @@
     },
     {
       "path": "help/ai-toolkit.md",
-      "url": "/help/ai-toolkit",
+      "url": "/docs/help/ai-toolkit/",
       "title": "AI Toolkit",
       "summary": "Everything SvGrid ships for building with language models, in one place. The toolkit spans two axes: **AI inside your running app** (helpers your users invoke - natural-language filter, smart fill, summarise, classify) and **AI inside your editor** (the MCP server + grounding files that make Claude, Cursor, and friends write correct SvGrid code).",
       "section": "help",
@@ -1580,7 +1552,7 @@
     },
     {
       "path": "help/ai.md",
-      "url": "/help/ai",
+      "url": "/docs/help/ai/",
       "title": "AI assistant",
       "summary": "Bring a language model into your grid with helpers that stay strictly model-agnostic: **natural-language filter**, **smart fill**, **summarise**, **classify**, **chart-this**, **find anomalies**, and **natural-language export**. Built in and **free** in **@svgrid/grid** - no license key, no separate package. They ship no model client and do nothing until you register a provider, so they add nothing to your bundle unless you import them.",
       "section": "help",
@@ -1594,7 +1566,7 @@
     },
     {
       "path": "help/alerts.md",
-      "url": "/help/alerts",
+      "url": "/docs/help/alerts/",
       "title": "Alerts - Enterprise",
       "summary": "Alert rules let your users say \"tell me when the data does X\" - and then act on it automatically: raise a toast, tint the row, flash the cell, block the edit, or just log it. Rules are authored at runtime in a no-code builder, persisted, and shareable as JSON. No redeploy to add an alert.",
       "section": "help",
@@ -1608,7 +1580,7 @@
     },
     {
       "path": "help/api-stability.md",
-      "url": "/help/api-stability",
+      "url": "/docs/help/api-stability/",
       "title": "API stability & semver policy",
       "summary": "The promise SvGrid makes to you about which exports you can lean on, how breaking changes are communicated, and how long deprecated APIs stick around.",
       "section": "help",
@@ -1620,7 +1592,7 @@
     },
     {
       "path": "help/architecture.md",
-      "url": "/help/architecture",
+      "url": "/docs/help/architecture/",
       "title": "Architecture overview",
       "summary": "A one-page mental model that should let you reason about every other topic in the docs. SvGrid is a strict three-layer system - if you know which layer a piece of code lives in, you know what it can and cannot do.",
       "section": "help",
@@ -1632,21 +1604,21 @@
     },
     {
       "path": "help/benchmarks.md",
-      "url": "/help/benchmarks",
+      "url": "/docs/help/benchmarks/",
       "title": "Performance benchmarks",
-      "summary": "Headline numbers from the regression suite. Every figure below is from the same hardware + browser configuration, re-measured on each release; the script that produces them lives in packages/grid/scripts/bench.ts and is checked in.",
+      "summary": "Headline numbers from the regression suite. Every figure below is from the same hardware + browser configuration, re-measured on each release.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1273,
-      "lastUpdated": "2026-08-15",
+      "words": 1310,
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "06-large-dataset"
       ]
     },
     {
       "path": "help/browser-support.md",
-      "url": "/help/browser-support",
+      "url": "/docs/help/browser-support/",
       "title": "Browser & runtime support",
       "summary": "The shipping target matrix. If your environment isn't listed, assume unsupported until you've validated the linked feature surfaces below.",
       "section": "help",
@@ -1658,7 +1630,7 @@
     },
     {
       "path": "help/cells/cell-components.md",
-      "url": "/help/cells/cell-components",
+      "url": "/docs/help/cells/cell-components/",
       "title": "Cell components",
       "summary": "For any cell whose content is more than a string, use cell: with renderSnippet or renderComponent.",
       "section": "help/cells",
@@ -1672,7 +1644,7 @@
     },
     {
       "path": "help/cells/cell-data-types.md",
-      "url": "/help/cells/cell-data-types",
+      "url": "/docs/help/cells/cell-data-types/",
       "title": "Cell data types",
       "summary": "The editorType field on a column tags the column with a type. This drives three different behaviours:",
       "section": "help/cells",
@@ -1686,7 +1658,7 @@
     },
     {
       "path": "help/cells/cell-text-selection.md",
-      "url": "/help/cells/cell-text-selection",
+      "url": "/docs/help/cells/cell-text-selection/",
       "title": "Cell text selection",
       "summary": "By default the grid has **cell-range selection** (drag across cells, range highlight, copy as TSV). Standard browser text-selection inside a cell is **not** the default - clicking-and-dragging across a cell creates a range selection, not a text selection.",
       "section": "help/cells",
@@ -1700,21 +1672,21 @@
     },
     {
       "path": "help/cells/conditional-formatting.md",
-      "url": "/help/cells/conditional-formatting",
+      "url": "/docs/help/cells/conditional-formatting/",
       "title": "Conditional formatting",
       "summary": "Conditional formatting colors a cell by its value. SvGrid ships it as a declarative engine prop, conditionalFormats, so you describe the rules once and the grid paints every cell - no per-cell cell snippet required.",
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 896,
-      "lastUpdated": "2026-07-28",
+      "words": 955,
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "141-conditional-formatting"
       ]
     },
     {
       "path": "help/cells/expressions.md",
-      "url": "/help/cells/expressions",
+      "url": "/docs/help/cells/expressions/",
       "title": "Expressions",
       "summary": "SvGrid does not ship a formula / expression language for cells. Computed values are JavaScript - either via fieldFn or inside a cell callback.",
       "section": "help/cells",
@@ -1728,7 +1700,7 @@
     },
     {
       "path": "help/cells/getting-values.md",
-      "url": "/help/cells/getting-values",
+      "url": "/docs/help/cells/getting-values/",
       "title": "Getting values",
       "summary": "You get cell values in three ways depending on context.",
       "section": "help/cells",
@@ -1742,7 +1714,7 @@
     },
     {
       "path": "help/cells/highlighting-changes.md",
-      "url": "/help/cells/highlighting-changes",
+      "url": "/docs/help/cells/highlighting-changes/",
       "title": "Highlighting changes",
       "summary": "Set cellFlash on a column and the grid flashes that cell whenever its value changes - edits, streaming feeds, server pushes. It is keyed by row identity, so scrolling a virtualized grid (which recycles <td> nodes) never triggers a false flash; only a same-row value change does. It respects prefers-reduced-motion.",
       "section": "help/cells",
@@ -1756,21 +1728,21 @@
     },
     {
       "path": "help/cells/sparklines.md",
-      "url": "/help/cells/sparklines",
+      "url": "/docs/help/cells/sparklines/",
       "title": "Sparklines",
       "summary": "A sparkline is a tiny, word-sized chart drawn inside a single cell. SvGrid renders them as a first-class column type: set sparkline on a column whose value is an array of numbers and the grid paints an inline SVG. No chart library, no custom cell snippet.",
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
       "words": 440,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "140-sparkline-cells"
       ]
     },
     {
       "path": "help/cells/styling-cells.md",
-      "url": "/help/cells/styling-cells",
+      "url": "/docs/help/cells/styling-cells/",
       "title": "Styling cells",
       "summary": "Cells render as <td> and pick up the same CSS variable tokens as the rest of the grid.",
       "section": "help/cells",
@@ -1784,7 +1756,7 @@
     },
     {
       "path": "help/cells/text-formatting.md",
-      "url": "/help/cells/text-formatting",
+      "url": "/docs/help/cells/text-formatting/",
       "title": "Text formatting",
       "summary": "The format field on a column produces locale-aware formatted strings without you writing a renderer.",
       "section": "help/cells",
@@ -1798,57 +1770,57 @@
     },
     {
       "path": "help/cells/tooltips.md",
-      "url": "/help/cells/tooltips",
+      "url": "/docs/help/cells/tooltips/",
       "title": "Tooltips",
       "summary": "There is no built-in tooltip API on ColumnDef. Use the standard title attribute, an accessible <dialog>, or any popover library - wired through a custom cell renderer.",
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
       "words": 217,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "85-tooltips-and-notes"
       ]
     },
     {
       "path": "help/cells/view-refresh.md",
-      "url": "/help/cells/view-refresh",
+      "url": "/docs/help/cells/view-refresh/",
       "title": "View refresh",
       "summary": "The grid renders reactively - it does **not** have a refresh() method, because it doesn't need one. To make the grid re-display, change the data that drives it.",
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
       "words": 246,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/charts.md",
-      "url": "/help/charts",
+      "url": "/docs/help/charts/",
       "title": "Integrated charts",
       "summary": "SvGrid can chart its own data with no external charting library. Two pieces:",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
       "words": 1326,
-      "lastUpdated": "2026-07-25",
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/collaboration.md",
-      "url": "/help/collaboration",
+      "url": "/docs/help/collaboration/",
       "title": "Real-time collaboration",
       "summary": "Two people (or two AI agents) on the same grid: **presence** (who's here and where their cursor is) and **live edits** (a change in one client appears in every other). SvGrid packages this as a headless controller over a pluggable transport - the only infrastructure-specific piece.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
       "words": 358,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/columns-hierarchy.md",
-      "url": "/help/columns-hierarchy",
+      "url": "/docs/help/columns-hierarchy/",
       "title": "Columns hierarchy & manager",
       "summary": "The pattern for grids with too many columns to fit on screen at once. A side-panel \"column manager\" exposes the column tree to the user: they pick what's visible, what gets collapsed into a one-cell summary, and what order leaves appear in within each group.",
       "section": "help",
@@ -1862,7 +1834,7 @@
     },
     {
       "path": "help/columns/aligned-grids.md",
-      "url": "/help/columns/aligned-grids",
+      "url": "/docs/help/columns/aligned-grids/",
       "title": "Aligned grids",
       "summary": "Aligned grids are two or more independent <SvGrid> instances kept in lockstep: **horizontal scroll** and **column-resize widths** propagate between them. Use it for a budget-vs-actuals comparison, or a totals grid pinned under a body grid, where the columns must stay lined up.",
       "section": "help/columns",
@@ -1876,28 +1848,28 @@
     },
     {
       "path": "help/columns/column-definitions.md",
-      "url": "/help/columns/column-definitions",
+      "url": "/docs/help/columns/column-definitions/",
       "title": "Column definitions",
       "summary": "A ColumnDef tells SvGrid how to read a value out of a row, how to render it, and which features apply to it. The grid below is built from a handful of ColumnDefs - look at the source to see how each shape maps to a column behaviour:",
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
       "words": 591,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "01-quick-start"
       ]
     },
     {
       "path": "help/columns/column-groups.md",
-      "url": "/help/columns/column-groups",
+      "url": "/docs/help/columns/column-groups/",
       "title": "Column groups",
       "summary": "A column group is a ColumnDef whose columns array contains children. The parent renders a spanning header above its children. The pivot demo below shows three levels of grouped headers in action - Year wraps Quarter wraps measure:",
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
       "words": 442,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "52-pivot-table",
         "183-collapsible-column-groups"
@@ -1905,7 +1877,7 @@
     },
     {
       "path": "help/columns/column-headers.md",
-      "url": "/help/columns/column-headers",
+      "url": "/docs/help/columns/column-headers/",
       "title": "Column headers - styling & height",
       "summary": "Headers are rendered as <th> inside a <thead> with role=\"row\". Style them with regular CSS - there are no header-specific Svelte props.",
       "section": "help/columns",
@@ -1919,7 +1891,7 @@
     },
     {
       "path": "help/columns/column-menu.md",
-      "url": "/help/columns/column-menu",
+      "url": "/docs/help/columns/column-menu/",
       "title": "Column menu",
       "summary": "Every column header carries a menu button (⋮). By default it's a flat list of actions plus a \"Choose columns\" submenu. Opt into the **tabbed** layout with columnMenuTabs:",
       "section": "help/columns",
@@ -1933,7 +1905,7 @@
     },
     {
       "path": "help/columns/column-moving.md",
-      "url": "/help/columns/column-moving",
+      "url": "/docs/help/columns/column-moving/",
       "title": "Column moving (drag to reorder)",
       "summary": "There are two ways to move columns in sv-grid:",
       "section": "help/columns",
@@ -1947,21 +1919,21 @@
     },
     {
       "path": "help/columns/column-pinning.md",
-      "url": "/help/columns/column-pinning",
+      "url": "/docs/help/columns/column-pinning/",
       "title": "Column pinning",
       "summary": "Pinning sticks a column to the **left** or **right** edge of the viewport so it does not scroll horizontally with the rest.",
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
       "words": 827,
-      "lastUpdated": "2026-08-12",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "25-column-pinning"
       ]
     },
     {
       "path": "help/columns/column-sizing.md",
-      "url": "/help/columns/column-sizing",
+      "url": "/docs/help/columns/column-sizing/",
       "title": "Column sizing",
       "summary": "Each column has a pixel width. The default for all columns is the grid's columnWidth prop (default ~140 px); each column can override via its width field.",
       "section": "help/columns",
@@ -1975,7 +1947,7 @@
     },
     {
       "path": "help/columns/column-spanning.md",
-      "url": "/help/columns/column-spanning",
+      "url": "/docs/help/columns/column-spanning/",
       "title": "Column & row spanning (merged cells)",
       "summary": "Spanning lets a single body cell cover **multiple columns** and/or **rows** - merged report headers, grouped labels, financial statements. SvGrid does this with a real colspan / rowspan merge engine; there are two ways to drive it.",
       "section": "help/columns",
@@ -1989,7 +1961,7 @@
     },
     {
       "path": "help/columns/column-state.md",
-      "url": "/help/columns/column-state",
+      "url": "/docs/help/columns/column-state/",
       "title": "Column state",
       "summary": "\"Column state\" is the bag of per-column settings that change at runtime: visibility, width, pinning, sort, filter. SvGrid keeps these as separate state slices inside the grid instance.",
       "section": "help/columns",
@@ -2003,7 +1975,7 @@
     },
     {
       "path": "help/columns/custom-header-components.md",
-      "url": "/help/columns/custom-header-components",
+      "url": "/docs/help/columns/custom-header-components/",
       "title": "Custom header components",
       "summary": "The header field on a ColumnDef accepts a function that returns either a renderSnippet(...) or renderComponent(...). The function receives a HeaderContext so it can access the column, header, and grid.",
       "section": "help/columns",
@@ -2017,33 +1989,33 @@
     },
     {
       "path": "help/columns/tool-panel.md",
-      "url": "/help/columns/tool-panel",
+      "url": "/docs/help/columns/tool-panel/",
       "title": "Tool panel (Columns + Filters)",
       "summary": "The tool panel is the docked sidebar - standard in enterprise grids - for managing columns and filters without hunting through a right-click menu. Turn it on with the toolPanel prop:",
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
       "words": 323,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "146-tool-panel"
       ]
     },
     {
       "path": "help/columns/updating-definitions.md",
-      "url": "/help/columns/updating-definitions",
+      "url": "/docs/help/columns/updating-definitions/",
       "title": "Updating column definitions",
       "summary": "There are two ways to change columns after the grid has mounted:",
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
       "words": 387,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/comparison.md",
-      "url": "/help/comparison",
+      "url": "/docs/help/comparison/",
       "title": "Comparison: SvGrid vs AG Grid vs TanStack Table",
       "summary": "The three projects solve overlapping problems, and the right choice depends on the framework you ship on and your budget.",
       "section": "help",
@@ -2055,7 +2027,7 @@
     },
     {
       "path": "help/conditional-form-schema.md",
-      "url": "/help/conditional-form-schema",
+      "url": "/docs/help/conditional-form-schema/",
       "title": "Conditional form schema",
       "summary": "A pattern for declarative field-visibility and editability rules inside a grid. Instead of writing imperative if/else checks across many cell callbacks and editable props, you declare a **schema** of when-rules per field and the grid evaluates them per row.",
       "section": "help",
@@ -2069,7 +2041,7 @@
     },
     {
       "path": "help/editing/edit-components.md",
-      "url": "/help/editing/edit-components",
+      "url": "/docs/help/editing/edit-components/",
       "title": "Edit components",
       "summary": "The grid ships with five inline editors. Each is selected by the column's editorType:",
       "section": "help/editing",
@@ -2083,7 +2055,7 @@
     },
     {
       "path": "help/editing/full-row.md",
-      "url": "/help/editing/full-row",
+      "url": "/docs/help/editing/full-row/",
       "title": "Full-row editing",
       "summary": "Full-row editing opens an **entire row** for edit at once: every editable cell shows an inline editor, a single Enter (or clicking away) commits all of them in one update, and Esc cancels the whole row. It's a form-style entry experience with the density of a grid.",
       "section": "help/editing",
@@ -2097,21 +2069,21 @@
     },
     {
       "path": "help/editing/overview.md",
-      "url": "/help/editing/overview",
+      "url": "/docs/help/editing/overview/",
       "title": "Editing - overview",
       "summary": "Inline editing is a single prop on <SvGrid>. Try it - double-click any cell, type to replace, hit Enter to commit. Tab moves to the next editable cell:",
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
       "words": 424,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "05-inline-editing"
       ]
     },
     {
       "path": "help/editing/parsing-values.md",
-      "url": "/help/editing/parsing-values",
+      "url": "/docs/help/editing/parsing-values/",
       "title": "Parsing values",
       "summary": "When the user commits an edit, the editor's DOM value (a string for text / number / date inputs, a boolean for checkboxes) is parsed by parseEditorValue into the canonical value for the column's type.",
       "section": "help/editing",
@@ -2126,21 +2098,22 @@
     },
     {
       "path": "help/editing/provided-editors.md",
-      "url": "/help/editing/provided-editors",
+      "url": "/docs/help/editing/provided-editors/",
       "title": "Provided cell editors",
       "summary": "The grid ships nine built-in editors, selected via editorType on the column definition. Each editor renders inside the cell while editing and falls back to the default text render (or your cell snippet) when the cell is read-only.",
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 1073,
-      "lastUpdated": "2026-06-16",
+      "words": 1272,
+      "lastUpdated": "2026-08-17",
       "demoIds": [
-        "26-list-chips-editors"
+        "26-list-chips-editors",
+        "428-async-editor-options"
       ]
     },
     {
       "path": "help/editing/saving-values.md",
-      "url": "/help/editing/saving-values",
+      "url": "/docs/help/editing/saving-values/",
       "title": "Saving values",
       "summary": "When the user commits an edit, the new value is written into the grid's **internal data copy**. The grid does **not** mutate the array you passed in via the data prop - it keeps its own working copy so an undo / cancel is possible without touching your state.",
       "section": "help/editing",
@@ -2154,7 +2127,7 @@
     },
     {
       "path": "help/editing/start-stop-editing.md",
-      "url": "/help/editing/start-stop-editing",
+      "url": "/docs/help/editing/start-stop-editing/",
       "title": "Start / stop editing",
       "summary": "The cell must be **focused** (the grid's active cell). Click any cell or use the arrow keys to set focus.",
       "section": "help/editing",
@@ -2169,7 +2142,7 @@
     },
     {
       "path": "help/editing/undo-redo.md",
-      "url": "/help/editing/undo-redo",
+      "url": "/docs/help/editing/undo-redo/",
       "title": "Undo / redo",
       "summary": "There is **no built-in undo/redo stack** inside <SvGrid>. The grid emits no per-edit event for an external stack to subscribe to, so undo/redo has to be built on top of the data-snapshot approach.",
       "section": "help/editing",
@@ -2183,21 +2156,21 @@
     },
     {
       "path": "help/editing/validation.md",
-      "url": "/help/editing/validation",
+      "url": "/docs/help/editing/validation/",
       "title": "Validation",
       "summary": "There is no validate(value) callback on ColumnDef today. Validation happens by intercepting committed edits and either accepting or reverting them.",
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
       "words": 388,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "24-validation"
       ]
     },
     {
       "path": "help/errors.md",
-      "url": "/help/errors",
+      "url": "/docs/help/errors/",
       "title": "Error reference",
       "summary": "Every Error thrown by @svgrid/grid or @svgrid/enterprise with the exact message text, the trigger condition, and the fix. If a runtime message you see isn't on this list, it's coming from your own code or a peer dependency.",
       "section": "help",
@@ -2209,21 +2182,21 @@
     },
     {
       "path": "help/export.md",
-      "url": "/help/export",
+      "url": "/docs/help/export/",
       "title": "Data export and printing",
       "summary": "**CSV / TSV / JSON export and copy-to-clipboard are free** in the community **@svgrid/grid** - the commodity \"data out\" every grid needs. The richer formats - **Excel (xlsx)**, **legacy Excel (xls)**, **PDF**, styled **HTML**, **XML**, **Markdown**, multi-sheet workbooks, password protection, conditional-format export, and the drop-in export menu - ship in the paid **@svgrid/enterprise** add-on, which reuses the exact same serializers so the two tiers feel like one product.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
       "words": 3881,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "21-export-and-print"
       ]
     },
     {
       "path": "help/expressions-query.md",
-      "url": "/help/expressions-query",
+      "url": "/docs/help/expressions-query/",
       "title": "Expression query language - Enterprise",
       "summary": "The expression language is a small, dependency-free query language your users author through the UI. It is the connective tissue behind alerts (and, in time, styled and calculated columns): one model for predicates, scalar maths, and change detection, evaluated the same way everywhere.",
       "section": "help",
@@ -2235,7 +2208,7 @@
     },
     {
       "path": "help/filtering/applying-filters.md",
-      "url": "/help/filtering/applying-filters",
+      "url": "/docs/help/filtering/applying-filters/",
       "title": "Applying filters",
       "summary": "\"Applying\" a filter means running it against the data. SvGrid applies filters **eagerly** by default: every keystroke updates the row model and the visible rows (with a 150ms debounce inside the column menu's value input).",
       "section": "help/filtering",
@@ -2249,7 +2222,7 @@
     },
     {
       "path": "help/filtering/custom-column-filters.md",
-      "url": "/help/filtering/custom-column-filters",
+      "url": "/docs/help/filtering/custom-column-filters/",
       "title": "Custom column filters",
       "summary": "When the built-in operators and the set-filter pattern are not enough, take over the filter pipeline.",
       "section": "help/filtering",
@@ -2263,7 +2236,7 @@
     },
     {
       "path": "help/filtering/date-filter.md",
-      "url": "/help/filtering/date-filter",
+      "url": "/docs/help/filtering/date-filter/",
       "title": "Date filter",
       "summary": "A column with editorType: 'date' (or 'datetime') gets the **date** filter operator set: equals, lessThan, greaterThan, **between**, isBlank.",
       "section": "help/filtering",
@@ -2277,7 +2250,7 @@
     },
     {
       "path": "help/filtering/filter-api.md",
-      "url": "/help/filtering/filter-api",
+      "url": "/docs/help/filtering/filter-api/",
       "title": "Filter API",
       "summary": "Two surfaces - pick based on whether the caller is inside or outside the component that owns the grid state.",
       "section": "help/filtering",
@@ -2291,7 +2264,7 @@
     },
     {
       "path": "help/filtering/filter-conditions.md",
-      "url": "/help/filtering/filter-conditions",
+      "url": "/docs/help/filtering/filter-conditions/",
       "title": "Filter conditions",
       "summary": "A \"filter condition\" is a (column, operator, value) triple. The grid stores filter conditions in state.columnFilters.",
       "section": "help/filtering",
@@ -2306,7 +2279,7 @@
     },
     {
       "path": "help/filtering/floating-filters.md",
-      "url": "/help/filtering/floating-filters",
+      "url": "/docs/help/filtering/floating-filters/",
       "title": "Floating filters",
       "summary": "\"Floating filters\" are the always-visible filter inputs that sit **between** the header row and the body. In SvGrid the filter row is **per-operator and per-type**: each cell has a funnel to pick the operator, the value input matches the column's type, and between shows a second inline \"To\" input.",
       "section": "help/filtering",
@@ -2320,7 +2293,7 @@
     },
     {
       "path": "help/filtering/number-filter.md",
-      "url": "/help/filtering/number-filter",
+      "url": "/docs/help/filtering/number-filter/",
       "title": "Number filter",
       "summary": "A column with editorType: 'number' gets the **number** filter operator set: equals, notEquals, greaterThan, lessThan, **between**, in, notIn, isBlank, isNotBlank. The default operator is equals.",
       "section": "help/filtering",
@@ -2334,21 +2307,21 @@
     },
     {
       "path": "help/filtering/overview.md",
-      "url": "/help/filtering/overview",
+      "url": "/docs/help/filtering/overview/",
       "title": "Filtering - overview",
       "summary": "Click any column header's filter icon to open the operator + value popover; numeric and date columns range-bucket their distinct values so the menu stays usable on big datasets:",
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
       "words": 559,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "03-excel-filters"
       ]
     },
     {
       "path": "help/filtering/set-filter.md",
-      "url": "/help/filtering/set-filter",
+      "url": "/docs/help/filtering/set-filter/",
       "title": "Set filter",
       "summary": "A \"set filter\" (a.k.a. value filter, list filter) shows a checklist of all distinct values in a column and lets the user pick which to include. It's what you reach for to filter status to \"active OR pending\", or department to a few specific teams.",
       "section": "help/filtering",
@@ -2363,7 +2336,7 @@
     },
     {
       "path": "help/filtering/text-filter.md",
-      "url": "/help/filtering/text-filter",
+      "url": "/docs/help/filtering/text-filter/",
       "title": "Text filter",
       "summary": "A column with no editorType (or editorType: 'text') gets the full **text** filter operator set. The default operator is contains.",
       "section": "help/filtering",
@@ -2378,7 +2351,7 @@
     },
     {
       "path": "help/glossary.md",
-      "url": "/help/glossary",
+      "url": "/docs/help/glossary/",
       "title": "Glossary",
       "summary": "Terminology used across the docs and the source. Sorted A-Z. If a term is unclear in a topic page and isn't on this list, please file an issue.",
       "section": "help",
@@ -2390,35 +2363,35 @@
     },
     {
       "path": "help/grouping-aggregation.md",
-      "url": "/help/grouping-aggregation",
+      "url": "/docs/help/grouping-aggregation/",
       "title": "Grouping & aggregation",
       "summary": "Roll rows up by one or more columns and compute aggregates (sum, avg, count, min, max, custom) at each group level. Powered by columnGroupingFeature plus per-column aggregator config.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1112,
-      "lastUpdated": "2026-08-15",
+      "words": 1588,
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "07-grouping-aggregation"
       ]
     },
     {
       "path": "help/grouping/aggregators.md",
-      "url": "/help/grouping/aggregators",
+      "url": "/docs/help/grouping/aggregators/",
       "title": "Group aggregators",
       "summary": "When grouping is active, each group row can show a rolled-up value per column - the sum of revenue, the average score, the count of deals. SvGrid does this declaratively: set aggregate on a column and the group header shows the result, formatted with that column's own format.",
       "section": "help/grouping",
       "pillar": "grid",
       "tier": "community",
       "words": 401,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "142-group-aggregators"
       ]
     },
     {
       "path": "help/headless/build-a-table.md",
-      "url": "/help/headless/build-a-table",
+      "url": "/docs/help/headless/build-a-table/",
       "title": "Build a table from scratch",
       "summary": "This is the whole point of headless: the engine computes the rows, **you** emit the markup. Here's a complete, sortable, filterable <table> in one Svelte component - no <SvGrid>, no grid CSS.",
       "section": "help/headless",
@@ -2432,7 +2405,7 @@
     },
     {
       "path": "help/headless/controlled-state.md",
-      "url": "/help/headless/controlled-state",
+      "url": "/docs/help/headless/controlled-state/",
       "title": "Controlled state",
       "summary": "The engine never owns its state - **you do**. You pass state in and the engine calls your onXxxChange handlers with the next value. That one rule is what makes headless SvGrid click with Svelte 5 $state, and it's what lets state survive an unmount or be shared across two grids.",
       "section": "help/headless",
@@ -2446,7 +2419,7 @@
     },
     {
       "path": "help/headless/overview.md",
-      "url": "/help/headless/overview",
+      "url": "/docs/help/headless/overview/",
       "title": "Headless overview",
       "summary": "<SvGrid> is the **renderer**. createSvGrid is the **engine** that powers it. They're independent: you can use the engine on its own to build a custom UI, render a plain <table> for print or email, run the row pipeline in a Web Worker or on a server, or unit-test sort / filter / aggregation logic with no DOM at all.",
       "section": "help/headless",
@@ -2460,7 +2433,7 @@
     },
     {
       "path": "help/headless/row-models.md",
-      "url": "/help/headless/row-models",
+      "url": "/docs/help/headless/row-models/",
       "title": "Row models",
       "summary": "The engine turns your raw data into the rows you render by running it through a **pipeline** of row models. You opt into the steps you need; everything else is tree-shaken out.",
       "section": "help/headless",
@@ -2474,7 +2447,7 @@
     },
     {
       "path": "help/headless/server-side.md",
-      "url": "/help/headless/server-side",
+      "url": "/docs/help/headless/server-side/",
       "title": "Server-side data (load on demand)",
       "summary": "When the rows live behind an API and there are too many to ship to the browser, the server does the work: **sorting**, **filtering**, and **paging** become query params, and it returns only the current page plus a total count. The headless engine wraps that page and nothing else - it never sees the rest of the dataset.",
       "section": "help/headless",
@@ -2488,7 +2461,7 @@
     },
     {
       "path": "help/headless/styling.md",
-      "url": "/help/headless/styling",
+      "url": "/docs/help/headless/styling/",
       "title": "Styling a headless table",
       "summary": "With the headless engine you render your own markup, so **you own every pixel of styling** - there is no grid stylesheet to fight. The same createSvGrid engine can drive a minimal underlined table, a fully bordered grid, or floating row cards. Flip the controls in the demo; the engine and rows are identical, only the CSS changes.",
       "section": "help/headless",
@@ -2502,7 +2475,7 @@
     },
     {
       "path": "help/headless/virtualization.md",
-      "url": "/help/headless/virtualization",
+      "url": "/docs/help/headless/virtualization/",
       "title": "Headless virtualization",
       "summary": "<SvGrid> virtualizes rows and columns for you. When you render your own markup, you virtualize yourself with the same engine SvGrid uses - createSvelteVirtualizer (reactive) or createVirtualizer (framework-agnostic). Only the rows in view get DOM nodes, so 100k rows stay smooth.",
       "section": "help/headless",
@@ -2516,7 +2489,7 @@
     },
     {
       "path": "help/i18n-rtl.md",
-      "url": "/help/i18n-rtl",
+      "url": "/docs/help/i18n-rtl/",
       "title": "Internationalisation & RTL",
       "summary": "The grid is locale-agnostic by design: every text label is yours to translate, every formatted value goes through Intl, and right-to-left layout flips via standard CSS logical properties.",
       "section": "help",
@@ -2530,36 +2503,22 @@
     },
     {
       "path": "help/import.md",
-      "url": "/help/import",
+      "url": "/docs/help/import/",
       "title": "Data import - Enterprise",
       "summary": "The sister to data export and printing. Read an Excel file, CSV/TSV blob, or JSON array in the browser and produce a typed preview of every parsed row - including per-cell validation errors - before any data lands in the grid. Ships in the paid **@svgrid/enterprise** add-on.",
       "section": "help",
       "pillar": "grid",
       "tier": "enterprise",
       "words": 2700,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "53-excel-import",
         "204-import-dialog"
       ]
     },
     {
-      "path": "help/index.md",
-      "url": "/help/index",
-      "title": "SvGrid Help",
-      "summary": "Topic-oriented documentation for SvGrid. Each page is a focused explanation of one feature with copy-paste code that runs against the shipping library - written for SvGrid, not translated from another grid.",
-      "section": "help",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 1333,
-      "lastUpdated": "2026-08-15",
-      "demoIds": [
-        "00-trading-desk"
-      ]
-    },
-    {
       "path": "help/llm-grounding.md",
-      "url": "/help/llm-grounding",
+      "url": "/docs/help/llm-grounding/",
       "title": "Use sv-grid docs as LLM context",
       "summary": "This page is the \"how do I make ChatGPT / Claude / Cursor write good sv-grid code?\" guide. Three pre-built artefacts ship with the docs specifically so models can ground themselves in current, accurate information instead of hallucinating from training data.",
       "section": "help",
@@ -2571,7 +2530,7 @@
     },
     {
       "path": "help/mcp-server.md",
-      "url": "/help/mcp-server",
+      "url": "/docs/help/mcp-server/",
       "title": "MCP server",
       "summary": "The sv-grid MCP server lets AI clients (Claude Desktop, Cursor, Zed, Continue, custom agents) query the documentation, scaffold column definitions, and preview exports - all grounded in the same schemas the library ships with. No API key required; everything runs locally against your installed copy.",
       "section": "help",
@@ -2583,19 +2542,19 @@
     },
     {
       "path": "help/migrating-from-ag-grid.md",
-      "url": "/help/migrating-from-ag-grid",
+      "url": "/docs/help/migrating-from-ag-grid/",
       "title": "Migrating from AG Grid to SvGrid",
       "summary": "If you tried AG Grid on a Svelte 5 project - via ag-grid-svelte, the old ag-grid-community/svelte, or a hand-rolled wrapper - you probably hit the same friction everyone hits: the bridge between AG Grid's React/Angular-first API and Svelte 5 runes is brittle, the bundle is heavy, and the Enterprise pricing only makes sense at scale.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
       "words": 2127,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/migrating-from-devextreme.md",
-      "url": "/help/migrating-from-devextreme",
+      "url": "/docs/help/migrating-from-devextreme/",
       "title": "Migrating from DevExtreme DataGrid (DevExpress)",
       "summary": "DevExtreme DataGrid is a deep, commercial multi-framework grid from DevExpress (jQuery, React, Vue, Angular). Moving to SvGrid trades the commercial suite for a Svelte-5-native grid with an MIT core and a far lower-cost paid tier.",
       "section": "help",
@@ -2607,7 +2566,7 @@
     },
     {
       "path": "help/migrating-from-glide.md",
-      "url": "/help/migrating-from-glide",
+      "url": "/docs/help/migrating-from-glide/",
       "title": "Migrating from Glide Data Grid",
       "summary": "Glide Data Grid is the canvas-rendered, ultra-high-performance choice for very wide datasets (100k+ rows, 100+ columns). Sv-grid renders to DOM with virtualization, which trades peak FPS for accessibility + standards-compliant HTML.",
       "section": "help",
@@ -2619,7 +2578,7 @@
     },
     {
       "path": "help/migrating-from-gridjs.md",
-      "url": "/help/migrating-from-gridjs",
+      "url": "/docs/help/migrating-from-gridjs/",
       "title": "Migrating from Grid.js",
       "summary": "Grid.js is a small vanilla-JS table for search, sort, and pagination that you render into a DOM element. SvGrid does the same in a Svelte-5-native component and keeps going - virtualization, Excel-style filters, editing, grouping - when you outgrow the basics.",
       "section": "help",
@@ -2631,7 +2590,7 @@
     },
     {
       "path": "help/migrating-from-handsontable.md",
-      "url": "/help/migrating-from-handsontable",
+      "url": "/docs/help/migrating-from-handsontable/",
       "title": "Migrating from Handsontable",
       "summary": "Handsontable's mental model is \"spreadsheet-in-a-page\": every cell editable, formulas, copy/paste with the OS clipboard, frozen rows and columns. Sv-grid covers ~90% of the same surface; the port is mostly a configuration translation, except for HyperFormula (see the Formulas section below).",
       "section": "help",
@@ -2643,7 +2602,7 @@
     },
     {
       "path": "help/migrating-from-jqxgrid.md",
-      "url": "/help/migrating-from-jqxgrid",
+      "url": "/docs/help/migrating-from-jqxgrid/",
       "title": "Migrating from jqxGrid (jQWidgets)",
       "summary": "jqxGrid and SvGrid come from the **same team**. jqxGrid is the mature, multi-framework grid (jQuery core with Angular, React, and Vue integrations); SvGrid is the Svelte-5-native member of the family. If your team is consolidating on Svelte 5, this guide maps a jqxGrid setup onto SvGrid - and the concepts will feel familiar because the engineering lineage is shared.",
       "section": "help",
@@ -2655,7 +2614,7 @@
     },
     {
       "path": "help/migrating-from-kendo-grid.md",
-      "url": "/help/migrating-from-kendo-grid",
+      "url": "/docs/help/migrating-from-kendo-grid/",
       "title": "Migrating from Kendo UI Grid (Telerik)",
       "summary": "Kendo UI Grid is the polished, commercial enterprise grid from Telerik / Progress, available for jQuery, React, Vue, and Angular. Moving to SvGrid trades the multi-framework commercial suite for a Svelte-5-native grid with an MIT core - and a much cheaper paid tier.",
       "section": "help",
@@ -2667,7 +2626,7 @@
     },
     {
       "path": "help/migrating-from-mui-x.md",
-      "url": "/help/migrating-from-mui-x",
+      "url": "/docs/help/migrating-from-mui-x/",
       "title": "Migrating from MUI X DataGrid",
       "summary": "MUI X DataGrid is the most common starting point for teams already on Material UI. It's a closed-source-Pro / open-source-Community split very similar to sv-grid's. The port is mostly mechanical.",
       "section": "help",
@@ -2679,7 +2638,7 @@
     },
     {
       "path": "help/migrating-from-primevue-datatable.md",
-      "url": "/help/migrating-from-primevue-datatable",
+      "url": "/docs/help/migrating-from-primevue-datatable/",
       "title": "Migrating from PrimeVue / PrimeNG / PrimeReact DataTable",
       "summary": "The Prime DataTable is the grid in the Prime UI suites for Vue, Angular, and React. Its columns are declared as <Column> children with field / header props - a shape that maps cleanly onto SvGrid's ColumnDef array. The port is mostly translating columns and events into a Svelte 5 component.",
       "section": "help",
@@ -2691,7 +2650,7 @@
     },
     {
       "path": "help/migrating-from-react-data-grid.md",
-      "url": "/help/migrating-from-react-data-grid",
+      "url": "/docs/help/migrating-from-react-data-grid/",
       "title": "Migrating from React Data Grid (adazzle)",
       "summary": "react-data-grid is a fast, Excel-like React grid with a clean column API. SvGrid mirrors its shape - virtualized DOM, typed columns, inline editing, custom cells - on Svelte 5 runes instead of React, so the port is mostly a column rename pass.",
       "section": "help",
@@ -2703,7 +2662,7 @@
     },
     {
       "path": "help/migrating-from-smart-grid.md",
-      "url": "/help/migrating-from-smart-grid",
+      "url": "/docs/help/migrating-from-smart-grid/",
       "title": "Migrating from Smart.Grid (Smart Web Components)",
       "summary": "Smart.Grid (htmlelements.com) and SvGrid come from the **same team**. Smart.Grid is a framework-agnostic custom element - it even works inside Svelte today - while SvGrid is the reactive, Svelte-5-native option. If you are standardising a Svelte app on idiomatic components, this guide maps a Smart.Grid setup onto SvGrid.",
       "section": "help",
@@ -2715,7 +2674,7 @@
     },
     {
       "path": "help/migrating-from-svar-svelte-datagrid.md",
-      "url": "/help/migrating-from-svar-svelte-datagrid",
+      "url": "/docs/help/migrating-from-svar-svelte-datagrid/",
       "title": "Migrating from SVAR Svelte DataGrid",
       "summary": "SVAR Svelte DataGrid (wx-svelte-grid) is, like SvGrid, an actual Svelte-native grid rather than a wrapper, and both are MIT-licensed and free for commercial use. Because both are component-first with array-of-object column definitions, a port is mostly a configuration translation. The reasons people switch are **capability** (SvGrid adds row grouping with aggregation, master-detail, Excel-style cell-range selection, integrated charts, and pivot) and **architecture** (SvGrid also exposes a headless engine and an MCP server).",
       "section": "help",
@@ -2727,7 +2686,7 @@
     },
     {
       "path": "help/migrating-from-svelte-headless-table.md",
-      "url": "/help/migrating-from-svelte-headless-table",
+      "url": "/docs/help/migrating-from-svelte-headless-table/",
       "title": "Migrating from svelte-headless-table",
       "summary": "svelte-headless-table popularised the headless-table pattern in the Svelte ecosystem. It is built on Svelte 4 stores and plugins (addSortBy, addColumnFilters, addPagination, ...), and it leaves the markup to you. SvGrid keeps the same headless idea but runs on Svelte 5 runes and ships a render component, so the port mostly *removes* the table you used to hand-author.",
       "section": "help",
@@ -2739,7 +2698,7 @@
     },
     {
       "path": "help/migrating-from-syncfusion.md",
-      "url": "/help/migrating-from-syncfusion",
+      "url": "/docs/help/migrating-from-syncfusion/",
       "title": "Migrating from Syncfusion Grid",
       "summary": "Syncfusion Grid is a comprehensive commercial grid across JavaScript, React, Vue, Angular, and Blazor, with a free community license for qualifying small teams. Moving to SvGrid trades the multi-framework suite for a Svelte-5-native grid with an unconditional MIT core.",
       "section": "help",
@@ -2751,7 +2710,7 @@
     },
     {
       "path": "help/migrating-from-tabulator.md",
-      "url": "/help/migrating-from-tabulator",
+      "url": "/docs/help/migrating-from-tabulator/",
       "title": "Migrating from Tabulator",
       "summary": "Tabulator is a feature-rich vanilla-JS table you instantiate against a DOM element and drive imperatively (table.setData(...), table.on('cellEdited', ...)). SvGrid covers a similar feature surface but as a Svelte 5 component: data is a reactive $state array, custom cells are snippets, and there is no manual mount / teardown.",
       "section": "help",
@@ -2763,7 +2722,7 @@
     },
     {
       "path": "help/migrating-from-tanstack-table.md",
-      "url": "/help/migrating-from-tanstack-table",
+      "url": "/docs/help/migrating-from-tanstack-table/",
       "title": "Migrating from TanStack Table",
       "summary": "TanStack Table (formerly React Table v8) is the closest conceptual sibling to sv-grid - both are \"headless data grid\" libraries with explicit row-model pipelines. If you already think in createTable() + getCoreRowModel(), this is a half-day port.",
       "section": "help",
@@ -2775,7 +2734,7 @@
     },
     {
       "path": "help/migrating-from-ui-kit-tables.md",
-      "url": "/help/migrating-from-ui-kit-tables",
+      "url": "/docs/help/migrating-from-ui-kit-tables/",
       "title": "Migrating from a UI-kit table (Flowbite / Skeleton / shadcn-svelte)",
       "summary": "Flowbite-Svelte, Skeleton, and shadcn-svelte all ship a styled <Table> component. They are presentation components: they render the rows you pass and match your design tokens, but sorting, filtering, virtualization, and editing are yours to write by hand. Moving to SvGrid replaces that hand-rolled logic with built-in features - while still letting you match the design system.",
       "section": "help",
@@ -2787,7 +2746,7 @@
     },
     {
       "path": "help/migrating-from-vincjo-datatables.md",
-      "url": "/help/migrating-from-vincjo-datatables",
+      "url": "/docs/help/migrating-from-vincjo-datatables/",
       "title": "Migrating from @vincjo/datatables",
       "summary": "@vincjo/datatables is a small, ergonomic Svelte datatable helper: you wrap your data in a handler and it gives you reactive sorting, filtering, and pagination while you keep your own table markup. SvGrid covers the same job and then keeps going - virtualization, an Excel-style filter menu, inline editing, and a render component - so the port is mostly about deciding how much markup you want to keep.",
       "section": "help",
@@ -2799,19 +2758,19 @@
     },
     {
       "path": "help/missing-features.md",
-      "url": "/help/missing-features",
+      "url": "/docs/help/missing-features/",
       "title": "Missing features",
       "summary": "An honest accounting of what is **not yet built**, audited against the shipped demo catalog. Most of what used to live here has shipped; the remaining gaps are small and clearly marked. Each entry has a rough effort estimate (S / M / L).",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1377,
-      "lastUpdated": "2026-07-02",
+      "words": 1484,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/mobile-card-view.md",
-      "url": "/help/mobile-card-view",
+      "url": "/docs/help/mobile-card-view/",
       "title": "Mobile card view",
       "summary": "On wide screens the grid is the grid. Under a viewport breakpoint (by convention 720 px), the same $state array re-renders as touch-friendly cards. Tap a card to expand it into an edit panel; the write flows through api.setCellValue so dirty tracking, filtering, and external observers see every edit identically, whether it came from the desktop grid or from the mobile card.",
       "section": "help",
@@ -2825,7 +2784,7 @@
     },
     {
       "path": "help/observability.md",
-      "url": "/help/observability",
+      "url": "/docs/help/observability/",
       "title": "Observability",
       "summary": "Production-grade visibility into a live grid: which rows users see, which cells they edit, what they filter for, how often the imperative API is invoked. Everything you need to wire into Sentry, Datadog, OpenTelemetry, Honeycomb, your own pipeline.",
       "section": "help",
@@ -2837,7 +2796,7 @@
     },
     {
       "path": "help/pivot.md",
-      "url": "/help/pivot",
+      "url": "/docs/help/pivot/",
       "title": "Pivot tables - Enterprise",
       "summary": "A built-in pivot model that turns a flat data set into a row-axis tree, a nested column-axis header, and one aggregated cell per (row-path × col-path × measure) triple. Ships in **@svgrid/enterprise**.",
       "section": "help",
@@ -2851,7 +2810,7 @@
     },
     {
       "path": "help/production.md",
-      "url": "/help/production",
+      "url": "/docs/help/production/",
       "title": "Production deployment",
       "summary": "The checklist that turns \"it works on my laptop\" into \"it ships\". One page per concern; each concern is one paragraph + the code that matters.",
       "section": "help",
@@ -2865,7 +2824,7 @@
     },
     {
       "path": "help/real-time.md",
-      "url": "/help/real-time",
+      "url": "/docs/help/real-time/",
       "title": "Real-time / streaming updates",
       "summary": "How to drive the grid from a WebSocket / SSE / poll. Three patterns ranked by the rate of change:",
       "section": "help",
@@ -2879,7 +2838,7 @@
     },
     {
       "path": "help/recipes.md",
-      "url": "/help/recipes",
+      "url": "/docs/help/recipes/",
       "title": "Recipes / Cookbook",
       "summary": "Quick patterns for the questions that come up over and over. Each recipe is paired with a live demo or a minimal snippet that runs against the shipping library.",
       "section": "help",
@@ -2916,7 +2875,7 @@
     },
     {
       "path": "help/rows/accessing-rows.md",
-      "url": "/help/rows/accessing-rows",
+      "url": "/docs/help/rows/accessing-rows/",
       "title": "Accessing rows",
       "summary": "You can read the grid's current rows in three ways.",
       "section": "help/rows",
@@ -2930,7 +2889,7 @@
     },
     {
       "path": "help/rows/full-width-rows.md",
-      "url": "/help/rows/full-width-rows",
+      "url": "/docs/help/rows/full-width-rows/",
       "title": "Full-width rows",
       "summary": "\"Full-width rows\" are rows whose content takes the entire grid width instead of being cell-by-cell - useful for inline editors, banner ads, section dividers, and detail-row expansions.",
       "section": "help/rows",
@@ -2944,7 +2903,7 @@
     },
     {
       "path": "help/rows/kanban-board.md",
-      "url": "/help/rows/kanban-board",
+      "url": "/docs/help/rows/kanban-board/",
       "title": "Kanban board mode",
       "summary": "Set one board prop and the grid renders its rows as **cards in horizontal lanes** instead of a table. It is the same <SvGrid>, the same data and columns - only the presentation changes. Lanes are bucketed by a field; dragging a card to another lane tells you to reassign that field on your own data.",
       "section": "help/rows",
@@ -2958,7 +2917,7 @@
     },
     {
       "path": "help/rows/master-detail.md",
-      "url": "/help/rows/master-detail",
+      "url": "/docs/help/rows/master-detail/",
       "title": "Master / detail (nested grids)",
       "summary": "Master/detail is the pattern where each **master** row expands to reveal a **detail** panel - most often a nested grid of the row's child records. SvGrid builds it from two props on <SvGrid>:",
       "section": "help/rows",
@@ -2972,7 +2931,7 @@
     },
     {
       "path": "help/rows/row-data.md",
-      "url": "/help/rows/row-data",
+      "url": "/docs/help/rows/row-data/",
       "title": "Row data",
       "summary": "Row data is whatever you pass to <SvGrid data={...}>. It is a ReadonlyArray<TData> where TData is your row type. Any shape works; the grid does not require a base class or interface.",
       "section": "help/rows",
@@ -2986,7 +2945,7 @@
     },
     {
       "path": "help/rows/row-dragging.md",
-      "url": "/help/rows/row-dragging",
+      "url": "/docs/help/rows/row-dragging/",
       "title": "Row dragging",
       "summary": "Managed row dragging lets users **reorder rows** within a grid and **move rows between grids**. Turn on rowDragManaged and every row becomes a drag source (grab cursor + a grip in the row-number cell); a glowing line shows where the row will land, and the grid splices its own data on drop.",
       "section": "help/rows",
@@ -3001,21 +2960,21 @@
     },
     {
       "path": "help/rows/row-height.md",
-      "url": "/help/rows/row-height",
+      "url": "/docs/help/rows/row-height/",
       "title": "Row height",
       "summary": "Row height is a single integer in pixels.",
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 337,
-      "lastUpdated": "2026-06-16",
+      "words": 542,
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
     },
     {
       "path": "help/rows/row-pagination.md",
-      "url": "/help/rows/row-pagination",
+      "url": "/docs/help/rows/row-pagination/",
       "title": "Row pagination",
       "summary": "Pagination is opt-in. Register the feature, register the row model, then either turn it on with showPagination or drive its state from outside.",
       "section": "help/rows",
@@ -3029,7 +2988,7 @@
     },
     {
       "path": "help/rows/row-pinning.md",
-      "url": "/help/rows/row-pinning",
+      "url": "/docs/help/rows/row-pinning/",
       "title": "Row pinning (top / bottom)",
       "summary": "Pin specific rows to the **top** or **bottom** of the grid so they stay visible while the rest of the data scrolls. Typical use cases:",
       "section": "help/rows",
@@ -3043,33 +3002,33 @@
     },
     {
       "path": "help/rows/row-sorting.md",
-      "url": "/help/rows/row-sorting",
+      "url": "/docs/help/rows/row-sorting/",
       "title": "Row sorting",
       "summary": "Sorting is a feature you opt into. Try it live - click any column header to cycle none → asc → desc → none; shift-click adds the column to the sort key list (multi-sort):",
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
       "words": 380,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "02-sort-filter-paginate"
       ]
     },
     {
       "path": "help/rows/row-spanning.md",
-      "url": "/help/rows/row-spanning",
+      "url": "/docs/help/rows/row-spanning/",
       "title": "Row spanning",
       "summary": "\"Row spanning\" lets one cell's content cover **multiple rows**, the way a merged cell does in a spreadsheet.",
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
       "words": 189,
-      "lastUpdated": "2026-06-05",
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/rows/scheduler.md",
-      "url": "/help/rows/scheduler",
+      "url": "/docs/help/rows/scheduler/",
       "title": "Scheduler / calendar mode",
       "summary": "Set one scheduler prop and the grid renders its rows as **events on a calendar** instead of a table. It is the same <SvGrid>, the same data and columns - only the presentation changes. Events are placed by time across four views (Month, Week, Day, Agenda); dragging an event to a new day or time tells you to reassign its start/end on your own data.",
       "section": "help/rows",
@@ -3090,7 +3049,7 @@
     },
     {
       "path": "help/rows/styling-rows.md",
-      "url": "/help/rows/styling-rows",
+      "url": "/docs/help/rows/styling-rows/",
       "title": "Styling rows",
       "summary": "Rows are <tr role=\"row\"> elements inside the grid table. Style them with plain CSS.",
       "section": "help/rows",
@@ -3104,35 +3063,49 @@
     },
     {
       "path": "help/rows/transactions.md",
-      "url": "/help/rows/transactions",
+      "url": "/docs/help/rows/transactions/",
       "title": "Transactions",
       "summary": "api.applyTransaction({ add, update, remove }) applies a batch of row mutations in a **single** data update - one re-render for the whole batch, not one per row. It's the path to use for high-frequency / streaming feeds (WebSocket deltas, tick data) where calling addRow / setCellValue per row would thrash.",
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
       "words": 326,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "145-transaction-api"
       ]
     },
     {
+      "path": "help/rows/tree-data.md",
+      "url": "/docs/help/rows/tree-data/",
+      "title": "Tree data",
+      "summary": "Nest rows into an expandable hierarchy with the treeData prop.",
+      "section": "help/rows",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 568,
+      "lastUpdated": "2026-08-17",
+      "demoIds": [
+        "426-tree-data"
+      ]
+    },
+    {
       "path": "help/rows/tree-rows.md",
-      "url": "/help/rows/tree-rows",
+      "url": "/docs/help/rows/tree-rows/",
       "title": "Tree rows (expand / collapse)",
       "summary": "SvGrid does not have a treeData prop. Tree-shaped data renders through the same data + columns pipeline as any other grid, with the tree behaviour living in *your* derived-state code. This is on purpose: a tree is just \"a flat list with a depth field and a collapsible subtree\", and the headless engine doesn't need to know which.",
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
       "words": 1008,
-      "lastUpdated": "2026-07-22",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "28-org-chart-tree"
       ]
     },
     {
       "path": "help/saved-views.md",
-      "url": "/help/saved-views",
+      "url": "/docs/help/saved-views/",
       "title": "Saved views & layout persistence",
       "summary": "The pattern for \"user changes sort + filters + columns; reopens the page next week; everything is where they left it.\" Powered entirely by your own state - the grid never writes to storage on its own.",
       "section": "help",
@@ -3146,7 +3119,7 @@
     },
     {
       "path": "help/scheduling.md",
-      "url": "/help/scheduling",
+      "url": "/docs/help/scheduling/",
       "title": "Scheduling: automate exports and reminders",
       "summary": "Two jobs turn up in almost every data app the moment it goes into daily use: *\"email me this report every weekday at 17:30\"* and *\"remind the desk at 09:00 to reconcile.\"* The reflex is to stand up a backend job runner. But in a long-lived data app - a dashboard that stays open on a wall screen, an ops console a team lives in all day - a schedule is just **a timer plus an action you already have**: an export or a toast alert.",
       "section": "help",
@@ -3158,7 +3131,7 @@
     },
     {
       "path": "help/security.md",
-      "url": "/help/security",
+      "url": "/docs/help/security/",
       "title": "Security & supply chain",
       "summary": "SvGrid is built for shipping into regulated environments where every dependency, every runtime call, and every network egress has to be justified before procurement signs. This page is the answer to \"what does this package do, what does it depend on, and what would I tell our InfoSec team?\".",
       "section": "help",
@@ -3172,7 +3145,7 @@
     },
     {
       "path": "help/server-side-data.md",
-      "url": "/help/server-side-data",
+      "url": "/docs/help/server-side-data/",
       "title": "Server-side data",
       "summary": "The patterns for moving sort, filter, group, and pagination off the client and onto your API. Three flavours, ranked by complexity:",
       "section": "help",
@@ -3186,7 +3159,7 @@
     },
     {
       "path": "help/server/server-editing.md",
-      "url": "/help/server/server-editing",
+      "url": "/docs/help/server/server-editing/",
       "title": "Server editing",
       "summary": "The Server-Side Row Model has a read side (getRows) and an optional **write side**. Implement whichever of createRow / updateRow / deleteRow your backend supports, and createServerDataSource gives you matching controller methods that call through and keep the on-screen page in sync. This page is a deep dive into that write path: the non-optimistic default, built-in optimistic updates with rollback, the saving state, surfacing validation errors, and optimistic concurrency.",
       "section": "help/server",
@@ -3198,7 +3171,7 @@
     },
     {
       "path": "help/server/server-filtering.md",
-      "url": "/help/server/server-filtering",
+      "url": "/docs/help/server/server-filtering/",
       "title": "Server filtering",
       "summary": "When the data lives on the server, the grid does not filter rows itself. It records what the user typed and emits a single **ServerFilterModel**, and your backend turns that model into a WHERE clause. This page is a deep dive into that model: its exact shape, the operator set, set-filter faceting, the global quick search, and how to map all of it to a **parameterized** query with the normalizeFilters helper from @svgrid/enterprise.",
       "section": "help/server",
@@ -3210,7 +3183,7 @@
     },
     {
       "path": "help/server/server-grouping.md",
-      "url": "/help/server/server-grouping",
+      "url": "/docs/help/server/server-grouping/",
       "title": "Server grouping",
       "summary": "Grouping a hundred thousand rows in the browser means shipping all hundred thousand rows first. Server grouping flips that: the backend runs the GROUP BY, and the grid receives **one pre-aggregated row per group** - a key plus its subtotals. Expanding a group then lazily drills into the next level (or the raw rows) for **that group only**, so the network never carries the full table.",
       "section": "help/server",
@@ -3225,7 +3198,7 @@
     },
     {
       "path": "help/server/server-paging.md",
-      "url": "/help/server/server-paging",
+      "url": "/docs/help/server/server-paging/",
       "title": "Server paging",
       "summary": "When the Server-Side Row Model holds one page in memory, paging is just the act of choosing which page. The createServerDataSource controller turns a page index into an offset/limit request, asks your backend for exactly those rows plus a total, and hands both back so a pager can draw itself. This page is the deep dive on that loop: how the numbers are computed, how to wire a \"Load more\" or numbered pager, how to change page size, and what to do when the backend cannot cheaply count the total.",
       "section": "help/server",
@@ -3239,7 +3212,7 @@
     },
     {
       "path": "help/server/server-row-model.md",
-      "url": "/help/server/server-row-model",
+      "url": "/docs/help/server/server-row-model/",
       "title": "Server-Side Row Model (SSRM)",
       "summary": "When the data lives on the server - millions of rows in a database - the grid should hold only the page on screen and push sorting, filtering, and paging to the backend. SvGrid packages this as **one datasource contract**: you implement a single async getRows, and createServerDataSource owns the request lifecycle (paging, sort, filter, race-safety, writes).",
       "section": "help/server",
@@ -3253,7 +3226,7 @@
     },
     {
       "path": "help/server/server-sorting.md",
-      "url": "/help/server/server-sorting",
+      "url": "/docs/help/server/server-sorting/",
       "title": "Server sorting",
       "summary": "In the Server-Side Row Model the grid never reorders the data - the server does, because only the server can see all the rows. The grid's job is to capture the user's intent as a sort model and hand it to the createServerDataSource controller; your getRows translates that model into an ORDER BY clause. This page is the deep dive on that model: its exact shape, multi-column priority, the mapping to SQL, how to wire external sort, and the two things that keep server sorting correct and fast - a stable tiebreaker and an index on the sorted columns.",
       "section": "help/server",
@@ -3265,7 +3238,7 @@
     },
     {
       "path": "help/server/server-tree-data.md",
-      "url": "/help/server/server-tree-data",
+      "url": "/docs/help/server/server-tree-data/",
       "title": "Server tree data (load on demand)",
       "summary": "When a hierarchy is too large to ship up front - a file system, an org chart with tens of thousands of people, a geographic drill-down - you do not want to fetch every node before the grid renders. The answer is to **seed only the roots**, then fetch each node's children the first time the user expands it.",
       "section": "help/server",
@@ -3279,7 +3252,7 @@
     },
     {
       "path": "help/shadcn.md",
-      "url": "/help/shadcn",
+      "url": "/docs/help/shadcn/",
       "title": "shadcn-svelte integration",
       "summary": "If your Svelte 5 app already uses shadcn-svelte, SvGrid drops in without a redesign. You keep the exact palette, radius, font, and dark mode you already have - the grid reads them straight from the same CSS variables your Button, Input, and Table components use.",
       "section": "help",
@@ -3291,7 +3264,7 @@
     },
     {
       "path": "help/skill.md",
-      "url": "/help/skill",
+      "url": "/docs/help/skill/",
       "title": "Agent Skill",
       "summary": "The SvGrid **Agent Skill** gives AI coding assistants project-aware context for writing correct SvGrid code. It is the always-on counterpart to the MCP server: the skill carries the API surface and house style so your assistant follows SvGrid's conventions without being told, and the MCP server supplies live, version-pinned lookups on demand.",
       "section": "help",
@@ -3303,7 +3276,7 @@
     },
     {
       "path": "help/spreadsheet-formulas.md",
-      "url": "/help/spreadsheet-formulas",
+      "url": "/docs/help/spreadsheet-formulas/",
       "title": "Spreadsheet formulas",
       "summary": "A minimal Excel-style formula engine that runs in the browser, with no dependencies. Cells can hold either a literal value (number, string, boolean) or a formula starting with =. When the formula resolves against the sheet, the cell shows the computed value; when you click the cell, the formula bar shows the source.",
       "section": "help",
@@ -3317,7 +3290,7 @@
     },
     {
       "path": "help/state-maintenance.md",
-      "url": "/help/state-maintenance",
+      "url": "/docs/help/state-maintenance/",
       "title": "State maintenance",
       "summary": "The pattern for snapshotting every dimension the user can change about the grid - sort, filters, group-by, column visibility + widths, pagination, expansion, selection, active cell - into a single JSON bag, and rehydrating the grid from one. Builds on Saved views but adds undo / redo, named bookmarks, JSON import / export, and debounced auto-save.",
       "section": "help",
@@ -3331,33 +3304,33 @@
     },
     {
       "path": "help/state/named-views.md",
-      "url": "/help/state/named-views",
+      "url": "/docs/help/state/named-views/",
       "title": "Named views",
       "summary": "A \"view\" is a saved snapshot of the grid's state - sort, filters, column order/width/visibility, page, grouping. Named views let a user save the layout they like and switch between them. SvGrid ships this as a small manager over the grid's getState() / setState(), with pluggable storage.",
       "section": "help/state",
       "pillar": "grid",
       "tier": "community",
       "words": 360,
-      "lastUpdated": "2026-07-21",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "143-named-views"
       ]
     },
     {
       "path": "help/status-bar.md",
-      "url": "/help/status-bar",
+      "url": "/docs/help/status-bar/",
       "title": "Status bar",
       "summary": "The status bar is the strip under the grid that shows live aggregates of the **selected cell range** - count, sum, average, min, max - the way Excel does at the bottom-right when you select a block of numbers.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
       "words": 234,
-      "lastUpdated": "2026-06-13",
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/tailwind.md",
-      "url": "/help/tailwind",
+      "url": "/docs/help/tailwind/",
       "title": "Tailwind integration",
       "summary": "SvGrid was built alongside Tailwind v4 (the gallery is the proof). The two compose cleanly because they have **non-overlapping concerns**:",
       "section": "help",
@@ -3371,19 +3344,19 @@
     },
     {
       "path": "help/testing-and-quality.md",
-      "url": "/help/testing-and-quality",
+      "url": "/docs/help/testing-and-quality/",
       "title": "Testing & Quality",
       "summary": "SvGrid ships with a comprehensive automated test suite. This page is the honest accounting of what we test, what we don't, and where coverage stands today.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
       "words": 938,
-      "lastUpdated": "2026-06-30",
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "help/testing.md",
-      "url": "/help/testing",
+      "url": "/docs/help/testing/",
       "title": "Testing your grid",
       "summary": "How to write tests that catch regressions before they ship. SvGrid is designed for both **fast unit tests** (Layer 2, the headless engine, runs in pure node) and **slow but accurate browser tests** (Layer 3, the <SvGrid> component, needs a real DOM or jsdom).",
       "section": "help",
@@ -3398,7 +3371,7 @@
     },
     {
       "path": "help/tokens.md",
-      "url": "/help/tokens",
+      "url": "/docs/help/tokens/",
       "title": "Design tokens",
       "summary": "Every visual property the grid exposes for theming is a CSS custom property (--sg-*). Tokens cascade like any other CSS variable - override at :root, on a wrapper element, or per-grid; the closest declaration wins.",
       "section": "help",
@@ -3412,7 +3385,7 @@
     },
     {
       "path": "help/ui-components/buttons.md",
-      "url": "/help/ui-components/buttons",
+      "url": "/docs/help/ui-components/buttons/",
       "title": "Buttons & toggles",
       "summary": "Press and toggle primitives. All take a size (sm | md | lg) and theme from --sg-*.",
       "section": "help/ui-components",
@@ -3424,7 +3397,7 @@
     },
     {
       "path": "help/ui-components/cli.md",
-      "url": "/help/ui-components/cli",
+      "url": "/docs/help/ui-components/cli/",
       "title": "Add components with the CLI",
       "summary": "@svgrid/ui gets a SvGrid UI component into your app - and lets you *see* it - in one command.",
       "section": "help/ui-components",
@@ -3436,7 +3409,7 @@
     },
     {
       "path": "help/ui-components/date-time.md",
-      "url": "/help/ui-components/date-time",
+      "url": "/docs/help/ui-components/date-time/",
       "title": "Date & time",
       "summary": "Four date/time controls built on a shared, framework-free date engine (date-core, date-format, date-selection, date-restrict). They are the rich-by-default editors for date, datetime and time grid columns, and work standalone.",
       "section": "help/ui-components",
@@ -3448,7 +3421,7 @@
     },
     {
       "path": "help/ui-components/feedback.md",
-      "url": "/help/ui-components/feedback",
+      "url": "/docs/help/ui-components/feedback/",
       "title": "Feedback & display",
       "summary": "Status, identity, loading and surface primitives for dashboards and detail panels. All are theme-token driven (light / dark + presets) and reduced-motion aware.",
       "section": "help/ui-components",
@@ -3460,7 +3433,7 @@
     },
     {
       "path": "help/ui-components/headless-editors.md",
-      "url": "/help/ui-components/headless-editors",
+      "url": "/docs/help/ui-components/headless-editors/",
       "title": "Headless editors",
       "summary": "Every editor is **headless-first**, exactly like the grid (createSvGrid / <SvGrid>). Each Sv* component is a thin styled renderer over a framework-free runes core named create<Editor>. Import the core to render your own markup with the kit's state machine, keyboard handling and ARIA - and none of its styles.",
       "section": "help/ui-components",
@@ -3472,7 +3445,7 @@
     },
     {
       "path": "help/ui-components/i18n-rtl.md",
-      "url": "/help/ui-components/i18n-rtl",
+      "url": "/docs/help/ui-components/i18n-rtl/",
       "title": "Internationalization & RTL",
       "summary": "Every editor in the kit shares one localization + direction contract, so you wire it the same way everywhere.",
       "section": "help/ui-components",
@@ -3484,7 +3457,7 @@
     },
     {
       "path": "help/ui-components/index.md",
-      "url": "/help/ui-components/index",
+      "url": "/docs/help/ui-components/index/",
       "title": "SvGrid UI",
       "summary": "**SvGrid UI** is the Svelte 5 component suite that ships in the free @svgrid/grid package - 70+ buttons, inputs, pickers, overlays, and layout primitives, each with its own tutorial page. Every one is **two things at once**:",
       "section": "help/ui-components",
@@ -3496,7 +3469,7 @@
     },
     {
       "path": "help/ui-components/inputs.md",
-      "url": "/help/ui-components/inputs",
+      "url": "/docs/help/ui-components/inputs/",
       "title": "Inputs",
       "summary": "Typed text controls. Each emits a clean value and themes from --sg-*.",
       "section": "help/ui-components",
@@ -3508,7 +3481,7 @@
     },
     {
       "path": "help/ui-components/layout.md",
-      "url": "/help/ui-components/layout",
+      "url": "/docs/help/ui-components/layout/",
       "title": "Layout & composite",
       "summary": "Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:",
       "section": "help/ui-components",
@@ -3520,7 +3493,7 @@
     },
     {
       "path": "help/ui-components/navigation.md",
-      "url": "/help/ui-components/navigation",
+      "url": "/docs/help/ui-components/navigation/",
       "title": "Navigation",
       "summary": "Wayfinding components for admin apps and Studio-generated screens. Pure, keyboard-accessible, theme-token driven.",
       "section": "help/ui-components",
@@ -3532,7 +3505,7 @@
     },
     {
       "path": "help/ui-components/overlays.md",
-      "url": "/help/ui-components/overlays",
+      "url": "/docs/help/ui-components/overlays/",
       "title": "Overlays",
       "summary": "App-chrome overlays built on the kit's shared accessibility primitives - createFocusTrap, lockScroll and createDismissableLayer - so focus, scroll locking and Escape / outside-click dismissal behave identically everywhere, and nested overlays always close top-first. All portal to <body> (never clipped), animate in, and respect prefers-reduced-motion.",
       "section": "help/ui-components",
@@ -3544,7 +3517,7 @@
     },
     {
       "path": "help/ui-components/range.md",
-      "url": "/help/ui-components/range",
+      "url": "/docs/help/ui-components/range/",
       "title": "Range & feedback",
       "summary": "Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:",
       "section": "help/ui-components",
@@ -3556,7 +3529,7 @@
     },
     {
       "path": "help/ui-components/selection.md",
-      "url": "/help/ui-components/selection",
+      "url": "/docs/help/ui-components/selection/",
       "title": "Selection",
       "summary": "List and overlay pickers. The overlay controls portal their panel to <body> (carrying theme tokens) so they never clip, and share a common option shape:",
       "section": "help/ui-components",
@@ -3568,7 +3541,7 @@
     },
     {
       "path": "help/ui-components/sv-accordion.md",
-      "url": "/help/ui-components/sv-accordion",
+      "url": "/docs/help/ui-components/sv-accordion/",
       "title": "SvAccordion",
       "summary": "A WAI-ARIA accordion of collapsible sections, with single- or multiple-expand and roving header focus.",
       "section": "help/ui-components",
@@ -3582,7 +3555,7 @@
     },
     {
       "path": "help/ui-components/sv-alert.md",
-      "url": "/help/ui-components/sv-alert",
+      "url": "/docs/help/ui-components/sv-alert/",
       "title": "SvAlert",
       "summary": "An inline, persistent contextual message - info, success, warning, danger, or neutral - with an icon, optional title, dismiss button, and trailing actions.",
       "section": "help/ui-components",
@@ -3596,7 +3569,7 @@
     },
     {
       "path": "help/ui-components/sv-auto-complete.md",
-      "url": "/help/ui-components/sv-auto-complete",
+      "url": "/docs/help/ui-components/sv-auto-complete/",
       "title": "SvAutoComplete",
       "summary": "A free-text input with a live-filtered suggestion list. Unlike SvComboBox, it accepts any value - the suggestions are just shortcuts - and it emits the raw text string.",
       "section": "help/ui-components",
@@ -3611,7 +3584,7 @@
     },
     {
       "path": "help/ui-components/sv-avatar-group.md",
-      "url": "/help/ui-components/sv-avatar-group",
+      "url": "/docs/help/ui-components/sv-avatar-group/",
       "title": "SvAvatarGroup",
       "summary": "Overlapping, stacked avatars with a \"+N\" overflow pill - the \"assigned to\" and \"members\" row for cards, tables, and detail panels.",
       "section": "help/ui-components",
@@ -3625,7 +3598,7 @@
     },
     {
       "path": "help/ui-components/sv-avatar.md",
-      "url": "/help/ui-components/sv-avatar",
+      "url": "/docs/help/ui-components/sv-avatar/",
       "title": "SvAvatar",
       "summary": "A user or entity avatar: an image with an automatic initials-and-color fallback, plus an optional presence status dot.",
       "section": "help/ui-components",
@@ -3639,7 +3612,7 @@
     },
     {
       "path": "help/ui-components/sv-badge.md",
-      "url": "/help/ui-components/sv-badge",
+      "url": "/docs/help/ui-components/sv-badge/",
       "title": "SvBadge",
       "summary": "A small status pill or count label - the quiet workhorse for statuses, counts, and tags across tables and cards.",
       "section": "help/ui-components",
@@ -3653,7 +3626,7 @@
     },
     {
       "path": "help/ui-components/sv-breadcrumb.md",
-      "url": "/help/ui-components/sv-breadcrumb",
+      "url": "/docs/help/ui-components/sv-breadcrumb/",
       "title": "SvBreadcrumb",
       "summary": "A navigation trail that shows where the current page sits in your app's hierarchy.",
       "section": "help/ui-components",
@@ -3667,7 +3640,7 @@
     },
     {
       "path": "help/ui-components/sv-button-group.md",
-      "url": "/help/ui-components/sv-button-group",
+      "url": "/docs/help/ui-components/sv-button-group/",
       "title": "SvButtonGroup",
       "summary": "A segmented button bar - a single-select view switcher, a multi-select toggle set, or a plain row of action buttons.",
       "section": "help/ui-components",
@@ -3681,7 +3654,7 @@
     },
     {
       "path": "help/ui-components/sv-button.md",
-      "url": "/help/ui-components/sv-button",
+      "url": "/docs/help/ui-components/sv-button/",
       "title": "SvButton",
       "summary": "The press primitive for the whole UI kit - a themeable button with variants, sizes, a built-in loading state, an icon slot, and automatic anchor rendering when you pass an href.",
       "section": "help/ui-components",
@@ -3695,7 +3668,7 @@
     },
     {
       "path": "help/ui-components/sv-calendar.md",
-      "url": "/help/ui-components/sv-calendar",
+      "url": "/docs/help/ui-components/sv-calendar/",
       "title": "SvCalendar",
       "summary": "A themeable, accessible month / year / decade calendar with every selection mode - the date surface the whole date/time family is built on.",
       "section": "help/ui-components",
@@ -3712,7 +3685,7 @@
     },
     {
       "path": "help/ui-components/sv-card.md",
-      "url": "/help/ui-components/sv-card",
+      "url": "/docs/help/ui-components/sv-card/",
       "title": "SvCard",
       "summary": "A themed surface container with an optional header, body, and footer - the building block for dashboards and Studio-generated app screens.",
       "section": "help/ui-components",
@@ -3726,7 +3699,7 @@
     },
     {
       "path": "help/ui-components/sv-carousel.md",
-      "url": "/help/ui-components/sv-carousel",
+      "url": "/docs/help/ui-components/sv-carousel/",
       "title": "SvCarousel",
       "summary": "A slideshow: a sliding track with prev/next arrows, dot indicators, optional autoplay that pauses on hover, and touch swipe.",
       "section": "help/ui-components",
@@ -3740,7 +3713,7 @@
     },
     {
       "path": "help/ui-components/sv-check-box.md",
-      "url": "/help/ui-components/sv-check-box",
+      "url": "/docs/help/ui-components/sv-check-box/",
       "title": "SvCheckBox",
       "summary": "A themed checkbox with a true indeterminate state and an optional inline label.",
       "section": "help/ui-components",
@@ -3754,7 +3727,7 @@
     },
     {
       "path": "help/ui-components/sv-chip.md",
-      "url": "/help/ui-components/sv-chip",
+      "url": "/docs/help/ui-components/sv-chip/",
       "title": "SvChip",
       "summary": "A compact, interactive pill for a selected value, filter token, or entity: an optional leading avatar or icon, a label, and an optional remove button.",
       "section": "help/ui-components",
@@ -3768,7 +3741,7 @@
     },
     {
       "path": "help/ui-components/sv-circular-progress.md",
-      "url": "/help/ui-components/sv-circular-progress",
+      "url": "/docs/help/ui-components/sv-circular-progress/",
       "title": "SvCircularProgress",
       "summary": "A circular ring progress indicator - determinate or spinning - with color intents, sizing and thickness, and an optional center label or custom center content.",
       "section": "help/ui-components",
@@ -3782,7 +3755,7 @@
     },
     {
       "path": "help/ui-components/sv-collapsible.md",
-      "url": "/help/ui-components/sv-collapsible",
+      "url": "/docs/help/ui-components/sv-collapsible/",
       "title": "SvCollapsible",
       "summary": "A single show/hide section: a header that toggles one region of content open and closed, with a smooth height animation. The standalone building block behind an accordion.",
       "section": "help/ui-components",
@@ -3796,7 +3769,7 @@
     },
     {
       "path": "help/ui-components/sv-color-input.md",
-      "url": "/help/ui-components/sv-color-input",
+      "url": "/docs/help/ui-components/sv-color-input/",
       "title": "SvColorInput",
       "summary": "A color swatch that opens a portalled popover with a hex field, the native picker, and a preset palette.",
       "section": "help/ui-components",
@@ -3810,7 +3783,7 @@
     },
     {
       "path": "help/ui-components/sv-combo-box.md",
-      "url": "/help/ui-components/sv-combo-box",
+      "url": "/docs/help/ui-components/sv-combo-box/",
       "title": "SvComboBox",
       "summary": "An editable combobox: type to filter a portalled option list and pick a value. Unlike an autocomplete, the value must come from the list - unmatched text reverts on blur. Filtering is local by default, or hand it a loadOptions for remote search.",
       "section": "help/ui-components",
@@ -3825,7 +3798,7 @@
     },
     {
       "path": "help/ui-components/sv-command.md",
-      "url": "/help/ui-components/sv-command",
+      "url": "/docs/help/ui-components/sv-command/",
       "title": "SvCommand",
       "summary": "A Cmd+K command palette: a fuzzy-searchable list of actions in a centered, focus-trapped dialog, with an optional global hotkey.",
       "section": "help/ui-components",
@@ -3839,7 +3812,7 @@
     },
     {
       "path": "help/ui-components/sv-context-menu.md",
-      "url": "/help/ui-components/sv-context-menu",
+      "url": "/docs/help/ui-components/sv-context-menu/",
       "title": "SvContextMenu",
       "summary": "Wraps a region and opens a menu at the pointer on right-click or long-press.",
       "section": "help/ui-components",
@@ -3853,7 +3826,7 @@
     },
     {
       "path": "help/ui-components/sv-country-input.md",
-      "url": "/help/ui-components/sv-country-input",
+      "url": "/docs/help/ui-components/sv-country-input/",
       "title": "SvCountryInput",
       "summary": "A searchable country picker showing a flag, name, and dial code. It emits the ISO 3166-1 alpha-2 code, so your model stores a stable 'US' / 'GB' rather than a display string.",
       "section": "help/ui-components",
@@ -3867,7 +3840,7 @@
     },
     {
       "path": "help/ui-components/sv-date-range-input.md",
-      "url": "/help/ui-components/sv-date-range-input",
+      "url": "/docs/help/ui-components/sv-date-range-input/",
       "title": "SvDateRangeInput",
       "summary": "A compact start/end field that opens a two-month range calendar with one-click presets (Today, Last 7 days, This month, ...). Emits an inclusive [start, end] tuple or null.",
       "section": "help/ui-components",
@@ -3881,7 +3854,7 @@
     },
     {
       "path": "help/ui-components/sv-date-time-picker.md",
-      "url": "/help/ui-components/sv-date-time-picker",
+      "url": "/docs/help/ui-components/sv-date-time-picker/",
       "title": "SvDateTimePicker",
       "summary": "A formatted text input plus a portalled dropdown with DATE / TIME tabs - type a masked value or pick it from a calendar and clock.",
       "section": "help/ui-components",
@@ -3896,7 +3869,7 @@
     },
     {
       "path": "help/ui-components/sv-display-primitives.md",
-      "url": "/help/ui-components/sv-display-primitives",
+      "url": "/docs/help/ui-components/sv-display-primitives/",
       "title": "Display primitives - SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden",
       "summary": "The small display helpers you reach for constantly in docs, command palettes, and media layouts - each themed from the shared --sg-* tokens and dependency-free.",
       "section": "help/ui-components",
@@ -3910,7 +3883,7 @@
     },
     {
       "path": "help/ui-components/sv-divider.md",
-      "url": "/help/ui-components/sv-divider",
+      "url": "/docs/help/ui-components/sv-divider/",
       "title": "SvDivider",
       "summary": "A theme-driven separator line - horizontal or vertical, solid or dashed, with an optional centered, start, or end label.",
       "section": "help/ui-components",
@@ -3924,7 +3897,7 @@
     },
     {
       "path": "help/ui-components/sv-dock-layout.md",
-      "url": "/help/ui-components/sv-dock-layout",
+      "url": "/docs/help/ui-components/sv-dock-layout/",
       "title": "SvDockLayout",
       "summary": "A basic docking layout: nested resizable split groups and tabbed leaves, with drag-to-dock. Drag any pane's tab onto another pane and drop it on an **edge** to split, or the **centre** to stack it as a tab; drag the splitters to resize; close panes with the x. It is the building block for IDE-style workspaces, BI dashboards, and trading desks.",
       "section": "help/ui-components",
@@ -3938,7 +3911,7 @@
     },
     {
       "path": "help/ui-components/sv-dock-manager.md",
-      "url": "/help/ui-components/sv-dock-manager",
+      "url": "/docs/help/ui-components/sv-dock-manager/",
       "title": "SvDockManager",
       "summary": "A full docking manager built on top of SvDockLayout. It keeps everything the tiled layout does - nested resizable splits, tabbed leaves, drag-to-dock - and adds the three features a real IDE workspace needs:",
       "section": "help/ui-components",
@@ -3952,7 +3925,7 @@
     },
     {
       "path": "help/ui-components/sv-drawer.md",
-      "url": "/help/ui-components/sv-drawer",
+      "url": "/docs/help/ui-components/sv-drawer/",
       "title": "SvDrawer",
       "summary": "An edge-anchored side sheet - right, left, top, or bottom - with a backdrop and the full dialog accessibility contract.",
       "section": "help/ui-components",
@@ -3966,7 +3939,7 @@
     },
     {
       "path": "help/ui-components/sv-drop-down-list.md",
-      "url": "/help/ui-components/sv-drop-down-list",
+      "url": "/docs/help/ui-components/sv-drop-down-list/",
       "title": "SvDropDownList",
       "summary": "A single-select dropdown: a trigger button plus a portalled option list, with no typing. Pick with the mouse or the keyboard (type-ahead included); the panel escapes any scroll container so it is never clipped.",
       "section": "help/ui-components",
@@ -3981,7 +3954,7 @@
     },
     {
       "path": "help/ui-components/sv-duration-input.md",
-      "url": "/help/ui-components/sv-duration-input",
+      "url": "/docs/help/ui-components/sv-duration-input/",
       "title": "SvDurationInput",
       "summary": "A duration editor whose value is a number of minutes but which accepts the human forms people actually type.",
       "section": "help/ui-components",
@@ -3995,7 +3968,7 @@
     },
     {
       "path": "help/ui-components/sv-empty-state.md",
-      "url": "/help/ui-components/sv-empty-state",
+      "url": "/docs/help/ui-components/sv-empty-state/",
       "title": "SvEmptyState",
       "summary": "A centered placeholder for empty lists, no-results screens, and blank panels: an icon or illustration, a title, a description, and an action slot.",
       "section": "help/ui-components",
@@ -4009,7 +3982,7 @@
     },
     {
       "path": "help/ui-components/sv-field.md",
-      "url": "/help/ui-components/sv-field",
+      "url": "/docs/help/ui-components/sv-field/",
       "title": "SvField",
       "summary": "The shared field chrome for every value-bearing editor in the kit - the label, hint, and error line that make any control behave consistently.",
       "section": "help/ui-components",
@@ -4021,7 +3994,7 @@
     },
     {
       "path": "help/ui-components/sv-file-upload.md",
-      "url": "/help/ui-components/sv-file-upload",
+      "url": "/docs/help/ui-components/sv-file-upload/",
       "title": "SvFileUpload",
       "summary": "A drag-and-drop file field with click-to-browse fallback, accept / size / count validation, and a selected-files list.",
       "section": "help/ui-components",
@@ -4035,7 +4008,7 @@
     },
     {
       "path": "help/ui-components/sv-form.md",
-      "url": "/help/ui-components/sv-form",
+      "url": "/docs/help/ui-components/sv-form/",
       "title": "SvForm",
       "summary": "A schema-driven form that renders the SvGrid UI-kit controls from a FormField[], with labels, required and custom validation, and a submit handler.",
       "section": "help/ui-components",
@@ -4052,7 +4025,7 @@
     },
     {
       "path": "help/ui-components/sv-gauge.md",
-      "url": "/help/ui-components/sv-gauge",
+      "url": "/docs/help/ui-components/sv-gauge/",
       "title": "SvGauge",
       "summary": "A radial arc gauge that renders a value within a range, with optional colored threshold bands, a needle, and a center label.",
       "section": "help/ui-components",
@@ -4066,7 +4039,7 @@
     },
     {
       "path": "help/ui-components/sv-grid-chart.md",
-      "url": "/help/ui-components/sv-grid-chart",
+      "url": "/docs/help/ui-components/sv-grid-chart/",
       "title": "SvGridChart",
       "summary": "An inline-SVG chart that renders a ChartSpec with no external charting dependency, built to bind to your grid's data.",
       "section": "help/ui-components",
@@ -4080,7 +4053,7 @@
     },
     {
       "path": "help/ui-components/sv-grid-dropdown.md",
-      "url": "/help/ui-components/sv-grid-dropdown",
+      "url": "/docs/help/ui-components/sv-grid-dropdown/",
       "title": "SvGridDropdown",
       "summary": "The themeable dropdown / listbox that powers the grid's list and chips cell editors. It is a deliberate replacement for the native <select>, whose option list cannot be styled to match the grid theme and fights the dark theme on Windows.",
       "section": "help/ui-components",
@@ -4092,7 +4065,7 @@
     },
     {
       "path": "help/ui-components/sv-grid-select.md",
-      "url": "/help/ui-components/sv-grid-select",
+      "url": "/docs/help/ui-components/sv-grid-select/",
       "title": "SvGridSelect",
       "summary": "A \"grid in a dropdown\" single-select: the panel shows the options as a compact multi-column table with a header row and search, so you can pick by more than a single label. It emits the chosen row's id.",
       "section": "help/ui-components",
@@ -4106,7 +4079,7 @@
     },
     {
       "path": "help/ui-components/sv-hover-card.md",
-      "url": "/help/ui-components/sv-hover-card",
+      "url": "/docs/help/ui-components/sv-hover-card/",
       "title": "SvHoverCard",
       "summary": "A rich preview card that opens when the pointer rests on its anchor and closes shortly after it leaves.",
       "section": "help/ui-components",
@@ -4120,7 +4093,7 @@
     },
     {
       "path": "help/ui-components/sv-layout-primitives.md",
-      "url": "/help/ui-components/sv-layout-primitives",
+      "url": "/docs/help/ui-components/sv-layout-primitives/",
       "title": "Layout primitives - SvStack, SvGroup, SvSimpleGrid",
       "summary": "Three tiny flex/grid wrappers that cover the layouts you reach for constantly, so you stop hand-writing display: flex; gap: … on every wrapper div. They carry no visual styling - just structure - and take a numeric gap (pixels) or any CSS length.",
       "section": "help/ui-components",
@@ -4134,7 +4107,7 @@
     },
     {
       "path": "help/ui-components/sv-list-box.md",
-      "url": "/help/ui-components/sv-list-box",
+      "url": "/docs/help/ui-components/sv-list-box/",
       "title": "SvListBox",
       "summary": "An inline single or multi-select list - a WAI-ARIA listbox with a roving highlight, full keyboard, type-ahead and optional windowing for huge option sets.",
       "section": "help/ui-components",
@@ -4148,7 +4121,7 @@
     },
     {
       "path": "help/ui-components/sv-loading-overlay.md",
-      "url": "/help/ui-components/sv-loading-overlay",
+      "url": "/docs/help/ui-components/sv-loading-overlay/",
       "title": "SvLoadingOverlay",
       "summary": "A cover-a-container loading scrim: a translucent overlay with a centred spinner that sits on top of any positioned parent while its content loads or saves.",
       "section": "help/ui-components",
@@ -4162,7 +4135,7 @@
     },
     {
       "path": "help/ui-components/sv-masked-input.md",
-      "url": "/help/ui-components/sv-masked-input",
+      "url": "/docs/help/ui-components/sv-masked-input/",
       "title": "SvMaskedInput",
       "summary": "A pattern-masked text input that formats as you type and reports both the masked and the raw value.",
       "section": "help/ui-components",
@@ -4176,7 +4149,7 @@
     },
     {
       "path": "help/ui-components/sv-menu-list.md",
-      "url": "/help/ui-components/sv-menu-list",
+      "url": "/docs/help/ui-components/sv-menu-list/",
       "title": "SvMenuList",
       "summary": "The recursive menu surface behind SvMenu and SvContextMenu: a WAI-ARIA menu with roving focus, submenus, separators, icons, and shortcuts.",
       "section": "help/ui-components",
@@ -4190,7 +4163,7 @@
     },
     {
       "path": "help/ui-components/sv-menu.md",
-      "url": "/help/ui-components/sv-menu",
+      "url": "/docs/help/ui-components/sv-menu/",
       "title": "SvMenu",
       "summary": "A dropdown / actions menu: a trigger opens a portalled, animated menu surface with submenus, separators, icons, shortcuts, and full keyboard support.",
       "section": "help/ui-components",
@@ -4204,7 +4177,7 @@
     },
     {
       "path": "help/ui-components/sv-menubar.md",
-      "url": "/help/ui-components/sv-menubar",
+      "url": "/docs/help/ui-components/sv-menubar/",
       "title": "SvMenubar",
       "summary": "An application menu bar: a horizontal row of menu buttons (File / Edit / View ...) that each open a dropdown.",
       "section": "help/ui-components",
@@ -4218,7 +4191,7 @@
     },
     {
       "path": "help/ui-components/sv-modal.md",
-      "url": "/help/ui-components/sv-modal",
+      "url": "/docs/help/ui-components/sv-modal/",
       "title": "SvModal",
       "summary": "An accessible modal dialog: a backdrop, a focus trap, Escape and backdrop close, and a scale-in animation.",
       "section": "help/ui-components",
@@ -4232,7 +4205,7 @@
     },
     {
       "path": "help/ui-components/sv-multi-select.md",
-      "url": "/help/ui-components/sv-multi-select",
+      "url": "/docs/help/ui-components/sv-multi-select/",
       "title": "SvMultiSelect",
       "summary": "A multi-select dropdown: the trigger shows the picked items as chips (collapsing to \"+N\"), and a portalled panel holds an optional search box over a checkbox list. It picks from a fixed set - distinct from SvTagsInput, which takes free-form tags.",
       "section": "help/ui-components",
@@ -4246,7 +4219,7 @@
     },
     {
       "path": "help/ui-components/sv-nav-pane.md",
-      "url": "/help/ui-components/sv-nav-pane",
+      "url": "/docs/help/ui-components/sv-nav-pane/",
       "title": "SvNavPane",
       "summary": "An Outlook-style navigation pane: collapsible sections, items with icons and badge counts, one level of nested sub-items, and an optional bottom module strip.",
       "section": "help/ui-components",
@@ -4260,7 +4233,7 @@
     },
     {
       "path": "help/ui-components/sv-number-input.md",
-      "url": "/help/ui-components/sv-number-input",
+      "url": "/docs/help/ui-components/sv-number-input/",
       "title": "SvNumberInput",
       "summary": "A numeric input with min/max/step, spinner buttons, thousands grouping, precision, and prefix/suffix.",
       "section": "help/ui-components",
@@ -4274,7 +4247,7 @@
     },
     {
       "path": "help/ui-components/sv-otp-input.md",
-      "url": "/help/ui-components/sv-otp-input",
+      "url": "/docs/help/ui-components/sv-otp-input/",
       "title": "SvOtpInput",
       "summary": "Segmented one-time-code / PIN entry - N single-character cells that advance themselves and accept a pasted code.",
       "section": "help/ui-components",
@@ -4288,7 +4261,7 @@
     },
     {
       "path": "help/ui-components/sv-pagination.md",
-      "url": "/help/ui-components/sv-pagination",
+      "url": "/docs/help/ui-components/sv-pagination/",
       "title": "SvPagination",
       "summary": "A standalone pager: page numbers with an ellipsis, plus prev/next and optional first/last controls.",
       "section": "help/ui-components",
@@ -4302,7 +4275,7 @@
     },
     {
       "path": "help/ui-components/sv-password-input.md",
-      "url": "/help/ui-components/sv-password-input",
+      "url": "/docs/help/ui-components/sv-password-input/",
       "title": "SvPasswordInput",
       "summary": "A password field with a reveal toggle and an optional 4-level strength meter.",
       "section": "help/ui-components",
@@ -4316,7 +4289,7 @@
     },
     {
       "path": "help/ui-components/sv-phone-input.md",
-      "url": "/help/ui-components/sv-phone-input",
+      "url": "/docs/help/ui-components/sv-phone-input/",
       "title": "SvPhoneInput",
       "summary": "A country dial-code selector plus a national number field that emits an E.164-style string.",
       "section": "help/ui-components",
@@ -4330,7 +4303,7 @@
     },
     {
       "path": "help/ui-components/sv-popconfirm.md",
-      "url": "/help/ui-components/sv-popconfirm",
+      "url": "/docs/help/ui-components/sv-popconfirm/",
       "title": "SvPopconfirm",
       "summary": "A quick confirm step in a popover anchored to its trigger, for a low-stakes destructive action where a full modal dialog would be too heavy.",
       "section": "help/ui-components",
@@ -4344,7 +4317,7 @@
     },
     {
       "path": "help/ui-components/sv-popover.md",
-      "url": "/help/ui-components/sv-popover",
+      "url": "/docs/help/ui-components/sv-popover/",
       "title": "SvPopover",
       "summary": "A floating panel anchored to a trigger, portalled to <body> so it escapes any overflow:hidden ancestor.",
       "section": "help/ui-components",
@@ -4358,7 +4331,7 @@
     },
     {
       "path": "help/ui-components/sv-progress.md",
-      "url": "/help/ui-components/sv-progress",
+      "url": "/docs/help/ui-components/sv-progress/",
       "title": "SvProgress",
       "summary": "A linear progress bar - determinate or indeterminate - with color intents, sizes, an optional percentage label, a striped fill, and a secondary buffer track.",
       "section": "help/ui-components",
@@ -4372,7 +4345,7 @@
     },
     {
       "path": "help/ui-components/sv-radio-group.md",
-      "url": "/help/ui-components/sv-radio-group",
+      "url": "/docs/help/ui-components/sv-radio-group/",
       "title": "SvRadioGroup",
       "summary": "An accessible single-select radio group following the WAI-ARIA radiogroup pattern, with roving tabindex and arrow-key navigation.",
       "section": "help/ui-components",
@@ -4386,7 +4359,7 @@
     },
     {
       "path": "help/ui-components/sv-rating.md",
-      "url": "/help/ui-components/sv-rating",
+      "url": "/docs/help/ui-components/sv-rating/",
       "title": "SvRating",
       "summary": "A star rating control built on the WAI-ARIA slider pattern - with hover preview, keyboard support, optional half steps, and a read-only mode.",
       "section": "help/ui-components",
@@ -4400,7 +4373,7 @@
     },
     {
       "path": "help/ui-components/sv-repeat-button.md",
-      "url": "/help/ui-components/sv-repeat-button",
+      "url": "/docs/help/ui-components/sv-repeat-button/",
       "title": "SvRepeatButton",
       "summary": "A button that keeps firing while you hold it down - after an initial delay, then at a steady interval.",
       "section": "help/ui-components",
@@ -4414,7 +4387,7 @@
     },
     {
       "path": "help/ui-components/sv-result.md",
-      "url": "/help/ui-components/sv-result",
+      "url": "/docs/help/ui-components/sv-result/",
       "title": "SvResult",
       "summary": "A full result page: a centred icon, title, description, and actions for the outcome of a flow - success, error, warning, info, or not-found. The whole-screen counterpart to a toast.",
       "section": "help/ui-components",
@@ -4428,7 +4401,7 @@
     },
     {
       "path": "help/ui-components/sv-rich-text.md",
-      "url": "/help/ui-components/sv-rich-text",
+      "url": "/docs/help/ui-components/sv-rich-text/",
       "title": "SvRichText",
       "summary": "A lightweight WYSIWYG editor: a formatting toolbar over a contentEditable region that emits HTML through a bindable value.",
       "section": "help/ui-components",
@@ -4442,7 +4415,7 @@
     },
     {
       "path": "help/ui-components/sv-scroll-area.md",
-      "url": "/help/ui-components/sv-scroll-area",
+      "url": "/docs/help/ui-components/sv-scroll-area/",
       "title": "SvScrollArea",
       "summary": "A scroll container with the kit's themed custom scrollbars, so any panel matches the grid and demos without hand-rolling scrollbar CSS.",
       "section": "help/ui-components",
@@ -4456,7 +4429,7 @@
     },
     {
       "path": "help/ui-components/sv-segmented.md",
-      "url": "/help/ui-components/sv-segmented",
+      "url": "/docs/help/ui-components/sv-segmented/",
       "title": "SvSegmented",
       "summary": "A segmented control: a compact row of mutually-exclusive options in a shared track - the modern alternative to a small radio group or a tab strip for a setting.",
       "section": "help/ui-components",
@@ -4470,7 +4443,7 @@
     },
     {
       "path": "help/ui-components/sv-skeleton.md",
-      "url": "/help/ui-components/sv-skeleton",
+      "url": "/docs/help/ui-components/sv-skeleton/",
       "title": "SvSkeleton",
       "summary": "A shimmering loading placeholder that stands in for content while data is in flight - text lines, rectangles, and circles that echo the shape of what is coming.",
       "section": "help/ui-components",
@@ -4484,7 +4457,7 @@
     },
     {
       "path": "help/ui-components/sv-slider.md",
-      "url": "/help/ui-components/sv-slider",
+      "url": "/docs/help/ui-components/sv-slider/",
       "title": "SvSlider",
       "summary": "A single or dual-thumb range slider with steps, ticks, scale labels, and full keyboard plus pointer control.",
       "section": "help/ui-components",
@@ -4498,7 +4471,7 @@
     },
     {
       "path": "help/ui-components/sv-sparkline.md",
-      "url": "/help/ui-components/sv-sparkline",
+      "url": "/docs/help/ui-components/sv-sparkline/",
       "title": "SvSparkline",
       "summary": "A tiny inline chart - line, area, bar, or win/loss - drawn from a plain number array, with no chart library.",
       "section": "help/ui-components",
@@ -4510,7 +4483,7 @@
     },
     {
       "path": "help/ui-components/sv-spinner.md",
-      "url": "/help/ui-components/sv-spinner",
+      "url": "/docs/help/ui-components/sv-spinner/",
       "title": "SvSpinner",
       "summary": "An indeterminate spinner: a small spinning ring for \"something is happening\" when you cannot show real progress.",
       "section": "help/ui-components",
@@ -4524,7 +4497,7 @@
     },
     {
       "path": "help/ui-components/sv-splitter.md",
-      "url": "/help/ui-components/sv-splitter",
+      "url": "/docs/help/ui-components/sv-splitter/",
       "title": "SvSplitter",
       "summary": "Two resizable panes divided by a draggable WAI-ARIA separator, with pointer drag and arrow-key resize.",
       "section": "help/ui-components",
@@ -4538,7 +4511,7 @@
     },
     {
       "path": "help/ui-components/sv-stat.md",
-      "url": "/help/ui-components/sv-stat",
+      "url": "/docs/help/ui-components/sv-stat/",
       "title": "SvStat",
       "summary": "A KPI / metric card: a label, a big value, and an optional delta with an auto-colored up/down trend, plus slots for an icon and an inline chart.",
       "section": "help/ui-components",
@@ -4552,7 +4525,7 @@
     },
     {
       "path": "help/ui-components/sv-stepper.md",
-      "url": "/help/ui-components/sv-stepper",
+      "url": "/docs/help/ui-components/sv-stepper/",
       "title": "SvStepper",
       "summary": "A progress stepper for wizards and multi-step forms. It lays out completed, active, and upcoming steps so the user always knows where they are.",
       "section": "help/ui-components",
@@ -4566,7 +4539,7 @@
     },
     {
       "path": "help/ui-components/sv-switch-button.md",
-      "url": "/help/ui-components/sv-switch-button",
+      "url": "/docs/help/ui-components/sv-switch-button/",
       "title": "SvSwitchButton",
       "summary": "An on/off sliding switch with the ARIA switch role - the control for settings that take effect immediately.",
       "section": "help/ui-components",
@@ -4580,7 +4553,7 @@
     },
     {
       "path": "help/ui-components/sv-tabs.md",
-      "url": "/help/ui-components/sv-tabs",
+      "url": "/docs/help/ui-components/sv-tabs/",
       "title": "SvTabs",
       "summary": "A WAI-ARIA tabs widget with roving-tabindex arrow-key navigation, four tab positions, and optional closable tabs.",
       "section": "help/ui-components",
@@ -4594,7 +4567,7 @@
     },
     {
       "path": "help/ui-components/sv-tags-input.md",
-      "url": "/help/ui-components/sv-tags-input",
+      "url": "/docs/help/ui-components/sv-tags-input/",
       "title": "SvTagsInput",
       "summary": "An editable token / chips input - type to add, click x or Backspace to remove.",
       "section": "help/ui-components",
@@ -4608,7 +4581,7 @@
     },
     {
       "path": "help/ui-components/sv-text-area.md",
-      "url": "/help/ui-components/sv-text-area",
+      "url": "/docs/help/ui-components/sv-text-area/",
       "title": "SvTextArea",
       "summary": "The multi-line text editor - with optional auto-grow and a character counter.",
       "section": "help/ui-components",
@@ -4622,7 +4595,7 @@
     },
     {
       "path": "help/ui-components/sv-text-input.md",
-      "url": "/help/ui-components/sv-text-input",
+      "url": "/docs/help/ui-components/sv-text-input/",
       "title": "SvTextInput",
       "summary": "The base single-line text editor for the whole kit - one control for text, email, url, tel, and search.",
       "section": "help/ui-components",
@@ -4636,7 +4609,7 @@
     },
     {
       "path": "help/ui-components/sv-time-picker.md",
-      "url": "/help/ui-components/sv-time-picker",
+      "url": "/docs/help/ui-components/sv-time-picker/",
       "title": "SvTimePicker",
       "summary": "An analog clock-dial time picker - 12- or 24-hour, minute snapping, and an hour-to-minute auto-switch. Drag the hand or click a number.",
       "section": "help/ui-components",
@@ -4650,7 +4623,7 @@
     },
     {
       "path": "help/ui-components/sv-timeline.md",
-      "url": "/help/ui-components/sv-timeline",
+      "url": "/docs/help/ui-components/sv-timeline/",
       "title": "SvTimeline",
       "summary": "A vertical activity or history feed: a connecting rail with a colored marker per entry, plus a title, timestamp, and description.",
       "section": "help/ui-components",
@@ -4664,7 +4637,7 @@
     },
     {
       "path": "help/ui-components/sv-toaster.md",
-      "url": "/help/ui-components/sv-toaster",
+      "url": "/docs/help/ui-components/sv-toaster/",
       "title": "SvToaster",
       "summary": "The host that renders the shared toast queue. Mount it once near your app root; call toast() from anywhere to push a notification.",
       "section": "help/ui-components",
@@ -4678,7 +4651,7 @@
     },
     {
       "path": "help/ui-components/sv-toggle-button.md",
-      "url": "/help/ui-components/sv-toggle-button",
+      "url": "/docs/help/ui-components/sv-toggle-button/",
       "title": "SvToggleButton",
       "summary": "A button with a sticky pressed on/off state, exposed to assistive tech via aria-pressed.",
       "section": "help/ui-components",
@@ -4692,7 +4665,7 @@
     },
     {
       "path": "help/ui-components/sv-tooltip.md",
-      "url": "/help/ui-components/sv-tooltip",
+      "url": "/docs/help/ui-components/sv-tooltip/",
       "title": "SvTooltip",
       "summary": "A small hover and focus tooltip anchored to its child, portalled to <body> so it is never clipped by a scroll container.",
       "section": "help/ui-components",
@@ -4706,7 +4679,7 @@
     },
     {
       "path": "help/ui-components/sv-tour.md",
-      "url": "/help/ui-components/sv-tour",
+      "url": "/docs/help/ui-components/sv-tour/",
       "title": "SvTour",
       "summary": "A guided product tour: it spotlights each target element in turn, anchors a popover with the step's copy, and walks the user through Back / Next / Done.",
       "section": "help/ui-components",
@@ -4720,7 +4693,7 @@
     },
     {
       "path": "help/ui-components/sv-tree-select.md",
-      "url": "/help/ui-components/sv-tree-select",
+      "url": "/docs/help/ui-components/sv-tree-select/",
       "title": "SvTreeSelect",
       "summary": "A single-select dropdown that shows an indented, collapsible tree in its panel - the cascader / tree-select pattern. Pick a node from a hierarchy, optionally showing its full path in the trigger.",
       "section": "help/ui-components",
@@ -4734,7 +4707,7 @@
     },
     {
       "path": "help/ui-components/sv-tree.md",
-      "url": "/help/ui-components/sv-tree",
+      "url": "/docs/help/ui-components/sv-tree/",
       "title": "SvTree",
       "summary": "A WAI-ARIA tree view: expand/collapse, single-select highlight, cascading tri-state checkboxes, keyboard navigation, and - for large or remote data - fixed-row virtualization and lazy loading.",
       "section": "help/ui-components",
@@ -4748,7 +4721,7 @@
     },
     {
       "path": "help/ui-components/sv-typography.md",
-      "url": "/help/ui-components/sv-typography",
+      "url": "/docs/help/ui-components/sv-typography/",
       "title": "Typography - SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList",
       "summary": "A small set of prose primitives so headings, body copy, links, quotes, highlights, and lists all pull from one type scale and the shared --sg-* tokens - instead of scattering ad-hoc font sizes and colours across your app.",
       "section": "help/ui-components",
@@ -4762,7 +4735,7 @@
     },
     {
       "path": "help/versioning.md",
-      "url": "/help/versioning",
+      "url": "/docs/help/versioning/",
       "title": "Doc versioning",
       "summary": "How sv-grid documentation tracks multiple shipping major versions.",
       "section": "help",
@@ -4774,7 +4747,7 @@
     },
     {
       "path": "help/web-components.md",
-      "url": "/help/web-components",
+      "url": "/docs/help/web-components/",
       "title": "Web Components & Custom Elements",
       "summary": "Ship SvGrid as a framework-agnostic web component (custom element) and use the Svelte 5 data grid in React, Vue, Angular, or plain HTML - no Svelte required in the host app.",
       "section": "help",
@@ -4786,7 +4759,7 @@
     },
     {
       "path": "legal/EULA.md",
-      "url": "/legal/EULA",
+      "url": "/docs/legal/EULA/",
       "title": "SVGRID END USER LICENSE AGREEMENT",
       "summary": "Version 1.0",
       "section": "legal",
@@ -4798,7 +4771,7 @@
     },
     {
       "path": "recipes/autosave-with-debounce.md",
-      "url": "/recipes/autosave-with-debounce",
+      "url": "/docs/recipes/autosave-with-debounce/",
       "title": "Auto-save edits with debounce",
       "summary": "Persist every cell edit to the server, debounced so a fast typer generates one save, not twenty.",
       "section": "recipes",
@@ -4810,7 +4783,7 @@
     },
     {
       "path": "recipes/barcode-cells.md",
-      "url": "/recipes/barcode-cells",
+      "url": "/docs/recipes/barcode-cells/",
       "title": "Barcode cells in a Svelte data grid (EAN-13)",
       "summary": "Render a real, scannable EAN-13 barcode in every row of your Svelte data grid - drawn as crisp SVG with no canvas, no eval, and no third-party dependency. This is the retail, warehouse, and inventory pattern: a product table where each row carries its own barcode label, sharp at any zoom and ready to print.",
       "section": "recipes",
@@ -4824,7 +4797,7 @@
     },
     {
       "path": "recipes/benchmark-harness.md",
-      "url": "/recipes/benchmark-harness",
+      "url": "/docs/recipes/benchmark-harness/",
       "title": "Benchmark harness",
       "summary": "You're answering:",
       "section": "recipes",
@@ -4836,7 +4809,7 @@
     },
     {
       "path": "recipes/between-date-filter.md",
-      "url": "/recipes/between-date-filter",
+      "url": "/docs/recipes/between-date-filter/",
       "title": "Between-operator filters for date ranges",
       "summary": "\"From / to\" date range as one filter, not two.",
       "section": "recipes",
@@ -4850,7 +4823,7 @@
     },
     {
       "path": "recipes/build-a-feature-plugin.md",
-      "url": "/recipes/build-a-feature-plugin",
+      "url": "/docs/recipes/build-a-feature-plugin/",
       "title": "Build your own feature plugin",
       "summary": "You want to inject behavior that applies to *every* row or column - a computed accent class, an audit fingerprint, an inline diff badge, a per-row policy gate - without forking the grid component or writing the same cell: boilerplate on every column def.",
       "section": "recipes",
@@ -4862,7 +4835,7 @@
     },
     {
       "path": "recipes/bulk-edit-selected-rows.md",
-      "url": "/recipes/bulk-edit-selected-rows",
+      "url": "/docs/recipes/bulk-edit-selected-rows/",
       "title": "Bulk-edit selected rows",
       "summary": "Goal: the user selects N rows, opens a toolbar, picks a field + value, and **every** selected row updates in one click. Standard back-office workflow for status changes, reassignments, tag application.",
       "section": "recipes",
@@ -4876,7 +4849,7 @@
     },
     {
       "path": "recipes/cell-renderer-patterns.md",
-      "url": "/recipes/cell-renderer-patterns",
+      "url": "/docs/recipes/cell-renderer-patterns/",
       "title": "Cell renderer patterns",
       "summary": "Every supported shape for the cell: slot on a ColumnDef, with the trade-offs for each.",
       "section": "recipes",
@@ -4888,7 +4861,7 @@
     },
     {
       "path": "recipes/chartjs-sync.md",
-      "url": "/recipes/chartjs-sync",
+      "url": "/docs/recipes/chartjs-sync/",
       "title": "Chart.js sync from grid filter state",
       "summary": "A chart that re-renders from api.getDisplayedRows() on every filter / sort change.",
       "section": "recipes",
@@ -4902,7 +4875,7 @@
     },
     {
       "path": "recipes/conditional-row-coloring.md",
-      "url": "/recipes/conditional-row-coloring",
+      "url": "/docs/recipes/conditional-row-coloring/",
       "title": "Conditional row coloring",
       "summary": "rowClass returns a class map per row; CSS does the rest.",
       "section": "recipes",
@@ -4916,7 +4889,7 @@
     },
     {
       "path": "recipes/cursor-based-infinite-scroll.md",
-      "url": "/recipes/cursor-based-infinite-scroll",
+      "url": "/docs/recipes/cursor-based-infinite-scroll/",
       "title": "Cursor-based infinite scroll",
       "summary": "Sparse-load a 100k-row audit log without paginating. Pattern: debounce on scroll, fetch the next chunk by cursor, splice into $state.",
       "section": "recipes",
@@ -4928,7 +4901,7 @@
     },
     {
       "path": "recipes/custom-filter-functions.md",
-      "url": "/recipes/custom-filter-functions",
+      "url": "/docs/recipes/custom-filter-functions/",
       "title": "Custom filter functions",
       "summary": "You need any of:",
       "section": "recipes",
@@ -4940,7 +4913,7 @@
     },
     {
       "path": "recipes/dependent-dropdowns.md",
-      "url": "/recipes/dependent-dropdowns",
+      "url": "/docs/recipes/dependent-dropdowns/",
       "title": "Dependent dropdowns (cascading editors)",
       "summary": "Country → State → City. Editing one level resets downstream levels; each cell's dropdown options come from the row's upstream value.",
       "section": "recipes",
@@ -4952,7 +4925,7 @@
     },
     {
       "path": "recipes/drag-drop-columns.md",
-      "url": "/recipes/drag-drop-columns",
+      "url": "/docs/recipes/drag-drop-columns/",
       "title": "Drag-drop columns to reorder",
       "summary": "Re-order columns by dragging them in a side panel; live grid reflects the new order.",
       "section": "recipes",
@@ -4966,7 +4939,7 @@
     },
     {
       "path": "recipes/external-search.md",
-      "url": "/recipes/external-search",
+      "url": "/docs/recipes/external-search/",
       "title": "External search box with highlighted matches",
       "summary": "A search input outside the grid filters the visible rows AND highlights matched substrings inline.",
       "section": "recipes",
@@ -4980,7 +4953,7 @@
     },
     {
       "path": "recipes/form-library-bridge.md",
-      "url": "/recipes/form-library-bridge",
+      "url": "/docs/recipes/form-library-bridge/",
       "title": "Form library bridge",
       "summary": "You want the same row to be editable two ways:",
       "section": "recipes",
@@ -4992,7 +4965,7 @@
     },
     {
       "path": "recipes/grid-state-inspector.md",
-      "url": "/recipes/grid-state-inspector",
+      "url": "/docs/recipes/grid-state-inspector/",
       "title": "Grid state inspector",
       "summary": "You're stuck on one of:",
       "section": "recipes",
@@ -5004,7 +4977,7 @@
     },
     {
       "path": "recipes/heatmap-cells.md",
-      "url": "/recipes/heatmap-cells",
+      "url": "/docs/recipes/heatmap-cells/",
       "title": "Heatmap-tinted numeric cells",
       "summary": "Bucket cell values into red/amber/neutral/green tints based on per-column min/max.",
       "section": "recipes",
@@ -5017,20 +4990,8 @@
       ]
     },
     {
-      "path": "recipes/index.md",
-      "url": "/recipes/index",
-      "title": "Recipes / cookbook",
-      "summary": "Copy-paste patterns for sv-grid. Every recipe is a complete, runnable snippet you can drop into your app. Each pairs with a live demo in the gallery.",
-      "section": "recipes",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 422,
-      "lastUpdated": "2026-08-15",
-      "demoIds": []
-    },
-    {
       "path": "recipes/kanban-from-grid-data.md",
-      "url": "/recipes/kanban-from-grid-data",
+      "url": "/docs/recipes/kanban-from-grid-data/",
       "title": "Kanban board over the same `$state`",
       "summary": "You want a Kanban board backed by the same rows your grid already shows - one source of truth, switchable between a table and a board.",
       "section": "recipes",
@@ -5044,7 +5005,7 @@
     },
     {
       "path": "recipes/lazy-load-expand.md",
-      "url": "/recipes/lazy-load-expand",
+      "url": "/docs/recipes/lazy-load-expand/",
       "title": "Lazy-load expand on demand",
       "summary": "Tree rows where children are fetched only when the user expands their parent.",
       "section": "recipes",
@@ -5058,7 +5019,7 @@
     },
     {
       "path": "recipes/loading-data.md",
-      "url": "/recipes/loading-data",
+      "url": "/docs/recipes/loading-data/",
       "title": "Loading data from REST + GraphQL",
       "summary": "Three shapes. Pick the one that matches your back-end; the grid doesn't care which.",
       "section": "recipes",
@@ -5070,7 +5031,7 @@
     },
     {
       "path": "recipes/million-rows.md",
-      "url": "/recipes/million-rows",
+      "url": "/docs/recipes/million-rows/",
       "title": "1 million rows with virtualization",
       "summary": "Row + column virtualization configured for very wide / very tall data.",
       "section": "recipes",
@@ -5084,7 +5045,7 @@
     },
     {
       "path": "recipes/mobile-card-pivot.md",
-      "url": "/recipes/mobile-card-pivot",
+      "url": "/docs/recipes/mobile-card-pivot/",
       "title": "Mobile card view with grid-on-desktop",
       "summary": "Same data, two layouts. Auto-pivot below 720px or force one via a toolbar switch.",
       "section": "recipes",
@@ -5098,7 +5059,7 @@
     },
     {
       "path": "recipes/multi-sheet-export.md",
-      "url": "/recipes/multi-sheet-export",
+      "url": "/docs/recipes/multi-sheet-export/",
       "title": "Multi-sheet xlsx export",
       "summary": "One workbook, multiple tabs - one per group / region / period.",
       "section": "recipes",
@@ -5112,7 +5073,7 @@
     },
     {
       "path": "recipes/nl-filter.md",
-      "url": "/recipes/nl-filter",
+      "url": "/docs/recipes/nl-filter/",
       "title": "NL filter wired to your LLM",
       "summary": "\"show last quarter > $10k sorted by date\" - one natural-language input drives setFilter + setSort.",
       "section": "recipes",
@@ -5126,7 +5087,7 @@
     },
     {
       "path": "recipes/persist-column-layout-to-url.md",
-      "url": "/recipes/persist-column-layout-to-url",
+      "url": "/docs/recipes/persist-column-layout-to-url/",
       "title": "Persist column layout to URL",
       "summary": "Goal: when a user sorts, filters, or pages the grid, the URL updates so that copy-pasting the link gives the recipient the same view. On reload the grid restores from the URL.",
       "section": "recipes",
@@ -5138,7 +5099,7 @@
     },
     {
       "path": "recipes/pin-first-column.md",
-      "url": "/recipes/pin-first-column",
+      "url": "/docs/recipes/pin-first-column/",
       "title": "Pin first column on horizontal scroll",
       "summary": "Wide grids where the row-label column must stay visible while the data scrolls horizontally.",
       "section": "recipes",
@@ -5152,7 +5113,7 @@
     },
     {
       "path": "recipes/profiling-with-fps-hud.md",
-      "url": "/recipes/profiling-with-fps-hud",
+      "url": "/docs/recipes/profiling-with-fps-hud/",
       "title": "Profiling with a live FPS HUD",
       "summary": "You're trying to figure out:",
       "section": "recipes",
@@ -5164,7 +5125,7 @@
     },
     {
       "path": "recipes/role-based-editing.md",
-      "url": "/recipes/role-based-editing",
+      "url": "/docs/recipes/role-based-editing/",
       "title": "Role-based editable columns",
       "summary": "Different user roles can edit different cells; the grid hides editors per-row via the editable callback.",
       "section": "recipes",
@@ -5178,7 +5139,7 @@
     },
     {
       "path": "recipes/saved-filter-sets.md",
-      "url": "/recipes/saved-filter-sets",
+      "url": "/docs/recipes/saved-filter-sets/",
       "title": "Saved filter sets",
       "summary": "Name and recall named filter combinations; round-trip via api.getFilters / setFilter.",
       "section": "recipes",
@@ -5192,7 +5153,7 @@
     },
     {
       "path": "recipes/saved-views.md",
-      "url": "/recipes/saved-views",
+      "url": "/docs/recipes/saved-views/",
       "title": "Saved views (localStorage)",
       "summary": "Per-user grid layouts. Each \"view\" snapshots column widths, pinning, sort, filter, page index, and (optionally) grouping. Switching views restores the snapshot.",
       "section": "recipes",
@@ -5204,7 +5165,7 @@
     },
     {
       "path": "recipes/server-side-filter-with-tanstack-query.md",
-      "url": "/recipes/server-side-filter-with-tanstack-query",
+      "url": "/docs/recipes/server-side-filter-with-tanstack-query/",
       "title": "Server-side filter with TanStack Query",
       "summary": "Goal: drive the grid from a real API. Sort + filter + page round-trip to the server; the response goes into TanStack Query so we get **caching, deduplication, request cancellation, retries, optimistic updates, and stale-while-revalidate** for free.",
       "section": "recipes",
@@ -5218,7 +5179,7 @@
     },
     {
       "path": "recipes/smart-paste.md",
-      "url": "/recipes/smart-paste",
+      "url": "/docs/recipes/smart-paste/",
       "title": "Smart paste: CSV / TSV / free-form → typed rows",
       "summary": "Paste anything; the assistant infers columns and previews typed rows for accept/update/skip.",
       "section": "recipes",
@@ -5232,7 +5193,7 @@
     },
     {
       "path": "recipes/sparkline-cells.md",
-      "url": "/recipes/sparkline-cells",
+      "url": "/docs/recipes/sparkline-cells/",
       "title": "Sparkline cell renderer",
       "summary": "In-cell mini-charts of a value series, rendered via inline SVG.",
       "section": "recipes",
@@ -5246,7 +5207,7 @@
     },
     {
       "path": "recipes/submit-time-validation.md",
-      "url": "/recipes/submit-time-validation",
+      "url": "/docs/recipes/submit-time-validation/",
       "title": "Submit-time validation with error summary",
       "summary": "Different from per-keystroke validation. The user edits freely; on **Submit**, a row-level validator runs and highlights every invalid cell with an aria-live summary panel.",
       "section": "recipes",
@@ -5258,19 +5219,19 @@
     },
     {
       "path": "recipes/testing-your-grid.md",
-      "url": "/recipes/testing-your-grid",
-      "title": "Testing your grid",
+      "url": "/docs/recipes/testing-your-grid/",
+      "title": "Choosing a grid testing strategy",
       "summary": "Three strategies for testing a grid in your app. Pick the strategy that matches the question you're answering.",
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 721,
-      "lastUpdated": "2026-06-16",
+      "words": 723,
+      "lastUpdated": "2026-08-18",
       "demoIds": []
     },
     {
       "path": "recipes/theme-matched-export.md",
-      "url": "/recipes/theme-matched-export",
+      "url": "/docs/recipes/theme-matched-export/",
       "title": "Theme-matched xlsx export",
       "summary": "Excel file colours follow the same --sg-* tokens the grid renders with.",
       "section": "recipes",
@@ -5284,7 +5245,7 @@
     },
     {
       "path": "recipes/theme-presets.md",
-      "url": "/recipes/theme-presets",
+      "url": "/docs/recipes/theme-presets/",
       "title": "Theme tokens for Ant / MUI / Fluent / shadcn",
       "summary": "Map your design system's tokens to --sg-* and the grid re-skins.",
       "section": "recipes",
@@ -5298,7 +5259,7 @@
     },
     {
       "path": "recipes/two-grid-master-detail.md",
-      "url": "/recipes/two-grid-master-detail",
+      "url": "/docs/recipes/two-grid-master-detail/",
       "title": "Two-grid master / detail",
       "summary": "Goal: one grid shows the **master** (parents - orders, customers, projects, …), a second grid below shows the **detail** for whichever row is selected (line items, contacts, tasks, …).",
       "section": "recipes",
@@ -5312,7 +5273,7 @@
     },
     {
       "path": "recipes/undo-redo-edits.md",
-      "url": "/recipes/undo-redo-edits",
+      "url": "/docs/recipes/undo-redo-edits/",
       "title": "Undo / redo for grid edits",
       "summary": "Maintain a history stack of cell edits; Ctrl+Z / Ctrl+Y replay backwards / forwards.",
       "section": "recipes",
@@ -5326,7 +5287,7 @@
     },
     {
       "path": "recipes/use-svgrid-from-react.md",
-      "url": "/recipes/use-svgrid-from-react",
+      "url": "/docs/recipes/use-svgrid-from-react/",
       "title": "Use SvGrid from React (custom-element bridge)",
       "summary": "SvGrid is Svelte-5-native, but you can drop it into a React app via a thin **custom element** wrapper. The wrapper publishes one <sv-grid-element> tag, React renders it like any other DOM element, and data + columns cross the boundary as serialised properties.",
       "section": "recipes",
@@ -5338,7 +5299,7 @@
     },
     {
       "path": "recipes/websocket-streaming.md",
-      "url": "/recipes/websocket-streaming",
+      "url": "/docs/recipes/websocket-streaming/",
       "title": "WebSocket streaming with backpressure",
       "summary": "Live tick stream with pause / resume / disconnect-and-replay and per-tick delta merge.",
       "section": "recipes",
@@ -5352,7 +5313,7 @@
     },
     {
       "path": "reference/auto/index.md",
-      "url": "/reference/auto/index",
+      "url": "/docs/reference/auto/index/",
       "title": "Auto-generated reference",
       "summary": "_Generated from the published TypeScript sources. Do not edit by hand - rerun node tools/build-reference.mjs._",
       "section": "reference",
@@ -5364,7 +5325,7 @@
     },
     {
       "path": "reference/auto/svgrid-enterprise-ai.md",
-      "url": "/reference/auto/svgrid-enterprise-ai",
+      "url": "/docs/reference/auto/svgrid-enterprise-ai/",
       "title": "`@svgrid/enterprise` · `ai.ts`",
       "summary": "Auto-generated. Source: packages\\enterprise\\src\\ai.ts.",
       "section": "reference",
@@ -5376,7 +5337,7 @@
     },
     {
       "path": "reference/auto/svgrid-enterprise-export.md",
-      "url": "/reference/auto/svgrid-enterprise-export",
+      "url": "/docs/reference/auto/svgrid-enterprise-export/",
       "title": "`@svgrid/enterprise` · `export.ts`",
       "summary": "Auto-generated. Source: packages\\enterprise\\src\\export.ts.",
       "section": "reference",
@@ -5388,7 +5349,7 @@
     },
     {
       "path": "reference/auto/svgrid-enterprise-import.md",
-      "url": "/reference/auto/svgrid-enterprise-import",
+      "url": "/docs/reference/auto/svgrid-enterprise-import/",
       "title": "`@svgrid/enterprise` · `import.ts`",
       "summary": "Auto-generated. Source: packages\\enterprise\\src\\import.ts.",
       "section": "reference",
@@ -5400,7 +5361,7 @@
     },
     {
       "path": "reference/auto/svgrid-enterprise-install.md",
-      "url": "/reference/auto/svgrid-enterprise-install",
+      "url": "/docs/reference/auto/svgrid-enterprise-install/",
       "title": "`@svgrid/enterprise` · `install.ts`",
       "summary": "Auto-generated. Source: packages\\enterprise\\src\\install.ts.",
       "section": "reference",
@@ -5412,7 +5373,7 @@
     },
     {
       "path": "reference/auto/svgrid-enterprise-pivot.md",
-      "url": "/reference/auto/svgrid-enterprise-pivot",
+      "url": "/docs/reference/auto/svgrid-enterprise-pivot/",
       "title": "`@svgrid/enterprise` · `pivot.ts`",
       "summary": "Auto-generated. Source: packages\\enterprise\\src\\pivot.ts.",
       "section": "reference",
@@ -5424,7 +5385,7 @@
     },
     {
       "path": "reference/auto/svgrid-grid-core.md",
-      "url": "/reference/auto/svgrid-grid-core",
+      "url": "/docs/reference/auto/svgrid-grid-core/",
       "title": "`@svgrid/grid` · `core.ts`",
       "summary": "Auto-generated. Source: packages\\grid\\src\\core.ts.",
       "section": "reference",
@@ -5436,7 +5397,7 @@
     },
     {
       "path": "reference/auto/svgrid-grid-svgrid-wrapper.types.md",
-      "url": "/reference/auto/svgrid-grid-svgrid-wrapper.types",
+      "url": "/docs/reference/auto/svgrid-grid-svgrid-wrapper.types/",
       "title": "`@svgrid/grid` · `svgrid-wrapper.types.ts`",
       "summary": "Auto-generated. Source: packages\\grid\\src\\svgrid-wrapper.types.ts.",
       "section": "reference",
@@ -5448,7 +5409,7 @@
     },
     {
       "path": "reference/bundle-size.md",
-      "url": "/reference/bundle-size",
+      "url": "/docs/reference/bundle-size/",
       "title": "Bundle size",
       "summary": "What SvGrid costs in your bundle, how to reproduce the number on your branch, and what to do if size matters.",
       "section": "reference",
@@ -5460,7 +5421,7 @@
     },
     {
       "path": "reference/ColumnDef.md",
-      "url": "/reference/ColumnDef",
+      "url": "/docs/reference/ColumnDef/",
       "title": "`ColumnDef` reference",
       "summary": "A column definition is the contract between the grid and one column of data. Pass an array of these as the columns prop to <SvGrid>.",
       "section": "reference",
@@ -5472,7 +5433,7 @@
     },
     {
       "path": "reference/enterprise.md",
-      "url": "/reference/enterprise",
+      "url": "/docs/reference/enterprise/",
       "title": "Enterprise reference",
       "summary": "Everything that @svgrid/enterprise adds on top of the Community surface. Install + license: see Enterprise feature pack.",
       "section": "reference",
@@ -5484,7 +5445,7 @@
     },
     {
       "path": "reference/features.md",
-      "url": "/reference/features",
+      "url": "/docs/reference/features/",
       "title": "Features reference",
       "summary": "A \"feature\" is a small bundle of state + helpers the grid engine checks for when wiring its row-model pipeline. Register only what you use - each feature ships about 1-2 KB gzipped and adds a small per-update cost.",
       "section": "reference",
@@ -5496,7 +5457,7 @@
     },
     {
       "path": "reference/headless-engine.md",
-      "url": "/reference/headless-engine",
+      "url": "/docs/reference/headless-engine/",
       "title": "Headless engine",
       "summary": "createSvGrid(options) returns a table object with:",
       "section": "reference",
@@ -5507,20 +5468,8 @@
       "demoIds": []
     },
     {
-      "path": "reference/index.md",
-      "url": "/reference/index",
-      "title": "API reference",
-      "summary": "The exhaustive surface of the published packages. For walkthroughs + patterns see Help; for first contact see Getting started.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 204,
-      "lastUpdated": "2026-08-15",
-      "demoIds": []
-    },
-    {
       "path": "reference/SvGrid.md",
-      "url": "/reference/SvGrid",
+      "url": "/docs/reference/SvGrid/",
       "title": "`<SvGrid>` reference",
       "summary": "The render component. One <SvGrid> element per grid instance.",
       "section": "reference",
@@ -5532,7 +5481,7 @@
     },
     {
       "path": "reference/SvGridApi.md",
-      "url": "/reference/SvGridApi",
+      "url": "/docs/reference/SvGridApi/",
       "title": "`SvGridApi` reference",
       "summary": "The imperative API exposed via <SvGrid onApiReady={(api) => ...}>. Use it for data, column, filter, sort, group, selection, and visibility operations from outside the component.",
       "section": "reference",
@@ -5544,14 +5493,14 @@
     },
     {
       "path": "why-headless.md",
-      "url": "/why-headless",
+      "url": "/docs/why-headless/",
       "title": "Why headless?",
       "summary": "SvGrid is **headless at the core**, with a fully-styled Svelte component shipped on top. That two-layer split is deliberate, and worth understanding before you reach for either.",
       "section": "",
       "pillar": "grid",
       "tier": "community",
       "words": 863,
-      "lastUpdated": "2026-07-02",
+      "lastUpdated": "2026-08-18",
       "demoIds": [
         "186-headless-table"
       ]

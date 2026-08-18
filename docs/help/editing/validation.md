@@ -1,4 +1,4 @@
-﻿# Validation
+# Validation
 
 There is no `validate(value)` callback on `ColumnDef` today. Validation
 happens by intercepting committed edits and either accepting or reverting

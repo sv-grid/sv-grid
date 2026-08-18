@@ -1,4 +1,4 @@
-﻿# Filtering - overview
+# Filtering - overview
 
 Click any column header's filter icon to open the operator + value
 popover; numeric and date columns range-bucket their distinct values

@@ -1,4 +1,4 @@
-﻿# View refresh
+# View refresh
 
 The grid renders reactively - it does **not** have a `refresh()` method,
 because it doesn't need one. To make the grid re-display, change the data

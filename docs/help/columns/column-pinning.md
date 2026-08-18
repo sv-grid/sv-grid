@@ -1,4 +1,4 @@
-﻿# Column pinning
+# Column pinning
 
 Pinning sticks a column to the **left** or **right** edge of the viewport so
 it does not scroll horizontally with the rest.

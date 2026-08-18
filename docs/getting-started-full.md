@@ -1,4 +1,4 @@
-﻿# Getting Started with SvGrid
+# Getting Started with SvGrid
 
 SvGrid is a modern, production-ready data grid for Svelte 5 - a headless
 core engine paired with a Svelte render component

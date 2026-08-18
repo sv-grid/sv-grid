@@ -1,4 +1,4 @@
-# Testing your grid
+# Choosing a grid testing strategy
 
 Three strategies for testing a grid in your app. Pick the strategy
 that matches the question you're answering.

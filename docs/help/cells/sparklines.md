@@ -68,5 +68,5 @@ nothing.
 - The geometry helper is exported as `buildSparkline(values, config)` if you
   want to render the same chart outside a grid cell.
 
-See the live [Sparkline cells](https://sv-grid.com/demos/140-sparkline-cells)
+See the live [Sparkline cells](https://svgrid.com/demos/140-sparkline-cells/)
 demo.

@@ -39,4 +39,4 @@ Pass an object to pick which:
   in-progress edit is reflected.
 - Group rows are skipped.
 
-See the live [Status bar](https://sv-grid.com/demos/144-status-bar) demo.
+See the live [Status bar](https://svgrid.com/demos/144-status-bar/) demo.

@@ -27,8 +27,8 @@ setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
 This suppresses the watermark in local dev. **For staging /
 production evaluation, request an evaluation key** at
-[svgrid.com/evaluate](https://svgrid.com/evaluate) - it's a one-form
-request, no sales call, key arrives in ~10 minutes.
+[svgrid.com/contact](https://svgrid.com/contact/) - no sales call
+required.
 
 The evaluation key is a real key with a 30-day expiry. Behaves
 identically to a paid license; lets you ship internal staging /

@@ -1,4 +1,4 @@
-﻿# SvGrid Help
+# SvGrid Help
 
 Topic-oriented documentation for SvGrid. Each page is a focused
 explanation of one feature with copy-paste code that runs against the
@@ -60,7 +60,8 @@ real-world scale:
 - [Conditional form schema](./conditional-form-schema.md) - declarative `when` rules for per-cell visibility and editability
 - [Server-side data](./server-side-data.md) - paginated fetch, server-driven sort + filter, sparse infinite scroll (with velocity-aware chunk loading + abort guards)
 - [Real-time / streaming updates](./real-time.md) - poll vs WebSocket, delta merge, pause-while-editing, backpressure
-- [Grouping & aggregation](./grouping-aggregation.md) - built-in aggregators, custom group cells, group-vs-leaf sort, performance notes
+- [Grouping & aggregation](./grouping-aggregation.md) - built-in aggregators, custom group cells, group-vs-leaf sort, group footers, grouped paging
+- [Tree data](./rows/tree-data.md) - hierarchical rows from flat parent-id or nested children, treegrid keyboard + ARIA
 - [Columns hierarchy + manager](./columns-hierarchy.md) - side-panel column tree with drag-to-reorder, collapsible groups, summary columns
 - [State maintenance](./state-maintenance.md) - capture / apply, undo / redo, bookmarks, JSON IO, debounced auto-save
 - [Saved views & persistence](./saved-views.md) - localStorage / server-side persistence, view migration, URL sharing

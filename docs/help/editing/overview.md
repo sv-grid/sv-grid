@@ -1,4 +1,4 @@
-﻿# Editing - overview
+# Editing - overview
 
 Inline editing is a single prop on `<SvGrid>`. Try it - double-click
 any cell, type to replace, hit `Enter` to commit. Tab moves to the

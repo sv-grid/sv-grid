@@ -1,4 +1,4 @@
-﻿# Tree rows (expand / collapse)
+# Tree rows (expand / collapse)
 
 SvGrid does not have a `treeData` prop. Tree-shaped data renders through
 the same data + columns pipeline as any other grid, with the tree

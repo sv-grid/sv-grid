@@ -1,4 +1,4 @@
-﻿# Migrating from AG Grid to SvGrid
+# Migrating from AG Grid to SvGrid
 
 If you tried AG Grid on a Svelte 5 project - via `ag-grid-svelte`, the
 old `ag-grid-community/svelte`, or a hand-rolled wrapper - you probably

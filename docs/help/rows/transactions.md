@@ -59,5 +59,5 @@ function schedule() {
 - Selection, expansion, and edit state keyed by `getRowId` survive a
   transaction - that's the point of a stable row id.
 
-See the live [Transaction API](https://sv-grid.com/demos/145-transaction-api)
+See the live [Transaction API](https://svgrid.com/demos/145-transaction-api/)
 demo.

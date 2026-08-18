@@ -71,5 +71,5 @@ const columns = [
 - The reducer is exported as `applyGroupAggregate(agg, columnId, rows)` for
   reuse outside the grid.
 
-See the live [Group aggregators](https://sv-grid.com/demos/142-group-aggregators)
+See the live [Group aggregators](https://svgrid.com/demos/142-group-aggregators/)
 demo.

@@ -164,5 +164,5 @@ normalization.
 - The resolver is exported as `resolveCellFormat(value, row, columnId, formats,
   stat)` if you want to compute the same result yourself.
 
-See the live [Conditional formatting](https://sv-grid.com/demos/141-conditional-formatting)
+See the live [Conditional formatting](https://svgrid.com/demos/141-conditional-formatting/)
 demo.

@@ -1,4 +1,4 @@
-﻿# Row sorting
+# Row sorting
 
 Sorting is a feature you opt into. Try it live - click any column
 header to cycle `none → asc → desc → none`; shift-click adds the

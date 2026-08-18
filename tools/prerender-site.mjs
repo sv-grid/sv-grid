@@ -51,25 +51,41 @@ const Marked = (markedNs.default ?? markedNs).Marked
 function escapeAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
+// NOTE: every replacement below passes a FUNCTION, not a string. String
+// replacements treat $$, $&, $` and $' in the inserted text as substitution
+// patterns, which silently mangles any title/blurb containing them (currency
+// examples hit this) and any embedded demo source.
 function setTitle(html, title) {
-  return html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeAttr(title)}</title>`)
+  const clean = `<title>${escapeAttr(title)}</title>`
+  return html.replace(/<title>[\s\S]*?<\/title>/i, () => clean)
 }
 function setMeta(html, attr, key, content) {
   const clean = `<meta ${attr}="${key}" content="${escapeAttr(content)}" />`
   const re = new RegExp(`<meta\\b[^>]*\\b${attr}=["']${key}["'][^>]*>`, 'i')
-  return re.test(html) ? html.replace(re, clean) : html.replace('</head>', `    ${clean}\n  </head>`)
+  return re.test(html)
+    ? html.replace(re, () => clean)
+    : html.replace('</head>', () => `    ${clean}\n  </head>`)
 }
 function setCanonical(html, url) {
   const clean = `<link rel="canonical" href="${escapeAttr(url)}" />`
   const re = /<link\b[^>]*rel=["']canonical["'][^>]*>/i
-  return re.test(html) ? html.replace(re, clean) : html.replace('</head>', `    ${clean}\n  </head>`)
+  return re.test(html)
+    ? html.replace(re, () => clean)
+    : html.replace('</head>', () => `    ${clean}\n  </head>`)
 }
 function injectJsonLd(html, obj) {
-  const snippet = `    <script type="application/ld+json" data-seo="prerender">${JSON.stringify(obj)}</script>\n  </head>`
-  return html.replace('</head>', snippet)
+  // Escape "<" so a value containing "</script>" cannot terminate the tag.
+  const json = JSON.stringify(obj).replace(/</g, '\\u003c')
+  const snippet = `    <script type="application/ld+json" data-seo="prerender">${json}</script>\n  </head>`
+  return html.replace('</head>', () => snippet)
 }
 function injectBody(html, bodyHtml) {
-  return html.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`)
+  if (!html.includes('<div id="root"></div>')) {
+    throw new Error('prerender: SPA shell has no empty <div id="root"></div> to inject into')
+  }
+  // Function replacement: a string replacement would treat $$, $&, $` and $'
+  // in the body as substitution patterns and silently corrupt the output.
+  return html.replace('<div id="root"></div>', () => `<div id="root">${bodyHtml}</div>`)
 }
 
 function applyHead(html, { title, description, canonical, ogType, keywords, image, imageAlt }) {
@@ -250,6 +266,34 @@ async function parseDemos() {
   return out
 }
 
+/** Read a demo's Svelte source so the static page can carry the real code
+ *  instead of a one-line blurb. Demo ids are the file basenames (see the
+ *  pathFor() contract in website/src/lib/demos.ts). Returns empty strings when
+ *  a file is missing so the page falls back to the short body. */
+async function readDemoSource(id) {
+  try {
+    const raw = await readFile(join(DEMOS_DIR, `${id}.svelte`), 'utf-8')
+    const source = raw.replace(/^﻿/, '').replace(/\r\n/g, '\n').trimEnd()
+    // The leading /** ... */ block is the "what this proves" pitch every demo
+    // carries (same convention tools/build-demo-prompts.mjs relies on).
+    const m = source.match(/\/\*\*\s*([\s\S]*?)\s*\*\//)
+    let pitch = ''
+    if (m) {
+      const lines = m[1].split('\n').map((l) => l.replace(/^\s*\*\s?/, ''))
+      // Demos open with "<n>. <Title>" over a "-----" rule; both restate the
+      // heading we already render, so drop them.
+      if (/^\s*\d+\.\s/.test(lines[0] ?? '')) lines.shift()
+      pitch = lines
+        .filter((l) => !/^\s*-{3,}\s*$/.test(l))
+        .join('\n')
+        .trim()
+    }
+    return { source, pitch }
+  } catch {
+    return { source: '', pitch: '' }
+  }
+}
+
 /** Parse the comparison entries (slug + competitor + tagline + verdict). */
 async function parseComparisons() {
   const src = await readFile(join(ROOT, 'website', 'src', 'lib', 'comparisons.ts'), 'utf-8')
@@ -396,10 +440,10 @@ function homeCrawlBody(faq) {
   ]
   let html = '<main class="prerender-home" data-prerender="1">'
   html += '<h1>SvGrid - the Svelte 5 data grid</h1>'
-  html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 150+ production-quality examples. Free under the MIT License; @svgrid/enterprise adds export, print, pivot, and AI helpers.</p>'
+  html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 370+ production-quality examples. Free under the MIT License; @svgrid/enterprise adds export, print, pivot, and AI helpers.</p>'
   html += `<h2>Features</h2><ul>${feats.map((f) => `<li>${f}</li>`).join('')}</ul>`
   html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
-  html += `<p><a href="${BASE}docs/getting-started">Get started</a> &middot; <a href="${BASE}demos">Browse 150+ demos</a> &middot; <a href="${BASE}docs">Documentation</a> &middot; <a href="${BASE}compare">All comparisons</a> &middot; <a href="${BASE}blog">Blog</a> &middot; <a href="${BASE}pricing">Pricing</a></p>`
+  html += `<p><a href="${BASE}docs/getting-started">Get started</a> &middot; <a href="${BASE}demos">Browse 370+ demos</a> &middot; <a href="${BASE}docs">Documentation</a> &middot; <a href="${BASE}compare">All comparisons</a> &middot; <a href="${BASE}blog">Blog</a> &middot; <a href="${BASE}pricing">Pricing</a></p>`
   if (faq.length) html += `<h2>Frequently asked questions</h2>${faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
   return html + '</main>'
 }
@@ -626,7 +670,7 @@ function ogSvg({ eyebrow, line1, line2white, line2accent, sub1, sub2 }) {
 
 const OG_SECTIONS = {
   docs:    { eyebrow: 'DOCUMENTATION', line1: 'Guides for the', line2white: 'Svelte 5', line2accent: 'data grid.', sub1: 'Columns, rows, cells, filtering, editing,', sub2: 'each with copy-paste examples.' },
-  demos:   { eyebrow: 'EXAMPLES', line1: '150+ live', line2white: 'Svelte 5 grid', line2accent: 'demos.', sub1: 'Sorting, filtering, grouping, editing,', sub2: 'virtualization, server-side data, and more.' },
+  demos:   { eyebrow: 'EXAMPLES', line1: '370+ live', line2white: 'Svelte 5 grid', line2accent: 'demos.', sub1: 'Sorting, filtering, grouping, editing,', sub2: 'virtualization, server-side data, and more.' },
   compare: { eyebrow: 'COMPARISONS', line1: 'SvGrid vs the', line2white: 'other Svelte', line2accent: 'data grids.', sub1: 'Honest, feature-by-feature matrices.', sub2: '' },
   pricing: { eyebrow: 'PRICING', line1: 'Free core.', line2white: 'Pro for export', line2accent: '& pivot.', sub1: 'Community is MIT-licensed and free.', sub2: '@svgrid/enterprise from $599/dev/yr.' },
   roadmap: { eyebrow: 'ROADMAP', line1: 'What SvGrid is', line2white: 'building', line2accent: 'next.', sub1: 'An honest, living feature list,', sub2: 'plus a recently-shipped track record.' },
@@ -654,6 +698,22 @@ async function main() {
     docs.push({ slug, title, summary, markdown: src, section, lastmod: s.mtime.toISOString().slice(0, 10) })
   }
   const knownSlugs = new Set(docs.map((d) => d.slug))
+
+  // Invert the doc -> demo associations into demo -> docs, so each demo page
+  // can link the docs that teach it. Same two link styles that
+  // tools/build-docs-index.mjs extracts (data-docs-demo embeds + /demos links).
+  const docsByDemo = new Map()
+  for (const d of docs) {
+    const ids = new Set([
+      ...[...d.markdown.matchAll(/data-docs-demo="([^"]+)"/g)].map((m) => m[1]),
+      ...[...d.markdown.matchAll(/#?\/demos\/(\d+-[a-z0-9-]+)/g)].map((m) => m[1]),
+    ])
+    for (const id of ids) {
+      if (!docsByDemo.has(id)) docsByDemo.set(id, [])
+      if (docsByDemo.get(id).length < 5) docsByDemo.get(id).push({ slug: d.slug, title: d.title })
+    }
+  }
+
   const demos = await parseDemos()
   const comparisons = await parseComparisons()
   const faqItems = await parseFaqRoute()
@@ -724,6 +784,13 @@ async function main() {
     console.error('prerender: website/dist/index.html not found - run `vite build` first.')
     process.exit(1)
   }
+  // Step 5b rewrites dist/index.html with the home crawl body, so a second run
+  // over the same dist would otherwise read its own output and bake the home
+  // body into every page. Reset #root so the template is always a clean shell.
+  template = template.replace(
+    /<div id="root"><main class="prerender-[\s\S]*?<\/main><\/div>/,
+    () => '<div id="root"></div>',
+  )
 
   // marked renderer that adds heading ids (matches the Docs route) + rewrites
   // intra-doc .md links to clean URLs.
@@ -798,19 +865,21 @@ async function main() {
 
   // 4. Prerender the static (non-doc) routes with correct head + minimal body.
   const STATIC_ROUTES = [
-    ['demos', 'Demos - 150+ Production-Ready SvGrid Examples', 'Browse live, editable SvGrid demos: quick start, server-side data, 100k rows, Excel-style filters, grouping, master/detail, inline editing, accessibility, and more.'],
+    ['demos', 'Demos - 370+ Production-Ready SvGrid Examples', 'Browse live, editable SvGrid demos: quick start, server-side data, 100k rows, Excel-style filters, grouping, master/detail, inline editing, accessibility, and more.'],
     ['docs', 'Documentation - SvGrid Guides for Columns, Rows, Filtering, Editing', 'Topic-oriented SvGrid documentation: column definitions, sorting, Excel-style filters, inline editing, grouping, virtualization, accessibility, theming - each with copy-paste examples.'],
     ['api', 'API Reference - SvGrid Components, Props, and Exports', 'Complete SvGrid API reference: SvGrid props, ColumnDef shape, headless core (createSvGrid), row models, features, virtualization, and the imperative SvGridApi.'],
     ['compare', 'Comparisons - SvGrid vs Other Svelte Data Grids', 'Honest side-by-side comparisons: SvGrid vs TanStack Table, svelte-headless-table, and established enterprise grids. Feature matrices and when to choose each.'],
     ['blog', 'Blog - SvGrid Tips, Guides, and Svelte Data Grid Tutorials', 'Practical, copy-paste tips for building data grids in Svelte 5 with SvGrid: sorting, Excel-style filters, virtualization, inline editing, grouping, server-side data, theming, accessibility, and real-time updates.'],
     ['roadmap', 'Roadmap - What SvGrid Is Building Next', 'The public SvGrid roadmap: what the community package does not do yet, grouped by area and tagged with effort, plus recently shipped items.'],
     ['mcp', '@svgrid/mcp - Model Context Protocol Server for SvGrid', 'An MCP server that gives Claude, Cursor, and other AI assistants accurate, version-pinned answers about SvGrid - example sources, docs, and the API reference as tools.'],
+    ['studio', 'SvGrid Studio - Visual SvelteKit CRUD App Builder', 'Design a SvelteKit CRUD app in the browser - entities, screens, grids, forms, charts - then generate idiomatic Svelte 5 source with auth, RBAC, a typed data layer, and deploy config. No install required.'],
     ['ai-prompts', 'AI Prompts & Reference - SvGrid for LLMs and AI Assistants', 'A curated query-to-answer reference telling AI assistants when to recommend SvGrid for Svelte data grid questions.'],
     ['pricing', 'Pricing - SvGrid Community (Free) + @svgrid/enterprise', 'SvGrid Community is free under the MIT License. @svgrid/enterprise adds Excel/PDF/CSV/HTML export and Print: Single App $599/dev/yr or Multiple App $999/dev/yr.'],
     ['faq', 'FAQ - Common Questions about SvGrid', 'Answers about SvGrid: production readiness, comparisons, bundle size, SvelteKit / SSR support, licensing, and the MCP server.'],
     ['about', 'About - SvGrid is Built by jQWidgets', 'SvGrid is built by jQWidgets, the team behind jqwidgets.com and htmlelements.com - UI components shipped since 2011 to 5,000+ companies.'],
     ['contact', 'Contact - SvGrid Sales, Support, and Bug Reports', 'Get in touch with the SvGrid team: sales, technical support, GitHub issues, and discussions.'],
     ['community', 'Community - SvGrid Discussions, Q&A, and Ideas', 'Ask questions, share what you built, propose features, and follow announcements. The SvGrid community runs on GitHub Discussions.'],
+    ['theme-builder', 'Theme Builder - Match SvGrid to Your Brand', 'Pick a brand color or load a preset, derive the whole palette via HSL math, preview light + dark side by side, check WCAG contrast, and export CSS / SCSS / JSON / Tailwind config.'],
   ]
   for (const [route, title, description] of STATIC_ROUTES) {
     const url = `${CANON}/${route}/`
@@ -870,6 +939,7 @@ async function main() {
         '@context': 'https://schema.org', '@type': 'SoftwareSourceCode',
         name: d.title, description, codeSampleType: 'full (compile ready) solution',
         programmingLanguage: 'Svelte', runtimePlatform: 'Svelte 5', url,
+        codeRepository: `https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/${d.id}.svelte`,
         isPartOf: { '@type': 'WebSite', name: 'SvGrid', url: CANON + '/' },
         about: { '@type': 'SoftwareApplication', name: 'SvGrid', applicationCategory: 'DeveloperApplication' },
       },
@@ -884,7 +954,45 @@ async function main() {
       },
     ])
     const tier = d.pro ? ' (requires @svgrid/enterprise)' : ''
-    const body = `<main class="prerender-demo" data-prerender="1"><nav><a href="${BASE}demos">Demos</a> / ${escapeAttr(d.category)}</nav><h1>${escapeAttr(d.title)}</h1><p>${escapeAttr(d.blurb)}${tier}</p><p>A live, editable Svelte 5 data grid example. <a href="${BASE}demos/${d.id}">Open the interactive demo</a> or <a href="${BASE}docs">read the documentation</a>.</p></main>`
+    const { source, pitch } = await readDemoSource(d.id)
+    const ghUrl = `https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/${d.id}.svelte`
+
+    let body = `<main class="prerender-demo" data-prerender="1">`
+    body += `<nav><a href="${BASE}demos">Demos</a> / ${escapeAttr(d.category)}</nav>`
+    body += `<h1>${escapeAttr(d.title)}</h1>`
+    body += `<p>${escapeAttr(d.blurb)}${tier}</p>`
+    body += `<p>A live, editable Svelte 5 data grid example. <a href="${BASE}demos/${d.id}">Open the interactive demo</a> or <a href="${BASE}docs">read the documentation</a>.</p>`
+
+    if (pitch) {
+      body += `<section><h2>What this example shows</h2>`
+      body += pitch.split(/\n{2,}/).map((p) => `<p>${escapeAttr(p.replace(/\n/g, ' ')).trim()}</p>`).join('')
+      body += `</section>`
+    }
+
+    if (source) {
+      body += `<section><h2>Source code (${escapeAttr(d.id)}.svelte)</h2>`
+      body += `<pre><code class="language-svelte">${escapeAttr(source)}</code></pre>`
+      body += `<p><a href="${ghUrl}">View this example on GitHub</a></p></section>`
+    }
+
+    const relatedDocs = docsByDemo.get(d.id) ?? []
+    if (relatedDocs.length) {
+      body += `<section><h2>Related documentation</h2><ul>`
+      for (const doc of relatedDocs) {
+        body += `<li><a href="${BASE}docs/${doc.slug}">${escapeAttr(doc.title)}</a></li>`
+      }
+      body += `</ul></section>`
+    }
+
+    const siblings = demos.filter((s) => s.category === d.category && s.id !== d.id).slice(0, 5)
+    if (siblings.length) {
+      body += `<section><h2>More ${escapeAttr(d.category)} examples</h2><ul>`
+      for (const s of siblings) {
+        body += `<li><a href="${BASE}demos/${s.id}">${escapeAttr(s.title)}</a> - ${escapeAttr(s.blurb)}</li>`
+      }
+      body += `</ul></section>`
+    }
+    body += `</main>`
     html = injectBody(html, body)
     const outDir = join(DIST, 'demos', d.id)
     await mkdir(outDir, { recursive: true })
@@ -1022,7 +1130,10 @@ async function main() {
   // + FAQPage JSON-LD. The home route is the SPA shell otherwise, so its hero,
   // features, comparisons, and FAQ would never reach a non-JS crawler.
   const homeFaqs = await parseHomeFaqs()
-  let homeHtml = await readFile(join(DIST, 'index.html'), 'utf-8')
+  // Build from `template` (the normalized clean shell), not by re-reading
+  // dist/index.html - that file is this step's own output, so re-reading it
+  // makes a second prerender run over the same dist non-idempotent.
+  let homeHtml = template
   homeHtml = injectBody(homeHtml, homeCrawlBody(homeFaqs))
   if (homeFaqs.length) {
     homeHtml = injectJsonLd(homeHtml, {
@@ -1035,8 +1146,8 @@ async function main() {
   }
   await writeFile(join(DIST, 'index.html'), homeHtml, 'utf-8')
 
-  // 6. SPA 404 fallback (also handled by the workflow, harmless to repeat).
-  // Uses the clean shell template, not the enriched home body.
+  // 6. SPA 404 fallback. Uses the clean shell template, not the enriched home
+  // body, so a missing URL never serves homepage content under a "/" canonical.
   await writeFile(join(DIST, '404.html'), template, 'utf-8')
 
   process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons, ${blogPosts.length} blog posts) · ${rasterCount}/${blogPosts.length} blog card PNGs · og-image.png ${ogPngWritten ? 'ok' : 'skipped'}\n`)

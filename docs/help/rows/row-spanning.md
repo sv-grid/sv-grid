@@ -1,4 +1,4 @@
-﻿# Row spanning
+# Row spanning
 
 "Row spanning" lets one cell's content cover **multiple rows**, the way a
 merged cell does in a spreadsheet.

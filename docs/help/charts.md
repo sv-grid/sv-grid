@@ -209,7 +209,7 @@ screen.
   `73-chartjs-sync` and `77-smart-chart`. `SvGridChart` is the
   batteries-included option.
 
-See the live [Integrated charts](https://sv-grid.com/demos/147-integrated-charts)
-demo, or the [Chart wizard panel](https://sv-grid.com/demos/152-chart-wizard) -
+See the live [Integrated charts](https://svgrid.com/demos/147-integrated-charts/)
+demo, or the [Chart wizard panel](https://svgrid.com/demos/152-chart-wizard/) -
 a pick-a-chart dialog whose type-gallery thumbnails are themselves live
 `SvGridChart` previews.

@@ -1,4 +1,4 @@
-﻿# Testing & Quality
+# Testing & Quality
 
 SvGrid ships with a comprehensive automated test suite. This page is the
 honest accounting of what we test, what we don't, and where coverage

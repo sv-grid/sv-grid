@@ -63,5 +63,5 @@ fires for edits from **other** users only (never echoes your own).
 - This is also the **multi-agent** substrate: an AI agent is just another peer
   posting `edit` messages - drive `sendEdit` from your agent loop.
 
-See the live [Real-time collaboration](https://sv-grid.com/demos/149-realtime-collaboration)
+See the live [Real-time collaboration](https://svgrid.com/demos/149-realtime-collaboration/)
 demo (open it in two tabs).

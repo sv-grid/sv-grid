@@ -1,4 +1,4 @@
-﻿# Tooltips
+# Tooltips
 
 There is no built-in tooltip API on `ColumnDef`. Use the standard `title`
 attribute, an accessible `<dialog>`, or any popover library - wired
