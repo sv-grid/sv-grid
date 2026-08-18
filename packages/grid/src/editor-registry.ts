@@ -20,9 +20,20 @@
  * mounting.
  */
 import type { Component } from 'svelte'
+import type { EditorInteraction } from './editor-contract'
 
-/** Context the grid hands a cell editor when it mounts one for an edit. */
-export type CellEditorContext<T = unknown> = {
+/**
+ * Context the grid hands a cell editor when it mounts one for an edit.
+ *
+ * Extends {@link EditorInteraction} - the shared commit / cancel / move contract
+ * the `Sv*` editors are written against - and narrows the parts the grid always
+ * supplies, so a registered component and a built-in editor speak the same
+ * language. `onCommitAndMove`, `onRequestClose` and `inCell` come from the
+ * contract and are always populated by the grid.
+ */
+export type CellEditorContext<T = unknown> = Required<
+  Pick<EditorInteraction<T>, 'onCommit' | 'onCancel' | 'onCommitAndMove' | 'onRequestClose' | 'inCell'>
+> & {
   /** The value currently being edited. */
   value: T
   /** Id of the row being edited. */
@@ -31,10 +42,6 @@ export type CellEditorContext<T = unknown> = {
   columnId: string
   /** Update the in-progress value WITHOUT ending the edit. */
   onChange: (value: T) => void
-  /** Commit the value and stop editing (optionally pass a final value). */
-  onCommit: (value?: T) => void
-  /** Discard changes and stop editing (returns focus to the grid). */
-  onCancel: () => void
 }
 
 /** How a registered component is mounted and wired for a cell edit. */
@@ -87,13 +94,22 @@ export function registeredCellEditorTypes(): string[] {
   return [...registry.keys()]
 }
 
-/** The default context → props mapping used when a registration has no `props`. */
+/**
+ * The default context → props mapping used when a registration has no `props`.
+ * Passes the whole {@link EditorInteraction} surface, so an editor written
+ * against the shared contract works when registered with no mapping at all.
+ * Svelte ignores props a component doesn't declare, so the extra keys are inert
+ * for a simple editor that only wants `value` + `onCommit`.
+ */
 export function defaultEditorProps(ctx: CellEditorContext): Record<string, unknown> {
   return {
     value: ctx.value,
     onChange: ctx.onChange,
     onCommit: ctx.onCommit,
     onCancel: ctx.onCancel,
+    onCommitAndMove: ctx.onCommitAndMove,
+    onRequestClose: ctx.onRequestClose,
+    inCell: ctx.inCell,
   }
 }
 

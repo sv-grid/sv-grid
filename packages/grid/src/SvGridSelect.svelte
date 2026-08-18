@@ -38,6 +38,12 @@
     loadOptions?: (query: string) => Promise<Row[]>
     debounceMs?: number
     loadingText?: string
+    /** Shown when the list is empty / a search matches nothing (localization). */
+    emptyText?: string
+    /** Placeholder in the panel's search box (localization). */
+    searchPlaceholder?: string
+    /** Accessible name for the panel's search box (localization). */
+    searchLabel?: string
   }
 
   let {
@@ -54,6 +60,9 @@
     loadOptions,
     debounceMs = 250,
     loadingText = 'Loading…',
+    emptyText = 'No matches',
+    searchPlaceholder = 'Search…',
+    searchLabel = 'Search options',
     disabled = false,
     readonly = false,
     label,
@@ -168,8 +177,8 @@
         aria-expanded="true"
         aria-controls={gs.panelId}
         aria-activedescendant={gs.activeDescendant()}
-        aria-label="Search options"
-        placeholder="Search…"
+        aria-label={searchLabel}
+        placeholder={searchPlaceholder}
         value={search}
         oninput={(e) => { search = e.currentTarget.value; gs.active = 0; if (loadOptions) runLoad(search) }}
       />
@@ -205,7 +214,7 @@
             {/each}
           </div>
         {:else}
-          <div class="sv-gs__empty" role="row">{loading ? loadingText : 'No matches'}</div>
+          <div class="sv-gs__empty" role="row">{loading ? loadingText : emptyText}</div>
         {/each}
         {#if loading && filtered.length}
           <div class="sv-gs__empty" role="row" aria-live="polite">{loadingText}</div>

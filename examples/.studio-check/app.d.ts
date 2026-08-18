@@ -1,2 +1,2 @@
-declare module "$app/stores" { import type { Readable } from "svelte/store"; export const page: Readable<{ url: { pathname: string } }> }
+declare module "$app/state" { export const page: { url: { pathname: string } } }
 declare module "*.css";

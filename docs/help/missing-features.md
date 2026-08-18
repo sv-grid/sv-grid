@@ -27,7 +27,9 @@ can see both the trajectory and the (short) list of real gaps.
 | ~~Row spanning (merged cells across rows)~~ | **shipped as cell merging** - `rowspan` in `MergeSpec`; demo `170-cell-merging` | ✓ |
 | ~~Full-width / detail row API~~ | **shipped** - `isDetailRow`; demo `106-detail-rows` | ✓ |
 | ~~Variable row height with `<SvGrid>`~~ | **shipped** - `rowHeight` accepts `(rowIndex) => px` | ✓ |
+| ~~Auto row height (measure content)~~ | **shipped** - `autoRowHeight` wraps cell text and measures each row, virtualization included | ✓ |
 | ~~`api.getDisplayedRows()`~~ | **shipped** | ✓ |
+| ~~Client-side tree data (hierarchical rows)~~ | **shipped** - `treeData` nests by parent id, `flattenTreeData` converts nested children; treegrid role + arrow-key expand; demo `426-tree-data` | ✓ |
 | ~~Built-in row dragging~~ | **shipped** - `rowDragManaged` reorders in-grid and moves rows **grid-to-grid** via a shared `rowDragGroup`; `onRowDragEnd` on the receiver; demos `105-row-reorder` (custom) + `180-row-dragging` (managed) | ✓ |
 
 ## Cells
@@ -70,6 +72,7 @@ can see both the trajectory and the (short) list of real gaps.
 | ~~Per-column `valueParser`~~ | **shipped** - `valueParser` on `ColumnDef`; demo `175` | ✓ |
 | ~~Programmatic `api.startEditing()` / `stopEditing()`~~ | **shipped** - demo `176` | ✓ |
 | ~~Full-row editing mode~~ | **shipped** - `fullRowEditing`; demo `177` | ✓ |
+| ~~Async / server-loaded editor option lists~~ | **shipped** - `editorOptions` may return a Promise (per column or per row), with a loading state, caching and `api.refreshEditorOptions()`; demo `428-async-editor-options` | ✓ |
 
 ## The real remaining gaps (short list)
 
@@ -102,11 +105,11 @@ sparklines, collaboration). The genuine remaining gaps:
 
 | Gap | Note | Effort |
 | --- | ---- | ------ |
-| **Multi Filter** (set + text stacked on one column) | one operator-set per column today | M |
+| ~~**Multi Filter** (two conditions on one column)~~ | **shipped** - a column filter takes a second condition joined by AND / OR, in the menu and via `api.setFilter` | ✓ |
 | **Custom filter / floating-filter component** slot | first-class pluggable filter | M |
 | **Custom tool panels** | panel is fixed Columns + Filters | M |
 | ~~**UI-string localisation** (`localeText`)~~ | **shipped** - `localeText` prop over `GridMessages`; every menu/panel/chrome string is overridable | ✓ |
-| **Row-grouping display modes** (single / multiple / groupRows) + group-level footers | grouping + group panel ship; display variants do not | M |
+| ~~**Row-grouping display modes** + group-level footers~~ | **shipped** - `groupDisplayMode: 'groupRows' \| 'singleColumn' \| 'multipleColumns'` plus `groupFooters` and `grandTotalRow`; demo `427-group-footers` | ✓ |
 | ~~**In-grid pivot mode** (toggle on the main grid)~~ | **shipped** - `enablePivot()` registers the engine and the main grid pivots in place | ✓ |
 | **Integrated-chart depth** (chart toolbar, cross-filtering) | 17 chart types + wizard + a "Chart selected range" context-menu item ship; the chart toolbar and click-to-filter loop do not | L |
 | **Server-side pivot / viewport row model** | SSRM ships sort/filter/group/infinite | L |

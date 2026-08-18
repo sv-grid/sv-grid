@@ -75,7 +75,7 @@
     display: flex; align-items: center; gap: 10px; width: 100%;
   }
   .sv-prog--success { --_c: var(--sg-success, #16a34a); }
-  .sv-prog--warning { --_c: var(--sg-warning, #f59e0b); }
+  .sv-prog--warning { --_c: var(--sg-warning, #d97706); }
   .sv-prog--danger { --_c: var(--sg-danger, #dc2626); }
   .sv-prog__track {
     position: relative; flex: 1; overflow: hidden;

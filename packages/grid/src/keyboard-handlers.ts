@@ -249,6 +249,23 @@ export function createKeyboard<
     // expands a collapsed group row, ArrowLeft collapses an expanded one,
     // instead of moving the active cell (treegrid-style). Leaves fall through
     // to normal navigation.
+    // Client tree data gets the same ArrowRight/ArrowLeft contract, driven off
+    // the row model rather than consumer callbacks.
+    if (ctx.props.treeData && (intent === "moveRight" || intent === "moveLeft")) {
+      const row = ctx.allRows[current.rowIndex];
+      if (row?.getCanExpand?.()) {
+        const expanded = row.getIsExpanded?.() ?? false;
+        if (intent === "moveRight" && !expanded) {
+          row.toggleExpanded?.();
+          return;
+        }
+        if (intent === "moveLeft" && expanded) {
+          row.toggleExpanded?.();
+          return;
+        }
+      }
+    }
+
     const serverGroup = ctx.props.serverGroup;
     if (serverGroup && (intent === "moveRight" || intent === "moveLeft")) {
       const data = ctx.allRows[current.rowIndex]?.original;

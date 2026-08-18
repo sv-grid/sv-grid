@@ -115,6 +115,42 @@ Removable-token picker for multi-select. The value is always an array.
 }
 ```
 
+## Async option lists
+
+Anywhere `editorOptions` is accepted it may also return a **Promise**, for
+lists that live on the server. Both the static and the per-row form support it:
+
+```ts
+// One request for the whole column.
+{ field: 'assignee', editorType: 'rich-select',
+  editorOptions: fetch('/api/users').then((r) => r.json()) }
+
+// Per row - a cascade, where the list depends on another cell.
+{ field: 'city', editorType: 'select',
+  editorOptions: (row) => fetch(`/api/cities?country=${row.country}`).then((r) => r.json()) }
+```
+
+While the request is in flight the dropdown shows **Loading…** rather than
+"No options", which would read as "nothing to pick". The cell keeps rendering
+its raw value.
+
+Results are cached so reopening an editor never refetches. A static source is
+cached per column; a cascade is cached per row **and per that row's data**, so
+editing the cell it depends on supersedes the entry and the next open refetches
+- change a row's Country and its City list reloads on its own.
+
+When the list changes server-side rather than in the row, invalidate explicitly:
+
+```ts
+api.refreshEditorOptions('city') // one column
+api.refreshEditorOptions()       // everything
+```
+
+A rejected request settles the editor on an empty list, so a failed lookup
+never leaves it spinning.
+
+<div data-docs-demo="428-async-editor-options" data-height="420"></div>
+
 ## Color editor - `editorType: 'color'`
 
 Native HTML color picker. The cell stores a `#rrggbb` string. Clicking

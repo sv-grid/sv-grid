@@ -59,7 +59,7 @@
   }
   .sv-result--success { --_c: var(--sg-success, #16a34a); }
   .sv-result--error { --_c: var(--sg-danger, #dc2626); }
-  .sv-result--warning { --_c: var(--sg-warning, #f59e0b); }
+  .sv-result--warning { --_c: var(--sg-warning, #d97706); }
   .sv-result--notfound { --_c: var(--sg-muted, #64748b); }
   .sv-result__icon {
     display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; margin-bottom: 4px;

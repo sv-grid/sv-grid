@@ -37,6 +37,12 @@
     /** Debounce for remote search. Default 250ms. */
     debounceMs?: number
     loadingText?: string
+    /** Shown when the list is empty / a search matches nothing (localization). */
+    emptyText?: string
+    /** Placeholder in the panel's search box (localization). */
+    searchPlaceholder?: string
+    /** Accessible name for the panel's search box (localization). */
+    searchLabel?: string
   }
 
   let {
@@ -52,6 +58,9 @@
     loadOptions,
     debounceMs = 250,
     loadingText = 'Loading…',
+    emptyText = 'No matches',
+    searchPlaceholder = 'Search…',
+    searchLabel = 'Search options',
     disabled = false,
     readonly = false,
     label,
@@ -193,8 +202,8 @@
         aria-expanded="true"
         aria-controls={ms.panelId}
         aria-activedescendant={ms.activeDescendant()}
-        aria-label="Search options"
-        placeholder="Search…"
+        aria-label={searchLabel}
+        placeholder={searchPlaceholder}
         value={search}
         oninput={(e) => { search = e.currentTarget.value; ms.active = 0; if (loadOptions) runLoad(search) }}
       />
@@ -224,7 +233,7 @@
           <span class="sv-ms__label">{opt.label}</span>
         </li>
       {:else}
-        <li class="sv-ms__empty" aria-disabled="true">{loading ? loadingText : 'No matches'}</li>
+        <li class="sv-ms__empty" aria-disabled="true">{loading ? loadingText : emptyText}</li>
       {/each}
       {#if loading && filtered.length}
         <li class="sv-ms__loading" aria-live="polite">{loadingText}</li>

@@ -84,7 +84,7 @@ Re-derive the numbers yourself: `pnpm size` and `pnpm demos:count`.
 
 - **Virtual scrolling.** Row + column windowing; 100k x 100 stays smooth, and there's a 1M-row demo.
 - **Filtering.** Excel-style filter menu, inline filter row, locale-aware text matching, set / value-list filter, between operator on numbers and dates.
-- **Editing.** 14 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, textarea, color, checkbox, list, chips, rating, password) plus a `cellEditor` snippet slot for anything else.
+- **Editing.** 15 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, autocomplete, textarea, color, checkbox, list, chips, rating, password), plus `date-native` / `datetime-native` / `time-native` to opt out of the rich pickers, and a `cellEditor` snippet slot for anything else.
 - **Selection.** Cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, row selection.
 - **Views.** Row grouping with aggregation, tree data, master/detail, full-width detail rows, spreadsheet mode with formulas, plus Kanban board and scheduler/calendar views.
 - **Layout.** Row + column pinning, sticky header + first column, header drag-to-reorder, keyboard-accessible column sizing, responsive mode for mobile.
@@ -104,7 +104,7 @@ The MIT community core has zero feature gating: no license key, no watermark, no
 | Excel / PDF export, import, pivot tables, print, Kanban + scheduler renderers | `+ @svgrid/enterprise` | Commercial |
 | The grid in React, Vue, Angular, or plain HTML | `@svgrid/grid-wc` | MIT |
 | Standalone Svelte 5 UI components (no grid) | `@svgrid/ui` | MIT |
-| Accurate SvGrid answers from Claude / Cursor / Zed | `@svgrid/mcp` | Commercial |
+| Accurate SvGrid answers from Claude / Cursor / Zed | `@svgrid/mcp` | Free to run; Studio codegen tools are Commercial |
 | A generated CRUD app from your database schema | `@svgrid/studio` | Commercial |
 
 OSS projects under an [OSI-approved license](https://opensource.org/licenses) get the Enterprise pack

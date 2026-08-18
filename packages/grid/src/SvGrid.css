@@ -902,8 +902,8 @@
    pattern isn't being applied (it matches nothing until it compiles). */
 .sv-grid-filter-value.sv-grid-filter-value-invalid,
 .sv-grid-tp-filter-input.sv-grid-filter-value-invalid {
-  border-color: var(--sg-danger, #e5484d) !important;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sg-danger, #e5484d) 45%, transparent);
+  border-color: var(--sg-danger, #dc2626) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sg-danger, #dc2626) 45%, transparent);
 }
 
 /* In / Not-in chip (token) input: chips + a flex-growing text box share one
@@ -2130,6 +2130,104 @@ select.sv-grid-fr-editor {
   background: var(--sg-selection-bg, #eaf2ff);
 }
 
+/* Group subtotal row (`groupFooters`). Renders through the normal cell path so
+   its totals sit under their own columns; a top rule + weight is what reads as
+   "this closes the group above". Lighter than the banner on purpose - the
+   banner opens a group, the footer just totals it. */
+.sv-grid-group-footer-row > .sv-grid-cell {
+  background: var(--sg-header-bg, #eef2f8);
+  border-top: 1px solid var(--sg-border, #d7dce5);
+  font-weight: 600;
+}
+
+/* Auto row height (`autoRowHeight`). The default cell truncates to one line
+   (nowrap + ellipsis + overflow hidden), which would make a measured row height
+   pointless - every row would measure the same. Let the text wrap so the row
+   has something to grow to, and pad vertically since there is no fixed height
+   centring the single line any more. */
+.sv-grid-row-auto-height > .sv-grid-cell {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  text-overflow: clip;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  /* Cells stretch to the row's height rather than centring on one line. */
+  vertical-align: top;
+}
+
+/* Grand total (`grandTotalRow`). One step heavier than a group subtotal: it
+   closes the whole dataset, not one group, so it takes a double top rule. */
+.sv-grid-grand-total-row > .sv-grid-cell {
+  border-top: 3px double var(--sg-border, #d7dce5);
+  font-weight: 700;
+}
+
+/* Client tree data (`treeData`). The indent is a sized spacer rather than
+   padding on the cell so conditional-format backgrounds and data bars still
+   span the full cell width. */
+.sv-grid-tree-indent {
+  display: inline-block;
+  flex: none;
+}
+.sv-grid-tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-right: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--sg-muted, #64748b);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sv-grid-tree-toggle:hover {
+  background: var(--sg-header-bg, #eef2f8);
+  color: var(--sg-fg, #0f172a);
+}
+/* One chevron for every expander in the library - the grid's tree rows, its
+   group banners and auto-group columns, SvGroupCell and SvTree all draw the
+   same `chevron-right` and rotate it open, rather than swapping between two
+   different glyphs. */
+.sv-grid-tree-toggle .sv-grid-icon,
+.sv-grid-group-toggle .sv-grid-icon {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.15s ease;
+}
+.sv-grid-tree-toggle[aria-expanded="true"] .sv-grid-icon,
+.sv-grid-group-toggle[aria-expanded="true"] .sv-grid-icon {
+  transform: rotate(90deg);
+}
+.sv-grid-tree-toggle:focus-visible {
+  outline: 2px solid var(--sg-accent, #2563eb);
+  outline-offset: 1px;
+}
+/* Auto-group column cell (`groupDisplayMode: singleColumn | multipleColumns`).
+   The group row is an ordinary row here, so only the label needs weight - the
+   full-width banner styling does not apply. */
+.sv-grid-autogroup-label {
+  font-weight: 600;
+  color: var(--sg-fg, #0f172a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keeps a childless row's value on the same x as its expandable siblings. */
+.sv-grid-tree-spacer {
+  display: inline-block;
+  width: 14px;
+  flex: none;
+  margin-right: 3px;
+}
+
 .sv-grid-group-cell {
   padding: 0 12px;
 }
@@ -2209,7 +2307,9 @@ select.sv-grid-fr-editor {
   line-height: 1.4;
   resize: vertical;
   outline: none;
-  box-shadow: var(--sg-focus-ring, 0 0 0 2px rgba(99, 102, 241, 0.40));
+  /* --sg-focus-ring is a COLOR everywhere else (`outline: 2px solid ...`).
+     Consume it as one here too, rather than as a whole box-shadow value. */
+  box-shadow: 0 0 0 2px var(--sg-focus-ring, rgba(99, 102, 241, 0.40));
 }
 
 .sv-grid-autocomplete {

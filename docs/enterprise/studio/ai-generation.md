@@ -78,11 +78,19 @@ designer produced, and hand it back:
 | `studio_add_screen` | Add an entity-bound screen (default grid) or a freestanding page |
 | `studio_add_block` | Add a data block (grid, chart, kpi, gauge, tree, tabs, accordion, pivot, board, calendar, detail, master-detail, filter, record, lookup, dashboard) to a screen |
 | `studio_add_component` | Add a UI component block (button, badge, alert, card, stat, timeline, sparkline, chip, ...) with prop overrides |
+| `studio_update_block` | **Configure** an existing block - columns, editing mode, export buttons, grouping, chart dimension/measure, row links, format rules - plus its width, height, and class |
+| `studio_remove_block` | Remove a block from a screen |
+| `studio_move_block` | Reorder a block within its screen |
+| `studio_update_screen` | Rename a screen, change its route or nav entry, or set `renderMode` (`ssr` for an idiomatic `+page.server.ts` load + form actions, `spa` for the client page) |
+| `studio_remove_screen` | Remove a screen and its blocks |
+| `studio_set_screen_layout` | Switch a screen between `grid`, `stack`, `split`, `dock`, and `canvas` layouts |
 | `studio_set_entity_source` | Bind an entity to a data source: `sql`, `supabase`, `rest`, `pglite`, or `memory` |
 | `studio_set_theme` | Set the theme preset, light/dark mode, and accent color |
 | `studio_set_access` | Configure [RBAC](./access-control.md): roles gating screens and create/update/delete actions |
 | `studio_set_auth` | Configure the [auth starter](./auth.md): protect, register, user admin, 2FA, email, OAuth (`github` / `google` / `oidc`) |
 | `studio_set_data_layer` | Turn the typed Drizzle data layer (schema + repositories + migrations) on or off |
+| `studio_set_tenancy` | Turn [multi-tenancy](./access-control.md#multi-tenancy) on/off - scopes every row to the caller's tenant, enforced server-side; `sharedEntities` stay global |
+| `studio_set_job` | Schedule a background job (`email` digest or `code`) - emits the guarded `/api/cron` route + the platform schedule; omit `cron` to remove one |
 | `studio_set_deploy_target` | Set `auto` / `vercel` / `netlify` / `cloudflare` / `node` - picks the adapter and emits CI/CD config |
 | `studio_validate` | Validate the current project; returns errors + warnings |
 | `studio_generate_app` | Emit the full runnable SvelteKit app - every file, ready to write and `svelte-check` |

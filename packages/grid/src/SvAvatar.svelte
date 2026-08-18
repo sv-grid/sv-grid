@@ -71,5 +71,5 @@
   .sv-avatar__status.is-online { background: var(--sg-success, #16a34a); }
   .sv-avatar__status.is-offline { background: var(--sg-muted, #94a3b8); }
   .sv-avatar__status.is-busy { background: var(--sg-danger, #dc2626); }
-  .sv-avatar__status.is-away { background: var(--sg-warning, #f59e0b); }
+  .sv-avatar__status.is-away { background: var(--sg-warning, #d97706); }
 </style>

@@ -88,7 +88,7 @@ all wire up the moment you turn on the matching prop.
 
 - **Virtual scrolling** - row + column windowing; 100k x 100 stays smooth, with a 1M-row demo.
 - **Filtering** - Excel-style filter menu, inline filter row, set / value-list filter, locale-aware matching, between operators.
-- **Editing** - 14 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, textarea, color, checkbox, list, chips, rating, password) plus a `cellEditor` snippet slot for anything custom.
+- **Editing** - 15 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, autocomplete, textarea, color, checkbox, list, chips, rating, password), plus `date-native` / `datetime-native` / `time-native` to opt out of the rich pickers, and a `cellEditor` snippet slot for anything custom.
 - **Selection** - cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, row selection.
 - **Views** - row grouping with aggregation, tree data, master/detail, full-width detail rows, spreadsheet mode with formulas.
 - **Layout** - row + column pinning, sticky header + first column, header drag-to-reorder, autosize, keyboard-accessible column sizing, zebra rows, responsive mode.

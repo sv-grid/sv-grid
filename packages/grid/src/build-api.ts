@@ -455,6 +455,21 @@ export function createGridApi<
       clearFilter(columnId) {
         ctx.clearColumnFilter(columnId);
       },
+      refreshEditorOptions(columnId) {
+        // Async `editorOptions` are cached per column (or per column+row for a
+        // per-row source) so opening an editor twice does not refetch. This
+        // drops those entries, so the next render re-runs the source - use it
+        // when the underlying list changed server-side.
+        if (columnId == null) {
+          ctx.asyncEditorOptions = {};
+          return;
+        }
+        const next = { ...ctx.asyncEditorOptions };
+        for (const key of Object.keys(next)) {
+          if (key === columnId || key.startsWith(`${columnId}::`)) delete next[key];
+        }
+        ctx.asyncEditorOptions = next;
+      },
       clearAllFilters() {
         // See `setFilter` for why the read-modify-write is untracked.
         untrack(() => {

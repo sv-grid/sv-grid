@@ -74,17 +74,31 @@ function rightClickFirstCell(target: HTMLElement) {
   return cell
 }
 
+/**
+ * Right-click and wait until the menu's ITEMS are in the DOM.
+ *
+ * GridMenus is a lazy chunk, and the overlay element appears before its items
+ * render. Waiting for the element alone leaves callers reading an empty item
+ * list; waiting a fixed tick makes them depend on an earlier test having
+ * already warmed the chunk. Only for cases that expect the menu to open - the
+ * "stays closed" case must not use this.
+ */
+async function openContextMenu(target: HTMLElement) {
+  rightClickFirstCell(target)
+  await vi.waitFor(() => {
+    const menu = target.querySelector('.sv-grid-context-menu')
+    expect(menu).not.toBeNull()
+    expect(menu!.querySelectorAll('.sv-grid-menu-item').length).toBeGreaterThan(0)
+  })
+  return target.querySelector('.sv-grid-context-menu') as HTMLElement
+}
+
 describe('SvGrid context menu', () => {
   it('opens the default menu on right-click with the built-in items', async () => {
     const { target, destroy } = await mountGrid(true)
     await tick()
-    rightClickFirstCell(target)
-    // First menu-open triggers GridMenus' lazy import (transforming the module on
-    // first load can exceed a single tick); poll until the overlay mounts.
-    await vi.waitFor(() => expect(target.querySelector('.sv-grid-context-menu')).not.toBeNull())
-    const menu = target.querySelector('.sv-grid-context-menu')
-    expect(menu).not.toBeNull()
-    const labels = [...menu!.querySelectorAll('.sv-grid-menu-item')].map((b) => b.textContent?.trim())
+    const menu = await openContextMenu(target)
+    const labels = [...menu.querySelectorAll('.sv-grid-menu-item')].map((b) => b.textContent?.trim())
     expect(labels).toContain('Copy')
     expect(labels).toContain('Paste')
     expect(labels).toContain('Remove row')
@@ -113,8 +127,10 @@ describe('SvGrid context menu', () => {
     ]
     const { target, destroy } = await mountGrid(items)
     await tick()
-    rightClickFirstCell(target)
-    await tick()
+    // Was a bare `await tick()`, which only worked because the case above had
+    // already loaded the lazy chunk - running this one alone would have read an
+    // empty menu.
+    await openContextMenu(target)
     const labels = [...target.querySelectorAll('.sv-grid-context-menu .sv-grid-menu-item')].map((b) =>
       b.textContent?.trim(),
     )

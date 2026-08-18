@@ -22,7 +22,15 @@ import {
   addFreestandingScreen,
   addBlock,
   addComponentBlock,
+  updateBlock,
+  removeBlock,
+  moveBlock,
+  updateScreen,
+  removeScreen,
+  setScreenLayout,
   setEntityDataSource,
+  setJob,
+  setTenancy,
   setTheme,
   setAuth,
   setDataLayer,
@@ -191,6 +199,71 @@ export const projectTools: ProjectTool[] = [
     },
   },
   {
+    name: 'studio_update_block',
+    description: 'Configure an EXISTING block: its config (columns, editing mode, export buttons, grouping, chart dimension/measure, rowLink, formatRules, ...), its width (span/colSpan), height, or CSS class. `config` is merged into the block\'s current config. Get block ids from studio_describe_project. This is how you configure a block after studio_add_block, which only adds a default one.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        screenId: { type: 'string' },
+        blockId: { type: 'string' },
+        config: { type: 'object', description: 'Partial BlockConfig, merged in. Grid example: { "editing": "inline", "export": { "xlsx": true }, "grouping": ["region"] }.' },
+        span: { type: 'number', enum: [1, 2, 3], description: 'Legacy 3-col width.' },
+        colSpan: { type: 'number', description: 'Width on the 12-column grid (1-12).' },
+        height: { type: 'number', description: 'Block height in px.' },
+        className: { type: 'string' },
+      },
+      required: ['screenId', 'blockId'],
+    },
+  },
+  {
+    name: 'studio_remove_block',
+    description: 'Remove a block from a screen. Get ids from studio_describe_project.',
+    inputSchema: {
+      type: 'object',
+      properties: { screenId: { type: 'string' }, blockId: { type: 'string' } },
+      required: ['screenId', 'blockId'],
+    },
+  },
+  {
+    name: 'studio_move_block',
+    description: 'Reorder a block within its screen: `dir` -1 moves it earlier, 1 later.',
+    inputSchema: {
+      type: 'object',
+      properties: { screenId: { type: 'string' }, blockId: { type: 'string' }, dir: { type: 'number', enum: [-1, 1] } },
+      required: ['screenId', 'blockId', 'dir'],
+    },
+  },
+  {
+    name: 'studio_update_screen',
+    description: 'Update a screen: title, route, nav entry, CSS class, or `renderMode`. Set renderMode "ssr" to emit idiomatic SvelteKit (a +page.server.ts `load` + form `actions`, progressive enhancement) instead of the default client-fetch SPA page; it applies to memory/sql-backed screens whose blocks are a single grid or read-only blocks, and falls back to "spa" otherwise.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        screenId: { type: 'string' },
+        title: { type: 'string' },
+        route: { type: 'string' },
+        className: { type: 'string' },
+        renderMode: { type: 'string', enum: ['spa', 'ssr'], description: 'Output shape for this screen.' },
+        nav: { type: 'object', description: '{ show?: boolean, label?: string }.' },
+      },
+      required: ['screenId'],
+    },
+  },
+  {
+    name: 'studio_remove_screen',
+    description: 'Remove a screen (and its blocks) from the project.',
+    inputSchema: { type: 'object', properties: { screenId: { type: 'string' } }, required: ['screenId'] },
+  },
+  {
+    name: 'studio_set_screen_layout',
+    description: 'Set how a screen arranges its blocks: grid (12-column, default) | stack (single column) | split (locked resizable panes) | dock (draggable/tabbable workspace) | canvas (free-form cell placement).',
+    inputSchema: {
+      type: 'object',
+      properties: { screenId: { type: 'string' }, layout: { type: 'string', enum: ['grid', 'stack', 'split', 'dock', 'canvas'] } },
+      required: ['screenId', 'layout'],
+    },
+  },
+  {
     name: 'studio_set_entity_source',
     description: 'Bind an entity to a data source. `source` is an EntityDataSource, e.g. { "kind": "sql", "table": "customers", "dialect": "postgres" } | { "kind": "memory" } | { "kind": "pglite", "table": "..." } | { "kind": "supabase", ... } | { "kind": "rest", ... }.',
     inputSchema: {
@@ -241,6 +314,38 @@ export const projectTools: ProjectTool[] = [
     name: 'studio_set_data_layer',
     description: 'Turn the typed Drizzle data layer (schema.ts + typed repos + drizzle-kit migrations) on or off. Applies to SQL-bound entities.',
     inputSchema: { type: 'object', properties: { enabled: { type: 'boolean' } }, required: ['enabled'] },
+  },
+  {
+    name: 'studio_set_tenancy',
+    description: 'Turn multi-tenancy on/off: every row is scoped to the signed-in user\'s tenant, enforced SERVER-side in each API route (reads filtered, creates stamped, update/delete ownership-checked). Requires auth + the Drizzle data layer + a SQL entity; without them it degrades to off. `sharedEntities` stay global (reference/lookup tables every tenant reads).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enabled: { type: 'boolean' },
+        field: { type: 'string', description: "Scoping column. Default 'tenantId'." },
+        sharedEntities: { type: 'array', items: { type: 'string' }, description: 'Entities to leave global.' },
+      },
+      required: ['enabled'],
+    },
+  },
+  {
+    name: 'studio_set_job',
+    description: 'Add, replace, or remove a scheduled background job. Emits a secret-guarded /api/cron route plus the schedule config for the deploy target (vercel.json crons on Vercel, a GitHub Actions schedule elsewhere). `kind`:"email" sends a summary of `entity` to `to` (needs auth email enabled); `kind`:"code" runs a body you supply. Omit `cron` to REMOVE the job.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Stable job id.' },
+        name: { type: 'string', description: 'Human label.' },
+        cron: { type: 'string', description: "5-field cron in UTC, e.g. '0 6 * * *'. Omit to remove the job." },
+        kind: { type: 'string', enum: ['email', 'code'] },
+        enabled: { type: 'boolean', description: 'Default true. A disabled job keeps its handler but is skipped by the scheduled run.' },
+        entity: { type: 'string', description: 'email: entity to summarize.' },
+        to: { type: 'string', description: 'email: recipient address.' },
+        subject: { type: 'string', description: 'email: subject line (defaults to the job name).' },
+        code: { type: 'string', description: 'code: the handler body (TypeScript).' },
+      },
+      required: ['id'],
+    },
   },
   {
     name: 'studio_set_deploy_target',
@@ -333,6 +438,82 @@ export function handleProjectTool(name: string, args: Record<string, unknown>): 
         project = addComponentBlock(p, screenId, component, merged)
         return confirm(`Added component "${component}" to screen ${screenId}.`)
       }
+      case 'studio_update_block': {
+        const p = requireProject()
+        const screenId = String(args.screenId ?? '')
+        const blockId = String(args.blockId ?? '')
+        const screen = p.screens.find((s) => s.id === screenId)
+        if (!screen) return fail(`No screen id=${screenId}. Call studio_describe_project.`)
+        const block = flattenBlocks(screen.blocks).find((b) => b.id === blockId)
+        if (!block) return fail(`No block id=${blockId} on screen ${screenId}.`)
+        const patch: Parameters<typeof updateBlock>[3] = {}
+        if (args.config && typeof args.config === 'object') patch.config = args.config as Parameters<typeof updateBlock>[3]['config']
+        if (typeof args.span === 'number') patch.span = args.span as 1 | 2 | 3
+        if (typeof args.colSpan === 'number') patch.colSpan = args.colSpan
+        if (typeof args.height === 'number') patch.height = args.height
+        if (typeof args.className === 'string') patch.className = args.className
+        if (Object.keys(patch).length === 0) return fail('Nothing to update - pass config, span, colSpan, height, or className.')
+        project = updateBlock(p, screenId, blockId, patch)
+        return confirm(`Updated ${block.config.kind} block ${blockId} (${Object.keys(patch).join(', ')}).`)
+      }
+      case 'studio_remove_block': {
+        const p = requireProject()
+        const screenId = String(args.screenId ?? '')
+        const blockId = String(args.blockId ?? '')
+        const screen = p.screens.find((s) => s.id === screenId)
+        if (!screen) return fail(`No screen id=${screenId}.`)
+        if (!flattenBlocks(screen.blocks).some((b) => b.id === blockId)) return fail(`No block id=${blockId} on screen ${screenId}.`)
+        project = removeBlock(p, screenId, blockId)
+        return confirm(`Removed block ${blockId} from screen ${screenId}.`)
+      }
+      case 'studio_move_block': {
+        const p = requireProject()
+        const screenId = String(args.screenId ?? '')
+        const blockId = String(args.blockId ?? '')
+        const dir = args.dir === -1 ? -1 : args.dir === 1 ? 1 : null
+        if (dir === null) return fail('dir must be -1 (earlier) or 1 (later).')
+        const screen = p.screens.find((s) => s.id === screenId)
+        if (!screen) return fail(`No screen id=${screenId}.`)
+        if (!flattenBlocks(screen.blocks).some((b) => b.id === blockId)) return fail(`No block id=${blockId} on screen ${screenId}.`)
+        project = moveBlock(p, screenId, blockId, dir)
+        return confirm(`Moved block ${blockId} ${dir === -1 ? 'earlier' : 'later'}.`)
+      }
+      case 'studio_update_screen': {
+        const p = requireProject()
+        const screenId = String(args.screenId ?? '')
+        if (!p.screens.some((s) => s.id === screenId)) return fail(`No screen id=${screenId}.`)
+        const patch: Parameters<typeof updateScreen>[2] = {}
+        if (typeof args.title === 'string') patch.title = args.title
+        if (typeof args.route === 'string') patch.route = args.route
+        if (typeof args.className === 'string') patch.className = args.className
+        if (args.renderMode === 'ssr' || args.renderMode === 'spa') patch.renderMode = args.renderMode
+        if (args.nav && typeof args.nav === 'object') patch.nav = args.nav as Parameters<typeof updateScreen>[2]['nav']
+        if (Object.keys(patch).length === 0) return fail('Nothing to update - pass title, route, className, renderMode, or nav.')
+        project = updateScreen(p, screenId, patch)
+        // renderMode is a request, not a guarantee: the emitter falls back to the
+        // SPA page when a screen's blocks or source don't fit the SSR shape.
+        const ssrNote = patch.renderMode === 'ssr'
+          ? ' SSR applies to memory/sql screens whose blocks are a single grid or read-only blocks; other screens still emit the SPA page.'
+          : ''
+        return confirm(`Updated screen ${screenId} (${Object.keys(patch).join(', ')}).${ssrNote}`)
+      }
+      case 'studio_remove_screen': {
+        const p = requireProject()
+        const screenId = String(args.screenId ?? '')
+        if (!p.screens.some((s) => s.id === screenId)) return fail(`No screen id=${screenId}.`)
+        project = removeScreen(p, screenId)
+        return confirm(`Removed screen ${screenId}.`)
+      }
+      case 'studio_set_screen_layout': {
+        const p = requireProject()
+        const screenId = String(args.screenId ?? '')
+        const layout = String(args.layout ?? '')
+        const allowed = ['grid', 'stack', 'split', 'dock', 'canvas']
+        if (!p.screens.some((s) => s.id === screenId)) return fail(`No screen id=${screenId}.`)
+        if (!allowed.includes(layout)) return fail(`layout must be one of: ${allowed.join(' | ')}.`)
+        project = setScreenLayout(p, screenId, layout as Parameters<typeof setScreenLayout>[2])
+        return confirm(`Screen ${screenId} now uses the ${layout} layout.`)
+      }
       case 'studio_set_entity_source': {
         const p = requireProject()
         const entity = String(args.entity ?? '')
@@ -376,6 +557,65 @@ export function handleProjectTool(name: string, args: Record<string, unknown>): 
       case 'studio_set_data_layer': {
         project = setDataLayer(requireProject(), args.enabled !== false)
         return confirm(project.dataLayer === 'drizzle' ? 'Drizzle data layer enabled.' : 'Data layer disabled.')
+      }
+      case 'studio_set_tenancy': {
+        const p = requireProject()
+        const enabled = args.enabled === true
+        if (!enabled) {
+          project = setTenancy(p, null)
+          return confirm('Multi-tenancy off.')
+        }
+        const shared = Array.isArray(args.sharedEntities) ? (args.sharedEntities as unknown[]).map(String) : undefined
+        const unknown = (shared ?? []).filter((e) => !p.entities.some((x) => x.name === e))
+        if (unknown.length) return fail(`Unknown entities in sharedEntities: ${unknown.join(', ')}.`)
+        project = setTenancy(p, {
+          enabled: true,
+          ...(typeof args.field === 'string' && args.field ? { field: args.field } : {}),
+          ...(shared?.length ? { sharedEntities: shared } : {}),
+        })
+        // Tenancy silently no-ops without its prerequisites, so say so here rather
+        // than letting the agent believe an unscoped app is scoped.
+        const missing = [
+          p.auth?.enabled === true ? null : 'auth (studio_set_auth)',
+          p.dataLayer === 'drizzle' ? null : 'the Drizzle data layer (studio_set_data_layer)',
+          p.entities.some((e) => entityDataSource(p, e.name).kind === 'sql') ? null : 'a SQL-bound entity (studio_set_entity_source)',
+        ].filter(Boolean)
+        const note = missing.length
+          ? ` NOT YET ENFORCED - still needs: ${missing.join(', ')}.`
+          : ' Enforced server-side on every SQL route.'
+        return confirm(`Multi-tenancy on (column "${typeof args.field === 'string' && args.field ? args.field : 'tenantId'}").${note}`)
+      }
+      case 'studio_set_job': {
+        const p = requireProject()
+        const id = String(args.id ?? '')
+        if (!id) return fail('id is required.')
+        // No cron = remove. Keeps one tool for the whole lifecycle.
+        if (!args.cron) {
+          if (!(p.jobs ?? []).some((j) => j.id === id)) return fail(`No job "${id}" to remove.`)
+          project = setJob(p, id, null)
+          return confirm(`Removed job "${id}".`)
+        }
+        const kind = args.kind === 'email' ? 'email' : 'code'
+        if (kind === 'email') {
+          if (!args.to) return fail('An email job needs `to`.')
+          if (!args.entity || !p.entities.some((e) => e.name === args.entity)) {
+            return fail(`An email job needs a known \`entity\`${args.entity ? ` (no entity "${String(args.entity)}")` : ''}.`)
+          }
+          if (p.auth?.email !== true) {
+            return fail('An email job needs the email layer: call studio_set_auth with { enabled: true, email: true } first.')
+          }
+        }
+        project = setJob(p, id, {
+          name: String(args.name ?? id),
+          cron: String(args.cron),
+          kind,
+          ...(args.enabled === false ? { enabled: false } : {}),
+          ...(typeof args.entity === 'string' ? { entity: args.entity } : {}),
+          ...(typeof args.to === 'string' ? { to: args.to } : {}),
+          ...(typeof args.subject === 'string' ? { subject: args.subject } : {}),
+          ...(typeof args.code === 'string' ? { code: args.code } : {}),
+        })
+        return confirm(`Job "${id}" scheduled at ${String(args.cron)} (${kind}).`)
       }
       case 'studio_set_deploy_target': {
         const t = String(args.target ?? 'auto') as 'auto' | 'vercel' | 'netlify' | 'cloudflare' | 'node'

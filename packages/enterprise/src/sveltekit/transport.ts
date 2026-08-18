@@ -109,9 +109,29 @@ export type KitValidateContext<TData extends RowData> = {
   event: { request: Request; locals?: Record<string, unknown> }
 }
 
+/** A row-scoping rule: every row this caller may touch has `field === value`. */
+export type KitScope = { field: string; value: unknown }
+
 export type KitHandlerOptions<TData extends RowData> = {
   schema: EntitySchema<TData>
   source: ServerDataSource<TData>
+  /**
+   * Restrict every operation to rows matching one column - the mechanism behind
+   * multi-tenancy (`field: 'tenantId'`), and usable for any "you only see your
+   * own rows" rule.
+   *
+   * Enforced on all four paths, because scoping reads alone is not isolation:
+   * - **read**: the predicate is merged into the query's filter model;
+   * - **create**: the value is stamped onto the row, overriding whatever the
+   *   client sent;
+   * - **update / delete**: the target row is re-read under the scope first, and
+   *   the write is rejected with `403` if it isn't the caller's - otherwise
+   *   guessing an id would reach across tenants.
+   *
+   * Return `null` to apply no scope (e.g. a super-admin). Throwing rejects the
+   * request, which is the safer default when a tenant cannot be resolved.
+   */
+  scope?: (ctx: { event: { request: Request; locals?: Record<string, unknown> } }) => KitScope | null | Promise<KitScope | null>
   /**
    * Optional server-side guard run BEFORE every op. Return `false` (or throw) to
    * reject the request with `403`. Receives the SvelteKit event, so you can read
@@ -188,7 +208,7 @@ const actionOf = <TData extends RowData>(msg: KitMessage<TData>): KitAction =>
 export function createKitHandlers<TData extends RowData>(
   options: KitHandlerOptions<TData>,
 ): KitHandlers {
-  const { source, authorize, validate, audit, hooks } = options
+  const { source, authorize, validate, audit, hooks, scope } = options
   const idField = options.schema.idField ?? options.schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
   const rowId = (row: unknown): string | null => {
     const v = (row as Record<string, unknown> | null)?.[idField]
@@ -237,13 +257,62 @@ export function createKitHandlers<TData extends RowData>(
       }
     }
 
+    // Resolve the row scope once per request. A thrown resolver is a rejection,
+    // not a 500: "I can't tell which tenant you are" must not fall through to
+    // an unscoped query.
+    let activeScope: KitScope | null = null
+    if (scope) {
+      try {
+        activeScope = (await scope({ event: { request, locals: event?.locals } })) ?? null
+      } catch (err) {
+        return jsonResponse({ error: err instanceof Error ? err.message : 'forbidden' }, 403)
+      }
+    }
+    /** True when `id` exists AND belongs to the caller's scope. */
+    const ownsRow = async (id: string): Promise<boolean> => {
+      if (!activeScope) return true
+      const idField = options.schema.idField ?? options.schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
+      const { rows } = await source.getRows({
+        startRow: 0,
+        endRow: 1,
+        pageIndex: 0,
+        pageSize: 1,
+        sortModel: [],
+        filterModel: {
+          columns: {
+            [idField]: { operator: 'equals' as const, value: id },
+            [activeScope.field]: { operator: 'equals' as const, value: String(activeScope.value) },
+          },
+        },
+      })
+      return rows.length > 0
+    }
+
     try {
       if (msg.kind === 'query') {
-        const result = await source.getRows(msg.request)
+        // Merge the scope into the requested filter. Written last so a client
+        // that sends its own `tenantId` filter cannot widen the scope.
+        const request = activeScope
+          ? {
+              ...msg.request,
+              filterModel: {
+                ...msg.request.filterModel,
+                columns: {
+                  ...(msg.request.filterModel?.columns ?? {}),
+                  [activeScope.field]: { operator: 'equals' as const, value: String(activeScope.value) },
+                },
+              },
+            }
+          : msg.request
+        const result = await source.getRows(request)
         return jsonResponse(result)
       }
       if (msg.kind === 'mutate') {
         const evt = { request, locals: event?.locals }
+        // Cross-tenant writes: reject before the source sees the id.
+        if (activeScope && (msg.op === 'update' || msg.op === 'delete')) {
+          if (!(await ownsRow(msg.id))) return jsonResponse({ error: 'forbidden' }, 403)
+        }
         // A `before*` hook throwing is a business-rule rejection -> 422 (not a 500).
         const runBefore = async <R>(fn: () => Promise<R>): Promise<R | Response> => {
           try { return await fn() } catch (err) { return jsonResponse({ error: err instanceof Error ? err.message : 'rejected' }, 422) }
@@ -256,6 +325,9 @@ export function createKitHandlers<TData extends RowData>(
             if (r instanceof Response) return r
             if (r) input = r as Partial<TData>
           }
+          // Stamp the scope LAST - after the before-hook - so neither the client
+          // nor a business rule can write a row into another tenant.
+          if (activeScope) input = { ...input, [activeScope.field]: activeScope.value } as Partial<TData>
           const row = await source.createRow(input)
           if (hooks?.afterCreate) await hooks.afterCreate({ row, event: evt })
           await fireAudit({ action: 'create', id: rowId(row), values: input, result: row, event: evt })
@@ -269,6 +341,8 @@ export function createKitHandlers<TData extends RowData>(
             if (r instanceof Response) return r
             if (r) patch = r as Partial<TData>
           }
+          // A patch must not be able to hand the row to another tenant.
+          if (activeScope) patch = { ...patch, [activeScope.field]: activeScope.value } as Partial<TData>
           const row = await source.updateRow(msg.id, patch)
           if (hooks?.afterUpdate) await hooks.afterUpdate({ id: msg.id, row, event: evt })
           await fireAudit({ action: 'update', id: msg.id, values: patch, result: row, event: evt })

@@ -39,7 +39,12 @@
     aria-label={meta.expanded ? 'Collapse group' : 'Expand group'}
     onclick={() => onToggle(row)}
   >
-    <span class="sv-group-chev" class:open={meta.expanded} aria-hidden="true">▸</span>
+    <!-- Same chevron the grid's own expanders and SvTree draw, so every
+         expander in the library looks identical. -->
+    <span class="sv-group-chev" class:open={meta.expanded} aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+    </span>
     <span class="sv-group-key">{meta.key}</span>
     {#if meta.loading}<span class="sv-group-load" aria-hidden="true">…</span>{/if}
   </button>
@@ -76,7 +81,9 @@
     cursor: pointer;
   }
   .sv-group-chev {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.15s;
     color: var(--sg-muted, #64748b);
   }

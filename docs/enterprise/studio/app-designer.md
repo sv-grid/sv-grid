@@ -132,6 +132,27 @@ expand a column to set its **header**, **width**, **alignment**, **pin** (left /
 right), plus show / hide + reorder. There is no standalone "Edit form" block - the
 grid owns editing end to end.
 
+### Export toolbar
+
+**Export toolbar** adds a button bar above the grid. Six options, in two groups:
+
+| Button | Runs through | Adds to the generated app |
+| ------ | ------------ | ------------------------- |
+| Export CSV / Export JSON / Copy | the free grid API | nothing |
+| Export Excel (.xlsx) | `@svgrid/enterprise` | `jszip` |
+| Export PDF | `@svgrid/enterprise` | `pdfmake` |
+| Print | `@svgrid/enterprise` | nothing |
+
+The Excel export is real OOXML - typed number and date cells, styled headers, a
+frozen header row - not a renamed CSV. PDF is paginated with a repeating header,
+and Print opens the browser's print dialog on a paginated layout.
+
+All six export what the user currently sees: the visible columns, in their
+current order, over the filtered and sorted rows. The optional dependencies are
+declared only for the buttons you switch on, so a CSV-only app installs neither.
+The canvas preview runs the same code the generated app does, so you can try a
+real export before generating.
+
 ## The analytical + companion blocks
 
 Beyond the grid, every block is still bound to the `EntitySchema` - these are data
@@ -155,7 +176,7 @@ views, not generic widgets:
 | **Filter panel** | A faceted sidebar that **filters the screen's grid** - enum / boolean facets pick a value, text facets search. | Title + which fields become facets. |
 | **Record panel** | Shows the row **selected in the grid** - a read-only field list, or an inline edit form. | Editable on / off, and (read-only) which fields to show. |
 | **Lookup** | Marks a relation field as a searchable picker in the edit form. | The relation field. |
-| **UI component** | A component from the SvGrid UI kit (button, badge, alert, card, stat, timeline, sparkline, chip, ...) dropped from the toolbox - entity-agnostic, works on freestanding pages too. | The component's own props, plus data bindings. |
+| **UI component** | A component from the SvGrid UI kit dropped from the toolbox - entity-agnostic, works on freestanding pages too. Grouped as Actions, Inputs, Display, Feedback, Layout, and Navigation, and covering headings and prose (heading, text, link, quote, code, keyboard key, list) as well as controls, pickers, and date/time inputs. | The component's own props (extracted from the component's own types, with its JSDoc as the tooltip), plus data bindings. |
 
 The **filter** and **record** panels wire to the grid on the same screen: the
 filter panel calls the grid controller's `setFilter`, and clicking a grid row

@@ -201,6 +201,7 @@ export {
   type PlanOp,
   type KitDataSourceOptions,
   type KitHandlerOptions,
+  type KitScope,
   type KitHandlers,
   type KitMessage,
   type SqlDialect,

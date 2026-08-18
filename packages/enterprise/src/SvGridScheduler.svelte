@@ -74,6 +74,7 @@
     popIn,
     createDismissableLayer,
     onScrollOutside,
+    type TimelineAxis,
   } from "@svgrid/grid";
   // Scheduler Pro feature models (this package).
   import { cascade, violations, type SchedulerDependency } from "./scheduler-dependencies";
@@ -296,6 +297,13 @@
     return out;
   });
   let hiddenResources = $state<Set<string>>(new Set());
+  // --- Scheduler Pro config ---------------------------------------------------
+  // The renderer receives config untyped (registered as Component<any>); read the
+  // Pro fields through a cast so the free grid's SchedulerConfig stays unchanged.
+  // Declared here rather than beside the dependency code further down: half the
+  // derivations below read it, and a `const` used above its declaration is a type
+  // error even though `$derived` is lazy enough to work at runtime.
+  const pcfg = $derived(scheduler as unknown as SchedulerProConfig<TFeatures, TData>);
   // --- multi-calendar overlay ---
   const calendars = $derived(pcfg.calendars ?? []);
   const calField = $derived(pcfg.calendarField);
@@ -416,10 +424,6 @@
     return out;
   });
 
-  // --- Scheduler Pro: event dependencies + auto-reschedule -------------------
-  // The renderer receives config untyped (registered as Component<any>); read the
-  // Pro fields through a cast so the free grid's SchedulerConfig stays unchanged.
-  const pcfg = $derived(scheduler as unknown as SchedulerProConfig<TFeatures, TData>);
   // Resolve dependency links from the flat list + any per-row `dependencyField`.
   const depList = $derived.by<SchedulerDependency[]>(() => {
     const out: SchedulerDependency[] = [];
@@ -724,7 +728,10 @@
   // Build a TimelineAxis-shaped object from the piecewise Pro axis so the existing
   // timeline template (ticks / majors / gridlines) renders unchanged. Collapsed
   // segments emit no ticks - the visual gap conveys the compression.
-  function proTimelineAxis(): typeof tlAxis {
+  // Annotated with the real `TimelineAxis` rather than `typeof tlAxis`: tlAxis
+  // CALLS this function, so referring back to it made the type circular and
+  // silently degraded tlAxis (and everything derived from it) to `any`.
+  function proTimelineAxis(): TimelineAxis {
     const data = proAxisData!;
     const ax = data.axis;
     const total = ax.totalPx || 1;

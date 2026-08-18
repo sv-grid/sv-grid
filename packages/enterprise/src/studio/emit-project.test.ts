@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setScreenDock, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
+import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setScreenDock, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setJob, setTenancy, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
 import { emitStudioProject, emitStudioAppBundle, emitStudioFragment, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
 import { UI_COMPONENT_REGISTRY } from './ui-components'
@@ -53,6 +53,26 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     const p = createProject([customers])
     return { ...p, screens: p.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })) }
   }
+
+  it('updateScreen can switch a screen to SSR (the CLI / MCP path, not just the designer)', () => {
+    // The other tests in this block set renderMode by spreading the screen object.
+    // Going through updateScreen is what the CLI and the studio_update_screen MCP
+    // tool do - and its patch type has to allow renderMode for that to be possible.
+    const p0 = createProject([customers])
+    const sid = p0.screens[0]!.id
+    expect(emitStudioProject(p0).find((f) => f.path === 'src/routes/customers/+page.server.ts')).toBeFalsy()
+
+    const p1 = updateScreen(p0, sid, { renderMode: 'ssr' })
+    expect(p1.screens[0]!.renderMode).toBe('ssr')
+    const server = emitStudioProject(p1).find((f) => f.path === 'src/routes/customers/+page.server.ts')
+    expect(server, 'updateScreen({ renderMode: "ssr" }) should reach the SSR emitter').toBeTruthy()
+    expect(server!.contents).toContain('export const load')
+    expect(server!.contents).toContain('export const actions')
+
+    // And back again - the SPA page returns, the server page goes away.
+    const p2 = updateScreen(p1, sid, { renderMode: 'spa' })
+    expect(emitStudioProject(p2).find((f) => f.path === 'src/routes/customers/+page.server.ts')).toBeFalsy()
+  })
 
   it('emits +page.server.ts with a load + CRUD form actions + server validation', () => {
     const server = emitStudioProject(ssrProject()).find((f) => f.path === 'src/routes/customers/+page.server.ts')
@@ -722,7 +742,7 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(get('src/routes/login/+page.server.ts')).toContain('cookies.set(SESSION_COOKIE')
     // The shell wires the session in: login bypass, real user, sign-out, role seed.
     const layout = get('src/routes/+layout.svelte')!
-    expect(layout).toContain('["/login"].includes($page.url.pathname)') // login renders bare (no shell)
+    expect(layout).toContain('["/login"].includes(page.url.pathname)') // login renders bare (no shell)
     expect(layout).toContain('action="/logout"')
     expect(layout).toContain('currentRole.set(data.role')
     expect(layout).toContain('data?.user?.email')
@@ -1011,6 +1031,191 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(files.find((f) => f.path === 'src/routes/audit/+page.svelte')).toBeUndefined()
   })
 
+  it('every registered toolbox component generates code that compiles', () => {
+    // The toolbox is registry-driven, so a new registration reaches codegen with
+    // no per-component work - which is exactly why it needs a blanket check that
+    // each one actually emits a valid import + usage.
+    for (const spec of UI_COMPONENT_REGISTRY) {
+      let p = createProject([customers])
+      const sid = p.screens[0]!.id
+      const defaults: Record<string, unknown> = {}
+      for (const pr of spec.props) if (pr.default != null) defaults[pr.key] = pr.default
+      if (spec.hasContent) defaults._content = spec.contentDefault ?? spec.label
+      p = addComponentBlock(p, sid, spec.key, defaults)
+      const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!
+      expect(page.contents, `${spec.key} did not import ${spec.importName}`).toContain(spec.importName)
+      expect(() => compile(page.contents, { filename: page.path, generate: 'client' }), `${spec.key} emitted invalid Svelte`).not.toThrow()
+    }
+  })
+
+  describe('multi-tenancy', () => {
+    /** Tenancy needs auth (to know the tenant) + the typed layer (for the column). */
+    const tenantProject = () => {
+      let p = createProject([customers, orders])
+      p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+      p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' })
+      p = setDataLayer(p, true)
+      p = setAuth(p, { enabled: true })
+      return setTenancy(p, { enabled: true })
+    }
+
+    it('scopes every SQL route server-side', () => {
+      const files = emitStudioProject(tenantProject())
+      for (const entity of ['customers', 'orders']) {
+        const route = files.find((f) => f.path === `src/routes/api/${entity}/+server.ts`)!.contents
+        expect(route, entity).toContain("import { requireTenant } from '$lib/server/tenant'")
+        expect(route, entity).toContain("scope: ({ event }) => ({ field: \"tenantId\", value: requireTenant(event) })")
+      }
+    })
+
+    it('resolves the tenant from the session and fails closed', () => {
+      const files = emitStudioProject(tenantProject())
+      const tenant = files.find((f) => f.path === 'src/lib/server/tenant.ts')!.contents
+      // requireTenant THROWS rather than returning null - the transport turns that
+      // into a 403. Returning null would run the query unscoped.
+      expect(tenant).toContain('export function requireTenant')
+      expect(tenant).toContain('throw new Error')
+      // The tenant comes off the session in hooks, never from the client.
+      const hooks = files.find((f) => f.path === 'src/hooks.server.ts')!.contents
+      expect(hooks).toContain('event.locals.tenantId')
+    })
+
+    it('adds the scoping column to every scoped table + the user store', () => {
+      const schema = emitStudioProject(tenantProject()).find((f) => f.path === 'src/lib/server/db/schema.ts')!.contents
+      // notNull: a row with no tenant belongs to nobody and no scoped read finds it.
+      expect(schema).toContain('"tenantId": text("tenant_id").notNull()')
+      // The user store carries it too - that is where the session's tenant comes from.
+      expect(schema.slice(schema.indexOf('authUsers'))).toContain('"tenantId"')
+    })
+
+    it('leaves shared entities global (no column, no scope)', () => {
+      let p = tenantProject()
+      p = setTenancy(p, { enabled: true, sharedEntities: ['orders'] })
+      const files = emitStudioProject(p)
+      expect(files.find((f) => f.path === 'src/routes/api/customers/+server.ts')!.contents).toContain('scope:')
+      expect(files.find((f) => f.path === 'src/routes/api/orders/+server.ts')!.contents).not.toContain('scope:')
+    })
+
+    it('honours a custom scoping column', () => {
+      let p = tenantProject()
+      p = setTenancy(p, { enabled: true, field: 'orgId' })
+      const files = emitStudioProject(p)
+      expect(files.find((f) => f.path === 'src/routes/api/customers/+server.ts')!.contents).toContain('field: "orgId"')
+      expect(files.find((f) => f.path === 'src/lib/server/db/schema.ts')!.contents).toContain('"orgId": text("org_id").notNull()')
+    })
+
+    it('degrades to OFF without auth or the typed data layer, rather than half-enforcing', () => {
+      // No auth: nothing can tell us who the tenant is.
+      let noAuth = createProject([customers])
+      noAuth = setEntityDataSource(noAuth, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+      noAuth = setDataLayer(noAuth, true)
+      noAuth = setTenancy(noAuth, { enabled: true })
+      expect(emitStudioProject(noAuth).find((f) => f.path === 'src/lib/server/tenant.ts')).toBeUndefined()
+
+      // No typed layer: the scoping column would not exist in any schema.
+      let noLayer = createProject([customers])
+      noLayer = setEntityDataSource(noLayer, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+      noLayer = setAuth(noLayer, { enabled: true })
+      noLayer = setTenancy(noLayer, { enabled: true })
+      const files = emitStudioProject(noLayer)
+      expect(files.find((f) => f.path === 'src/lib/server/tenant.ts')).toBeUndefined()
+      expect(files.find((f) => f.path === 'src/routes/api/customers/+server.ts')!.contents).not.toContain('scope:')
+    })
+
+    it('emits nothing tenancy-related when it is off', () => {
+      const files = emitStudioProject(createProject([customers]))
+      expect(files.find((f) => f.path === 'src/lib/server/tenant.ts')).toBeUndefined()
+    })
+  })
+
+  it('Scheduled jobs emit a guarded /api/cron + handler registry', () => {
+    let p = createProject([customers, orders])
+    p = setJob(p, 'nightly-digest', { name: 'Nightly digest', cron: '0 6 * * *', kind: 'code', code: "console.log('tick')" })
+    const files = emitStudioProject(p)
+
+    const route = files.find((f) => f.path === 'src/routes/api/cron/+server.ts')!.contents
+    // Secret-guarded, and refuses to run when no secret is configured - an
+    // unguarded "do work" URL is the failure mode worth preventing.
+    expect(route).toContain('env.CRON_SECRET')
+    expect(route).toContain('if (!secret) return false')
+    expect(route).toContain("throw error(401")
+    // One failing job must not abort the rest of the run.
+    expect(route).toContain('try { await fn()')
+
+    const jobs = files.find((f) => f.path === 'src/lib/server/jobs.ts')!.contents
+    expect(jobs).toContain('"nightly-digest"')
+    expect(jobs).toContain("console.log('tick')")
+    expect(jobs).toContain('export const enabledJobs: string[] = ["nightly-digest"]')
+  })
+
+  it('a disabled job keeps its handler but drops out of the scheduled run', () => {
+    let p = createProject([customers])
+    p = setJob(p, 'a', { name: 'A', cron: '0 1 * * *', kind: 'code', code: 'void 0' })
+    p = setJob(p, 'b', { name: 'B', cron: '0 2 * * *', kind: 'code', code: 'void 0', enabled: false })
+    const jobs = emitStudioProject(p).find((f) => f.path === 'src/lib/server/jobs.ts')!.contents
+    expect(jobs).toContain('"a"')
+    expect(jobs).toContain('"b"') // still callable via ?job=b
+    expect(jobs).toContain('export const enabledJobs: string[] = ["a"]')
+  })
+
+  it('an email job without the email layer emits a warning slot, not a broken import', () => {
+    let p = createProject([customers])
+    p = setJob(p, 'digest', { name: 'Digest', cron: '0 6 * * *', kind: 'email', entity: 'customers', to: 'ops@example.com' })
+    const jobs = emitStudioProject(p).find((f) => f.path === 'src/lib/server/jobs.ts')!.contents
+    expect(jobs).not.toContain("from '$lib/server/email'")
+    expect(jobs).toContain('email is not enabled on this project')
+  })
+
+  it('an email job with the email layer on sends a summary of its entity', () => {
+    let p = createProject([customers, orders])
+    p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' })
+    p = setDataLayer(p, true)
+    p = setAuth(p, { enabled: true, email: true })
+    p = setJob(p, 'digest', { name: 'Daily orders', cron: '0 6 * * *', kind: 'email', entity: 'orders', to: 'ops@example.com', subject: 'Orders today' })
+    const jobs = emitStudioProject(p).find((f) => f.path === 'src/lib/server/jobs.ts')!.contents
+    expect(jobs).toContain("import { sendEmail } from '$lib/server/email'")
+    expect(jobs).toContain("sendEmail('ops@example.com', 'Orders today'")
+  })
+
+  it('no jobs emits no cron route at all', () => {
+    const files = emitStudioProject(createProject([customers]))
+    expect(files.find((f) => f.path === 'src/routes/api/cron/+server.ts')).toBeUndefined()
+    expect(files.find((f) => f.path === 'src/lib/server/jobs.ts')).toBeUndefined()
+  })
+
+  it('Audit persists to an audit_log table when the typed data layer is on', () => {
+    let p = createProject([customers, orders])
+    p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' })
+    p = { ...p, audit: true, dataLayer: 'drizzle' }
+    const files = emitStudioProject(p)
+
+    // The trail gets a real table in the same schema, so one migration covers it.
+    const schema = files.find((f) => f.path === 'src/lib/server/db/schema.ts')!.contents
+    expect(schema).toContain('export const auditLog =')
+    expect(schema).toContain('"audit_log"')
+    // before / after snapshots - the in-memory store only kept field names.
+    expect(schema).toContain('"before"')
+    expect(schema).toContain('"after"')
+
+    const audit = files.find((f) => f.path === 'src/lib/audit.ts')!.contents
+    expect(audit).toContain("from '$lib/server/db'")
+    expect(audit).toContain('db.insert(auditLog)')
+    // Paged in the database, and read-only (append-only through recordAudit).
+    expect(audit).toContain('async getRows(')
+    expect(audit).toContain('.limit(limit).offset(start)')
+    expect(audit).not.toContain('createInMemoryDataSource')
+  })
+
+  it('Audit stays in-memory (and says so) without the typed data layer', () => {
+    let p = createProject([customers, orders])
+    p = setEntityDataSource(p, 'orders', { kind: 'sql', table: 'orders', dialect: 'postgres' })
+    p = { ...p, audit: true }
+    const files = emitStudioProject(p)
+    const audit = files.find((f) => f.path === 'src/lib/audit.ts')!.contents
+    expect(audit).toContain('createInMemoryDataSource')
+    expect(files.find((f) => f.path === 'src/lib/server/db/schema.ts')).toBeUndefined()
+  })
+
   it('Layout: 12-col grid, colSpan gives finer widths (legacy span still works)', () => {
     let p = createProject([customers, orders])
     const cid = p.screens.find((s) => s.entity === 'customers')!.id
@@ -1233,7 +1438,7 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(cust).toContain('controller.deleteRow(')                          // delete button (fills the missing affordance)
 
     const ord = files.find((f) => f.path === 'src/routes/orders/+page.svelte')!.contents
-    expect(ord).toContain("import { page } from '$app/stores'")              // drill TARGET reads URL params
+    expect(ord).toContain("import { page } from '$app/state'")              // drill TARGET reads URL params
     expect(ord).toContain('sp.get(_f)')
 
     for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
@@ -1251,7 +1456,15 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(cat).toContain('export function localizeCols')
     expect(cat).toContain('"col.customers.name"')  // seeded from the schema
     expect(cat).toContain('"nav.customers"')
-    expect(cat).toContain('"es": {}')              // other locale left for translators
+    // EVERY locale is seeded with the same keys, not just the default - an empty
+    // `{}` made the translator hunt for key names in the codegen.
+    expect(cat).not.toContain('"es": {}')
+    expect(cat).toMatch(/"es": \{[\s\S]*"col\.customers\.name"/)
+    expect(cat).toContain('// TODO: translate')
+    // Both locales carry the full key set.
+    const keyCount = (block: string) => (block.match(/"col\.customers\./g) ?? []).length
+    const [, enBlock = '', esBlock = ''] = cat.split(/"(?:en|es)": /)
+    expect(keyCount(enBlock)).toBe(keyCount(esBlock))
 
     const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
     expect(page).toContain("import { t, localizeCols } from '$lib/i18n'")
@@ -1982,6 +2195,50 @@ describe('grid editing (a Grid property) -> codegen', () => {
     expect(pageFor(createProject([customers]))).not.toContain('st-grid-toolbar')
   })
 
+  it('xlsx / pdf / print buttons go through @svgrid/enterprise and compile', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    p = updateBlock(p, sid, gid, { config: { export: { xlsx: true, pdf: true, print: true } } as Partial<import('./project').BlockConfig> })
+    const page = pageFor(p)
+    // Imported from the enterprise pack, not the free grid api.
+    expect(page).toMatch(/import \{[^}]*exportGrid[^}]*\} from '@svgrid\/enterprise'/)
+    expect(page).toMatch(/import \{[^}]*printGrid[^}]*\} from '@svgrid\/enterprise'/)
+    expect(page).toContain("stExport(gridApi_" + gid.replace(/-/g, '_') + ", 'xlsx', 'customers')")
+    expect(page).toContain("stExport(gridApi_" + gid.replace(/-/g, '_') + ", 'pdf', 'customers')")
+    expect(page).toContain('stPrint(gridApi_' + gid.replace(/-/g, '_') + ", 'customers')")
+    // Helpers emitted exactly once each, beside the buttons that call them.
+    expect(page.match(/async function stExport\(/g)?.length).toBe(1)
+    expect(page.match(/async function stPrint\(/g)?.length).toBe(1)
+    for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {
+      expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
+    }
+  })
+
+  it('declares the optional peer deps the enterprise exporters need', () => {
+    const base = createProject([customers])
+    const sid = base.screens[0]!.id
+    const gid = base.screens[0]!.blocks[0]!.id
+    const pkgOf = (proj: typeof base) => {
+      const f = emitStudioAppBundle(proj).find((f) => f.path === 'package.json')!
+      return JSON.parse(f.contents).dependencies as Record<string, string>
+    }
+    // jszip (xlsx) and pdfmake (pdf) are imported lazily INSIDE @svgrid/enterprise,
+    // so they never appear in the generated source - they must come from the config.
+    const xlsxDeps = pkgOf(updateBlock(base, sid, gid, { config: { export: { xlsx: true } } as Partial<import('./project').BlockConfig> }))
+    expect(xlsxDeps).toHaveProperty('jszip')
+    expect(xlsxDeps).not.toHaveProperty('pdfmake')
+
+    const pdfDeps = pkgOf(updateBlock(base, sid, gid, { config: { export: { pdf: true } } as Partial<import('./project').BlockConfig> }))
+    expect(pdfDeps).toHaveProperty('pdfmake')
+    expect(pdfDeps).not.toHaveProperty('jszip')
+
+    // A csv-only app drags in neither.
+    const csvDeps = pkgOf(updateBlock(base, sid, gid, { config: { export: { csv: true } } as Partial<import('./project').BlockConfig> }))
+    expect(csvDeps).not.toHaveProperty('jszip')
+    expect(csvDeps).not.toHaveProperty('pdfmake')
+  })
+
   it('tree data renders a client hierarchy: visible-row walk + tree cell on the label column, no flat sort/paginate', () => {
     let p = createProject([customers])
     const sid = p.screens[0]!.id
@@ -2338,6 +2595,35 @@ describe('emitStudioAppBundle (full runnable app)', () => {
     expect(pkg.devDependencies['vite']).toBeTruthy()
   })
 
+  it('schedules jobs with the platform: vercel.json crons on Vercel, a workflow elsewhere', () => {
+    let base = createProject([customers])
+    base = setJob(base, 'digest', { name: 'Digest', cron: '0 6 * * *', kind: 'code', code: 'void 0' })
+
+    const vercel = emitStudioAppBundle(setDeployTarget(base, 'vercel'))
+    const vj = vercel.find((f) => f.path === 'vercel.json')!
+    expect(JSON.parse(vj.contents).crons).toEqual([{ path: '/api/cron?job=digest', schedule: '0 6 * * *' }])
+    // Vercel Cron calls the route itself - no Actions workflow needed.
+    expect(vercel.find((f) => f.path === '.github/workflows/cron.yml')).toBeUndefined()
+
+    const node = emitStudioAppBundle(setDeployTarget(base, 'node'))
+    const wf = node.find((f) => f.path === '.github/workflows/cron.yml')!.contents
+    expect(wf).toContain("- cron: '0 6 * * *'")
+    // The endpoint lives in the CRON_URL secret; the workflow appends the job.
+    expect(wf).toContain('"$CRON_URL?job=digest"')
+    // Inert until the secrets exist, so CI is green before it is configured.
+    expect(wf).toContain("secrets.CRON_URL != ''")
+    expect(node.find((f) => f.path === 'vercel.json')).toBeUndefined()
+
+    // The secret the route demands is documented in .env.example.
+    expect(node.find((f) => f.path === '.env.example')!.contents).toContain('CRON_SECRET=')
+  })
+
+  it('emits no schedule config when there are no jobs', () => {
+    const files = emitStudioAppBundle(setDeployTarget(createProject([customers]), 'vercel'))
+    expect(files.find((f) => f.path === 'vercel.json')).toBeUndefined()
+    expect(files.find((f) => f.path === '.github/workflows/cron.yml')).toBeUndefined()
+  })
+
   it('pins Vite 7 (not 8) so the app boots in StackBlitz WebContainer', () => {
     const bundle = emitStudioAppBundle(createProject([customers]))
     const pkg = JSON.parse(bundle.find((f) => f.path === 'package.json')!.contents)
@@ -2662,7 +2948,7 @@ describe('code companion (design + your own code)', () => {
     expect(page.contents).toContain('let gridApi = $state<SvGridApi<any, any> | null>(null)')
     expect(page.contents).toContain('onApiReady={(a) => (gridApi = a)}')
     // Full ctx on mount + cleanup on unmount; the grid exposes reload(), not setRows.
-    expect(page.contents).toContain('const ctx = { grid: gridCtx, data: { get rows() { return view.rows }, reload: () => controller.refresh(), create: (v) => controller.createRow(v), update: (id, v) => controller.updateRow(id, v), delete: (id) => controller.deleteRow(id) }, goto, params: Object.fromEntries($page.url.searchParams) } as unknown as PageContext')
+    expect(page.contents).toContain('const ctx = { grid: gridCtx, data: { get rows() { return view.rows }, reload: () => controller.refresh(), create: (v) => controller.createRow(v), update: (id, v) => controller.updateRow(id, v), delete: (id) => controller.deleteRow(id) }, goto, params: Object.fromEntries(page.url.searchParams) } as unknown as PageContext')
     expect(page.contents).toContain('handlers.onLoad(ctx)')
     expect(page.contents).toContain('return () => handlers.onDestroy(ctx)')
     // The grid api is typed to the entity's row (Customers), not any.
@@ -2828,7 +3114,12 @@ describe('code companion (design + your own code)', () => {
     expect(typeCheckBody(dts, 'ctx.chart1.setData([1, 2, 3])').length).toBeGreaterThan(0)
     // An unknown ctx member is caught.
     expect(typeCheckBody(dts, 'ctx.notAThing()').length).toBeGreaterThan(0)
-  })
+    // This test runs REAL TypeScript programs over the generated code against
+    // the grid's .d.ts, so it scales with the public type surface and is far
+    // slower than a normal unit test. It passes comfortably in isolation but was
+    // brushing the default 5s budget under full-suite parallel load; every grid
+    // API added since made that worse. Give the compile room.
+  }, 30_000)
 
   it('onDestroy is a first-class slot in handlers.ts + page-context manifest', () => {
     let p = createProject([customers])

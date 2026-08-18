@@ -546,6 +546,107 @@ const BASE_REGISTRY: ReadonlyArray<UiComponentSpec> = [
     props: [{ key: 'nodes', label: 'Nodes', type: 'json', default: [{ id: '1', label: 'Documents', children: [{ id: '1-1', label: 'Reports' }, { id: '1-2', label: 'Invoices' }] }, { id: '2', label: 'Pictures' }] }],
   },
   { key: 'country-input', label: 'Country input', category: 'Inputs', importName: 'SvCountryInput', props: [] },
+
+  // --- Typography / prose -------------------------------------------------
+  // The kit's text primitives. Cheap to expose and they are what a freestanding
+  // page (an "About", a help panel) is mostly made of - without them a designer
+  // user has no way to place a heading or a paragraph.
+  {
+    key: 'title', label: 'Heading', category: 'Display', importName: 'SvTitle',
+    props: [{ key: 'size', label: 'Level', type: 'select', options: ['1', '2', '3', '4', '5', '6'], default: '2' }],
+    hasContent: true, contentLabel: 'Text', contentDefault: 'Section heading',
+  },
+  {
+    key: 'text', label: 'Text', category: 'Display', importName: 'SvText',
+    props: [
+      { key: 'size', label: 'Size', type: 'select', options: ['xs', 'sm', 'md', 'lg', 'xl'], default: 'md' },
+      { key: 'weight', label: 'Weight', type: 'select', options: ['normal', 'medium', 'semibold', 'bold'], default: 'normal' },
+      { key: 'tone', label: 'Tone', type: 'select', options: ['default', 'muted', 'accent', 'success', 'warning', 'error'], default: 'default' },
+    ],
+    hasContent: true, contentLabel: 'Text', contentDefault: 'Body text.',
+  },
+  {
+    key: 'anchor', label: 'Link', category: 'Display', importName: 'SvAnchor',
+    props: [
+      { key: 'href', label: 'URL', type: 'string', default: '#' },
+      { key: 'tone', label: 'Tone', type: 'select', options: ['accent', 'default', 'muted'], default: 'accent' },
+      { key: 'size', label: 'Size', type: 'select', options: ['sm', 'md', 'lg'], default: 'md' },
+    ],
+    hasContent: true, contentLabel: 'Label', contentDefault: 'Read more',
+  },
+  {
+    key: 'blockquote', label: 'Quote', category: 'Display', importName: 'SvBlockquote',
+    props: [], hasContent: true, contentLabel: 'Quote', contentDefault: 'A quoted passage.',
+  },
+  {
+    key: 'code', label: 'Inline code', category: 'Display', importName: 'SvCode',
+    props: [], hasContent: true, contentLabel: 'Code', contentDefault: 'npm install',
+  },
+  {
+    key: 'kbd', label: 'Keyboard key', category: 'Display', importName: 'SvKbd',
+    props: [{ key: 'size', label: 'Size', type: 'select', options: ['sm', 'md'], default: 'md' }],
+    hasContent: true, contentLabel: 'Key', contentDefault: 'Ctrl',
+  },
+  {
+    key: 'mark', label: 'Highlight', category: 'Display', importName: 'SvMark',
+    props: [{ key: 'tone', label: 'Tone', type: 'select', options: ['yellow', 'accent', 'success', 'warning', 'error'], default: 'yellow' }],
+    hasContent: true, contentLabel: 'Text', contentDefault: 'highlighted',
+  },
+  {
+    key: 'list', label: 'List', category: 'Display', importName: 'SvList',
+    props: [],
+    fixed: [{ key: 'items', expr: "['First item', 'Second item', 'Third item']", preview: ['First item', 'Second item', 'Third item'] }],
+  },
+
+  // --- Feedback -----------------------------------------------------------
+  {
+    key: 'spinner', label: 'Spinner', category: 'Feedback', importName: 'SvSpinner',
+    props: [{ key: 'size', label: 'Size', type: 'select', options: ['sm', 'md', 'lg'], default: 'md' }],
+  },
+  {
+    key: 'loading-overlay', label: 'Loading overlay', category: 'Feedback', importName: 'SvLoadingOverlay',
+    props: [
+      { key: 'visible', label: 'Visible', type: 'boolean', default: true },
+      { key: 'label', label: 'Label', type: 'string', default: 'Loading...' },
+    ],
+  },
+  {
+    key: 'result', label: 'Result', category: 'Feedback', importName: 'SvResult',
+    props: [
+      { key: 'status', label: 'Status', type: 'select', options: ['success', 'error', 'warning', 'info'], default: 'success' },
+      { key: 'title', label: 'Title', type: 'string', default: 'All done' },
+    ],
+  },
+
+  // --- Structure ----------------------------------------------------------
+  {
+    key: 'collapsible', label: 'Collapsible', category: 'Layout', importName: 'SvCollapsible',
+    props: [
+      { key: 'title', label: 'Title', type: 'string', default: 'Details' },
+      { key: 'open', label: 'Open', type: 'boolean', default: false },
+    ],
+    hasContent: true, contentLabel: 'Content', contentDefault: 'Hidden until expanded.',
+  },
+  {
+    key: 'carousel', label: 'Carousel', category: 'Layout', importName: 'SvCarousel',
+    props: [],
+  },
+
+  // --- Date / time + richer pickers ---------------------------------------
+  // These are grid cell editors too; as standalone blocks they are what a
+  // filter bar or a booking form is built from.
+  { key: 'date-time-picker', label: 'Date & time picker', category: 'Inputs', importName: 'SvDateTimePicker', props: [] },
+  { key: 'time-picker', label: 'Time picker', category: 'Inputs', importName: 'SvTimePicker', props: [] },
+  { key: 'date-range-input', label: 'Date range', category: 'Inputs', importName: 'SvDateRangeInput', props: [] },
+  {
+    key: 'segmented', label: 'Segmented control', category: 'Inputs', importName: 'SvSegmented',
+    props: [{ key: 'options', label: 'Options', type: 'json', default: [{ value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }] }],
+  },
+  {
+    key: 'tree-select', label: 'Tree select', category: 'Inputs', importName: 'SvTreeSelect',
+    props: [{ key: 'nodes', label: 'Nodes', type: 'json', default: [{ id: '1', label: 'Europe', children: [{ id: '1-1', label: 'France' }, { id: '1-2', label: 'Spain' }] }, { id: '2', label: 'Asia' }] }],
+  },
+  { key: 'file-upload', label: 'File upload', category: 'Inputs', importName: 'SvFileUpload', props: [] },
 ]
 
 // ---------------------------------------------------------------------------

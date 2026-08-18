@@ -28,6 +28,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "tsc -p tsconfig.json",
     "test:types": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

@@ -142,7 +142,7 @@
   .sv-pw__meter { display: flex; gap: 4px; }
   .sv-pw__bar { flex: 1; height: 4px; border-radius: 2px; background: var(--sg-border, #e2e8f0); transition: background 0.15s; }
   .sv-pw__bar.on.is-lvl1 { background: var(--sg-danger, #dc2626); }
-  .sv-pw__bar.on.is-lvl2 { background: var(--sg-warning, #f59e0b); }
+  .sv-pw__bar.on.is-lvl2 { background: var(--sg-warning, #d97706); }
   .sv-pw__bar.on.is-lvl3 { background: #eab308; }
   .sv-pw__bar.on.is-lvl4 { background: var(--sg-success, #16a34a); }
   .sv-pw__strength { font-size: 11px; font-weight: 600; color: var(--sg-muted, #64748b); }

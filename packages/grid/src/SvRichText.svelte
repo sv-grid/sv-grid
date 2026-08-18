@@ -19,7 +19,7 @@
    * <SvRichText bind:value={html} placeholder="Write something…" />
    * ```
    */
-  import { nextEditorId } from './editor-contract'
+  import { nextEditorId, resolveMessages } from './editor-contract'
 
   const DEFAULT_TOOLS: RichTextTool[] = [
     'bold', 'italic', 'underline', 'strike', '|',
@@ -29,16 +29,27 @@
     'link', 'clear', '|', 'undo', 'redo',
   ]
 
-  const META: Record<Exclude<RichTextTool, '|'>, { label: string; glyph: string }> = {
-    bold: { label: 'Bold', glyph: 'B' }, italic: { label: 'Italic', glyph: 'I' },
-    underline: { label: 'Underline', glyph: 'U' }, strike: { label: 'Strikethrough', glyph: 'S' },
-    h1: { label: 'Heading 1', glyph: 'H1' }, h2: { label: 'Heading 2', glyph: 'H2' },
-    h3: { label: 'Heading 3', glyph: 'H3' }, p: { label: 'Paragraph', glyph: '¶' },
-    ul: { label: 'Bullet list', glyph: '•' }, ol: { label: 'Numbered list', glyph: '1.' },
-    quote: { label: 'Quote', glyph: '❝' }, code: { label: 'Code block', glyph: '</>' },
-    alignLeft: { label: 'Align left', glyph: '≡' }, alignCenter: { label: 'Align center', glyph: '≣' },
-    alignRight: { label: 'Align right', glyph: '≡' }, link: { label: 'Link', glyph: '🔗' },
-    clear: { label: 'Clear formatting', glyph: '⌫' }, undo: { label: 'Undo', glyph: '↶' }, redo: { label: 'Redo', glyph: '↷' },
+  /** Toolbar glyphs. Mode-independent and not language-dependent, so they stay
+   *  fixed; the LABELS beside them are localizable via `messages`. */
+  const GLYPH: Record<Exclude<RichTextTool, '|'>, string> = {
+    bold: 'B', italic: 'I', underline: 'U', strike: 'S',
+    h1: 'H1', h2: 'H2', h3: 'H3', p: '¶',
+    ul: '•', ol: '1.', quote: '❝', code: '</>',
+    alignLeft: '≡', alignCenter: '≣', alignRight: '≡', link: '🔗',
+    clear: '⌫', undo: '↶', redo: '↷',
+  }
+
+  /** User-facing strings (localizable via `messages`). Every one is a tooltip +
+   *  accessible name on a toolbar button, so leaving them hard-coded made the
+   *  whole toolbar English-only for screen-reader users. */
+  type RichTextMessages = Record<Exclude<RichTextTool, '|'>, string> & { linkPrompt: string; toolbar: string }
+  const DEFAULT_MESSAGES: RichTextMessages = {
+    bold: 'Bold', italic: 'Italic', underline: 'Underline', strike: 'Strikethrough',
+    h1: 'Heading 1', h2: 'Heading 2', h3: 'Heading 3', p: 'Paragraph',
+    ul: 'Bullet list', ol: 'Numbered list', quote: 'Quote', code: 'Code block',
+    alignLeft: 'Align left', alignCenter: 'Align center', alignRight: 'Align right',
+    link: 'Link', clear: 'Clear formatting', undo: 'Undo', redo: 'Redo',
+    linkPrompt: 'Link URL', toolbar: 'Formatting',
   }
 
   type Props = {
@@ -52,6 +63,8 @@
     /** Toolbar tools + order; use '|' for a separator. */
     tools?: RichTextTool[]
     ariaLabel?: string
+    /** Override any toolbar label / prompt (localization). */
+    messages?: Partial<RichTextMessages>
   }
 
   let {
@@ -63,8 +76,10 @@
     minHeight = '160px',
     tools = DEFAULT_TOOLS,
     ariaLabel = 'Rich text editor',
+    messages,
   }: Props = $props()
 
+  const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
   const uid = nextEditorId('sv-rt')
   let editorEl = $state<HTMLDivElement | null>(null)
   let focused = $state(false)
@@ -109,14 +124,14 @@
     ul: () => exec('insertUnorderedList'), ol: () => exec('insertOrderedList'),
     quote: () => exec('formatBlock', 'BLOCKQUOTE'), code: () => exec('formatBlock', 'PRE'),
     alignLeft: () => exec('justifyLeft'), alignCenter: () => exec('justifyCenter'), alignRight: () => exec('justifyRight'),
-    link: () => { const url = typeof prompt === 'function' ? prompt('Link URL', 'https://') : null; if (url) exec('createLink', url) },
+    link: () => { const url = typeof prompt === 'function' ? prompt(M.linkPrompt, 'https://') : null; if (url) exec('createLink', url) },
     clear: () => exec('removeFormat'), undo: () => exec('undo'), redo: () => exec('redo'),
   }
 </script>
 
 <div class="sv-rt" class:is-disabled={disabled} class:is-readonly={readonly}>
   {#if !readonly}
-    <div class="sv-rt__toolbar" role="toolbar" aria-label="Formatting" aria-controls={uid}>
+    <div class="sv-rt__toolbar" role="toolbar" aria-label={M.toolbar} aria-controls={uid}>
       {#each tools as t, i (i)}
         {#if t === '|'}
           <span class="sv-rt__sep" aria-hidden="true"></span>
@@ -126,13 +141,13 @@
             class="sv-rt__btn"
             class:is-on={activeState[t]}
             data-tool={t}
-            title={META[t].label}
-            aria-label={META[t].label}
+            title={M[t]}
+            aria-label={M[t]}
             aria-pressed={activeState[t] ? true : undefined}
             {disabled}
             onmousedown={(e) => e.preventDefault()}
             onclick={run[t]}
-          >{META[t].glyph}</button>
+          >{GLYPH[t]}</button>
         {/if}
       {/each}
     </div>

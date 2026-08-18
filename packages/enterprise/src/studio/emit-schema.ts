@@ -362,17 +362,19 @@ const SQL_DRIVERS: Record<'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso', {
  *  the route imports the shared access policy and rejects unauthorized writes -
  *  server-enforced, so a tampered client can't bypass it. When audit is on, every
  *  successful write is recorded. */
-function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean; screenIds?: string[]; triggers?: EntityTriggers; dbSchema?: string } = {}): GeneratedFile {
+function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean; screenIds?: string[]; triggers?: EntityTriggers; dbSchema?: string; tenantField?: string } = {}): GeneratedFile {
   const n = namesFor(schema)
   const key = (dialect === 'supabase' ? 'postgres' : (dialect ?? 'postgres')) as 'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso'
   const driver = SQL_DRIVERS[key]
   const dialectLiteral = sqlDialectExpr(dialect)
   const accessImport = feat.access ? `\nimport { authorizeAction, getServerRole } from '$lib/access'` : ''
   const auditImport = feat.audit ? `\nimport { recordAudit } from '$lib/audit'` : ''
+  const tenantImport = feat.tenantField ? `\nimport { requireTenant } from '$lib/server/tenant'` : ''
   // Every connected route validates writes against the schema server-side, and
   // (when enabled) authorizes them by role + records an audit entry.
   const opts = [`schema: ${n.schemaVar}`, `source`, `validate: true`]
   if (feat.access) opts.push(`// Server-enforced RBAC: the caller's role comes from the session (event.locals). Reads\n  // are allowed only if the role can open one of this entity's own screens.\n  authorize: ({ action, event }) => authorizeAction(getServerRole(event), action, ${JSON.stringify(feat.screenIds ?? [])})`)
+  if (feat.tenantField) opts.push(`// Multi-tenancy, enforced server-side: reads are filtered to the caller's tenant,\n  // creates are stamped with it, and update/delete re-read the target under the\n  // scope first - so a guessed id cannot reach another tenant's row.\n  scope: ({ event }) => ({ field: ${JSON.stringify(feat.tenantField)}, value: requireTenant(event) })`)
   if (feat.audit) opts.push(`// Record every successful write to the audit trail.\n  audit: (e) => recordAudit({ entity: ${JSON.stringify(schema.name)}, action: e.action, recordId: e.id, values: e.values as Record<string, unknown> | undefined, actor: String(e.event.locals?.role ?? e.event.locals?.user ?? 'system') })`)
   // Server-enforced business rules: the entity's triggers compiled to lifecycle hooks.
   const hooks = triggerHooksOpt(feat.triggers)
@@ -384,7 +386,7 @@ function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectK
     contents: `${driver.imports}
 import { env } from '$env/dynamic/private'
 import { createKitHandlers, createSqlDataSource } from '@svgrid/enterprise'
-import { ${n.schemaVar}, type ${n.type} } from '$lib/schemas'${accessImport}${auditImport}
+import { ${n.schemaVar}, type ${n.type} } from '$lib/schemas'${accessImport}${auditImport}${tenantImport}
 
 ${driver.setup}
 
@@ -737,7 +739,7 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
 
   // i18n: translate nav labels via `nav.<id>` keys (Home has no id -> literal).
   const navLabel = opts.i18n ? `{item.id ? $t('nav.' + item.id, item.label) : item.label}` : '{item.label}'
-  const anchor = `<a class="sv-app__link" class:is-active={$page.url.pathname === item.href} href={item.href}>${navLabel}</a>`
+  const anchor = `<a class="sv-app__link" class:is-active={page.url.pathname === item.href} href={item.href}>${navLabel}</a>`
   // When RBAC is on, hide nav links the current role can't open.
   const linkGate = opts.access
     ? `{#if !item.id || canScreen($currentRole, item.id)}${anchor}{/if}`
@@ -968,14 +970,14 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
     contents: `<script lang="ts">
   import '../app.css'
   import '../custom.css'
-  import { page } from '$app/stores'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}${opts.auth ? `\n  import type { LayoutData } from './$types'` : ''}${opts.supabaseAuth ? `\n  import { SvAuthGate, type SupabaseAuthClientLike } from '@svgrid/enterprise'\n  import { supabaseClient } from '$lib/connections'` : ''}
+  import { page } from '$app/state'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}${opts.auth ? `\n  import type { LayoutData } from './$types'` : ''}${opts.supabaseAuth ? `\n  import { SvAuthGate, type SupabaseAuthClientLike } from '@svgrid/enterprise'\n  import { supabaseClient } from '$lib/connections'` : ''}
 
   let { children${opts.auth ? ', data' : ''} }${opts.auth ? ": { children: import('svelte').Snippet; data: LayoutData }" : ''} = $props()
   const nav = ${JSON.stringify(links)}
   const brand = ${JSON.stringify(brand)}${footConst}${logoConst}
   let navOpen = $state(false)${opts.auth && opts.access ? `\n  // Seed the client role store from the signed-in session (server-resolved).\n  $effect(() => { if (data?.role) currentRole.set(data.role as never) })` : ''}
   // Close the mobile drawer whenever the route changes.
-  $effect(() => { void $page.url.pathname; navOpen = false })${hasSwitch ? `
+  $effect(() => { void page.url.pathname; navOpen = false })${hasSwitch ? `
   // Light/dark switcher: defaults to the mode picked in Studio, then honours the
   // visitor's saved choice. Applies via [data-theme] on <html> (see the token
   // sets in <svelte:head>), and persists per browser.
@@ -1014,11 +1016,11 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
     return () => window.removeEventListener('keydown', onKey)
   })
   // Close both menus on route change.
-  $effect(() => { void $page.url.pathname; bellOpen = false; menuOpen = false })` : ''}
+  $effect(() => { void page.url.pathname; bellOpen = false; menuOpen = false })` : ''}
 </script>
 ${themeHead}
 
-${opts.auth ? `{#if ${JSON.stringify(opts.authRoutes ?? ['/login'])}.includes($page.url.pathname)}
+${opts.auth ? `{#if ${JSON.stringify(opts.authRoutes ?? ['/login'])}.includes(page.url.pathname)}
 {@render children()}
 {:else}
 ${body}
@@ -1137,7 +1139,7 @@ export function prepareEntities(schemas: EntitySchema[]): { entries: Prepared[];
 /** Emit the shared entity modules: `src/lib/schemas.ts` + `src/lib/data.ts` (+ `connections.ts`). */
 export function emitEntityModules(
   schemas: EntitySchema[],
-  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean; screensByEntity?: Map<string, string[]>; triggers?: Record<string, EntityTriggers>; supabaseConn?: { url?: string; key?: string }; supabaseAuth?: boolean } = {},
+  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean; screensByEntity?: Map<string, string[]>; triggers?: Record<string, EntityTriggers>; supabaseConn?: { url?: string; key?: string }; supabaseAuth?: boolean; tenantField?: string; tenantScoped?: (entity: string) => boolean } = {},
 ): { files: GeneratedFile[]; prepared: EntitySchema[] } {
   const { entries, seed } = prepareEntities(schemas)
   const { file: data, needs } = dataModule(entries, seed, opts.sources, opts.supabaseConn)
@@ -1148,7 +1150,15 @@ export function emitEntityModules(
     needs.supabaseUrl = opts.supabaseConn.url; needs.supabaseKey = opts.supabaseConn.key
   }
   if (needs.supabase || opts.supabaseAuth) files.push(connectionsModule(needs))
-  for (const r of needs.sqlRoutes) files.push(sqlRouteFile(r.schema, r.table, r.dialect, { access: opts.accessEnabled, audit: opts.auditEnabled, screenIds: opts.screensByEntity?.get(r.schema.name) ?? [], triggers: opts.triggers?.[r.schema.name], dbSchema: r.dbSchema }))
+  for (const r of needs.sqlRoutes) files.push(sqlRouteFile(r.schema, r.table, r.dialect, {
+    access: opts.accessEnabled,
+    audit: opts.auditEnabled,
+    screenIds: opts.screensByEntity?.get(r.schema.name) ?? [],
+    triggers: opts.triggers?.[r.schema.name],
+    dbSchema: r.dbSchema,
+    // A shared (reference-data) entity stays global - no scope on its route.
+    tenantField: opts.tenantField && opts.tenantScoped?.(r.schema.name) !== false ? opts.tenantField : undefined,
+  }))
   return { files, prepared: entries.map((e) => e.schema) }
 }
 

@@ -186,7 +186,11 @@
           {...ts.itemProps(i)}
         >
           {#if row.hasChildren}
-            <span class="sv-ts__chev" class:is-open={row.expanded} aria-hidden="true">▸</span>
+            <!-- Same chevron as SvTree and the grid's expanders. -->
+            <span class="sv-ts__chev" class:is-open={row.expanded} aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+            </span>
           {:else}
             <span class="sv-ts__chev sv-ts__chev--leaf" aria-hidden="true"></span>
           {/if}
@@ -226,7 +230,7 @@
   :global(.sv-ts__row.is-active) { background: var(--sg-row-hover-bg, #f1f5f9); }
   :global(.sv-ts__row.is-selected) { color: var(--sg-accent, #2563eb); font-weight: 600; }
   :global(.sv-ts__row.is-disabled) { opacity: 0.5; cursor: not-allowed; }
-  :global(.sv-ts__chev) { width: 14px; flex: none; color: var(--sg-muted, #64748b); transition: transform 0.12s; font-size: 10px; }
+  :global(.sv-ts__chev) { width: 14px; flex: none; display: inline-flex; align-items: center; justify-content: center; color: var(--sg-muted, #64748b); transition: transform 0.12s; }
   :global(.sv-ts__chev.is-open) { transform: rotate(90deg); }
   :global(.sv-ts__chev--leaf) { visibility: hidden; }
   :global(.sv-ts__label) { flex: 1; white-space: nowrap; }

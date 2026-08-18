@@ -1,7 +1,9 @@
 # Columns & cells
 
-`ColumnDef<Row>[]` is the column model. Validate generated columns against
-`https://svgrid.com/schemas/column-def.json` when unsure.
+`GridColumns<Row>` is the column model - the single-parameter alias for
+`ColumnDef<{}, Row>[]`. (`ColumnDef` itself takes a phantom feature bag as its
+first type parameter, so `ColumnDef<Row>` does not compile.) Validate generated
+columns against `https://svgrid.com/schemas/column-def.json` when unsure.
 
 ## Every column needs a stable `id`
 
@@ -14,7 +16,7 @@ equal, but `id` must always be present and unique.
 const columns = [{ field: 'name', header: 'Name' }]
 
 // ✅ Correct.
-const columns: ColumnDef<Row>[] = [
+const columns: GridColumns<Row> = [
   { id: 'name', field: 'name', header: 'Name' },
 ]
 ```
@@ -27,16 +29,16 @@ A column with no `field` (e.g. an actions column) still needs an `id`:
 
 ## Types drive alignment, parsing, and the default editor
 
-Set `type` instead of hand-formatting. `'number'` right-aligns and uses a
-numeric editor; `'date'` parses/formats dates; `'boolean'` renders a
-checkbox.
+Set `cellDataType` instead of hand-formatting. `'number'` right-aligns and uses
+a numeric editor; `'date'` parses/formats dates; `'boolean'` renders a
+checkbox. The member is `cellDataType` - there is no bare `type` on a column.
 
 ```ts
 // ❌ Incorrect - string amount, manual alignment, no numeric editor.
 { id: 'amount', field: 'amount', header: 'Amount', cell: RightAlignedText }
 
 // ✅ Correct.
-{ id: 'amount', field: 'amount', header: 'Amount', type: 'number' }
+{ id: 'amount', field: 'amount', header: 'Amount', cellDataType: 'number' }
 ```
 
 ## Custom cells are snippets assigned to `cell`
@@ -48,9 +50,9 @@ hoists snippet declarations, so you can reference the snippet in the
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
 
-  const columns: ColumnDef<Order>[] = [
+  const columns: GridColumns<Order> = [
     { id: 'status', field: 'status', header: 'Status', cell: StatusCell },
   ]
 </script>

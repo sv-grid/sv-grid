@@ -2,6 +2,31 @@
 
 > Step 5 of 6 · [← Features](./4-features.md) · [Next: Going to production →](./6-going-to-production.md)
 
+## Start with a preset
+
+Before hand-writing any tokens: 20 design-system presets ship with the package,
+each a single stylesheet with a full light + dark palette. One import re-themes
+the whole grid.
+
+```ts
+import '@svgrid/grid/themes/shadcn.css'
+```
+
+Available: `ember` (SvGrid's own look), `shadcn`, `tailwind`, `material`,
+`fluent`, `carbon`, `antd`, `bootstrap`, `atlassian`, `salesforce`, `sap`,
+`github`, `linear`, `notion`, `vercel`, `excel`, `nord`, `dracula`,
+`catppuccin`, `ag-alpine`.
+
+Each preset defines every token the grid and the UI components read - including
+the semantic status colors (`--sg-danger`, `--sg-success`, `--sg-warning`,
+`--sg-info`) and the focus ring, which follows the preset's accent. Presets
+flip with `data-theme="dark"` automatically (see below).
+
+Override individual tokens after the import to adjust a preset, or skip presets
+entirely and declare the tokens yourself - that is the rest of this page.
+
+## Declaring tokens yourself
+
 The render component (`<SvGrid>`) ships its own scoped styles. You
 re-theme it by declaring `--sg-*` CSS custom properties at any level
 above the grid - `:root` for the whole app, a wrapper `<div>` for one

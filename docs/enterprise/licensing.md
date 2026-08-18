@@ -42,13 +42,22 @@ version released during your paid term.
 
 ```
 SVENTERPRISE-IXIX-XXXX-XXXX-XXXX-XXXX
-       │
-       └── single hex-encoded payload, verified locally
+│
+└── prefix the runtime recognises; the rest identifies your license
 ```
 
-The check is purely client-side, signed against our public key.
-**No network call** is ever made to validate. Air-gapped deployments
-work out of the box.
+The check is purely client-side and **no network call** is ever made to
+validate, so air-gapped deployments work out of the box.
+
+It is also deliberately not cryptography. The runtime classifies the key
+string - prefix recognised, on the revoked list, a `DEV` / `EVAL` sentinel, or
+a paid key - and nothing more (`checkLicenseKey` in
+`packages/enterprise/src/license-core.ts`). Anyone with devtools can read a key
+out of a deployed bundle, and an unlicensed build still runs; it just shows a
+watermark and logs a one-time notice. The license is a legal agreement, not a
+technical lock, and we would rather say so than imply a DRM scheme that isn't
+there. Keys are revocable: a key we revoke stops being accepted in later
+releases.
 
 ## Per-environment keys
 

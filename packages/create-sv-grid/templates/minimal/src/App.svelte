@@ -1,17 +1,10 @@
 <script>
-  import {
-    SvGrid,
-    tableFeatures,
-    rowSortingFeature,
-    columnFilteringFeature,
-    rowSelectionFeature,
-  } from '@svgrid/grid'
+  import { SvGrid } from '@svgrid/grid'
 
-  const features = tableFeatures({
-    rowSortingFeature,
-    columnFilteringFeature,
-    rowSelectionFeature,
-  })
+  // Capabilities are boolean props - `sortable`, `filterable`, `editable`,
+  // `groupable`, `pageable` - and each injects the feature it needs. For finer
+  // control you can register features explicitly with `tableFeatures({ ... })`
+  // and pass them as `features`; see docs/getting-started/4-features.md.
 
   // Your data. Swap for a fetch() in onMount, a store, or props.
   let rows = $state([
@@ -47,12 +40,12 @@
     <SvGrid
       data={rows}
       {columns}
-      {features}
-      filterMode="menu"
+      sortable
+      filterable
+      editable
       selectionMode="row"
       showRowSelection={true}
       showRowNumbers={true}
-      enableInlineEditing={true}
       rowHeight={38}
       containerHeight="100%"
       fitColumns={true}

@@ -11,7 +11,8 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, SchedulerViewConfig, Screen, StudioProject, SupabaseSource } from './project.js'
+import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, ScheduledJob, SchedulerViewConfig, Screen, StudioProject, SupabaseSource } from './project.js'
+import { tenantField, isTenantScoped } from './project.js'
 import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, clickSlot, rowSelectSlot, changeSlot, eventSlot, FORM_SUBMIT, GRID_EVENTS, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen, ssrScreenShape } from './project.js'
 import { uiComponentSpec, gridApiSettableProps, STANDARD_UI_EVENTS } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
@@ -503,7 +504,7 @@ ${panels}
       if (rels.length) props.push(`related={[${rels.join(', ')}]}`)
       // Open the record named by the URL `?id=` (set by a grid / board / calendar
       // drill-through); stays switchable via the header dropdown.
-      props.push(`selectedId={$page.url.searchParams.get('id') ?? undefined}`)
+      props.push(`selectedId={page.url.searchParams.get('id') ?? undefined}`)
       if (h) props.push(`height={${h}}`)
       return `    <div ${wrapperStyle(block)}${cls}>
       <SvRecordDetail ${props.join(' ')} />
@@ -793,7 +794,14 @@ const cellSnippetName = (idSafe: string, field: string): string => `cellRender_$
 /** Does this grid want an export toolbar (any export affordance enabled)? */
 function gridHasExport(cfg: GridConfig): boolean {
   const e = cfg.export
-  return !!e && (!!e.csv || !!e.json || !!e.copy)
+  return !!e && (!!e.csv || !!e.json || !!e.copy || !!e.xlsx || !!e.pdf || !!e.print)
+}
+
+/** True when a grid's export bar needs `@svgrid/enterprise` (xlsx / pdf / print)
+ *  rather than only the free grid API (csv / json / copy). */
+function gridHasEnterpriseExport(cfg: GridConfig): boolean {
+  const e = cfg.export
+  return !!e && (!!e.xlsx || !!e.pdf || !!e.print)
 }
 
 /** Is this a tree-data grid (self-referential hierarchy)? */
@@ -888,6 +896,12 @@ function exportToolbarMarkup(e: NonNullable<GridConfig['export']>, apiVar: strin
   const btns: string[] = []
   if (e.csv) btns.push(`<button type="button" class="st-rowaction" onclick={() => void ${apiVar}?.exportCsv({ filename: ${fn} })}>Export CSV</button>`)
   if (e.json) btns.push(`<button type="button" class="st-rowaction" onclick={() => void ${apiVar}?.exportJson({ filename: ${fn} })}>Export JSON</button>`)
+  // xlsx / pdf / print go through @svgrid/enterprise. `exportGrid` reads the
+  // grid's own visible columns and displayed rows, so the file matches what the
+  // user sees - no column list to keep in sync here.
+  if (e.xlsx) btns.push(`<button type="button" class="st-rowaction" onclick={() => void stExport(${apiVar}, 'xlsx', ${fn})}>Export Excel</button>`)
+  if (e.pdf) btns.push(`<button type="button" class="st-rowaction" onclick={() => void stExport(${apiVar}, 'pdf', ${fn})}>Export PDF</button>`)
+  if (e.print) btns.push(`<button type="button" class="st-rowaction" onclick={() => void stPrint(${apiVar}, ${fn})}>Print</button>`)
   if (e.copy) btns.push(`<button type="button" class="st-rowaction" onclick={() => void ${apiVar}?.copyToClipboard()}>Copy</button>`)
   return `      <div class="st-grid-toolbar">\n        ${btns.join('\n        ')}\n      </div>\n`
 }
@@ -901,6 +915,31 @@ const BADGE_VARIANT_HELPER = `  function stBadgeVariant(value: unknown): 'neutra
     if (['closed', 'error', 'failed', 'cancelled', 'canceled', 'overdue', 'rejected', 'lost', 'blocked', 'inactive', 'no', 'false', 'high', 'urgent'].includes(v)) return 'danger'
     if (['new', 'info', 'draft', 'low'].includes(v)) return 'info'
     return 'neutral'
+  }`
+
+/** Shared helper: run an `@svgrid/enterprise` export off a captured grid API.
+ *  Emitted once per page when any grid has an xlsx / pdf button. Surfaces the
+ *  failure instead of swallowing it - a missing optional peer dep (jszip for
+ *  xlsx, pdfmake for pdf) is the usual cause and is worth seeing. */
+const EXPORT_HELPER = `  async function stExport(api: SvGridApi<never, never> | undefined, format: 'xlsx' | 'pdf', filename: string) {
+    if (!api) return
+    try {
+      await exportGrid(api, { format, filename })
+    } catch (err) {
+      console.error('Export failed:', err)
+      alert('Export failed: ' + (err instanceof Error ? err.message : String(err)))
+    }
+  }`
+
+/** Shared helper: paginated print off a captured grid API. */
+const PRINT_HELPER = `  async function stPrint(api: SvGridApi<never, never> | undefined, title: string) {
+    if (!api) return
+    try {
+      await printGrid(api, { title })
+    } catch (err) {
+      console.error('Print failed:', err)
+      alert('Print failed: ' + (err instanceof Error ? err.message : String(err)))
+    }
   }`
 
 /** The `{#snippet}` body for one rich cell renderer (badge / progress / link). */
@@ -1523,7 +1562,7 @@ function codeWiring(screen: Screen, rowType: string, datasetRowsVar: string | un
   if (dataset === 'settable' && datasetRowsVar) ctxParts.push(`data: { get rows() { return ${datasetRowsVar} }, setRows: (r) => (${datasetRowsVar} = r) }`)
   else if (dataset === 'reload') ctxParts.push('data: { get rows() { return view.rows }, reload: () => controller.refresh(), create: (v) => controller.createRow(v), update: (id, v) => controller.updateRow(id, v), delete: (id) => controller.deleteRow(id) }')
   ctxParts.push('goto')
-  ctxParts.push('params: Object.fromEntries($page.url.searchParams)')
+  ctxParts.push('params: Object.fromEntries(page.url.searchParams)')
   if (screen.state?.length) ctxParts.push(`state: { ${screen.state.map((v) => `get ${v.name}() { return ${v.name} }, set ${v.name}(x) { ${v.name} = x }`).join(', ')} }`)
   return { decls, ctxLiteral: `{ ${ctxParts.join(', ')} }`, usesHandle, usesDataHandle, usesGridHandle }
 }
@@ -1686,7 +1725,7 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
 
   const codeImport = hasCode ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  import type { PageContext } from './page-context'\n  ` : ''
   const gotoImport = hasCode ? `import { goto } from '$app/navigation'\n  ` : ''
-  const pageStoreImport = hasCode ? `import { page } from '$app/stores'\n  ` : ''
+  const pageStateImport = hasCode ? `import { page } from '$app/state'\n  ` : ''
   const handleDecls = (wiring?.decls ?? []).join('\n  ')
   // The Grid exposes its real SvGridApi (onApiReady) so code gets the full, typed
   // grid API - ctx.grid.exportCsv(), selectCells(), startEditing(), ... - not a stub.
@@ -1717,7 +1756,7 @@ function freestandingScreenPage(screen: Screen, accessEnabled: boolean, i18nEnab
     path: `src/routes/${screen.route}/+page.svelte`,
     description: `${screen.title} screen (freestanding, no bound entity).`,
     contents: `<script lang="ts">
-  ${gridImport}${typeImport}${handleImport}${codeImport}${gotoImport}${pageStoreImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}${codeScript}
+  ${gridImport}${typeImport}${handleImport}${codeImport}${gotoImport}${pageStateImport}${accessImport}${i18nImport}${parts.join('\n\n  ')}${codeScript}
 </script>
 
 <h1 class="st__title">${title}</h1>
@@ -1864,6 +1903,11 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   if (hasPivot) entImports.push('SvPivotDesigner')
   // The scheduler renderer (grid scheduler-view + calendar block) is registered app-wide (idempotent).
   if (usesScheduler) entImports.push('enableSchedulerView')
+  // xlsx / pdf / print export buttons.
+  const wantsEnterpriseExport = allBlocks.some((b) => b.config.kind === 'grid' && gridHasEnterpriseExport(b.config))
+  const wantsPrint = allBlocks.some((b) => b.config.kind === 'grid' && !!b.config.export?.print)
+  if (wantsEnterpriseExport) entImports.push('exportGrid')
+  if (wantsPrint) entImports.push('printGrid')
   if (rtSupabase) entImports.push('createSupabaseRealtime', 'type SupabaseRealtimeClientLike')
   // Dedupe: record + form both want SvGridEditPanel.
   const entImport = entImports.length ? `import { ${[...new Set(entImports)].join(', ')} } from '@svgrid/enterprise'\n  ` : ''
@@ -1904,7 +1948,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   for (const a of screenActions) parts.push(actionHandlerScript(a))
   if (needsController) {
     const urlFilter = applyUrlFilters
-      ? `\n    const sp = $page.url.searchParams
+      ? `\n    const sp = page.url.searchParams
     const _cols: Record<string, { operator: 'equals'; value: string }> = {}
     for (const _f of [${filterableFieldNames.map(jsStr).join(', ')}]) { const _v = sp.get(_f); if (_v != null) _cols[_f] = { operator: 'equals', value: _v } }
     if (Object.keys(_cols).length) controller.setFilter({ columns: _cols })`
@@ -1930,6 +1974,14 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // A shared badge-intent helper is emitted once if any column uses the badge renderer.
   if (blocks.some((b) => b.config.kind === 'grid' && b.config.columns.some((c) => c.show && c.cellType?.kind === 'badge'))) {
     parts.push(BADGE_VARIANT_HELPER)
+  }
+  // Enterprise export/print helpers, emitted once per page beside the toolbar
+  // buttons that call them.
+  if (blocks.some((b) => b.config.kind === 'grid' && (!!b.config.export?.xlsx || !!b.config.export?.pdf))) {
+    parts.push(EXPORT_HELPER)
+  }
+  if (blocks.some((b) => b.config.kind === 'grid' && !!b.config.export?.print)) {
+    parts.push(PRINT_HELPER)
   }
   for (const b of blocks) {
     if (b.config.kind === 'grid') {
@@ -2124,13 +2176,13 @@ ${body}
   const accessSpecs = [...(needsCurrentRole ? ['currentRole'] : []), ...(gatesUi ? ['can'] : []), ...(gatesActions ? ['canScreen'] : [])]
   const accessImport = accessSpecs.length ? `import { ${accessSpecs.join(', ')} } from '$lib/access'\n  ` : ''
   const i18nImport = i18nEnabled ? `import { t, localizeCols } from '$lib/i18n'\n  ` : ''
-  // Code-behind needs goto (ctx.goto) + the page store (ctx.params) even when no
+  // Code-behind needs goto (ctx.goto) + page state (ctx.params) even when no
   // block otherwise navigates; and the handle runtime for its data/component handles.
   const gotoImport = usesGoto || codeEnabled ? `import { goto } from '$app/navigation'\n  ` : ''
   const codeImport = codeEnabled ? `import { onMount } from 'svelte'\n  import * as handlers from './handlers'\n  import type { PageContext } from './page-context'\n  ` : ''
   const handleSpecs = [codeWire?.usesHandle ? 'handle' : '', codeWire?.usesDataHandle ? 'dataHandle' : '', codeWire?.usesGridHandle ? 'gridHandle' : ''].filter(Boolean)
   const handleImport = handleSpecs.length ? `import { ${handleSpecs.join(', ')} } from '$lib/handles.svelte'\n  ` : ''
-  const pageImport = applyUrlFilters || has(allBlocks, 'detail') || codeEnabled ? `import { page } from '$app/stores'\n  ` : ''
+  const pageImport = applyUrlFilters || has(allBlocks, 'detail') || codeEnabled ? `import { page } from '$app/state'\n  ` : ''
   const title = i18nEnabled ? `{$t('screen.${screen.id}', ${JSON.stringify(screen.title)})}` : screen.title
   // Surface a failed data load (silent empty grid otherwise) with a retry.
   const errorBanner = needsController
@@ -2563,7 +2615,13 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     if (s.entity === undefined) continue // freestanding screen - gates no entity route
     screensByEntity.set(s.entity, [...(screensByEntity.get(s.entity) ?? []), s.id])
   }
-  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled, screensByEntity, triggers: project.triggers, supabaseConn: project.supabase, supabaseAuth: project.auth?.enabled === true && project.auth.provider === 'supabase' })
+  // Multi-tenancy needs BOTH the session (to know the tenant) and the typed data
+  // layer (so the column exists in the schema). Missing either, it degrades to
+  // off rather than emitting a scope that reads a column nothing declares.
+  const tenancyRequested = project.tenancy?.enabled === true
+  const tenancyOn = tenancyRequested && authEnabled && project.dataLayer === 'drizzle' && Object.values(sources).some((s) => s.kind === 'sql')
+  const tenantCol = tenancyOn ? tenantField(project) : undefined
+  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled, screensByEntity, triggers: project.triggers, supabaseConn: project.supabase, supabaseAuth: project.auth?.enabled === true && project.auth.provider === 'supabase', tenantField: tenantCol, tenantScoped: (name) => isTenantScoped(project, name) })
   const byName = new Map(prepared.map((s) => [s.name, s]))
   // Raw (unprepared) entities keep their original field set - needed to derive
   // relation display-field names that match withRelationLabels (the prepared
@@ -2648,14 +2706,23 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   const authRegister = dbBackedAuth && project.auth?.register === true
   const authUserAdmin = dbBackedAuth && accessEnabled && project.auth?.userAdmin === true
   const authTwoFactor = dbBackedAuth && project.auth?.twoFactor === true
-  const dataLayerList = project.dataLayer === 'drizzle' && sqlEntities.length > 0 ? dataLayerFiles(project, sqlEntities, sources, dbBackedAuth, authTwoFactor) : []
+  // The audit trail persists to a real table whenever the typed layer is active;
+  // without it there is nowhere to put one, so the store stays in-memory.
+  const auditPersisted = project.audit === true && dataLayerActive
+  const dataLayerList = project.dataLayer === 'drizzle' && sqlEntities.length > 0 ? dataLayerFiles(project, sqlEntities, sources, dbBackedAuth, authTwoFactor, auditPersisted, tenantCol) : []
   // Without the Drizzle layer (or on MSSQL, which it can't cover), ship plain SQL the
   // user runs once against their database - otherwise the tables must pre-exist.
   const ddlFiles = sqlEntities.length > 0 && !dataLayerActive ? sqlDdlFiles(project.entities, sources) : []
   // The builtin cookie-session auth files (hooks.server, /login, session store, ...)
   // are skipped for the Supabase provider - SvAuthGate replaces them.
-  const authFileList = authEnabled && !supabaseAuth ? authFiles(project, dbBackedAuth, accessEnabled) : []
-  const auditFiles = auditEnabled ? [auditModule(), auditRouteFile(), auditViewerPage()] : []
+  const authFileList = authEnabled && !supabaseAuth ? authFiles(project, dbBackedAuth, accessEnabled, tenantCol) : []
+  const auditFiles = auditEnabled ? [auditModule(auditPersisted), auditRouteFile(), auditViewerPage()] : []
+  // Scheduled jobs. `emailReal` gates the email kind the same way the auth flows
+  // gate theirs - an email job without the email layer emits a warning slot
+  // rather than an import that would not resolve.
+  const jobList = (project.jobs ?? []).filter((j) => j.id && j.cron)
+  const jobFileList = jobList.length ? jobsFiles(project, jobList, project.auth?.email === true) : []
+  const tenantFileList = tenantCol ? [tenantModule(tenantCol)] : []
   // Routes that render bare (no shell) + skip the login guard.
   const publicAuthRoutes = authEnabled && !supabaseAuth ? ['/login', ...(authTwoFactor ? ['/login/verify'] : []), ...(authRegister ? ['/register', '/forgot-password', '/reset-password'] : [])] : []
   let navExtras = auditEnabled ? [...nav, { href: '/audit', label: 'Audit log', id: '__audit__' }] : nav
@@ -2663,7 +2730,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   if (authUserAdmin) navExtras = [...navExtras, { href: '/users', label: 'Users', id: '__users__' }]
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
   const handleFiles = project.screens.some(screenHasCode) ? [handlesModuleFile()] : []
-  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...ddlFiles, ...auditFiles, ...i18nFiles, ...actionRouteFiles, ...ssrHelpers, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled && !supabaseAuth, supabaseAuth, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
+  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...ddlFiles, ...auditFiles, ...jobFileList, ...tenantFileList, ...i18nFiles, ...actionRouteFiles, ...ssrHelpers, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled && !supabaseAuth, supabaseAuth, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the
@@ -2692,7 +2759,14 @@ function i18nModule(project: StudioProject): GeneratedFile {
   const en = buildMessages(project)
   const localeUnion = locales.map((l) => JSON.stringify(l)).join(' | ')
   const seeded = JSON.stringify(en, null, 2).replace(/\n/g, '\n  ')
-  const messagesEntries = locales.map((l) => `  ${JSON.stringify(l)}: ${l === def ? seeded : '{}'},`).join('\n')
+  // Every locale is seeded with the SAME keys, not just the default. An empty
+  // `{}` left the translator to discover the key names by reading the codegen;
+  // seeding means the work is "translate these values in place". Values start as
+  // the default-locale copy, so an untranslated app reads correctly rather than
+  // falling back to raw keys.
+  const messagesEntries = locales
+    .map((l) => `  ${JSON.stringify(l)}: ${seeded},${l === def ? '' : ' // TODO: translate'}`)
+    .join('\n')
   return {
     path: 'src/lib/i18n.ts',
     description: 'Localization: locales, the current-locale store, the message catalog, and t() / localizeCols helpers.',
@@ -2702,8 +2776,9 @@ export type Locale = ${localeUnion}
 export const locales: Locale[] = ${JSON.stringify(locales)} as Locale[]
 export const currentLocale = writable<Locale>(${JSON.stringify(def)})
 
-// The default locale is seeded from your schema + screen labels. Fill the other
-// locales in with the same keys; missing keys fall back to the default.
+// Seeded from your schema + screen labels. Every locale starts with the same
+// keys and the default-locale text, so translating is editing values in place -
+// no key hunting. Anything you delete falls back to the default locale.
 const messages: Record<Locale, Record<string, string>> = {
 ${messagesEntries}
 }
@@ -2722,12 +2797,18 @@ export function localizeCols<T extends { field?: string | number; header?: strin
   }
 }
 
-/** The audit store: an in-memory `ServerDataSource` of change records + a
- *  `recordAudit` writer. Swap the source for SQL/Supabase to persist the trail. */
-function auditModule(): GeneratedFile {
+/** The audit store: the `AuditEntry` schema, a source, and the `recordAudit`
+ *  writer the API routes call.
+ *
+ *  With the typed data layer active the trail is written to a real `audit_log`
+ *  table, so it survives a restart. Without one there is nowhere to put it and
+ *  it falls back to an in-memory source (fine for a demo, useless as an audit
+ *  trail - the emitted comment says so). */
+function auditModule(persisted = false): GeneratedFile {
+  if (persisted) return auditModulePersisted()
   return {
     path: 'src/lib/audit.ts',
-    description: 'Audit trail store: the AuditEntry schema, an in-memory source, and recordAudit(). Swap the source for a DB table to persist it.',
+    description: 'Audit trail store: the AuditEntry schema, an in-memory source, and recordAudit(). NOT persisted - enable the typed data layer to write to a real table.',
     contents: `import { createInMemoryDataSource } from '@svgrid/enterprise'
 import type { EntitySchema } from '@svgrid/enterprise'
 
@@ -2784,6 +2865,248 @@ export async function recordAudit(input: {
 }
 `,
   }
+}
+
+/** The DB-backed audit store (typed data layer active): writes to `audit_log`
+ *  via Drizzle, so the trail survives a restart and records before/after values
+ *  rather than just which field names changed. */
+function auditModulePersisted(): GeneratedFile {
+  return {
+    path: 'src/lib/audit.ts',
+    description: 'Audit trail: the AuditEntry schema, a Drizzle-backed source over audit_log, and recordAudit() with before/after snapshots.',
+    contents: `import { count, desc } from 'drizzle-orm'
+import type { EntitySchema } from '@svgrid/enterprise'
+import { db } from '$lib/server/db'
+import { auditLog } from '$lib/server/db/schema'
+
+export type AuditEntry = {
+  id: string
+  at: string
+  actor: string
+  entity: string
+  action: 'create' | 'update' | 'delete'
+  recordId: string
+  summary: string
+  /** JSON snapshot of the row before the change (update / delete). */
+  before?: string | null
+  /** JSON snapshot of the row after it (create / update). */
+  after?: string | null
+}
+
+export const auditSchema: EntitySchema<AuditEntry> = {
+  name: 'audit',
+  idField: 'id',
+  fields: [
+    { field: 'id', type: 'text', primaryKey: true, readonly: true },
+    { field: 'at', type: 'datetime', label: 'When' },
+    { field: 'actor', type: 'text', label: 'Actor' },
+    { field: 'entity', type: 'text', label: 'Entity' },
+    { field: 'action', type: 'enum', label: 'Action', options: [{ value: 'create', label: 'Create' }, { value: 'update', label: 'Update' }, { value: 'delete', label: 'Delete' }] },
+    { field: 'recordId', type: 'text', label: 'Record' },
+    { field: 'summary', type: 'text', label: 'Summary' },
+    { field: 'before', type: 'json', label: 'Before', readonly: true },
+    { field: 'after', type: 'json', label: 'After', readonly: true },
+  ],
+}
+
+const toEntry = (r: typeof auditLog.$inferSelect): AuditEntry => ({
+  id: String(r.id),
+  at: typeof r.at === 'string' ? r.at : new Date(r.at as unknown as Date).toISOString(),
+  actor: r.actor,
+  entity: r.entity,
+  action: r.action as AuditEntry['action'],
+  recordId: r.recordId,
+  summary: r.summary,
+  before: r.before ?? null,
+  after: r.after ?? null,
+})
+
+/** Read-only \\\`ServerDataSource\\\` for the /audit viewer. Newest first, paged in
+ *  the database so a long trail doesn't load in one go. No write methods: the
+ *  trail is append-only through \\\`recordAudit\\\`. */
+export const auditSource = {
+  async getRows(request: { startRow?: number; endRow?: number }) {
+    const start = request.startRow ?? 0
+    const limit = Math.max(1, (request.endRow ?? start + 25) - start)
+    const [rows, counted] = await Promise.all([
+      db.select().from(auditLog).orderBy(desc(auditLog.at)).limit(limit).offset(start),
+      db.select({ n: count() }).from(auditLog),
+    ])
+    return { rows: rows.map(toEntry), rowCount: Number(counted.at(0)?.n ?? 0) }
+  },
+}
+
+/** Append one change record. Called by the API routes' \\\`audit\\\` hook. */
+export async function recordAudit(input: {
+  entity: string
+  action: 'create' | 'update' | 'delete'
+  recordId: string | null
+  values?: Record<string, unknown>
+  before?: Record<string, unknown> | null
+  actor?: string
+}): Promise<void> {
+  const summary =
+    input.action === 'delete'
+      ? \`Deleted \${input.entity} \${input.recordId ?? ''}\`.trim()
+      : \`\${input.action === 'create' ? 'Created' : 'Updated'} \${input.entity}\${input.values ? ' (' + Object.keys(input.values).join(', ') + ')' : ''}\`
+  await db.insert(auditLog).values({
+    at: new Date().toISOString(),
+    actor: input.actor ?? 'system',
+    entity: input.entity,
+    action: input.action,
+    recordId: input.recordId ?? '',
+    summary,
+    before: input.before ? JSON.stringify(input.before) : null,
+    after: input.values ? JSON.stringify(input.values) : null,
+  } as typeof auditLog.$inferInsert)
+}
+`,
+  }
+}
+
+/**
+ * The tenant resolver: reads the signed-in user's tenant off the session.
+ *
+ * `requireTenant` THROWS when there is no tenant, and the transport turns a
+ * thrown scope resolver into a 403 - so an unauthenticated or tenant-less
+ * request fails closed instead of silently querying every tenant's rows.
+ */
+function tenantModule(field: string): GeneratedFile {
+  return {
+    path: 'src/lib/server/tenant.ts',
+    description: 'Resolve the caller\'s tenant from the session; used to scope every API route.',
+    contents: `// Regenerated by SvGrid Studio. Multi-tenancy: which tenant is calling?
+//
+// The tenant is carried on the session (see hooks.server.ts / auth.ts) and
+// stamped onto \`event.locals\`. Every scoped API route calls requireTenant().
+
+export type TenantEvent = { locals?: Record<string, unknown> }
+
+/** The caller's tenant id, or null when there is none. */
+export function getTenant(event: TenantEvent): string | null {
+  const t = event.locals?.${field}
+  return t == null || t === '' ? null : String(t)
+}
+
+/**
+ * The caller's tenant id, or THROW.
+ *
+ * Throwing is the point: the route's \`scope\` turns it into a 403. Returning
+ * null here would let the query run unscoped, which is the one failure mode
+ * multi-tenancy cannot have.
+ */
+export function requireTenant(event: TenantEvent): string {
+  const t = getTenant(event)
+  if (!t) throw new Error('No tenant on the session - sign in again.')
+  return t
+}
+`,
+  }
+}
+
+/**
+ * Scheduled jobs: the handler registry + the guarded `/api/cron` route.
+ *
+ * Server-side, unlike `@svgrid/enterprise`'s `createScheduler`, which only ticks
+ * while a browser tab is open. The platform's scheduler calls the route; the
+ * route checks `CRON_SECRET` and runs the due handlers.
+ */
+function jobsFiles(project: StudioProject, jobs: ScheduledJob[], emailAvailable: boolean): GeneratedFile[] {
+  const handler = (j: ScheduledJob): string => {
+    const label = jsStr(j.name)
+    if (j.kind === 'email') {
+      const ent = project.entities.find((e) => e.name === j.entity)
+      const to = jsStr(j.to ?? '')
+      const subject = jsStr(j.subject ?? j.name)
+      if (!ent || !emailAvailable || !j.to) {
+        // Emit the slot anyway so the schedule is real and the gap is obvious,
+        // rather than silently dropping the job.
+        const why = !emailAvailable ? 'email is not enabled on this project' : !j.to ? 'no recipient set' : `unknown entity ${j.entity}`
+        return `  ${JSON.stringify(j.id)}: async () => {\n    // ${label}: cannot send - ${why}.\n    console.warn('cron ${j.id}: skipped (${why})')\n  },`
+      }
+      const n = namesFor(ent)
+      return `  ${JSON.stringify(j.id)}: async () => {
+    const { rows, rowCount } = await ${n.sourceVar}.getRows({ startRow: 0, endRow: 10, sortModel: [], filterModel: {} })
+    const items = rows.map((r) => '<li>' + Object.values(r).slice(0, 3).map(String).join(' &middot; ') + '</li>').join('')
+    await sendEmail(${to}, ${subject}, '<p>' + rowCount + ' ${ent.name} total. Most recent:</p><ul>' + items + '</ul>')
+  },`
+    }
+    const body = (j.code ?? '').trim() || `console.log('cron ${j.id}: no body yet')`
+    return `  ${JSON.stringify(j.id)}: async () => {\n${body.split('\n').map((l) => '    ' + l).join('\n')}\n  },`
+  }
+
+  const entityImports = new Set<string>()
+  for (const j of jobs) {
+    if (j.kind !== 'email') continue
+    const ent = project.entities.find((e) => e.name === j.entity)
+    if (ent && emailAvailable && j.to) entityImports.add(namesFor(ent).sourceVar)
+  }
+  const imports = [
+    ...(entityImports.size ? [`import { ${[...entityImports].sort().join(', ')} } from '$lib/data'`] : []),
+    ...(jobs.some((j) => j.kind === 'email') && emailAvailable ? [`import { sendEmail } from '$lib/server/email'`] : []),
+  ]
+
+  const table = jobs.map((j) => ` *   ${j.id.padEnd(20)} ${j.cron.padEnd(16)} ${j.name}`).join('\n')
+  const jobsTs = `// Regenerated by SvGrid Studio. Scheduled job handlers.
+//
+// Schedule (UTC):
+${table}
+//
+// Runs on the server, triggered by /api/cron - NOT in the browser. Edit a
+// handler body freely; the registry keys are what /api/cron dispatches on.
+${imports.join('\n')}
+
+export const jobs: Record<string, () => Promise<void>> = {
+${jobs.map(handler).join('\n')}
+}
+
+/** Job ids that are switched on. /api/cron without ?job= runs exactly these. */
+export const enabledJobs: string[] = ${JSON.stringify(jobs.filter((j) => j.enabled !== false).map((j) => j.id))}
+`
+
+  const routeTs = `import { json, error } from '@sveltejs/kit'
+import { env } from '$env/dynamic/private'
+import type { RequestHandler } from './$types'
+import { jobs, enabledJobs } from '$lib/server/jobs'
+
+/**
+ * Scheduled-job endpoint. Your platform's scheduler calls this (Vercel Cron, a
+ * GitHub Actions schedule, or a crontab running \`curl\`). See DEPLOY.md.
+ *
+ * Guarded by CRON_SECRET: send it as \`Authorization: Bearer <secret>\` or
+ * \`?secret=<secret>\`. With no CRON_SECRET set the route refuses to run rather
+ * than leaving a public "do work" URL open.
+ */
+const authorized = (request: Request, url: URL): boolean => {
+  const secret = env.CRON_SECRET
+  if (!secret) return false
+  const header = request.headers.get('authorization')
+  return header === 'Bearer ' + secret || url.searchParams.get('secret') === secret
+}
+
+const run: RequestHandler = async ({ request, url }) => {
+  if (!authorized(request, url)) throw error(401, 'cron: missing or invalid CRON_SECRET')
+  const only = url.searchParams.get('job')
+  const ids = only ? [only] : enabledJobs
+  const results: Array<{ job: string; ok: boolean; error?: string }> = []
+  for (const id of ids) {
+    const fn = jobs[id]
+    if (!fn) { results.push({ job: id, ok: false, error: 'unknown job' }); continue }
+    // One failing job must not stop the rest of the run.
+    try { await fn(); results.push({ job: id, ok: true }) }
+    catch (err) { results.push({ job: id, ok: false, error: err instanceof Error ? err.message : String(err) }) }
+  }
+  return json({ ran: results.length, results })
+}
+
+export const GET = run
+export const POST = run
+`
+
+  return [
+    { path: 'src/lib/server/jobs.ts', description: 'Scheduled job handlers, keyed by job id.', contents: jobsTs },
+    { path: 'src/routes/api/cron/+server.ts', description: 'Guarded cron endpoint that runs the scheduled jobs.', contents: routeTs },
+  ]
 }
 
 /** The read API for the audit trail (the /audit viewer reads it via the transport). */
@@ -2908,7 +3231,7 @@ export function authorizeAction(role: AppRole, action: 'read' | WriteAction, scr
  *  `hooks.server.ts` that resolves the caller into `event.locals.role`/`user` (the loop
  *  the RBAC layer already expects), a `/login` page + sign-out, and the `App.Locals`
  *  type augmentation. Works across every data source (no DB required for the demo). */
-function authFiles(project: StudioProject, dbBacked = false, accessEnabled = false): GeneratedFile[] {
+function authFiles(project: StudioProject, dbBacked = false, accessEnabled = false, tenantColumn?: string): GeneratedFile[] {
   const users = seedUsers(project)
   const demo = users[0]!
   const protect = project.auth?.protect !== false
@@ -3172,7 +3495,10 @@ import { SESSION_COOKIE, readSession } from '$lib/server/auth'
 export const handle: Handle = async ({ event, resolve }) => {
   const user = await readSession(event.cookies.get(SESSION_COOKIE))
   event.locals.user = user ?? undefined
-  event.locals.role = user?.role
+  event.locals.role = user?.role${tenantColumn ? `
+  // Multi-tenancy: the tenant travels on the session, so every scoped API route
+  // reads it from here rather than trusting anything the client sends.
+  event.locals.${tenantColumn} = (user as { ${tenantColumn}?: string } | null | undefined)?.${tenantColumn}` : ''}
   return resolve(event)
 }
 `
@@ -3196,7 +3522,7 @@ export {}
   const layoutServerTs = `import type { LayoutServerLoad } from './$types'
 ${protect ? `import { redirect } from '@sveltejs/kit'\n\nconst PUBLIC = new Set(${JSON.stringify(publicRoutes)})\n` : ''}
 // Expose the signed-in user + role to every page (read as \`data.user\` / \`data.role\`,
-// or \`$page.data\`).${protect ? ' Unauthenticated visitors are sent to /login.' : ''}
+// or \`page.data\`).${protect ? ' Unauthenticated visitors are sent to /login.' : ''}
 export const load: LayoutServerLoad = async ({ locals${protect ? ', url' : ''} }) => {
 ${protect ? "  if (!locals.user && !PUBLIC.has(url.pathname)) throw redirect(302, '/login?redirectTo=' + encodeURIComponent(url.pathname))\n" : ''}  return { user: locals.user ?? null, role: locals.role ?? null }
 }
@@ -3934,8 +4260,44 @@ function dzColumn(dialect: DzDialect, field: EntityField, colName: string, isPk:
 /** The Drizzle `auth_users` table (added when auth + data layer are both on): the
  *  DB-backed user store the login flow reads. Fixed shape: id, unique email, name,
  *  role, passwordHash. Returns the table block + the core imports it needs. */
-function dzUsersTable(dialect: DzDialect, tableFn: string, with2fa = false): { block: string; imports: string[] } {
-  const tail = '\n})\nexport type AuthUserRow = typeof authUsers.$inferSelect\nexport type AuthUserNew = typeof authUsers.$inferInsert'
+/** The tenant-scoping column, per dialect. Indexed-by-convention (callers filter
+ *  on it in every query), not null - a row with no tenant belongs to nobody and
+ *  would be invisible to every scoped read. */
+function dzTenantColumn(dialect: DzDialect, field: string): { expr: string; imports: string[] } {
+  const col = field.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase()
+  if (dialect === 'mysql') return { expr: `varchar(${JSON.stringify(col)}, { length: 128 }).notNull()`, imports: ['varchar'] }
+  return { expr: `text(${JSON.stringify(col)}).notNull()`, imports: ['text'] }
+}
+
+/** The audit-trail table, in the same schema as the entities so one migration
+ *  covers it. Shaped like `AuditEntry` in `$lib/audit`, plus `before` / `after`
+ *  JSON snapshots that the in-memory store never kept. */
+function dzAuditTable(dialect: DzDialect, tableFn: string): { block: string; imports: string[] } {
+  const tail = '\n})\nexport type AuditRow = typeof auditLog.$inferSelect\nexport type AuditNew = typeof auditLog.$inferInsert'
+  if (dialect === 'postgres') {
+    return {
+      imports: [tableFn, 'serial', 'text', 'timestamp'],
+      block: `export const auditLog = ${tableFn}("audit_log", {\n  "id": serial("id").primaryKey(),\n  "at": timestamp("at").notNull().defaultNow(),\n  "actor": text("actor").notNull(),\n  "entity": text("entity").notNull(),\n  "action": text("action").notNull(),\n  "recordId": text("record_id").notNull(),\n  "summary": text("summary").notNull(),\n  "before": text("before"),\n  "after": text("after"),${tail}`,
+    }
+  }
+  if (dialect === 'mysql') {
+    return {
+      imports: [tableFn, 'int', 'varchar', 'text', 'timestamp'],
+      block: `export const auditLog = ${tableFn}("audit_log", {\n  "id": int("id").autoincrement().primaryKey(),\n  "at": timestamp("at").notNull().defaultNow(),\n  "actor": varchar("actor", { length: 255 }).notNull(),\n  "entity": varchar("entity", { length: 128 }).notNull(),\n  "action": varchar("action", { length: 16 }).notNull(),\n  "recordId": varchar("record_id", { length: 128 }).notNull(),\n  "summary": text("summary").notNull(),\n  "before": text("before"),\n  "after": text("after"),${tail}`,
+    }
+  }
+  // sqlite / turso
+  return {
+    imports: [tableFn, 'integer', 'text'],
+    block: `export const auditLog = ${tableFn}("audit_log", {\n  "id": integer("id").primaryKey({ autoIncrement: true }),\n  "at": text("at").notNull(),\n  "actor": text("actor").notNull(),\n  "entity": text("entity").notNull(),\n  "action": text("action").notNull(),\n  "recordId": text("record_id").notNull(),\n  "summary": text("summary").notNull(),\n  "before": text("before"),\n  "after": text("after"),${tail}`,
+  }
+}
+
+function dzUsersTable(dialect: DzDialect, tableFn: string, with2fa = false, tenantColumn?: string): { block: string; imports: string[] } {
+  // Multi-tenancy: the user's own tenant is where every scoped request gets its
+  // tenant from, so the user store has to carry it.
+  const ten = tenantColumn ? `\n  ${JSON.stringify(tenantColumn)}: ${dzTenantColumn(dialect, tenantColumn).expr},` : ''
+  const tail = `${ten}\n})\nexport type AuthUserRow = typeof authUsers.$inferSelect\nexport type AuthUserNew = typeof authUsers.$inferInsert`
   if (dialect === 'postgres') {
     const tfa = with2fa ? '\n  "twoFactor": boolean("two_factor").notNull().default(false),' : ''
     return {
@@ -3962,7 +4324,7 @@ function dzUsersTable(dialect: DzDialect, tableFn: string, with2fa = false): { b
  *  there's a SQL-bound entity on a supported dialect): a schema (the source of truth
  *  for drizzle-kit migrations), a client, a typed repository per entity, and the
  *  drizzle.config.ts. The connected `+server.ts` routes read the same tables. */
-function dataLayerFiles(project: StudioProject, sqlEntities: EntitySchema[], sources: Record<string, EntityDataSource>, includeUsers = false, usersTwoFactor = false): GeneratedFile[] {
+function dataLayerFiles(project: StudioProject, sqlEntities: EntitySchema[], sources: Record<string, EntityDataSource>, includeUsers = false, usersTwoFactor = false, includeAudit = false, tenantColumn?: string): GeneratedFile[] {
   const firstSql = sources[sqlEntities[0]!.name]
   const dialect = dzDialect(firstSql?.kind === 'sql' ? firstSql.dialect : undefined)
   if (!dialect) return [] // MSSQL: raw route only (Drizzle has no SQL Server driver)
@@ -3985,14 +4347,28 @@ function dataLayerFiles(project: StudioProject, sqlEntities: EntitySchema[], sou
       c.imports.forEach((i) => colImports.add(i))
       return `  ${JSON.stringify(f.field)}: ${c.expr},`
     })
+    // Multi-tenancy: the scoping column the API route filters/stamps on. Added
+    // here (not to the entity's field list) so it stays out of forms and grids -
+    // it is infrastructure, not data the user edits.
+    if (tenantColumn && isTenantScoped(project, e.name) && !e.fields.some((f) => f.field === tenantColumn)) {
+      const t = dzTenantColumn(dialect, tenantColumn)
+      t.imports.forEach((i) => colImports.add(i))
+      cols.push(`  ${JSON.stringify(tenantColumn)}: ${t.expr},`)
+    }
     tableBlocks.push(`export const ${tableVar} = ${cfg.table}(${JSON.stringify(table)}, {\n${cols.join('\n')}\n})\nexport type ${type}Row = typeof ${tableVar}.$inferSelect\nexport type ${type}New = typeof ${tableVar}.$inferInsert`)
     meta.push({ e, tableVar, pkKey: pk, pkNumber })
   }
   // Auth: the DB-backed user store lives in the same schema (so one migration covers it).
   if (includeUsers) {
-    const u = dzUsersTable(dialect, cfg.table, usersTwoFactor)
+    const u = dzUsersTable(dialect, cfg.table, usersTwoFactor, tenantColumn)
     u.imports.forEach((i) => colImports.add(i))
     tableBlocks.push(u.block)
+  }
+  // Audit: same reasoning - one migration covers the trail alongside the data.
+  if (includeAudit) {
+    const a = dzAuditTable(dialect, cfg.table)
+    a.imports.forEach((i) => colImports.add(i))
+    tableBlocks.push(a.block)
   }
   const schemaTs = `// Regenerated by SvGrid Studio. Typed database schema (Drizzle ORM) - the source of
 // truth for migrations: edit here, then run \`npm run db:generate\` && \`npm run db:migrate\`.
@@ -4487,6 +4863,12 @@ function envExample(allSource: string): string | null {
     if (allSource.includes("'google'") || allSource.includes('"google"')) { lines.push('# GOOGLE_CLIENT_ID='); lines.push('# GOOGLE_CLIENT_SECRET=') }
     if (allSource.includes("'oidc'") || allSource.includes('"oidc"')) { lines.push('# OIDC_ISSUER=  # e.g. https://login.microsoftonline.com/<tenant>/v2.0'); lines.push('# OIDC_CLIENT_ID='); lines.push('# OIDC_CLIENT_SECRET=') }
   }
+  if (allSource.includes('env.CRON_SECRET')) {
+    lines.push('')
+    lines.push('# Shared secret for /api/cron. The endpoint refuses to run without it,')
+    lines.push('# so set the same value here and in your scheduler.')
+    lines.push('CRON_SECRET=')
+  }
   if (lines.length === 0) return null
   lines.push('')
   lines.push('# Optional: your SvGrid license key removes the unlicensed watermark.')
@@ -4514,6 +4896,17 @@ export function runtimeDeps(project: StudioProject, allSource: string): Record<s
   if (/from ['"]hyperformula['"]/.test(allSource)) dependencies['hyperformula'] = '^3.3.0'
   if (/from ['"]jszip['"]/.test(allSource)) dependencies['jszip'] = '^3.10.1'
   if (/from ['"]pdfmake(?:\/[^'"]*)?['"]/.test(allSource)) dependencies['pdfmake'] = '^0.2.10'
+  // xlsx / pdf export buttons reach these through @svgrid/enterprise, which
+  // imports them lazily - so they never appear in the generated source and the
+  // scans above cannot see them. Key off the export config instead, or the app
+  // ships an Export Excel button that throws on the missing peer dep.
+  for (const screen of project.screens ?? []) {
+    for (const block of screen.blocks ?? []) {
+      if (block.config.kind !== 'grid') continue
+      if (block.config.export?.xlsx) dependencies['jszip'] = '^3.10.1'
+      if (block.config.export?.pdf) dependencies['pdfmake'] = '^0.2.10'
+    }
+  }
   // nodemailer is dynamically imported by the email layer only on the SMTP branch.
   if (/import\(['"]nodemailer['"]\)/.test(allSource)) dependencies['nodemailer'] = '^6.9.0'
   if (project.dataLayer === 'drizzle' && /from ['"]drizzle-orm(?:\/[^'"]*)?['"]/.test(allSource)) dependencies['drizzle-orm'] = '^0.44.0'
@@ -4620,6 +5013,66 @@ export default defineConfig({
  * Download it, `npm install`, `npm run dev`. This is what the designer's
  * "Download .zip" produces.
  */
+/**
+ * The platform-side half of scheduled jobs: something has to CALL `/api/cron`.
+ *
+ * Vercel has native cron, so its schedule goes in `vercel.json` and needs no
+ * secrets. Every other target gets a GitHub Actions schedule that curls the
+ * endpoint - it works anywhere the app is reachable, and stays inert until
+ * `CRON_URL` / `CRON_SECRET` are set, so CI is green before you configure it.
+ */
+function cronScheduleFiles(project: StudioProject, plan: DeployPlan): GeneratedFile[] {
+  const jobs = (project.jobs ?? []).filter((j) => j.id && j.cron && j.enabled !== false)
+  if (!jobs.length) return []
+
+  if (plan.label === 'Vercel') {
+    // Vercel Cron hits the path on its own schedule; one entry per job so each
+    // keeps its own cron expression.
+    const crons = jobs.map((j) => ({ path: `/api/cron?job=${encodeURIComponent(j.id)}`, schedule: j.cron }))
+    return [{
+      path: 'vercel.json',
+      description: 'Vercel Cron schedule for the app\'s background jobs.',
+      contents: JSON.stringify({ crons }, null, 2) + '\n',
+    }]
+  }
+
+  const steps = jobs.map((j) => `      - name: ${j.name} (${j.cron})
+        if: \${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '${j.cron}' }}
+        run: |
+          curl -fsS -X POST "$CRON_URL?job=${encodeURIComponent(j.id)}" \\
+            -H "authorization: Bearer $CRON_SECRET"
+`).join('')
+  const schedules = [...new Set(jobs.map((j) => j.cron))].map((c) => `    - cron: '${c}'`).join('\n')
+
+  return [{
+    path: '.github/workflows/cron.yml',
+    description: 'Scheduled job runner: calls /api/cron on the deployed app.',
+    contents: `# Scheduled jobs for the generated app. GitHub runs this on the schedules
+# below and it calls the app's /api/cron endpoint.
+#
+# Set two repository secrets before it does anything:
+#   CRON_URL     https://<your-app>/api/cron
+#   CRON_SECRET  the same value as the app's CRON_SECRET env var
+# Until then the job short-circuits, so CI stays green.
+name: Scheduled jobs
+
+on:
+  schedule:
+${schedules}
+  workflow_dispatch:
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    if: \${{ secrets.CRON_URL != '' && secrets.CRON_SECRET != '' }}
+    env:
+      CRON_URL: \${{ secrets.CRON_URL }}
+      CRON_SECRET: \${{ secrets.CRON_SECRET }}
+    steps:
+${steps}`,
+  }]
+}
+
 export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
   const generated = emitStudioProject(project)
   const allSource = generated.map((f) => f.contents).join('\n')
@@ -4634,6 +5087,7 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     { path: 'vitest.config.ts', description: 'Test runner config for the generated smoke tests (npm test).', contents: VITEST_CONFIG },
     { path: 'src/lib/schemas.test.ts', description: 'Smoke tests: every entity renders + round-trips through its data source.', contents: smokeTestFile(project) },
     ...plan.files,
+    ...cronScheduleFiles(project, plan),
     ...SCAFFOLD_STATIC,
     ...(envExample(allSource) ? [{ path: '.env.example', description: 'Environment variables the app reads (copy to .env and fill in).', contents: envExample(allSource)! }] : []),
     ...(envDotFile(allSource) ? [{ path: '.env', description: 'Local env (git-ignored): a real random SESSION_SECRET is pre-filled so sessions are secure out of the box; fill in the rest.', contents: envDotFile(allSource)! }] : []),

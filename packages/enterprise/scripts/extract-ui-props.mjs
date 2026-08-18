@@ -34,6 +34,15 @@ const COMPONENTS = [
   'SvMaskedInput', 'SvPhoneInput', 'SvTagsInput', 'SvDurationInput', 'SvRadioGroup',
   'SvButtonGroup', 'SvListBox', 'SvDropDownList', 'SvComboBox', 'SvAutoComplete',
   'SvMultiSelect', 'SvRepeatButton', 'SvRichText', 'SvTree', 'SvCountryInput',
+  // wave 2: typography / prose primitives, feedback, structure, date-time +
+  // richer pickers. Closes most of the gap between the toolbox and the kit -
+  // a freestanding page is mostly headings and paragraphs, which the toolbox
+  // previously could not place at all.
+  'SvTitle', 'SvText', 'SvAnchor', 'SvBlockquote', 'SvCode', 'SvKbd', 'SvMark', 'SvList',
+  'SvSpinner', 'SvLoadingOverlay', 'SvResult',
+  'SvCollapsible', 'SvCarousel',
+  'SvDateTimePicker', 'SvTimePicker', 'SvDateRangeInput', 'SvSegmented', 'SvTreeSelect',
+  'SvFileUpload',
 ]
 
 /** Shared prop-type sources resolved for `Props = X & {...}` intersections and

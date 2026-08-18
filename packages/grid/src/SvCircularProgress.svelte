@@ -89,7 +89,7 @@
     position: relative; display: inline-flex; flex: none;
   }
   .sv-circ--success { --_c: var(--sg-success, #16a34a); }
-  .sv-circ--warning { --_c: var(--sg-warning, #f59e0b); }
+  .sv-circ--warning { --_c: var(--sg-warning, #d97706); }
   .sv-circ--danger { --_c: var(--sg-danger, #dc2626); }
   .sv-circ__svg { display: block; transform: rotate(-90deg); }
   .sv-circ__track { stroke: var(--sg-border, #e2e8f0); }

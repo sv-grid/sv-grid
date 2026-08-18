@@ -32,6 +32,8 @@ export {
   createGroupedRowModel,
   createPaginatedRowModel,
   createSortedRowModel,
+  createTreeRowModel,
+  flattenTreeData,
   applyGroupAggregate,
   filterFns,
   rowExpandingFeature,
@@ -52,6 +54,8 @@ export {
   type Column,
   type ColumnDef,
   type ColumnDefTemplate,
+  type GridColumnDef,
+  type GridColumns,
   type GroupAggregator,
   type Header,
   type HeaderContext,
@@ -62,6 +66,8 @@ export {
   type SvGrid as SvGridInstance,
   type SvGridOptions,
   type TableFeatures,
+  type TreeRowModelOptions,
+  type FlattenTreeOptions,
   type Updater,
 } from './core'
 
@@ -671,10 +677,13 @@ export {
 export {
   insertGroupFooters,
   buildAutoGroupColumns,
+  paginateGroupedRows,
   type GroupDisplayType,
   type GroupFooterOptions,
   type AutoGroupColumnSpec,
   type AutoGroupResult,
+  type GroupPaginationOptions,
+  type GroupPaginationResult,
 } from './group-display'
 export { getKeyboardIntent, getNextActiveCell, type GridKeyboardIntent } from './keyboard'
 export { createVirtualizer } from './virtualization/virtualizer'

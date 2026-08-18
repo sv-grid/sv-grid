@@ -125,6 +125,70 @@ user sees, combine it with database [Row-Level Security](./auth.md#scope-data-pe
 RBAC in the app for actions + screens, RLS in Postgres for row visibility. The
 two are complementary: keep both on for defense in depth.
 
+## Multi-tenancy
+
+RBAC answers "what may this role do?". Multi-tenancy answers a different
+question - "whose rows are these?" - and the two compose: a role gates the
+action, the tenant gates the data.
+
+```ts
+project.tenancy = { enabled: true }                        // column: tenantId
+project.tenancy = { enabled: true, field: 'orgId' }        // custom column
+project.tenancy = { enabled: true, sharedEntities: ['currencies'] }
+```
+
+One database, one deployment, rows partitioned by a tenant column. The tenant
+comes from the signed-in user's session - never from anything the client sends.
+
+**It is enforced on the server, on all four paths.** Scoping reads alone is not
+isolation, so the generated API route also:
+
+| Operation | What the route does |
+| --- | --- |
+| read | merges the tenant predicate into the query, written **last** so a client-supplied `tenantId` filter cannot widen it |
+| create | stamps the tenant onto the row, overriding whatever was sent, and **after** any business-rule hook |
+| update / delete | re-reads the target row under the scope first and returns `403` if it isn't yours - otherwise guessing an id would reach across tenants |
+| update (patch) | re-stamps the tenant, so a patch cannot hand a row to someone else |
+
+If the tenant cannot be resolved, `requireTenant` **throws** and the request
+fails with `403`. That is deliberate: returning "no tenant" would run the query
+unscoped, which is the one failure mode multi-tenancy cannot have.
+
+### What it generates
+
+- `src/lib/server/tenant.ts` - `getTenant` / `requireTenant` off `event.locals`
+- `scope: ...` on every scoped entity's `+server.ts`
+- a not-null tenant column on each scoped table **and** on `auth_users`, in the
+  same migration as everything else
+- the tenant on `event.locals` in `hooks.server.ts`
+
+The column is added to the database schema, not to the entity's field list, so
+it stays out of forms and grids - it is infrastructure, not data your users edit.
+
+### Requirements
+
+Needs the [auth starter](./auth.md) (to know the tenant), the
+[typed data layer](./drizzle.md) (so the column exists), and at least one
+SQL-bound entity. Missing any of them it degrades to **off** rather than
+emitting a half-enforced scope; the `studio_set_tenancy` MCP tool says so
+explicitly rather than letting you believe an unscoped app is scoped.
+
+`sharedEntities` stay global - reference tables like currencies or countries
+that every tenant reads get no column and no scope.
+
+### Using the primitive directly
+
+Outside Studio, the same mechanism is one option on `createKitHandlers`:
+
+```ts
+export const { POST } = createKitHandlers({
+  schema, source,
+  scope: ({ event }) => ({ field: 'tenantId', value: requireTenant(event) }),
+})
+```
+
+Return `null` to skip scoping for a caller (a super-admin), or throw to reject.
+
 ## See also
 
 - [Auth & secured screens](./auth.md) - authentication + RLS

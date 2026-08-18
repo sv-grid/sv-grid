@@ -42,20 +42,26 @@ for the common cases:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
 
   type Row = { id: number; name: string; amount: number }
   const data = $state<Row[]>([/* ...rows... */])
 
-  const columns: ColumnDef<Row>[] = [
+  const columns: GridColumns<Row> = [
     { id: 'id',     field: 'id',     header: 'ID',     width: 80 },
     { id: 'name',   field: 'name',   header: 'Name' },
-    { id: 'amount', field: 'amount', header: 'Amount', type: 'number' },
+    { id: 'amount', field: 'amount', header: 'Amount', cellDataType: 'number' },
   ]
 </script>
 
 <SvGrid {data} {columns} sortable filterable pageable />
 ```
+
+**Typing the columns array.** Use `GridColumns<Row>` (or `GridColumnDef<Row>`
+for a single column). The underlying `ColumnDef` takes *two* type parameters -
+a phantom feature bag first, your row type second - so `ColumnDef<Row>` is a
+compile error and `ColumnDef<{}, Row>[]` is the long form you will see in
+older docs. All three describe the same shape.
 
 ## Critical rules
 
@@ -70,8 +76,9 @@ code pairs.
   the column. Snippet params are `{ value, row, column }`.
 - **Set widths in `ColumnDef` (`width` / `minWidth` / `flex`)**, never
   with CSS on the grid's internal nodes - the renderer owns those.
-- **Use `type: 'number' | 'date' | 'boolean'`** for alignment, parsing,
-  and the right default editor, instead of hand-formatting.
+- **Use `cellDataType: 'number' | 'date' | 'boolean'`** for alignment,
+  parsing, and the right default editor, instead of hand-formatting. (The
+  member is `cellDataType`, not `type`.)
 
 ### Features & props → [data-and-features.md](./rules/data-and-features.md)
 

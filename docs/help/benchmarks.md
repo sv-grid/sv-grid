@@ -1,9 +1,14 @@
 # Performance benchmarks
 
 Headline numbers from the regression suite. Every figure below is from
-the same hardware + browser configuration, re-measured on each release;
-the script that produces them lives in
-`packages/grid/scripts/bench.ts` and is checked in.
+the same hardware + browser configuration, re-measured on each release.
+
+Reproduce them yourself rather than taking these on trust: the
+[benchmark harness](../recipes/benchmark-harness.md) is a copy-paste
+`<SvGrid>` probe that measures time-to-first-paint across any (rows x
+columns) matrix, and the bundle-size figures come from `pnpm size`
+(`packages/grid/scripts/measure-size.mjs`). Numbers from your own
+machine and data shape are the ones worth planning against.
 
 Live load - 100k rows x 100 columns with row + column virtualization:
 

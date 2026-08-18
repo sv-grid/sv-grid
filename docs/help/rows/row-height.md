@@ -29,13 +29,45 @@ The example gallery's
 [demos/10-custom-cells-and-themes.svelte](../../../examples/src/demos/10-custom-cells-and-themes.svelte)
 shows the density toggle in full.
 
-## Variable row height
+## Auto row height (size each row to its content)
 
-The built-in virtualizer assumes uniform row height. **Variable height is not
-supported by `<SvGrid>` directly**.
+`autoRowHeight` lets cell text wrap and sizes every row to its tallest cell:
 
-If you absolutely need it, use the lower-level headless virtualizer and roll
-your own row layout:
+```svelte
+<SvGrid {data} {columns} autoRowHeight />
+```
+
+Rows are measured after they render, so this works with virtualization. Before
+a row has been measured the grid uses `rowHeight` (or 30) as its estimate, which
+keeps the scrollbar stable as you scroll into rows for the first time:
+
+```svelte
+<!-- 44px is the starting guess; each row settles to its real height -->
+<SvGrid {data} {columns} autoRowHeight rowHeight={44} />
+```
+
+Things worth knowing:
+
+- It costs a measurement pass per row. With uniform content a fixed `rowHeight`
+  is cheaper - reach for `autoRowHeight` when you have free text, notes, or
+  wrapped addresses.
+- Passing a **function** `rowHeight` turns it off. You are already supplying
+  per-row heights, so measuring would fight you.
+- Rows re-measure when their content reflows, e.g. after a column resize.
+- Measurements are dropped when the row set changes, so filtering or replacing
+  `data` never sizes a new row by the old one's content.
+
+## Variable row height (you supply the numbers)
+
+Pass a function to size rows yourself, without measuring:
+
+```svelte
+<SvGrid {data} {columns} rowHeight={(i) => (data[i].tall ? 80 : 36)} />
+```
+
+The virtualizer handles the variable-size case natively (cumulative offsets), so
+scrolling and the total height stay correct. The same engine is available
+headless if you are building your own row layout:
 
 ```ts
 import { createSvelteVirtualizer } from '@svgrid/grid'

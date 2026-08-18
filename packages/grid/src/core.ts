@@ -45,6 +45,11 @@ export type CellSpanParams<TData extends RowData = RowData> = {
   value: unknown
 }
 
+/** The raw option list a column's `editorOptions` can supply. */
+export type EditorOptionSource = ReadonlyArray<
+  string | number | { value: string | number; label?: string; color?: string }
+>
+
 /** Params passed to a column's `valueParser(...)` on edit commit. */
 export type ValueParserParams<TData extends RowData = RowData> = {
   /** The value after built-in per-`editorType` coercion. */
@@ -172,6 +177,16 @@ export function applyGroupAggregate<TData extends RowData>(
   }
 }
 
+/**
+ * A column definition.
+ *
+ * `TFeatures` is a phantom parameter - it is threaded through nested
+ * `columns` groups but no member depends on it, so `{}`, `TableFeatures` and
+ * `typeof features` are all interchangeable here. It is deliberately left
+ * WITHOUT a default: `ColumnDef<Row>` would otherwise bind `Row` to this slot
+ * and silently type your data as `RowData`, losing every field-name check.
+ * Prefer {@link GridColumns} / {@link GridColumnDef} for the common case.
+ */
 export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = {
   id?: string
   field?: keyof TData & string
@@ -336,16 +351,20 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    *
    * Pass a function `(row) => options` for row-dependent (cascading)
    * options - e.g. City options that depend on Country in the same row.
+   *
+   * Either form may return a **Promise**, for options that come from the
+   * server. While it resolves, the editor shows a loading state and the cell
+   * renders its raw value.
+   *
+   * Results are cached so reopening an editor does not refetch: a static source
+   * per column, a per-row source per row AND per that row's data - so a cascade
+   * reloads by itself when the cell it depends on is edited. Call
+   * `api.refreshEditorOptions(columnId?)` when the list changes server-side.
    */
   editorOptions?:
-    | ReadonlyArray<
-        string | number | { value: string | number; label?: string; color?: string }
-      >
-    | ((
-        row: TData,
-      ) => ReadonlyArray<
-        string | number | { value: string | number; label?: string; color?: string }
-      >)
+    | EditorOptionSource
+    | Promise<EditorOptionSource>
+    | ((row: TData) => EditorOptionSource | Promise<EditorOptionSource>)
   /** When true, list/chips allow multiple selections. Cell value becomes an array. */
   editorMultiple?: boolean
   /** Separator used when joining array values for the readonly cell display. Defaults to ', '. */
@@ -408,6 +427,23 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
     | ReadonlyArray<string>
     | ((ctx: CellContext<TData>) => string | ReadonlyArray<string> | Record<string, boolean> | undefined | null)
 }
+
+/**
+ * A column definition keyed only by your row type - the ergonomic form of
+ * {@link ColumnDef}, whose first parameter is a phantom feature bag that is
+ * almost always `{}`.
+ *
+ * ```ts
+ * const columns: GridColumns<Person> = [{ field: 'firstName', header: 'Name' }]
+ * ```
+ *
+ * Interchangeable with `ColumnDef<{}, TData>` and `ColumnDef<typeof features,
+ * TData>` in both directions, so it mixes freely with existing code.
+ */
+export type GridColumnDef<TData extends RowData = RowData> = ColumnDef<TableFeatures, TData>
+
+/** An array of {@link GridColumnDef} - what you pass to `<SvGrid columns={...}>`. */
+export type GridColumns<TData extends RowData = RowData> = Array<GridColumnDef<TData>>
 
 export type Column<TData extends RowData> = {
   id: string
@@ -647,6 +683,119 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
     return buildGroups(rows, 0, 0, 'group')
   }
 }
+export type TreeRowModelOptions = {
+  /** Field holding each row's parent id. Rows with no parent are roots. */
+  parentField: string
+  /** Field holding the row's own id. Defaults to `'id'`. */
+  idField?: string
+}
+
+/**
+ * Client-side tree data: nest the grid's own flat rows into a parent/child
+ * hierarchy that `createExpandedRowModel` then walks.
+ *
+ * This works on the rows the grid already built rather than on raw data, so
+ * tree rows keep their cells, editing, selection and formatting - they are real
+ * data rows that happen to have children, not synthetic banners like grouping's.
+ * That is also why the model is parent-id based: nested source arrays never
+ * become rows (the grid only builds rows for `data`), so nested input is
+ * flattened first with {@link flattenTreeData}. One code path, no duplicated
+ * row construction.
+ *
+ * Rows are tagged `__treeRow` so `isGroupRow` does not mistake an expandable
+ * data row for a full-width group banner.
+ */
+export function createTreeRowModel<TData extends RowData>(
+  options: TreeRowModelOptions,
+): RowModelFactory<TData> {
+  const { parentField, idField = 'id' } = options
+  return ({ table, rows }) => {
+    if (!rows.length) return rows
+    const keyOf = (row: Row<TData>) => (row.original as any)?.[idField]
+    const parentOf = (row: Row<TData>) => (row.original as any)?.[parentField]
+
+    const present = new Set<unknown>()
+    for (const row of rows) present.add(keyOf(row))
+
+    const childrenByParent = new Map<unknown, Array<Row<TData>>>()
+    const roots: Array<Row<TData>> = []
+    for (const row of rows) {
+      const parent = parentOf(row)
+      // A row whose parent is absent (filtered out, or never existed) becomes a
+      // root rather than disappearing - silently dropping rows is worse than a
+      // shallower tree. Self-parenting is treated the same way.
+      if (parent == null || parent === keyOf(row) || !present.has(parent)) {
+        roots.push(row)
+        continue
+      }
+      const list = childrenByParent.get(parent) ?? []
+      list.push(row)
+      childrenByParent.set(parent, list)
+    }
+
+    // Guards a cycle in the parent chain from recursing forever.
+    const seen = new Set<unknown>()
+    const build = (row: Row<TData>, depth: number): Row<TData> => {
+      const key = keyOf(row)
+      const id = row.id
+      if (seen.has(key)) {
+        return { ...row, depth, subRows: [], getCanExpand: () => false } as Row<TData>
+      }
+      seen.add(key)
+      const subRows = (childrenByParent.get(key) ?? []).map((child) => build(child, depth + 1))
+      return {
+        ...row,
+        depth,
+        subRows,
+        leafCount: subRows.reduce((n, sub) => n + 1 + (sub.leafCount ?? 0), 0),
+        __treeRow: true,
+        getCanExpand: () => subRows.length > 0,
+        getIsExpanded: () => Boolean((table.getState().expanded ?? {})[id]),
+        toggleExpanded: () => {
+          table.setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
+        },
+      } as Row<TData>
+    }
+
+    return roots.map((root) => build(root, 0))
+  }
+}
+
+export type FlattenTreeOptions = {
+  /** Field holding an array of child objects. */
+  childrenField: string
+  /** Field holding each object's id. Defaults to `'id'`. */
+  idField?: string
+  /** Field to WRITE the resolved parent id onto. Defaults to `'__parentId'`. */
+  parentField?: string
+}
+
+/**
+ * Flatten nested tree data into the flat parent-id shape `createTreeRowModel`
+ * consumes, stamping each child with its parent's id.
+ *
+ * Children are emitted directly after their parent so the natural order already
+ * matches the rendered tree. The `childrenField` array is left on the objects
+ * (harmless, and callers often still want it); only the parent link is added.
+ */
+export function flattenTreeData<T extends RowData>(
+  data: ReadonlyArray<T>,
+  options: FlattenTreeOptions,
+): T[] {
+  const { childrenField, idField = 'id', parentField = '__parentId' } = options
+  const out: T[] = []
+  const walk = (nodes: ReadonlyArray<T>, parentId: unknown) => {
+    for (const node of nodes) {
+      const flat = { ...node, [parentField]: parentId } as T
+      out.push(flat)
+      const kids = (node as any)[childrenField]
+      if (Array.isArray(kids) && kids.length) walk(kids as ReadonlyArray<T>, (node as any)[idField])
+    }
+  }
+  walk(data, null)
+  return out
+}
+
 export function createExpandedRowModel<TData extends RowData>(): RowModelFactory<TData> {
   return ({ table, rows }) => {
     const expanded: ExpandedState = table.getState().expanded ?? {}

@@ -4491,6 +4491,30 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "type": "string",
         "default": "Loading…",
         "group": "common"
+      },
+      {
+        "key": "emptyText",
+        "label": "Empty Text",
+        "type": "string",
+        "default": "No matches",
+        "description": "Shown when the list is empty / a search matches nothing (localization).",
+        "group": "common"
+      },
+      {
+        "key": "searchPlaceholder",
+        "label": "Search Placeholder",
+        "type": "string",
+        "default": "Search…",
+        "description": "Placeholder in the panel's search box (localization).",
+        "group": "common"
+      },
+      {
+        "key": "searchLabel",
+        "label": "Search Label",
+        "type": "string",
+        "default": "Search options",
+        "description": "Accessible name for the panel's search box (localization).",
+        "group": "common"
       }
     ],
     "events": [
@@ -4626,6 +4650,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "type": "string",
         "default": "Rich text editor",
         "group": "advanced"
+      },
+      {
+        "key": "messages",
+        "label": "Messages",
+        "type": "json",
+        "description": "Override any toolbar label / prompt (localization).",
+        "group": "common"
       }
     ],
     "events": [
@@ -4741,6 +4772,22 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Search Placeholder",
         "type": "string",
         "default": "Search...",
+        "group": "common"
+      },
+      {
+        "key": "loadingText",
+        "label": "Loading Text",
+        "type": "string",
+        "default": "Loading...",
+        "description": "Placeholder row shown under a lazy node while its children load (localization).",
+        "group": "common"
+      },
+      {
+        "key": "clearSearchLabel",
+        "label": "Clear Search Label",
+        "type": "string",
+        "default": "Clear search",
+        "description": "Accessible name for the search box's clear button (localization).",
         "group": "common"
       },
       {
@@ -4943,6 +4990,1423 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
       }
     ]
   },
+  "SvTitle": {
+    "props": [
+      {
+        "key": "order",
+        "label": "Order",
+        "type": "json",
+        "default": 2,
+        "description": "Semantic heading level (h1-h6).",
+        "group": "common"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "json",
+        "description": "Visual size step, defaults to `order`.",
+        "group": "appearance"
+      },
+      {
+        "key": "align",
+        "label": "Align",
+        "type": "select",
+        "options": [
+          "start",
+          "center",
+          "end"
+        ],
+        "description": "Text alignment.",
+        "group": "appearance"
+      },
+      {
+        "key": "truncate",
+        "label": "Truncate",
+        "type": "boolean",
+        "default": false,
+        "description": "Truncate to a single line with an ellipsis.",
+        "group": "common"
+      }
+    ],
+    "events": []
+  },
+  "SvText": {
+    "props": [
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "options": [
+          "xs",
+          "sm",
+          "md",
+          "lg",
+          "xl"
+        ],
+        "default": "md",
+        "description": "Font size step.",
+        "group": "appearance"
+      },
+      {
+        "key": "weight",
+        "label": "Weight",
+        "type": "select",
+        "options": [
+          "normal",
+          "medium",
+          "semibold",
+          "bold"
+        ],
+        "default": "normal",
+        "description": "Font weight.",
+        "group": "common"
+      },
+      {
+        "key": "tone",
+        "label": "Tone",
+        "type": "select",
+        "options": [
+          "default",
+          "muted",
+          "accent",
+          "success",
+          "warning",
+          "error"
+        ],
+        "default": "default",
+        "description": "Semantic colour.",
+        "group": "common"
+      },
+      {
+        "key": "align",
+        "label": "Align",
+        "type": "select",
+        "options": [
+          "start",
+          "center",
+          "end"
+        ],
+        "description": "Text alignment.",
+        "group": "appearance"
+      },
+      {
+        "key": "truncate",
+        "label": "Truncate",
+        "type": "boolean",
+        "default": false,
+        "description": "Truncate to a single line with an ellipsis.",
+        "group": "common"
+      },
+      {
+        "key": "clamp",
+        "label": "Clamp",
+        "type": "number",
+        "description": "Clamp to N lines with an ellipsis (overrides truncate).",
+        "group": "common"
+      },
+      {
+        "key": "inline",
+        "label": "Inline",
+        "type": "boolean",
+        "default": false,
+        "description": "Render inline (`span`) instead of a block (`p`).",
+        "group": "common"
+      },
+      {
+        "key": "as",
+        "label": "As",
+        "type": "string",
+        "description": "Override the element/tag.",
+        "group": "common"
+      }
+    ],
+    "events": []
+  },
+  "SvAnchor": {
+    "props": [
+      {
+        "key": "href",
+        "label": "Href",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "external",
+        "label": "External",
+        "type": "boolean",
+        "default": false,
+        "description": "Open in a new tab with safe `rel`.",
+        "group": "common"
+      },
+      {
+        "key": "underline",
+        "label": "Underline",
+        "type": "select",
+        "options": [
+          "hover",
+          "always",
+          "none"
+        ],
+        "default": "hover",
+        "description": "Underline behaviour.",
+        "group": "common"
+      },
+      {
+        "key": "tone",
+        "label": "Tone",
+        "type": "select",
+        "options": [
+          "accent",
+          "default",
+          "muted"
+        ],
+        "default": "accent",
+        "description": "Semantic colour.",
+        "group": "common"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "default": "md",
+        "description": "Font size step.",
+        "group": "appearance"
+      }
+    ],
+    "events": [
+      {
+        "key": "click",
+        "label": "Click",
+        "prop": "onclick"
+      }
+    ]
+  },
+  "SvBlockquote": {
+    "props": [
+      {
+        "key": "cite",
+        "label": "Cite",
+        "type": "string",
+        "description": "Attribution shown under the quote.",
+        "group": "common"
+      },
+      {
+        "key": "tone",
+        "label": "Tone",
+        "type": "select",
+        "options": [
+          "accent",
+          "muted",
+          "success",
+          "warning",
+          "error"
+        ],
+        "default": "accent",
+        "description": "Accent colour of the rule.",
+        "group": "common"
+      }
+    ],
+    "events": []
+  },
+  "SvCode": {
+    "props": [
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Render as a padded block instead of inline.",
+        "group": "appearance"
+      },
+      {
+        "key": "code",
+        "label": "Code",
+        "type": "string",
+        "description": "Code as a string (skip the snippet).",
+        "group": "common"
+      }
+    ],
+    "events": []
+  },
+  "SvKbd": {
+    "props": [
+      {
+        "key": "keys",
+        "label": "Keys",
+        "type": "json",
+        "description": "Key sequence, rendered as separate caps.",
+        "group": "common"
+      },
+      {
+        "key": "separator",
+        "label": "Separator",
+        "type": "string",
+        "default": "+",
+        "description": "Separator between keys.",
+        "group": "common"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "options": [
+          "sm",
+          "md"
+        ],
+        "default": "md",
+        "group": "appearance"
+      }
+    ],
+    "events": []
+  },
+  "SvMark": {
+    "props": [
+      {
+        "key": "tone",
+        "label": "Tone",
+        "type": "select",
+        "options": [
+          "yellow",
+          "accent",
+          "success",
+          "warning",
+          "error"
+        ],
+        "default": "yellow",
+        "group": "common"
+      }
+    ],
+    "events": []
+  },
+  "SvList": {
+    "props": [
+      {
+        "key": "type",
+        "label": "Type",
+        "type": "select",
+        "options": [
+          "unordered",
+          "ordered",
+          "none"
+        ],
+        "default": "unordered",
+        "description": "Marker style. `none` drops markers + indentation.",
+        "group": "common"
+      },
+      {
+        "key": "items",
+        "label": "Items",
+        "type": "json",
+        "description": "Simple string items (skip the snippet).",
+        "group": "common"
+      },
+      {
+        "key": "spacing",
+        "label": "Spacing",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "default": "md",
+        "description": "Vertical gap between items.",
+        "group": "common"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "default": "md",
+        "description": "Font size step.",
+        "group": "appearance"
+      }
+    ],
+    "events": []
+  },
+  "SvSpinner": {
+    "props": [
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "default": "md",
+        "description": "Diameter in px, or a named size. Default `md` (20px).",
+        "group": "appearance"
+      },
+      {
+        "key": "color",
+        "label": "Color",
+        "type": "string",
+        "description": "Stroke color (defaults to the accent token).",
+        "group": "appearance"
+      },
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "string",
+        "description": "Accessible label; when omitted the spinner is `aria-hidden`.",
+        "group": "common"
+      }
+    ],
+    "events": []
+  },
+  "SvLoadingOverlay": {
+    "props": [
+      {
+        "key": "visible",
+        "label": "Visible",
+        "type": "boolean",
+        "default": false,
+        "description": "Show the overlay.",
+        "group": "common"
+      },
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "string",
+        "description": "Text shown under the spinner (also the a11y label).",
+        "group": "common"
+      },
+      {
+        "key": "spinnerSize",
+        "label": "Spinner Size",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "default": "lg",
+        "description": "Spinner size. Default `lg`.",
+        "group": "common"
+      },
+      {
+        "key": "blur",
+        "label": "Blur",
+        "type": "boolean",
+        "default": false,
+        "description": "Blur the content behind the scrim.",
+        "group": "common"
+      }
+    ],
+    "events": []
+  },
+  "SvResult": {
+    "props": [
+      {
+        "key": "status",
+        "label": "Status",
+        "type": "select",
+        "options": [
+          "success",
+          "error",
+          "warning",
+          "info",
+          "notfound"
+        ],
+        "default": "info",
+        "group": "common"
+      },
+      {
+        "key": "title",
+        "label": "Title",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "type": "string",
+        "group": "common"
+      }
+    ],
+    "events": []
+  },
+  "SvCollapsible": {
+    "props": [
+      {
+        "key": "title",
+        "label": "Title",
+        "type": "string",
+        "description": "Header text (ignored when a `header` snippet is given).",
+        "group": "common"
+      },
+      {
+        "key": "open",
+        "label": "Open",
+        "type": "boolean",
+        "description": "Open state (bindable).",
+        "group": "common"
+      },
+      {
+        "key": "disabled",
+        "label": "Disabled",
+        "type": "boolean",
+        "default": false,
+        "group": "behavior"
+      }
+    ],
+    "events": [
+      {
+        "key": "openChange",
+        "label": "Open Change",
+        "prop": "onOpenChange"
+      }
+    ]
+  },
+  "SvCarousel": {
+    "props": [
+      {
+        "key": "count",
+        "label": "Count",
+        "type": "number",
+        "group": "common"
+      },
+      {
+        "key": "current",
+        "label": "Current",
+        "type": "number",
+        "description": "Active slide index (bindable).",
+        "group": "common"
+      },
+      {
+        "key": "autoplay",
+        "label": "Autoplay",
+        "type": "number",
+        "default": 0,
+        "description": "Autoplay interval in ms; 0 = off.",
+        "group": "common"
+      },
+      {
+        "key": "loop",
+        "label": "Loop",
+        "type": "boolean",
+        "default": true,
+        "group": "common"
+      },
+      {
+        "key": "arrows",
+        "label": "Arrows",
+        "type": "boolean",
+        "default": true,
+        "group": "common"
+      },
+      {
+        "key": "dots",
+        "label": "Dots",
+        "type": "boolean",
+        "default": true,
+        "group": "common"
+      },
+      {
+        "key": "ariaLabel",
+        "label": "Aria Label",
+        "type": "string",
+        "default": "Carousel",
+        "group": "advanced"
+      },
+      {
+        "key": "dir",
+        "label": "Dir",
+        "type": "select",
+        "options": [
+          "ltr",
+          "rtl",
+          "auto"
+        ],
+        "description": "Text direction (rtl mirrors the prev/next arrows + slide direction).",
+        "group": "advanced"
+      }
+    ],
+    "events": []
+  },
+  "SvDateTimePicker": {
+    "props": [
+      {
+        "key": "disabled",
+        "label": "Disabled",
+        "type": "boolean",
+        "default": false,
+        "description": "Disable interaction + form submission.",
+        "group": "behavior"
+      },
+      {
+        "key": "readonly",
+        "label": "Readonly",
+        "type": "boolean",
+        "default": false,
+        "description": "Read-only: the value is shown but not editable.",
+        "group": "behavior"
+      },
+      {
+        "key": "required",
+        "label": "Required",
+        "type": "boolean",
+        "default": false,
+        "description": "Required for validation (adds `aria-required` + participates in validity).",
+        "group": "behavior"
+      },
+      {
+        "key": "invalid",
+        "label": "Invalid",
+        "type": "boolean",
+        "default": false,
+        "description": "Marks the control invalid (`aria-invalid` + error styling).",
+        "group": "behavior"
+      },
+      {
+        "key": "error",
+        "label": "Error",
+        "type": "string",
+        "description": "Error message; when set it is announced via `aria-describedby` and shown.",
+        "group": "common"
+      },
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "string",
+        "description": "Visible field label, rendered above the control and wired via `for`/`id`.",
+        "group": "common"
+      },
+      {
+        "key": "hint",
+        "label": "Hint",
+        "type": "string",
+        "description": "Helper text shown under the control and announced via `aria-describedby`.",
+        "group": "common"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "description": "Control size / density.",
+        "group": "appearance"
+      },
+      {
+        "key": "dir",
+        "label": "Dir",
+        "type": "select",
+        "options": [
+          "ltr",
+          "rtl",
+          "auto"
+        ],
+        "description": "Text direction. `'rtl'` mirrors layout for Arabic/Hebrew/etc.; `'auto'` (the default) inherits from the surrounding document so a page-level `dir` wins.",
+        "group": "advanced"
+      },
+      {
+        "key": "name",
+        "label": "Name",
+        "type": "string",
+        "description": "Form field name; the editor emits a hidden input carrying its value.",
+        "group": "advanced"
+      },
+      {
+        "key": "id",
+        "label": "Id",
+        "type": "string",
+        "description": "Root/control element id (the label/hint/error ids derive from it).",
+        "group": "advanced"
+      },
+      {
+        "key": "ariaLabel",
+        "label": "Aria Label",
+        "type": "string",
+        "description": "Accessible name when there is no visible `label`.",
+        "group": "advanced"
+      },
+      {
+        "key": "loading",
+        "label": "Loading",
+        "type": "boolean",
+        "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
+        "group": "behavior"
+      },
+      {
+        "key": "value",
+        "label": "Value",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "formatString",
+        "label": "Format String",
+        "type": "string",
+        "default": "yyyy-MM-dd HH:mm",
+        "description": "Display / parse mask (token engine).",
+        "group": "common"
+      },
+      {
+        "key": "min",
+        "label": "Min",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "max",
+        "label": "Max",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "nullable",
+        "label": "Nullable",
+        "type": "boolean",
+        "default": true,
+        "group": "common"
+      },
+      {
+        "key": "placeholder",
+        "label": "Placeholder",
+        "type": "string",
+        "default": "Select date & time",
+        "group": "common"
+      },
+      {
+        "key": "locale",
+        "label": "Locale",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "firstDayOfWeek",
+        "label": "First Day Of Week",
+        "type": "number",
+        "default": 0,
+        "group": "common"
+      },
+      {
+        "key": "weekNumbers",
+        "label": "Week Numbers",
+        "type": "boolean",
+        "default": false,
+        "group": "common"
+      },
+      {
+        "key": "hourFormat",
+        "label": "Hour Format",
+        "type": "select",
+        "options": [
+          "12-hour",
+          "24-hour"
+        ],
+        "default": "24-hour",
+        "group": "common"
+      },
+      {
+        "key": "minuteInterval",
+        "label": "Minute Interval",
+        "type": "number",
+        "default": 1,
+        "group": "common"
+      },
+      {
+        "key": "dropDownDisplayMode",
+        "label": "Drop Down Display Mode",
+        "type": "json",
+        "default": "both",
+        "description": "Which tabs the dropdown shows.",
+        "group": "common"
+      },
+      {
+        "key": "spinButtons",
+        "label": "Spin Buttons",
+        "type": "boolean",
+        "default": false,
+        "description": "Up/down spinner buttons that bump the value by `stepMinutes`.",
+        "group": "common"
+      },
+      {
+        "key": "stepMinutes",
+        "label": "Step Minutes",
+        "type": "number",
+        "default": 1,
+        "group": "common"
+      },
+      {
+        "key": "autoOpen",
+        "label": "Auto Open",
+        "type": "boolean",
+        "default": false,
+        "description": "Open the dropdown as soon as the field is focused (grid in-cell editing).",
+        "group": "common"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch the field to fill its container (100% width) instead of the fixed default width - used when mounted as a grid cell editor.",
+        "group": "appearance"
+      },
+      {
+        "key": "animate",
+        "label": "Animate",
+        "type": "select",
+        "options": [
+          "slide",
+          "fade"
+        ],
+        "default": false,
+        "description": "Animate the calendar's month/drill navigation (honors reduced-motion).",
+        "group": "common"
+      },
+      {
+        "key": "messages",
+        "label": "Messages",
+        "type": "json",
+        "description": "Override the built-in strings (tabs, dialog, clear/open aria-labels).",
+        "group": "common"
+      }
+    ],
+    "events": [
+      {
+        "key": "change",
+        "label": "Change",
+        "prop": "onChange"
+      },
+      {
+        "key": "commit",
+        "label": "Commit",
+        "prop": "onCommit",
+        "description": "Fired when the value is finalized (Enter, blur, or a single-date pick). Used by the grid to save the cell."
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "prop": "onCancel",
+        "description": "Fired on Escape / dismiss without committing (grid cancels the edit)."
+      }
+    ]
+  },
+  "SvTimePicker": {
+    "props": [
+      {
+        "key": "value",
+        "label": "Value",
+        "type": "json",
+        "description": "Date, \"HH:MM[:SS]\" string, or epoch ms.",
+        "group": "common"
+      },
+      {
+        "key": "format",
+        "label": "Format",
+        "type": "json",
+        "default": "24-hour",
+        "group": "common"
+      },
+      {
+        "key": "minuteInterval",
+        "label": "Minute Interval",
+        "type": "number",
+        "default": 1,
+        "group": "common"
+      },
+      {
+        "key": "autoSwitchToMinutes",
+        "label": "Auto Switch To Minutes",
+        "type": "boolean",
+        "default": true,
+        "description": "After picking an hour, jump the dial to minutes. Default true.",
+        "group": "common"
+      },
+      {
+        "key": "footer",
+        "label": "Footer",
+        "type": "boolean",
+        "default": false,
+        "description": "Show the Now footer button.",
+        "group": "common"
+      },
+      {
+        "key": "disabled",
+        "label": "Disabled",
+        "type": "boolean",
+        "default": false,
+        "group": "behavior"
+      },
+      {
+        "key": "readonly",
+        "label": "Readonly",
+        "type": "boolean",
+        "default": false,
+        "group": "behavior"
+      },
+      {
+        "key": "name",
+        "label": "Name",
+        "type": "string",
+        "group": "advanced"
+      },
+      {
+        "key": "selection",
+        "label": "Selection",
+        "type": "json",
+        "default": "hour",
+        "description": "Which dial opens first.",
+        "group": "common"
+      },
+      {
+        "key": "dir",
+        "label": "Dir",
+        "type": "select",
+        "options": [
+          "ltr",
+          "rtl",
+          "auto"
+        ],
+        "description": "Text direction (rtl mirrors layout; auto/undefined inherits).",
+        "group": "advanced"
+      },
+      {
+        "key": "messages",
+        "label": "Messages",
+        "type": "json",
+        "description": "Override the built-in strings (group label + AM/PM/Now).",
+        "group": "common"
+      },
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "hint",
+        "label": "Hint",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "error",
+        "label": "Error",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "required",
+        "label": "Required",
+        "type": "boolean",
+        "default": false,
+        "group": "behavior"
+      },
+      {
+        "key": "invalid",
+        "label": "Invalid",
+        "type": "boolean",
+        "default": false,
+        "group": "behavior"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "group": "appearance"
+      },
+      {
+        "key": "id",
+        "label": "Id",
+        "type": "string",
+        "group": "advanced"
+      }
+    ],
+    "events": [
+      {
+        "key": "change",
+        "label": "Change",
+        "prop": "onChange",
+        "description": "Fires with a Date (today's date carrying the picked time)."
+      }
+    ]
+  },
+  "SvDateRangeInput": {
+    "props": [
+      {
+        "key": "disabled",
+        "label": "Disabled",
+        "type": "boolean",
+        "default": false,
+        "description": "Disable interaction + form submission.",
+        "group": "behavior"
+      },
+      {
+        "key": "readonly",
+        "label": "Readonly",
+        "type": "boolean",
+        "default": false,
+        "description": "Read-only: the value is shown but not editable.",
+        "group": "behavior"
+      },
+      {
+        "key": "required",
+        "label": "Required",
+        "type": "boolean",
+        "default": false,
+        "description": "Required for validation (adds `aria-required` + participates in validity).",
+        "group": "behavior"
+      },
+      {
+        "key": "invalid",
+        "label": "Invalid",
+        "type": "boolean",
+        "default": false,
+        "description": "Marks the control invalid (`aria-invalid` + error styling).",
+        "group": "behavior"
+      },
+      {
+        "key": "error",
+        "label": "Error",
+        "type": "string",
+        "description": "Error message; when set it is announced via `aria-describedby` and shown.",
+        "group": "common"
+      },
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "string",
+        "description": "Visible field label, rendered above the control and wired via `for`/`id`.",
+        "group": "common"
+      },
+      {
+        "key": "hint",
+        "label": "Hint",
+        "type": "string",
+        "description": "Helper text shown under the control and announced via `aria-describedby`.",
+        "group": "common"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "default": "md",
+        "description": "Control size / density.",
+        "group": "appearance"
+      },
+      {
+        "key": "dir",
+        "label": "Dir",
+        "type": "select",
+        "options": [
+          "ltr",
+          "rtl",
+          "auto"
+        ],
+        "description": "Text direction. `'rtl'` mirrors layout for Arabic/Hebrew/etc.; `'auto'` (the default) inherits from the surrounding document so a page-level `dir` wins.",
+        "group": "advanced"
+      },
+      {
+        "key": "name",
+        "label": "Name",
+        "type": "string",
+        "description": "Form field name; the editor emits a hidden input carrying its value.",
+        "group": "advanced"
+      },
+      {
+        "key": "id",
+        "label": "Id",
+        "type": "string",
+        "description": "Root/control element id (the label/hint/error ids derive from it).",
+        "group": "advanced"
+      },
+      {
+        "key": "ariaLabel",
+        "label": "Aria Label",
+        "type": "string",
+        "description": "Accessible name when there is no visible `label`.",
+        "group": "advanced"
+      },
+      {
+        "key": "loading",
+        "label": "Loading",
+        "type": "boolean",
+        "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
+        "group": "behavior"
+      },
+      {
+        "key": "value",
+        "label": "Value",
+        "type": "json",
+        "description": "Inclusive [start, end] range, or null.",
+        "group": "common"
+      },
+      {
+        "key": "formatString",
+        "label": "Format String",
+        "type": "string",
+        "default": "yyyy-MM-dd",
+        "description": "Display format for each end (token engine, e.g. 'yyyy-MM-dd').",
+        "group": "common"
+      },
+      {
+        "key": "min",
+        "label": "Min",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "max",
+        "label": "Max",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "months",
+        "label": "Months",
+        "type": "number",
+        "default": 2,
+        "description": "Number of month panels shown side by side. Default 2.",
+        "group": "common"
+      },
+      {
+        "key": "firstDayOfWeek",
+        "label": "First Day Of Week",
+        "type": "number",
+        "default": 0,
+        "group": "common"
+      },
+      {
+        "key": "weekNumbers",
+        "label": "Week Numbers",
+        "type": "boolean",
+        "default": false,
+        "group": "common"
+      },
+      {
+        "key": "locale",
+        "label": "Locale",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "placeholder",
+        "label": "Placeholder",
+        "type": "string",
+        "default": "Select date range",
+        "group": "common"
+      },
+      {
+        "key": "presets",
+        "label": "Presets",
+        "type": "json",
+        "description": "Quick shortcuts shown in the calendar's side rail.",
+        "group": "common"
+      },
+      {
+        "key": "animate",
+        "label": "Animate",
+        "type": "select",
+        "options": [
+          "slide",
+          "fade"
+        ],
+        "default": false,
+        "description": "Animate the calendar's month navigation.",
+        "group": "common"
+      },
+      {
+        "key": "autoOpen",
+        "label": "Auto Open",
+        "type": "boolean",
+        "default": false,
+        "description": "Open the popover as soon as the field is focused.",
+        "group": "common"
+      },
+      {
+        "key": "messages",
+        "label": "Messages",
+        "type": "json",
+        "description": "Override the built-in strings.",
+        "group": "common"
+      }
+    ],
+    "events": [
+      {
+        "key": "change",
+        "label": "Change",
+        "prop": "onChange"
+      }
+    ]
+  },
+  "SvSegmented": {
+    "props": [
+      {
+        "key": "options",
+        "label": "Options",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "value",
+        "label": "Value",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "block",
+        "label": "Block",
+        "type": "boolean",
+        "default": false,
+        "description": "Stretch the control (and split options evenly) to the container width.",
+        "group": "appearance"
+      },
+      {
+        "key": "name",
+        "label": "Name",
+        "type": "string",
+        "group": "advanced"
+      }
+    ],
+    "events": [
+      {
+        "key": "change",
+        "label": "Change",
+        "prop": "onChange"
+      }
+    ]
+  },
+  "SvTreeSelect": {
+    "props": [
+      {
+        "key": "nodes",
+        "label": "Nodes",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "value",
+        "label": "Value",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "placeholder",
+        "label": "Placeholder",
+        "type": "string",
+        "default": "Select…",
+        "group": "common"
+      },
+      {
+        "key": "showPath",
+        "label": "Show Path",
+        "type": "boolean",
+        "default": false,
+        "group": "common"
+      },
+      {
+        "key": "expandedIds",
+        "label": "Expanded Ids",
+        "type": "json",
+        "group": "common"
+      }
+    ],
+    "events": [
+      {
+        "key": "change",
+        "label": "Change",
+        "prop": "onChange"
+      },
+      {
+        "key": "commit",
+        "label": "Commit",
+        "prop": "onCommit"
+      },
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "prop": "onCancel"
+      }
+    ]
+  },
+  "SvFileUpload": {
+    "props": [
+      {
+        "key": "disabled",
+        "label": "Disabled",
+        "type": "boolean",
+        "default": false,
+        "description": "Disable interaction + form submission.",
+        "group": "behavior"
+      },
+      {
+        "key": "readonly",
+        "label": "Readonly",
+        "type": "boolean",
+        "default": false,
+        "description": "Read-only: the value is shown but not editable.",
+        "group": "behavior"
+      },
+      {
+        "key": "required",
+        "label": "Required",
+        "type": "boolean",
+        "default": false,
+        "description": "Required for validation (adds `aria-required` + participates in validity).",
+        "group": "behavior"
+      },
+      {
+        "key": "invalid",
+        "label": "Invalid",
+        "type": "boolean",
+        "default": false,
+        "description": "Marks the control invalid (`aria-invalid` + error styling).",
+        "group": "behavior"
+      },
+      {
+        "key": "error",
+        "label": "Error",
+        "type": "string",
+        "description": "Error message; when set it is announced via `aria-describedby` and shown.",
+        "group": "common"
+      },
+      {
+        "key": "label",
+        "label": "Label",
+        "type": "string",
+        "description": "Visible field label, rendered above the control and wired via `for`/`id`.",
+        "group": "common"
+      },
+      {
+        "key": "hint",
+        "label": "Hint",
+        "type": "string",
+        "description": "Helper text shown under the control and announced via `aria-describedby`.",
+        "group": "common"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "description": "Control size / density.",
+        "group": "appearance"
+      },
+      {
+        "key": "dir",
+        "label": "Dir",
+        "type": "select",
+        "options": [
+          "ltr",
+          "rtl",
+          "auto"
+        ],
+        "description": "Text direction. `'rtl'` mirrors layout for Arabic/Hebrew/etc.; `'auto'` (the default) inherits from the surrounding document so a page-level `dir` wins.",
+        "group": "advanced"
+      },
+      {
+        "key": "name",
+        "label": "Name",
+        "type": "string",
+        "description": "Form field name; the editor emits a hidden input carrying its value.",
+        "group": "advanced"
+      },
+      {
+        "key": "id",
+        "label": "Id",
+        "type": "string",
+        "description": "Root/control element id (the label/hint/error ids derive from it).",
+        "group": "advanced"
+      },
+      {
+        "key": "ariaLabel",
+        "label": "Aria Label",
+        "type": "string",
+        "description": "Accessible name when there is no visible `label`.",
+        "group": "advanced"
+      },
+      {
+        "key": "loading",
+        "label": "Loading",
+        "type": "boolean",
+        "description": "Busy state - shows a spinner (e.g. while an async value/validation resolves).",
+        "group": "behavior"
+      },
+      {
+        "key": "files",
+        "label": "Files",
+        "type": "json",
+        "group": "common"
+      },
+      {
+        "key": "accept",
+        "label": "Accept",
+        "type": "string",
+        "group": "common"
+      },
+      {
+        "key": "multiple",
+        "label": "Multiple",
+        "type": "boolean",
+        "default": false,
+        "group": "behavior"
+      },
+      {
+        "key": "maxSize",
+        "label": "Max Size",
+        "type": "number",
+        "description": "Max size per file in bytes.",
+        "group": "common"
+      },
+      {
+        "key": "maxFiles",
+        "label": "Max Files",
+        "type": "number",
+        "group": "common"
+      },
+      {
+        "key": "messages",
+        "label": "Messages",
+        "type": "json",
+        "group": "common"
+      }
+    ],
+    "events": [
+      {
+        "key": "change",
+        "label": "Change",
+        "prop": "onChange"
+      },
+      {
+        "key": "reject",
+        "label": "Reject",
+        "prop": "onReject"
+      }
+    ]
+  },
   "SvGrid": {
     "props": [
       {
@@ -5026,9 +6490,51 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "treeData",
+        "label": "Tree Data",
+        "type": "json",
+        "description": "Client-side tree data: nest rows into a hierarchy by parent id. ```svelte <SvGrid {data} {columns} treeData={{ parentField: 'managerId', column: 'name' }} /> ``` Unlike grouping, tree rows are real data rows - they keep their cells, editing and selection, and only gain an expander plus indentation in `column`. Rows whose parent is missing become roots rather than vanishing. For NESTED source data (`children: [...]`), flatten it first with `flattenTreeData(data, { childrenField: 'children' })` and point `parentField` at the `__parentId` it stamps on. Setting this replaces row grouping - a row cannot be both.",
+        "group": "common"
+      },
+      {
         "key": "groupable",
         "label": "Groupable",
         "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "groupFooters",
+        "label": "Group Footers",
+        "type": "boolean",
+        "description": "Render a subtotal row after each group's children, carrying that group's aggregate values under the columns they belong to (the columns with an `aggregate` set). Off by default. Footers are inserted after paging, so they never count against `pageSize` - a page shows its `pageSize` data rows plus whatever footers close on it.",
+        "group": "common"
+      },
+      {
+        "key": "grandTotalRow",
+        "label": "Grand Total Row",
+        "type": "boolean",
+        "description": "Append a grand-total row at the very end, aggregating the whole filtered set (not just the current page) with each column's `aggregate` function. Independent of `groupFooters`: use it on a flat grid for a bottom totals line, or alongside group subtotals for both. Like group footers it is appended after paging, so it never counts against `pageSize` - but it is only appended on the LAST page, so a total never appears mid-dataset. Columns without an `aggregate` are left blank.",
+        "group": "common"
+      },
+      {
+        "key": "groupDisplayMode",
+        "label": "Group Display Mode",
+        "type": "json",
+        "description": "How grouped rows are displayed. - `groupRows` (default): a full-width banner row per group. Unchanged behaviour - existing grids are untouched. - `singleColumn`: one synthetic \"Group\" column holding every level, indented by depth. - `multipleColumns`: one synthetic column per grouped field. Both column modes hide the grouped source columns, since their values move into the auto column(s), and render group rows as ordinary rows so their aggregate cells line up under the real columns.",
+        "group": "common"
+      },
+      {
+        "key": "autoGroupColumnHeader",
+        "label": "Auto Group Column Header",
+        "type": "string",
+        "description": "Header for the combined `singleColumn` auto-group column. Default `\"Group\"`.",
+        "group": "common"
+      },
+      {
+        "key": "autoGroupColumnWidth",
+        "label": "Auto Group Column Width",
+        "type": "number",
+        "description": "Width (px) of each auto-group column. Default `220`.",
         "group": "common"
       },
       {
@@ -5177,6 +6683,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Row Height",
         "type": "number",
         "description": "Row height in pixels. Pass a function `(rowIndex) => px` for per-row variable heights (e.g. an interactive row-resize feature). Defaults to 30.",
+        "group": "common"
+      },
+      {
+        "key": "autoRowHeight",
+        "label": "Auto Row Height",
+        "type": "boolean",
+        "description": "Size each row to its own content instead of a fixed height: cell text wraps and the row grows to fit the tallest cell. Rows are measured after they render, so this works with virtualization - `rowHeight` (or 30) is the estimate used before a row has been measured, which keeps the scrollbar stable while you scroll into new rows. Costs a measurement pass per row, so prefer a fixed `rowHeight` when your content is uniform. Ignored when `rowHeight` is a function (you are already supplying per-row heights).",
         "group": "common"
       },
       {

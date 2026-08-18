@@ -48,6 +48,11 @@
     /** Render a built-in search box that drives the filter. */
     searchable?: boolean
     searchPlaceholder?: string
+    /** Placeholder row shown under a lazy node while its children load
+     *  (localization). */
+    loadingText?: string
+    /** Accessible name for the search box's clear button (localization). */
+    clearSearchLabel?: string
     /** Sort siblings by label ('asc'/'desc') or a custom comparator. */
     sort?: 'asc' | 'desc' | ((a: TreeNode, b: TreeNode) => number)
     /** Allow inline rename (double-click or F2). Fires onRename. */
@@ -77,6 +82,8 @@
     filter,
     searchable = false,
     searchPlaceholder = 'Search...',
+    loadingText = 'Loading...',
+    clearSearchLabel = 'Clear search',
     sort,
     editable = false,
     onRename,
@@ -173,7 +180,7 @@
     if (!node?.lazy || loaded.has(id) || loadingIds.has(id)) return
     loadingIds = new Set(loadingIds).add(id)
     // A placeholder row shows immediately while the promise resolves.
-    loaded = new Map(loaded).set(id, [{ id: `${id}__loading`, label: 'Loading...', disabled: true }])
+    loaded = new Map(loaded).set(id, [{ id: `${id}__loading`, label: loadingText, disabled: true }])
     try {
       const kids = await loadChildren(node)
       loaded = new Map(loaded).set(id, kids)
@@ -268,7 +275,7 @@
   <div class="sv-tree__search">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
     <input class="sv-tree__search-input" type="text" placeholder={searchPlaceholder} bind:value={query} aria-label={searchPlaceholder} />
-    {#if query}<button type="button" class="sv-tree__search-clear" aria-label="Clear search" onclick={() => (query = '')}>&times;</button>{/if}
+    {#if query}<button type="button" class="sv-tree__search-clear" aria-label={clearSearchLabel} onclick={() => (query = '')}>&times;</button>{/if}
   </div>
 {/if}
 <!-- svelte-ignore a11y_no_static_element_interactions -->

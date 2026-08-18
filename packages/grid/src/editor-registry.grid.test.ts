@@ -95,4 +95,52 @@ describe('registry wiring in SvGrid', () => {
       destroy()
     }
   })
+
+  it('hands the editor the full EditorInteraction contract, not a subset', async () => {
+    // The contract type used to be documented but never supplied: the registry
+    // passed only value/onChange/onCommit/onCancel, so an editor written against
+    // `EditorInteraction` (Tab-to-move, dismiss-without-commit, in-cell tuning)
+    // silently got undefined for half of it.
+    let seen: Record<string, unknown> = {}
+    registerCellEditor('stars', {
+      component: SvRating,
+      props: (ctx) => {
+        seen = ctx as unknown as Record<string, unknown>
+        return { value: ctx.value }
+      },
+    })
+
+    const { api, target, destroy } = await mountGrid()
+    try {
+      api.startEditing(0, 'score')
+      await tick()
+      await tick()
+      expect(typeof seen.onCommit).toBe('function')
+      expect(typeof seen.onCancel).toBe('function')
+      expect(typeof seen.onChange).toBe('function')
+      expect(typeof seen.onCommitAndMove).toBe('function')
+      expect(typeof seen.onRequestClose).toBe('function')
+      expect(seen.inCell).toBe(true)
+      expect(seen.rowId).toBeTruthy()
+      expect(seen.columnId).toBe('score')
+      void target
+    } finally {
+      destroy()
+    }
+  })
+
+  it('defaults to passing the whole contract when a registration has no props mapping', async () => {
+    // A registration with no `props` should still work for a contract-aware
+    // editor - that is the point of the default mapping.
+    registerCellEditor('stars', SvRating)
+    const { api, target, destroy } = await mountGrid()
+    try {
+      api.startEditing(0, 'score')
+      await tick()
+      await tick()
+      expect(target.querySelector('.sv-rating')).not.toBeNull()
+    } finally {
+      destroy()
+    }
+  })
 })

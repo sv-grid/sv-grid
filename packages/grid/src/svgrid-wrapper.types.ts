@@ -248,6 +248,12 @@ export type SvGridApi<
   setFacetFilter(columnId: string, values: ReadonlyArray<string> | null): void
   clearFilter(columnId: string): void
   /**
+   * Drop cached async `editorOptions` so the next render refetches them.
+   * Omit `columnId` to clear every column. Only affects columns whose
+   * `editorOptions` returns a Promise - static lists are never refetched.
+   */
+  refreshEditorOptions(columnId?: string): void
+  /**
    * Clear every active column filter (menu, filter-row, set-list, and global).
    * Resets the grid to "no filtering" in a single call.
    */

@@ -82,8 +82,22 @@ function mountGrid(data: Row[]) {
 async function openFilterMenu(target: HTMLElement) {
   const btn = target.querySelector('.sv-grid-col-filter-btn') as HTMLButtonElement
   btn.click()
-  // GridMenus is a lazy chunk; poll until the popover mounts.
-  await vi.waitFor(() => expect(target.querySelector('.sv-grid-filter-menu')).not.toBeNull())
+  // GridMenus is a lazy chunk, so poll until the popover mounts AND its value
+  // checklist has rendered.
+  //
+  // Waiting only for the popover element returns while the listbox is still
+  // empty: the chunk arrives, the menu element appears, and the values are
+  // snapshotted and windowed in a later flush. Callers then read option counts
+  // from a list that has not populated yet. It survives locally because those
+  // flushes land in the same task, but under parallel load the gap widens - it
+  // failed once that way in a full-suite run. Every caller here opens a menu on
+  // a column that has values, so a populated list is the settled state to wait
+  // for, and each test's own assertions are unchanged.
+  await vi.waitFor(() => {
+    const menu = target.querySelector('.sv-grid-filter-menu')
+    expect(menu).not.toBeNull()
+    expect(menu!.querySelectorAll('[role="option"]').length).toBeGreaterThan(0)
+  })
   return target.querySelector('.sv-grid-filter-menu') as HTMLElement
 }
 

@@ -96,7 +96,7 @@
 <style>
   .sv-rating {
     --_on: var(--sg-rating-on, #f59e0b);
-    --_off: var(--sg-rating-empty, #d1d5db);
+    --_off: var(--sg-rating-empty, #cbd5e1);
     --_sz: 22px;
     display: inline-flex; gap: 2px; align-items: center;
   }

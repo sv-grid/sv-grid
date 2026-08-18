@@ -69,5 +69,9 @@ extract-part.mjs
 
 # Generated PDF (rebuilt from docs/legal/EULA.md by tools/eula-to-pdf.mjs).
 docs/legal/SvGrid-EULA.pdf
-tools/prerender-site.mjs
-*.mjs
+
+# NOTE: a blanket `*.mjs` used to live here (alongside `tools/prerender-site.mjs`).
+# Both were mistakes: they are no-ops for already-tracked files, but they silently
+# hid every NEW .mjs from `git status` - including build scripts that
+# package.json invokes (`tools/count-demos.mjs`, `packages/enterprise/scripts/
+# build-designer.mjs`). Ignore scratch scripts by name, never by extension.

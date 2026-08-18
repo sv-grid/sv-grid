@@ -94,8 +94,14 @@ describe('editable comments', () => {
     const cell = dataCell(target, 0)
     cell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
     // First menu-open triggers GridMenus' lazy import; poll until it mounts.
-    await vi.waitFor(() => expect(target.querySelector('.sv-grid-context-menu')).not.toBeNull())
-    await tick()
+    // Wait for the menu's ITEMS, not just the overlay element: GridMenus is a
+    // lazy chunk and the overlay mounts before its items render, so a fixed
+    // tick afterwards is a race rather than a guarantee.
+    await vi.waitFor(() => {
+      const menu = target.querySelector('.sv-grid-context-menu')
+      expect(menu).not.toBeNull()
+      expect(menu!.querySelectorAll('.sv-grid-menu-item').length).toBeGreaterThan(0)
+    })
     const editItem = [...target.querySelectorAll('.sv-grid-context-menu .sv-grid-menu-item')].find(
       (b) => b.textContent?.trim() === 'Edit comment',
     ) as HTMLElement

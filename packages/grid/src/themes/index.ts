@@ -35,6 +35,28 @@ export type ThemePalette = {
   pinnedBorder?: string
   /** Drop shadow cast by a pinned column into the scroll area. */
   pinnedShadow?: string
+  /* Semantic status colors. The UI kit reads these for destructive buttons,
+     validation errors, alert variants, badges and the rating star. A preset
+     that omits them gets the mode-appropriate defaults below, which match the
+     inline fallbacks the components shipped with - so adding these changed
+     nothing for existing presets, it only made them themeable. */
+  /** Errors, destructive actions, invalid cells. */
+  danger?: string
+  /** Confirmations, positive deltas. */
+  success?: string
+  /** Cautions, pending states, the rating star. */
+  warning?: string
+  /** Neutral informational callouts. */
+  info?: string
+  /** Focus outline color. Defaults to the preset's accent. */
+  focusRing?: string
+}
+
+/** Status-color defaults per mode - dark mode lifts them so they stay legible
+ *  on a dark ground. Values match the components' own inline fallbacks. */
+const STATUS_DEFAULTS: Record<ThemeMode, { danger: string; success: string; warning: string; info: string }> = {
+  light: { danger: '#dc2626', success: '#16a34a', warning: '#d97706', info: '#0891b2' },
+  dark: { danger: '#f87171', success: '#4ade80', warning: '#fbbf24', info: '#22d3ee' },
 }
 
 export type ThemePreset = {
@@ -156,6 +178,7 @@ export function resolveThemeTokens(preset: ThemePreset | undefined, mode: ThemeM
   const resolved = preset ?? defaultThemePreset
   const p = resolved[mode]
   const accent = accentOverride || p.accent
+  const status = STATUS_DEFAULTS[mode]
   return {
     '--sg-bg': p.bg,
     '--sg-fg': p.fg,
@@ -194,6 +217,25 @@ export function resolveThemeTokens(preset: ThemePreset | undefined, mode: ThemeM
     '--sg-on-accent': onAccent(accent),
     '--sg-radius': `${resolved.radius}px`,
     '--sg-font': resolved.font,
+    // Semantic status colors. Same reasoning as the scrollbar tokens below:
+    // the UI kit consumes these (destructive buttons, alerts, validation,
+    // badges, the rating star), so a preset that doesn't define them leaves
+    // every status color at a hard-coded red/green/amber that ignores the
+    // theme and, on dark presets, sits at the wrong lightness.
+    '--sg-danger': p.danger ?? status.danger,
+    '--sg-success': p.success ?? status.success,
+    '--sg-warning': p.warning ?? status.warning,
+    '--sg-info': p.info ?? status.info,
+    // A COLOR, not a shadow - consumed as `outline: 2px solid var(...)`.
+    '--sg-focus-ring': p.focusRing ?? accent,
+    // Derived surfaces + shape the kit reads. Deriving from the palette keeps
+    // them following the preset and the light/dark mode.
+    '--sg-muted-bg': p.rowHover,
+    '--sg-skeleton-bg': p.rowHover,
+    '--sg-radius-lg': `${resolved.radius * 2}px`,
+    '--sg-rating-on': p.warning ?? status.warning,
+    '--sg-rating-empty': p.border,
+    '--sg-invalid-fg': p.danger ?? status.danger,
     // The grid's custom scrollbar is a shadow-DOM web component that reads its
     // OWN --sg-scrollbar-* tokens (with fixed light-mode fallbacks). Without
     // these it ignores the theme entirely - a light scrollbar left on a dark

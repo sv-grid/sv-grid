@@ -207,6 +207,46 @@ everywhere.
 
 Live demo: [Computed fields & hooks](https://svgrid.com/demos/199-studio-computed-hooks/).
 
+## Scheduled jobs
+
+Triggers run when someone changes a row. For work that runs on a clock -
+a nightly digest, a cleanup pass - add a **scheduled job**:
+
+```ts
+project.jobs = [
+  { id: 'daily-digest', name: 'Daily order digest', cron: '0 6 * * *',
+    kind: 'email', entity: 'orders', to: 'ops@example.com' },
+  { id: 'cleanup', name: 'Purge stale drafts', cron: '0 3 * * *',
+    kind: 'code', code: "await db.delete(drafts).where(/* ... */)" },
+]
+```
+
+Two kinds: `email` sends a summary of an entity (row count plus the newest
+rows) through the generated email layer, and `code` runs a body you write.
+
+This generates two files - `src/lib/server/jobs.ts` (the handlers, keyed by
+job id) and `src/routes/api/cron/+server.ts` - plus the schedule config for
+your deploy target: `vercel.json` crons on Vercel, a GitHub Actions schedule
+everywhere else.
+
+Three things to know:
+
+- **It runs on the server**, unlike `createScheduler` in `@svgrid/enterprise`,
+  which only ticks while a browser tab is open.
+- **The endpoint is secret-guarded.** Set `CRON_SECRET` in the app's
+  environment and send it as `Authorization: Bearer <secret>` (or
+  `?secret=`). With no `CRON_SECRET` set the route refuses to run rather than
+  leaving a public "do work" URL open. The Actions workflow stays inert until
+  you add the `CRON_URL` and `CRON_SECRET` repository secrets, so CI is green
+  before you configure it.
+- **One failing job does not stop the others.** Each handler is caught
+  individually and the response reports per-job status.
+
+An `email` job needs the [auth email layer](./auth.md) switched on; without it
+the handler slot is still emitted with a warning, so the schedule is real and
+the gap is visible rather than silently dropped. `enabled: false` keeps a
+handler callable via `?job=<id>` while dropping it from the scheduled run.
+
 ## See also
 
 - [Edit forms](./edit-forms.md) · [Schema](./schema.md)

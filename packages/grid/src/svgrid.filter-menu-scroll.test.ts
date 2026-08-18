@@ -64,8 +64,16 @@ async function openFilterMenu(target: HTMLElement) {
   const btn = target.querySelector('.sv-grid-col-filter-btn') as HTMLButtonElement
   expect(btn).not.toBeNull()
   btn.click()
-  // GridMenus is a lazy chunk; poll until the popover mounts.
-  await vi.waitFor(() => expect(target.querySelector('.sv-grid-filter-menu')).not.toBeNull())
+  // GridMenus is a lazy chunk, so poll until the popover mounts AND its value
+  // checklist is in the DOM. Waiting only for the popover element returns while
+  // the menu body is still filling in, so a caller that reaches for
+  // `.sv-listbox` can get null - which is how this file flaked under
+  // full-suite parallel load.
+  await vi.waitFor(() => {
+    const menu = target.querySelector('.sv-grid-filter-menu')
+    expect(menu).not.toBeNull()
+    expect(menu!.querySelector('.sv-listbox')).not.toBeNull()
+  })
   return target.querySelector('.sv-grid-filter-menu') as HTMLElement
 }
 

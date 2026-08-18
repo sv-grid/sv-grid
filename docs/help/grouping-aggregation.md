@@ -209,6 +209,91 @@ use pivot when you also roll up columns.
 - [Demo #07 Grouping + aggregation](https://svgrid.com/demos/07-grouping-aggregation/)
   - the source for the example above.
 
+## Display modes
+
+`groupDisplayMode` decides where group state is drawn:
+
+| Mode | Result |
+| --- | --- |
+| `groupRows` (default) | A full-width banner row per group. Unchanged behaviour. |
+| `singleColumn` | One synthetic **Group** column holding every level, indented by depth. |
+| `multipleColumns` | One synthetic column per grouped field. |
+
+```svelte
+<SvGrid {data} {columns} groupable groupDisplayMode="singleColumn" />
+```
+
+Both column modes hide the grouped **source** columns, because their values
+move into the auto column - showing both would just duplicate them. They also
+render the group row as an ordinary row, which is the real reason to use them:
+its aggregate cells then line up under the columns they belong to instead of
+sitting in a full-width strip.
+
+Tune the combined column with `autoGroupColumnHeader` (default `"Group"`) and
+`autoGroupColumnWidth` (default `220`). In `multipleColumns` each column takes
+its name from the source column's header.
+
+## Group footers (subtotal rows)
+
+`groupFooters` closes each group with a subtotal row:
+
+```svelte
+<SvGrid {data} {columns} groupable groupFooters />
+```
+
+The footer is a clone of the group banner, so it already carries that group's
+aggregates and renders through the normal cell path - each total lands under
+its own column instead of in a full-width strip. It is not expandable and has
+no expander.
+
+Only columns with an `aggregate` produce a value, the same ones that populate
+the banner.
+
+## Grand total row
+
+`grandTotalRow` appends a single totals row for the whole filtered set:
+
+```svelte
+<SvGrid {data} {columns} grandTotalRow />
+```
+
+It is independent of `groupFooters` - use it on a flat grid for a bottom totals
+line, or together for subtotals *and* a total:
+
+```svelte
+<SvGrid {data} {columns} groupable groupFooters grandTotalRow />
+```
+
+Three things to know:
+
+- It aggregates the **leaf** rows, so turning grouping on does not double-count
+  (the group banners already carry subtotals).
+- It follows the **filtered** set, not the raw data - filter the grid and the
+  total moves with it.
+- With `pageable`, it is appended only on the **last** page, so a total never
+  appears mid-dataset. The value still covers every row, not just that page.
+
+Columns without an `aggregate` render blank, and if no column declares one the
+row is skipped entirely.
+
+## Grouping with pagination
+
+`pageSize` budgets **data** rows. Group banners and footers do not count
+against it:
+
+```svelte
+<SvGrid {data} {columns} groupable groupFooters pageable pageSize={10} />
+```
+
+A page holds `pageSize` real rows and reprints the banners those rows sit
+under, so a group split across a page boundary is labelled on both pages - the
+way a spreadsheet repeats group headers across a page break. Footers are
+inserted after paging, so switching them on never pushes data onto the next
+page.
+
+A collapsed group is the visible unit and takes one page slot itself; an
+expanded one is a header and takes none.
+
 ## Frequently asked questions
 
 ### How do I group rows in SvGrid?

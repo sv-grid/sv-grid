@@ -9,6 +9,7 @@ import type {
   TableFeatures,
 } from "./index";
 import type { ConditionalFormat } from "./conditional-formatting";
+import type { GroupDisplayType } from "./group-display";
 import type { GridMessages } from "./grid-messages";
 import type { GridPivotConfig } from "./pivot-view.svelte";
 import type { MenuItem } from "./SvMenuList.svelte";
@@ -1029,7 +1030,75 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   sortable?: boolean;
   filterable?: boolean;
   editable?: boolean;
+  /**
+   * Client-side tree data: nest rows into a hierarchy by parent id.
+   *
+   * ```svelte
+   * <SvGrid {data} {columns} treeData={{ parentField: 'managerId', column: 'name' }} />
+   * ```
+   *
+   * Unlike grouping, tree rows are real data rows - they keep their cells,
+   * editing and selection, and only gain an expander plus indentation in
+   * `column`. Rows whose parent is missing become roots rather than vanishing.
+   *
+   * For NESTED source data (`children: [...]`), flatten it first with
+   * `flattenTreeData(data, { childrenField: 'children' })` and point
+   * `parentField` at the `__parentId` it stamps on.
+   *
+   * Setting this replaces row grouping - a row cannot be both.
+   */
+  treeData?: {
+    /** Field holding each row's parent id. */
+    parentField: string;
+    /** Field holding the row's own id. Defaults to `'id'`. */
+    idField?: string;
+    /**
+     * Column id that carries the expander + indentation. Defaults to the first
+     * visible column.
+     */
+    column?: string;
+    /** Indent per depth level, in px. Default `12`. */
+    indentPx?: number;
+  };
   groupable?: boolean;
+  /**
+   * Render a subtotal row after each group's children, carrying that group's
+   * aggregate values under the columns they belong to (the columns with an
+   * `aggregate` set). Off by default.
+   *
+   * Footers are inserted after paging, so they never count against `pageSize` -
+   * a page shows its `pageSize` data rows plus whatever footers close on it.
+   */
+  groupFooters?: boolean;
+  /**
+   * Append a grand-total row at the very end, aggregating the whole filtered
+   * set (not just the current page) with each column's `aggregate` function.
+   *
+   * Independent of `groupFooters`: use it on a flat grid for a bottom totals
+   * line, or alongside group subtotals for both. Like group footers it is
+   * appended after paging, so it never counts against `pageSize` - but it is
+   * only appended on the LAST page, so a total never appears mid-dataset.
+   * Columns without an `aggregate` are left blank.
+   */
+  grandTotalRow?: boolean;
+  /**
+   * How grouped rows are displayed.
+   *
+   * - `groupRows` (default): a full-width banner row per group. Unchanged
+   *   behaviour - existing grids are untouched.
+   * - `singleColumn`: one synthetic "Group" column holding every level,
+   *   indented by depth.
+   * - `multipleColumns`: one synthetic column per grouped field.
+   *
+   * Both column modes hide the grouped source columns, since their values move
+   * into the auto column(s), and render group rows as ordinary rows so their
+   * aggregate cells line up under the real columns.
+   */
+  groupDisplayMode?: GroupDisplayType;
+  /** Header for the combined `singleColumn` auto-group column. Default `"Group"`. */
+  autoGroupColumnHeader?: string;
+  /** Width (px) of each auto-group column. Default `220`. */
+  autoGroupColumnWidth?: number;
   pageable?: boolean;
   loading?: boolean;
   /**
@@ -1107,6 +1176,18 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    *  per-row variable heights (e.g. an interactive row-resize feature).
    *  Defaults to 30. */
   rowHeight?: number | ((rowIndex: number) => number);
+  /**
+   * Size each row to its own content instead of a fixed height: cell text wraps
+   * and the row grows to fit the tallest cell. Rows are measured after they
+   * render, so this works with virtualization - `rowHeight` (or 30) is the
+   * estimate used before a row has been measured, which keeps the scrollbar
+   * stable while you scroll into new rows.
+   *
+   * Costs a measurement pass per row, so prefer a fixed `rowHeight` when your
+   * content is uniform. Ignored when `rowHeight` is a function (you are already
+   * supplying per-row heights).
+   */
+  autoRowHeight?: boolean;
   /**
    * Height (px) of a single column-header level row. With multi-level
    * (grouped) headers the total header height is `levels * headerHeight`,

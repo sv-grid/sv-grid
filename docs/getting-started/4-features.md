@@ -1,52 +1,10 @@
 # 4. Features
 
-> Step 4 of 6 · [← Data and columns](./3-data-and-columns.md) · [Next: Theme and density →](./5-theme-and-density.md)
-
-The grid engine is **feature-gated**. Out of the box you get the core
-row model (rows in their original order). To enable sorting, filtering,
-grouping, pagination, expansion, or selection, register the matching
-feature; the wrapper wires the matching row-model factory for you.
-
-![The engine ships the core row model in original order; you opt into features that wire into the SvGrid component.](/docs-media/grid-feature-gating.svg)
-
-```svelte
-<script lang="ts">
-  import {
-    SvGrid,
-    tableFeatures,
-    rowSortingFeature,
-    columnFilteringFeature,
-    rowSelectionFeature,
-    type ColumnDef,
-  } from '@svgrid/grid'
-
-  const features = tableFeatures({
-    rowSortingFeature,
-    columnFilteringFeature,
-    rowSelectionFeature,
-  })
-</script>
-
-<SvGrid
-  data={rows}
-  columns={columns}
-  features={features}
-  filterMode="menu"
-  showPagination={true}
-  pageSize={25}
-/>
-```
-
-The wrapper handles the user-facing toggles via plain props. If you
-need the headless pipeline directly - say, a custom renderer - drop
-down to `createSvGrid` from the same package. See
-[Why headless?](../why-headless.md).
-
-## Capability shortcuts (the quick way)
+> Step 4 of 6 Â· [â† Data and columns](./3-data-and-columns.md) Â· [Next: Theme and density â†’](./5-theme-and-density.md)
 
 Every capability is **off by default** - a bare `<SvGrid>` is a plain,
-read-only table. The fastest way to opt in is a set of boolean shortcut
-props. No `tableFeatures({ … })` import, no feature constants:
+read-only table. Opt in with boolean props. No imports, no feature
+constants:
 
 ```svelte
 <SvGrid
@@ -69,10 +27,55 @@ props. No `tableFeatures({ … })` import, no feature constants:
 | `pageable`   | Pagination footer                                | `showPagination`                           |
 
 Each shortcut is an override: omit it (or set `false`) to leave the
-capability off; set it `true` to opt in. They compose with the
-fine-grained props and the `features` set below - reach for those when
-you need finer control (e.g. `filterMode`, `pageSize`, per-column
-`sortable: false`). See the live [Shortcut config](https://sv-grid.com/demos/135-shortcut-config) demo.
+capability off; set it `true` to opt in. See the live
+[Shortcut config](https://svgrid.com/demos/135-shortcut-config/) demo.
+
+**For most grids this is the whole story** - skip to
+[Theme and density](./5-theme-and-density.md). The rest of this page is the
+explicit form underneath, worth reading when you want finer control.
+
+## The explicit form: registering features
+
+The engine is feature-gated: out of the box you get the core row model (rows
+in their original order), and each capability is a feature you register. The
+shortcut props above just inject these for you.
+
+![The engine ships the core row model in original order; you opt into features that wire into the SvGrid component.](/docs-media/grid-feature-gating.svg)
+
+Register them yourself when you need the fine-grained props alongside -
+`filterMode`, `pageSize`, per-column `sortable: false`:
+
+```svelte
+<script lang="ts">
+  import {
+    SvGrid,
+    tableFeatures,
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowSelectionFeature,
+    type GridColumns,
+  } from '@svgrid/grid'
+
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowSelectionFeature,
+  })
+</script>
+
+<SvGrid
+  data={rows}
+  columns={columns}
+  features={features}
+  filterMode="menu"
+  showPagination={true}
+  pageSize={25}
+/>
+```
+
+If you need the headless pipeline directly - say, a custom renderer - drop
+down to `createSvGrid` from the same package. See
+[Why headless?](../why-headless.md).
 
 ## The feature catalogue
 
@@ -135,7 +138,7 @@ URL sync, a server fetch).
 
 For server-side data or tree data the wrapper records the sort + filter
 UI state but does **not** re-order the rows - you do. See
-[Going to production §1](./6-going-to-production.md#1-server-side-data).
+[Going to production Â§1](./6-going-to-production.md#1-server-side-data).
 
 ## Selection + editing
 

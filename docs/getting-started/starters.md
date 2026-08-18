@@ -53,8 +53,9 @@ npm run dev
 | `--help` | `-h` | Show usage |
 
 Both templates use the free MIT `@svgrid/grid` core. Add
-[`@svgrid/enterprise`](../enterprise/README.md) for export, import, print, pivot, and
-the AI helpers.
+[`@svgrid/enterprise`](../enterprise/README.md) for export, import, print, and pivot.
+The AI helpers (natural-language filter, smart fill, summarize, classify) are part of
+the free core - you register your own model provider.
 
 ## The admin dashboard starter
 

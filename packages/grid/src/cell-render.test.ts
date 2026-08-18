@@ -9,16 +9,35 @@ import { createCellRender } from './cell-render'
 // shape that mirrors the @svgrid/grid runtime closely enough to exercise
 // every branch.
 
+// Only `id` / `original` / `getCellValueByColumnId` are read by the functions
+// under test, but the stub carries the full `Row` shape so it is assignable
+// without a cast at every call site.
 type AnyRow = {
   id: string
+  index: number
   original: Record<string, unknown>
+  depth: number
+  getCanExpand: () => boolean
+  getIsExpanded: () => boolean
+  toggleExpanded: () => void
+  getIsSelected: () => boolean
+  toggleSelected: () => void
+  getAllCells: () => never[]
   getCellValueByColumnId: (colId: string) => unknown
 }
 
 function makeRow(id: string, data: Record<string, unknown>): AnyRow {
   return {
     id,
+    index: 0,
     original: data,
+    depth: 0,
+    getCanExpand: () => false,
+    getIsExpanded: () => false,
+    toggleExpanded: () => {},
+    getIsSelected: () => false,
+    toggleSelected: () => {},
+    getAllCells: () => [],
     getCellValueByColumnId: (colId: string) => data[colId],
   }
 }
@@ -34,6 +53,11 @@ function makeCtx(overrides: Partial<any> = {}): any {
     conditionalColumnStats: new Map(),
     noteOverrides: {},
     editorOptionsCache: {},
+    // Async `editorOptions` bookkeeping: resolved lists (reactive in the real
+    // controller) plus two plain Sets used as dedupe guards.
+    asyncEditorOptions: {} as Record<string, unknown>,
+    asyncEditorOptionsPending: new Set<string>(),
+    asyncEditorColumns: new Set<string>(),
     ...overrides,
   }
 }

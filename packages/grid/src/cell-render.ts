@@ -263,6 +263,77 @@ export function createCellRender<
     return v && v.trim() ? v : null
   }
 
+  const isThenable = (v: unknown): v is Promise<unknown> =>
+    typeof (v as { then?: unknown } | null)?.then === "function";
+
+  /**
+   * Resolve a promised option list once per key, then keep it.
+   *
+   * Render paths call `getColumnEditorOptions` synchronously and often, so an
+   * async source cannot block: the first call starts the fetch and returns an
+   * empty list, and the resolved value lands in reactive state which re-renders
+   * the editor. `asyncEditorOptionsPending` tracks in-flight keys so repeated
+   * renders do not fire the request again.
+   */
+  function resolveAsyncOptions(
+    key: string,
+    promise: Promise<unknown>,
+    /** Drop other cached entries starting with this prefix when the result
+     *  lands - used to evict a cascade's superseded signatures. */
+    prunePrefix?: string,
+  ): CellEditorOption[] {
+    const done = ctx.asyncEditorOptions[key];
+    if (done) return done;
+    const pending: Set<string> = ctx.asyncEditorOptionsPending;
+    if (!pending.has(key)) {
+      // Plain Set, not reactive state: this runs inside the template, and a
+      // $state write during render is a Svelte 5 error.
+      pending.add(key);
+      const store = (value: CellEditorOption[]) => {
+        const next: Record<string, CellEditorOption[]> = {};
+        for (const [k, v] of Object.entries(ctx.asyncEditorOptions as Record<string, CellEditorOption[]>)) {
+          // Keep everything except this cell's stale signatures.
+          if (prunePrefix && k !== key && k.startsWith(prunePrefix)) continue;
+          next[k] = v;
+        }
+        next[key] = value;
+        ctx.asyncEditorOptions = next;
+      };
+      promise
+        .then((value) => store(normalizeEditorOptions(value as never)))
+        // A failed lookup settles on "no options" rather than leaving the
+        // editor spinning forever.
+        .catch(() => store([]))
+        .finally(() => {
+          pending.delete(key);
+        });
+    }
+    return [];
+  }
+
+  /**
+   * Cache key for a per-row async source.
+   *
+   * A cascade depends on the row's OTHER cells - City is a function of Country -
+   * so keying by row id alone made the first result permanent: changing the
+   * country left the old city list cached forever. The row's own values are
+   * folded into the key, so editing the row naturally supersedes the entry.
+   *
+   * Only reached for columns already known to be async, so the stringify cost
+   * is bounded by the rows actually rendering such a column.
+   */
+  function asyncRowKey(column: Column<TData>, row: Row<TData>): string {
+    let signature: string;
+    try {
+      signature = JSON.stringify(row.original);
+    } catch {
+      // Circular / non-serializable row: fall back to identity, which at least
+      // invalidates when the consumer replaces the object immutably.
+      signature = String(row.index);
+    }
+    return `${column.id}::${row.id}::${signature}`;
+  }
+
   function getColumnEditorOptions(
     column: Column<TData>,
     row?: Row<TData> | null,
@@ -272,8 +343,36 @@ export function createCellRender<
       // Dynamic per-row: must be re-evaluated because the row's other
       // cells may have just changed (cascade).
       if (!row?.original) return [];
-      return normalizeEditorOptions(def(row.original as TData));
+      // Once a column is known to hand back promises, answer from the cache
+      // WITHOUT calling the source again. Render reads options constantly, so
+      // calling an async source every time fires a real request per render -
+      // and any state the source touches is being mutated mid-render, which
+      // Svelte rejects outright. The key folds in the row's values, so editing
+      // the row supersedes the entry and the cascade refetches.
+      const known = (ctx.asyncEditorColumns as Set<string>).has(column.id);
+      if (known) {
+        const key = asyncRowKey(column, row);
+        const done = ctx.asyncEditorOptions[key];
+        if (done) return done;
+        if ((ctx.asyncEditorOptionsPending as Set<string>).has(key)) return [];
+        const produced = def(row.original as TData);
+        if (isThenable(produced)) {
+          return resolveAsyncOptions(key, produced, `${column.id}::${row.id}::`);
+        }
+        return normalizeEditorOptions(produced);
+      }
+      const produced = def(row.original as TData);
+      if (isThenable(produced)) {
+        (ctx.asyncEditorColumns as Set<string>).add(column.id);
+        return resolveAsyncOptions(
+          asyncRowKey(column, row),
+          produced,
+          `${column.id}::${row.id}::`,
+        );
+      }
+      return normalizeEditorOptions(produced);
     }
+    if (isThenable(def)) return resolveAsyncOptions(column.id, def);
     const id = column.id;
     if (
       !ctx.editorOptionsCache[id] ||
@@ -283,6 +382,27 @@ export function createCellRender<
       (ctx.editorOptionsCache as Record<string, unknown>)[id + "__src"] = def;
     }
     return ctx.editorOptionsCache[id];
+  }
+
+  /**
+   * True while a column's (or cell's) async option list is still loading.
+   * Derived from "the source is async and no result has landed" rather than
+   * from the pending Set, so it stays reactive - `asyncEditorOptions` is the
+   * reactive half, the Set is only a dedupe guard.
+   */
+  function areEditorOptionsLoading(
+    column: Column<TData>,
+    row?: Row<TData> | null,
+  ): boolean {
+    const def = column.columnDef.editorOptions;
+    if (typeof def === "function") {
+      if (!row?.original) return false;
+      // Never call the source here - that would fire another request just to
+      // answer "are we loading?". The resolver records which columns are async.
+      if (!(ctx.asyncEditorColumns as Set<string>).has(column.id)) return false;
+      return !ctx.asyncEditorOptions[asyncRowKey(column, row)];
+    }
+    return isThenable(def) && !ctx.asyncEditorOptions[column.id];
   }
 
   /** Joined display string for list/chips cells. */
@@ -461,6 +581,7 @@ export function createCellRender<
     computeCellValidity,
     computeCellNote,
     getColumnEditorOptions,
+    areEditorOptionsLoading,
     formatListCellValue,
     formatCellValue,
     formatPinnedValue,

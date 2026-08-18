@@ -19,6 +19,10 @@ export function getColumnBaseValue<TData extends RowData>(row: Row<TData>, colum
 }
 
 export function isGroupRow<TData extends RowData>(row: Row<TData>) {
+  // Tree rows are expandable too, but they are real data rows - rendering one as
+  // a full-width banner would swallow its cells. Only grouping's synthetic rows
+  // are banners.
+  if ((row as { __treeRow?: boolean }).__treeRow) return false;
   return typeof row.getCanExpand === "function" && row.getCanExpand();
 }
 

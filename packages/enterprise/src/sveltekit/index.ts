@@ -11,6 +11,7 @@ export {
   createKitHandlers,
   type KitDataSourceOptions,
   type KitHandlerOptions,
+  type KitScope,
   type KitHandlers,
   type KitMessage,
 } from './transport'

@@ -203,7 +203,20 @@ export type SchedulerViewConfig = {
 export type TreeDataConfig = { parentField: string; labelField: string }
 /** Which export affordances the grid toolbar shows. All go through the grid's built-in
  *  export API (dependency-free). Empty / all-false = no toolbar. */
-export type GridExportConfig = { csv?: boolean; json?: boolean; copy?: boolean }
+/** Export buttons on a grid's toolbar.
+ *
+ *  `csv` / `json` / `copy` use the free grid API. `xlsx` / `pdf` / `print` go
+ *  through `@svgrid/enterprise` (real OOXML, pdfmake, paginated print) and pull
+ *  in their optional peer deps - jszip for xlsx, pdfmake for pdf - which the
+ *  generated package.json declares only when the button is switched on. */
+export type GridExportConfig = {
+  csv?: boolean
+  json?: boolean
+  copy?: boolean
+  xlsx?: boolean
+  pdf?: boolean
+  print?: boolean
+}
 /** Which filtering surfaces the grid shows (when `filterable`). `global` = the search-all
  *  box, `row` = a filter input under each header, `menu` = the column header filter menu. */
 export type GridFilterUi = { global?: boolean; row?: boolean; menu?: boolean }
@@ -817,6 +830,68 @@ export type StudioProject = {
   /** Server-side business-rule triggers, keyed by entity name. Enforced on the
    *  SQL route (compiled into createKitHandlers `hooks`). */
   triggers?: Record<string, EntityTriggers>
+  /** Scheduled background jobs: a guarded `/api/cron` endpoint plus the schedule
+   *  config for the deploy target. Empty / omitted emits nothing. */
+  jobs?: ScheduledJob[]
+  /** Multi-tenancy: scope every row to the signed-in user's tenant. */
+  tenancy?: TenancyConfig
+}
+
+/**
+ * Multi-tenancy for the generated app: one database, one deployment, rows
+ * partitioned by a tenant column.
+ *
+ * Enforced on the SERVER, in the API route's `scope` option - reads are
+ * filtered, creates are stamped, and updates/deletes re-read the target under
+ * the scope first. A client that skips the UI still cannot reach another
+ * tenant's rows.
+ *
+ * Requires the [auth starter](./auth.md) (the tenant comes from the session)
+ * and the typed data layer (the column has to exist in the schema). Without
+ * both it degrades to off rather than emitting a half-enforced scope.
+ */
+export type TenancyConfig = {
+  enabled: boolean
+  /** Column holding the tenant key on every scoped entity. Default `tenantId`. */
+  field?: string
+  /** Entities to leave GLOBAL (shared across tenants) - reference/lookup tables
+   *  like currencies or countries that every tenant reads. */
+  sharedEntities?: string[]
+}
+
+/** What a scheduled job does when it fires.
+ *  - `email`: send a summary of an entity (row count + the newest rows).
+ *  - `code`: run a body you write, with `db` / `sendEmail` in scope. */
+export type ScheduledJobKind = 'email' | 'code'
+
+/**
+ * One scheduled background job.
+ *
+ * Jobs run on the SERVER via a generated `/api/cron` route, not in a browser
+ * tab - unlike the client-side `createScheduler` in `@svgrid/enterprise`, which
+ * only fires while the app is open. The route is secret-guarded and invoked by
+ * the platform's scheduler (Vercel Cron, a GitHub Actions schedule, or your own
+ * crontab hitting the URL).
+ */
+export type ScheduledJob = {
+  /** Stable id - the `?job=` selector and the handler name. */
+  id: string
+  /** Human label used in comments + the DEPLOY.md table. */
+  name: string
+  /** Standard 5-field cron expression, interpreted in UTC. */
+  cron: string
+  /** Off by default is surprising for something you explicitly added, so a job
+   *  runs unless `enabled` is explicitly false. */
+  enabled?: boolean
+  kind: ScheduledJobKind
+  /** `email`: the entity to summarize. */
+  entity?: string
+  /** `email`: recipient address. */
+  to?: string
+  /** `email`: subject line. Defaults to the job name. */
+  subject?: string
+  /** `code`: the handler body (TypeScript). */
+  code?: string
 }
 
 /** The render mode for a screen. `'ssr'` emits idiomatic SvelteKit (`+page.server.ts`
@@ -882,6 +957,32 @@ export function setTrigger(project: StudioProject, entity: string, event: Trigge
   if (Object.keys(nextEnt).length) triggers[entity] = nextEnt
   else delete triggers[entity]
   return { ...project, triggers: Object.keys(triggers).length ? triggers : undefined }
+}
+
+/** Turn multi-tenancy on/off and configure the scoping column. */
+export function setTenancy(project: StudioProject, tenancy: TenancyConfig | null): StudioProject {
+  if (!tenancy || !tenancy.enabled) {
+    const { tenancy: _drop, ...rest } = project
+    return rest
+  }
+  return { ...project, tenancy }
+}
+
+/** The tenant column name, defaulted. */
+export const tenantField = (project: StudioProject): string => project.tenancy?.field || 'tenantId'
+
+/** True when `entity` is scoped to a tenant (i.e. tenancy is on and it is not
+ *  listed as shared). Shared entities stay global reference data. */
+export function isTenantScoped(project: StudioProject, entity: string): boolean {
+  if (project.tenancy?.enabled !== true) return false
+  return !(project.tenancy.sharedEntities ?? []).includes(entity)
+}
+
+/** Add or replace a scheduled job (matched by `id`). Pass `null` to remove one. */
+export function setJob(project: StudioProject, id: string, job: Omit<ScheduledJob, 'id'> | null): StudioProject {
+  const rest = (project.jobs ?? []).filter((j) => j.id !== id)
+  const next = job ? [...rest, { ...job, id }] : rest
+  return { ...project, jobs: next.length ? next : undefined }
 }
 
 /** Where the generated app deploys. Drives the emitted SvelteKit adapter + config. */
@@ -1378,7 +1479,13 @@ export function removeScreen(project: StudioProject, screenId: string): StudioPr
   return { ...project, screens: project.screens.filter((s) => s.id !== screenId) }
 }
 
-export function updateScreen(project: StudioProject, screenId: string, patch: Partial<Pick<Screen, 'title' | 'route' | 'entity' | 'nav' | 'actions' | 'className'>>): StudioProject {
+export function updateScreen(
+  project: StudioProject,
+  screenId: string,
+  // `renderMode` is patchable here so SSR output is reachable without the
+  // designer - the CLI and the MCP tools drive the model through this function.
+  patch: Partial<Pick<Screen, 'title' | 'route' | 'entity' | 'nav' | 'actions' | 'className' | 'renderMode'>>,
+): StudioProject {
   return mapScreen(project, screenId, (s) => ({ ...s, ...patch }))
 }
 

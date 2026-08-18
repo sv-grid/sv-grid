@@ -62,7 +62,7 @@ describe('live-data starters', () => {
       const all = emitStudioProject(s.build()).map((f) => f.contents).join('\n')
       expect(all.includes('SvRecordDetail'), `${s.id}: no detail page`).toBe(true)
       expect(all.includes('import { goto }'), `${s.id}: no drill-through`).toBe(true)
-      expect(all.includes("selectedId={$page.url.searchParams.get('id')"), `${s.id}: detail not URL-addressable`).toBe(true)
+      expect(all.includes("selectedId={page.url.searchParams.get('id')"), `${s.id}: detail not URL-addressable`).toBe(true)
     }
   })
 

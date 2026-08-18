@@ -256,13 +256,32 @@
   // Server-side group / tree a11y: aria-level on every tree row, aria-expanded
   // on the expandable ones. Undefined (attribute omitted) when serverGroup is off.
   const serverGroup = $derived(opt.serverGroup);
+  // Client tree data reuses this same treegrid contract - the row model already
+  // records depth and expandability, so the accessors just read the row instead
+  // of calling back into consumer callbacks.
+  const treeData = $derived(opt.treeData);
   function sgAriaLevel(row: Row<TData>): number | undefined {
+    if (treeData) return (row.depth ?? 0) + 1;
     return serverGroup ? serverGroup.level(row.original as TData) + 1 : undefined;
   }
   function sgAriaExpanded(row: Row<TData>): boolean | undefined {
+    if (treeData) {
+      if (!row.getCanExpand?.()) return undefined;
+      return row.getIsExpanded?.() ?? false;
+    }
     if (!serverGroup || !serverGroup.isGroup(row.original as TData)) return undefined;
     return serverGroup.expanded?.(row.original as TData) ?? false;
   }
+  /** Column that carries the tree expander: explicit, else the first visible one. */
+  const treeColumnId = $derived(
+    treeData ? (treeData.column ?? allColumns[0]?.id ?? "") : "",
+  );
+  // Row-grouping display modes: group state lives in synthetic columns instead
+  // of a full-width banner row.
+  const groupColumnMode = $derived(ctrl.groupColumnMode);
+  const autoGroupCell = $derived(ctrl.autoGroupCell);
+  const isAutoGroupColumn = (id: string): boolean =>
+    id === "__autoGroup" || id.startsWith("__group_");
   const sortDirectionByColumn = $derived(ctrl.sortDirectionByColumn);
   const groupingColumns = $derived(ctrl.groupingColumns);
   const paginationState = $derived(ctrl.paginationState);
@@ -286,10 +305,25 @@
     const rh = opt.rowHeight;
     return typeof rh === "function" ? rh(i) : (rh ?? 30);
   };
+  // Auto height applies to both bodies. The non-virtualized one has no
+  // `rowItem`, so it sizes from `rowSizePx` - but must still emit `min-height`
+  // and the wrap class, or `autoRowHeight` would silently do nothing whenever
+  // `virtualization={false}`.
+  const rowStyleFor = (i: number): string =>
+    autoRowHeightOn
+      ? `min-height: ${measuredRowHeightPx(i) ?? rowSizePx(i)}px;`
+      : `height: ${rowSizePx(i)}px;`;
   const columnVirtualizationEnabled = $derived(
     ctrl.columnVirtualizationEnabled,
   );
   const virtualRows = $derived(ctrl.virtualRows);
+  const autoRowHeightOn = $derived(ctrl.autoRowHeightOn);
+  const measureRowHeight = $derived(ctrl.measureRowHeight);
+  const measuredRowHeightPx = $derived(ctrl.measuredRowHeightPx);
+  // Under auto height the row must be free to grow, so it gets `min-height`
+  // (the pre-measure estimate) instead of a fixed `height` that would clip it.
+  const rowHeightStyle = (size: number): string =>
+    autoRowHeightOn ? `min-height: ${size}px;` : `height: ${size}px;`;
   // DOM-space spacer heights + capped total: identical to the logical
   // virtualizer values for normal grids, scaled down past
   // MAX_DOM_SCROLL_HEIGHT so huge grids stay scrollable to the last row on
@@ -405,6 +439,16 @@
   const hasMeasured = $derived(ctrl.hasMeasured);
   const onBodyScroll = $derived(ctrl.onBodyScroll);
   const computeRowClass = $derived(ctrl.computeRowClass);
+  // Group subtotal rows are clones of their banner, so they render through the
+  // normal cell path and their aggregates land under the right columns; only
+  // the class distinguishes them. Typed here rather than cast inline - an `as`
+  // inside template markup type-checks but breaks the vitest/build parse.
+  const isGroupFooterRow = (row: Row<TData>): boolean =>
+    (row as { __groupFooter?: boolean }).__groupFooter === true;
+  // The grand total is a group footer that closes the whole set rather than one
+  // group, so it carries both classes - shared chrome, heavier top rule.
+  const isGrandTotalRow = (row: Row<TData>): boolean =>
+    (row as { __grandTotal?: boolean }).__grandTotal === true;
   const computeCellClass = $derived(ctrl.computeCellClass);
   const computeCellTooltip = $derived(ctrl.computeCellTooltip);
   const computeCellValidity = $derived(ctrl.computeCellValidity);
@@ -412,6 +456,7 @@
   const getCellDisplayValue = $derived(ctrl.getCellDisplayValue);
   const getColumnAlign = $derived(ctrl.getColumnAlign);
   const getColumnEditorOptions = $derived(ctrl.getColumnEditorOptions);
+  const areEditorOptionsLoading = $derived(ctrl.areEditorOptionsLoading);
   const formatListCellValue = $derived(ctrl.formatListCellValue);
   const formatCellValue = $derived(ctrl.formatCellValue);
   const getPinnedCellValue = $derived(ctrl.getPinnedCellValue);
@@ -460,6 +505,21 @@
         ctrl.editingCell = null;
         ctrl.gridRootEl?.focus({ preventScroll: true });
       },
+      // Tab out of an editor: commit, then step to the adjacent cell. Without
+      // this a registered editor's Tab walks focus out of the grid (#48) - the
+      // built-in editors already route through the same helper.
+      onCommitAndMove: (v: unknown, direction: 1 | -1) => {
+        if (v !== undefined) updateEditingCellValue(v);
+        ctrl.commitAndMoveByTab(direction === -1);
+      },
+      // Close a popover editor without committing. Same effect as cancel today;
+      // named separately so an editor can distinguish "dismiss my panel" from
+      // "abandon the edit" if that ever diverges.
+      onRequestClose: () => {
+        ctrl.editingCell = null;
+        ctrl.gridRootEl?.focus({ preventScroll: true });
+      },
+      inCell: true,
     };
   }
   const onHeaderSortClick = $derived(ctrl.onHeaderSortClick);
@@ -869,6 +929,11 @@
         <path d="M6 6l12 12" />
       {:else if name === "chevron-down"}
         <path d="M6 9l6 6 6-6" />
+      {:else if name === "chevron-right"}
+        <!-- Same path SvTree's twisty uses, so every expander in the library
+             draws the same chevron. Rotated 90deg by CSS when expanded rather
+             than swapped for a second glyph. -->
+        <path d="m9 18 6-6-6-6" />
       {:else if name === "op-contains"}
         <circle cx="11" cy="11" r="6" />
         <path d="M20 20l-4.5-4.5" />
@@ -1027,7 +1092,12 @@
         </svg>
       {/if}
     {:else}
-      {#if row.depth > 0 && column.id === allColumns[0]?.id}
+      <!-- Indent for rows nested under a group BANNER. Tree data and the
+           column display modes draw their own indent next to the expander, so
+           this must not stack on top of theirs - `row.depth` is set in all
+           three cases and this used to fire for every one of them, leaving a
+           20px gap between a tree row's chevron and its text. -->
+      {#if row.depth > 0 && column.id === allColumns[0]?.id && !treeData && !groupColumnMode}
         <span
           class="sv-grid-group-child-indent"
           style={`width: ${row.depth * 20}px;`}
@@ -1073,7 +1143,72 @@
        color / weight and the icon-set glyph ride on the content wrapper.
        Falls straight through to `cellBody` when no format applies, so the
        common (unformatted) path pays nothing. -->
+  <!-- Tree expander + indentation, prefixed to the tree column's cell. Rows
+       without children still get the indent (and a spacer where the chevron
+       would be) so values stay aligned down a level. -->
+  {#snippet treeAffordance(row: Row<TData>)}
+    {@const canExpand = row.getCanExpand?.() ?? false}
+    <span
+      class="sv-grid-tree-indent"
+      style={`width:${(row.depth ?? 0) * (treeData?.indentPx ?? 12)}px;`}
+      aria-hidden="true"
+    ></span>
+    {#if canExpand}
+      <button
+        type="button"
+        class="sv-grid-tree-toggle"
+        aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
+        aria-label={row.getIsExpanded?.() ? "Collapse row" : "Expand row"}
+        onclick={(event) => {
+          event.stopPropagation();
+          row.toggleExpanded?.();
+        }}>{@render icon("chevron-right")}</button
+      >
+    {:else}
+      <span class="sv-grid-tree-spacer" aria-hidden="true"></span>
+    {/if}
+  {/snippet}
+
+  <!-- The group label + expander for a `singleColumn` / `multipleColumns`
+       auto-group cell. Indented by level in single-column mode; in multi-column
+       mode each level already has its own column, so no indent. -->
+  {#snippet autoGroupAffordance(row: Row<TData>, cell: { label: string; count: number; depth: number })}
+    <span
+      class="sv-grid-tree-indent"
+      style={`width:${cell.depth * 16}px;`}
+      aria-hidden="true"
+    ></span>
+    <button
+      type="button"
+      class="sv-grid-tree-toggle"
+      aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
+      aria-label={row.getIsExpanded?.() ? "Collapse group" : "Expand group"}
+      onclick={(event) => {
+        event.stopPropagation();
+        row.toggleExpanded?.();
+      }}>{@render icon("chevron-right")}</button
+    >
+    <span class="sv-grid-autogroup-label">{cell.label}</span>
+    <span class="sv-grid-group-count">({cell.count})</span>
+  {/snippet}
+
   {#snippet cellBodyWithFormat(
+    row: Row<TData>,
+    column: Column<TData>,
+    cellValue: unknown,
+  )}
+    {#if groupColumnMode && isAutoGroupColumn(column.id)}
+      {@const agc = autoGroupCell(row, column.id)}
+      {#if agc}{@render autoGroupAffordance(row, agc)}{/if}
+    {:else}
+      {#if treeData && column.id === treeColumnId}
+        {@render treeAffordance(row)}
+      {/if}
+      {@render cellBodyFormatted(row, column, cellValue)}
+    {/if}
+  {/snippet}
+
+  {#snippet cellBodyFormatted(
     row: Row<TData>,
     column: Column<TData>,
     cellValue: unknown,
@@ -1175,10 +1310,12 @@
       ></button>
     {:else if ctrl.editingCell?.editorType === "list"}
       {@const opts = getColumnEditorOptions(column, row)}
+      {@const optsLoading = areEditorOptionsLoading(column, row)}
       {@const multi = column.columnDef.editorMultiple === true}
       {#if DropdownEditor}
         <DropdownEditor
           options={opts}
+          loading={optsLoading}
           value={ctrl.editingCell?.value}
           multiple={multi}
           placeholder="Select…"
@@ -1196,9 +1333,10 @@
       {/if}
     {:else if ctrl.editingCell?.editorType === "chips"}
       {@const opts = getColumnEditorOptions(column, row)}
+      {@const optsLoading = areEditorOptionsLoading(column, row)}
       {@const multi = column.columnDef.editorMultiple === true}
       {@const selectedArr = toValueArray(ctrl.editingCell?.value)}
-      {@render chipsEditor(opts, multi, selectedArr)}
+      {@render chipsEditor(opts, multi, selectedArr, optsLoading)}
     {:else if ctrl.editingCell?.editorType === "rating"}
       {@const ratingVal = Math.max(
         0,
@@ -1241,9 +1379,11 @@
       <!-- Custom dropdown: opens a themed popover identical in feel to
            the existing 'list' editor (single-select, no typeahead). -->
       {@const selectOpts = getColumnEditorOptions(column, row)}
+      {@const optsLoading = areEditorOptionsLoading(column, row)}
       {#if DropdownEditor}
         <DropdownEditor
           options={selectOpts}
+          loading={optsLoading}
           value={ctrl.editingCell?.value}
           multiple={false}
           placeholder="Select…"
@@ -1263,9 +1403,11 @@
       <!-- Searchable combobox: same popover as 'select' with a
            typeahead filter input baked in at the top. -->
       {@const richOpts = getColumnEditorOptions(column, row)}
+      {@const optsLoading = areEditorOptionsLoading(column, row)}
       {#if DropdownEditor}
         <DropdownEditor
           options={richOpts}
+          loading={optsLoading}
           value={ctrl.editingCell?.value}
           multiple={false}
           searchable={true}
@@ -1527,6 +1669,7 @@
     opts: CellEditorOption[],
     multi: boolean,
     selectedArr: Array<string | number>,
+    optsLoading: boolean,
   )}
     {#if opts.length > 0}
       <!-- Options-driven chips editor: defer to the custom dropdown,
@@ -1536,6 +1679,7 @@
       {#if DropdownEditor}
         <DropdownEditor
           options={opts}
+          loading={optsLoading}
           value={ctrl.editingCell?.value}
           multiple={multi}
           placeholder="Pick…"
@@ -1657,7 +1801,7 @@
         onclick={(event) => {
           event.stopPropagation();
           row.toggleExpanded?.();
-        }}>{row.getIsExpanded?.() ? "▾" : "▸"}</button
+        }}>{@render icon("chevron-right")}</button
       >
       <span class="sv-grid-group-label">{headerLabel}: {groupValue}</span>
       <span class="sv-grid-group-count"
@@ -1853,7 +1997,7 @@
             activeDescendantId,
             rowCount: allRows.length,
             colCount: allColumns.length,
-            treegrid: !!opt.serverGroup,
+            treegrid: !!opt.serverGroup || !!opt.treeData,
           })}
           onkeydown={onGridKeyDown}
           onpaste={onGridPaste}
@@ -2438,14 +2582,14 @@
                 {#if row}
                   {#if opt.isDetailRow?.(row.original as TData, rowIndex)}
                     {@render detailRowMarkup(row, rowIndex)}
-                  {:else if isGroupRow(row)}
+                  {:else if isGroupRow(row) && !groupColumnMode}
                     <tr
                       class="sv-grid-row sv-grid-group-row"
                       class:sv-grid-row-selected={isRowSelected(row.id)}
                       aria-level={row.depth + 1}
                       aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
                       {...getGridRowA11yProps(rowIndex + 1)}
-                      style={`height: ${rowItem.size}px;`}
+                      style={rowHeightStyle(rowItem.size)}
                     >
                       <td
                         class="sv-grid-cell sv-grid-group-cell"
@@ -2467,11 +2611,15 @@
                       class:sv-grid-row-alt={opt.zebraRows &&
                         rowIndex % 2 === 1}
                       class:sv-grid-row-draggable={rowDragManagedEffective}
+                      class:sv-grid-group-footer-row={isGroupFooterRow(row)}
+                      class:sv-grid-grand-total-row={isGrandTotalRow(row)}
+                      class:sv-grid-row-auto-height={autoRowHeightOn}
                       {...getGridRowA11yProps(rowIndex + 1)}
                       aria-level={sgAriaLevel(row)}
                       aria-expanded={sgAriaExpanded(row)}
                       {...rowDragAttrs(rowIndex)}
-                      style={`height: ${rowItem.size}px;`}
+                      style={rowHeightStyle(rowItem.size)}
+                      use:measureRowHeight={rowIndex}
                     >
                       {#if showRowNumbersEffective}
                         <td
@@ -2690,14 +2838,14 @@
               {#each allRows as row, rowIndex (row.id)}
                 {#if opt.isDetailRow?.(row.original as TData, rowIndex)}
                   {@render detailRowMarkup(row, rowIndex)}
-                {:else if isGroupRow(row)}
+                {:else if isGroupRow(row) && !groupColumnMode}
                   <tr
                     class="sv-grid-row sv-grid-group-row"
                     class:sv-grid-row-selected={isRowSelected(row.id)}
                     aria-level={row.depth + 1}
                     aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
                     {...getGridRowA11yProps(rowIndex + 1)}
-                    style={`height: ${rowSizePx(rowIndex)}px;`}
+                    style={rowStyleFor(rowIndex)}
                   >
                     <td
                       class="sv-grid-cell sv-grid-group-cell"
@@ -2719,11 +2867,15 @@
                     class:sv-grid-row-alt={opt.zebraRows &&
                       rowIndex % 2 === 1}
                     class:sv-grid-row-draggable={rowDragManagedEffective}
+                    class:sv-grid-group-footer-row={isGroupFooterRow(row)}
+                    class:sv-grid-grand-total-row={isGrandTotalRow(row)}
+                    class:sv-grid-row-auto-height={autoRowHeightOn}
                     {...getGridRowA11yProps(rowIndex + 1)}
                     aria-level={sgAriaLevel(row)}
                     aria-expanded={sgAriaExpanded(row)}
                     {...rowDragAttrs(rowIndex)}
-                    style={`height: ${rowSizePx(rowIndex)}px;`}
+                    style={rowStyleFor(rowIndex)}
+                    use:measureRowHeight={rowIndex}
                   >
                     {#if showRowNumbersEffective}
                       <td

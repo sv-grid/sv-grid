@@ -135,7 +135,7 @@
 
   :global(.sv-toast--success) { --_accent: var(--sg-success, #16a34a); }
   :global(.sv-toast--error) { --_accent: var(--sg-danger, #dc2626); }
-  :global(.sv-toast--warning) { --_accent: var(--sg-warning, #f59e0b); }
+  :global(.sv-toast--warning) { --_accent: var(--sg-warning, #d97706); }
   :global(.sv-toast--info) { --_accent: var(--sg-accent, #2563eb); }
 
   :global(.sv-toast__icon) { flex: none; width: 18px; height: 18px; display: grid; place-items: center; color: var(--_accent); font-weight: 700; }

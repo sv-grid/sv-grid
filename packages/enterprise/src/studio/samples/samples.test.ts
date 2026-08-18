@@ -170,7 +170,7 @@ describe('sample apps', () => {
         expect(detail, `${s.id}: no detail block`).toBeTruthy()
         const all = emitStudioProject(project).map((f) => f.contents).join('\n')
         expect(all.includes('SvRecordDetail'), `${s.id}: no SvRecordDetail`).toBe(true)
-        expect(all.includes("selectedId={$page.url.searchParams.get('id')"), `${s.id}: detail not URL-addressable`).toBe(true)
+        expect(all.includes("selectedId={page.url.searchParams.get('id')"), `${s.id}: detail not URL-addressable`).toBe(true)
       }
     })
 

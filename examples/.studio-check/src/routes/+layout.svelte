@@ -1,6 +1,6 @@
 <script lang="ts">
   import '../app.css'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
 
   let { children } = $props()
   const nav = [{"href":"/","label":"Home"},{"href":"/customers","label":"Customer"}]
@@ -14,7 +14,7 @@
     <a class="sv-app__brand" href="/">{brand}</a>
     <nav class="sv-app__links">
       {#each nav as item (item.href)}
-        <a class="sv-app__link" class:is-active={$page.url.pathname === item.href} href={item.href}>{item.label}</a>
+        <a class="sv-app__link" class:is-active={page.url.pathname === item.href} href={item.href}>{item.label}</a>
       {/each}
     </nav>
     <span class="sv-app__foot">{footer}</span>

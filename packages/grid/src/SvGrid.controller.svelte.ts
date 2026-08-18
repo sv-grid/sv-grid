@@ -1,11 +1,13 @@
 import {
     applyExcelFilter,
+    applyGroupAggregate,
     normalizeForFilter,
     createColumnVirtualizer,
     createCoreRowModel,
     createExpandedRowModel,
     createFilteredRowModel,
     createGroupedRowModel,
+    createTreeRowModel,
     createSvelteVirtualizer,
     createSortedRowModel,
     createSvGrid,
@@ -88,6 +90,7 @@ import {
     hiddenLeavesForCollapse,
   } from "./column-groups";
 import { resolveColumnId } from "./column-id";
+import { buildAutoGroupColumns, insertGroupFooters, paginateGroupedRows } from "./group-display";
 import {
     createGridApi,
   } from "./build-api";
@@ -667,6 +670,10 @@ export function createSvGridController<
   const externalPaginationEnabled = $derived(props.externalPagination === true);
   const passthroughSortedRowModel = ({ rows }: { rows: Array<Row<TData>> }) =>
     rows;
+  // Client tree data. Structural like external sort, so captured once at mount -
+  // the row-model pipeline is read before any later prop change could apply.
+  // svelte-ignore state_referenced_locally
+  const treeDataConfig = props.treeData;
 
 
   const grid = createSvGrid({
@@ -687,7 +694,14 @@ export function createSvGridController<
         sortedRowModel: externalSortEnabled
           ? passthroughSortedRowModel
           : createSortedRowModel<TData>(sortFns),
-        groupedRowModel: createGroupedRowModel<TData>(),
+        // Tree nesting replaces grouping when `treeData` is set - a row cannot
+        // be both a hierarchy node and bucketed under a group banner.
+        groupedRowModel: treeDataConfig
+          ? createTreeRowModel<TData>({
+              parentField: treeDataConfig.parentField,
+              idField: treeDataConfig.idField,
+            })
+          : createGroupedRowModel<TData>(),
         expandedRowModel: createExpandedRowModel<TData>(),
       };
     },
@@ -771,6 +785,103 @@ export function createSvGridController<
     userColumnOrder = props.columnOrder ? [...props.columnOrder] : [];
   });
 
+  // Declared here rather than beside the other pagination/state derivations:
+  // the auto-group column pipeline below reads it, and a `const` used above its
+  // declaration is a type error even though `$derived` is lazy enough at runtime.
+  const groupingColumns = $derived.by(() => {
+    gridStateVersion;
+    return grid.getState().grouping ?? [];
+  });
+
+  /**
+   * Row-grouping display mode. `groupRows` (the default) renders a full-width
+   * banner per group - the historical behaviour. `singleColumn` folds every
+   * grouping level into one synthetic column; `multipleColumns` gives each
+   * grouped field its own. Both hide the grouped SOURCE columns, since their
+   * values now live in the auto column.
+   */
+  const groupDisplayMode = $derived(props.groupDisplayMode ?? "groupRows");
+  const autoGroupSpec = $derived(
+    buildAutoGroupColumns(groupingColumns, groupDisplayMode),
+  );
+  /** True when group state is shown in columns rather than banner rows. */
+  const groupColumnMode = $derived(autoGroupSpec.autoColumns.length > 0);
+
+  /**
+   * The synthetic auto-group columns as real `Column` objects, so the rest of
+   * the pipeline (widths, pinning, virtualization, headers) treats them like
+   * any other column. They carry no `field` - their cell content is resolved
+   * from the row's group state at render time.
+   */
+  const autoGroupColumns = $derived.by(() => {
+    if (!groupColumnMode) return [] as Column<TData>[];
+    const sourceById = new Map(grid.getAllColumns().map((c) => [c.id, c]));
+    return autoGroupSpec.autoColumns.map((spec) => {
+      const source = spec.field ? sourceById.get(spec.field) : undefined;
+      const sourceHeader = source?.columnDef.header;
+      const header =
+        spec.field == null
+          ? (props.autoGroupColumnHeader ?? "Group")
+          : typeof sourceHeader === "string"
+            ? sourceHeader
+            : spec.field;
+      const column: Column<TData> = {
+        id: spec.id,
+        depth: 0,
+        columnDef: {
+          header,
+          width: props.autoGroupColumnWidth ?? 220,
+          sortable: false,
+          filterable: false,
+        } as never,
+        getCanSort: () => false,
+        getCanFilter: () => false,
+        getIsSorted: () => false,
+        getToggleSortingHandler: () => () => {},
+      };
+      return column;
+    });
+  });
+
+  /**
+   * What an auto-group column shows for a given row.
+   *
+   * `singleColumn` puts every level in one column, so a group row renders its
+   * own level (indented by depth) and leaf rows stay blank - the ancestry is
+   * already visible in the banner rows above.
+   *
+   * `multipleColumns` gives each grouped field a column, so a group row only
+   * writes into the column matching ITS level and leaves the others blank.
+   *
+   * Returns null when the cell should render nothing.
+   */
+  function autoGroupCell(
+    row: Row<TData>,
+    columnId: string,
+  ): { label: string; count: number; depth: number } | null {
+    if (!isGroupRow(row)) return null;
+    const depth = row.depth ?? 0;
+    if (columnId !== "__autoGroup") {
+      // multipleColumns: only the column for this row's own level renders.
+      const field = groupingColumns[depth];
+      if (!field || `__group_${field}` !== columnId) return null;
+    }
+    const groupingColumnId = groupingColumns[depth] ?? "";
+    const sourceColumn = grid
+      .getAllColumns()
+      .find((c) => c.id === groupingColumnId);
+    const raw = row.getCellValueByColumnId(groupingColumnId);
+    const label = sourceColumn
+      ? formatCellValue(sourceColumn, raw, row)
+      : String(raw ?? "");
+    return {
+      label,
+      count: row.leafCount ?? row.subRows?.length ?? 0,
+      // singleColumn indents by level; multipleColumns already separates them.
+      depth: columnId === "__autoGroup" ? depth : 0,
+    };
+  }
+
   const allColumns = $derived.by(() => {
     let raw = grid
       .getAllColumns()
@@ -778,8 +889,13 @@ export function createSvGridController<
         (column) =>
           !hiddenColumns[column.id] &&
           !hiddenByGroupCollapse[column.id] &&
-          !isHiddenByResponsive(column),
+          !isHiddenByResponsive(column) &&
+          // In a column display mode the grouped columns are folded into the
+          // auto column(s), so showing them too would just duplicate the value.
+          !autoGroupSpec.hiddenSourceIds.has(column.id),
       );
+    // Auto-group columns lead, like a row header.
+    if (autoGroupColumns.length) raw = [...autoGroupColumns, ...raw];
     // Apply user reorder (if any). Unknown ids in userColumnOrder are
     // skipped; columns not in userColumnOrder keep their original
     // relative order after the user-ordered ones.
@@ -821,7 +937,21 @@ export function createSvGridController<
     const headers: (typeof base)[number]["headers"] = [];
     for (const column of allColumns) {
       const header = byId.get(column.id);
-      if (header) headers.push(header);
+      if (header) {
+        headers.push(header);
+        continue;
+      }
+      // Auto-group columns have no engine header. Synthesize one rather than
+      // skipping: the header row indexes `headers` BY POSITION against the
+      // rendered columns, so a gap would shift every later header by one.
+      const synthetic = {
+        id: column.id,
+        isPlaceholder: false,
+        colSpan: 1,
+        column,
+        getContext: () => ({ header: synthetic, column, table: grid }),
+      } as (typeof base)[number]["headers"][number];
+      headers.push(synthetic);
     }
     return [{ id: base[0]!.id, headers }];
   });
@@ -1098,10 +1228,6 @@ export function createSvGridController<
     return directions;
   });
 
-  const groupingColumns = $derived.by(() => {
-    gridStateVersion;
-    return grid.getState().grouping ?? [];
-  });
 
   const paginationState = $derived.by(() => {
     gridStateVersion;
@@ -1221,14 +1347,129 @@ export function createSvGridController<
    * the full dataset rather than the current page (see the comment above
    * `_rowModels`).
    */
-  const allRows = $derived.by(() => {
-    const rows = allRowsBeforePagination;
-    // External pagination: `data` already IS the current page - never slice.
-    if (!paginationEnabled || externalPaginationEnabled) return rows;
+  /**
+   * Grouped pagination. `allRowsBeforePagination` interleaves group banners with
+   * data rows, so a plain slice spends the page budget on banners - ten groups of
+   * two at `pageSize: 10` used to show about three data rows (#73). When grouping
+   * is active we page by DATA rows and reprint each page's ancestor banners.
+   * Null when grouping is off, so the flat path stays a cheap slice.
+   */
+  const groupedPage = $derived.by(() => {
+    if (!paginationEnabled || externalPaginationEnabled) return null;
+    if (!groupingColumns.length) return null;
     const { pageIndex, pageSize } = paginationState;
-    const start = pageIndex * pageSize;
-    return rows.slice(start, start + pageSize);
+    return paginateGroupedRows(allRowsBeforePagination, {
+      getDepth: (row: any) => row.depth ?? 0,
+      isGroup: (row: any) => isGroupRow(row),
+      // A collapsed group is the visible unit and takes a page slot; an expanded
+      // one is a banner reprinted above its children.
+      isExpanded: (row: any) => row.getIsExpanded?.() === true,
+      pageIndex,
+      pageSize,
+    });
   });
+
+  /**
+   * The grand-total row: one synthetic row carrying each column's `aggregate`
+   * over the whole filtered set. Shaped like a group footer so it renders
+   * through the normal cell path - totals land under the columns they belong
+   * to, and `getCanExpand`/`getIsExpanded` are off so nothing treats it as a
+   * banner. Returns null when no column aggregates (nothing to total).
+   *
+   * Aggregates the LEAF rows: `allRowsBeforePagination` interleaves group
+   * banners once grouping is on, and those carry per-group subtotals that
+   * would otherwise be summed a second time.
+   */
+  const buildGrandTotalRow = () => {
+    const leaves = allRowsBeforePagination.filter((row: any) => !isGroupRow(row));
+    const columns = grid.getAllColumns();
+    const original: Record<string, unknown> = {};
+    let hasAggregate = false;
+    for (const column of columns) {
+      const field = column.columnDef.field;
+      const agg = column.columnDef.aggregate;
+      if (!field || !agg) continue;
+      hasAggregate = true;
+      original[field] = applyGroupAggregate(agg, column.id, leaves as any);
+    }
+    if (!hasAggregate) return null;
+    return {
+      id: "__grand_total__",
+      index: -1,
+      original,
+      depth: 0,
+      subRows: [],
+      leafCount: leaves.length,
+      __groupFooter: true,
+      __grandTotal: true,
+      getCanExpand: () => false,
+      getIsExpanded: () => false,
+      toggleExpanded: () => {},
+      getIsSelected: () => false,
+      toggleSelected: () => {},
+      getAllCells: () => [],
+      getCellValueByColumnId: (columnId: string) => {
+        const col = columns.find((c) => c.id === columnId);
+        const field = col?.columnDef.field;
+        return field && field in original ? original[field] : undefined;
+      },
+    } as any;
+  };
+
+  /**
+   * Visible rows for the current page. Applied last so filters operate on
+   * the full dataset rather than the current page (see the comment above
+   * `_rowModels`).
+   */
+  const allRows = $derived.by(() => {
+    const paged = (() => {
+      const rows = allRowsBeforePagination;
+      // External pagination: `data` already IS the current page - never slice.
+      if (!paginationEnabled || externalPaginationEnabled) return rows;
+      if (groupedPage) return groupedPage.rows;
+      const { pageIndex, pageSize } = paginationState;
+      const start = pageIndex * pageSize;
+      return rows.slice(start, start + pageSize);
+    })();
+    const wantGroupFooters = Boolean(props.groupFooters) && groupingColumns.length > 0;
+    // The grand total belongs at the END of the dataset, so it is appended only
+    // on the last page - otherwise every page would end in a "total" that isn't
+    // one. With pagination off (or external, where the consumer owns paging and
+    // `data` is already the page) there is only one page to be last.
+    const isLastPage = (() => {
+      if (!paginationEnabled || externalPaginationEnabled) return true;
+      const { pageIndex, pageSize } = paginationState;
+      const total = groupedPage ? groupedPage.dataRowCount : allRowsBeforePagination.length;
+      return pageIndex >= Math.ceil(total / pageSize) - 1;
+    })();
+    const wantGrandTotal = Boolean(props.grandTotalRow) && isLastPage;
+    if (!wantGroupFooters && !wantGrandTotal) return paged;
+    // Footers are inserted AFTER paging so they never eat page budget. A footer
+    // is a clone of its group row, which already carries the group's aggregate
+    // values - so it renders through the normal cell path and the totals land
+    // under the columns they belong to, with `getCanExpand` off so nothing
+    // treats it as a banner.
+    return insertGroupFooters(paged, {
+      getDepth: (row: any) => row.depth ?? 0,
+      isGroup: (row: any) => isGroupRow(row),
+      includeGroupFooter: wantGroupFooters,
+      includeGrandTotalFooter: wantGrandTotal,
+      makeGrandTotal: buildGrandTotalRow,
+      makeFooter: (group: any) => ({
+        ...group,
+        id: `${group.id}__footer`,
+        subRows: [],
+        __groupFooter: true,
+        getCanExpand: () => false,
+        getIsExpanded: () => false,
+      }),
+    }) as typeof paged;
+  });
+
+  /** Rows the pager divides into pages: data rows only once grouping is on. */
+  const paginatedRowTotal = $derived(
+    groupedPage ? groupedPage.dataRowCount : allRowsBeforePagination.length,
+  );
 
   // When a filter reduces the dataset, the stored pageIndex can point beyond
   // the last valid page. Reset to page 0 so the grid never shows a blank body.
@@ -1236,7 +1477,7 @@ export function createSvGridController<
   $effect(() => {
     if (!paginationEnabled || externalPaginationEnabled) return;
     const { pageIndex, pageSize } = paginationState;
-    const pageCount = Math.ceil(allRowsBeforePagination.length / pageSize);
+    const pageCount = Math.ceil(paginatedRowTotal / pageSize);
     if (pageCount > 0 && pageIndex >= pageCount) {
       grid.setPagination({ pageIndex: 0, pageSize });
     }
@@ -1245,7 +1486,7 @@ export function createSvGridController<
   // Footer-facing pagination values. In external mode they come from the
   // consumer-controlled props; otherwise from the local row model + state.
   const paginationTotalRows = $derived(
-    externalPaginationEnabled ? (props.rowCount ?? 0) : allRowsBeforePagination.length,
+    externalPaginationEnabled ? (props.rowCount ?? 0) : paginatedRowTotal,
   );
   const paginationPageIndex = $derived(
     externalPaginationEnabled ? (props.pageIndex ?? 0) : paginationState.pageIndex,
@@ -2223,6 +2464,75 @@ export function createSvGridController<
       el.removeEventListener("scroll-change", onHorizontal as EventListener);
   });
 
+  // --- Auto row height -------------------------------------------------
+  // Measured natural heights, keyed by row index. A plain Map (not $state):
+  // it is written from a ResizeObserver during layout, and making it reactive
+  // would re-run the render that is doing the measuring. `autoRowHeightVersion`
+  // is the reactive signal instead, bumped only when a height actually changes.
+  const measuredRowHeights = new Map<number, number>();
+  let autoRowHeightVersion = $state(0);
+  // A per-row `rowHeight` function already supplies heights, so auto-measuring
+  // would fight it. Fixed numbers are fine - they become the pre-measure estimate.
+  const autoRowHeightOn = $derived(
+    props.autoRowHeight === true && typeof props.rowHeight !== "function",
+  );
+  const autoRowHeightFallback = $derived(
+    typeof props.rowHeight === "number" ? props.rowHeight : 30,
+  );
+
+  /** Report a row's measured height. Called by the view's measuring action.
+   *  Sub-pixel churn is ignored so a fractional layout can't loop. */
+  function reportRowHeight(index: number, height: number): void {
+    if (!autoRowHeightOn || height <= 0) return;
+    const prev = measuredRowHeights.get(index);
+    if (prev !== undefined && Math.abs(prev - height) < 1) return;
+    measuredRowHeights.set(index, height);
+    autoRowHeightVersion += 1;
+  }
+
+  /**
+   * Svelte action for a `<tr>` under `autoRowHeight`. Measures the row once on
+   * mount and again whenever its content reflows (a resized column rewraps
+   * text), reporting the natural height back to the virtualizer.
+   *
+   * Uses the shared rAF-deferred observer: the callback bumps state that
+   * re-lays-out the observed element, which is exactly the pattern that trips
+   * "ResizeObserver loop completed with undelivered notifications" when handled
+   * synchronously.
+   */
+  function measureRowHeight(node: HTMLElement, index: number) {
+    let current = index;
+    let stop: (() => void) | null = null;
+    const measure = () => reportRowHeight(current, node.getBoundingClientRect().height);
+    const attach = () => {
+      stop?.();
+      stop = autoRowHeightOn ? observeSizeRaf(node, measure) : null;
+      if (autoRowHeightOn) measure();
+    };
+    attach();
+    return {
+      update(next: number) {
+        if (next === current) return;
+        current = next;
+        // A recycled row now shows different data - re-measure under its new index.
+        measure();
+      },
+      destroy() {
+        stop?.();
+      },
+    };
+  }
+
+  // Row index -> row identity changes when the data does, so stale measurements
+  // would size new rows by the old ones. Drop them when the row set changes.
+  $effect(() => {
+    void allRows.length;
+    void internalData;
+    if (!autoRowHeightOn || measuredRowHeights.size === 0) return;
+    measuredRowHeights.clear();
+    autoRowHeightVersion += 1;
+  });
+
   $effect(() => {
     // When containerHeight is a string (e.g. "100%") the actual pixel height
     // depends on the parent layout - read it from the live scroll container.
@@ -2236,9 +2546,18 @@ export function createSvGridController<
         ? (scrollContainer?.clientHeight ?? 520)
         : (props.containerHeight ?? 520);
     const rh = props.rowHeight;
+    // Auto height: read measured sizes, falling back to the fixed rowHeight as
+    // the estimate for rows that have not rendered yet. Touch the version so a
+    // new measurement re-runs this effect (the Map itself is not reactive).
+    autoRowHeightVersion;
+    const estimateSize = autoRowHeightOn
+      ? (index: number) => measuredRowHeights.get(index) ?? autoRowHeightFallback
+      : typeof rh === "function"
+        ? rh
+        : (rh ?? 30);
     virtualizer.setOptions({
       count: allRows.length,
-      estimateSize: typeof rh === "function" ? rh : (rh ?? 30),
+      estimateSize,
       overscan: props.overscan ?? 8,
       viewportHeight,
     });
@@ -2313,6 +2632,20 @@ export function createSvGridController<
    *  are resolved on every call because they can change as other cells in
    *  the same row change (the whole point of cascading editors). */
   const editorOptionsCache: Record<string, CellEditorOption[]> = {};
+  // Resolved async `editorOptions`, keyed by column id (static source) or
+  // `columnId::rowId` (per-row cascade). Reactive so a fetch landing re-renders
+  // the open editor; `...Pending` both drives the loading state and dedupes the
+  // request across the many synchronous render calls.
+  let asyncEditorOptions = $state<Record<string, CellEditorOption[]>>({});
+  // Deliberately NOT reactive: this is written during render (the resolver runs
+  // inside the template), and mutating $state there is a Svelte 5 error that
+  // takes the whole editor down with it. Only the resolved result needs to be
+  // reactive; the loading flag is derived from "thenable source, no result yet".
+  const asyncEditorOptionsPending = new Set<string>();
+  // Columns whose per-row `editorOptions` has been observed returning a Promise.
+  // Lets the resolver answer from cache without re-invoking the source, so an
+  // async source fires one request per row instead of one per render.
+  const asyncEditorColumns = new Set<string>();
 
 
 
@@ -2950,6 +3283,9 @@ export function createSvGridController<
     get isCellEditableAt() { return isCellEditableAt; },
     get sortDirectionByColumn() { return sortDirectionByColumn; },
     get groupingColumns() { return groupingColumns; },
+    get groupDisplayMode() { return groupDisplayMode; },
+    get groupColumnMode() { return groupColumnMode; },
+    get autoGroupCell() { return autoGroupCell; },
     get paginationState() { return paginationState; },
     get externalPaginationEnabled() { return externalPaginationEnabled; },
     get paginationTotalRows() { return paginationTotalRows; },
@@ -3120,6 +3456,15 @@ export function createSvGridController<
     get rowVirtualizationEnabled() { return rowVirtualizationEnabled; },
     get columnVirtualizationEnabled() { return columnVirtualizationEnabled; },
     get virtualRows() { return virtualRows; },
+    get autoRowHeightOn() { return autoRowHeightOn; },
+    /** Svelte action: measure this row and report its natural height. */
+    get measureRowHeight() { return measureRowHeight; },
+    /** A row's measured height, or undefined before it has been measured.
+     *  The non-virtualized body reads this directly (it has no virtual item). */
+    get measuredRowHeightPx() {
+      autoRowHeightVersion;
+      return (index: number): number | undefined => measuredRowHeights.get(index);
+    },
     get virtualRowTotalSize() { return virtualRowTotalSize; },
     get virtualRowStart() { return virtualRowStart; },
     get virtualRowEnd() { return virtualRowEnd; },
@@ -3161,7 +3506,12 @@ export function createSvGridController<
     get getCellDisplayValue() { return getCellDisplayValue; },
     get getColumnAlign() { return getColumnAlign; },
     get editorOptionsCache() { return editorOptionsCache; },
+    get asyncEditorOptions() { return asyncEditorOptions; },
+    set asyncEditorOptions(v) { asyncEditorOptions = v as never; },
+    get asyncEditorOptionsPending() { return asyncEditorOptionsPending; },
+    get asyncEditorColumns() { return asyncEditorColumns; },
     get getColumnEditorOptions() { return getColumnEditorOptions; },
+    get areEditorOptionsLoading() { return areEditorOptionsLoading; },
     get formatListCellValue() { return formatListCellValue; },
     get formatCellValue() { return formatCellValue; },
     get getPinnedCellValue() { return getPinnedCellValue; },
@@ -3297,7 +3647,7 @@ export function createSvGridController<
   const { onGridKeyDown, onWindowKeydown, onHeaderSortClick } = createKeyboard<TFeatures, TData>(ctx);
   const { computeSummaries, hasRenderedColumn } = createSummaries<TFeatures, TData>(ctx);
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, setFacetSelection, setFilterTokens, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
-  const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
+  const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, startColumnResize, onColumnResizeMove, endColumnResize, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);

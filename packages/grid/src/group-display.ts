@@ -70,6 +70,89 @@ export function insertGroupFooters<R>(rows: ReadonlyArray<R>, opts: GroupFooterO
   return out
 }
 
+export type GroupPaginationOptions<R> = {
+  /** Depth of a row (group rows and their descendants). */
+  getDepth: (row: R) => number
+  /** True when a row is a group (banner) row. */
+  isGroup: (row: R) => boolean
+  /**
+   * True when a group row is expanded. Defaults to treating every group as
+   * expanded. This matters: an EXPANDED group is a header, reprinted above its
+   * children and costing no page budget, while a COLLAPSED group is the visible
+   * unit itself and must consume a slot - otherwise a fully collapsed grid has
+   * no budget-consuming rows at all and every page comes back empty.
+   */
+  isExpanded?: (row: R) => boolean
+  pageIndex: number
+  pageSize: number
+}
+
+export type GroupPaginationResult<R> = {
+  /** The rows to render for this page: the page's budget-consuming rows, each
+   *  preceded by whichever ancestor banners have not been printed yet. */
+  rows: R[]
+  /** Budget-consuming rows across every page - what the pager divides by.
+   *  Data rows plus collapsed group rows; expanded banners do not count. */
+  dataRowCount: number
+}
+
+/**
+ * Paginate a grouped row list by DATA rows, repeating each page's ancestor
+ * group headers.
+ *
+ * Slicing the flat grouped list directly counts group banners against
+ * `pageSize`, so `pageSize: 10` over ten groups of two shows almost no data
+ * (#73). Here only non-group rows consume the page budget, and a page reprints
+ * the group chain its first rows sit under - the same thing a spreadsheet does
+ * when a grouped table breaks across pages.
+ *
+ * Ancestors are tracked with a depth stack rather than parent pointers, so this
+ * works on the already-flattened expanded model and needs nothing from the row
+ * objects but depth and group-ness.
+ */
+export function paginateGroupedRows<R>(
+  rows: ReadonlyArray<R>,
+  opts: GroupPaginationOptions<R>,
+): GroupPaginationResult<R> {
+  const { getDepth, isGroup, isExpanded, pageIndex, pageSize } = opts
+  const expanded = isExpanded ?? (() => true)
+  const start = pageIndex * pageSize
+  const end = start + pageSize
+
+  const out: R[] = []
+  // Expanded banners currently open, outermost first. `printed` marks the ones
+  // this page has already emitted, so a group spanning rows 3-8 prints its
+  // banner once, not once per row.
+  const openGroups: Array<{ row: R; printed: boolean }> = []
+  let unitsSeen = 0
+
+  for (const row of rows) {
+    const depth = getDepth(row)
+    // A row at depth <= an open banner's depth closes it.
+    while (openGroups.length > 0 && getDepth(openGroups[openGroups.length - 1]!.row) >= depth) {
+      openGroups.pop()
+    }
+    if (isGroup(row) && expanded(row)) {
+      // A header for rows that follow: reprinted per page, costs no budget.
+      openGroups.push({ row, printed: false })
+      continue
+    }
+    // Everything else is a visible unit: a data row, or a collapsed group
+    // standing in for its whole subtree.
+    const index = unitsSeen
+    unitsSeen += 1
+    if (index < start || index >= end) continue
+    for (const g of openGroups) {
+      if (g.printed) continue
+      g.printed = true
+      out.push(g.row)
+    }
+    out.push(row)
+  }
+
+  return { rows: out, dataRowCount: unitsSeen }
+}
+
 export type AutoGroupColumnSpec = {
   /** Synthetic column id (e.g. `__autoGroup` or `__group_<field>`). */
   id: string

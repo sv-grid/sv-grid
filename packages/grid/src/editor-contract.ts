@@ -68,16 +68,23 @@ export type SvEditorProps = {
  * The interaction surface an editor exposes when embedded as a grid cell editor.
  * Standalone usage ignores these; the grid supplies them so every editor shares
  * one commit / cancel / move contract (Enter commits, Escape cancels, Tab moves)
- * instead of each cell-editor re-implementing key handling. Consumed in Phase 2
- * (the editor registry).
+ * instead of each cell-editor re-implementing key handling.
+ *
+ * `CellEditorContext` (editor-registry.ts) extends this type, so what the grid
+ * hands a registered editor and what this contract promises are the same thing
+ * by construction rather than by convention.
  */
 export type EditorInteraction<V = unknown> = {
-  /** Commit the current value and stop editing (Enter, option pick, blur-commit). */
-  onCommit?: (value: V) => void
+  /**
+   * Commit the value and stop editing (Enter, option pick, blur-commit).
+   * The argument is optional: an editor that has been reporting through
+   * `onChange` can just call `onCommit()` to commit what the grid already has.
+   */
+  onCommit?: (value?: V) => void
   /** Abandon the edit and restore the previous value (Escape). */
   onCancel?: () => void
   /** Commit, then move to the adjacent cell (Tab = 1, Shift+Tab = -1). */
-  onCommitAndMove?: (value: V, direction: 1 | -1) => void
+  onCommitAndMove?: (value: V | undefined, direction: 1 | -1) => void
   /** Ask the surrounding popover/panel to close without committing. */
   onRequestClose?: () => void
   /** True while mounted inside a grid cell (lets an editor tune autofocus etc.). */

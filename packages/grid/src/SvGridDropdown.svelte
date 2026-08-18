@@ -41,6 +41,10 @@
     onCommit?: () => void
     /** Called when the user dismisses (Escape, blur with no change). */
     onCancel?: () => void
+    /** The option list is still being fetched (async `editorOptions`). Shows a
+     *  loading line instead of "No options", which would read as "nothing to
+     *  pick" when the truth is "not here yet". */
+    loading?: boolean
   }
 
   let {
@@ -54,6 +58,7 @@
     onChange,
     onCommit,
     onCancel,
+    loading = false,
   }: Props = $props()
 
   /** Stable per-instance id used to build option ids for
@@ -158,9 +163,13 @@
   function updatePanelPosition() {
     if (!triggerEl) return
     // Use the smaller of (option count, 10) for the upward-flip math so
-    // a 3-option list doesn't think it needs 320px of headroom.
-    const visibleCount = Math.min(options.length, 10)
-    const estimatedHeight = visibleCount * optionRowHeight + (multiple ? 40 : 0) + 8
+    // a 3-option list doesn't think it needs 320px of headroom. Measured off
+    // the VISIBLE options - the search-filtered list is what actually renders,
+    // and an async list is empty at open time.
+    const visibleCount = Math.min(visibleOptions.length, 10)
+    const searchHeight = searchable ? 38 : 0
+    const estimatedHeight =
+      visibleCount * optionRowHeight + (multiple ? 40 : 0) + searchHeight + 8
     panelRect = anchoredRect(triggerEl.getBoundingClientRect(), {
       estimatedHeight,
       // Preserve the original behavior: anchor to the trigger, no clamping.
@@ -179,6 +188,20 @@
       window.removeEventListener('scroll', reposition, true)
       window.removeEventListener('resize', reposition)
     }
+  })
+
+  // Re-anchor when the option list itself changes while the panel is open.
+  // The geometry is derived from the option COUNT, so an async list - which
+  // lands after the panel opened, and a search filter, which shrinks it - would
+  // otherwise leave the panel sized for the list it had a moment ago. With an
+  // async source that means a panel sized for ZERO options: 8px tall, with the
+  // arriving options spilling outside its background and the grid showing
+  // through behind them.
+  $effect(() => {
+    if (!open) return
+    void visibleOptions.length
+    void optionRowHeight
+    updatePanelPosition()
   })
 
   function closePanel() {
@@ -387,9 +410,15 @@
     {@const needsScroll = options.length > 10}
     <!-- Cap to the comfortable 10-row height AND the room the viewport allows,
          so a panel near the bottom edge scrolls instead of overflowing. -->
+    <!-- Capped by the REAL room the viewport allows (`availHeight`), never by
+         `maxHeight` - that one is clamped to our estimated height, and the
+         estimate assumes a 32px row. Themes with a larger font render taller
+         rows, so the estimate came up a few px short and the last option was
+         cut off by the panel edge. The estimate still decides which way to
+         flip; it must not decide how tall the panel is allowed to be. -->
     {@const panelMax = Math.min(
       needsScroll ? 10 * optionRowHeight + (multiple ? 40 : 0) + 8 : Number.POSITIVE_INFINITY,
-      panelRect.maxHeight,
+      panelRect.availHeight,
     )}
     <div
       class="sv-grid-dropdown-panel"
@@ -400,7 +429,8 @@
       use:portalToBody
       use:popIn={{ up: panelRect.openUpward }}
       style:position="fixed"
-      style:top={`${panelRect.top}px`}
+      style:top={panelRect.openUpward ? null : `${panelRect.top}px`}
+      style:bottom={panelRect.openUpward ? `${panelRect.bottom}px` : null}
       style:left={`${panelRect.left}px`}
       style:width={`${panelRect.width}px`}
       style:max-height={panelMax !== null ? `${panelMax}px` : null}
@@ -422,7 +452,9 @@
           }}
         />
       {/if}
-      {#if visibleOptions.length === 0}
+      {#if loading && visibleOptions.length === 0}
+        <div class="sv-grid-dropdown-empty" role="status" aria-live="polite">Loading…</div>
+      {:else if visibleOptions.length === 0}
         <div class="sv-grid-dropdown-empty">{searchable && searchQuery ? `No matches for "${searchQuery}"` : 'No options'}</div>
       {:else}
         {#each visibleOptions as opt, i (String(opt.value))}
