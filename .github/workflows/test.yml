@@ -85,17 +85,23 @@ jobs:
           fi
           # Print the totals to the job log for human review.
           if [ -f "$REPORT" ]; then
+            # Build the table line by line. A template literal would need its
+            # rows at column 0, which closes this block scalar and makes the
+            # whole workflow file unparseable.
             node -e "
               const r = require('./packages/grid/coverage/coverage-summary.json').total;
               const fmt = (m) => m.pct.toFixed(2) + '%';
-              const out = \`### Test coverage
-| Metric | Coverage |
-| ------ | -------- |
-| Lines | \${fmt(r.lines)} |
-| Statements | \${fmt(r.statements)} |
-| Functions | \${fmt(r.functions)} |
-| Branches | \${fmt(r.branches)} |
-\`;
+              const out = [
+                '### Test coverage',
+                '',
+                '| Metric | Coverage |',
+                '| ------ | -------- |',
+                '| Lines | ' + fmt(r.lines) + ' |',
+                '| Statements | ' + fmt(r.statements) + ' |',
+                '| Functions | ' + fmt(r.functions) + ' |',
+                '| Branches | ' + fmt(r.branches) + ' |',
+                '',
+              ].join('\n');
               require('fs').writeFileSync(process.env.GITHUB_STEP_SUMMARY ?? '/dev/null', out);
               console.log(out);
               require('fs').writeFileSync('coverage-comment.md', out);
