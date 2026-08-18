@@ -28,10 +28,10 @@ describe('SvButtonGroup', () => {
       expect(group.getAttribute('role')).toBe('radiogroup')
       const btns = [...target.querySelectorAll<HTMLButtonElement>('.sv-bg__btn')]
       expect(btns.map((b) => b.getAttribute('role'))).toEqual(['radio', 'radio', 'radio'])
-      expect(btns[1].getAttribute('aria-checked')).toBe('true')
+      expect(btns[1]!.getAttribute('aria-checked')).toBe('true')
       // Roving tabindex: only the checked/active button is tabbable.
-      expect(btns[1].tabIndex).toBe(0)
-      expect(btns[0].tabIndex).toBe(-1)
+      expect(btns[1]!.tabIndex).toBe(0)
+      expect(btns[0]!.tabIndex).toBe(-1)
     } finally { destroy() }
   })
 
@@ -40,7 +40,7 @@ describe('SvButtonGroup', () => {
     const { target, destroy } = mountBg({ items, value: 'day', mode: 'single', onChange: (v: unknown) => (got = v) })
     try {
       const btns = target.querySelectorAll<HTMLButtonElement>('.sv-bg__btn')
-      btns[2].click()
+      btns[2]!.click()
       flushSync()
       expect(got).toBe('month')
     } finally { destroy() }
@@ -53,8 +53,8 @@ describe('SvButtonGroup', () => {
       const group = target.querySelector<HTMLElement>('.sv-bg')!
       expect(group.getAttribute('role')).toBe('group')
       const btns = target.querySelectorAll<HTMLButtonElement>('.sv-bg__btn')
-      expect(btns[0].getAttribute('aria-pressed')).toBe('true')
-      btns[1].click()
+      expect(btns[0]!.getAttribute('aria-pressed')).toBe('true')
+      btns[1]!.click()
       flushSync()
       expect(got).toEqual(['day', 'week'])
     } finally { destroy() }

@@ -32,11 +32,11 @@ describe('SvAccordion', () => {
     try {
       const headers = [...target.querySelectorAll<HTMLButtonElement>('.sv-acc__header')]
       expect(headers).toHaveLength(3)
-      expect(headers[0].getAttribute('aria-expanded')).toBe('true')
-      expect(headers[1].getAttribute('aria-expanded')).toBe('false')
+      expect(headers[0]!.getAttribute('aria-expanded')).toBe('true')
+      expect(headers[1]!.getAttribute('aria-expanded')).toBe('false')
       const region = target.querySelector<HTMLElement>('.sv-acc__panel')!
       expect(region.getAttribute('role')).toBe('region')
-      expect(region.getAttribute('aria-labelledby')).toBe(headers[0].id)
+      expect(region.getAttribute('aria-labelledby')).toBe(headers[0]!.id)
       // Only one panel region is rendered (the open one).
       expect(target.querySelectorAll('.sv-acc__panel')).toHaveLength(1)
     } finally { destroy() }
@@ -47,7 +47,7 @@ describe('SvAccordion', () => {
     const { target, destroy } = mountAcc({ items, expanded: ['a'], expandMode: 'single', onChange: (ids: string[]) => (got = ids) })
     try {
       const headers = target.querySelectorAll<HTMLButtonElement>('.sv-acc__header')
-      headers[1].click()
+      headers[1]!.click()
       flushSync()
       expect(got).toEqual(['b'])
     } finally { destroy() }
@@ -58,7 +58,7 @@ describe('SvAccordion', () => {
     const { target, destroy } = mountAcc({ items, expanded: ['a'], expandMode: 'multiple', onChange: (ids: string[]) => (got = ids) })
     try {
       const headers = target.querySelectorAll<HTMLButtonElement>('.sv-acc__header')
-      headers[2].click()
+      headers[2]!.click()
       flushSync()
       expect(got).toEqual(['a', 'c'])
     } finally { destroy() }

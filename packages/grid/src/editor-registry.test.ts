@@ -15,6 +15,8 @@ import {
 const Fake = (() => {}) as unknown as Component<any>
 const Fake2 = (() => {}) as unknown as Component<any>
 
+// onCommitAndMove / onRequestClose / inCell are deliberately left off: the
+// tests below assert that defaultEditorProps maps them to undefined.
 function ctx(overrides: Partial<CellEditorContext> = {}): CellEditorContext {
   return {
     value: 42,
@@ -24,7 +26,7 @@ function ctx(overrides: Partial<CellEditorContext> = {}): CellEditorContext {
     onCommit: () => {},
     onCancel: () => {},
     ...overrides,
-  }
+  } as CellEditorContext
 }
 
 afterEach(() => {

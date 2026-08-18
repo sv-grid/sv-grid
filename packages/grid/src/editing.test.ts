@@ -154,7 +154,7 @@ describe('isCellEditable', () => {
       data: [{ a: 'hello' }],
     })
     ed.isCellEditable(ctx.allColumns[0], ctx.allRows[0])
-    const cc = spy.mock.calls[0][0]
+    const cc = spy.mock.calls[0]![0]
     expect(cc.getValue()).toBe('hello')
     expect(cc.cell.getValue()).toBe('hello')
     expect(cc.cell.getContext()).toBe(cc)

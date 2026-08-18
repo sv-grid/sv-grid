@@ -62,11 +62,11 @@ describe('isBucketableColumn', () => {
   const cols = makeColumns()
 
   it('returns { isDate: false } for a number column', () => {
-    expect(isBucketableColumn(cols.num)).toEqual({ isDate: false })
+    expect(isBucketableColumn(cols.num!)).toEqual({ isDate: false })
   })
 
   it('returns { isDate: true } for a date column', () => {
-    expect(isBucketableColumn(cols.when)).toEqual({ isDate: true })
+    expect(isBucketableColumn(cols.when!)).toEqual({ isDate: true })
   })
 
   it('returns { isDate: true } for a datetime column', () => {
@@ -81,15 +81,15 @@ describe('isBucketableColumn', () => {
   })
 
   it('returns null for a text column', () => {
-    expect(isBucketableColumn(cols.id)).toBeNull()
+    expect(isBucketableColumn(cols.id!)).toBeNull()
   })
 
   it('returns null for a checkbox column', () => {
-    expect(isBucketableColumn(cols.flag)).toBeNull()
+    expect(isBucketableColumn(cols.flag!)).toBeNull()
   })
 
   it('returns null for a column with no editorType', () => {
-    expect(isBucketableColumn(cols.name)).toBeNull()
+    expect(isBucketableColumn(cols.name!)).toBeNull()
   })
 })
 
@@ -105,7 +105,7 @@ describe('buildBuckets - numeric', () => {
       name: '',
       flag: false,
     }))
-    expect(buildBuckets(cols.num, false, data, accessor)).toBeNull()
+    expect(buildBuckets(cols.num!, false, data, accessor)).toBeNull()
   })
 
   it('builds 10 buckets when distinct values exceed the threshold', () => {
@@ -117,7 +117,7 @@ describe('buildBuckets - numeric', () => {
       name: '',
       flag: false,
     }))
-    const buckets = buildBuckets(cols.num, false, data, accessor)
+    const buckets = buildBuckets(cols.num!, false, data, accessor)
     expect(buckets).not.toBeNull()
     expect(buckets!).toHaveLength(10)
   })
@@ -130,12 +130,12 @@ describe('buildBuckets - numeric', () => {
       name: '',
       flag: false,
     }))
-    const buckets = buildBuckets(cols.num, false, data, accessor)!
-    expect(buckets[0].numericMin).toBe(0)
-    expect(buckets[9].numericMax).toBe(30)
+    const buckets = buildBuckets(cols.num!, false, data, accessor)!
+    expect(buckets[0]!.numericMin).toBe(0)
+    expect(buckets[9]!.numericMax).toBe(30)
     // bucket i's max equals bucket i+1's min (contiguous, no gaps)
     for (let i = 0; i < buckets.length - 1; i += 1) {
-      expect(buckets[i].numericMax).toBeCloseTo(buckets[i + 1].numericMin, 10)
+      expect(buckets[i]!.numericMax).toBeCloseTo(buckets[i + 1]!.numericMin, 10)
     }
   })
 
@@ -147,10 +147,10 @@ describe('buildBuckets - numeric', () => {
       name: '',
       flag: false,
     }))
-    const buckets = buildBuckets(cols.num, false, data, accessor)!
+    const buckets = buildBuckets(cols.num!, false, data, accessor)!
     expect(buckets.filter((b) => b.isLast)).toHaveLength(1)
-    expect(buckets[9].isLast).toBe(true)
-    expect(buckets[0].isLast).toBe(false)
+    expect(buckets[9]!.isLast).toBe(true)
+    expect(buckets[0]!.isLast).toBe(false)
     expect(buckets.every((b) => b.isDate === false)).toBe(true)
   })
 
@@ -162,8 +162,8 @@ describe('buildBuckets - numeric', () => {
       name: '',
       flag: false,
     }))
-    const buckets = buildBuckets(cols.num, false, data, accessor)!
-    expect(buckets[0].label).toContain('–')
+    const buckets = buildBuckets(cols.num!, false, data, accessor)!
+    expect(buckets[0]!.label).toContain('–')
   })
 
   it('ignores non-finite / blank values when computing min/max and distinct', () => {
@@ -180,10 +180,10 @@ describe('buildBuckets - numeric', () => {
       { id: 'b', num: undefined as unknown as number, when: '', name: '', flag: false },
       { id: 'c', num: 'not-a-number' as unknown as number, when: '', name: '', flag: false },
     ]
-    const buckets = buildBuckets(cols.num, false, data, accessor)!
+    const buckets = buildBuckets(cols.num!, false, data, accessor)!
     // range is still 0..30 - the junk rows were skipped
-    expect(buckets[0].numericMin).toBe(0)
-    expect(buckets[9].numericMax).toBe(30)
+    expect(buckets[0]!.numericMin).toBe(0)
+    expect(buckets[9]!.numericMax).toBe(30)
   })
 
   it('returns null when all finite values are identical (min === max)', () => {
@@ -196,7 +196,7 @@ describe('buildBuckets - numeric', () => {
       name: '',
       flag: false,
     }))
-    expect(buildBuckets(cols.num, false, data, accessor)).toBeNull()
+    expect(buildBuckets(cols.num!, false, data, accessor)).toBeNull()
   })
 
   it('returns null when there is no finite data at all', () => {
@@ -207,11 +207,11 @@ describe('buildBuckets - numeric', () => {
       name: '',
       flag: false,
     }))
-    expect(buildBuckets(cols.num, false, data, accessor)).toBeNull()
+    expect(buildBuckets(cols.num!, false, data, accessor)).toBeNull()
   })
 
   it('returns null for an empty dataset', () => {
-    expect(buildBuckets(cols.num, false, [], accessor)).toBeNull()
+    expect(buildBuckets(cols.num!, false, [], accessor)).toBeNull()
   })
 
   it('handles negative ranges', () => {
@@ -222,9 +222,9 @@ describe('buildBuckets - numeric', () => {
       name: '',
       flag: false,
     }))
-    const buckets = buildBuckets(cols.num, false, data, accessor)!
-    expect(buckets[0].numericMin).toBe(-20)
-    expect(buckets[9].numericMax).toBe(20)
+    const buckets = buildBuckets(cols.num!, false, data, accessor)!
+    expect(buckets[0]!.numericMin).toBe(-20)
+    expect(buckets[9]!.numericMax).toBe(20)
   })
 })
 
@@ -241,11 +241,11 @@ describe('buildBuckets - date', () => {
       name: '',
       flag: false,
     }))
-    const buckets = buildBuckets(cols.when, true, data, accessor)!
+    const buckets = buildBuckets(cols.when!, true, data, accessor)!
     expect(buckets).toHaveLength(10)
     expect(buckets.every((b) => b.isDate === true)).toBe(true)
     // labels should look like dates (contain a 4-digit year)
-    expect(buckets[0].label).toMatch(/\d{4}/)
+    expect(buckets[0]!.label).toMatch(/\d{4}/)
   })
 
   it('accepts Date instances directly', () => {
@@ -257,9 +257,9 @@ describe('buildBuckets - date', () => {
     )
     // accessor reads row[column.id]; column id is 'when'
     const rows = data.map((d) => ({ when: d.when })) as unknown as Row[]
-    const buckets = buildBuckets(cols.when, true, rows, accessor)!
+    const buckets = buildBuckets(cols.when!, true, rows, accessor)!
     expect(buckets).toHaveLength(10)
-    expect(buckets[0].numericMin).toBe(start)
+    expect(buckets[0]!.numericMin).toBe(start)
   })
 
   it('returns null when date values are too few', () => {
@@ -270,7 +270,7 @@ describe('buildBuckets - date', () => {
       name: '',
       flag: false,
     }))
-    expect(buildBuckets(cols.when, true, data, accessor)).toBeNull()
+    expect(buildBuckets(cols.when!, true, data, accessor)).toBeNull()
   })
 
   it('skips invalid date strings', () => {
@@ -286,9 +286,9 @@ describe('buildBuckets - date', () => {
       })),
       { id: 'bad', num: 0, when: 'not-a-date', name: '', flag: false },
     ]
-    const buckets = buildBuckets(cols.when, true, data, accessor)!
+    const buckets = buildBuckets(cols.when!, true, data, accessor)!
     expect(buckets).toHaveLength(10)
-    expect(buckets[0].numericMin).toBe(start)
+    expect(buckets[0]!.numericMin).toBe(start)
   })
 })
 
@@ -344,7 +344,7 @@ describe('isInBucket', () => {
       name: '',
       flag: false,
     }))
-    const buckets = buildBuckets(cols.num, false, data, accessor)!
+    const buckets = buildBuckets(cols.num!, false, data, accessor)!
     for (const v of [0, 1, 15, 50, 99, 100]) {
       const hits = buckets.filter((b) => isInBucket(v, b))
       expect(hits).toHaveLength(1)

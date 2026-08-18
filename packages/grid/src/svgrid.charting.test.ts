@@ -19,7 +19,7 @@ import {
   formatChartValue,
   buildChart,
 } from './index'
-import type { ColumnDef, SvGridApi } from './index'
+import type { ChartAggregateRequest, ColumnDef, SvGridApi } from './index'
 
 type Person = { id: number; name: string; team: string; age: number; salary: number }
 
@@ -328,7 +328,7 @@ describe('SvGrid built-in charting', () => {
       await tick()
       const csv = chartSpecToCsv(api.getChartSpec()!)
       const [header, ...rows] = csv.split('\n')
-      expect(header.startsWith('Category,')).toBe(true)
+      expect(header!.startsWith('Category,')).toBe(true)
       expect(rows.length).toBeGreaterThan(0)
       // Export button + menu.
       const btn = target.querySelector<HTMLButtonElement>('[aria-label="Export chart"]')
@@ -435,7 +435,7 @@ describe('SvGrid built-in charting', () => {
 
   it('renders a custom `buildSpec` chart that stays live with the grid', async () => {
     const { api, destroy } = await mountGrid({
-      charting: { defaultOpen: true, buildSpec: (rows) => ({ type: 'bar', categories: ['All'], series: [{ label: 'Count', values: [rows.length] }] }) },
+      charting: { defaultOpen: true, buildSpec: (rows: unknown[]) => ({ type: 'bar', categories: ['All'], series: [{ label: 'Count', values: [rows.length] }] }) },
     })
     try {
       await tick()
@@ -487,7 +487,7 @@ describe('SvGrid built-in charting', () => {
     let lastFilter: any = null
     const { api, destroy } = await mountGrid({
       charting: {
-        getAggregate: async (req) => {
+        getAggregate: async (req: ChartAggregateRequest) => {
           calls += 1
           lastFilter = req.filterModel
           return [

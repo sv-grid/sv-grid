@@ -56,8 +56,9 @@
 
 <SvField id={uid} {hint} {error} {required} {dir}>
   <label class="sv-check sv-check--{size}" class:is-disabled={disabled} class:is-readonly={readonly} class:is-invalid={invalid}>
+    <!-- role="checkbox" arrives via boxProps(), which the a11y pass cannot see through -->
+    <!-- svelte-ignore a11y_role_supports_aria_props_implicit -->
     <button
-      role="checkbox"
       class="sv-check__box"
       class:is-checked={checked && !indeterminate}
       class:is-indeterminate={indeterminate}

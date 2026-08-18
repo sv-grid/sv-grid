@@ -53,7 +53,7 @@ describe('SvFileUpload', () => {
       target.querySelector<HTMLButtonElement>('.sv-file__remove')!.click()
       flushSync()
       expect(got).toHaveLength(1)
-      expect(got![0].name).toBe('b.png')
+      expect(got![0]!.name).toBe('b.png')
     } finally { destroy() }
   })
 })

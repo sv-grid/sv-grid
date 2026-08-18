@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import {
   chartToSvgString,
   chartToPngBlob,
@@ -125,7 +125,7 @@ describe('chartToSvgString', () => {
 describe('downloadChartSvg', () => {
   let createSpy: ReturnType<typeof vi.spyOn>
   let revokeSpy: ReturnType<typeof vi.spyOn>
-  let clickSpy: ReturnType<typeof vi.fn>
+  let clickSpy: Mock<() => void>
 
   beforeEach(() => {
     vi.useFakeTimers()

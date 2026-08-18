@@ -614,7 +614,6 @@ describe('copySelectionToClipboard', () => {
       configurable: true,
     })
     const execCommand = vi.fn().mockReturnValue(true)
-    // @ts-expect-error - jsdom lacks execCommand by default
     document.execCommand = execCommand
     const ctx = makeCtx()
     ctx.selectionRange = {
@@ -631,7 +630,6 @@ describe('copySelectionToClipboard', () => {
       value: undefined,
       configurable: true,
     })
-    // @ts-expect-error - override execCommand to throw
     document.execCommand = () => {
       throw new Error('blocked')
     }

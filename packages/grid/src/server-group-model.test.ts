@@ -23,16 +23,16 @@ function makeGroupSource(data: Row[], delay = 0): ServerDataSource<Row> & { call
       this.calls += 1
       if (delay) await new Promise((r) => setTimeout(r, delay))
       const subset = data.filter((r) =>
-        req.groupKeys.every((k, i) => String((r as Record<string, unknown>)[req.groupBy[i]!]) === k),
+        req.groupKeys!.every((k, i) => String((r as Record<string, unknown>)[req.groupBy![i]!]) === k),
       )
-      const level = req.groupKeys.length
-      if (level < req.groupBy.length) {
-        const field = req.groupBy[level]!
+      const level = req.groupKeys!.length
+      if (level < req.groupBy!.length) {
+        const field = req.groupBy![level]!
         const map = new Map<string, Record<string, unknown>>()
         for (const r of subset) {
           const key = String((r as Record<string, unknown>)[field])
           const agg = map.get(key) ?? { [field]: (r as Record<string, unknown>)[field] }
-          for (const a of req.aggregations) {
+          for (const a of req.aggregations!) {
             const cur = (agg[a.col] as number) ?? 0
             agg[a.col] = a.fn === 'count' ? cur + 1 : cur + ((r as Record<string, unknown>)[a.col] as number)
           }
@@ -241,7 +241,7 @@ function makeTreeSource(nodes: Node[]): ServerDataSource<Node> & { calls: number
     calls: 0,
     async getRows(req) {
       this.calls += 1
-      const parent = req.groupKeys.length ? req.groupKeys[req.groupKeys.length - 1] : null
+      const parent = req.groupKeys!.length ? req.groupKeys![req.groupKeys!.length - 1] : null
       const children = nodes.filter((n) => (n.parentId ?? null) === (parent ?? null))
       return { rows: children, rowCount: children.length }
     },

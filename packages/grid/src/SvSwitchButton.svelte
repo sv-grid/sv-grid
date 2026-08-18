@@ -53,8 +53,9 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
+  <!-- role="switch" arrives via switchProps(), which the a11y pass cannot see through -->
+  <!-- svelte-ignore a11y_role_supports_aria_props_implicit -->
   <button
-    role="switch"
     class="sv-switch sv-switch--{size}"
     class:is-on={checked}
     class:is-readonly={readonly}

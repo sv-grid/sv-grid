@@ -9,6 +9,8 @@ import {
   type CellEditorContext,
 } from './editor-registry'
 
+// onCommitAndMove / onRequestClose / inCell are the hooks the grid injects at
+// mount; the registry tests here never exercise them.
 function ctx(overrides: Partial<CellEditorContext> = {}): CellEditorContext {
   return {
     value: null,
@@ -18,7 +20,7 @@ function ctx(overrides: Partial<CellEditorContext> = {}): CellEditorContext {
     onCommit: () => {},
     onCancel: () => {},
     ...overrides,
-  }
+  } as CellEditorContext
 }
 
 afterEach(() => {

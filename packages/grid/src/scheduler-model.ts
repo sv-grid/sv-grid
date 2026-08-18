@@ -797,7 +797,7 @@ export function timelineAxis(
   } else if (view === 'timelineYear') {
     const y = rangeStart.getFullYear()
     for (let m = 0; m < 12; m++) {
-      ticks.push(mk(new Date(y, m, 1), new Date(y, m + 1, 1), TL_MO[m]))
+      ticks.push(mk(new Date(y, m, 1), new Date(y, m + 1, 1), TL_MO[m]!))
     }
     majors = groupMajors(
       ticks,

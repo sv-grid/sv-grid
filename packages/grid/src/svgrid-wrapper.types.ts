@@ -1,18 +1,14 @@
 ﻿import type { CellFormatConfig, ColumnDef, RowData, SvGridOptions, TableFeatures } from './core'
 // Type-only import (the reverse of SvGrid.types importing SvGridApi); TS resolves the
 // type-level cycle. Backs the generic key/value typing of `setOption` / `getOption`.
-import type { Props } from './SvGrid.types'
+import type { FilterOperator, Props } from './SvGrid.types'
 import type { GridExportOptions, GridClipboardOptions } from './export-format'
 import type { ChartSpec, ChartType } from './chart'
 
-export type SvGridFilterOperator =
-  | 'contains'
-  | 'equals'
-  | 'startsWith'
-  | 'greaterThan'
-  | 'lessThan'
-  | 'between'
-  | 'isBlank'
+// Aliased to the core union rather than restated: the API surfaces below hand
+// back whatever the grid actually filtered with, so a hand-maintained subset
+// here silently mistypes operators like 'endsWith' that reach callers at runtime.
+export type SvGridFilterOperator = FilterOperator
 
 /**
  * A serializable snapshot of everything that makes up the current "view":

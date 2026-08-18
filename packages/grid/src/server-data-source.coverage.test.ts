@@ -22,7 +22,7 @@ describe('createServerDataSource - request params', () => {
   })
 
   it('setFilter resets to page 0', async () => {
-    const getRows = vi.fn(async () => ({ rows: [], rowCount: 100 }))
+    const getRows = vi.fn(async (_req: ServerRequest) => ({ rows: [], rowCount: 100 }))
     const ctl = createServerDataSource<Row>({ getRows }, { pageSize: 10, onChange: () => {} })
     ctl.setPage(3)
     await flush()

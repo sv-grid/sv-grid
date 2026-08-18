@@ -196,7 +196,7 @@ describe('createCellRender / computeCellClass', () => {
     const row = makeRow('r', { score: 9 })
     expect(cr.computeCellClass(row, makeColumn('score', { cellClass }))).toBe('big')
     expect(cellClass).toHaveBeenCalledTimes(1)
-    const passed = cellClass.mock.calls[0][0]
+    const passed = cellClass.mock.calls[0]![0]
     expect(passed.row).toBe(row)
     expect(passed.getValue()).toBe(9)
   })
@@ -447,7 +447,7 @@ describe('createCellRender / formatPinnedValue', () => {
     const formatter = vi.fn(({ value, row }: any) => `${value}:${row}`)
     const col = makeColumn('a', { formatter })
     expect(cr.formatPinnedValue(col, 5)).toBe('5:null')
-    expect(formatter.mock.calls[0][0].row).toBeNull()
+    expect(formatter.mock.calls[0]![0].row).toBeNull()
   })
 
   it('masks password pinned values', () => {
@@ -502,7 +502,7 @@ describe('createCellRender / computePinnedCellClass', () => {
       field: 'a',
     })
     expect(cr.computePinnedCellClass({ a: 3 }, col)).toBe('pos')
-    expect(cellClass.mock.calls[0][0].row).toBeNull()
+    expect(cellClass.mock.calls[0]![0].row).toBeNull()
   })
 
   it('coerces a falsy cellClass result to empty string', () => {

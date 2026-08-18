@@ -49,8 +49,8 @@ describe('createTreeRowModel', () => {
 
   it('records depth down the chain', () => {
     const [root] = run(data) as never as Array<{ depth: number; subRows: never[] }>
-    expect(root.depth).toBe(0)
-    const child = (root.subRows as never as Array<{ id: string; depth: number; subRows: never[] }>)[0]!
+    expect(root!.depth).toBe(0)
+    const child = (root!.subRows as never as Array<{ id: string; depth: number; subRows: never[] }>)[0]!
     expect(child.depth).toBe(1)
     expect((child.subRows as never as Array<{ depth: number }>)[0]!.depth).toBe(2)
   })
@@ -72,7 +72,7 @@ describe('createTreeRowModel', () => {
     const [root] = run(data) as never as Array<never>
     expect((root as never as { __treeRow: boolean }).__treeRow).toBe(true)
     // Expandable, but must NOT render as a full-width banner.
-    expect(isGroupRow(root)).toBe(false)
+    expect(isGroupRow(root!)).toBe(false)
   })
 
   it('drives expansion through the table state', () => {

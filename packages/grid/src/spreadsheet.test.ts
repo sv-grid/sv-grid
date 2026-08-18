@@ -9,7 +9,6 @@ if (typeof globalThis.CSS === 'undefined') {
   // @ts-expect-error - minimal shim for the test environment
   globalThis.CSS = { escape: (s: string) => s.replace(/["\\]/g, '\\$&') }
 } else if (typeof globalThis.CSS.escape !== 'function') {
-  // @ts-expect-error - augment partial CSS object
   globalThis.CSS.escape = (s: string) => s.replace(/["\\]/g, '\\$&')
 }
 

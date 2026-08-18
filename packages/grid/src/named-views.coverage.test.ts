@@ -144,7 +144,7 @@ describe('attachAutoSavedView', () => {
     const off = attachAutoSavedView(host, views, { intervalMs: 500 })
     expect(views.has('__autosave')).toBe(false)
     // mutate the host state, then let the poller tick
-    host.set({ sorting: [{ id: 'new', desc: false }], columnFilters: [] } as SvGridViewState)
+    host.set({ sorting: [{ id: 'new', desc: false }], columnFilters: [] } as unknown as SvGridViewState)
     vi.advanceTimersByTime(500)
     expect(views.has('__autosave')).toBe(true)
     off()
@@ -164,7 +164,7 @@ describe('attachAutoSavedView', () => {
     const host = fakeHost({ sorting: [] })
     const views = createNamedViews(host, { storage: memoryViews() })
     const off = attachAutoSavedView(host, views, { name: 'mySlot', intervalMs: 200 })
-    host.set({ sorting: [{ id: 'q', desc: true }], columnFilters: [] } as SvGridViewState)
+    host.set({ sorting: [{ id: 'q', desc: true }], columnFilters: [] } as unknown as SvGridViewState)
     vi.advanceTimersByTime(200)
     expect(views.has('mySlot')).toBe(true)
     off()
@@ -185,7 +185,7 @@ describe('attachAutoSavedView', () => {
     const host = {
       getState: () => {
         if (throwing) throw new Error('boom')
-        return { sorting: [], columnFilters: [] } as SvGridViewState
+        return { sorting: [], columnFilters: [] } as unknown as SvGridViewState
       },
       setState: vi.fn(),
     }

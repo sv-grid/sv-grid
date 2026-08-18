@@ -189,8 +189,9 @@ const ORD: Record<number, string> = { 1: 'first', 2: 'second', 3: 'third', 4: 'f
 
 // Where in the month a monthly / yearly rule lands, as a phrase.
 function whereInMonth(r: RecurrenceRule, wd: ReadonlyArray<string>, ord: Record<number, string>): string {
-  if (r.weekOfMonth != null && r.weekdays && r.weekdays.length) {
-    return `the ${ord[r.weekOfMonth] ?? r.weekOfMonth} ${wd[r.weekdays[0]]}`
+  const firstWeekday = r.weekdays?.[0]
+  if (r.weekOfMonth != null && firstWeekday != null) {
+    return `the ${ord[r.weekOfMonth] ?? r.weekOfMonth} ${wd[firstWeekday]}`
   }
   if (r.day === -1) return 'the last day'
   if (r.day != null && r.day < 0) return `the ${-r.day} day(s) from the end`

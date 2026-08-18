@@ -19,8 +19,8 @@ describe('groupOptions', () => {
   it('buckets by group in first-seen order and preserves the flat index', () => {
     const groups = groupOptions(opts)
     expect(groups.map((g) => g.group)).toEqual(['Americas', 'Europe'])
-    expect(groups[0].options.map((o) => o.index)).toEqual([0, 1])
-    expect(groups[1].options.map((o) => o.index)).toEqual([2, 3])
+    expect(groups[0]!.options.map((o) => o.index)).toEqual([0, 1])
+    expect(groups[1]!.options.map((o) => o.index)).toEqual([2, 3])
     expect(hasGroups(opts)).toBe(true)
   })
   it('returns a single null group when nothing is grouped', () => {

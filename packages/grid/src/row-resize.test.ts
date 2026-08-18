@@ -97,8 +97,8 @@ describe('rowResize - strip injection', () => {
       expect(strip!.style.cursor).toBe('row-resize')
     }
     // Gutter cells become a positioning context with visible overflow.
-    expect(gutterOf(rows[0]).style.position).toBe('relative')
-    expect(gutterOf(rows[0]).style.overflow).toBe('visible')
+    expect(gutterOf(rows[0]!).style.position).toBe('relative')
+    expect(gutterOf(rows[0]!).style.overflow).toBe('visible')
     action.destroy()
   })
 
@@ -106,12 +106,12 @@ describe('rowResize - strip injection', () => {
     const { host, rows } = buildGrid([{}])
     track(host)
     const action = rowResize(host, { onResize: vi.fn() })
-    expect(rows[0].querySelectorAll(`.${STRIP_CLASS}`).length).toBe(1)
+    expect(rows[0]!.querySelectorAll(`.${STRIP_CLASS}`).length).toBe(1)
     // Trigger the MutationObserver by appending an unrelated node.
-    gutterOf(rows[0]).appendChild(document.createElement('span'))
+    gutterOf(rows[0]!).appendChild(document.createElement('span'))
     await Promise.resolve()
     await new Promise((r) => setTimeout(r, 0))
-    expect(rows[0].querySelectorAll(`.${STRIP_CLASS}`).length).toBe(1)
+    expect(rows[0]!.querySelectorAll(`.${STRIP_CLASS}`).length).toBe(1)
     action.destroy()
   })
 
@@ -124,10 +124,10 @@ describe('rowResize - strip injection', () => {
     ])
     track(host)
     const action = rowResize(host, { onResize: vi.fn() })
-    expect(stripOf(rows[0])).toBeNull()
-    expect(stripOf(rows[1])).toBeNull()
-    expect(stripOf(rows[2])).toBeNull()
-    expect(stripOf(rows[3])).not.toBeNull()
+    expect(stripOf(rows[0]!)).toBeNull()
+    expect(stripOf(rows[1]!)).toBeNull()
+    expect(stripOf(rows[2]!)).toBeNull()
+    expect(stripOf(rows[3]!)).not.toBeNull()
     action.destroy()
   })
 
@@ -159,9 +159,9 @@ describe('rowResize - strip injection', () => {
   it('does not override an already-positioned gutter cell', () => {
     const { host, rows } = buildGrid([{}])
     track(host)
-    gutterOf(rows[0]).style.position = 'sticky'
+    gutterOf(rows[0]!).style.position = 'sticky'
     const action = rowResize(host, { onResize: vi.fn() })
-    expect(gutterOf(rows[0]).style.position).toBe('sticky')
+    expect(gutterOf(rows[0]!).style.position).toBe('sticky')
     action.destroy()
   })
 
@@ -169,8 +169,8 @@ describe('rowResize - strip injection', () => {
     const { host, rows } = buildGrid([{}, {}])
     track(host)
     const action = rowResize(host, { onResize: vi.fn(), disabled: true })
-    expect(stripOf(rows[0])).toBeNull()
-    expect(stripOf(rows[1])).toBeNull()
+    expect(stripOf(rows[0]!)).toBeNull()
+    expect(stripOf(rows[1]!)).toBeNull()
     action.destroy()
   })
 })
@@ -183,11 +183,11 @@ describe('rowResize - drag', () => {
   it('reports the new height on pointerup and fires move callbacks', () => {
     const { host, rows } = buildGrid([{ rowIndex: 0 }])
     track(host)
-    mockRowHeight(rows[0], 32)
+    mockRowHeight(rows[0]!, 32)
     const onResize = vi.fn()
     const onResizeMove = vi.fn()
     const action = rowResize(host, { onResize, onResizeMove })
-    const strip = stripOf(rows[0])!
+    const strip = stripOf(rows[0]!)!
 
     strip.dispatchEvent(pointer('pointerdown', { clientY: 100 }))
     expect(strip.classList.contains('is-resizing')).toBe(true)
@@ -196,7 +196,7 @@ describe('rowResize - drag', () => {
     // Drag down 20px -> 52.
     window.dispatchEvent(pointer('pointermove', { clientY: 120 }))
     expect(onResizeMove).toHaveBeenLastCalledWith(0, 52)
-    expect(rows[0].style.height).toBe('52px')
+    expect(rows[0]!.style.height).toBe('52px')
 
     window.dispatchEvent(pointer('pointerup', { clientY: 120 }))
     expect(onResize).toHaveBeenCalledWith(0, 52)
@@ -208,10 +208,10 @@ describe('rowResize - drag', () => {
   it('clamps the height to the min bound', () => {
     const { host, rows } = buildGrid([{ rowIndex: 0 }])
     track(host)
-    mockRowHeight(rows[0], 32)
+    mockRowHeight(rows[0]!, 32)
     const onResize = vi.fn()
     const action = rowResize(host, { onResize, min: 24 })
-    const strip = stripOf(rows[0])!
+    const strip = stripOf(rows[0]!)!
     strip.dispatchEvent(pointer('pointerdown', { clientY: 100 }))
     // Drag far up -> would be negative, clamps to 24.
     window.dispatchEvent(pointer('pointerup', { clientY: 0 }))
@@ -222,10 +222,10 @@ describe('rowResize - drag', () => {
   it('clamps the height to the max bound', () => {
     const { host, rows } = buildGrid([{ rowIndex: 0 }])
     track(host)
-    mockRowHeight(rows[0], 32)
+    mockRowHeight(rows[0]!, 32)
     const onResize = vi.fn()
     const action = rowResize(host, { onResize, max: 50 })
-    const strip = stripOf(rows[0])!
+    const strip = stripOf(rows[0]!)!
     strip.dispatchEvent(pointer('pointerdown', { clientY: 100 }))
     window.dispatchEvent(pointer('pointerup', { clientY: 1000 }))
     expect(onResize).toHaveBeenCalledWith(0, 50)
@@ -235,10 +235,10 @@ describe('rowResize - drag', () => {
   it('works without an onResizeMove callback (optional)', () => {
     const { host, rows } = buildGrid([{ rowIndex: 0 }])
     track(host)
-    mockRowHeight(rows[0], 30)
+    mockRowHeight(rows[0]!, 30)
     const onResize = vi.fn()
     const action = rowResize(host, { onResize })
-    const strip = stripOf(rows[0])!
+    const strip = stripOf(rows[0]!)!
     strip.dispatchEvent(pointer('pointerdown', { clientY: 50 }))
     expect(() => window.dispatchEvent(pointer('pointermove', { clientY: 60 }))).not.toThrow()
     window.dispatchEvent(pointer('pointerup', { clientY: 60 }))
@@ -270,11 +270,11 @@ describe('rowResize - pointerdown guards', () => {
   it('ignores pointerdown when disabled', () => {
     const { host, rows } = buildGrid([{ rowIndex: 0 }])
     track(host)
-    mockRowHeight(rows[0], 32)
+    mockRowHeight(rows[0]!, 32)
     const onResize = vi.fn()
     // Start enabled so a strip exists, then disable via update.
     const action = rowResize(host, { onResize })
-    const strip = stripOf(rows[0])!
+    const strip = stripOf(rows[0]!)!
     action.update({ onResize, disabled: true })
     // update removes strips, but dispatch on the (now-detached) strip anyway:
     // even if it were still in the DOM, current.disabled short-circuits.
@@ -289,7 +289,7 @@ describe('rowResize - pointerdown guards', () => {
     track(host)
     const onResize = vi.fn()
     const action = rowResize(host, { onResize })
-    gutterOf(rows[0]).dispatchEvent(pointer('pointerdown', { clientY: 10 }))
+    gutterOf(rows[0]!).dispatchEvent(pointer('pointerdown', { clientY: 10 }))
     expect(document.body.style.cursor).toBe('')
     action.destroy()
   })
@@ -298,10 +298,10 @@ describe('rowResize - pointerdown guards', () => {
     const { host, rows } = buildGrid([{}])
     track(host)
     // Remove the data-svgrid-row marker so rowIndexOf returns NaN.
-    rows[0].querySelector('[data-svgrid-row]')!.removeAttribute('data-svgrid-row')
+    rows[0]!.querySelector('[data-svgrid-row]')!.removeAttribute('data-svgrid-row')
     const onResize = vi.fn()
     const action = rowResize(host, { onResize })
-    const strip = stripOf(rows[0])!
+    const strip = stripOf(rows[0]!)!
     strip.dispatchEvent(pointer('pointerdown', { clientY: 10 }))
     expect(document.body.style.cursor).toBe('')
     expect(strip.classList.contains('is-resizing')).toBe(false)
@@ -333,14 +333,14 @@ describe('rowResize - update + destroy', () => {
     track(host)
     const onResize = vi.fn()
     const action = rowResize(host, { onResize, disabled: false })
-    expect(stripOf(rows[0])).not.toBeNull()
+    expect(stripOf(rows[0]!)).not.toBeNull()
 
     action.update({ onResize, disabled: true })
-    expect(stripOf(rows[0])).toBeNull()
-    expect(stripOf(rows[1])).toBeNull()
+    expect(stripOf(rows[0]!)).toBeNull()
+    expect(stripOf(rows[1]!)).toBeNull()
 
     action.update({ onResize, disabled: false })
-    expect(stripOf(rows[0])).not.toBeNull()
+    expect(stripOf(rows[0]!)).not.toBeNull()
     action.destroy()
   })
 
@@ -348,29 +348,29 @@ describe('rowResize - update + destroy', () => {
     const { host, rows } = buildGrid([{}])
     track(host)
     const action = rowResize(host, { onResize: vi.fn() })
-    const firstStrip = stripOf(rows[0])
+    const firstStrip = stripOf(rows[0]!)
     // Same disabled value -> decorate is NOT called, strip stays the same node.
     action.update({ onResize: vi.fn() })
-    expect(stripOf(rows[0])).toBe(firstStrip)
+    expect(stripOf(rows[0]!)).toBe(firstStrip)
     action.destroy()
   })
 
   it('destroy removes all strips and detaches listeners', () => {
     const { host, rows } = buildGrid([{ rowIndex: 0 }])
     track(host)
-    mockRowHeight(rows[0], 32)
+    mockRowHeight(rows[0]!, 32)
     const onResize = vi.fn()
     const action = rowResize(host, { onResize })
-    expect(stripOf(rows[0])).not.toBeNull()
+    expect(stripOf(rows[0]!)).not.toBeNull()
 
     action.destroy()
-    expect(stripOf(rows[0])).toBeNull()
+    expect(stripOf(rows[0]!)).toBeNull()
 
     // After destroy the pointerdown listener is gone; re-create a strip
     // manually and confirm no drag starts.
     const strip = document.createElement('div')
     strip.className = STRIP_CLASS
-    gutterOf(rows[0]).appendChild(strip)
+    gutterOf(rows[0]!).appendChild(strip)
     strip.dispatchEvent(pointer('pointerdown', { clientY: 10 }))
     expect(document.body.style.cursor).toBe('')
   })
@@ -378,14 +378,14 @@ describe('rowResize - update + destroy', () => {
   it('uses default min=20 / max=320 when bounds are omitted', () => {
     const { host, rows } = buildGrid([{ rowIndex: 0 }])
     track(host)
-    mockRowHeight(rows[0], 100)
+    mockRowHeight(rows[0]!, 100)
     const onResize = vi.fn()
     const action = rowResize(host, { onResize })
-    const strip = stripOf(rows[0])!
+    const strip = stripOf(rows[0]!)!
     strip.dispatchEvent(pointer('pointerdown', { clientY: 0 }))
     // Drag way past max -> clamps to 320.
     window.dispatchEvent(pointer('pointermove', { clientY: 10000 }))
-    expect(rows[0].style.height).toBe('320px')
+    expect(rows[0]!.style.height).toBe('320px')
     // Drag way below min -> clamps to 20.
     window.dispatchEvent(pointer('pointerup', { clientY: -10000 }))
     expect(onResize).toHaveBeenCalledWith(0, 20)

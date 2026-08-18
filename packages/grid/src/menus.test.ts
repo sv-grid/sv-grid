@@ -557,8 +557,8 @@ describe('createMenus - contextMenuItems', () => {
     expect(labels).toContain('Remove row')
     expect(labels).toContain('Remove column')
     // no leading/trailing separator
-    expect(items[0].separator).toBeFalsy()
-    expect(items[items.length - 1].separator).toBeFalsy()
+    expect(items[0]!.separator).toBeFalsy()
+    expect(items[items.length - 1]!.separator).toBeFalsy()
   })
 
   it('built-in run wiring invokes clipboard helpers', () => {
@@ -627,8 +627,8 @@ describe('createMenus - contextMenuItems', () => {
     const m = createMenus(ctx)
     const items = m.contextMenuItems()
     expect(items.map((i) => i.key)).toEqual(['shown'])
-    expect(items[0].disabled).toBe(true)
-    items[0].run!()
+    expect(items[0]!.disabled).toBe(true)
+    items[0]!.run!()
     expect(action).toHaveBeenCalled()
   })
 
