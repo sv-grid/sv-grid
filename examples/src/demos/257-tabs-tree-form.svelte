@@ -49,7 +49,7 @@
     {#snippet panel(active)}
       {#if active === 'form'}
         <div class="pane">
-          <SvForm {fields} columns={2} initial={{ plan: 'pro', seats: 5 }} onSubmit={(v) => (submitted = v)} submitLabel="Create account" />
+          <SvForm {fields} columns={2} initial={{ plan: 'pro', seats: 5 }} onSubmit={(v) => { submitted = v }} submitLabel="Create account" />
           {#if submitted}<pre class="result">{JSON.stringify(submitted, null, 2)}</pre>{/if}
         </div>
       {:else if active === 'tree'}

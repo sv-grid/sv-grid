@@ -53,7 +53,14 @@
 
   let view = $state<'timeline' | 'table'>('timeline')
 
-  const schedulerCfg: SchedulerProConfig<any, Call> = {
+  // `utilizationHeatmap.capacityField` is declared as `keyof SchedulerResource`, so
+  // it does not know about a resource type's own extra fields. The renderer reads
+  // any numeric field off the resource, so widen the key to this demo's Queue.
+  type QueueSchedulerConfig = Omit<SchedulerProConfig<any, Call>, 'utilizationHeatmap'> & {
+    utilizationHeatmap?: boolean | { capacityField?: keyof Queue & string }
+  }
+
+  const schedulerCfg: QueueSchedulerConfig = {
     startField: 'start', endField: 'end', titleField: 'title', colorField: 'color',
     resourceField: 'queue', resources: queues,
     utilizationHeatmap: { capacityField: 'cap' },

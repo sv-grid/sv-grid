@@ -157,14 +157,14 @@
   {:else}
     <SvCard title="Security" subtitle="Protect your account and data.">
       <div class="rows">
-        <div class="setting"><div><strong>Two-factor authentication</strong><div class="muted">Require a code at sign-in.</div></div><SvSwitchButton bind:checked={twoFA} /></div>
+        <div class="setting"><div><strong>Two-factor authentication</strong><div class="muted">Require a code at sign-in.</div></div><SvSwitchButton checked={twoFA} onChange={(v) => (twoFA = v)} /></div>
         <SvDivider />
-        <div class="setting"><div><strong>Single sign-on (SSO)</strong><div class="muted">Let members sign in with your IdP.</div></div><SvSwitchButton bind:checked={sso} /></div>
+        <div class="setting"><div><strong>Single sign-on (SSO)</strong><div class="muted">Let members sign in with your IdP.</div></div><SvSwitchButton checked={sso} onChange={(v) => (sso = v)} /></div>
         <SvDivider />
         <div class="setting">
           <div><strong>API key</strong><div class="muted">Used for server-to-server calls.</div></div>
           <div class="keyrow">
-            <SvTextInput value={apiKey} readonly width={220}>
+            <SvTextInput value={apiKey} readonly>
               {#snippet leading()}<span class="ic">🔑</span>{/snippet}
             </SvTextInput>
             <SvPopconfirm title="Rotate API key?" description="The current key stops working right away." confirmLabel="Rotate" confirmVariant="danger" onConfirm={rotateKey}>

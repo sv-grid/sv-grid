@@ -48,12 +48,14 @@
   const source: ServerDataSource<Sale> = {
     async getRows(req) {
       await new Promise((r) => setTimeout(r, 200)) // simulated latency
+      // `groupBy` / `groupKeys` are optional on ServerRequest (a flat source may
+      // omit them); this grouped source is always called with both.
       const subset = DB.filter((r) =>
-        req.groupKeys.every((k, i) => String((r as Record<string, unknown>)[req.groupBy[i]!]) === k),
+        req.groupKeys!.every((k, i) => String((r as Record<string, unknown>)[req.groupBy![i]!]) === k),
       )
-      const level = req.groupKeys.length
-      if (level < req.groupBy.length) {
-        const field = req.groupBy[level]!
+      const level = req.groupKeys!.length
+      if (level < req.groupBy!.length) {
+        const field = req.groupBy![level]!
         const map = new Map<string, Record<string, unknown>>()
         for (const r of subset) {
           const key = String((r as Record<string, unknown>)[field])
@@ -93,13 +95,13 @@
   type GridRow = ServerGroupGridRow<Sale> & { n?: number }
   const rows = $derived<GridRow[]>(serverGroupRows(view))
 
-  const usd = { type: 'number' as const, options: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 } }
+  const usd = { type: 'number' as const, options: { style: 'currency' as const, currency: 'USD', maximumFractionDigits: 0 } }
   const columns: ColumnDef<typeof features, GridRow>[] = [
     {
       field: 'region',
       header: 'Group',
       width: 300,
-      cell: (ctx) => renderComponent(SvGroupCell, { row: ctx.row.original, onToggle: nav.onToggle, leafField: 'rep' }),
+      cell: (ctx) => renderComponent(SvGroupCell, { row: ctx.row.original, onToggle: () => nav.onToggle(ctx.row.original), leafField: 'rep' }),
     },
     { field: 'n', header: 'Rows', width: 110, align: 'right' },
     { field: 'amount', header: 'Amount', width: 170, align: 'right', format: usd },

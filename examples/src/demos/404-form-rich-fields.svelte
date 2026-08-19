@@ -35,8 +35,10 @@
 
   const initial = { accountId: 'ACC-4821', seats: 10, role: 'editor' }
 
-  function onSubmit(values: Record<string, unknown>) {
-    return toast.promise(new Promise((res) => setTimeout(res, 900)), {
+  // Awaited (not returned) so the handler stays `Promise<void>` - SvForm keeps the
+  // Submit button in its loading state until the toast promise settles.
+  async function onSubmit(values: Record<string, unknown>) {
+    await toast.promise(new Promise((res) => setTimeout(res, 900)), {
       loading: 'Creating account...', success: `Account created for ${values.name}`, error: 'Failed',
     })
   }

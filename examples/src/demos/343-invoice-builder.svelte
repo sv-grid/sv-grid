@@ -112,7 +112,7 @@
         <SvDivider />
         <SvStat label="Total due" value={money(total)} hint={`${lines.length} items`} />
         <div class="copy">
-          <span>Email me a copy</span><SvSwitchButton bind:checked={sendCopy} />
+          <span>Email me a copy</span><SvSwitchButton checked={sendCopy} onChange={(v) => (sendCopy = v)} />
         </div>
       </SvCard>
     </aside>

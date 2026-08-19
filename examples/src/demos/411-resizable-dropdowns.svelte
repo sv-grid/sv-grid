@@ -38,7 +38,7 @@
     'Warsaw', 'Zurich',
   ]
 
-  let tz = $state<number | null>(12)
+  let tz = $state<string | number | null>(12)
   let fruit = $state<string | number | null>(null)
   let city = $state('')
   let resizable = $state(true)
@@ -66,7 +66,8 @@
       <SvText size="sm" weight="semibold">Drop-down list</SvText>
       <SvDropDownList
         {resizable}
-        bind:value={tz}
+        value={tz}
+        onChange={(v) => (tz = v)}
         options={timezones}
         placeholder="Pick a timezone"
         label="Timezone"
@@ -79,7 +80,8 @@
       <SvComboBox
         {resizable}
         clearable
-        bind:value={fruit}
+        value={fruit}
+        onChange={(v) => (fruit = v)}
         options={fruits}
         placeholder="Type to filter…"
         label="Favourite fruit"
@@ -119,7 +121,8 @@
     <div class="bounds-field">
       <SvDropDownList
         {resizable}
-        bind:value={tz}
+        value={tz}
+        onChange={(v) => (tz = v)}
         options={timezones}
         placeholder="Pick a timezone"
         ariaLabel="Timezone (bounds demo)"
