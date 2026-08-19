@@ -19,12 +19,12 @@
     "autoprefixer": "^10.5.0",
     "jszip": "^3.10.1",
     "pdfmake": "^0.2.10",
-    "postcss": "^8.5.12",
+    "postcss": "^8.5.26",
     "svelte": "^5.55.5",
     "svelte-check": "^4.4.6",
     "tailwindcss": "^4.2.4",
     "typescript": "6.0.3",
-    "vite": "^8.0.10"
+    "vite": "^8.2.1"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",

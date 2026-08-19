@@ -4671,7 +4671,7 @@ function deployPlan(project: StudioProject): DeployPlan {
     case 'vercel':
       return {
         adapterModule: '@sveltejs/adapter-vercel',
-        adapterDep: ['@sveltejs/adapter-vercel', '^5.5.0'],
+        adapterDep: ['@sveltejs/adapter-vercel', '^6.3.2'],
         files: [],
         cli: 'npx vercel --prod',
         deployScript: 'vercel deploy --prod',
