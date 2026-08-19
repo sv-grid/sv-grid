@@ -32,6 +32,7 @@
   "scripts": {
     "build:manifests": "node ./scripts/build-manifests.mjs",
     "build:ts": "tsc -p tsconfig.json",
+    "build:mcpb": "node ./scripts/build-mcpb.mjs",
     "build": "pnpm build:manifests && pnpm build:ts",
     "prepublishOnly": "pnpm build",
     "start": "node dist/index.js",
