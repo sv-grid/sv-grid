@@ -5,3 +5,17 @@ packages:
 
 linkWorkspacePackages: true
 preferWorkspacePackages: true
+
+# Forces patched versions of transitive deps whose parents pin vulnerable
+# ranges. Each entry clears a high-severity Dependabot alert. Caret ranges on
+# purpose: a bare >= let undici jump 7 -> 8 and fast-uri 3 -> 4, which swaps a
+# security alert for an API break in whatever depends on them. Drop an entry
+# once the parent ships the fix itself.
+overrides:
+  ip-address: '^10.3.1'
+  undici: '^7.29.0'
+  fast-uri: '^3.1.5'
+  brace-expansion: '^5.0.7'
+  hono: '^4.12.25'
+  '@hono/node-server': '^1.19.15'
+  body-parser: '^2.3.0'
