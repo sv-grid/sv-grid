@@ -11,8 +11,8 @@
  * whose OpenAPI is blocked) - the caller can then ask the user to list columns.
  */
 import type { RowData } from '@svgrid/grid'
-import type { EntityFieldType, EntitySchema } from '../schema'
-import { buildEntitySchema, type IntrospectedColumn } from './schema-from-columns'
+import type { EntityFieldType, EntitySchema } from '../schema.js'
+import { buildEntitySchema, type IntrospectedColumn } from './schema-from-columns.js'
 
 export type IntrospectSupabaseOptions = {
   /** Project URL, e.g. `https://xxxx.supabase.co`. */

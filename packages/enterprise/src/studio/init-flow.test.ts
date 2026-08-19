@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { runStudioInit, parseSelection, type DbGateway, type PromptIO } from './init-flow.js'
 import type { StudioIO } from './cli.js'
 import { parseProject, validateProject, type GridConfig } from './project.js'
@@ -52,6 +52,38 @@ function fakeDb(): DbGateway {
       return [] // no foreign keys
     },
   }
+}
+
+/** Stand in for a Supabase project: PostgREST serves its OpenAPI doc at /rest/v1/. */
+function stubSupabase(definitions: Record<string, unknown> | null) {
+  vi.stubGlobal('fetch', async (input: string | URL) => {
+    const href = String(input)
+    if (href.endsWith('/rest/v1/')) {
+      if (!definitions) return new Response('nope', { status: 401 })
+      return new Response(JSON.stringify({ definitions }), { status: 200, headers: { 'content-type': 'application/json' } })
+    }
+    // Row-sample and CSV fallbacks: answer empty so only the OpenAPI path counts.
+    return new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } })
+  })
+}
+
+const SUPABASE_DEFS = {
+  customers: {
+    required: ['id', 'name'],
+    properties: {
+      id: { type: 'integer', description: 'Note:\nThis is a Primary Key.<pk/>' },
+      name: { type: 'string' },
+      tier: { type: 'string', enum: ['free', 'pro'] },
+    },
+  },
+  orders: {
+    required: ['id'],
+    properties: {
+      id: { type: 'integer', description: '<pk/>' },
+      total: { type: 'number' },
+      customer_id: { type: 'integer', description: "<fk table='customers' column='id'/>" },
+    },
+  },
 }
 
 describe('parseSelection', () => {
@@ -135,7 +167,8 @@ describe('runStudioInit', () => {
   })
 
   it('stores a dataset in PGlite when that source is picked', async () => {
-    const prompts = scriptedPrompts(['3', '1', 'y', '1', '1', 'n', 'Shop', '.'])
+    // Source menu: 1 sample, 2 database, 3 supabase, 4 pglite, 5 rest.
+    const prompts = scriptedPrompts(['4', '1', 'y', '1', '1', 'n', 'Shop', '.'])
     const fs = memoryIo()
     const result = await runStudioInit({}, prompts.io, null, fs.io)
 
@@ -200,7 +233,7 @@ describe('runStudioInit', () => {
   })
 
   it('builds an app from a REST endpoint', async () => {
-    const prompts = scriptedPrompts(['4', 'https://api.example.com/widgets', 'widgets', 'y', '1', '1', 'n', 'API app', '.'])
+    const prompts = scriptedPrompts(['5', 'https://api.example.com/widgets', 'widgets', 'y', '1', '1', 'n', 'API app', '.'])
     const fs = memoryIo()
     const rows = JSON.stringify({ data: [{ id: 1, name: 'Widget', price: 9.5 }] })
     const result = await runStudioInit({}, prompts.io, null, fs.io, async () => rows)
@@ -217,6 +250,98 @@ describe('runStudioInit', () => {
     const listScreen = result.project.screens.find((s) => s.id === result.project.entities[0]!.name)!
     const grid = listScreen.blocks.find((b) => b.config.kind === 'grid')!.config as GridConfig
     expect(grid.editing).toBe('inline')
+  })
+
+  describe('supabase', () => {
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('reads a project over the REST API and binds each table to it', async () => {
+      stubSupabase(SUPABASE_DEFS)
+      const prompts = scriptedPrompts(['all', 'y', '1', '1', 'n', 'Shop', '.'])
+      const fs = memoryIo()
+      const result = await runStudioInit(
+        { supabaseUrl: 'https://abc.supabase.co', supabaseKey: 'anon-key' },
+        prompts.io,
+        null, // no DbGateway: the point is that Supabase needs no driver
+        fs.io,
+      )
+
+      expect(result.project.entities.map((e) => e.name)).toEqual(['customers', 'orders'])
+      expect(result.project.dataSource).toBe('supabase')
+      expect(result.project.dataSources?.customers).toEqual({
+        kind: 'supabase', table: 'customers', url: 'https://abc.supabase.co', key: 'anon-key',
+      })
+      expect(validateProject(result.project).filter((i) => i.level === 'error')).toEqual([])
+      // The URL + key flags skip straight to the table question.
+      expect(prompts.asked[0]).toBe('Which tables? (all, or a comma list of names/numbers)')
+    })
+
+    it('picks up the primary key and the foreign key from the API doc', async () => {
+      stubSupabase(SUPABASE_DEFS)
+      const prompts = scriptedPrompts(['all', 'y', '1', '1', 'n', 'Shop', '.'])
+      const fs = memoryIo()
+      const { project } = await runStudioInit(
+        { supabaseUrl: 'https://abc.supabase.co', supabaseKey: 'k' }, prompts.io, null, fs.io,
+      )
+      const orders = project.entities.find((e) => e.name === 'orders')!
+      expect(orders.fields.find((f) => f.field === 'id')?.primaryKey).toBe(true)
+      expect(orders.fields.find((f) => f.field === 'customer_id')?.relation?.entity).toBe('customers')
+      // A relation means the customers detail page gets an orders tab.
+      expect(project.screens.some((s) => s.id === 'customers-detail')).toBe(true)
+    })
+
+    it('imports only the picked tables', async () => {
+      stubSupabase(SUPABASE_DEFS)
+      const prompts = scriptedPrompts(['orders', 'y', '1', '1', 'n', 'Shop', '.'])
+      const fs = memoryIo()
+      const { project } = await runStudioInit(
+        { supabaseUrl: 'https://abc.supabase.co', supabaseKey: 'k' }, prompts.io, null, fs.io,
+      )
+      expect(project.entities.map((e) => e.name)).toEqual(['orders'])
+    })
+
+    it('falls back to typed table names when the API doc is restricted', async () => {
+      // 401 on the doc, but each table still introspects from a sample row.
+      let calls = 0
+      vi.stubGlobal('fetch', async (input: string | URL) => {
+        const href = String(input)
+        calls++
+        if (href.endsWith('/rest/v1/')) return new Response('no', { status: 401 })
+        return new Response(JSON.stringify([{ id: 1, name: 'Acme' }]), {
+          status: 200, headers: { 'content-type': 'application/json' },
+        })
+      })
+      const prompts = scriptedPrompts(['customers', 'y', '1', '1', 'n', 'Shop', '.'])
+      const fs = memoryIo()
+      const { project } = await runStudioInit(
+        { supabaseUrl: 'https://abc.supabase.co', supabaseKey: 'k' }, prompts.io, null, fs.io,
+      )
+      expect(calls).toBeGreaterThan(0)
+      expect(project.entities.map((e) => e.name)).toEqual(['customers'])
+      expect(project.entities[0]!.fields.map((f) => f.field)).toContain('name')
+      expect(prompts.asked).toContain('Table names (comma separated):')
+    })
+
+    it('requires both the URL and the key', async () => {
+      const prompts = scriptedPrompts(['', ''])
+      const fs = memoryIo()
+      await expect(runStudioInit({ supabaseUrl: 'https://abc.supabase.co' }, prompts.io, null, fs.io))
+        .rejects.toThrow('project URL and the anon key are required')
+    })
+
+    it('fails clearly when no picked table can be read', async () => {
+      // Doc lists nothing AND every per-table fallback 404s.
+      vi.stubGlobal('fetch', async (input: string | URL) =>
+        String(input).endsWith('/rest/v1/')
+          ? new Response(JSON.stringify({ definitions: {} }), { status: 200, headers: { 'content-type': 'application/json' } })
+          : new Response('missing', { status: 404 }),
+      )
+      const prompts = scriptedPrompts(['ghosts'])
+      const fs = memoryIo()
+      await expect(runStudioInit(
+        { supabaseUrl: 'https://abc.supabase.co', supabaseKey: 'k' }, prompts.io, null, fs.io,
+      )).rejects.toThrow('None of the picked tables could be read')
+    })
   })
 
   it('applies the chosen theme', async () => {

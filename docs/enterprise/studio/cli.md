@@ -35,6 +35,8 @@ app leads with an overview dashboard over its most-referenced table.
 | --- | --- |
 | `--db <dialect>` | Skip the source question and read a live database: `postgres` \| `supabase` \| `mysql` \| `mssql` \| `sqlite`. The driver is installed for you. |
 | `--url <conn>` | Connection string (or file path for SQLite) for `--db`. |
+| `--supabase-url <url>` | Read a Supabase project over its REST API instead - no driver, no connection string. |
+| `--supabase-key <anon>` | The project's anon key, paired with `--supabase-url`. |
 | `--dataset <id>` | Start from sample data: `customers-orders`, `products-categories`, `projects-tasks`, `employees-departments`, `tickets-accounts`. |
 | `--title <name>` | App name. |
 | `--out <dir>` | Folder to write the app into (default: `.`). |
@@ -45,6 +47,9 @@ app leads with an overview dashboard over its most-referenced table.
 ```bash
 # guided, from your own database
 npx @svgrid/studio init --db postgres --url $DATABASE_URL --out my-app
+
+# from Supabase, over the REST API (no driver to install)
+npx @svgrid/studio init --supabase-url https://xxxx.supabase.co --supabase-key $SUPABASE_ANON_KEY
 
 # no questions at all: a seeded sample app
 npx @svgrid/studio init --yes --dataset projects-tasks --out demo

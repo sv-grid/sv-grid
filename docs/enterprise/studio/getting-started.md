@@ -47,6 +47,13 @@ you:
 npx @svgrid/studio init --db postgres --url $DATABASE_URL --out my-app
 ```
 
+On Supabase there is no driver to install at all - it is read over the project's
+REST API:
+
+```bash
+npx @svgrid/studio init --supabase-url https://xxxx.supabase.co --supabase-key $SUPABASE_ANON_KEY
+```
+
 Prefer clicking? The visual designer has the same wizard behind its **New app**
 button - or open [svgrid.com/studio/new](https://svgrid.com/studio/new) to start
 one in the browser. Both paths run the same generator, so they produce the same
