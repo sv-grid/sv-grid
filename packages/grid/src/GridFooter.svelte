@@ -4,7 +4,6 @@
       type TableFeatures,
     } from "./index";
   import "./sv-grid-scrollbar";
-  import SvGridDropdown from "./SvGridDropdown.svelte";
   import {
       fmtStat,
     } from "./SvGrid.helpers";
@@ -27,6 +26,26 @@
     /** Page-size choices for the selector. Defaults to `[10, 25, 50, 100]`. */
     pageSizeOptions?: number[];
   } = $props();
+
+  // SvGridDropdown is ~22 KB and exists here only to pick one of four numbers.
+  // Importing it statically also dragged it into the base bundle and silently
+  // defeated the lazy `import()` in SvGrid.svelte, which loads the same
+  // component as a cell editor. So the closed trigger below is plain markup
+  // reusing the dropdown's own classes (identical appearance), and the real
+  // component is fetched on first open. Keep this lazy: a static import here
+  // re-breaks the cell-editor split too, not just the footer.
+  let PageSizeDropdown = $state<typeof import("./SvGridDropdown.svelte").default | null>(null);
+  let loadingPageSize = $state(false);
+
+  async function openPageSize() {
+    if (PageSizeDropdown || loadingPageSize) return;
+    loadingPageSize = true;
+    try {
+      PageSizeDropdown = (await import("./SvGridDropdown.svelte")).default;
+    } finally {
+      loadingPageSize = false;
+    }
+  }
 
   // View facade: re-bind the controller's reactive members so the markup
   // (moved verbatim from SvGrid.svelte) stays identical.
@@ -88,12 +107,32 @@
         <div class="sv-grid-pagination-pagesize">
           <span>{messages.pageSize}</span>
           <div class="sv-grid-pagination-pagesize-dd">
-            <SvGridDropdown
-              options={sizes.map((n) => ({ value: n, label: String(n) }))}
-              value={pageSize}
-              autoOpen={false}
-              onChange={(v) => setPageSize(Number(v))}
-            />
+            {#if PageSizeDropdown}
+              <!-- autoOpen so the click that triggered the load also opens the
+                   panel, rather than making the user click a second time. -->
+              <PageSizeDropdown
+                options={sizes.map((n) => ({ value: n, label: String(n) }))}
+                value={pageSize}
+                autoOpen={true}
+                onChange={(v) => setPageSize(Number(v))}
+              />
+            {:else}
+              <!-- Mirrors SvGridDropdown's closed trigger exactly (same classes,
+                   same ARIA) so there is no visual change and no layout shift
+                   when the real component swaps in. -->
+              <div class="sv-grid-dropdown">
+                <button
+                  type="button"
+                  class="sv-grid-dropdown-trigger"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  onclick={openPageSize}
+                >
+                  <span class="sv-grid-dropdown-label">{pageSize}</span>
+                  <span class="sv-grid-dropdown-caret" aria-hidden="true">▾</span>
+                </button>
+              </div>
+            {/if}
           </div>
         </div>
         <span class="sv-grid-pagination-range">
