@@ -349,6 +349,40 @@
   const tlLaneH = $derived(scheduler.timelineLaneHeight ?? 26);
   const tlResW = $derived(scheduler.resourceAreaWidth ?? 160);
   const tlSlot = $derived(Math.max(1, scheduler.timelineSlotMinutes ?? slotMinutes));
+  // --- Scheduler Pro: non-working-time collapse + continuous zoom ------------
+  // Declared ahead of `tlAxis` / `tlAxisWidth` (which read `axisPro` and
+  // `proAxisData` directly) rather than beside the other Pro features: a `const`
+  // used above its declaration is a type error even though `$derived` is lazy
+  // enough to work at runtime.
+  const collapseOn = $derived(isTimeline && (pcfg.collapseNonWorking === true || pcfg.collapseWeekends === true));
+  // Zoom: consumer-controlled `zoom`, overridable by the built-in stepper.
+  let zoomOverride = $state<number | null>(null);
+  const zoomValue = $derived(zoomOverride ?? pcfg.zoom ?? null);
+  const zoomOn = $derived(isTimeline && zoomValue != null);
+  const zoomLadder = $derived(pcfg.zoomLevels ?? zoomPresets);
+  const axisPro = $derived(collapseOn || zoomOn);
+  // The piecewise axis (working spans full width, non-working collapsed) + tick size.
+  const proAxisData = $derived.by<{ axis: Axis; tickMinutes: number; level: ZoomLevel | null } | null>(() => {
+    if (!axisPro) return null;
+    const z = zoomOn ? resolveZoom(zoomValue as number | ZoomLevel, zoomLadder) : null;
+    const pxPerMinute = z ? z.pxPerMinute : 0.5;
+    const axis = buildAxis(range.start, range.end, {
+      pxPerMinute,
+      businessHours: scheduler.businessHours,
+      nonWorkingDays: scheduler.nonWorkingDays,
+      collapseNonWorking: pcfg.collapseNonWorking,
+      collapseWeekends: pcfg.collapseWeekends,
+      collapsedGapPx: pcfg.collapsedGapPx,
+    });
+    const tickMinutes = z ? z.level.tickMinutes : view === "timelineDay" ? 60 : 1440;
+    return { axis, tickMinutes, level: z?.level ?? null };
+  });
+  function stepZoom(dir: number) {
+    const cur = zoomValue == null ? 3 : typeof zoomValue === "number" ? zoomValue : zoomLadder.indexOf(zoomValue as ZoomLevel);
+    const next = Math.max(0, Math.min(zoomLadder.length - 1, (cur < 0 ? 3 : cur) + dir));
+    zoomOverride = next;
+    pcfg.onZoomChange?.(zoomLadder[next]!);
+  }
   const tlAxis = $derived(
     axisPro
       ? proTimelineAxis()
@@ -373,14 +407,10 @@
       ? Math.max(proAxisData.axis.totalPx, tlOuterW ? tlOuterW - tlResW : 0, 320)
       : Math.max(tlAxis.ticks.length * TL_TICK_MIN, tlOuterW ? tlOuterW - tlResW : 0, 320),
   );
-  const tlRows = $derived(
-    timelineRows(
-      resourceField ? (visibleResIds ? resources.filter((r) => visibleResIds.has(r.id)) : resources) : null,
-      tlEventsForRows,
-    ),
-  );
-
   // --- Grouped / tree resources (timeline) ----------------------------------
+  // This block and the multi-assignment one below it feed `tlRows`, so both are
+  // declared ahead of it (a `const` used above its declaration is a type error
+  // even though `$derived` is lazy enough to work at runtime).
   const GROUP_ROW_H = 30;
   const hasGroups = $derived(isTimeline && !!resourceField && !!(pcfg.resourceGroups && pcfg.resourceGroups.length));
   let collapsedGroups = $state<Set<string>>(new Set());
@@ -404,6 +434,54 @@
     hasGroups ? buildResourceRows(resources, pcfg.resourceGroups!, pcfg.resourceGroupOf ?? (() => undefined), collapsedGroups) : [],
   );
   const visibleResIds = $derived(hasGroups ? new Set(visibleResourceIds(treeRows)) : null);
+
+  // --- Scheduler Pro: multi-assignment (one event under several resources) ---
+  // Resolve assignments from the flat list + any per-row `assignmentField`.
+  const assignmentsList = $derived.by<SchedulerAssignment[]>(() => {
+    const out: SchedulerAssignment[] = [];
+    if (pcfg.assignments) out.push(...pcfg.assignments);
+    const f = pcfg.assignmentField;
+    if (f) {
+      for (const row of data) {
+        const raw = fieldValue(row, f);
+        if (!Array.isArray(raw)) continue;
+        const evId = key(row);
+        for (const r of raw) {
+          if (typeof r === "string") out.push({ id: `${evId}@${r}`, eventId: evId, resourceId: r });
+          else if (r && typeof r === "object" && "resourceId" in r) {
+            const o = r as { id?: string; resourceId: string; units?: number };
+            out.push({ id: o.id ?? `${evId}@${o.resourceId}`, eventId: evId, resourceId: o.resourceId, units: o.units });
+          }
+        }
+      }
+    }
+    return out;
+  });
+  const hasAssignments = $derived(assignmentsList.length > 0 || !!pcfg.assignmentField);
+  // Flattened (event x resource) allocations for the visible timeline events.
+  const tlAllocations = $derived.by(() => {
+    if (!isTimeline || !resourceField) return [];
+    return expandAssignments(viewEvents, assignmentsList, {
+      keyOf: (e) => e.rowKey,
+      startOf: (e) => e.start,
+      endOf: (e) => e.end,
+      resourceOf: (e) => e.resourceId,
+    });
+  });
+  // Events fed to timelineRows: expanded per assigned resource when assignments
+  // are in play (one event can then appear under several resources), else plain.
+  const tlEventsForRows = $derived(
+    hasAssignments
+      ? tlAllocations.map((a) => ({ ...a.event, key: `${a.event.key}@${a.resourceId}`, resourceId: a.resourceId }))
+      : viewEvents,
+  );
+
+  const tlRows = $derived(
+    timelineRows(
+      resourceField ? (visibleResIds ? resources.filter((r) => visibleResIds.has(r.id)) : resources) : null,
+      tlEventsForRows,
+    ),
+  );
   // The unified list the timeline body iterates: group-header rows interleaved
   // with resource rows (each carrying its lane-packed tlRow + its tlRows index).
   type TlPacked = (typeof tlRows)[number];
@@ -535,46 +613,8 @@
     pcfg.onDependenciesChange?.(moves);
   }
 
-  // --- Scheduler Pro: multi-assignment + resource histogram + column summary --
-  // Resolve assignments from the flat list + any per-row `assignmentField`.
-  const assignmentsList = $derived.by<SchedulerAssignment[]>(() => {
-    const out: SchedulerAssignment[] = [];
-    if (pcfg.assignments) out.push(...pcfg.assignments);
-    const f = pcfg.assignmentField;
-    if (f) {
-      for (const row of data) {
-        const raw = fieldValue(row, f);
-        if (!Array.isArray(raw)) continue;
-        const evId = key(row);
-        for (const r of raw) {
-          if (typeof r === "string") out.push({ id: `${evId}@${r}`, eventId: evId, resourceId: r });
-          else if (r && typeof r === "object" && "resourceId" in r) {
-            const o = r as { id?: string; resourceId: string; units?: number };
-            out.push({ id: o.id ?? `${evId}@${o.resourceId}`, eventId: evId, resourceId: o.resourceId, units: o.units });
-          }
-        }
-      }
-    }
-    return out;
-  });
-  const hasAssignments = $derived(assignmentsList.length > 0 || !!pcfg.assignmentField);
-  // Flattened (event x resource) allocations for the visible timeline events.
-  const tlAllocations = $derived.by(() => {
-    if (!isTimeline || !resourceField) return [];
-    return expandAssignments(viewEvents, assignmentsList, {
-      keyOf: (e) => e.rowKey,
-      startOf: (e) => e.start,
-      endOf: (e) => e.end,
-      resourceOf: (e) => e.resourceId,
-    });
-  });
-  // Events fed to timelineRows: expanded per assigned resource when assignments
-  // are in play (one event can then appear under several resources), else plain.
-  const tlEventsForRows = $derived(
-    hasAssignments
-      ? tlAllocations.map((a) => ({ ...a.event, key: `${a.event.key}@${a.resourceId}`, resourceId: a.resourceId }))
-      : viewEvents,
-  );
+  // --- Scheduler Pro: resource histogram + column summary --------------------
+  // (multi-assignment lives further up, beside the timeline row derivations)
   // Resource utilization histogram (timeline): a bar per axis tick under each row.
   const histCfg = $derived(typeof pcfg.resourceHistogram === "object" ? pcfg.resourceHistogram : {});
   const histOn = $derived(!!pcfg.resourceHistogram && isTimeline && !!resourceField);
@@ -675,7 +715,7 @@
     return out;
   }
   // Per-time-column summary strip (counts / sums / custom reducer) over axis ticks.
-  const summaryCfg = $derived(pcfg.columnSummary && pcfg.columnSummary !== false ? pcfg.columnSummary : null);
+  const summaryCfg = $derived(pcfg.columnSummary ? pcfg.columnSummary : null);
   const tlSummary = $derived.by(() => {
     if (!summaryCfg || !isTimeline) return null;
     const cols = tlAxis.ticks.map((t) => ({ start: t.start, end: t.end }));
@@ -687,36 +727,9 @@
     return vals;
   });
 
-  // --- Scheduler Pro: non-working-time collapse + continuous zoom ------------
-  const collapseOn = $derived(isTimeline && (pcfg.collapseNonWorking === true || pcfg.collapseWeekends === true));
-  // Zoom: consumer-controlled `zoom`, overridable by the built-in stepper.
-  let zoomOverride = $state<number | null>(null);
-  const zoomValue = $derived(zoomOverride ?? pcfg.zoom ?? null);
-  const zoomOn = $derived(isTimeline && zoomValue != null);
-  const zoomLadder = $derived(pcfg.zoomLevels ?? zoomPresets);
-  const axisPro = $derived(collapseOn || zoomOn);
-  // The piecewise axis (working spans full width, non-working collapsed) + tick size.
-  const proAxisData = $derived.by<{ axis: Axis; tickMinutes: number; level: ZoomLevel | null } | null>(() => {
-    if (!axisPro) return null;
-    const z = zoomOn ? resolveZoom(zoomValue as number | ZoomLevel, zoomLadder) : null;
-    const pxPerMinute = z ? z.pxPerMinute : 0.5;
-    const axis = buildAxis(range.start, range.end, {
-      pxPerMinute,
-      businessHours: scheduler.businessHours,
-      nonWorkingDays: scheduler.nonWorkingDays,
-      collapseNonWorking: pcfg.collapseNonWorking,
-      collapseWeekends: pcfg.collapseWeekends,
-      collapsedGapPx: pcfg.collapsedGapPx,
-    });
-    const tickMinutes = z ? z.level.tickMinutes : view === "timelineDay" ? 60 : 1440;
-    return { axis, tickMinutes, level: z?.level ?? null };
-  });
-  function stepZoom(dir: number) {
-    const cur = zoomValue == null ? 3 : typeof zoomValue === "number" ? zoomValue : zoomLadder.indexOf(zoomValue as ZoomLevel);
-    const next = Math.max(0, Math.min(zoomLadder.length - 1, (cur < 0 ? 3 : cur) + dir));
-    zoomOverride = next;
-    pcfg.onZoomChange?.(zoomLadder[next]!);
-  }
+  // --- Scheduler Pro: axis tick labels (non-working collapse + zoom) ---------
+  // The axis itself (`axisPro` / `proAxisData`) is built further up, beside the
+  // rest of the timeline derivations that consume it.
   const TL_WD_S = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const TL_MO_S = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   function proTickLabel(d: Date, tickMinutes: number): string {
@@ -2118,16 +2131,20 @@
   }
   function drawerOptions(col: DrawerCol, row: TData) {
     const raw = typeof col.editorOptions === "function" ? col.editorOptions(row) : col.editorOptions;
-    if (!raw) return undefined;
-    return raw.map((o) =>
-      typeof o === "object" && o != null && "value" in o
+    // editorOptions may resolve asynchronously, but the drawer form is built
+    // synchronously - those columns render without a preset option list rather
+    // than throwing on Promise.map.
+    if (!raw || !Array.isArray(raw)) return undefined;
+    const opts: ReadonlyArray<string | number | { value: string | number; label?: string; color?: string }> = raw;
+    return opts.map((o) =>
+      typeof o === "object"
         ? {
-            value: (o as { value: unknown }).value as string | number,
-            label: String((o as { label?: unknown }).label ?? (o as { value: unknown }).value),
+            value: o.value,
+            label: String(o.label ?? o.value),
             // Carry a color swatch through so the drawer's select shows it.
-            color: (o as { color?: unknown }).color as string | undefined,
+            color: o.color,
           }
-        : { value: o as string | number, label: String(o) },
+        : { value: o, label: String(o) },
     );
   }
   let drawerInitial = $state<Record<string, unknown>>({});

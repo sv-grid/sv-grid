@@ -96,7 +96,7 @@ describe('full component surface (extractor-driven)', () => {
   it('the Grid exposes its full event surface as ctx.grid subscriptions', () => {
     // An entity screen's grid, made code-enabled by an onLoad body that subscribes.
     let p = createProject([customers])
-    const sid = p.screens[0].id
+    const sid = p.screens[0]!.id
     p = setHandlerBody(p, sid, 'onLoad', 'ctx.grid.onCellClick = (e) => { console.log(e.row) }')
     const files = emitStudioProject(p)
     const page = files.find((f) => f.path.endsWith('+page.svelte'))!.contents
@@ -121,7 +121,7 @@ describe('full component surface (extractor-driven)', () => {
   it('ctx.grid exposes runtime-settable props (ctx.grid.sortable = true) with types + wiring', () => {
     // An entity screen's grid, made code-enabled by an onLoad body that sets a prop.
     let p = createProject([customers])
-    const sid = p.screens[0].id
+    const sid = p.screens[0]!.id
     p = setHandlerBody(p, sid, 'onLoad', 'ctx.grid.sortable = true\n  ctx.grid.zebraRows = true\n  if (ctx.grid.sortable) ctx.grid.rowHeight = 40')
     const files = emitStudioProject(p)
     const page = files.find((f) => f.path.endsWith('+page.svelte'))!.contents

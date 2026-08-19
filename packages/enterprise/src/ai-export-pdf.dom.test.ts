@@ -48,7 +48,7 @@ beforeEach(() => {
   setLicenseKey('SVENTERPRISE-DEV-TEST')
   setAIProvider(mockAIProvider)
   // aiExport delegates to the registered engine - here the mocked exportGrid.
-  registerExportProvider(exportGrid)
+  registerExportProvider(exportGrid as never)
 })
 
 describe('aiExport - the demo 203 "grouped PDF" query', () => {

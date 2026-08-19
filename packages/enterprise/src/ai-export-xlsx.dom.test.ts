@@ -72,7 +72,7 @@ beforeEach(() => {
   setLicenseKey('SVENTERPRISE-DEV-TEST')
   setAIProvider(mockAIProvider)
   // aiExport is free (grid) and delegates the real write to enterprise's engine.
-  registerExportProvider(exportGrid)
+  registerExportProvider(exportGrid as never)
 })
 
 describe('aiExport - "export orders over $300" (xlsx default)', () => {

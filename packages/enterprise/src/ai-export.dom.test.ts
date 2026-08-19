@@ -47,7 +47,7 @@ beforeEach(() => {
   setAIProvider(mockAIProvider)
   // aiExport is free (grid) and delegates the WRITE to the registered engine;
   // register enterprise's exportGrid so the download path actually runs.
-  registerExportProvider(exportGrid)
+  registerExportProvider(exportGrid as never)
 })
 afterEach(() => setAIProvider(null))
 

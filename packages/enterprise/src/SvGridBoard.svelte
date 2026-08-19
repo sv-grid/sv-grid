@@ -381,7 +381,10 @@
   function drawerOptions(col: DrawerCol, row: TData) {
     const raw =
       typeof col.editorOptions === "function" ? col.editorOptions(row) : col.editorOptions;
-    if (!raw) return undefined;
+    // editorOptions may resolve asynchronously, but the drawer form is built
+    // synchronously - those columns render without a preset option list rather
+    // than throwing on Promise.map.
+    if (!raw || !Array.isArray(raw)) return undefined;
     return raw.map((o) =>
       typeof o === "object"
         ? { value: o.value, label: o.label ?? String(o.value) }

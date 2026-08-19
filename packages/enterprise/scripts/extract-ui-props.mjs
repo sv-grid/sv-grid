@@ -348,7 +348,11 @@ if (process.argv.includes('--check')) {
   } catch {
     /* missing counts as stale */
   }
-  if (current !== output) {
+  // Compare on normalized newlines: the checked-in file picks up CRLF from a
+  // Windows checkout (core.autocrlf, no .gitattributes) while this script always
+  // emits LF, which otherwise reports a false STALE on content that matches.
+  const sameContent = current.replace(/\r\n/g, '\n') === output.replace(/\r\n/g, '\n')
+  if (!sameContent) {
     console.error('extract-ui-props: ui-components.generated.ts is STALE. Run: node scripts/extract-ui-props.mjs')
     process.exit(1)
   }
