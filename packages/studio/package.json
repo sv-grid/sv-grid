@@ -29,7 +29,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "tsc -p tsconfig.json",
-    "test:types": "tsc -p tsconfig.json --noEmit"
+    "test:types": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint ./src"
   },
   "dependencies": {
     "@svgrid/enterprise": "workspace:^"

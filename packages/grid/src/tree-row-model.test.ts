@@ -115,7 +115,6 @@ describe('createTreeRowModel', () => {
   })
 
   it('honours a custom idField', () => {
-    type K = { key: number; parent: number | null }
     const keyed = [
       { key: 10, parent: null },
       { key: 11, parent: 10 },

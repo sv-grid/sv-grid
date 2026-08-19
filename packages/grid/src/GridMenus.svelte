@@ -1,97 +1,21 @@
 <script lang="ts" generics="TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData">
   import {
-    applyExcelFilter,
-    normalizeForFilter,
     splitInTokens,
     trailingInToken,
-    createColumnVirtualizer,
-    createCoreRowModel,
-    createExpandedRowModel,
-    createFilteredRowModel,
-    createGroupedRowModel,
-    createPaginatedRowModel,
-    createSvelteVirtualizer,
-    createSortedRowModel,
-    createSvGrid,
-    filterFns,
-    getGridCellA11yProps,
-    getGridCellDomId,
-    getGridHeaderA11yProps,
-    getGridRootA11yProps,
-    getGridRowA11yProps,
-    parseEditorValue,
-    normalizeEditorOptions,
-    sortFns,
-    tableFeatures,
-    rowSortingFeature,
-    columnFilteringFeature,
-    columnGroupingFeature,
-    type CellContext,
-    type EditorContext,
-    type CellEditorOption,
     type CellEditorType,
-    type CellFormatter,
-    type CellFormatConfig,
     type Column,
-    type ColumnDef,
-    type Row,
     type RowData,
-    type SvGridApi,
     type TableFeatures,
   } from "./index";
   import "./sv-grid-scrollbar";
   import { onScrollOutside } from "./a11y/dismissable";
   import type { Snippet } from "svelte";
-  import { getKeyboardIntent, getNextActiveCell } from "./keyboard";
-  import {
-    formatNumericWithConfig,
-    getDateFormatter,
-    resolveDatePattern,
-  } from "./cell-formatting";
-  import {
-    RenderSnippetConfig,
-    RenderComponentConfig,
-  } from "./render-component";
-  import { buildFillPattern } from "./fill-patterns";
-  import { buildSparkline, toSparklineValues } from "./sparkline";
-  import {
-    resolveCellFormat,
-    computeColumnStat,
-    formatsNeedingStats,
-    type ColumnStat,
-    type ResolvedCellFormat,
-  } from "./conditional-formatting";
-  import SvGridDropdown from "./SvGridDropdown.svelte";
   import SvListBox from "./SvListBox.svelte";
   import type {
-    Props,
-    SelectionPoint,
-    SelectionRange,
-    CellEditState,
     FilterOperator,
-    FilterOption,
-    MenuPosition,
   } from "./SvGrid.types";
   import {
-    cfTextStyle,
-    fmtStat,
-    getCellKey,
-    resolveClassList,
-    toDateInputValue,
-    toDateTimeLocalInputValue,
-    getEditableInputValue,
     getEditorInputType,
-    toValueArray,
-    getOptionLabel,
-    getOptionColor,
-    colorfulChipStyle,
-    getEditorClass,
-    asDate,
-    clampMenuX,
-    cssEscape,
-    rawToNumber,
-    formatFacetNumber,
-    formatFacetDate,
   } from "./SvGrid.helpers";
 
   import type { SvGridController } from "./SvGrid.controller.svelte";
@@ -103,7 +27,6 @@
   const groupingControlsEnabled = $derived(ctrl.groupingControlsEnabled);
   const filterMenuValues = $derived(ctrl.filterMenuValues);
   const tooltip = $derived(ctrl.tooltip);
-  const showTooltipFor = $derived(ctrl.showTooltipFor);
   const columnMenuFor = $derived(ctrl.columnMenuFor);
   const columnMenuPos = $derived(ctrl.columnMenuPos);
   const filterMenuFor = $derived(ctrl.filterMenuFor);

@@ -19,7 +19,6 @@ import { fileURLToPath } from 'node:url'
 // with cwd set to website/, which used to make DOCS_DIR website/docs and fail.
 const ROOT      = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DOCS_DIR  = join(ROOT, 'docs')
-const DEMOS_DIR = join(ROOT, 'examples', 'src', 'demos')
 const PUBLIC_DIR = join(ROOT, 'website', 'public') // served copies for crawlers
 const SITE      = process.env.SVGRID_SITE_ORIGIN ?? 'https://svgrid.com'   // canonical doc origin
 

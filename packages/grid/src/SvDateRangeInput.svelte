@@ -20,7 +20,7 @@
   import { anchoredRect, portalToBody, popIn, type AnchoredRect } from './popover'
   import { editorAria, nextEditorId, resolveMessages, type SvEditorProps } from './editor-contract'
   import { formatDate } from './datetime/date-format'
-  import { toDate, startOfDay, type DateLike } from './datetime/date-core'
+  import { startOfDay, type DateLike } from './datetime/date-core'
   import { rangeDays } from './datetime/date-selection'
   import type { CalendarPreset } from './createCalendar.svelte'
 

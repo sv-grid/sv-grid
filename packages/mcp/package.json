@@ -1,10 +1,11 @@
 {
   "name": "@svgrid/mcp",
+  "mcpName": "com.svgrid/svgrid",
   "funding": {
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.3.0",
+  "version": "2.3.2",
   "description": "Model Context Protocol (MCP) server for SvGrid. Exposes example sources, docs, and API reference to AI assistants.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "jQWidgets <sales@jqwidgets.com>",
@@ -17,12 +18,13 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "@svgrid/mcp": "dist/index.js"
+    "svgrid-mcp": "dist/index.js"
   },
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "server.json"
   ],
   "publishConfig": {
     "access": "public"
@@ -33,7 +35,8 @@
     "build": "pnpm build:manifests && pnpm build:ts",
     "prepublishOnly": "pnpm build",
     "start": "node dist/index.js",
-    "test:types": "tsc -p tsconfig.json --noEmit"
+    "test:types": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint ./src"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",

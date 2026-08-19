@@ -73,7 +73,6 @@ afterEach(() => {
 
 describe('registry wiring in SvGrid', () => {
   it('mounts a registered component when a custom-editorType cell edits', async () => {
-    let committed: unknown = undefined
     registerCellEditor('stars', {
       component: SvRating,
       props: (ctx) => ({
@@ -90,7 +89,6 @@ describe('registry wiring in SvGrid', () => {
       // The registered SvRating editor is mounted in the editing overlay.
       const rating = target.querySelector('.sv-rating')
       expect(rating).not.toBeNull()
-      void committed
     } finally {
       destroy()
     }

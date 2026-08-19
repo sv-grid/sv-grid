@@ -60,7 +60,7 @@ export function updateField(
     if (f.field !== fieldName) {
       return makesPrimary && f.primaryKey ? { ...f, primaryKey: false } : f
     }
-    let next: EntityField = { ...f, ...patch }
+    const next: EntityField = { ...f, ...patch }
     if (patch.type && patch.type !== f.type) {
       if (patch.type !== 'enum') delete next.options
       if (patch.type !== 'relation') delete next.relation

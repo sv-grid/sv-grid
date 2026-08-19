@@ -10,7 +10,7 @@
  * build. It targets the template's conventions: `$lib/EntityScreen.svelte`,
  * `$lib/schemas`, `$lib/data`, and the `st-*` / `.home` CSS classes.
  */
-import { resolveIdField, titleCase, type EntityField, type EntityFieldType, type EntitySchema, type ValidationRuleSpec } from '../schema.js'
+import { resolveIdField, titleCase, type EntityField, type EntitySchema, type ValidationRuleSpec } from '../schema.js'
 import type { GeneratedFile } from './scaffold.js'
 import type { EntityDataSource, RestAdapterConfig, RestSource, ShellConfig, ShellStyle, SqlDialectKind, SqlSource, EntityTriggers, TriggerEvent } from './project.js'
 import { sanitizeClassName, compileTriggerSteps, TRIGGER_EVENTS } from './project.js'

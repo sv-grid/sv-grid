@@ -2,104 +2,14 @@
 // reading/writing controller state via the `ctx` handle; the reactive core
 // ($state/$derived/$effect) stays in the controller.
 import {
-    applyExcelFilter,
-    normalizeForFilter,
-    createColumnVirtualizer,
-    createCoreRowModel,
-    createExpandedRowModel,
-    createFilteredRowModel,
-    createGroupedRowModel,
-    createSvelteVirtualizer,
-    createSortedRowModel,
-    createSvGrid,
-    getGridCellDomId,
-    sortFns,
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
     columnGroupingFeature,
-    type CellEditorOption,
-    type Column,
-    type ColumnDef,
-    type Row,
     type RowData,
     type TableFeatures,
   } from "./index";
 import "./sv-grid-scrollbar";
-import {
-    computeColumnStat,
-    formatsNeedingStats,
-    type ColumnStat,
-  } from "./conditional-formatting";
-import SvGridDropdown from "./SvGridDropdown.svelte";
-import type {
-    Props,
-    SelectionRange,
-    CellEditState,
-    FilterOperator,
-    MenuPosition,
-  } from "./SvGrid.types";
-import {
-    rawToNumber,
-  } from "./SvGrid.helpers";
-import {
-    createScrollSync,
-  } from "./scroll-sync";
-import {
-    createKeyboard,
-  } from "./keyboard-handlers";
-import {
-    createSummaries,
-  } from "./summaries";
-import {
-    createMenus,
-  } from "./menus";
-import {
-    createCellRender,
-  } from "./cell-render";
-import {
-    createEditing,
-  } from "./editing";
-import {
-    createSelection,
-  } from "./selection";
-import {
-    createColumns,
-  } from "./columns";
-import {
-    createGridApi,
-  } from "./build-api";
-import {
-    createClipboard,
-  } from "./clipboard";
-import {
-    filterOperatorOptions,
-    fallbackOperatorOption,
-    TEXT_OPERATORS,
-    NUMBER_OPERATORS,
-    DATE_OPERATORS,
-    CHECKBOX_OPERATORS,
-    operatorOption,
-    operatorsForColumn,
-    defaultOperatorFor,
-    operatorLabelFor,
-  } from "./filter-operators";
-import {
-    type FacetBucket,
-    isBucketableColumn,
-    buildBuckets,
-    isInBucket,
-  } from "./facet-buckets";
-import {
-    getColumnBaseValue,
-    isGroupRow,
-    toolPanelHeaderLabel,
-    formatSummaryNumeric,
-    getColumnAlign,
-    getPinnedCellValue,
-    getColumnAccessorValue,
-    columnDefMatchesId,
-  } from "./cell-values";
 
 export function createFeatures<
   TFeatures extends TableFeatures = TableFeatures,

@@ -11,7 +11,7 @@
  *   - `skipImport` - wrap in a try/catch dummy export rather than top-level
  *   - `expect-error` - block MUST fail to type-check (one line)
  */
-import { readFile, readdir, mkdir, writeFile, rm } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import ts from 'typescript'

@@ -66,7 +66,6 @@ export type MenuItemProps = {
   onclick: () => void
 }
 
-let uid = 0
 
 export function createMenu(config: MenuConfig) {
   const items = () => config.items()

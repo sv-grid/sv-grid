@@ -50,7 +50,6 @@
     value = $bindable<ReadonlyArray<string | number>>([]),
     onChange,
     onCommit,
-    onCancel,
     placeholder = 'Select…',
     searchable = true,
     maxTagCount = 3,

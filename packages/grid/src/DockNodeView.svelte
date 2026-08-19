@@ -42,7 +42,7 @@
 
     const onMove = (ev: PointerEvent) => {
       const delta = ((vertical ? ev.clientY : ev.clientX) - startPos) / total
-      let fa = Math.min(Math.max(startSizes[a]! + delta, minA), pairTotal - minB)
+      const fa = Math.min(Math.max(startSizes[a]! + delta, minA), pairTotal - minB)
       const next = startSizes.slice()
       next[a] = fa
       next[b] = pairTotal - fa

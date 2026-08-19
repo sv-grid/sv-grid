@@ -289,7 +289,7 @@ async function main() {
   if (!template) {
     if (interactive) {
       stdout.write(`\n  Templates:\n`)
-      Object.entries(TEMPLATES).forEach(([k, t], i) => {
+      Object.entries(TEMPLATES).forEach(([, t], i) => {
         stdout.write(`   ${color('cyan', String(i + 1))}. ${t.label}\n`)
       })
       const pick = await ask('\nChoose a template (1-2):', '1')

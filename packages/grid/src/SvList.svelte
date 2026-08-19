@@ -37,7 +37,7 @@
   {#if children}
     {@render children()}
   {:else if items}
-    {#each items as item}<li>{item}</li>{/each}
+    {#each items as item, i (i)}<li>{item}</li>{/each}
   {/if}
 </svelte:element>
 

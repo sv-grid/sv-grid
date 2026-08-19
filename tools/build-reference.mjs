@@ -18,7 +18,7 @@
  *   - Default values (use the hand-written /reference/SvGrid.md tables for those)
  *   - Generic constraints beyond the first level
  */
-import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join, basename } from 'node:path'
 
 const SOURCES = [
@@ -100,7 +100,7 @@ function md(name, sym) {
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
-  let indexLines = [
+  const indexLines = [
     '# Auto-generated reference',
     '',
     '_Generated from the published TypeScript sources. Do not edit by hand - rerun `node tools/build-reference.mjs`._',

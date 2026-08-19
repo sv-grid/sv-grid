@@ -12,6 +12,7 @@
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
+import { createInterface } from 'node:readline/promises'
 import { dirname, resolve } from 'node:path'
 import {
   buildStudioBugReport,
@@ -29,16 +30,19 @@ import {
   resolveSchemas,
   runStudioAdd,
   runStudioAddApp,
+  runStudioInit,
   serializeProject,
   setEntityDataSource,
   summarizeVerify,
   type EntitySchema,
+  type InitFlags,
+  type PromptIO,
   type SqlDialectName,
   type StudioIO,
   type StudioProject,
 } from '@svgrid/enterprise/studio'
 import { connect } from './db-connect.js'
-import { DRIVER_FOR, installDriver, isDriverInstalled } from './driver-install.js'
+import { ensureDriverInstalled } from './driver-install.js'
 import { startDesignerServer } from './designer-server.js'
 import { ensureApp, startAppServer, type AppServer } from './dev.js'
 
@@ -77,6 +81,12 @@ type Parsed = {
   ai?: boolean
   appPort?: number
   fragment?: boolean
+  // `init` command:
+  dataset?: string
+  theme?: string
+  dark?: boolean
+  title?: string
+  yes?: boolean
 }
 
 function parse(args: string[]): Parsed {
@@ -102,6 +112,11 @@ function parse(args: string[]): Parsed {
     else if (a === '--ai') out.ai = true
     else if (a === '--app-port') out.appPort = Number(args[++i])
     else if (a === '--fragment') out.fragment = true
+    else if (a === '--dataset') out.dataset = args[++i]
+    else if (a === '--theme') out.theme = args[++i]
+    else if (a === '--dark') out.dark = true
+    else if (a === '--title') out.title = args[++i]
+    else if (a === '-y' || a === '--yes') out.yes = true
     else if (a === '-h' || a === '--help') out.help = true
     else if (!a.startsWith('-')) positional.push(a)
   }
@@ -114,6 +129,7 @@ function parse(args: string[]): Parsed {
 const HELP = `svgrid-studio - scaffold CRUD screens from a schema file or a live database
 
 Usage:
+  svgrid-studio init                                # guided: pick your data, get a working CRUD app
   svgrid-studio designer                            # open the visual designer in your browser
   svgrid-studio add <name> --from <schema>          # one table/model from a schema file
   svgrid-studio add --all   --from <schema>         # every table/model, linked
@@ -123,6 +139,17 @@ Usage:
   svgrid-studio eject [--fragment]                  # write the app (or a drop-in fragment) from studio.config.json
   svgrid-studio dev                                 # designer + the RUNNING app, side by side (HMR)
   svgrid-studio deploy [--target <provider>] [--dry-run]  # build + deploy via the provider CLI
+
+Guided setup (init) - asks where your data lives, which tables you want, and
+which pages each gets, then writes a runnable app + studio.config.json.
+Running \`svgrid-studio\` with no arguments starts it too.
+  --db <dialect> --url <conn>   skip the questions and read a live database
+  --dataset <id>   start from sample data (customers-orders, products-categories,
+                   projects-tasks, employees-departments, tickets-accounts)
+  --title <name>   app name
+  --out <dir>      folder to write the app into (default: .)
+  --theme <id>     design-system preset      --dark   dark mode
+  -y, --yes        take every default, ask nothing
 
 Deploy (build first, then the provider CLI; target from --target, else
 studio.config.json, else the adapter in svelte.config.js):
@@ -156,11 +183,78 @@ Options:
   -h, --help       Show this help
 
 Examples:
+  svgrid-studio init
+  svgrid-studio init --db postgres --url $DATABASE_URL --out my-app
   svgrid-studio add customers --from src/lib/db/schema.ts
   svgrid-studio add --all     --from prisma/schema.prisma
   svgrid-studio add customers --db postgres --url $DATABASE_URL --sql
   svgrid-studio add --all     --db supabase --url $DATABASE_URL
 `
+
+/**
+ * Terminal prompts for the guided `init`.
+ *
+ * Lines are queued from a listener attached up front rather than read one at a
+ * time with `rl.question()`: on a pipe or a redirected file, readline delivers
+ * the whole buffer at once, and anything arriving before the next question is
+ * asked would simply be dropped. Once input runs out we answer with each
+ * question's default, so a scripted run finishes instead of hanging.
+ */
+function terminalPrompts(): PromptIO & { close: () => void } {
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  const waiting: ((line: string | null) => void)[] = []
+  const buffered: string[] = []
+  let ended = false
+
+  rl.on('line', (line) => {
+    const next = waiting.shift()
+    if (next) next(line)
+    else buffered.push(line)
+  })
+  rl.on('close', () => {
+    ended = true
+    for (const resolve of waiting.splice(0)) resolve(null)
+  })
+
+  const nextLine = (): Promise<string | null> => {
+    if (buffered.length) return Promise.resolve(buffered.shift()!)
+    if (ended) return Promise.resolve(null)
+    return new Promise((resolve) => waiting.push(resolve))
+  }
+
+  return {
+    ask: async (question, def) => {
+      process.stdout.write(`${question}${def ? ` (${def})` : ''} `)
+      const line = await nextLine()
+      if (line === null) {
+        process.stdout.write(`${def ?? ''}\n`) // echo the default we fell back to
+        return def ?? ''
+      }
+      return line.trim() || def || ''
+    },
+    say: (line) => process.stdout.write(line + '\n'),
+    close: () => rl.close(),
+  }
+}
+
+/** Read an OpenAPI spec / REST response from a URL or a local file. */
+const fetchText = async (source: string): Promise<string> =>
+  /^https?:\/\//.test(source) ? (await fetch(source)).text() : readFile(source, 'utf8')
+
+/** The guided "build me a CRUD app" flow. */
+async function runInit(flags: InitFlags): Promise<void> {
+  const prompts = terminalPrompts()
+  try {
+    const result = await runStudioInit(flags, prompts, {
+      ensureDriver: (dialect) => ensureDriverInstalled(dialect, process.cwd(), prompts.say),
+      connect: (dialect, url) => connect(dialect, url),
+    }, io, fetchText)
+    process.stdout.write('\nNext:\n')
+    for (const stepLine of result.nextSteps) process.stdout.write(`  ${stepLine}\n`)
+  } finally {
+    prompts.close()
+  }
+}
 
 function report(name: string, written: string[], verifyLine: string): void {
   process.stdout.write(`Scaffolded "${name}":\n`)
@@ -171,6 +265,23 @@ function report(name: string, written: string[], verifyLine: string): void {
 async function main(): Promise<void> {
   const [cmd, ...rest] = process.argv.slice(2)
   const opts = parse(rest)
+
+  // --- guided setup: the few-clicks path from nothing to a CRUD app ---------
+  // Bare `svgrid-studio` in a terminal starts here too: with no argument, the
+  // most useful thing we can do is walk the user through building an app.
+  if ((cmd === 'init' || (!cmd && process.stdin.isTTY)) && !opts.help) {
+    await runInit({
+      ...(opts.outDir ? { out: opts.outDir } : {}),
+      ...(opts.db ? { db: opts.db } : {}),
+      ...(opts.url ? { url: opts.url } : {}),
+      ...(opts.dataset ? { dataset: opts.dataset } : {}),
+      ...(opts.theme ? { theme: opts.theme } : {}),
+      ...(opts.dark ? { dark: true } : {}),
+      ...(opts.title ? { title: opts.title } : {}),
+      ...(opts.yes ? { yes: true } : {}),
+    })
+    return
+  }
 
   // --- eject: write the app (or a fragment) from studio.config.json ---------
   if (cmd === 'eject' && !opts.help) {
@@ -320,34 +431,10 @@ async function main(): Promise<void> {
     // the user - they never need to know `pg`/`mysql2`/etc. must be present
     // before --db works (mirrors the designer's "Install driver" flow).
     const cwd = process.cwd()
-    if (!isDriverInstalled(opts.db, cwd)) {
-      const driver = DRIVER_FOR[opts.db]
-      process.stdout.write(`Installing ${driver} (required for --db ${opts.db})...\n`)
-      const result = await installDriver(opts.db, cwd)
-      if (!result.ok) {
-        process.stderr.write(
-          `svgrid-studio: could not install "${driver}" automatically.\n${result.output}\n` +
-            `Run \`${result.manager} install ${driver}\` yourself and try again.\n`,
-        )
-        process.exit(1)
-      }
-      process.stdout.write(`Installed ${driver}.\n`)
-
-      // The install child process can report success before the new module is
-      // reliably resolvable (seen on Windows - antivirus/file-sync tools can
-      // briefly hold the just-written files). Poll rather than racing straight
-      // into connect(), which would resolve the driver too early and crash.
-      const deadline = Date.now() + 5000
-      while (!isDriverInstalled(opts.db, cwd) && Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 200))
-      }
-      if (!isDriverInstalled(opts.db, cwd)) {
-        process.stderr.write(
-          `svgrid-studio: installed "${driver}" but it's still not resolvable from this directory.\n` +
-            `Something (antivirus, a file-sync tool) may be holding a lock on the new files. Try running the command again.\n`,
-        )
-        process.exit(1)
-      }
+    const driver = await ensureDriverInstalled(opts.db, cwd, (l) => process.stdout.write(l + '\n'))
+    if (!driver.ok) {
+      process.stderr.write(`svgrid-studio: ${driver.message}\n`)
+      process.exit(1)
     }
 
     const execute = await connect(opts.db, opts.url)

@@ -52,7 +52,7 @@
   const autoId = nextEditorId('sv-otp')
   const uid = $derived(id ?? autoId)
   const cells = $derived(otpCells(sanitizeOtp(value, length, numeric), length))
-  let inputs = $state<HTMLInputElement[]>([])
+  const inputs = $state<HTMLInputElement[]>([])
 
   function commit(next: string) {
     const clean = sanitizeOtp(next, length, numeric)

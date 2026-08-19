@@ -25,7 +25,6 @@ import {
   createGroupedRowModel,
   createPaginatedRowModel,
   createSortedRowModel,
-  renderSnippet,
   rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,

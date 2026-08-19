@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Enterprise feature pack for SvGrid: Excel (xlsx), PDF, CSV, TSV and HTML export, Excel/CSV/JSON import, pivot tables with a drag-and-drop designer, paginated print, Kanban board and scheduler views. Requires a paid license key.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "jQWidgets <sales@jqwidgets.com>",
@@ -69,7 +69,8 @@
     "build:node": "node ./scripts/build-node.mjs",
     "build:designer": "node ./scripts/build-designer.mjs",
     "prepublishOnly": "node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
-    "extract:ui-props": "node scripts/extract-ui-props.mjs"
+    "extract:ui-props": "node scripts/extract-ui-props.mjs",
+    "lint": "eslint ./src"
   },
   "peerDependencies": {
     "svelte": "^5.0.0",

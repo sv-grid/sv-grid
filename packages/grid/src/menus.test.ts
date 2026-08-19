@@ -597,7 +597,6 @@ describe('createMenus - contextMenuItems', () => {
       internalData: [rowA, rowB],
       contextMenuFor: { rowIndex: 1, colIndex: 0, columnId: 'name', rowId: 'r1', row: rowB },
     }))
-    const ctx2 = (m2 as any)
     const removeItem = m2.contextMenuItems().find((i) => i.key === 'remove_row')!
     removeItem.run!()
   })

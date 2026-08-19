@@ -58,7 +58,8 @@ describe('createSvGrid - getRowId', () => {
 
   it('passes the row index to getRowId', () => {
     const seen: Array<{ id: string; index: number }> = []
-    createSvGrid<typeof features, Row>({
+    // The row model is lazy, so it has to be read for getRowId to run at all.
+    const rows = createSvGrid<typeof features, Row>({
       _features: features,
       _rowModels: { coreRowModel: createCoreRowModel<Row>() },
       columns,
@@ -68,6 +69,7 @@ describe('createSvGrid - getRowId', () => {
         return row.id
       },
     }).getRowModel().rows
+    expect(rows).toHaveLength(data.length)
     expect(seen).toEqual([
       { id: 'ada',   index: 0 },
       { id: 'linus', index: 1 },

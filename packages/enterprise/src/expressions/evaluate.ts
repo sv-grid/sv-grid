@@ -103,6 +103,11 @@ export function evaluateScalar<TData = ExprRow>(
           return b === 0 ? NaN : a / b
         case '%':
           return b === 0 ? NaN : a % b
+        // Rules are authored at runtime, so an operator outside the union can
+        // arrive from parsed JSON. Without this the switch falls out of its
+        // case and into `case 'agg'`, reading agg fields off a binary node.
+        default:
+          return null
       }
     }
     case 'agg': {
@@ -123,6 +128,10 @@ export function evaluateScalar<TData = ExprRow>(
           return Math.min(...nums)
         case 'max':
           return Math.max(...nums)
+        // Same here: falling through to `case 'func'` would call
+        // `expr.name.toUpperCase()` on an agg node and throw.
+        default:
+          return null
       }
     }
     case 'func': {

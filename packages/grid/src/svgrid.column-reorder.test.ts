@@ -106,14 +106,6 @@ function headerOrder(target: HTMLElement): string[] {
   return Array.from(ths).map((th) => th.dataset.svgridHeaderCol ?? '')
 }
 
-function header(target: HTMLElement, id: string): HTMLElement {
-  // jsdom doesn't ship CSS.escape; our ids are simple alphanumerics so
-  // a plain attribute selector is fine.
-  const el = target.querySelector<HTMLElement>(`th[data-svgrid-header-col="${id}"]`)
-  if (!el) throw new Error(`header not found: ${id}`)
-  return el
-}
-
 describe('SvGrid column reorder - default off', () => {
   it('does NOT set draggable on headers when the prop is unset', async () => {
     const { target, destroy } = await mountGrid()

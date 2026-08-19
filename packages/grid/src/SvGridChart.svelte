@@ -213,15 +213,7 @@
     return { t0: zoom.i0 / n, t1: (zoom.i1 + 1) / n }
   })
 
-  /** Map a brush-svg-local x to a category index in the FULL data range. */
-  function brushXToIndex(localX: number): number {
-    if (!brushGeo) return 0
-    const w = brushGeo.plot.w
-    const x = Math.max(0, Math.min(w, localX - brushGeo.plot.x))
-    const n = spec.categories.length
-    return Math.max(0, Math.min(n - 1, Math.floor((x / w) * n)))
-  }
-  type BrushDrag = { mode: 'move' | 'left' | 'right'; startX: number; startT0: number; startT1: number }
+  type BrushDrag ={ mode: 'move' | 'left' | 'right'; startX: number; startT0: number; startT1: number }
   let brushDrag = $state<BrushDrag | null>(null)
   function brushSvgX(e: PointerEvent, svg: SVGSVGElement): number {
     const r = svg.getBoundingClientRect()
@@ -919,7 +911,7 @@
     {#if isRadar && geo.radarCenter}
       {@const c = geo.radarCenter}
       <!-- Concentric grid rings -->
-      {#each geo.radarRings as v, ri (ri)}
+      {#each geo.radarRings as _v, ri (ri)}
         {@const ringR = c.r * ((ri + 1) / geo.radarRings.length)}
         <circle class="sv-grid-chart-radar-ring" cx={c.cx} cy={c.cy} r={ringR} />
       {/each}

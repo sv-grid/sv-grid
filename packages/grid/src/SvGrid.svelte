@@ -17,7 +17,6 @@
   } from "./index";
   import "./sv-grid-scrollbar";
   import "./SvGrid.css";
-  import type { Snippet } from "svelte";
   import {
     RenderSnippetConfig,
     RenderComponentConfig,
@@ -36,16 +35,10 @@
   import { timeStringToDate, dateToTimeString } from "./SvGrid.helpers";
   import type {
     Props,
-    SelectionPoint,
-    SelectionRange,
-    CellEditState,
     FilterOperator,
-    FilterOption,
-    MenuPosition,
   } from "./SvGrid.types";
   import {
     cfTextStyle,
-    fmtStat,
     getEditableInputValue,
     getEditorInputType,
     toValueArray,
@@ -57,7 +50,6 @@
   import {
     splitInTokens,
     trailingInToken,
-    joinInTokens,
   } from "./filtering/excel-filters";
   import { createSvGridController } from "./SvGrid.controller.svelte";
   // GridMenus hosts tooltips + all column/filter/context menu overlays - none of
@@ -180,10 +172,8 @@
 
   // ---- View facade: re-bind the controller's reactive members as locals so the
   //      markup stays identical. Assignable state + bindings + DOM refs use c.* directly.
-  const paginationEnabled = $derived(ctrl.paginationEnabled);
   const filterRowValues = $derived(ctrl.filterRowValues);
   const filterMenuValues = $derived(ctrl.filterMenuValues);
-  const tooltip = $derived(ctrl.tooltip);
   const showTooltipFor = $derived(ctrl.showTooltipFor);
   const hideTooltip = $derived(ctrl.hideTooltip);
   const findHits = $derived(ctrl.findHits);
@@ -284,19 +274,13 @@
     id === "__autoGroup" || id.startsWith("__group_");
   const sortDirectionByColumn = $derived(ctrl.sortDirectionByColumn);
   const groupingColumns = $derived(ctrl.groupingColumns);
-  const paginationState = $derived(ctrl.paginationState);
-  const allRowsBeforePagination = $derived(ctrl.allRowsBeforePagination);
   const allRows = $derived(ctrl.allRows);
-  const statusBarEnabled = $derived(ctrl.statusBarEnabled);
-  const statusBarAggregates = $derived(ctrl.statusBarAggregates);
-  const statusBarStats = $derived(ctrl.statusBarStats);
   const toolPanelEnabled = $derived(ctrl.toolPanelEnabled);
   const toolPanelColumns = $derived(ctrl.toolPanelColumns);
   const toolPanelHeaderLabel = $derived(ctrl.toolPanelHeaderLabel);
   const toggleColumnVisibleInPanel = $derived(ctrl.toggleColumnVisibleInPanel);
   const moveColumnInPanel = $derived(ctrl.moveColumnInPanel);
   const toggleGroupInPanel = $derived(ctrl.toggleGroupInPanel);
-  const virtualizer = $derived(ctrl.virtualizer);
   const rowVirtualizationEnabled = $derived(ctrl.rowVirtualizationEnabled);
   // The fixed row height, matching what the virtualized path takes from the virtualizer.
   // The non-virtualized (`virtualization={false}`) body must apply this too, else its rows
@@ -525,9 +509,6 @@
   const onHeaderSortClick = $derived(ctrl.onHeaderSortClick);
   const onGridKeyDown = $derived(ctrl.onGridKeyDown);
   const onGridPaste = $derived(ctrl.onGridPaste);
-  const changePage = $derived(ctrl.changePage);
-  const goToPage = $derived(ctrl.goToPage);
-  const setPageSize = $derived(ctrl.setPageSize);
   const updateFilterRow = $derived(ctrl.updateFilterRow);
   const updateFilterMenuValue = $derived(ctrl.updateFilterMenuValue);
   const updateFilterMenuValueTo = $derived(ctrl.updateFilterMenuValueTo);
@@ -1291,7 +1272,7 @@
         aria-label="Edit checkbox value"
         onclick={(event) => {
           event.stopPropagation();
-          const nextValue = !Boolean(ctrl.editingCell?.value);
+          const nextValue = !ctrl.editingCell?.value;
           ctrl.editingCell = ctrl.editingCell
             ? { ...ctrl.editingCell, value: nextValue }
             : ctrl.editingCell;
@@ -1300,7 +1281,7 @@
         onkeydown={(event) =>
           toggleCheckboxWithKeyboard(event, () => {
             event.stopPropagation();
-            const nextValue = !Boolean(ctrl.editingCell?.value);
+            const nextValue = !ctrl.editingCell?.value;
             ctrl.editingCell = ctrl.editingCell
               ? { ...ctrl.editingCell, value: nextValue }
               : ctrl.editingCell;
@@ -2687,10 +2668,6 @@
                           fillHandleCell.rowIndex === rowIndex &&
                           fillHandleCell.colIndex === colIndex}
                         {@const userCellClass = computeCellClass(
-                          row,
-                          rendered.column,
-                        )}
-                        {@const cellTooltip = computeCellTooltip(
                           row,
                           rendered.column,
                         )}

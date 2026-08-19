@@ -83,6 +83,10 @@ const XML_ESCAPE: Record<string, string> = {
   "'": '&apos;',
 }
 // Control chars that are illegal in XML 1.0 (would make Excel reject the file).
+// XML 1.0 forbids these control characters outright, so they are stripped
+// rather than escaped - a stray \x00 from a data source would otherwise
+// produce a workbook Excel refuses to open.
+// eslint-disable-next-line no-control-regex
 const INVALID_XML = /[\x00-\x08\x0B\x0C\x0E-\x1F]/g
 function esc(s: string): string {
   return s.replace(INVALID_XML, '').replace(/[&<>"']/g, (c) => XML_ESCAPE[c]!)

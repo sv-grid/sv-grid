@@ -39,7 +39,6 @@ import {
   blockPalette,
   createProject,
   defaultBlockConfig,
-  defaultScreenFor,
   gridColumns,
   moveBlock,
   removeBlock,

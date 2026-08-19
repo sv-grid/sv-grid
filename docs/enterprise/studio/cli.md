@@ -13,6 +13,46 @@ live database and writes a working CRUD screen into your SvelteKit app.
 npx @svgrid/studio add <name> [--from <schema> | --db <dialect> --url <conn>] [options]
 ```
 
+## `init`
+
+The guided path: answer a few questions and get a working app. This is also what
+runs when you type `npx @svgrid/studio` with no arguments in a terminal.
+
+```bash
+npx @svgrid/studio init [--db <dialect> --url <conn>] [--dataset <id>] [--out <dir>]
+```
+
+It asks where the data comes from, which tables to include, which pages each
+table gets, and which theme to use - then writes a runnable SvelteKit app plus a
+`studio.config.json` you can reopen in the [designer](./app-designer.md).
+
+Every table you pick gets a **list** screen (searchable grid with status pills
+and totals), a **manage** screen (grid + editable record panel), and - when other
+tables relate to it - a **record page** with a tab per related collection. The
+app leads with an overview dashboard over its most-referenced table.
+
+| Flag | Description |
+| --- | --- |
+| `--db <dialect>` | Skip the source question and read a live database: `postgres` \| `supabase` \| `mysql` \| `mssql` \| `sqlite`. The driver is installed for you. |
+| `--url <conn>` | Connection string (or file path for SQLite) for `--db`. |
+| `--dataset <id>` | Start from sample data: `customers-orders`, `products-categories`, `projects-tasks`, `employees-departments`, `tickets-accounts`. |
+| `--title <name>` | App name. |
+| `--out <dir>` | Folder to write the app into (default: `.`). |
+| `--theme <id>` | Design-system preset (see [Theming](./theming.md)). |
+| `--dark` | Start in dark mode. |
+| `-y`, `--yes` | Take every default and ask nothing - useful in scripts and CI. |
+
+```bash
+# guided, from your own database
+npx @svgrid/studio init --db postgres --url $DATABASE_URL --out my-app
+
+# no questions at all: a seeded sample app
+npx @svgrid/studio init --yes --dataset projects-tasks --out demo
+```
+
+The designer's **New app** button runs the same flow visually, and produces the
+same project - pick whichever suits you.
+
 ## `designer`
 
 Open the visual [app designer](./app-designer.md) in your browser, auto-saving

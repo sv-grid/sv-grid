@@ -53,8 +53,6 @@
     labelField,
     value = $bindable<string | number | null>(null),
     onChange,
-    onCommit,
-    onCancel,
     placeholder = 'Select…',
     searchable = true,
     loadOptions,

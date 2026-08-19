@@ -39,7 +39,7 @@ const stripEmDash = (s) => s.replace(/—/g, '-').replace(/\s-\s/g, ' - ')
 // Main tweet: "<hook> <hashtags>", no link, trimmed to 280.
 function assemble(hook, tags) {
   const tail = hashtags(tags)
-  let text = stripEmDash(`${hook} ${tail}`.trim())
+  const text = stripEmDash(`${hook} ${tail}`.trim())
   if (tweetLength(text) <= TWEET_MAX) return text
   let h = hook
   while (h.length > 8 && tweetLength(`${h} ${tail}`) > TWEET_MAX) {

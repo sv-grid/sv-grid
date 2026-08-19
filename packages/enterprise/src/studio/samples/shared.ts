@@ -8,9 +8,14 @@
  * parse/serialize and generates a runnable app with no special-casing.
  */
 import type { EntitySchema } from '../../schema.js'
-import type { ChartType } from '@svgrid/grid'
 import { generateValue } from '../sample-data.js'
-import { defaultBlockConfig, sanitizeProject, screenFromTemplate, buildDockLayout, type Block, type BlockConfig, type DetailRelated, type FormatRule, type GridConfig, type GridDensity, type KpiFormat, type Reduce, type RowAction, type RowLink, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle, type SchedulerViewConfig, type SchedulerViewMode, type AuthConfig, type AccessControl } from '../project.js'
+import { gridConfig, type GridOpts } from '../screen-suites.js'
+import { sanitizeProject, screenFromTemplate, buildDockLayout, type Block, type GridConfig, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle, type SchedulerViewConfig, type SchedulerViewMode, type AuthConfig, type AccessControl } from '../project.js'
+
+// The generic screen factories live in `../screen-suites.js` (they are public API
+// now - the guided CRUD suite builds on them). Re-exported here so every sample
+// app keeps importing its whole toolkit from one place.
+export { dashScreen, detailScreen, formScreen, gridConfig, listScreen, statusPills, type GridOpts, type Tile } from '../screen-suites.js'
 
 type Row = Record<string, unknown>
 
@@ -70,135 +75,6 @@ export type SampleApp = {
   accent: string
   /** Build the full project (fresh each call). */
   build: () => StudioProject
-}
-
-/** Rich-grid options an enterprise screen layers onto the default grid: status
- *  pills / thresholds (formatRules), a totals row, row actions, row-click drill,
- *  and density. */
-export type GridOpts = {
-  format?: FormatRule[]
-  rowActions?: RowAction[]
-  rowLink?: RowLink
-  summaries?: boolean
-  density?: GridDensity
-  pageSize?: number
-}
-
-/** A dashboard tile: KPI card (with trend/target/format), chart, gauge, pivot,
- *  tree, a rich grid, or a tabbed group of display tiles. */
-export type Tile =
-  | { kpi: string; measure?: string; reduce: Reduce; format?: KpiFormat; trendField?: string; trendReduce?: Reduce; target?: number; span?: 1 | 2 | 3 }
-  | { chart: string; measure?: string; reduce?: Reduce; type?: ChartType; span?: 1 | 2 | 3 }
-  | { gauge: string; measure?: string; reduce: Reduce; min?: number; max?: number; unit?: string; span?: 1 | 2 | 3 }
-  | { pivot: { rows: string[]; cols: string[]; measure?: string; aggregate?: Reduce }; span?: 1 | 2 | 3 }
-  | { tree: { labelField: string; parentField: string }; span?: 1 | 2 | 3 }
-  | ({ grid: true; span?: 1 | 2 | 3 } & GridOpts)
-  | { filter: string[]; span?: 1 | 2 | 3 }
-  | { tabs: { label: string; tiles: Tile[] }[]; span?: 1 | 2 | 3 }
-
-/** The default grid config with enterprise options merged on. */
-function gridConfig(entity: EntitySchema, opts: GridOpts): BlockConfig {
-  const base = defaultBlockConfig('grid', entity) as GridConfig
-  return {
-    ...base,
-    ...(opts.format ? { formatRules: opts.format } : {}),
-    ...(opts.rowActions ? { rowActions: opts.rowActions } : {}),
-    ...(opts.rowLink ? { rowLink: opts.rowLink } : {}),
-    ...(opts.summaries ? { rowSummaries: true } : {}),
-    ...(opts.density ? { density: opts.density } : {}),
-    ...(opts.pageSize ? { pageSize: opts.pageSize } : {}),
-  }
-}
-
-/** One dashboard tile -> a Block. Recurses for `tabs` (whose children must be
- *  display blocks: chart / kpi / gauge / pivot / tree). `nextId` yields ids unique
- *  across the WHOLE screen (top-level tiles AND every nested tab child) - a per-level
- *  index would collide (top-level `blk-1` vs each tab's first child `blk-1`), which
- *  makes a keyed each throw `each_key_duplicate`. */
-function tileBlock(entity: EntitySchema, t: Tile, nextId: () => string): Block {
-  const id = nextId()
-  if ('kpi' in t) {
-    const config: BlockConfig = {
-      kind: 'kpi', label: t.kpi, ...(t.measure ? { measure: t.measure } : {}), reduce: t.reduce,
-      ...(t.format ? { format: t.format } : {}), ...(t.trendField ? { trendField: t.trendField } : {}),
-      ...(t.trendReduce ? { trendReduce: t.trendReduce } : {}), ...(t.target != null ? { target: t.target } : {}),
-    }
-    return { id, span: t.span ?? 1, config }
-  }
-  if ('chart' in t) {
-    return { id, span: t.span ?? 2, config: { kind: 'chart', dimension: t.chart, ...(t.measure ? { measure: t.measure } : {}), reduce: t.reduce ?? 'sum', type: t.type ?? 'bar' } }
-  }
-  if ('gauge' in t) {
-    return { id, span: t.span ?? 1, config: { kind: 'gauge', label: t.gauge, ...(t.measure ? { measure: t.measure } : {}), reduce: t.reduce, min: t.min ?? 0, max: t.max ?? 100, ...(t.unit ? { unit: t.unit } : {}) } }
-  }
-  if ('pivot' in t) {
-    return { id, span: t.span ?? 3, config: { kind: 'pivot', rows: t.pivot.rows, cols: t.pivot.cols, ...(t.pivot.measure ? { measure: t.pivot.measure } : {}), aggregate: t.pivot.aggregate ?? 'sum' } }
-  }
-  if ('tree' in t) {
-    return { id, span: t.span ?? 1, config: { kind: 'tree', labelField: t.tree.labelField, parentField: t.tree.parentField } }
-  }
-  if ('filter' in t) {
-    return { id, span: t.span ?? 3, config: { kind: 'filter', fields: t.filter } }
-  }
-  if ('tabs' in t) {
-    return { id, span: t.span ?? 3, config: { kind: 'tabs', tabs: t.tabs.map((tab) => ({ label: tab.label, blocks: tab.tiles.map((tt) => tileBlock(entity, tt, nextId)) })) } }
-  }
-  return { id, span: t.span ?? 3, config: gridConfig(entity, t) }
-}
-
-/** Compose a dashboard screen from explicit tiles (KPI cards + gauges + charts +
- *  pivots + trees + a rich grid). */
-export function dashScreen(
-  entity: EntitySchema,
-  meta: { id: string; title: string; order: number },
-  tiles: Tile[],
-): Screen {
-  let n = 0
-  const nextId = () => `blk-${++n}`
-  const blocks = tiles.map((t) => tileBlock(entity, t, nextId))
-  return { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order } }
-}
-
-/** FormatRule[] that color-code an enum field's cells by its option colors -
- *  turns a plain status column into enterprise status pills. */
-export function statusPills(entity: EntitySchema, field: string): FormatRule[] {
-  const f = entity.fields.find((x) => x.field === field)
-  if (!f?.options) return []
-  return f.options
-    .filter((o) => o.color)
-    .map((o) => ({ field, op: 'eq' as const, value: o.value as string | number, background: `color-mix(in srgb, ${o.color} 18%, transparent)`, color: o.color, bold: true }))
-}
-
-/** A list screen: an optional faceted filter panel + a rich grid (status pills,
- *  totals, row actions, drill-through). */
-export function listScreen(
-  entity: EntitySchema,
-  meta: { id: string; title: string; order: number },
-  opts: { filter?: string[]; grid?: GridOpts } = {},
-): Screen {
-  const blocks: Block[] = []
-  if (opts.filter?.length) blocks.push({ id: 'filter-1', span: 3, config: { kind: 'filter', fields: opts.filter } })
-  blocks.push({ id: 'grid-1', span: 3, config: gridConfig(entity, opts.grid ?? {}) })
-  return { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order } }
-}
-
-/**
- * A form-showcase screen: a grid to pick a row + an editable record panel that
- * renders the full field form (phone / rating / tags / mask / slider editors)
- * inline. Lets a user see and try the rich editors on load, not just on edit.
- */
-export function formScreen(
-  entity: EntitySchema,
-  meta: { id: string; title: string; order: number },
-  fields?: string[],
-  grid?: GridOpts,
-  filter?: string[],
-): Screen {
-  const blocks: Block[] = []
-  if (filter?.length) blocks.push({ id: 'filter-1', span: 3, config: { kind: 'filter', fields: filter } })
-  blocks.push({ id: 'grid-1', span: 3, config: gridConfig(entity, grid ?? {}) })
-  blocks.push({ id: 'record-1', span: 3, config: { kind: 'record', editable: true, ...(fields ? { fields } : {}) } })
-  return { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order } }
 }
 
 /** A Kanban board screen: an optional filter panel + a board grouping rows by an
@@ -275,25 +151,6 @@ export function workspaceScreen(
   const layout = opts.mode ?? 'dock'
   const base: Screen = { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order }, layout }
   return { ...base, dock: buildDockLayout(base) }
-}
-
-/** A record detail-page screen: a full record view (header + status pill + metric
- *  tiles + tabbed Overview / related timelines) - the signature view for
- *  relation-heavy records (a customer / deal / patient / trip page). */
-export function detailScreen(
-  entity: EntitySchema,
-  meta: { id: string; title: string; order: number },
-  opts: { titleField: string; subtitleField?: string; statusField?: string; metricFields?: string[]; sections?: { label: string; fields: string[] }[]; related?: DetailRelated[] },
-): Screen {
-  const blocks: Block[] = [{ id: 'detail-1', span: 3, config: {
-    kind: 'detail', titleField: opts.titleField,
-    ...(opts.subtitleField ? { subtitleField: opts.subtitleField } : {}),
-    ...(opts.statusField ? { statusField: opts.statusField } : {}),
-    ...(opts.metricFields?.length ? { metricFields: opts.metricFields } : {}),
-    ...(opts.sections?.length ? { sections: opts.sections } : {}),
-    ...(opts.related?.length ? { related: opts.related } : {}),
-  } }]
-  return { id: meta.id, entity: entity.name, title: meta.title, route: meta.id, blocks, nav: { show: true, label: meta.title, order: meta.order } }
 }
 
 /** Build a screen from a template, then override its id / route / title / nav.

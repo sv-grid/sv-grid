@@ -19,8 +19,23 @@
 
 ---
 
-Scaffold a full CRUD screen for SvelteKit from a **live database** or a
-**Drizzle / Prisma schema** in **one command**.
+Not sure where to start? Let it ask:
+
+```bash
+npx @svgrid/studio init
+```
+
+`init` walks you through it - where your data lives, which tables you want,
+which pages each gets - and writes a runnable SvelteKit app: a searchable list,
+an edit form and a record page per table, plus an overview dashboard. Point it
+straight at a database and it installs the driver for you:
+
+```bash
+npx @svgrid/studio init --db postgres --url "$DATABASE_URL" --out my-app
+```
+
+Or scaffold a single CRUD screen into an existing app from a **live database**
+or a **Drizzle / Prisma schema** in **one command**:
 
 ```bash
 # from a live database (PostgreSQL / Supabase / MySQL / SQL Server / SQLite)

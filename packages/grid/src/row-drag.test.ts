@@ -6,7 +6,7 @@
  * Because the bus is shared, we can create TWO fake ctxs (two grids) and drive
  * a genuine grid-to-grid move without mounting anything.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createRowDrag, rowDropZone } from './row-drag'
 
 type AnyCtx = Record<string, any>

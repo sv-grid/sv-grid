@@ -102,7 +102,7 @@ describe('showTooltipFor / hideTooltip', () => {
   })
 
   it('clears a pending timer before scheduling a new tooltip', () => {
-    const { ctx, ss } = syncFor()
+    const { ss } = syncFor()
     const clearSpy = vi.spyOn(window, 'clearTimeout')
     const el = anchorEl({ left: 10, right: 30, top: 10, bottom: 30 })
     ss.showTooltipFor(el, 'first')
@@ -204,13 +204,10 @@ describe('scheduleScrollSync / flushScheduledScrollSync', () => {
 })
 
 describe('onBodyScroll', () => {
-  let rafCb: FrameRequestCallback | null = null
   beforeEach(() => {
-    rafCb = null
-    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
-      rafCb = cb
-      return 7
-    })
+    // These tests assert what happens BEFORE the frame runs, so the stub just
+    // hands back a handle and never invokes the callback.
+    vi.stubGlobal('requestAnimationFrame', () => 7)
   })
   afterEach(() => {
     vi.unstubAllGlobals()

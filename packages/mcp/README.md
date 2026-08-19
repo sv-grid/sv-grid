@@ -63,7 +63,7 @@ npx @svgrid/mcp
 
 # Or install globally, then run the bin
 npm install -g @svgrid/mcp
-@svgrid/mcp
+svgrid-mcp
 ```
 
 The server speaks MCP over **stdio**: stdout is reserved for JSON-RPC, logs go to stderr.

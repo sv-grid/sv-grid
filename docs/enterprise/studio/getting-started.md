@@ -26,6 +26,34 @@ They all end in the same place, so pick by what you have:
 
 ---
 
+## Guided path - answer a few questions, get the app
+
+If you already know where your data lives, let Studio ask:
+
+```bash
+npx @svgrid/studio init
+```
+
+It asks four things - where the data comes from (sample data, your database,
+in-browser Postgres, or a REST API), which tables you want, which pages each
+table gets, and what it should look like - then writes a runnable SvelteKit app
+with a list, an edit form and a record page per table, plus an overview
+dashboard.
+
+Pointing it at a real database is one line, and Studio installs the driver for
+you:
+
+```bash
+npx @svgrid/studio init --db postgres --url $DATABASE_URL --out my-app
+```
+
+Prefer clicking? The visual designer has the same wizard behind its **New app**
+button - or open [svgrid.com/studio/new](https://svgrid.com/studio/new) to start
+one in the browser. Both paths run the same generator, so they produce the same
+app. See [The Studio CLI](./cli.md#init) for every flag.
+
+---
+
 ## Fastest path - a downloadable, ready-to-run example
 
 Rather have a working project on your machine than type code into a blank

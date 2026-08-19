@@ -85,6 +85,9 @@ ${color('bold', 'Examples')}
   npm  create @svgrid/studio@latest my-app -- --from ./prisma/schema.prisma
   npm  create @svgrid/studio@latest my-app -- --project ./studio.config.json
   npm  create @svgrid/studio@latest my-app -- --theme material --dark
+
+${color('bold', 'Have a database?')}
+  npx @svgrid/studio init   reads your tables and scaffolds a page for each.
 `)
 }
 
@@ -376,6 +379,7 @@ async function main() {
   stdout.write(`  cd ${target}\n`)
   stdout.write(`  npm install\n`)
   stdout.write(`  npm run dev\n\n`)
+  stdout.write(`${color('dim', 'Have a database?')} npx @svgrid/studio init ${color('dim', 'reads your tables and scaffolds a page for each.')}\n`)
   stdout.write(`${color('dim', 'Docs:')} https://svgrid.com/docs/enterprise/studio/\n\n`)
 }
 

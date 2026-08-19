@@ -114,10 +114,10 @@ describe('createServerGroupModel', () => {
 
   it('collapse removes the children again', async () => {
     const src = makeGroupSource(DATA)
-    let state = { displayRows: [] as ServerDisplayRow<Row>[] } as never
+    // Reads go through ctl.getState() below, so the change callback is a no-op.
     const ctl = createServerGroupModel<Row>(src, {
       groupBy: ['country', 'city'],
-      onChange: (s) => (state = s as never),
+      onChange: () => {},
     })
     ctl.refresh()
     await flush()

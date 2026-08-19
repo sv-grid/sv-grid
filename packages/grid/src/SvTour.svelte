@@ -156,6 +156,10 @@
     >
       {#if step.image}
         <div class="sv-tour__media">
+          <!-- A step's `image` is either a URL (rendered as an img above) or
+               inline SVG markup the app author wrote for its own tour - never
+               user input, so rendering it as markup is the intent. -->
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {#if /^(https?:|data:|\/)/.test(step.image)}<img class="sv-tour__img" src={step.image} alt="" />{:else}{@html step.image}{/if}
         </div>
       {/if}

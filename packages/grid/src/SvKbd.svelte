@@ -21,7 +21,7 @@
 
 {#if keys}
   <span class="sv-kbd-group sv-kbd--{size}">
-    {#each keys as k, i}
+    {#each keys as k, i (i)}
       {#if i > 0}<span class="sv-kbd__sep" aria-hidden="true">{separator}</span>{/if}
       <kbd class="sv-kbd">{k}</kbd>
     {/each}

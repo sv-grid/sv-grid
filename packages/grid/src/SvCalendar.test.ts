@@ -86,7 +86,7 @@ describe('SvCalendar selection', () => {
 
   it('range mode: two clicks emit the inclusive span', () => {
     let got: Date[] = []
-    const { target, destroy } = mountCal({
+    const { destroy } = mountCal({
       value: null,
       selectionMode: 'range',
       displayMode: 'month',

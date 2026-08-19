@@ -1,50 +1,13 @@
 <script lang="ts" generics="TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData">
   import {
-      getGridCellA11yProps,
-      getGridCellDomId,
-      getGridHeaderA11yProps,
-      getGridRootA11yProps,
-      getGridRowA11yProps,
-      type EditorContext,
-      type CellEditorOption,
-      type Column,
-      type Row,
       type RowData,
       type TableFeatures,
     } from "./index";
   import "./sv-grid-scrollbar";
-  import type { Snippet } from "svelte";
-  import {
-      RenderSnippetConfig,
-      RenderComponentConfig,
-    } from "./render-component";
-  import {
-      buildSparkline,
-      toSparklineValues,
-    } from "./sparkline";
   import SvGridDropdown from "./SvGridDropdown.svelte";
-  import type {
-      Props,
-      SelectionPoint,
-      SelectionRange,
-      CellEditState,
-      FilterOperator,
-      FilterOption,
-      MenuPosition,
-    } from "./SvGrid.types";
   import {
-      cfTextStyle,
       fmtStat,
-      getEditableInputValue,
-      getEditorInputType,
-      toValueArray,
-      getOptionLabel,
-      getOptionColor,
-      colorfulChipStyle,
-      getEditorClass,
     } from "./SvGrid.helpers";
-  import {
-    } from "./SvGrid.controller.svelte";
   import type { SvGridController } from "./SvGrid.controller.svelte";
 
   let {
@@ -68,9 +31,6 @@
   // View facade: re-bind the controller's reactive members so the markup
   // (moved verbatim from SvGrid.svelte) stays identical.
   const paginationEnabled = $derived(ctrl.paginationEnabled);
-  const grid = $derived(ctrl.grid);
-  const paginationState = $derived(ctrl.paginationState);
-  const allRowsBeforePagination = $derived(ctrl.allRowsBeforePagination);
   const statusBarEnabled = $derived(ctrl.statusBarEnabled);
   const statusBarAggregates = $derived(ctrl.statusBarAggregates);
   const statusBarStats = $derived(ctrl.statusBarStats);

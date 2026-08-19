@@ -521,6 +521,9 @@ const XML_ESCAPE: Record<string, string> = {
 }
 function xmlText(value: unknown): string {
   const s = value == null ? '' : value instanceof Date ? value.toISOString() : String(value)
+  // Stripping control characters is the point: XML 1.0 forbids them outright,
+  // so a stray \x00 from a data source would produce an unopenable file.
+  // eslint-disable-next-line no-control-regex
   return s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').replace(/[&<>"']/g, (c) => XML_ESCAPE[c]!)
 }
 /** Coerce a field name into a valid XML element name. */

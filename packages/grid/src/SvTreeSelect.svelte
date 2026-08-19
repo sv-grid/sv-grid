@@ -36,8 +36,6 @@
     nodes,
     value = $bindable<string | number | null>(null),
     onChange,
-    onCommit,
-    onCancel,
     placeholder = 'Select…',
     showPath = false,
     expandedIds = [],

@@ -74,7 +74,7 @@ export function createSqlDataSource<TData extends RowData>(
   config: SqlDataSourceConfig<TData>,
 ): WritableDataSource<TData> & AggregateSource {
   nudgeEnterprise('Studio') // soft-gate; never blocks, safe on the server
-  const { schema, table, execute } = config
+  const { schema, execute } = config
   const dialect = config.dialect ?? {}
   const returning = config.returning ?? true
   const id = quoter(dialect)

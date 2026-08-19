@@ -16,6 +16,29 @@ database, get a CRUD app - kept to data views.
 > generated app to a folder - no host app needed. See
 > [Launch the designer](./launch.md).
 
+## Starting a new app
+
+**New app** in the top bar walks you from nothing to a working CRUD app: pick
+where the data comes from, choose the tables, choose the pages, open the result.
+
+1. **Start** - sample data, your own data, or a blank set of tables you name.
+2. **Data** - connect a database (the table picker shows row counts and lets you
+   preview rows before importing), pick a starter dataset, point at a REST
+   endpoint, or paste an OpenAPI document.
+3. **Screens** - tick which pages each table gets (list, form, record page,
+   dashboard) and how rows are edited: a popup form, in the grid, or on the
+   record page.
+4. **Done** - name it and open it. It arrives as one undo step, so Ctrl+Z puts
+   the previous design back.
+
+Connecting to a live database needs the local designer (`npx @svgrid/studio dev`)
+because database drivers run on your machine, not in a browser tab. On
+[svgrid.com/studio](https://svgrid.com/studio) the other three paths work as-is,
+and you can rebind to your database later with **Use my data**.
+
+The terminal equivalent is [`svgrid-studio init`](./cli.md#init) - same
+questions, same generator, same app.
+
 ## How the screen is laid out
 
 Here is the real designer with a small Sales App open:

@@ -158,7 +158,7 @@ describe('getDateFormatter', () => {
 
 describe('formatNumericWithConfig - number', () => {
   it('formats a basic integer with default locale', () => {
-    expect(formatNumericWithConfig(1234, { type: 'number' })).toMatch(/1[\.,]?234/)
+    expect(formatNumericWithConfig(1234, { type: 'number' })).toMatch(/1[.,]?234/)
   })
 
   it('respects locale grouping and decimal separators', () => {

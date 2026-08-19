@@ -13,10 +13,6 @@ import {
     createSvGrid,
     getGridCellDomId,
     sortFns,
-    tableFeatures,
-    rowSortingFeature,
-    columnFilteringFeature,
-    columnGroupingFeature,
     type CellEditorOption,
     type Column,
     type ColumnDef,
@@ -38,7 +34,6 @@ import {
     formatNeedsStats,
     type ColumnStat,
   } from "./conditional-formatting";
-import SvGridDropdown from "./SvGridDropdown.svelte";
 import type {
     Props,
     SelectionRange,

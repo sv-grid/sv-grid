@@ -41,7 +41,7 @@
   const resolvedDir = $derived(dir === 'ltr' || dir === 'rtl' ? dir : undefined)
   const rtl = $derived(resolvedDir === 'rtl')
 
-  let triggerEls = $state<(HTMLButtonElement | null)[]>([])
+  const triggerEls = $state<(HTMLButtonElement | null)[]>([])
   let panelEl = $state<HTMLDivElement | null>(null)
   let openIndex = $state(-1)
   let activeIndex = $state(0)

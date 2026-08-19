@@ -2,52 +2,12 @@
 // reading/writing controller state via the `ctx` handle; the reactive core
 // ($state/$derived/$effect) stays in the controller.
 import {
-  applyExcelFilter,
-  normalizeForFilter,
-  createColumnVirtualizer,
-  createCoreRowModel,
-  createExpandedRowModel,
-  createFilteredRowModel,
-  createGroupedRowModel,
-  createPaginatedRowModel,
-  createSvelteVirtualizer,
-  createSortedRowModel,
-  createSvGrid,
-  filterFns,
-  getGridCellA11yProps,
-  getGridCellDomId,
-  getGridHeaderA11yProps,
-  getGridRootA11yProps,
-  getGridRowA11yProps,
-  parseEditorValue,
-  normalizeEditorOptions,
-  sortFns,
-  tableFeatures,
-  rowSortingFeature,
-  columnFilteringFeature,
-  columnGroupingFeature,
-  type CellContext,
-  type EditorContext,
-  type CellEditorOption,
-  type CellEditorType,
-  type CellFormatter,
-  type CellFormatConfig,
-  type Column,
-  type ColumnDef,
-  type Row,
   type RowData,
   type SvGridApi,
   type TableFeatures,
 } from "./index";
 import "./sv-grid-scrollbar";
 import { untrack } from "svelte";
-import type { Snippet } from "svelte";
-import { getKeyboardIntent, getNextActiveCell } from "./keyboard";
-import {
-  formatNumericWithConfig,
-  getDateFormatter,
-  resolveDatePattern,
-} from "./cell-formatting";
 // The export serializers load lazily (their own chunk) so export-format.ts stays
 // out of the base bundle - it is fetched only when an export/copy method is
 // actually invoked (an explicit, already-async user action).
@@ -57,77 +17,12 @@ import type {
   GridExportOptions,
   GridClipboardOptions,
 } from "./export-format";
-import {
-  RenderSnippetConfig,
-  RenderComponentConfig,
-} from "./render-component";
-import { buildFillPattern } from "./fill-patterns";
-import { buildSparkline, toSparklineValues } from "./sparkline";
-import {
-  resolveCellFormat,
-  computeColumnStat,
-  formatsNeedingStats,
-  type ColumnStat,
-  type ResolvedCellFormat,
-} from "./conditional-formatting";
-import SvGridDropdown from "./SvGridDropdown.svelte";
 import type {
-  Props,
-  SelectionPoint,
-  SelectionRange,
-  CellEditState,
   FilterOperator,
-  FilterOption,
-  MenuPosition,
 } from "./SvGrid.types";
 import {
-  cfTextStyle,
-  fmtStat,
-  getCellKey,
-  resolveClassList,
-  toDateInputValue,
-  toDateTimeLocalInputValue,
-  getEditableInputValue,
-  getEditorInputType,
-  toValueArray,
-  getOptionLabel,
-  getOptionColor,
-  colorfulChipStyle,
-  getEditorClass,
-  asDate,
-  clampMenuX,
-  cssEscape,
-  rawToNumber,
-  formatFacetNumber,
-  formatFacetDate,
-} from "./SvGrid.helpers";
-import { createClipboard } from "./clipboard";
-import {
-  filterOperatorOptions,
-  fallbackOperatorOption,
-  TEXT_OPERATORS,
-  NUMBER_OPERATORS,
-  DATE_OPERATORS,
-  CHECKBOX_OPERATORS,
-  operatorOption,
-  operatorsForColumn,
-  defaultOperatorFor,
-  operatorLabelFor,
-} from "./filter-operators";
-import {
-  type FacetBucket,
-  isBucketableColumn,
-  buildBuckets,
-  isInBucket,
-} from "./facet-buckets";
-import {
-  getColumnBaseValue,
   isGroupRow,
-  toolPanelHeaderLabel,
-  formatSummaryNumeric,
   getColumnAlign,
-  getPinnedCellValue,
-  getColumnAccessorValue,
   columnDefMatchesId,
 } from "./cell-values";
 

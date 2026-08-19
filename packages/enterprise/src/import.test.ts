@@ -250,7 +250,7 @@ describe('validation + commit', () => {
     const { api } = fakeApi()
     const r = await importData(api, {
       file: csv, format: 'csv',
-      validator: (row, i) => {
+      validator: (row, _i) => {
         const errs = []
         const price = (row as any).price as number
         if (price < 0) errs.push({ field: 'price', message: 'must be >= 0' })

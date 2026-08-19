@@ -90,6 +90,10 @@
   // (writing innerHTML while focused would collapse the caret).
   $effect(() => {
     const v = value ?? ''
+    // A contenteditable owns its own DOM: letting Svelte re-render the body
+    // would wipe the caret mid-typing, so the value is pushed in by hand and
+    // only while the editor is unfocused.
+    // eslint-disable-next-line svelte/no-dom-manipulating
     if (editorEl && !focused && editorEl.innerHTML !== v) editorEl.innerHTML = v
     if (editorEl) empty = editorEl.textContent!.trim().length === 0
   })

@@ -658,7 +658,7 @@ function coerceTyped(raw: string, type: ImportFieldType):
       if (iso) return { ok: true, value: `${iso[1]}-${iso[2]}-${iso[3]}` }
       // mm/dd/yyyy or dd/mm/yyyy - we don't try to disambiguate; the
       // demo can declare the locale via its own validator if it cares.
-      const slash = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)
+      const slash = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/)
       if (slash) {
         const [, a, b, y] = slash
         // Default to mm/dd/yyyy because it's the dominant locale where

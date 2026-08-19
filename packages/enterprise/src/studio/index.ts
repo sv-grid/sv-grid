@@ -44,6 +44,33 @@ export { emitStudioProject, emitStudioAppBundle, emitStudioFragment, runtimeDeps
 export { sampleApps, getSampleApp, type SampleApp } from './samples/index.js'
 export { starterProject } from './samples/starter.js'
 export { liveDataSamples, getLiveDataSample } from './samples/live-data.js'
+export { starterDatasets, getStarterDataset, type StarterDataset } from './samples/datasets.js'
+export {
+  runStudioInit,
+  parseSelection,
+  type PromptIO,
+  type DbGateway,
+  type FetchText,
+  type InitFlags,
+  type InitResult,
+} from './init-flow.js'
+export {
+  crudSuiteScreens,
+  addCrudSuite,
+  crudAppFromSchemas,
+  listScreen,
+  formScreen,
+  detailScreen,
+  dashScreen,
+  statusPills,
+  gridConfig,
+  type CrudScreenKind,
+  type CrudEditingMode,
+  type CrudSuiteOptions,
+  type CrudAppOptions,
+  type GridOpts,
+  type Tile,
+} from './screen-suites.js'
 export {
   sanitizeStudioProject,
   buildStudioBugReport,

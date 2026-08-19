@@ -450,7 +450,7 @@ function extractStructured(text) {
   try {
     meta = JSON.parse(metaJson)
   } catch (e) {
-    throw new Error(`Metadata JSON failed to parse: ${e.message}\nRaw metadata:\n${metaJson}`)
+    throw new Error(`Metadata JSON failed to parse: ${e.message}\nRaw metadata:\n${metaJson}`, { cause: e })
   }
   return { ...meta, body }
 }

@@ -8,7 +8,7 @@
 // Rendered at the GitHub-recommended 1280x640 (deviceScaleFactor 1) so every
 // file stays well under GitHub's 1 MB social-preview limit.
 import { chromium } from 'playwright'
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 

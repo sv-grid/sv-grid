@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { rowResize } from './row-resize'
-import type { RowResizeOptions } from './row-resize'
 
 const STRIP_CLASS = 'sv-grid-row-resize-handle'
 
@@ -247,7 +246,7 @@ describe('rowResize - drag', () => {
   })
 
   it('ignores pointermove / pointerup when no drag is active', () => {
-    const { host, rows } = buildGrid([{ rowIndex: 0 }])
+    const { host } = buildGrid([{ rowIndex: 0 }])
     track(host)
     const onResize = vi.fn()
     const onResizeMove = vi.fn()

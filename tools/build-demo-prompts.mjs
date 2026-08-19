@@ -61,7 +61,7 @@ function columnShape(src) {
 }
 
 function apiCalls(src) {
-  return [...src.matchAll(/\bapi[\.?]\.?([a-zA-Z]+)\(/g)]
+  return [...src.matchAll(/\bapi[.?]\.?([a-zA-Z]+)\(/g)]
     .map((m) => m[1])
     .filter((m) => /^[a-z]/.test(m))   // strip class names like Constructor
     .filter((p, i, a) => a.indexOf(p) === i)

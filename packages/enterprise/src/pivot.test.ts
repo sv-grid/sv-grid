@@ -8,7 +8,6 @@ import {
   filterCollapsedPivotRows,
   pivotAggregators,
   type PivotConfig,
-  type PivotRow,
 } from './pivot'
 
 type Sale = {

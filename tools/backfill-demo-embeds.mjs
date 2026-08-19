@@ -13,7 +13,6 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const DOCS_DIR  = join(process.cwd(), 'docs', 'help')
-const DEMOS_DIR = join(process.cwd(), 'examples', 'src', 'demos')
 
 /** Manual mapping for pages whose name doesn't match a demo id.
  *  Each value is the demo id (without `.svelte`) OR null to skip. */

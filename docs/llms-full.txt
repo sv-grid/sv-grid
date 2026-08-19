@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-18 from 361 pages.
+Generated 2026-08-19 from 361 pages.
 
 <!-- =================================================================
      /docs/brand/company-description/  (community)
@@ -2062,6 +2062,29 @@ database, get a CRUD app - kept to data views.
 > generated app to a folder - no host app needed. See
 > [Launch the designer](./launch.md).
 
+## Starting a new app
+
+**New app** in the top bar walks you from nothing to a working CRUD app: pick
+where the data comes from, choose the tables, choose the pages, open the result.
+
+1. **Start** - sample data, your own data, or a blank set of tables you name.
+2. **Data** - connect a database (the table picker shows row counts and lets you
+   preview rows before importing), pick a starter dataset, point at a REST
+   endpoint, or paste an OpenAPI document.
+3. **Screens** - tick which pages each table gets (list, form, record page,
+   dashboard) and how rows are edited: a popup form, in the grid, or on the
+   record page.
+4. **Done** - name it and open it. It arrives as one undo step, so Ctrl+Z puts
+   the previous design back.
+
+Connecting to a live database needs the local designer (`npx @svgrid/studio dev`)
+because database drivers run on your machine, not in a browser tab. On
+[svgrid.com/studio](https://svgrid.com/studio) the other three paths work as-is,
+and you can rebind to your database later with **Use my data**.
+
+The terminal equivalent is [`svgrid-studio init`](./cli.md#init) - same
+questions, same generator, same app.
+
 ## How the screen is laid out
 
 Here is the real designer with a small Sales App open:
@@ -2911,6 +2934,46 @@ live database and writes a working CRUD screen into your SvelteKit app.
 ```bash
 npx @svgrid/studio add <name> [--from <schema> | --db <dialect> --url <conn>] [options]
 ```
+
+## `init`
+
+The guided path: answer a few questions and get a working app. This is also what
+runs when you type `npx @svgrid/studio` with no arguments in a terminal.
+
+```bash
+npx @svgrid/studio init [--db <dialect> --url <conn>] [--dataset <id>] [--out <dir>]
+```
+
+It asks where the data comes from, which tables to include, which pages each
+table gets, and which theme to use - then writes a runnable SvelteKit app plus a
+`studio.config.json` you can reopen in the [designer](./app-designer.md).
+
+Every table you pick gets a **list** screen (searchable grid with status pills
+and totals), a **manage** screen (grid + editable record panel), and - when other
+tables relate to it - a **record page** with a tab per related collection. The
+app leads with an overview dashboard over its most-referenced table.
+
+| Flag | Description |
+| --- | --- |
+| `--db <dialect>` | Skip the source question and read a live database: `postgres` \| `supabase` \| `mysql` \| `mssql` \| `sqlite`. The driver is installed for you. |
+| `--url <conn>` | Connection string (or file path for SQLite) for `--db`. |
+| `--dataset <id>` | Start from sample data: `customers-orders`, `products-categories`, `projects-tasks`, `employees-departments`, `tickets-accounts`. |
+| `--title <name>` | App name. |
+| `--out <dir>` | Folder to write the app into (default: `.`). |
+| `--theme <id>` | Design-system preset (see [Theming](./theming.md)). |
+| `--dark` | Start in dark mode. |
+| `-y`, `--yes` | Take every default and ask nothing - useful in scripts and CI. |
+
+```bash
+# guided, from your own database
+npx @svgrid/studio init --db postgres --url $DATABASE_URL --out my-app
+
+# no questions at all: a seeded sample app
+npx @svgrid/studio init --yes --dataset projects-tasks --out demo
+```
+
+The designer's **New app** button runs the same flow visually, and produces the
+same project - pick whichever suits you.
 
 ## `designer`
 
@@ -4697,6 +4760,34 @@ They all end in the same place, so pick by what you have:
 | A Supabase project | [Supabase CRUD grid](./supabase-grid.md) | browser client, keys, Row-Level Security |
 | An HTTP / JSON API | [REST CRUD grid](./rest-grid.md) | the REST adapter, no server route at all |
 | An afternoon | [Build a CRM](./tutorial-crm.md) | multi-entity: relations, master-detail, a real DB |
+
+---
+
+## Guided path - answer a few questions, get the app
+
+If you already know where your data lives, let Studio ask:
+
+```bash
+npx @svgrid/studio init
+```
+
+It asks four things - where the data comes from (sample data, your database,
+in-browser Postgres, or a REST API), which tables you want, which pages each
+table gets, and what it should look like - then writes a runnable SvelteKit app
+with a list, an edit form and a record page per table, plus an overview
+dashboard.
+
+Pointing it at a real database is one line, and Studio installs the driver for
+you:
+
+```bash
+npx @svgrid/studio init --db postgres --url $DATABASE_URL --out my-app
+```
+
+Prefer clicking? The visual designer has the same wizard behind its **New app**
+button - or open [svgrid.com/studio/new](https://svgrid.com/studio/new) to start
+one in the browser. Both paths run the same generator, so they produce the same
+app. See [The Studio CLI](./cli.md#init) for every flag.
 
 ---
 

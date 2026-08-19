@@ -38,7 +38,6 @@ export type SeriesOverlay = 'linear' | `sma:${number}` | `ema:${number}`
 export type SeriesPattern = 'solid' | 'stripe' | 'crosshatch' | 'dots' | 'diagonal'
 /** Cycle used when `ChartSpec.patternFallback` is true and a series has no
  *  explicit `pattern` set. Skips `'solid'` so every series gets a texture. */
-const PATTERN_CYCLE: SeriesPattern[] = ['stripe', 'crosshatch', 'dots', 'diagonal']
 
 export type ChartSeries = {
   label: string
@@ -2254,7 +2253,7 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
     entries.reduce((sum, e) => sum + (Number.isFinite(e.values[i]!) ? e.values[i]! : 0), 0),
   )
   const sort = opts.sort ?? (opts.topN ? 'value-desc' : 'none')
-  let order = categories.map((_, i) => i)
+  const order = categories.map((_, i) => i)
   if (sort === 'value-desc') order.sort((a, b) => totals[b]! - totals[a]!)
   else if (sort === 'value-asc') order.sort((a, b) => totals[a]! - totals[b]!)
   else if (sort === 'category') order.sort((a, b) => categories[a]!.localeCompare(categories[b]!))

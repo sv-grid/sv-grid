@@ -17,6 +17,9 @@ import type { RowData } from '@svgrid/grid'
 import type { SerializeOptions } from './export-serialize'
 
 // Control chars illegal in XML 1.0 - strip so a stray \x00 can't corrupt the file.
+// See export-ooxml.ts: XML 1.0 has no representation for these at all, so a
+// control character has to be dropped before it reaches the file.
+// eslint-disable-next-line no-control-regex
 const INVALID_XML = /[\x00-\x08\x0B\x0C\x0E-\x1F]/g
 function xmlEscape(s: string): string {
   return s

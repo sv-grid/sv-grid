@@ -14,7 +14,7 @@
  * packages/svgrid-ui/recipes/*.svelte are not crawled by anything and carry a
  * long tail of trailing-slash redirects that would drown the real failures.
  */
-import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname, resolve, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 

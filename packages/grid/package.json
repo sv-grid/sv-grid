@@ -104,7 +104,8 @@
     "test:types": "svelte-check --tsconfig ./tsconfig.json",
     "test:lib": "vitest run --coverage",
     "test:build": "publint --strict",
-    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-themes.mjs"
+    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-themes.mjs",
+    "lint": "eslint ./src"
   },
   "devDependencies": {
     "@sveltejs/package": "^2.5.7",

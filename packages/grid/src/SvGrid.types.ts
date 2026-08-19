@@ -13,7 +13,6 @@ import type { GroupDisplayType } from "./group-display";
 import type { GridMessages } from "./grid-messages";
 import type { GridPivotConfig } from "./pivot-view.svelte";
 import type { MenuItem } from "./SvMenuList.svelte";
-import type { RecurrenceRule } from "./recurrence";
 
 /** The calendar views the scheduler can render. {@link SchedulerConfig}. The
  *  `timeline*` views are horizontal: time runs left→right and resources are

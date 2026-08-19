@@ -7,7 +7,7 @@
  *
  * Re-running is idempotent: pages that exist are left alone.
  */
-import { readFile, writeFile, access } from 'node:fs/promises'
+import { writeFile, access } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { join } from 'node:path'
 

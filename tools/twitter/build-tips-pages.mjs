@@ -20,7 +20,7 @@
  * Idempotent: an existing file's publish `date` is preserved and only `updated`
  * is refreshed, so regenerating never resets a page's age (which SEO cares about).
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
