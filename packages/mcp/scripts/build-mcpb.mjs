@@ -107,9 +107,27 @@ execFileSync('npm', ['install', '--omit=dev', '--no-audit', '--no-fund', '--logl
   shell: process.platform === 'win32',
 })
 
-// Declared so clients can show the tool list before the server is ever run.
-// Read off the built server rather than hand-maintained, so it cannot drift.
-// tools_generated stays true: this is a hint, the server remains the authority.
+// Read off the built server as a build-time smoke test: if the staged bundle
+// cannot answer tools/list, we fail here rather than shipping a broken .mcpb.
+//
+// The result is deliberately NOT written into manifest.tools, because MCPB and
+// Smithery want mutually exclusive shapes there (checked 2026-08-20, mcpb 2.1.2
+// and smithery 1.2.0, both latest):
+//
+//   - tools with inputSchema  -> mcpb rejects, "Unrecognized key(s): inputSchema",
+//                                in BOTH `validate` and `pack`, so the bundle
+//                                cannot even be built.
+//   - tools without it        -> Smithery's API returns 400 "expected object,
+//                                received undefined", once per tool.
+//   - no tools array          -> Smithery's API returns 400 "No values to set".
+//
+// So a spec-valid MCPB currently cannot be published to Smithery as a bundle.
+// `--config-schema` is not a way out either; the CLI rejects it for anything
+// other than a URL publish. We keep the bundle spec-valid, since that is what
+// makes it installable in Claude Desktop and every other MCPB client, and treat
+// Smithery as blocked on their end. `tools` is optional in MCPB, and
+// `tools_generated: true` tells clients to discover tools at runtime, which
+// this server does correctly.
 const tools = await readToolsFromServer(join(stage, 'server', 'index.js'))
 
 const manifest = {
@@ -137,7 +155,6 @@ const manifest = {
     entry_point: 'server/index.js',
     mcp_config: { command: 'node', args: ['${__dirname}/server/index.js'] },
   },
-  tools,
   tools_generated: true,
 }
 
@@ -157,4 +174,4 @@ execFileSync('npx', ['-y', '@anthropic-ai/mcpb@2.1.2', 'pack', stage, out], {
 await rm(stage, { recursive: true, force: true })
 const { size } = await stat(out)
 console.log(`\n  ${out}`)
-console.log(`  ${(size / 1024 / 1024).toFixed(1)} MB, ${tools.length} tools declared`)
+console.log(`  ${(size / 1024 / 1024).toFixed(1)} MB, ${tools.length} tools verified at build time`)
