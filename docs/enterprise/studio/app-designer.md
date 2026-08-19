@@ -23,18 +23,23 @@ where the data comes from, choose the tables, choose the pages, open the result.
 
 1. **Start** - sample data, your own data, or a blank set of tables you name.
 2. **Data** - connect a database (the table picker shows row counts and lets you
-   preview rows before importing), pick a starter dataset, point at a REST
-   endpoint, or paste an OpenAPI document.
+   preview rows before importing), read a **Supabase** project, pick a starter
+   dataset, point at a REST endpoint, or paste an OpenAPI document.
 3. **Screens** - tick which pages each table gets (list, form, record page,
    dashboard) and how rows are edited: a popup form, in the grid, or on the
    record page.
 4. **Done** - name it and open it. It arrives as one undo step, so Ctrl+Z puts
    the previous design back.
 
-Connecting to a live database needs the local designer (`npx @svgrid/studio dev`)
-because database drivers run on your machine, not in a browser tab. On
-[svgrid.com/studio](https://svgrid.com/studio) the other three paths work as-is,
-and you can rebind to your database later with **Use my data**.
+Connecting to a live SQL database needs the local designer
+(`npx @svgrid/studio dev`) because database drivers run on your machine, not in a
+browser tab. **Supabase is the exception**: it serves its own REST API, so the
+wizard reads your tables with just the project URL and the anon key - it is the
+one real database that works from
+[svgrid.com/studio](https://svgrid.com/studio) with nothing installed. Row-level
+security still applies, so the app sees exactly what the browser may see. The
+other paths work there too, and you can rebind to any database later with
+**Use my data**.
 
 The terminal equivalent is [`svgrid-studio init`](./cli.md#init) - same
 questions, same generator, same app.

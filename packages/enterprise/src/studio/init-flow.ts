@@ -17,6 +17,7 @@ import { starterDatasets, getStarterDataset } from './samples/datasets.js'
 import { introspectDatabase, listDatabaseTables, countTableRows, type DbExecute, type SqlDialectName } from './introspect-db.js'
 import { introspectOpenApi } from './introspect-openapi.js'
 import { introspectJson } from './introspect.js'
+import { introspectSupabaseTable, listSupabaseTables } from '../sources/introspect-supabase.js'
 import { buildConnectionString, isFileDialect, type SqlConnectionParts } from './db-connect-string.js'
 import { emitStudioAppBundle } from './emit-project.js'
 import { mergeManaged, skipUserOwned } from './scaffold.js'
@@ -48,6 +49,10 @@ export type InitFlags = {
   db?: SqlDialectName
   /** Connection string for `db`. */
   url?: string
+  /** Supabase project URL - skips the source question and both prompts. */
+  supabaseUrl?: string
+  /** Supabase anon key. */
+  supabaseKey?: string
   /** Pick a starter dataset by id, skipping the source question. */
   dataset?: string
   /** Theme preset id. */
@@ -70,6 +75,7 @@ export type InitResult = {
 const SOURCES = [
   { key: 'sample', label: 'Sample data', hint: 'a seeded pair of related tables - see a working app immediately' },
   { key: 'db', label: 'An existing database', hint: 'Postgres, MySQL, SQL Server or SQLite - reads your tables' },
+  { key: 'supabase', label: 'Supabase', hint: 'project URL + anon key, read over the REST API - no driver needed' },
   { key: 'pglite', label: 'Local Postgres in the browser (PGlite)', hint: 'real SQL, persists, no server to set up' },
   { key: 'rest', label: 'A REST API or OpenAPI spec', hint: 'infers the tables from the endpoint' },
 ] as const
@@ -137,10 +143,12 @@ type Gathered = {
 async function gatherData(flags: InitFlags, prompts: PromptIO, db: DbGateway | null, fetchText: FetchText | null): Promise<Gathered> {
   let source: SourceKey = 'sample'
   if (flags.db) source = 'db'
+  else if (flags.supabaseUrl) source = 'supabase'
   else if (flags.dataset) source = 'sample'
   else if (!flags.yes) source = SOURCES[await pick(prompts, 'Where should the app get its data?', [...SOURCES])]!.key
 
   if (source === 'db') return gatherFromDatabase(flags, prompts, db)
+  if (source === 'supabase') return gatherFromSupabase(flags, prompts)
   if (source === 'rest') return gatherFromRest(prompts, fetchText)
 
   // Sample data, stored in memory or in PGlite.
@@ -208,6 +216,49 @@ async function gatherFromDatabase(flags: InitFlags, prompts: PromptIO, db: DbGat
   if (schemas.length === 0) throw new Error('None of the picked tables could be read.')
   prompts.say(`  Read ${schemas.length} ${schemas.length === 1 ? 'table' : 'tables'}.`)
   return { schemas, sources, seed: {}, kind: 'sql' }
+}
+
+/**
+ * Supabase reads over its own REST API, so this needs no driver and no
+ * DbGateway - just the project URL and the anon key.
+ */
+async function gatherFromSupabase(flags: InitFlags, prompts: PromptIO): Promise<Gathered> {
+  const url = (flags.supabaseUrl ?? (await prompts.ask('Project URL:', ''))).trim()
+  const key = (flags.supabaseKey ?? (await prompts.ask('Anon key:', ''))).trim()
+  if (!url || !key) throw new Error('Both the project URL and the anon key are required.')
+
+  prompts.say('  Reading the API...')
+  const tables = await listSupabaseTables(url, key)
+  let picked: string[]
+  if (tables.length) {
+    prompts.say('')
+    prompts.say(`Found ${tables.length} ${tables.length === 1 ? 'table' : 'tables'}:`)
+    tables.forEach((t, i) => prompts.say(`  ${i + 1}. ${t}`))
+    const answer = flags.yes ? 'all' : await prompts.ask('Which tables? (all, or a comma list of names/numbers)', 'all')
+    picked = parseSelection(answer, tables)
+  } else {
+    // The API doc is often CORS-blocked or restricted; naming the tables by hand
+    // still works because each one is introspected individually.
+    prompts.say("  Couldn't list the tables (the API doc may be restricted for this key).")
+    const typed = await prompts.ask('Table names (comma separated):', '')
+    picked = typed.split(',').map((t) => t.trim()).filter(Boolean)
+  }
+  if (picked.length === 0) throw new Error('No tables picked - nothing to build.')
+
+  const schemas: EntitySchema[] = []
+  const sources: Record<string, EntityDataSource> = {}
+  for (const table of picked) {
+    const schema = await introspectSupabaseTable({ url, key, table })
+    if (!schema?.fields.length) {
+      prompts.say(`  ! Skipped ${table}: no columns could be read.`)
+      continue
+    }
+    schemas.push(schema as EntitySchema)
+    sources[schema.name] = { kind: 'supabase', table, url, key }
+  }
+  if (schemas.length === 0) throw new Error('None of the picked tables could be read.')
+  prompts.say(`  Read ${schemas.length} ${schemas.length === 1 ? 'table' : 'tables'}.`)
+  return { schemas, sources, seed: {}, kind: 'supabase' }
 }
 
 async function askConnectionParts(prompts: PromptIO): Promise<SqlConnectionParts> {

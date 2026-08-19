@@ -82,6 +82,8 @@ type Parsed = {
   appPort?: number
   fragment?: boolean
   // `init` command:
+  supabaseUrl?: string
+  supabaseKey?: string
   dataset?: string
   theme?: string
   dark?: boolean
@@ -112,6 +114,8 @@ function parse(args: string[]): Parsed {
     else if (a === '--ai') out.ai = true
     else if (a === '--app-port') out.appPort = Number(args[++i])
     else if (a === '--fragment') out.fragment = true
+    else if (a === '--supabase-url') out.supabaseUrl = args[++i]
+    else if (a === '--supabase-key') out.supabaseKey = args[++i]
     else if (a === '--dataset') out.dataset = args[++i]
     else if (a === '--theme') out.theme = args[++i]
     else if (a === '--dark') out.dark = true
@@ -144,6 +148,8 @@ Guided setup (init) - asks where your data lives, which tables you want, and
 which pages each gets, then writes a runnable app + studio.config.json.
 Running \`svgrid-studio\` with no arguments starts it too.
   --db <dialect> --url <conn>   skip the questions and read a live database
+  --supabase-url <url> --supabase-key <anon>   read a Supabase project over its
+                   REST API (no driver, works without a local database)
   --dataset <id>   start from sample data (customers-orders, products-categories,
                    projects-tasks, employees-departments, tickets-accounts)
   --title <name>   app name
@@ -274,6 +280,8 @@ async function main(): Promise<void> {
       ...(opts.outDir ? { out: opts.outDir } : {}),
       ...(opts.db ? { db: opts.db } : {}),
       ...(opts.url ? { url: opts.url } : {}),
+      ...(opts.supabaseUrl ? { supabaseUrl: opts.supabaseUrl } : {}),
+      ...(opts.supabaseKey ? { supabaseKey: opts.supabaseKey } : {}),
       ...(opts.dataset ? { dataset: opts.dataset } : {}),
       ...(opts.theme ? { theme: opts.theme } : {}),
       ...(opts.dark ? { dark: true } : {}),
