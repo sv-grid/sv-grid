@@ -5,7 +5,7 @@ branch, and what to do if size matters.
 
 ## Measured
 
-Re-measured **2026-08-15** with the script that ships in the repo:
+Re-measured **2026-08-20** with the script that ships in the repo:
 
 ```bash
 node packages/grid/scripts/measure-size.mjs
@@ -13,8 +13,8 @@ node packages/grid/scripts/measure-size.mjs
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
-| Headless core (`createGrid`) | **2.2 kB** | - | - |
-| Full render component (`<SvGrid>`) | **80.5 kB** | **8.9 kB** | 64.1 kB |
+| Headless core (`createGrid`) | **2.3 kB** | - | - |
+| Full render component (`<SvGrid>`) | **78.2 kB** | **9.0 kB** | 77.1 kB |
 
 Svelte is a peer dependency and is excluded from every figure. Builds are
 minified and gzipped at level 9.
@@ -25,12 +25,15 @@ splits into:
 
 | Chunk | gzip | Loads when |
 | --- | ---: | --- |
-| `SvDateTimePicker` | 20.9 kB | a date / datetime / time cell editor opens |
+| `SvDateTimePicker` | 18.2 kB | a date / datetime / time cell editor opens |
 | `SvGridChart` | 15.7 kB | a chart renders |
-| `chart` (engine) | 11.6 kB | charting is enabled |
+| `chart` (engine) | 11.7 kB | charting is enabled |
+| `GridMenus` | 11.7 kB | a header or context menu opens |
 | `SvGridChartPanel` | 7.5 kB | the chart panel opens |
-| `GridMenus` | 6.0 kB | a header or context menu opens |
+| `SvGridDropdown` | 5.2 kB | a list / chips cell editor or the page-size picker opens |
+| `dismissable` | 3.7 kB | any popover, menu or dropdown layer opens |
 | `export-format` | 1.8 kB | CSV / TSV / JSON export or clipboard copy runs |
+| `popover` | 0.9 kB | a popover is positioned |
 | `SvGridChartView` | 0.7 kB | the grid switches to chart view |
 
 The Kanban board and the scheduler / calendar view are not in either
@@ -71,7 +74,7 @@ at module load, so neither is in your synchronous bundle.
 
 1. **Use the headless engine for read-only views.** When you only need to
    display server-side data with no interaction, `createGrid` plus a short
-   `<table>` renderer is 2.2 kB instead of 80.5 kB. See the
+   `<table>` renderer is 2.3 kB instead of 78.2 kB. See the
    [headless engine reference](./headless-engine.md).
 2. **Register only the features you use.** The grid is feature-gated:
    sorting, filtering, grouping, pagination, expansion, and selection are

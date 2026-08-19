@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-19T17:17:02.594Z",
+  "generatedAt": "2026-08-19T22:55:53.574Z",
   "counts": {
     "pages": 361,
     "enterprise": 54,
@@ -722,7 +722,7 @@
       "pillar": "company",
       "tier": "community",
       "words": 647,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -1003,8 +1003,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Screens & features",
-      "words": 603,
-      "lastUpdated": "2026-08-12",
+      "words": 604,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "362-dock-manager"
       ]
@@ -1239,8 +1239,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Screens & features",
-      "words": 655,
-      "lastUpdated": "2026-08-12",
+      "words": 656,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "363-scheduler-intro",
         "371-scheduler-timeline",
@@ -1545,7 +1545,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2086,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -1599,7 +1599,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1040,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -1611,7 +1611,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1310,
-      "lastUpdated": "2026-08-18",
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "06-large-dataset"
       ]
@@ -2022,7 +2022,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1536,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -2549,7 +2549,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2127,
-      "lastUpdated": "2026-08-18",
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -2817,7 +2817,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1141,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "22-admin-template"
       ]
@@ -5415,8 +5415,8 @@
       "section": "reference",
       "pillar": "grid",
       "tier": "community",
-      "words": 570,
-      "lastUpdated": "2026-08-15",
+      "words": 613,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {

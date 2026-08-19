@@ -138,7 +138,7 @@ mutate DOM nodes during a sort.
 | ----- | ------------------------------------------------- | ------------------------------------ |
 | 1     | Your app                                          | n/a                                  |
 | 2     | `packages/grid/src/core.ts` + row-models | `dist/index.js` (~2 kB gzip)     |
-| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~80 kB gzip + 9 kB CSS) |
+| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~78 kB gzip + 9 kB CSS) |
 |       | `packages/enterprise/src/{export,print,import,ai}.ts` | `@svgrid/enterprise/dist/*` (lazy-loaded peers) |
 
 ## See also

@@ -31,7 +31,7 @@ Measured gzipped, with Svelte excluded as a peer dependency:
 | What you import                                       | Gzipped | Minified |
 | ----------------------------------------------------- | ------- | -------- |
 | Headless core (`createGrid` + `createCoreRowModel`)   | ~2 KB   | ~7 KB    |
-| Full `<SvGrid>` render component (everything)         | ~80 KB  | ~293 KB  |
+| Full `<SvGrid>` render component (everything)         | ~78 KB  | ~340 KB  |
 
 Add ~9 KB gzipped for the render component's CSS. Charts, date/time
 editors, menus, and export split into `import()` chunks (~64 KB total)

@@ -28,7 +28,7 @@ this section answers each one directly.
 | Does the library transmit any data?               | **No.** Zero outbound network calls. Inspect with DevTools.     |
 | Does the library write to localStorage?           | **Only when you opt in.** [Saved views](../help/saved-views.md) writes when you tell it to. |
 | Does the library evaluate user input as code?     | **No.** CSP-compliant; no `eval` / `new Function`.              |
-| Does the library include third-party trackers?    | **No.** Verify the bundle - ~80 kB gzip, no analytics SDK.     |
+| Does the library include third-party trackers?    | **No.** Verify the bundle - ~78 kB gzip, no analytics SDK.     |
 | Is the library SOC 2 / ISO 27001 certified?       | The LIBRARY can't be certified - it's not a service. Your hosted app gets certified; the library is in-scope as a dependency. See [SOC 2 posture](./soc2.md). |
 | Is the library GDPR-compliant?                    | The library is GDPR-neutral: it never processes data the user didn't already see. See [GDPR + data residency](./gdpr.md). |
 | Is the library HIPAA-compliant?                   | Same: HIPAA-neutral. PHI handling is a property of your app, not the grid. See [HIPAA posture](./hipaa.md). |

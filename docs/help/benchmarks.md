@@ -194,7 +194,7 @@ holds the visible window regardless of total row count.
 
 ### How fast is SvGrid, and how big is it?
 
-It ships a much smaller bundle (~80 KB gzipped for the full render component,
+It ships a much smaller bundle (~78 KB gzipped for the full render component,
 or ~2 KB for the headless core) and virtualizes by default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.

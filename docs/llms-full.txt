@@ -734,7 +734,7 @@ you registered via `setAIProvider(...)`. For PHI:
 Example redaction in the provider adapter:
 
 ```ts
-import { setAIProvider, type AIProvider } from '@svgrid/enterprise'
+import { setAIProvider, type AIProvider } from '@svgrid/grid'
 
 const redactingProvider: AIProvider = async ({ prompt, ...rest }) => {
   const safe = prompt.replace(/MRN-?\d{8}/g, '<<MRN>>').replace(/SSN[:\s-]*\d{3}-?\d{2}-?\d{4}/g, '<<SSN>>')
@@ -4443,7 +4443,7 @@ Dock is one of five per-screen layout modes in the designer:
   and spans on a 12-column grid of fixed-height rows, so blocks sit exactly
   where you drop them.
 
-## Related
+## See also
 
 - [App designer](./app-designer.md) - the block palette and inspector.
 - [Scheduler / calendar view](./scheduler.md) and the Kanban board - other ways
@@ -7360,7 +7360,7 @@ Several starter apps ship a scheduler so you can see it end to end:
 - **HireDesk (ATS)** - interviews on a **Week** grid, colored by pipeline stage.
 - **Evently**, **HealthClinic**, **FitClub**, and the restaurant app - month event calendars.
 
-## Related
+## See also
 
 - The underlying grid feature and its live demos: [Scheduler / calendar mode](#/demos/363-scheduler-intro),
   [timeline views](#/demos/371-scheduler-timeline), and the real-world apps built on it -
@@ -11778,7 +11778,7 @@ The grid never calls a model directly. Every runtime AI call routes
 through a single async **provider** you register once at app boot:
 
 ```ts
-import { setAIProvider, type AIProvider } from '@svgrid/enterprise'
+import { setAIProvider, type AIProvider } from '@svgrid/grid'
 
 const provider: AIProvider = async ({ prompt, responseFormat, signal, task }) => {
   const r = await fetch('/api/ai', {
@@ -12925,7 +12925,7 @@ mutate DOM nodes during a sort.
 | ----- | ------------------------------------------------- | ------------------------------------ |
 | 1     | Your app                                          | n/a                                  |
 | 2     | `packages/grid/src/core.ts` + row-models | `dist/index.js` (~2 kB gzip)     |
-| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~80 kB gzip + 9 kB CSS) |
+| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~78 kB gzip + 9 kB CSS) |
 |       | `packages/enterprise/src/{export,print,import,ai}.ts` | `@svgrid/enterprise/dist/*` (lazy-loaded peers) |
 
 ## See also
@@ -13158,7 +13158,7 @@ holds the visible window regardless of total row count.
 
 ### How fast is SvGrid, and how big is it?
 
-It ships a much smaller bundle (~80 KB gzipped for the full render component,
+It ships a much smaller bundle (~78 KB gzipped for the full render component,
 or ~2 KB for the headless core) and virtualizes by default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.
@@ -16175,7 +16175,7 @@ depends on the framework you ship on and your budget.
 
 | Project              | Lives in                                 | Ships                                   | Bundle (typical) | License            |
 | -------------------- | ---------------------------------------- | --------------------------------------- | ---------------- | ------------------ |
-| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~2 KB headless / ~80 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
+| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~2 KB headless / ~78 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
 | **AG Grid Community**| React, Angular, Vue, plain JS            | Full grid + renderer                    | ~340 KB                                   | MIT                                |
 | **AG Grid Enterprise**| same                                    | Adds pivot, integrated charts, server-side row model, more | ~600 KB+ | Commercial                         |
 | **TanStack Table**   | React, Vue, Svelte, Solid, Qwik, Lit, JS | Headless engine **only**                | ~12-14 KB                                 | MIT                                |
@@ -16259,7 +16259,7 @@ Measured gzipped, with Svelte treated as a peer dependency and excluded
 | @svgrid/grid path                          | Gzipped | Minified |
 | ----------------------------------------------- | ------- | -------- |
 | Headless core (`createGrid` + a row model)      | ~2 KB   | ~7 KB    |
-| Full `<SvGrid>` render component                | ~80 KB  | ~293 KB  |
+| Full `<SvGrid>` render component                | ~78 KB  | ~340 KB  |
 
 Add ~9 KB gzipped for the render component's CSS. A further ~64 KB of
 charts, date/time editors, menus, and export splits into `import()` chunks
@@ -16329,7 +16329,7 @@ bridge into Svelte 5.
 
 ### Is SvGrid a good AG Grid alternative?
 
-Yes, for Svelte projects. SvGrid ships a much smaller bundle (~80 KB gzipped
+Yes, for Svelte projects. SvGrid ships a much smaller bundle (~78 KB gzipped
 for the full render component, ~2 KB headless) than AG Grid Community, is
 MIT-licensed for commercial use, and offers `@svgrid/enterprise` for
 export/pivot/import at a per-developer price instead of AG Grid Enterprise's
@@ -16346,7 +16346,7 @@ virtualization, and editing UI yourself. Both are MIT-licensed.
 ### How big is the SvGrid bundle?
 
 Measured gzipped (Svelte excluded as a peer dependency): ~2 KB for the
-headless core and ~80 KB for the full `<SvGrid>` render component (~293 KB
+headless core and ~78 KB for the full `<SvGrid>` render component (~340 KB
 minified), plus ~9 KB of CSS. Charts, date/time editors, menus, and export
 add another ~64 KB that loads on demand rather than up front. Enterprise
 features are separate, lazy-loaded subpath imports, so you ship only what
@@ -22033,7 +22033,7 @@ We tell you when **not** to switch at the bottom.
 | --- | --- | --- | --- | --- |
 | **License** | MIT | Commercial (~$999/dev/yr) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
 | **Svelte 5 native** | ❌ (wrapper) | ❌ (wrapper) | ✅ | ✅ |
-| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~2 KB headless / ~80 KB full | lazy-loaded subpaths |
+| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~2 KB headless / ~78 KB full | lazy-loaded subpaths |
 | **Sorting / filtering / grouping** | ✅ | ✅ | ✅ | (in Community) |
 | **Master/detail, tree, range select** | ❌ Enterprise only | ✅ | ✅ (free) | (in Community) |
 | **Excel export** | ❌ | ✅ Enterprise | ❌ | ✅ |
@@ -22405,7 +22405,7 @@ and no framework bridge to keep in sync.
 
 ### Will my AG Grid bundle size shrink?
 
-Almost always. SvGrid's full render component is ~80 KB gzipped (or ~2 KB
+Almost always. SvGrid's full render component is ~78 KB gzipped (or ~2 KB
 for the headless core) versus a much heavier AG Grid Community bundle, and you
 only add `@svgrid/enterprise` features you actually use - so you ship a fraction of
 the JavaScript.
@@ -25461,7 +25461,7 @@ Measured gzipped, with Svelte excluded as a peer dependency:
 | What you import                                       | Gzipped | Minified |
 | ----------------------------------------------------- | ------- | -------- |
 | Headless core (`createGrid` + `createCoreRowModel`)   | ~2 KB   | ~7 KB    |
-| Full `<SvGrid>` render component (everything)         | ~80 KB  | ~293 KB  |
+| Full `<SvGrid>` render component (everything)         | ~78 KB  | ~340 KB  |
 
 Add ~9 KB gzipped for the render component's CSS. Charts, date/time
 editors, menus, and export split into `import()` chunks (~64 KB total)
@@ -53919,7 +53919,7 @@ branch, and what to do if size matters.
 
 ## Measured
 
-Re-measured **2026-08-15** with the script that ships in the repo:
+Re-measured **2026-08-20** with the script that ships in the repo:
 
 ```bash
 node packages/grid/scripts/measure-size.mjs
@@ -53927,8 +53927,8 @@ node packages/grid/scripts/measure-size.mjs
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
-| Headless core (`createGrid`) | **2.2 kB** | - | - |
-| Full render component (`<SvGrid>`) | **80.5 kB** | **8.9 kB** | 64.1 kB |
+| Headless core (`createGrid`) | **2.3 kB** | - | - |
+| Full render component (`<SvGrid>`) | **78.2 kB** | **9.0 kB** | 77.1 kB |
 
 Svelte is a peer dependency and is excluded from every figure. Builds are
 minified and gzipped at level 9.
@@ -53939,12 +53939,15 @@ splits into:
 
 | Chunk | gzip | Loads when |
 | --- | ---: | --- |
-| `SvDateTimePicker` | 20.9 kB | a date / datetime / time cell editor opens |
+| `SvDateTimePicker` | 18.2 kB | a date / datetime / time cell editor opens |
 | `SvGridChart` | 15.7 kB | a chart renders |
-| `chart` (engine) | 11.6 kB | charting is enabled |
+| `chart` (engine) | 11.7 kB | charting is enabled |
+| `GridMenus` | 11.7 kB | a header or context menu opens |
 | `SvGridChartPanel` | 7.5 kB | the chart panel opens |
-| `GridMenus` | 6.0 kB | a header or context menu opens |
+| `SvGridDropdown` | 5.2 kB | a list / chips cell editor or the page-size picker opens |
+| `dismissable` | 3.7 kB | any popover, menu or dropdown layer opens |
 | `export-format` | 1.8 kB | CSV / TSV / JSON export or clipboard copy runs |
+| `popover` | 0.9 kB | a popover is positioned |
 | `SvGridChartView` | 0.7 kB | the grid switches to chart view |
 
 The Kanban board and the scheduler / calendar view are not in either
@@ -53985,7 +53988,7 @@ at module load, so neither is in your synchronous bundle.
 
 1. **Use the headless engine for read-only views.** When you only need to
    display server-side data with no interaction, `createGrid` plus a short
-   `<table>` renderer is 2.2 kB instead of 80.5 kB. See the
+   `<table>` renderer is 2.3 kB instead of 78.2 kB. See the
    [headless engine reference](./headless-engine.md).
 2. **Register only the features you use.** The grid is feature-gated:
    sorting, filtering, grouping, pagination, expansion, and selection are
