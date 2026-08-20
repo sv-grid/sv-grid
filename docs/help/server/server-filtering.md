@@ -171,9 +171,9 @@ each keystroke should not become its own round trip.
 ```svelte
 <script lang="ts">
   import { SvGrid } from '@svgrid/grid'
-  import { createServerDataSource, type ServerFilterModel } from '@svgrid/grid'
+  import { createServerDataSource, type ServerFilterModel, type ServerState } from '@svgrid/grid'
 
-  let view = $state({ rows: [], loading: false, total: 0 })
+  let view = $state<ServerState<Row>>()
   const ctl = createServerDataSource(source, {
     pageSize: 50,
     onChange: (s) => (view = s),
@@ -193,15 +193,17 @@ each keystroke should not become its own round trip.
   }
 </script>
 
-<SvGrid
-  data={view.rows}
-  {columns} {features}
-  filterable
-  externalFilter
-  loading={view.loading}
-  pageable={false}
-  {onFiltersChange}
-/>
+{#if view}
+  <SvGrid
+    data={view.rows}
+    {columns} {features}
+    filterable
+    externalFilter
+    loading={view.loading}
+    pageable={false}
+    {onFiltersChange}
+  />
+{/if}
 ```
 
 `setFilter` resets to page 0 and re-fetches, so a new filter always shows its

@@ -8,9 +8,12 @@ import {
   installEnterprise, setLicenseKey,
   exportGrid, printGrid, importData,
   createPivotModel, pivotAggregators,
-  setAIProvider, aiFilter, aiSmartFill, aiSummarize, aiClassify,
   type EnterpriseGridApi, type ExportOptions, type ImportOptions, type PivotConfig,
 } from '@svgrid/enterprise'
+
+// The AI helpers are free and live in the community package. Enterprise only
+// registers its export engine so an AI-planned Excel / PDF export can run.
+import { setAIProvider, aiFilter, aiSmartFill, aiSummarize, aiClassify } from '@svgrid/grid'
 ```
 
 ## License
@@ -252,7 +255,10 @@ import type {
   PivotRow,
   PivotRowKind,
   PivotValueConfig,
+} from '@svgrid/enterprise'
 
+// AI types come from the community package alongside the helpers themselves.
+import type {
   AIProvider,
   AIRequest,
   AITask,
@@ -268,5 +274,5 @@ import type {
   AISummary,
   AIClassifyOptions,
   AIClassifyResult,
-} from '@svgrid/enterprise'
+} from '@svgrid/grid'
 ```

@@ -6,7 +6,7 @@
 @custom-variant dark (&:where(html[data-theme='dark'], html[data-theme='dark'] *));
 
 /* ---------------------------------------------------------------------------
- * SvGrid theme tokens - one of @svgrid/grid's 19 built-in presets (pick one
+ * SvGrid theme tokens - one of @svgrid/grid's 20 built-in presets (pick one
  * with `npm create @svgrid@latest -- --theme <id> [--dark]`, or edit the
  * values below by hand). The dashboard shell reads them through the --app-*
  * aliases further down, so the whole app themes as one, not just the grid.

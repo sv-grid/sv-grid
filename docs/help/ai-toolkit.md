@@ -31,7 +31,7 @@ The grid never calls a model directly. Every runtime AI call routes
 through a single async **provider** you register once at app boot:
 
 ```ts
-import { setAIProvider, type AIProvider } from '@svgrid/enterprise'
+import { setAIProvider, type AIProvider } from '@svgrid/grid'
 
 const provider: AIProvider = async ({ prompt, responseFormat, signal, task }) => {
   const r = await fetch('/api/ai', {

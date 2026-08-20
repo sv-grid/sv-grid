@@ -44,14 +44,14 @@ When a column has tens of thousands of distinct values, you don't want to pre-re
 let state = $state<{
   status: 'idle' | 'loading' | 'ready' | 'error'
   values: string[]
-}>({ state: 'idle', values: [] })
+}>({ status: 'idle', values: [] })
 let selected = $state<Set<string>>(new Set())
 
 async function loadValues() {
-  state = { state: 'loading', values: [] }
+  state = { status: 'loading', values: [] }
   const res = await fetch('/api/orders/customers')
   const values = await res.json()
-  state = { state: 'ready', values }
+  state = { status: 'ready', values }
 }
 
 function toggle(value: string) {
@@ -107,7 +107,7 @@ See demo 111 ("Tree" card) and [demo 102: Tree checkbox cascade](#/demos/102-tre
 
 ## API surface
 
-```ts
+```ts {nocheck}
 type SvGridApi<…> = {
   // Set a multi-select set filter. Pass null or [] to clear.
   setFacetFilter(columnId: string, values: ReadonlyArray<string> | null): void

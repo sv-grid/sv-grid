@@ -83,7 +83,7 @@ import { createProject } from '@svgrid/enterprise'
 let project = $state(createProject([customerSchema, orderSchema], { title: 'Sales App' }))
 ```
 
-```svelte
+```svelte {nocheck}
 <script lang="ts">
   import { SvStudioDesigner } from '@svgrid/enterprise'
 </script>

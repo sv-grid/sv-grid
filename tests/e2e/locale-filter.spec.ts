@@ -56,16 +56,24 @@ test.describe('locale-aware text filter (real browser)', () => {
 
   test('clearing the input restores all rows', async ({ page }) => {
     const input = page.locator('.sv-grid-global-filter input').first()
+    // Captured, not hard-coded: the body is virtualized, so this counts the
+    // rows the viewport renders rather than the 26 in the dataset. A literal
+    // threshold here just encodes one window height.
+    const unfiltered = (await visibleCities(page)).length
+    expect(unfiltered).toBeGreaterThan(1)
+
     await input.fill('munchen')
     await expect.poll(async () => (await visibleCities(page)).length).toBe(1)
 
     await input.fill('')
-    await expect.poll(async () => (await visibleCities(page)).length).toBeGreaterThanOrEqual(20)
+    await expect.poll(async () => (await visibleCities(page)).length).toBe(unfiltered)
   })
 
   test('locale picker change keeps the same accent-folding behavior', async ({ page }) => {
     const input = page.locator('.sv-grid-global-filter input').first()
-    const picker = page.getByRole('combobox').first()
+    // Named, not `.first()`: the demo renders inside the site shell, whose
+    // theme-preset <select> is the first combobox on the page.
+    const picker = page.getByRole('combobox', { name: 'Locale' })
 
     await input.fill('geneve')
     await expect.poll(() => visibleCities(page)).toEqual(['Genève'])

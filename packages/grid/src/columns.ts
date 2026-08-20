@@ -71,13 +71,18 @@ export function createColumns<
     if (!(ctx.props.enableColumnReorder ?? false)) return;
     ctx.colDragId = columnId;
     e.dataTransfer?.setData("text/plain", columnId);
-    e.dataTransfer!.effectAllowed = "move";
+    // Guarded, not asserted: `dataTransfer` is non-null in a real browser drag
+    // but null on a synthetic DragEvent. The `!` threw there, and because the
+    // throw landed after `colDragId` was set but before `colDropSide` was, the
+    // drop then silently no-op'd instead of surfacing the error. Matches the
+    // pattern row-drag.ts already uses.
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
   }
 
   function onColumnHeaderDragOver(e: DragEvent, columnId: string) {
     if (!ctx.colDragId || ctx.colDragId === columnId) return;
     e.preventDefault();
-    e.dataTransfer!.dropEffect = "move";
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     ctx.colDropSide = e.clientX < rect.left + rect.width / 2 ? "before" : "after";
     ctx.colDropOnId = columnId;

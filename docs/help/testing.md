@@ -35,7 +35,10 @@ without a DOM.
 
 ```ts
 import { describe, it, expect } from 'vitest'
-import { createSvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
+import {
+  createSvGrid, tableFeatures, rowSortingFeature,
+  createCoreRowModel, createSortedRowModel, sortFns,
+} from '@svgrid/grid'
 
 describe('sort behaviour', () => {
   it('sorts by a single column ascending', () => {
@@ -52,8 +55,15 @@ describe('sort behaviour', () => {
         { field: 'name', header: 'Name' },
       ],
       _features: features,
+      // Opt into the row models you assert on. The headless grid composes
+      // them explicitly, so a grid built without `sortedRowModel` returns
+      // rows in source order no matter what `sorting` says.
+      _rowModels: {
+        coreRowModel: createCoreRowModel(),
+        sortedRowModel: createSortedRowModel(sortFns),
+      },
+      state: { sorting: [{ id: 'name', desc: false }] },
     })
-    grid.setSort([{ id: 'name', desc: false }])
     const visible = grid.getRowModel().rows.map((r) => r.original.name)
     expect(visible).toEqual(['Alice', 'Bob', 'Charlie'])
   })

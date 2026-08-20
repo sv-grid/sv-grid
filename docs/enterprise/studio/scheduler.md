@@ -84,7 +84,7 @@ Several starter apps ship a scheduler so you can see it end to end:
 - **HireDesk (ATS)** - interviews on a **Week** grid, colored by pipeline stage.
 - **Evently**, **HealthClinic**, **FitClub**, and the restaurant app - month event calendars.
 
-## Related
+## See also
 
 - The underlying grid feature and its live demos: [Scheduler / calendar mode](#/demos/363-scheduler-intro),
   [timeline views](#/demos/371-scheduler-timeline), and the real-world apps built on it -

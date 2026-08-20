@@ -15,7 +15,12 @@ One-time browser install (downloads ~150 MB of Chromium):
 pnpm test:e2e:install
 ```
 
-The config uses the gallery's existing Vite dev server on port 5180; it will start (or reuse) the server automatically.
+The specs navigate to `/sv-grid/#/demos/<id>`, which are **website** routes, not the example gallery (`pnpm dev`, port 5174). The config starts the website's dev server on port 5180 with `SVGRID_SITE_BASE=/sv-grid/`, or reuses one you already have running there.
+
+Two consequences:
+
+- `website/` is a private submodule, so this suite only runs on a checkout that has it. That is also why it is not in CI.
+- If you start the server by hand, set the base too. In Git Bash, `SVGRID_SITE_BASE=/sv-grid/` gets path-mangled into `C:/Program Files/Git/sv-grid/`; use PowerShell or prefix with `MSYS_NO_PATHCONV=1`.
 
 ## Running
 

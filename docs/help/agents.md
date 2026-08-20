@@ -105,8 +105,12 @@ const tools = [
 Wire the tool calls back to your live `api` reference:
 
 ```ts
+// Widen past the two seed messages: tool results carry a `tool_call_id`, and
+// an assistant turn carries `tool_calls`.
+type ChatMessage = { role: string; content?: unknown; tool_call_id?: string; [key: string]: unknown }
+
 async function runAgent(prompt: string) {
-  let messages = [
+  const messages: ChatMessage[] = [
     { role: 'system', content: `You drive a data grid. Columns: ${JSON.stringify(api!.getColumns())}.` },
     { role: 'user',   content: prompt },
   ]

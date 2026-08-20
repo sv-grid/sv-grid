@@ -38,9 +38,11 @@ as option 1 (no separate code path).
 
 ```svelte
 <script lang="ts">
-  import { spreadsheetLayout, spansToMerges, type ColumnDef } from '@svgrid/grid'
+  // `SpanColumn` rather than `ColumnDef`: `spansToMerges` needs `id` to be
+  // present, and on a ColumnDef it is optional.
+  import { spreadsheetLayout, spansToMerges, type SpanColumn } from '@svgrid/grid'
 
-  const columns: ColumnDef<F, Row>[] = [
+  const columns: SpanColumn<Row>[] = [
     { id: 'region', field: 'region',
       // merge each vertical run of equal regions
       rowSpan: ({ data, rowIndex }) => {

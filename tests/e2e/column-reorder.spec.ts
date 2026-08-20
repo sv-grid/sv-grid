@@ -54,10 +54,11 @@ async function dragHeader(
 
 test.describe('column reorder (engine, real browser)', () => {
   test.beforeEach(async ({ page }) => {
-    // Reset persisted order so each test starts from the natural one.
-    await page.addInitScript(() => {
-      try { window.localStorage.removeItem('sv-109-column-order') } catch { /* ignore */ }
-    })
+    // No storage reset here on purpose. Playwright gives each test a fresh
+    // browser context, so localStorage already starts empty and the grid
+    // mounts in its natural order. The addInitScript reset that used to sit
+    // here re-ran on EVERY navigation, including the reload in the
+    // persistence test below, wiping the order it was meant to verify.
     await page.goto(DEMO)
     // Wait for the grid to mount and emit its initial column set.
     await page.locator('th[data-svgrid-header-col]').first().waitFor()

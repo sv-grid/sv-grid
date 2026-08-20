@@ -73,11 +73,15 @@ headless if you are building your own row layout:
 import { createSvelteVirtualizer } from '@svgrid/grid'
 
 const virtualizer = createSvelteVirtualizer({
-  count: () => rows.length,
-  getScrollElement: () => scrollEl,
+  count: rows.length,
   estimateSize: (index) => rows[index]!.tall ? 80 : 36,
+  viewportHeight: scrollEl.clientHeight,
   overscan: 6,
 })
+
+// It owns no DOM. Feed it your scroller's numbers as they change:
+virtualizer.setScrollOffset(scrollEl.scrollTop)
+virtualizer.setViewportHeight(scrollEl.clientHeight)
 ```
 
 See [`packages/grid/src/virtualization/`](../../../packages/grid/src/virtualization/).

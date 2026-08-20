@@ -26,6 +26,8 @@ node ids, and you return that node's direct children:
 <script lang="ts">
   import { SvGrid, createServerGroupModel, serverGroupRows, SvGroupCell, renderComponent } from '@svgrid/grid'
 
+  type Node = { id: string; name: string; expandable: boolean }
+
   const ctl = createServerGroupModel<Node>(source, {
     treeData: true,
     getRowId: (n) => n.id,

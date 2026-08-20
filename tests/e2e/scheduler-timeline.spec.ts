@@ -11,6 +11,33 @@ const ROADMAP = '/sv-grid/#/demos/384-scheduler-app-roadmap'
 const bar = (page: Page, title: string) => page.locator('.sv-sched-tl-bar', { hasText: title })
 const pickView = (page: Page, frag: string) => page.locator('.sv-sched-views button', { hasText: frag }).click()
 
+/**
+ * A point inside a timeline lane that no event bar covers.
+ *
+ * The range-selection tests used to hard-code "3% across the first row, 12px
+ * down", on the assumption that early hours are always empty because blocks
+ * start at 9am. That stopped holding once a multi-day bar spanned the whole
+ * visible Day window: the click landed on the bar, the bar's own handler took
+ * it, and no range marker was ever created. Scan for real empty space instead.
+ */
+async function emptyLanePoint(page: Page) {
+  const lanes = await page.locator('.sv-sched-tl-row:not(.sv-sched-tl-filler) .sv-sched-tl-lanes').all()
+  for (const lane of lanes) {
+    const box = await lane.boundingBox()
+    if (!box) continue
+    for (let frac = 0.03; frac < 0.95; frac += 0.04) {
+      const x = box.x + box.width * frac
+      const y = box.y + box.height / 2
+      const onBar = await page.evaluate(
+        ([px, py]) => !!(document.elementFromPoint(px!, py!) as HTMLElement | null)?.closest('.sv-sched-tl-bar'),
+        [x, y],
+      )
+      if (!onBar) return { x, y }
+    }
+  }
+  throw new Error('no empty spot in any timeline lane')
+}
+
 async function drag(page: Page, fromX: number, fromY: number, toX: number, toY: number) {
   await page.mouse.move(fromX, fromY)
   await page.mouse.down()
@@ -108,8 +135,8 @@ test.describe('scheduler timeline (real browser)', () => {
     await pickView(page, 'Day')
     await page.waitForTimeout(200)
     const before = await page.locator('.sv-sched-tl-bar').count()
-    const lanes = (await page.locator('.sv-sched-tl-lanes').first().boundingBox())!
-    await page.mouse.click(lanes.x + lanes.width * 0.03, lanes.y + 12)
+    const spot = await emptyLanePoint(page)
+    await page.mouse.click(spot.x, spot.y)
     // A click marks a single cell (one continuous timeline band), nothing created.
     await expect(page.locator('.sv-sched-select-mirror')).toHaveCount(1)
     await expect(page.locator('.sv-sched-tl-bar')).toHaveCount(before)
@@ -129,8 +156,8 @@ test.describe('scheduler timeline (real browser)', () => {
     await pickView(page, 'Day')
     await page.waitForTimeout(200)
     const before = await page.locator('.sv-sched-tl-bar').count()
-    const lanes = (await page.locator('.sv-sched-tl-lanes').first().boundingBox())!
-    await page.mouse.click(lanes.x + lanes.width * 0.03, lanes.y + 12)
+    const spot = await emptyLanePoint(page)
+    await page.mouse.click(spot.x, spot.y)
     await expect(page.locator('.sv-sched-select-mirror')).toHaveCount(1)
     await page.keyboard.press('Escape')
     await expect(page.locator('.sv-sched-select-mirror')).toHaveCount(0)

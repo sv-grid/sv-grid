@@ -3,8 +3,9 @@
 > Step 1 of 6 · [Next: First grid →](./2-first-grid.md)
 
 SvGrid is a single npm package. There is no peer dependency on a CSS
-framework - bring your own, or use the default theme that ships with
-the render component.
+framework - bring your own, or import one of the 20 themes that ship
+with it. Each theme carries a light and a dark palette, so dark mode is
+an attribute, not a second stylesheet.
 
 ![Two install paths side by side: scaffold a ready-wired project with npm create @svgrid@latest, or add the @svgrid/grid package manually and import SvGrid into your markup.](/docs-media/gs-install.svg)
 
@@ -59,6 +60,43 @@ A 5-line smoke test:
 ```
 
 If you see a styled `<table>` with two rows, you're done.
+
+## Pick a theme
+
+The render component ships its own styles, so the grid is readable the
+moment it mounts. It is deliberately plain, though: no preset is applied
+until you ask for one. Import a theme to change that.
+
+```ts
+import '@svgrid/grid/themes/shadcn.css'
+```
+
+Twenty are available: `ember` (SvGrid's own look), `shadcn`, `tailwind`,
+`material`, `fluent`, `carbon`, `antd`, `bootstrap`, `atlassian`,
+`salesforce`, `sap`, `github`, `linear`, `notion`, `vercel`, `excel`,
+`nord`, `dracula`, `catppuccin`, `ag-alpine`.
+
+Each one declares the whole `--sg-*` token set twice: once on `:root` and
+once under `:root[data-theme='dark']`. So dark mode is one attribute on
+the document, and the grid follows:
+
+```ts
+document.documentElement.dataset.theme = 'dark'
+```
+
+Two things worth knowing before you wire this into an existing app:
+
+- **Set `color-scheme` too.** Without it the browser keeps painting native
+  scrollbars, form controls and the page canvas light, so a dark grid sits
+  in a light frame. `:root { color-scheme: light }` plus
+  `:root[data-theme='dark'] { color-scheme: dark }` is the whole fix.
+- **Apply the attribute before the first paint.** Setting it from a
+  component means the page renders in the wrong palette for a frame. An
+  inline script in `index.html` (or `app.html` in SvelteKit) that reads
+  `localStorage` avoids the flash.
+
+The scaffolded starters do both already. [Step 5](./5-theme-and-density.md)
+covers overriding individual tokens, per-instance theming and density.
 
 ## Enterprise add-on (optional)
 

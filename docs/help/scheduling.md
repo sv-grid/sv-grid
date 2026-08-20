@@ -90,7 +90,7 @@ it once when your view mounts and stop it on teardown.
   import { createScheduler } from '@svgrid/enterprise'
   import { toast, type SvGridApi } from '@svgrid/grid'
 
-  let api = $state<SvGridApi | null>(null)
+  let api = $state<SvGridApi<typeof features, Row> | null>(null)
 
   $effect(() => {
     if (!api) return
@@ -237,10 +237,10 @@ can add, remove, or toggle schedules at runtime and the next tick picks up the
 change.
 
 ```ts
-// Save
-localStorage.setItem('schedules', JSON.stringify(schedules))
 // Restore
 const schedules: Schedule[] = JSON.parse(localStorage.getItem('schedules') ?? '[]')
+// Save
+localStorage.setItem('schedules', JSON.stringify(schedules))
 ```
 
 ## Building a schedules panel

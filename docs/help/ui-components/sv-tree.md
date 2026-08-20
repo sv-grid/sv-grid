@@ -36,9 +36,9 @@ import { SvTree } from '@svgrid/grid'
 
 ```svelte
 <script lang="ts">
-  import { SvTree, type TreeNode } from '@svgrid/grid'
+  import { SvTree, type SvTreeNode } from '@svgrid/grid'
   let selected = $state<string | null>(null)
-  const nodes: TreeNode[] = [
+  const nodes: SvTreeNode[] = [
     { id: 'src', label: 'src', children: [
       { id: 'app', label: 'App.svelte' },
       { id: 'main', label: 'main.ts' },
@@ -53,7 +53,7 @@ import { SvTree } from '@svgrid/grid'
 
 | Prop              | Type                                                    | Default        | Description                                                    |
 | ----------------- | ------------------------------------------------------- | -------------- | -------------------------------------------------------------- |
-| `nodes`           | `ReadonlyArray<TreeNode>`                               | -              | The tree data.                                                 |
+| `nodes`           | `ReadonlyArray<SvTreeNode>`                               | -              | The tree data.                                                 |
 | `selected`        | `string \| null`                                        | `null`         | Selected node id (single-select highlight).                    |
 | `onSelect`        | `(id: string) => void`                                  | -              | Fires when a node is selected.                                 |
 | `expandedIds`     | `string[]`                                              | -              | Controlled/initial expanded ids.                               |
@@ -66,7 +66,7 @@ import { SvTree } from '@svgrid/grid'
 | `virtual`         | `boolean`                                               | `false`        | Window rows (render only the visible slice). Needs `height`.   |
 | `rowHeight`       | `number`                                                | `30`           | Fixed row height in px (must match the CSS).                   |
 | `height`          | `number`                                                | -              | Scroll-viewport height in px. Required for `virtual`.          |
-| `loadChildren`    | `(node: TreeNode) => Promise<TreeNode[]>`              | -              | Lazy-load a `lazy` node's children on first expand.            |
+| `loadChildren`    | `(node: SvTreeNode) => Promise<SvTreeNode[]>`              | -              | Lazy-load a `lazy` node's children on first expand.            |
 | `filter`          | `string`                                                | -              | Show only matching nodes and their ancestors, auto-expanded.   |
 | `searchable`      | `boolean`                                               | `false`        | Render a built-in search box that drives the filter.           |
 | `searchPlaceholder` | `string`                                              | `Search...`    | Placeholder for the search box.                                |
@@ -76,7 +76,7 @@ import { SvTree } from '@svgrid/grid'
 | `reorderable`     | `boolean`                                               | `false`        | Allow drag-drop reorder; fires `onMove`.                        |
 | `onMove`          | `(dragId, targetId, position) => void`                | -              | Drop event; apply with the exported `moveTreeNode` helper.     |
 
-`TreeNode` (exported): `{ id: string; label: string; children?: TreeNode[]; disabled?: boolean; lazy?: boolean }`.
+`SvTreeNode` (exported): `{ id: string; label: string; children?: SvTreeNode[]; disabled?: boolean; lazy?: boolean }`.
 Set `lazy: true` on a node to show an expand arrow before its children exist and
 load them via `loadChildren`.
 
@@ -129,15 +129,15 @@ box filters what has loaded so far:
 
 ```svelte
 <script lang="ts">
-  import { SvTree, type TreeNode } from '@svgrid/grid'
+  import { SvTree, type SvTreeNode } from '@svgrid/grid'
 
-  let nodes = $state<TreeNode[]>([
+  let nodes = $state<SvTreeNode[]>([
     { id: 'docs', label: 'Documents', lazy: true },
     { id: 'media', label: 'Media', lazy: true },
   ])
   let selected = $state<string | null>(null)
 
-  async function loadChildren(node: TreeNode): Promise<TreeNode[]> {
+  async function loadChildren(node: SvTreeNode): Promise<SvTreeNode[]> {
     const res = await fetch(`/api/fs?dir=${node.id}`)
     const entries: { id: string; name: string; folder: boolean }[] = await res.json()
     return entries.map((e) => ({ id: e.id, label: e.name, lazy: e.folder }))

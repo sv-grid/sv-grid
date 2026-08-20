@@ -1,0 +1,36 @@
+/* ---------------------------------------------------------------------------
+ * Theme.
+ *
+ * @svgrid/grid ships 20 presets, each one a full light AND dark palette on the
+ * --sg-* custom properties: ember, shadcn, tailwind, material, fluent, carbon,
+ * antd, bootstrap, atlassian, salesforce, sap, github, linear, notion, vercel,
+ * excel, nord, dracula, catppuccin, ag-alpine.
+ *
+ * Swap the id below to re-theme the grid and this page together, or delete the
+ * import and declare the tokens yourself. The dark half of every preset hangs
+ * off <html data-theme="dark">, which the toggle in App.svelte writes.
+ *
+ * Token reference: https://svgrid.com/docs/getting-started/5-theme-and-density
+ * ------------------------------------------------------------------------- */
+/* svgrid-theme:start */
+@import '@svgrid/grid/themes/shadcn.css';
+/* svgrid-theme:end */
+
+/* Which way the page leans, so scrollbars, form controls and the canvas behind
+   the app follow the theme instead of staying stubbornly light. */
+:root {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* The page chrome reads the same tokens the grid does, so changing the preset
+   above moves the whole app, not just the table. */
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--sg-bg);
+  color: var(--sg-fg);
+  font-family: var(--sg-font, system-ui, sans-serif);
+}

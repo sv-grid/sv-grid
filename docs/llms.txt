@@ -18,7 +18,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 
 ### Getting started
 
-- [1. Install](https://svgrid.com/docs/getting-started/1-install/): SvGrid is a single npm package. There is no peer dependency on a CSS framework - bring your own, or use the default theme that ships with the render component.
+- [1. Install](https://svgrid.com/docs/getting-started/1-install/): SvGrid is a single npm package. There is no peer dependency on a CSS framework - bring your own, or import one of the 20 themes that ship with it. Each theme carries a light and a dark palette, so …
 - [2. First grid in 60 seconds](https://svgrid.com/docs/getting-started/2-first-grid/): !Anatomy of the minimal example: a data rows array and a columns ColumnDef array flow into a SvGrid element that renders a small table with a header row and three body rows.
 - [3. Data and columns](https://svgrid.com/docs/getting-started/3-data-and-columns/): SvGrid reads two arrays: data (your rows) and columns (the column-definition list). Everything else is opt-in.
 - [4. Features](https://svgrid.com/docs/getting-started/4-features/): Every capability is **off by default** - a bare <SvGrid> is a plain, read-only table. Opt in with boolean props. No imports, no feature constants:

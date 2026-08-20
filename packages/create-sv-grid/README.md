@@ -50,17 +50,21 @@ pnpm create @svgrid my-app -t minimal
 | Flag | Description |
 | --- | --- |
 | `--template`, `-t` | `minimal` or `admin-dashboard` |
-| `--theme <id>` | `admin-dashboard` only. One of `@svgrid/grid`'s 19 built-in presets - shadcn, Tailwind, Material, Excel, Fluent, and more (default: `tailwind`) |
-| `--dark` / `--light` | `admin-dashboard` only. Start in dark or light mode (default: `dark`) |
+| `--theme <id>` | One of `@svgrid/grid`'s 20 built-in presets - shadcn, Tailwind, Material, Excel, Fluent, and more (default: `tailwind`) |
+| `--dark` / `--light` | Start in dark or light mode. `minimal` follows the OS when neither is given |
 | `--force`, `-f` | Scaffold into a non-empty directory |
 | `--help`, `-h` | Show usage |
 
-Choosing `admin-dashboard` interactively also prompts for a theme and light/dark
-mode - or skip the prompts with flags:
+Either template prompts for a theme and a light/dark mode when run
+interactively, or takes them as flags:
 
 ```bash
 npm create @svgrid@latest my-app -- -t admin-dashboard --theme material --light
+npm create @svgrid@latest my-app -- -t minimal --theme nord --dark
 ```
+
+Both ship a working toggle, so the choice is a starting point rather than
+something you are stuck with.
 
 Then:
 

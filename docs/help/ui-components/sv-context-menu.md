@@ -111,7 +111,7 @@ that do not apply rather than hiding them, so the menu keeps a stable shape:
   let row = $state({ id: 1, name: 'Ada', archived: false })
 
   const items: MenuItem[] = $derived([
-    { label: 'Open', shortcut: 'Enter', onSelect: () => open(row) },
+    { label: 'Open', shortcut: 'Enter', onSelect: () => openRow(row) },
     { label: 'Duplicate', onSelect: () => duplicate(row) },
     { separator: true },
     { label: 'Archive', disabled: row.archived, onSelect: () => archive(row) },

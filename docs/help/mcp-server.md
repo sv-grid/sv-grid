@@ -105,7 +105,7 @@ Generate a `ColumnDef[]` from a sample row. Picks reasonable widths,
 inferred editor types, sensible header labels, and format options for
 numbers / currencies / ISO dates.
 
-```ts
+```ts {nocheck}
 scaffoldColumns({
   sampleRow: { id: 'r1', sellDate: '2026-05-12', price: 1499.99, currency: 'USD' },
   inferFormat?: boolean,    // default true

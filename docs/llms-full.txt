@@ -1548,7 +1548,7 @@ const access: StudioProject['access'] = {
 With RBAC on, **Generate app** emits `src/lib/access.ts` - the single policy
 module shared by every screen and route:
 
-```ts
+```ts {nocheck}
 import { writable } from 'svelte/store'
 
 export type AppRole = 'admin' | 'editor' | 'viewer'
@@ -2129,7 +2129,7 @@ import { createProject } from '@svgrid/enterprise'
 let project = $state(createProject([customerSchema, orderSchema], { title: 'Sales App' }))
 ```
 
-```svelte
+```svelte {nocheck}
 <script lang="ts">
   import { SvStudioDesigner } from '@svgrid/enterprise'
 </script>
@@ -4259,7 +4259,7 @@ this table" screen.
 
 ## Usage
 
-```svelte
+```svelte {nocheck}
 <script lang="ts">
   import { SvSchemaDesigner, type EntitySchema } from '@svgrid/enterprise'
 
@@ -4304,7 +4304,7 @@ your backend). Because an `EntitySchema` is plain JSON, "export" is
 `JSON.stringify` and "import" is `JSON.parse` back into `schema` - no special
 format:
 
-```svelte
+```svelte {nocheck}
 <script lang="ts">
   import { SvSchemaDesigner, type EntitySchema } from '@svgrid/enterprise'
 
@@ -9974,8 +9974,9 @@ own dependencies only when used.
 > Step 1 of 6 · [Next: First grid →](./2-first-grid.md)
 
 SvGrid is a single npm package. There is no peer dependency on a CSS
-framework - bring your own, or use the default theme that ships with
-the render component.
+framework - bring your own, or import one of the 20 themes that ship
+with it. Each theme carries a light and a dark palette, so dark mode is
+an attribute, not a second stylesheet.
 
 ![Two install paths side by side: scaffold a ready-wired project with npm create @svgrid@latest, or add the @svgrid/grid package manually and import SvGrid into your markup.](/docs-media/gs-install.svg)
 
@@ -10030,6 +10031,43 @@ A 5-line smoke test:
 ```
 
 If you see a styled `<table>` with two rows, you're done.
+
+## Pick a theme
+
+The render component ships its own styles, so the grid is readable the
+moment it mounts. It is deliberately plain, though: no preset is applied
+until you ask for one. Import a theme to change that.
+
+```ts
+import '@svgrid/grid/themes/shadcn.css'
+```
+
+Twenty are available: `ember` (SvGrid's own look), `shadcn`, `tailwind`,
+`material`, `fluent`, `carbon`, `antd`, `bootstrap`, `atlassian`,
+`salesforce`, `sap`, `github`, `linear`, `notion`, `vercel`, `excel`,
+`nord`, `dracula`, `catppuccin`, `ag-alpine`.
+
+Each one declares the whole `--sg-*` token set twice: once on `:root` and
+once under `:root[data-theme='dark']`. So dark mode is one attribute on
+the document, and the grid follows:
+
+```ts
+document.documentElement.dataset.theme = 'dark'
+```
+
+Two things worth knowing before you wire this into an existing app:
+
+- **Set `color-scheme` too.** Without it the browser keeps painting native
+  scrollbars, form controls and the page canvas light, so a dark grid sits
+  in a light frame. `:root { color-scheme: light }` plus
+  `:root[data-theme='dark'] { color-scheme: dark }` is the whole fix.
+- **Apply the attribute before the first paint.** Setting it from a
+  component means the page renders in the wrong palette for a frame. An
+  inline script in `index.html` (or `app.html` in SvelteKit) that reads
+  `localStorage` avoids the flash.
+
+The scaffolded starters do both already. [Step 5](./5-theme-and-density.md)
+covers overriding individual tokens, per-instance theming and density.
 
 ## Enterprise add-on (optional)
 
@@ -11346,8 +11384,12 @@ const tools = [
 Wire the tool calls back to your live `api` reference:
 
 ```ts
+// Widen past the two seed messages: tool results carry a `tool_call_id`, and
+// an assistant turn carries `tool_calls`.
+type ChatMessage = { role: string; content?: unknown; tool_call_id?: string; [key: string]: unknown }
+
 async function runAgent(prompt: string) {
-  let messages = [
+  const messages: ChatMessage[] = [
     { role: 'system', content: `You drive a data grid. Columns: ${JSON.stringify(api!.getColumns())}.` },
     { role: 'user',   content: prompt },
   ]
@@ -12518,7 +12560,9 @@ conditional formats + flash targets to apply:
 ```ts
 import { attachAlertEngine, localStorageAlertRules } from '@svgrid/enterprise'
 
-const attach = attachAlertEngine({
+// Pass your row type: without it TData defaults to Record<string, unknown>
+// and `r.id` comes back as `unknown`.
+const attach = attachAlertEngine<Row>({
   rules,
   getRowId: (r) => r.id,
   getData: () => currentRows,
@@ -15771,9 +15815,11 @@ as option 1 (no separate code path).
 
 ```svelte
 <script lang="ts">
-  import { spreadsheetLayout, spansToMerges, type ColumnDef } from '@svgrid/grid'
+  // `SpanColumn` rather than `ColumnDef`: `spansToMerges` needs `id` to be
+  // present, and on a ColumnDef it is optional.
+  import { spreadsheetLayout, spansToMerges, type SpanColumn } from '@svgrid/grid'
 
-  const columns: ColumnDef<F, Row>[] = [
+  const columns: SpanColumn<Row>[] = [
     { id: 'region', field: 'region',
       // merge each vertical run of equal regions
       rowSpan: ({ data, rowIndex }) => {
@@ -19239,14 +19285,14 @@ When a column has tens of thousands of distinct values, you don't want to pre-re
 let state = $state<{
   status: 'idle' | 'loading' | 'ready' | 'error'
   values: string[]
-}>({ state: 'idle', values: [] })
+}>({ status: 'idle', values: [] })
 let selected = $state<Set<string>>(new Set())
 
 async function loadValues() {
-  state = { state: 'loading', values: [] }
+  state = { status: 'loading', values: [] }
   const res = await fetch('/api/orders/customers')
   const values = await res.json()
-  state = { state: 'ready', values }
+  state = { status: 'ready', values }
 }
 
 function toggle(value: string) {
@@ -19302,7 +19348,7 @@ See demo 111 ("Tree" card) and [demo 102: Tree checkbox cascade](#/demos/102-tre
 
 ## API surface
 
-```ts
+```ts {nocheck}
 type SvGridApi<…> = {
   // Set a multi-select set filter. Pass null or [] to clear.
   setFacetFilter(columnId: string, values: ReadonlyArray<string> | null): void
@@ -21884,7 +21930,7 @@ Generate a `ColumnDef[]` from a sample row. Picks reasonable widths,
 inferred editor types, sensible header labels, and format options for
 numbers / currencies / ISO dates.
 
-```ts
+```ts {nocheck}
 scaffoldColumns({
   sampleRow: { id: 'r1', sellDate: '2026-05-12', price: 1499.99, currency: 'USD' },
   inferFormat?: boolean,    // default true
@@ -27205,11 +27251,15 @@ headless if you are building your own row layout:
 import { createSvelteVirtualizer } from '@svgrid/grid'
 
 const virtualizer = createSvelteVirtualizer({
-  count: () => rows.length,
-  getScrollElement: () => scrollEl,
+  count: rows.length,
   estimateSize: (index) => rows[index]!.tall ? 80 : 36,
+  viewportHeight: scrollEl.clientHeight,
   overscan: 6,
 })
+
+// It owns no DOM. Feed it your scroller's numbers as they change:
+virtualizer.setScrollOffset(scrollEl.scrollTop)
+virtualizer.setViewportHeight(scrollEl.clientHeight)
 ```
 
 See [`packages/grid/src/virtualization/`](../../../packages/grid/src/virtualization/).
@@ -28865,6 +28915,8 @@ visible depends on its ancestors' expanded state.
 Three pieces of state, the third one derived:
 
 ```ts
+type Node = { id: string; parentId: string | null; childIds: string[]; depth: number }
+
 let allRows = $state<Node[]>(/* every node, flat */)
 let expanded = $state<Record<string, boolean>>({ root: true })
 
@@ -29016,6 +29068,8 @@ that runs after every leaf edit and writes the result back onto the
 parent rows:
 
 ```ts
+type Node = { id: string; childIds: string[]; depth: number; subtotal: number }
+
 function recompute(rows: Node[]): Node[] {
   const byId = new Map(rows.map((r) => [r.id, { ...r }]))
   // post-order DFS: deepest first so each parent already has updated children
@@ -29432,7 +29486,7 @@ it once when your view mounts and stop it on teardown.
   import { createScheduler } from '@svgrid/enterprise'
   import { toast, type SvGridApi } from '@svgrid/grid'
 
-  let api = $state<SvGridApi | null>(null)
+  let api = $state<SvGridApi<typeof features, Row> | null>(null)
 
   $effect(() => {
     if (!api) return
@@ -29579,10 +29633,10 @@ can add, remove, or toggle schedules at runtime and the next tick picks up the
 change.
 
 ```ts
-// Save
-localStorage.setItem('schedules', JSON.stringify(schedules))
 // Restore
 const schedules: Schedule[] = JSON.parse(localStorage.getItem('schedules') ?? '[]')
+// Save
+localStorage.setItem('schedules', JSON.stringify(schedules))
 ```
 
 ## Building a schedules panel
@@ -30533,9 +30587,9 @@ each keystroke should not become its own round trip.
 ```svelte
 <script lang="ts">
   import { SvGrid } from '@svgrid/grid'
-  import { createServerDataSource, type ServerFilterModel } from '@svgrid/grid'
+  import { createServerDataSource, type ServerFilterModel, type ServerState } from '@svgrid/grid'
 
-  let view = $state({ rows: [], loading: false, total: 0 })
+  let view = $state<ServerState<Row>>()
   const ctl = createServerDataSource(source, {
     pageSize: 50,
     onChange: (s) => (view = s),
@@ -30555,15 +30609,17 @@ each keystroke should not become its own round trip.
   }
 </script>
 
-<SvGrid
-  data={view.rows}
-  {columns} {features}
-  filterable
-  externalFilter
-  loading={view.loading}
-  pageable={false}
-  {onFiltersChange}
-/>
+{#if view}
+  <SvGrid
+    data={view.rows}
+    {columns} {features}
+    filterable
+    externalFilter
+    loading={view.loading}
+    pageable={false}
+    {onFiltersChange}
+  />
+{/if}
 ```
 
 `setFilter` resets to page 0 and re-fetches, so a new filter always shows its
@@ -31513,6 +31569,8 @@ node ids, and you return that node's direct children:
 ```svelte
 <script lang="ts">
   import { SvGrid, createServerGroupModel, serverGroupRows, SvGroupCell, renderComponent } from '@svgrid/grid'
+
+  type Node = { id: string; name: string; expandable: boolean }
 
   const ctl = createServerGroupModel<Node>(source, {
     treeData: true,
@@ -33135,7 +33193,10 @@ without a DOM.
 
 ```ts
 import { describe, it, expect } from 'vitest'
-import { createSvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
+import {
+  createSvGrid, tableFeatures, rowSortingFeature,
+  createCoreRowModel, createSortedRowModel, sortFns,
+} from '@svgrid/grid'
 
 describe('sort behaviour', () => {
   it('sorts by a single column ascending', () => {
@@ -33152,8 +33213,15 @@ describe('sort behaviour', () => {
         { field: 'name', header: 'Name' },
       ],
       _features: features,
+      // Opt into the row models you assert on. The headless grid composes
+      // them explicitly, so a grid built without `sortedRowModel` returns
+      // rows in source order no matter what `sorting` says.
+      _rowModels: {
+        coreRowModel: createCoreRowModel(),
+        sortedRowModel: createSortedRowModel(sortFns),
+      },
+      state: { sorting: [{ id: 'name', desc: false }] },
     })
-    grid.setSort([{ id: 'name', desc: false }])
     const visible = grid.getRowModel().rows.map((r) => r.original.name)
     expect(visible).toEqual(['Alice', 'Bob', 'Charlie'])
   })
@@ -33749,7 +33817,7 @@ npx @svgrid/ui add button --preview
 ```
 
 `try` needs no project - it caches a tiny sandbox under your temp dir (so repeat
-runs are instant) and opens the browser, with a theme picker (all 19 presets) and
+runs are instant) and opens the browser, with a theme picker (all 20 presets) and
 a light/dark toggle so you can preview the component in your target theme. Pass
 **several component ids** (or a group id) and they all render together in the same
 sandbox - handy for comparing a set side by side. `--preview` drops a
@@ -34153,9 +34221,11 @@ reactive state, actions, and **prop-getters** you spread onto your own elements.
 
 ```svelte
 <script lang="ts">
-  import { createListbox } from '@svgrid/grid'
+  import { createListbox, type ListboxValue } from '@svgrid/grid'
 
-  let value = $state<string | null>(null)
+  // `ListboxValue` covers every selection shape the primitive can hand back:
+  // a single value, an array, or a Set when `multiple` is on.
+  let value = $state<ListboxValue>(null)
   const options = [
     { value: 'a', label: 'Apple' },
     { value: 'b', label: 'Banana' },
@@ -34234,6 +34304,7 @@ and panel and spreads `dialogProps()` for the ARIA:
 ```svelte
 <script lang="ts">
   import { createOverlay } from '@svgrid/grid'
+  let open = $state(false)
   let dialogEl = $state<HTMLElement | null>(null)
   const overlay = createOverlay({
     open: () => open,
@@ -37490,11 +37561,12 @@ filter, and a trailing action resets them all:
 ```svelte
 <script lang="ts">
   import { SvChip, SvButton } from '@svgrid/grid'
-  let filters = $state([
+  type Filter = { key: string; label: string; variant: 'accent' | 'info' | 'danger' }
+  let filters = $state<Filter[]>([
     { key: 'status', label: 'Status: Open', variant: 'accent' },
     { key: 'owner', label: 'Owner: Me', variant: 'info' },
     { key: 'due', label: 'Overdue', variant: 'danger' },
-  ] as const)
+  ])
 
   const remove = (key: string) => (filters = filters.filter((f) => f.key !== key))
 </script>
@@ -38299,7 +38371,7 @@ that do not apply rather than hiding them, so the menu keeps a stable shape:
   let row = $state({ id: 1, name: 'Ada', archived: false })
 
   const items: MenuItem[] = $derived([
-    { label: 'Open', shortcut: 'Enter', onSelect: () => open(row) },
+    { label: 'Open', shortcut: 'Enter', onSelect: () => openRow(row) },
     { label: 'Duplicate', onSelect: () => duplicate(row) },
     { separator: true },
     { label: 'Archive', disabled: row.archived, onSelect: () => archive(row) },
@@ -47698,9 +47770,9 @@ import { SvTree } from '@svgrid/grid'
 
 ```svelte
 <script lang="ts">
-  import { SvTree, type TreeNode } from '@svgrid/grid'
+  import { SvTree, type SvTreeNode } from '@svgrid/grid'
   let selected = $state<string | null>(null)
-  const nodes: TreeNode[] = [
+  const nodes: SvTreeNode[] = [
     { id: 'src', label: 'src', children: [
       { id: 'app', label: 'App.svelte' },
       { id: 'main', label: 'main.ts' },
@@ -47715,7 +47787,7 @@ import { SvTree } from '@svgrid/grid'
 
 | Prop              | Type                                                    | Default        | Description                                                    |
 | ----------------- | ------------------------------------------------------- | -------------- | -------------------------------------------------------------- |
-| `nodes`           | `ReadonlyArray<TreeNode>`                               | -              | The tree data.                                                 |
+| `nodes`           | `ReadonlyArray<SvTreeNode>`                               | -              | The tree data.                                                 |
 | `selected`        | `string \| null`                                        | `null`         | Selected node id (single-select highlight).                    |
 | `onSelect`        | `(id: string) => void`                                  | -              | Fires when a node is selected.                                 |
 | `expandedIds`     | `string[]`                                              | -              | Controlled/initial expanded ids.                               |
@@ -47728,7 +47800,7 @@ import { SvTree } from '@svgrid/grid'
 | `virtual`         | `boolean`                                               | `false`        | Window rows (render only the visible slice). Needs `height`.   |
 | `rowHeight`       | `number`                                                | `30`           | Fixed row height in px (must match the CSS).                   |
 | `height`          | `number`                                                | -              | Scroll-viewport height in px. Required for `virtual`.          |
-| `loadChildren`    | `(node: TreeNode) => Promise<TreeNode[]>`              | -              | Lazy-load a `lazy` node's children on first expand.            |
+| `loadChildren`    | `(node: SvTreeNode) => Promise<SvTreeNode[]>`              | -              | Lazy-load a `lazy` node's children on first expand.            |
 | `filter`          | `string`                                                | -              | Show only matching nodes and their ancestors, auto-expanded.   |
 | `searchable`      | `boolean`                                               | `false`        | Render a built-in search box that drives the filter.           |
 | `searchPlaceholder` | `string`                                              | `Search...`    | Placeholder for the search box.                                |
@@ -47738,7 +47810,7 @@ import { SvTree } from '@svgrid/grid'
 | `reorderable`     | `boolean`                                               | `false`        | Allow drag-drop reorder; fires `onMove`.                        |
 | `onMove`          | `(dragId, targetId, position) => void`                | -              | Drop event; apply with the exported `moveTreeNode` helper.     |
 
-`TreeNode` (exported): `{ id: string; label: string; children?: TreeNode[]; disabled?: boolean; lazy?: boolean }`.
+`SvTreeNode` (exported): `{ id: string; label: string; children?: SvTreeNode[]; disabled?: boolean; lazy?: boolean }`.
 Set `lazy: true` on a node to show an expand arrow before its children exist and
 load them via `loadChildren`.
 
@@ -47791,15 +47863,15 @@ box filters what has loaded so far:
 
 ```svelte
 <script lang="ts">
-  import { SvTree, type TreeNode } from '@svgrid/grid'
+  import { SvTree, type SvTreeNode } from '@svgrid/grid'
 
-  let nodes = $state<TreeNode[]>([
+  let nodes = $state<SvTreeNode[]>([
     { id: 'docs', label: 'Documents', lazy: true },
     { id: 'media', label: 'Media', lazy: true },
   ])
   let selected = $state<string | null>(null)
 
-  async function loadChildren(node: TreeNode): Promise<TreeNode[]> {
+  async function loadChildren(node: SvTreeNode): Promise<SvTreeNode[]> {
     const res = await fetch(`/api/fs?dir=${node.id}`)
     const entries: { id: string; name: string; folder: boolean }[] = await res.json()
     return entries.map((e) => ({ id: e.id, label: e.name, lazy: e.folder }))
@@ -54213,9 +54285,12 @@ import {
   installEnterprise, setLicenseKey,
   exportGrid, printGrid, importData,
   createPivotModel, pivotAggregators,
-  setAIProvider, aiFilter, aiSmartFill, aiSummarize, aiClassify,
   type EnterpriseGridApi, type ExportOptions, type ImportOptions, type PivotConfig,
 } from '@svgrid/enterprise'
+
+// The AI helpers are free and live in the community package. Enterprise only
+// registers its export engine so an AI-planned Excel / PDF export can run.
+import { setAIProvider, aiFilter, aiSmartFill, aiSummarize, aiClassify } from '@svgrid/grid'
 ```
 
 ## License
@@ -54457,7 +54532,10 @@ import type {
   PivotRow,
   PivotRowKind,
   PivotValueConfig,
+} from '@svgrid/enterprise'
 
+// AI types come from the community package alongside the helpers themselves.
+import type {
   AIProvider,
   AIRequest,
   AITask,
@@ -54473,7 +54551,7 @@ import type {
   AISummary,
   AIClassifyOptions,
   AIClassifyResult,
-} from '@svgrid/enterprise'
+} from '@svgrid/grid'
 ```
 
 <!-- =================================================================

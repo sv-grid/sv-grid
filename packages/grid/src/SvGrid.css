@@ -1012,6 +1012,11 @@
   width: 16px;
   height: 16px;
   margin: 0 auto;
+  /* The UA stylesheet gives <button> "padding: 1px 6px" on top of
+     "box-sizing: border-box", which leaves 2px of content width inside the
+     16px box. The glyphs below then shrink to a sliver, and the tick renders
+     as a bare slanted line. Guarded by tests/e2e/selection-checkbox.spec.ts. */
+  padding: 0;
   border: 1px solid var(--sg-input-border, #8794a8);
   border-radius: 4px;
   background: var(--sg-input-bg, #fff);
@@ -1089,6 +1094,7 @@ select.sv-grid-fr-editor {
 
 .sv-grid-checkbox[aria-checked="true"]::after {
   content: "";
+  flex: none;
   width: 5px;
   height: 9px;
   border-right: 2px solid currentColor;
@@ -1098,6 +1104,7 @@ select.sv-grid-fr-editor {
 
 .sv-grid-checkbox[aria-checked="mixed"]::after {
   content: "";
+  flex: none;
   width: 8px;
   height: 2px;
   border-radius: 1px;
@@ -2391,6 +2398,9 @@ select.sv-grid-fr-editor {
 .sv-grid-find-step, .sv-grid-find-close {
   display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px;
+  /* Same fixed-box + UA <button> padding trap as .sv-grid-checkbox: without
+     this reset the 6px side padding squeezes the icon inside the 22px box. */
+  padding: 0;
   background: transparent;
   border: 0;
   color: var(--sg-muted, #64748b);

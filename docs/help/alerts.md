@@ -147,7 +147,9 @@ conditional formats + flash targets to apply:
 ```ts
 import { attachAlertEngine, localStorageAlertRules } from '@svgrid/enterprise'
 
-const attach = attachAlertEngine({
+// Pass your row type: without it TData defaults to Record<string, unknown>
+// and `r.id` comes back as `unknown`.
+const attach = attachAlertEngine<Row>({
   rules,
   getRowId: (r) => r.id,
   getData: () => currentRows,

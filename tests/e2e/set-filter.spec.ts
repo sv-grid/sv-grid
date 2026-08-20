@@ -44,18 +44,19 @@ test.describe('set filter - tree / async / Excel (real browser)', () => {
   })
 
   test('tree card: clicking a region checks all descendants and filters the grid', async ({ page }) => {
-    const startCount = await rowCount(page)
-
     // Find the "Americas" tree node by its label text.
     const americas = page.locator('.tree li.tree-node', { hasText: 'Americas' }).first()
     const checkbox = americas.locator('input[type="checkbox"]')
     await checkbox.check()
 
-    // The grid should narrow to Americas rows only.
-    await expect.poll(async () => {
-      const count = await rowCount(page)
-      return count > 0 && count < startCount
-    }).toBe(true)
+    // Assert on the region values on screen, not on a row count. The body is
+    // virtualized and Americas is roughly a third of the 320 rows, so the
+    // rendered window stays full and its length does not move.
+    await expect.poll(async () =>
+      page.$$eval('tbody.sv-grid-body td[data-col-id="region"]', (els) =>
+        [...new Set(els.map((el) => (el.textContent ?? '').trim()))],
+      ),
+    ).toEqual(['Americas'])
   })
 
   test('tree "Clear" button restores all rows', async ({ page }) => {

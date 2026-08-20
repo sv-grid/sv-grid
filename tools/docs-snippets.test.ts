@@ -12,9 +12,18 @@
  *   - `expect-error` - block MUST fail to type-check (one line)
  */
 import { readFile, readdir } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import ts from 'typescript'
+
+/** Stable id for a snippet body: survives the block moving down a page, changes
+ *  the moment the code itself does. Line endings and trailing whitespace are
+ *  normalised so a CRLF checkout keys the same as an LF one. */
+function baselineKey(code: string): string {
+  const normalized = code.replace(/\r\n/g, '\n').replace(/[ \t]+$/gm, '').trim()
+  return createHash('sha1').update(normalized).digest('hex').slice(0, 8)
+}
 
 const DOCS_DIR = join(process.cwd(), 'docs')
 const TMP_DIR  = join(process.cwd(), 'node_modules', '.cache', 'docs-snippets')
@@ -164,37 +173,36 @@ const IGNORE_CODES = new Set<number>([
   2312, 2422, 2365, // `type X extends ...` / operator on a fragment type
 ])
 
-// Pre-existing failures in NON-Studio docs: illustrative fragments and a few
-// genuine nits outside this effort's scope (some - setSort/setSorting/set-filter
-// `state` - look like real API drift worth a separate cleanup). The gate stays
-// green on exactly these, but FAILS on any NEW failure anywhere (all of
-// enterprise/studio/** is held to zero). Trim as the underlying docs are fixed.
+// Pre-existing failures in NON-Studio docs: illustrative fragments the harness
+// can't compile in isolation. The gate stays green on exactly these, but FAILS
+// on any NEW failure anywhere (all of enterprise/studio/** is held to zero).
+// Trim as the underlying docs are fixed.
+//
+// Entries are `path:<first 8 chars of a sha1 over the snippet body>`, NOT
+// `path:line`. Line keys silently rotted once: a bulk docs pass inserted an
+// image + blank line near the top of many pages, every snippet below shifted by
+// two lines, and all 25 baseline entries stopped matching at once - so a
+// long-known-broken snippet reported as a fresh failure. A content hash only
+// stops matching when the snippet itself changes, which is exactly when the
+// entry SHOULD be re-examined. `npx vitest run tools/docs-snippets.test.ts`
+// prints the key for every failure, so refreshing an entry is a copy-paste.
 const KNOWN_BASELINE = new Set<string>([
-  'docs/getting-started/6-going-to-production.md:172',
-  'docs/getting-started-full.md:692',
-  'docs/help/agents.md:105',
-  'docs/help/columns/column-spanning.md:37',
-  'docs/help/filtering/set-filter.md:41',
-  'docs/help/filtering/set-filter.md:108',
-  'docs/help/mcp-server.md:106',
-  'docs/help/migrating-from-ag-grid.md:86',
-  'docs/help/rows/row-height.md:40',
-  'docs/help/rows/row-pinning.md:16',
-  'docs/help/rows/row-pinning.md:25',
-  'docs/help/rows/tree-rows.md:25',
-  'docs/help/rows/tree-rows.md:176',
-  'docs/help/testing.md:34',
-  'docs/recipes/testing-your-grid.md:24',
-  'docs/reference/enterprise.md:36',
-  'docs/reference/enterprise.md:176',
-  'docs/reference/features.md:44',
-  'docs/reference/SvGridApi.md:58',
-  'docs/reference/SvGridApi.md:67',
-  'docs/reference/SvGridApi.md:78',
-  'docs/reference/SvGridApi.md:129',
-  'docs/reference/SvGridApi.md:169',
-  'docs/reference/SvGridApi.md:179',
-  'docs/why-headless.md:91',
+  'docs/getting-started-full.md:c835e035',
+  'docs/getting-started/6-going-to-production.md:47cffe6c',
+  'docs/help/migrating-from-ag-grid.md:be932e82',
+  'docs/help/rows/row-pinning.md:695aff46',
+  'docs/help/rows/row-pinning.md:9e2fa435',
+  'docs/recipes/testing-your-grid.md:6b8d07c0',
+  'docs/reference/SvGridApi.md:02669eaf',
+  'docs/reference/SvGridApi.md:5787f496',
+  'docs/reference/SvGridApi.md:87f965ee',
+  'docs/reference/SvGridApi.md:b6498452',
+  'docs/reference/SvGridApi.md:bc9c8ef0',
+  'docs/reference/SvGridApi.md:f3990cc9',
+  'docs/reference/enterprise.md:15f04d04',
+  'docs/reference/enterprise.md:1fca2f9e',
+  'docs/reference/features.md:adba5b56',
+  'docs/why-headless.md:d4845f42',
 ])
 
 describe('docs code snippets', () => {
@@ -216,12 +224,16 @@ describe('docs code snippets', () => {
     const failures: string[] = []
     for (const s of all) {
       const diagnostics = compile(s)
-      const loc = `${relative(process.cwd(), s.file).replace(/\\/g, '/')}:${s.line}`
+      const rel = relative(process.cwd(), s.file).replace(/\\/g, '/')
+      // `path:line` for humans (jump straight to it), `path:hash` for the
+      // baseline lookup - see the KNOWN_BASELINE note on why not line numbers.
+      const loc = `${rel}:${s.line}`
+      const key = `${rel}:${baselineKey(s.code)}`
       const expectError = s.flags.has('expect-error')
       if (expectError && diagnostics.length === 0) {
         failures.push(`${loc} - flagged \`expect-error\` but compiled clean`)
-      } else if (!expectError && diagnostics.length > 0 && !KNOWN_BASELINE.has(loc)) {
-        failures.push(`${loc}\n  ${diagnostics.join('\n  ')}`)
+      } else if (!expectError && diagnostics.length > 0 && !KNOWN_BASELINE.has(key)) {
+        failures.push(`${loc}  [baseline key: ${key}]\n  ${diagnostics.join('\n  ')}`)
       }
     }
 

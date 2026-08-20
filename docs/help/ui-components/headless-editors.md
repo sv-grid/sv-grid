@@ -12,9 +12,11 @@ reactive state, actions, and **prop-getters** you spread onto your own elements.
 
 ```svelte
 <script lang="ts">
-  import { createListbox } from '@svgrid/grid'
+  import { createListbox, type ListboxValue } from '@svgrid/grid'
 
-  let value = $state<string | null>(null)
+  // `ListboxValue` covers every selection shape the primitive can hand back:
+  // a single value, an array, or a Set when `multiple` is on.
+  let value = $state<ListboxValue>(null)
   const options = [
     { value: 'a', label: 'Apple' },
     { value: 'b', label: 'Banana' },
@@ -93,6 +95,7 @@ and panel and spreads `dialogProps()` for the ARIA:
 ```svelte
 <script lang="ts">
   import { createOverlay } from '@svgrid/grid'
+  let open = $state(false)
   let dialogEl = $state<HTMLElement | null>(null)
   const overlay = createOverlay({
     open: () => open,

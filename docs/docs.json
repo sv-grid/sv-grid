@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-19T22:55:53.574Z",
+  "generatedAt": "2026-08-19T23:33:22.242Z",
   "counts": {
     "pages": 361,
     "enterprise": 54,
@@ -782,8 +782,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Auth & security",
-      "words": 1208,
-      "lastUpdated": "2026-08-18",
+      "words": 1209,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -834,7 +834,7 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 3631,
+      "words": 3632,
       "lastUpdated": "2026-08-19",
       "demoIds": []
     },
@@ -990,8 +990,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 589,
-      "lastUpdated": "2026-08-12",
+      "words": 591,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -1408,12 +1408,12 @@
       "path": "getting-started/1-install.md",
       "url": "/docs/getting-started/1-install/",
       "title": "1. Install",
-      "summary": "SvGrid is a single npm package. There is no peer dependency on a CSS framework - bring your own, or use the default theme that ships with the render component.",
+      "summary": "SvGrid is a single npm package. There is no peer dependency on a CSS framework - bring your own, or import one of the 20 themes that ship with it. Each theme carries a light and a dark palette, so dark mode is an attribute, not a second stylesheet.",
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 409,
-      "lastUpdated": "2026-07-22",
+      "words": 642,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -1518,8 +1518,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1272,
-      "lastUpdated": "2026-08-15",
+      "words": 1306,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -1572,8 +1572,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "enterprise",
-      "words": 1302,
-      "lastUpdated": "2026-08-09",
+      "words": 1321,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "399-alert-rules-engine"
       ]
@@ -1953,8 +1953,8 @@
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
-      "words": 389,
-      "lastUpdated": "2026-07-21",
+      "words": 407,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "170-cell-merging"
       ]
@@ -2327,8 +2327,8 @@
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
-      "words": 785,
-      "lastUpdated": "2026-07-22",
+      "words": 786,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "111-set-filter-advanced",
         "102-tree-checkbox-cascade"
@@ -2536,8 +2536,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1078,
-      "lastUpdated": "2026-08-15",
+      "words": 1079,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -2966,8 +2966,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 542,
-      "lastUpdated": "2026-08-18",
+      "words": 553,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -3097,8 +3097,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1008,
-      "lastUpdated": "2026-08-18",
+      "words": 1036,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "28-org-chart-tree"
       ]
@@ -3125,8 +3125,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2124,
-      "lastUpdated": "2026-07-28",
+      "words": 2126,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -3177,8 +3177,8 @@
       "section": "help/server",
       "pillar": "grid",
       "tier": "community",
-      "words": 1327,
-      "lastUpdated": "2026-07-22",
+      "words": 1325,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -3244,8 +3244,8 @@
       "section": "help/server",
       "pillar": "grid",
       "tier": "community",
-      "words": 1289,
-      "lastUpdated": "2026-07-21",
+      "words": 1300,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "31-lazy-tree-load"
       ]
@@ -3362,8 +3362,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1250,
-      "lastUpdated": "2026-07-22",
+      "words": 1297,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "02-sort-filter-paginate",
         "01-quick-start"
@@ -3404,7 +3404,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 820,
-      "lastUpdated": "2026-08-03",
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -3439,8 +3439,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 924,
-      "lastUpdated": "2026-07-31",
+      "words": 952,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {
@@ -3733,8 +3733,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 689,
-      "lastUpdated": "2026-08-03",
+      "words": 702,
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "339-status-display"
       ]
@@ -3819,7 +3819,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 816,
-      "lastUpdated": "2026-08-03",
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "331-app-overlays"
       ]
@@ -4714,7 +4714,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 1018,
-      "lastUpdated": "2026-08-03",
+      "lastUpdated": "2026-08-19",
       "demoIds": [
         "321-tree"
       ]
@@ -5439,8 +5439,8 @@
       "section": "reference",
       "pillar": "grid",
       "tier": "enterprise",
-      "words": 737,
-      "lastUpdated": "2026-08-15",
+      "words": 788,
+      "lastUpdated": "2026-08-19",
       "demoIds": []
     },
     {

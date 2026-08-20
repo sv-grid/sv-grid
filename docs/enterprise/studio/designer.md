@@ -18,7 +18,7 @@ this table" screen.
 
 ## Usage
 
-```svelte
+```svelte {nocheck}
 <script lang="ts">
   import { SvSchemaDesigner, type EntitySchema } from '@svgrid/enterprise'
 
@@ -63,7 +63,7 @@ your backend). Because an `EntitySchema` is plain JSON, "export" is
 `JSON.stringify` and "import" is `JSON.parse` back into `schema` - no special
 format:
 
-```svelte
+```svelte {nocheck}
 <script lang="ts">
   import { SvSchemaDesigner, type EntitySchema } from '@svgrid/enterprise'
 

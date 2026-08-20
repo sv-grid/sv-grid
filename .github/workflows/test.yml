@@ -56,9 +56,27 @@ jobs:
       - name: Unit + behavioral tests with coverage
         # `pnpm test` resolves to `pnpm --filter @svgrid/grid test:lib`,
         # which runs `vitest run --coverage` against the configured
-        # thresholds in packages/grid/vite.config.ts
-        # (lines 90 / statements 90 / functions 80 / branches 75).
+        # thresholds in packages/grid/vite.config.ts. Those are a ratchet set
+        # just under the measured values, so read them there rather than
+        # copying the numbers here (this comment claimed 90/90/80/75 long
+        # after the real gate became 79/73/73/63).
         run: pnpm test
+
+      - name: Enterprise unit + DOM tests
+        # Not covered by `pnpm test`, which filters to @svgrid/grid. Runs after
+        # the grid build above because these resolve @svgrid/grid through dist.
+        run: pnpm --filter @svgrid/enterprise test
+
+      - name: Web component tests
+        # Its suite loads the BUILT bundle, so the build is part of the test.
+        run: pnpm --filter @svgrid/grid-wc build && pnpm --filter @svgrid/grid-wc test
+
+      - name: Docs guardrails
+        # Orphaned for months: these live in tools/ and no package's vitest
+        # config includes them, so nothing ran them and all three drifted red.
+        # studio-docs + ui-docs read website/src/lib/docs.ts, which needs the
+        # private submodule checked out above.
+        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts
 
       - name: Build MCP server (smoke check)
         run: pnpm --filter @svgrid/mcp build

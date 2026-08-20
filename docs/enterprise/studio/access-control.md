@@ -48,7 +48,7 @@ const access: StudioProject['access'] = {
 With RBAC on, **Generate app** emits `src/lib/access.ts` - the single policy
 module shared by every screen and route:
 
-```ts
+```ts {nocheck}
 import { writable } from 'svelte/store'
 
 export type AppRole = 'admin' | 'editor' | 'viewer'

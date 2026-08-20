@@ -25,6 +25,8 @@ visible depends on its ancestors' expanded state.
 Three pieces of state, the third one derived:
 
 ```ts
+type Node = { id: string; parentId: string | null; childIds: string[]; depth: number }
+
 let allRows = $state<Node[]>(/* every node, flat */)
 let expanded = $state<Record<string, boolean>>({ root: true })
 
@@ -176,6 +178,8 @@ that runs after every leaf edit and writes the result back onto the
 parent rows:
 
 ```ts
+type Node = { id: string; childIds: string[]; depth: number; subtotal: number }
+
 function recompute(rows: Node[]): Node[] {
   const byId = new Map(rows.map((r) => [r.id, { ...r }]))
   // post-order DFS: deepest first so each parent already has updated children

@@ -54,7 +54,7 @@ npx @svgrid/ui add button --preview
 ```
 
 `try` needs no project - it caches a tiny sandbox under your temp dir (so repeat
-runs are instant) and opens the browser, with a theme picker (all 19 presets) and
+runs are instant) and opens the browser, with a theme picker (all 20 presets) and
 a light/dark toggle so you can preview the component in your target theme. Pass
 **several component ids** (or a group id) and they all render together in the same
 sandbox - handy for comparing a set side by side. `--preview` drops a

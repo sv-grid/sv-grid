@@ -83,7 +83,7 @@ Dock is one of five per-screen layout modes in the designer:
   and spans on a 12-column grid of fixed-height rows, so blocks sit exactly
   where you drop them.
 
-## Related
+## See also
 
 - [App designer](./app-designer.md) - the block palette and inspector.
 - [Scheduler / calendar view](./scheduler.md) and the Kanban board - other ways

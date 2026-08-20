@@ -80,8 +80,8 @@ ${Object.entries(TEMPLATES)
   .join('\n')}
 
 ${color('bold', 'Options')}
-  --theme <id>       admin-dashboard only. One of: ${THEME_IDS.join(', ')} (default: tailwind).
-  --dark / --light   admin-dashboard only. Start in dark or light mode (default: dark).
+  --theme <id>       One of: ${THEME_IDS.join(', ')} (default: tailwind).
+  --dark / --light   Start in dark or light mode (default: dark).
   --force            Scaffold into a non-empty directory.
 
 ${color('bold', 'Examples')}
@@ -93,17 +93,16 @@ ${color('bold', 'Examples')}
 }
 
 const THEME_IDS = [
-  'shadcn', 'tailwind', 'material', 'excel', 'fluent', 'carbon', 'sap',
+  'ember', 'shadcn', 'tailwind', 'material', 'excel', 'fluent', 'carbon', 'sap',
   'salesforce', 'atlassian', 'github', 'antd', 'ag-alpine', 'bootstrap',
   'vercel', 'linear', 'notion', 'nord', 'dracula', 'catppuccin',
 ]
 
 /**
- * Resolve the theme + mode to apply (admin-dashboard only): from `--theme` /
- * `--dark` / `--light` flags, or (in a TTY) an interactive prompt; otherwise
- * left untouched (the template's own dark-by-default look stands). Reuses
- * `@svgrid/grid/themes`'s own preset list, so the picker can never drift from
- * the canonical set.
+ * Resolve the theme + mode to apply: from `--theme` / `--dark` / `--light`
+ * flags, or (in a TTY) an interactive prompt; otherwise left untouched (the
+ * template's own default look stands). Reuses `@svgrid/grid/themes`'s own
+ * preset list, so the picker can never drift from the canonical set.
  */
 async function promptTheme(args, ask, interactive) {
   let themes
@@ -132,13 +131,24 @@ async function promptTheme(args, ask, interactive) {
     const a = await ask('Light or dark mode? (light/dark)', 'dark')
     mode = /^l(ight)?$/i.test(a) ? 'light' : 'dark'
   }
+  // Whether the mode was actually chosen, as opposed to falling through to the
+  // default below. minimal follows the OS when nobody said, which is only
+  // distinguishable from an explicit --dark by keeping this flag.
+  const explicitMode = mode != null
   mode ??= 'dark' // matches the template's existing default - only patched when 'light' is chosen.
 
-  return { themeId, mode, name: themes.getThemePreset(themeId)?.name ?? themeId, themes }
+  return { themeId, mode, explicitMode, name: themes.getThemePreset(themeId)?.name ?? themeId, themes }
 }
 
-/** Rewrite `app.css` (between the `svgrid-theme` markers) with the resolved
- *  `--sg-*` tokens for the chosen theme. */
+/** Rewrite `app.css` between the `svgrid-theme` markers.
+ *
+ *  The two templates want different things there. admin-dashboard inlines the
+ *  resolved `--sg-*` tokens, because its Tailwind layer aliases them to
+ *  `--app-*` and having the values on the page makes them editable. minimal
+ *  just points at the preset stylesheet the package already ships, which keeps
+ *  its `app.css` short enough to read in one go. Which one we are looking at
+ *  is decided by what the marked block currently holds, not by the template
+ *  name, so a hand-edited project still round-trips. */
 async function applyTheme(destDir, choice) {
   if (!choice) return
   const { themeId, themes } = choice
@@ -149,12 +159,19 @@ async function applyTheme(destDir, choice) {
     const lines = Object.entries(tokens).map(([k, v]) => `  ${k}: ${v};`).join('\n')
     return `${selector} {\n${lines}\n  color-scheme: ${scheme};\n}`
   }
-  const css = `${block(':root', light, 'light')}\n${block(":root[data-theme='dark']", dark, 'dark')}`
+  const tokenBlocks = `${block(':root', light, 'light')}\n${block(":root[data-theme='dark']", dark, 'dark')}`
 
   const cssPath = join(destDir, 'src', 'app.css')
   const cssText = await readFile(cssPath, 'utf8').catch(() => null)
   if (cssText == null) return
-  const marked = /\/\* svgrid-theme:start \*\/[\s\S]*?\/\* svgrid-theme:end \*\//
+  const marked = /\/\* svgrid-theme:start \*\/([\s\S]*?)\/\* svgrid-theme:end \*\//
+  // A CSS @import has to stay at the top of the file, so where the block holds
+  // one we swap the preset id in place instead of replacing it with token
+  // declarations that would then sit above the import.
+  const held = cssText.match(marked)
+  const css = held && /@import\s/.test(held[1])
+    ? `@import '@svgrid/grid/themes/${preset.id}.css';`
+    : tokenBlocks
   if (marked.test(cssText)) {
     await writeFile(cssPath, cssText.replace(marked, `/* svgrid-theme:start */\n${css}\n/* svgrid-theme:end */`))
   }
@@ -202,6 +219,27 @@ async function applyMode(destDir, choice) {
         .replace(`let theme = $state<Theme>('dark')`, `let theme = $state<Theme>('light')`),
     )
   }
+}
+
+/** minimal picks its start mode in an inline script in `index.html`, falling
+ *  back to the OS preference. Pin it only when light or dark was actually asked
+ *  for - following the OS is the better default for anyone who did not say. */
+async function applyModeMinimal(destDir, choice) {
+  if (!choice || !choice.explicitMode) return
+
+  const htmlPath = join(destDir, 'index.html')
+  const html = await readFile(htmlPath, 'utf8').catch(() => null)
+  if (html == null) return
+
+  await writeFile(
+    htmlPath,
+    html
+      .replace(`<html lang="en" data-theme="light">`, `<html lang="en" data-theme="${choice.mode}">`)
+      .replace(
+        `var fallback = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'`,
+        `var fallback = '${choice.mode}'`,
+      ),
+  )
 }
 
 function sanitizeName(name) {
@@ -328,9 +366,9 @@ async function main() {
     process.exit(1)
   }
 
-  // 3b. Theme + light/dark mode - admin-dashboard only (minimal has no theme
-  // system to pick from).
-  const themeChoice = template === 'admin-dashboard' ? await promptTheme(args, ask, interactive) : null
+  // 3b. Theme + light/dark mode. Both templates carry the full --sg-* palette
+  // and a toggle, so both get asked.
+  const themeChoice = await promptTheme(args, ask, interactive)
   if (rl) rl.close()
 
   // 4. Scaffold.
@@ -339,12 +377,17 @@ async function main() {
   await setProjectName(destDir, projectName)
   await applyTheme(destDir, themeChoice)
   await applyMode(destDir, themeChoice)
+  await applyModeMinimal(destDir, themeChoice)
 
   // 5. Next steps.
   const rel = isAbsolute(target) || target.startsWith('.') ? target : `./${target}`
   stdout.write(`\n${color('green', '✔')} Scaffolded ${color('bold', projectName)} (${template}) into ${rel}\n`)
   if (themeChoice) {
-    stdout.write(`  ${color('dim', 'theme')} ${themeChoice.name} (${themeChoice.mode})\n`)
+    // minimal only pins a mode when one was asked for; otherwise it reads the
+    // OS preference at load, so reporting "dark" here would be a lie.
+    const pinned = themeChoice.explicitMode || template === 'admin-dashboard'
+    const mode = pinned ? themeChoice.mode : 'follows your OS'
+    stdout.write(`  ${color('dim', 'theme')} ${themeChoice.name} (${mode})\n`)
   }
   stdout.write(`\n`)
   stdout.write(`${color('bold', 'Next steps')}\n`)

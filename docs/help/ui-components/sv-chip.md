@@ -97,11 +97,12 @@ filter, and a trailing action resets them all:
 ```svelte
 <script lang="ts">
   import { SvChip, SvButton } from '@svgrid/grid'
-  let filters = $state([
+  type Filter = { key: string; label: string; variant: 'accent' | 'info' | 'danger' }
+  let filters = $state<Filter[]>([
     { key: 'status', label: 'Status: Open', variant: 'accent' },
     { key: 'owner', label: 'Owner: Me', variant: 'info' },
     { key: 'due', label: 'Overdue', variant: 'danger' },
-  ] as const)
+  ])
 
   const remove = (key: string) => (filters = filters.filter((f) => f.key !== key))
 </script>
