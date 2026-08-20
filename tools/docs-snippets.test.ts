@@ -102,6 +102,42 @@ const COMPILER_OPTIONS: ts.CompilerOptions = {
   types: [],
 }
 
+const VIRTUAL_FILE = '__snippet__.ts'
+const AMBIENT_FILE = '__docs_ambient__.d.ts'
+
+// ONE host, reused for every snippet. A per-snippet `ts.createCompilerHost`
+// re-read and re-parsed lib.dom.d.ts plus the whole @svgrid/grid source graph
+// on each of the ~1400 blocks, which is nearly all of this test's runtime (it
+// blew its own 300s timeout the first time CI ran it). Parsed SourceFiles and
+// module resolutions are immutable for a fixed set of compiler options, so
+// caching them across programs is safe - it is what the language service's
+// DocumentRegistry does internally.
+const HOST = ts.createCompilerHost(COMPILER_OPTIONS)
+const realGetSourceFile = HOST.getSourceFile.bind(HOST)
+const realReadFile = HOST.readFile.bind(HOST)
+const realFileExists = HOST.fileExists.bind(HOST)
+const sourceFileCache = new Map<string, ts.SourceFile | undefined>()
+const moduleResolutionCache = ts.createModuleResolutionCache(
+  process.cwd(),
+  (f) => f,
+  COMPILER_OPTIONS,
+)
+let currentCode = ''
+
+HOST.readFile = (name) =>
+  name === VIRTUAL_FILE ? currentCode : name === AMBIENT_FILE ? AMBIENT : realReadFile(name)
+HOST.fileExists = (name) =>
+  name === VIRTUAL_FILE || name === AMBIENT_FILE ? true : realFileExists(name)
+HOST.getSourceFile = (name, languageVersion, onError, shouldCreate) => {
+  // The snippet changes every call, so it is the one file never cached.
+  if (name === VIRTUAL_FILE) return ts.createSourceFile(name, currentCode, languageVersion, true)
+  if (!sourceFileCache.has(name)) {
+    sourceFileCache.set(name, realGetSourceFile(name, languageVersion, onError, shouldCreate))
+  }
+  return sourceFileCache.get(name)
+}
+HOST.getModuleResolutionCache = () => moduleResolutionCache
+
 /** Compile the snippet against the real `@svgrid/*` types.
  *  Returns the diagnostic messages (empty if it compiles clean). */
 function compile(snippet: Snippet): string[] {
@@ -115,18 +151,11 @@ function compile(snippet: Snippet): string[] {
   // Force module context so top-level `await` (common in the docs) is allowed.
   code += '\nexport {}\n'
 
-  const virtualFile = '__snippet__.ts'
-  const ambientFile = '__docs_ambient__.d.ts'
+  const virtualFile = VIRTUAL_FILE
+  const ambientFile = AMBIENT_FILE
+  currentCode = code
 
-  const host = ts.createCompilerHost(COMPILER_OPTIONS)
-  const originalRead = host.readFile.bind(host)
-  host.readFile = (name) =>
-    name === virtualFile ? code : name === ambientFile ? AMBIENT : originalRead(name)
-  const originalExists = host.fileExists.bind(host)
-  host.fileExists = (name) =>
-    name === virtualFile || name === ambientFile ? true : originalExists(name)
-
-  const program = ts.createProgram([virtualFile, ambientFile], COMPILER_OPTIONS, host)
+  const program = ts.createProgram([virtualFile, ambientFile], COMPILER_OPTIONS, HOST)
   const sf = program.getSourceFile(virtualFile)
   if (!sf) return ['Source file missing']
   return ts.getPreEmitDiagnostics(program, sf)
@@ -244,5 +273,9 @@ describe('docs code snippets', () => {
         (failures.length > 20 ? `\n\n…and ${failures.length - 20} more.` : ''),
       )
     }
-  }, 300_000)
+    // Headroom, not an expectation: with the shared host above this runs in
+    // well under a minute. The margin is so a slow runner reports the real
+    // diagnostics instead of an opaque timeout, which is how this first failed
+    // in CI.
+  }, 600_000)
 })
