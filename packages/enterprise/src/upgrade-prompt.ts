@@ -39,13 +39,16 @@ export type EnterpriseFeatureLabel =
  * been shown this session, a card is already up, or we're on the server. Safe
  * to call on every Pro feature invocation - it self-throttles.
  */
-export function showUpgradePrompt(feature?: EnterpriseFeatureLabel | string): void {
+export function showUpgradePrompt(
+  feature?: EnterpriseFeatureLabel | string,
+  opts?: { expired?: boolean },
+): void {
   if (shownThisSession) return
   if (typeof document === 'undefined' || typeof window === 'undefined') return
   if (document.querySelector(`[${CARD_ATTR}]`)) return
   shownThisSession = true
 
-  const card = buildCard(feature)
+  const card = buildCard(feature, opts?.expired === true)
   document.body.appendChild(card)
   // Animate in on the next frame so the transition actually runs.
   requestAnimationFrame(() => {
@@ -73,11 +76,11 @@ function close(card: HTMLElement): void {
   window.setTimeout(() => card.remove(), 220)
 }
 
-function buildCard(feature?: EnterpriseFeatureLabel | string): HTMLElement {
+function buildCard(feature?: EnterpriseFeatureLabel | string, expired = false): HTMLElement {
   const card = document.createElement('div')
   card.setAttribute(CARD_ATTR, '1')
   card.setAttribute('role', 'dialog')
-  card.setAttribute('aria-label', 'Unlock SvGrid Pro')
+  card.setAttribute('aria-label', expired ? 'Your trial has ended' : 'Unlock SvGrid Pro')
   Object.assign(card.style, {
     position: 'fixed',
     bottom: '16px',
@@ -105,24 +108,34 @@ function buildCard(feature?: EnterpriseFeatureLabel | string): HTMLElement {
     ? `<strong style="color:#fff">${escapeHtml(featureName)}</strong> is a Pro feature.`
     : `You just used a <strong style="color:#fff">Pro</strong> feature.`
 
+  // An expired trial is a different message from "you never had a licence":
+  // they already evaluated, so the ask is to convert, not to start over.
+  const badge = expired ? 'TRIAL ENDED' : 'PRO'
+  const heading = expired ? 'Your trial has ended' : 'Unlock SvGrid Pro'
+  const body = expired
+    ? `${featurePhrase} Your evaluation period is over - everything still works,
+       but this notice stays until a licence key is set.`
+    : `${featurePhrase} It runs in evaluation with a watermark - start a free trial
+       to remove it and ship to production.`
+  const cta = expired ? 'Buy a licence' : 'Start free trial'
+
   card.innerHTML = `
     <button type="button" data-act="x" aria-label="Dismiss"
       style="position:absolute;top:8px;right:8px;width:24px;height:24px;display:flex;
       align-items:center;justify-content:center;background:transparent;border:0;
       color:#94a3b8;font-size:18px;line-height:1;cursor:pointer;border-radius:6px;">&times;</button>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <span style="display:inline-block;background:#4f46e5;color:#fff;font-size:10px;
-        font-weight:700;letter-spacing:0.06em;padding:2px 7px;border-radius:999px;">PRO</span>
-      <span style="font-weight:700;color:#fff;">Unlock SvGrid Pro</span>
+      <span style="display:inline-block;background:${expired ? '#b45309' : '#4f46e5'};color:#fff;font-size:10px;
+        font-weight:700;letter-spacing:0.06em;padding:2px 7px;border-radius:999px;">${badge}</span>
+      <span style="font-weight:700;color:#fff;">${heading}</span>
     </div>
     <p style="margin:0 0 12px;color:#cbd5e1;">
-      ${featurePhrase} It runs in evaluation with a watermark - start a free trial
-      to remove it and ship to production.
+      ${body}
     </p>
     <div style="display:flex;gap:8px;align-items:center;">
       <a data-act="trial" href="${TRIAL_URL}" target="_blank" rel="noopener noreferrer"
         style="flex:1;text-align:center;background:#6366f1;color:#fff;font-weight:600;
-        text-decoration:none;padding:8px 12px;border-radius:8px;">Start free trial</a>
+        text-decoration:none;padding:8px 12px;border-radius:8px;">${cta}</a>
       <a data-act="pricing" href="${PRICING_URL}" target="_blank" rel="noopener noreferrer"
         style="color:#a5b4fc;text-decoration:none;padding:8px 6px;font-weight:600;">Pricing</a>
     </div>
