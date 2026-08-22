@@ -277,6 +277,19 @@ export type FormSection = {
   fields: string[]
   /** Show the section only while this holds - see `EntityField.when`. */
   visibleWhen?: PredicateExpr
+  /**
+   * Let the user fold this group away. Turns the heading into a disclosure
+   * button, so a long form opens at a readable length instead of a wall of
+   * inputs.
+   *
+   * A collapsed section is still **filled in and still validated** - it is a
+   * display state, not a condition. Use `visibleWhen` to actually drop fields
+   * from the form. If a collapsed section holds an error the panel opens it, so
+   * a failed submit can never point at something the user cannot see.
+   */
+  collapsible?: boolean
+  /** Start folded. Only meaningful with `collapsible`. */
+  collapsed?: boolean
 }
 
 /**

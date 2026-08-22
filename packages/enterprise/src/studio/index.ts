@@ -115,6 +115,7 @@ export {
   setFieldInput,
   setFieldHidden,
   formControlsFor,
+  formControlSettings,
   suggestFormSections,
   addScreen,
   addFreestandingScreen,

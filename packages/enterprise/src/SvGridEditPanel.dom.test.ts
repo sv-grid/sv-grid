@@ -183,6 +183,54 @@ describe('SvGridEditPanel (DOM)', () => {
     expect(el.querySelector('#sv-ef-id')).toBeTruthy()
   })
 
+  it('folds a section away, and opens it again rather than hiding an error', async () => {
+    const long: EntitySchema = {
+      name: 'people',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'name', type: 'text' },
+        { field: 'vat', type: 'text', required: true },
+      ],
+      form: {
+        sections: [
+          { title: 'Who', fields: ['name'] },
+          { title: 'Billing', fields: ['vat'], collapsible: true, collapsed: true },
+        ],
+      },
+    }
+    const onSubmit = vi.fn()
+    const el = render({ schema: long, presentation: 'inline', onSubmit })
+
+    // Folding is a disclosure button, and it starts shut.
+    const toggle = el.querySelector<HTMLButtonElement>('.sv-ep__section-toggle')!
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    const bodies = [...el.querySelectorAll<HTMLElement>('.sv-ep__body')]
+    expect(bodies[1]!.hidden).toBe(true)
+    // A shut group says how much is in it rather than looking empty.
+    expect(el.querySelector('.sv-ep__section-count')?.textContent).toBe('1')
+    // "Who" is not collapsible, so it has no toggle.
+    expect(el.querySelectorAll('.sv-ep__section-toggle')).toHaveLength(1)
+
+    toggle.click()
+    flushSync()
+    expect(el.querySelector<HTMLButtonElement>('.sv-ep__section-toggle')!.getAttribute('aria-expanded')).toBe('true')
+    expect([...el.querySelectorAll<HTMLElement>('.sv-ep__body')][1]!.hidden).toBe(false)
+
+    // Fold it back, then submit: `vat` is required, so the section must reopen -
+    // a folded group is a display state, not a condition, and its fields are
+    // still validated. Pointing at an error nobody can see would be a dead end.
+    el.querySelector<HTMLButtonElement>('.sv-ep__section-toggle')!.click()
+    flushSync()
+    expect([...el.querySelectorAll<HTMLElement>('.sv-ep__body')][1]!.hidden).toBe(true)
+
+    el.querySelector('form')!.requestSubmit()
+    await vi.waitFor(() => expect(el.querySelector('.sv-ep-field__err')).toBeTruthy())
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect([...el.querySelectorAll<HTMLElement>('.sv-ep__body')][1]!.hidden).toBe(false)
+    expect(el.querySelector('.sv-ep__section-toggle')!.getAttribute('aria-expanded')).toBe('true')
+  })
+
   it('waits until you leave a field before complaining, then clears as you fix it', async () => {
     const required: EntitySchema = {
       name: 'people',

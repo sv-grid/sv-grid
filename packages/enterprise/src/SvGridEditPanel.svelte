@@ -144,22 +144,39 @@
 
   // Grouped layout: each section's resolvable fields, plus a trailing group for
   // anything not assigned to a section (so no field is ever silently dropped).
-  const fieldGroups = $derived.by((): Array<{ title?: string; description?: string; columns?: 1 | 2 | 3; fields: FormFieldDescriptor[] }> => {
-    if (!layoutSections || !layoutSections.length) return [{ fields }]
+  const fieldGroups = $derived.by((): Array<{ title?: string; description?: string; columns?: 1 | 2 | 3; collapsible?: boolean; key: string; fields: FormFieldDescriptor[] }> => {
+    if (!layoutSections || !layoutSections.length) return [{ key: '', fields }]
     const assigned = new Set<string>()
-    const groups = layoutSections.map((s) => {
+    const groups = layoutSections.map((s, i) => {
       const gf = s.fields.map((name) => fields.find((f) => f.field === name)).filter(Boolean) as FormFieldDescriptor[]
       for (const f of gf) assigned.add(f.field)
       // A section can be conditional in its own right, the same way a field is.
       const shown = s.visibleWhen ? sectionVisible(s.visibleWhen, values) : true
-      return { title: s.title, description: s.description, columns: s.columns, fields: shown ? gf : [] }
+      return { title: s.title, description: s.description, columns: s.columns, collapsible: s.collapsible, key: `${i}`, fields: shown ? gf : [] }
     })
     const rest = fields.filter((f) => !assigned.has(f.field))
     // A section whose fields are all hidden by a condition disappears with them,
     // rather than leaving a heading over nothing.
     const shown = groups.filter((g) => g.fields.length)
-    return rest.length ? [...shown, { fields: rest }] : shown
+    return rest.length ? [...shown, { key: 'rest', fields: rest }] : shown
   })
+
+  // Which collapsible sections the user has folded away. Seeded from the
+  // layout's `collapsed`, then owned by the user for the life of the form.
+  let folded = $state<Record<string, boolean>>({})
+  $effect(() => {
+    const seed: Record<string, boolean> = {}
+    ;(layoutSections ?? []).forEach((s, i) => { if (s.collapsible && s.collapsed) seed[`${i}`] = true })
+    folded = seed
+  })
+  /**
+   * A folded section is a display state, not a condition - its fields are still
+   * validated. So a section holding an error is forced open: a failed submit
+   * must never point at something the user cannot see.
+   */
+  const groupHasError = (g: { fields: FormFieldDescriptor[] }) => g.fields.some((f) => shownErrors[f.field])
+  const isFolded = (g: { key: string; collapsible?: boolean; fields: FormFieldDescriptor[] }) =>
+    !!g.collapsible && !!folded[g.key] && !groupHasError(g)
 
   // Options for the custom dropdown: prepend a blank "clear" option for
   // non-required fields (parity with the native select's empty option).
@@ -484,10 +501,23 @@
 
     {#if fieldGroups.length > 1 || fieldGroups[0]?.title}
       {#each fieldGroups as g, gi (gi)}
+        {@const shut = isFolded(g)}
         <div class="sv-ep__section">
-          {#if g.title}<h4 class="sv-ep__section-title">{g.title}</h4>{/if}
-          {#if g.description}<p class="sv-ep__section-desc">{g.description}</p>{/if}
-          <div class="sv-ep__body" style="--sv-ep-cols: {g.columns ?? layoutColumns}">
+          {#if g.collapsible && g.title}
+            <!-- The heading becomes the control, so the whole row is the target
+                 rather than a small chevron beside it. -->
+            <h4 class="sv-ep__section-title">
+              <button type="button" class="sv-ep__section-toggle" aria-expanded={!shut} aria-controls={`sv-eg-${gi}`} onclick={() => (folded[g.key] = !folded[g.key])}>
+                <span class="sv-ep__section-caret" class:is-shut={shut} aria-hidden="true"></span>
+                {g.title}
+                {#if shut}<span class="sv-ep__section-count">{g.fields.length}</span>{/if}
+              </button>
+            </h4>
+          {:else if g.title}
+            <h4 class="sv-ep__section-title">{g.title}</h4>
+          {/if}
+          {#if g.description && !shut}<p class="sv-ep__section-desc">{g.description}</p>{/if}
+          <div class="sv-ep__body" id={`sv-eg-${gi}`} hidden={shut} style="--sv-ep-cols: {g.columns ?? layoutColumns}">
             {#each g.fields as f (f.field)}{@render fieldRow(f)}{/each}
           </div>
         </div>
@@ -854,6 +884,11 @@
      field labels, which are themselves small and muted. */
   .sv-ep__section-title { margin: 0; padding: 16px 18px 0; font-size: 13.5px; font-weight: 650; color: var(--ep-fg); }
   .sv-ep__section-desc { margin: 3px 0 0; padding: 0 18px; font-size: 12px; line-height: 1.45; color: var(--sg-muted, #64748b); }
+  .sv-ep__section-toggle { display: flex; align-items: center; gap: 7px; width: 100%; padding: 0; font: inherit; text-align: left; border: 0; background: none; color: inherit; cursor: pointer; }
+  .sv-ep__section-caret { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid currentColor; transition: transform 120ms ease; }
+  .sv-ep__section-caret.is-shut { transform: rotate(-90deg); }
+  /* How many fields are hidden in there - a folded group should not look empty. */
+  .sv-ep__section-count { display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px; font-size: 10px; font-weight: 600; background: var(--sg-muted-bg, #eef2f7); color: var(--sg-muted, #64748b); }
   /* The heading owns the gap above its fields, so the group reads as one thing. */
   .sv-ep__section-title + .sv-ep__body, .sv-ep__section-desc + .sv-ep__body { padding-top: 10px; }
   .sv-ep__discard { margin-right: auto; font-size: 12.5px; font-weight: 600; color: var(--ep-danger); }

@@ -2666,19 +2666,37 @@ ${hint ? `          {#if !form?.errors?.[${key}]}<small class="sk-hint">${htmlEs
     ? (() => {
         const assigned = new Set<string>()
         const groups = layout.sections!.map((s) => {
-          const items = s.fields.map((name) => { assigned.add(name); return blockFor(name) }).filter(Boolean) as string[]
-          return { title: s.title, description: s.description, columns: s.columns, items }
+          const names: string[] = []
+          const items = s.fields.map((name) => { assigned.add(name); names.push(name); return blockFor(name) }).filter(Boolean) as string[]
+          return { title: s.title, description: s.description, columns: s.columns, collapsible: s.collapsible, collapsed: s.collapsed, names, items }
         }).filter((g) => g.items.length)
         const rest = formFields.filter((f) => !assigned.has(f.field)).map((f) => blockFor(f.field)!).filter(Boolean)
-        return rest.length ? [...groups, { title: undefined, description: undefined, columns: undefined, items: rest }] : groups
+        return rest.length ? [...groups, { title: undefined, description: undefined, columns: undefined, collapsible: false, collapsed: false, names: [], items: rest }] : groups
       })()
     : null
   const formCols = layout?.columns ?? 1
   const fieldsMarkup = ssrSections
     ? ssrSections
-        .map((g) => `        <fieldset class="sk-group" style="--sk-cols: ${g.columns ?? formCols}">
-${g.title ? `          <legend>${htmlEsc(g.title)}</legend>\n` : ''}${g.description ? `          <p class="sk-group__desc">${htmlEsc(g.description)}</p>\n` : ''}${g.items.join('\n')}
-        </fieldset>`)
+        .map((g) => {
+          const inner = `${g.description ? `          <p class="sk-group__desc">${htmlEsc(g.description)}</p>\n` : ''}${g.items.join('\n')}`
+          // A collapsible group is a native <details>, so it folds with no JS at
+          // all - which is the point on a server-rendered page. A group that
+          // starts folded is forced open when the server sent back an error for
+          // one of its fields, so a rejected submit is never pointing at
+          // something the user cannot see.
+          if (g.collapsible && g.title) {
+            const open = g.collapsed
+              ? `{${JSON.stringify(g.names)}.some((f) => form?.errors?.[f])}`
+              : '{true}'
+            return `        <details class="sk-group sk-group--fold" style="--sk-cols: ${g.columns ?? formCols}" open=${open}>
+          <summary>${htmlEsc(g.title)}</summary>
+${inner}
+        </details>`
+          }
+          return `        <fieldset class="sk-group" style="--sk-cols: ${g.columns ?? formCols}">
+${g.title ? `          <legend>${htmlEsc(g.title)}</legend>\n` : ''}${inner}
+        </fieldset>`
+        })
         .join('\n')
     : `        <div class="sk-group" style="--sk-cols: ${formCols}">\n${fieldBlocks.join('\n')}\n        </div>`
 
@@ -2793,6 +2811,13 @@ ${facetCss}  .sk-rowact { display: flex; gap: 10px; }
   .sk-group + .sk-group { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--sg-border, #e2e8f0); }
   .sk-group legend { grid-column: 1 / -1; padding: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--sg-muted, #64748b); }
   .sk-group__desc { grid-column: 1 / -1; margin: 0; font-size: 12px; color: var(--sg-muted, #64748b); }
+  /* A foldable group is a native <details>, so it works with JavaScript off.
+     display:grid on the element itself would lay the <summary> out as a grid
+     item and break the disclosure, so the grid moves to [open] children. */
+  .sk-group--fold { display: block; }
+  .sk-group--fold > summary { grid-column: 1 / -1; margin-bottom: 12px; font-size: 13.5px; font-weight: 650; color: var(--sg-fg, #0f172a); cursor: pointer; list-style-position: inside; }
+  .sk-group--fold[open] { display: grid; }
+  .sk-group--fold[open] > summary { margin-bottom: 0; }
   .sk-field--wide { grid-column: 1 / -1; }
   .sk-hint { color: var(--sg-muted, #64748b); font-size: 11.5px; }
   @media (max-width: 560px) { .sk-group { grid-template-columns: 1fr; } }

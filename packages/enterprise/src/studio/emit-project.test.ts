@@ -3316,7 +3316,7 @@ describe('code companion (design + your own code)', () => {
     /** A screen holding one Form block and nothing else. */
     const formScreen = (config: Record<string, unknown> = {}) => {
       let p = createProject([customers])
-      p = addScreen(p, 'customers', 'New customer')
+      p = addScreen(p, 'customers')
       const sid = p.screens[1]!.id
       for (const b of [...p.screens[1]!.blocks]) p = removeBlock(p, sid, b.id)
       p = addBlock(p, sid, 'form')

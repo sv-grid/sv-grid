@@ -1625,6 +1625,8 @@ export function updateFormSection(
     if (!merged.description) delete merged.description
     if (!merged.visibleWhen) delete merged.visibleWhen
     if (!merged.columns) delete merged.columns
+    if (!merged.collapsible) { delete merged.collapsible; delete merged.collapsed }
+    if (!merged.collapsed) delete merged.collapsed
     return merged
   })
   return setEntityForm(project, entityName, { ...schema!.form, sections: next })
@@ -1802,6 +1804,25 @@ export function formControlsFor(type: EntityFieldType): StudioEditorType[] {
     case 'json': return ['textarea', 'text']
     default: return ['text', 'textarea', 'password', 'phone', 'country', 'mask', 'color', 'autocomplete', 'chips']
   }
+}
+
+/**
+ * Which extra settings a control actually uses, so a builder can show those and
+ * nothing else. Picking "mask" and then having nowhere to type the pattern - or
+ * "slider" with no way to set its range - is a dead end, and listing all of them
+ * against every control is a wall of mostly-irrelevant boxes.
+ *
+ * `range` is min/max, which live on the field itself rather than under `input`
+ * (they validate as well as bound the control).
+ */
+export type ControlSetting = 'range' | 'step' | 'precision' | 'affix' | 'mask'
+
+export function formControlSettings(control: StudioEditorType | undefined, type: EntityFieldType): ControlSetting[] {
+  const kind = control ?? formControlsFor(type)[0]
+  if (kind === 'mask') return ['mask']
+  if (kind === 'slider' || kind === 'rating') return ['range', 'step']
+  if (kind === 'number' || (type === 'number' && kind !== 'text')) return ['range', 'step', 'precision', 'affix']
+  return []
 }
 
 /**

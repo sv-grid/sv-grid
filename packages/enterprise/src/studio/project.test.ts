@@ -41,6 +41,7 @@ import {
   setFieldInput,
   setFieldHidden,
   formControlsFor,
+  formControlSettings,
   suggestFormSections,
   addFreestandingScreen,
   addScreen,
@@ -1044,6 +1045,28 @@ describe('form layout operations', () => {
     expect(fieldOf(p).hidden).toEqual({ form: true }) // and the grid answer survived the round-trip
     p = setFieldHidden(p, 'customers', 'secret', 'form', false)
     expect(fieldOf(p).hidden).toBeUndefined()
+  })
+
+  it('offers only the settings the chosen control actually uses', () => {
+    // Picking a control with nowhere to configure it is the dead end this avoids.
+    expect(formControlSettings('mask', 'text')).toEqual(['mask'])
+    expect(formControlSettings('slider', 'number')).toEqual(['range', 'step'])
+    expect(formControlSettings('rating', 'number')).toContain('range')
+    expect(formControlSettings(undefined, 'number')).toEqual(['range', 'step', 'precision', 'affix'])
+    // A plain text or date field has none of them.
+    expect(formControlSettings(undefined, 'text')).toEqual([])
+    expect(formControlSettings(undefined, 'date')).toEqual([])
+    // A number rendered as text is being treated as text.
+    expect(formControlSettings('text', 'number')).toEqual([])
+  })
+
+  it('folds a section away, and forgets "starts folded" when folding is turned off', () => {
+    let p = addFormSection(createProject([customers]), 'customers', 'Billing')
+    p = updateFormSection(p, 'customers', 0, { collapsible: true, collapsed: true })
+    expect(entityOf(p, 'customers')!.form!.sections![0]).toMatchObject({ collapsible: true, collapsed: true })
+    // Turning folding off must not leave `collapsed` behind to confuse a reader.
+    p = updateFormSection(p, 'customers', 0, { collapsible: undefined })
+    expect(entityOf(p, 'customers')!.form!.sections![0]).toEqual({ title: 'Billing', fields: [] })
   })
 
   it('offers only the controls that suit a field’s type', () => {

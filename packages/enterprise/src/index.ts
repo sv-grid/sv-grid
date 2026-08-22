@@ -379,6 +379,7 @@ export {
   setFieldInput,
   setFieldHidden,
   formControlsFor,
+  formControlSettings,
   suggestFormSections,
   setDataSource,
   defaultEntitySource,
