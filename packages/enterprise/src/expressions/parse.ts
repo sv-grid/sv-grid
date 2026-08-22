@@ -28,13 +28,13 @@ import type {
   ComparisonOp,
   PredicateExpr,
   ScalarExpr,
-} from './expression-types'
+} from './expression-types.js'
 import {
   columnRefText,
   resolveColumnRef,
   type ExprColumn,
-} from './expression-columns'
-import { isBuiltinFunction } from './evaluate'
+} from './expression-columns.js'
+import { isBuiltinFunction } from './evaluate.js'
 
 // ---------------------------------------------------------------------------
 // Tokenizer

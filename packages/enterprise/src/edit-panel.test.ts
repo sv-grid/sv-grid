@@ -4,6 +4,8 @@ import {
   buildInitialValues,
   controlKind,
   editMode,
+  evalValidationRules,
+  fieldState,
   rowId,
   toSubmitValues,
   validateAll,
@@ -13,7 +15,9 @@ import {
   fromNumberValue,
   toSliderValue,
   toTags,
+  visibleFormFields,
 } from './edit-panel'
+import { schemaToFormFields, type FormFieldDescriptor } from './schema'
 
 type Customer = {
   id: string
@@ -209,5 +213,110 @@ describe('editor value coercion', () => {
     expect(toTags('')).toEqual([])
     expect(toTags(null)).toEqual([])
     expect(toTags([1, 2])).toEqual(['1', '2'])
+  })
+})
+
+// --- the form builder: value-driven fields -----------------------------------
+
+/** `field <op> value` as a serializable predicate leaf. */
+const cmp = (column: string, op: string, value: unknown) =>
+  ({ kind: 'cmp', column, op, value }) as never
+
+type Order = { id: string; reason: string; other: string; total: number; approver: string }
+
+const orders: EntitySchema<Order> = {
+  name: 'orders',
+  idField: 'id',
+  fields: [
+    { field: 'id', type: 'text', primaryKey: true, readonly: true },
+    { field: 'reason', type: 'enum', options: [{ value: 'damaged', label: 'Damaged' }, { value: 'other', label: 'Other' }] },
+    // Only asked for, and only demanded, when the reason is "other".
+    {
+      field: 'other',
+      type: 'text',
+      when: { visible: cmp('reason', 'equals', 'other'), required: cmp('reason', 'equals', 'other') },
+    },
+    { field: 'total', type: 'number' },
+    // Locked once the order is large enough to need sign-off.
+    { field: 'approver', type: 'text', when: { disabled: cmp('total', 'lessThan', 1000) } },
+  ],
+}
+
+describe('conditional fields', () => {
+  const specOf = (name: string) => schemaToFormFields(orders).find((f) => f.field === name)!
+
+  it('shows and demands a field only while its condition holds', () => {
+    const hidden = fieldState(specOf('other'), { reason: 'damaged', other: '' })
+    expect(hidden.visible).toBe(false)
+    expect(hidden.required).toBe(false)
+
+    const shown = fieldState(specOf('other'), { reason: 'other', other: '' })
+    expect(shown.visible).toBe(true)
+    expect(shown.required).toBe(true)
+  })
+
+  it('locks a field while its disabled condition holds, and readonly always wins', () => {
+    expect(fieldState(specOf('approver'), { total: 10 }).disabled).toBe(true)
+    expect(fieldState(specOf('approver'), { total: 5000 }).disabled).toBe(false)
+    expect(fieldState(specOf('id'), { total: 5000 }).disabled).toBe(true)
+  })
+
+  it('lists only the fields the form is currently showing', () => {
+    expect(visibleFormFields(orders, { reason: 'damaged' }).map((f) => f.field)).not.toContain('other')
+    expect(visibleFormFields(orders, { reason: 'other' }).map((f) => f.field)).toContain('other')
+  })
+
+  it('never blocks a save on a field the user cannot see', async () => {
+    // `other` is required-when-visible, but the reason is "damaged", so it is
+    // neither shown nor demanded.
+    expect(await validateAll(orders, { reason: 'damaged', other: '', total: 1 })).toEqual({})
+    expect(await validateAll(orders, { reason: 'other', other: '', total: 1 })).toEqual({
+      other: 'Other is required',
+    })
+  })
+
+  it('leaves a hidden field out of the payload, so a stale value is never written', () => {
+    const hidden = toSubmitValues(orders, { reason: 'damaged', other: 'stale text', total: 1, approver: '' })
+    expect(hidden).not.toHaveProperty('other')
+    const shown = toSubmitValues(orders, { reason: 'other', other: 'kept', total: 1, approver: '' })
+    expect(shown.other).toBe('kept')
+  })
+
+  it('falls back to showing a field when its condition is malformed', () => {
+    // A broken rule must never hide data or block a save.
+    const broken: FormFieldDescriptor = {
+      field: 'x', label: 'X', type: 'text', editorType: 'text',
+      required: false, readonly: false, span: 1,
+      when: { visible: { kind: 'nonsense' } as never },
+    }
+    expect(fieldState(broken, {}).visible).toBe(true)
+    expect(fieldState(broken, {}).disabled).toBe(false)
+  })
+})
+
+describe('no-code validation rules at runtime', () => {
+  it('applies each operator the generated server applies', () => {
+    const values = { name: 'ab', qty: 5, max: 3 }
+    expect(evalValidationRules([{ field: 'name', op: 'minLen', value: 3, message: 'Too short' }], values))
+      .toEqual({ name: 'Too short' })
+    expect(evalValidationRules([{ field: 'name', op: 'minLen', value: 2, message: 'Too short' }], values)).toEqual({})
+    expect(evalValidationRules([{ field: 'qty', op: 'lte', compareTo: 'max', message: 'Over the max' }], values))
+      .toEqual({ qty: 'Over the max' })
+    expect(evalValidationRules([{ field: 'missing', op: 'required', message: 'Needed' }], values))
+      .toEqual({ missing: 'Needed' })
+  })
+
+  it('runs as part of validateAll, so a rule fires in the form, not just on the server', async () => {
+    const withRules: EntitySchema<{ id: string; code: string }> = {
+      name: 'things',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'code', type: 'text' },
+      ],
+      validations: [{ field: 'code', op: 'minLen', value: 4, message: 'Code needs 4+ characters' }],
+    }
+    expect(await validateAll(withRules, { code: 'ab' })).toEqual({ code: 'Code needs 4+ characters' })
+    expect(await validateAll(withRules, { code: 'abcd' })).toEqual({})
   })
 })

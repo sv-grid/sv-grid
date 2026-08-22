@@ -11,7 +11,7 @@ import type {
   ExprRow,
   PredicateExpr,
   ScalarExpr,
-} from './expression-types'
+} from './expression-types.js'
 
 type Scalar = number | string | boolean | null
 

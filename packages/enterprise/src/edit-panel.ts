@@ -13,7 +13,10 @@ import {
   validateField,
   type EntitySchema,
   type FormFieldDescriptor,
-} from './schema'
+  type ValidationRuleSpec,
+} from './schema.js'
+import { evaluatePredicate } from './expressions/evaluate.js'
+import type { PredicateExpr } from './expressions/expression-types.js'
 
 export type EditMode = 'create' | 'edit'
 
@@ -137,6 +140,117 @@ export function builtInError(field: FormFieldDescriptor, value: unknown): string
 }
 
 /**
+ * Evaluate one of a field's `when` conditions against the values currently in
+ * the form. A malformed condition falls back rather than throwing: a bad rule
+ * should not make the form unusable, and the safe answer differs per flag
+ * (a field stays visible, stays enabled, keeps its static required flag).
+ */
+function test(expr: PredicateExpr | undefined, values: Record<string, unknown>, fallback: boolean): boolean {
+  if (!expr) return fallback
+  try {
+    const result = evaluatePredicate(expr, { row: values })
+    // An unrecognised node evaluates to undefined rather than throwing, so a
+    // non-boolean answer counts as "no opinion" and takes the fallback too.
+    return typeof result === 'boolean' ? result : fallback
+  } catch {
+    return fallback
+  }
+}
+
+/** Whether a field is shown, editable, and demanded, for the current values. */
+export type FieldState = { visible: boolean; disabled: boolean; required: boolean }
+
+/**
+ * Resolve a field's live state from its `when` conditions. Read-only always
+ * wins over a `disabled` condition, and `when.required` replaces the static
+ * `required` flag rather than adding to it, so a rule can make a normally
+ * required field optional as well as the other way round.
+ */
+export function fieldState(field: FormFieldDescriptor, values: Record<string, unknown>): FieldState {
+  return {
+    visible: test(field.when?.visible, values, true),
+    disabled: field.readonly || test(field.when?.disabled, values, false),
+    required: field.when?.required ? test(field.when.required, values, false) : field.required,
+  }
+}
+
+/** Whether a form section's `visibleWhen` holds for the current values. */
+export function sectionVisible(expr: PredicateExpr, values: Record<string, unknown>): boolean {
+  return test(expr, values, true)
+}
+
+/** The fields the form currently shows, in order. */
+export function visibleFormFields<TData extends RowData>(
+  schema: EntitySchema<TData>,
+  values: Record<string, unknown>,
+): FormFieldDescriptor[] {
+  return schemaToFormFields(schema).filter((f) => fieldState(f, values).visible)
+}
+
+/** True when any field's behaviour depends on the values (i.e. has a `when`). */
+export function hasFieldConditions<TData extends RowData>(schema: EntitySchema<TData>): boolean {
+  return schema.fields.some((f) => !!f.when && (!!f.when.visible || !!f.when.disabled || !!f.when.required))
+}
+
+/**
+ * Drop the values of fields hidden by a `when.visible` condition.
+ *
+ * The edit panel already leaves them out via `toSubmitValues`; a server that
+ * builds its own payload (the generated SSR route reads a `FormData`) runs it
+ * through this so both paths write exactly the same fields. Without it, a field
+ * the user could not see would still be saved from a posted form.
+ */
+export function stripHiddenValues<TData extends RowData>(
+  schema: EntitySchema<TData>,
+  values: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!hasFieldConditions(schema)) return values
+  const out: Record<string, unknown> = {}
+  const shown = new Set(visibleFormFields(schema, values).map((f) => f.field))
+  for (const [field, value] of Object.entries(values)) {
+    if (!schema.fields.some((f) => f.field === field) || shown.has(field)) out[field] = value
+  }
+  return out
+}
+
+/**
+ * Run the schema's no-code validation rules (`EntitySchema.validations`).
+ *
+ * These already compile into the generated app's server-side `hooks.validate`;
+ * this is the matching interpreter, so the same rule also fires live in the edit
+ * panel and the designer preview instead of only after a round-trip to a
+ * generated server. The comparisons mirror `compileValidation` in
+ * `studio/emit-schema.ts` exactly - string equality for eq/ne, numeric ordering
+ * for lt/lte/gt/gte, length for minLen/maxLen - so a rule cannot mean one thing
+ * in the form and another on the server.
+ */
+export function evalValidationRules(rules: ReadonlyArray<ValidationRuleSpec>, values: Record<string, unknown>): Record<string, string> {
+  const errors: Record<string, string> = {}
+  for (const rule of rules) {
+    if (errors[rule.field]) continue // first failing rule per field wins
+    const left = values[rule.field]
+    const num = () => (rule.compareTo ? Number(values[rule.compareTo]) : Number(rule.value))
+    const str = () => (rule.compareTo ? String(values[rule.compareTo]) : String(rule.value ?? ''))
+    const len = String(left ?? '').length
+    let holds: boolean
+    switch (rule.op) {
+      case 'eq': holds = String(left) === str(); break
+      case 'ne': holds = String(left) !== str(); break
+      case 'lt': holds = Number(left) < num(); break
+      case 'lte': holds = Number(left) <= num(); break
+      case 'gt': holds = Number(left) > num(); break
+      case 'gte': holds = Number(left) >= num(); break
+      case 'required': holds = left != null && left !== ''; break
+      case 'maxLen': holds = len <= Number(rule.value); break
+      case 'minLen': holds = len >= Number(rule.value); break
+      default: holds = true
+    }
+    if (!holds) errors[rule.field] = rule.message
+  }
+  return errors
+}
+
+/**
  * Seed the form's editable state. Uses the row's value when editing, else the
  * field's `defaultValue`, else a type-appropriate empty. Covers every field the
  * form shows (`schemaToFormFields`), including the read-only primary key so it
@@ -157,6 +271,48 @@ export function buildInitialValues<TData extends RowData>(
 }
 
 /**
+ * The error for one field, or null. Required-but-empty first, then the field's
+ * own constraints, then its Standard Schema validator. Read-only and
+ * condition-hidden fields never produce one: the user cannot act on them, so an
+ * error there would be a dead end.
+ *
+ * Shared by whole-form validation and by the panel's on-blur check, so a field
+ * cannot pass one and fail the other.
+ */
+async function fieldError(f: FormFieldDescriptor, values: Record<string, unknown>): Promise<string | null> {
+  if (f.readonly) return null
+  const state = fieldState(f, values)
+  if (!state.visible) return null
+  const value = values[f.field]
+  if (state.required && f.type !== 'boolean' && isEmpty(value)) return `${f.label} is required`
+  const builtIn = builtInError(f, value)
+  if (builtIn) return builtIn
+  if (!isEmpty(value)) return (await validateField(f, value)) ?? null
+  return null
+}
+
+/**
+ * Validate a single field, for checking as the user leaves it rather than making
+ * them submit to find out. Includes the schema-level rules that name this field,
+ * so a cross-field rule surfaces on the field it blames.
+ */
+export async function validateOne<TData extends RowData>(
+  schema: EntitySchema<TData>,
+  field: string,
+  values: Record<string, unknown>,
+): Promise<string | null> {
+  const descriptor = schemaToFormFields(schema).find((f) => f.field === field)
+  if (!descriptor) return null
+  const own = await fieldError(descriptor, values)
+  if (own) return own
+  if (schema.validations?.length) {
+    const byRule = evalValidationRules(schema.validations, values)[field]
+    if (byRule) return byRule
+  }
+  return (await validateEntity(schema, values as Partial<TData>))[field] ?? null
+}
+
+/**
  * Validate every editable field: required-but-empty first, then the field's
  * Standard Schema validator (if any), then the schema-level cross-field
  * `hooks.validate` (e.g. "end date must be after start date"). Returns a
@@ -169,23 +325,15 @@ export async function validateAll<TData extends RowData>(
 ): Promise<Record<string, string>> {
   const errors: Record<string, string> = {}
   for (const f of schemaToFormFields(schema)) {
-    if (f.readonly) continue
-    const value = values[f.field]
-    if (f.required && f.type !== 'boolean' && isEmpty(value)) {
-      errors[f.field] = `${f.label} is required`
-      continue
-    }
-    const builtIn = builtInError(f, value)
-    if (builtIn) {
-      errors[f.field] = builtIn
-      continue
-    }
-    if (!isEmpty(value)) {
-      const msg = await validateField(f, value)
-      if (msg) errors[f.field] = msg
+    const msg = await fieldError(f, values)
+    if (msg) errors[f.field] = msg
+  }
+  // No-code rules, then the cross-field hook. Neither overwrites a per-field error.
+  if (schema.validations?.length) {
+    for (const [field, message] of Object.entries(evalValidationRules(schema.validations, values))) {
+      if (!errors[field]) errors[field] = message
     }
   }
-  // Cross-field rules run last, and never overwrite a per-field error.
   const crossField = await validateEntity(schema, values as Partial<TData>)
   for (const [field, message] of Object.entries(crossField)) {
     if (!errors[field]) errors[field] = message
@@ -216,6 +364,9 @@ export function toSubmitValues<TData extends RowData>(
   const out: Record<string, unknown> = {}
   for (const f of schemaToFormFields(schema)) {
     if (f.readonly) continue
+    // A field hidden by its `when.visible` condition is left out entirely, so a
+    // value the user can no longer see is never written back.
+    if (!fieldState(f, values).visible) continue
     out[f.field] = coerceOut(f, values[f.field])
   }
   return out as Partial<TData>
