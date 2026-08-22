@@ -89,6 +89,8 @@
      *  Fields not in any section render in a trailing default group. When set,
      *  `formFields` ordering is per-section. */
     sections?: FormSection[]
+    /** Ask one section at a time (Back / Next). Defaults to the schema's `form.steps`. */
+    steps?: boolean
     /** Dialog width for the modal / drawer presentations. Default 'md'. */
     formSize?: 'sm' | 'md' | 'lg'
     onSubmit: (payload: SubmitPayload) => void | Promise<void>
@@ -109,6 +111,7 @@
     columns,
     formFields,
     sections,
+    steps,
     formSize = 'md',
     onSubmit,
     onCancel,
@@ -144,6 +147,9 @@
 
   // Grouped layout: each section's resolvable fields, plus a trailing group for
   // anything not assigned to a section (so no field is ever silently dropped).
+  // Read straight off the layout, not off `fieldGroups` - the grouping needs to
+  // know whether we are stepping, so it cannot be what decides it.
+  const wantSteps = $derived(!!(steps ?? schema.form?.steps) && !!layoutSections?.length)
   const fieldGroups = $derived.by((): Array<{ title?: string; description?: string; columns?: 1 | 2 | 3; collapsible?: boolean; key: string; fields: FormFieldDescriptor[] }> => {
     if (!layoutSections || !layoutSections.length) return [{ key: '', fields }]
     const assigned = new Set<string>()
@@ -158,7 +164,15 @@
     // A section whose fields are all hidden by a condition disappears with them,
     // rather than leaving a heading over nothing.
     const shown = groups.filter((g) => g.fields.length)
-    return rest.length ? [...shown, { key: 'rest', fields: rest }] : shown
+    if (!rest.length) return shown
+    // Stepping, the leftovers join the last step rather than becoming a step of
+    // their own: an untitled "Step 4" holding whatever nobody placed is a
+    // mystery, and every step of a wizard should be deliberate.
+    if (wantSteps && shown.length) {
+      const last = shown[shown.length - 1]!
+      return [...shown.slice(0, -1), { ...last, fields: [...last.fields, ...rest] }]
+    }
+    return [...shown, { key: 'rest', fields: rest }]
   })
 
   // Which collapsible sections the user has folded away. Seeded from the
@@ -175,8 +189,45 @@
    * must never point at something the user cannot see.
    */
   const groupHasError = (g: { fields: FormFieldDescriptor[] }) => g.fields.some((f) => shownErrors[f.field])
+  // Never folded while stepping: a step is already one group at a time, and a
+  // step you have to unfold before you can fill it in is just an extra click.
   const isFolded = (g: { key: string; collapsible?: boolean; fields: FormFieldDescriptor[] }) =>
-    !!g.collapsible && !!folded[g.key] && !groupHasError(g)
+    !stepped && !!g.collapsible && !!folded[g.key] && !groupHasError(g)
+
+  // --- Steps -----------------------------------------------------------------
+  // One section at a time. The groups are already the steps (a section hidden by
+  // its condition has been filtered out upstream, so the count follows the
+  // answers), which is why there is no second list to keep in sync.
+  const stepped = $derived(wantSteps && fieldGroups.length > 1)
+  let step = $state(0)
+  // Clamp rather than reset: answering something that hides a later section must
+  // not throw the user back to the beginning.
+  const stepIndex = $derived(stepped ? Math.min(step, fieldGroups.length - 1) : 0)
+  const visibleGroups = $derived(stepped ? [fieldGroups[stepIndex]!] : fieldGroups)
+  const isLastStep = $derived(stepIndex === fieldGroups.length - 1)
+
+  /**
+   * Move to the next step, but only once this one is clean. Validating just the
+   * step you are on is the point of a wizard: errors surface where they were
+   * made instead of arriving in a heap at the end.
+   */
+  async function nextStep() {
+    const group = fieldGroups[stepIndex]
+    if (!group) return
+    let bad = false
+    for (const f of group.fields) {
+      touched[f.field] = true
+      const message = await validateOne(schema, f.field, values)
+      if (message) { errors[f.field] = message; bad = true }
+      else delete errors[f.field]
+    }
+    if (bad) {
+      const first = group.fields.find((f) => errors[f.field])
+      if (first) focusField(first.field)
+      return
+    }
+    step = stepIndex + 1
+  }
 
   // Options for the custom dropdown: prepend a blank "clear" option for
   // non-required fields (parity with the native select's empty option).
@@ -201,6 +252,7 @@
     errors = {}
     touched = {}
     submitAttempted = false
+    step = 0
     submitError = null
     confirmingDiscard = false
   })
@@ -260,13 +312,22 @@
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault()
+    // Enter in a text field still submits a form even with no submit button on
+    // screen. Mid-wizard that would save a half-filled record, so it advances
+    // instead - the same thing Next does.
+    if (stepped && !isLastStep) { void nextStep(); return }
     submitError = null
     submitAttempted = true
     const found = await validateAll(schema, values)
     errors = found
     if (Object.keys(found).length > 0) {
-      // Put the user on the first thing they need to fix.
+      // Put the user on the first thing they need to fix - and, when stepping,
+      // on the step it is actually on, or the focus would land off-screen.
       const first = fields.find((f) => found[f.field])
+      if (stepped && first) {
+        const at = fieldGroups.findIndex((g) => g.fields.some((f) => found[f.field]))
+        if (at >= 0) step = at
+      }
       if (first) focusField(first.field)
       return
     }
@@ -499,8 +560,21 @@
       </div>
     {/if}
 
+    {#if stepped}
+      <!-- Where you are, and how much is left. Named steps beat "3 of 7": the
+           titles are already written, so use them. -->
+      <ol class="sv-ep__steps" aria-label="Form steps">
+        {#each fieldGroups as g, gi (gi)}
+          <li class="sv-ep__step" class:is-current={gi === stepIndex} class:is-done={gi < stepIndex} aria-current={gi === stepIndex ? 'step' : undefined}>
+            <span class="sv-ep__step-dot" aria-hidden="true">{gi < stepIndex ? '✓' : gi + 1}</span>
+            <span class="sv-ep__step-label">{g.title ?? `Step ${gi + 1}`}</span>
+          </li>
+        {/each}
+      </ol>
+    {/if}
+
     {#if fieldGroups.length > 1 || fieldGroups[0]?.title}
-      {#each fieldGroups as g, gi (gi)}
+      {#each visibleGroups as g, gi (gi)}
         {@const shut = isFolded(g)}
         <div class="sv-ep__section">
           {#if g.collapsible && g.title}
@@ -539,9 +613,18 @@
         {#if onCancel}
           <button type="button" class="sv-ep__btn" onclick={close} disabled={submitting}>Cancel</button>
         {/if}
-        <button type="submit" class="sv-ep__btn sv-ep__btn--primary" disabled={submitting}>
-          {submitting ? 'Saving…' : (submitLabel ?? (mode === 'create' ? 'Create' : 'Save'))}
-        </button>
+        {#if stepped && stepIndex > 0}
+          <button type="button" class="sv-ep__btn" onclick={() => (step = stepIndex - 1)} disabled={submitting}>Back</button>
+        {/if}
+        {#if stepped && !isLastStep}
+          <!-- Not a submit button: Next validates this step only, and a stray
+               Enter in a text field must not save a half-filled record. -->
+          <button type="button" class="sv-ep__btn sv-ep__btn--primary" onclick={nextStep} disabled={submitting}>Next</button>
+        {:else}
+          <button type="submit" class="sv-ep__btn sv-ep__btn--primary" disabled={submitting}>
+            {submitting ? 'Saving…' : (submitLabel ?? (mode === 'create' ? 'Create' : 'Save'))}
+          </button>
+        {/if}
       {/if}
     </footer>
   </form>
@@ -884,6 +967,14 @@
      field labels, which are themselves small and muted. */
   .sv-ep__section-title { margin: 0; padding: 16px 18px 0; font-size: 13.5px; font-weight: 650; color: var(--ep-fg); }
   .sv-ep__section-desc { margin: 3px 0 0; padding: 0 18px; font-size: 12px; line-height: 1.45; color: var(--sg-muted, #64748b); }
+  /* The step rail. Wraps rather than scrolls: a wizard with six steps in a
+     narrow drawer should read as two rows, not run off the edge. */
+  .sv-ep__steps { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 14px 18px 0; list-style: none; }
+  .sv-ep__step { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sg-muted, #64748b); }
+  .sv-ep__step-dot { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 50%; font-size: 10.5px; font-weight: 700; background: var(--sg-muted-bg, #eef2f7); color: var(--sg-muted, #64748b); }
+  .sv-ep__step.is-current { color: var(--ep-fg); font-weight: 600; }
+  .sv-ep__step.is-current .sv-ep__step-dot { background: var(--sg-accent, #4f46e5); color: var(--sg-on-accent, #fff); }
+  .sv-ep__step.is-done .sv-ep__step-dot { background: color-mix(in srgb, var(--sg-accent, #4f46e5) 18%, transparent); color: var(--sg-accent, #4f46e5); }
   .sv-ep__section-toggle { display: flex; align-items: center; gap: 7px; width: 100%; padding: 0; font: inherit; text-align: left; border: 0; background: none; color: inherit; cursor: pointer; }
   .sv-ep__section-caret { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid currentColor; transition: transform 120ms ease; }
   .sv-ep__section-caret.is-shut { transform: rotate(-90deg); }

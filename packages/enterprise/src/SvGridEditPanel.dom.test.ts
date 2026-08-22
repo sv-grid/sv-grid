@@ -231,6 +231,80 @@ describe('SvGridEditPanel (DOM)', () => {
     expect(el.querySelector('.sv-ep__section-toggle')!.getAttribute('aria-expanded')).toBe('true')
   })
 
+  it('asks one step at a time, and will not let you past a step that is wrong', async () => {
+    const wizard: EntitySchema = {
+      name: 'people',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'name', type: 'text', required: true },
+        { field: 'email', type: 'text' },
+        { field: 'vat', type: 'text' },
+      ],
+      form: {
+        steps: true,
+        sections: [
+          { title: 'Who', fields: ['name'] },
+          { title: 'Contact', fields: ['email'] },
+          { title: 'Billing', fields: ['vat', 'id'] },
+        ],
+      },
+    }
+    const onSubmit = vi.fn()
+    const el = render({ schema: wizard, presentation: 'inline', onSubmit })
+    const btn = (label: string) => [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === label)
+
+    // Only the current step is on screen, and the rail names every step.
+    expect([...el.querySelectorAll('.sv-ep__step-label')].map((n) => n.textContent)).toEqual(['Who', 'Contact', 'Billing'])
+    expect(el.querySelectorAll('.sv-ep__section')).toHaveLength(1)
+    expect(el.querySelector('#sv-ef-name')).toBeTruthy()
+    expect(el.querySelector('#sv-ef-email')).toBeFalsy()
+    // Mid-wizard the primary action is Next, not Save - and there is no Back yet.
+    expect(btn('Next')).toBeTruthy()
+    expect(btn('Save')).toBeFalsy()
+    expect(btn('Back')).toBeFalsy()
+
+    // `name` is required and empty, so Next must refuse and say why.
+    btn('Next')!.click()
+    await vi.waitFor(() => expect(el.querySelector('.sv-ep-field__err')).toBeTruthy())
+    expect(el.querySelector('#sv-ef-email')).toBeFalsy() // still on step 1
+
+    const nameInput = el.querySelector<HTMLInputElement>('#sv-ef-name')!
+    nameInput.value = 'Ada'
+    nameInput.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+    btn('Next')!.click()
+    await vi.waitFor(() => expect(el.querySelector('#sv-ef-email')).toBeTruthy())
+    expect(el.querySelector('#sv-ef-name')).toBeFalsy()
+    expect(btn('Back')).toBeTruthy()
+
+    // Back does not re-validate - going backwards is always allowed.
+    btn('Back')!.click()
+    flushSync()
+    expect(el.querySelector('#sv-ef-name')).toBeTruthy()
+
+    btn('Next')!.click()
+    await vi.waitFor(() => expect(el.querySelector('#sv-ef-email')).toBeTruthy())
+    btn('Next')!.click()
+    await vi.waitFor(() => expect(el.querySelector('#sv-ef-vat')).toBeTruthy())
+    // Last step: the primary action becomes the real submit.
+    expect(btn('Next')).toBeFalsy()
+    expect(el.querySelector('button[type="submit"]')).toBeTruthy()
+    el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click()
+    await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+  })
+
+  it('a single section is a page, not a one-step wizard', () => {
+    const one: EntitySchema = {
+      name: 'people', idField: 'id',
+      fields: [{ field: 'id', type: 'text', primaryKey: true }, { field: 'name', type: 'text' }],
+      form: { steps: true, sections: [{ title: 'Who', fields: ['name'] }] },
+    }
+    const el = render({ schema: one, presentation: 'inline', onSubmit: vi.fn() })
+    expect(el.querySelector('.sv-ep__steps')).toBeFalsy()
+    expect(el.querySelector('button[type="submit"]')).toBeTruthy()
+  })
+
   it('waits until you leave a field before complaining, then clears as you fix it', async () => {
     const required: EntitySchema = {
       name: 'people',
