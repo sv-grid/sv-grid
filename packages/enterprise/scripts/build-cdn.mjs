@@ -1,9 +1,10 @@
 /**
  * Build the CDN bundle of @svgrid/enterprise.
  *
- * The published package ships raw Svelte/TS *source* (compiled by the consumer's
- * bundler). Generic CDNs can't compile that, so this emits a pre-compiled ESM
- * bundle under `dist/cdn/`:
+ * The published package ships `dist/` from svelte-package: JS + .d.ts, with the
+ * .svelte components left uncompiled for the consumer's bundler. Generic CDNs
+ * can't compile Svelte at all, so this emits a fully pre-compiled ESM bundle
+ * under `dist/cdn/`:
  *
  *   - svgrid-enterprise.svelte-external.js
  *       Keeps `svelte`, `@svgrid/grid`, `jszip` and `pdfmake` EXTERNAL, so a page

@@ -1,13 +1,13 @@
 /**
  * Build the Node ESM bundle of `@svgrid/enterprise/studio`.
  *
- * The package ships raw TS *source* for bundler consumers (Vite/SvelteKit
- * compile it). But the pure, Svelte-free Studio core is also meant to run in
- * bare Node - it powers the `@svgrid/studio` CLI (`svgrid-studio`) and the
- * `@svgrid/mcp` server, both plain `node dist/cli.js` processes that cannot
- * import a `.ts` specifier. This emits a single self-contained ESM file under
- * `dist/node/` that Node resolves via the package's `./studio` "node" export
- * condition.
+ * svelte-package already emits `dist/studio/` for bundler consumers, but that
+ * output is a tree of extensionless relative imports only a bundler resolves.
+ * The pure, Svelte-free Studio core also has to run in bare Node - it powers
+ * the `@svgrid/studio` CLI (`svgrid-studio`) and the `@svgrid/mcp` server, both
+ * plain `node dist/cli.js` processes. This emits a single self-contained ESM
+ * file under `dist/node/` that Node resolves via the package's `./studio`
+ * "node" export condition.
  *
  * The Studio core has NO runtime dependency on Svelte or `@svgrid/grid` (it
  * imports only erasable types), so everything bundles in. The one exception is
